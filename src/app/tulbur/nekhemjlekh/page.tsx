@@ -1334,10 +1334,13 @@ export default function InvoicingZardluud() {
         setHistoryItems([]);
         return;
       }
-      const resp = await uilchilgee(token).get(`/geree/${gid}/history-ledger`, {
+      const resp = await uilchilgee(token).get(`/guilgeeAvlaguud`, {
         params: {
           baiguullagiinId: ajiltan.baiguullagiinId,
-          barilgiinId: selectedBuildingId || barilgiinId || null,
+          query: JSON.stringify({ gereeniiId: gid }),
+          sort: JSON.stringify({ ognoo: 1, createdAt: 1 }),
+          khuudasniiDugaar: 1,
+          khuudasniiKhemjee: 5000,
         },
       });
       const data = resp.data;

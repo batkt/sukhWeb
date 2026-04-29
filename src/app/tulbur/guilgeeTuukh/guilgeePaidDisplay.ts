@@ -44,41 +44,15 @@ export function aggregateLedgerTulsunByGereeId(
     const gid = gereeIdFromItem(it, contractsByNumber);
     if (!gid) continue;
 
-    const isStandaloneEkhniiUldegdel = it?.ekhniiUldegdelEsekh === true;
-    const itemAmount = isStandaloneEkhniiUldegdel
-      ? Number(it?.undsenDun ?? it?.tulukhDun ?? it?.uldegdel ?? 0) || 0
-      : Number(
-          it?.niitTulbur ??
-            it?.niitDun ??
-            it?.total ??
-            it?.tulukhDun ??
-            it?.undsenDun ??
-            it?.dun ??
-            0,
-        ) || 0;
-
-    let paidForRow: number;
-    if (isStandaloneEkhniiUldegdel) {
-      paidForRow = Number(it?.tulsunDun ?? it?.tulsun ?? 0) || 0;
-    } else {
-      const type = String(it?.turul || it?.type || "").toLowerCase();
-      const khelber = String(it?.khelber || "").toLowerCase();
-      const source = String(it?.sourceCollection || "").toLowerCase();
-      const isPayment =
-        type === "tulult" ||
-        type === "төлбөр" ||
-        type === "төлөлт" ||
-        khelber === "төлөлт" ||
-        khelber === "tulult" ||
-        source === "gereeniitulsunavlaga" ||
-        (itemAmount < 0 && !isStandaloneEkhniiUldegdel);
-      const fromTulsun = Number(it?.tulsunDun ?? it?.tulsun ?? 0) || 0;
-      if (isPayment) {
-        paidForRow = fromTulsun || Math.abs(itemAmount);
-      } else {
-        paidForRow = fromTulsun;
-      }
+    const rawDun = Number(it?.dun ?? 0);
+    let paidForRow = 0;
+    
+    // Only sum records where dun < 0 (actual payments/credits)
+    // To avoid double-counting tulsunDun from charge records.
+    if (rawDun < 0) {
+      paidForRow = Math.abs(rawDun);
     }
+    
     m[gid] = (m[gid] ?? 0) + paidForRow;
   }
   return m;

@@ -288,44 +288,17 @@ export default function OrlogoAvlagaPage() {
 
   const emptyQuery = useMemo(() => ({}), []);
 
-  const { data: historyData, isLoading: isLoadingHistory } = useSWR(
+  const { data: unifiedData, isLoading } = useSWR(
     token && baiguullagiinId
       ? [
-          "/nekhemjlekhiinTuukh-oa",
+          "/guilgeeAvlaguud-oa",
           token,
           baiguullagiinId,
           selectedBuildingId || null,
         ]
       : null,
     async ([, tkn, bId, barId]) => {
-      const resp = await uilchilgee(tkn).get("/nekhemjlekhiinTuukh", {
-        params: {
-          baiguullagiinId: bId,
-          ...(barId ? { barilgiinId: barId } : {}),
-          khuudasniiDugaar: 1,
-          khuudasniiKhemjee: 20000,
-          query: JSON.stringify({
-            baiguullagiinId: bId,
-            ...(barId ? { barilgiinId: barId } : {}),
-          }),
-        },
-      });
-      return resp.data;
-    },
-    { revalidateOnFocus: false },
-  );
-
-  const { data: receivableData, isLoading: isLoadingReceivable } = useSWR(
-    token && baiguullagiinId
-      ? [
-          "/gereeniiTulukhAvlaga-oa",
-          token,
-          baiguullagiinId,
-          selectedBuildingId || null,
-        ]
-      : null,
-    async ([, tkn, bId, barId]) => {
-      const resp = await uilchilgee(tkn).get("/gereeniiTulukhAvlaga", {
+      const resp = await uilchilgee(tkn).get("/guilgeeAvlaguud", {
         params: {
           baiguullagiinId: bId,
           ...(barId ? { barilgiinId: barId } : {}),
@@ -338,28 +311,33 @@ export default function OrlogoAvlagaPage() {
     { revalidateOnFocus: false },
   );
 
-  const { data: paymentRecordsData, isLoading: isLoadingPayment } = useSWR(
-    token && baiguullagiinId
-      ? [
-          "/gereeniiTulsunAvlaga-oa",
-          token,
-          baiguullagiinId,
-          selectedBuildingId || null,
-        ]
-      : null,
-    async ([, tkn, bId, barId]) => {
-      const resp = await uilchilgee(tkn).get("/gereeniiTulsunAvlaga", {
-        params: {
-          baiguullagiinId: bId,
-          ...(barId ? { barilgiinId: barId } : {}),
-          khuudasniiDugaar: 1,
-          khuudasniiKhemjee: 20000,
-        },
-      });
-      return resp.data;
-    },
-    { revalidateOnFocus: false },
-  );
+  const historyData = useMemo(() => {
+    if (!unifiedData?.jagsaalt) return { jagsaalt: [] };
+    return {
+      jagsaalt: unifiedData.jagsaalt.filter(
+        (r: any) =>
+          r.turul === "nekhemjlekh" || r.turul === "ашиглалт" || !r.turul,
+      ),
+    };
+  }, [unifiedData]);
+
+  const receivableData = useMemo(() => {
+    if (!unifiedData?.jagsaalt) return { jagsaalt: [] };
+    return {
+      jagsaalt: unifiedData.jagsaalt.filter((r: any) => Number(r.tulukhDun) > 0),
+    };
+  }, [unifiedData]);
+
+  const paymentRecordsData = useMemo(() => {
+    if (!unifiedData?.jagsaalt) return { jagsaalt: [] };
+    return {
+      jagsaalt: unifiedData.jagsaalt.filter((r: any) => Number(r.tulsunDun) > 0),
+    };
+  }, [unifiedData]);
+
+  const isLoadingHistory = isLoading;
+  const isLoadingReceivable = isLoading;
+  const isLoadingPayment = isLoading;
 
   const { gereeGaralt } = useGereeJagsaalt(
     emptyQuery,

@@ -16,8 +16,8 @@ export function getApiUrl(): string {
     process.env.GITHUB_REF_NAME === "dev" ||
     process.env.BRANCH === "dev"
   ) {
-    // return "http://103.50.205.80/";
-    return "https://amarhome.mn/api084/";
+    return "http://103.236.194.106:8084/";
+    //return "https://amarhome.mn/api/";
     // buynaa
   }
 
@@ -34,11 +34,11 @@ export function getApiUrl(): string {
     typeof window !== "undefined" &&
     window.location.hostname === "amarhome.mn"
   ) {
-    // return "http://103.50.205.80/";
-    return "https://amarhome.mn/api/";
+    return "http://103.236.194.106:8084/";
+    //return "https://amarhome.mn/api/";
   }
-  // return "http://103.50.205.80/";
-  return "https://amarhome.mn/api/";
+  return "http://103.236.194.106:8084/";
+  //return "https://amarhome.mn/api/";
 }
 
 /** Base URL for medegdel static assets (images/audio). Use origin + /medegdel/ so nginx can serve or proxy without /api. */
@@ -91,7 +91,9 @@ export const socket = (): Socket => {
   const socketBase = apiUrl.endsWith("/api/") ? apiUrl.slice(0, -5) : apiUrl;
 
   // or use the current API host
-  const endpoint = socketBase.includes("localhost") ? socketBase : "https://amarhome.mn";
+  const endpoint = socketBase.includes("localhost")
+    ? socketBase
+    : "https://amarhome.mn";
 
   socketInstance = io(endpoint, {
     path: "/socket.io",
@@ -110,12 +112,12 @@ export const socket = (): Socket => {
 // attempt fails (network error or non-2xx response).
 export async function fetchWithDomainFallback(
   path: string,
-  options?: RequestInit
+  options?: RequestInit,
 ): Promise<Response> {
   // Use the api proxy path on the domain so URLs become
   // https://amarhome.mn/api/nekhemjlekhCron/...
-  const CRON_DOMAIN = "https://amarhome.mn/api";
-  const CRON_IP = "https://amarhome.mn/";
+  const CRON_DOMAIN = "http://103.236.194.106:8084";
+  const CRON_IP = "http://103.236.194.106:8084";
   const bases = [CRON_DOMAIN, CRON_IP];
 
   let lastErr: any = null;
@@ -176,7 +178,7 @@ export const togloomUilchilgee = (token?: string): AxiosInstance => {
         // Check if baiguullagiinId is already in the URL path
         const urlPath = config.url || "";
         const baiguullagaPathMatch = urlPath.match(
-          /^\/baiguullaga\/([^\/\?]+)/
+          /^\/baiguullaga\/([^\/\?]+)/,
         );
         const baiguullagiinIdInPath = baiguullagaPathMatch?.[1];
 
@@ -227,7 +229,7 @@ export const zogsoolUilchilgee = (token?: string): AxiosInstance => {
         // Check if baiguullagiinId is already in the URL path
         const urlPath = config.url || "";
         const baiguullagaPathMatch = urlPath.match(
-          /^\/baiguullaga\/([^\/\?]+)/
+          /^\/baiguullaga\/([^\/\?]+)/,
         );
         const baiguullagiinIdInPath = baiguullagaPathMatch?.[1];
 
@@ -274,7 +276,7 @@ const uilchilgee = (token?: string): AxiosInstance => {
         // Pattern: /baiguullaga/{id} or /baiguullaga/{id}/...
         const urlPath = config.url || "";
         const baiguullagaPathMatch = urlPath.match(
-          /^\/baiguullaga\/([^\/\?]+)/
+          /^\/baiguullaga\/([^\/\?]+)/,
         );
         const baiguullagiinIdInPath = baiguullagaPathMatch?.[1];
 
@@ -290,7 +292,10 @@ const uilchilgee = (token?: string): AxiosInstance => {
         }
         // Allow callers to opt-out of auto-injecting barilgiinId via header
         const headers = config.headers as any;
-        const orgOnly = headers?.["X-Org-Only"] === "1" || headers?.["x-org-only"] === "1" || (headers?.get && headers.get("X-Org-Only") === "1");
+        const orgOnly =
+          headers?.["X-Org-Only"] === "1" ||
+          headers?.["x-org-only"] === "1" ||
+          (headers?.get && headers.get("X-Org-Only") === "1");
         if (!orgOnly) {
           if (globalBarilgiinId && p.barilgiinId == null) {
             p.barilgiinId = globalBarilgiinId;
@@ -306,7 +311,7 @@ const uilchilgee = (token?: string): AxiosInstance => {
   // Remove offline queueing: if a request fails, just propagate the error
   instance.interceptors.response.use(
     (resp) => resp,
-    async (error) => Promise.reject(error)
+    async (error) => Promise.reject(error),
   );
 
   return instance;

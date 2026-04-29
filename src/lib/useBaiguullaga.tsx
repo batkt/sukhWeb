@@ -9,11 +9,7 @@ const fetcher = async (
   baiguullagiinId: string
 ): Promise<Baiguullaga> => {
   try {
-    const response = await uilchilgee(token).get(`${url}/${baiguullagiinId}`, {
-      headers: {
-        "X-Org-Only": "1",
-      },
-    });
+    const response = await uilchilgee(token).get(`${url}/${baiguullagiinId}`);
     // Ensure we return the raw organization record, unwrapping result/data if needed
     return response.data?.result || response.data;
   } catch (error) {

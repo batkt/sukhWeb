@@ -229,7 +229,7 @@ export default function Khynalt() {
   const { data: paymentData } = useSWR(
     token && ajiltan?.baiguullagiinId && rangeStart && rangeEnd
       ? [
-          "/gereeniiTulsunAvlaga",
+          "/guilgeeAvlaguud",
           token,
           ajiltan.baiguullagiinId,
           effectiveBarilgiinId,
@@ -438,7 +438,7 @@ export default function Khynalt() {
   const { data: tulukhAvlagaData } = useSWR(
     token && ajiltan?.baiguullagiinId && rangeStart && rangeEnd
       ? [
-          "/gereeniiTulukhAvlaga",
+          "/guilgeeAvlaguud",
           token,
           ajiltan.baiguullagiinId,
           effectiveBarilgiinId,

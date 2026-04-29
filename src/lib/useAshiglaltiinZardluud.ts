@@ -61,16 +61,13 @@ export function useAshiglaltiinZardluud(overrides?: {
 
   const { data, error, mutate } = useSWR(
     shouldFetch && currentBarilga
-      ? [`/baiguullaga/${currentOrg}`, token, currentBarilga]
+      ? ["/ashiglaltiinZardluud", token, currentBarilga]
       : null,
     async ([url, token, barilgaId]) => {
       const response = await uilchilgee(token).get(url, {
-        headers: { "X-Org-Only": "1" },
+        params: { query: JSON.stringify({ barilgiinId: barilgaId }) },
       });
-      const org = response.data;
-      const barilga = org.barilguud?.find((b: any) => b._id === barilgaId);
-      if (!barilga) return [] as ZardalItem[];
-      return barilga.tokhirgoo?.ashiglaltiinZardluud || [];
+      return response.data?.jagsaalt || response.data || [];
     },
     {
       dedupingInterval: 0,
@@ -80,23 +77,13 @@ export function useAshiglaltiinZardluud(overrides?: {
     }
   );
 
-  const addZardal = async (
-    zardalData: Partial<ZardalItem>
-  ) => {
+  const addZardal = async (zardalData: Partial<ZardalItem>) => {
     if (!token || !currentOrg || !currentBarilga) return;
 
-    const orgResp = await uilchilgee(token).get(`/baiguullaga/${currentOrg}`, {
-      headers: { "X-Org-Only": "1" },
-    });
-    const org = orgResp.data;
-    const barilga = org.barilguud?.find((b: any) => b._id === currentBarilga);
-    if (!barilga) throw new Error("Building not found");
-
-    if (!barilga.tokhirgoo) barilga.tokhirgoo = {};
-    if (!barilga.tokhirgoo.ashiglaltiinZardluud)
-      barilga.tokhirgoo.ashiglaltiinZardluud = [];
-
-    const newItem: ZardalItem = {
+    const payload = {
+      ...zardalData,
+      baiguullagiinId: currentOrg,
+      barilgiinId: currentBarilga,
       ner: zardalData.ner ?? "Лифт",
       turul: zardalData.turul ?? "лифт",
       zardliinTurul: zardalData.zardliinTurul ?? "Энгийн",
@@ -126,39 +113,14 @@ export function useAshiglaltiinZardluud(overrides?: {
       zaaltDefaultDun: zardalData.zaaltDefaultDun ?? 0,
     };
 
-    barilga.tokhirgoo.ashiglaltiinZardluud.push(newItem);
-
-    const payload = {
-      ...org,
-      barilguud: org.barilguud,
-    };
-
-    await updateMethod("baiguullaga", token, payload);
+    await uilchilgee(token).post("/ashiglaltiinZardluud", payload);
     mutate();
   };
 
-  const updateZardal = async (
-    id: string,
-    zardalData: Partial<ZardalItem>
-  ) => {
+  const updateZardal = async (id: string, zardalData: Partial<ZardalItem>) => {
     if (!token || !currentOrg || !currentBarilga) return;
 
-    const orgResp = await uilchilgee(token).get(`/baiguullaga/${currentOrg}`, {
-      headers: { "X-Org-Only": "1" },
-    });
-    const org = orgResp.data;
-    const barilga = org.barilguud?.find((b: any) => b._id === currentBarilga);
-    if (!barilga) throw new Error("Building not found");
-
-    if (!barilga.tokhirgoo?.ashiglaltiinZardluud) return;
-
-    const index = barilga.tokhirgoo.ashiglaltiinZardluud.findIndex(
-      (item: any) => item._id === id
-    );
-    if (index === -1) return;
-
-    barilga.tokhirgoo.ashiglaltiinZardluud[index] = {
-      ...barilga.tokhirgoo.ashiglaltiinZardluud[index],
+    const payload = {
       ...zardalData,
       bodokhArga: zardalData.bodokhArga ?? "тогтмол",
       tariffUsgeer: zardalData.tariffUsgeer ?? "",
@@ -169,38 +131,13 @@ export function useAshiglaltiinZardluud(overrides?: {
           : undefined),
     };
 
-    const payload = {
-      ...org,
-      barilguud: org.barilguud,
-    };
-
-    await updateMethod("baiguullaga", token, payload);
+    await uilchilgee(token).put(`/ashiglaltiinZardluud/${id}`, payload);
     mutate();
   };
 
   const deleteZardal = async (id: string) => {
     if (!token || !currentOrg || !currentBarilga) return;
-
-    const orgResp = await uilchilgee(token).get(`/baiguullaga/${currentOrg}`, {
-      headers: { "X-Org-Only": "1" },
-    });
-    const org = orgResp.data;
-    const barilga = org.barilguud?.find((b: any) => b._id === currentBarilga);
-    if (!barilga) throw new Error("Building not found");
-
-    if (!barilga.tokhirgoo?.ashiglaltiinZardluud) return;
-
-    barilga.tokhirgoo.ashiglaltiinZardluud =
-      barilga.tokhirgoo.ashiglaltiinZardluud.filter(
-        (item: any) => item._id !== id
-      );
-
-    const payload = {
-      ...org,
-      barilguud: org.barilguud,
-    };
-
-    await updateMethod("baiguullaga", token, payload);
+    await uilchilgee(token).delete(`/ashiglaltiinZardluud/${id}`);
     mutate();
   };
 

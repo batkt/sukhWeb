@@ -215,7 +215,7 @@ export function computeLedgerRunningBalancesByGereeId(
       type === "төлөлт" ||
       khelber === "төлөлт" ||
       khelber === "tulult" ||
-      source === "gereeniitulsunavlaga" ||
+      source === "guilgeeavlaguud" ||
       (itemAmount < 0 && !isStandaloneEkhnii);
     const fromTulsun = Number(it?.tulsunDun ?? it?.tulsun ?? 0) || 0;
 

@@ -188,6 +188,8 @@ export default function DansniiKhuulga() {
       start:
         hasDateFilter && !isLatestMonthView ? rawStart || undefined : undefined,
       end: hasDateFilter && !isLatestMonthView ? rawEnd || undefined : undefined,
+      startMs: rawStart ? new Date(rawStart).getTime() : 0,
+      endMs: rawEnd ? new Date(rawEnd + "T23:59:59").getTime() : 8640000000000000,
     };
   }, [ekhlekhOgnoo]);
 
@@ -311,6 +313,12 @@ export default function DansniiKhuulga() {
         minWidth: 110,
       },
       { key: "paid", label: "Гүйцэтгэл", align: "end", minWidth: 110 },
+      {
+        key: "sariinUldegdel",
+        label: "Сарын үлдэгдэл",
+        align: "end",
+        minWidth: 110,
+      },
       { key: "tuluv", label: "Төлөв", align: "start", minWidth: 110 },
       {
         key: "lastLog",
@@ -359,6 +367,7 @@ export default function DansniiKhuulga() {
     "uldegdel",
     "sariinTurees",
     "paid",
+    "sariinUldegdel",
     "tuluv",
     "lastLog",
   ] as const;
@@ -393,19 +402,14 @@ export default function DansniiKhuulga() {
   const [historyIndex, setHistoryIndex] = useState(0);
   const [liftFloors, setLiftFloors] = useState<string[]>([]);
   const historyRef = useRef<HTMLDivElement | null>(null);
-
-  // Paid history modal state
-  // History modal removed; showing org-scoped list directly
-
-  // Fetch org-scoped payment history
   const {
-    data: historyData,
+    data: unifiedData,
     isLoading: isLoadingHistory,
-    mutate: mutateHistory,
+    mutate: mutateUnified,
   } = useSWR(
     token && ajiltan?.baiguullagiinId
       ? [
-          "/nekhemjlekhiinTuukh",
+          "/guilgeeAvlaguud",
           token,
           ajiltan.baiguullagiinId,
           effectiveBarilgiinId || null,
@@ -425,51 +429,36 @@ export default function DansniiKhuulga() {
     { revalidateOnFocus: false },
   );
 
-  const { data: receivableData, mutate: mutateReceivable } = useSWR(
-    token && ajiltan?.baiguullagiinId
-      ? [
-          "/gereeniiTulukhAvlaga",
-          token,
-          ajiltan.baiguullagiinId,
-          effectiveBarilgiinId || null,
-        ]
-      : null,
-    async ([url, tkn, orgId, branch]) => {
-      const resp = await uilchilgee(tkn).get(url, {
-        params: {
-          baiguullagiinId: orgId,
-          barilgiinId: branch || undefined,
-          khuudasniiDugaar: 1,
-          khuudasniiKhemjee: 20000,
-        },
-      });
-      return resp.data;
-    },
-    { revalidateOnFocus: false },
-  );
 
-  const { data: paymentRecordsData, mutate: mutatePaymentRecords } = useSWR(
-    token && ajiltan?.baiguullagiinId
-      ? [
-          "/gereeniiTulsunAvlaga",
-          token,
-          ajiltan.baiguullagiinId,
-          effectiveBarilgiinId || null,
-        ]
-      : null,
-    async ([url, tkn, orgId, branch]) => {
-      const resp = await uilchilgee(tkn).get(url, {
-        params: {
-          baiguullagiinId: orgId,
-          barilgiinId: branch || undefined,
-          khuudasniiDugaar: 1,
-          khuudasniiKhemjee: 20000,
-        },
-      });
-      return resp.data;
-    },
-    { revalidateOnFocus: false },
-  );
+
+  // Derive legacy data structures from unified data for backward compatibility in this page
+  const historyData = useMemo(() => {
+    if (!unifiedData?.jagsaalt) return { jagsaalt: [] };
+    return {
+      jagsaalt: unifiedData.jagsaalt.filter(
+        (r: any) =>
+          r.turul === "nekhemjlekh" || r.turul === "ашиглалт" || !r.turul,
+      ),
+    };
+  }, [unifiedData]);
+
+  const receivableData = useMemo(() => {
+    if (!unifiedData?.jagsaalt) return { jagsaalt: [] };
+    return {
+      jagsaalt: unifiedData.jagsaalt.filter((r: any) => Number(r.tulukhDun) > 0),
+    };
+  }, [unifiedData]);
+
+  const paymentRecordsData = useMemo(() => {
+    if (!unifiedData?.jagsaalt) return { jagsaalt: [] };
+    return {
+      jagsaalt: unifiedData.jagsaalt.filter((r: any) => Number(r.tulsunDun) > 0),
+    };
+  }, [unifiedData]);
+
+  const mutateHistory = mutateUnified;
+  const mutateReceivable = mutateUnified;
+  const mutatePaymentRecords = mutateUnified;
 
   // Fetch resident monthly matrix data for "сарын үлдэгдэл"
   // Backend requires baiguullagiinId, ekhlekhOgnoo, duusakhOgnoo.
@@ -1146,7 +1135,7 @@ export default function DansniiKhuulga() {
         g?._id || g?.gereeniiId || g?.gereeId || "",
       ).trim();
       const gereeDugaar = String(g?.gereeniiDugaar || "").trim();
-      const key = gereeId || gereeDugaar;
+      const key = gereeId || gereeDugaar || (String(g?.orshinSuugchId || g?.residentId || "").trim()) || `${String(r?.ner ?? g?.ner || "").trim().toLowerCase()}|${String(r?.utas ?? g?.utas || "").trim()}|${String(r?.toot ?? g?.toot || "").trim()}`;
       if (key) residentKeysFromProfile.add(key);
 
       // Pre-populate map with these residents
@@ -1179,7 +1168,7 @@ export default function DansniiKhuulga() {
       })();
       const toot = String(it?.toot || it?.medeelel?.toot || "").trim();
       const key =
-        gereeId || residentId || gereeDugaar || `${ner}|${utas}|${toot}`;
+        gereeId || gereeDugaar || residentId || `${ner}|${utas}|${toot}`;
       if (key && key !== "||") {
         residentKeysFromProfile.add(key);
         if (!map.has(key)) {
@@ -1265,12 +1254,12 @@ export default function DansniiKhuulga() {
 
       // Priority grouping: GereeId > ResidentId > GereeDugaar > Name+Utas
       const key =
-        gereeId || residentId || gereeDugaar || `${ner}|${utas}|${toot}`;
+        gereeId || gereeDugaar || residentId || `${ner}|${utas}|${toot}`;
 
       if (!key || key === "||") return; // Skip if no valid identifier
       if (!residentKeysFromProfile.has(key)) return; // Only include residents that pass the profile filter
 
-      // Check if this is a standalone ekhniiUldegdel record from gereeniiTulukhAvlaga
+      // Check if this is a standalone ekhniiUldegdel record from guilgeeAvlaguud
       const isStandaloneEkhniiUldegdel = it?.ekhniiUldegdelEsekh === true;
       const standaloneAmount =
         Number(it?.undsenDun ?? it?.tulukhDun ?? it?.uldegdel ?? 0) || 0;
@@ -1285,54 +1274,57 @@ export default function DansniiKhuulga() {
             contractsWithEkhniiUldegdelInInvoice.has(gereeDugaar));
 
         if (contractHasEkhniiUldegdelInInvoice && standaloneAmount >= 0) {
-          // Skip only when positive - invoice's ekhniiUldegdel covers it
           return;
         }
       }
 
-      // For standalone ekhniiUldegdel records (that don't have an invoice), use undsenDun (original amount)
-      // For invoices/other items, base on niitTulbur/niitDun/total (sum of zardluud),
-      // matching HistoryModal's charge calculation and avoiding double-counting niitTulburOriginal.
-      let itemAmount = isStandaloneEkhniiUldegdel
-        ? Number(it?.undsenDun ?? it?.tulukhDun ?? it?.uldegdel ?? 0) || 0
-        : Number(
-            it?.niitTulbur ??
-              it?.niitDun ??
-              it?.total ??
-              it?.tulukhDun ??
-              it?.undsenDun ??
-              it?.dun ??
-              0,
-          ) || 0;
+      // Calculate base amounts for this specific record
+      const rawDun = Number(it?.dun ?? 0);
+      
+      // If it's an invoice record (nekhemjlekh), it represents a collection of charges.
+      // However, our new ledger approach records individual charges with dun > 0.
+      // Payment records have dun < 0.
+      
+      let chargeForRow = 0;
+      let paidForRow = 0;
 
-      let ekhniiUldegdelDelta = isStandaloneEkhniiUldegdel ? itemAmount : 0;
-      if (!isStandaloneEkhniiUldegdel) {
-        // For invoices: base on niitTulbur/niitDun/total (sum of zardluud/expenses),
-        // which matches what HistoryModal derives from zardluud.
-        const guilgeenuud = Array.isArray(it?.medeelel?.guilgeenuud)
-          ? it.medeelel.guilgeenuud
-          : Array.isArray(it?.guilgeenuud)
-            ? it.guilgeenuud
-            : [];
+      if (rawDun > 0) {
+        // It's a charge (receivable)
+        chargeForRow = rawDun;
+        paidForRow = 0; // We will sum payments from payment records only to avoid double counting
+      } else if (rawDun < 0) {
+        // It's a payment or credit
+        chargeForRow = 0;
+        paidForRow = Math.abs(rawDun);
+      }
 
-        itemAmount =
-          Number(
-            it?.niitTulbur ??
-              it?.niitDun ??
-              it?.total ??
-              it?.tulukhDun ??
-              it?.undsenDun ??
-              it?.dun ??
-              0,
-          ) || 0;
+      // Handle standalone opening balance as a special charge case
+      if (isStandaloneEkhniiUldegdel) {
+        chargeForRow = Math.abs(standaloneAmount);
+        paidForRow = 0;
+      }
 
-        // Extract ekhniiUldegdel from invoice zardluud and guilgeenuud for column display
+      // Monthly scoping
+      const itemMs = itemPrimaryDateMs(it);
+      const isWithinMonth =
+        effectiveDateFilter.hasDateFilter &&
+        itemMs >= effectiveDateFilter.startMs &&
+        itemMs <= effectiveDateFilter.endMs;
+
+      const chargeForMonth = isWithinMonth ? chargeForRow : 0;
+      const paidForMonth = isWithinMonth ? paidForRow : 0;
+
+      // Calculate ekhniiUldegdel delta for the "Opening Balance" column if needed
+      let ekhniiUldegdelDelta = 0;
+      if (isStandaloneEkhniiUldegdel) {
+        ekhniiUldegdelDelta = standaloneAmount;
+      } else {
         const zardluud = Array.isArray(it?.medeelel?.zardluud)
           ? it.medeelel.zardluud
           : Array.isArray(it?.zardluud)
             ? it.zardluud
             : [];
-        const fromZardluud = zardluud.reduce((s: number, z: any) => {
+        ekhniiUldegdelDelta = zardluud.reduce((s: number, z: any) => {
           const ner = String(z?.ner || "").toLowerCase();
           const isEkh =
             z?.isEkhniiUldegdel === true ||
@@ -1341,37 +1333,8 @@ export default function DansniiKhuulga() {
             ner.includes("ekhnii uldegdel");
           if (!isEkh) return s;
           const amt = Number(z?.dun ?? z?.tariff ?? 0);
-          return s + (amt !== 0 ? amt : 0);
+          return s + amt;
         }, 0);
-        const fromGuilgee = guilgeenuud.reduce((s: number, g: any) => {
-          if (g?.ekhniiUldegdelEsekh !== true) return s;
-          const amt = Number(g?.tulukhDun ?? g?.undsenDun ?? 0);
-          return s + (amt !== 0 ? amt : 0);
-        }, 0);
-        ekhniiUldegdelDelta = fromZardluud + fromGuilgee;
-      }
-
-      // Match deduplicatedResidentsAll: төлөлт rows add to paid, not charges; prefer tulsunDun for paid amount.
-      let chargeForRow: number;
-      let paidForRow: number;
-      if (isStandaloneEkhniiUldegdel) {
-        chargeForRow = itemAmount;
-        paidForRow = Number(it?.tulsunDun ?? it?.tulsun ?? 0) || 0;
-      } else {
-        const type = String(it?.turul || it?.type || "").toLowerCase();
-        const isPayment =
-          type === "tulult" ||
-          type === "төлбөр" ||
-          type === "төлөлт" ||
-          (itemAmount < 0 && !isStandaloneEkhniiUldegdel);
-        const fromTulsun = Number(it?.tulsunDun ?? it?.tulsun ?? 0) || 0;
-        if (isPayment) {
-          chargeForRow = 0;
-          paidForRow = fromTulsun || Math.abs(itemAmount);
-        } else {
-          chargeForRow = Math.abs(itemAmount);
-          paidForRow = fromTulsun;
-        }
       }
 
       if (!map.has(key)) {
@@ -1386,6 +1349,8 @@ export default function DansniiKhuulga() {
           _historyCount: 1,
           _totalTulbur: chargeForRow,
           _totalTulsun: paidForRow,
+          _totalTulburMonth: chargeForMonth,
+          _totalTulsunMonth: paidForMonth,
           _hasEkhniiUldegdel:
             isStandaloneEkhniiUldegdel || ekhniiUldegdelDelta !== 0,
           _ekhniiUldegdelAmount: ekhniiUldegdelDelta,
@@ -1396,6 +1361,10 @@ export default function DansniiKhuulga() {
         existing._historyCount += 1;
         existing._totalTulbur += chargeForRow;
         existing._totalTulsun += paidForRow;
+        existing._totalTulburMonth =
+          (existing._totalTulburMonth || 0) + chargeForMonth;
+        existing._totalTulsunMonth =
+          (existing._totalTulsunMonth || 0) + paidForMonth;
         const rg = String(gereeId || "").trim();
         if (
           rg &&
@@ -1865,21 +1834,20 @@ export default function DansniiKhuulga() {
       latestRowUldegdelRequestedRef.current.add(gid);
 
       uilchilgee(token)
-        .get(`/geree/${gid}/history-ledger`, {
+        .get(`/guilgeeAvlaguud`, {
           params: {
             baiguullagiinId,
-            barilgiinId: effectiveBarilgiinId || null,
+            query: JSON.stringify({ gereeniiId: gid }),
+            sort: JSON.stringify({ ognoo: 1, createdAt: 1 }),
+            khuudasniiDugaar: 1,
+            khuudasniiKhemjee: 5000,
             _t: Date.now(),
           },
         })
         .then((resp) => {
           const backendLedger = Array.isArray(resp.data?.jagsaalt)
             ? resp.data.jagsaalt
-            : Array.isArray(resp.data?.ledger)
-              ? resp.data.ledger
-              : Array.isArray(resp.data)
-                ? resp.data
-                : [];
+            : [];
 
           // Get latest row's uldegdel (backend returns oldest-first, so last row is latest)
           const latestRow =
@@ -2202,6 +2170,20 @@ export default function DansniiKhuulga() {
         return;
       }
 
+      // Fetch bulk uldegdelBodyo for Excel export
+      const bulkResp = await uilchilgee(token).post("/uldegdelBodyo", {
+        baiguullagiinId: ajiltan.baiguullagiinId,
+        barilgiinId: effectiveBarilgiinId || undefined,
+        ognoo: ekhlekhOgnoo,
+      });
+      const exportSummaries = new Map<string, any>();
+      if (bulkResp.data?.summaries) {
+        bulkResp.data.summaries.forEach((s: any) => {
+          if (s.gereeniiId) exportSummaries.set(String(s.gereeniiId), s);
+          if (s.gereeniiDugaar) exportSummaries.set(String(s.gereeniiDugaar), s);
+        });
+      }
+
       // Build exact data set from UI to perfectly match sequence, filtering, and missing resident issues.
       const tableData = sortedResidents.map((item: any, index: number) => {
         const gid =
@@ -2237,6 +2219,14 @@ export default function DansniiKhuulga() {
           ekhniiUldegdel: parseFloat(String(ekhniiAmt)).toFixed(2),
           uldegdel: parseFloat(String(currentBalance)).toFixed(2),
           guitsetgel: parseFloat(String(paidAmount)).toFixed(2),
+          sariinUldegdel: parseFloat(
+            String(
+              exportSummaries.get(gid)?.totalUldegdel ||
+                exportSummaries.get(item?.gereeniiDugaar)?.totalUldegdel ||
+                Number(item?._totalTulburMonth || 0) -
+                  Number(item?._totalTulsunMonth || 0),
+            ),
+          ).toFixed(2),
           tuluv: odooTuluv,
         };
       });
@@ -2254,6 +2244,7 @@ export default function DansniiKhuulga() {
           { key: "ekhniiUldegdel", label: "Эхний үлдэгдэл" },
           { key: "uldegdel", label: "Үлдэгдэл" },
           { key: "guitsetgel", label: "Гүйцэтгэл" },
+          { key: "sariinUldegdel", label: "Сарын үлдэгдэл" },
           { key: "tuluv", label: "Төлөв" },
         ],
         fileName: `tolborder_jagsaalt_${new Date().toISOString().split("T")[0]}`,
@@ -2418,12 +2409,12 @@ export default function DansniiKhuulga() {
       // Only mark as paid when transaction type is "tulult" (Төлөлт)
       // For other types (avlaga, ashiglalt), create a transaction record without marking as paid
       if (data.type === "tulult") {
-        // Payment: mark invoices as paid
-        const response = await uilchilgee(token).post("/markInvoicesAsPaid", {
+        // Payment: record directly in guilgeeAvlaguud with negative dun
+        const response = await uilchilgee(token).post("/guilgeeAvlaguud", {
           baiguullagiinId: ajiltan.baiguullagiinId,
           barilgiinId: effectiveBarilgiinId,
           tukhainBaaziinKholbolt: ajiltan?.tukhainBaaziinKholbolt,
-          dun: data.amount,
+          dun: -Math.abs(data.amount),
           orshinSuugchId: data.residentId,
           gereeniiId: data.gereeniiId,
           tailbar:
@@ -2432,12 +2423,11 @@ export default function DansniiKhuulga() {
               ? `Эхний үлдэгдэл - ${data.date}`
               : `Төлөлт - ${data.date}`),
           ognoo: data.date,
-          ...(data.ekhniiUldegdel && { markEkhniiUldegdel: true }),
           createdBy: ajiltan._id,
           createdAt: new Date().toISOString(),
-          // Нэхэмжлэхийн түүх / history-ledger: бүртгэсэн ажилтны нэр (сервер хадгалах ёстой)
           burtgesenAjiltaniiNer: ajiltan.ner,
           guilgeeKhiisenAjiltniiNer: ajiltan.ner,
+          turul: "tulult",
         });
 
         if (isTransactionHttpOk(response)) {
@@ -2501,30 +2491,31 @@ export default function DansniiKhuulga() {
         // Сервер заримдаа dun-г шууд tulukhDun-д тавьдаг тул ашиглалт дээр dun=0,
         // дүнг зөвхөн tulsunDun-аар дамжуулна (guilgeenuudForNekhemjlekh-тай нийцнэ).
         const response = await uilchilgee(token).post(
-          "/gereeniiGuilgeeKhadgalya",
+          "/guilgeeAvlaguud",
           {
             baiguullagiinId: ajiltan.baiguullagiinId,
             barilgiinId: effectiveBarilgiinId,
             tukhainBaaziinKholbolt: ajiltan?.tukhainBaaziinKholbolt,
             turul: data.type,
+            source: "gar",
             ...(isAshiglalt
               ? {
                   tulukhDun: 0,
                   tulsunDun: data.amount,
-                  dun: 0,
+                  dun: -data.amount, // Negative dun indicates payment/credit in the hook
                 }
               : {
                   tulukhDun: data.amount,
                   tulsunDun: 0,
-                  dun: data.amount,
+                  dun: data.amount, // Positive dun indicates charge
                 }),
             orshinSuugchId: data.residentId,
             gereeniiId: data.gereeniiId,
             tailbar: normalizedTailbar,
             ognoo: data.date,
-            ...(data.ekhniiUldegdel && { ekhniiUldegdelEsekh: true }), // Only include when checked
-            createdBy: ajiltan._id,
-            createdAt: new Date().toISOString(),
+            ...(data.ekhniiUldegdel && { ekhniiUldegdelEsekh: true }),
+            guilgeeKhiisenAjiltniiId: ajiltan._id,
+            guilgeeKhiisenAjiltniiNer: `${ajiltan.ovog || ""} ${ajiltan.ner || ""}`.trim(),
           },
         );
 
@@ -2639,7 +2630,7 @@ export default function DansniiKhuulga() {
           (key[0] === "/nekhemjlekhiinTuukh" ||
             key[0] === "/geree" ||
             key[0] === "/orshinSuugch" ||
-            key[0] === "/gereeniiTulukhAvlaga"),
+            key[0] === "/guilgeeAvlaguud"),
         undefined,
         { revalidate: true },
       );
@@ -2720,8 +2711,8 @@ export default function DansniiKhuulga() {
             [
               "/nekhemjlekhiinTuukh",
               "/geree",
-              "/gereeniiTulukhAvlaga",
-              "/gereeniiTulsunAvlaga",
+              "/guilgeeAvlaguud",
+              "/guilgeeAvlaguud",
               "/orshinSuugch",
             ].includes(key[0]),
           undefined,
@@ -3328,6 +3319,10 @@ export default function DansniiKhuulga() {
               historyScopedByDate={historyScopedByDate}
               canCreateTransaction={canCreateTransaction}
               maxHeight="calc(100vh - 550px)"
+              token={token}
+              ajiltan={ajiltan}
+              effectiveBarilgiinId={effectiveBarilgiinId}
+              ekhlekhOgnoo={ekhlekhOgnoo}
               onViewInvoice={(residentData: any) => {
                 setSelectedResident(residentData);
                 setIsModalOpen(true);
@@ -3440,13 +3435,13 @@ export default function DansniiKhuulga() {
           );
           mutate(
             (key: any) =>
-              Array.isArray(key) && key[0] === "/gereeniiTulsunAvlaga",
+              Array.isArray(key) && key[0] === "/guilgeeAvlaguud",
             undefined,
             { revalidate: true },
           );
           mutate(
             (key: any) =>
-              Array.isArray(key) && key[0] === "/gereeniiTulukhAvlaga",
+              Array.isArray(key) && key[0] === "/guilgeeAvlaguud",
             undefined,
             { revalidate: true },
           );
@@ -3499,7 +3494,7 @@ export default function DansniiKhuulga() {
           );
           mutate(
             (key: any) =>
-              Array.isArray(key) && key[0] === "/gereeniiTulukhAvlaga",
+              Array.isArray(key) && key[0] === "/guilgeeAvlaguud",
             undefined,
             { revalidate: true },
           );

@@ -949,10 +949,13 @@ export default function InvoiceModal({
     let cancelled = false;
     const gid = gereeIdForLedgerFetch;
     uilchilgee(token)
-      .get(`/geree/${gid}/history-ledger`, {
+      .get(`/guilgeeAvlaguud`, {
         params: {
           baiguullagiinId,
-          barilgiinId: selectedBuildingId || barilgiinId || null,
+          query: JSON.stringify({ gereeniiId: gid }),
+          sort: JSON.stringify({ ognoo: 1, createdAt: 1 }),
+          khuudasniiDugaar: 1,
+          khuudasniiKhemjee: 5000,
           _t: Date.now(),
         },
       })
@@ -960,11 +963,7 @@ export default function InvoiceModal({
         if (cancelled) return;
         const rows = Array.isArray(resp.data?.jagsaalt)
           ? resp.data.jagsaalt
-          : Array.isArray(resp.data?.ledger)
-            ? resp.data.ledger
-            : Array.isArray(resp.data)
-              ? resp.data
-              : [];
+          : [];
         setLedgerRawRows(rows);
 
         const g = resp.data?.globalUldegdel;

@@ -58,8 +58,7 @@ interface LedgerEntry {
   parentInvoiceId?: string;
   sourceCollection?:
     | "nekhemjlekhiinTuukh"
-    | "gereeniiTulsunAvlaga"
-    | "gereeniiTulukhAvlaga";
+    | "guilgeeAvlaguud";
 }
 
 type LedgerDetailSelection =
@@ -1024,40 +1023,26 @@ export default function HistoryModal({
         khuudasniiKhemjee: 5000,
       };
 
-      // Fetch all necessary data concurrently
-      const [historyResp, paymentResp, receivableResp] = await Promise.all([
-        uilchilgee(token || undefined).get("/nekhemjlekhiinTuukh", {
-          params: {
-            ...commonParams,
-            query: {
-              baiguullagiinId: baiguullagiinId || undefined,
-            },
-            _t: Date.now(),
-          },
-        }),
-        uilchilgee(token || undefined).get("/gereeniiTulsunAvlaga", {
-          params: {
-            ...commonParams,
-            _t: Date.now(),
-          },
-        }),
-        uilchilgee(token || undefined).get("/gereeniiTulukhAvlaga", {
-          params: {
-            ...commonParams,
-            _t: Date.now(),
-          },
-        }),
-      ]);
+      // Fetch all necessary data from the unified guilgeeAvlaguud endpoint
+      const unifiedResp = await uilchilgee(token || undefined).get("/guilgeeAvlaguud", {
+        params: {
+          ...commonParams,
+          query: JSON.stringify({
+            baiguullagiinId: baiguullagiinId || undefined,
+            // Filter by contract if possible
+            ...(explicitGereeId ? { gereeniiId: explicitGereeId } : {}),
+          }),
+          _t: Date.now(),
+        },
+      });
 
-      const rawList = Array.isArray(historyResp.data?.jagsaalt)
-        ? historyResp.data.jagsaalt
+      const allRecords = Array.isArray(unifiedResp.data?.jagsaalt)
+        ? unifiedResp.data.jagsaalt
         : [];
-      const paymentRecords = Array.isArray(paymentResp.data?.jagsaalt)
-        ? paymentResp.data.jagsaalt
-        : [];
-      const receivableRecords = Array.isArray(receivableResp.data?.jagsaalt)
-        ? receivableResp.data.jagsaalt
-        : [];
+
+      const rawList = allRecords.filter((r: any) => r.turul === "nekhemjlekh" || r.turul === "ашиглалт" || !r.turul);
+      const paymentRecords = allRecords.filter((r: any) => Number(r.tulsunDun) > 0);
+      const receivableRecords = allRecords.filter((r: any) => Number(r.tulukhDun) > 0);
 
       // Extract all possible identifiers from the contract/resident object
       const residentId = String(contract?.orshinSuugchId || "").trim();
@@ -1241,7 +1226,7 @@ export default function HistoryModal({
               (z.ner && z.ner.includes("Эхний үлдэгдэл"));
 
             // For "Эхний үлдэгдэл" entries with 0 value, SKIP them entirely
-            // We'll use the gereeniiTulukhAvlaga record instead (which has the actual value)
+            // We'll use the guilgeeAvlaguud record instead (which has the actual value)
             if (isEkhniiUldegdel && (amt === 0 || amt === undefined)) {
               return;
             }
@@ -1274,7 +1259,7 @@ export default function HistoryModal({
               if (zMongoId) seenZardalMongoIds.add(zMongoId);
               if (z._id) processedIds.add(z._id.toString());
 
-              // Mark ALL ekhniiUldegdel records from gereeniiTulukhAvlaga as processed
+              // Mark ALL ekhniiUldegdel records from guilgeeAvlaguud as processed
               // if this invoice zardal is ekhniiUldegdel WITH value
               // This prevents double-counting
               if (isEkhniiUldegdel) {
@@ -1289,7 +1274,7 @@ export default function HistoryModal({
           }
         });
 
-        // If we found ekhniiUldegdel in invoice, mark all gereeniiTulukhAvlaga ekhniiUldegdel as processed
+        // If we found ekhniiUldegdel in invoice, mark all guilgeeAvlaguud ekhniiUldegdel as processed
         // (Double-check in case the loop missed some)
         if (foundEkhniiUldegdelInInvoice) {
           matchedReceivables.forEach((r: any) => {
@@ -1542,7 +1527,7 @@ export default function HistoryModal({
         }
       });
 
-      // Process receivable records from gereeniiTulukhAvlaga
+      // Process receivable records from guilgeeAvlaguud
       // Track if we've already added ekhniiUldegdel from invoice zardluud WITH a value > 0
       const hasEkhniiUldegdelInInvoice = flatLedger.some((entry) => {
         const isEkhniiUldegdelName =
@@ -1580,8 +1565,8 @@ export default function HistoryModal({
         // For ekhniiUldegdel, use undsenDun (original amount) for the charge - payments are tracked separately
         const amt =
           rec.ekhniiUldegdelEsekh === true
-            ? Number(rec.undsenDun ?? rec.tulukhDun ?? rec.uldegdel ?? 0)
-            : Number(rec.tulukhDun || rec.undsenDun || 0);
+            ? Number(rec.undsenDun ?? rec.tulukhDun ?? rec.uldegdel ?? rec.dun ?? 0)
+            : Number(rec.tulukhDun || rec.undsenDun || rec.dun || rec.niitDun || 0);
 
         // Include ekhniiUldegdel even when negative (credit); other receivables need amt > 0
         if ((rec.ekhniiUldegdelEsekh === true && amt !== 0) || amt > 0) {
@@ -1593,7 +1578,7 @@ export default function HistoryModal({
               ? "Цахилгаан"
               : rawRecName || "Авлага";
           let rowTailbar =
-            rec.tailbar || rec.zardliinNer || "Гараар нэмсэн авлага";
+            rec.tailbar || rec.zardliinNer || rec.ner || "Гараар нэмсэн авлага";
 
           if (isEkhniiUldegdel) {
             const prefix = "Эхний үлдэгдэл";
@@ -1622,12 +1607,12 @@ export default function HistoryModal({
             khelber: "Авлага",
             tailbar: rowTailbar,
             burtgesenOgnoo: rec.createdAt || "-",
-            sourceCollection: "gereeniiTulukhAvlaga",
+            sourceCollection: "guilgeeAvlaguud",
           });
         }
       });
 
-      // Process payment records from gereeniiTulsunAvlaga
+      // Process payment records from guilgeeAvlaguud
       matchedPayments.forEach((payment: any) => {
         const pId = payment._id?.toString();
         // Skip if already processed in invoice loop
@@ -1644,7 +1629,7 @@ export default function HistoryModal({
           payment.ognoo || payment.createdAt || new Date().toISOString(),
         );
         const ajiltan = coalesceRegisteredAjiltan(payment);
-        const tulsunDun = Number(payment.tulsunDun || 0);
+        const tulsunDun = Number(payment.tulsunDun || payment.tulsun || payment.dun || 0);
         const turul = payment.turul || "tulbur";
 
         // Determine the name based on type
@@ -1682,7 +1667,7 @@ export default function HistoryModal({
             khelber,
             tailbar: payment.tailbar || payment.zardliinNer || name,
             burtgesenOgnoo: payment.createdAt || "-",
-            sourceCollection: "gereeniiTulsunAvlaga",
+            sourceCollection: "guilgeeAvlaguud",
           });
         }
       });
@@ -1729,28 +1714,23 @@ export default function HistoryModal({
       if (contractIdToFetch) {
         try {
           const ledgerResp = await uilchilgee(token || undefined).get(
-            `/geree/${contractIdToFetch}/history-ledger`,
+            `/guilgeeAvlaguud`,
             {
               params: {
                 baiguullagiinId: baiguullagiinId || undefined,
-                barilgiinId: barilgiinId || null,
+                query: JSON.stringify({ gereeniiId: contractIdToFetch }),
+                khuudasniiDugaar: 1,
+                khuudasniiKhemjee: 5000,
+                sort: JSON.stringify({ ognoo: 1, createdAt: 1 }),
                 _t: Date.now(),
               },
             },
           );
           const backendLedger = Array.isArray(ledgerResp.data?.jagsaalt)
             ? ledgerResp.data.jagsaalt
-            : Array.isArray(ledgerResp.data?.ledger)
-              ? ledgerResp.data.ledger
-              : Array.isArray(ledgerResp.data)
-                ? ledgerResp.data
-                : [];
-          const hasUldegdel = backendLedger.some(
-            (r: any) =>
-              r?.uldegdel != null && Number.isFinite(Number(r.uldegdel)),
-          );
-          if (backendLedger.length > 0 && hasUldegdel) {
-            // Use backend ledger with uldegdel from each row - NO calculation, use backend values directly
+            : [];
+          if (backendLedger.length > 0) {
+            // Use backend ledger and recompute uldegdel on frontend
             const mapped = backendLedger.map((r: any) => {
               let tulukhDun =
                 Number(r.tulukhDun ?? r.dun ?? r.niitDun ?? 0) || 0;
@@ -1769,15 +1749,15 @@ export default function HistoryModal({
                 ner: r.ner || "",
                 tulukhDun,
                 tulsunDun,
-                uldegdel: Number(r.uldegdel ?? 0), // Use uldegdel directly from backend - NO calculation
-                isSystem: r.isSystem ?? false,
-                ajiltan: coalesceRegisteredAjiltan(r),
-                khelber: r.khelber,
+                uldegdel: Number(r.uldegdel ?? 0), // Preserve original balance for recompute starting point
+                isSystem: !!r.ekhniiUldegdelEsekh,
+                ajiltan: r.guilgeeKhiisenAjiltniiNer || "",
+                khelber: r.turul,
                 tailbar: r.tailbar,
-                burtgesenOgnoo: r.burtgesenOgnoo,
+                burtgesenOgnoo: r.createdAt,
                 _id: r._id,
-                parentInvoiceId: r.parentInvoiceId,
-                sourceCollection: r.sourceCollection,
+                parentInvoiceId: r.nekhemjlekhId,
+                sourceCollection: "guilgeeAvlaguud",
               };
               return entry;
             });
@@ -1793,9 +1773,12 @@ export default function HistoryModal({
             }
             sortLedger(mapped);
             const mappedDeduped = dedupeSemanticallyIdenticalLedgerRows(mapped);
+            const hasBackendUldegdel = backendLedger.some(
+              (r: any) => r.uldegdel !== undefined && r.uldegdel !== null,
+            );
             recomputeLedgerRunningBalances(
               mappedDeduped,
-              "fromFirstRowPostedBalance",
+              hasBackendUldegdel ? "fromFirstRowPostedBalance" : "fromZero",
             );
             setData(mappedDeduped);
             setLoading(false);
@@ -1843,14 +1826,14 @@ export default function HistoryModal({
           ner.includes("төлөлт") ||
           ner.includes("ашиглалт"))
       ) {
-        return "gereeniiTulsunAvlaga";
+        return "guilgeeAvlaguud";
       }
       if (
         tul > 0 &&
         tsu <= 0 &&
         (khelber.includes("авлага") || ner.includes("эхний үлдэгдэл"))
       ) {
-        return "gereeniiTulukhAvlaga";
+        return "guilgeeAvlaguud";
       }
       return "nekhemjlekhiinTuukh";
     };
@@ -1861,11 +1844,9 @@ export default function HistoryModal({
     try {
       let response;
       const endpoint =
-        source === "gereeniiTulsunAvlaga"
-          ? "/gereeniiTulsunAvlaga"
-          : source === "gereeniiTulukhAvlaga"
-            ? "/gereeniiTulukhAvlaga"
-            : "/nekhemjlekhiinTuukh";
+        source === "guilgeeAvlaguud"
+          ? "/guilgeeAvlaguud"
+          : "/nekhemjlekhiinTuukh";
 
       // If it's a sub-item (zardal or guilgee) in an invoice
       if (entry?.parentInvoiceId && source === "nekhemjlekhiinTuukh") {
@@ -1933,8 +1914,7 @@ export default function HistoryModal({
               // best-effort only
             }
           };
-          await deleteRelatedByInvoice("/gereeniiTulsunAvlaga");
-          await deleteRelatedByInvoice("/gereeniiTulukhAvlaga");
+          await deleteRelatedByInvoice("/guilgeeAvlaguud");
         }
 
         // Show success message
@@ -2458,7 +2438,7 @@ export default function HistoryModal({
                                 <tr className="history-print-total-row bg-slate-100 dark:bg-slate-800/50">
                                   
                                 <td
-                                  colSpan={2}
+                                  colSpan={3}
                                   className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-2 text-[13px]  text-slate-700 dark:text-slate-200 text-left border-t-2 border-slate-300 dark:border-slate-600"
                                 >
                                   Нийт

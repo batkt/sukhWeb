@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useRef } from 'react';
-import { io, type Socket } from 'socket.io-client';
-import uilchilgee from '@/lib/uilchilgee';
+import { useEffect, useState, useRef } from "react";
+import { io, type Socket } from "socket.io-client";
+import uilchilgee from "@/lib/uilchilgee";
 
 interface TuukhEntry {
   tsagiinTuukh?: Array<{
@@ -106,22 +106,24 @@ export function useParkingSocket({
     async function loadInitialEntriesData() {
       setIsLoadingInitial(true);
       try {
-        const url = '/uilchluulegch/active';
+        const url = "/uilchluulegch/active";
         const params: any = {
           baiguullagiinId: baiguullagiinId,
         };
         if (barilgiinId) {
           params.barilgiinId = barilgiinId;
         }
-        
-        const response = await uilchilgee(token || undefined).get(url, { params });
+
+        const response = await uilchilgee(token || undefined).get(url, {
+          params,
+        });
         const result = response.data;
-        
+
         if (result.success && result.data) {
           setParkingEntries(result.data || []);
         }
       } catch (error) {
-        console.error('Error loading initial parking entries:', error);
+        console.error("Error loading initial parking entries:", error);
       } finally {
         setIsLoadingInitial(false);
       }
@@ -137,13 +139,12 @@ export function useParkingSocket({
     }
 
     // Socket.IO server URL - use the parking server
-    // User requested to connect to domain
-    const socketUrl = 'https://amarhome.mn';
-
+    // User requested to connect to IP directly
+    const socketUrl = "http://103.236.194.106:8084";
 
     // Create socket instance
     const socketInstance = io(socketUrl, {
-      transports: ['websocket', 'polling'],
+      transports: ["websocket", "polling"],
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
@@ -154,43 +155,45 @@ export function useParkingSocket({
     socketRef.current = socketInstance;
 
     // Connection events
-    socketInstance.on('connect', () => {
+    socketInstance.on("connect", () => {
       setIsConnected(true);
       setConnectionError(null);
     });
 
-    socketInstance.on('disconnect', (reason) => {
+    socketInstance.on("disconnect", (reason) => {
       setIsConnected(false);
     });
 
-    socketInstance.on('connect_error', (error) => {
-      console.error('Parking Socket.IO connection error:', error);
+    socketInstance.on("connect_error", (error) => {
+      console.error("Parking Socket.IO connection error:", error);
       setConnectionError(error);
       setIsConnected(false);
     });
 
-    socketInstance.on('reconnect_attempt', () => {
+    socketInstance.on("reconnect_attempt", () => {
       // Reconnecting...
     });
 
-    socketInstance.on('reconnect_failed', () => {
-      console.error('Parking Socket.IO reconnection failed');
-      setConnectionError(new Error('Failed to reconnect to parking server'));
+    socketInstance.on("reconnect_failed", () => {
+      console.error("Parking Socket.IO reconnection failed");
+      setConnectionError(new Error("Failed to reconnect to parking server"));
     });
 
     // Helper to update entries
     const updateEntries = (record: Uilchluulegch) => {
-        if (!record || !record._id) return;
-        setParkingEntries((prev) => {
-            const existingIndex = prev.findIndex((e) => e._id === record._id);
-            if (existingIndex >= 0) {
-              const updated = [...prev];
-              updated[existingIndex] = record;
-              return updated;
-            } else {
-              return [record, ...prev.slice(0, maxEntries - 1)].filter((e): e is Uilchluulegch => e !== undefined);
-            }
-        });
+      if (!record || !record._id) return;
+      setParkingEntries((prev) => {
+        const existingIndex = prev.findIndex((e) => e._id === record._id);
+        if (existingIndex >= 0) {
+          const updated = [...prev];
+          updated[existingIndex] = record;
+          return updated;
+        } else {
+          return [record, ...prev.slice(0, maxEntries - 1)].filter(
+            (e): e is Uilchluulegch => e !== undefined,
+          );
+        }
+      });
     };
 
     // Listen for new parking entries - Organization level (Global)
@@ -213,26 +216,26 @@ export function useParkingSocket({
 
     // Subscribe to Camera-Specific Events (if cameras provided)
     if (cameras && cameras.length > 0) {
-        cameras.forEach(cam => {
-            if (cam.cameraType === "entry") {
-                const entryEvent = `zogsoolOroh${baiguullagiinId}${cam.cameraIP}`;
-                socketInstance.on(entryEvent, (data: any) => {
-                    if (data.uilchluulegch) {
-                         updateEntries(data.uilchluulegch);
-                    }
-                });
-            } else if (cam.cameraType === "exit") {
-                const exitEvent = `zogsoolGarah${baiguullagiinId}${cam.cameraIP}`;
-                socketInstance.on(exitEvent, (data: Uilchluulegch) => {
-                    updateEntries(data);
-                });
-
-                const tulsunEvent = `zogsoolGarahTulsun${baiguullagiinId}${cam.cameraIP}`;
-                 socketInstance.on(tulsunEvent, () => {
-                    // Camera paid exit event
-                });
+      cameras.forEach((cam) => {
+        if (cam.cameraType === "entry") {
+          const entryEvent = `zogsoolOroh${baiguullagiinId}${cam.cameraIP}`;
+          socketInstance.on(entryEvent, (data: any) => {
+            if (data.uilchluulegch) {
+              updateEntries(data.uilchluulegch);
             }
-        });
+          });
+        } else if (cam.cameraType === "exit") {
+          const exitEvent = `zogsoolGarah${baiguullagiinId}${cam.cameraIP}`;
+          socketInstance.on(exitEvent, (data: Uilchluulegch) => {
+            updateEntries(data);
+          });
+
+          const tulsunEvent = `zogsoolGarahTulsun${baiguullagiinId}${cam.cameraIP}`;
+          socketInstance.on(tulsunEvent, () => {
+            // Camera paid exit event
+          });
+        }
+      });
     }
 
     setSocket(socketInstance);
@@ -246,11 +249,13 @@ export function useParkingSocket({
         }
         // Cleanup camera listeners
         if (cameras && cameras.length > 0) {
-             cameras.forEach(cam => {
-                socketInstance.off(`zogsoolOroh${baiguullagiinId}${cam.cameraIP}`);
-                socketInstance.off(`zogsoolGarah${baiguullagiinId}${cam.cameraIP}`);
-                socketInstance.off(`zogsoolGarahTulsun${baiguullagiinId}${cam.cameraIP}`);
-             });
+          cameras.forEach((cam) => {
+            socketInstance.off(`zogsoolOroh${baiguullagiinId}${cam.cameraIP}`);
+            socketInstance.off(`zogsoolGarah${baiguullagiinId}${cam.cameraIP}`);
+            socketInstance.off(
+              `zogsoolGarahTulsun${baiguullagiinId}${cam.cameraIP}`,
+            );
+          });
         }
         socketInstance.disconnect();
         socketRef.current = null;

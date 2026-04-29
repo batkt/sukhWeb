@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Table } from "antd";
+import { Table, Spin } from "antd";
+import useSWR from "swr";
+import uilchilgee from "@/lib/uilchilgee";
 import { Eye, History, Banknote } from "lucide-react";
 import formatNumber from "../../../../tools/function/formatNumber";
 import { getPaymentStatusLabel } from "@/lib/utils";
@@ -40,7 +42,64 @@ interface GuilgeeTableProps {
   onTransaction: (resident: any, remainingValue: number) => void;
   canCreateTransaction?: boolean;
   maxHeight?: string | number;
+  token?: string | null;
+  ajiltan?: any;
+  effectiveBarilgiinId?: string | null;
+  ekhlekhOgnoo?: any;
 }
+
+const MonthlyBalanceCell = ({
+  token,
+  baiguullagiinId,
+  barilgiinId,
+  ekhlekhOgnoo,
+  gereeniiId,
+  gereeniiDugaar,
+  fallbackValue,
+}: {
+  token: string | null;
+  baiguullagiinId: string;
+  barilgiinId: string | null;
+  ekhlekhOgnoo: any;
+  gereeniiId?: string;
+  gereeniiDugaar?: string;
+  fallbackValue: number;
+}) => {
+  const { data, isLoading } = useSWR(
+    token && baiguullagiinId && (gereeniiId || gereeniiDugaar)
+      ? ["/uldegdelBodyo", token, baiguullagiinId, barilgiinId, ekhlekhOgnoo, gereeniiId, gereeniiDugaar]
+      : null,
+    async ([url, tkn, orgId, branch, dateRange, gId, gDugaar]) => {
+      const resp = await uilchilgee(tkn).post(url, {
+        baiguullagiinId: orgId,
+        barilgiinId: branch || undefined,
+        ognoo: dateRange,
+        gereeniiId: gId,
+        gereeniiDugaar: gDugaar,
+      });
+      return resp.data;
+    },
+    { revalidateOnFocus: false },
+  );
+
+  if (isLoading) return <Spin size="small" />;
+
+  const monthAgg = data?.summary 
+    ? data.summary.uldegdel 
+    : (data?.globalSummary ? data.globalSummary.uldegdel : fallbackValue);
+
+  return (
+    <span
+      className={
+        monthAgg < 0.01
+          ? "!text-emerald-600 dark:!text-emerald-400"
+          : "!text-red-500 dark:!text-red-400"
+      }
+    >
+      {formatNumber(monthAgg, 2)}
+    </span>
+  );
+};
 
 export default function GuilgeeTable({
   data,
@@ -69,6 +128,10 @@ export default function GuilgeeTable({
   onTransaction,
   canCreateTransaction = true,
   maxHeight = "calc(100vh - 500px)",
+  token,
+  ajiltan,
+  effectiveBarilgiinId,
+  ekhlekhOgnoo,
 }: GuilgeeTableProps) {
   // Check if checkbox column is visible
   const isCheckboxVisible = visibleColumns.some(
@@ -371,23 +434,50 @@ export default function GuilgeeTable({
             ...baseColumn,
             render: (_: any, record: any) => {
               const gid = getGereeId(record);
-              const historyAggregate =
-                Number(record?._totalTulbur || 0) -
-                Number(record?._totalTulsun || 0);
-              const remainingValue = historyScopedByDate
-                ? (bestKnownBalances[gid] ?? historyAggregate)
-                : (bestKnownBalances[gid] ??
-                  (historyAggregate || Number(record?.uldegdel ?? 0)));
+              const gdugaar = record?.gereeniiDugaar || record?.gdugaar;
+              const fallback = bestKnownBalances[gid] ?? 0;
+
               return (
-                <span
-                  className={
-                    remainingValue < 0.01
-                      ? "!text-emerald-600 dark:!text-emerald-400"
-                      : "!text-red-500 dark:!text-red-400"
-                  }
-                >
-                  {formatNumber(remainingValue, 2)}
-                </span>
+                <MonthlyBalanceCell
+                  token={token}
+                  baiguullagiinId={ajiltan.baiguullagiinId}
+                  barilgiinId={effectiveBarilgiinId || null}
+                  ekhlekhOgnoo={null} // Total uldegdel - no date range
+                  gereeniiId={gid}
+                  gereeniiDugaar={gdugaar}
+                  fallbackValue={fallback}
+                />
+              );
+            },
+          };
+        }
+
+        if (col.key === "sariinUldegdel") {
+          return {
+            ...baseColumn,
+            render: (_: any, record: any) => {
+              const gid = getGereeId(record);
+              const gdugaar = String(record?.gereeniiDugaar || "");
+              const fallback = Number(record?._totalTulburMonth || 0) - Number(record?._totalTulsunMonth || 0);
+
+              if (!token || !ajiltan?.baiguullagiinId) {
+                return (
+                  <span className={fallback < 0.01 ? "!text-emerald-600" : "!text-red-500"}>
+                    {formatNumber(fallback, 2)}
+                  </span>
+                );
+              }
+
+              return (
+                <MonthlyBalanceCell
+                  token={token}
+                  baiguullagiinId={ajiltan.baiguullagiinId}
+                  barilgiinId={effectiveBarilgiinId || null}
+                  ekhlekhOgnoo={ekhlekhOgnoo}
+                  gereeniiId={gid}
+                  gereeniiDugaar={gdugaar}
+                  fallbackValue={fallback}
+                />
               );
             },
           };
@@ -401,10 +491,7 @@ export default function GuilgeeTable({
               const historyAggregate =
                 Number(record?._totalTulbur || 0) -
                 Number(record?._totalTulsun || 0);
-              const remainingValue = historyScopedByDate
-                ? (bestKnownBalances[gid] ?? historyAggregate)
-                : (bestKnownBalances[gid] ??
-                  (historyAggregate || Number(record?.uldegdel ?? 0)));
+              const remainingValue = historyAggregate;
               const paidForTuluv = gid
                 ? Number(monthPaidByGereeId[gid] ?? 0)
                 : 0;
@@ -538,10 +625,7 @@ export default function GuilgeeTable({
               const historyAggregate =
                 Number(record?._totalTulbur || 0) -
                 Number(record?._totalTulsun || 0);
-              const remainingValue = historyScopedByDate
-                ? (bestKnownBalances[gid] ?? historyAggregate)
-                : (bestKnownBalances[gid] ??
-                  (historyAggregate || Number(record?.uldegdel ?? 0)));
+              const remainingValue = historyAggregate;
 
               const residentData = resident
                 ? {
@@ -575,7 +659,7 @@ export default function GuilgeeTable({
                     className="p-1.5 rounded hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
                     title="Түүх харах"
                   >
-                    <History className="w-5 h-5 text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300" />
+                    <History className="w-5 h-5 text-blue-500 dark:blue-400 hover:text-blue-600 dark:hover:text-blue-300" />
                   </button>
                   <button
                     onClick={() => onViewInvoice(residentData)}
@@ -625,18 +709,12 @@ export default function GuilgeeTable({
 
   // Calculate summary/footer data
   const getSummary = () => {
-    // Get visible columns excluding checkbox for alignment with data columns
     const dataCols = visibleColumns.filter((col) => col.key !== "checkbox");
-    // Calculate index offset for summary cells when checkbox is visible
     const checkboxOffset = isCheckboxVisible ? 1 : 0;
-
-    console.log("%c📊 [DASHBOARD SUMMARY] Starting calculation...", "color: purple; font-weight: bold;");
-    const dashboardTotals = { paid: 0, balance: 0, billed: 0, residents: deduplicatedResidents.length };
 
     return (
       <Table.Summary fixed="bottom">
         <Table.Summary.Row className="bg-gray-50 dark:bg-gray-800">
-          {/* Empty cell for checkbox column alignment */}
           {isCheckboxVisible && (
             <Table.Summary.Cell index={0} className="text-center text">
               -
@@ -647,21 +725,11 @@ export default function GuilgeeTable({
 
             if (col.key === "ekhniiUldegdel") {
               const total = deduplicatedResidents.reduce(
-                (sum: number, it: any) => {
-                  return sum + Number(it?._ekhniiUldegdelAmount ?? 0);
-                },
+                (sum: number, it: any) => sum + Number(it?._ekhniiUldegdelAmount ?? 0),
                 0,
               );
               content = (
-                <span
-                  className={
-                    (total < 0
-                      ? "!text-emerald-600 dark:!text-emerald-400"
-                      : total > 0
-                        ? "!text-red-500 dark:!text-red-400 font bold"
-                        : "text-[color:var(--panel-text)]") + " font-bold"
-                  }
-                >
+                <span className="font-bold text-slate-900 dark:!text-white">
                   {formatNumber(total, 2)} ₮
                 </span>
               );
@@ -669,18 +737,9 @@ export default function GuilgeeTable({
               const total = deduplicatedResidents.reduce(
                 (sum: number, it: any) => {
                   const gid = getGereeId(it);
-                  const monthlyData = gid
-                    ? monthlyDataByGereeId?.get(gid)
-                    : null;
-                  const monthSlice = pickMonthSlice(
-                    monthlyData,
-                    monthlyPeriods,
-                    matrixMonthKey,
-                  );
-                  const v =
-                    monthSlice != null
-                      ? Number(monthSlice.billed ?? 0)
-                      : Number(it?._totalTulbur ?? 0);
+                  const monthlyData = gid ? monthlyDataByGereeId?.get(gid) : null;
+                  const monthSlice = pickMonthSlice(monthlyData, monthlyPeriods, matrixMonthKey);
+                  const v = monthSlice != null ? Number(monthSlice.billed ?? 0) : Number(it?._totalTulbur ?? 0);
                   return sum + v;
                 },
                 0,
@@ -705,31 +764,44 @@ export default function GuilgeeTable({
                 </span>
               );
             } else if (col.key === "uldegdel") {
-              const total = deduplicatedResidents.reduce(
-                (sum: number, it: any) => {
-                  const gid = getGereeId(it);
-                  const historyAggregate =
-                    Number(it?._totalTulbur || 0) -
-                    Number(it?._totalTulsun || 0);
-                  const balance = historyScopedByDate
-                    ? (bestKnownBalances[gid] ?? historyAggregate)
-                    : (bestKnownBalances[gid] ??
-                      (historyAggregate || Number(it?.uldegdel ?? 0)));
-                  return sum + balance;
-                },
+              const fallbackTotal = deduplicatedResidents.reduce(
+                (sum: number, it: any) => sum + (Number(it?._totalTulbur || 0) - Number(it?._totalTulsun || 0)),
                 0,
               );
-              dashboardTotals.balance = total;
-              content = (
-                <span
-                  className={
-                    (total < 0.01
-                      ? "!text-emerald-600 dark:!text-emerald-400"
-                      : "!text-red-500 dark:!text-red-400") + " font-bold"
-                  }
-                >
-                  {formatNumber(total, 2)} ₮
-                </span>
+              content = !token || !ajiltan?.baiguullagiinId ? (
+                <span className="font-bold">{formatNumber(fallbackTotal, 2)} ₮</span>
+              ) : (
+                <div className="font-bold flex items-center justify-end gap-1">
+                  <MonthlyBalanceCell
+                    token={token}
+                    baiguullagiinId={ajiltan.baiguullagiinId}
+                    barilgiinId={effectiveBarilgiinId || null}
+                    ekhlekhOgnoo={null}
+                    fallbackValue={fallbackTotal}
+                  />
+                  <span>₮</span>
+                </div>
+              );
+            } else if (col.key === "sariinUldegdel") {
+              const fallbackTotal = deduplicatedResidents.reduce(
+                (sum: number, it: any) =>
+                  sum + (Number(it?._totalTulburMonth || 0) - Number(it?._totalTulsunMonth || 0)),
+                0,
+              );
+
+              content = !token || !ajiltan?.baiguullagiinId ? (
+                <span className="font-bold">{formatNumber(fallbackTotal, 2)} ₮</span>
+              ) : (
+                <div className="font-bold flex items-center justify-end gap-1">
+                  <MonthlyBalanceCell
+                    token={token}
+                    baiguullagiinId={ajiltan.baiguullagiinId}
+                    barilgiinId={effectiveBarilgiinId || null}
+                    ekhlekhOgnoo={ekhlekhOgnoo}
+                    fallbackValue={fallbackTotal}
+                  />
+                  <span>₮</span>
+                </div>
               );
             }
 

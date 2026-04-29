@@ -57,60 +57,19 @@ export function useTulburFooterTotals(
     return map;
   }, [orshinSuugchGaralt?.jagsaalt]);
 
-  const { data: historyData } = useSWR(
+  const { data: unifiedData } = useSWR(
     token && baiguullagiinId
-      ? ["/nekhemjlekhiinTuukh-footer", token, baiguullagiinId, barilgiinId, startDate, endDate]
+      ? ["/guilgeeAvlaguud-footer", token, baiguullagiinId, barilgiinId, startDate, endDate]
       : null,
     async ([, tkn, bId, barId, start, end]) => {
-      const resp = await uilchilgee(tkn).get("/nekhemjlekhiinTuukh", {
+      const resp = await uilchilgee(tkn).get("/guilgeeAvlaguud", {
         params: {
           baiguullagiinId: bId,
           ...(barId ? { barilgiinId: barId } : {}),
           ...(start ? { ekhlekhOgnoo: start } : {}),
           ...(end ? { duusakhOgnoo: end } : {}),
           khuudasniiDugaar: 1,
-          khuudasniiKhemjee: 5000,
-          query: { baiguullagiinId: bId, ...(barId ? { barilgiinId: barId } : {}) },
-        },
-      });
-      return resp.data;
-    },
-    { revalidateOnFocus: false }
-  );
-
-  const { data: receivableData } = useSWR(
-    token && baiguullagiinId
-      ? ["/gereeniiTulukhAvlaga-footer", token, baiguullagiinId, barilgiinId, startDate, endDate]
-      : null,
-    async ([, tkn, bId, barId, start, end]) => {
-      const resp = await uilchilgee(tkn).get("/gereeniiTulukhAvlaga", {
-        params: {
-          baiguullagiinId: bId,
-          ...(barId ? { barilgiinId: barId } : {}),
-          ...(start ? { ekhlekhOgnoo: start } : {}),
-          ...(end ? { duusakhOgnoo: end } : {}),
-          khuudasniiDugaar: 1,
-          khuudasniiKhemjee: 5000,
-        },
-      });
-      return resp.data;
-    },
-    { revalidateOnFocus: false }
-  );
-
-  const { data: paymentRecordsData } = useSWR(
-    token && baiguullagiinId
-      ? ["/gereeniiTulsunAvlaga-footer", token, baiguullagiinId, barilgiinId, startDate, endDate]
-      : null,
-    async ([, tkn, bId, barId, start, end]) => {
-      const resp = await uilchilgee(tkn).get("/gereeniiTulsunAvlaga", {
-        params: {
-          baiguullagiinId: bId,
-          ...(barId ? { barilgiinId: barId } : {}),
-          ...(start ? { ekhlekhOgnoo: start } : {}),
-          ...(end ? { duusakhOgnoo: end } : {}),
-          khuudasniiDugaar: 1,
-          khuudasniiKhemjee: 5000,
+          khuudasniiKhemjee: 10000, // Fetch a large enough batch for footer calculations
         },
       });
       return resp.data;
@@ -119,49 +78,8 @@ export function useTulburFooterTotals(
   );
 
   const allHistoryItems = useMemo(() => {
-    const invoices = Array.isArray(historyData?.jagsaalt)
-      ? historyData.jagsaalt
-      : Array.isArray(historyData)
-        ? historyData
-        : [];
-    const receivables = Array.isArray(receivableData?.jagsaalt)
-      ? receivableData.jagsaalt
-      : Array.isArray(receivableData)
-        ? receivableData
-        : [];
-    const payments = Array.isArray(paymentRecordsData?.jagsaalt)
-      ? paymentRecordsData.jagsaalt
-      : Array.isArray(paymentRecordsData)
-        ? paymentRecordsData
-        : [];
-
-    const combined = [...invoices];
-    const trackingIds = new Set(invoices.map((it: any) => String(it._id)));
-    invoices.forEach((it: any) => {
-      const gList = Array.isArray(it?.medeelel?.guilgeenuud)
-        ? it.medeelel.guilgeenuud
-        : Array.isArray(it?.guilgeenuud)
-          ? it.guilgeenuud
-          : [];
-      
-      const pList = Array.isArray(it?.paymentHistory) ? it.paymentHistory : [];
-
-      [...gList, ...pList].forEach((g: any) => {
-        const id = String(g?._id || g?.guilgeeniiId || "");
-        if (id && !id.startsWith("sync_")) trackingIds.add(id);
-      });
-    });
-
-    receivables.forEach((r: any) => {
-      if (!trackingIds.has(String(r._id))) combined.push(r);
-    });
-
-    payments.forEach((p: any) => {
-      if (!trackingIds.has(String(p._id))) combined.push(p);
-    });
-
-    return combined;
-  }, [historyData, receivableData, paymentRecordsData]);
+    return Array.isArray(unifiedData?.jagsaalt) ? unifiedData.jagsaalt : [];
+  }, [unifiedData]);
 
   const buildingHistoryItems = useMemo(() => {
     const bid = String(barilgiinId || "");
@@ -235,7 +153,7 @@ export function useTulburFooterTotals(
     setLedgerBilledByGid({});
     setLedgerPaidByGid({});
     uldegdelRequestedRef.current.clear();
-  }, [historyData, receivableData, paymentRecordsData, startDate, endDate]);
+  }, [unifiedData, startDate, endDate]);
 
   useEffect(() => {
     if (!token || !baiguullagiinId || deduplicatedResidents.length === 0) return;
