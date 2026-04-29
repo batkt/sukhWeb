@@ -432,6 +432,42 @@ export default function DansniiKhuulga() {
     { revalidateOnFocus: false },
   );
 
+  const { data: invoiceCronData, error: invoiceCronError } = useSWR(
+    token && ajiltan?.baiguullagiinId
+      ? [`/nekhemjlekhCron/${ajiltan.baiguullagiinId}`, token, effectiveBarilgiinId]
+      : null,
+    async ([url, tkn, bId]) => {
+      const resp = await uilchilgee(tkn).get(url, {
+        params: { barilgiinId: bId || undefined },
+      });
+      // Unwrap result/data array from common project API structures
+      const res = resp.data;
+      return res?.data || res?.result || res || [];
+    },
+    { revalidateOnFocus: false },
+  );
+
+  const invoiceDay = useMemo(() => {
+    // If we have data, try to find the most specific setting (building-level) or fallback to org-level
+    const list = Array.isArray(invoiceCronData) ? invoiceCronData : [];
+    if (list.length === 0) return 1;
+
+    // Filter for current building if specified, otherwise take latest
+    const buildingSpecific = list.filter(
+      (x: any) =>
+        x.barilgiinId &&
+        String(x.barilgiinId).trim() === String(effectiveBarilgiinId).trim(),
+    );
+    const target =
+      buildingSpecific.length > 0
+        ? buildingSpecific[buildingSpecific.length - 1]
+        : list[list.length - 1];
+
+    return target?.nekhemjlekhUusgekhOgnoo || 1;
+  }, [invoiceCronData, effectiveBarilgiinId]);
+
+  const isInvoiceDayLoading = !invoiceCronData && !invoiceCronError;
+
 
 
   // Derive legacy data structures from unified data for backward compatibility in this page
@@ -474,49 +510,39 @@ export default function DansniiKhuulga() {
     ).padStart(2, "0")}`;
 
     if (rawStart && rawEnd) {
-      const startD = new Date(String(rawStart));
-      const endD = new Date(String(rawEnd));
-      if (!Number.isNaN(startD.getTime())) startD.setHours(0, 0, 0, 0);
-      if (!Number.isNaN(endD.getTime())) endD.setHours(23, 59, 59, 999);
       const startKey = toMonthKey(rawStart);
-      const endKey = toMonthKey(rawEnd);
-      const monthKey =
-        startKey && endKey && startKey !== endKey
-          ? `${startKey}>${endKey}`
-          : startKey || endKey || fallbackMonthKey;
+      const [y, m] = startKey.split("-").map(Number);
+      
+      const startDate = new Date(y, m - 1, invoiceDay, 0, 0, 0, 0);
+      const endDate = new Date(y, m, invoiceDay, 23, 59, 59, 999);
+
       return {
-        start: Number.isNaN(startD.getTime())
-          ? new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-          : startD.toISOString(),
-        end: Number.isNaN(endD.getTime())
-          ? new Date(
-              now.getFullYear(),
-              now.getMonth() + 1,
-              0,
-              23,
-              59,
-              59,
-              999,
-            ).toISOString()
-          : endD.toISOString(),
-        monthKey,
+        start: startDate.toISOString(),
+        end: endDate.toISOString(),
+        monthKey: startKey,
       };
     }
 
     const [yy, mm] = fallbackMonthKey.split("-").map((v) => parseInt(v, 10));
     const monthIdx = Number.isFinite(mm) ? mm - 1 : now.getMonth();
     const yearVal = Number.isFinite(yy) ? yy : now.getFullYear();
-    const start = new Date(yearVal, monthIdx, 1, 0, 0, 0, 0);
-    const end = new Date(yearVal, monthIdx + 1, 0, 23, 59, 59, 999);
+
+    // Align range with invoiceDay (billing cycle)
+    const startParts = fallbackMonthKey.split("-").map(Number);
+    const [y, m] = startParts;
+    
+    const startDate = new Date(y, m - 1, invoiceDay, 0, 0, 0, 0);
+    const endDate = new Date(y, m, invoiceDay, 23, 59, 59, 999);
+
     return {
-      start: start.toISOString(),
-      end: end.toISOString(),
+      start: startDate.toISOString(),
+      end: endDate.toISOString(),
       monthKey: fallbackMonthKey,
     };
-  }, [ekhlekhOgnoo]);
+  }, [ekhlekhOgnoo, invoiceDay]);
 
   const { data: monthlyMatrixData, mutate: mutateMonthlyMatrix } = useSWR(
-    token && ajiltan?.baiguullagiinId
+    token && ajiltan?.baiguullagiinId && !isInvoiceDayLoading
       ? [
           "/tailan/resident-monthly-matrix",
           token,
@@ -529,15 +555,49 @@ export default function DansniiKhuulga() {
       const resp = await uilchilgee(tkn).post(url, {
         baiguullagiinId: orgId,
         barilgiinId: branch || undefined,
-        ekhlekhOgnoo: monthlyMatrixRange.start,
-        duusakhOgnoo: monthlyMatrixRange.end,
+        ekhlekhOgnoo: monthlyMatrixRange.start.split("T")[0],
+        duusakhOgnoo: monthlyMatrixRange.end.split("T")[0],
         khuudasniiDugaar: 1,
-        khuudasniiKhemjee: 10000, // Fetch all residents
+        khuudasniiKhemjee: 10000,
       });
-      return resp.data;
+      // Unwrap result/data array from common project API structures
+      const res = resp.data;
+      return res?.data || res?.result || res || [];
     },
     { revalidateOnFocus: false },
   );
+
+  const monthlyDataByGereeId = useMemo(() => {
+    const map = new Map<string, any>();
+    // Handle both direct array or nested { list: [] } response
+    const list = Array.isArray(monthlyMatrixData)
+      ? monthlyMatrixData
+      : Array.isArray((monthlyMatrixData as any)?.list)
+        ? (monthlyMatrixData as any).list
+        : [];
+
+    list.forEach((item: any) => {
+      if (item.gereeniiId) map.set(String(item.gereeniiId), item);
+      if (item.gereeniiDugaar) map.set(String(item.gereeniiDugaar), item);
+    });
+    return map;
+  }, [monthlyMatrixData]);
+
+  const monthlyPeriods = useMemo(() => {
+    const fromApi = (monthlyMatrixData as any)?.periods;
+    if (Array.isArray(fromApi) && fromApi.length > 0) return fromApi;
+
+    // Fallback: derive periods from the months keys of the first item
+    const list = Array.isArray(monthlyMatrixData)
+      ? monthlyMatrixData
+      : Array.isArray((monthlyMatrixData as any)?.list)
+        ? (monthlyMatrixData as any).list
+        : [];
+    if (list.length > 0 && list[0]?.months) {
+      return Object.keys(list[0].months).sort();
+    }
+    return [];
+  }, [monthlyMatrixData]);
 
   /** Жагсаалтын SWR түлхүүрүүдийг шууд revalidate — global mutate заримдаа бүрэн ажиллахгүй (тусгайлбал ашиглалт) */
   /** Сарын хязгаар: эхний сарын 1-ний өдрөөс сүүлийн сарын сүүлийн өдөр хүртэл (YYYY-MM-DD). */
@@ -619,26 +679,7 @@ export default function DansniiKhuulga() {
     };
   }, [socket, ajiltan?.baiguullagiinId, revalidateTulburCaches]);
 
-  // Transform monthly matrix data into a Map for easy lookup by gereeniiId
-  const monthlyDataByGereeId = useMemo(() => {
-    const map = new Map<string, any>();
-    const list = Array.isArray(monthlyMatrixData?.list)
-      ? monthlyMatrixData.list
-      : [];
-    list.forEach((item: any) => {
-      if (item?.gereeniiId) {
-        map.set(String(item.gereeniiId), item);
-      }
-    });
-    return map;
-  }, [monthlyMatrixData]);
-
-  // Extract periods array from the API response
-  const monthlyPeriods = useMemo(() => {
-    return Array.isArray(monthlyMatrixData?.periods)
-      ? monthlyMatrixData.periods
-      : [];
-  }, [monthlyMatrixData]);
+  // Extract periods array from the API response (moved above)
 
   const allHistoryItems = useMemo(() => {
     const invoices = Array.isArray(historyData?.jagsaalt)
@@ -793,33 +834,16 @@ export default function DansniiKhuulga() {
     });
   }, [allHistoryItems, effectiveBarilgiinId, contractsById, residentsById]);
 
-  /**
-   * Хүснэгт/Excel-ийн Үлдэгдэл:
-   * 1) /geree/:id/history-ledger-ийн хамгийн сүүлийн мөрийн uldegdel (илүү найдвартай)
-   * 2) contract.uldegdel (fallback)
-   */
-  const gidsInLedger = useMemo(() => {
-    const s = new Set<string>();
-    allHistoryItems.forEach((it: any) => {
-      const gid = getGereeIdPure(it, contractsByNumber);
-      if (gid) s.add(gid);
-    });
-    return s;
-  }, [allHistoryItems, contractsByNumber]);
 
   const tableDisplayBalances = useMemo(() => {
     const out: Record<string, number> = {};
 
-    // 1. Base: contract.uldegdel (may be 0/null for new residents — just a seed)
     Object.values(contractsById).forEach((c: any) => {
       if (c?._id != null && c.uldegdel != null) {
         out[String(c._id)] = Number(c.uldegdel);
       }
     });
 
-    // 2. Compute running balances from the full bulk ledger.
-    //    guilgeeAvlaguud rows do NOT carry a pre-computed `uldegdel` field —
-    //    we must derive it from tulukhDun / tulsunDun / zardluud / guilgeenuud.
     if (allHistoryItems.length > 0) {
       const computed = computeLedgerRunningBalancesByGereeId(
         allHistoryItems,
@@ -1845,80 +1869,111 @@ export default function DansniiKhuulga() {
   }, [sortedResidents, page, rowsPerPage]);
 
   const getGereeId = (it: any) => getGereeIdPure(it, contractsByNumber);
+  const billingCycleRange = useMemo(() => {
+    const start = ekhlekhOgnoo?.[0];
+    if (!start) return undefined;
+    
+    // Timezone-safe parsing of YYYY-MM-DD
+    const parts = String(start).split("-").map(Number);
+    if (parts.length !== 3) return [start, ekhlekhOgnoo?.[1]];
+    const [y, m, d] = parts;
+    const startDate = new Date(y, m - 1, d);
 
-  // Fetch latest row uldegdel from history ledger API for each contract
+    // If user picked a standard month start (1st), adjust to the organization's billing day
+    if (startDate.getDate() === 1 && invoiceDay > 1) {
+      startDate.setDate(invoiceDay);
+    }
+    
+    const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, startDate.getDate());
+
+    const format = (dt: Date) => {
+      const fy = dt.getFullYear();
+      const fm = String(dt.getMonth() + 1).padStart(2, "0");
+      const fd = String(dt.getDate()).padStart(2, "0");
+      return `${fy}-${fm}-${fd}`;
+    };
+
+    return [format(startDate), format(endDate)];
+  }, [ekhlekhOgnoo, invoiceDay]);
+
+  // Fetch accurate server-computed balances via /uldegdelBodyo for all contracts.
+  // This replaces the old per-resident /guilgeeAvlaguud fetch which tried to read
+  // a non-existent `uldegdel` field from raw ledger rows.
+  // Stringify the range to ensure stable useEffect dependencies
+  const billingCycleRangeKey = JSON.stringify(billingCycleRange);
+
+  // Clear request tracking when building or cycle changes so we can refetch.
+  // We DON'T clear the actual state (latestRowUldegdelByGereeId) here to prevent
+  // the "disappearing data" flicker. New data will simply overwrite the old.
+  useEffect(() => {
+    latestRowUldegdelRequestedRef.current.clear();
+  }, [effectiveBarilgiinId, billingCycleRangeKey]);
+
   useEffect(() => {
     if (
       !token ||
       !ajiltan?.baiguullagiinId ||
-      deduplicatedResidentsAll.length === 0
+      deduplicatedResidentsAll.length === 0 ||
+      isInvoiceDayLoading
     ) {
       return;
     }
 
     const baiguullagiinId = ajiltan.baiguullagiinId;
-    const toFetch = deduplicatedResidentsAll.slice(0, 500);
 
-    toFetch.forEach((it: any) => {
-      const gid = getGereeId(it);
-      if (!gid) return;
+    // Collect all gids that need a balance
+    const gidsToFetch = deduplicatedResidentsAll
+      .map((it: any) => getGereeId(it))
+      .filter(Boolean) as string[];
 
-      // SKIP if we already have this resident's transactions in our bulk ledger (unifiedData)
-      // This prevents unnecessary individual API calls for residents already covered.
-      if (gidsInLedger.has(gid)) return;
+    if (gidsToFetch.length === 0) return;
 
-      // Only skip if we already have a valid number value or if request is in progress
-      const existingValue = latestRowUldegdelByGereeId[gid];
-      if (
-        (existingValue !== undefined &&
-          existingValue !== null &&
-          Number.isFinite(existingValue)) ||
-        latestRowUldegdelRequestedRef.current.has(gid)
-      ) {
-        return;
-      }
+    // Call uldegdelBodyo for each contract in parallel (batched to avoid overload)
+    // We skip contracts already in latestRowUldegdelRequestedRef to avoid duplicate calls
+    const pending = gidsToFetch.filter(
+      (gid) => !latestRowUldegdelRequestedRef.current.has(gid),
+    );
+    if (pending.length === 0) return;
 
-      latestRowUldegdelRequestedRef.current.add(gid);
+    // Mark all as requested before firing
+    pending.forEach((gid) => latestRowUldegdelRequestedRef.current.add(gid));
 
-      uilchilgee(token)
-        .get(`/guilgeeAvlaguud`, {
-          params: {
+    // Batch into groups of 50 to avoid hitting rate limits
+    const BATCH = 50;
+    for (let i = 0; i < pending.length; i += BATCH) {
+      const batch = pending.slice(i, i + BATCH);
+      batch.forEach((gid) => {
+        uilchilgee(token)
+          .post(`/uldegdelBodyo`, {
             baiguullagiinId,
-            query: JSON.stringify({ gereeniiId: gid }),
-            sort: JSON.stringify({ ognoo: -1, createdAt: -1 }), // DESCENDING to get latest first
-            khuudasniiDugaar: 1,
-            khuudasniiKhemjee: 1, // We only need the top row
-          },
-        })
-        .then((resp) => {
-          const backendLedger = Array.isArray(resp.data?.jagsaalt)
-            ? resp.data.jagsaalt
-            : [];
+            barilgiinId: effectiveBarilgiinId || undefined,
+            gereeniiId: gid,
+            ognoo: billingCycleRange,
+          })
+          .then((resp) => {
+            const summary = resp.data?.summary;
+            const uldegdel =
+              summary?.uldegdel != null &&
+              Number.isFinite(Number(summary.uldegdel))
+                ? Number(summary.uldegdel)
+                : null;
 
-          // With descending sort, the 0th item is the absolute latest
-          const latestRow = backendLedger[0] || null;
-          const latestUldegdel =
-            latestRow?.uldegdel != null &&
-            Number.isFinite(Number(latestRow.uldegdel))
-              ? Number(latestRow.uldegdel)
-              : null;
-
-          setLatestRowUldegdelByGereeId((prev) => ({
-            ...prev,
-            [gid]: latestUldegdel,
-          }));
-        })
-        .catch(() => {
-          latestRowUldegdelRequestedRef.current.delete(gid);
-          // Set to null to indicate fetch failed, but allow retry later
-          setLatestRowUldegdelByGereeId((prev) => ({ ...prev, [gid]: null }));
-        });
-    });
+            setLatestRowUldegdelByGereeId((prev) => ({
+              ...prev,
+              [gid]: uldegdel,
+            }));
+          })
+          .catch(() => {
+            latestRowUldegdelRequestedRef.current.delete(gid);
+          });
+      });
+    }
   }, [
     token,
     ajiltan?.baiguullagiinId,
     deduplicatedResidentsAll,
     effectiveBarilgiinId,
+    billingCycleRangeKey,
   ]);
 
   // Count cancelled gerees with unpaid invoices/zardal
@@ -2217,7 +2272,7 @@ export default function DansniiKhuulga() {
       const bulkResp = await uilchilgee(token).post("/uldegdelBodyo", {
         baiguullagiinId: ajiltan.baiguullagiinId,
         barilgiinId: effectiveBarilgiinId || undefined,
-        ognoo: ekhlekhOgnoo,
+        ognoo: billingCycleRange,
       });
       const exportSummaries = new Map<string, any>();
       if (bulkResp.data?.summaries) {

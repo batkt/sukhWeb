@@ -358,7 +358,10 @@ export default function GuilgeeTable({
             ...baseColumn,
             render: (_: any, record: any) => {
               const gid = getGereeId(record);
-              const monthlyData = gid ? monthlyDataByGereeId?.get(gid) : null;
+              const gDugaar = record?.gereeniiDugaar || (record?.gereeniiId && contractsById[String(record.gereeniiId)]?.gereeniiDugaar);
+              
+              const monthlyData = gid ? monthlyDataByGereeId?.get(gid) : (gDugaar ? monthlyDataByGereeId?.get(String(gDugaar)) : null);
+              
               const monthSlice = pickMonthSlice(
                 monthlyData,
                 monthlyPeriods,
@@ -397,34 +400,40 @@ export default function GuilgeeTable({
             },
           };
         }
-
         if (col.key === "sariinUldegdel") {
           return {
             ...baseColumn,
             render: (_: any, record: any) => {
               const gid = getGereeId(record);
-              const monthlyData = gid ? monthlyDataByGereeId?.get(gid) : null;
-              const monthSlice = pickMonthSlice(
-                monthlyData,
-                monthlyPeriods,
-                matrixMonthKey,
-              );
+              const gDugaar = record?.gereeniiDugaar || (record?.gereeniiId && contractsById[String(record.gereeniiId)]?.gereeniiDugaar);
+              
+              // 1. Prioritize server-computed balance (uldegdelBodyo)
+              const serverBalance = gid ? bestKnownBalances[gid] : null;
+              if (serverBalance != null) {
+                return (
+                  <span className={serverBalance < 0.01 ? "!text-emerald-600 dark:!text-emerald-400 font-medium" : "!text-red-500 dark:!text-red-400 font-medium"}>
+                    {formatNumber(serverBalance, 2)}
+                  </span>
+                );
+              }
 
-              const fallback =
-                Number(record?._totalTulburMonth || 0) -
-                Number(record?._totalTulsunMonth || 0);
-              const balance =
-                monthSlice != null ? Number(monthSlice.uldegdel ?? 0) : fallback;
+              // 2. Fallback to monthly matrix
+              const monthlyData = gid ? monthlyDataByGereeId?.get(gid) : (gDugaar ? monthlyDataByGereeId?.get(String(gDugaar)) : null);
+              const monthSlice = pickMonthSlice(monthlyData, monthlyPeriods, matrixMonthKey);
+              if (monthSlice != null) {
+                const b = Number(monthSlice.uldegdel ?? 0);
+                return (
+                  <span className={b < 0.01 ? "!text-emerald-600 dark:!text-emerald-400 font-medium" : "!text-red-500 dark:!text-red-400 font-medium"}>
+                    {formatNumber(b, 2)}
+                  </span>
+                );
+              }
 
+              // 3. Last resort: local aggregation
+              const aggB = Number(record?._totalTulburMonth || 0) - Number(record?._totalTulsunMonth || 0);
               return (
-                <span
-                  className={
-                    balance < 0.01
-                      ? "!text-emerald-600 dark:!text-emerald-400 font-medium"
-                      : "!text-red-500 dark:!text-red-400 font-medium"
-                  }
-                >
-                  {formatNumber(balance, 2)}
+                <span className={aggB < 0.01 ? "!text-emerald-600 dark:!text-emerald-400 font-medium" : "!text-red-500 dark:!text-red-400 font-medium"}>
+                  {formatNumber(aggB, 2)}
                 </span>
               );
             },
@@ -725,27 +734,22 @@ export default function GuilgeeTable({
                 </span>
               );
             } else if (col.key === "sariinUldegdel") {
-              const totalMonthlyBalance = deduplicatedResidents.reduce(
-                (sum: number, it: any) => {
-                  const gid = getGereeId(it);
-                  const monthlyData = gid ? monthlyDataByGereeId?.get(gid) : null;
-                  const monthSlice = pickMonthSlice(
-                    monthlyData,
-                    monthlyPeriods,
-                    matrixMonthKey,
-                  );
-                  const fallback =
-                    Number(it?._totalTulburMonth || 0) -
-                    Number(it?._totalTulsunMonth || 0);
-                  const b =
-                    monthSlice != null ? Number(monthSlice.uldegdel ?? 0) : fallback;
-                  return sum + b;
-                },
-                0,
-              );
+              const total = deduplicatedResidents.reduce((sum: number, it: any) => {
+                const gid = getGereeId(it);
+                const serverB = gid ? bestKnownBalances[gid] : null;
+                if (serverB != null) return sum + serverB;
+
+                const gD = it?.gereeniiDugaar || (it?.gereeniiId && contractsById[String(it.gereeniiId)]?.gereeniiDugaar);
+                const mData = gid ? monthlyDataByGereeId?.get(gid) : (gD ? monthlyDataByGereeId?.get(String(gD)) : null);
+                const mSlice = pickMonthSlice(mData, monthlyPeriods, matrixMonthKey);
+                if (mSlice != null) return sum + Number(mSlice.uldegdel ?? 0);
+
+                return sum + (Number(it?._totalTulburMonth || 0) - Number(it?._totalTulsunMonth || 0));
+              }, 0);
+
               content = (
                 <span className="font-bold text-slate-900 dark:!text-white">
-                  {formatNumber(totalMonthlyBalance, 2)} ₮
+                  {formatNumber(total, 2)} ₮
                 </span>
               );
             }

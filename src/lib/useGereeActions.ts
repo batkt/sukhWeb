@@ -145,18 +145,24 @@ export function useGereeActions(
           baiguullagiinNer: baiguullaga?.ner,
           erkh: "OrshinSuugch",
           taniltsuulgaKharakhEsekh: true,
-          // Building & Apartment Information
+          // Units (Multiple Units Support)
+          units: Array.isArray(newResident.units) && newResident.units.length > 0 
+            ? newResident.units 
+            : [{
+                toot: newResident.toot || "",
+                davkhar: newResident.davkhar || "",
+                orts: newResident.orts || "1",
+                ekhniiUldegdel: newResident.ekhniiUldegdel || 0,
+                tsahilgaaniiZaalt: newResident.tsahilgaaniiZaalt || 0,
+              }],
+          // Backward compatibility fields
           toot: newResident.toot || "",
           davkhar: newResident.davkhar || "",
-          orts: newResident.orts || "1", // Default to "1" if not provided
+          orts: newResident.orts || "1",
           barilgiinId: selectedBarilga?._id || effectiveBid || "",
           bairniiNer: selectedBarilga?.ner || "",
-          // Financial Information
-          ekhniiUldegdel: newResident.ekhniiUldegdel || 0,
-          tsahilgaaniiZaalt: newResident.tsahilgaaniiZaalt || "",
-          // Additional
+          // Global settings
           tailbar: newResident.tailbar || "",
-          // Address (if available from selectedBarilga)
           duureg: newResident.duureg || selectedBarilga?.duureg || "",
           horoo: newResident.horoo || selectedBarilga?.horoo || "",
           soh: selectedBarilga?.tokhirgoo?.sohNer || "",
@@ -349,6 +355,23 @@ export function useGereeActions(
         ekhniiUldegdel: p.ekhniiUldegdel || 0,
         khonogoorBodokhEsekh: p.khonogoorBodokhEsekh || false,
         bodokhKhonog: p.bodokhKhonog || 0,
+        units: Array.isArray(p.toots) && p.toots.length > 0 
+          ? p.toots.map((t: any) => ({
+              orts: t.orts || "1",
+              davkhar: t.davkhar || "",
+              toot: t.toot || "",
+              ekhniiUldegdel: t.ekhniiUldegdel || 0,
+              tsahilgaaniiZaalt: t.tsahilgaaniiZaalt || 0,
+            }))
+          : [
+              {
+                orts: p.orts || "1",
+                davkhar: p.davkhar || "",
+                toot: p.toot || "",
+                ekhniiUldegdel: p.ekhniiUldegdel || 0,
+                tsahilgaaniiZaalt: p.tsahilgaaniiZaalt || 0,
+              }
+            ],
       });
       setShowResidentModal(true);
     },
@@ -737,6 +760,7 @@ export function useGereeActions(
       turul: "Үндсэн",
       tailbar: "",
       ekhniiUldegdel: 0,
+      units: [{ orts: "1", davkhar: "", toot: "", ekhniiUldegdel: 0, tsahilgaaniiZaalt: 0 }],
     });
     setShowResidentModal?.(true);
   }, [setEditingResident, setNewResident, setShowResidentModal]);

@@ -385,7 +385,7 @@ export default function Khynalt() {
     };
   }, [orlogoAvlagaData]);
 
-  const avlagiinNasjiltData = null; // Removed broken 501 /tailan/avlagiin-nasjilt
+  const avlagiinNasjiltData: any = null; // Removed broken 501 /tailan/avlagiin-nasjilt
 
   const { data: tulukhAvlagaData } = useSWR(
     token && ajiltan?.baiguullagiinId && rangeStart && rangeEnd

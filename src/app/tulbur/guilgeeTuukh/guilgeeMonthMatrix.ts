@@ -14,8 +14,11 @@ export function pickMonthSlice(
   const months = monthlyData?.months;
   if (!months || typeof months !== "object") return null;
 
-  if (matrixMonthKey && months[matrixMonthKey] != null) {
-    return months[matrixMonthKey];
+  if (matrixMonthKey) {
+    if (months[matrixMonthKey] != null) return months[matrixMonthKey];
+    // Fuzzy match: if looking for "2026-04", match "2026-04-22"
+    const fuzzyKey = Object.keys(months).find((k) => k.startsWith(matrixMonthKey));
+    if (fuzzyKey && months[fuzzyKey] != null) return months[fuzzyKey];
   }
   if (!periods?.length) return null;
   for (let i = periods.length - 1; i >= 0; i--) {

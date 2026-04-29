@@ -7,6 +7,8 @@ import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { ConfirmCloseDialog } from "@/components/ui/ConfirmCloseDialog";
+import Button from "@/components/ui/Button";
+import { Plus } from "lucide-react";
 import {
   getResidentToot,
   getResidentDavkhar,
@@ -86,9 +88,20 @@ export default function ResidentModal({
       (Array.isArray(newResident.utas) && !newResident.utas[0]?.trim())
     )
       newErrors.push("utas");
-    if (!newResident.orts?.trim()) newErrors.push("orts");
-    if (!newResident.davkhar?.trim()) newErrors.push("davkhar");
-    if (!newResident.toot?.trim()) newErrors.push("toot");
+
+    // Validate each unit
+    const units = Array.isArray(newResident.units) ? newResident.units : [];
+    if (units.length === 0) {
+      if (!newResident.orts?.trim()) newErrors.push("orts");
+      if (!newResident.davkhar?.trim()) newErrors.push("davkhar");
+      if (!newResident.toot?.trim()) newErrors.push("toot");
+    } else {
+      units.forEach((unit: any, index: number) => {
+        if (!unit.orts?.trim()) newErrors.push(`units.${index}.orts`);
+        if (!unit.davkhar?.trim()) newErrors.push(`units.${index}.davkhar`);
+        if (!unit.toot?.trim()) newErrors.push(`units.${index}.toot`);
+      });
+    }
 
     setErrors(newErrors);
 
@@ -100,7 +113,18 @@ export default function ResidentModal({
         davkhar: "Давхар",
         toot: "Тоот",
       };
-      const missingFields = newErrors.map((e) => fieldNames[e]).join(", ");
+      
+      const missingFields = newErrors
+        .map((e) => {
+          if (e.startsWith("units.")) {
+            const parts = e.split(".");
+            const field = parts[2];
+            return `Мөр ${parseInt(parts[1]) + 1}: ${fieldNames[field] || field}`;
+          }
+          return fieldNames[e] || e;
+        })
+        .join(", ");
+
       openErrorOverlay(
         `Дараах талбарууд бөглөх шаардлагатай: ${missingFields}`,
       );
@@ -131,21 +155,25 @@ export default function ResidentModal({
             .toString()
             .trim();
 
-          // Ignore the same resident when editing
           const isSameResident =
             editingResident &&
             String(editingResident._id || "") === String(r._id || "");
           if (isSameResident) return false;
 
-          // Only block if it's the exact same unit being registered for the same person
           const rToots = (getResidentToots(r) || "")
             .split(", ")
             .map((t) => t.trim());
-          const currentToot = String(newResident.toot || "").trim();
-          const isSameUnit = rToots.includes(currentToot);
+
+          const units = Array.isArray(newResident.units) 
+            ? newResident.units 
+            : [{ toot: newResident.toot }];
+
+          const hasConflict = units.some((u: any) => 
+            rToots.includes(String(u.toot || "").trim())
+          );
 
           return (
-            rOvog === ovog && rNer === ner && rPhone === phone && isSameUnit
+            rOvog === ovog && rNer === ner && rPhone === phone && hasConflict
           );
         });
 
@@ -233,14 +261,64 @@ export default function ResidentModal({
   // Sync local state when modal opens or editingResident changes
   React.useEffect(() => {
     if (show) {
-      // We only want the integer part for our visual-suffix inputs
-      const f1 = formatWithCommas(newResident.ekhniiUldegdel);
-      setUldegdelInput(f1.split('.')[0] || "");
-      
-      const f2 = formatWithCommas(newResident.tsahilgaaniiZaalt);
-      setZaaltInput(f2.split('.')[0] || "");
+      // Ensure units array exists
+      if (!Array.isArray(newResident.units) || newResident.units.length === 0) {
+        setNewResident((p: any) => ({
+          ...p,
+          units: [
+            {
+              orts: p.orts || "1",
+              davkhar: p.davkhar || "",
+              toot: p.toot || "",
+              ekhniiUldegdel: p.ekhniiUldegdel || 0,
+              tsahilgaaniiZaalt: p.tsahilgaaniiZaalt || 0,
+            },
+          ],
+        }));
+      }
+
+      setUldegdelInput(formatWithCommas(newResident.ekhniiUldegdel).split(".")[0] || "");
+      setZaaltInput(formatWithCommas(newResident.tsahilgaaniiZaalt).split(".")[0] || "");
     }
   }, [show, editingResident]);
+
+  const addUnitRow = () => {
+    setNewResident((p: any) => ({
+      ...p,
+      units: [
+        ...(p.units || []),
+        {
+          orts: "1",
+          davkhar: "",
+          toot: "",
+          ekhniiUldegdel: 0,
+          tsahilgaaniiZaalt: 0,
+        },
+      ],
+    }));
+  };
+
+  const removeUnitRow = (index: number) => {
+    setNewResident((p: any) => {
+      const newUnits = [...(p.units || [])];
+      newUnits.splice(index, 1);
+      return { ...p, units: newUnits };
+    });
+  };
+
+  const updateUnitRow = (index: number, field: string, value: any) => {
+    setNewResident((p: any) => {
+      const newUnits = [...(p.units || [])];
+      newUnits[index] = { ...newUnits[index], [field]: value };
+      
+      // If updating the first unit, also update top-level fields for backward compatibility
+      if (index === 0) {
+        return { ...p, units: newUnits, [field]: value };
+      }
+      
+      return { ...p, units: newUnits };
+    });
+  };
 
   if (!show) return null;
 
@@ -578,245 +656,160 @@ export default function ResidentModal({
                       />
                     </div>
 
-                    {/* СӨХ нэр, Орц, Давхар, Тоот - One row */}
-                    <div className="md:col-span-2 grid grid-cols-4 gap-2">
-                      {/* СӨХ нэр (Регистр) */}
-                      <div>
-                        <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors">
-                          СӨХ нэр
-                        </label>
-                        <input
-                          type="text"
-                          value={sohNer || ""}
-                          className="modern-input w-full"
-                          readOnly
-                          disabled
-                        />
+                    {/* Units Section */}
+                    <div className="md:col-span-2 space-y-4">
+                      <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-2">
+                        <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">Бүртгэлтэй тоотнууд</h3>
+                        <Button
+                          type="button"
+                          onClick={addUnitRow}
+                          variant="secondary"
+                          size="sm"
+                          leftIcon={<Plus className="w-3.5 h-3.5" />}
+                        >
+                          Тоот нэмэх
+                        </Button>
                       </div>
 
-                      {/* Орц */}
-                      <div>
-                        <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors">
-                          Орц
-                        </label>
-                        <div
-                          className={`tusgai-wrapper w-full flex items-center ${errors.includes("orts") ? "input-error" : ""}`}
-                        >
-                          <TusgaiZagvar
-                            value={newResident.orts || ""}
-                            onChange={(val: string) => {
-                              setNewResident((p: any) => ({
-                                ...p,
-                                orts: val,
-                                toot: "",
-                              }));
-                            }}
-                            options={
-                              ortsOptions.length > 0
-                                ? ortsOptions.map((o) => ({
-                                    value: o,
-                                    label: o,
-                                  }))
-                                : [{ value: "", label: "Орц тохируулаагүй" }]
-                            }
-                            className="w-full h-full"
-                            placeholder="Сонгох..."
-                          />
-                        </div>
-                      </div>
+                      <div className="space-y-3">
+                        {(newResident.units || []).map((unit: any, index: number) => (
+                          <div 
+                            key={index} 
+                            className="relative grid grid-cols-1 md:grid-cols-12 gap-3 p-4 bg-slate-50/50 dark:bg-slate-900/30 rounded-xl border border-slate-100 dark:border-slate-800 transition-all hover:border-slate-200 dark:hover:border-slate-700"
+                          >
+                            {/* Remove Button */}
+                            {index > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => removeUnitRow(index)}
+                                className="absolute -right-2 -top-2 p-1.5 bg-white dark:bg-slate-800 text-rose-500 rounded-full shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all z-10"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            )}
 
-                      {/* Давхар */}
-                      <div>
-                        <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors">
-                          Давхар
-                        </label>
-                        <div
-                          className={`tusgai-wrapper w-full flex items-center ${errors.includes("davkhar") ? "input-error" : ""}`}
-                        >
-                          <TusgaiZagvar
-                            value={newResident.davkhar || ""}
-                            onChange={(val: string) => {
-                              setNewResident((p: any) => ({
-                                ...p,
-                                davkhar: val,
-                                toot: "",
-                              }));
-                            }}
-                            options={
-                              davkharOptions.length > 0
-                                ? davkharOptions.map((d) => ({
-                                    value: d,
-                                    label: d,
-                                  }))
-                                : [{ value: "", label: "Давхар тохируулаагүй" }]
-                            }
-                            className="w-full h-full"
-                            placeholder="Сонгох..."
-                          />
-                        </div>
-                      </div>
+                            {/* Row Number Badge */}
+                            <div className="absolute -left-2 -top-2 w-6 h-6 flex items-center justify-center bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-full text-[10px] font-bold border border-white dark:border-slate-700 shadow-sm">
+                              {index + 1}
+                            </div>
 
-                      {/* Тоот */}
-                      <div>
-                        <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors">
-                          Тоот
-                        </label>
-                        <div
-                          className={`tusgai-wrapper w-full flex items-center ${errors.includes("toot") ? "input-error" : ""} ${!newResident.orts || !newResident.davkhar ? "disabled" : ""}`}
-                        >
-                          <TusgaiZagvar
-                            value={newResident.toot || ""}
-                            onChange={(val: string) => {
-                              setNewResident((p: any) => ({ ...p, toot: val }));
-                            }}
-                            options={
-                              getTootOptions(
-                                newResident.orts || "",
-                                newResident.davkhar || "",
-                              ).length > 0
-                                ? getTootOptions(
-                                    newResident.orts || "",
-                                    newResident.davkhar || "",
-                                  ).map((t) => {
+                            <div className="md:col-span-2">
+                              <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-500 mb-1">
+                                Орц
+                              </label>
+                              <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${index}.orts`) ? "input-error" : ""}`}>
+                                <TusgaiZagvar
+                                  value={unit.orts || ""}
+                                  onChange={(val: string) => updateUnitRow(index, "orts", val)}
+                                  options={ortsOptions.map((o) => ({ value: o, label: o }))}
+                                  className="w-full h-full"
+                                  placeholder="Орц..."
+                                />
+                              </div>
+                            </div>
+
+                            <div className="md:col-span-2">
+                              <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-500 mb-1">
+                                Давхар
+                              </label>
+                              <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${index}.davkhar`) ? "input-error" : ""}`}>
+                                <TusgaiZagvar
+                                  value={unit.davkhar || ""}
+                                  onChange={(val: string) => updateUnitRow(index, "davkhar", val)}
+                                  options={davkharOptions.map((d) => ({ value: d, label: d }))}
+                                  className="w-full h-full"
+                                  placeholder="Давхар..."
+                                />
+                              </div>
+                            </div>
+
+                            <div className="md:col-span-2">
+                              <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-500 mb-1">
+                                Тоот
+                              </label>
+                              <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${index}.toot`) ? "input-error" : ""}`}>
+                                <TusgaiZagvar
+                                  value={unit.toot || ""}
+                                  onChange={(val: string) => updateUnitRow(index, "toot", val)}
+                                  options={getTootOptions(unit.orts || "", unit.davkhar || "").map((t) => {
                                     const isOccupied = currentResidents?.some(
                                       (r: any) => {
-                                        const rOrts = String(
-                                          getResidentOrts(r) || "",
-                                        ).trim();
-                                        const rDavkhar = String(
-                                          getResidentDavkhar(r) || "",
-                                        ).trim();
-                                        const rToot = String(
-                                          getResidentToot(r) || "",
-                                        ).trim();
+                                        const rOrts = String(getResidentOrts(r) || "").trim();
+                                        const rDavkhar = String(getResidentDavkhar(r) || "").trim();
+                                        const rToot = String(getResidentToot(r) || "").trim();
                                         const isSameUnit =
-                                          rOrts ===
-                                            String(
-                                              newResident.orts || "",
-                                            ).trim() &&
-                                          rDavkhar ===
-                                            String(
-                                              newResident.davkhar || "",
-                                            ).trim() &&
+                                          rOrts === String(unit.orts || "").trim() &&
+                                          rDavkhar === String(unit.davkhar || "").trim() &&
                                           rToot === String(t || "").trim();
                                         const isDifferentResident =
-                                          String(r._id || "") !==
-                                          String(editingResident?._id || "");
-                                        return (
-                                          isSameUnit && isDifferentResident
-                                        );
+                                          String(r._id || "") !== String(editingResident?._id || "");
+                                        return isSameUnit && isDifferentResident;
                                       },
                                     );
                                     return { value: t, label: t, isOccupied };
-                                  })
-                                : [{ value: "", label: "Тоотын сонгох" }]
-                            }
-                            className="w-full h-full"
-                            placeholder="Сонгох..."
-                            disabled={!newResident.orts || !newResident.davkhar}
-                          />
-                        </div>
+                                  })}
+                                  className="w-full h-full"
+                                  placeholder="Тоот..."
+                                  disabled={!unit.orts || !unit.davkhar}
+                                />
+                              </div>
+                            </div>
+
+                            <div className="md:col-span-3">
+                              <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-500 mb-1">
+                                Эхний үлдэгдэл
+                              </label>
+                              <input
+                                type="text"
+                                value={formatWithCommas(unit.ekhniiUldegdel).split(".")[0] || ""}
+                                onChange={(e) => {
+                                  const num = parseToNumber(e.target.value);
+                                  updateUnitRow(index, "ekhniiUldegdel", num);
+                                }}
+                                className="modern-input w-full text-right"
+                                placeholder="0"
+                                disabled={isEkhniiUldegdelDisabled && index === 0}
+                              />
+                            </div>
+
+                            <div className="md:col-span-3">
+                              <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-500 mb-1">
+                                Цахилгаан кВт
+                              </label>
+                              <input
+                                type="text"
+                                value={formatWithCommas(unit.tsahilgaaniiZaalt).split(".")[0] || ""}
+                                onChange={(e) => {
+                                  const num = parseToNumber(e.target.value);
+                                  updateUnitRow(index, "tsahilgaaniiZaalt", num);
+                                }}
+                                className="modern-input w-full text-right"
+                                placeholder="0"
+                              />
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
 
-                    {/* Барилгын нэр */}
-                    <div>
+                    {/* Tailbar */}
+                    <div className="md:col-span-2">
                       <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors">
-                        Барилгын нэр
+                        Тайлбар
                       </label>
-                      <input
-                        type="text"
-                        value={selectedBarilga?.ner || ""}
-                        className="modern-input w-full"
-                        readOnly
-                        disabled
+                      <textarea
+                        value={newResident.tailbar || ""}
+                        onChange={(e) => {
+                          setNewResident((p: any) => ({
+                            ...p,
+                            tailbar: e.target.value,
+                          }));
+                        }}
+                        className="modern-textarea w-full resize-none"
+                        placeholder="Тайлбар..."
                       />
-                    </div>
-
-                    {/* Эхний үлдэгдэл */}
-                    <div>
-                      <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors">
-                        Эхний үлдэгдэл
-                      </label>
-                      <div className="relative group/input">
-                        <input
-                          type="text"
-                          value={uldegdelInput}
-                          onChange={(e) => {
-                            const inputVal = e.target.value;
-                            const formatted = formatWhileTyping(inputVal);
-                            setUldegdelInput(formatted);
-                            
-                            const num = parseFloat(formatted.replace(/,/g, "")) || 0;
-                            setNewResident((p: any) => ({
-                              ...p,
-                              ekhniiUldegdel: num,
-                            }));
-                          }}
-                          onBlur={() => {
-                            if (uldegdelInput) {
-                               setUldegdelInput(formatWithCommas(uldegdelInput));
-                            }
-                          }}
-                          className="modern-input w-full pr-[38px] text-right "
-                          placeholder="0.00"
-                          disabled={isEkhniiUldegdelDisabled}
-                        />
-                        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-xs pointer-events-none select-none font-medium">
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Тайлбар and Цахилгааны заалт - One row */}
-                    <div className="md:col-span-2 grid grid-cols-2 gap-2">
-                      {/* Тайлбар */}
-                      <div>
-                        <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors">
-                          Тайлбар
-                        </label>
-                        <textarea
-                          value={newResident.tailbar || ""}
-                          onChange={(e) => {
-                            setNewResident((p: any) => ({
-                              ...p,
-                              tailbar: e.target.value,
-                            }));
-                          }}
-                          className="modern-textarea w-full resize-none"
-                          placeholder="Тайлбар..."
-                        />
-                      </div>
-
-                      {/* Цахилгаан кВт */}
-                      <div>
-                        <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors">
-                          Цахилгаан кВт
-                        </label>
-                        <div className="relative group/input">
-                         <input
-                          type="text"
-                          value={zaaltInput}
-                          onChange={(e) => {
-                            const inputVal = e.target.value;
-                            const formatted = formatWhileTyping(inputVal);
-                            setZaaltInput(formatted);
-                            setNewResident((p: any) => ({
-                              ...p,
-                              tsahilgaaniiZaalt: formatted.replace(/,/g, ""),
-                            }));
-                          }}
-                          onBlur={() => {
-                             if (zaaltInput) {
-                               setZaaltInput(formatWithCommas(zaaltInput));
-                             }
-                          }}
-                          className="modern-input w-full pr-[38px] text-right "
-                          placeholder="0.00"
-                         />
-                         <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-xs pointer-events-none select-none font-medium">
-                         </span>
-                        </div>
-                      </div>
                     </div>
 
                     {/* Pro-rating Settings - New Row */}
@@ -862,20 +855,24 @@ export default function ResidentModal({
                 </div>
 
                 <div className="flex justify-end px-4 py-3 border-t border-gray-200/50 dark:border-gray-700/50 gap-3 bg-gradient-to-r from-transparent via-white/5 to-transparent">
-                  <button
+                  <Button
                     type="button"
                     onClick={requestClose}
-                    className="ant-btn ant-btn-default min-w-[80px] text-sm py-2 px-4 rounded-lg"
+                    variant="secondary"
+                    size="md"
+                    className="min-w-[80px]"
                   >
                     Хаах
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="submit"
-                    className="ant-btn ant-btn-primary min-w-[80px] text-sm py-2 px-4 rounded-lg"
+                    variant="primary"
+                    size="md"
+                    className="min-w-[80px]"
                     data-modal-primary
                   >
                     {editingResident ? "Хадгалах" : "Хадгалах"}
-                  </button>
+                  </Button>
                 </div>
               </form>
             </motion.div>

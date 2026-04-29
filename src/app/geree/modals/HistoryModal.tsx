@@ -18,7 +18,7 @@ import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import InvoiceModal from "./InvoiceModal";
 import { ModalPortal } from "../../../../components/golContent";
-import { ledgerFilterYmdKey } from "@/app/tulbur/guilgeeTuukh/ledgerRunningBalances";
+import { ledgerFilterYmdKey, itemPrimaryDateMs } from "@/app/tulbur/guilgeeTuukh/ledgerRunningBalances";
 
 /** Хэвлэх мэтадата — нэвтэрсэн ажилтны нэр */
 type HistoryModalPrintedBy = {
@@ -249,6 +249,7 @@ function dedupeSemanticallyIdenticalLedgerRows(
       String(row.ner ?? "").trim(),
       String(row.burtgesenOgnoo ?? "").trim(),
       String(row.sourceCollection ?? "").trim(),
+      String(row._id ?? "").trim(), // Use _id to ensure unique entries stay unique
     ].join("\u0001");
     if (seen.has(k)) continue;
     seen.add(k);
@@ -997,23 +998,6 @@ export default function HistoryModal({
         ? String(contract._id).trim()
         : "");
 
-    // Silent Auto-Sync: Recalculate global balance on backend before fetching (if endpoint exists)
-    // This is completely silent - no errors logged
-    if (contractIdToFetch) {
-      try {
-        uilchilgee(token || undefined)
-          .post("/nekhemjlekh/recalculate-balance", {
-            gereeId: contractIdToFetch,
-            baiguullagiinId,
-          })
-          .catch(() => {
-            // Silently ignore all errors (endpoint may not exist)
-          });
-      } catch (e) {
-        // Silently ignore sync errors
-      }
-    }
-
     setLoading(true);
     try {
       const commonParams = {
@@ -1040,9 +1024,22 @@ export default function HistoryModal({
         ? unifiedResp.data.jagsaalt
         : [];
 
-      const rawList = allRecords.filter((r: any) => r.turul === "nekhemjlekh" || r.turul === "ашиглалт" || !r.turul);
-      const paymentRecords = allRecords.filter((r: any) => Number(r.tulsunDun) > 0);
-      const receivableRecords = allRecords.filter((r: any) => Number(r.tulukhDun) > 0);
+      const rawList = allRecords.filter((r: any) => 
+        r.turul === "nekhemjlekh" || 
+        r.turul === "ашиглалт" || 
+        r.turul === "ashiglalt" || 
+        !r.turul
+      );
+      const paymentRecords = allRecords.filter((r: any) => 
+        Number(r.tulsunDun) > 0 || 
+        String(r.turul).toLowerCase().includes("tul") ||
+        String(r.khelber).toLowerCase().includes("tul")
+      );
+      const receivableRecords = allRecords.filter((r: any) => 
+        Number(r.tulukhDun) > 0 || 
+        String(r.turul).toLowerCase().includes("avlaga") ||
+        String(r.khelber).toLowerCase().includes("avlaga")
+      );
 
       // Extract all possible identifiers from the contract/resident object
       const residentId = String(contract?.orshinSuugchId || "").trim();
