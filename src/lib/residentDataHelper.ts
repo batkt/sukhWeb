@@ -35,6 +35,75 @@ export function getResidentField(
 }
 
 /**
+ * Get all toot values from resident as a comma-separated string
+ */
+export function getResidentToots(resident: any): string | null {
+  if (!resident) return null;
+  
+  const values: string[] = [];
+  
+  if (Array.isArray(resident.toots) && resident.toots.length > 0) {
+    resident.toots.forEach((t: any) => {
+      if (t.toot != null && t.toot !== '') {
+        values.push(String(t.toot));
+      }
+    });
+  }
+  
+  if (values.length === 0 && resident.toot != null && resident.toot !== '') {
+    values.push(String(resident.toot));
+  }
+  
+  return values.length > 0 ? Array.from(new Set(values)).join(', ') : null;
+}
+
+/**
+ * Get all davkhar values from resident as a comma-separated string
+ */
+export function getResidentDavkhauraud(resident: any): string | null {
+  if (!resident) return null;
+  
+  const values: string[] = [];
+  
+  if (Array.isArray(resident.toots) && resident.toots.length > 0) {
+    resident.toots.forEach((t: any) => {
+      if (t.davkhar != null && t.davkhar !== '') {
+        values.push(String(t.davkhar));
+      }
+    });
+  }
+  
+  if (values.length === 0 && resident.davkhar != null && resident.davkhar !== '') {
+    values.push(String(resident.davkhar));
+  }
+  
+  return values.length > 0 ? Array.from(new Set(values)).join(', ') : null;
+}
+
+/**
+ * Get all orts values from resident as a comma-separated string
+ */
+export function getResidentOrtsuud(resident: any): string | null {
+  if (!resident) return null;
+  
+  const values: string[] = [];
+  
+  if (Array.isArray(resident.toots) && resident.toots.length > 0) {
+    resident.toots.forEach((t: any) => {
+      if (t.orts != null && t.orts !== '') {
+        values.push(String(t.orts));
+      }
+    });
+  }
+  
+  if (values.length === 0 && resident.orts != null && resident.orts !== '') {
+    values.push(String(resident.orts));
+  }
+  
+  return values.length > 0 ? Array.from(new Set(values)).join(', ') : null;
+}
+
+/**
  * Get toot value from resident, prioritizing toots array
  */
 export function getResidentToot(resident: any): string | null {
@@ -84,3 +153,4 @@ export function getResidentSoh(resident: any): string | null {
 export function getResidentBairniiNer(resident: any): string | null {
   return getResidentField(resident, 'bairniiNer', null);
 }
+

@@ -9,6 +9,9 @@ import {
   getResidentToot,
   getResidentDavkhar,
   getResidentOrts,
+  getResidentToots,
+  getResidentDavkhauraud,
+  getResidentOrtsuud,
 } from "@/lib/residentDataHelper";
 
 export interface ResidentItem {
@@ -107,7 +110,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: ResidentItem) => (
           <span className="text-gray-900 dark:text-white whitespace-nowrap">
-            {getResidentOrts(record) || "-"}
+            {getResidentOrtsuud(record) || "-"}
           </span>
         ),
       },
@@ -126,7 +129,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: ResidentItem) => (
           <span className="text-gray-900 dark:text-white whitespace-nowrap">
-            {getResidentDavkhar(record) || "-"}
+            {getResidentDavkhauraud(record) || "-"}
           </span>
         ),
       },
@@ -144,8 +147,8 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
         align: "center",
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: ResidentItem) => (
-          <span className="text-gray-900 dark:text-white whitespace-nowrap">
-            {getResidentToot(record) || "-"}
+          <span className="text-gray-900 dark:text-white whitespace-nowrap font-medium">
+            {getResidentToots(record) || "-"}
           </span>
         ),
       },
