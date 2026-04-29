@@ -42,7 +42,7 @@ interface ResidentsTableProps {
   maxHeight?: string | number;
 }
 
-export const ResidentsTable: React.FC<ResidentsTableProps> = ({
+export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
   data,
   loading = false,
   page = 1,
@@ -277,6 +277,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
       </div>
     </div>
   );
-};
+});
+
 
 export default ResidentsTable;

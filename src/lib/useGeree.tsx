@@ -201,7 +201,7 @@ export function useGereeJagsaalt(
 
   const [khuudaslalt, setGereeKhuudaslalt] = useState<Khuudaslalt>({
     khuudasniiDugaar: 1,
-    khuudasniiKhemjee: 500,
+    khuudasniiKhemjee: 100,
     search: "",
   });
 

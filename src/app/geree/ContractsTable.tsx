@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import { Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { ChevronDown, ChevronUp, Edit, Eye, FileText } from "lucide-react";
+import { FileText } from "lucide-react";
 import { ALL_COLUMNS } from "./columns";
 import { StandardPagination } from "@/components/ui/StandardTable";
 
@@ -36,7 +36,7 @@ interface ContractsTableProps {
   maxHeight?: string | number;
 }
 
-export const ContractsTable: React.FC<ContractsTableProps> = ({
+export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
   ajiltan,
   currentContracts,
   totalContracts,
@@ -82,7 +82,6 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
           column?.key === "ner" ||
           column?.key === "tuluv" ||
           column?.key === "gereeniiDugaar";
-        const isLastCol = colIdx === visibleColumns.length - 1;
 
         const alignClass =
           columnKey === "ner" || columnKey === "bairniiNer"
@@ -209,8 +208,6 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
     startIndex,
   ]);
 
-  const totalPages = Math.max(1, Math.ceil(totalContracts / rowsPerPage));
-
   return (
     <div className="table-surface rounded-2xl w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
       <div className="p-1 allow-overflow no-scrollbar" id="contracts-table">
@@ -289,6 +286,6 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
       </div>
     </div>
   );
-};
+});
 
 export default ContractsTable;

@@ -155,74 +155,9 @@ export function useTulburFooterTotals(
     uldegdelRequestedRef.current.clear();
   }, [unifiedData, startDate, endDate]);
 
-  useEffect(() => {
-    if (!token || !baiguullagiinId || deduplicatedResidents.length === 0) return;
-    deduplicatedResidents.forEach((it: any) => {
-      const gid = (it?.gereeniiId && String(it.gereeniiId)) || (it?._gereeniiId && String(it._gereeniiId)) || "";
-      if (!gid || paidRequestedRef.current.has(gid)) return;
-      paidRequestedRef.current.add(gid);
-      uilchilgee(token).post("/tulsunSummary", { baiguullagiinId, gereeniiId: gid }).then((resp) => {
-        const total = Number(resp.data?.totalTulsunDun ?? resp.data?.totalInvoicePayment ?? 0) || 0;
-        setPaidSummaryByGereeId((prev) => ({ ...prev, [gid]: total }));
-      }).catch(() => { paidRequestedRef.current.delete(gid); });
-    });
-  }, [token, baiguullagiinId, deduplicatedResidents]);
-
-  useEffect(() => {
-    if (!token || !baiguullagiinId || deduplicatedResidents.length === 0) return;
-    deduplicatedResidents.forEach((it: any) => {
-      const gid = (it?.gereeniiId && String(it.gereeniiId)) || (it?._gereeniiId && String(it._gereeniiId)) || "";
-      if (!gid || uldegdelRequestedRef.current.has(gid)) return;
-      uldegdelRequestedRef.current.add(gid);
-      uilchilgee(token).get(`/geree/${gid}/history-ledger`, { params: { baiguullagiinId, _t: Date.now() } }).then((resp) => {
-        const ledger = resp.data?.jagsaalt || resp.data?.ledger || resp.data || [];
-        
-        let filteredLedger = ledger;
-        const startMs = startDate ? new Date(startDate as string).getTime() : 0;
-        const endMs = endDate || startDate
-          ? (() => { const d = new Date((endDate || startDate) as string); d.setHours(23, 59, 59, 999); return d.getTime(); })()
-          : Number.MAX_SAFE_INTEGER;
-          
-        let pBilled = 0;
-        let pPaid = 0;
-
-        // Full ledger is sorted by backend. Identify rows within range.
-        const inRangeRows = ledger.filter((row: any) => {
-          if (!row?.ognoo) return false;
-          const ms = new Date(row.ognoo).getTime();
-          return ms >= startMs && ms <= endMs;
-        });
-
-        inRangeRows.forEach((row: any) => {
-           const isEkh = row.ner === "Эхний үлдэгдэл" || 
-                        (row.tailbar && row.tailbar.includes("Эхний үлдэгдэл")) ||
-                        row.ner === "Opening Balance" ||
-                        (row.tailbar && row.tailbar.toLowerCase().includes("opening"));
-           if (!isEkh) pBilled += Number(row.tulukhDun ?? 0);
-           pPaid += Number(row.tulsunDun ?? 0);
-        });
-
-        setLedgerBilledByGid(prev => ({ ...prev, [gid]: pBilled }));
-        setLedgerPaidByGid(prev => ({ ...prev, [gid]: pPaid }));
-
-        // Opening Balance is the running balance BEFORE the first row of the period
-        const firstIdx = ledger.findIndex((row: any) => row?.ognoo && new Date(row.ognoo).getTime() >= startMs);
-        if (firstIdx !== -1) {
-          const row = ledger[firstIdx];
-          const isEkh = row.ner === "Эхний үлдэгдэл" || (row.tailbar && row.tailbar.includes("Эхний үлдэгдэл"));
-          const chargeImpact = !isEkh ? Number(row.tulukhDun ?? 0) : 0;
-          const payImpact = Number(row.tulsunDun ?? 0);
-          const ekhnii = Number(row.uldegdel ?? 0) - chargeImpact + payImpact;
-          setEkhniiUldegdelByGereeId(prev => ({ ...prev, [gid]: ekhnii }));
-        } else if (ledger.length > 0) {
-          setEkhniiUldegdelByGereeId(prev => ({ ...prev, [gid]: Number(ledger[ledger.length - 1].uldegdel ?? 0) }));
-        }
-
-        const latestRow = inRangeRows.length > 0 ? inRangeRows[inRangeRows.length - 1] : null;
-        setUldegdelByGereeId((prev) => ({ ...prev, [gid]: latestRow ? latestRow.uldegdel : (ledger[ledger.length - 1]?.uldegdel ?? 0) }));
-      }).catch(() => { uldegdelRequestedRef.current.delete(gid); });
-    });
-  }, [token, baiguullagiinId, deduplicatedResidents]);
+  // Removed expensive individual fetches for /tulsunSummary and /history-ledger as they caused significant performance issues 
+  // and frequently resulted in 404 errors due to non-existent backend endpoints.
+  // Performance is prioritized by calculating totals from bulk 'unifiedData' and existing contract balances.
 
   const bestKnownBalances = useMemo(() => {
     const balances: Record<string, number> = {};

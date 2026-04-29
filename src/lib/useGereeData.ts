@@ -226,19 +226,24 @@ export function useGereeData(
     Record<string, "Төлсөн" | "Төлөөгүй" | "Хугацаа хэтэрсэн" | "Тодорхойгүй">
   >({});
 
-  // Fetch payment status
+  // Optimized payment status fetching: reduced limit from 20,000 to 1,000 
+  // and added checks to prevent redundant execution.
   useEffect(() => {
+    let isMounted = true;
     const run = async () => {
-      if (!token || !ajiltan?.baiguullagiinId) return;
+      if (!token || !ajiltan?.baiguullagiinId || residentsList.length === 0) return;
       try {
         const resp = await uilchilgee(token).get(`/nekhemjlekhiinTuukh`, {
           params: {
             baiguullagiinId: ajiltan.baiguullagiinId,
             barilgiinId: selectedBuildingId || barilgiinId || null,
             khuudasniiDugaar: 1,
-            khuudasniiKhemjee: 20000,
+            khuudasniiKhemjee: 1000, // Reduced from 20,000 for performance
           },
         });
+        
+        if (!isMounted) return;
+
         const list: any[] = Array.isArray(resp.data?.jagsaalt)
           ? resp.data.jagsaalt
           : Array.isArray(resp.data)
@@ -246,10 +251,7 @@ export function useGereeData(
             : [];
 
         const residents = residentsList;
-        const norm = (v: any) =>
-          String(v ?? "")
-            .trim()
-            .toLowerCase();
+        const norm = (v: any) => String(v ?? "").trim().toLowerCase();
         const resIndex = new Map<string, string>();
 
         const makeResKeys = (r: any): string[] => {
@@ -318,12 +320,13 @@ export function useGereeData(
               : "Тодорхойгүй";
         });
         setTuluvByResidentId(out);
-      } catch {
-        setTuluvByResidentId({});
+      } catch (err) {
+        if (isMounted) setTuluvByResidentId({});
       }
     };
     run();
-  }, [token, ajiltan?.baiguullagiinId, effectiveBarilgiinId, residentsList]);
+    return () => { isMounted = false; };
+  }, [token, ajiltan?.baiguullagiinId, effectiveBarilgiinId, residentsList.length > 0]); // Trigger only when residents load
 
   const renderCellValue = useCallback(
     (contract: any, columnKey: string): React.ReactNode => {

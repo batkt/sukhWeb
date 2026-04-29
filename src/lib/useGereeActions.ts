@@ -161,6 +161,8 @@ export function useGereeActions(
           horoo: newResident.horoo || selectedBarilga?.horoo || "",
           soh: selectedBarilga?.tokhirgoo?.sohNer || "",
           sohNer: selectedBarilga?.tokhirgoo?.sohNer || "",
+          khonogoorBodokhEsekh: newResident.khonogoorBodokhEsekh || false,
+          bodokhKhonog: Number(newResident.bodokhKhonog) || 0,
         };
 
         if (editingResident?._id) {
@@ -345,6 +347,8 @@ export function useGereeActions(
         turul: p.turul || "Үндсэн",
         tailbar: p?.tailbar || "",
         ekhniiUldegdel: p.ekhniiUldegdel || 0,
+        khonogoorBodokhEsekh: p.khonogoorBodokhEsekh || false,
+        bodokhKhonog: p.bodokhKhonog || 0,
       });
       setShowResidentModal(true);
     },

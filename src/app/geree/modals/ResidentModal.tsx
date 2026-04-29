@@ -818,6 +818,46 @@ export default function ResidentModal({
                         </div>
                       </div>
                     </div>
+
+                    {/* Pro-rating Settings - New Row */}
+                    <div className="md:col-span-2 grid grid-cols-2 gap-4 pt-2 border-t border-gray-100 dark:border-gray-800 mt-2">
+                      <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-900/50 p-2 rounded-lg border border-slate-100 dark:border-slate-800">
+                        <div className="flex flex-col">
+                          <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Ирээдүйд ашигласан тооцох</span>
+                          <span className="text-[10px] text-slate-500 dark:text-slate-500">Төлбөрийг хоногоор бодох</span>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer scale-90">
+                          <input
+                            type="checkbox"
+                            checked={newResident.khonogoorBodokhEsekh || false}
+                            onChange={(e) => setNewResident((p: any) => ({ ...p, khonogoorBodokhEsekh: e.target.checked }))}
+                            disabled={editingResident?.khonogoorBodokhEsekh === true}
+                            className="sr-only peer"
+                          />
+                          <div className={`w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 ${editingResident?.khonogoorBodokhEsekh === true ? 'opacity-60 cursor-not-allowed' : ''}`}></div>
+                        </label>
+                      </div>
+
+                      {newResident.khonogoorBodokhEsekh && (
+                        <div className="flex items-center gap-3 bg-blue-50/30 dark:bg-blue-900/10 p-2 rounded-lg border border-blue-100/50 dark:border-blue-800/30 animate-in fade-in slide-in-from-right-4 duration-300">
+                          <div className="flex-1">
+                            <label className="block text-[10px] uppercase tracking-wider font-bold text-blue-600 dark:text-blue-400 mb-1">
+                              Ашиглах хоног
+                            </label>
+                            <input
+                              type="number"
+                              min={1}
+                              max={31}
+                              value={newResident.bodokhKhonog || ""}
+                              onChange={(e) => setNewResident((p: any) => ({ ...p, bodokhKhonog: e.target.value }))}
+                              disabled={editingResident?.khonogoorBodokhEsekh === true}
+                              placeholder="Хоног"
+                              className={`modern-input w-full !border-blue-200 dark:!border-blue-800/50 ${editingResident?.khonogoorBodokhEsekh === true ? 'bg-slate-100 dark:bg-slate-800/50 cursor-not-allowed' : ''}`}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 

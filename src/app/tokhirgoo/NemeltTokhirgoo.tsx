@@ -52,6 +52,11 @@ export default function NemeltTokhirgoo() {
   const [guestFrequencyValue, setGuestFrequencyValue] = useState<
     number | string
   >("");
+  
+  // Calculation states
+  const [calculationEnabled, setCalculationEnabled] = useState<boolean>(false);
+  const [calculationMethod, setCalculationMethod] = useState<string>("Хуанли");
+  const [fixedDayCount, setFixedDayCount] = useState<number | string>(30);
   const fetchInvoiceSchedule = async () => {
     if (!token || !ajiltan?.baiguullagiinId) return;
 
@@ -300,6 +305,11 @@ export default function NemeltTokhirgoo() {
       {}) as any;
 
     const find = (field: string, def: any = "") => {
+      // 0. Priority for billing calculation fields (root tokhirgoo)
+      if (["bodokhArgaEnabled", "bodokhArga", "bodokhKhonog"].includes(field)) {
+        if (tok[field] !== undefined && tok[field] !== null) return tok[field];
+      }
+
       // 1. Check schema standard: target.tokhirgoo.zochinTokhirgoo
       if (zt[field] !== undefined && zt[field] !== null) return zt[field];
       // 2. Check root zochinTokhirgoo
@@ -333,6 +343,10 @@ export default function NemeltTokhirgoo() {
     setGuestNote(find("zochinTailbar", ""));
     setGuestFrequencyType(find("davtamjiinTurul", "saraar"));
     setGuestFrequencyValue(find("davtamjUtga", ""));
+
+    setCalculationMethod(find("bodokhArga", "Хуанли"));
+    setFixedDayCount(find("bodokhKhonog", 30));
+    setCalculationEnabled(!!find("bodokhArgaEnabled", false));
   }, [baiguullaga, selectedBuildingId, barilgiinId]);
 
   const fetchGuestSettings = async () => {
@@ -425,6 +439,60 @@ export default function NemeltTokhirgoo() {
       openErrorOverlay(
         error?.message || "  хадгалахад алдаа гарлаа",
       );
+    } finally {
+      hideSpinner();
+    }
+  };
+
+  const saveCalculationSettings = async () => {
+    if (!token || !ajiltan?.baiguullagiinId) {
+      openErrorOverlay("Нэвтрэх шаардлагатай");
+      return;
+    }
+    showSpinner();
+    try {
+      const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
+      const resp = await uilchilgee(token).get(`/baiguullaga/${ajiltan.baiguullagiinId}`, {
+        headers: { "X-Org-Only": "1" },
+      });
+      const freshOrg = resp.data;
+      let payload: any = JSON.parse(JSON.stringify(freshOrg));
+
+      const calculationData = {
+        bodokhArgaEnabled: calculationEnabled,
+        bodokhArga: calculationMethod,
+        bodokhKhonog: Number(fixedDayCount) || 30,
+      };
+
+      if (effectiveBarilgiinId && payload.barilguud) {
+        payload.barilguud = payload.barilguud.map((b: any) => {
+          const bId = b._id || b.id;
+          if (String(bId).trim() === String(effectiveBarilgiinId).trim()) {
+            return {
+              ...b,
+              tokhirgoo: {
+                ...(b.tokhirgoo || {}),
+                ...calculationData,
+              },
+            };
+          }
+          return b;
+        });
+      } else {
+        payload.tokhirgoo = {
+          ...(payload.tokhirgoo || {}),
+          ...calculationData,
+        };
+      }
+
+      const result = await updateMethod("baiguullaga", token, payload);
+      if (result?.data) {
+        await baiguullagaMutate(result.data.result || result.data, false);
+        await baiguullagaMutate();
+        openSuccessOverlay("Амжилттай хадгаллаа");
+      }
+    } catch (error: any) {
+      openErrorOverlay(error?.message || "Хадгалахад алдаа гарлаа");
     } finally {
       hideSpinner();
     }
@@ -842,6 +910,101 @@ export default function NemeltTokhirgoo() {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Calculation Method Box */}
+          <div id="nemelt-calculation-box" className="mt-6 pb-20">
+            <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden">
+              <div className="p-5 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20">
+                <div className="flex items-center gap-3">
+                  <div>
+                    <h3 className="text-lg text-theme">Төлбөр тооцох арга</h3>
+                    <p className="text-xs text-[color:var(--muted-text)]">
+                      Сарын төлбөрийг хоногоор хувааж тооцох тохиргоо
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-theme">
+                    {calculationEnabled ? "Идэвхтэй" : "Идэвхгүй"}
+                  </span>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={calculationEnabled}
+                      onChange={(e) => setCalculationEnabled(e.currentTarget.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 dark:peer-focus:ring-green-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 dark:peer-checked:bg-green-600 peer-checked:bg-green-600"></div>
+                  </label>
+                </div>
+              </div>
+
+              {calculationEnabled && (
+                <>
+                  <div className="p-5 bg-gradient-to-br from-green-50/50 to-emerald-50/50 dark:from-green-950/10 dark:to-emerald-950/10 space-y-4 animate-in fade-in zoom-in-95 duration-300">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-3">
+                        <label className="text-sm font-medium text-theme">Тооцоолох төрөл</label>
+                        <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-xl w-fit">
+                          <button
+                            onClick={() => setCalculationMethod("Хуанли")}
+                            className={`px-6 py-2 rounded-lg text-sm transition-all ${
+                              calculationMethod === "Хуанли"
+                                ? "bg-white dark:bg-gray-700 shadow-sm text-green-600 font-bold"
+                                : "text-gray-500 hover:text-gray-700"
+                            }`}
+                          >
+                            Хуанли
+                          </button>
+                          <button
+                            onClick={() => setCalculationMethod("Тогтмол")}
+                            className={`px-6 py-2 rounded-lg text-sm transition-all ${
+                              calculationMethod === "Тогтмол"
+                                ? "bg-white dark:bg-gray-700 shadow-sm text-green-600 font-bold"
+                                : "text-gray-500 hover:text-gray-700"
+                            }`}
+                          >
+                            Тогтмол
+                          </button>
+                        </div>
+                        <p className="text-xs text-[color:var(--muted-text)]">
+                          {calculationMethod === "Хуанли" 
+                            ? "Тухайн сарын нийт хоногт хувааж бодно (28, 30, 31)" 
+                            : "Доорх заасан хоногт тогтмол хувааж бодно"}
+                        </p>
+                      </div>
+
+                      {calculationMethod === "Тогтмол" && (
+                        <div className="space-y-2 animate-in fade-in slide-in-from-left-4 duration-300">
+                          <label className="text-sm font-medium text-theme">Сарын тогтмол хоног</label>
+                          <MNumberInput
+                            value={fixedDayCount === "" ? undefined : Number(fixedDayCount)}
+                            onChange={(val) => setFixedDayCount(val !== "" ? val : "")}
+                            placeholder="30"
+                            min={1}
+                            max={31}
+                            size="md"
+                            className="w-full md:w-48"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="pt-4 flex justify-end border-t border-[color:var(--surface-border)]/50">
+                      <Button
+                        onClick={saveCalculationSettings}
+                        variant="primary"
+                        size="sm"
+                        className="!rounded-2xl px-8"
+                      >
+                        Хадгалах
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
