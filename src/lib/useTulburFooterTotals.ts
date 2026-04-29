@@ -69,7 +69,7 @@ export function useTulburFooterTotals(
           ...(start ? { ekhlekhOgnoo: start } : {}),
           ...(end ? { duusakhOgnoo: end } : {}),
           khuudasniiDugaar: 1,
-          khuudasniiKhemjee: 10000, // Fetch a large enough batch for footer calculations
+          khuudasniiKhemjee: 1000, // Reduced from 10000 for better performance
         },
       });
       return resp.data;

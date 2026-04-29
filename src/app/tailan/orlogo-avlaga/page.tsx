@@ -288,7 +288,7 @@ export default function OrlogoAvlagaPage() {
 
   const emptyQuery = useMemo(() => ({}), []);
 
-  const { data: unifiedData, isLoading } = useSWR(
+  const { data: unifiedData, isLoading: isUnifiedLoading } = useSWR(
     token && baiguullagiinId
       ? [
           "/guilgeeAvlaguud-oa",
@@ -335,9 +335,9 @@ export default function OrlogoAvlagaPage() {
     };
   }, [unifiedData]);
 
-  const isLoadingHistory = isLoading;
-  const isLoadingReceivable = isLoading;
-  const isLoadingPayment = isLoading;
+  const isLoadingHistory = isUnifiedLoading;
+  const isLoadingReceivable = isUnifiedLoading;
+  const isLoadingPayment = isUnifiedLoading;
 
   const { gereeGaralt } = useGereeJagsaalt(
     emptyQuery,
@@ -623,7 +623,6 @@ export default function OrlogoAvlagaPage() {
           params: {
             baiguullagiinId,
             ...(selectedBuildingId ? { barilgiinId: selectedBuildingId } : {}),
-            _t: Date.now(),
           },
         },
       );

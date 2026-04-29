@@ -953,10 +953,9 @@ export default function InvoiceModal({
         params: {
           baiguullagiinId,
           query: JSON.stringify({ gereeniiId: gid }),
-          sort: JSON.stringify({ ognoo: 1, createdAt: 1 }),
+          sort: JSON.stringify({ ognoo: -1, createdAt: -1 }), // Latest first
           khuudasniiDugaar: 1,
           khuudasniiKhemjee: 5000,
-          _t: Date.now(),
         },
       })
       .then((resp) => {
@@ -972,7 +971,7 @@ export default function InvoiceModal({
           return;
         }
         const sorted = [...rows].sort(compareHistoryLedgerRowsChrono);
-        const last = sorted[sorted.length - 1];
+        const last = sorted[sorted.length - 1]; // Latest in chronological order
         const u = last?.uldegdel != null ? Number(last.uldegdel) : NaN;
         setLedgerBalanceFromFetch(
           Number.isFinite(u) ? roundInvoiceMoney(u) : null,

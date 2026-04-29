@@ -48,58 +48,6 @@ interface GuilgeeTableProps {
   ekhlekhOgnoo?: any;
 }
 
-const MonthlyBalanceCell = ({
-  token,
-  baiguullagiinId,
-  barilgiinId,
-  ekhlekhOgnoo,
-  gereeniiId,
-  gereeniiDugaar,
-  fallbackValue,
-}: {
-  token: string | null;
-  baiguullagiinId: string;
-  barilgiinId: string | null;
-  ekhlekhOgnoo: any;
-  gereeniiId?: string;
-  gereeniiDugaar?: string;
-  fallbackValue: number;
-}) => {
-  const { data, isLoading } = useSWR(
-    token && baiguullagiinId && (gereeniiId || gereeniiDugaar)
-      ? ["/uldegdelBodyo", token, baiguullagiinId, barilgiinId, ekhlekhOgnoo, gereeniiId, gereeniiDugaar]
-      : null,
-    async ([url, tkn, orgId, branch, dateRange, gId, gDugaar]) => {
-      const resp = await uilchilgee(tkn).post(url, {
-        baiguullagiinId: orgId,
-        barilgiinId: branch || undefined,
-        ognoo: dateRange,
-        gereeniiId: gId,
-        gereeniiDugaar: gDugaar,
-      });
-      return resp.data;
-    },
-    { revalidateOnFocus: false },
-  );
-
-  if (isLoading) return <Spin size="small" />;
-
-  const monthAgg = data?.summary 
-    ? data.summary.uldegdel 
-    : (data?.globalSummary ? data.globalSummary.uldegdel : fallbackValue);
-
-  return (
-    <span
-      className={
-        monthAgg < 0.01
-          ? "!text-emerald-600 dark:!text-emerald-400"
-          : "!text-red-500 dark:!text-red-400"
-      }
-    >
-      {formatNumber(monthAgg, 2)}
-    </span>
-  );
-};
 
 export default function GuilgeeTable({
   data,
@@ -434,19 +382,17 @@ export default function GuilgeeTable({
             ...baseColumn,
             render: (_: any, record: any) => {
               const gid = getGereeId(record);
-              const gdugaar = record?.gereeniiDugaar || record?.gdugaar;
-              const fallback = bestKnownBalances[gid] ?? 0;
-
+              const balance = bestKnownBalances[gid] ?? 0;
               return (
-                <MonthlyBalanceCell
-                  token={token}
-                  baiguullagiinId={ajiltan.baiguullagiinId}
-                  barilgiinId={effectiveBarilgiinId || null}
-                  ekhlekhOgnoo={null} // Total uldegdel - no date range
-                  gereeniiId={gid}
-                  gereeniiDugaar={gdugaar}
-                  fallbackValue={fallback}
-                />
+                <span
+                  className={
+                    balance < 0.01
+                      ? "!text-emerald-600 dark:!text-emerald-400 font-medium"
+                      : "!text-red-500 dark:!text-red-400 font-medium"
+                  }
+                >
+                  {formatNumber(balance, 2)}
+                </span>
               );
             },
           };
@@ -457,27 +403,29 @@ export default function GuilgeeTable({
             ...baseColumn,
             render: (_: any, record: any) => {
               const gid = getGereeId(record);
-              const gdugaar = String(record?.gereeniiDugaar || "");
-              const fallback = Number(record?._totalTulburMonth || 0) - Number(record?._totalTulsunMonth || 0);
+              const monthlyData = gid ? monthlyDataByGereeId?.get(gid) : null;
+              const monthSlice = pickMonthSlice(
+                monthlyData,
+                monthlyPeriods,
+                matrixMonthKey,
+              );
 
-              if (!token || !ajiltan?.baiguullagiinId) {
-                return (
-                  <span className={fallback < 0.01 ? "!text-emerald-600" : "!text-red-500"}>
-                    {formatNumber(fallback, 2)}
-                  </span>
-                );
-              }
+              const fallback =
+                Number(record?._totalTulburMonth || 0) -
+                Number(record?._totalTulsunMonth || 0);
+              const balance =
+                monthSlice != null ? Number(monthSlice.uldegdel ?? 0) : fallback;
 
               return (
-                <MonthlyBalanceCell
-                  token={token}
-                  baiguullagiinId={ajiltan.baiguullagiinId}
-                  barilgiinId={effectiveBarilgiinId || null}
-                  ekhlekhOgnoo={ekhlekhOgnoo}
-                  gereeniiId={gid}
-                  gereeniiDugaar={gdugaar}
-                  fallbackValue={fallback}
-                />
+                <span
+                  className={
+                    balance < 0.01
+                      ? "!text-emerald-600 dark:!text-emerald-400 font-medium"
+                      : "!text-red-500 dark:!text-red-400 font-medium"
+                  }
+                >
+                  {formatNumber(balance, 2)}
+                </span>
               );
             },
           };
@@ -764,44 +712,41 @@ export default function GuilgeeTable({
                 </span>
               );
             } else if (col.key === "uldegdel") {
-              const fallbackTotal = deduplicatedResidents.reduce(
-                (sum: number, it: any) => sum + (Number(it?._totalTulbur || 0) - Number(it?._totalTulsun || 0)),
+              const totalBalance = deduplicatedResidents.reduce(
+                (sum: number, it: any) => {
+                  const gid = getGereeId(it);
+                  return sum + (bestKnownBalances[gid] ?? 0);
+                },
                 0,
               );
-              content = !token || !ajiltan?.baiguullagiinId ? (
-                <span className="font-bold">{formatNumber(fallbackTotal, 2)} ₮</span>
-              ) : (
-                <div className="font-bold flex items-center justify-end gap-1">
-                  <MonthlyBalanceCell
-                    token={token}
-                    baiguullagiinId={ajiltan.baiguullagiinId}
-                    barilgiinId={effectiveBarilgiinId || null}
-                    ekhlekhOgnoo={null}
-                    fallbackValue={fallbackTotal}
-                  />
-                  <span>₮</span>
-                </div>
+              content = (
+                <span className="font-bold text-slate-900 dark:!text-white">
+                  {formatNumber(totalBalance, 2)} ₮
+                </span>
               );
             } else if (col.key === "sariinUldegdel") {
-              const fallbackTotal = deduplicatedResidents.reduce(
-                (sum: number, it: any) =>
-                  sum + (Number(it?._totalTulburMonth || 0) - Number(it?._totalTulsunMonth || 0)),
+              const totalMonthlyBalance = deduplicatedResidents.reduce(
+                (sum: number, it: any) => {
+                  const gid = getGereeId(it);
+                  const monthlyData = gid ? monthlyDataByGereeId?.get(gid) : null;
+                  const monthSlice = pickMonthSlice(
+                    monthlyData,
+                    monthlyPeriods,
+                    matrixMonthKey,
+                  );
+                  const fallback =
+                    Number(it?._totalTulburMonth || 0) -
+                    Number(it?._totalTulsunMonth || 0);
+                  const b =
+                    monthSlice != null ? Number(monthSlice.uldegdel ?? 0) : fallback;
+                  return sum + b;
+                },
                 0,
               );
-
-              content = !token || !ajiltan?.baiguullagiinId ? (
-                <span className="font-bold">{formatNumber(fallbackTotal, 2)} ₮</span>
-              ) : (
-                <div className="font-bold flex items-center justify-end gap-1">
-                  <MonthlyBalanceCell
-                    token={token}
-                    baiguullagiinId={ajiltan.baiguullagiinId}
-                    barilgiinId={effectiveBarilgiinId || null}
-                    ekhlekhOgnoo={ekhlekhOgnoo}
-                    fallbackValue={fallbackTotal}
-                  />
-                  <span>₮</span>
-                </div>
+              content = (
+                <span className="font-bold text-slate-900 dark:!text-white">
+                  {formatNumber(totalMonthlyBalance, 2)} ₮
+                </span>
               );
             }
 

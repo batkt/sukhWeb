@@ -66,6 +66,7 @@ import { useGereeActions } from "@/lib/useGereeActions";
 import { StandardPagination } from "@/components/ui/StandardTable";
 import {
   itemPrimaryDateMs,
+  computeLedgerRunningBalancesByGereeId,
 } from "./ledgerRunningBalances";
 import { aggregateLedgerTulsunByGereeIdInRange } from "./guilgeePaidDisplay";
 
@@ -104,6 +105,8 @@ function getGereeIdPure(it: any, contractsByNumber: Record<string, any>) {
     (it?.gereeId && String(it.gereeId)) ||
     (it?.gereeniiDugaar &&
       String(contractsByNumber[String(it.gereeniiDugaar)]?._id || "")) ||
+    // Last resort: if this IS a contract row, its own _id is the geree ID
+    (it?._id && String(it._id)) ||
     ""
   );
 }
@@ -594,6 +597,11 @@ export default function DansniiKhuulga() {
 
   // No transition effect needed — SWR keys are stable (no date params), date filtering is client-side.
 
+  useEffect(() => {
+    setLatestRowUldegdelByGereeId({});
+    latestRowUldegdelRequestedRef.current.clear();
+  }, [effectiveBarilgiinId]);
+
   // Socket: revalidate data when payment, avlaga, ashiglalt, or delete happens (from any tab/source)
   useEffect(() => {
     const baiguullagiinId = ajiltan?.baiguullagiinId;
@@ -790,18 +798,49 @@ export default function DansniiKhuulga() {
    * 1) /geree/:id/history-ledger-ийн хамгийн сүүлийн мөрийн uldegdel (илүү найдвартай)
    * 2) contract.uldegdel (fallback)
    */
+  const gidsInLedger = useMemo(() => {
+    const s = new Set<string>();
+    allHistoryItems.forEach((it: any) => {
+      const gid = getGereeIdPure(it, contractsByNumber);
+      if (gid) s.add(gid);
+    });
+    return s;
+  }, [allHistoryItems, contractsByNumber]);
+
   const tableDisplayBalances = useMemo(() => {
     const out: Record<string, number> = {};
+
+    // 1. Base: contract.uldegdel (may be 0/null for new residents — just a seed)
     Object.values(contractsById).forEach((c: any) => {
       if (c?._id != null && c.uldegdel != null) {
         out[String(c._id)] = Number(c.uldegdel);
       }
     });
+
+    // 2. Compute running balances from the full bulk ledger.
+    //    guilgeeAvlaguud rows do NOT carry a pre-computed `uldegdel` field —
+    //    we must derive it from tulukhDun / tulsunDun / zardluud / guilgeenuud.
+    if (allHistoryItems.length > 0) {
+      const computed = computeLedgerRunningBalancesByGereeId(
+        allHistoryItems,
+        contractsByNumber,
+      );
+      Object.assign(out, computed);
+    }
+
+    // 3. Override with the most-recent single-row fetches (background, for contracts
+    //    not yet present in the bulk ledger payload).
     Object.entries(latestRowUldegdelByGereeId).forEach(([gid, v]) => {
       if (v != null && Number.isFinite(v)) out[gid] = v;
     });
+
     return out;
-  }, [contractsById, latestRowUldegdelByGereeId]);
+  }, [
+    contractsById,
+    allHistoryItems,
+    contractsByNumber,
+    latestRowUldegdelByGereeId,
+  ]);
 
   /** Гүйцэтгэл: зөвхөн `monthlyMatrixRange` сарын төлөлт (бүх түүхийн харагдац ч ижил) */
   const monthPaidByGereeId = useMemo(() => {
@@ -1135,13 +1174,17 @@ export default function DansniiKhuulga() {
         g?._id || g?.gereeniiId || g?.gereeId || "",
       ).trim();
       const gereeDugaar = String(g?.gereeniiDugaar || "").trim();
-      const key = gereeId || gereeDugaar || (String(g?.orshinSuugchId || g?.residentId || "").trim()) || `${String(r?.ner ?? g?.ner || "").trim().toLowerCase()}|${String(r?.utas ?? g?.utas || "").trim()}|${String(r?.toot ?? g?.toot || "").trim()}`;
+      const key = gereeId || gereeDugaar || (String(g?.orshinSuugchId || g?.residentId || "").trim()) || `${String((r?.ner ?? g?.ner) || "").trim().toLowerCase()}|${String((r?.utas ?? g?.utas) || "").trim()}|${String((r?.toot ?? g?.toot) || "").trim()}`;
       if (key) residentKeysFromProfile.add(key);
 
-      // Pre-populate map with these residents
+      // Pre-populate map with contract-sourced rows.
+      // CRITICAL: Explicitly set gereeniiId = g._id so getGereeId() can resolve
+      // the balance lookup (a contract's own ID lives at _id, not gereeniiId).
       if (!map.has(key)) {
         map.set(key, {
           ...g,
+          gereeniiId: gereeId || g?._id,  // ensure lookup key is present
+          gereeId: gereeId || g?._id,
           _historyCount: 0,
           _totalTulbur: 0,
           _totalTulsun: 0,
@@ -1820,6 +1863,10 @@ export default function DansniiKhuulga() {
       const gid = getGereeId(it);
       if (!gid) return;
 
+      // SKIP if we already have this resident's transactions in our bulk ledger (unifiedData)
+      // This prevents unnecessary individual API calls for residents already covered.
+      if (gidsInLedger.has(gid)) return;
+
       // Only skip if we already have a valid number value or if request is in progress
       const existingValue = latestRowUldegdelByGereeId[gid];
       if (
@@ -1838,10 +1885,9 @@ export default function DansniiKhuulga() {
           params: {
             baiguullagiinId,
             query: JSON.stringify({ gereeniiId: gid }),
-            sort: JSON.stringify({ ognoo: 1, createdAt: 1 }),
+            sort: JSON.stringify({ ognoo: -1, createdAt: -1 }), // DESCENDING to get latest first
             khuudasniiDugaar: 1,
-            khuudasniiKhemjee: 5000,
-            _t: Date.now(),
+            khuudasniiKhemjee: 1, // We only need the top row
           },
         })
         .then((resp) => {
@@ -1849,11 +1895,8 @@ export default function DansniiKhuulga() {
             ? resp.data.jagsaalt
             : [];
 
-          // Get latest row's uldegdel (backend returns oldest-first, so last row is latest)
-          const latestRow =
-            backendLedger.length > 0
-              ? backendLedger[backendLedger.length - 1]
-              : null;
+          // With descending sort, the 0th item is the absolute latest
+          const latestRow = backendLedger[0] || null;
           const latestUldegdel =
             latestRow?.uldegdel != null &&
             Number.isFinite(Number(latestRow.uldegdel))
@@ -2515,7 +2558,7 @@ export default function DansniiKhuulga() {
             ognoo: data.date,
             ...(data.ekhniiUldegdel && { ekhniiUldegdelEsekh: true }),
             guilgeeKhiisenAjiltniiId: ajiltan._id,
-            guilgeeKhiisenAjiltniiNer: `${ajiltan.ovog || ""} ${ajiltan.ner || ""}`.trim(),
+            guilgeeKhiisenAjiltniiNer: `${(ajiltan as any).ovog || ""} ${ajiltan.ner || ""}`.trim(),
           },
         );
 

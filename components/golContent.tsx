@@ -88,7 +88,7 @@ export default function GolContent({ children }: GolContentProps) {
       });
       return res.data;
     },
-    { revalidateOnFocus: true, refreshInterval: 60000 }
+    { revalidateOnFocus: false, refreshInterval: 300000 }
   );
   const sanalUnreadCount = Number(sanalUnreadData?.count ?? 0) || 0;
   const { data: sanalUnreadListData } = useSWR(

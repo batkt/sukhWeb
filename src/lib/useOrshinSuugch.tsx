@@ -204,7 +204,7 @@ export function useOrshinSuugchJagsaalt(
 
   const { data, mutate, isValidating, error }: SWRResponse<any, any> = useSWR(
     shouldFetch
-      ? ["/orshinSuugch", token, baiguullagiinId, barilgiinId, khuudaslalt]
+      ? ["/orshinSuugch", token, baiguullagiinId, barilgiinId, khuudaslalt, query]
       : null,
     fetcherJagsaalt,
     {

@@ -178,7 +178,7 @@ export const togloomUilchilgee = (token?: string): AxiosInstance => {
         // Check if baiguullagiinId is already in the URL path
         const urlPath = config.url || "";
         const baiguullagaPathMatch = urlPath.match(
-          /^\/baiguullaga\/([^\/\?]+)/,
+          /(?:^|\/)baiguullaga\/([^\/\?]+)/,
         );
         const baiguullagiinIdInPath = baiguullagaPathMatch?.[1];
 
@@ -229,7 +229,7 @@ export const zogsoolUilchilgee = (token?: string): AxiosInstance => {
         // Check if baiguullagiinId is already in the URL path
         const urlPath = config.url || "";
         const baiguullagaPathMatch = urlPath.match(
-          /^\/baiguullaga\/([^\/\?]+)/,
+          /(?:^|\/)baiguullaga\/([^\/\?]+)/,
         );
         const baiguullagiinIdInPath = baiguullagaPathMatch?.[1];
 
@@ -276,7 +276,7 @@ const uilchilgee = (token?: string): AxiosInstance => {
         // Pattern: /baiguullaga/{id} or /baiguullaga/{id}/...
         const urlPath = config.url || "";
         const baiguullagaPathMatch = urlPath.match(
-          /^\/baiguullaga\/([^\/\?]+)/,
+          /(?:^|\/)baiguullaga\/([^\/\?]+)/,
         );
         const baiguullagiinIdInPath = baiguullagaPathMatch?.[1];
 

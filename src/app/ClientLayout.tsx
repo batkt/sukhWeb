@@ -291,7 +291,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
           <div className="flex flex-col items-center justify-center p-8 rounded-[32px] pointer-events-auto gap-4">
             <div className="w-40 h-40 lg:w-56 lg:h-56">
               <DotLottieReact
-                src="/cat loading.json"
+                src="/cat-loading.json"
                 loop
                 autoplay
                 style={{ width: "100%", height: "100%" }}
@@ -322,7 +322,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
               <div className="flex flex-col items-center justify-center p-8 rounded-[32px] pointer-events-auto gap-4">
                 <div className="w-40 h-40 lg:w-56 lg:h-56">
                   <DotLottieReact
-                    src="/cat loading.json"
+                    src="/cat-loading.json"
                     loop
                     autoplay
                     style={{ width: "100%", height: "100%" }}

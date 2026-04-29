@@ -1027,12 +1027,12 @@ export default function HistoryModal({
       const unifiedResp = await uilchilgee(token || undefined).get("/guilgeeAvlaguud", {
         params: {
           ...commonParams,
+          sort: JSON.stringify({ ognoo: -1, createdAt: -1 }),
           query: JSON.stringify({
             baiguullagiinId: baiguullagiinId || undefined,
             // Filter by contract if possible
             ...(explicitGereeId ? { gereeniiId: explicitGereeId } : {}),
           }),
-          _t: Date.now(),
         },
       });
 
@@ -1721,8 +1721,7 @@ export default function HistoryModal({
                 query: JSON.stringify({ gereeniiId: contractIdToFetch }),
                 khuudasniiDugaar: 1,
                 khuudasniiKhemjee: 5000,
-                sort: JSON.stringify({ ognoo: 1, createdAt: 1 }),
-                _t: Date.now(),
+                sort: JSON.stringify({ ognoo: -1, createdAt: -1 }), // Latest first
               },
             },
           );
@@ -1730,17 +1729,20 @@ export default function HistoryModal({
             ? ledgerResp.data.jagsaalt
             : [];
           if (backendLedger.length > 0) {
+            // Sort chronological Oldest -> Newest for running balance computation
+            const sortedBackend = [...backendLedger].sort((a, b) => {
+              const da = itemPrimaryDateMs(a);
+              const db = itemPrimaryDateMs(b);
+              if (da !== db) return da - db;
+              return String(a._id || "").localeCompare(String(b._id || ""));
+            });
+
             // Use backend ledger and recompute uldegdel on frontend
-            const mapped = backendLedger.map((r: any) => {
-              let tulukhDun =
-                Number(r.tulukhDun ?? r.dun ?? r.niitDun ?? 0) || 0;
+            const mapped = sortedBackend.map((r: any) => {
+              let tulukhDun = Number(r.tulukhDun ?? r.dun ?? r.niitDun ?? 0) || 0;
               let tulsunDun = Number(r.tulsunDun ?? r.tulsun ?? 0) || 0;
               const rowTurul = String(r.turul || "").toLowerCase();
-              if (
-                rowTurul === "ashiglalt" &&
-                tulukhDun > 0 &&
-                tulsunDun === 0
-              ) {
+              if (rowTurul === "ashiglalt" && tulukhDun > 0 && tulsunDun === 0) {
                 tulsunDun = tulukhDun;
                 tulukhDun = 0;
               }

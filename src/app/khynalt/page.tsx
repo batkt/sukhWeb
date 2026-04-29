@@ -91,14 +91,12 @@ export default function Khynalt() {
   const shouldFetch = isInitialized && !!token && !!ajiltan?.baiguullagiinId;
 
   const { data: buildingConfig } = useSWR(
-    shouldFetch && effectiveBarilgiinId
-      ? ["/baiguullaga/", token, ajiltan.baiguullagiinId, effectiveBarilgiinId]
+    shouldFetch && ajiltan?.baiguullagiinId
+      ? ["/baiguullaga", token, ajiltan.baiguullagiinId]
       : null,
-    async ([url, tkn, bId, barId]): Promise<any> => {
-      const resp = await uilchilgee(tkn).get(url, {
-        params: { baiguullagiinId: bId, barilgiinId: barId },
-      });
-      return resp.data;
+    async ([url, tkn, bId]): Promise<any> => {
+      const resp = await uilchilgee(tkn).get(`${url}/${bId}`);
+      return resp.data?.result || resp.data;
     },
     { revalidateOnFocus: false },
   );
@@ -107,11 +105,11 @@ export default function Khynalt() {
     useOrshinSuugchJagsaalt(
       token || "",
       ajiltan?.baiguullagiinId || "",
-      {},
+      undefined,
       effectiveBarilgiinId,
     );
   const { gereeGaralt, setGereeKhuudaslalt } = useGereeJagsaalt(
-    {},
+    undefined,
     shouldFetch ? token || undefined : undefined,
     shouldFetch ? ajiltan?.baiguullagiinId : undefined,
     effectiveBarilgiinId,
@@ -125,17 +123,17 @@ export default function Khynalt() {
   useEffect(() => {
     setOrshinSuugchKhuudaslalt({
       khuudasniiDugaar: 1,
-      khuudasniiKhemjee: 500,
+      khuudasniiKhemjee: 100,
       search: "",
     });
     setGereeKhuudaslalt({
       khuudasniiDugaar: 1,
-      khuudasniiKhemjee: 500,
+      khuudasniiKhemjee: 100,
       search: "",
     });
     setAjiltniiKhuudaslalt({
       khuudasniiDugaar: 1,
-      khuudasniiKhemjee: 500,
+      khuudasniiKhemjee: 100,
       search: "",
     });
   }, [setOrshinSuugchKhuudaslalt, setGereeKhuudaslalt, setAjiltniiKhuudaslalt]);
@@ -213,7 +211,7 @@ export default function Khynalt() {
           baiguullagiinId: bId,
           ...(barId ? { barilgiinId: barId } : {}),
           khuudasniiDugaar: 1,
-          khuudasniiKhemjee: 5000,
+          khuudasniiKhemjee: 1000,
           query: JSON.stringify({
             baiguullagiinId: bId,
             ...(barId ? { barilgiinId: barId } : {}),
@@ -243,7 +241,7 @@ export default function Khynalt() {
           baiguullagiinId: bId,
           ...(barId ? { barilgiinId: barId } : {}),
           khuudasniiDugaar: 1,
-          khuudasniiKhemjee: 5000,
+          khuudasniiKhemjee: 1000,
           ekhlekhOgnoo: start,
           duusakhOgnoo: end,
         },
@@ -295,29 +293,7 @@ export default function Khynalt() {
     { revalidateOnFocus: false },
   );
 
-  // Fetch building-wide payment summary for the selected period
-  const { data: buildingPaymentSummary } = useSWR(
-    token && ajiltan?.baiguullagiinId && rangeStart && rangeEnd
-      ? [
-          "/tulsunSummary",
-          token,
-          ajiltan.baiguullagiinId,
-          effectiveBarilgiinId,
-          rangeStart,
-          rangeEnd,
-        ]
-      : null,
-    async ([url, tkn, bId, barId, start, end]): Promise<any> => {
-      const resp = await uilchilgee(tkn).post(url, {
-        baiguullagiinId: bId,
-        barilgiinId: barId,
-        ekhlekhOgnoo: start,
-        duusakhOgnoo: end,
-      });
-      return resp.data;
-    },
-    { revalidateOnFocus: false },
-  );
+  const buildingPaymentSummary = null; // Removed non-existent /tulsunSummary
 
   const { data: orlogoAvlagaData } = useSWR(
     token &&
@@ -364,7 +340,7 @@ export default function Khynalt() {
         ekhlekhOgnoo: start,
         duusakhOgnoo: end,
         khuudasniiDugaar: 1,
-        khuudasniiKhemjee: 10000,
+        khuudasniiKhemjee: 100, // Reduced from 10000 for dashboard
       });
       return resp.data;
     },
@@ -409,31 +385,7 @@ export default function Khynalt() {
     };
   }, [orlogoAvlagaData]);
 
-  const { data: avlagiinNasjiltData } = useSWR(
-    token && ajiltan?.baiguullagiinId && rangeStart && rangeEnd
-      ? [
-          "/tailan/avlagiin-nasjilt",
-          token,
-          ajiltan.baiguullagiinId,
-          effectiveBarilgiinId,
-          rangeStart,
-          rangeEnd,
-        ]
-      : null,
-    async ([, tkn, bId, barId, start, end]): Promise<any> => {
-      const resp = await uilchilgee(tkn).post("/tailan/avlagiin-nasjilt", {
-        baiguullagiinId: bId,
-        barilgiinId: barId,
-        ekhlekhOgnoo: start,
-        duusakhOgnoo: end,
-        view: "detailed",
-        khuudasniiDugaar: 1,
-        khuudasniiKhemjee: 5000,
-      });
-      return resp.data;
-    },
-    { revalidateOnFocus: false },
-  );
+  const avlagiinNasjiltData = null; // Removed broken 501 /tailan/avlagiin-nasjilt
 
   const { data: tulukhAvlagaData } = useSWR(
     token && ajiltan?.baiguullagiinId && rangeStart && rangeEnd
@@ -454,7 +406,7 @@ export default function Khynalt() {
           ...(start ? { ekhlekhOgnoo: start } : {}),
           ...(end ? { duusakhOgnoo: end } : {}),
           khuudasniiDugaar: 1,
-          khuudasniiKhemjee: 5000,
+          khuudasniiKhemjee: 1000,
         },
       });
       return resp.data;
