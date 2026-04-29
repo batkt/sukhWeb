@@ -11,6 +11,9 @@ import {
   getResidentToot,
   getResidentDavkhar,
   getResidentOrts,
+  getResidentToots,
+  getResidentDavkhauraud,
+  getResidentOrtsuud,
 } from "@/lib/residentDataHelper";
 
 interface ResidentModalProps {
@@ -127,21 +130,32 @@ export default function ResidentModal({
           const rPhone = (Array.isArray(r.utas) ? r.utas[0] : r.utas || "")
             .toString()
             .trim();
+
           // Ignore the same resident when editing
           const isSameResident =
             editingResident &&
             String(editingResident._id || "") === String(r._id || "");
           if (isSameResident) return false;
-          return rOvog === ovog && rNer === ner && rPhone === phone;
+
+          // Only block if it's the exact same unit being registered for the same person
+          const rToots = (getResidentToots(r) || "")
+            .split(", ")
+            .map((t) => t.trim());
+          const currentToot = String(newResident.toot || "").trim();
+          const isSameUnit = rToots.includes(currentToot);
+
+          return (
+            rOvog === ovog && rNer === ner && rPhone === phone && isSameUnit
+          );
         });
 
         if (duplicates.length > 0) {
           const tootList = duplicates
             .map((r: any) => {
-              const orts = r.orts || "-";
-              const davkhar = r.davkhar || "-";
-              const toot = r.toot || "-";
-              return `${orts} орц, ${davkhar} давхар, ${toot} тоот`;
+              const orts = getResidentOrtsuud(r) || "-";
+              const davkhar = getResidentDavkhauraud(r) || "-";
+              const toots = getResidentToots(r) || "-";
+              return `${orts} орц, ${davkhar} давхар, ${toots} тоот`;
             })
             .join("; ");
 
