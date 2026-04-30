@@ -5,13 +5,14 @@ import { Button as AntButton } from "antd";
 import type { ButtonProps as AntButtonProps } from "antd";
 import { cn } from "@/lib/utils";
 
-export interface ButtonProps extends Omit<AntButtonProps, "size" | "variant"> {
+export interface ButtonProps extends Omit<AntButtonProps, "size" | "variant" | "type"> {
   variant?: "primary" | "secondary" | "back" | "text" | "ghost" | "danger" | "success" | "warning";
   size?: "sm" | "md" | "lg" | "small" | "middle" | "large";
   isLoading?: boolean;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
   fullWidth?: boolean;
+  type?: AntButtonProps["type"] | "button" | "submit" | "reset";
 }
 
 const Button = React.forwardRef<HTMLElement, ButtonProps>(
@@ -28,13 +29,22 @@ const Button = React.forwardRef<HTMLElement, ButtonProps>(
       disabled,
       fullWidth = false,
       type,
+      htmlType,
       icon,
       ...props
     },
     ref
   ) => {
+    // Determine if type is a native HTML type
+    const isHtmlType = type === "button" || type === "submit" || type === "reset";
+    
     // Determine Ant Design button type
-    const antType = type || (variant === "primary" ? "primary" : "default");
+    const antType = isHtmlType 
+      ? (variant === "primary" ? "primary" : "default")
+      : (type || (variant === "primary" ? "primary" : "default"));
+
+    // Determine native HTML type
+    const finalHtmlType = isHtmlType ? (type as any) : htmlType;
 
     // Base styles from button.md and common patterns
     const baseStyles = "inline-flex items-center justify-center gap-2 transition-all duration-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed border-none";
@@ -67,6 +77,7 @@ const Button = React.forwardRef<HTMLElement, ButtonProps>(
       <AntButton
         ref={ref as any}
         type={antType as any}
+        htmlType={finalHtmlType}
         loading={isLoading || loading}
         disabled={disabled}
         icon={combinedIcon}
