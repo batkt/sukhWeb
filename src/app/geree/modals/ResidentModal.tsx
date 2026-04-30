@@ -844,7 +844,7 @@ export default function ResidentModal({
                     <div className="md:col-span-2 grid grid-cols-2 gap-4 pt-2 border-t border-gray-100 dark:border-gray-800 mt-2">
                       <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-900/50 p-2 rounded-lg border border-slate-100 dark:border-slate-800">
                         <div className="flex flex-col">
-                          <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Ирээдүйд ашигласан тооцох</span>
+                          <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Ирээдүйд ашигласан хоног тооцох</span>
                           <span className="text-[10px] text-slate-500 dark:text-slate-500">Төлбөрийг хоногоор бодох</span>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer scale-90">
