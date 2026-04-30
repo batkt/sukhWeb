@@ -370,8 +370,9 @@ export default function Ebarimt() {
       filtered = filtered.filter((it) => {
         if (!it.date) return true; // if no date, include
         const itemDate = moment(it.date, "YYYY-MM-DD HH:mm").toDate();
-        if (start && itemDate < start) return false;
-        if (end && itemDate > end) return false;
+        if (start && itemDate < moment(start).startOf("day").toDate())
+          return false;
+        if (end && itemDate > moment(end).endOf("day").toDate()) return false;
         return true;
       });
     }
