@@ -156,7 +156,7 @@ export default function DansniiKhuulga() {
 
   const todayStr = new Date().toISOString().split("T")[0];
   const [ekhlekhOgnoo, setEkhlekhOgnoo] =
-    useState<DateRangeValue>(getDefaultDateRange);
+    useState<DateRangeValue>([null, null]);
   const [tuluvFilter, setTuluvFilter] = useState<
     "all" | "paid" | "unpaid" | "partiallyPaid" | "overdue"
   >("all");
@@ -185,14 +185,31 @@ export default function DansniiKhuulga() {
         startKey === currentMonthKey,
     );
 
+    const currentMonthRange = getDefaultDateRange();
+    const cStartMs = new Date(currentMonthRange[0] + "T00:00:00").getTime();
+    const cEndMs = new Date(currentMonthRange[1] + "T23:59:59").getTime();
+
     return {
       hasDateFilter,
       isLatestMonthView,
       start:
         hasDateFilter && !isLatestMonthView ? rawStart || undefined : undefined,
       end: hasDateFilter && !isLatestMonthView ? rawEnd || undefined : undefined,
-      startMs: rawStart ? new Date(rawStart).getTime() : 0,
-      endMs: rawEnd ? new Date(rawEnd + "T23:59:59").getTime() : 8640000000000000,
+      startMs: rawStart ? new Date(rawStart + "T00:00:00").getTime() : 0,
+      endMs: rawEnd
+        ? new Date(rawEnd + "T23:59:59").getTime()
+        : 8640000000000000,
+      paidRangeStartMs: hasDateFilter
+        ? rawStart
+          ? new Date(rawStart + "T00:00:00").getTime()
+          : 0
+        : cStartMs,
+      paidRangeEndMs: hasDateFilter
+        ? rawEnd
+          ? new Date(rawEnd + "T23:59:59").getTime()
+          : 8640000000000000
+        : cEndMs,
+      monthKey: startKey || currentMonthKey,
     };
   }, [ekhlekhOgnoo]);
 
@@ -205,7 +222,7 @@ export default function DansniiKhuulga() {
       ),
     [effectiveDateFilter],
   );
-
+  
   // ALWAYS fetch all data from API (no date params) — date filtering done client-side in allHistoryItems.
   // This avoids SWR cache key switching (full vs bounded) that caused stale/mixed data on date change.
 
@@ -316,12 +333,6 @@ export default function DansniiKhuulga() {
         minWidth: 110,
       },
       { key: "paid", label: "Гүйцэтгэл", align: "end", minWidth: 110 },
-      {
-        key: "sariinUldegdel",
-        label: "Сарын үлдэгдэл",
-        align: "end",
-        minWidth: 110,
-      },
       { key: "tuluv", label: "Төлөв", align: "start", minWidth: 110 },
       {
         key: "lastLog",
@@ -370,7 +381,6 @@ export default function DansniiKhuulga() {
     "uldegdel",
     "sariinTurees",
     "paid",
-    "sariinUldegdel",
     "tuluv",
     "lastLog",
   ] as const;
@@ -498,106 +508,9 @@ export default function DansniiKhuulga() {
   const mutateHistory = mutateUnified;
   const mutateReceivable = mutateUnified;
   const mutatePaymentRecords = mutateUnified;
+  const mutateMonthlyMatrix = mutateUnified;
 
-  // Fetch resident monthly matrix data for "сарын үлдэгдэл"
-  // Backend requires baiguullagiinId, ekhlekhOgnoo, duusakhOgnoo.
-  // If user selected a month via date picker, use that month; otherwise fallback to current month.
-  const monthlyMatrixRange = useMemo(() => {
-    const [rawStart, rawEnd] = ekhlekhOgnoo || [];
-    const now = new Date();
-    const fallbackMonthKey = `${now.getFullYear()}-${String(
-      now.getMonth() + 1,
-    ).padStart(2, "0")}`;
 
-    if (rawStart && rawEnd) {
-      const startKey = toMonthKey(rawStart);
-      const [y, m] = startKey.split("-").map(Number);
-      
-      const startDate = new Date(y, m - 1, invoiceDay, 0, 0, 0, 0);
-      const endDate = new Date(y, m, invoiceDay, 23, 59, 59, 999);
-
-      return {
-        start: startDate.toISOString(),
-        end: endDate.toISOString(),
-        monthKey: startKey,
-      };
-    }
-
-    const [yy, mm] = fallbackMonthKey.split("-").map((v) => parseInt(v, 10));
-    const monthIdx = Number.isFinite(mm) ? mm - 1 : now.getMonth();
-    const yearVal = Number.isFinite(yy) ? yy : now.getFullYear();
-
-    // Align range with invoiceDay (billing cycle)
-    const startParts = fallbackMonthKey.split("-").map(Number);
-    const [y, m] = startParts;
-    
-    const startDate = new Date(y, m - 1, invoiceDay, 0, 0, 0, 0);
-    const endDate = new Date(y, m, invoiceDay, 23, 59, 59, 999);
-
-    return {
-      start: startDate.toISOString(),
-      end: endDate.toISOString(),
-      monthKey: fallbackMonthKey,
-    };
-  }, [ekhlekhOgnoo, invoiceDay]);
-
-  const { data: monthlyMatrixData, mutate: mutateMonthlyMatrix } = useSWR(
-    token && ajiltan?.baiguullagiinId && !isInvoiceDayLoading
-      ? [
-          "/tailan/resident-monthly-matrix",
-          token,
-          ajiltan.baiguullagiinId,
-          effectiveBarilgiinId || null,
-          monthlyMatrixRange.monthKey, // key only (avoid timezone jitter)
-        ]
-      : null,
-    async ([url, tkn, orgId, branch]) => {
-      const resp = await uilchilgee(tkn).post(url, {
-        baiguullagiinId: orgId,
-        barilgiinId: branch || undefined,
-        ekhlekhOgnoo: monthlyMatrixRange.start.split("T")[0],
-        duusakhOgnoo: monthlyMatrixRange.end.split("T")[0],
-        khuudasniiDugaar: 1,
-        khuudasniiKhemjee: 10000,
-      });
-      // Unwrap result/data array from common project API structures
-      const res = resp.data;
-      return res?.data || res?.result || res || [];
-    },
-    { revalidateOnFocus: false },
-  );
-
-  const monthlyDataByGereeId = useMemo(() => {
-    const map = new Map<string, any>();
-    // Handle both direct array or nested { list: [] } response
-    const list = Array.isArray(monthlyMatrixData)
-      ? monthlyMatrixData
-      : Array.isArray((monthlyMatrixData as any)?.list)
-        ? (monthlyMatrixData as any).list
-        : [];
-
-    list.forEach((item: any) => {
-      if (item.gereeniiId) map.set(String(item.gereeniiId), item);
-      if (item.gereeniiDugaar) map.set(String(item.gereeniiDugaar), item);
-    });
-    return map;
-  }, [monthlyMatrixData]);
-
-  const monthlyPeriods = useMemo(() => {
-    const fromApi = (monthlyMatrixData as any)?.periods;
-    if (Array.isArray(fromApi) && fromApi.length > 0) return fromApi;
-
-    // Fallback: derive periods from the months keys of the first item
-    const list = Array.isArray(monthlyMatrixData)
-      ? monthlyMatrixData
-      : Array.isArray((monthlyMatrixData as any)?.list)
-        ? (monthlyMatrixData as any).list
-        : [];
-    if (list.length > 0 && list[0]?.months) {
-      return Object.keys(list[0].months).sort();
-    }
-    return [];
-  }, [monthlyMatrixData]);
 
   /** Жагсаалтын SWR түлхүүрүүдийг шууд revalidate — global mutate заримдаа бүрэн ажиллахгүй (тусгайлбал ашиглалт) */
   /** Сарын хязгаар: эхний сарын 1-ний өдрөөс сүүлийн сарын сүүлийн өдөр хүртэл (YYYY-MM-DD). */
@@ -636,7 +549,6 @@ export default function DansniiKhuulga() {
       mutateHistory?.(),
       mutateReceivable?.(),
       mutatePaymentRecords?.(),
-      mutateMonthlyMatrix?.(),
     ]);
     await mutate(
       (key: any) => {
@@ -732,28 +644,10 @@ export default function DansniiKhuulga() {
 
     if (!ekhlekhOgnoo || (!ekhlekhOgnoo[0] && !ekhlekhOgnoo[1]))
       return combined;
-    if (effectiveDateFilter.isLatestMonthView) {
-      return [...combined].sort(
-        (a, b) => itemPrimaryDateMs(a) - itemPrimaryDateMs(b),
-      );
-    }
-    const [start, end] = ekhlekhOgnoo;
-    const startObj = start ? new Date(start) : null;
-    if (startObj) startObj.setHours(0, 0, 0, 0);
-    const endObj = end ? new Date(end) : null;
-    if (endObj) endObj.setHours(23, 59, 59, 999);
 
-    const s = startObj ? startObj.getTime() : Number.NEGATIVE_INFINITY;
-    const e = endObj ? new Date(endObj).getTime() : Number.POSITIVE_INFINITY;
-
-    const filtered = combined.filter((it: any) => {
-      const d = itemPrimaryDateMs(it);
-      return d >= s && d <= e;
-    });
-
-    // CRITICAL: Sort by date ASCENDING so that forEach(it => balances[gid] = it.uldegdel)
-    // will always leave the LATEST balance in the map.
-    return filtered.sort(
+    // Return everything. Date filtering for DISPLAY is handled in filteredItems.
+    // This ensures tableDisplayBalances always has the full history to calculate correct balances.
+    return combined.sort(
       (a, b) => itemPrimaryDateMs(a) - itemPrimaryDateMs(b),
     );
   }, [
@@ -762,6 +656,8 @@ export default function DansniiKhuulga() {
     paymentRecordsData,
     ekhlekhOgnoo,
     effectiveDateFilter.isLatestMonthView,
+    effectiveDateFilter.startMs,
+    effectiveDateFilter.endMs,
   ]);
 
   const { gereeGaralt } = useGereeJagsaalt(
@@ -868,19 +764,17 @@ export default function DansniiKhuulga() {
 
   /** Гүйцэтгэл: зөвхөн `monthlyMatrixRange` сарын төлөлт (бүх түүхийн харагдац ч ижил) */
   const monthPaidByGereeId = useMemo(() => {
-    const startMs = new Date(monthlyMatrixRange.start).getTime();
-    const endMs = new Date(monthlyMatrixRange.end).getTime();
     return aggregateLedgerTulsunByGereeIdInRange(
       buildingHistoryItems,
       contractsByNumber,
-      startMs,
-      endMs,
+      effectiveDateFilter.paidRangeStartMs,
+      effectiveDateFilter.paidRangeEndMs,
     );
   }, [
     buildingHistoryItems,
     contractsByNumber,
-    monthlyMatrixRange.start,
-    monthlyMatrixRange.end,
+    effectiveDateFilter.paidRangeStartMs,
+    effectiveDateFilter.paidRangeEndMs,
   ]);
 
   // Filter by paid/unpaid + Орц + Давхар
@@ -936,10 +830,15 @@ export default function DansniiKhuulga() {
         );
 
         if (selectedOrtsFilter) {
-          if (!orts || orts !== toStr(selectedOrtsFilter)) return false;
+          const filterVal = toStr(selectedOrtsFilter).toLowerCase();
+          const targetOrts = orts.toLowerCase();
+          if (targetOrts !== filterVal && !targetOrts.includes(filterVal))
+            return false;
         }
         if (selectedDavkharFilter) {
-          if (!davkhar || davkhar !== toStr(selectedDavkharFilter))
+          const filterVal = toStr(selectedDavkharFilter).toLowerCase();
+          const targetDavkhar = davkhar.toLowerCase();
+          if (targetDavkhar !== filterVal && !targetDavkhar.includes(filterVal))
             return false;
         }
         if (selectedTootFilter) {
@@ -1114,6 +1013,15 @@ export default function DansniiKhuulga() {
         };
         if (!matchesSearch(augmented, searchTerm)) return false;
       }
+
+      // 3. Date Filter (Table display logic: show only items in range)
+      if (effectiveDateFilter.hasDateFilter) {
+        const d = itemPrimaryDateMs(it);
+        if (d < effectiveDateFilter.startMs || d > effectiveDateFilter.endMs) {
+          return false;
+        }
+      }
+
       return true;
     });
   }, [
@@ -1175,9 +1083,17 @@ export default function DansniiKhuulga() {
       const currentToot = toStr(g?.toot ?? r?.toot);
 
       // Apply static profile filters
-      if (selectedOrtsFilter && orts !== toStr(selectedOrtsFilter)) return;
-      if (selectedDavkharFilter && davkhar !== toStr(selectedDavkharFilter))
-        return;
+      if (selectedOrtsFilter) {
+        const filterVal = toStr(selectedOrtsFilter).toLowerCase();
+        const targetOrts = orts.toLowerCase();
+        if (targetOrts !== filterVal && !targetOrts.includes(filterVal)) return;
+      }
+      if (selectedDavkharFilter) {
+        const filterVal = toStr(selectedDavkharFilter).toLowerCase();
+        const targetDavkhar = davkhar.toLowerCase();
+        if (targetDavkhar !== filterVal && !targetDavkhar.includes(filterVal))
+          return;
+      }
       if (selectedTootFilter) {
         const filterVal = toStr(selectedTootFilter).toLowerCase();
         const targetToot = currentToot.toLowerCase();
@@ -1540,9 +1456,17 @@ export default function DansniiKhuulga() {
       const currentToot = toStr(g?.toot ?? r?.toot);
 
       // Apply static profile filters (SAME AS deduplicatedResidents)
-      if (selectedOrtsFilter && orts !== toStr(selectedOrtsFilter)) return;
-      if (selectedDavkharFilter && davkhar !== toStr(selectedDavkharFilter))
-        return;
+      if (selectedOrtsFilter) {
+        const filterVal = toStr(selectedOrtsFilter).toLowerCase();
+        const targetOrts = orts.toLowerCase();
+        if (targetOrts !== filterVal && !targetOrts.includes(filterVal)) return;
+      }
+      if (selectedDavkharFilter) {
+        const filterVal = toStr(selectedDavkharFilter).toLowerCase();
+        const targetDavkhar = davkhar.toLowerCase();
+        if (targetDavkhar !== filterVal && !targetDavkhar.includes(filterVal))
+          return;
+      }
       if (selectedTootFilter) {
         const filterVal = toStr(selectedTootFilter).toLowerCase();
         const targetToot = currentToot.toLowerCase();
@@ -2317,14 +2241,6 @@ export default function DansniiKhuulga() {
           ekhniiUldegdel: parseFloat(String(ekhniiAmt)).toFixed(2),
           uldegdel: parseFloat(String(currentBalance)).toFixed(2),
           guitsetgel: parseFloat(String(paidAmount)).toFixed(2),
-          sariinUldegdel: parseFloat(
-            String(
-              exportSummaries.get(gid)?.totalUldegdel ||
-                exportSummaries.get(item?.gereeniiDugaar)?.totalUldegdel ||
-                Number(item?._totalTulburMonth || 0) -
-                  Number(item?._totalTulsunMonth || 0),
-            ),
-          ).toFixed(2),
           tuluv: odooTuluv,
         };
       });
@@ -2342,7 +2258,6 @@ export default function DansniiKhuulga() {
           { key: "ekhniiUldegdel", label: "Эхний үлдэгдэл" },
           { key: "uldegdel", label: "Үлдэгдэл" },
           { key: "guitsetgel", label: "Гүйцэтгэл" },
-          { key: "sariinUldegdel", label: "Сарын үлдэгдэл" },
           { key: "tuluv", label: "Төлөв" },
         ],
         fileName: `tolborder_jagsaalt_${new Date().toISOString().split("T")[0]}`,
@@ -3411,9 +3326,7 @@ export default function DansniiKhuulga() {
               rowsPerPage={rowsPerPage}
               deduplicatedResidents={deduplicatedResidents}
               getGereeId={getGereeId}
-              monthlyDataByGereeId={monthlyDataByGereeId}
-              monthlyPeriods={monthlyPeriods}
-              matrixMonthKey={monthlyMatrixRange.monthKey}
+              matrixMonthKey={effectiveDateFilter.monthKey}
               historyScopedByDate={historyScopedByDate}
               canCreateTransaction={canCreateTransaction}
               maxHeight="calc(100vh - 550px)"

@@ -459,7 +459,7 @@ export default function PaymentModal({
       (async () => {
         try {
           const r = await fetch(
-            `http://103.236.194.106:8084/api/payment/qpay?id=${transaction._id}&amount=${qe.dun}`,
+            `https://amarhome.mn/api/payment/qpay?id=${transaction._id}&amount=${qe.dun}`,
           );
           const d = await r.json();
           if (d.qr_image || d.qrData) setQpayData(d);

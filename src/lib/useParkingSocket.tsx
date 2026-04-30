@@ -140,7 +140,7 @@ export function useParkingSocket({
 
     // Socket.IO server URL - use the parking server
     // User requested to connect to IP directly
-    const socketUrl = "http://103.236.194.106:8084";
+    const socketUrl = "https://amarhome.mn/api";
 
     // Create socket instance
     const socketInstance = io(socketUrl, {

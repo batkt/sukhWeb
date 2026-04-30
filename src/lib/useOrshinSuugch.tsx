@@ -191,7 +191,7 @@ export function useOrshinSuugchJagsaalt(
 ) {
   const [khuudaslalt, setOrshinSuugchKhuudaslalt] = useState<Khuudaslalt>({
     khuudasniiDugaar: 1,
-    khuudasniiKhemjee: 100,
+    khuudasniiKhemjee: 5000,
     search: "",
   });
 
