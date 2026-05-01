@@ -186,8 +186,7 @@ export default function DansniiKhuulga() {
     );
 
     const currentMonthRange = getDefaultDateRange();
-    const cStartMs = new Date(currentMonthRange[0] + "T00:00:00").getTime();
-    const cEndMs = new Date(currentMonthRange[1] + "T23:59:59").getTime();
+
 
     return {
       hasDateFilter,
@@ -203,12 +202,12 @@ export default function DansniiKhuulga() {
         ? rawStart
           ? new Date(rawStart + "T00:00:00").getTime()
           : 0
-        : cStartMs,
+        : 0,
       paidRangeEndMs: hasDateFilter
         ? rawEnd
           ? new Date(rawEnd + "T23:59:59").getTime()
           : 8640000000000000
-        : cEndMs,
+        : 8640000000000000,
       monthKey: startKey || currentMonthKey,
     };
   }, [ekhlekhOgnoo]);
@@ -1795,30 +1794,15 @@ export default function DansniiKhuulga() {
   const getGereeId = (it: any) => getGereeIdPure(it, contractsByNumber);
   const billingCycleRange = useMemo(() => {
     const start = ekhlekhOgnoo?.[0];
-    if (!start) return undefined;
+    const end = ekhlekhOgnoo?.[1];
+    if (!start || !end) return undefined;
     
-    // Timezone-safe parsing of YYYY-MM-DD
-    const parts = String(start).split("-").map(Number);
-    if (parts.length !== 3) return [start, ekhlekhOgnoo?.[1]];
-    const [y, m, d] = parts;
-    const startDate = new Date(y, m - 1, d);
+    // Return the selected natural month range (e.g., 2026-02-01 to 2026-02-28)
+    // without any custom billing cycle (invoiceDay) offsets.
+    return [start, end];
+  }, [ekhlekhOgnoo]);
 
-    // If user picked a standard month start (1st), adjust to the organization's billing day
-    if (startDate.getDate() === 1 && invoiceDay > 1) {
-      startDate.setDate(invoiceDay);
-    }
-    
-    const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, startDate.getDate());
 
-    const format = (dt: Date) => {
-      const fy = dt.getFullYear();
-      const fm = String(dt.getMonth() + 1).padStart(2, "0");
-      const fd = String(dt.getDate()).padStart(2, "0");
-      return `${fy}-${fm}-${fd}`;
-    };
-
-    return [format(startDate), format(endDate)];
-  }, [ekhlekhOgnoo, invoiceDay]);
 
   // Fetch accurate server-computed balances via /uldegdelBodyo for all contracts.
   // This replaces the old per-resident /guilgeeAvlaguud fetch which tried to read
