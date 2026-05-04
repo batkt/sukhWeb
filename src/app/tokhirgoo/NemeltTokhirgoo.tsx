@@ -103,12 +103,14 @@ export default function NemeltTokhirgoo() {
     }
   };
 
-  const saveInvoiceSchedule = async () => {
+  const saveInvoiceSchedule = async (overrideActive?: boolean) => {
+    const isOverrideBool = typeof overrideActive === 'boolean';
+    const isActive = isOverrideBool ? overrideActive : invoiceActive;
     if (!token || !ajiltan?.baiguullagiinId) {
       openErrorOverlay("Нэвтрэх шаардлагатай");
       return;
     }
-    if (!invoiceDay || invoiceDay < 1 || invoiceDay > 31) {
+    if (isActive && (!invoiceDay || invoiceDay < 1 || invoiceDay > 31)) {
       openErrorOverlay("Огноог 1-31 хооронд сонгоно уу");
       return;
     }
@@ -127,7 +129,7 @@ export default function NemeltTokhirgoo() {
           baiguullagiinId: ajiltan?.baiguullagiinId,
           barilgiinId: effectiveBarilgiinId,
           nekhemjlekhUusgekhOgnoo: invoiceDay,
-          idevkhitei: invoiceActive,
+          idevkhitei: isActive,
         }),
       });
 
@@ -354,7 +356,7 @@ export default function NemeltTokhirgoo() {
     await baiguullagaMutate();
   };
 
-  const saveGuestSettings = async () => {
+  const saveGuestSettings = async (overrideEnabled?: boolean) => {
     if (!token || !ajiltan?.baiguullagiinId) {
       openErrorOverlay("Нэвтрэх шаардлагатай");
       return;
@@ -376,9 +378,12 @@ export default function NemeltTokhirgoo() {
         throw new Error("Байгууллагын мэдээлэл олдсонгүй");
       }
 
+      const isOverrideBool = typeof overrideEnabled === 'boolean';
+      const isEnabled = isOverrideBool ? overrideEnabled : !!guestConfigEnabled;
+
       // 2. Prepare schema-compliant configuration
       const zochinTokhirgoo = {
-        zochinUrikhEsekh: !!guestConfigEnabled,
+        zochinUrikhEsekh: isEnabled,
         zochinTurul: "Оршин суугч",
         zochinErkhiinToo: Number(guestLimit) || 0,
         zochinTusBurUneguiMinut: Number(guestFreeMinutes) || 0,
@@ -444,7 +449,7 @@ export default function NemeltTokhirgoo() {
     }
   };
 
-  const saveCalculationSettings = async () => {
+  const saveCalculationSettings = async (overrideEnabled?: boolean) => {
     if (!token || !ajiltan?.baiguullagiinId) {
       openErrorOverlay("Нэвтрэх шаардлагатай");
       return;
@@ -458,8 +463,11 @@ export default function NemeltTokhirgoo() {
       const freshOrg = resp.data;
       let payload: any = JSON.parse(JSON.stringify(freshOrg));
 
+      const isOverrideBool = typeof overrideEnabled === 'boolean';
+      const isEnabled = isOverrideBool ? overrideEnabled : calculationEnabled;
+
       const calculationData = {
-        bodokhArgaEnabled: calculationEnabled,
+        bodokhArgaEnabled: isEnabled,
         bodokhArga: calculationMethod,
         bodokhKhonog: Number(fixedDayCount) || 30,
       };
@@ -612,9 +620,11 @@ export default function NemeltTokhirgoo() {
                     <input
                       type="checkbox"
                       checked={invoiceActive}
-                      onChange={(e) =>
-                        setInvoiceActive(e.currentTarget.checked)
-                      }
+                      onChange={(e) => {
+                        const val = e.currentTarget.checked;
+                        setInvoiceActive(val);
+                        if (!val) saveInvoiceSchedule(false);
+                      }}
                       className="sr-only peer"
                       aria-label="Нэхэмжлэх идэвхжүүлэх"
                     />
@@ -784,9 +794,11 @@ export default function NemeltTokhirgoo() {
                   <input
                     type="checkbox"
                     checked={guestConfigEnabled}
-                    onChange={(e) =>
-                      setGuestConfigEnabled(e.currentTarget.checked)
-                    }
+                    onChange={(e) => {
+                      const val = e.currentTarget.checked;
+                      setGuestConfigEnabled(val);
+                      if (!val) saveGuestSettings(false);
+                    }}
                     className="sr-only peer"
                   />
                   <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 dark:peer-checked:bg-blue-600 peer-checked:bg-blue-600"></div>
@@ -932,7 +944,11 @@ export default function NemeltTokhirgoo() {
                     <input
                       type="checkbox"
                       checked={calculationEnabled}
-                      onChange={(e) => setCalculationEnabled(e.currentTarget.checked)}
+                      onChange={(e) => {
+                        const val = e.currentTarget.checked;
+                        setCalculationEnabled(val);
+                        if (!val) saveCalculationSettings(false);
+                      }}
                       className="sr-only peer"
                     />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 dark:peer-focus:ring-green-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 dark:peer-checked:bg-green-600 peer-checked:bg-green-600"></div>

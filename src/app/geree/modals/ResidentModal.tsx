@@ -836,10 +836,13 @@ export default function ResidentModal({
                             {/* Pro-rating Row inside Unit */}
                             <div className="md:col-span-12 flex items-center gap-4 mt-1 pt-2 border-t border-slate-100 dark:border-slate-800">
                               <div className="flex items-center gap-2">
-                                <label className="relative inline-flex items-center cursor-pointer scale-75">
+                                <label className={`relative inline-flex items-center ${!!selectedBarilga?.tokhirgoo?.bodokhArgaEnabled ? "cursor-pointer" : "cursor-not-allowed opacity-50"} scale-75`}
+                                  title={!selectedBarilga?.tokhirgoo?.bodokhArgaEnabled ? "Барилгын тохиргоонд хоногоор бодох тохиргоо идэвхжээгүй байна" : ""}
+                                >
                                   <input
                                     type="checkbox"
                                     checked={unit.khonogoorBodokhEsekh || false}
+                                    disabled={!selectedBarilga?.tokhirgoo?.bodokhArgaEnabled}
                                     onChange={(e) => updateUnitRow(index, "khonogoorBodokhEsekh", e.target.checked)}
                                     className="sr-only peer"
                                   />
