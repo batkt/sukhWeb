@@ -1438,7 +1438,40 @@ export default function GolContent({ children }: GolContentProps) {
           </div>
         </ModalPortal>
       )}
+      {/* Help / Тусламж Modal */}
+      {tuslamjModalOpen && (
+        <ModalPortal>
+          <div className="fixed inset-0 z-[1300] flex items-center justify-center p-4 animate-fadeIn">
+            <div
+              className="absolute inset-0 backdrop-blur-sm bg-black/50 dark:bg-black/80 transition-all duration-300"
+              onClick={() => setTuslamjModalOpen(false)}
+            />
+            <div className="relative bg-[color:var(--surface-bg)] rounded-3xl w-full max-w-4xl max-h-[88vh] flex flex-col overflow-hidden border border-[color:var(--surface-border)] shadow-[0_20px_60px_rgba(0,0,0,0.25)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.8)]">
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-[color:var(--surface-border)] bg-gradient-to-r from-[color:var(--surface-bg)] via-[color:var(--surface-hover)] to-[color:var(--surface-bg)] shrink-0">
+                <h3 className="text-xl font-semibold text-theme flex items-center gap-2">
+                  <HelpCircle className="w-5 h-5 text-[color:var(--theme)]" />
+                  Тусламж
+                </h3>
+                <button
+                  onClick={() => setTuslamjModalOpen(false)}
+                  className="p-2 hover:bg-[color:var(--surface-hover)] dark:hover:bg-[color:var(--panel)] rounded-xl transition-all duration-200 hover:rotate-90 group"
+                >
+                  <X className="w-6 h-6 text-theme group-hover:scale-110 transition-transform" />
+                </button>
+              </div>
+              {/* Body */}
+              <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
+                <Suspense fallback={<div className="p-8 text-center text-theme">Уншиж байна...</div>}>
+                  <TuslamjTokhirgoo compact />
+                </Suspense>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
       <div id="modal-root"></div>
+
     </>
   );
 }

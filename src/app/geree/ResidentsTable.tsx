@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import { Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { Edit, Trash2, ChevronUp, ChevronDown } from "lucide-react";
+import { Edit, Trash2, ChevronUp, ChevronDown, X } from "lucide-react";
 import { getPaymentStatusLabel } from "@/lib/utils";
 import {
   getResidentToot,
@@ -37,6 +37,7 @@ interface ResidentsTableProps {
   tuluvByResidentId?: Record<string, string>;
   onEdit?: (resident: ResidentItem) => void;
   onDelete?: (resident: ResidentItem) => void;
+  onRemoveToot?: (residentId: string, baiguullagiinId: string, barilgiinId: string, toot: string) => void;
   onSort?: (key: SortKey, order?: "ascend" | "descend" | null) => void;
   /** Viewport-based scroll height (same idea as /tulbur) */
   maxHeight?: string | number;
@@ -52,6 +53,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
   tuluvByResidentId = {},
   onEdit,
   onDelete,
+  onRemoveToot,
   onSort,
   maxHeight = "calc(100vh - 460px)",
 }) => {
@@ -146,11 +148,57 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
             : null,
         align: "center",
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
-        render: (_: any, record: ResidentItem) => (
-          <span className="text-gray-900 dark:text-white whitespace-nowrap font-medium">
-            {getResidentToots(record) || "-"}
-          </span>
-        ),
+        render: (_: any, record: ResidentItem) => {
+          const toots =
+            Array.isArray(record.toots) && record.toots.length > 0
+              ? record.toots
+              : [
+                  {
+                    toot: record.toot,
+                    baiguullagiinId: record.baiguullagiinId,
+                    barilgiinId: record.barilgiinId,
+                  },
+                ];
+
+          if (toots.length <= 1) {
+            return (
+              <span className="text-gray-900 dark:text-white whitespace-nowrap font-medium">
+                {getResidentToots(record) || "-"}
+              </span>
+            );
+          }
+
+          return (
+            <div className="flex flex-wrap gap-1 justify-center max-w-[200px]">
+              {toots.map((t: any, idx: number) => (
+                <span
+                  key={idx}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-xs font-medium text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700"
+                >
+                  {t.toot}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.confirm(`${t.toot} тоотыг хасах уу?`)) {
+                        onRemoveToot?.(
+                          String(record._id),
+                          t.baiguullagiinId,
+                          t.barilgiinId,
+                          t.toot,
+                        );
+                      }
+                    }}
+                    className="p-0.5 hover:text-red-500 transition-colors rounded-full hover:bg-red-50 dark:hover:bg-red-900/20"
+                    title="Хасах"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          );
+        },
       },
       {
         title: (
@@ -235,6 +283,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
       tuluvByResidentId,
       onEdit,
       onDelete,
+      onRemoveToot,
       onSort,
     ],
   );

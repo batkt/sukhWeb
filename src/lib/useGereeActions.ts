@@ -1335,17 +1335,98 @@ export function useGereeActions(
     [token],
   );
 
+  const handleRemoveResidentToot = useCallback(
+    async (
+      residentId: string,
+      baiguullagiinId: string,
+      barilgiinId: string,
+      toot: string,
+    ) => {
+      if (!token) {
+        openErrorOverlay("Нэвтрэх шаардлагатай");
+        return;
+      }
+      onLoadingChange?.(true);
+      try {
+        await uilchilgee(token).post("/orshinSuugch/remove-toot", {
+          residentId,
+          baiguullagiinId,
+          barilgiinId,
+          toot,
+        });
+        openSuccessOverlay("Тоот амжилттай хасагдлаа");
+        // Refresh resident lists across the app
+        mutate(
+          (key: any) =>
+            Array.isArray(key) &&
+            (key[0] === "/orshinSuugch" || key[0] === "/geree"),
+          undefined,
+          { revalidate: true },
+        );
+        return true;
+      } catch (err) {
+        openErrorOverlay(getErrorMessage(err));
+        return false;
+      } finally {
+        onLoadingChange?.(false);
+      }
+    },
+    [token, onLoadingChange, mutate],
+  );
+
   return {
     handleCreateResident,
     handleDeleteResident,
     handleEditResident,
+    handleRemoveResidentToot,
     handleCreateOrUpdateEmployee,
     handleDeleteEmployee,
     handleEditEmployee,
     handleEdit: (_contract: any) => {},
     handleUpdateContract: async (_e: React.FormEvent) => {},
     handleCreateContract: async (_e: React.FormEvent) => {},
-    handlePreviewContractTemplate: (_id: string) => {},
+    handlePreviewContractTemplate: async (contract: any) => {
+      if (!token || !ajiltan?.baiguullagiinId) {
+        openErrorOverlay("Нэвтрэх шаардлагатай");
+        return;
+      }
+      if (onLoadingChange) onLoadingChange(true);
+      try {
+        // Find the first available template for this organization
+        const templatesResp = await uilchilgee(token).get("/gereeniiZagvar", {
+          params: { baiguullagiinId: ajiltan.baiguullagiinId }
+        });
+        
+        const templates = Array.isArray(templatesResp.data?.jagsaalt) 
+          ? templatesResp.data.jagsaalt 
+          : (Array.isArray(templatesResp.data) ? templatesResp.data : []);
+        
+        if (templates.length === 0) {
+          openErrorOverlay("Гэрээний загвар олдсонгүй. Эхлээд загвар үүсгэнэ үү.");
+          return;
+        }
+        
+        // Use the first template by default
+        const selectedTemplate = templates[0];
+        
+        // Fetch the filled template
+        const resp = await uilchilgee(token).post("/gereeniiZagvarSoliyo", {
+          gereeniiZagvariinId: selectedTemplate._id,
+          gereeniiId: contract._id || contract.id,
+        });
+        
+        if (resp.data?.success && resp.data?.result) {
+          if (setPreviewTemplate) setPreviewTemplate(resp.data.result);
+          if (setShowPreviewModal) setShowPreviewModal(true);
+        } else {
+          openErrorOverlay("Загвар боловсруулахад алдаа гарлаа: " + (resp.data?.message || "Тодорхойгүй алдаа"));
+        }
+      } catch (err) {
+        openErrorOverlay(getErrorMessage(err));
+      } finally {
+        if (onLoadingChange) onLoadingChange(false);
+      }
+    },
     handleOpenPaymentModal: (_resident: any) => {},
     handleMarkAsPaid: async () => {},
     handleShowResidentModal,

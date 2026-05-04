@@ -69,7 +69,7 @@ export function useTulburFooterTotals(
           ...(start ? { ekhlekhOgnoo: start } : {}),
           ...(end ? { duusakhOgnoo: end } : {}),
           khuudasniiDugaar: 1,
-          khuudasniiKhemjee: 1000, // Reduced from 10000 for better performance
+          khuudasniiKhemjee: 5000, // Increased for better data coverage
         },
       });
       return resp.data;
@@ -109,8 +109,7 @@ export function useTulburFooterTotals(
     const allGerees = (gereeGaralt?.jagsaalt || []) as any[];
     allGerees.forEach((g: any) => {
       const gereeId = String(g?._id || g?.gereeniiId || g?.gereeId || "").trim();
-      const gereeDugaar = String(g?.gereeniiDugaar || "").trim();
-      const key = gereeId || gereeDugaar;
+      const key = gereeId;
       if (key && !map.has(key)) {
         map.set(key, { ...g, _gereeniiId: gereeId });
       }
@@ -119,13 +118,12 @@ export function useTulburFooterTotals(
     buildingHistoryItems.forEach((it: any) => {
       const residentId = String(it?.orshinSuugchId || "").trim();
       const gereeId = String(it?.gereeniiId || it?.gereeId || "").trim();
-      const gereeDugaar = String(it?.gereeniiDugaar || "").trim();
-      const resGid = gereeId || (gereeDugaar && (contractsByNumber as any)[gereeDugaar]?._id ? String((contractsByNumber as any)[gereeDugaar]._id) : "");
+      const resGid = gereeId;
       
       const ner = String(it?.ner || "").trim().toLowerCase();
       const utas = Array.isArray(it?.utas) ? String(it.utas[0] || "").trim() : String(it?.utas || "").trim();
-      const toot = String(it?.toot || it?.medeelel?.toot || "").trim();
-      const key = resGid || residentId || gereeDugaar || `${ner}|${utas}|${toot}`;
+      const tootVal = String(it?.toot || it?.medeelel?.toot || (Array.isArray(it?.toots) ? it.toots[0]?.toot : "") || "").trim();
+      const key = resGid || residentId || `${ner}|${utas}|${tootVal}`;
 
       if (!key || key === "||") return;
       if (!map.has(key)) {
@@ -161,15 +159,26 @@ export function useTulburFooterTotals(
 
   const bestKnownBalances = useMemo(() => {
     const balances: Record<string, number> = {};
+    // 1. Initial fallback from contracts
     Object.values(contractsById).forEach((c: any) => {
       const id = String(c?._id || "").trim();
-      if (id && c?.uldegdel != null) balances[id] = Number(c.uldegdel);
+      if (id) balances[id] = Number(c.uldegdel || 0);
     });
-    [...allHistoryItems].sort((a,b) => new Date(b.ognoo || 0).getTime() - new Date(a.ognoo || 0).getTime()).forEach((it) => {
-      const gid = String(it?.gereeniiId || it?.gereeId || "").trim();
-      if (gid && balances[gid] === undefined && it?.uldegdel != null) balances[gid] = Number(it.uldegdel);
-    });
-    Object.entries(uldegdelByGereeId).forEach(([id, val]) => { if (val != null) balances[id] = val; });
+
+    // 2. Overwrite with the balance from the LATEST ledger record (most accurate)
+    // We sort allHistoryItems by date ascending and let later items overwrite earlier ones
+    [...allHistoryItems]
+      .sort((a, b) => {
+        const dateA = new Date(String(a.ognoo || a.createdAt || 0).replace(/\./g, "-")).getTime();
+        const dateB = new Date(String(b.ognoo || b.createdAt || 0).replace(/\./g, "-")).getTime();
+        return (isNaN(dateA) ? 0 : dateA) - (isNaN(dateB) ? 0 : dateB);
+      })
+      .forEach((it) => {
+        const gid = String(it?.gereeniiId || it?.gereeId || "").trim();
+        if (gid && it?.uldegdel != null) {
+          balances[gid] = Number(it.uldegdel);
+        }
+      });
     return balances;
   }, [allHistoryItems, contractsById, uldegdelByGereeId]);
 
@@ -191,7 +200,7 @@ export function useTulburFooterTotals(
     buildingHistoryItems.forEach((it: any) => {
       const ms = itemPrimaryDateMs(it);
       if (ms < startMs || ms > endMs) return;
-      const gid = String(it?.gereeniiId ?? it?.gereeId ?? "").trim() || (it?.gereeniiDugaar && String((contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || "")) || "";
+      const gid = String(it?.gereeniiId ?? it?.gereeId ?? "").trim();
       if (!gid) return;
       const amount = Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? it?.tulukhDun ?? it?.undsenDun ?? it?.dun ?? 0);
       const fromTulsun = Number(it?.tulsunDun ?? 0);
@@ -204,10 +213,11 @@ export function useTulburFooterTotals(
                        ner.includes("opening") ||
                        tailbar.includes("эхний") ||
                        tailbar.includes("opening");
-      const isPayment = type === "tulult" || type === "төлбөр" || type === "төлөлт" || (amount < 0 && !isStandaloneEkh);
+      const isPayment = amount < 0 && !isStandaloneEkh;
+      const isCharge = amount > 0 && !isStandaloneEkh && !isOpening;
 
-      if (!isPayment && !isOpening) {
-        aggregateBilledMap[gid] = (aggregateBilledMap[gid] || 0) + Math.abs(amount);
+      if (isCharge) {
+        aggregateBilledMap[gid] = (aggregateBilledMap[gid] || 0) + amount;
       }
     });
 
@@ -219,6 +229,16 @@ export function useTulburFooterTotals(
     deduplicatedResidents.forEach((it: any) => {
       const gid = (it?.gereeniiId && String(it.gereeniiId)) || (it?._gereeniiId && String(it._gereeniiId)) || "";
       if (!gid) return;
+
+      const status = String(it?.tuluv || it?.status || "").trim();
+      const isCancelled =
+        status === "Цуцалсан" ||
+        status.toLowerCase() === "цуцалсан" ||
+        status === "tsutlsasan" ||
+        status.toLowerCase() === "tsutlsasan";
+
+      if (isCancelled) return;
+
       const paid = ledgerPaidByGid[gid] ?? aggregatePaidMap[gid] ?? 0;
       const billed = ledgerBilledByGid[gid] ?? aggregateBilledMap[gid] ?? 0;
       const balance = bestKnownBalances[gid] ?? Number(it?.uldegdel ?? 0);
@@ -234,10 +254,30 @@ export function useTulburFooterTotals(
     finalBilledByGid.forEach(v => totalBilled += v);
     finalBalanceByGid.forEach(v => totalUldegdel += v);
     
+    const aggregateInitialMap: Record<string, number> = {};
+    buildingHistoryItems.forEach((it: any) => {
+      const gid = String(it?.gereeniiId ?? it?.gereeId ?? "").trim();
+      if (!gid) return;
+      const amount = Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? it?.tulukhDun ?? it?.undsenDun ?? it?.dun ?? 0);
+      const isStandaloneEkh = it?.ekhniiUldegdelEsekh === true;
+      const ner = String(it?.ner || "").toLowerCase();
+      const tailbar = String(it?.tailbar || it?.medeelel?.tailbar || "").toLowerCase();
+      const isOpening = isStandaloneEkh || 
+                       ner.includes("эхний") || 
+                       ner.includes("opening") ||
+                       tailbar.includes("эхний") ||
+                       tailbar.includes("opening");
+      
+      if (isOpening) {
+        aggregateInitialMap[gid] = (aggregateInitialMap[gid] || 0) + amount;
+      }
+    });
+
     // Sum ekhnii uldegdel
     deduplicatedResidents.forEach(it => {
       const gid = (it?.gereeniiId && String(it.gereeniiId)) || (it?._gereeniiId && String(it._gereeniiId)) || "";
-      const ekh = ekhniiUldegdelByGereeId[gid] ?? (finalBalanceByGid.get(gid) || 0) - (finalBilledByGid.get(gid) || 0) + (finalPaidByGid.get(gid) || 0);
+      // Prioritize explicit ledger-based initial balance if available
+      const ekh = ekhniiUldegdelByGereeId[gid] ?? (aggregateInitialMap[gid] || Math.max(0, (finalBalanceByGid.get(gid) || 0) - (finalBilledByGid.get(gid) || 0) + (finalPaidByGid.get(gid) || 0)));
       totalEkhniiUldegdel += ekh;
     });
 

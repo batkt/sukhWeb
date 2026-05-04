@@ -77,7 +77,22 @@ export default function Khynalt() {
   const [mounted, setMounted] = useState(false);
   const [dateRange, setDateRange] = useState<
     [string | null, string | null] | undefined
-  >(getDefaultDateRange);
+  >(() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth();
+    const start = new Date(y, m - 1, 1);
+    const end = new Date(y, m + 1, 0);
+
+    const f = (d: Date) => {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+
+    return [f(start), f(end)];
+  });
 
   const footerTotals = useTulburFooterTotals(
     token,
@@ -152,7 +167,22 @@ export default function Khynalt() {
     Number(orshinSuugchGaralt?.niitMur) || residents.length;
 
   const { start: rangeStart, end: rangeEnd } = useMemo(() => {
-    const range = dateRange || getDefaultDateRange();
+    let range = dateRange;
+    if (!range) {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = now.getMonth();
+      const start = new Date(y, m - 1, 1);
+      const end = new Date(y, m + 1, 0);
+
+      const f = (d: Date) => {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      };
+      range = [f(start), f(end)];
+    }
     return {
       start: range[0] || "",
       end: range[1] || "",
@@ -224,6 +254,7 @@ export default function Khynalt() {
     { revalidateOnFocus: false },
   );
 
+  // Date-filtered payments (dun < 0) for Сарын гүйцэтгэл
   const { data: paymentData } = useSWR(
     token && ajiltan?.baiguullagiinId && rangeStart && rangeEnd
       ? [
@@ -241,7 +272,7 @@ export default function Khynalt() {
           baiguullagiinId: bId,
           ...(barId ? { barilgiinId: barId } : {}),
           khuudasniiDugaar: 1,
-          khuudasniiKhemjee: 1000,
+          khuudasniiKhemjee: 5000,
           ekhlekhOgnoo: start,
           duusakhOgnoo: end,
         },
@@ -250,6 +281,48 @@ export default function Khynalt() {
     },
     { revalidateOnFocus: false },
   );
+
+  // All-time payments (dun < 0) for Орлого/Гүйцэтгэл card — no date filter
+  const { data: allTimePaymentData } = useSWR(
+    token && ajiltan?.baiguullagiinId && effectiveBarilgiinId
+      ? ["/guilgeeAvlaguud/all-time", token, ajiltan.baiguullagiinId, effectiveBarilgiinId]
+      : null,
+    async ([, tkn, bId, barId]): Promise<any> => {
+      const resp = await uilchilgee(tkn).get("/guilgeeAvlaguud", {
+        params: {
+          baiguullagiinId: bId,
+          ...(barId ? { barilgiinId: barId } : {}),
+          khuudasniiDugaar: 1,
+          khuudasniiKhemjee: 5000,
+        },
+      });
+      return resp.data;
+    },
+    { revalidateOnFocus: false },
+  );
+
+  // Single clean endpoint: MongoDB aggregate on GuilgeeAvlaguud (tulsunDun > 0)
+  // Returns allTime.sum (Орлого card) and monthly.sum (Сарын гүйцэтгэл card)
+  const { data: tulburDugnelt } = useSWR(
+    token && ajiltan?.baiguullagiinId && effectiveBarilgiinId && rangeStart && rangeEnd
+      ? ["/tailan/tulbur-dugnelt", token, ajiltan.baiguullagiinId, effectiveBarilgiinId, rangeStart, rangeEnd]
+      : null,
+    async ([, tkn, bId, barId, start, end]): Promise<any> => {
+      const resp = await uilchilgee(tkn).post("/tailan/tulbur-dugnelt", {
+        baiguullagiinId: bId,
+        barilgiinId: barId,
+        ekhlekhOgnoo: start,
+        duusakhOgnoo: end,
+      });
+      return resp.data;
+    },
+    { revalidateOnFocus: false },
+  );
+
+  const allTimePaidFromLedger = Number(tulburDugnelt?.allTime?.paidSum ?? 0);
+  const monthlyPaidFromLedger = Number(tulburDugnelt?.monthly?.paidSum ?? 0);
+  const monthlyBilledFromLedger = Number(tulburDugnelt?.monthly?.billedSum ?? 0);
+
 
   const { data: overdueData } = useSWR(
     token && ajiltan?.baiguullagiinId
@@ -295,6 +368,7 @@ export default function Khynalt() {
 
   const buildingPaymentSummary = null; // Removed non-existent /tulsunSummary
 
+  // Date-filtered: used for Сарын гүйцэтгэл (monthly performance)
   const { data: orlogoAvlagaData } = useSWR(
     token &&
       ajiltan?.baiguullagiinId &&
@@ -316,6 +390,22 @@ export default function Khynalt() {
         barilgiinId: barId,
         ekhlekhOgnoo: start,
         duusakhOgnoo: end,
+      });
+      return resp.data;
+    },
+    { revalidateOnFocus: false },
+  );
+
+  // All-time (no date filter): used for Орлого/Гүйцэтгэл card
+  const { data: orlogoAvlagaAllTime } = useSWR(
+    token && ajiltan?.baiguullagiinId && effectiveBarilgiinId
+      ? ["/tailan/orlogo-avlaga/all", token, ajiltan.baiguullagiinId, effectiveBarilgiinId]
+      : null,
+    async ([, tkn, bId, barId]): Promise<any> => {
+      const resp = await uilchilgee(tkn).post("/tailan/orlogo-avlaga", {
+        baiguullagiinId: bId,
+        barilgiinId: barId,
+        // No ekhlekhOgnoo / duusakhOgnoo → returns all time
       });
       return resp.data;
     },
@@ -364,24 +454,14 @@ export default function Khynalt() {
     residentsPaidCountFromTailan,
     residentsUnpaidCountFromTailan,
   } = useMemo(() => {
-    const rawPaid = Array.isArray(orlogoAvlagaData?.paid?.list)
-      ? orlogoAvlagaData.paid.list
-      : [];
-    const paid = rawPaid.filter(
-      (item: any) => (Number(item?.tulsunDun ?? item?.tulsun ?? 0) || 0) > 0,
-    );
-    const total = paid.reduce(
-      (sum: number, item: any) =>
-        sum + (Number(item?.tulsunDun ?? item?.tulsun ?? 0) || 0),
-      0,
-    );
-    const rawUnpaid = Array.isArray(orlogoAvlagaData?.unpaid?.list)
-      ? orlogoAvlagaData.unpaid.list
-      : [];
+    // Use the backend-aggregated sum directly — it already filtered by date and building
+    const total = Number(orlogoAvlagaData?.paid?.sum ?? 0);
+    const paidCount = Number(orlogoAvlagaData?.paid?.count ?? 0);
+    const unpaidCount = Number(orlogoAvlagaData?.unpaid?.count ?? 0);
     return {
       totalOrlogoFromTailan: total,
-      residentsPaidCountFromTailan: paid.length,
-      residentsUnpaidCountFromTailan: rawUnpaid.length,
+      residentsPaidCountFromTailan: paidCount,
+      residentsUnpaidCountFromTailan: unpaidCount,
     };
   }, [orlogoAvlagaData]);
 
@@ -468,165 +548,46 @@ export default function Khynalt() {
         ? paymentData
         : [];
 
-    const residentById = new Map<string, any>();
-    residents.forEach((r: any) => residentById.set(String(r._id || ""), r));
-
-    const norm = (v: any) =>
-      String(v ?? "")
-        .trim()
-        .toLowerCase();
-    const resIndex = new Map<string, string>();
-    const makeResKeysLocal = (r: any): string[] => {
-      const id = String(r?._id || "");
-      const reg = norm(r?.register);
-      const phone = norm(r?.utas);
-      const ovog = norm(r?.ovog);
-      const ner = norm(r?.ner);
-      const toot = String(r?.toot ?? r?.medeelel?.toot ?? "").trim();
-      const keys: string[] = [];
-      if (id) keys.push(`id|${id}`);
-      if (reg) keys.push(`reg|${reg}`);
-      if (phone) keys.push(`phone|${phone}`);
-      if (ovog || ner || toot) keys.push(`name|${ovog}|${ner}|${toot}`);
-      return keys;
-    };
-    residents.forEach((r: any) => {
-      const id = String(r?._id || "");
-      if (!id) return;
-      makeResKeysLocal(r).forEach((k) => resIndex.set(k, id));
-    });
-
-    let paid = 0;
-    let unpaid = 0;
     const byBld: Record<string, number> = {};
     const seriesMap = new Map<string, { paid: number; unpaid: number }>();
 
-    const residentInvoiceStats = new Map<
-      string,
-      { totalTulbur: number; totalTulsun: number }
-    >();
-    residents.forEach((r: any) => {
-      residentInvoiceStats.set(String(r._id || ""), {
-        totalTulbur: 0,
-        totalTulsun: 0,
-      });
-    });
-
-    list.forEach((it) => {
-      const amount =
-        Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0;
-      const backendUldegdel = it.uldegdel != null ? Number(it.uldegdel) : null;
-      const uldegdelInvoice =
-        backendUldegdel !== null
-          ? backendUldegdel > 0
-            ? backendUldegdel
-            : isPaidLike(it)
-              ? 0
-              : amount
-          : isPaidLike(it)
-            ? 0
-            : amount;
-      const tulsunInvoice = amount - uldegdelInvoice;
-
-      const invoiceKeys: string[] = [];
-      const osIdRaw = String(it?.orshinSuugchId || "");
-      if (osIdRaw) invoiceKeys.push(`id|${osIdRaw}`);
-      const reg = norm(it?.register);
-      if (reg) invoiceKeys.push(`reg|${reg}`);
-      const utasVal = Array.isArray(it?.utas) ? it.utas[0] : it?.utas;
-      const phone = norm(utasVal);
-      if (phone) invoiceKeys.push(`phone|${phone}`);
-      const ovog = norm(it?.ovog);
-      const ner = norm(it?.ner);
-      const toot = String(it?.medeelel?.toot ?? it?.toot ?? "").trim();
-      if (ovog || ner || toot) invoiceKeys.push(`name|${ovog}|${ner}|${toot}`);
-
-      let osId = "";
-      for (const k of invoiceKeys) {
-        const found = resIndex.get(k);
-        if (found) {
-          osId = found;
-          break;
-        }
-      }
-
-      if (osId && residentInvoiceStats.has(osId)) {
-        const stats = residentInvoiceStats.get(osId)!;
-        stats.totalTulbur += amount;
-        stats.totalTulsun += tulsunInvoice;
-      }
-
-      paid += tulsunInvoice;
-      unpaid += Math.max(0, uldegdelInvoice);
-
-      const barilga =
-        osId && residentById.has(osId)
-          ? residentById.get(osId)?.barilgiinId ||
-            residentById.get(osId)?.barilga
-          : it?.barilgiinId || "Тодорхойгүй";
-      byBld[barilga] = (byBld[barilga] || 0) + amount;
-
-      // For the time series, map INVOICE creation date ONLY for unpaid/billed amounts
-      const created = String(it?.createdAt || it?.ognoo || it?.date || "");
-      if (created) {
-        const d = new Date(created);
-        const key = buildLabel(d);
-        const curr = seriesMap.get(key) || { paid: 0, unpaid: 0 };
-        // We only add unpaid here; paid will be filled accurately from actual payment records below.
-        curr.unpaid += uldegdelInvoice;
-        seriesMap.set(key, curr);
-      }
-    });
-
-    // NOW iterate over actual payment records (receipts) to map the PAID time series
+    // 1. We no longer rely on legacy invoices (list) for the graphs.
+    // We strictly build the time-series graphs from the authoritative ledger (paymentList)
+    // using dun > 0 (billed) and dun < 0 (paid)
     paymentList.forEach((p) => {
-      const paidAmt =
-        Number(
-          p?.tulsunDun ??
-            p?.tulsun ??
-            p?.niitTulbur ??
-            p?.niitDun ??
-            p?.total ??
-            p?.tulur ??
-            p?.tulukhDun ??
-            p?.undsenDun ??
-            p?.dun ??
-            p?.sariinTurees ??
-            0,
-        ) || 0;
-      const tulsunOgnooStr = String(
-        p?.tulsunOgnoo || p?.createdAt || p?.ognoo || p?.date || "",
-      );
-      if (tulsunOgnooStr && paidAmt > 0) {
-        const d = new Date(tulsunOgnooStr);
-        const key = buildLabel(d);
-        const curr = seriesMap.get(key) || { paid: 0, unpaid: 0 };
-        curr.paid += paidAmt;
-        seriesMap.set(key, curr);
+      const rawDun = Number(p?.dun ?? 0);
+      const isInitialBalance = p?.ekhniiUldegdelEsekh === true;
+      
+      // Skip explicit initial balances so they don't spike the daily graphs
+      if (isInitialBalance) return;
+
+      const dateStr = String(p?.ognoo || p?.createdAt || p?.date || "");
+      if (!dateStr) return;
+
+      const d = new Date(dateStr);
+      const key = buildLabel(d);
+      const curr = seriesMap.get(key) || { paid: 0, unpaid: 0 };
+
+      if (rawDun > 0) {
+        // dun > 0 is a charge/receivable (Авлага)
+        curr.unpaid += rawDun;
+      } else if (rawDun < 0) {
+        // dun < 0 is a payment/income (Орлого)
+        curr.paid += Math.abs(rawDun);
       }
+
+      seriesMap.set(key, curr);
     });
 
-    const finalPaidResidents = new Set<string>();
-    const finalUnpaidResidents = new Set<string>();
-
-    residentInvoiceStats.forEach((stats, osId) => {
-      const uldegdel = stats.totalTulbur - stats.totalTulsun;
-      if (uldegdel > 1) {
-        finalUnpaidResidents.add(osId);
-      } else {
-        finalPaidResidents.add(osId);
-      }
-    });
-
-    // Synchronize with GuilgeeTuukh's footer totals for consistency
-    const finalPaid = footerTotals.totalPaid;
-    const finalUnpaid = footerTotals.totalUldegdel;
-
-    const totalInvoiceAmount = list.reduce(
-      (s, it) =>
-        s + (Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0),
-      0,
-    );
+    // Орлого/Гүйцэтгэл: all-time income directly from ledger (dun < 0), no date filter
+    const finalPaid = allTimePaidFromLedger;
+    
+    // Үлдэгдэл/Авлага: all-time outstanding balance across all contracts
+    // We strictly use the authoritative ledger: (All time Billed - All time Paid)
+    // This perfectly bypasses any date-filter issues or empty period fallbacks.
+    const allTimeBilledFromLedger = Number(tulburDugnelt?.allTime?.billedSum ?? 0);
+    const calculatedAllTimeUnpaid = Math.max(0, allTimeBilledFromLedger - allTimePaidFromLedger);
+    const finalUnpaid = calculatedAllTimeUnpaid > 0 ? calculatedAllTimeUnpaid : (footerTotals.totalUldegdel || 0);
 
     const paidArr: number[] = [];
     const unpaidArr: number[] = [];
@@ -644,8 +605,8 @@ export default function Khynalt() {
     return {
       incomeTotals: { paid: finalPaid, unpaid: finalUnpaid },
       incomeByBuilding: byBld,
-      residentsPaidCount: finalPaidResidents.size,
-      residentsUnpaidCount: finalUnpaidResidents.size,
+      residentsPaidCount: 0,
+      residentsUnpaidCount: footerTotals.tuluvUnpaidCount || 0,
       incomeSeries: { labels: orderedLabels, paid: paidArr, unpaid: unpaidArr },
       expenseSeries: { labels: orderedLabels, expenses: unpaidArr },
       profitSeries: {
@@ -662,8 +623,11 @@ export default function Khynalt() {
     orderedLabels,
     buildLabel,
     buildingPaymentSummary,
-    ekhniiUldegdelTotal,
     orlogoAvlagaData,
+    orlogoAvlagaAllTime,
+    allTimePaidFromLedger,
+    tulburDugnelt,
+    footerTotals,
   ]);
 
   const {
@@ -674,46 +638,26 @@ export default function Khynalt() {
     currentMonthTotal,
   } = incomeComputed;
 
-  // Calculate current month total from the actual data periods
+  // Calculate current month total using the reliable backend aggregation
   const currentMonthTotalComputed = useMemo(() => {
-    // If we have matrix data, use that for the billing total as it's more accurate
+    // 1. Single source of truth for period payments:
+    const paid = monthlyPaidFromLedger;
+
+    // 2. Determine period total billed and unpaid
+    let total = 0;
+    let unpaid = 0;
+
     if (matrixTotalBilled > 0) {
-      if (monthlyMatrixData?.list && monthlyMatrixData?.periods) {
-        const periods = monthlyMatrixData.periods;
-        const currentPeriod = periods[periods.length - 1];
-        if (currentPeriod) {
-          let mPaid = 0;
-          let mBilled = 0;
-          (monthlyMatrixData.list as any[]).forEach((item) => {
-            mPaid += Number(item?.months?.[currentPeriod]?.paid ?? 0);
-            mBilled += Number(item?.months?.[currentPeriod]?.billed ?? 0);
-          });
-          return {
-            paid: mPaid,
-            unpaid: Math.max(0, mBilled - mPaid),
-            total: mBilled,
-          };
-        }
-      }
-      return {
-        paid: incomeTotals.paid,
-        unpaid: incomeTotals.unpaid,
-        total: matrixTotalBilled,
-      };
+      total = matrixTotalBilled;
+      unpaid = Math.max(0, total - paid);
+    } else {
+      // Use strictly the ledger's actual dun > 0 billed amount for this period!
+      total = monthlyBilledFromLedger;
+      unpaid = Math.max(0, total - paid);
     }
 
-    const { paid, unpaid } = currentMonthTotal || { paid: 0, unpaid: 0 };
-    // If we have actual current month data, use it
-    if (paid > 0 || unpaid > 0) {
-      return { paid, unpaid, total: paid + unpaid };
-    }
-    // Fallback to incomeTotals if no specific current month data
-    return {
-      paid: incomeTotals.paid,
-      unpaid: incomeTotals.unpaid,
-      total: incomeTotals.paid + incomeTotals.unpaid,
-    };
-  }, [currentMonthTotal, incomeTotals, matrixTotalBilled]);
+    return { paid, unpaid, total };
+  }, [matrixTotalBilled, monthlyPaidFromLedger, monthlyBilledFromLedger]);
 
   const overdue2m = useMemo(() => {
     if (overdueData?.success) {
@@ -840,7 +784,7 @@ export default function Khynalt() {
         if (diffDays > 0) return `${diffDays} хоног хэтэрсэн`;
       }
     }
-    return it?.gereeniiDugaar ? "Төлбөр дутуу" : "Төлбөр дутуу";
+    return "Төлбөр дутуу";
   };
 
   const huurimtlagdsanAvlaga = useMemo(() => {
@@ -853,17 +797,23 @@ export default function Khynalt() {
       const items = unpaidList.map((it: any) => {
         const amount =
           Number(it?.uldegdel ?? it?.niitTulbur ?? it?.tulbur ?? 0) || 0;
-        const name = [it?.ovog, it?.ner, it?.toot].filter(Boolean).join(" ");
+        const tVal = Array.isArray(it?.toots)
+          ? it.toots
+              .map((t: any) => String(t.toot ?? "").trim())
+              .filter(Boolean)
+              .join(",")
+          : String(it?.toot ?? "").trim();
+        const name = [it?.ovog, it?.ner, tVal].filter(Boolean).join(" ");
         return {
           ...it,
           amount,
-          name: name || it?.gereeniiDugaar || "-",
+          name: name || it?.toot || "-",
           dugaalaltDugaar: it?.gereeniiDugaar || it?._id || it?.dugaalaltDugaar,
         };
       });
       return {
         count: new Set(
-          items.map((it: any) => it?.gereeniiDugaar || it?.orshinSuugchId),
+          items.map((it: any) => it?.orshinSuugchId || it?.toot || it?._id),
         ).size,
         total: incomeTotals.unpaid,
         items,
@@ -915,7 +865,9 @@ export default function Khynalt() {
             niitTulbur: amt,
             ovog: rec?.ovog,
             ner: rec?.ner,
-            toot: rec?.toot,
+            toot: Array.isArray(rec?.toots)
+              ? rec.toots[0]?.toot
+              : rec?.toot,
             gereeniiDugaar: rec?.gereeniiDugaar,
             gereeniiTuluv: "Цуцлагдсан",
             dugaalaltDugaar: rec?.gereeniiDugaar || rec?._id,
@@ -984,18 +936,20 @@ export default function Khynalt() {
         .replace(/^toot\s*[:：]\s*/i, "")
         .trim();
     const rawKeyForItem = (it: any) => {
-      const toot = stripTootLabelPrefix(
-        String(it?.toot ?? it?.medeelel?.toot ?? it?.tootDugaar ?? "").trim(),
-      );
+      const tVal = Array.isArray(it?.toots)
+        ? it.toots
+            .map((t: any) => String(t.toot ?? "").trim())
+            .filter(Boolean)
+            .join(",")
+        : String(it?.toot ?? "").trim();
+      const toot = stripTootLabelPrefix(tVal);
+
       const fromToot = toot;
-      const fromGeree = stripTootLabelPrefix(
-        String(it?.gereeniiDugaar ?? it?.dugaalaltDugaar ?? "").trim(),
-      );
-      return fromToot || fromGeree || "-";
+      return fromToot;
     };
-    /** Доод тэнхлэг — зөвхөн тоо/дугаар, «Тоот:» үггүй */
+
     const axisLabel = (it: any) => {
-      const raw = rawKeyForItem(it);
+      const raw = rawKeyForItem(it) || String(it?.toot || "");
       return raw.length > 12 ? raw.slice(0, 11) + "…" : raw;
     };
     const tooltipTitleAt = (idx: number) => {
@@ -1139,7 +1093,7 @@ export default function Khynalt() {
   const kpiCardsRaw = [
     {
       title: "2+ сар төлөөгүй",
-      value: formatNumber(footerTotals.tuluvUnpaidCount ?? 0, 0),
+      value: formatNumber(overdueData?.total ?? 0, 0),
       subtitle: "Төлбөр төлөгдөөгүй",
       color: "from-amber-500 to-orange-600",
       href: "/tulbur?tuluv=unpaid",

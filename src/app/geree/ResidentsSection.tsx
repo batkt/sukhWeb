@@ -22,6 +22,7 @@ interface ResidentsSectionProps {
   >;
   onEditResident: (resident: any) => void;
   onRequestDeleteResident: (resident: any) => void;
+  onRemoveToot?: (residentId: string, baiguullagiinId: string, barilgiinId: string, toot: string) => void;
   setResPageSize: (size: number) => void;
   setResPage: (page: number) => void;
 }
@@ -39,6 +40,7 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
   tuluvByResidentId,
   onEditResident,
   onRequestDeleteResident,
+  onRemoveToot,
   setResPageSize,
   setResPage,
 }) => {
@@ -62,6 +64,7 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
               maxHeight="calc(100vh - 460px)"
               onEdit={onEditResident}
               onDelete={onRequestDeleteResident}
+              onRemoveToot={onRemoveToot}
               onSort={(key, order) => toggleSortFor?.(key, order)}
             />
           </div>

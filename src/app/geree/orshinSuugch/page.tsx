@@ -48,6 +48,7 @@ export default function OrshinSuugchPage() {
         state.setResidentToDelete(r);
         state.setShowDeleteResidentModal(true);
       }}
+      onRemoveToot={actions.handleRemoveResidentToot}
       setResPageSize={state.setResPageSize}
       setResPage={state.setResPage}
     />

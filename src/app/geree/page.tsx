@@ -34,7 +34,7 @@ export default function GereePage() {
       sortOrder={state.sortOrder}
       handleEdit={actions.handleEdit}
       handlePreviewContractTemplate={actions.handlePreviewContractTemplate}
-      handlePreviewInvoice={actions.handlePreviewInvoice}
+
       currentPage={state.currentPage}
       rowsPerPage={state.rowsPerPage}
       setCurrentPage={state.setCurrentPage}

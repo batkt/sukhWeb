@@ -2902,10 +2902,14 @@ body {
 img,
 video,
 canvas,
-svg,
-iframe {
+svg {
   max-width: 100%;
   height: auto;
+}
+
+/* iframes (e.g., YouTube embeds) must NOT have height:auto — it collapses them to 0 */
+iframe {
+  max-width: 100%;
 }
 
 /* Common full-cover helper for hero banners or cards */
@@ -2961,6 +2965,18 @@ textarea,
 .modal-surface .content-scroll {
   overflow: auto;
   max-height: calc(92svh - 96px);
+}
+
+/* Help content: make iframes (YouTube) use 16:9 aspect ratio and fill width */
+.tsonkh-zaavar iframe {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 400px;
+  border-radius: 0.75rem;
+  border: none;
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
 }
 
 /* Small-screen overrides: make fixed-width utilities fluid and improve modal behavior */

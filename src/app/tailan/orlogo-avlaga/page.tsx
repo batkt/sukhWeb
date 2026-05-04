@@ -616,27 +616,63 @@ export default function OrlogoAvlagaPage() {
     const gid = getGereeId(it);
     if (!gid || !baiguullagiinId) return;
     setExpandedLoading(true);
+    
     try {
-      const resp = await uilchilgee(token ?? undefined).get(
-        `/geree/${gid}/history-ledger`,
-        {
-          params: {
-            baiguullagiinId,
-            ...(selectedBuildingId ? { barilgiinId: selectedBuildingId } : {}),
-          },
-        },
+      // Build ledger locally from already-fetched unifiedData instead of making an API call
+      // to the deprecated history-ledger endpoint
+      const allItems = unifiedData?.jagsaalt || [];
+      const contractTransactions = allItems.filter(
+        (row: any) => String(row.gereeniiId) === String(gid) || String(row._gereeId) === String(gid)
       );
-      const ledger = Array.isArray(resp.data?.jagsaalt)
-        ? resp.data.jagsaalt
-        : Array.isArray(resp.data?.ledger)
-          ? resp.data.ledger
-          : Array.isArray(resp.data)
-            ? resp.data
-            : [];
+      
+      // Sort chronologically
+      contractTransactions.sort((a: any, b: any) => {
+        const d1 = new Date(a.ognoo || a.createdAt || 0).getTime();
+        const d2 = new Date(b.ognoo || b.createdAt || 0).getTime();
+        if (d1 !== d2) return d1 - d2;
+        return String(a._id || "").localeCompare(String(b._id || ""));
+      });
+      
+      // Get the contract to find ekhniiUldegdel
+      const contract = contractsById[gid];
+      let running = Number(contract?.ekhniiUldegdel || 0);
+      
+      const ledger: any[] = [];
+      
+      if (running !== 0) {
+        ledger.push({
+          _id: "ekhnii-uldegdel",
+          ognoo: contract?.createdAt || null,
+          tailbar: "Эхний үлдэгдэл",
+          tulukhDun: running > 0 ? running : 0,
+          tulsunDun: running < 0 ? Math.abs(running) : 0,
+          uldegdel: running
+        });
+      }
+      
+      contractTransactions.forEach((row: any) => {
+        const amt = Number(row.dun || 0);
+        // dun > 0 is a charge (tulukh)
+        // dun < 0 is a payment (tulsun)
+        const tulukh = amt > 0 ? amt : 0;
+        const tulsun = amt < 0 ? Math.abs(amt) : 0;
+        running += amt;
+        
+        ledger.push({
+          _id: row._id,
+          ognoo: row.ognoo || row.createdAt,
+          tailbar: row.tailbar || (amt > 0 ? "Авлага" : "Төлбөр"),
+          tulukhDun: tulukh,
+          tulsunDun: tulsun,
+          uldegdel: Math.round(running * 100) / 100,
+          turul: row.turul
+        });
+      });
+      
       setExpandedLedger(ledger);
-      setExpandedGlobalUldegdel(resp.data?.globalUldegdel ?? null);
+      setExpandedGlobalUldegdel(Math.round(running * 100) / 100);
     } catch (e: any) {
-      setExpandedError(e?.response?.data?.aldaa || e.message || "Алдаа гарлаа");
+      setExpandedError(e.message || "Алдаа гарлаа");
     } finally {
       setExpandedLoading(false);
     }

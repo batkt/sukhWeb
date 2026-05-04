@@ -37,11 +37,9 @@ export function getPaymentStatusLabel(
     0
   );
 
-  const hasPaymentHistory = Array.isArray(item.paymentHistory)
-    ? item.paymentHistory.length > 0
-    : false;
-
-  const isPartiallyPaidOrUnpaid = uldegdel !== null && uldegdel > 0;
+  const billedAmt = Number(item.niitTulbur ?? item.niitDun ?? item.total ?? item.tulukhDun ?? item.undsenDun ?? item.dun ?? 0);
+  const paidAmt = Number(item.tulsunDun ?? item.tulsun ?? 0);
+  const isPaidOff = (billedAmt > 0 && paidAmt >= billedAmt) || (uldegdel !== null && uldegdel <= 0);
 
   // Paid signals (backend or derived)
   const paidSignals = [
@@ -50,16 +48,18 @@ export function getPaymentStatusLabel(
     rawLc === "paid_success",
     item.payStatus === "PAID",
     item.paid === true,
-    (uldegdel !== null && uldegdel <= 0) // Explicitly zero balance means paid
+    isPaidOff
   ];
 
   // If there are paid signals and it's NOT explicitly returning a >0 uldegdel, it's Paid
-  if (paidSignals.some(Boolean) && !isPartiallyPaidOrUnpaid) return "Төлсөн";
+  if (paidSignals.some(Boolean)) return "Төлсөн";
 
   // Respect explicit backend tuluv BEFORE doing date-based calculations.
   // If the backend says "Төлөөгүй", trust it — don't override with overdue logic.
   if (rawTuluv === "Төлөөгүй") return "Төлөөгүй";
   if (rawTuluv === "Хугацаа хэтэрсэн") return "Хугацаа хэтэрсэн";
+
+  const isPartiallyPaidOrUnpaid = !isPaidOff && billedAmt > 0;
 
   // If it explicitly has an unpaid balance, it's Unpaid
   if (isPartiallyPaidOrUnpaid) return "Төлөөгүй";

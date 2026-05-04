@@ -185,7 +185,7 @@ interface ContractEditorProps {
     baruunTolgoi?: string;
     zuunKhul?: string;
     baruunKhul?: string;
-  }) => void;
+  }) => void | Promise<void>;
   onBack?: () => void;
   initialData?: any;
   isEditMode?: boolean;
@@ -449,7 +449,7 @@ export default function ContractEditor({
       };
 
       if (onSave) {
-        onSave(baseData);
+        await onSave(baseData);
         return;
       }
 

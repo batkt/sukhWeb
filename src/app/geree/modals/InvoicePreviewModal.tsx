@@ -16,9 +16,9 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
   const constraintsRef = React.useRef<HTMLDivElement | null>(null);
   const dragControls = useDragControls();
   useModalHotkeys({ isOpen: show, onClose });
-  if (!show || !invoiceData?.preview) return null;
+  if (!show || !invoiceData) return null;
 
-  const preview = invoiceData.preview;
+  const preview = invoiceData.preview || invoiceData;
   const formatDate = (dateStr: string) => {
     if (!dateStr) return "-";
     const date = new Date(dateStr);

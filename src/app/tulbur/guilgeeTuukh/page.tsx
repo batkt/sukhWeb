@@ -912,7 +912,13 @@ export default function DansniiKhuulga() {
         return !isResidentPaid && isLinkedToCancelledGeree;
       }
 
-      return true;
+      const itGereeId = String(it?.gereeniiId || it?.gereeId || "");
+      const itGereeDugaar = String(it?.gereeniiDugaar || "");
+      const isLinkedToCancelledGeree =
+        (itGereeId && cancelledGereeIds.has(itGereeId)) ||
+        (itGereeDugaar && cancelledGereeDugaars.has(itGereeDugaar));
+
+      return !isLinkedToCancelledGeree;
     });
   }, [
     buildingHistoryItems,
@@ -1282,7 +1288,7 @@ export default function DansniiKhuulga() {
 
       // Handle standalone opening balance as a special charge case
       if (isStandaloneEkhniiUldegdel) {
-        chargeForRow = Math.abs(standaloneAmount);
+        chargeForRow = standaloneAmount;
         paidForRow = 0;
       }
 
@@ -1622,7 +1628,7 @@ export default function DansniiKhuulga() {
         ekhniiUldegdelDelta = fromZardluud + fromGuilgee;
       }
 
-      const chargeAmt = isPayment ? 0 : Math.abs(itemAmount);
+      const chargeAmt = isPayment ? 0 : itemAmount;
       const fromTulsunRow = Number(it?.tulsunDun ?? it?.tulsun ?? 0) || 0;
       const paidAmt = isPayment
         ? fromTulsunRow || Math.abs(itemAmount)

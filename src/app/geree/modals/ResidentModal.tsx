@@ -794,7 +794,7 @@ export default function ResidentModal({
                                 value={formatWithCommas(unit.ekhniiUldegdel).split(".")[0] || ""}
                                 onChange={(e) => {
                                   const num = parseToNumber(e.target.value);
-                                  updateUnitRow(index, "ekhniiUldegdel", num);
+                                  updateUnitRow(index, "ekhniiUldegdel", Math.max(0, num));
                                 }}
                                 className="modern-input w-full text-right"
                                 placeholder="0"
@@ -811,7 +811,7 @@ export default function ResidentModal({
                                 value={formatWithCommas(unit.tsahilgaaniiZaalt).split(".")[0] || ""}
                                 onChange={(e) => {
                                   const num = parseToNumber(e.target.value);
-                                  updateUnitRow(index, "tsahilgaaniiZaalt", num);
+                                  updateUnitRow(index, "tsahilgaaniiZaalt", Math.max(0, num));
                                 }}
                                 className="modern-input w-full text-right"
                                 placeholder="0"

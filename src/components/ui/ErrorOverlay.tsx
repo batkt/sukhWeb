@@ -14,6 +14,7 @@ export function ErrorOverlayHost() {
   return (
     <Toaster
       position="top-right"
+      containerStyle={{ zIndex: 99999 }}
       toastOptions={{
         style: {
           borderRadius: "12px",

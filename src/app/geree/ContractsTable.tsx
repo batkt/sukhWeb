@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import { Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { FileText } from "lucide-react";
+import { FileText, Eye } from "lucide-react";
 import { ALL_COLUMNS } from "./columns";
 import { StandardPagination } from "@/components/ui/StandardTable";
 
@@ -26,8 +26,8 @@ interface ContractsTableProps {
   startIndex: number;
   renderCellValue: (contract: any, columnKey: string) => React.ReactNode;
   handleEdit: (contract: any) => void;
-  handlePreviewContractTemplate: (id: string) => void;
-  handlePreviewInvoice: (contract: any) => void;
+  handlePreviewContractTemplate: (contract: any) => void;
+
   currentPage: number;
   rowsPerPage: number;
   setCurrentPage: (page: number) => void;
@@ -52,7 +52,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
   renderCellValue,
   handleEdit,
   handlePreviewContractTemplate,
-  handlePreviewInvoice,
+
   currentPage,
   rowsPerPage,
   setCurrentPage,
@@ -186,11 +186,11 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
         render: (_: any, record: any) => (
           <div className="flex gap-2 justify-center">
             <button
-              onClick={() => handlePreviewInvoice(record)}
+              onClick={() => handlePreviewContractTemplate(record)}
               className="p-2 rounded-2xl hover-surface transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
-              title="Нэхэмжлэх харах"
+              title="Гэрээний загвар харах"
             >
-              <FileText className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+              <Eye className="w-5 h-5 text-gray-600 dark:text-gray-300" />
             </button>
           </div>
         ),
@@ -204,7 +204,8 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
     sortOrder,
     toggleSortFor,
     renderCellValue,
-    handlePreviewInvoice,
+
+    handlePreviewContractTemplate,
     startIndex,
   ]);
 

@@ -371,7 +371,9 @@ export function useGereeData(
           return getStringValue(contract.turul) || "-";
 
         case "duureg": {
-          // Try to get duureg from linked resident's toots array first
+          const val = getStringValue(contract.duureg);
+          if (val && val !== "-") return val;
+          // Fallback to linked resident
           const orshinSuugchId = contract.orshinSuugchId;
           if (orshinSuugchId) {
             const resident = residentsById[String(orshinSuugchId)];
@@ -380,17 +382,24 @@ export function useGereeData(
                 Array.isArray(resident.toots) && resident.toots.length > 0
                   ? resident.toots[0]?.duureg
                   : null;
-              const residentDuureg = tootsDuureg ?? resident.duureg;
-              if (residentDuureg != null && residentDuureg !== "") {
-                return getStringValue(residentDuureg);
-              }
+              return getStringValue(tootsDuureg ?? resident.duureg) || "-";
             }
           }
-          return getStringValue(contract.duureg) || "-";
+          return "-";
         }
 
         case "horoo": {
-          // Try to get horoo from linked resident's toots array first
+          const horoo = contract.horoo;
+          if (horoo != null) {
+            if (typeof horoo === "object") {
+              return (
+                getStringValue(horoo.ner) || getStringValue(horoo.kod) || "-"
+              );
+            }
+            const hVal = getStringValue(horoo);
+            if (hVal && hVal !== "-") return hVal;
+          }
+          // Fallback to linked resident
           const orshinSuugchId = contract.orshinSuugchId;
           if (orshinSuugchId) {
             const resident = residentsById[String(orshinSuugchId)];
@@ -412,17 +421,13 @@ export function useGereeData(
               }
             }
           }
-          const horoo = contract.horoo;
-          if (typeof horoo === "object" && horoo != null) {
-            return (
-              getStringValue(horoo.ner) || getStringValue(horoo.kod) || "-"
-            );
-          }
-          return getStringValue(horoo) || "-";
+          return "-";
         }
 
         case "bairniiNer": {
-          // Try to get bairniiNer from linked resident's toots array first
+          const val = getStringValue(contract.bairniiNer) || getStringValue(contract.bairNer);
+          if (val && val !== "-") return val;
+          // Fallback to linked resident
           const orshinSuugchId = contract.orshinSuugchId;
           if (orshinSuugchId) {
             const resident = residentsById[String(orshinSuugchId)];
@@ -431,76 +436,64 @@ export function useGereeData(
                 Array.isArray(resident.toots) && resident.toots.length > 0
                   ? resident.toots[0]?.bairniiNer
                   : null;
-              const residentBairniiNer = tootsBairniiNer ?? resident.bairniiNer;
-              if (residentBairniiNer != null && residentBairniiNer !== "") {
-                return getStringValue(residentBairniiNer);
-              }
+              return getStringValue(tootsBairniiNer ?? resident.bairniiNer) || "-";
             }
           }
-          return getStringValue(contract.bairniiNer) || "-";
+          return "-";
         }
 
         case "orts": {
-          // First try to get orts from the linked resident (prioritize toots array)
+          const val = contract.orts != null ? String(contract.orts) : "";
+          if (val && val !== "-") return val;
+          // Fallback to linked resident
           const orshinSuugchId = contract.orshinSuugchId;
           if (orshinSuugchId) {
             const resident = residentsById[String(orshinSuugchId)];
             if (resident) {
-              // Try toots array first, then top-level
               const tootsOrts =
                 Array.isArray(resident.toots) && resident.toots.length > 0
                   ? resident.toots[0]?.orts
                   : null;
-              const residentOrts = tootsOrts ?? resident.orts;
-              if (residentOrts != null && residentOrts !== "") {
-                return String(residentOrts);
-              }
+              return String(tootsOrts ?? resident.orts ?? "-");
             }
           }
-          // Fall back to contract's own orts value
-          return contract.orts != null ? String(contract.orts) : "-";
+          return "-";
         }
 
         case "davkhar": {
-          // Try to get davkhar from the linked resident (prioritize toots array)
+          const val = contract.davkhar != null ? String(contract.davkhar) : "";
+          if (val && val !== "-") return val;
+          // Fallback to linked resident
           const orshinSuugchId = contract.orshinSuugchId;
           if (orshinSuugchId) {
             const resident = residentsById[String(orshinSuugchId)];
             if (resident) {
-              // Try toots array first, then top-level
               const tootsDavkhar =
                 Array.isArray(resident.toots) && resident.toots.length > 0
                   ? resident.toots[0]?.davkhar
                   : null;
-              const residentDavkhar = tootsDavkhar ?? resident.davkhar;
-              if (residentDavkhar != null && residentDavkhar !== "") {
-                return String(residentDavkhar);
-              }
+              return String(tootsDavkhar ?? resident.davkhar ?? "-");
             }
           }
-          // Fall back to contract's own davkhar value
-          return contract.davkhar != null ? String(contract.davkhar) : "-";
+          return "-";
         }
 
         case "toot": {
-          // Try to get toot from the linked resident (prioritize toots array)
+          const val = contract.toot != null ? String(contract.toot) : "";
+          if (val && val !== "-") return val;
+          // Fallback to linked resident
           const orshinSuugchId = contract.orshinSuugchId;
           if (orshinSuugchId) {
             const resident = residentsById[String(orshinSuugchId)];
             if (resident) {
-              // Try toots array first, then top-level
               const tootsToot =
                 Array.isArray(resident.toots) && resident.toots.length > 0
                   ? resident.toots[0]?.toot
                   : null;
-              const residentToot = tootsToot ?? resident.toot;
-              if (residentToot != null && residentToot !== "") {
-                return String(residentToot);
-              }
+              return String(tootsToot ?? resident.toot ?? "-");
             }
           }
-          // Fall back to contract's own toot value
-          return contract.toot != null ? String(contract.toot) : "-";
+          return "-";
         }
 
         case "utas":
@@ -784,10 +777,14 @@ export function useGereeData(
         aVal = `${a?.ovog || ""} ${a?.ner || ""}`.trim().toLowerCase();
         bVal = `${b?.ovog || ""} ${b?.ner || ""}`.trim().toLowerCase();
       } else if (sortKey === "toot" || sortKey === "orts" || sortKey === "davkhar") {
+        const aValRaw = a?.[sortKey];
+        const bValRaw = b?.[sortKey];
         const aResident = a?.orshinSuugchId ? residentsById[String(a.orshinSuugchId)] : null;
         const bResident = b?.orshinSuugchId ? residentsById[String(b.orshinSuugchId)] : null;
-        const aRaw = String(aResident?.[sortKey] ?? a?.[sortKey] ?? "").trim();
-        const bRaw = String(bResident?.[sortKey] ?? b?.[sortKey] ?? "").trim();
+        
+        const aRaw = String(aValRaw ?? aResident?.[sortKey] ?? "").trim();
+        const bRaw = String(bValRaw ?? bResident?.[sortKey] ?? "").trim();
+        
         const aNum = parseInt(aRaw);
         const bNum = parseInt(bRaw);
         if (!isNaN(aNum) && !isNaN(bNum)) {
