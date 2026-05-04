@@ -84,29 +84,84 @@ export default function UnitsSection({
             status.toLowerCase() === "идэвхгүй";
           if (isCancelled) return;
 
-          // Get orts and floor from contract or linked resident
-          const orshinSuugchId = c?.orshinSuugchId;
-          let contractOrts = String(c?.orts || "").trim();
-          let contractFloor = String(c?.davkhar || "").trim();
-          let contractToot = String(c?.toot || "").trim();
+          // Find all toots associated with this contract
+          const tootsList: { o: string; f: string; t: string }[] = [];
 
-          if (orshinSuugchId && residentsById[String(orshinSuugchId)]) {
-            const resident = residentsById[String(orshinSuugchId)];
-            if (resident.orts != null)
-              contractOrts = String(resident.orts).trim();
-            if (resident.davkhar != null)
-              contractFloor = String(resident.davkhar).trim();
-            if (resident.toot != null)
-              contractToot = String(resident.toot).trim();
-          }
+          const orshinSuugchId = c?.orshinSuugchId;
+          const resident = orshinSuugchId
+            ? residentsById[String(orshinSuugchId)]
+            : null;
 
           if (
-            contractOrts === orts &&
-            contractFloor === floor &&
-            contractToot
+            resident &&
+            Array.isArray(resident.toots) &&
+            resident.toots.length > 0
           ) {
-            activeToots.add(contractToot);
+            // Priority 1: Resident's modern toots array
+            resident.toots.forEach((rt: any) => {
+              const rOrts = String(rt.orts || "").trim();
+              const rFloor = String(rt.davkhar || "").trim();
+              const rToots = String(rt.toot || "")
+                .split(",")
+                .map((x) => x.trim())
+                .filter(Boolean);
+              rToots.forEach((rtToot) => {
+                tootsList.push({ o: rOrts, f: rFloor, t: rtToot });
+              });
+            });
+          } else {
+            // Priority 2: Contract fields (fallback to single resident fields)
+            let cOrtsStr = String(c?.orts || "").trim();
+            let cFloorStr = String(c?.davkhar || "").trim();
+            let cTootStr = String(c?.toot || "").trim();
+
+            if (resident) {
+              if (!cOrtsStr && resident.orts != null)
+                cOrtsStr = String(resident.orts).trim();
+              if (!cFloorStr && resident.davkhar != null)
+                cFloorStr = String(resident.davkhar).trim();
+              if (!cTootStr && resident.toot != null)
+                cTootStr = String(resident.toot).trim();
+            }
+
+            const cOrtsArr = cOrtsStr
+              .split(",")
+              .map((x) => x.trim())
+              .filter(Boolean);
+            const cFloorArr = cFloorStr
+              .split(",")
+              .map((x) => x.trim())
+              .filter(Boolean);
+            const cTootArr = cTootStr
+              .split(",")
+              .map((x) => x.trim())
+              .filter(Boolean);
+
+            if (cOrtsArr.length > 0 && cFloorArr.length > 0 && cTootArr.length > 0) {
+              cOrtsArr.forEach((o) => {
+                cFloorArr.forEach((f) => {
+                  cTootArr.forEach((t) => {
+                    tootsList.push({ o, f, t });
+                  });
+                });
+              });
+            } else if (cTootArr.length > 0) {
+              cTootArr.forEach((t) => {
+                tootsList.push({ o: cOrtsStr, f: cFloorStr, t });
+              });
+            }
           }
+
+          // Add to activeToots if they match the current orts and floor
+          tootsList.forEach((tItem) => {
+            if (tItem.t) {
+              const matchOrts = tItem.o === orts || !tItem.o;
+              const matchFloor = tItem.f === floor || !tItem.f;
+              if (matchOrts && matchFloor) {
+                activeToots.add(tItem.t);
+              }
+            }
+          });
         });
 
         // Filter units based on unitStatusFilter

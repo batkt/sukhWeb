@@ -84,6 +84,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
               ? "ascend"
               : "descend"
             : null,
+        align: "left",
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (val: string | { ner?: string; kod?: string }) => {
           const name =
@@ -98,7 +99,11 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
         },
       },
       {
-        title: <span className="text-gray-900 dark:text-white">Орц</span>,
+        title: (
+          <span className="text-gray-900 dark:text-white text-center block">
+            Орц
+          </span>
+        ),
         key: "orts",
         dataIndex: "orts",
         sorter: true,
@@ -117,7 +122,11 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
         ),
       },
       {
-        title: <span className="text-gray-900 dark:text-white">Давхар</span>,
+        title: (
+          <span className="text-gray-900 dark:text-white text-center block">
+            Давхар
+          </span>
+        ),
         key: "davkhar",
         dataIndex: "davkhar",
         sorter: true,
@@ -136,7 +145,11 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
         ),
       },
       {
-        title: <span className="text-gray-900 dark:text-white">Тоот</span>,
+        title: (
+          <span className="text-gray-900 dark:text-white text-center block">
+            Тоот
+          </span>
+        ),
         key: "toot",
         dataIndex: "toot",
         sorter: true,
@@ -169,7 +182,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
           }
 
           return (
-            <div className="flex flex-wrap gap-1 justify-center max-w-[200px]">
+            <div className="flex flex-wrap gap-1 justify-center max-w-[200px] mx-auto">
               {toots.map((t: any, idx: number) => (
                 <span
                   key={idx}
@@ -202,7 +215,9 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
       },
       {
         title: (
-          <span className="text-gray-900 dark:text-white">Холбоо барих</span>
+          <span className="text-gray-900 dark:text-white text-center block">
+            Холбоо барих
+          </span>
         ),
         dataIndex: "utas",
         key: "utas",
@@ -222,16 +237,25 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
         ),
       },
       {
-        title: <span className="text-gray-900 dark:text-white">Төлөв</span>,
+        title: (
+          <span className="text-gray-900 dark:text-white text-center block">
+            Төлөв
+          </span>
+        ),
         key: "tuluv",
         align: "center",
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: ResidentItem) => {
           const id = String(record?._id || "");
-          const label =
-            id && tuluvByResidentId[id]
-              ? tuluvByResidentId[id]
-              : getPaymentStatusLabel(record);
+          let label = "Тодорхойгүй";
+          if (record?.uldegdel !== undefined && Number(record.uldegdel) <= 0) {
+            label = "Төлсөн";
+          } else {
+            label =
+              id && tuluvByResidentId[id]
+                ? tuluvByResidentId[id]
+                : getPaymentStatusLabel(record);
+          }
           const cls =
             label === "Төлсөн"
               ? "badge-paid"

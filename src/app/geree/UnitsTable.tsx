@@ -118,10 +118,13 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
       },
       {
         title: (
-          <span className="text-slate-900 dark:text-slate-200">Тоотууд</span>
+          <span className="text-slate-900 dark:text-slate-200 text-center block">
+            Тоотууд
+          </span>
         ),
         dataIndex: "filteredUnits",
         key: "filteredUnits",
+        align: "center",
         className: "text-slate-900 dark:text-slate-200",
         render: (filteredUnits: string[], record: FloorItem) => {
           if (!filteredUnits || filteredUnits.length === 0) {
@@ -133,7 +136,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
           }
           return (
             <div
-              className="grid gap-1.5 py-1"
+              className="grid gap-1.5 py-1 justify-center"
               style={{
                 gridTemplateColumns: "repeat(auto-fill, minmax(48px, 1fr))",
                 justifyItems: "center",

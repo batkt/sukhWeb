@@ -2358,8 +2358,6 @@ export default function HistoryModal({
                                     e.stopPropagation();
                                     const isDeletable =
                                       row._id &&
-                                      row.sourceCollection !==
-                                        "nekhemjlekhiinTuukh" &&
                                       !row.isSystem;
 
                                     if (isDeletable && row._id) {
@@ -2371,33 +2369,25 @@ export default function HistoryModal({
                                   }}
                                   className={`p-2 transition-all rounded-lg ${
                                     row._id &&
-                                    row.sourceCollection !==
-                                      "nekhemjlekhiinTuukh" &&
                                     !row.isSystem
                                       ? "!text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer"
                                       : "text-gray-200 dark:text-gray-800 cursor-not-allowed opacity-50"
                                   }`}
                                   title={
-                                    row.isSystem ||
-                                    row.sourceCollection ===
-                                      "nekhemjlekhiinTuukh"
-                                      ? "Системээс эсвэл нэхэмжлэхээс үүсгэсэн - устгах боломжгүй"
+                                    row.isSystem
+                                      ? "Системээс үүсгэсэн - устгах боломжгүй"
                                       : row._id
                                         ? "Устгах"
                                         : "Устгах боломжгүй"
                                   }
                                   disabled={
                                     !row._id ||
-                                    row.sourceCollection ===
-                                      "nekhemjlekhiinTuukh" ||
                                     row.isSystem
                                   }
                                 >
                                   <Trash2
                                     className={`h-5 w-5 ${
                                       row._id &&
-                                      row.sourceCollection !==
-                                        "nekhemjlekhiinTuukh" &&
                                       !row.isSystem
                                         ? "!text-red-500"
                                         : "text-slate-300 dark:text-slate-600"

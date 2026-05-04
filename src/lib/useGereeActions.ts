@@ -154,6 +154,8 @@ export function useGereeActions(
                 orts: newResident.orts || "1",
                 ekhniiUldegdel: newResident.ekhniiUldegdel || 0,
                 tsahilgaaniiZaalt: newResident.tsahilgaaniiZaalt || 0,
+                khonogoorBodokhEsekh: newResident.khonogoorBodokhEsekh || false,
+                bodokhKhonog: newResident.bodokhKhonog || 0,
               }],
           // Backward compatibility fields
           toot: newResident.toot || "",
@@ -367,6 +369,8 @@ export function useGereeActions(
               toot: t.toot || "",
               ekhniiUldegdel: t.ekhniiUldegdel || 0,
               tsahilgaaniiZaalt: t.tsahilgaaniiZaalt || 0,
+              khonogoorBodokhEsekh: t.khonogoorBodokhEsekh || false,
+              bodokhKhonog: t.bodokhKhonog || 0,
             }))
           : [
               {
@@ -375,6 +379,8 @@ export function useGereeActions(
                 toot: p.toot || "",
                 ekhniiUldegdel: p.ekhniiUldegdel || 0,
                 tsahilgaaniiZaalt: p.tsahilgaaniiZaalt || 0,
+                khonogoorBodokhEsekh: p.khonogoorBodokhEsekh || false,
+                bodokhKhonog: p.bodokhKhonog || 0,
               }
             ],
       });

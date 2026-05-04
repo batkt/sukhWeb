@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import { Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { FileText, Eye } from "lucide-react";
+import { FileText, Eye, CalendarX2 } from "lucide-react";
 import { ALL_COLUMNS } from "./columns";
 import { StandardPagination } from "@/components/ui/StandardTable";
 
@@ -84,7 +84,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
           column?.key === "gereeniiDugaar";
 
         const alignClass =
-          columnKey === "ner" || columnKey === "bairniiNer"
+          columnKey === "ner" || columnKey === "bairniiNer" || columnKey === "gereeniiDugaar"
             ? "left"
             : columnKey === "sariinTurees" ||
                 columnKey === "baritsaaniiUldegdel"
@@ -129,7 +129,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
           return {
             title: (
               <span
-                className={`text-gray-900 dark:text-white ${columnKey === "ner" ? "text-center block" : ""}`}
+                className={`text-gray-900 dark:text-white ${alignClass === "center" || columnKey === "ner" || columnKey === "gereeniiDugaar" ? "text-center block" : ""}`}
               >
                 {column?.label}
               </span>
@@ -157,7 +157,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
         return {
           title: (
             <span
-              className={`text-gray-900 dark:text-white ${columnKey === "ner" ? "text-center block" : ""}`}
+              className={`text-gray-900 dark:text-white ${alignClass === "center" || columnKey === "ner" || columnKey === "gereeniiDugaar" ? "text-center block" : ""}`}
             >
               {column?.label}
             </span>
@@ -181,19 +181,50 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
         title: <span className="text-gray-900 dark:text-white">Үйлдэл</span>,
         key: "action",
         align: "center",
-        width: 80,
+        width: 140,
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
-        render: (_: any, record: any) => (
-          <div className="flex gap-2 justify-center">
-            <button
-              onClick={() => handlePreviewContractTemplate(record)}
-              className="p-2 rounded-2xl hover-surface transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
-              title="Гэрээний загвар харах"
-            >
-              <Eye className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-            </button>
-          </div>
-        ),
+        render: (_: any, record: any) => {
+          const tuluv = String(record?.tuluv || "").trim();
+          const isCancelled = tuluv === "Цуцалсан" || tuluv.toLowerCase() === "цуцалсан";
+          const cancelDateRaw =
+            record?.tsutsalsanOgnoo ||
+            record?.tsutlsasanOgnoo ||
+            record?.tsutlsanOgnoo ||
+            record?.updatedAt;
+          const cancelDate = cancelDateRaw
+            ? new Date(cancelDateRaw).toLocaleDateString("mn-MN", {
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+              })
+            : null;
+
+          return (
+            <div className="flex gap-1 justify-center items-center">
+              <button
+                onClick={() => handlePreviewContractTemplate(record)}
+                className="p-2 rounded-2xl hover-surface transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+                title="Гэрээний загвар харах"
+              >
+                <Eye className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+              </button>
+              {isCancelled && (
+                <div
+                  className="flex items-center gap-1.5 px-1 py-1"
+                  title={cancelDate ? `Цуцалсан: ${cancelDate}` : "Цуцалсан"}
+                >
+                  <div className="w-[1px] h-4 bg-gray-200 dark:bg-gray-700 mx-0.5" />
+                  <CalendarX2 className="w-4 h-4 text-red-500 dark:text-red-400 flex-shrink-0" />
+                  {cancelDate && (
+                    <span className="text-[11px] font-medium text-red-500 dark:text-red-400 whitespace-nowrap">
+                      {cancelDate}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        },
       },
     ];
 

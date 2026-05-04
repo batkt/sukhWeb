@@ -554,6 +554,7 @@ export function useGereeData(
 
           // Try to get cancelled date from various possible field names
           const cancelledDate =
+            contract.tsutsalsanOgnoo ||
             contract.cancelledAt ||
             contract.tsutlsasanOgnoo ||
             contract.tsutlsanOgnoo ||

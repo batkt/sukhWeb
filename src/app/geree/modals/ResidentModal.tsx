@@ -278,6 +278,8 @@ export default function ResidentModal({
               toot: p.toot || "",
               ekhniiUldegdel: p.ekhniiUldegdel || 0,
               tsahilgaaniiZaalt: p.tsahilgaaniiZaalt || 0,
+              khonogoorBodokhEsekh: p.khonogoorBodokhEsekh || false,
+              bodokhKhonog: p.bodokhKhonog || 0,
             },
           ],
         }));
@@ -299,6 +301,8 @@ export default function ResidentModal({
           toot: "",
           ekhniiUldegdel: 0,
           tsahilgaaniiZaalt: 0,
+          khonogoorBodokhEsekh: false,
+          bodokhKhonog: 0,
         },
       ],
     }));
@@ -308,7 +312,18 @@ export default function ResidentModal({
     setNewResident((p: any) => {
       const newUnits = [...(p.units || [])];
       newUnits.splice(index, 1);
-      return { ...p, units: newUnits };
+      // If we removed the primary (index 0), sync new first unit to top-level fields
+      const updates: any = { units: newUnits };
+      if (index === 0 && newUnits.length > 0) {
+        updates.orts = newUnits[0].orts || "";
+        updates.davkhar = newUnits[0].davkhar || "";
+        updates.toot = newUnits[0].toot || "";
+        updates.ekhniiUldegdel = newUnits[0].ekhniiUldegdel || 0;
+        updates.tsahilgaaniiZaalt = newUnits[0].tsahilgaaniiZaalt || 0;
+        updates.khonogoorBodokhEsekh = newUnits[0].khonogoorBodokhEsekh || false;
+        updates.bodokhKhonog = newUnits[0].bodokhKhonog || 0;
+      }
+      return { ...p, ...updates };
     });
   };
 
@@ -705,8 +720,8 @@ export default function ResidentModal({
                             key={index} 
                             className="relative grid grid-cols-1 md:grid-cols-12 gap-3 p-4 bg-slate-50/50 dark:bg-slate-900/30 rounded-xl border border-slate-100 dark:border-slate-800 transition-all hover:border-slate-200 dark:hover:border-slate-700"
                           >
-                            {/* Remove Button */}
-                            {index > 0 && (
+                            {/* Remove Button - allow deleting any row as long as there are 2+ units */}
+                            {(newResident.units || []).length > 1 && (
                               <button
                                 type="button"
                                 onClick={() => removeUnitRow(index)}
@@ -817,6 +832,37 @@ export default function ResidentModal({
                                 placeholder="0"
                               />
                             </div>
+
+                            {/* Pro-rating Row inside Unit */}
+                            <div className="md:col-span-12 flex items-center gap-4 mt-1 pt-2 border-t border-slate-100 dark:border-slate-800">
+                              <div className="flex items-center gap-2">
+                                <label className="relative inline-flex items-center cursor-pointer scale-75">
+                                  <input
+                                    type="checkbox"
+                                    checked={unit.khonogoorBodokhEsekh || false}
+                                    onChange={(e) => updateUnitRow(index, "khonogoorBodokhEsekh", e.target.checked)}
+                                    className="sr-only peer"
+                                  />
+                                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                                </label>
+                                <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400">Ирээдүйд ашиглах хоног</span>
+                              </div>
+
+                              {unit.khonogoorBodokhEsekh && (
+                                <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200">
+                                  <input
+                                    type="number"
+                                    min={1}
+                                    max={31}
+                                    value={unit.bodokhKhonog || ""}
+                                    onChange={(e) => updateUnitRow(index, "bodokhKhonog", e.target.value)}
+                                    placeholder="Хоног"
+                                    className="modern-input !w-16 !h-7 text-center !py-0"
+                                  />
+                                  <span className="text-[11px] text-slate-500">хоногоор бодох</span>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -840,45 +886,7 @@ export default function ResidentModal({
                       />
                     </div>
 
-                    {/* Pro-rating Settings - New Row */}
-                    <div className="md:col-span-2 grid grid-cols-2 gap-4 pt-2 border-t border-gray-100 dark:border-gray-800 mt-2">
-                      <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-900/50 p-2 rounded-lg border border-slate-100 dark:border-slate-800">
-                        <div className="flex flex-col">
-                          <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Ирээдүйд ашигласан хоног тооцох</span>
-                          <span className="text-[10px] text-slate-500 dark:text-slate-500">Төлбөрийг хоногоор бодох</span>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer scale-90">
-                          <input
-                            type="checkbox"
-                            checked={newResident.khonogoorBodokhEsekh || false}
-                            onChange={(e) => setNewResident((p: any) => ({ ...p, khonogoorBodokhEsekh: e.target.checked }))}
-                            disabled={editingResident?.khonogoorBodokhEsekh === true}
-                            className="sr-only peer"
-                          />
-                          <div className={`w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 ${editingResident?.khonogoorBodokhEsekh === true ? 'opacity-60 cursor-not-allowed' : ''}`}></div>
-                        </label>
-                      </div>
 
-                      {newResident.khonogoorBodokhEsekh && (
-                        <div className="flex items-center gap-3 bg-blue-50/30 dark:bg-blue-900/10 p-2 rounded-lg border border-blue-100/50 dark:border-blue-800/30 animate-in fade-in slide-in-from-right-4 duration-300">
-                          <div className="flex-1">
-                            <label className="block text-[10px] uppercase tracking-wider font-bold text-blue-600 dark:text-blue-400 mb-1">
-                              Ашиглах хоног
-                            </label>
-                            <input
-                              type="number"
-                              min={1}
-                              max={31}
-                              value={newResident.bodokhKhonog || ""}
-                              onChange={(e) => setNewResident((p: any) => ({ ...p, bodokhKhonog: e.target.value }))}
-                              disabled={editingResident?.khonogoorBodokhEsekh === true}
-                              placeholder="Хоног"
-                              className={`modern-input w-full !border-blue-200 dark:!border-blue-800/50 ${editingResident?.khonogoorBodokhEsekh === true ? 'bg-slate-100 dark:bg-slate-800/50 cursor-not-allowed' : ''}`}
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </div>
                   </div>
                 </div>
 
