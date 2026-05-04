@@ -654,7 +654,7 @@ export default function NemeltTokhirgoo() {
                     </div>
                     <Button
                       id="nemelt-invoice-save"
-                      onClick={saveInvoiceSchedule}
+                      onClick={() => saveInvoiceSchedule()}
                       variant="primary"
                       size="sm"
                       className="whitespace-nowrap"
@@ -912,7 +912,7 @@ export default function NemeltTokhirgoo() {
 
                 <div className="pt-2 flex justify-end">
                   <Button
-                    onClick={saveGuestSettings}
+                    onClick={() => saveGuestSettings()}
                     variant="primary"
                     size="sm"
                     className="!rounded-2xl"
@@ -1009,7 +1009,7 @@ export default function NemeltTokhirgoo() {
 
                     <div className="pt-4 flex justify-end border-t border-[color:var(--surface-border)]/50">
                       <Button
-                        onClick={saveCalculationSettings}
+                        onClick={() => saveCalculationSettings()}
                         variant="primary"
                         size="sm"
                         className="!rounded-2xl px-8"
