@@ -40,6 +40,15 @@ interface AvlagiinNasjiltTableProps {
     p91_120: number;
     p120plus: number;
   };
+  authoritativeTotals?: {
+    totalPaid: number;
+    totalUldegdel: number;
+    totalBilled: number;
+    totalEkhniiUldegdel: number;
+    paidByGereeId: Record<string, number>;
+    billedByGereeId: Record<string, number>;
+    uldegdelByGereeId: Record<string, number>;
+  };
 }
 
 const formatNer = (val: string) => {
@@ -60,6 +69,7 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
   totalCount = 0,
   onPageChange,
   totals,
+  authoritativeTotals,
 }) => {
   const columns = useMemo(() => [
     {
@@ -147,43 +157,54 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
 
   const footer = useMemo(() => {
     if (!totals || data.length === 0) return null;
+    const finalTotals = authoritativeTotals ? {
+      undsenDun: authoritativeTotals.totalBilled + authoritativeTotals.totalEkhniiUldegdel,
+      tulsunDun: authoritativeTotals.totalPaid,
+      uldegdel: authoritativeTotals.totalUldegdel,
+      p0_30: totals.p0_30,
+      p31_60: totals.p31_60,
+      p61_90: totals.p61_90,
+      p91_120: totals.p91_120,
+      p120plus: totals.p120plus,
+    } : totals;
+
     return (
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
         <div className="flex flex-col">
           <span className="text-[11px] text-slate-500 uppercase tracking-wider font-bold">Нийт Төлөх</span>
-          <span className="text-sm font-bold text-slate-900 dark:text-white">{formatNumber(totals.undsenDun, 2)}₮</span>
+          <span className="text-sm font-bold text-slate-900 dark:text-white">{formatNumber(finalTotals.undsenDun, 2)}₮</span>
         </div>
         <div className="flex flex-col">
           <span className="text-[11px] text-slate-500 uppercase tracking-wider font-bold">Нийт Төлсөн</span>
-          <span className="text-sm font-bold text-emerald-500">{formatNumber(totals.tulsunDun, 2)}₮</span>
+          <span className="text-sm font-bold text-emerald-500">{formatNumber(finalTotals.tulsunDun, 2)}₮</span>
         </div>
         <div className="flex flex-col">
           <span className="text-[11px] text-slate-500 uppercase tracking-wider font-bold">Нийт Үлдэгдэл</span>
-          <span className="text-sm font-bold text-red-500">{formatNumber(totals.uldegdel, 2)}₮</span>
+          <span className="text-sm font-bold text-red-500">{formatNumber(finalTotals.uldegdel, 2)}₮</span>
         </div>
         <div className="flex flex-col">
           <span className="text-[11px] text-slate-500 uppercase tracking-wider font-bold">0-30</span>
-          <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{formatNumber(totals.p0_30, 2)}₮</span>
+          <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{formatNumber(finalTotals.p0_30, 2)}₮</span>
         </div>
         <div className="flex flex-col">
           <span className="text-[11px] text-slate-500 uppercase tracking-wider font-bold">31-60</span>
-          <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{formatNumber(totals.p31_60, 2)}₮</span>
+          <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{formatNumber(finalTotals.p31_60, 2)}₮</span>
         </div>
         <div className="flex flex-col">
           <span className="text-[11px] text-slate-500 uppercase tracking-wider font-bold">61-90</span>
-          <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{formatNumber(totals.p61_90, 2)}₮</span>
+          <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{formatNumber(finalTotals.p61_90, 2)}₮</span>
         </div>
         <div className="flex flex-col">
           <span className="text-[11px] text-slate-500 uppercase tracking-wider font-bold">91-120</span>
-          <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{formatNumber(totals.p91_120, 2)}₮</span>
+          <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{formatNumber(finalTotals.p91_120, 2)}₮</span>
         </div>
         <div className="flex flex-col">
           <span className="text-[11px] text-slate-500 uppercase tracking-wider font-bold">120+</span>
-          <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{formatNumber(totals.p120plus, 2)}₮</span>
+          <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{formatNumber(finalTotals.p120plus, 2)}₮</span>
         </div>
       </div>
     );
-  }, [totals, data.length]);
+  }, [totals, data.length, authoritativeTotals]);
 
   return (
     <StandardTable
