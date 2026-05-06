@@ -27,6 +27,8 @@ import {
   Mic,
   Square,
 } from "lucide-react";
+import { useTourSteps } from "@/lib/useTourSteps";
+import { useRegisterTourSteps } from "@/context/TourContext";
 
 /** Normalize zurag/duu to API path "baiguullagiinId/filename". Handles full server paths (e.g. /root/sukhBack/public/medegdel/.../file.jpg) and relative paths. */
 function normalizeMedegdelAssetPath(p: string | null | undefined): string {
@@ -71,6 +73,9 @@ export default function SanalKhuselt() {
   const { ajiltan, token } = useAuth();
   const { selectedBuildingId } = useBuilding();
   const socket = useSocket();
+
+  const tourSteps = useTourSteps("feedback");
+  useRegisterTourSteps("/medegdel/sanalKhuselt", tourSteps);
 
   const [medegdelList, setMedegdelList] = useState<MedegdelItem[]>([]);
   const [selectedMedegdel, setSelectedMedegdel] = useState<MedegdelItem | null>(
@@ -852,8 +857,9 @@ export default function SanalKhuselt() {
           className={`w-full md:w-[380px] lg:w-[420px] flex-col gap-4 shrink-0 ${showDetail ? "hidden md:flex" : "flex"}`}
         >
           {/* Dashboard: counts, click to filter list */}
-          <div className="grid grid-cols-4 gap-2 shrink-0">
+          <div id="feedback-stats" className="grid grid-cols-4 gap-2 shrink-0">
             <button
+              id="feedback-filter-all"
               type="button"
               onClick={() => setDashboardFilter("all")}
               className={`rounded-2xl border p-3 text-center transition-all ${
@@ -866,6 +872,7 @@ export default function SanalKhuselt() {
               <div className="text-[10px] opacity-80">{t("Бүгд")}</div>
             </button>
             <button
+              id="feedback-filter-done"
               type="button"
               onClick={() => setDashboardFilter("shiidegdsen")}
               className={`rounded-2xl border p-3 text-center transition-all ${
@@ -878,6 +885,7 @@ export default function SanalKhuselt() {
               <div className="text-[10px] opacity-80">{t("Шийдэгдсэн")}</div>
             </button>
             <button
+              id="feedback-filter-gomdol"
               type="button"
               onClick={() => setDashboardFilter("gomdol")}
               className={`rounded-2xl border p-3 text-center transition-all ${
@@ -890,6 +898,7 @@ export default function SanalKhuselt() {
               <div className="text-[10px] opacity-80">{t("Гомдол")}</div>
             </button>
             <button
+              id="feedback-filter-sanal"
               type="button"
               onClick={() => setDashboardFilter("sanal")}
               className={`rounded-2xl border p-3 text-center transition-all ${
@@ -905,7 +914,7 @@ export default function SanalKhuselt() {
 
           {/* Search and Filters */}
           <div className="flex flex-col gap-3">
-            <div className="relative">
+            <div id="feedback-search" className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-theme/50" />
               <input
                 type="text"
@@ -915,8 +924,9 @@ export default function SanalKhuselt() {
                 className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] text-theme placeholder:text-theme/40 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm transition-all"
               />
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div id="feedback-filters" className="grid grid-cols-2 gap-2">
               <Select
+                id="feedback-filter-type-select"
                 value={filterType}
                 onChange={setFilterType}
                 className="w-full"
@@ -932,6 +942,7 @@ export default function SanalKhuselt() {
                 ]}
               />
               <Select
+                id="feedback-filter-status-select"
                 value={filterStatus}
                 onChange={setFilterStatus}
                 className="w-full"
@@ -950,7 +961,7 @@ export default function SanalKhuselt() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-3">
+          <div id="sanal-list" className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-3">
             {loading ? (
               <div className="py-10 text-center text-theme/50 text-sm">
                 {t("Уншиж байна...")}

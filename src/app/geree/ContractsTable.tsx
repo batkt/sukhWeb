@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import { Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { FileText, Eye, CalendarX2 } from "lucide-react";
+import { FileText, Eye, CalendarX2, Edit } from "lucide-react";
 import { ALL_COLUMNS } from "./columns";
 import { StandardPagination } from "@/components/ui/StandardTable";
 
@@ -183,7 +183,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
         align: "center",
         width: 140,
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
-        render: (_: any, record: any) => {
+        render: (_: any, record: any, index: number) => {
           const tuluv = String(record?.tuluv || "").trim();
           const isCancelled = tuluv === "Цуцалсан" || tuluv.toLowerCase() === "цуцалсан";
           const cancelDateRaw =
@@ -207,6 +207,14 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
                 title="Гэрээний загвар харах"
               >
                 <Eye className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+              </button>
+              <button
+                onClick={() => handleEdit(record)}
+                className="p-2 rounded-2xl hover-surface transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                id={index === 0 ? "geree-edit-btn" : undefined}
+                title="Засах"
+              >
+                <Edit className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               </button>
               {isCancelled && (
                 <div

@@ -44,6 +44,8 @@ import formatNumber, {
   formatCurrency,
 } from "../../../tools/function/formatNumber";
 import { useTulburFooterTotals } from "@/lib/useTulburFooterTotals";
+import { useRegisterTourSteps } from "@/context/TourContext";
+import { useTourSteps } from "@/lib/useTourSteps";
 
 ChartJS.register(
   CategoryScale,
@@ -787,6 +789,10 @@ export default function Khynalt() {
     return "Төлбөр дутуу";
   };
 
+  // Register guided tour for /khynalt
+  const tourSteps = useTourSteps("dashboard");
+  useRegisterTourSteps("/khynalt", tourSteps);
+
   const huurimtlagdsanAvlaga = useMemo(() => {
     const unpaidList = Array.isArray(orlogoAvlagaData?.unpaid?.list)
       ? orlogoAvlagaData.unpaid.list
@@ -1177,7 +1183,10 @@ export default function Khynalt() {
             Сайн байна уу{ajiltan?.ner ? `, ${ajiltan.ner}` : ""}
           </h1>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-8 pr-4 w-full flex-shrink-0">
+        <div
+          id="khynalt-stats"
+          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-8 pr-4 w-full flex-shrink-0"
+        >
           {kpiCards.map((card, index) => {
             const Icon = (card as any).icon;
             const CardContent = (
@@ -1288,6 +1297,7 @@ export default function Khynalt() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 w-full min-w-0 items-stretch">
             <div
+              id="khynalt-income-chart"
               className={`neu-panel allow-overflow rounded-3xl p-5 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col h-[300px] ${
                 mounted
                   ? "opacity-100 translate-y-0"
@@ -1349,6 +1359,7 @@ export default function Khynalt() {
             </div>
 
             <div
+              id="khynalt-receivable-chart"
               className={`neu-panel allow-overflow rounded-3xl p-5 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col h-[300px] ${
                 mounted
                   ? "opacity-100 translate-y-0"
@@ -1424,6 +1435,7 @@ export default function Khynalt() {
 
             {/* Payment Summary Bar Chart */}
             <div
+              id="khynalt-summary-chart"
               className={`neu-panel allow-overflow rounded-3xl p-5 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col h-[300px] ${
                 mounted
                   ? "opacity-100 translate-y-0"

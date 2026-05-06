@@ -798,7 +798,7 @@ export default function GereeHeader({
             <button
               onClick={onDownloadUnitsTemplate}
               className="btn-minimal"
-              id="units-download-template-btn"
+              id="mobile-units-download-template-btn"
               aria-label="Загвар татах"
               title="Тоот бүртгэлийн Excel загвар татах"
             >
@@ -810,7 +810,7 @@ export default function GereeHeader({
             <button
               onClick={onUnitsExcelImportClick}
               className="btn-minimal"
-              id="units-upload-template-btn"
+              id="mobile-units-upload-template-btn"
               disabled={isUploadingUnits}
               aria-label="Excel-ээс импортлох"
               title="Excel-ээс тоот бүртгэлийг импортлох"

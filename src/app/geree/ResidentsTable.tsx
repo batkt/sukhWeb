@@ -277,12 +277,13 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
         align: "center",
         width: 100,
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
-        render: (_: any, record: ResidentItem) => (
+        render: (_: any, record: ResidentItem, index: number) => (
           <div className="flex gap-2 justify-center">
             <button
               type="button"
               onClick={() => onEdit?.(record)}
               className="p-2 rounded-2xl action-edit hover-surface transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/30"
+              id={index === 0 ? "resident-edit-btn" : undefined}
               title="Засах"
             >
               <Edit className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -291,6 +292,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
               type="button"
               onClick={() => onDelete?.(record)}
               className="p-2 rounded-2xl action-delete hover-surface transition-colors hover:bg-red-100 dark:hover:bg-red-900/30"
+              id={index === 0 ? "resident-delete-btn" : undefined}
               title="Устгах"
             >
               <Trash2 className="w-5 h-5 text-red-600 dark:text-red-400" />

@@ -5,10 +5,15 @@ import { useRouter } from "next/navigation";
 import ResidentsSection from "../ResidentsSection";
 import { useGereeContext } from "../GereeContext";
 import { hasPermission } from "@/lib/permissionUtils";
+import { useTourSteps } from "@/lib/useTourSteps";
+import { useRegisterTourSteps } from "@/context/TourContext";
 
 export default function OrshinSuugchPage() {
   const router = useRouter();
   const { state, data, actions, ajiltan } = useGereeContext();
+
+  const tourSteps = useTourSteps("residents");
+  useRegisterTourSteps("/geree/orshinSuugch", tourSteps);
 
   useEffect(() => {
     if (ajiltan) {

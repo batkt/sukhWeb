@@ -15,6 +15,8 @@ import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import useSWR from "swr"; // Added SWR import if not there
 import BlogManagement from "./BlogManagement";
+import { useTourSteps } from "@/lib/useTourSteps";
+import { useRegisterTourSteps } from "@/context/TourContext";
 interface Geree {
   _id: string;
   ner: string;
@@ -68,6 +70,9 @@ function MedegdelContent() {
   
   const initialTab = searchParams.get("tab") === "niitlel" ? "niitlel" : "medegdel";
   const [activeTab, setActiveTab] = useState<"medegdel" | "niitlel">(initialTab);
+
+  const tourSteps = useTourSteps(activeTab === "niitlel" ? "niitlel" : "notifications");
+  useRegisterTourSteps("/medegdel/medegdel", tourSteps);
 
   useEffect(() => {
     const tab = searchParams.get("tab") === "niitlel" ? "niitlel" : "medegdel";
@@ -387,7 +392,7 @@ function MedegdelContent() {
         </div>
 
         {/* Tabs Control */}
-        <div className="flex p-1  rounded-2xl neu-panel bg-white/5 backdrop-blur-sm self-stretch sm:self-auto">
+        <div id="medegdel-tab-switch" className="flex p-1  rounded-2xl neu-panel bg-white/5 backdrop-blur-sm self-stretch sm:self-auto">
           <button
             onClick={() => handleTabChange("medegdel")}
             className={`flex-1  sm:flex-none px-6 py-2 rounded-xl text-sm transition-all duration-200 ${
@@ -427,9 +432,10 @@ function MedegdelContent() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.35 }}
           className="neu-panel p-4 sm:p-5 flex flex-col min-w-0 lg:flex-1"
+          id="medegdel-channels-section"
         >
           
-          <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mb-4 min-w-0">
+          <div id="medegdel-channels" className="grid grid-cols-3 gap-1.5 sm:gap-2 mb-4 min-w-0">
             {(["App", "Мессеж", "Mail"] as const).map((m) => {
               const Icon = channelIcons[m];
               return (
@@ -450,12 +456,13 @@ function MedegdelContent() {
             })}
           </div>
 
-          <div className="flex items-center justify-between mt-2 mb-2">
+          <div id="medegdel-templates" className="flex items-center justify-between mt-2 mb-2">
             <span className="text-xs  text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
               <FileText className="w-3.5 h-3.5" />
               Загвар
             </span>
             <button
+              id="medegdel-template-add-btn"
               type="button"
               onClick={handleOpenTemplateModal}
               className="btn-minimal-sm btn-minimal inline-flex items-center gap-1.5 px-2 py-1 text-xs"
@@ -574,6 +581,7 @@ function MedegdelContent() {
 
         {/* Middle: Recipients */}
         <motion.section
+          id="medegdel-contacts-section"
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, delay: 0.05 }}
@@ -592,7 +600,7 @@ function MedegdelContent() {
           </div>
 
           <div className="flex items-center gap-2 mb-3 flex-wrap">
-            <label className="flex items-center gap-2 cursor-pointer text-sm">
+            <label id="medegdel-select-all" className="flex items-center gap-2 cursor-pointer text-sm">
               <input
                 type="checkbox"
                 checked={
@@ -611,7 +619,7 @@ function MedegdelContent() {
             )}
           </div>
 
-          <div className="relative h-9 w-full neu-panel mb-3 flex items-center">
+          <div id="medegdel-contact-search" className="relative h-9 w-full neu-panel mb-3 flex items-center">
             <SearchIcon className="absolute left-3 w-4 h-4 text-slate-500 pointer-events-none" />
             <input
               aria-label="Хайх"
@@ -622,7 +630,7 @@ function MedegdelContent() {
             />
           </div>
 
-          <div className="flex-1 min-h-0 overflow-y-auto space-y-2 px-1 pr-1 custom-scrollbar">
+          <div id="medegdel-contact-list" className="flex-1 min-h-0 overflow-y-auto space-y-2 px-1 pr-1 custom-scrollbar">
               {isValidating ? (
                 <div className="text-center py-12 text-slate-500 text-sm">
                   Уншиж байна...
@@ -677,6 +685,7 @@ function MedegdelContent() {
         </motion.section>
         {/* Right: Message composer */}
         <motion.section
+          id="medegdel-composer-section"
           initial={{ opacity: 0, x: 16 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.35, delay: 0.1 }}
@@ -713,12 +722,14 @@ function MedegdelContent() {
 
                 <div className="flex flex-col gap-3 flex-1 min-h-0">
                   <Input
+                    id="medegdel-title-input"
                     placeholder="Гарчиг"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     className="!rounded-xl !h-11 text-sm bg-white/20 dark:bg-white/10 border border-white/30"
                   />
                   <Input.TextArea
+                    id="medegdel-content-input"
                     rows={6}
                     placeholder="Мэдэгдлийн агуулга бичих..."
                     value={msj}
@@ -752,6 +763,7 @@ function MedegdelContent() {
                       }}
                     />
                     <button
+                      id="medegdel-image-btn"
                       type="button"
                       onClick={() => attachInputRef.current?.click()}
                       className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs  bg-white/20 dark:bg-white/10 border border-white/30 hover:bg-white/30 transition-colors"
@@ -800,6 +812,7 @@ function MedegdelContent() {
                     ))}
                   </div>
                   <Button
+                    id="medegdel-new-btn"
                     type="primary"
                     onClick={send}
                     loading={loading}

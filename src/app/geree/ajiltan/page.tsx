@@ -5,10 +5,17 @@ import { useRouter } from "next/navigation";
 import EmployeesSection from "../EmployeesSection";
 import { useGereeContext } from "../GereeContext";
 import { hasPermission } from "@/lib/permissionUtils";
+import { useTourSteps } from "@/lib/useTourSteps";
+import { useRegisterTourSteps } from "@/context/TourContext";
 
 export default function AjiltanPage() {
   const router = useRouter();
   const { state, data, actions, ajiltan } = useGereeContext();
+  
+  // Tour steps
+  const tourSteps = useTourSteps("employees");
+  useRegisterTourSteps("/geree/ajiltan", tourSteps);
+
   const hasGereeBase =
     hasPermission(ajiltan, "/geree") || hasPermission(ajiltan, "geree");
   const canViewEmployees =

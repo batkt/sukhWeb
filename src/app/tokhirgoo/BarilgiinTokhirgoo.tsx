@@ -614,7 +614,13 @@ const NewBuildingModal: React.FC<{
   );
 };
 
+import { useTourSteps } from "@/lib/useTourSteps";
+
 export default function BarilgiinTokhirgoo() {
+  // Register tour steps for barilga
+  const tourSteps = useTourSteps("barilga");
+  useRegisterTourSteps("/tokhirgoo", tourSteps);
+
   const districts: Record<string, string[]> = {
     Улаанбаатар: [
       "Сүхбаатар",

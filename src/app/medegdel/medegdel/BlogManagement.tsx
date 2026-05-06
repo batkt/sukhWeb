@@ -214,7 +214,7 @@ export default function BlogManagement() {
           Нийтлэлүүд
         </h2>
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <div className="relative h-10 flex-1 sm:w-64 flex items-center neu-panel">
+          <div id="niitlel-search" className="relative h-10 flex-1 sm:w-64 flex items-center neu-panel">
             <SearchIcon className="absolute left-3 w-4 h-4 text-slate-500 pointer-events-none" />
             <input
               placeholder="Нийтлэл хайх..."
@@ -224,6 +224,7 @@ export default function BlogManagement() {
             />
           </div>
           <Button
+            id="niitlel-new-btn"
             type="primary"
             onClick={() => handleOpenModal()}
             className="h-10 rounded-xl bg-theme border-0 flex items-center gap-2 shadow-lg hover:shadow-xl transition-all"
@@ -249,7 +250,7 @@ export default function BlogManagement() {
           </div>
         ) : (
           <div className="flex flex-col gap-6">
-            <div className="table-surface rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 sm:p-5">
+            <div id="niitlel-list" className="table-surface rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 sm:p-5">
               <div className="max-h-[calc(100vh-360px)] overflow-auto custom-scrollbar">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {paginatedBlogs.map((blog) => (
@@ -307,14 +308,16 @@ export default function BlogManagement() {
               </div>
             </div>
 
-            <StandardPagination
-              current={page}
-              total={filteredBlogs.length}
-              pageSize={rowsPerPage}
-              onChange={setPage}
-              onPageSizeChange={setRowsPerPage}
-              pageSizeOptions={[6, 9, 12, 24]}
-            />
+            <div id="niitlel-pagination">
+              <StandardPagination
+                current={page}
+                total={filteredBlogs.length}
+                pageSize={rowsPerPage}
+                onChange={setPage}
+                onPageSizeChange={setRowsPerPage}
+                pageSizeOptions={[6, 9, 12, 24]}
+              />
+            </div>
           </div>
         )}
       </div>

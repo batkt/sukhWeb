@@ -5,10 +5,16 @@ import { useRouter } from "next/navigation";
 import UnitsSection from "../UnitsSection";
 import { useGereeContext } from "../GereeContext";
 import { hasPermission } from "@/lib/permissionUtils";
+import { useTourSteps } from "@/lib/useTourSteps";
+import { useRegisterTourSteps } from "@/context/TourContext";
 
 export default function TootBurtgelPage() {
   const router = useRouter();
   const { state, data, actions, ajiltan } = useGereeContext();
+
+  // Tour steps
+  const tourSteps = useTourSteps("units");
+  useRegisterTourSteps("/geree/tootBurtgel", tourSteps);
 
   useEffect(() => {
     if (ajiltan) {

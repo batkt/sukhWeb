@@ -11,6 +11,8 @@ import moment from "moment";
 import { useAuth } from "@/lib/useAuth";
 import { useRouter } from "next/navigation";
 import { hasPermission } from "@/lib/permissionUtils";
+import { useTourSteps } from "@/lib/useTourSteps";
+import { useRegisterTourSteps } from "@/context/TourContext";
 import uilchilgee, { getApiUrl } from "@/lib/uilchilgee";
 import useBaiguullaga from "@/lib/useBaiguullaga";
 import formatNumber from "../../../../tools/function/formatNumber";
@@ -41,6 +43,9 @@ type TableItem = {
 export default function Ebarimt() {
   const router = useRouter();
   const { token, ajiltan, barilgiinId } = useAuth();
+
+  const tourSteps = useTourSteps("ebarimt");
+  useRegisterTourSteps("/tulbur/ebarimt", tourSteps);
 
   useEffect(() => {
     if (ajiltan) {

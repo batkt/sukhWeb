@@ -2949,11 +2949,20 @@ export default function DansniiKhuulga() {
   const tourSteps = useMemo<DriverStep[]>(
     () => [
       {
+        element: "#guilgee-date",
+        popover: {
+          title: "Огнооны шүүлтүүр",
+          description: "Хугацааны интервал сонгож жагсаалтыг шүүнэ.",
+          side: "bottom",
+        },
+      },
+      {
         element: "#guilgee-status-filter",
         popover: {
           title: "Төлөвийн шүүлтүүр",
           description:
             "Төлсөн, Төлөөгүй эсвэл Хугацаа хэтэрсэн гэх мэт төлөвөөр ялгана.",
+          side: "bottom",
         },
       },
       {
@@ -2961,6 +2970,7 @@ export default function DansniiKhuulga() {
         popover: {
           title: "Нэхэмжлэх",
           description: "Энд дарж нэхэмжлэхийн цонх нээнэ.",
+          side: "left",
         },
       },
       {
@@ -2968,6 +2978,7 @@ export default function DansniiKhuulga() {
         popover: {
           title: "Excel татах",
           description: "Жагсаалтыг Excel файл хэлбэрээр татна.",
+          side: "left",
         },
       },
       {
@@ -2975,6 +2986,7 @@ export default function DansniiKhuulga() {
         popover: {
           title: "Жагсаалт",
           description: "Гүйлгээний түүх энд харагдана.",
+          side: "top",
         },
       },
       {
@@ -2982,6 +2994,7 @@ export default function DansniiKhuulga() {
         popover: {
           title: "Хуудаслалт",
           description: "Эндээс хуудсуудын хооронд шилжинэ.",
+          side: "top",
         },
       },
     ],
@@ -3010,7 +3023,7 @@ export default function DansniiKhuulga() {
       </div> */}
 
       <div className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div id="guilgee-status-filter" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((stat, idx) => {
             // Map stat titles to filter values
             const getFilterValue = (
@@ -3062,7 +3075,7 @@ export default function DansniiKhuulga() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
               <div
-                id="dans-date"
+                id="guilgee-date"
                 className="btn-minimal h-[40px] w-[min(100%,320px)] sm:w-[320px] flex items-center px-3"
               >
                 <StandardDatePicker
@@ -3268,6 +3281,7 @@ export default function DansniiKhuulga() {
               </div>
               <Tooltip title="Нэхэмжлэх илгээх">
                 <motion.div
+                  id="guilgee-nekhemjlekh-btn"
                   whileHover={{ scale: 1.03 }}
                   transition={{ duration: 0.3 }}
                 >
@@ -3345,14 +3359,16 @@ export default function DansniiKhuulga() {
               }}
             />
           </div>
-          <StandardPagination
-            current={page}
-            total={deduplicatedResidents.length}
-            pageSize={rowsPerPage}
-            onChange={setPage}
-            onPageSizeChange={setRowsPerPage}
-            pageSizeOptions={[50, 100, 500, 1000]}
-          />
+          <div id="guilgee-pagination">
+            <StandardPagination
+              current={page}
+              total={deduplicatedResidents.length}
+              pageSize={rowsPerPage}
+              onChange={setPage}
+              onPageSizeChange={setRowsPerPage}
+              pageSizeOptions={[50, 100, 500, 1000]}
+            />
+          </div>
         </div>
       </div>
 
