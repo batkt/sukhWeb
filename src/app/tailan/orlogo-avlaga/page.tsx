@@ -165,7 +165,7 @@ export default function OrlogoAvlagaPage() {
 
   const baiguullagiinId = ajiltan?.baiguullagiinId ?? null;
 
-  const [activeTab, setActiveTab] = useState<TabType>("avlaga");
+  const [activeTab, setActiveTab] = useState<TabType>("tulult");
   const [dateRange, setDateRange] = useState<DateRangeValue>(getDefaultDateRange);
   const { searchTerm } = useSearch();
   const [filters, setFilters] = useState({
@@ -453,7 +453,30 @@ export default function OrlogoAvlagaPage() {
   const deduplicatedResidents = useMemo(() => {
     const map = new Map<string, any>();
 
-    // Process each resident to pull sync'd values from the matrix and ledger
+    // 1. First, populate with all residents from the building
+    (orshinSuugchGaralt?.jagsaalt || []).forEach((r: any) => {
+      const rid = String(r?._id || "").trim();
+      if (!rid) return;
+
+      // Use a synthetic key: rid + primary toot to handle cases without contracts yet
+      const key = `res-${rid}`;
+      map.set(key, {
+        _id: rid,
+        _residentId: rid,
+        _ner: r.ner || "",
+        _ovog: r.ovog || "",
+        _utas: r.utas || "",
+        _toot: r.toot || "",
+        _davkhar: r.davkhar || "",
+        _ekhniiUldegdel: 0,
+        _periodPaid: 0,
+        _periodTulbur: 0,
+        _finalUldegdel: 0,
+        isResidentOnly: true
+      });
+    });
+
+    // 2. Then, process contracts to get accurate financial data and handle multiple units
     (gereeGaralt?.jagsaalt || []).forEach((ct: any) => {
       const gid = String(ct?._id || "").trim();
       if (!gid) return;
@@ -461,19 +484,13 @@ export default function OrlogoAvlagaPage() {
       const residentId = String(ct?.orshinSuugchId || "").trim();
       const r = residentId ? residentsById[residentId] : undefined;
 
-      // 1. Төлөх дүн (Billed) from Ledger aggregation
       const periodBilled = Number(ledgerBilledTable[gid] ?? 0);
-
-      // 2. Төлсөн (Paid) from Ledger aggregation
       const periodPaid = Number(ledgerPaidTable[gid] ?? 0);
-
-      // 3. Эцсийн үлдэгдэл (Final Balance) from Running Ledger
       const finalBal =
         ledgerBalances[gid] != null
           ? Number(ledgerBalances[gid])
           : Number(ct.globalUldegdel ?? ct.uldegdel ?? 0);
 
-      // 4. Эхний үлдэгдэл (Opening Balance) from Ledger
       const ekhBal = 
         footerTotals.ekhniiUldegdelByGereeId[gid] != null
           ? Number(footerTotals.ekhniiUldegdelByGereeId[gid])
@@ -481,7 +498,7 @@ export default function OrlogoAvlagaPage() {
             ? Number(ct.ekhniiUldegdel ?? 0)
             : finalBal - periodBilled + periodPaid;
 
-      map.set(gid, {
+      const row = {
         ...ct,
         _gereeId: gid,
         _gereeDugaar: ct?.gereeniiDugaar || "",
@@ -495,20 +512,32 @@ export default function OrlogoAvlagaPage() {
         _periodPaid: Math.round(periodPaid * 100) / 100,
         _periodTulbur: Math.round(periodBilled * 100) / 100,
         _finalUldegdel: Math.round(finalBal * 100) / 100,
-      });
+      };
+
+      // If this resident was already added (from step 1), and this is their first contract,
+      // we can either replace the resident-only row or add as a new row.
+      // To show ALL UNITS, we should add a row for each contract.
+      if (residentId && map.has(`res-${residentId}`)) {
+        const resOnly = map.get(`res-${residentId}`);
+        if (resOnly.isResidentOnly) {
+           // Replace the "placeholder" with the first real contract
+           map.delete(`res-${residentId}`);
+        }
+      }
+      
+      map.set(gid, row);
     });
 
     return Array.from(map.values());
   }, [
-    buildingHistoryItems,
+    orshinSuugchGaralt,
+    gereeGaralt,
+    residentsById,
     ledgerBalances,
     ledgerPaidTable,
-    monthlyMatrixData,
-    monthlyMatrixRange.monthKey,
-    contractsByNumber,
-    contractsById,
-    residentsById,
-    gereeGaralt,
+    ledgerBilledTable,
+    footerTotals,
+    effectiveDateFilter
   ]);
 
 
@@ -579,7 +608,11 @@ export default function OrlogoAvlagaPage() {
     [deduplicatedResidents, debouncedFilters, searchTerm],
   );
 
-  const displayList = activeTab === "tulult" ? paidList : avlagaList;
+  const displayList = useMemo(() => {
+    if (activeTab === "tulult") return paidList;
+    if (activeTab === "avlaga") return avlagaList;
+    return allList;
+  }, [activeTab, paidList, avlagaList, allList]);
 
   // Use authoritative grand totals from useTulburFooterTotals (same as tulbur page)
   const totalOrlogo = footerTotals.totalPaid;
@@ -837,12 +870,12 @@ export default function OrlogoAvlagaPage() {
 
       <div className="flex justify-between items-center  mb-6 no-print">
         <div className="flex items-center gap-6">
-          <h1 className="text-2xl font-bold">Орлого авлагын товчоо</h1>
+          <h1 className="text-2xl font-bold">Орлого тулгалтын тайлан</h1>
           <div className="flex gap-2">
             {(
               [
-                ["avlaga", "Авлага"],
                 ["tulult", "Орлого"],
+                ["all", "Бүгд"],
               ] as [TabType, string][]
             ).map(([tab, label]) => (
               <button

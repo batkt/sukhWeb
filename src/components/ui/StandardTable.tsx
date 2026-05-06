@@ -39,6 +39,8 @@ interface Column<T> {
   sorter?: boolean | ((a: T, b: T) => number);
   render?: (value: any, item: T, index: number) => React.ReactNode;
   className?: string;
+  children?: Column<T>[];
+  fixed?: "left" | "right";
 }
 
 interface StandardTableProps<T extends object> {
@@ -92,34 +94,44 @@ export function StandardTable<T extends object>({
   };
 
   // Convert our Column type to Ant Design's TableColumnsType with dark mode support
-  const antColumns: TableColumnsType<T> = columns.map((col, colIndex) => ({
+  const mapColumn = (col: Column<T>, colIndex: number, totalCols: number): any => ({
     key: col.key,
-    dataIndex: col.key,
+    dataIndex: col.children ? undefined : col.key,
     title: col.label,
     width: col.width,
     align: getAlign(col.align) as "left" | "center" | "right",
     sorter: col.sorter,
+    fixed: col.fixed,
     className: `
-      bg-gray-50 dark:bg-gray-900 
+      !bg-gray-50 dark:!bg-gray-900 
       text-gray-900 dark:text-white 
-      border-b border-gray-200 dark:border-gray-700
-      font-semibold
+      border-b border-gray-200 dark:border-gray-800
+      font-semibold py-1.5 px-2
       ${col.className || ""}
     `,
+    children: col.children?.map((child, idx) => mapColumn(child, idx, col.children!.length)),
     onCell: () => ({
-      className: colIndex < columns.length - 1 ? "!border-r !border-slate-200 dark:!border-slate-700/60" : undefined,
+      className: `
+        ${colIndex < totalCols - 1 ? "!border-r !border-slate-200 dark:!border-slate-800" : ""}
+        py-1.5 px-2
+      `,
     }),
     onHeaderCell: () => ({
-      className: colIndex < columns.length - 1 ? "!border-r !border-slate-200 dark:!border-slate-700/60" : undefined,
+      className: `
+        ${colIndex < totalCols - 1 ? "!border-r !border-slate-200 dark:!border-slate-800" : ""}
+        !bg-gray-50 dark:!bg-gray-900 py-1.5 px-2
+      `,
     }),
-    render: (value: any, record: T, index: number) => {
+    render: col.children ? undefined : (value: any, record: T, index: number) => {
       return col.render ? (
         col.render(value, record, index)
       ) : (
         <span className="text-gray-900 dark:text-white">{value}</span>
       );
     },
-  }));
+  });
+
+  const antColumns: TableColumnsType<T> = columns.map((col, idx) => mapColumn(col, idx, columns.length));
 
   // Prepare data with keys for Ant Design
   const dataWithKeys = data.map((item, index) => ({

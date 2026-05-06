@@ -30,11 +30,11 @@ export default function NegtgelTailanPage() {
 
   const baiguullagiinId = ajiltan?.baiguullagiinId ?? null;
 
-  const [dateRange, setDateRange] = useState<[any, any] | undefined>(getDefaultDateRange);
+  const [dateRange, setDateRange] = useState<[any, any] | undefined>(undefined);
   const [searchText, setSearchText] = useState("");
   const { searchTerm } = useSearch();
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(100);
+  const [pageSize, setPageSize] = useState(1000);
 
   // Authoritative totals from the same source as the tulbur page
   const footerTotals = useTulburFooterTotals(
@@ -132,8 +132,8 @@ export default function NegtgelTailanPage() {
           report: "negtgel",
           baiguullagiinId: baiguullagiinId ?? undefined,
           barilgiinId: selectedBuildingId ?? undefined,
-          ekhlekhOgnoo: `${dateRange?.[0] || ""} 00:00:00`,
-          duusakhOgnoo: `${dateRange?.[1] || ""} 23:59:59`,
+          ekhlekhOgnoo: dateRange?.[0] ? `${dayjs(dateRange[0]).format("YYYY-MM-DD")} 00:00:00` : undefined,
+          duusakhOgnoo: dateRange?.[1] ? `${dayjs(dateRange[1]).format("YYYY-MM-DD")} 23:59:59` : undefined,
           search: searchText || searchTerm || undefined,
         },
         { responseType: "blob" },
@@ -205,7 +205,7 @@ export default function NegtgelTailanPage() {
             setPageSize(v);
             setCurrentPage(1);
           }}
-          pageSizeOptions={[50, 100, 200, 500]}
+          pageSizeOptions={[50, 100, 200, 500, 1000]}
         />
       </div>
     </div>

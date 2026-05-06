@@ -251,11 +251,12 @@ export default function AvlagiinNasjiltPage() {
         "/tailan/avlagiin-nasjilt",
         payload,
       );
-      const fetchedData =
-        response.data?.detailed?.list || response.data?.jagsaalt || [];
-      const summaryData = response.data?.summary || null;
+      const fetchedData = response.data?.data || response.data?.detailed?.list || response.data?.jagsaalt || [];
+      const summaryData = response.data?.totals || response.data?.summary || null;
+      const countData = response.data?.totalCount || response.data?.count || (Array.isArray(fetchedData) ? fetchedData.length : 0);
+      
       setData(Array.isArray(fetchedData) ? fetchedData : []);
-      setSummary(summaryData);
+      setSummary({ totals: summaryData, count: countData });
     } catch (err: any) {
       console.error("Fetch error:", err);
     } finally {
@@ -302,16 +303,14 @@ export default function AvlagiinNasjiltPage() {
   };
 
   const filteredData = useMemo(() => {
-    return data.filter((it: any) => {
-      const uldegdel = Number(it.uldegdel ?? it.tulukhDun ?? 0);
-      return Math.abs(uldegdel) > 0.01;
-    });
+    return data;
   }, [data]);
 
   const totals = useMemo(() => {
+    if (summary?.totals) return summary.totals;
     const fields = [
       "undsenDun", "khungulult", "tulsunDun", "uldegdel",
-      "p0_30", "p31_60", "p61_90", "p120plus",
+      "p0_30", "p31_60", "p61_90", "p91_120", "p120plus",
     ];
     const results: any = {};
     fields.forEach((f) => {
@@ -322,7 +321,7 @@ export default function AvlagiinNasjiltPage() {
       );
     });
     return results;
-  }, [filteredData]);
+  }, [filteredData, summary?.totals]);
 
   return (
     <ConfigProvider

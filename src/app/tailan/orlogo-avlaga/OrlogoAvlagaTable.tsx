@@ -236,12 +236,12 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                   </Table.Summary.Cell>
                 </Table.Summary.Row>
                 {expandedGlobalUldegdel !== null && (
-                  <Table.Summary.Row className="bg-red-50 dark:bg-red-900/20  ">
-                    <Table.Summary.Cell index={0} colSpan={3} align="right">
-                      <span className="  text-red-600 dark:text-red-400 text-[13px]">Нийт үлдэгдэл:</span>
-                    </Table.Summary.Cell>
-                    <Table.Summary.Cell index={1} colSpan={2} align="right">
-                      <span className="  text-red-600 dark:text-red-400 text-[15px]">{formatNumber(expandedGlobalUldegdel, 2)} ₮</span>
+                  <Table.Summary.Row className="bg-red-50 dark:bg-red-900/20">
+                    <Table.Summary.Cell index={0} colSpan={6} align="right">
+                      <div className="flex items-center justify-end gap-2 py-1 px-2">
+                        <span className="font-semibold text-red-600 dark:text-red-400 text-[13px]">Нийт үлдэгдэл:</span>
+                        <span className="font-bold text-red-600 dark:text-red-400 text-[16px]">{formatNumber(expandedGlobalUldegdel, 2)} ₮</span>
+                      </div>
                     </Table.Summary.Cell>
                   </Table.Summary.Row>
                 )}
