@@ -16,10 +16,6 @@ interface ResidentsSectionProps {
   sortKey: SortKey;
   sortOrder: "asc" | "desc";
   toggleSortFor?: (key: string, order?: any) => void;
-  tuluvByResidentId: Record<
-    string,
-    "Төлсөн" | "Төлөөгүй" | "Хугацаа хэтэрсэн" | "Тодорхойгүй"
-  >;
   onEditResident: (resident: any) => void;
   onRequestDeleteResident: (resident: any) => void;
   onRemoveToot?: (residentId: string, baiguullagiinId: string, barilgiinId: string, toot: string) => void;
@@ -37,7 +33,6 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
   sortKey,
   sortOrder,
   toggleSortFor,
-  tuluvByResidentId,
   onEditResident,
   onRequestDeleteResident,
   onRemoveToot,
@@ -60,7 +55,6 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
               pageSize={resPageSize}
               sortKey={sortKey}
               sortOrder={sortOrder}
-              tuluvByResidentId={tuluvByResidentId}
               maxHeight="calc(100vh - 460px)"
               onEdit={onEditResident}
               onDelete={onRequestDeleteResident}

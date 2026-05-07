@@ -165,13 +165,23 @@ export function GereeProvider({ children }: { children: React.ReactNode }) {
       "ajiltan.deleted": data.ajiltniiJagsaaltMutate,
     };
 
+    // Listen for global payment/billing updates
+    const paymentEvent = `tulburUpdated:${ajiltan.baiguullagiinId}`;
+    const paymentHandler = () => {
+      console.log("💰 Payment update received via socket, refreshing resident data...");
+      data.orshinSuugchJagsaaltMutate?.();
+      data.gereeJagsaaltMutate?.();
+    };
+
     socketCtx.on(baiguullagiinEvent, baiguullagiinHandler);
+    socketCtx.on(paymentEvent, paymentHandler);
     Object.entries(legacyHandlers).forEach(([event, handler]) => {
       socketCtx?.on(event, handler);
     });
 
     return () => {
       try { socketCtx.off(baiguullagiinEvent, baiguullagiinHandler); } catch (e) {}
+      try { socketCtx.off(paymentEvent, paymentHandler); } catch (e) {}
       Object.entries(legacyHandlers).forEach(([event, handler]) => {
         try { socketCtx?.off(event, handler); } catch (e) {}
       });

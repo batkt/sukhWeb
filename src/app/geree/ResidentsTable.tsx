@@ -34,7 +34,6 @@ interface ResidentsTableProps {
   pageSize?: number;
   sortKey?: SortKey;
   sortOrder?: SortOrder;
-  tuluvByResidentId?: Record<string, string>;
   onEdit?: (resident: ResidentItem) => void;
   onDelete?: (resident: ResidentItem) => void;
   onRemoveToot?: (residentId: string, baiguullagiinId: string, barilgiinId: string, toot: string) => void;
@@ -50,7 +49,6 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
   pageSize = 10,
   sortKey = "createdAt",
   sortOrder = "desc",
-  tuluvByResidentId = {},
   onEdit,
   onDelete,
   onRemoveToot,
@@ -245,17 +243,9 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
         key: "tuluv",
         align: "center",
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
-        render: (_: any, record: ResidentItem) => {
-          const id = String(record?._id || "");
-          let label = "Тодорхойгүй";
-          if (record?.uldegdel !== undefined && Number(record.uldegdel) <= 0) {
-            label = "Төлсөн";
-          } else {
-            label =
-              id && tuluvByResidentId[id]
-                ? tuluvByResidentId[id]
-                : getPaymentStatusLabel(record);
-          }
+        render: (_: any, record: any) => {
+          const uldegdel = Number(record?.uldegdel ?? record?.ekhniiUldegdel ?? 0);
+          const label = uldegdel <= 0 ? "Төлсөн" : "Төлөөгүй";
           const cls =
             label === "Төлсөн"
               ? "badge-paid"
@@ -306,7 +296,6 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
       pageSize,
       sortKey,
       sortOrder,
-      tuluvByResidentId,
       onEdit,
       onDelete,
       onRemoveToot,

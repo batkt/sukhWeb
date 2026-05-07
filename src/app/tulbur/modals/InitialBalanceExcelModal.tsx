@@ -158,15 +158,20 @@ export default function InitialBalanceExcelModal({
                 <X className="w-5 h-5 text-gray-500" />
               </Button>
             </div>
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-3">
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="px-4 py-2 border border-gray-200 dark:border-slate-700 bg-transparent rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                />
+            <div className="flex flex-col gap-2 mb-8">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="px-4 py-2 border border-gray-200 dark:border-slate-700 bg-transparent rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  />
+                </div>
               </div>
+              <p className="text-[10px] text-gray-500 dark:text-slate-400 italic">
+                * Excel файл дотор "Огноо" багана ашиглан мөр бүрт өөр огноо өгөх боломжтой.
+              </p>
             </div>
 
             <div

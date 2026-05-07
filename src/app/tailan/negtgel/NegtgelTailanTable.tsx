@@ -230,7 +230,7 @@ export function NegtgelTailanTable({ data, loading, authoritativeTotalUldegdel }
           render: (_: any, record: NegtgelTailanItem) => {
             const bal = Number(record.niitUldegdel ?? record.globalUldegdel ?? record.niitTulukhDun ?? 0);
             return (
-              <span className="font-bold text-gray-900 dark:text-white">
+              <span className="text-gray-900 dark:text-white">
                 {formatNumber(bal, 2)}
               </span>
             );
@@ -252,8 +252,8 @@ export function NegtgelTailanTable({ data, loading, authoritativeTotalUldegdel }
       containerClassName="rounded-2xl"
       footer={
         <div className="flex justify-end items-center gap-4 py-2 border-t border-gray-100 dark:border-gray-800">
-          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Нийт үлдэгдэл:</span>
-          <span className="text-lg font-bold text-emerald-500">{formatNumber(totalUldegdel, 2)} ₮</span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">Нийт үлдэгдэл:</span>
+          <span className="text-lg text-emerald-500">{formatNumber(totalUldegdel, 2)} ₮</span>
         </div>
       }
     />

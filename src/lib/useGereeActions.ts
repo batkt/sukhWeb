@@ -157,10 +157,14 @@ export function useGereeActions(
                 khonogoorBodokhEsekh: newResident.khonogoorBodokhEsekh || false,
                 bodokhKhonog: newResident.bodokhKhonog || 0,
               }],
-          // Backward compatibility fields
-          toot: newResident.toot || "",
-          davkhar: newResident.davkhar || "",
-          orts: newResident.orts || "1",
+          // Backward compatibility fields - pull from first unit if possible
+          toot: newResident.units?.[0]?.toot || newResident.toot || "",
+          davkhar: newResident.units?.[0]?.davkhar || newResident.davkhar || "",
+          orts: newResident.units?.[0]?.orts || newResident.orts || "1",
+          ekhniiUldegdel: newResident.units?.[0]?.ekhniiUldegdel ?? (newResident.ekhniiUldegdel || 0),
+          tsahilgaaniiZaalt: newResident.units?.[0]?.tsahilgaaniiZaalt ?? (newResident.tsahilgaaniiZaalt || 0),
+          khonogoorBodokhEsekh: newResident.units?.[0]?.khonogoorBodokhEsekh ?? (newResident.khonogoorBodokhEsekh || false),
+          bodokhKhonog: Number(newResident.units?.[0]?.bodokhKhonog ?? (newResident.bodokhKhonog || 0)),
           barilgiinId: selectedBarilga?._id || effectiveBid || "",
           bairniiNer: selectedBarilga?.ner || "",
           // Global settings
@@ -169,8 +173,6 @@ export function useGereeActions(
           horoo: newResident.horoo || selectedBarilga?.horoo || "",
           soh: selectedBarilga?.tokhirgoo?.sohNer || "",
           sohNer: selectedBarilga?.tokhirgoo?.sohNer || "",
-          khonogoorBodokhEsekh: newResident.khonogoorBodokhEsekh || false,
-          bodokhKhonog: Number(newResident.bodokhKhonog) || 0,
           // Temporary contract end date
           duusakhOgnoo: newResident.turul === "Түр" ? (newResident.duusakhOgnoo || null) : null,
         };
@@ -336,6 +338,10 @@ export function useGereeActions(
         }
       }
 
+      console.log(`[DEBUG] Opening Resident Modal:`, {
+        name: `${p.ovog} ${p.ner}`,
+        units: Array.isArray(p.toots) ? p.toots.map((t: any) => ({ toot: t.toot, balance: t.ekhniiUldegdel })) : "no toots"
+      });
       setNewResident({
         ovog: p.ovog || "",
         ner: p.ner || "",
@@ -353,10 +359,10 @@ export function useGereeActions(
         orts: p.orts || "",
         toot: p.toot || "",
         davkhar: p.davkhar || "",
-        tsahilgaaniiZaalt: p.tsahilgaaniiZaalt || "",
+        tsahilgaaniiZaalt: p.tsahilgaaniiZaalt ?? 0,
         turul: p.turul || "Үндсэн",
         tailbar: p?.tailbar || "",
-        ekhniiUldegdel: p.ekhniiUldegdel || 0,
+        ekhniiUldegdel: ekhniiUldegdel ?? 0,
         khonogoorBodokhEsekh: p.khonogoorBodokhEsekh || false,
         bodokhKhonog: p.bodokhKhonog || 0,
         duusakhOgnoo: p.duusakhOgnoo
@@ -367,8 +373,10 @@ export function useGereeActions(
               orts: t.orts || "1",
               davkhar: t.davkhar || "",
               toot: t.toot || "",
-              ekhniiUldegdel: t.ekhniiUldegdel || 0,
-              tsahilgaaniiZaalt: t.tsahilgaaniiZaalt || 0,
+              ekhniiUldegdel: (t.ekhniiUldegdel !== undefined && t.ekhniiUldegdel !== 0) 
+                ? t.ekhniiUldegdel 
+                : (ekhniiUldegdel || 0),
+              tsahilgaaniiZaalt: t.tsahilgaaniiZaalt ?? 0,
               khonogoorBodokhEsekh: t.khonogoorBodokhEsekh || false,
               bodokhKhonog: t.bodokhKhonog || 0,
             }))
@@ -377,7 +385,7 @@ export function useGereeActions(
                 orts: p.orts || "1",
                 davkhar: p.davkhar || "",
                 toot: p.toot || "",
-                ekhniiUldegdel: p.ekhniiUldegdel || 0,
+                ekhniiUldegdel: ekhniiUldegdel || 0,
                 tsahilgaaniiZaalt: p.tsahilgaaniiZaalt || 0,
                 khonogoorBodokhEsekh: p.khonogoorBodokhEsekh || false,
                 bodokhKhonog: p.bodokhKhonog || 0,
@@ -927,6 +935,14 @@ export function useGereeActions(
           if (baiguullagaMutate) {
             await baiguullagaMutate();
           }
+          // Refresh resident and contract lists across the app
+          mutate(
+            (key: any) =>
+              Array.isArray(key) &&
+              (key[0] === "/orshinSuugch" || key[0] === "/geree"),
+            undefined,
+            { revalidate: true },
+          );
         }
       } catch (err) {
         openErrorOverlay(getErrorMessage(err));
@@ -1034,6 +1050,14 @@ export function useGereeActions(
           if (baiguullagaMutate) {
             await baiguullagaMutate();
           }
+          // Refresh resident and contract lists across the app
+          mutate(
+            (key: any) =>
+              Array.isArray(key) &&
+              (key[0] === "/orshinSuugch" || key[0] === "/geree"),
+            undefined,
+            { revalidate: true },
+          );
         }
       } catch (err) {
         openErrorOverlay(getErrorMessage(err));

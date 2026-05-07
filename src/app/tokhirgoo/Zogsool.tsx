@@ -140,9 +140,9 @@ export default function Zogsool({
     setEditingItem(null);
   };
 
-  const formatNumber = (num: any, decimals = 0) => {
+  const formatNumber = (num: any, decimals = 2) => {
     const val = typeof num === 'string' ? parseFloat(num) : num;
-    if (isNaN(val)) return "0";
+    if (isNaN(val)) return "0.00";
     return val.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
   };
 

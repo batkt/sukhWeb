@@ -62,16 +62,11 @@ export const ZogsoolOrshinSuugchTable: React.FC<
         title: "Нэр",
         key: "ner",
         render: (_: any, record: ResidentParking) => (
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500">
-              <User className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-[12px] font-black text-slate-700 dark:text-slate-200">
-                {record.ner || record.orshinSuugchNer || "Нэр тодорхойгүй"}
-              </p>
-              <p className="text-[10px] text-slate-400">{record.ovog || ""}</p>
-            </div>
+          <div>
+            <p className="text-[12px] font-semibold text-slate-700 dark:text-slate-200">
+              {record.ner || record.orshinSuugchNer || "Нэр тодорхойгүй"}
+            </p>
+            <p className="text-[10px] text-slate-400">{record.ovog || ""}</p>
           </div>
         ),
       },

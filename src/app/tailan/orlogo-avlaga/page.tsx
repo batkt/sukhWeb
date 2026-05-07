@@ -831,7 +831,9 @@ export default function OrlogoAvlagaPage() {
             <h1 className="text-2xl font-bold uppercase">
               {activeTab === "tulult"
                 ? "Орлогын товчоо тайлан"
-                : "Авлага тулгалтын тайлан"}
+                : activeTab === "avlaga"
+                  ? "Авлагын товчоо тайлан"
+                  : "Орлого авлагын тайлан"}
             </h1>
             <p className="text-sm mt-1">
               {baiguullaga?.ner || "Байгууллагын нэр"}
@@ -870,11 +872,12 @@ export default function OrlogoAvlagaPage() {
 
       <div className="flex justify-between items-center  mb-6 no-print">
         <div className="flex items-center gap-6">
-          <h1 className="text-2xl font-bold">Орлого тулгалтын тайлан</h1>
+          <h1 className="text-2xl font-bold">Авлагын товчоо</h1>
           <div className="flex gap-2">
             {(
               [
                 ["tulult", "Орлого"],
+                ["avlaga", "Авлага"],
                 ["all", "Бүгд"],
               ] as [TabType, string][]
             ).map(([tab, label]) => (

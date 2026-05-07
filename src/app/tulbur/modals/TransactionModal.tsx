@@ -301,7 +301,7 @@ export default function TransactionModal({
       if (res.data?.success && typeof res.data.niitDun === "number") {
         console.log("[CALC] Received response:", res.data);
         const formatted = formatAmount(res.data.niitDun);
-        setAmount(formatted.split(".")[0] || "0");
+        setAmount(formatted);
 
         // Save breakdown for UI display
         setCalcBreakdown({

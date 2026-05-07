@@ -36,8 +36,11 @@ interface Props {
 }
 
 const formatNumber = (val: any) => {
-  if (val === null || val === undefined || isNaN(Number(val))) return "0";
-  return new Intl.NumberFormat("en-US").format(Number(val));
+  if (val === null || val === undefined || isNaN(Number(val))) return "0.00";
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Number(val));
 };
 
 const ValueRenderer: React.FC<{

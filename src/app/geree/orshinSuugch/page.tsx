@@ -40,7 +40,6 @@ export default function OrshinSuugchPage() {
       sortKey={state.sortKey}
       sortOrder={state.sortOrder}
       toggleSortFor={actions.toggleSortFor}
-      tuluvByResidentId={data.tuluvByResidentId}
       onEditResident={(resident) => {
         actions.handleEditResident(
           resident,

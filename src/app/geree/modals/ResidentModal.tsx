@@ -8,7 +8,8 @@ import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { ConfirmCloseDialog } from "@/components/ui/ConfirmCloseDialog";
 import Button from "@/components/ui/Button";
-import { Plus } from "lucide-react";
+import { Plus, Calendar } from "lucide-react";
+import StandardDatePicker from "@/components/ui/StandardDatePicker";
 import {
   getResidentToot,
   getResidentDavkhar,
@@ -54,23 +55,72 @@ export default function ResidentModal({
   const [showConfirmClose, setShowConfirmClose] = React.useState(false);
 
   // Snapshot of newResident when modal opens — used to detect unsaved changes
-  const initialSnapshot = React.useRef<any>(null);
+  const initialSnapshot = React.useRef<string | null>(null);
   React.useEffect(() => {
     if (show) {
-      initialSnapshot.current = JSON.parse(JSON.stringify(newResident));
+      // Wait for units to be initialized (either from props or from the useEffect below)
+      // to avoid false-positive "unsaved changes" warnings on new residents.
+      const hasUnits = Array.isArray(newResident?.units) && newResident.units.length > 0;
+      
+      if (!initialSnapshot.current) {
+          // Only take snapshot if units are populated (initialization done)
+          // OR if it's been a few renders and still no units (though should always have one)
+          if (hasUnits) {
+            initialSnapshot.current = JSON.stringify(newResident);
+          }
+      }
       setErrors([]);
     } else {
+      initialSnapshot.current = null;
       setShowConfirmClose(false);
-      // Reset local inputs when modal closes
       setUldegdelInput("");
       setZaaltInput("");
     }
-  }, [show]);
+  }, [show, newResident?.units, editingResident]);
 
   const hasChanges = React.useMemo(() => {
-    if (!initialSnapshot.current) return false;
-    return JSON.stringify(newResident) !== JSON.stringify(initialSnapshot.current);
-  }, [newResident]);
+    if (!initialSnapshot.current || !newResident) return false;
+    
+    // Compare normalized versions
+    const normalize = (val: any) => {
+        if (!val) return {};
+        const obj = typeof val === "string" ? JSON.parse(val) : JSON.parse(JSON.stringify(val));
+        
+        // Remove volatile fields or normalize types
+        const clean = (o: any) => {
+            if (!o || typeof o !== "object") return o;
+            const result: any = Array.isArray(o) ? [] : {};
+            Object.keys(o).forEach(k => {
+                let v = o[k];
+                // Treat undefined, null, empty string as equivalent for ALL fields
+                if (v === undefined || v === null || v === "") {
+                    v = ""; 
+                }
+                // Special case for numbers: 0 is also an "empty" value for these specific fields
+                if (v === 0 || v === "0") {
+                    if (k === "ekhniiUldegdel" || k === "tsahilgaaniiZaalt" || k === "bodokhKhonog") {
+                        v = ""; // Normalize to empty string for comparison
+                    }
+                }
+                
+                if (Array.isArray(v)) {
+                   result[k] = v.map(clean);
+                } else if (v && typeof v === "object") {
+                   result[k] = clean(v);
+                } else {
+                   result[k] = v;
+                }
+            });
+            return result;
+        };
+        return clean(obj);
+    };
+    
+    const s1 = JSON.stringify(normalize(newResident));
+    const s2 = JSON.stringify(normalize(initialSnapshot.current));
+    
+    return s1 !== s2;
+  }, [newResident, show]);
 
   const requestClose = () => {
     if (hasChanges) {
@@ -234,7 +284,7 @@ export default function ResidentModal({
   };
 
   const formatWithCommas = (val: any) => {
-    if (val === undefined || val === null || val === "" || val === 0) return "";
+    if (val === undefined || val === null || val === "") return "";
     const num = typeof val === "string" ? parseToNumber(val) : val;
     if (isNaN(num)) return "";
     return num.toLocaleString("en-US", {
@@ -256,7 +306,8 @@ export default function ResidentModal({
     if (!editingResident) return false;
     const existing =
       editingResident.ekhniiUldegdel ?? editingResident.medeelel?.ekhniiUldegdel;
-    const initial = initialSnapshot.current?.ekhniiUldegdel;
+    const parsedSnapshot = initialSnapshot.current ? JSON.parse(initialSnapshot.current) : null;
+    const initial = parsedSnapshot?.ekhniiUldegdel;
     // Disable if original record has non-zero OR if it was non-zero when modal opened (e.g. fetched from history)
     return (
       (existing != null && Number(existing) !== 0) ||
@@ -285,10 +336,10 @@ export default function ResidentModal({
         }));
       }
 
-      setUldegdelInput(formatWithCommas(newResident.ekhniiUldegdel).split(".")[0] || "");
-      setZaaltInput(formatWithCommas(newResident.tsahilgaaniiZaalt).split(".")[0] || "");
+      setUldegdelInput(formatWithCommas(newResident.ekhniiUldegdel) || "0");
+      setZaaltInput(formatWithCommas(newResident.tsahilgaaniiZaalt) || "0");
     }
-  }, [show, editingResident]);
+  }, [show, newResident.ekhniiUldegdel, newResident.tsahilgaaniiZaalt]);
 
   const addUnitRow = () => {
     setNewResident((p: any) => ({
@@ -596,9 +647,16 @@ export default function ResidentModal({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {/* Төрөл */}
                     <div>
-                      <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors">
-                        Төрөл
-                      </label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs text-slate-600 dark:text-slate-400 transition-colors">
+                          Төрөл
+                        </label>
+                        {newResident.turul === "Түр" && (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-200 dark:border-amber-800 animate-pulse">
+                            Түр гэрээ
+                          </span>
+                        )}
+                      </div>
                       <div className="tusgai-wrapper w-full flex items-center">
                         <TusgaiZagvar
                           value={newResident.turul || "Үндсэн"}
@@ -622,19 +680,28 @@ export default function ResidentModal({
 
                     {/* Гэрээ дуусах огноо - only shown for Түр гэрээ */}
                     {(newResident.turul === "Түр") && (
-                      <div>
-                        <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors">
+                      <motion.div 
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="relative"
+                      >
+                        <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5 text-blue-500" />
                           Гэрээ дуусах огноо <span className="text-red-500">*</span>
                         </label>
-                        <input
-                          type="date"
-                          value={newResident.duusakhOgnoo || ""}
-                          onChange={(e) =>
-                            setNewResident((p: any) => ({ ...p, duusakhOgnoo: e.target.value }))
-                          }
-                          className={`modern-input w-full ${errors.includes("duusakhOgnoo") ? "input-error" : ""}`}
-                        />
-                      </div>
+                        <div className="h-8">
+                          <StandardDatePicker
+                            value={newResident.duusakhOgnoo}
+                            onChange={(_date, dateString) => 
+                              setNewResident((p: any) => ({ ...p, duusakhOgnoo: dateString }))
+                            }
+                            placeholder="Дуусах огноо..."
+                            className={errors.includes("duusakhOgnoo") ? "border-red-500" : ""}
+                            getPopupContainer={() => residentRef.current || document.body}
+                            popupStyle={{ zIndex: 13010 }}
+                          />
+                        </div>
+                      </motion.div>
                     )}
 
                     {/* Овог */}
@@ -806,7 +873,7 @@ export default function ResidentModal({
                               </label>
                               <input
                                 type="text"
-                                value={formatWithCommas(unit.ekhniiUldegdel).split(".")[0] || ""}
+                                value={formatWithCommas(unit.ekhniiUldegdel) || "0"}
                                 onChange={(e) => {
                                   const num = parseToNumber(e.target.value);
                                   updateUnitRow(index, "ekhniiUldegdel", Math.max(0, num));
@@ -823,7 +890,7 @@ export default function ResidentModal({
                               </label>
                               <input
                                 type="text"
-                                value={formatWithCommas(unit.tsahilgaaniiZaalt).split(".")[0] || ""}
+                                value={formatWithCommas(unit.tsahilgaaniiZaalt) || "0"}
                                 onChange={(e) => {
                                   const num = parseToNumber(e.target.value);
                                   updateUnitRow(index, "tsahilgaaniiZaalt", Math.max(0, num));

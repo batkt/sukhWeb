@@ -86,7 +86,7 @@ export default function OrshinSuugch() {
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
   const [editingResident, setEditingResident] =
     useState<ResidentParking | null>(null);
-  const pageSize = 50;
+  const [pageSize, setPageSize] = useState(50);
 
   const shouldFetch = isInitialized && !!token && !!ajiltan?.baiguullagiinId;
 
@@ -98,10 +98,11 @@ export default function OrshinSuugch() {
           ajiltan?.baiguullagiinId,
           effectiveBarilgiinId,
           page,
+          pageSize,
           searchTerm,
         ]
       : null,
-    async ([url, tkn, bId, barId, pg, search]): Promise<any> => {
+    async ([url, tkn, bId, barId, pg, pSize, search]): Promise<any> => {
       // Build query object with barilgiinId for backend filtering
       const queryObj: any = {
         baiguullagiinId: bId,
@@ -124,7 +125,7 @@ export default function OrshinSuugch() {
           baiguullagiinId: bId,
           ...(barId ? { barilgiinId: barId } : {}),
           khuudasniiDugaar: pg,
-          khuudasniiKhemjee: pageSize,
+          khuudasniiKhemjee: pSize,
           ...(search ? { search: search } : {}),
           query: JSON.stringify(queryObj),
         },
@@ -134,24 +135,8 @@ export default function OrshinSuugch() {
     { revalidateOnFocus: false },
   );
 
-  const residents: ResidentParking[] = useMemo(() => {
-    const list = residentsData?.jagsaalt || [];
-    if (!effectiveBarilgiinId) return list;
-
-    // Client-side filtering by barilgiinId as fallback if backend doesn't filter
-    const toStr = (v: any) => (v == null ? "" : String(v));
-    const targetBarilgiinId = toStr(effectiveBarilgiinId);
-
-    return list.filter((item: any) => {
-      const itemBarilgiinId = toStr(item?.barilgiinId);
-      return itemBarilgiinId === targetBarilgiinId;
-    });
-  }, [residentsData, effectiveBarilgiinId]);
-
-  // Use filtered count if client-side filtering is applied
-  const totalCount = effectiveBarilgiinId
-    ? residents.length
-    : residentsData?.niitMur || 0;
+  const residents: ResidentParking[] = residentsData?.jagsaalt || [];
+  const totalCount = residentsData?.niitMur || 0;
   const totalPages = Math.ceil(totalCount / pageSize);
 
   const handleDelete = async (r: ResidentParking) => {
@@ -178,14 +163,14 @@ export default function OrshinSuugch() {
   };
 
   return (
-    <div className="h-full overflow-y-auto custom-scrollbar">
-      <div className="p-4 sm:p-8 max-w-[1700px] mx-auto min-h-full flex flex-col gap-6">
+    <div className="h-full flex flex-col overflow-hidden">
+      <div className="p-4 sm:p-8 max-w-[1700px] mx-auto w-full flex-1 flex flex-col gap-6 overflow-hidden">
         {/* Header */}
         <div className="relative z-10 px-6 py-4 rounded-[32px] border border-slate-200 dark:border-slate-800 shadow-sm shadow-slate-200/50">
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
             {/* Left: Title and Stats */}
             <div className="flex items-center gap-4 shrink-0">
-              <div className="p-2.5 rounded-2xl bg-slate-900 text-white shadow-lg">
+              <div className="p-2.5 rounded-2xl bg-[#4285F4] text-white shadow-lg shadow-[#4285F4]/20">
                 <User className="w-5 h-5" />
               </div>
               <div>
@@ -253,7 +238,7 @@ export default function OrshinSuugch() {
         )}
 
         {/* Content Table */}
-        <div className="relative overflow-hidden rounded-[32px] border border-slate-200 dark:border-slate-800 backdrop-blur-xl shadow-2xl flex-1 mt-2 p-4">
+        <div className="relative overflow-hidden rounded-[32px] border border-slate-200 dark:border-slate-800 backdrop-blur-xl shadow-2xl flex-1 min-h-0 mt-2 p-4">
           <ZogsoolOrshinSuugchTable
             data={residents}
             loading={!residentsData && !residents.length}
@@ -269,7 +254,10 @@ export default function OrshinSuugch() {
           total={totalCount}
           pageSize={pageSize}
           onChange={setPage}
-          onPageSizeChange={undefined} // pageSize is fixed to 50 in this page currently
+          onPageSizeChange={(newSize) => {
+            setPageSize(newSize);
+            setPage(1);
+          }}
         />
       </div>
     </div>

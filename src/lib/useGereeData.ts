@@ -10,6 +10,9 @@ import {
   getResidentToot,
   getResidentDavkhar,
   getResidentOrts,
+  getResidentToots,
+  getResidentDavkhauraud,
+  getResidentOrtsuud,
 } from "@/lib/residentDataHelper";
 
 export function useGereeData(
@@ -222,111 +225,7 @@ export function useGereeData(
     [tootMap, composeKey],
   );
 
-  const [tuluvByResidentId, setTuluvByResidentId] = useState<
-    Record<string, "Төлсөн" | "Төлөөгүй" | "Хугацаа хэтэрсэн" | "Тодорхойгүй">
-  >({});
 
-  // Optimized payment status fetching: reduced limit from 20,000 to 1,000 
-  // and added checks to prevent redundant execution.
-  useEffect(() => {
-    let isMounted = true;
-    const run = async () => {
-      if (!token || !ajiltan?.baiguullagiinId || residentsList.length === 0) return;
-      try {
-        const resp = await uilchilgee(token).get(`/nekhemjlekhiinTuukh`, {
-          params: {
-            baiguullagiinId: ajiltan.baiguullagiinId,
-            barilgiinId: selectedBuildingId || barilgiinId || null,
-            khuudasniiDugaar: 1,
-            khuudasniiKhemjee: 1000, // Reduced from 20,000 for performance
-          },
-        });
-        
-        if (!isMounted) return;
-
-        const list: any[] = Array.isArray(resp.data?.jagsaalt)
-          ? resp.data.jagsaalt
-          : Array.isArray(resp.data)
-            ? resp.data
-            : [];
-
-        const residents = residentsList;
-        const norm = (v: any) => String(v ?? "").trim().toLowerCase();
-        const resIndex = new Map<string, string>();
-
-        const makeResKeys = (r: any): string[] => {
-          const id = String(r?._id || "");
-          const reg = norm(r?.register);
-          const phone = norm(r?.utas);
-          const ovog = norm(r?.ovog);
-          const ner = norm(r?.ner);
-          const toot = String(r?.toot ?? r?.medeelel?.toot ?? "").trim();
-          const keys: string[] = [];
-          if (id) keys.push(`id|${id}`);
-          if (reg) keys.push(`reg|${reg}`);
-          if (phone) keys.push(`phone|${phone}`);
-          if (ovog || ner || toot) keys.push(`name|${ovog}|${ner}|${toot}`);
-          return keys;
-        };
-
-        residents.forEach((r: any) => {
-          const id = String(r?._id || "");
-          if (!id) return;
-          makeResKeys(r).forEach((k) => resIndex.set(k, id));
-        });
-
-        const byId: Record<string, { label: string; ts: number }> = {};
-        list.forEach((it: any) => {
-          const keys: string[] = [];
-          const osIdRaw = String(it?.orshinSuugchId || "");
-          if (osIdRaw) keys.push(`id|${osIdRaw}`);
-          const reg = norm(it?.register);
-          if (reg) keys.push(`reg|${reg}`);
-          const utasVal = Array.isArray(it?.utas) ? it.utas[0] : it?.utas;
-          const phone = norm(utasVal);
-          if (phone) keys.push(`phone|${phone}`);
-          const ovog = norm(it?.ovog);
-          const ner = norm(it?.ner);
-          const toot = String(it?.medeelel?.toot ?? it?.toot ?? "").trim();
-          if (ovog || ner || toot) keys.push(`name|${ovog}|${ner}|${toot}`);
-
-          let osId = "";
-          for (const k of keys) {
-            const found = resIndex.get(k);
-            if (found) {
-              osId = found;
-              break;
-            }
-          }
-          if (!osId) return;
-
-          const label = getPaymentStatusLabel(it);
-          const ts = new Date(
-            it?.tulsunOgnoo || it?.ognoo || it?.createdAt || 0,
-          ).getTime();
-          const cur = byId[osId];
-          if (!cur || ts >= cur.ts) byId[osId] = { label, ts };
-        });
-
-        const out: Record<
-          string,
-          "Төлсөн" | "Төлөөгүй" | "Хугацаа хэтэрсэн" | "Тодорхойгүй"
-        > = {};
-        Object.entries(byId).forEach(([k, v]) => {
-          const l = v.label as any;
-          out[k] =
-            l === "Төлсөн" || l === "Төлөөгүй" || l === "Хугацаа хэтэрсэн"
-              ? l
-              : "Тодорхойгүй";
-        });
-        setTuluvByResidentId(out);
-      } catch (err) {
-        if (isMounted) setTuluvByResidentId({});
-      }
-    };
-    run();
-    return () => { isMounted = false; };
-  }, [token, ajiltan?.baiguullagiinId, effectiveBarilgiinId, residentsList.length > 0]); // Trigger only when residents load
 
   const renderCellValue = useCallback(
     (contract: any, columnKey: string): React.ReactNode => {
@@ -450,11 +349,7 @@ export function useGereeData(
           if (orshinSuugchId) {
             const resident = residentsById[String(orshinSuugchId)];
             if (resident) {
-              const tootsOrts =
-                Array.isArray(resident.toots) && resident.toots.length > 0
-                  ? resident.toots[0]?.orts
-                  : null;
-              return String(tootsOrts ?? resident.orts ?? "-");
+              return getResidentOrtsuud(resident) || "-";
             }
           }
           return "-";
@@ -468,11 +363,7 @@ export function useGereeData(
           if (orshinSuugchId) {
             const resident = residentsById[String(orshinSuugchId)];
             if (resident) {
-              const tootsDavkhar =
-                Array.isArray(resident.toots) && resident.toots.length > 0
-                  ? resident.toots[0]?.davkhar
-                  : null;
-              return String(tootsDavkhar ?? resident.davkhar ?? "-");
+              return getResidentDavkhauraud(resident) || "-";
             }
           }
           return "-";
@@ -486,11 +377,7 @@ export function useGereeData(
           if (orshinSuugchId) {
             const resident = residentsById[String(orshinSuugchId)];
             if (resident) {
-              const tootsToot =
-                Array.isArray(resident.toots) && resident.toots.length > 0
-                  ? resident.toots[0]?.toot
-                  : null;
-              return String(tootsToot ?? resident.toot ?? "-");
+              return getResidentToots(resident) || "-";
             }
           }
           return "-";
@@ -721,12 +608,28 @@ export function useGereeData(
       const filterOrts = String(selectedOrtsForContracts).trim();
       filtered = filtered.filter((c: any) => {
         const orshinSuugchId = c.orshinSuugchId;
-        let contractOrts = String(c?.orts || "").trim();
+        
+        // 1. If contract has its own explicit orts, use it strictly
+        const cOrts = String(c?.orts || "").trim();
+        if (cOrts !== "" && cOrts !== "-") {
+          return cOrts === filterOrts;
+        }
+        
+        // 2. Otherwise, check linked resident's all units
         if (orshinSuugchId && residentsById[String(orshinSuugchId)]) {
           const resident = residentsById[String(orshinSuugchId)];
-          if (resident.orts != null) contractOrts = String(resident.orts).trim();
+          
+          // Check all toots
+          if (Array.isArray(resident.toots)) {
+            if (resident.toots.some((t: any) => String(t.orts || "").trim() === filterOrts)) {
+              return true;
+            }
+          }
+          
+          // Fallback to resident's top-level orts
+          if (String(resident.orts || "").trim() === filterOrts) return true;
         }
-        return contractOrts === filterOrts;
+        return false;
       });
     }
 
@@ -734,12 +637,28 @@ export function useGereeData(
       const filterDawkhar = String(selectedDawkhar).trim();
       filtered = filtered.filter((c: any) => {
         const orshinSuugchId = c.orshinSuugchId;
-        let contractDawkhar = String(c?.davkhar || "").trim();
+        
+        // 1. If contract has its own explicit davkhar, use it strictly
+        const cDavkhar = String(c?.davkhar || "").trim();
+        if (cDavkhar !== "" && cDavkhar !== "-") {
+          return cDavkhar === filterDawkhar;
+        }
+
+        // 2. Otherwise, check linked resident's all units
         if (orshinSuugchId && residentsById[String(orshinSuugchId)]) {
           const resident = residentsById[String(orshinSuugchId)];
-          if (resident.davkhar != null) contractDawkhar = String(resident.davkhar).trim();
+          
+          // Check all toots
+          if (Array.isArray(resident.toots)) {
+            if (resident.toots.some((t: any) => String(t.davkhar || "").trim() === filterDawkhar)) {
+              return true;
+            }
+          }
+          
+          // Fallback to resident's top-level davkhar
+          if (String(resident.davkhar || "").trim() === filterDawkhar) return true;
         }
-        return contractDawkhar === filterDawkhar;
+        return false;
       });
     }
 
@@ -909,7 +828,6 @@ export function useGereeData(
     socketCtx,
     composeKey,
     getTootOptions,
-    tuluvByResidentId,
     renderCellValue,
     gereeJagsaaltMutate,
     orshinSuugchJagsaaltMutate,
