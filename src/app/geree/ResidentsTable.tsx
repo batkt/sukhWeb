@@ -249,9 +249,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
           const cls =
             label === "Төлсөн"
               ? "badge-paid"
-              : label === "Хугацаа хэтэрсэн" || label === "Төлөөгүй"
-                ? "badge-unpaid"
-                : "badge-neutral";
+              : "badge-unpaid";
           return (
             <span
               className={`inline-flex items-center px-2 py-0.5 font-normal rounded-full ${cls}`}
