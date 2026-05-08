@@ -31,7 +31,7 @@ interface ResidentModalProps {
   selectedBarilga: any;
   baiguullaga: any;
   currentResidents: any[];
-  onSubmit: (e: React.FormEvent) => void;
+  onSubmit: (e: React.FormEvent) => Promise<any>;
 }
 
 export default function ResidentModal({
@@ -53,6 +53,7 @@ export default function ResidentModal({
   const dragControls = useDragControls();
   const [errors, setErrors] = React.useState<string[]>([]);
   const [showConfirmClose, setShowConfirmClose] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   // Snapshot of newResident when modal opens — used to detect unsaved changes
   const initialSnapshot = React.useRef<string | null>(null);
@@ -198,68 +199,80 @@ export default function ResidentModal({
     return true;
   };
 
-  const handleLocalSubmit = (e: React.FormEvent) => {
+  const handleLocalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     if (validate()) {
-      // Duplicate check: same ovog + ner + phone already registered
-      const ovog = (newResident.ovog || "").toString().trim().toLowerCase();
-      const ner = (newResident.ner || "").toString().trim().toLowerCase();
-      const phone = (
-        Array.isArray(newResident.utas)
-          ? newResident.utas[0]
-          : newResident.utas || ""
-      )
-        .toString()
-        .trim();
+      setIsSubmitting(true);
+      try {
+        // Duplicate check: same ovog + ner + phone already registered
+        const ovog = (newResident.ovog || "").toString().trim().toLowerCase();
+        const ner = (newResident.ner || "").toString().trim().toLowerCase();
+        const phone = (
+          Array.isArray(newResident.utas)
+            ? newResident.utas[0]
+            : newResident.utas || ""
+        )
+          .toString()
+          .trim();
 
-      if (ovog && ner && phone && Array.isArray(currentResidents)) {
-        const duplicates = currentResidents.filter((r: any) => {
-          const rOvog = (r.ovog || "").toString().trim().toLowerCase();
-          const rNer = (r.ner || "").toString().trim().toLowerCase();
-          const rPhone = (Array.isArray(r.utas) ? r.utas[0] : r.utas || "")
-            .toString()
-            .trim();
+        if (ovog && ner && phone && Array.isArray(currentResidents)) {
+          const duplicates = currentResidents.filter((r: any) => {
+            const rOvog = (r.ovog || "").toString().trim().toLowerCase();
+            const rNer = (r.ner || "").toString().trim().toLowerCase();
+            const rPhone = (Array.isArray(r.utas) ? r.utas[0] : r.utas || "")
+              .toString()
+              .trim();
 
-          const isSameResident =
-            editingResident &&
-            String(editingResident._id || "") === String(r._id || "");
-          if (isSameResident) return false;
+            const isSameResident =
+              editingResident &&
+              String(editingResident._id || "") === String(r._id || "");
+            if (isSameResident) return false;
 
-          const rToots = (getResidentToots(r) || "")
-            .split(", ")
-            .map((t) => t.trim());
+            const rToots = (getResidentToots(r) || "")
+              .split(", ")
+              .map((t) => t.trim());
 
-          const units = Array.isArray(newResident.units) 
-            ? newResident.units 
-            : [{ toot: newResident.toot }];
+            const units = Array.isArray(newResident.units) 
+              ? newResident.units 
+              : [{ toot: newResident.toot }];
 
-          const hasConflict = units.some((u: any) => 
-            rToots.includes(String(u.toot || "").trim())
-          );
+            const hasConflict = units.some((u: any) => 
+              rToots.includes(String(u.toot || "").trim())
+            );
 
-          return (
-            rOvog === ovog && rNer === ner && rPhone === phone && hasConflict
-          );
-        });
+            return (
+              rOvog === ovog && rNer === ner && rPhone === phone && hasConflict
+            );
+          });
 
-        if (duplicates.length > 0) {
-          const tootList = duplicates
-            .map((r: any) => {
-              const orts = getResidentOrtsuud(r) || "-";
-              const davkhar = getResidentDavkhauraud(r) || "-";
-              const toots = getResidentToots(r) || "-";
-              return `${orts} орц, ${davkhar} давхар, ${toots} тоот`;
-            })
-            .join("; ");
+          if (duplicates.length > 0) {
+            const tootList = duplicates
+              .map((r: any) => {
+                const orts = getResidentOrtsuud(r) || "-";
+                const davkhar = getResidentDavkhauraud(r) || "-";
+                const toots = getResidentToots(r) || "-";
+                return `${orts} орц, ${davkhar} давхар, ${toots} тоот`;
+              })
+              .join("; ");
 
-          openErrorOverlay(
-            `Энэ овог, нэр, утасны оршин суугч дараах тоот дээр бүртгэлтэй байна: ${tootList}. Давхардсан бүртгэл үүсгэх боломжгүй.`,
-          );
-          return;
+            openErrorOverlay(
+              `Энэ овог, нэр, утасны оршин суугч дараах тоот дээр бүртгэлтэй байна: ${tootList}. Давхардсан бүртгэл үүсгэх боломжгүй.`,
+            );
+            setIsSubmitting(false);
+            return;
+          }
         }
-      }
 
-      onSubmit(e);
+        const success = await onSubmit(e);
+        if (!success) {
+          setIsSubmitting(false);
+        }
+      } catch (error) {
+        console.error("Submit error:", error);
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -1066,8 +1079,9 @@ export default function ResidentModal({
                     size="md"
                     className="min-w-[80px]"
                     data-modal-primary
+                    disabled={isSubmitting}
                   >
-                    {editingResident ? "Хадгалах" : "Хадгалах"}
+                    {isSubmitting ? "Түр хүлээнэ үү..." : (editingResident ? "Хадгалах" : "Хадгалах")}
                   </Button>
                 </div>
               </form>
