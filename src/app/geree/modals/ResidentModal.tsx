@@ -146,10 +146,18 @@ export default function ResidentModal({
       if (!newResident.davkhar?.trim()) newErrors.push("davkhar");
       if (!newResident.toot?.trim()) newErrors.push("toot");
     } else {
+      const uniqueUnitKeys = new Set();
       units.forEach((unit: any, index: number) => {
         if (!unit.orts?.trim()) newErrors.push(`units.${index}.orts`);
         if (!unit.davkhar?.trim()) newErrors.push(`units.${index}.davkhar`);
         if (!unit.toot?.trim()) newErrors.push(`units.${index}.toot`);
+        
+        const key = `${unit.orts?.trim()}-${unit.davkhar?.trim()}-${unit.toot?.trim()}`;
+        if (uniqueUnitKeys.has(key)) {
+          newErrors.push(`units.${index}.duplicate`);
+        } else {
+          uniqueUnitKeys.add(key);
+        }
       });
     }
 
@@ -175,6 +183,7 @@ export default function ResidentModal({
           if (e.startsWith("units.")) {
             const parts = e.split(".");
             const field = parts[2];
+            if (field === "duplicate") return `Мөр ${parseInt(parts[1]) + 1}: Давхардсан тоот (Орц/Давхар/Тоот)`;
             return `Мөр ${parseInt(parts[1]) + 1}: ${fieldNames[field] || field}`;
           }
           return fieldNames[e] || e;
