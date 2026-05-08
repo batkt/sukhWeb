@@ -333,7 +333,7 @@ export default function GolContent({ children }: GolContentProps) {
       submenu: [
         { label: "Жагсаалт", path: "jagsaalt" },
         { label: "Камер касс", path: "camera" },
-        { label: "Оршин суугч", path: "orshinSuugch" },
+        { label: "Машин бүртгэл", path: "orshinSuugch" },
       ],
     },
   ];

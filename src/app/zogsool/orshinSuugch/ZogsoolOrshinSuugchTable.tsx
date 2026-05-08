@@ -10,6 +10,7 @@ import Button from "@/components/ui/Button";
 interface ResidentParking {
   _id?: string;
   ner?: string;
+  orts?: string;
   orshinSuugchNer?: string;
   ovog?: string;
   utas?: string;
@@ -43,15 +44,17 @@ interface ZogsoolOrshinSuugchTableProps {
   pageSize: number;
   onEdit: (resident: ResidentParking) => void;
   onDelete: (resident: ResidentParking) => void;
+  onFilterChange?: (filters: any) => void;
+  ortsOptions?: string[];
 }
 
 export const ZogsoolOrshinSuugchTable: React.FC<
   ZogsoolOrshinSuugchTableProps
-> = ({ data, loading, page, pageSize, onEdit, onDelete }) => {
+> = ({ data, loading, page, pageSize, onEdit, onDelete, onFilterChange, ortsOptions = [] }) => {
   const columns: ColumnsType<ResidentParking> = useMemo(
     () => [
       {
-        title: "№",
+        title: <span className="text-black dark:text-white">№</span>,
         key: "index",
         width: 50,
         align: "center",
@@ -59,62 +62,43 @@ export const ZogsoolOrshinSuugchTable: React.FC<
           (page - 1) * pageSize + idx + 1,
       },
       {
-        title: "Нэр",
+        title: <span className="text-black dark:text-white">Нэр</span>,
         key: "ner",
+        align: "center",
         render: (_: any, record: ResidentParking) => (
-          <div>
-            <p className="text-[12px] font-semibold text-slate-700 dark:text-slate-200">
+          <div className="text-left">
+            <p className="text-[12px] text-black dark:text-white font-sans">
               {record.ner || record.orshinSuugchNer || "Нэр тодорхойгүй"}
             </p>
-            <p className="text-[10px] text-slate-400">{record.ovog || ""}</p>
           </div>
         ),
       },
       {
-        title: "Утас",
+        title: <span className="text-black dark:text-white">Утас</span>,
         key: "utas",
+        align: "center",
         render: (_: any, record: ResidentParking) => (
-          <div className="flex items-center gap-2 text-[11px] text-slate-600 dark:text-slate-400">
-            <Phone className="w-3.5 h-3.5 text-slate-400" />
+          <div className="flex items-center justify-center gap-2 text-[11px] text-black dark:text-white">
             {record.utas || "-"}
           </div>
         ),
       },
       {
-        title: "Дугаар",
+        title: <span className="text-black dark:text-white">Дугаар</span>,
         key: "dugaar",
         align: "center",
         render: (_: any, record: ResidentParking) => (
           <div className="flex flex-wrap gap-2 justify-center">
-            {record.mashiniiDugaar ? (
-              <div className="flex items-center gap-1.5 px-2 py-1 rounded-2xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50">
-                <Car className="w-3 h-3 text-blue-500" />
-                <span className="text-[10px] text-slate-700 dark:text-blue-200">
+            {record.mashiniiDugaar && record.mashiniiDugaar !== "БҮРТГЭЛГҮЙ" ? (
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-2xl bg-slate-100 dark:bg-white/10 border border-slate-300 dark:border-white/20">
+                <span className="text-[10px] text-black dark:text-white">
                   {record.mashiniiDugaar}
                 </span>
               </div>
             ) : (
-              <span className="text-[10px] text-slate-400 italic">
-                Машин бүртгэлгүй
-              </span>
-            )}
-          </div>
-        ),
-      },
-      {
-        title: "Төрөл",
-        key: "turul",
-        align: "center",
-        render: (_: any, record: ResidentParking) => (
-          <div className="flex flex-col gap-1.5 items-center">
-            <span className="px-2 py-1 rounded text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 w-fit">
-              {record.zochinTurul || record.turul || "-"}
-            </span>
-            {record.zochinErkhiinToo !== undefined && (
-              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 w-fit">
-                <span className="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-tighter">
-                  Хэрэглэсэн {record.mashinuud?.length || 0}/
-                  {record.zochinErkhiinToo}
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-2xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800/50">
+                <span className="text-[10px] text-black dark:text-white">
+                  БҮРТГЭЛГҮЙ
                 </span>
               </div>
             )}
@@ -122,22 +106,37 @@ export const ZogsoolOrshinSuugchTable: React.FC<
         ),
       },
       {
-        title: "Ажилтан",
-        key: "ajiltan",
+        title: <span className="text-black dark:text-white">Төрөл</span>,
+        key: "turul",
         align: "center",
         render: (_: any, record: ResidentParking) => (
-          <div className="text-[11px] text-slate-600 dark:text-slate-400">
-            {record.burtgesenAjiltaniiNer || "-"}
+          <div className="flex flex-col gap-1.5 items-center">
+            <span className="px-2 py-1 rounded text-[10px] bg-slate-100 dark:bg-slate-800 text-black dark:text-white w-fit">
+              {record.zochinTurul || record.turul || "Оршин суугч"}
+            </span>
           </div>
         ),
       },
       {
-        title: "Тоот",
+        title: <span className="text-black dark:text-white">Орц</span>,
+        key: "orts",
+        align: "center",
+        filterMultiple: false,
+        sorter: (a, b) => (a.orts || "").localeCompare(b.orts || ""),
+        render: (_: any, record: ResidentParking) => (
+          <div className="text-[11px] text-black dark:text-white">
+            {record.orts || ""}
+          </div>
+        ),
+      },
+      {
+        title: <span className="text-black dark:text-white">Тоот</span>,
         key: "toot",
         align: "center",
+        sorter: (a, b) => (a.ezenToot || "").localeCompare(b.ezenToot || ""),
         render: (_: any, record: ResidentParking) => (
           <div className="flex items-center justify-center gap-2">
-            <span className="px-2.5 py-1 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50 text-[10px] text-emerald-700 dark:text-emerald-400">
+            <span className="px-2.5 py-1 rounded-2xl bg-slate-100 dark:bg-white/10 border border-slate-300 dark:border-white/20 text-[10px] text-black dark:text-white">
               {record.ezenToot || getResidentToot(record)
                 ? `${record.ezenToot || getResidentToot(record)} тоот`
                 : "-"}
@@ -146,7 +145,7 @@ export const ZogsoolOrshinSuugchTable: React.FC<
         ),
       },
       {
-        title: "Үйлдэл",
+        title: <span className="text-black dark:text-white">Үйлдэл</span>,
         key: "action",
         width: 100,
         align: "center",
@@ -154,24 +153,30 @@ export const ZogsoolOrshinSuugchTable: React.FC<
           <div className="flex justify-center items-center gap-1">
             <button
               onClick={() => onEdit(record)}
-              className="p-2 rounded-2xl action-edit hover-surface transition-colors"
+              className="p-2 rounded-2xl action-edit hover-surface transition-colors hover:bg-slate-200 dark:hover:bg-white/20"
               title="Засах"
             >
-              <Edit className="w-5 h-5" />
+              <Edit className="w-5 h-5 text-black dark:text-white" />
             </button>
             <button
               onClick={() => onDelete(record)}
-              className="p-2 rounded-2xl action-delete hover-surface transition-colors"
+              className="p-2 rounded-2xl action-delete hover-surface transition-colors hover:bg-slate-200 dark:hover:bg-white/20"
               title="Устгах"
             >
-              <Trash2 className="w-5 h-5" />
+              <Trash2 className="w-5 h-5 text-black dark:text-white" />
             </button>
           </div>
         ),
       },
     ],
-    [page, pageSize, onEdit, onDelete],
+    [page, pageSize, onEdit, onDelete, ortsOptions],
   );
+
+  const handleTableChange = (pagination: any, filters: any) => {
+    if (onFilterChange) {
+      onFilterChange(filters);
+    }
+  };
 
   return (
     <div className="w-full">
@@ -184,7 +189,8 @@ export const ZogsoolOrshinSuugchTable: React.FC<
         bordered
         loading={loading}
         className="guilgee-table"
-        scroll={{ x: "max-content", y: "calc(100vh - 280px)" }}
+        onChange={handleTableChange}
+        scroll={{ x: "max-content", y: "calc(100vh - 550px)" }}
         locale={{ emptyText: "Оршин суугчийн мэдээлэл олдсонгүй" }}
       />
     </div>

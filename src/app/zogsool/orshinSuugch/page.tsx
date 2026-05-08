@@ -16,6 +16,14 @@ import {
   Edit2,
   Trash2,
 } from "lucide-react";
+import { useSearch } from "@/context/SearchContext";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import useSWR from "swr";
 import uilchilgee from "@/lib/uilchilgee";
 import moment from "moment";
@@ -26,6 +34,7 @@ import { getResidentToot } from "@/lib/residentDataHelper";
 import Button from "@/components/ui/Button";
 import ZogsoolOrshinSuugchTable from "./ZogsoolOrshinSuugchTable";
 import { StandardPagination } from "@/components/ui/StandardTable";
+import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
 
 const RealTimeClock = () => {
   const [time, setTime] = useState(moment());
@@ -35,18 +44,16 @@ const RealTimeClock = () => {
   }, []);
   return (
     <div className="flex flex-col items-center text-center hidden md:flex shrink-0">
-      <Clock className="w-4 h-4 text-[#4285F4] mb-1.5 opacity-80" />
-      <p className="text-[11px] font-black text-slate-800 dark:text-gray-200 leading-none">
+      <p className="text-[11px] font-normal text-black dark:text-white leading-none">
         {time.format("YYYY-MM-DD")}
       </p>
-      <p className="text-[9px] text-slate-400 uppercase tracking-[0.2em] mt-1.5 ">
+      <p className="text-[9px] text-black dark:text-white uppercase mt-1.5 ">
         {time.format("HH:mm:ss")}
       </p>
     </div>
   );
 };
 
-/* Updated interface to match /orshinSuugch response */
 interface ResidentParking {
   _id?: string;
   ner?: string;
@@ -75,18 +82,24 @@ interface ResidentParking {
   zochinTusBurUneguiMinut?: number;
   zochinNiitUneguiMinut?: number;
   orshinSuugchTurul?: string;
+  orts?: string;
 }
 
 export default function OrshinSuugch() {
   const { token, ajiltan, barilgiinId } = useAuth();
   const { selectedBuildingId, isInitialized } = useBuilding();
   const effectiveBarilgiinId = selectedBuildingId || barilgiinId || undefined;
-  const [searchTerm, setSearchTerm] = useState("");
+  const { searchTerm } = useSearch();
   const [page, setPage] = useState(1);
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
   const [editingResident, setEditingResident] =
     useState<ResidentParking | null>(null);
-  const [pageSize, setPageSize] = useState(50);
+  const [pageSize, setPageSize] = useState(100);
+  
+  // Filters
+  const [turulFilter, setTurulFilter] = useState("Бүгд");
+  const [ortsFilter, setOrtsFilter] = useState("");
+  const [tootFilter, setTootFilter] = useState("");
 
   const shouldFetch = isInitialized && !!token && !!ajiltan?.baiguullagiinId;
 
@@ -100,9 +113,12 @@ export default function OrshinSuugch() {
           page,
           pageSize,
           searchTerm,
+          turulFilter,
+          ortsFilter,
+          tootFilter,
         ]
       : null,
-    async ([url, tkn, bId, barId, pg, pSize, search]): Promise<any> => {
+    async ([url, tkn, bId, barId, pg, pSize, search, turul, orts, toot]): Promise<any> => {
       // Build query object with barilgiinId for backend filtering
       const queryObj: any = {
         baiguullagiinId: bId,
@@ -110,24 +126,50 @@ export default function OrshinSuugch() {
       if (barId) {
         queryObj.barilgiinId = barId;
       }
-      if (search) {
-        queryObj.$or = [
-          { ner: { $regex: search, $options: "i" } },
-          { orshinSuugchNer: { $regex: search, $options: "i" } },
-          { utas: { $regex: search, $options: "i" } },
-          { burtgeliinDugaar: { $regex: search, $options: "i" } },
-          { mashiniiDugaar: { $regex: search, $options: "i" } },
-        ];
-      }
-
+      
       const resp = await uilchilgee(tkn).get(url, {
         params: {
           baiguullagiinId: bId,
           ...(barId ? { barilgiinId: barId } : {}),
           khuudasniiDugaar: pg,
           khuudasniiKhemjee: pSize,
-          ...(search ? { search: search } : {}),
-          query: JSON.stringify(queryObj),
+          search: search || undefined,
+          turul: turul && turul !== "Бүгд" ? turul : undefined,
+          orts: orts && orts !== "Бүгд" ? orts : undefined,
+          toot: toot || undefined,
+        },
+      });
+      return resp.data;
+    },
+    { revalidateOnFocus: false },
+  );
+
+  // Separate SWR for category counts (ignores turulFilter)
+  const { data: statsData } = useSWR(
+    shouldFetch
+      ? [
+          "/zochinJagsaalt",
+          token,
+          ajiltan?.baiguullagiinId,
+          effectiveBarilgiinId,
+          1,
+          5000, // Large limit to get true counts if backend doesn't aggregate
+          searchTerm,
+          "Бүгд",
+          ortsFilter,
+          tootFilter,
+        ]
+      : null,
+    async ([url, tkn, bId, barId, pg, pSize, search, turul, orts, toot]): Promise<any> => {
+      const resp = await uilchilgee(tkn).get(url, {
+        params: {
+          baiguullagiinId: bId,
+          ...(barId ? { barilgiinId: barId } : {}),
+          khuudasniiDugaar: 1,
+          khuudasniiKhemjee: 5000,
+          search: search || undefined,
+          orts: orts && orts !== "Бүгд" ? orts : undefined,
+          toot: toot || undefined,
         },
       });
       return resp.data;
@@ -138,6 +180,55 @@ export default function OrshinSuugch() {
   const residents: ResidentParking[] = residentsData?.jagsaalt || [];
   const totalCount = residentsData?.niitMur || 0;
   const totalPages = Math.ceil(totalCount / pageSize);
+
+  const ortsOptions = useMemo(() => {
+    const set = new Set<string>();
+    residents.forEach(r => {
+      if (r.orts) set.add(r.orts);
+    });
+    return Array.from(set).sort();
+  }, [residents]);
+
+  const handleFilterChange = (filters: any) => {
+    if (filters.orts) {
+      setOrtsFilter(filters.orts[0] || "");
+    }
+    setPage(1);
+  };
+
+  const categoryStats = useMemo(() => {
+    const list = statsData?.jagsaalt || [];
+    const total = statsData?.niitMur || 0;
+    
+    return [
+      { label: "Машин бүртгэл", value: "Бүгд", count: total },
+      { 
+        label: "Оршин суугч", 
+        value: "Оршин суугч", 
+        count: list.filter((it: any) => it.turul === "Оршин суугч" || it.zochinTurul === "Оршин суугч" || it.orshinSuugchTurul === "Оршин суугч").length 
+      },
+      { 
+        label: "СӨХ", 
+        value: "СӨХ", 
+        count: list.filter((it: any) => it.turul === "СӨХ" || it.zochinTurul === "СӨХ" || it.orshinSuugchTurul === "СӨХ").length 
+      },
+      { 
+        label: "Ажилтан", 
+        value: "Ажилтан", 
+        count: list.filter((it: any) => it.turul === "Ажилтан" || it.zochinTurul === "Ажилтан" || it.orshinSuugchTurul === "Ажилтан").length 
+      },
+      { 
+        label: "Түрээслэгч", 
+        value: "Түрээслэгч", 
+        count: list.filter((it: any) => it.turul === "Түрээслэгч" || it.zochinTurul === "Түрээслэгч" || it.orshinSuugchTurul === "Түрээслэгч").length 
+      },
+      { 
+        label: "Бусад", 
+        value: "Бусад", 
+        count: list.filter((it: any) => !["Оршин суугч", "СӨХ", "Ажилтан", "Түрээслэгч"].includes(it.turul || it.zochinTurul || it.orshinSuugchTurul)).length 
+      },
+    ];
+  }, [statsData, totalCount]);
 
   const handleDelete = async (r: ResidentParking) => {
     const id = r._id;
@@ -163,53 +254,52 @@ export default function OrshinSuugch() {
   };
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
-      <div className="p-4 sm:p-8 max-w-[1700px] mx-auto w-full flex-1 flex flex-col gap-6 overflow-hidden">
-        {/* Header */}
-        <div className="relative z-10 px-6 py-4 rounded-[32px] border border-slate-200 dark:border-slate-800 shadow-sm shadow-slate-200/50">
-          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
-            {/* Left: Title and Stats */}
-            <div className="flex items-center gap-4 shrink-0">
-              <div className="p-2.5 rounded-2xl bg-[#4285F4] text-white shadow-lg shadow-[#4285F4]/20">
-                <User className="w-5 h-5" />
-              </div>
-              <div>
-                <h1 className="text-lg text-slate-800 dark:text-white">
-                  Оршин суугч
-                </h1>
-                <p className="text-[9px]  text-slate-400 uppercase tracking-widest mt-1">
-                  {residentsData?.niitMur || 0} Бүртгэлтэй
-                </p>
-              </div>
-            </div>
+    <div className="h-[100vh] flex flex-col overflow-hidden">
+      <div className="p-4 sm:p-8 max-w-[1700px] mx-auto w-full flex-1 flex flex-col gap-6 overflow-hidden bg-transparent">
 
-            {/* Right: Controls */}
-            <div className="flex flex-wrap lg:flex-nowrap items-center gap-4 flex-1 lg:justify-end">
-              <div className="relative group w-full sm:w-72 max-w-sm">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#4285F4] transition-colors" />
-                <input
-                  type="text"
-                  placeholder="Нэр, утас, дугаар хайх..."
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setPage(1);
-                  }}
-                  className="w-full pl-11 pr-4 h-11 rounded-[30px] bg-slate-50 dark:bg-slate-800/50 border-0 text-[11px]  text-slate-700 dark:text-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-[#4285F4]/20 transition-all shadow-inner"
-                />
-              </div>
 
-              <Button
-                onClick={() => setShowRegistrationModal(true)}
-                variant="primary"
-                size="sm"
-                leftIcon={<Plus className="w-3.5 h-3.5" />}
-                className="h-11 px-6 rounded-[30px] uppercase tracking-widest text-[10px] font-black"
+        {/* Category Filter Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          {categoryStats.map((stat) => {
+            const isActive = turulFilter === stat.value;
+            return (
+              <div
+                key={stat.value}
+                onClick={() => {
+                  setTurulFilter(stat.value);
+                  setPage(1);
+                }}
+                className="relative group rounded-2xl transition-all cursor-pointer border border-slate-200 dark:border-white/10"
               >
-                <span className="hidden sm:inline">Бүртгэх</span>
-              </Button>
-            </div>
-          </div>
+                <div className="relative rounded-2xl p-5 overflow-hidden flex flex-col h-full justify-between">
+                  <div className="text-3xl font-sans mb-1 text-black dark:text-white">
+                    {stat.count || "0"}
+                  </div>
+                  <div className="text-[13px] font-sans leading-tight text-black/70 dark:text-white/70">
+                    {stat.label}
+                  </div>
+                  {isActive && (
+                    <div className="absolute top-3 right-3">
+                      <div className="w-2.5 h-2.5 rounded-full bg-black dark:bg-white animate-pulse shadow-[0_0_8px_rgba(0,0,0,0.3)] dark:shadow-[0_0_8px_rgba(255,255,255,0.3)]" />
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Table Actions */}
+        <div className="flex items-center justify-end px-1">
+         
+          <Button
+            onClick={() => setShowRegistrationModal(true)}
+            variant="primary"
+            className="h-11 px-8 rounded-[30px] uppercase text-[10px] shadow-lg shadow-blue-500/20 hover:scale-105 transition-transform font-sans"
+          >
+            Нэмэх
+          </Button>
+         
         </div>
 
         {showRegistrationModal && (
@@ -238,7 +328,7 @@ export default function OrshinSuugch() {
         )}
 
         {/* Content Table */}
-        <div className="relative overflow-hidden rounded-[32px] border border-slate-200 dark:border-slate-800 backdrop-blur-xl shadow-2xl flex-1 min-h-0 mt-2 p-4">
+        <div className="relative rounded-[32px] border border-slate-200 dark:border-slate-800 backdrop-blur-xl shadow-2xl mt-2 flex-1 min-h-0 overflow-hidden">
           <ZogsoolOrshinSuugchTable
             data={residents}
             loading={!residentsData && !residents.length}
@@ -246,6 +336,8 @@ export default function OrshinSuugch() {
             pageSize={pageSize}
             onEdit={(resident) => setEditingResident(resident)}
             onDelete={(resident) => handleDelete(resident)}
+            onFilterChange={handleFilterChange}
+            ortsOptions={ortsOptions}
           />
         </div>
 
