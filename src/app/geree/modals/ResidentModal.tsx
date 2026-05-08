@@ -277,6 +277,7 @@ export default function ResidentModal({
   // Local state for formatted inputs
   const [uldegdelInput, setUldegdelInput] = React.useState("");
   const [zaaltInput, setZaaltInput] = React.useState("");
+  const [focusedInput, setFocusedInput] = React.useState<string | null>(null);
 
   const parseToNumber = (str: string) => {
     if (typeof str !== "string") return str || 0;
@@ -871,33 +872,113 @@ export default function ResidentModal({
                               <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-500 mb-1">
                                 Эхний үлдэгдэл
                               </label>
-                              <input
-                                type="text"
-                                value={formatWithCommas(unit.ekhniiUldegdel) || "0"}
-                                onChange={(e) => {
-                                  const num = parseToNumber(e.target.value);
-                                  updateUnitRow(index, "ekhniiUldegdel", Math.max(0, num));
-                                }}
-                                className="modern-input w-full text-right"
-                                placeholder="0"
-                                disabled={isEkhniiUldegdelDisabled && index === 0}
-                              />
+                              <div className="relative group">
+                                <input
+                                  type="text"
+                                  value={
+                                    focusedInput === `ekhniiUldegdel-${index}`
+                                      ? formatWhileTyping(String(unit.ekhniiUldegdel || ""))
+                                      : formatWithCommas(unit.ekhniiUldegdel) || "0.00"
+                                  }
+                                  onFocus={(e) => {
+                                    setFocusedInput(`ekhniiUldegdel-${index}`);
+                                    if (unit.ekhniiUldegdel === 0 || !unit.ekhniiUldegdel) {
+                                      setTimeout(() => e.target.select(), 0);
+                                    }
+                                  }}
+                                  onBlur={() => setFocusedInput(null)}
+                                  onChange={(e) => {
+                                    const input = e.target;
+                                    const val = input.value;
+                                    const selectionStart = input.selectionStart || 0;
+                                    
+                                    // Count digits to the right of cursor before formatting
+                                    const suffixDigits = val.slice(selectionStart).replace(/\D/g, "").length;
+                                    
+                                    const rawValue = val.replace(/[^0-9]/g, "");
+                                    updateUnitRow(index, "ekhniiUldegdel", rawValue ? rawValue : "");
+
+                                    // Adjust cursor position after render
+                                    setTimeout(() => {
+                                      const newVal = input.value;
+                                      let newPos = newVal.length;
+                                      let digitsFound = 0;
+                                      // Walk backwards from the end to find the right position
+                                      for (let i = newVal.length - 1; i >= 0; i--) {
+                                        if (/\d/.test(newVal[i])) {
+                                          if (digitsFound === suffixDigits) {
+                                            newPos = i + 1;
+                                            break;
+                                          }
+                                          digitsFound++;
+                                        }
+                                        if (i === 0) newPos = 0;
+                                      }
+                                      input.setSelectionRange(newPos, newPos);
+                                    }, 0);
+                                  }}
+                                  className="modern-input w-full text-right font-mono"
+                                  placeholder="0.00"
+                                  disabled={isEkhniiUldegdelDisabled && index === 0}
+                                />
+                                <div className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                  ₮
+                                </div>
+                              </div>
                             </div>
 
                             <div className="md:col-span-3">
                               <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-500 mb-1">
                                 Цахилгаан кВт
                               </label>
-                              <input
-                                type="text"
-                                value={formatWithCommas(unit.tsahilgaaniiZaalt) || "0"}
-                                onChange={(e) => {
-                                  const num = parseToNumber(e.target.value);
-                                  updateUnitRow(index, "tsahilgaaniiZaalt", Math.max(0, num));
-                                }}
-                                className="modern-input w-full text-right"
-                                placeholder="0"
-                              />
+                              <div className="relative group">
+                                <input
+                                  type="text"
+                                  value={
+                                    focusedInput === `tsahilgaaniiZaalt-${index}`
+                                      ? formatWhileTyping(String(unit.tsahilgaaniiZaalt || ""))
+                                      : formatWithCommas(unit.tsahilgaaniiZaalt) || "0.00"
+                                  }
+                                  onFocus={(e) => {
+                                    setFocusedInput(`tsahilgaaniiZaalt-${index}`);
+                                    if (unit.tsahilgaaniiZaalt === 0 || !unit.tsahilgaaniiZaalt) {
+                                      setTimeout(() => e.target.select(), 0);
+                                    }
+                                  }}
+                                  onBlur={() => setFocusedInput(null)}
+                                  onChange={(e) => {
+                                    const input = e.target;
+                                    const val = input.value;
+                                    const selectionStart = input.selectionStart || 0;
+                                    const suffixDigits = val.slice(selectionStart).replace(/\D/g, "").length;
+                                    
+                                    const rawValue = val.replace(/[^0-9]/g, "");
+                                    updateUnitRow(index, "tsahilgaaniiZaalt", rawValue ? rawValue : "");
+
+                                    setTimeout(() => {
+                                      const newVal = input.value;
+                                      let newPos = newVal.length;
+                                      let digitsFound = 0;
+                                      for (let i = newVal.length - 1; i >= 0; i--) {
+                                        if (/\d/.test(newVal[i])) {
+                                          if (digitsFound === suffixDigits) {
+                                            newPos = i + 1;
+                                            break;
+                                          }
+                                          digitsFound++;
+                                        }
+                                        if (i === 0) newPos = 0;
+                                      }
+                                      input.setSelectionRange(newPos, newPos);
+                                    }, 0);
+                                  }}
+                                  className="modern-input w-full text-right font-mono"
+                                  placeholder="0.00"
+                                />
+                                <div className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                  кВт
+                                </div>
+                              </div>
                             </div>
 
                             {/* Pro-rating Row inside Unit */}

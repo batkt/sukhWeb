@@ -34,6 +34,7 @@ interface ResidentsTableProps {
   pageSize?: number;
   sortKey?: SortKey;
   sortOrder?: SortOrder;
+  currentBaiguullagiinId?: string;
   onEdit?: (resident: ResidentItem) => void;
   onDelete?: (resident: ResidentItem) => void;
   onRemoveToot?: (residentId: string, baiguullagiinId: string, barilgiinId: string, toot: string) => void;
@@ -49,6 +50,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
   pageSize = 10,
   sortKey = "createdAt",
   sortOrder = "desc",
+  currentBaiguullagiinId,
   onEdit,
   onDelete,
   onRemoveToot,
@@ -57,6 +59,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
 }) => {
   const columns: ColumnsType<ResidentItem> = useMemo(
     () => [
+      // ... (index and ner columns omitted for brevity, keeping them as they are)
       {
         title: <span className="text-gray-900 dark:text-white">№</span>,
         key: "index",
@@ -160,7 +163,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
         align: "center",
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: ResidentItem) => {
-          const toots =
+          let toots =
             Array.isArray(record.toots) && record.toots.length > 0
               ? record.toots
               : [
@@ -170,11 +173,18 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
                     barilgiinId: record.barilgiinId,
                   },
                 ];
+          
+          // Filter by currentBaiguullagiinId if provided
+          if (currentBaiguullagiinId) {
+            toots = toots.filter((t: any) => String(t.baiguullagiinId) === String(currentBaiguullagiinId));
+          }
 
-          if (toots.length <= 1) {
+          if (toots.length === 0) return "-";
+
+          if (toots.length === 1) {
             return (
               <span className="text-gray-900 dark:text-white whitespace-nowrap font-medium">
-                {getResidentToots(record) || "-"}
+                {toots[0].toot || "-"}
               </span>
             );
           }
