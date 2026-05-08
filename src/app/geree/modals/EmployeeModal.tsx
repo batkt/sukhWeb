@@ -13,7 +13,7 @@ interface EmployeeModalProps {
   editingEmployee: any;
   newEmployee: any;
   setNewEmployee: (val: any) => void;
-  onSubmit: (e: React.FormEvent) => void;
+  onSubmit: (e: React.FormEvent) => Promise<any>;
 }
 
 export default function EmployeeModal({
@@ -27,6 +27,7 @@ export default function EmployeeModal({
   const employeeRef = React.useRef<HTMLDivElement | null>(null);
   const constraintsRef = React.useRef<HTMLDivElement | null>(null);
   const dragControls = useDragControls();
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   useModalHotkeys({
     isOpen: show,
@@ -91,7 +92,20 @@ export default function EmployeeModal({
                 </svg>
               </button>
             </div>
-            <form onSubmit={onSubmit} className="p-6 space-y-4">
+            <form 
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (isSubmitting) return;
+                setIsSubmitting(true);
+                try {
+                  const success = await onSubmit(e);
+                  if (!success) setIsSubmitting(false);
+                } catch (err) {
+                  setIsSubmitting(false);
+                }
+              }} 
+              className="p-6 space-y-4"
+            >
               {editingEmployee && (
                 <input type="hidden" name="_id" value={newEmployee._id || editingEmployee._id} />
               )}
@@ -248,8 +262,13 @@ export default function EmployeeModal({
                 >
                   Хаах
                 </Button>
-                <Button htmlType="submit" variant="primary" className="min-w-[100px]">
-                  {editingEmployee ? "Хадгалах" : "Хадгалах"}
+                <Button 
+                  htmlType="submit" 
+                  variant="primary" 
+                  className="min-w-[100px]"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Түр хүлээнэ үү..." : (editingEmployee ? "Хадгалах" : "Хадгалах")}
                 </Button>
               </div>
             </form>

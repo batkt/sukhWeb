@@ -18,7 +18,7 @@ interface ContractModalProps {
   ortsOptions: string[];
   davkharOptions: string[];
   getTootOptions: (orts: string, floor: string) => string[];
-  onSubmit: (e: React.FormEvent) => void;
+  onSubmit: (e: React.FormEvent) => Promise<any>;
   baiguullaga: any;
 }
 
@@ -40,6 +40,7 @@ export default function ContractModal({
   const contractRef = React.useRef<HTMLDivElement | null>(null);
   const constraintsRef = React.useRef<HTMLDivElement | null>(null);
   const dragControls = useDragControls();
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
   
   useModalHotkeys({
     isOpen: show,
@@ -105,7 +106,20 @@ export default function ContractModal({
               </button>
             </div>
 
-            <form onSubmit={onSubmit} className="flex-1 flex flex-col min-h-0">
+            <form 
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (isSubmitting) return;
+                setIsSubmitting(true);
+                try {
+                  const success = await onSubmit(e);
+                  if (!success) setIsSubmitting(false);
+                } catch (err) {
+                  setIsSubmitting(false);
+                }
+              }} 
+              className="flex-1 flex flex-col min-h-0"
+            >
               {/* Stepper */}
               <div className="px-6 my-6">
                 <div className="md:hidden overflow-x-auto -mx-6 px-6">
@@ -194,10 +208,11 @@ export default function ContractModal({
                 ) : (
                   <button
                     type="submit"
+                    disabled={isSubmitting}
                     className="btn-minimal btn-save h-11"
                     data-modal-primary
                   >
-                    {editingContract ? "Хадгалах" : "Гэрээ үүсгэх"}
+                    {isSubmitting ? "Түр хүлээнэ үү..." : (editingContract ? "Хадгалах" : "Гэрээ үүсгэх")}
                   </button>
                 )}
               </div>
