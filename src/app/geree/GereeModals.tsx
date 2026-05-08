@@ -141,13 +141,13 @@ export default function GereeModals() {
         selectedBarilga={data.selectedBarilga}
         baiguullaga={baiguullaga}
         currentResidents={data.residentsList}
-        onSubmit={(e) => {
-          actions.handleCreateResident(e, state.newResident, state.editingResident).then((success) => {
-            if (success) {
-              state.setShowResidentModal(false);
-              state.setEditingResident(null);
-            }
-          });
+        onSubmit={async (e) => {
+          const success = await actions.handleCreateResident(e, state.newResident, state.editingResident);
+          if (success) {
+            state.setShowResidentModal(false);
+            state.setEditingResident(null);
+          }
+          return success;
         }}
       />
 
