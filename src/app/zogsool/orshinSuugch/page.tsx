@@ -100,6 +100,31 @@ export default function OrshinSuugch() {
   const [turulFilter, setTurulFilter] = useState("Бүгд");
   const [ortsFilter, setOrtsFilter] = useState("");
   const [tootFilter, setTootFilter] = useState("");
+  
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if any modal is already open
+      if (showRegistrationModal || editingResident) return;
+
+      if (e.key === "+" || (e.key === "=" && e.shiftKey)) {
+        const target = e.target as HTMLElement;
+        const tag = (target?.tagName || "").toLowerCase();
+        const isEditable = 
+          target?.isContentEditable || 
+          tag === "input" || 
+          tag === "textarea" || 
+          tag === "select";
+
+        if (isEditable) return;
+
+        e.preventDefault();
+        setShowRegistrationModal(true);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showRegistrationModal, editingResident]);
 
   const shouldFetch = isInitialized && !!token && !!ajiltan?.baiguullagiinId;
 

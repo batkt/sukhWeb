@@ -369,17 +369,23 @@ export function useGereeActions(
           ? new Date(p.duusakhOgnoo).toISOString().split("T")[0]
           : "",
         units: Array.isArray(p.toots) && p.toots.length > 0 
-          ? p.toots.map((t: any) => ({
-              orts: t.orts || "1",
-              davkhar: t.davkhar || "",
-              toot: t.toot || "",
-              ekhniiUldegdel: (t.ekhniiUldegdel !== undefined && t.ekhniiUldegdel !== 0) 
-                ? t.ekhniiUldegdel 
-                : (ekhniiUldegdel || 0),
-              tsahilgaaniiZaalt: t.tsahilgaaniiZaalt ?? 0,
-              khonogoorBodokhEsekh: t.khonogoorBodokhEsekh || false,
-              bodokhKhonog: t.bodokhKhonog || 0,
-            }))
+          ? p.toots
+              .filter((t: any) => {
+                const currentBid = String(selectedBuildingId || barilgiinId || "");
+                const tootBid = String(t.barilgiinId || "");
+                return currentBid === tootBid;
+              })
+              .map((t: any) => ({
+                orts: t.orts || "1",
+                davkhar: t.davkhar || "",
+                toot: t.toot || "",
+                ekhniiUldegdel: (t.ekhniiUldegdel !== undefined && t.ekhniiUldegdel !== 0) 
+                  ? t.ekhniiUldegdel 
+                  : (ekhniiUldegdel || 0),
+                tsahilgaaniiZaalt: t.tsahilgaaniiZaalt ?? 0,
+                khonogoorBodokhEsekh: t.khonogoorBodokhEsekh || false,
+                bodokhKhonog: t.bodokhKhonog || 0,
+              }))
           : [
               {
                 orts: p.orts || "1",
@@ -1303,9 +1309,11 @@ export function useGereeActions(
           nevtrekhNer: "",
           nuutsUg: "",
         });
+        return true;
       } catch (err) {
         console.error("Error creating/updating employee:", err);
         openErrorOverlay(getErrorMessage(err));
+        return false;
       }
     },
     [
@@ -1413,8 +1421,8 @@ export function useGereeActions(
     handleDeleteEmployee,
     handleEditEmployee,
     handleEdit: (_contract: any) => {},
-    handleUpdateContract: async (_e: React.FormEvent) => {},
-    handleCreateContract: async (_e: React.FormEvent) => {},
+    handleUpdateContract: async (_e: React.FormEvent) => { return true; },
+    handleCreateContract: async (_e: React.FormEvent) => { return true; },
     handlePreviewContractTemplate: async (contract: any) => {
       if (!token || !ajiltan?.baiguullagiinId) {
         openErrorOverlay("Нэвтрэх шаардлагатай");

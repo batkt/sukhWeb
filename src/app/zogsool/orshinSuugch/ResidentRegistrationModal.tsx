@@ -43,7 +43,6 @@ export default function ResidentRegistrationModal({
   onSuccess,
   editData,
 }: ResidentRegistrationModalProps) {
-  useModalHotkeys({ isOpen: true, onClose });
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
   const [step, setStep] = useState(editData ? 2 : 1);
@@ -143,12 +142,21 @@ export default function ResidentRegistrationModal({
         : null;
 
       if (found) {
+        // Find specific unit for current building, excluding WALLET_API sources
+        const specificToot = Array.isArray(found.toots)
+          ? found.toots.find(
+              (t: any) =>
+                String(t.barilgiinId) === String(barilgiinId) &&
+                t.source !== "WALLET_API",
+            )
+          : null;
+
         setFormData((prev) => ({
           ...prev,
           phone: phoneToSearch,
-          name: found.ner || found.orshinSuugchNer || prev.name,
+          name: specificToot?.ner || found.ner || found.orshinSuugchNer || prev.name,
           ovog: found.ovog || prev.ovog,
-          unit: found.toot || found.burtgeliinDugaar || prev.unit,
+          unit: specificToot?.toot || "", // Only use if it matches our building and isn't WALLET_API
           rightsCount: found.zochinErkhiinToo ?? prev.rightsCount,
           freeMinutes: found.zochinTusBurUneguiMinut ?? prev.freeMinutes,
           type: found.zochinTurul || found.turul || prev.type,
@@ -257,6 +265,12 @@ export default function ResidentRegistrationModal({
     }
   };
 
+  useModalHotkeys({
+    isOpen: true,
+    onClose,
+    onSubmit: step === 1 ? handleManualProceed : handleSave,
+  });
+
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6">
@@ -359,6 +373,7 @@ export default function ResidentRegistrationModal({
                   fullWidth
                   className="h-12 bg-black dark:bg-white text-white dark:text-black hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors"
                   isLoading={searching}
+                  data-modal-primary
                   rightIcon={
                     !searching ? <ArrowRight className="w-4 h-4" /> : undefined
                   }
@@ -552,6 +567,7 @@ export default function ResidentRegistrationModal({
                   variant="primary"
                   size="sm"
                   isLoading={loading}
+                  data-modal-primary
                   className="bg-black dark:bg-white text-white dark:text-black hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors"
                 >
                   Хадгалах

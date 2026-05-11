@@ -17,6 +17,30 @@ export default function GereePage() {
   const gereeTourSteps = useTourSteps("contracts");
   useRegisterTourSteps("/geree", gereeTourSteps);
 
+  // Global hotkey: "+" to add resident
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in an input
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable ||
+        target.closest("[data-prevent-hotkeys]")
+      ) {
+        return;
+      }
+
+      if (e.key === "+" || (e.shiftKey && e.key === "=")) {
+        e.preventDefault();
+        actions.handleShowResidentModal();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [actions]);
+
   return (
     <ContractsTable
       ajiltan={ajiltan}

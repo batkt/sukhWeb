@@ -421,19 +421,19 @@ function LedgerMonthlyBreakdownTable({
       <table className="w-full text-[11px] sm:text-[12px] border-collapse min-w-[340px] font-normal">
         <thead>
           <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-center text-[9px] uppercase tracking-wide text-slate-700 dark:text-slate-200">
-            <th className="py-3 px-3 font-semibold whitespace-nowrap text-center">
+            <th className="py-3 px-3 font-semibold whitespace-nowrap text-center border-r border-slate-400 dark:border-slate-500">
               Сар
             </th>
-            <th className="py-3 px-3 font-semibold whitespace-nowrap text-center">
+            <th className="py-3 px-3 font-semibold whitespace-nowrap text-center border-r border-slate-400 dark:border-slate-500">
               Өмнөх үлдэгдэл
             </th>
-            <th className="py-3 px-3 font-semibold whitespace-nowrap text-center">
+            <th className="py-3 px-3 font-semibold whitespace-nowrap text-center border-r border-slate-400 dark:border-slate-500">
               Төлөх
             </th>
-            <th className="py-3 px-3 font-semibold whitespace-nowrap text-center">
+            <th className="py-3 px-3 font-semibold whitespace-nowrap text-center border-r border-slate-400 dark:border-slate-500">
               Төлсөн
             </th>
-            <th className="py-3 px-3 font-semibold whitespace-nowrap text-center">
+            <th className="py-3 px-3 font-semibold whitespace-nowrap text-center border-slate-400 dark:border-slate-500">
               Сарын эцсийн үлдэгдэл
             </th>
           </tr>
@@ -450,38 +450,38 @@ function LedgerMonthlyBreakdownTable({
                     : "bg-white dark:bg-[#0f172a]"
                 }`}
               >
-                <td className="py-3 px-3 text-center text-slate-700 dark:text-slate-200 whitespace-nowrap">
+                <td className="py-3 px-3 text-center text-slate-900 dark:text-slate-100 whitespace-nowrap border-r border-slate-300 dark:border-slate-600">
                   {r.displayMonth}
                 </td>
-                <td className="py-3 px-3 text-right tabular-nums text-slate-700 dark:text-slate-200">
+                <td className="py-3 px-3 text-right tabular-nums text-slate-900 dark:text-slate-100 border-r border-slate-300 dark:border-slate-600">
                   {formatCurrency(r.balanceStart)} ₮
                 </td>
-                <td className="py-3 px-3 text-right tabular-nums text-slate-700 dark:text-slate-200">
+                <td className="py-3 px-3 text-right tabular-nums text-slate-900 dark:text-slate-100 border-r border-slate-300 dark:border-slate-600">
                   {formatCurrency(r.tulukh)} ₮
                 </td>
-                <td className="py-3 px-3 text-right tabular-nums text-slate-700 dark:text-slate-200">
+                <td className="py-3 px-3 text-right tabular-nums text-slate-900 dark:text-slate-100 border-r border-slate-300 dark:border-slate-600">
                   {formatCurrency(r.tulsun)} ₮
                 </td>
-                <td className="py-3 px-3 text-right tabular-nums text-slate-700 dark:text-slate-200">
+                <td className="py-3 px-3 text-right tabular-nums text-slate-900 dark:text-slate-100">
                   {formatCurrency(r.balanceEnd)} ₮
                 </td>
               </tr>
             );
           })}
-          <tr className="history-print-total-row border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60">
+          <tr className="history-print-total-row border-t border-slate-400 dark:border-slate-700 bg-white dark:bg-slate-800/60">
             <td
               colSpan={2}
-              className="py-3 px-3 text-left text-slate-800 dark:text-slate-100 font-bold"
+              className="py-3 px-3 text-left text-slate-900 dark:text-slate-100 font-bold border-r border-slate-400 dark:border-slate-500"
             >
               Нийт
             </td>
-            <td className="py-3 px-3 text-left tabular-nums text-slate-800 dark:text-slate-100 whitespace-nowrap font-bold">
+            <td className="py-3 px-3 text-left tabular-nums text-slate-900 dark:text-slate-100 whitespace-nowrap font-bold border-r border-slate-400 dark:border-slate-500">
               {formatCurrency(totalTulukh)} ₮
             </td>
-            <td className="py-3 px-3 text-left tabular-nums text-slate-800 dark:text-slate-100 whitespace-nowrap font-bold">
+            <td className="py-3 px-3 text-left tabular-nums text-slate-900 dark:text-slate-100 whitespace-nowrap font-bold border-r border-slate-400 dark:border-slate-500">
               {formatCurrency(totalTulsun)} ₮
             </td>
-            <td className="py-3 px-3 text-left tabular-nums text-slate-800 dark:text-slate-100 whitespace-nowrap font-bold">
+            <td className="py-3 px-3 text-left tabular-nums text-slate-900 dark:text-slate-100 whitespace-nowrap font-bold">
               {formatCurrency(finalUldegdel)} ₮
             </td>
           </tr>
@@ -520,7 +520,7 @@ function HistoryContractInfoGrid({
           <span className="text-[9px] text-slate-400 uppercase tracking-wider block print:text-black">
             {item.label}
           </span>
-          <span className="text-[13px] text-slate-700 dark:text-slate-200 truncate block print:text-black">
+          <span className="text-[13px] text-slate-900 dark:text-slate-100 truncate block print:text-black">
             {item.value}
           </span>
         </div>
@@ -2232,37 +2232,37 @@ export default function HistoryModal({
 
                 {/* Table Section - Scrollable */}
                 <div className="history-print-table-body flex-1 overflow-auto custom-scrollbar px-5 sm:px-6 print:px-0">
-                  <table className="w-full text-[13px]">
+                  <table className="w-full text-[13px] border-collapse">
                     <thead className="sticky top-0 z-10 bg-white dark:bg-[#0f172a]">
                       <tr className="border-b border-slate-200 dark:border-slate-700">
-                        <th className="py-2 px-1.5 text-center text-[9px] border-r text-slate-800 dark:text-slate-100 uppercase font-semibold tracking-wide w-10 print:w-8">
+                        <th className="py-2 px-1.5 text-center text-[9px] border-r border-b border-slate-400 dark:border-slate-500 text-slate-900 dark:text-slate-100 uppercase font-semibold tracking-wide w-10 print:w-8">
                           №
                         </th>
-                        <th className="py-2 px-2 text-center text-[9px] border-r text-slate-800 dark:text-slate-100 uppercase font-semibold tracking-wide">
+                        <th className="py-2 px-2 text-center text-[9px] border-r border-b border-slate-400 dark:border-slate-500 text-slate-900 dark:text-slate-100 uppercase font-semibold tracking-wide">
                           Огноо
                         </th>
-                        <th className="py-2 px-2 text-center text-[9px] border-r text-slate-800 dark:text-slate-100 uppercase font-semibold tracking-wide hidden sm:table-cell print:table-cell">
+                        <th className="py-2 px-2 text-center text-[9px] border-r border-b border-slate-400 dark:border-slate-500 text-slate-900 dark:text-slate-100 uppercase font-semibold tracking-wide hidden sm:table-cell print:table-cell">
                           Ажилтан
                         </th>
-                        <th className="py-2 px-2 text-center text-[9px] border-r text-slate-800 dark:text-slate-100 uppercase font-semibold tracking-wide">
+                        <th className="py-2 px-2 text-center text-[9px] border-r border-b border-slate-400 dark:border-slate-500 text-slate-900 dark:text-slate-100 uppercase font-semibold tracking-wide">
                           Төлөх дүн
                         </th>
-                        <th className="py-2 px-2 text-center text-[9px] border-r text-slate-800 dark:text-slate-100 uppercase font-semibold tracking-wide">
+                        <th className="py-2 px-2 text-center text-[9px] border-r border-b border-slate-400 dark:border-slate-500 text-slate-900 dark:text-slate-100 uppercase font-semibold tracking-wide">
                           Төлсөн дүн
                         </th>
-                        <th className="py-2 px-2 text-center text-[9px] border-r text-slate-800 dark:text-slate-100 uppercase font-semibold tracking-wide">
+                        <th className="py-2 px-2 text-center text-[9px] border-r border-b border-slate-400 dark:border-slate-500 text-slate-900 dark:text-slate-100 uppercase font-semibold tracking-wide">
                           Үлдэгдэл сараар
                         </th>
-                        <th className="py-2 px-2 text-center text-[9px] border-r text-slate-800 dark:text-slate-100 uppercase font-semibold tracking-wide hidden md:table-cell print:table-cell">
+                        <th className="py-2 px-2 text-center text-[9px] border-r border-b border-slate-400 dark:border-slate-500 text-slate-900 dark:text-slate-100 uppercase font-semibold tracking-wide hidden md:table-cell print:table-cell">
                           Хэлбэр
                         </th>
-                        <th className="py-2 px-2 text-center text-[9px] border-r text-slate-800 dark:text-slate-100 uppercase font-semibold tracking-wide hidden md:table-cell print:table-cell">
+                        <th className="py-2 px-2 text-center text-[9px] border-r border-b border-slate-400 dark:border-slate-500 text-slate-900 dark:text-slate-100 uppercase font-semibold tracking-wide hidden md:table-cell print:table-cell">
                           Тайлбар
                         </th>
-                        <th className="py-2 px-2 text-center text-[9px] border-r text-slate-800 dark:text-slate-100 uppercase font-semibold tracking-wide hidden lg:table-cell print:table-cell">
+                        <th className="py-2 px-2 text-center text-[9px] border-r border-b border-slate-400 dark:border-slate-500 text-slate-900 dark:text-slate-100 uppercase font-semibold tracking-wide hidden lg:table-cell print:table-cell">
                           Бүртгэсэн огноо
                         </th>
-                        <th className="py-2 px-3 text-center text-[9px] text-slate-800 dark:text-slate-100 uppercase font-semibold tracking-wide w-28">
+                        <th className="py-2 px-3 text-center text-[9px] border-b border-slate-400 dark:border-slate-500 text-slate-900 dark:text-slate-100 uppercase font-semibold tracking-wide w-28">
                           Үйлдэл
                         </th>
                       </tr>
@@ -2291,19 +2291,19 @@ export default function HistoryModal({
                               key={row._id || idx}
                               className="hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-colors"
                             >
-                              <td className="py-2 px-1.5 text-[13px] border-r text-slate-600 dark:text-slate-300 whitespace-nowrap text-center tabular-nums w-10 print:w-8">
+                              <td className="py-2 px-1.5 text-[13px] border-r border-b border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-200 whitespace-nowrap text-center tabular-nums w-10 print:w-8">
                                 {idx}
                               </td>
-                              <td className="py-2 px-2 text-[13px] border-r text-slate-600 dark:text-slate-300 whitespace-nowrap text-center">
+                              <td className="py-2 px-2 text-[13px] border-r border-b border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-200 whitespace-nowrap text-center">
                                 {formatLedgerOgnooCell(row.ognoo)}
                               </td>
-                              <td className="py-2 px-2 text-[13px] border-r text-slate-500 dark:text-slate-400 hidden sm:table-cell text-center">
+                              <td className="py-2 px-2 text-[13px] border-r border-b border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hidden sm:table-cell text-center">
                                 {row.isSystem ? "Систем" : row.ajiltan}
                               </td>
-                              <td className="py-2 px-2 text-[13px] border-r text-slate-600 dark:text-slate-300 text-right whitespace-nowrap">
+                              <td className="py-2 px-2 text-[13px] border-r border-b border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-200 text-right whitespace-nowrap">
                                 {formatCurrency(row.tulukhDun)}
                               </td>
-                              <td className="py-2 px-2 text-right border-r whitespace-nowrap text-slate-700 dark:text-slate-200">
+                              <td className="py-2 px-2 text-right border-r border-b border-slate-300 dark:border-slate-600 whitespace-nowrap text-slate-900 dark:text-slate-200">
                                 {formatCurrency(row.tulsunDun)}
                               </td>
                               <td
@@ -2328,7 +2328,7 @@ export default function HistoryModal({
                                 data-print-balance={
                                   (row.uldegdel ?? 0) < 0.01 ? "ok" : "due"
                                 }
-                                className={`py-2 px-2 text-[13px] border-r text-right whitespace-nowrap cursor-pointer rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/80 hover:bg-slate-100/90 dark:hover:bg-slate-800/50 transition-colors ${(row.uldegdel ?? 0) < 0.01 ? "no-underline !text-emerald-600 dark:!text-emerald-400" : "underline underline-offset-2 decoration-red-500 dark:decoration-red-400 !text-red-500 dark:!text-red-400"}`}
+                                className={`py-2 px-2 text-[13px] border-r border-b border-slate-300 dark:border-slate-600 text-right whitespace-nowrap cursor-pointer rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/80 hover:bg-slate-100/90 dark:hover:bg-slate-800/50 transition-colors ${(row.uldegdel ?? 0) < 0.01 ? "no-underline !text-emerald-600 dark:!text-emerald-400" : "underline underline-offset-2 decoration-red-500 dark:decoration-red-400 !text-red-500 dark:!text-red-400"}`}
                                 title="Дэлгэрэнгүй харах"
                               >
                                 {typeof row.uldegdel === "number"
@@ -2337,13 +2337,13 @@ export default function HistoryModal({
                                     ? formatCurrency(Number(row.uldegdel))
                                     : "-"}
                               </td>
-                              <td className="py-2 px-2 text-[13px] border-r text-slate-500 dark:text-slate-400 hidden md:table-cell print:table-cell text-center capitalize">
+                              <td className="py-2 px-2 text-[13px] border-r border-b border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hidden md:table-cell print:table-cell text-center capitalize">
                                 {row.khelber || "-"}
                               </td>
-                              <td className="py-2 px-2 text-[13px] border-r text-slate-600 dark:text-slate-300 hidden md:table-cell print:table-cell">
+                              <td className="py-2 px-2 text-[13px] border-r border-b border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-200 hidden md:table-cell print:table-cell">
                                 {row.tailbar || "-"}
                               </td>
-                              <td className="py-2 px-2 text-[13px] border-r text-slate-400 dark:text-slate-500 hidden lg:table-cell print:table-cell whitespace-nowrap text-center">
+                              <td className="py-2 px-2 text-[13px] border-r border-b border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 hidden lg:table-cell print:table-cell whitespace-nowrap text-center">
                                 {row.burtgesenOgnoo &&
                                 row.burtgesenOgnoo !== "-"
                                   ? new Date(row.burtgesenOgnoo).toLocaleString(
@@ -2352,7 +2352,7 @@ export default function HistoryModal({
                                     )
                                   : "-"}
                               </td>
-                              <td className="py-2 px-3 text-center flex items-center justify-center">
+                              <td className="py-2 px-3 border-b border-slate-300 dark:border-slate-600 text-center flex items-center justify-center">
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -2412,30 +2412,30 @@ export default function HistoryModal({
                             return (
                               <>
                                 {isFiltered && filteredData.length > 0 && (
-                                  <tr className="history-print-total-row bg-slate-50/70 dark:bg-slate-800/60 print:bg-transparent italic">
-                                    <td className="sticky bottom-[37px] z-10 bg-slate-50 dark:bg-slate-800/90 py-1 px-1.5 border-t border-slate-200 dark:border-slate-700"></td>
-                                    <td colSpan={2} className="sticky bottom-[37px] z-10 bg-slate-50 dark:bg-slate-800/90 py-1 px-2 text-[12px] text-slate-500 text-right border-t border-slate-200 dark:border-slate-700">
+                                  <tr className="history-print-total-row bg-white dark:bg-slate-800/60 print:bg-transparent italic">
+                                    <td className="sticky bottom-[37px] z-10 bg-white dark:bg-slate-800/90 py-1 px-1.5 border-t border-r border-slate-400 dark:border-slate-600"></td>
+                                    <td colSpan={2} className="sticky bottom-[37px] z-10 bg-white dark:bg-slate-800/90 py-1 px-2 text-[12px] text-slate-900 dark:text-slate-100 text-right border-t border-r border-slate-400 dark:border-slate-600">
                                       Хугацааны эхний үлдэгдэл:
                                     </td>
-                                    <td colSpan={2} className="sticky bottom-[37px] z-10 bg-slate-50 dark:bg-slate-800/90 border-t border-slate-200 dark:border-slate-700"></td>
-                                    <td className="sticky bottom-[37px] z-10 bg-slate-50 dark:bg-slate-800/90 py-1 px-2 text-[12px] font-medium text-slate-600 dark:text-slate-400 text-right border-t border-slate-200 dark:border-slate-700">
+                                    <td colSpan={2} className="sticky bottom-[37px] z-10 bg-white dark:bg-slate-800/90 border-t border-r border-slate-400 dark:border-slate-600"></td>
+                                    <td className="sticky bottom-[37px] z-10 bg-white dark:bg-slate-800/90 py-1 px-2 text-[12px] font-bold text-slate-900 dark:text-slate-100 text-right border-t border-r border-slate-400 dark:border-slate-600">
                                       {formatCurrency(openingBalance)} ₮
                                     </td>
-                                    <td colSpan={4} className="sticky bottom-[37px] z-10 bg-slate-50 dark:bg-slate-800/90 border-t border-slate-200 dark:border-slate-700"></td>
+                                    <td colSpan={4} className="sticky bottom-[37px] z-10 bg-white dark:bg-slate-800/90 border-t border-r border-slate-400 dark:border-slate-600"></td>
                                   </tr>
                                 )}
-                                <tr className="history-print-total-row bg-slate-100 dark:bg-slate-800/50">
+                                <tr className="history-print-total-row bg-white dark:bg-slate-800/50">
                                   
                                 <td
                                   colSpan={3}
-                                  className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-2 text-[13px]  text-slate-700 dark:text-slate-200 text-left border-t-2 border-slate-300 dark:border-slate-600"
+                                  className="sticky bottom-0 z-10 bg-white dark:bg-slate-800 py-2 px-2 text-[13px]  text-slate-900 dark:text-slate-200 text-left border-t-2 border-r border-slate-400 dark:border-slate-600"
                                 >
                                   Нийт
                                 </td>
-                                <td className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-2 text-[13px]  text-slate-700 dark:text-slate-200 text-right whitespace-nowrap border-t-2 border-slate-300 dark:border-slate-600">
+                                <td className="sticky bottom-0 z-10 bg-white dark:bg-slate-800 py-2 px-2 text-[13px]  text-slate-900 dark:text-slate-200 text-right whitespace-nowrap border-t-2 border-r border-slate-400 dark:border-slate-600">
                                   {formatCurrency(totalCharges)} ₮
                                 </td>
-                                <td className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-2 text-[13px]  text-slate-700 dark:text-slate-200 text-right whitespace-nowrap border-t-2 border-slate-300 dark:border-slate-600">
+                                <td className="sticky bottom-0 z-10 bg-white dark:bg-slate-800 py-2 px-2 text-[13px]  text-slate-900 dark:text-slate-200 text-right whitespace-nowrap border-t-2 border-r border-slate-400 dark:border-slate-600">
                                   {formatCurrency(totalPayments)} ₮
                                 </td>
                                 <td
@@ -2464,14 +2464,14 @@ export default function HistoryModal({
                                   data-print-balance={
                                     balance < 0.01 ? "ok" : "due"
                                   }
-                                  className={`sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-2 text-[13px] text-right whitespace-nowrap border-t-2 border-slate-300 dark:border-slate-600 cursor-pointer rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/80 hover:bg-slate-200/90 dark:hover:bg-slate-700/50 transition-colors ${balanceClass}`}
+                                  className={`sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-2 text-[13px] text-right whitespace-nowrap border-t-2 border-r border-slate-300 dark:border-slate-600 cursor-pointer rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/80 hover:bg-slate-200/90 dark:hover:bg-slate-700/50 transition-colors ${balanceClass}`}
                                   title="Дэлгэрэнгүй харах"
                                 >
                                   {formatCurrency(balance)} ₮
                                 </td>
                                 <td
                                   colSpan={4}
-                                  className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 border-t-2 border-slate-300 dark:border-slate-600"
+                                  className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 border-t-2 border-r border-slate-300 dark:border-slate-600"
                                 ></td>
                               </tr>
                             </>

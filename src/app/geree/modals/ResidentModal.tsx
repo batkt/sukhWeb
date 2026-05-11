@@ -32,6 +32,7 @@ interface ResidentModalProps {
   baiguullaga: any;
   currentResidents: any[];
   onSubmit: (e: React.FormEvent) => Promise<any>;
+  token: string | null;
 }
 
 export default function ResidentModal({
@@ -47,6 +48,7 @@ export default function ResidentModal({
   baiguullaga,
   currentResidents,
   onSubmit,
+  token,
 }: ResidentModalProps) {
   const residentRef = React.useRef<HTMLDivElement | null>(null);
   const constraintsRef = React.useRef<HTMLDivElement | null>(null);
@@ -290,9 +292,57 @@ export default function ResidentModal({
     return "";
   }, [selectedBarilga, baiguullaga]);
 
+  const handleSearch = async (phone: string) => {
+    if (!phone || phone.length !== 8 || !selectedBarilga?._id) return;
+
+    try {
+      const resp = await uilchilgee(token || "").get("/orshinSuugch", {
+        params: {
+          baiguullagiinId: baiguullaga?._id,
+          barilgiinId: selectedBarilga._id,
+          search: phone,
+        },
+      });
+
+      const found = Array.isArray(resp.data?.jagsaalt) ? resp.data.jagsaalt[0] : null;
+
+      if (found) {
+        // Filter units by current building and exclude WALLET_API
+        const filteredToots = (found.toots || []).filter(
+          (t: any) =>
+            String(t.barilgiinId) === String(selectedBarilga._id) &&
+            t.source !== "WALLET_API"
+        );
+
+        setNewResident((p: any) => ({
+          ...p,
+          ovog: found.ovog || p.ovog,
+          ner: found.ner || p.ner,
+          register: found.register || p.register,
+          mail: found.mail || found.email || p.mail,
+          khayag: found.khayag || p.khayag,
+          units: filteredToots.length > 0 
+            ? filteredToots.map((t: any) => ({
+                orts: t.orts || "1",
+                davkhar: t.davkhar || "",
+                toot: t.toot || "",
+                ekhniiUldegdel: t.ekhniiUldegdel || 0,
+                tsahilgaaniiZaalt: t.tsahilgaaniiZaalt || 0,
+                khonogoorBodokhEsekh: t.khonogoorBodokhEsekh || false,
+                bodokhKhonog: t.bodokhKhonog || 0,
+              }))
+            : p.units
+        }));
+      }
+    } catch (err) {
+      console.error("Search error:", err);
+    }
+  };
+
   useModalHotkeys({
     isOpen: show,
     onClose: requestClose,
+    onSubmit: (e?: any) => handleLocalSubmit(e || { preventDefault: () => {} } as any),
     container: residentRef.current,
   });
 
@@ -317,12 +367,25 @@ export default function ResidentModal({
   };
 
   const formatWhileTyping = (val: string) => {
-    // Return ONLY the integer part with commas. 
-    // We'll show the .00 as a visual suffix in the UI.
+    // Remove commas for processing
     const clean = val.replace(/,/g, "");
-    let integerPart = clean.replace(/\D/g, "");
-    if (!integerPart) return "";
-    return integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    
+    // Split into integer and fractional parts
+    const parts = clean.split(".");
+    let integerPart = parts[0].replace(/\D/g, "");
+    const hasDot = clean.includes(".");
+    let fractionalPart = parts.length > 1 ? parts[1].replace(/\D/g, "").slice(0, 2) : "";
+    
+    if (!integerPart && !hasDot) return "";
+    
+    // Add commas to integer part
+    if (integerPart) {
+      integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    } else if (hasDot) {
+      integerPart = "0"; // Show 0 if user starts with a dot
+    }
+    
+    return integerPart + (hasDot ? "." : "") + fractionalPart;
   };
 
   const isEkhniiUldegdelDisabled = React.useMemo(() => {
@@ -782,6 +845,9 @@ export default function ResidentModal({
                             .replace(/[^0-9]/g, "")
                             .slice(0, 8);
                           setNewResident((p: any) => ({ ...p, utas: [value] }));
+                          if (value.length === 8 && !editingResident) {
+                            handleSearch(value);
+                          }
                         }}
                         className={`modern-input w-full ${errors.includes("utas") ? "input-error" : ""}`}
                         placeholder="12345678"
@@ -914,25 +980,35 @@ export default function ResidentModal({
                                     const val = input.value;
                                     const selectionStart = input.selectionStart || 0;
                                     
-                                    // Count digits to the right of cursor before formatting
-                                    const suffixDigits = val.slice(selectionStart).replace(/\D/g, "").length;
+                                    // Count characters to the right of cursor before formatting
+                                    // to maintain cursor position relative to digits/dot
+                                    const suffixChars = val.slice(selectionStart).replace(/,/g, "");
                                     
-                                    const rawValue = val.replace(/[^0-9]/g, "");
-                                    updateUnitRow(index, "ekhniiUldegdel", rawValue ? rawValue : "");
+                                    // Allow only digits and one dot
+                                    let cleanVal = val.replace(/[^0-9.]/g, "");
+                                    const dotIndex = cleanVal.indexOf(".");
+                                    if (dotIndex !== -1) {
+                                      // Keep only the first dot and 2 decimals
+                                      cleanVal = cleanVal.slice(0, dotIndex + 1) + 
+                                                cleanVal.slice(dotIndex + 1).replace(/\./g, "").slice(0, 2);
+                                    }
+                                    
+                                    updateUnitRow(index, "ekhniiUldegdel", cleanVal);
 
                                     // Adjust cursor position after render
                                     setTimeout(() => {
                                       const newVal = input.value;
                                       let newPos = newVal.length;
-                                      let digitsFound = 0;
+                                      let charsFound = 0;
+                                      
                                       // Walk backwards from the end to find the right position
                                       for (let i = newVal.length - 1; i >= 0; i--) {
-                                        if (/\d/.test(newVal[i])) {
-                                          if (digitsFound === suffixDigits) {
+                                        if (newVal[i] !== ",") {
+                                          if (charsFound === suffixChars.length) {
                                             newPos = i + 1;
                                             break;
                                           }
-                                          digitsFound++;
+                                          charsFound++;
                                         }
                                         if (i === 0) newPos = 0;
                                       }
@@ -972,22 +1048,28 @@ export default function ResidentModal({
                                     const input = e.target;
                                     const val = input.value;
                                     const selectionStart = input.selectionStart || 0;
-                                    const suffixDigits = val.slice(selectionStart).replace(/\D/g, "").length;
+                                    const suffixChars = val.slice(selectionStart).replace(/,/g, "");
                                     
-                                    const rawValue = val.replace(/[^0-9]/g, "");
-                                    updateUnitRow(index, "tsahilgaaniiZaalt", rawValue ? rawValue : "");
+                                    let cleanVal = val.replace(/[^0-9.]/g, "");
+                                    const dotIndex = cleanVal.indexOf(".");
+                                    if (dotIndex !== -1) {
+                                      cleanVal = cleanVal.slice(0, dotIndex + 1) + 
+                                                cleanVal.slice(dotIndex + 1).replace(/\./g, "").slice(0, 2);
+                                    }
+                                    
+                                    updateUnitRow(index, "tsahilgaaniiZaalt", cleanVal);
 
                                     setTimeout(() => {
                                       const newVal = input.value;
                                       let newPos = newVal.length;
-                                      let digitsFound = 0;
+                                      let charsFound = 0;
                                       for (let i = newVal.length - 1; i >= 0; i--) {
-                                        if (/\d/.test(newVal[i])) {
-                                          if (digitsFound === suffixDigits) {
+                                        if (newVal[i] !== ",") {
+                                          if (charsFound === suffixChars.length) {
                                             newPos = i + 1;
                                             break;
                                           }
-                                          digitsFound++;
+                                          charsFound++;
                                         }
                                         if (i === 0) newPos = 0;
                                       }

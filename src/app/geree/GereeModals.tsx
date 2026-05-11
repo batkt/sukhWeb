@@ -124,7 +124,14 @@ export default function GereeModals() {
         ortsOptions={data.ortsOptions}
         davkharOptions={data.davkharOptions}
         getTootOptions={data.getTootOptions}
-        onSubmit={state.editingContract ? actions.handleUpdateContract : actions.handleCreateContract}
+        onSubmit={async (e) => {
+          const handler = state.editingContract ? actions.handleUpdateContract : actions.handleCreateContract;
+          const success = await handler(e);
+          if (success) {
+            state.setShowContractModal(false);
+          }
+          return success;
+        }}
         baiguullaga={baiguullaga}
       />
 
@@ -149,6 +156,7 @@ export default function GereeModals() {
           }
           return success;
         }}
+        token={token}
       />
 
       {/* Employee Modal */}
@@ -158,7 +166,14 @@ export default function GereeModals() {
         editingEmployee={state.editingEmployee}
         newEmployee={state.newEmployee}
         setNewEmployee={state.setNewEmployee}
-        onSubmit={actions.handleCreateOrUpdateEmployee}
+        onSubmit={async (e) => {
+          const success = await actions.handleCreateOrUpdateEmployee(e);
+          if (success) {
+            state.setShowEmployeeModal(false);
+            state.setEditingEmployee(null);
+          }
+          return success;
+        }}
       />
 
       {/* Payment / Avlaga Modal */}
