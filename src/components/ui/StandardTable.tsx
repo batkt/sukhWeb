@@ -106,7 +106,7 @@ export function StandardTable<T extends object>({
       !bg-gray-50 dark:!bg-gray-900 
       text-gray-900 dark:text-white 
       border-b border-gray-200 dark:border-gray-800
-      font-semibold py-1.5 px-2
+      font-normal py-1.5 px-2
       ${col.className || ""}
     `,
     children: col.children?.map((child, idx) => mapColumn(child, idx, col.children!.length)),
@@ -245,7 +245,7 @@ export function StandardPagination({
               }}
             >
               <SelectTrigger className="h-8 border-none bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl px-3 gap-2 transition-colors !shadow-none">
-                <span className="text-[13px] font-semibold text-slate-800 dark:text-slate-200">
+                <span className="text-[13px] font-normal text-slate-800 dark:text-slate-200">
                   {pageSize} / хуудас
                 </span>
               </SelectTrigger>
@@ -276,7 +276,7 @@ export function StandardPagination({
         </button>
 
         <div className="flex items-center justify-center px-4 h-8 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm">
-          <span className="text-[13px] font-bold text-emerald-500 tabular-nums">
+          <span className="text-[13px] font-normal text-emerald-500 tabular-nums">
             {current} <span className="text-slate-300 mx-1">/</span>{" "}
             {totalPages}
           </span>

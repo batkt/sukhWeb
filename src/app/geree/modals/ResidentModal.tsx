@@ -984,11 +984,11 @@ export default function ResidentModal({
                                     // to maintain cursor position relative to digits/dot
                                     const suffixChars = val.slice(selectionStart).replace(/,/g, "");
                                     
-                                    // Allow only digits and one dot
-                                    let cleanVal = val.replace(/[^0-9.]/g, "");
+                                    // Convert comma to dot for decimal support and allow only digits/dot
+                                    let cleanVal = val.replace(/,/g, ".").replace(/[^0-9.]/g, "");
                                     const dotIndex = cleanVal.indexOf(".");
                                     if (dotIndex !== -1) {
-                                      // Keep only the first dot and 2 decimals
+                                      // Keep only the first dot and up to 2 decimals
                                       cleanVal = cleanVal.slice(0, dotIndex + 1) + 
                                                 cleanVal.slice(dotIndex + 1).replace(/\./g, "").slice(0, 2);
                                     }
@@ -1050,9 +1050,11 @@ export default function ResidentModal({
                                     const selectionStart = input.selectionStart || 0;
                                     const suffixChars = val.slice(selectionStart).replace(/,/g, "");
                                     
-                                    let cleanVal = val.replace(/[^0-9.]/g, "");
+                                    // Convert comma to dot for decimal support and allow only digits/dot
+                                    let cleanVal = val.replace(/,/g, ".").replace(/[^0-9.]/g, "");
                                     const dotIndex = cleanVal.indexOf(".");
                                     if (dotIndex !== -1) {
+                                      // Keep only the first dot and up to 2 decimals
                                       cleanVal = cleanVal.slice(0, dotIndex + 1) + 
                                                 cleanVal.slice(dotIndex + 1).replace(/\./g, "").slice(0, 2);
                                     }

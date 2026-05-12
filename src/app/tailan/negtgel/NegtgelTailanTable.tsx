@@ -137,7 +137,7 @@ export function NegtgelTailanTable({ data, loading, authoritativeTotalUldegdel }
       {
         key: "toot",
         label: "Тоот",
-        width: 80,
+        width: 60,
         align: "center",
         fixed: "left",
         render: (_: any, record: NegtgelTailanItem) => record._id?.toot || record.toot || "-",
@@ -253,7 +253,7 @@ export function NegtgelTailanTable({ data, loading, authoritativeTotalUldegdel }
       footer={
         <div className="flex justify-end items-center gap-4 py-2 border-t border-gray-100 dark:border-gray-800">
           <span className="text-sm text-gray-500 dark:text-gray-400">Нийт үлдэгдэл:</span>
-          <span className="text-lg text-emerald-500">{formatNumber(totalUldegdel, 2)} ₮</span>
+          <span className="text-sm text-emerald-500">{formatNumber(totalUldegdel, 2)} ₮</span>
         </div>
       }
     />

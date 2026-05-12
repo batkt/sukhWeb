@@ -86,7 +86,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
     { key: "ner", label: "Харилцагчийн нэр", width: "180px", align: "left" as const },
     { key: "gereeniiDugaar", label: "Гэрээний дугаар", width: "120px", align: "center" as const },
     { key: "davkhar", label: "Давхар", width: "80px", align: "center" as const },
-    { key: "toot", label: "Тоот", width: "80px", align: "center" as const },
+    { key: "toot", label: "Тоот", width: "60px", align: "center" as const },
   ], []);
 
   const balanceColumns = useMemo(() => {
@@ -169,7 +169,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
       });
     })();
 
-    const headerClassName = "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white font-semibold text-[13px]";
+    const headerClassName = "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white font-normal text-[13px]";
 
     const ledgerColumns: ColumnsType<any> = [
       { title: "№", key: "index", width: 50, align: "center", className: headerClassName, render: (_: any, __: any, index: number) => (ledgerPage - 1) * 50 + index + 1 },
@@ -306,9 +306,10 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                 <tr
                   key={record._gereeDugaar || record.gereeniiDugaar || record._id || `row-${index}`}
                   className={`
-                    cursor-pointer transition-colors duration-100
-                    ${index % 2 === 0 ? "bg-white dark:bg-gray-900" : "bg-gray-50/50 dark:bg-gray-800/30"}
-                    hover:bg-blue-50/60 dark:hover:bg-blue-900/15 hover:shadow-sm
+                    cursor-pointer transition-colors duration-200
+                    ${index % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-700/50"}
+                    text-gray-900 dark:text-white
+                    hover:bg-gray-100 dark:hover:bg-gray-600
                   `}
                   onClick={() => onRowClick(record)}
                 >
@@ -316,8 +317,8 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                     <td
                       key={col.key}
                       className={`
-                        px-3 py-2.5 text-[13px] whitespace-nowrap
-                        border-b border-gray-100 dark:border-gray-800
+                        px-3 py-2 text-[13px] whitespace-nowrap
+                        border-b border-slate-100 dark:border-slate-800/50
                         ${col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "text-left"}
                         ${getCellClassName(col.key)}
                       `}
@@ -329,7 +330,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                         </span>
                       ) : (
                         getCellValue(record, col.key, index)
-                      )}
+                      ) || "-"}
                     </td>
                   ))}
                 </tr>
@@ -347,7 +348,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                     <td
                       key={col.key}
                       className={`
-                        px-3 py-3 text-[13px] font-semibold   whitespace-nowrap
+                        px-3 py-3 text-[13px] font-normal text-gray-900 dark:text-white
                         ${col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "text-left"}
                         ${col.key === "paid" ? "text-emerald-600 dark:text-emerald-400" : ""}
                         ${col.key === "finalBalance" ? "text-red-600 dark:text-red-400" : ""}

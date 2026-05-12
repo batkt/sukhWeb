@@ -216,20 +216,6 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
               >
                 <Edit className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               </button>
-              {isCancelled && (
-                <div
-                  className="flex items-center gap-1.5 px-1 py-1"
-                  title={cancelDate ? `Цуцалсан: ${cancelDate}` : "Цуцалсан"}
-                >
-                  <div className="w-[1px] h-4 bg-gray-200 dark:bg-gray-700 mx-0.5" />
-                  <CalendarX2 className="w-4 h-4 text-red-500 dark:text-red-400 flex-shrink-0" />
-                  {cancelDate && (
-                    <span className="text-[11px] font-medium text-red-500 dark:text-red-400 whitespace-nowrap">
-                      {cancelDate}
-                    </span>
-                  )}
-                </div>
-              )}
             </div>
           );
         },

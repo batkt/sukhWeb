@@ -25,7 +25,7 @@ export default function R2WPlayerComponent({
   USER,
   PASSWD,
   ROOT = "stream",
-  serverPath = "/api/camera/stream",
+  serverPath = "/api/camera",
   containerId,
   style,
   onError,

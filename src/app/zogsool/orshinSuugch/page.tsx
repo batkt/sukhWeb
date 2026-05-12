@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
 import {
@@ -92,6 +93,8 @@ export default function OrshinSuugch() {
   const { searchTerm } = useSearch();
   const [page, setPage] = useState(1);
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<ResidentParking | null>(null);
   const [editingResident, setEditingResident] =
     useState<ResidentParking | null>(null);
   const [pageSize, setPageSize] = useState(100);
@@ -255,23 +258,22 @@ export default function OrshinSuugch() {
     ];
   }, [statsData, totalCount]);
 
-  const handleDelete = async (r: ResidentParking) => {
-    const id = r._id;
-    if (!id || !token) return;
-    if (
-      !window.confirm(
-        `${r.ner || r.orshinSuugchNer || "Энэ хэрэглэгчийг"} устгахдаа итгэлтэй байна уу?`,
-      )
-    )
-      return;
+  const handleDelete = (r: ResidentParking) => {
+    setItemToDelete(r);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!itemToDelete || !token) return;
+    const id = itemToDelete._id;
 
     try {
-      // Based on save endpoint /zochinHadgalya, we might need a specific delete endpoint
-      // but trying regular deleteMethod first as it's common in this project
       const res = await deleteMethod("orshinSuugch", token, id);
       if (res.data) {
         toast.success("Амжилттай устгагдлаа");
         mutate();
+        setShowDeleteModal(false);
+        setItemToDelete(null);
       }
     } catch (err) {
       toast.error("Устгахад алдаа гарлаа");
@@ -320,12 +322,60 @@ export default function OrshinSuugch() {
           <Button
             onClick={() => setShowRegistrationModal(true)}
             variant="primary"
+            leftIcon={<Plus className="w-4 h-4" />}
             className="h-11 px-8 rounded-[30px] uppercase text-[10px] shadow-lg shadow-blue-500/20 hover:scale-105 transition-transform font-sans"
           >
             Нэмэх
           </Button>
          
         </div>
+
+        {showDeleteModal && itemToDelete && (
+          <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 sm:p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+              onClick={() => setShowDeleteModal(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-sm bg-white dark:bg-[#0f1117] rounded-[32px] shadow-2xl overflow-hidden border border-white/20 dark:border-white/5 p-8"
+            >
+              <div className="flex flex-col items-center text-center">
+                <div className="w-16 h-16 rounded-full bg-red-50 dark:bg-red-500/10 flex items-center justify-center mb-6">
+                  <Trash2 className="w-8 h-8 text-red-500" />
+                </div>
+                <h3 className="text-xl font-medium text-slate-800 dark:text-white mb-2">
+                  Устгахдаа итгэлтэй байна уу?
+                </h3>
+                <p className="text-slate-500 dark:text-slate-400 mb-8 leading-relaxed">
+                  <span className="font-bold text-slate-900 dark:text-slate-100">
+                    {itemToDelete.ner || itemToDelete.orshinSuugchNer || "Энэ хэрэглэгч"}
+                  </span>{" "}
+                  -ийн мэдээллийг устгахыг зөвшөөрч байна уу?
+                </p>
+                <div className="flex flex-col w-full gap-3">
+                  <button
+                    onClick={confirmDelete}
+                    className="w-full h-12 bg-red-500 hover:bg-red-600 text-white rounded-2xl font-medium transition-all hover:scale-105 active:scale-95 shadow-lg shadow-red-500/20"
+                  >
+                    Устгах
+                  </button>
+                  <button
+                    onClick={() => setShowDeleteModal(false)}
+                    className="w-full h-12 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 rounded-2xl font-medium transition-all"
+                  >
+                    Цуцлах
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
 
         {showRegistrationModal && (
           <ResidentRegistrationModal

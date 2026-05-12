@@ -44,6 +44,7 @@ import axios from "axios";
 import uilchilgee, {
   socket as getSocket,
   aldaaBarigch,
+  url as apiUrl,
 } from "@/lib/uilchilgee";
 import formatNumber from "../../../../tools/function/formatNumber";
 import R2WPlayerComponent from "@/components/R2WPlayerComponent";
@@ -1023,6 +1024,7 @@ export default function Camera() {
                           gateName={camera.gateName}
                           cameraType="entry"
                           onOpenGate={khaalgaNeey}
+                          barilgiinId={effectiveBarilgiinId}
                         />
                       </div>
                     ))}
@@ -1098,6 +1100,7 @@ export default function Camera() {
                           gateName={camera.gateName}
                           cameraType="exit"
                           onOpenGate={khaalgaNeey}
+                          barilgiinId={effectiveBarilgiinId}
                         />
                       </div>
                     ))}
@@ -2135,6 +2138,7 @@ const CameraStream = React.memo(
     gateName,
     cameraType,
     onOpenGate,
+    barilgiinId,
   }: {
     ip: string;
     port: number;
@@ -2145,6 +2149,7 @@ const CameraStream = React.memo(
     gateName?: string;
     cameraType?: "entry" | "exit";
     onOpenGate?: (ip: string) => void;
+    barilgiinId?: string;
   }) => {
     const [error, setError] = useState(false);
     const [connectionState, setConnectionState] = useState<string>("");
@@ -2301,7 +2306,7 @@ const CameraStream = React.memo(
           USER={username}
           PASSWD={password}
           ROOT={root}
-          serverPath="/api/camera/stream"
+          serverPath={apiUrl + `camera/stream/${barilgiinId}`}
           onError={handleError}
           onConnectionStateChange={handleConnectionStateChange}
           style={{

@@ -428,79 +428,56 @@ export function useGereeData(
         }
 
         case "ognoo": {
+          const createdDate = contract.ognoo || contract.createdAt;
+          if (!createdDate) return "-";
+          
+          try {
+            const date = new Date(createdDate);
+            if (!isNaN(date.getTime())) {
+              return React.createElement(
+                "span",
+                { className: "text-green-600 dark:text-green-400 font-medium" },
+                date.toLocaleDateString("mn-MN", {
+                  year: "numeric",
+                  month: "2-digit",
+                  day: "2-digit",
+                }),
+              );
+            }
+          } catch (e) {}
+          return "-";
+        }
+
+        case "tsutsalsanOgnoo": {
           const status = String(
             contract.tuluv || contract.status || "Идэвхтэй",
           ).trim();
           const isCancelled =
-            status === "Цуцалсан" ||
-            status.toLowerCase() === "цуцалсан" ||
-            status === "tsutlsasan" ||
-            status.toLowerCase() === "tsutlsasan" ||
-            status === "Идэвхгүй" ||
-            status.toLowerCase() === "идэвхгүй";
+            status === "Цуцалсан" || status.toLowerCase() === "цуцалсан";
+          if (!isCancelled) return "-";
 
-          // Try to get cancelled date from various possible field names
-          const cancelledDate =
+          const rawDate =
             contract.tsutsalsanOgnoo ||
-            contract.cancelledAt ||
             contract.tsutlsasanOgnoo ||
             contract.tsutlsanOgnoo ||
-            contract.duusakhOgnoo ||
-            contract.updatedAt; // Fallback to updatedAt if cancelled
+            contract.updatedAt;
+          if (!rawDate) return "-";
 
-          const createdDate = contract.ognoo || contract.createdAt;
-
-          const formatDate = (dateValue: any): string => {
-            if (!dateValue) return "";
-            try {
-              const date = new Date(dateValue);
-              if (!isNaN(date.getTime())) {
-                return date.toLocaleDateString("mn-MN", {
+          try {
+            const date = new Date(rawDate);
+            if (!isNaN(date.getTime())) {
+              return React.createElement(
+                "span",
+                { className: "text-red-500 font-medium" },
+                date.toLocaleDateString("mn-MN", {
                   year: "numeric",
                   month: "2-digit",
                   day: "2-digit",
-                });
-              }
-            } catch (e) {
-              // Fall through
-            }
-            return getStringValue(dateValue);
-          };
-
-          const formattedCreated = formatDate(createdDate);
-          const formattedCancelled = isCancelled
-            ? formatDate(cancelledDate)
-            : "";
-
-          // Apply color based on status with !important to override table styles
-          const dateClass = isCancelled
-            ? "!text-red-600 dark:!text-red-400 "
-            : "!text-green-600 dark:!text-green-400 ";
-
-          if (isCancelled) {
-            // Show only cancelled date for cancelled contracts
-            if (formattedCancelled) {
-              return React.createElement(
-                "span",
-                { className: dateClass, style: { color: "#dc2626" } },
-                formattedCancelled,
-              );
-            } else {
-              // If cancelled date not available, show "-"
-              return React.createElement(
-                "span",
-                { className: dateClass, style: { color: "#dc2626" } },
-                "-",
+                }),
               );
             }
-          } else {
-            // Show created date for active contracts
-            return React.createElement(
-              "span",
-              { className: dateClass, style: { color: "#16a34a" } },
-              formattedCreated || "-",
-            );
-          }
+          } catch (e) {}
+          return "-";
         }
 
         default: {

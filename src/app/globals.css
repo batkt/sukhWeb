@@ -4541,6 +4541,7 @@ a:active {
 .dark .guilgee-table .ant-table-tbody > tr > td,
 .dark .guilgee-table .ant-table-tbody > tr.compact-row > td {
   border-bottom: 1px solid #374151 !important;
+  color: #ffffff !important;
 }
 
 /* Row class - cancelled (red highlight) */
@@ -4738,6 +4739,7 @@ a:active {
 .dark .guilgee-table .ant-table-thead > tr > th.ant-table-cell-fix-left,
 .dark .guilgee-table .ant-table-thead > tr > th.ant-table-cell-fix-right {
   background-color: #111827 !important;
+  color: #ffffff !important;
 }
 
 /* AGGRESSIVE: Force table row borders - light mode */

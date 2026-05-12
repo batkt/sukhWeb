@@ -58,8 +58,11 @@ export const ZogsoolOrshinSuugchTable: React.FC<
         key: "index",
         width: 50,
         align: "center",
-        render: (_: any, __: any, idx: number) =>
-          (page - 1) * pageSize + idx + 1,
+        render: (_: any, __: any, idx: number) => (
+          <span className="text-black dark:text-white text-[11px]">
+            {(page - 1) * pageSize + idx + 1}
+          </span>
+        ),
       },
       {
         title: <span className="text-black dark:text-white">Нэр</span>,
@@ -90,13 +93,13 @@ export const ZogsoolOrshinSuugchTable: React.FC<
         render: (_: any, record: ResidentParking) => (
           <div className="flex flex-wrap gap-2 justify-center">
             {record.mashiniiDugaar && record.mashiniiDugaar !== "БҮРТГЭЛГҮЙ" ? (
-              <div className="flex items-center gap-1.5 px-2 py-1 rounded-2xl bg-slate-100 dark:bg-white/10 border border-slate-300 dark:border-white/20">
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-2xl bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10">
                 <span className="text-[10px] text-black dark:text-white">
                   {record.mashiniiDugaar}
                 </span>
               </div>
             ) : (
-              <div className="flex items-center gap-1.5 px-2 py-1 rounded-2xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800/50">
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-2xl bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10">
                 <span className="text-[10px] text-black dark:text-white">
                   БҮРТГЭЛГҮЙ
                 </span>
@@ -134,15 +137,19 @@ export const ZogsoolOrshinSuugchTable: React.FC<
         key: "toot",
         align: "center",
         sorter: (a, b) => (a.ezenToot || "").localeCompare(b.ezenToot || ""),
-        render: (_: any, record: ResidentParking) => (
-          <div className="flex items-center justify-center gap-2">
-            <span className="px-2.5 py-1 rounded-2xl bg-slate-100 dark:bg-white/10 border border-slate-300 dark:border-white/20 text-[10px] text-black dark:text-white">
-              {record.ezenToot || getResidentToot(record)
-                ? `${record.ezenToot || getResidentToot(record)} тоот`
-                : "-"}
-            </span>
-          </div>
-        ),
+        render: (_: any, record: ResidentParking) => {
+          const tootValue = record.ezenToot || getResidentToot(record);
+          if (!tootValue || tootValue === "-") return null;
+          
+          return (
+            <div className="flex items-center justify-center gap-2">
+              <span className="px-2.5 py-1 rounded-2xl bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10 text-[10px] text-black dark:text-white">
+                  {tootValue}
+                  <span className="ml-1 opacity-70">тоот</span>
+              </span>
+            </div>
+          );
+        },
       },
       {
         title: <span className="text-black dark:text-white">Үйлдэл</span>,
@@ -160,10 +167,15 @@ export const ZogsoolOrshinSuugchTable: React.FC<
             </button>
             <button
               onClick={() => onDelete(record)}
-              className="p-2 rounded-2xl action-delete hover-surface transition-colors hover:bg-slate-200 dark:hover:bg-white/20"
-              title="Устгах"
+              disabled={!record.mashiniiDugaar || record.mashiniiDugaar === "БҮРТГЭЛГҮЙ"}
+              className={`p-2 rounded-2xl action-delete transition-all ${
+                (!record.mashiniiDugaar || record.mashiniiDugaar === "БҮРТГЭЛГҮЙ")
+                  ? "opacity-20 cursor-not-allowed text-slate-400"
+                  : "hover-surface hover:bg-red-50 dark:hover:bg-red-500/10 text-black dark:text-white hover:text-red-500"
+              }`}
+              title={(!record.mashiniiDugaar || record.mashiniiDugaar === "БҮРТГЭЛГҮЙ") ? "Машин бүртгэлгүй" : "Устгах"}
             >
-              <Trash2 className="w-5 h-5 text-black dark:text-white" />
+              <Trash2 className="w-5 h-5" />
             </button>
           </div>
         ),

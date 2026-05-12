@@ -13,5 +13,6 @@ export const ALL_COLUMNS = [
   { key: "utas", label: "Холбоо барих", default: true },
   { key: "tuluv", label: "Төлөв", default: true },
 
+  { key: "tsutsalsanOgnoo", label: "Цуцалсан огноо", default: true },
   { key: "ognoo", label: "Үүссэн огноо", default: true },
 ];

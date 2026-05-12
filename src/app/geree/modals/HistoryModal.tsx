@@ -2267,7 +2267,7 @@ export default function HistoryModal({
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
+                    <tbody className="divide-y divide-slate-300 dark:divide-slate-600">
                       {loading ? (
                         Array.from({ length: 5 }).map((_, i) => (
                           <tr key={i} className="animate-pulse">
@@ -2424,18 +2424,18 @@ export default function HistoryModal({
                                     <td colSpan={4} className="sticky bottom-[37px] z-10 bg-white dark:bg-slate-800/90 border-t border-r border-slate-400 dark:border-slate-600"></td>
                                   </tr>
                                 )}
-                                <tr className="history-print-total-row bg-white dark:bg-slate-800/50">
+                                <tr className="history-print-total-row bg-white dark:bg-slate-800">
                                   
                                 <td
                                   colSpan={3}
-                                  className="sticky bottom-0 z-10 bg-white dark:bg-slate-800 py-2 px-2 text-[13px]  text-slate-900 dark:text-slate-200 text-left border-t-2 border-r border-slate-400 dark:border-slate-600"
+                                  className="sticky bottom-0 z-10 bg-white dark:bg-slate-800 py-2 px-2 text-[13px] font-bold text-black dark:text-slate-50 text-left border-t-2 border-r border-slate-400 dark:border-slate-600"
                                 >
                                   Нийт
                                 </td>
-                                <td className="sticky bottom-0 z-10 bg-white dark:bg-slate-800 py-2 px-2 text-[13px]  text-slate-900 dark:text-slate-200 text-right whitespace-nowrap border-t-2 border-r border-slate-400 dark:border-slate-600">
+                                <td className="sticky bottom-0 z-10 bg-white dark:bg-slate-800 py-2 px-2 text-[13px] font-bold text-black dark:text-slate-50 text-right whitespace-nowrap border-t-2 border-r border-slate-400 dark:border-slate-600">
                                   {formatCurrency(totalCharges)} ₮
                                 </td>
-                                <td className="sticky bottom-0 z-10 bg-white dark:bg-slate-800 py-2 px-2 text-[13px]  text-slate-900 dark:text-slate-200 text-right whitespace-nowrap border-t-2 border-r border-slate-400 dark:border-slate-600">
+                                <td className="sticky bottom-0 z-10 bg-white dark:bg-slate-800 py-2 px-2 text-[13px] font-bold text-black dark:text-slate-50 text-right whitespace-nowrap border-t-2 border-r border-slate-400 dark:border-slate-600">
                                   {formatCurrency(totalPayments)} ₮
                                 </td>
                                 <td

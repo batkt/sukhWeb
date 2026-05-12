@@ -114,7 +114,7 @@ const PrintStyles = () => (
 
       th {
         background-color: #f0f0f0 !important;
-        font-weight: bold !important;
+        font-weight: normal !important;
         -webkit-print-color-adjust: exact;
       }
 
@@ -878,7 +878,6 @@ export default function OrlogoAvlagaPage() {
               [
                 ["tulult", "Орлого"],
                 ["avlaga", "Авлага"],
-                ["all", "Бүгд"],
               ] as [TabType, string][]
             ).map(([tab, label]) => (
               <button

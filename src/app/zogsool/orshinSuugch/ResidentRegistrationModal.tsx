@@ -56,7 +56,7 @@ export default function ResidentRegistrationModal({
     unit: editData?.toot || editData?.burtgeliinDugaar || editData?.ezenToot || "",
     type: (editData?.zochinTurul || editData?.turul || "Оршин суугч") as
       | "Оршин суугч"
-      | "Түрээслэгч",
+      | "Түр оршин суугч",
     frequency: editData?.davtamjiinTurul || "saraar",
     rightsCount: editData?.zochinErkhiinToo ?? 1,
     freeMinutes: editData?.zochinTusBurUneguiMinut ?? 8,
@@ -64,17 +64,8 @@ export default function ResidentRegistrationModal({
     orshinSuugchTurul: editData?.orshinSuugchTurul || "",
   });
 
-  // Fetch guest defaults from Barilga
-  const { data: buildingData } = useSWR(
-    barilgiinId ? `/barilga/${barilgiinId}` : null,
-    async (url) => {
-      const resp = await uilchilgee(token).get(url, {
-        params: { baiguullagiinId },
-      });
-      return resp.data;
-    },
-    { revalidateOnFocus: false },
-  );
+  // Fetch guest defaults from Barilga - Disabled as endpoint /barilga does not exist
+  const buildingData: any = null;
 
   const guestDefaults = useMemo(() => {
     return buildingData?.zochinTokhirgoo || null;
@@ -186,19 +177,35 @@ export default function ResidentRegistrationModal({
       toast.error("Утасны дугаар 8 оронтой байх ёстой");
       return;
     }
-    setStep(2);
+
+    // If it's a resident, we MUST search and find them first.
+    // We don't allow manual registration of NEW residents from the parking module.
+    if (!formData.orshinSuugchTurul || formData.orshinSuugchTurul === "Оршин суугч") {
+      handleSearch(formData.phone);
+    } else {
+      // For Staff, SÖH, etc., we allow manual proceed to Step 2
+      setStep(2);
+    }
   };
 
   const handleSave = async () => {
-    if (!formData.name || !formData.phone) {
-      toast.error("Нэр, утас заавал оруулна уу");
-      return;
+    // Validate individual fields and show separate errors
+    let hasError = false;
+    
+    if (!formData.name?.trim()) {
+      toast.error("Оршин суугчийн нэр заавал оруулна уу");
+      hasError = true;
+    }
+    
+    if (!formData.phone?.trim()) {
+      toast.error("Утасны дугаар заавал оруулна уу");
+      hasError = true;
+    } else if (formData.phone.trim().length !== 8) {
+      toast.error("Утасны дугаар 8 оронтой байх ёстой");
+      hasError = true;
     }
 
-    if (formData.phone.length !== 8) {
-      toast.error("Утасны дугаар 8 оронтой байх ёстой");
-      return;
-    }
+    if (hasError) return;
 
     setLoading(true);
     try {
@@ -286,7 +293,7 @@ export default function ResidentRegistrationModal({
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className={`relative w-full ${step === 1 ? "max-w-md" : "max-w-3xl"} bg-white dark:bg-[#0f1117] rounded-[32px] shadow-2xl overflow-hidden border border-white/20 dark:border-white/5 ring-1 ring-black/5 transition-all duration-500 ease-in-out`}
+          className={`relative w-full ${step === 1 ? "max-w-md" : "max-w-3xl"} bg-white dark:bg-[#11131a] rounded-[32px] shadow-2xl overflow-hidden border border-slate-200 dark:border-white/10 ring-1 ring-black/5 transition-all duration-500 ease-in-out`}
         >
           {/* Header */}
           <div className="relative px-8 py-6 border-b border-slate-100 dark:border-white/5 bg-white/50 dark:bg-white/[0.02]">
@@ -332,17 +339,16 @@ export default function ResidentRegistrationModal({
                         orshinSuugchTurul: e.target.value,
                       })
                     }
-                    className="w-full h-12 pl-10 pr-8 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-xl text-sm  text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer"
+                    className="w-full h-12 pl-10 pr-8 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 rounded-xl text-sm  text-slate-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer"
                   >
                     <option value="Оршин суугч">Оршин суугч</option>
                     <option value="Ажилтан">Ажилтан</option>
                     <option value="СӨХ">СӨХ</option>
                     <option value="Үнэгүй">Үнэгүй</option>
                     <option value="Дотоод">Дотоод</option>
-                    <option value="Жолооч">Жолооч</option>
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                  <label className="absolute -top-2 left-3 px-1 bg-white dark:bg-[#0f1117] text-[11px] font-sans text-slate-400">
+                  <label className="absolute -top-2 left-3 px-1 bg-white dark:bg-[#11131a] text-[11px] font-sans text-slate-400 dark:text-slate-300">
                     Төрөл
                   </label>
                 </div>
@@ -410,7 +416,7 @@ export default function ResidentRegistrationModal({
                         placeholder="88888888"
                       />
 
-                      {formData.orshinSuugchTurul !== "СӨХ" && (
+                      {!["СӨХ", "Ажилтан", "Үнэгүй", "Дотоод"].includes(formData.orshinSuugchTurul) && (
                         <div className="group relative">
                           <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors z-10">
                             <Home className="w-4 h-4" />
@@ -421,7 +427,7 @@ export default function ResidentRegistrationModal({
                             onChange={(e) =>
                               setFormData({ ...formData, unit: e.target.value })
                             }
-                            className="w-full h-11 pl-10 pr-4 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-xl text-sm  text-slate-700 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                            className="w-full h-11 pl-10 pr-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 rounded-xl text-sm  text-slate-700 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                             placeholder="Тоот сонгох"
                           />
                           <datalist id="toot-suggestions">
@@ -429,7 +435,7 @@ export default function ResidentRegistrationModal({
                               <option key={t} value={t} />
                             ))}
                           </datalist>
-                          <label className="absolute -top-2 left-3 px-1 bg-white dark:bg-[#0f1117] text-[11px] font-sans text-slate-400 group-focus-within:text-blue-500 transition-colors">
+                          <label className="absolute -top-2 left-3 px-1 bg-white dark:bg-[#11131a] text-[11px] font-sans text-slate-400 dark:text-slate-300 group-focus-within:text-blue-500 transition-colors">
                             Тоот
                           </label>
                         </div>
@@ -456,7 +462,7 @@ export default function ResidentRegistrationModal({
                         />
                       </div>
 
-                      {formData.orshinSuugchTurul !== "СӨХ" && (
+                      {!["СӨХ", "Ажилтан", "Үнэгүй", "Дотоод"].includes(formData.orshinSuugchTurul) && (
                         <div className="group relative">
                           <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
                             <Home className="w-4 h-4" />
@@ -469,13 +475,13 @@ export default function ResidentRegistrationModal({
                                 type: e.target.value as any,
                               })
                             }
-                            className="w-full h-11 pl-10 pr-8 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-xl text-sm  text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer"
+                            className="w-full h-11 pl-10 pr-8 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 rounded-xl text-sm  text-slate-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer"
                           >
                             <option value="Оршин суугч">Оршин суугч</option>
-                            <option value="Түрээслэгч">Түрээслэгч</option>
+                            <option value="Түр оршин суугч">Түр оршин суугч</option>
                           </select>
                           <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                          <label className="absolute -top-2 left-3 px-1 bg-white dark:bg-[#0f1117] text-[10px]  text-slate-400 uppercase tracking-wider">
+                          <label className="absolute -top-2 left-3 px-1 bg-white dark:bg-[#11131a] text-[10px]  text-slate-400 dark:text-slate-300 uppercase tracking-wider">
                             Төрөл
                           </label>
                         </div>
@@ -499,10 +505,10 @@ export default function ResidentRegistrationModal({
                         <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
                           <User className="w-4 h-4" />
                         </div>
-                        <div className="w-full h-11 pl-10 pr-8 flex items-center bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-xl text-sm text-black dark:text-white">
+                        <div className="w-full h-11 pl-10 pr-8 flex items-center bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 rounded-xl text-sm text-black dark:text-white">
                           {formData.orshinSuugchTurul || "Оршин суугч"}
                         </div>
-                        <label className="absolute -top-2 left-3 px-1 bg-white dark:bg-[#0f1117] text-[11px] font-sans text-slate-400">
+                        <label className="absolute -top-2 left-3 px-1 bg-white dark:bg-[#11131a] text-[11px] font-sans text-slate-400 dark:text-slate-300">
                           Төрөл
                         </label>
                       </div>
@@ -604,10 +610,10 @@ const InputField = ({
       type={type}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full h-11 pl-10 pr-4 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-xl text-sm  text-slate-700 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+      className="w-full h-11 pl-10 pr-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 rounded-xl text-sm  text-slate-700 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
       placeholder={placeholder}
     />
-    <label className="absolute -top-2 left-3 px-1 bg-white dark:bg-[#0f1117] text-[11px] font-sans text-slate-400 group-focus-within:text-blue-500 transition-colors">
+    <label className="absolute -top-2 left-3 px-1 bg-white dark:bg-[#11131a] text-[11px] font-sans text-slate-400 dark:text-slate-300 group-focus-within:text-blue-500 transition-colors">
       {label}
     </label>
   </div>
