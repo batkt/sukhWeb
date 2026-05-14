@@ -266,6 +266,7 @@ export default function OrshinSuugch() {
   const confirmDelete = async () => {
     if (!itemToDelete || !token) return;
     const id = itemToDelete._id;
+    if (!id) return;
 
     try {
       const res = await deleteMethod("orshinSuugch", token, id);
