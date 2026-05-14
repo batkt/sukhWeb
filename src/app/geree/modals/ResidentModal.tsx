@@ -10,6 +10,7 @@ import { ConfirmCloseDialog } from "@/components/ui/ConfirmCloseDialog";
 import Button from "@/components/ui/Button";
 import { Plus, Calendar } from "lucide-react";
 import StandardDatePicker from "@/components/ui/StandardDatePicker";
+import uilchilgee from "@/lib/uilchilgee";
 import {
   getResidentToot,
   getResidentDavkhar,
