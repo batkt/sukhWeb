@@ -65,7 +65,10 @@ export function useAshiglaltiinZardluud(overrides?: {
       : null,
     async ([url, token, barilgaId]) => {
       const response = await uilchilgee(token).get(url, {
-        params: { query: JSON.stringify({ barilgiinId: barilgaId }) },
+        params: { 
+          query: JSON.stringify({ barilgiinId: barilgaId }),
+          khuudasniiKhemjee: 50 
+        },
       });
       return response.data?.jagsaalt || response.data || [];
     },
