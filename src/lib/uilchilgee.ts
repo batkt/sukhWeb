@@ -25,7 +25,7 @@ export function getApiUrl(): string {
   }
 
   if (typeof window !== "undefined" && window.location.protocol === "https:") {
-    return "/api";
+    return "/api/";
   }
 
   if (
