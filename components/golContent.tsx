@@ -316,7 +316,7 @@ export default function GolContent({ children }: GolContentProps) {
         { label: "Авлагын товчоо", path: "orlogo-avlaga" },
         { label: "Нэгтгэл тайлан", path: "negtgel" },
         { label: "Авлагийн насжилт", path: "avlagiin-nasjilt" },
-        { label: "ParkEase", path: "zogsool" },
+        { label: "Зогсоол", path: "zogsool" },
       ],
     },
     {
@@ -328,7 +328,7 @@ export default function GolContent({ children }: GolContentProps) {
       ],
     },
     {
-      label: "ParkEase",
+      label: "Зогсоол",
       path: "zogsool",
       submenu: [
         { label: "Жагсаалт", path: "jagsaalt" },

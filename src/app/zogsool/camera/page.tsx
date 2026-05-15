@@ -467,6 +467,7 @@ export default function Camera() {
           mashiniiDugaar: transaction.mashiniiDugaar,
           CAMERA_IP: activeExitIP || exitCameras[0]?.cameraIP,
           barilgiinId: effectiveBarilgiinId,
+          baiguullagiinId: transaction.baiguullagiinId, // Added for backend lookup
         };
 
         const resp = await axios.post(
@@ -478,12 +479,13 @@ export default function Camera() {
             },
           },
         );
-        if (resp.status === 200 || resp.data === "Amjilttai") {
+        
+        if ((resp.status === 200 && !resp.data.aldaa) || resp.data === "Amjilttai") {
           toast.success("Гаралтын команд амжилттай");
           setConfirmExitId(null);
           fetchList();
         } else {
-          toast.error("Алдаа: " + (resp.data?.message || "Амжилтгүй"));
+          toast.error("Алдаа: " + (resp.data.aldaa || resp.data?.message || "Амжилтгүй"));
         }
       } catch (err) {
         console.error("SDK Error:", err);
