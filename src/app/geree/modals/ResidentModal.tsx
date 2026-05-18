@@ -58,6 +58,33 @@ export default function ResidentModal({
   const [showConfirmClose, setShowConfirmClose] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
+  const pendingCursorRef = React.useRef<{ index: number, field: string, validChars: number } | null>(null);
+
+  React.useLayoutEffect(() => {
+    if (pendingCursorRef.current) {
+      const { index, field, validChars } = pendingCursorRef.current;
+      const input = document.getElementById(`input-${field}-${index}`) as HTMLInputElement;
+      if (input) {
+        const newVal = input.value;
+        let charsFound = 0;
+        let newPos = newVal.length;
+        if (validChars > 0) {
+          for (let i = 0; i < newVal.length; i++) {
+            if (newVal[i] !== ",") charsFound++;
+            if (charsFound === validChars) {
+              newPos = i + 1;
+              break;
+            }
+          }
+        } else {
+          newPos = 0;
+        }
+        input.setSelectionRange(newPos, newPos);
+      }
+      pendingCursorRef.current = null;
+    }
+  });
+
   // Snapshot of newResident when modal opens — used to detect unsaved changes
   const initialSnapshot = React.useRef<string | null>(null);
   React.useEffect(() => {
@@ -79,6 +106,7 @@ export default function ResidentModal({
       setShowConfirmClose(false);
       setUldegdelInput("");
       setZaaltInput("");
+      setIsSubmitting(false);
     }
   }, [show, newResident?.units, editingResident]);
 
@@ -963,6 +991,7 @@ export default function ResidentModal({
                               </label>
                               <div className="relative group">
                                 <input
+                                  id={`input-ekhniiUldegdel-${index}`}
                                   type="text"
                                   value={
                                     focusedInput === `ekhniiUldegdel-${index}`
@@ -979,42 +1008,23 @@ export default function ResidentModal({
                                   onChange={(e) => {
                                     const input = e.target;
                                     const val = input.value;
-                                    const selectionStart = input.selectionStart || 0;
+                                    const oldStart = input.selectionStart || 0;
                                     
-                                    // Count characters to the right of cursor before formatting
-                                    // to maintain cursor position relative to digits/dot
-                                    const suffixChars = val.slice(selectionStart).replace(/,/g, "");
-                                    
-                                    // Convert comma to dot for decimal support and allow only digits/dot
-                                    let cleanVal = val.replace(/,/g, ".").replace(/[^0-9.]/g, "");
+                                    // Count valid characters (digits/dot) before cursor
+                                    const beforeCursor = val.slice(0, oldStart);
+                                    const validCharsBeforeCursor = beforeCursor.replace(/[^0-9.]/g, "").length;
+
+                                    pendingCursorRef.current = { index, field: "ekhniiUldegdel", validChars: validCharsBeforeCursor };
+
+                                    // Remove all commas (thousands separators) before processing decimals
+                                    let cleanVal = val.replace(/,/g, "");
+                                    cleanVal = cleanVal.replace(/[^0-9.]/g, "");
                                     const dotIndex = cleanVal.indexOf(".");
                                     if (dotIndex !== -1) {
-                                      // Keep only the first dot and up to 2 decimals
                                       cleanVal = cleanVal.slice(0, dotIndex + 1) + 
                                                 cleanVal.slice(dotIndex + 1).replace(/\./g, "").slice(0, 2);
                                     }
-                                    
                                     updateUnitRow(index, "ekhniiUldegdel", cleanVal);
-
-                                    // Adjust cursor position after render
-                                    setTimeout(() => {
-                                      const newVal = input.value;
-                                      let newPos = newVal.length;
-                                      let charsFound = 0;
-                                      
-                                      // Walk backwards from the end to find the right position
-                                      for (let i = newVal.length - 1; i >= 0; i--) {
-                                        if (newVal[i] !== ",") {
-                                          if (charsFound === suffixChars.length) {
-                                            newPos = i + 1;
-                                            break;
-                                          }
-                                          charsFound++;
-                                        }
-                                        if (i === 0) newPos = 0;
-                                      }
-                                      input.setSelectionRange(newPos, newPos);
-                                    }, 0);
                                   }}
                                   className="modern-input w-full text-right font-mono"
                                   placeholder="0.00"
@@ -1032,6 +1042,7 @@ export default function ResidentModal({
                               </label>
                               <div className="relative group">
                                 <input
+                                  id={`input-tsahilgaaniiZaalt-${index}`}
                                   type="text"
                                   value={
                                     focusedInput === `tsahilgaaniiZaalt-${index}`
@@ -1048,36 +1059,23 @@ export default function ResidentModal({
                                   onChange={(e) => {
                                     const input = e.target;
                                     const val = input.value;
-                                    const selectionStart = input.selectionStart || 0;
-                                    const suffixChars = val.slice(selectionStart).replace(/,/g, "");
+                                    const oldStart = input.selectionStart || 0;
                                     
-                                    // Convert comma to dot for decimal support and allow only digits/dot
-                                    let cleanVal = val.replace(/,/g, ".").replace(/[^0-9.]/g, "");
+                                    // Count valid characters (digits/dot) before cursor
+                                    const beforeCursor = val.slice(0, oldStart);
+                                    const validCharsBeforeCursor = beforeCursor.replace(/[^0-9.]/g, "").length;
+
+                                    pendingCursorRef.current = { index, field: "tsahilgaaniiZaalt", validChars: validCharsBeforeCursor };
+
+                                    // Remove all commas (thousands separators) before processing decimals
+                                    let cleanVal = val.replace(/,/g, "");
+                                    cleanVal = cleanVal.replace(/[^0-9.]/g, "");
                                     const dotIndex = cleanVal.indexOf(".");
                                     if (dotIndex !== -1) {
-                                      // Keep only the first dot and up to 2 decimals
                                       cleanVal = cleanVal.slice(0, dotIndex + 1) + 
                                                 cleanVal.slice(dotIndex + 1).replace(/\./g, "").slice(0, 2);
                                     }
-                                    
                                     updateUnitRow(index, "tsahilgaaniiZaalt", cleanVal);
-
-                                    setTimeout(() => {
-                                      const newVal = input.value;
-                                      let newPos = newVal.length;
-                                      let charsFound = 0;
-                                      for (let i = newVal.length - 1; i >= 0; i--) {
-                                        if (newVal[i] !== ",") {
-                                          if (charsFound === suffixChars.length) {
-                                            newPos = i + 1;
-                                            break;
-                                          }
-                                          charsFound++;
-                                        }
-                                        if (i === 0) newPos = 0;
-                                      }
-                                      input.setSelectionRange(newPos, newPos);
-                                    }, 0);
                                   }}
                                   className="modern-input w-full text-right font-mono"
                                   placeholder="0.00"
