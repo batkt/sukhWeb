@@ -23,6 +23,7 @@ import RequestScopeSync from "@/context/RequestScopeSync";
 import { TourProvider } from "@/context/TourContext";
 import TourHost from "@/components/ui/TourHost";
 import type { Socket } from "socket.io-client";
+import ChatWidget from "@/components/ChatWidget";
 
 function parseJwt(token: string) {
   try {
@@ -312,6 +313,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
         <BuildingProvider>
           <RequestScopeSync />
           {children}
+          <ChatWidget />
           <Toaster position="top-right" richColors closeButton />
           <SuccessOverlayHost />
           <ErrorOverlayHost />

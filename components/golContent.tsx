@@ -25,6 +25,10 @@ const TuslamjTokhirgoo = lazy(() =>
   import("@/app/tokhirgoo/TuslamjTokhirgoo").then((m) => ({ default: m.default }))
 );
 
+const ChatWidget = lazy(() =>
+  import("@/components/ChatWidget").then((m) => ({ default: m.default }))
+);
+
 interface GolContentProps {
   children: React.ReactNode;
   title?: string;
@@ -58,6 +62,7 @@ export default function GolContent({ children }: GolContentProps) {
   const [showLogout, setShowLogout] = useState<boolean>(false);
   const [showSanalDropdown, setShowSanalDropdown] = useState<boolean>(false);
   const [tuslamjModalOpen, setTuslamjModalOpen] = useState<boolean>(false);
+  const [tuslamjTab, setTuslamjTab] = useState<"instructions" | "chat">("instructions");
   const { searchTerm, setSearchTerm } = useSearch();
   const { selectedBuildingId, setSelectedBuildingId } = useBuilding();
   const [isMobile, setIsMobile] = useState(false);
@@ -1057,45 +1062,7 @@ export default function GolContent({ children }: GolContentProps) {
         </div>
       </nav>
 
-      {/* Tuslamj (Help) Modal */}
-      {tuslamjModalOpen && (
-        <ModalPortal>
-          <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4">
-            <div
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-              onClick={() => setTuslamjModalOpen(false)}
-              aria-hidden="true"
-            />
-            <div
-              className="relative max-w-7xl max-h-[85vh] overflow-hidden rounded-2xl shadow-2xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)]"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between p-4 border-b border-[color:var(--surface-border)]">
-                <h3 className="text-lg text-theme">Тусламж</h3>
-                <button
-                  type="button"
-                  onClick={() => setTuslamjModalOpen(false)}
-                  className="p-2 rounded-xl hover:bg-[color:var(--surface-hover)] transition-colors"
-                  aria-label="Хаах"
-                >
-                  <X className="w-5 h-5 text-theme" />
-                </button>
-              </div>
-              <div className="overflow-y-auto max-h-[calc(85vh-64px)]">
-                <Suspense
-                  fallback={
-                    <div className="p-8 text-center text-theme/70">
-                      Уншиж байна...
-                    </div>
-                  }
-                >
-                  <TuslamjTokhirgoo compact />
-                </Suspense>
-              </div>
-            </div>
-          </div>
-        </ModalPortal>
-      )}
+
 
       {/* Mobile Menu Drawer */}
       {mobileMenuOpen && (
@@ -1451,7 +1418,7 @@ export default function GolContent({ children }: GolContentProps) {
               <div className="flex items-center justify-between px-6 py-4 border-b border-[color:var(--surface-border)] bg-gradient-to-r from-[color:var(--surface-bg)] via-[color:var(--surface-hover)] to-[color:var(--surface-bg)] shrink-0">
                 <h3 className="text-xl font-semibold text-theme flex items-center gap-2">
                   <HelpCircle className="w-5 h-5 text-[color:var(--theme)]" />
-                  Тусламж
+                  Тусламж & Дэмжлэг
                 </h3>
                 <button
                   onClick={() => setTuslamjModalOpen(false)}
@@ -1460,10 +1427,47 @@ export default function GolContent({ children }: GolContentProps) {
                   <X className="w-6 h-6 text-theme group-hover:scale-110 transition-transform" />
                 </button>
               </div>
+              
+              {/* Tab Selector */}
+              <div className="flex gap-2 px-6 pt-4 pb-2 bg-[color:var(--surface-hover)] dark:bg-[color:var(--panel)] overflow-x-auto border-b border-[color:var(--surface-border)] shrink-0">
+                <button
+                  onClick={() => setTuslamjTab('instructions')}
+                  className={`px-6 py-2.5 rounded-xl font-semibold transition-all duration-300 whitespace-nowrap text-sm ${
+                    tuslamjTab === 'instructions'
+                      ? 'bg-[color:var(--theme)] text-white shadow-lg shadow-[color:var(--theme)]/20 dark:shadow-[color:var(--theme)]/40 transform scale-102'
+                      : 'bg-[color:var(--surface-bg)] dark:bg-[color:var(--surface-bg)] text-theme hover:bg-[color:var(--surface-border)] dark:hover:bg-[color:var(--surface-hover)] hover:scale-101 shadow-sm'
+                  }`}
+                  style={{ borderRadius: '0.75rem' }}
+                >
+                  <div className="flex items-center gap-2">
+                    <HelpCircle className="w-4 h-4" />
+                    <span>Системийн заавар</span>
+                  </div>
+                </button>
+                <button
+                  onClick={() => setTuslamjTab('chat')}
+                  className={`px-6 py-2.5 rounded-xl font-semibold transition-all duration-300 whitespace-nowrap text-sm ${
+                    tuslamjTab === 'chat'
+                      ? 'bg-[color:var(--theme)] text-white shadow-lg shadow-[color:var(--theme)]/20 dark:shadow-[color:var(--theme)]/40 transform scale-102'
+                      : 'bg-[color:var(--surface-bg)] dark:bg-[color:var(--surface-bg)] text-theme hover:bg-[color:var(--surface-border)] dark:hover:bg-[color:var(--surface-hover)] hover:scale-101 shadow-sm'
+                  }`}
+                  style={{ borderRadius: '0.75rem' }}
+                >
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4" />
+                    <span>Шууд чат & Холбоо барих</span>
+                  </div>
+                </button>
+              </div>
+
               {/* Body */}
-              <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
+              <div className="flex-1 min-h-[480px] overflow-y-auto custom-scrollbar bg-gradient-to-b from-transparent to-[color:var(--surface-hover)]/20 dark:to-[color:var(--panel)]/30">
                 <Suspense fallback={<div className="p-8 text-center text-theme">Уншиж байна...</div>}>
-                  <TuslamjTokhirgoo compact />
+                  {tuslamjTab === 'instructions' ? (
+                    <TuslamjTokhirgoo compact />
+                  ) : (
+                    <ChatWidget inline />
+                  )}
                 </Suspense>
               </div>
             </div>
