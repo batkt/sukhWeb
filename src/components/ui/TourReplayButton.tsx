@@ -88,7 +88,7 @@ export default function TourReplayButton() {
     setOpen((o) => !o);
   };
 
-  if (pathname === "/login" || disabled) return null;
+  if (pathname === "/login") return null;
 
   return (
     <div className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-[1200] pointer-events-auto">

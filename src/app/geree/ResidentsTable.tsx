@@ -107,6 +107,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
         ),
         key: "orts",
         dataIndex: "orts",
+        width: 80,
         sorter: true,
         sortOrder:
           sortKey === "orts"
@@ -130,6 +131,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
         ),
         key: "davkhar",
         dataIndex: "davkhar",
+        width: 90,
         sorter: true,
         sortOrder:
           sortKey === "davkhar"
@@ -153,6 +155,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
         ),
         key: "toot",
         dataIndex: "toot",
+        width: 140,
         sorter: true,
         sortOrder:
           sortKey === "toot"
@@ -229,6 +232,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
         ),
         dataIndex: "utas",
         key: "utas",
+        width: 140,
         sorter: true,
         sortOrder:
           sortKey === "utas"
@@ -251,6 +255,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
           </span>
         ),
         key: "tuluv",
+        width: 110,
         align: "center",
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: any) => {

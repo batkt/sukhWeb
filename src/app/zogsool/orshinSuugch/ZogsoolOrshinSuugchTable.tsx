@@ -67,6 +67,7 @@ export const ZogsoolOrshinSuugchTable: React.FC<
       {
         title: <span className="text-black dark:text-white">Нэр</span>,
         key: "ner",
+        width: 250,
         align: "center",
         render: (_: any, record: ResidentParking) => (
           <div className="text-left">
@@ -79,6 +80,7 @@ export const ZogsoolOrshinSuugchTable: React.FC<
       {
         title: <span className="text-black dark:text-white">Утас</span>,
         key: "utas",
+        width: 120,
         align: "center",
         render: (_: any, record: ResidentParking) => (
           <div className="flex items-center justify-center gap-2 text-[11px] text-black dark:text-white">
@@ -89,6 +91,7 @@ export const ZogsoolOrshinSuugchTable: React.FC<
       {
         title: <span className="text-black dark:text-white">Дугаар</span>,
         key: "dugaar",
+        width: 140,
         align: "center",
         render: (_: any, record: ResidentParking) => (
           <div className="flex flex-wrap gap-2 justify-center">
@@ -111,6 +114,7 @@ export const ZogsoolOrshinSuugchTable: React.FC<
       {
         title: <span className="text-black dark:text-white">Төрөл</span>,
         key: "turul",
+        width: 110,
         align: "center",
         render: (_: any, record: ResidentParking) => (
           <div className="flex flex-col gap-1.5 items-center">
@@ -123,6 +127,7 @@ export const ZogsoolOrshinSuugchTable: React.FC<
       {
         title: <span className="text-black dark:text-white">Орц</span>,
         key: "orts",
+        width: 80,
         align: "center",
         filterMultiple: false,
         sorter: (a, b) => (a.orts || "").localeCompare(b.orts || ""),
@@ -135,6 +140,7 @@ export const ZogsoolOrshinSuugchTable: React.FC<
       {
         title: <span className="text-black dark:text-white">Тоот</span>,
         key: "toot",
+        width: 120,
         align: "center",
         sorter: (a, b) => (a.ezenToot || "").localeCompare(b.ezenToot || ""),
         render: (_: any, record: ResidentParking) => {
