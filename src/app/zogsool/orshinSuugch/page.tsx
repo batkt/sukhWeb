@@ -231,7 +231,7 @@ export default function OrshinSuugch() {
 
   const categoryStats = useMemo(() => {
     const list = statsData?.jagsaalt || [];
-    const total = statsData?.niitMur || 0;
+    const total = list.length;
     
     return [
       { label: "Нийт бүртгэл", value: "Бүгд", count: total },
