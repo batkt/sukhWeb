@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, JSX } from "react";
 import { io, Socket } from "socket.io-client";
 import axios from "axios";
 import { useAuth } from "@/lib/useAuth";
+import TuslamjTokhirgoo from "@/app/tokhirgoo/TuslamjTokhirgoo";
 
 const BASE_API = "https://admin.zevtabs.mn/api/v1/chat";
 const SOCKET_URL = "https://admin.zevtabs.mn";
@@ -45,6 +46,7 @@ interface ChatWidgetProps {
 export default function ChatWidget({ inline = false }: ChatWidgetProps): JSX.Element {
   const { baiguullaga, ajiltan } = useAuth();
   const [isOpen, setIsOpen] = useState<boolean>(inline);
+  const [activeTab, setActiveTab] = useState<"chat" | "help">("chat");
   const [guestId, setGuestId] = useState<string>("");
   const [conversation, setConversation] = useState<ConversationType | null>(null);
   const [messages, setMessages] = useState<MessageType[]>([]);
@@ -419,8 +421,64 @@ export default function ChatWidget({ inline = false }: ChatWidgetProps): JSX.Ele
             </div>
           )}
 
-          {/* Messages Area */}
-          <div 
+          {/* Tab Selector inside bottom right widget */}
+          {!inline && (
+            <div 
+              style={{
+                display: "flex",
+                borderBottom: "1px solid rgba(0, 0, 0, 0.06)",
+                backgroundColor: "#f8fafc",
+                padding: "6px 8px",
+                gap: "4px"
+              }}
+            >
+              <button
+                onClick={() => setActiveTab("chat")}
+                style={{
+                  flex: 1,
+                  padding: "8px 12px",
+                  fontSize: "12px",
+                  fontWeight: "600",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  backgroundColor: activeTab === "chat" ? "#ffffff" : "transparent",
+                  color: activeTab === "chat" ? "#059669" : "#64748b",
+                  boxShadow: activeTab === "chat" ? "0 2px 8px rgba(0,0,0,0.06)" : "none",
+                  transition: "all 0.2s ease"
+                }}
+              >
+                💬 Шууд чат
+              </button>
+              <button
+                onClick={() => setActiveTab("help")}
+                style={{
+                  flex: 1,
+                  padding: "8px 12px",
+                  fontSize: "12px",
+                  fontWeight: "600",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  backgroundColor: activeTab === "help" ? "#ffffff" : "transparent",
+                  color: activeTab === "help" ? "#059669" : "#64748b",
+                  boxShadow: activeTab === "help" ? "0 2px 8px rgba(0,0,0,0.06)" : "none",
+                  transition: "all 0.2s ease"
+                }}
+              >
+                📘 Тусламж
+              </button>
+            </div>
+          )}
+
+          {!inline && activeTab === "help" ? (
+            <div style={{ flex: 1, overflowY: "auto", backgroundColor: "#ffffff" }}>
+              <TuslamjTokhirgoo compact />
+            </div>
+          ) : (
+            <>
+              {/* Messages Area */}
+              <div 
             style={{
               flex: 1,
               overflowY: "auto",
@@ -634,6 +692,8 @@ export default function ChatWidget({ inline = false }: ChatWidgetProps): JSX.Ele
               </svg>
             </button>
           </div>
+        </>
+      )}
         </div>
       )}
     </>
