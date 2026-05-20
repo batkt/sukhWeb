@@ -234,7 +234,7 @@ export default function OrshinSuugch() {
     const total = statsData?.niitMur || 0;
     
     return [
-      { label: "Машин бүртгэл", value: "Бүгд", count: total },
+      { label: "Нийт бүртгэл", value: "Бүгд", count: total },
       { 
         label: "Оршин суугч", 
         value: "Оршин суугч", 
@@ -302,20 +302,27 @@ export default function OrshinSuugch() {
                   setTurulFilter(stat.value);
                   setPage(1);
                 }}
-                className="relative group rounded-2xl transition-all cursor-pointer border border-slate-200 dark:border-white/10"
+                className={`relative group rounded-2xl transition-all duration-300 cursor-pointer border bg-white dark:bg-slate-900 ${
+                  isActive
+                    ? "border-blue-500 shadow-md shadow-blue-500/10 scale-[1.02]"
+                    : "border-slate-200/60 dark:border-white/5 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/10"
+                }`}
               >
-                <div className="relative rounded-2xl p-5 overflow-hidden flex flex-col h-full justify-between">
-                  <div className="text-3xl font-sans mb-1 text-black dark:text-white">
+                <div className="relative p-5 overflow-hidden flex flex-col h-full justify-between">
+                  <div
+                    className={`text-3xl font-sans mb-1 transition-colors ${
+                      isActive ? "text-blue-600 dark:text-blue-400 font-bold" : "text-slate-800 dark:text-slate-200"
+                    }`}
+                  >
                     {stat.count || "0"}
                   </div>
-                  <div className="text-[13px] font-sans leading-tight text-black/70 dark:text-white/70">
+                  <div
+                    className={`text-[13px] font-sans leading-tight transition-colors ${
+                      isActive ? "text-blue-600/80 dark:text-blue-400/80 font-medium" : "text-slate-500 dark:text-slate-400"
+                    }`}
+                  >
                     {stat.label}
                   </div>
-                  {isActive && (
-                    <div className="absolute top-3 right-3">
-                      <div className="w-2.5 h-2.5 rounded-full bg-black dark:bg-white animate-pulse shadow-[0_0_8px_rgba(0,0,0,0.3)] dark:shadow-[0_0_8px_rgba(255,255,255,0.3)]" />
-                    </div>
-                  )}
                 </div>
               </div>
             );
