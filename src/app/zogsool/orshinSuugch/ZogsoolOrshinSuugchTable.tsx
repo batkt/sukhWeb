@@ -159,6 +159,7 @@ export const ZogsoolOrshinSuugchTable: React.FC<
         render: (_: any, record: ResidentParking) => (
           <div className="flex justify-center items-center gap-1">
             <button
+              id="resident-edit-btn"
               onClick={() => onEdit(record)}
               className="p-2 rounded-2xl action-edit hover-surface transition-colors hover:bg-slate-200 dark:hover:bg-white/20"
               title="Засах"
@@ -166,6 +167,7 @@ export const ZogsoolOrshinSuugchTable: React.FC<
               <Edit className="w-5 h-5 text-black dark:text-white" />
             </button>
             <button
+              id="resident-delete-btn"
               onClick={() => onDelete(record)}
               disabled={!record.mashiniiDugaar || record.mashiniiDugaar === "БҮРТГЭЛГҮЙ"}
               className={`p-2 rounded-2xl action-delete transition-all ${
@@ -191,7 +193,7 @@ export const ZogsoolOrshinSuugchTable: React.FC<
   };
 
   return (
-    <div className="w-full">
+    <div id="residents-table" className="w-full">
       <Table
         dataSource={data}
         columns={columns}

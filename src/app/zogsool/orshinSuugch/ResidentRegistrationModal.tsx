@@ -136,10 +136,10 @@ export default function ResidentRegistrationModal({
         // Find specific unit for current building, excluding WALLET_API sources
         const specificToot = Array.isArray(found.toots)
           ? found.toots.find(
-              (t: any) =>
-                String(t.barilgiinId) === String(barilgiinId) &&
-                t.source !== "WALLET_API",
-            )
+            (t: any) =>
+              String(t.barilgiinId) === String(barilgiinId) &&
+              t.source !== "WALLET_API",
+          )
           : null;
 
         setFormData((prev) => ({
@@ -191,12 +191,12 @@ export default function ResidentRegistrationModal({
   const handleSave = async () => {
     // Validate individual fields and show separate errors
     let hasError = false;
-    
+
     if (!formData.name?.trim()) {
       toast.error("Оршин суугчийн нэр заавал оруулна уу");
       hasError = true;
     }
-    
+
     if (!formData.phone?.trim()) {
       toast.error("Утасны дугаар заавал оруулна уу");
       hasError = true;
@@ -514,17 +514,10 @@ export default function ResidentRegistrationModal({
                       </div>
 
                       {/* License Plate Special Input */}
-                      <div className="relative p-6 rounded-2xl bg-slate-100 dark:bg-white/[0.03] flex justify-center items-center overflow-hidden group border border-slate-200 dark:border-white/5">
-                        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-5"></div>
-                        <div className="relative w-64 h-14 bg-white dark:bg-slate-50 rounded-lg border-2 border-black flex items-center shadow-lg transform group-hover:scale-105 transition-transform duration-300">
-                          <div className="h-full w-12 bg-black dark:bg-white flex flex-col items-center justify-center border-r-2 border-black">
-                            <div className="text-[6px] text-white dark:text-black leading-none mb-0.5">
-                              MNG
-                            </div>
-                            <div className="w-6 h-6 rounded-full bg-slate-100 border border-slate-400 flex items-center justify-center">
-                              <span className="text-[4px] ">SOYOMBO</span>
-                            </div>
-                          </div>
+                      <div className="relative p-6 rounded-2xl bg-[#edf2f7] bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px] dark:bg-slate-900/50 flex flex-col justify-center items-center overflow-hidden group border border-slate-200/60 dark:border-white/10 shadow-inner">
+
+                        <div className="relative w-64 h-[72px] bg-white rounded-lg border-[2px] flex items-center  transform group-hover:scale-102 transition-transform duration-300">
+
                           <input
                             type="text"
                             value={formData.plate === "БҮРТГЭЛГҮЙ" ? "" : formData.plate}
@@ -540,13 +533,11 @@ export default function ResidentRegistrationModal({
                                 setFormData({ ...formData, plate: input });
                               }
                             }}
-                            className="w-full h-full bg-transparent text-center text-3xl uppercase tracking-widest text-slate-900 placeholder:text-slate-200 outline-none font-mono"
+                            className="w-full h-full  text-center text-3xl font-bold uppercase tracking-[0.15em]  outline-none font-mono focus:ring-0"
                             placeholder="0000УБА"
                           />
                         </div>
-                        <p className="absolute bottom-2 text-[11px] font-sans text-slate-400">
-                          Улсын дугаар
-                        </p>
+
                       </div>
 
                       <InputField

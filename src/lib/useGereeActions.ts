@@ -1296,6 +1296,16 @@ export function useGereeActions(
           openSuccessOverlay("Ажилтан нэмэгдлээ");
         }
 
+        try {
+          mutate(
+            (key: any) => Array.isArray(key) && key[0] === "/ajiltan",
+            undefined,
+            { revalidate: true }
+          );
+        } catch (_e) {
+          // Best-effort cache refresh
+        }
+
         setShowEmployeeModal?.(false);
         setEditingEmployee?.(null);
         setNewEmployee?.({
@@ -1364,6 +1374,17 @@ export function useGereeActions(
       try {
         await deleteMethod("ajiltan", token, employee._id);
         openSuccessOverlay("Ажилтан устгагдлаа");
+
+        try {
+          mutate(
+            (key: any) => Array.isArray(key) && key[0] === "/ajiltan",
+            undefined,
+            { revalidate: true }
+          );
+        } catch (_e) {
+          // Best-effort cache refresh
+        }
+
         return true;
       } catch (err) {
         openErrorOverlay(getErrorMessage(err));

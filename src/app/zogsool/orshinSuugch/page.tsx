@@ -36,6 +36,8 @@ import Button from "@/components/ui/Button";
 import ZogsoolOrshinSuugchTable from "./ZogsoolOrshinSuugchTable";
 import { StandardPagination } from "@/components/ui/StandardTable";
 import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
+import { useTourSteps } from "@/lib/useTourSteps";
+import { useRegisterTourSteps } from "@/context/TourContext";
 
 const RealTimeClock = () => {
   const [time, setTime] = useState(moment());
@@ -91,6 +93,9 @@ export default function OrshinSuugch() {
   const { selectedBuildingId, isInitialized } = useBuilding();
   const effectiveBarilgiinId = selectedBuildingId || barilgiinId || undefined;
   const { searchTerm } = useSearch();
+
+  const tourSteps = useTourSteps("residents");
+  useRegisterTourSteps("/zogsool/orshinSuugch", tourSteps);
   const [page, setPage] = useState(1);
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -321,6 +326,7 @@ export default function OrshinSuugch() {
         <div className="flex items-center justify-end px-1">
          
           <Button
+            id="resident-new-btn"
             onClick={() => setShowRegistrationModal(true)}
             variant="primary"
             leftIcon={<Plus className="w-4 h-4" />}
@@ -417,16 +423,18 @@ export default function OrshinSuugch() {
           />
         </div>
 
-        <StandardPagination
-          current={page}
-          total={totalCount}
-          pageSize={pageSize}
-          onChange={setPage}
-          onPageSizeChange={(newSize) => {
-            setPageSize(newSize);
-            setPage(1);
-          }}
-        />
+        <div id="resident-pagination">
+          <StandardPagination
+            current={page}
+            total={totalCount}
+            pageSize={pageSize}
+            onChange={setPage}
+            onPageSizeChange={(newSize) => {
+              setPageSize(newSize);
+              setPage(1);
+            }}
+          />
+        </div>
       </div>
     </div>
   );

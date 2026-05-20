@@ -37,6 +37,7 @@ interface TourContextValue {
 const TourContext = createContext<TourContextValue | null>(null);
 
 const DISABLED_KEY = "app-tour-disabled";
+const GLOBAL_DISABLED_KEY = "app-tour-disabled-global";
 
 export function TourProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -44,11 +45,15 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   const driverRef = useRef<Driver | null>(null);
   const [disabledPages, setDisabledPages] = useState<Record<string, boolean>>({});
   const [shownPages, setShownPages] = useState<Record<string, boolean>>({});
+  const [globalDisabled, setGlobalDisabled] = useState<boolean>(false);
 
-  // read persisted flags (per page)
+  // read persisted flags
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
+      if (localStorage.getItem(GLOBAL_DISABLED_KEY) === "1") {
+        setGlobalDisabled(true);
+      }
       const keys = Object.keys(localStorage).filter(k => k.startsWith(DISABLED_KEY));
       const map: Record<string, boolean> = {};
       keys.forEach(k => {
@@ -117,6 +122,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
 
   const start = useCallback(
     async (id?: string) => {
+      if (globalDisabled) return;
       const key = id || pathname || "global";
       if (disabledPages[key]) return;
       const steps = stepsMap[key] || stepsMap["global"];
@@ -158,8 +164,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
                 stopBtn.onclick = (e: MouseEvent) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  const currentKey = id || pathname || "global";
-                  disable(currentKey);
+                  disable();
                   drv.destroy();
                 };
                 footer.prepend(stopBtn);
@@ -195,7 +200,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       drv.drive();
       setShownPages((prev) => ({ ...prev, [key]: true }));
     },
-    [disabledPages, pathname, stepsMap]
+    [disabledPages, pathname, stepsMap, globalDisabled]
   );
 
   const registerSteps = useCallback((id: string, steps: DriverStep[]) => {
@@ -203,6 +208,10 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const disable = useCallback((key?: string) => {
+    setGlobalDisabled(true);
+    try {
+      localStorage.setItem(GLOBAL_DISABLED_KEY, "1");
+    } catch {}
     const k = key || pathname || "global";
     setDisabledPages((prev) => ({ ...prev, [k]: true }));
     try {
@@ -211,6 +220,10 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   const enable = useCallback((key?: string) => {
+    setGlobalDisabled(false);
+    try {
+      localStorage.removeItem(GLOBAL_DISABLED_KEY);
+    } catch {}
     const k = key || pathname || "global";
     setDisabledPages((prev) => {
       const next = { ...prev };
@@ -225,6 +238,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   // Auto start logic
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (globalDisabled) return;
     const key = pathname || "global";
     if (disabledPages[key]) return;
     if (shownPages[key]) return;
@@ -232,7 +246,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     if (!steps || steps.length === 0) return;
     const t = setTimeout(() => start(key), 600);
     return () => clearTimeout(t);
-  }, [disabledPages, pathname, start, stepsMap, shownPages]);
+  }, [disabledPages, pathname, start, stepsMap, shownPages, globalDisabled]);
 
   const value = useMemo(
     () => ({ 
@@ -240,10 +254,10 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       start, 
       disable, 
       enable, 
-      disabled: !!disabledPages[pathname || "global"], 
+      disabled: globalDisabled || !!disabledPages[pathname || "global"], 
       hasShownOnce: !!shownPages[pathname || "global"] 
     }),
-    [registerSteps, start, disable, enable, disabledPages, shownPages, pathname]
+    [registerSteps, start, disable, enable, globalDisabled, disabledPages, shownPages, pathname]
   );
 
   return <TourContext.Provider value={value}>{children}</TourContext.Provider>;

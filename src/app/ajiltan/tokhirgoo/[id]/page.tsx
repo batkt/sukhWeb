@@ -46,7 +46,7 @@ export default function EmployeeSettingsPage() {
     { id: "tokhirgoo.email", label: "И-мэйл" },
     { id: "tokhirgoo.medegdel", label: "Мэдэгдэл" },
     { id: "tokhirgoo.nemelt", label: "Нэмэлт" },
-    { id: "tokhirgoo.tuslamj", label: "Тусламж" },
+    { id: "tokhirgoo.tuslamj", label: "Ерөнхий тусламж" },
     { id: "tokhirgoo.utas", label: "Утас" },
     { id: "tokhirgoo.zogsool", label: "Зогсоол" },
     { id: "tokhirgoo.zogsoolBurtgekh", label: "Зогсоол бүртгэх" },

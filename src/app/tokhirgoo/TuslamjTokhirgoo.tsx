@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { useTsonkh } from "@/lib/useTsonkh";
 import { HelpCircle, Info, BookOpen, AlertCircle, Loader2 } from "lucide-react";
+import { useTour } from "@/context/TourContext";
 
 type Props = {
   ajiltan?: any;
@@ -17,17 +18,51 @@ export default function TuslamjTokhirgoo(props: Props) {
   const { compact = false } = props;
   const pathname = usePathname();
   const { list: tsonkhList, loading: tsonkhLoading } = useTsonkh("sukh");
+  const { disable, enable, disabled } = useTour();
 
   const currentTsonkh = useMemo(() => {
     const path = pathname?.replace(/\/$/, "") || "";
     if (!path) return null;
+
+    if (path === "/zogsool/orshinSuugch" || path === "/geree/orshinSuugch") {
+      return {
+        _id: "resident-list-help-custom",
+        ner: "Оршин суугч",
+        zaavar: `<div class="space-y-4">
+  <p><strong>Оршин суугчдын бүртгэлийн хэсэг</strong> нь орон сууцны хотхон, барилгын оршин суугчид болон тэдгээрийн тээврийн хэрэгслийн мэдээллийг нэгдсэн байдлаар удирдах зориулалттай.</p>
+  
+  <div class="bg-blue-50 dark:bg-blue-900/20 p-5 rounded-3xl border border-blue-100 dark:border-blue-900/30">
+    <h4 class="font-bold text-blue-900 dark:text-blue-400 mb-2">Үндсэн боломжууд:</h4>
+    <ul class="list-disc pl-5 space-y-1.5 text-slate-700 dark:text-slate-300">
+      <li>Шинээр оршин суугч болон түүний тээврийн хэрэгслийн дугаарыг бүртгэх</li>
+      <li>Оршин суугчдын мэдээллийг харах, шүүх болон засах</li>
+      <li>Шаардлагагүй болсон бүртгэлийг системээс устгах</li>
+      <li>Орц, тоотоор шүүлт хийж мэдээллийг хурдан олох</li>
+    </ul>
+  </div>
+
+  <div class="mt-4">
+    <h4 class="font-bold text-slate-900 dark:text-white mb-2">Ажиллуулах зааварчилгаа:</h4>
+    <ol class="list-decimal pl-5 space-y-2.5 text-slate-700 dark:text-slate-300">
+      <li><strong>Нэмэх товч</strong> дээр дарж оршин суугчийн нэр, утасны дугаар, орц, тоот болон тээврийн хэрэгслийн улсын дугаарыг бүртгэнэ.</li>
+      <li>Жагсаалтаас хайлт хийхдээ дээд хэсэгт байрлах <strong>Хайх цонхыг</strong> ашиглан нэр, утас эсвэл улсын дугаараар хайх боломжтой.</li>
+      <li>Бүртгэлтэй оршин суугчийн мэдээллийг шинэчлэхийн тулд тухайн мөрний баруун талд байрлах <strong>Засах (Edit) товчлуур</strong> дээр дарна уу.</li>
+    </ol>
+  </div>
+</div>`
+      } as any;
+    }
+
     const withZam = tsonkhList
       .map((t) => ({ t, zam: (t.zam || "").replace(/\/$/, "") }))
       .filter(({ zam }) => zam);
     withZam.sort((a, b) => b.zam.length - a.zam.length);
-    const found = withZam.find(
+
+    // Try finding exact or prefix match first
+    let found = withZam.find(
       ({ zam }) => path === zam || path.startsWith(zam + "/")
     );
+
     return found?.t ?? null;
   }, [pathname, tsonkhList]);
 
@@ -106,11 +141,22 @@ export default function TuslamjTokhirgoo(props: Props) {
           </div>
 
           {/* Footer Area */}
-          <div className="px-6 py-4 bg-slate-50/50 dark:bg-white/5 border-t border-slate-100 dark:border-white/5">
+          <div className="px-6 py-4 bg-slate-50/50 dark:bg-white/5 border-t border-slate-100 dark:border-white/5 flex items-center justify-between">
             <div className="flex items-center gap-2 text-[11px] text-slate-400 uppercase tracking-wider font-semibold">
               <HelpCircle className="w-3 h-3" />
-              <span>Тусламжийн төв</span>
+              <span>Ерөнхий тусламж</span>
             </div>
+            <label className="flex items-center gap-2 cursor-pointer group select-none">
+              <input
+                type="checkbox"
+                checked={disabled}
+                onChange={(e) => (e.target.checked ? disable() : enable())}
+                className="w-4 h-4 rounded border-slate-300 dark:border-white/10 text-theme focus:ring-theme"
+              />
+              <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 group-hover:text-theme transition-colors">
+                Дахин харуулахгүй
+              </span>
+            </label>
           </div>
         </div>
       </div>

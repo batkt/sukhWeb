@@ -62,7 +62,7 @@ export default function ChatWidget({ inline = false }: ChatWidgetProps): JSX.Ele
   const t = (key: string): string => {
     const translations: Record<"mn" | "en", Record<string, string>> = {
       mn: {
-        help: "Тусламж & Дэмжлэг",
+        help: "Ерөнхий тусламж",
         loading: "Чат холбогдож байна...",
         placeholder: "Мессеж бичих...",
         connectError: "Чат холбогдоход алдаа гарлаа: ",
@@ -466,7 +466,7 @@ export default function ChatWidget({ inline = false }: ChatWidgetProps): JSX.Ele
                   transition: "all 0.2s ease"
                 }}
               >
-                📘 Тусламж
+                📘 Ерөнхий тусламж
               </button>
             </div>
           )}

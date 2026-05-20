@@ -20,6 +20,7 @@ const UstgasanTuukh = lazy(() => import("./UstsanTuukh"));
 const ZassanTuukh = lazy(() => import("./ZassanTuukh"));
 const BarilgiinTokhirgoo = lazy(() => import("./BarilgiinTokhirgoo"));
 const NemeltTokhirgoo = lazy(() => import("./NemeltTokhirgoo"));
+const TuslamjTokhirgoo = lazy(() => import("./TuslamjTokhirgoo"));
 
 // Error boundary for chunk loading errors
 class ChunkErrorBoundary extends Component<
@@ -140,6 +141,7 @@ function Tokhirgoo() {
       { perm: "tokhirgoo.nevtreltiinTuukh", text: "Нэвтрэлтийн түүх", tsonkh: NevtreltiinTuukh, comingSoon: false },
       { perm: "tokhirgoo.ustsanTuukh", text: "Устгасан түүх", tsonkh: UstgasanTuukh, comingSoon: false },
       { perm: "tokhirgoo.zassanTuukh", text: "Зассан түүх", tsonkh: ZassanTuukh, comingSoon: false },
+      { perm: "tokhirgoo.tuslamj", text: "Ерөнхий тусламж", tsonkh: TuslamjTokhirgoo, comingSoon: false },
       { perm: "tokhirgoo.baaz", text: "Бааз", tsonkh: Baaz, comingSoon: true },
     ];
 

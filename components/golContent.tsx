@@ -10,7 +10,7 @@ import UnguSongokh from "./ungu/unguSongokh";
 import ThemedLogo from "@/components/ui/ThemedLogo";
 import ThemeModeToggler from "@/components/ui/ThemeModeToggler";
 import TourReplayButton from "@/components/ui/TourReplayButton";
-import { useRegisterTourSteps } from "@/context/TourContext";
+import { useRegisterTourSteps, useTour } from "@/context/TourContext";
 import { useSearch } from "@/context/SearchContext";
 import { useBuilding } from "@/context/BuildingContext";
 import useBaiguullaga from "@/lib/useBaiguullaga";
@@ -64,6 +64,7 @@ export default function GolContent({ children }: GolContentProps) {
   const [tuslamjModalOpen, setTuslamjModalOpen] = useState<boolean>(false);
   const [tuslamjTab, setTuslamjTab] = useState<"instructions" | "chat">("instructions");
   const { searchTerm, setSearchTerm } = useSearch();
+  const { disable, enable, disabled } = useTour();
   const { selectedBuildingId, setSelectedBuildingId } = useBuilding();
   const [isMobile, setIsMobile] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
@@ -685,7 +686,7 @@ export default function GolContent({ children }: GolContentProps) {
 
               <button
                 type="button"
-                aria-label="Тусламж"
+                aria-label="Ерөнхий тусламж"
                 onClick={() => setTuslamjModalOpen(true)}
                 className="inline-flex items-center justify-center h-9 w-9 xl:h-10 xl:w-10 rounded-full neu-panel hover:scale-105 transition-all duration-300"
               >
@@ -897,7 +898,7 @@ export default function GolContent({ children }: GolContentProps) {
 
               <button
                 type="button"
-                aria-label="Тусламж"
+                aria-label="Ерөнхий тусламж"
                 onClick={() => setTuslamjModalOpen(true)}
                 className="inline-flex items-center justify-center h-8 w-8 sm:h-9 sm:w-9 rounded-full neu-panel active:scale-95 hover:scale-105 transition-all duration-300"
               >
@@ -1418,7 +1419,7 @@ export default function GolContent({ children }: GolContentProps) {
               <div className="flex items-center justify-between px-6 py-4 border-b border-[color:var(--surface-border)] bg-gradient-to-r from-[color:var(--surface-bg)] via-[color:var(--surface-hover)] to-[color:var(--surface-bg)] shrink-0">
                 <h3 className="text-xl font-semibold text-theme flex items-center gap-2">
                   <HelpCircle className="w-5 h-5 text-[color:var(--theme)]" />
-                  Тусламж & Дэмжлэг
+                  Ерөнхий тусламж
                 </h3>
                 <button
                   onClick={() => setTuslamjModalOpen(false)}

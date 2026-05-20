@@ -1,11 +1,12 @@
 "use client";
 
 import { HelpCircle, X, EyeOff, RotateCcw, ChevronRight } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { useTour } from "@/context/TourContext";
 import useModalHotkeys from "@/lib/useModalHotkeys";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTsonkh } from "@/lib/useTsonkh";
 
 export default function TourReplayButton() {
   const { start, disable, enable, disabled } = useTour();
@@ -13,6 +14,53 @@ export default function TourReplayButton() {
   const [open, setOpen] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
   const [showLabel, setShowLabel] = useState(false);
+
+  const { list: tsonkhList } = useTsonkh("sukh");
+  const currentTsonkh = useMemo(() => {
+    const path = pathname?.replace(/\/$/, "") || "";
+    if (!path) return null;
+
+    if (path === "/zogsool/orshinSuugch" || path === "/geree/orshinSuugch") {
+      return {
+        _id: "resident-list-help-custom",
+        ner: "Оршин суугч",
+        zaavar: `<div class="space-y-4">
+  <p><strong>Оршин суугчдын бүртгэлийн хэсэг</strong> нь орон сууцны хотхон, барилгын оршин суугчид болон тэдгээрийн тээврийн хэрэгслийн мэдээллийг нэгдсэн байдлаар удирдах зориулалттай.</p>
+  
+  <div class="bg-blue-50 dark:bg-blue-900/20 p-5 rounded-3xl border border-blue-100 dark:border-blue-900/30">
+    <h4 class="font-bold text-blue-900 dark:text-blue-400 mb-2">Үндсэн боломжууд:</h4>
+    <ul class="list-disc pl-5 space-y-1.5 text-slate-700 dark:text-slate-300">
+      <li>Шинээр оршин суугч болон түүний тээврийн хэрэгслийн дугаарыг бүртгэх</li>
+      <li>Оршин суугчдын мэдээллийг харах, шүүх болон засах</li>
+      <li>Шаардлагагүй болсон бүртгэлийг системээс устгах</li>
+      <li>Орц, тоотоор шүүлт хийж мэдээллийг хурдан олох</li>
+    </ul>
+  </div>
+
+  <div class="mt-4">
+    <h4 class="font-bold text-slate-900 dark:text-white mb-2">Ажиллуулах зааварчилгаа:</h4>
+    <ol class="list-decimal pl-5 space-y-2.5 text-slate-700 dark:text-slate-300">
+      <li><strong>Нэмэх товч</strong> дээр дарж оршин суугчийн нэр, утасны дугаар, орц, тоот болон тээврийн хэрэгслийн улсын дугаарыг бүртгэнэ.</li>
+      <li>Жагсаалтаас хайлт хийхдээ дээд хэсэгт байрлах <strong>Хайх цонхыг</strong> ашиглан нэр, утас эсвэл улсын дугаараар хайх боломжтой.</li>
+      <li>Бүртгэлтэй оршин суугчийн мэдээллийг шинэчлэхийн тулд тухайн мөрний баруун талд байрлах <strong>Засах (Edit) товчлуур</strong> дээр дарна уу.</li>
+    </ol>
+  </div>
+</div>`
+      } as any;
+    }
+
+    const withZam = tsonkhList
+      .map((t) => ({ t, zam: (t.zam || "").replace(/\/$/, "") }))
+      .filter(({ zam }) => zam);
+    withZam.sort((a, b) => b.zam.length - a.zam.length);
+
+    // Try finding exact or prefix match first
+    let found = withZam.find(
+      ({ zam }) => path === zam || path.startsWith(zam + "/")
+    );
+
+    return found?.t ?? null;
+  }, [pathname, tsonkhList]);
 
   useModalHotkeys({ isOpen: open, onClose: () => setOpen(false) });
 
@@ -40,7 +88,7 @@ export default function TourReplayButton() {
     setOpen((o) => !o);
   };
 
-  if (pathname === "/login") return null;
+  if (pathname === "/login" || disabled) return null;
 
   return (
     <div className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-[1200] pointer-events-auto">
@@ -60,7 +108,7 @@ export default function TourReplayButton() {
                 className="absolute right-full mr-3 px-4 py-2 rounded-2xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-white/20 shadow-2xl pointer-events-none whitespace-nowrap hidden md:block"
               >
                 <span className="text-sm font-medium text-slate-900 dark:text-white flex items-center gap-2">
-                  Тусламж хэрэгтэй юу? <span className="text-blue-500">👋</span>
+                  {currentTsonkh?.ner ? `${currentTsonkh.ner} тусламж хэрэгтэй юу?` : "Ерөнхий тусламж хэрэгтэй юу?"} <span className="text-blue-500">👋</span>
                 </span>
                 <div className="absolute top-1/2 -right-1 -translate-y-1/2 w-2 h-2 rotate-45 bg-white/90 dark:bg-slate-900/90 border-r border-t border-white/20" />
               </motion.div>
@@ -118,9 +166,11 @@ export default function TourReplayButton() {
               className="w-[280px] md:w-72 overflow-hidden rounded-3xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.2)]"
             >
               <div className="p-5 border-b border-slate-100 dark:border-white/5">
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Тусламж</h3>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                  {currentTsonkh?.ner || "Ерөнхий тусламж"}
+                </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  Системийн заавар болон тусламжийг эндээс аваарай
+                  {currentTsonkh?.ner ? "Энэ хуудасны тухай дэлгэрэнгүй мэдээлэл" : "Системийн заавар болон тусламжийг эндээс аваарай"}
                 </p>
               </div>
 
