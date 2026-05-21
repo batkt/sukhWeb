@@ -162,7 +162,12 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
     }
 
     if (typeof value === "object") {
-       if (Array.isArray(value)) return `[${value.length} мөр]`;
+       if (Array.isArray(value)) {
+         if (value.length > 0 && value.every((v: any) => typeof v === 'string' || typeof v === 'number')) {
+           return value.join(', ');
+         }
+         return `[${value.length} мөр]`;
+       }
        return <span className="text-[10px] truncate max-w-[200px] inline-block">{JSON.stringify(value)}</span>;
     }
 
@@ -181,21 +186,73 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
     ner: "Нэр",
     ovog: "Овог",
     utas: "Утас",
+    utas2: "Утас 2",
     mail: "Имэйл",
     email: "Имэйл",
     register: "Регистр",
+    rd: "Регистр",
     toot: "Тоот",
+    toots: "Тоотууд",
     davkhar: "Давхар",
     orts: "Орц",
     bairniiNer: "Барилгын нэр",
     baiguullagiinNer: "Байгууллагын нэр",
     ekhniiUldegdel: "Эхний үлдэгдэл",
+    ehniiUldegdel: "Эхний үлдэгдэл",
     tailbar: "Тайлбар",
     status: "Төлөв",
     tuluv: "Төлөв",
+    tuluw: "Төлөв",
     zardluud: "Зардлууд",
     segmentuud: "Сегментүүд",
     khungulultuud: "Хөнгөлөлтүүд",
+    khonogoorBodokhEsekh: "Хоногоор бодох эсэх",
+    bodokhKhonog: "Бодох хоног",
+    gereeniiDugaar: "Гэрээний дугаар",
+    nekhemjlekhiinDugaar: "Нэхэмжлэхийн дугаар",
+    dugaar: "Дугаар",
+    ognoo: "Огноо",
+    ekhlekhOgnoo: "Эхлэх огноо",
+    duusakhOgnoo: "Дуусах огноо",
+    nuusenOgnoo: "Нүүсэн огноо",
+    guilgeeniiDugaar: "Гүйлгээний дугаар",
+    tulukhDun: "Төлөх дүн",
+    tulsunDun: "Төлсөн дүн",
+    uldegdel: "Үлдэгдэл",
+    globalUldegdel: "Нийт үлдэгдэл",
+    khasagdsanEsekh: "Хасагдсан эсэх",
+    kholbooBarih: "Холбоо барих",
+    torguuli: "Торгууль",
+    aldangi: "Алданги",
+    shugam: "Шугам",
+    ashiglalt: "Ашиглалт",
+    turul: "Төрөл",
+    kod: "Код",
+    khayag: "Хаяг",
+    ajiltanId: "Ажилтны ID",
+    nevtrekhNer: "Нэвтрэх нэр",
+    nuutsUg: "Нууц үг",
+    erkh: "Эрх",
+    une: "Үнэ",
+    khemjee: "Хэмжээ",
+    talbai: "Талбай",
+    zoriulalt: "Зориулалт",
+    barilgiinId: "Барилгын ID",
+    baiguullagiinId: "Байгууллагын ID",
+    dun: "Дүн",
+    barimtDugaar: "Баримтын дугаар",
+    sar: "Сар",
+    jil: "Жил",
+    uilchilgee: "Үйлчилгээ",
+    mashiniiDugaar: "Машины дугаар",
+    danDugaar: "Дансны дугаар",
+    dansniiNer: "Дансны нэр",
+    bank: "Банк",
+    khariutsagch: "Хариуцагч",
+    isCompany: "Байгууллага эсэх",
+    tulbur: "Төлбөр",
+    niitDun: "Нийт дүн",
+    khutulbur: "Хөтөлбөр",
   };
 
   const normalizedChanges = (record.changes || record.uurchlult || []).map((c) => ({
