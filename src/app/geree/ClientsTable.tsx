@@ -12,7 +12,7 @@ import {
   getResidentToots,
   getResidentDavkhauraud,
   getResidentOrtsuud,
-} from "@/lib/ResidentDataHelper";
+} from "@/lib/residentDataHelper";
 
 export interface ClientItem {
   _id?: string;
