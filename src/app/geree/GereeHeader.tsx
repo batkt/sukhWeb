@@ -18,9 +18,9 @@ import { ALL_COLUMNS } from "./columns";
 import Link from "next/link";
 
 interface GereeHeaderProps {
-  activeTab: "contracts" | "residents" | "employees" | "units";
+  activeTab: "contracts" | "residents" | "employees" | "units" | "clients";
   setActiveTab: (
-    tab: "contracts" | "residents" | "employees" | "units",
+    tab: "contracts" | "residents" | "employees" | "units" | "clients",
   ) => void;
   ortsOptions: string[];
   selectedOrts: string;
@@ -125,6 +125,10 @@ export default function GereeHeader({
     hasGereeBase ||
     hasPermission(ajiltan, "/geree/ajiltan") ||
     hasPermission(ajiltan, "geree.ajiltan");
+  const showClients =
+    hasGereeBase ||
+    hasPermission(ajiltan, "/geree/khariltsagch") ||
+    hasPermission(ajiltan, "geree.khariltsagch");
 
   useEffect(() => {
     const handleClickOutsideDesktop = (event: MouseEvent) => {
@@ -419,7 +423,7 @@ export default function GereeHeader({
                       : "text-theme/60 hover:bg-theme/10 hover:text-theme"
                   }`}
                 >
-                  Тоот бүртгэл
+                  Өмч бүртгэл
                 </Link>
               )}
               {showEmployees && (
@@ -433,6 +437,19 @@ export default function GereeHeader({
                   }`}
                 >
                   Ажилтан
+                </Link>
+              )}
+              {showClients && (
+                <Link
+                  id="tab-clients"
+                  href="/geree/khariltsagch"
+                  className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 hover:translate-y-0 ${
+                    activeTab === "clients"
+                      ? "bg-theme/15 text-theme font-medium shadow-sm ring-1 ring-theme/30"
+                      : "text-theme/60 hover:bg-theme/10 hover:text-theme"
+                  }`}
+                >
+                  Харилцагч
                 </Link>
               )}
             </div>

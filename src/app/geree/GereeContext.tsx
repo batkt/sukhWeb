@@ -87,7 +87,8 @@ export function GereeProvider({ children }: { children: React.ReactNode }) {
     state.unitPageSize,
     state.selectedDawkhar,
     state.selectedOrtsForContracts,
-    state.statusFilter
+    state.statusFilter,
+    state.propertyTab,
   );
   const actions = useGereeActions(
     token,

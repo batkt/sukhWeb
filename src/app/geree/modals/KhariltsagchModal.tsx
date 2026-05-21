@@ -20,12 +20,12 @@ import {
   getResidentOrtsuud,
 } from "@/lib/residentDataHelper";
 
-interface ResidentModalProps {
+interface KhariltsagchModalProps {
   show: boolean;
   onClose: () => void;
-  editingResident: any;
-  newResident: any;
-  setNewResident: (val: any) => void;
+  editingClient: any;
+  newClient: any;
+  setNewClient: (val: any) => void;
   ortsOptions: string[];
   davkharOptions: string[];
   getTootOptions: (orts: string, floor: string) => string[];
@@ -36,12 +36,12 @@ interface ResidentModalProps {
   token: string | null;
 }
 
-export default function ResidentModal({
+export default function KhariltsagchModal({
   show,
   onClose,
-  editingResident,
-  newResident,
-  setNewResident,
+  editingClient,
+  newClient,
+  setNewClient,
   ortsOptions,
   davkharOptions,
   getTootOptions,
@@ -50,7 +50,7 @@ export default function ResidentModal({
   currentResidents,
   onSubmit,
   token,
-}: ResidentModalProps) {
+}: KhariltsagchModalProps) {
   const residentRef = React.useRef<HTMLDivElement | null>(null);
   const constraintsRef = React.useRef<HTMLDivElement | null>(null);
   const dragControls = useDragControls();
@@ -85,19 +85,19 @@ export default function ResidentModal({
     }
   });
 
-  // Snapshot of newResident when modal opens — used to detect unsaved changes
+  // Snapshot of newClient when modal opens — used to detect unsaved changes
   const initialSnapshot = React.useRef<string | null>(null);
   React.useEffect(() => {
     if (show) {
       // Wait for units to be initialized (either from props or from the useEffect below)
       // to avoid false-positive "unsaved changes" warnings on new residents.
-      const hasUnits = Array.isArray(newResident?.units) && newResident.units.length > 0;
+      const hasUnits = Array.isArray(newClient?.units) && newClient.units.length > 0;
       
       if (!initialSnapshot.current) {
           // Only take snapshot if units are populated (initialization done)
           // OR if it's been a few renders and still no units (though should always have one)
           if (hasUnits) {
-            initialSnapshot.current = JSON.stringify(newResident);
+            initialSnapshot.current = JSON.stringify(newClient);
           }
       }
       setErrors([]);
@@ -108,10 +108,10 @@ export default function ResidentModal({
       setZaaltInput("");
       setIsSubmitting(false);
     }
-  }, [show, newResident?.units, editingResident]);
+  }, [show, newClient?.units, editingClient]);
 
   const hasChanges = React.useMemo(() => {
-    if (!initialSnapshot.current || !newResident) return false;
+    if (!initialSnapshot.current || !newClient) return false;
     
     // Compare normalized versions
     const normalize = (val: any) => {
@@ -148,11 +148,11 @@ export default function ResidentModal({
         return clean(obj);
     };
     
-    const s1 = JSON.stringify(normalize(newResident));
+    const s1 = JSON.stringify(normalize(newClient));
     const s2 = JSON.stringify(normalize(initialSnapshot.current));
     
     return s1 !== s2;
-  }, [newResident, show]);
+  }, [newClient, show]);
 
   const requestClose = () => {
     if (hasChanges) {
@@ -164,19 +164,19 @@ export default function ResidentModal({
 
   const validate = () => {
     const newErrors: string[] = [];
-    if (!newResident.ner?.trim()) newErrors.push("ner");
+    if (!newClient.ner?.trim()) newErrors.push("ner");
     if (
-      !newResident.utas ||
-      (Array.isArray(newResident.utas) && !newResident.utas[0]?.trim())
+      !newClient.utas ||
+      (Array.isArray(newClient.utas) && !newClient.utas[0]?.trim())
     )
       newErrors.push("utas");
 
     // Validate each unit
-    const units = Array.isArray(newResident.units) ? newResident.units : [];
+    const units = Array.isArray(newClient.units) ? newClient.units : [];
     if (units.length === 0) {
-      if (!newResident.orts?.trim()) newErrors.push("orts");
-      if (!newResident.davkhar?.trim()) newErrors.push("davkhar");
-      if (!newResident.toot?.trim()) newErrors.push("toot");
+      if (!newClient.orts?.trim()) newErrors.push("orts");
+      if (!newClient.davkhar?.trim()) newErrors.push("davkhar");
+      if (!newClient.toot?.trim()) newErrors.push("toot");
     } else {
       const uniqueUnitKeys = new Set();
       units.forEach((unit: any, index: number) => {
@@ -194,7 +194,7 @@ export default function ResidentModal({
     }
 
     // Require end date for temporary contracts
-    if (newResident.turul === "Түр" && !newResident.duusakhOgnoo?.trim()) {
+    if (newClient.turul === "Түр" && !newClient.duusakhOgnoo?.trim()) {
       newErrors.push("duusakhOgnoo");
     }
 
@@ -238,12 +238,12 @@ export default function ResidentModal({
       setIsSubmitting(true);
       try {
         // Duplicate check: same ovog + ner + phone already registered
-        const ovog = (newResident.ovog || "").toString().trim().toLowerCase();
-        const ner = (newResident.ner || "").toString().trim().toLowerCase();
+        const ovog = (newClient.ovog || "").toString().trim().toLowerCase();
+        const ner = (newClient.ner || "").toString().trim().toLowerCase();
         const phone = (
-          Array.isArray(newResident.utas)
-            ? newResident.utas[0]
-            : newResident.utas || ""
+          Array.isArray(newClient.utas)
+            ? newClient.utas[0]
+            : newClient.utas || ""
         )
           .toString()
           .trim();
@@ -257,17 +257,17 @@ export default function ResidentModal({
               .trim();
 
             const isSameResident =
-              editingResident &&
-              String(editingResident._id || "") === String(r._id || "");
+              editingClient &&
+              String(editingClient._id || "") === String(r._id || "");
             if (isSameResident) return false;
 
             const rToots = (getResidentToots(r) || "")
               .split(", ")
               .map((t) => t.trim());
 
-            const units = Array.isArray(newResident.units) 
-              ? newResident.units 
-              : [{ toot: newResident.toot }];
+            const units = Array.isArray(newClient.units) 
+              ? newClient.units 
+              : [{ toot: newClient.toot }];
 
             const hasConflict = units.some((u: any) => 
               rToots.includes(String(u.toot || "").trim())
@@ -325,7 +325,7 @@ export default function ResidentModal({
     if (!phone || phone.length !== 8 || !selectedBarilga?._id) return;
 
     try {
-      const resp = await uilchilgee(token || "").get("/orshinSuugch", {
+      const resp = await uilchilgee(token || "").get("/khariltsagch", {
         params: {
           baiguullagiinId: baiguullaga?._id,
           barilgiinId: selectedBarilga._id,
@@ -343,7 +343,7 @@ export default function ResidentModal({
             t.source !== "WALLET_API"
         );
 
-        setNewResident((p: any) => ({
+        setNewClient((p: any) => ({
           ...p,
           ovog: found.ovog || p.ovog,
           ner: found.ner || p.ner,
@@ -418,9 +418,9 @@ export default function ResidentModal({
   };
 
   const isEkhniiUldegdelDisabled = React.useMemo(() => {
-    if (!editingResident) return false;
+    if (!editingClient) return false;
     const existing =
-      editingResident.ekhniiUldegdel ?? editingResident.medeelel?.ekhniiUldegdel;
+      editingClient.ekhniiUldegdel ?? editingClient.medeelel?.ekhniiUldegdel;
     const parsedSnapshot = initialSnapshot.current ? JSON.parse(initialSnapshot.current) : null;
     const initial = parsedSnapshot?.ekhniiUldegdel;
     // Disable if original record has non-zero OR if it was non-zero when modal opened (e.g. fetched from history)
@@ -428,14 +428,14 @@ export default function ResidentModal({
       (existing != null && Number(existing) !== 0) ||
       (initial != null && Number(initial) !== 0)
     );
-  }, [editingResident, show, initialSnapshot.current]);
+  }, [editingClient, show, initialSnapshot.current]);
 
-  // Sync local state when modal opens or editingResident changes
+  // Sync local state when modal opens or editingClient changes
   React.useEffect(() => {
     if (show) {
       // Ensure units array exists
-      if (!Array.isArray(newResident.units) || newResident.units.length === 0) {
-        setNewResident((p: any) => ({
+      if (!Array.isArray(newClient.units) || newClient.units.length === 0) {
+        setNewClient((p: any) => ({
           ...p,
           units: [
             {
@@ -451,13 +451,13 @@ export default function ResidentModal({
         }));
       }
 
-      setUldegdelInput(formatWithCommas(newResident.ekhniiUldegdel) || "0");
-      setZaaltInput(formatWithCommas(newResident.tsahilgaaniiZaalt) || "0");
+      setUldegdelInput(formatWithCommas(newClient.ekhniiUldegdel) || "0");
+      setZaaltInput(formatWithCommas(newClient.tsahilgaaniiZaalt) || "0");
     }
-  }, [show, newResident.ekhniiUldegdel, newResident.tsahilgaaniiZaalt]);
+  }, [show, newClient.ekhniiUldegdel, newClient.tsahilgaaniiZaalt]);
 
   const addUnitRow = () => {
-    setNewResident((p: any) => ({
+    setNewClient((p: any) => ({
       ...p,
       units: [
         ...(p.units || []),
@@ -475,7 +475,7 @@ export default function ResidentModal({
   };
 
   const removeUnitRow = (index: number) => {
-    setNewResident((p: any) => {
+    setNewClient((p: any) => {
       const newUnits = [...(p.units || [])];
       newUnits.splice(index, 1);
       // If we removed the primary (index 0), sync new first unit to top-level fields
@@ -494,7 +494,7 @@ export default function ResidentModal({
   };
 
   const updateUnitRow = (index: number, field: string, value: any) => {
-    setNewResident((p: any) => {
+    setNewClient((p: any) => {
       const newUnits = [...(p.units || [])];
       newUnits[index] = { ...newUnits[index], [field]: value };
       
@@ -724,7 +724,7 @@ export default function ResidentModal({
                     />
                   </svg>
                   <h2 className="text-lg text-slate-900 dark:text-white">
-                    {editingResident
+                    {editingClient
                       ? "Оршин суугчийн мэдээлэл засах"
                       : "Оршин суугч нэмэх"}
                   </h2>
@@ -766,7 +766,7 @@ export default function ResidentModal({
                         <label className="block text-xs text-slate-600 dark:text-slate-400 transition-colors">
                           Төрөл
                         </label>
-                        {newResident.turul === "Түр" && (
+                        {newClient.turul === "Түр" && (
                           <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-200 dark:border-amber-800 animate-pulse">
                             Түр гэрээ
                           </span>
@@ -774,9 +774,9 @@ export default function ResidentModal({
                       </div>
                       <div className="tusgai-wrapper w-full flex items-center">
                         <TusgaiZagvar
-                          value={newResident.turul || "Үндсэн"}
+                          value={newClient.turul || "Үндсэн"}
                           onChange={(val: string) => {
-                            setNewResident((p: any) => ({
+                            setNewClient((p: any) => ({
                               ...p,
                               turul: val,
                               // Clear end date when switching back to permanent
@@ -794,7 +794,7 @@ export default function ResidentModal({
                     </div>
 
                     {/* Гэрээ дуусах огноо - only shown for Түр гэрээ */}
-                    {(newResident.turul === "Түр") && (
+                    {(newClient.turul === "Түр") && (
                       <motion.div 
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -806,9 +806,9 @@ export default function ResidentModal({
                         </label>
                         <div className="h-8">
                           <StandardDatePicker
-                            value={newResident.duusakhOgnoo}
+                            value={newClient.duusakhOgnoo}
                             onChange={(_date, dateString) => 
-                              setNewResident((p: any) => ({ ...p, duusakhOgnoo: dateString }))
+                              setNewClient((p: any) => ({ ...p, duusakhOgnoo: dateString }))
                             }
                             placeholder="Дуусах огноо..."
                             className={errors.includes("duusakhOgnoo") ? "border-red-500" : ""}
@@ -826,13 +826,13 @@ export default function ResidentModal({
                       </label>
                       <input
                         type="text"
-                        value={newResident.ovog || ""}
+                        value={newClient.ovog || ""}
                         onChange={(e) => {
                           const value = e.target.value.replace(
                             /[^a-zA-Zа-яА-ЯөүёӨҮЁ-]/g,
                             "",
                           );
-                          setNewResident((p: any) => ({ ...p, ovog: value }));
+                          setNewClient((p: any) => ({ ...p, ovog: value }));
                         }}
                         className="modern-input w-full"
                       />
@@ -845,13 +845,13 @@ export default function ResidentModal({
                       </label>
                       <input
                         type="text"
-                        value={newResident.ner || ""}
+                        value={newClient.ner || ""}
                         onChange={(e) => {
                           const value = e.target.value.replace(
                             /[^a-zA-Zа-яА-ЯөүёӨҮЁ-]/g,
                             "",
                           );
-                          setNewResident((p: any) => ({ ...p, ner: value }));
+                          setNewClient((p: any) => ({ ...p, ner: value }));
                         }}
                         className={`modern-input w-full ${errors.includes("ner") ? "input-error" : ""}`}
                       />
@@ -865,16 +865,16 @@ export default function ResidentModal({
                       <input
                         type="tel"
                         value={
-                          Array.isArray(newResident.utas)
-                            ? newResident.utas[0] || ""
-                            : newResident.utas || ""
+                          Array.isArray(newClient.utas)
+                            ? newClient.utas[0] || ""
+                            : newClient.utas || ""
                         }
                         onChange={(e) => {
                           const value = e.target.value
                             .replace(/[^0-9]/g, "")
                             .slice(0, 8);
-                          setNewResident((p: any) => ({ ...p, utas: [value] }));
-                          if (value.length === 8 && !editingResident) {
+                          setNewClient((p: any) => ({ ...p, utas: [value] }));
+                          if (value.length === 8 && !editingClient) {
                             handleSearch(value);
                           }
                         }}
@@ -900,13 +900,13 @@ export default function ResidentModal({
                       </div>
 
                       <div className="space-y-3">
-                        {(newResident.units || []).map((unit: any, index: number) => (
+                        {(newClient.units || []).map((unit: any, index: number) => (
                           <div 
                             key={index} 
                             className="relative grid grid-cols-1 md:grid-cols-14 gap-3 p-4 bg-slate-50/50 dark:bg-slate-900/30 rounded-xl border border-slate-100 dark:border-slate-800 transition-all hover:border-slate-200 dark:hover:border-slate-700"
                           >
                             {/* Remove Button - allow deleting any row as long as there are 2+ units */}
-                            {(newResident.units || []).length > 1 && (
+                            {(newClient.units || []).length > 1 && (
                               <button
                                 type="button"
                                 onClick={() => removeUnitRow(index)}
@@ -923,68 +923,30 @@ export default function ResidentModal({
                               {index + 1}
                             </div>
 
-                            {unit.turul !== "Гараж" && unit.turul !== "Агуулах" && (
-                              <>
-                                <div className="md:col-span-2">
-                                  <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-500 mb-1">
-                                    Орц
-                                  </label>
-                                  <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${index}.orts`) ? "input-error" : ""}`}>
-                                    <TusgaiZagvar
-                                      value={unit.orts || ""}
-                                      onChange={(val: string) => updateUnitRow(index, "orts", val)}
-                                      options={ortsOptions.map((o) => ({ value: o, label: o }))}
-                                      className="w-full h-full"
-                                      placeholder="Орц..."
-                                    />
-                                  </div>
-                                </div>
 
-                                <div className="md:col-span-2">
-                                  <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-500 mb-1">
-                                    Давхар
-                                  </label>
-                                  <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${index}.davkhar`) ? "input-error" : ""}`}>
-                                    <TusgaiZagvar
-                                      value={unit.davkhar || ""}
-                                      onChange={(val: string) => updateUnitRow(index, "davkhar", val)}
-                                      options={davkharOptions.map((d) => ({ value: d, label: d }))}
-                                      className="w-full h-full"
-                                      placeholder="Давхар..."
-                                    />
-                                  </div>
-                                </div>
-                              </>
-                            )}
 
-                            <div className="md:col-span-2">
+                            <div className="md:col-span-4">
                               <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-500 mb-1">
-                                {unit.turul === "Гараж" || unit.turul === "Агуулах" ? "Дугаар" : "Тоот"}
+                                Дугаар
                               </label>
                               <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${index}.toot`) ? "input-error" : ""}`}>
                                 <TusgaiZagvar
                                   value={unit.toot || ""}
                                   onChange={(val: string) => updateUnitRow(index, "toot", val)}
-                                  options={getTootOptions(unit.orts || "", unit.davkhar || "").map((t) => {
+                                  options={getTootOptions("1", "").map((t) => {
                                     const isOccupied = currentResidents?.some(
                                       (r: any) => {
-                                        const rOrts = String(getResidentOrts(r) || "").trim();
-                                        const rDavkhar = String(getResidentDavkhar(r) || "").trim();
                                         const rToot = String(getResidentToot(r) || "").trim();
-                                        const isSameUnit =
-                                          rOrts === String(unit.orts || "").trim() &&
-                                          rDavkhar === String(unit.davkhar || "").trim() &&
-                                          rToot === String(t || "").trim();
+                                        const isSameUnit = rToot === String(t || "").trim();
                                         const isDifferentResident =
-                                          String(r._id || "") !== String(editingResident?._id || "");
+                                          String(r._id || "") !== String(editingClient?._id || "");
                                         return isSameUnit && isDifferentResident;
                                       },
                                     );
                                     return { value: t, label: t, isOccupied };
                                   })}
                                   className="w-full h-full"
-                                  placeholder={unit.turul === "Гараж" || unit.turul === "Агуулах" ? "Дугаар..." : "Тоот..."}
-                                  disabled={!(unit.turul === "Гараж" || unit.turul === "Агуулах") && (!unit.orts || !unit.davkhar)}
+                                  placeholder="Дугаар..."
                                 />
                               </div>
                             </div>
@@ -998,7 +960,6 @@ export default function ResidentModal({
                                   value={unit.turul || "Орон сууц"}
                                   onChange={(val: string) => updateUnitRow(index, "turul", val)}
                                   options={[
-                                    { value: "Орон сууц", label: "Орон сууц" },
                                     { value: "Гараж", label: "Гараж" },
                                     { value: "Агуулах", label: "Агуулах" },
                                   ]}
@@ -1153,9 +1114,9 @@ export default function ResidentModal({
                         Тайлбар
                       </label>
                       <textarea
-                        value={newResident.tailbar || ""}
+                        value={newClient.tailbar || ""}
                         onChange={(e) => {
-                          setNewResident((p: any) => ({
+                          setNewClient((p: any) => ({
                             ...p,
                             tailbar: e.target.value,
                           }));
@@ -1187,7 +1148,7 @@ export default function ResidentModal({
                     data-modal-primary
                     disabled={isSubmitting}
                   >
-                    {isSubmitting ? "Түр хүлээнэ үү..." : (editingResident ? "Хадгалах" : "Хадгалах")}
+                    {isSubmitting ? "Түр хүлээнэ үү..." : (editingClient ? "Хадгалах" : "Хадгалах")}
                   </Button>
                 </div>
               </form>

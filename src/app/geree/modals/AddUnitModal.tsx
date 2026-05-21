@@ -55,7 +55,10 @@ export default function AddUnitModal({
     for (const part of parts) {
       if (part.includes("-")) {
         const [start, end] = part.split("-").map((s) => parseInt(s.trim()));
-        if (isNaN(start) || isNaN(end) || start > end) continue;
+        if (isNaN(start) || isNaN(end) || start > end) {
+          result.push(part);
+          continue;
+        }
         for (let i = start; i <= end; i++) {
           result.push(String(i));
         }

@@ -1,6 +1,7 @@
 import React, { useMemo, useCallback, useState, useEffect } from "react";
 import { useGereeJagsaalt } from "@/lib/useGeree";
 import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
+import { useKhariltsagchJagsaalt } from "@/lib/useKhariltsagch";
 import { useAjiltniiJagsaalt } from "@/lib/useAjiltan";
 import { useGereeniiZagvar } from "@/lib/useGereeniiZagvar";
 import { useSocket } from "@/context/SocketContext";
@@ -35,6 +36,7 @@ export function useGereeData(
   selectedDawkhar?: string,
   selectedOrtsForContracts?: string,
   statusFilter?: "all" | "active" | "cancelled",
+  propertyTab?: "Тоот" | "Зогсоол" | "Агуулах",
 ) {
   // Stick strictly to selectedBuildingId from context to prevent data leakage from cookie-based barilgiinId
   const effectiveBarilgiinId = selectedBuildingId || undefined;
@@ -68,6 +70,18 @@ export function useGereeData(
   );
 
   const {
+    KhariltsagchGaralt,
+    KhariltsagchJagsaaltMutate,
+    setKhariltsagchKhuudaslalt,
+    isValidating: isValidatingClient,
+  } = useKhariltsagchJagsaalt(
+    token || "",
+    ajiltan?.baiguullagiinId || "",
+    {},
+    effectiveBarilgiinId,
+  );
+
+  const {
     ajilchdiinGaralt,
     ajiltniiJagsaaltMutate,
     setAjiltniiKhuudaslalt,
@@ -91,6 +105,7 @@ export function useGereeData(
 
   const contracts = gereeGaralt?.jagsaalt || [];
   const residentsList = (orshinSuugchGaralt?.jagsaalt || []) as any[];
+  const clientsList = (KhariltsagchGaralt?.jagsaalt || []) as any[];
   const employeesList = (ajilchdiinGaralt?.jagsaalt || []) as any[];
 
   // Create a map of residents by _id for quick lookup
@@ -143,37 +158,40 @@ export function useGereeData(
     }
   }, [selectedBarilga]);
 
-  const tootMap: Record<string, string[]> = useMemo(() => {
-    const out: Record<string, string[]> = {};
-    try {
-      const tokhirgoo = (selectedBarilga as any)?.tokhirgoo || {};
-      const map = (tokhirgoo as any)?.davkhariinToonuud;
+  const maps = useMemo(() => {
+    const parseMap = (map: any) => {
+      const out: Record<string, string[]> = {};
       if (map && typeof map === "object" && !Array.isArray(map)) {
         Object.entries(map).forEach(([floor, val]) => {
           let units: string[] = [];
           if (Array.isArray(val)) {
-            units = val.flatMap((v) =>
-              String(v)
-                .split(/[\s,;|]+/)
-                .filter(Boolean),
-            );
+            units = val.flatMap((v) => String(v).split(/[\s,;|]+/).filter(Boolean));
           } else if (typeof val === "string") {
             units = val.split(/[\s,;|]+/).filter(Boolean);
           }
           out[String(floor)] = units;
         });
       }
-      const tok = (tokhirgoo as any)?.davkhar;
-      if (Array.isArray(tok)) {
-        tok.forEach((it: any) => {
-          const floor = String(it?.davkhar ?? it);
-          const list = Array.isArray(it?.toonuud) ? it.toonuud : [];
-          if (floor && !out[floor])
-            out[floor] = list.map((x: any) => String(x));
-        });
-      }
-    } catch {}
-    return out;
+      return out;
+    };
+
+    const tokhirgoo = (selectedBarilga as any)?.tokhirgoo || {};
+    const outToot = parseMap(tokhirgoo.davkhariinToonuud);
+    const outZogsool = parseMap(tokhirgoo.davkhariinZogsoolnuud);
+    const outAguulakh = parseMap(tokhirgoo.davkhariinAguulakhnuud);
+
+    const tok = tokhirgoo.davkhar;
+    if (Array.isArray(tok)) {
+      tok.forEach((it: any) => {
+        const floor = String(it?.davkhar ?? it);
+        const list = Array.isArray(it?.toonuud) ? it.toonuud : [];
+        if (floor && !outToot[floor]) {
+          outToot[floor] = list.map((x: any) => String(x));
+        }
+      });
+    }
+
+    return { outToot, outZogsool, outAguulakh };
   }, [selectedBarilga]);
 
   const composeKey = useCallback((orts: string, floor: string) => {
@@ -183,26 +201,30 @@ export function useGereeData(
   }, []);
 
   const getTootOptions = useCallback(
-    (orts: string, floor: string) => {
+    (orts: string, floor: string, turul: "Тоот" | "Зогсоол" | "Агуулах" = "Тоот") => {
       try {
         const o = String(orts || "").trim();
         const f = String(floor || "").trim();
         const key = composeKey(o, f);
 
+        let activeMap = maps.outToot;
+        if (turul === "Зогсоол") activeMap = maps.outZogsool;
+        else if (turul === "Агуулах") activeMap = maps.outAguulakh;
+
         let candidates: string[] = [];
         if (
-          tootMap[key] &&
-          Array.isArray(tootMap[key]) &&
-          tootMap[key].length > 0
+          activeMap[key] &&
+          Array.isArray(activeMap[key]) &&
+          activeMap[key].length > 0
         ) {
-          candidates = tootMap[key].slice();
+          candidates = activeMap[key].slice();
         } else if (
           f &&
-          tootMap[f] &&
-          Array.isArray(tootMap[f]) &&
-          tootMap[f].length > 0
+          activeMap[f] &&
+          Array.isArray(activeMap[f]) &&
+          activeMap[f].length > 0
         ) {
-          candidates = tootMap[f].slice();
+          candidates = activeMap[f].slice();
         } else {
           return [];
         }
@@ -222,7 +244,7 @@ export function useGereeData(
         return [];
       }
     },
-    [tootMap, composeKey],
+    [maps, composeKey],
   );
 
 
@@ -575,6 +597,52 @@ export function useGereeData(
     startIndex + resPageSize,
   );
 
+  // Filter and sort clients
+  const filteredClients = useMemo(() => {
+    let filtered = [...clientsList];
+
+    if (searchTerm && searchTerm.trim() !== "") {
+      const term = searchTerm.toLowerCase().trim();
+      filtered = filtered.filter((r: any) => {
+        const ner = String(r?.ner || "").toLowerCase();
+        const ovog = String(r?.ovog || "").toLowerCase();
+        const utas = String(r?.utas || "").toLowerCase();
+        const toot = String(r?.toot || "").toLowerCase();
+        const register = String(r?.register || "").toLowerCase();
+        return (
+          ner.includes(term) ||
+          ovog.includes(term) ||
+          utas.includes(term) ||
+          toot.includes(term) ||
+          register.includes(term)
+        );
+      });
+    }
+
+    filtered.sort((a: any, b: any) => {
+      let aVal: any = String(a?.[sortKey] || "").trim().toLowerCase();
+      let bVal: any = String(b?.[sortKey] || "").trim().toLowerCase();
+      if (sortKey === "ner") {
+        aVal = `${a?.ovog || ""} ${a?.ner || ""}`.trim().toLowerCase();
+        bVal = `${b?.ovog || ""} ${b?.ner || ""}`.trim().toLowerCase();
+      }
+      if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    return filtered;
+  }, [clientsList, searchTerm, sortKey, sortOrder]);
+
+  const clientTotalPages = Math.max(
+    1,
+    Math.ceil(filteredClients.length / resPageSize),
+  );
+  const currentClients = filteredClients.slice(
+    startIndex,
+    startIndex + resPageSize,
+  );
+
   // Filter and sort contracts
   const filteredContracts = useMemo(() => {
     let filtered = [...contracts];
@@ -773,14 +841,35 @@ export function useGereeData(
   );
 
   // Compute floors list from davkharOptions and selectedDawkhar filter
+  // For Зогсоол and Агуулах, derive floors from their map keys instead
   const floorsList = useMemo(() => {
-    let list = [...davkharOptions];
+    let list: string[] = [];
+    const activeTab = propertyTab || "Тоот";
+
+    if (activeTab === "Тоот") {
+      list = [...davkharOptions];
+    } else {
+      // For Зогсоол / Агуулах, extract unique floor names from the map keys
+      const activeMap = activeTab === "Зогсоол" ? maps.outZogsool : maps.outAguulakh;
+      const floorsSet = new Set<string>();
+      Object.keys(activeMap).forEach((key) => {
+        // Keys are in format "orts::floor" or just "floor"
+        if (key.includes("::")) {
+          const parts = key.split("::");
+          floorsSet.add(parts[1] || parts[0]);
+        } else {
+          floorsSet.add(key);
+        }
+      });
+      list = Array.from(floorsSet);
+    }
+
     const sel = String(selectedDawkhar || "").trim();
     if (sel) {
       list = list.filter((d) => String(d) === sel);
     }
     return list;
-  }, [davkharOptions, selectedDawkhar]);
+  }, [davkharOptions, selectedDawkhar, propertyTab, maps]);
 
   // Paginate floors
   const unitTotalPages = Math.max(
@@ -796,10 +885,14 @@ export function useGereeData(
   return {
     contracts,
     residentsList,
+    clientsList,
+    currentClients,
+    clientTotalPages,
+    isValidatingClient,
     employeesList,
     davkharOptions,
     ortsOptions,
-    tootMap,
+    tootMap: maps.outToot,
     selectedBarilga,
     zagvaruud,
     socketCtx,

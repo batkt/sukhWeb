@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/useAuth";
 import { useGereeContext } from "./GereeContext";
 import ContractModal from "./modals/ContractModal";
 import ResidentModal from "./modals/ResidentModal";
+import KhariltsagchModal from "./modals/KhariltsagchModal";
 import EmployeeModal from "./modals/EmployeeModal";
 import DeleteConfirmModal from "./modals/DeleteModal";
 import PaymentModal from "./modals/PaymentModal";
@@ -202,7 +203,7 @@ export default function GereeModals() {
         value={state.addTootValue}
         setValue={state.setAddTootValue}
         onSubmit={async (floor: string, values: string[]) => {
-          await actions.addUnit(floor, values);
+          await actions.addUnit(floor, values, state.propertyTab);
         }}
       />
 
@@ -291,7 +292,7 @@ export default function GereeModals() {
         onConfirm={async () => {
           if (state.unitToDelete) {
             if (actions.deleteUnit) {
-              await actions.deleteUnit(state.unitToDelete.floor, state.unitToDelete.unit);
+              await actions.deleteUnit(state.unitToDelete.floor, state.unitToDelete.unit, state.propertyTab);
             }
             state.setShowDeleteUnitModal(false);
             state.setUnitToDelete(null);
@@ -308,7 +309,7 @@ export default function GereeModals() {
         onConfirm={async () => {
           if (state.floorToDelete) {
             if (actions.deleteFloor) {
-              await actions.deleteFloor(state.floorToDelete);
+              await actions.deleteFloor(state.floorToDelete, state.propertyTab);
             }
             state.setShowDeleteFloorModal(false);
             state.setFloorToDelete(null);

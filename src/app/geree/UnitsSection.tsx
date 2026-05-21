@@ -26,8 +26,9 @@ interface UnitsSectionProps {
   sortKey?: string;
   sortOrder?: "asc" | "desc";
   composeKey: (orts: string, floor: string) => string;
+  propertyTab: "Тоот" | "Зогсоол" | "Агуулах";
   unitStatusFilter: "all" | "occupied" | "free";
-  getTootOptions: (orts: string, floor: string) => string[];
+  getTootOptions: (orts: string, floor: string, turul?: "Тоот" | "Зогсоол" | "Агуулах") => string[];
   onAddUnit: (floor: string) => void;
   onDeleteUnit: (floor: string, unit: string) => void;
   onDeleteFloor: (floor: string) => void;
@@ -53,6 +54,7 @@ export default function UnitsSection({
   sortKey = "orts",
   sortOrder = "asc",
   composeKey,
+  propertyTab,
   unitStatusFilter,
   getTootOptions,
   onAddUnit,
@@ -69,7 +71,7 @@ export default function UnitsSection({
     targetOrtsList.forEach((orts) => {
       floorsList.forEach((floor) => {
         const key = composeKey(orts, floor);
-        const units = getTootOptions(orts, floor);
+        const units = getTootOptions(orts, floor, propertyTab);
 
         // Find active toots (units with active contracts) for this floor
         const activeToots = new Set<string>();
@@ -218,6 +220,7 @@ export default function UnitsSection({
     composeKey,
     getTootOptions,
     unitStatusFilter,
+    propertyTab,
     sortKey,
     sortOrder,
   ]);

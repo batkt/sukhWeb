@@ -105,6 +105,7 @@ export default function GereeLayout({ children, activeTab }: GereeLayoutProps) {
         onShowList2Modal={() => state.setShowList2Modal(true)}
         onSendInvoices={() => actions.handleSendInvoices(state.selectedContracts)}
         onShowResidentModal={handleOpenResidentModal}
+        onShowClientModal={actions.handleShowClientModal}
         onExportResidentsExcel={actions.handleExportResidentsExcel}
         onDownloadResidentsTemplate={actions.handleDownloadResidentsTemplate}
         onResidentsExcelImportClick={actions.handleResidentsExcelImportClick}

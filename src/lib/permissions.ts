@@ -26,6 +26,11 @@ export const ALL_PERMISSIONS: PermissionItem[] = [
         description: "Оршин суугч харах эрх",
       },
       {
+        id: "geree.khariltsagch",
+        label: "Харилцагч",
+        description: "Харилцагч харах эрх",
+      },
+      {
         id: "geree.tootBurtgel",
         label: "Тоот бүртгэл",
         description: "Тоот бүртгэл харах эрх",

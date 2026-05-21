@@ -22,18 +22,18 @@ function GereeLayoutWrapper({ children }: { children: React.ReactNode }) {
 
   const activeTab = useMemo(() => {
     if (pathname.includes("/orshinSuugch")) return "residents";
+    if (pathname.includes("/khariltsagch")) return "clients";
     if (pathname.includes("/ajiltan")) return "employees";
     if (pathname.includes("/tootBurtgel")) return "units";
     if (pathname === "/geree" || pathname === "/geree/") return "contracts";
     return "contracts";
   }, [pathname]);
 
-
-
-  const handleTabChange = (tab: "contracts" | "residents" | "employees" | "units") => {
+  const handleTabChange = (tab: "contracts" | "residents" | "employees" | "units" | "clients") => {
     const routes = {
       contracts: "/geree",
       residents: "/geree/orshinSuugch",
+      clients: "/geree/khariltsagch",
       employees: "/geree/ajiltan",
       units: "/geree/tootBurtgel",
     };

@@ -63,6 +63,8 @@ const EditBuildingModal: React.FC<{
   setEditOrtsCount: (value: number | "") => void;
   editDavkharCount: number | "";
   setEditDavkharCount: (value: number | "") => void;
+  editZogsoolDavkharCount: number | "";
+  setEditZogsoolDavkharCount: (value: number | "") => void;
   hasUserEdited: boolean;
   setHasUserEdited: (value: boolean) => void;
   editedBuildingId: string | null;
@@ -87,6 +89,8 @@ const EditBuildingModal: React.FC<{
   setEditOrtsCount,
   editDavkharCount,
   setEditDavkharCount,
+  editZogsoolDavkharCount,
+  setEditZogsoolDavkharCount,
   hasUserEdited,
   setHasUserEdited,
   editedBuildingId,
@@ -307,6 +311,32 @@ const EditBuildingModal: React.FC<{
                   className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
                 />
               </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <label className="block text-sm  text-[color:var(--panel-text)]">
+                  Нийт зогсоолын давхарын тоо
+                  <span className="ml-1.5 text-xs text-[color:var(--muted-text)] font-normal">(B1, B2, B3... үүсгэнэ)</span>
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  value={editZogsoolDavkharCount}
+                  onChange={(e) => {
+                    setEditZogsoolDavkharCount(
+                      e.target.value === "" ? "" : Number(e.target.value),
+                    );
+                    setHasUserEdited(true);
+                  }}
+                  onKeyDown={(e) => e.stopPropagation()}
+                  placeholder="0"
+                  className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
+                />
+                {(editZogsoolDavkharCount && Number(editZogsoolDavkharCount) > 0) ? (
+                  <p className="text-xs text-blue-500 dark:text-blue-400 mt-1">
+                    Үүсгэх давхар: {Array.from({ length: Number(editZogsoolDavkharCount) }, (_, i) => `B${i + 1}`).join(", ")}
+                  </p>
+                ) : null}
+              </div>
             </div>
           </div>
         </div>
@@ -350,6 +380,8 @@ const NewBuildingModal: React.FC<{
   setOrtsCount: (value: number | "") => void;
   davkharCount: number | "";
   setDavkharCount: (value: number | "") => void;
+  zogsoolDavkharCount: number | "";
+  setZogsoolDavkharCount: (value: number | "") => void;
   handleSaveSettings: (
     selectedDuureg?: string,
     selectedHoroo?: string,
@@ -366,6 +398,8 @@ const NewBuildingModal: React.FC<{
   setOrtsCount,
   davkharCount,
   setDavkharCount,
+  zogsoolDavkharCount,
+  setZogsoolDavkharCount,
   handleSaveSettings,
   isSaving,
   districts,
@@ -580,6 +614,31 @@ const NewBuildingModal: React.FC<{
                   placeholder="0"
                   className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
                 />
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <label className="block text-sm  text-[color:var(--panel-text)]">
+                  Нийт зогсоолын давхарын тоо
+                  <span className="ml-1.5 text-xs text-[color:var(--muted-text)] font-normal">(B1, B2, B3... үүсгэнэ)</span>
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  value={zogsoolDavkharCount}
+                  onChange={(e) =>
+                    setZogsoolDavkharCount(
+                      e.target.value === "" ? "" : Number(e.target.value),
+                    )
+                  }
+                  onKeyDown={(e) => e.stopPropagation()}
+                  placeholder="0"
+                  className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
+                />
+                {(zogsoolDavkharCount && Number(zogsoolDavkharCount) > 0) ? (
+                  <p className="text-xs text-blue-500 dark:text-blue-400 mt-1">
+                    Үүсгэх давхар: {Array.from({ length: Number(zogsoolDavkharCount) }, (_, i) => `B${i + 1}`).join(", ")}
+                  </p>
+                ) : null}
               </div>
             </div>
           </div>
@@ -961,6 +1020,8 @@ export default function BarilgiinTokhirgoo() {
   const [davkharCount, setDavkharCount] = useState<number | "">(0);
   // entrances (орц) as numeric count like давхар
   const [ortsCount, setOrtsCount] = useState<number | "">(0);
+  // basement/parking floors count for new building (generates B1, B2...)
+  const [zogsoolDavkharCount, setZogsoolDavkharCount] = useState<number | "">(0);
   const [isInit, setIsInit] = useState<boolean>(false);
 
   // Field for adding a new building (added via main save button)
@@ -990,6 +1051,7 @@ export default function BarilgiinTokhirgoo() {
     setNewBarilgaNer("");
     setOrtsCount("");
     setDavkharCount("");
+    setZogsoolDavkharCount("");
     setIsNewBuildingModalOpen(true);
   };
 
@@ -1001,6 +1063,8 @@ export default function BarilgiinTokhirgoo() {
   const [editBarilgaNer, setEditBarilgaNer] = useState<string>("");
   const [editOrtsCount, setEditOrtsCount] = useState<number | "">(0);
   const [editDavkharCount, setEditDavkharCount] = useState<number | "">(0);
+  // basement/parking floors count for edit building (generates B1, B2...)
+  const [editZogsoolDavkharCount, setEditZogsoolDavkharCount] = useState<number | "">(0);
   const [hasUserEdited, setHasUserEdited] = useState<boolean>(false);
   const [editSelectedDuureg, setEditSelectedDuureg] = useState<string>("");
   const [editSelectedHoroo, setEditSelectedHoroo] = useState<string>("");
@@ -1311,6 +1375,7 @@ export default function BarilgiinTokhirgoo() {
       const name = (editBarilgaNer || "").trim();
       const count = Number(editDavkharCount) || 0;
       const ortsNum = Number(editOrtsCount) || 0;
+      const zogsoolCount = Number(editZogsoolDavkharCount) || 0;
 
       if (!name) {
         openErrorOverlay("Барилгын нэр оруулна уу");
@@ -1335,7 +1400,10 @@ export default function BarilgiinTokhirgoo() {
         const tokhirgoo = {
           ...(b.tokhirgoo || {}),
           orts: String(ortsNum),
-          davkhar: Array.from({ length: count }, (_, i) => String(i + 1)),
+          davkhar: [
+            ...Array.from({ length: count }, (_, i) => String(i + 1)),
+            ...Array.from({ length: zogsoolCount }, (_, i) => `B${i + 1}`),
+          ],
           ...(selectedDuureg && {
             duuregNer: selectedDuureg,
             districtCode: selectedDuureg + (selectedHoroo || ""),
@@ -1392,11 +1460,12 @@ export default function BarilgiinTokhirgoo() {
         ? ortsFrom.length
         : Number(ortsFrom) || 0;
       setEditOrtsCount(ortsNum);
-      const davFrom = tok.davkhar || [];
-      const davCount = Array.isArray(davFrom)
-        ? davFrom.length
-        : Number(davFrom) || 0;
-      setEditDavkharCount(davCount);
+      const davFrom: string[] = Array.isArray(tok.davkhar) ? tok.davkhar : [];
+      // Separate regular floors (numeric) from parking/basement floors (B-prefixed)
+      const regularFloors = davFrom.filter((d) => /^\d+$/.test(String(d)));
+      const bFloors = davFrom.filter((d) => /^B\d+$/i.test(String(d)));
+      setEditDavkharCount(regularFloors.length);
+      setEditZogsoolDavkharCount(bFloors.length);
 
       // Load district and horoo if they exist
       const duuregNer = tok.duuregNer || "";
@@ -1620,6 +1689,7 @@ export default function BarilgiinTokhirgoo() {
     const name = (newBarilgaNer || "").trim();
     const davCount = Number(davkharCount) || 0;
     const ortsNum = Number(ortsCount) || 0;
+    const zogsoolNum = Number(zogsoolDavkharCount) || 0;
 
     if (!name) {
       openErrorOverlay("Барилгын нэр оруулна уу");
@@ -1645,7 +1715,10 @@ export default function BarilgiinTokhirgoo() {
         baiguullagiinId: String(baiguullaga._id),
         tokhirgoo: {
           orts: String(ortsNum),
-          davkhar: Array.from({ length: davCount }, (_, i) => String(i + 1)),
+          davkhar: [
+            ...Array.from({ length: davCount }, (_, i) => String(i + 1)),
+            ...Array.from({ length: zogsoolNum }, (_, i) => `B${i + 1}`),
+          ],
           ...(selectedDuureg && {
             duuregNer: selectedDuureg,
             districtCode: selectedDuureg + (selectedHoroo || ""),
@@ -1705,6 +1778,7 @@ export default function BarilgiinTokhirgoo() {
       setNewBarilgaNer("");
       setOrtsCount("");
       setDavkharCount("");
+      setZogsoolDavkharCount("");
     } catch (e) {
       aldaaBarigch(e);
       openErrorOverlay("Шинэ барилга нэмэх явцад алдаа гарлаа");
@@ -2330,6 +2404,8 @@ export default function BarilgiinTokhirgoo() {
           setOrtsCount={setOrtsCount}
           davkharCount={davkharCount}
           setDavkharCount={setDavkharCount}
+          zogsoolDavkharCount={zogsoolDavkharCount}
+          setZogsoolDavkharCount={setZogsoolDavkharCount}
           handleSaveSettings={handleSaveSettings}
           isSaving={isSaving}
           districts={districts}
@@ -2345,6 +2421,8 @@ export default function BarilgiinTokhirgoo() {
           setEditOrtsCount={setEditOrtsCount}
           editDavkharCount={editDavkharCount}
           setEditDavkharCount={setEditDavkharCount}
+          editZogsoolDavkharCount={editZogsoolDavkharCount}
+          setEditZogsoolDavkharCount={setEditZogsoolDavkharCount}
           hasUserEdited={hasUserEdited}
           setHasUserEdited={setHasUserEdited}
           editedBuildingId={editedBuildingId}

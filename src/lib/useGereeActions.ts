@@ -26,10 +26,13 @@ export function useGereeActions(
   composeKey?: (orts: string, floor: string) => string,
   setShowResidentModal?: (show: boolean) => void,
   setShowEmployeeModal?: (show: boolean) => void,
+  setShowClientModal?: (show: boolean) => void,
   setNewResident?: (resident: any) => void,
   setNewEmployee?: (employee: any) => void,
+  setNewClient?: (client: any) => void,
   setEditingResident?: (resident: any | null) => void,
   setEditingEmployee?: (employee: any | null) => void,
+  setEditingClient?: (client: any | null) => void,
   setIsUploadingResidents?: (uploading: boolean) => void,
   setIsUploadingUnits?: (uploading: boolean) => void,
   residentExcelInputRef?: React.RefObject<HTMLInputElement | null>,
@@ -414,7 +417,8 @@ export function useGereeActions(
   );
 
   const addUnit = useCallback(
-    async (floor: string, values: string[]) => {
+    async (floor: string, values: string[], turul: "Тоот" | "Зогсоол" | "Агуулах" = "Тоот") => {
+      const propName = turul === "Зогсоол" ? "davkhariinZogsoolnuud" : turul === "Агуулах" ? "davkhariinAguulakhnuud" : "davkhariinToonuud";
       if (!token || !baiguullaga?._id) {
         openErrorOverlay("Мэдээлэл дутуу байна");
         return;
@@ -458,7 +462,7 @@ export function useGereeActions(
         };
 
         const key = composeKeyFn(selectedOrts || "", floor);
-        const existing = (barilga.tokhirgoo?.davkhariinToonuud || {}) as Record<
+        const existing = (barilga.tokhirgoo?.[propName] || {}) as Record<
           string,
           any
         >;
@@ -475,7 +479,7 @@ export function useGereeActions(
             ...b,
             tokhirgoo: {
               ...(b.tokhirgoo || {}),
-              davkhariinToonuud: {
+              [propName]: {
                 ...existing,
                 [key]: newUnits,
               },
@@ -490,7 +494,7 @@ export function useGereeActions(
 
         await updateMethod("baiguullaga", token, payload);
         await baiguullagaMutate?.();
-        openSuccessOverlay("Тоот нэмэгдлээ");
+        openSuccessOverlay(`${turul} нэмэгдлээ`);
       } catch (err) {
         openErrorOverlay(getErrorMessage(err));
       } finally {
@@ -510,7 +514,8 @@ export function useGereeActions(
   );
 
   const deleteUnit = useCallback(
-    async (floor: string, unit: string) => {
+    async (floor: string, unit: string, turul: "Тоот" | "Зогсоол" | "Агуулах" = "Тоот") => {
+      const propName = turul === "Зогсоол" ? "davkhariinZogsoolnuud" : turul === "Агуулах" ? "davkhariinAguulakhnuud" : "davkhariinToonuud";
       if (!token || !baiguullaga?._id) {
         openErrorOverlay("Мэдээлэл дутуу байна");
         return;
@@ -553,7 +558,7 @@ export function useGereeActions(
         };
 
         const key = composeKeyFn(selectedOrts || "", floor);
-        const existing = (barilga.tokhirgoo?.davkhariinToonuud || {}) as Record<
+        const existing = (barilga.tokhirgoo?.[propName] || {}) as Record<
           string,
           any
         >;
@@ -564,7 +569,7 @@ export function useGereeActions(
         );
 
         if (currentUnits.length === updatedUnits.length) {
-          openErrorOverlay("Тоот олдсонгүй");
+          openErrorOverlay(`${turul} олдсонгүй`);
           return;
         }
 
@@ -609,7 +614,7 @@ export function useGereeActions(
             ...b,
             tokhirgoo: {
               ...(b.tokhirgoo || {}),
-              davkhariinToonuud: {
+              [propName]: {
                 ...existing,
                 [key]: updatedUnits,
               },
@@ -624,7 +629,7 @@ export function useGereeActions(
 
         await updateMethod("baiguullaga", token, payload);
         await baiguullagaMutate?.();
-        openSuccessOverlay("Тоот устгагдлаа");
+        openSuccessOverlay(`${turul} устгагдлаа`);
       } catch (err) {
         openErrorOverlay(getErrorMessage(err));
       } finally {
@@ -645,7 +650,8 @@ export function useGereeActions(
   );
 
   const deleteFloor = useCallback(
-    async (floor: string) => {
+    async (floor: string, turul: "Тоот" | "Зогсоол" | "Агуулах" = "Тоот") => {
+      const propName = turul === "Зогсоол" ? "davkhariinZogsoolnuud" : turul === "Агуулах" ? "davkhariinAguulakhnuud" : "davkhariinToonuud";
       if (!token || !baiguullaga?._id) {
         openErrorOverlay("Мэдээлэл дутуу байна");
         return;
@@ -675,7 +681,7 @@ export function useGereeActions(
         }
 
         const key = composeKeyFn(selectedOrts || "", floor);
-        const existing = (barilga.tokhirgoo?.davkhariinToonuud || {}) as Record<
+        const existing = (barilga.tokhirgoo?.[propName] || {}) as Record<
           string,
           string[]
         >;
@@ -1433,7 +1439,142 @@ export function useGereeActions(
     [token, onLoadingChange, mutate],
   );
 
+  // --- KHARILTSAGCH ACTIONS ---
+  const handleCreateClient = useCallback(
+    async (e: React.FormEvent, newClient: any, editingClient: any) => {
+      e.preventDefault();
+      if (!token) return;
+
+      const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
+      if (!baiguullaga?._id || !effectiveBarilgiinId) {
+        openErrorOverlay("Байгууллага эсвэл барилга сонгоогүй байна.");
+        return;
+      }
+
+      if (!newClient.ovog || !newClient.ner || !newClient.utas) {
+        openErrorOverlay("Овог, нэр, утас заавал оруулна уу.");
+        return;
+      }
+
+      try {
+        const payload = {
+          ...newClient,
+          baiguullagiinId: baiguullaga._id,
+          barilgiinId: effectiveBarilgiinId,
+        };
+        if (editingClient?._id) {
+          await uilchilgee(token).put(
+            `/khariltsagch/${editingClient._id}`,
+            payload,
+          );
+          openSuccessOverlay("Амжилттай засагдлаа");
+        } else {
+          await uilchilgee(token).post("/khariltsagch", payload);
+          openSuccessOverlay("Амжилттай бүртгэгдлээ");
+        }
+        mutate(
+          (key: any) =>
+            Array.isArray(key) && key[0] === "/khariltsagch",
+          undefined,
+          { revalidate: true },
+        );
+      } catch (error: any) {
+        openErrorOverlay(`Алдаа гарлаа: ${error.response?.data?.error || error.message}`);
+      }
+    },
+    [token, baiguullaga, selectedBuildingId, barilgiinId, mutate],
+  );
+
+  const handleDeleteClient = useCallback(
+    async (client: any) => {
+      if (!token) return;
+      try {
+        await uilchilgee(token).delete(`/khariltsagch/${client._id}`);
+        openSuccessOverlay("Амжилттай устгагдлаа");
+        mutate(
+          (key: any) =>
+            Array.isArray(key) && key[0] === "/khariltsagch",
+          undefined,
+          { revalidate: true },
+        );
+      } catch (error: any) {
+        openErrorOverlay(`Алдаа: ${error.response?.data?.error || error.message}`);
+      }
+    },
+    [token, mutate],
+  );
+
+  const handleEditClient = useCallback(
+    async (
+      p: any,
+      setEditingClient: any,
+      setNewClient: any,
+      setShowClientModal: any,
+    ) => {
+      setEditingClient(p);
+      let ekhniiUldegdel = p.ekhniiUldegdel ?? p.medeelel?.ekhniiUldegdel ?? 0;
+      setNewClient({
+        ...p,
+        units: Array.isArray(p.toots) && p.toots.length > 0 ? p.toots : [{ orts: p.orts || "1", davkhar: p.davkhar || "", toot: p.toot || "", ekhniiUldegdel: 0, tsahilgaaniiZaalt: 0 }],
+        ekhniiUldegdel,
+      });
+      setShowClientModal(true);
+    },
+    [],
+  );
+
+  const handleRemoveClientToot = useCallback(
+    async (residentId: string, baiguullagiinId: string, barilgiinId: string, toot: string) => {
+      if (!token) return;
+      try {
+        await uilchilgee(token).post("/khariltsagch/remove-toot", {
+          residentId,
+          baiguullagiinId,
+          barilgiinId,
+          toot,
+        });
+        openSuccessOverlay("Тоот амжилттай хасагдлаа");
+        mutate(
+          (key: any) =>
+            Array.isArray(key) && key[0] === "/khariltsagch",
+          undefined,
+          { revalidate: true },
+        );
+      } catch (error: any) {
+        openErrorOverlay(
+          `Тоот хасахад алдаа гарлаа: ${error.message}`,
+        );
+      }
+    },
+    [token, mutate],
+  );
+
+  const handleShowClientModal = useCallback(() => {
+    setEditingClient?.(null);
+    setNewClient?.({
+      ovog: "",
+      ner: "",
+      register: "",
+      utas: [""],
+      khayag: "",
+      aimag: "Улаанбаатар",
+      duureg: "",
+      horoo: "",
+      turul: "Үндсэн",
+      tailbar: "",
+      units: [{ orts: "1", davkhar: "", toot: "", ekhniiUldegdel: 0, tsahilgaaniiZaalt: 0 }],
+      ekhniiUldegdel: undefined,
+    });
+    setShowClientModal?.(true);
+  }, [setEditingClient, setNewClient, setShowClientModal]);
+
+
   return {
+    handleCreateClient,
+    handleDeleteClient,
+    handleEditClient,
+    handleRemoveClientToot,
+    handleShowClientModal,
     handleCreateResident,
     handleDeleteResident,
     handleEditResident,

@@ -22,6 +22,11 @@ export function useGereeState(searchParams: any, didInitRef: any) {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showAvlagaModal, setShowAvlagaModal] = useState(false);
 
+  // Khariltsagch Modal States
+  const [showClientModal, setShowClientModal] = useState(false);
+  const [newClient, setNewClient] = useState<any>({});
+  const [editingClient, setEditingClient] = useState<any>(null);
+
   const [addTootFloor, setAddTootFloor] = useState<string>("");
   const [addTootValue, setAddTootValue] = useState<string>("");
   
@@ -67,6 +72,7 @@ export function useGereeState(searchParams: any, didInitRef: any) {
   const [selectedDawkhar, setSelectedDawkhar] = useState<string>("");
   const [selectedOrtsForContracts, setSelectedOrtsForContracts] =
     useState<string>("");
+  const [propertyTab, setPropertyTab] = useState<"Тоот" | "Зогсоол" | "Агуулах">("Тоот");
   const [statusFilter, setStatusFilter] = useState<
     "all" | "active" | "cancelled"
   >("all");
@@ -254,6 +260,8 @@ export function useGereeState(searchParams: any, didInitRef: any) {
     setSelectedDawkhar,
     selectedOrtsForContracts,
     setSelectedOrtsForContracts,
+    propertyTab,
+    setPropertyTab,
     statusFilter,
     setStatusFilter,
     unitStatusFilter,
@@ -273,5 +281,11 @@ export function useGereeState(searchParams: any, didInitRef: any) {
     residentExcelInputRef,
     unitExcelInputRef,
     columnMenuRef,
+    showClientModal,
+    setShowClientModal,
+    newClient,
+    setNewClient,
+    editingClient,
+    setEditingClient,
   };
 }
