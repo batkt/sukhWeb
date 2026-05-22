@@ -189,7 +189,9 @@ export function useGereeData(
       tok.forEach((it: any) => {
         const floor = String(it?.davkhar ?? it);
         const list = Array.isArray(it?.toonuud) ? it.toonuud : [];
-        if (floor && !outToot[floor]) {
+        // Only add to outToot if there are actual unit numbers,
+        // so parking/storage floors don't pollute the Тоот map
+        if (floor && !outToot[floor] && list.length > 0) {
           outToot[floor] = list.map((x: any) => String(x));
         }
       });
@@ -920,7 +922,17 @@ export function useGereeData(
     const activeTab = propertyTab || "Тоот";
 
     if (activeTab === "Тоот") {
-      list = [...davkharOptions];
+      // Only show floors that actually have unit numbers defined
+      const floorsSet = new Set<string>();
+      Object.keys(maps.outToot).forEach((key) => {
+        if (key.includes("::")) {
+          const parts = key.split("::");
+          floorsSet.add(parts[1] || parts[0]);
+        } else {
+          floorsSet.add(key);
+        }
+      });
+      list = Array.from(floorsSet);
     } else {
       // For Зогсоол / Агуулах, extract unique floor names from the map keys
       const activeMap =
