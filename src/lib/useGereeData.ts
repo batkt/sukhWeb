@@ -189,10 +189,14 @@ export function useGereeData(
       tok.forEach((it: any) => {
         const floor = String(it?.davkhar ?? it);
         const list = Array.isArray(it?.toonuud) ? it.toonuud : [];
-        // Only add to outToot if there are actual unit numbers,
-        // so parking/storage floors don't pollute the Тоот map
-        if (floor && !outToot[floor] && list.length > 0) {
-          outToot[floor] = list.map((x: any) => String(x));
+        // Only add if there are actual unit numbers
+        if (floor && list.length > 0) {
+          // Route basement/parking floors (B1, B2...) to Зогсоол map
+          const isBasement = /^B\d+$/i.test(floor);
+          const target = isBasement ? outZogsool : outToot;
+          if (!target[floor]) {
+            target[floor] = list.map((x: any) => String(x));
+          }
         }
       });
     }

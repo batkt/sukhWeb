@@ -25,7 +25,8 @@ import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 export default function GereeModals() {
   const router = useRouter();
   const { token, baiguullaga } = useAuth();
-  const { state, data, actions, ajiltan, permissionsData, reloadPermissions } = useGereeContext();
+  const { state, data, actions, ajiltan, permissionsData, reloadPermissions } =
+    useGereeContext();
 
   // Permissions Modal State
   const [showPermissionsModal, setShowPermissionsModal] = useState(false);
@@ -37,33 +38,35 @@ export default function GereeModals() {
 
   // Zagvar Editor Modal (full-screen for create/edit template)
   const [showZagvarEditorModal, setShowZagvarEditorModal] = useState(false);
-  const [zagvarEditorTemplateId, setZagvarEditorTemplateId] = useState<string | null>(null);
+  const [zagvarEditorTemplateId, setZagvarEditorTemplateId] = useState<
+    string | null
+  >(null);
 
   // Expose the permissions and credentials modal handler via a ref or context
   React.useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       (window as any).__openPermissionsModal = (employee: any) => {
         console.log("🚀 Opening permissions modal for employee:", employee);
         setPermissionsEmployee(employee);
         setShowPermissionsModal(true);
       };
-      
+
       (window as any).__openCredentialsModal = (employee: any) => {
         console.log("🔐 Opening credentials modal for employee:", employee);
         setCredentialsEmployee(employee);
         setShowCredentialsModal(true);
       };
-      
+
       (window as any).__openHistoryModal = (contract: any) => {
         console.log("📜 Opening history modal for contract:", contract);
         state.setHistoryContract(contract);
         state.setShowHistoryModal(true);
       };
-      
+
       console.log("✅ Global modal functions registered");
     }
     return () => {
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         delete (window as any).__openPermissionsModal;
         delete (window as any).__openCredentialsModal;
       }
@@ -71,8 +74,8 @@ export default function GereeModals() {
   }, []);
 
   const handleSavePermissions = async (
-    permissions: string[], 
-    erkhuud: { zam: string; too: number }[] = []
+    permissions: string[],
+    erkhuud: { zam: string; too: number }[] = [],
   ) => {
     if (!token || !permissionsEmployee?._id) {
       openErrorOverlay("Мэдээлэл дутуу байна");
@@ -81,13 +84,16 @@ export default function GereeModals() {
 
     try {
       // First, update the employee's permissions
-      await uilchilgee(token).post(`/ajiltandErkhUgyu/${permissionsEmployee._id}`, {
-        tsonkhniiErkhuud: permissions,
-        erkhuud: erkhuud,
-        barilguud: permissionsEmployee.barilguud, // Preserve existing buildings
-      });
+      await uilchilgee(token).post(
+        `/ajiltandErkhUgyu/${permissionsEmployee._id}`,
+        {
+          tsonkhniiErkhuud: permissions,
+          erkhuud: erkhuud,
+          barilguud: permissionsEmployee.barilguud, // Preserve existing buildings
+        },
+      );
       console.log("✅ Employee permissions updated via Tsonkhnii Medeelel");
-      
+
       // Reload limits
       reloadPermissions();
 
@@ -99,12 +105,15 @@ export default function GereeModals() {
       console.log("3️⃣ Refreshing employee list...");
       await data.ajiltniiJagsaaltMutate();
       console.log("✅ Employee list refreshed");
-      
+
       openSuccessOverlay("Эрх амжилттай хадгалагдлаа");
     } catch (error: any) {
       console.error("❌ Error saving permissions:", error);
       console.error("Error response:", error?.response?.data);
-      const errorMessage = error?.response?.data?.aldaa || error?.message || "Эрх хадгалахад алдаа гарлаа";
+      const errorMessage =
+        error?.response?.data?.aldaa ||
+        error?.message ||
+        "Эрх хадгалахад алдаа гарлаа";
       openErrorOverlay(errorMessage);
       throw error;
     }
@@ -126,7 +135,9 @@ export default function GereeModals() {
         davkharOptions={data.davkharOptions}
         getTootOptions={data.getTootOptions}
         onSubmit={async (e) => {
-          const handler = state.editingContract ? actions.handleUpdateContract : actions.handleCreateContract;
+          const handler = state.editingContract
+            ? actions.handleUpdateContract
+            : actions.handleCreateContract;
           const success = await handler(e);
           if (success) {
             state.setShowContractModal(false);
@@ -150,7 +161,11 @@ export default function GereeModals() {
         baiguullaga={baiguullaga}
         currentResidents={data.residentsList}
         onSubmit={async (e) => {
-          const success = await actions.handleCreateResident(e, state.newResident, state.editingResident);
+          const success = await actions.handleCreateResident(
+            e,
+            state.newResident,
+            state.editingResident,
+          );
           if (success) {
             state.setShowResidentModal(false);
             state.setEditingResident(null);
@@ -158,6 +173,37 @@ export default function GereeModals() {
           return success;
         }}
         token={token}
+      />
+
+      {/* Khariltsagch / Client Modal */}
+      <KhariltsagchModal
+        show={state.showClientModal}
+        onClose={() => {
+          state.setShowClientModal(false);
+          state.setEditingClient(null);
+        }}
+        editingClient={state.editingClient}
+        newClient={state.newClient}
+        setNewClient={state.setNewClient}
+        ortsOptions={data.ortsOptions}
+        davkharOptions={data.davkharOptions}
+        getTootOptions={data.getTootOptions}
+        selectedBarilga={data.selectedBarilga}
+        baiguullaga={baiguullaga}
+        currentResidents={data.residentsList}
+        onSubmit={async (e) => {
+          const success = await actions.handleCreateClient(
+            e,
+            state.newClient,
+            state.editingClient,
+          );
+          if (success) {
+            state.setShowClientModal(false);
+            state.setEditingClient(null);
+          }
+          return success;
+        }}
+        token={token || null}
       />
 
       {/* Employee Modal */}
@@ -292,7 +338,11 @@ export default function GereeModals() {
         onConfirm={async () => {
           if (state.unitToDelete) {
             if (actions.deleteUnit) {
-              await actions.deleteUnit(state.unitToDelete.floor, state.unitToDelete.unit, state.propertyTab);
+              await actions.deleteUnit(
+                state.unitToDelete.floor,
+                state.unitToDelete.unit,
+                state.propertyTab,
+              );
             }
             state.setShowDeleteUnitModal(false);
             state.setUnitToDelete(null);
@@ -332,30 +382,29 @@ export default function GereeModals() {
         onClose={() => setShowCredentialsModal(false)}
         employee={credentialsEmployee}
         onSave={async (emp, nevtrekhNer, nuutsUg) => {
-           if (!token || !emp?._id) return;
-           try {
-              // Send full employee with updated credentials so backend doesn't
-              // overwrite baiguullagiinId/barilguud (which would remove from list)
-              const payload: any = { ...emp, nevtrekhNer };
-              if (nuutsUg && nuutsUg.trim()) {
-                payload.nuutsUg = nuutsUg;
-              } else {
-                delete payload.nuutsUg; // Don't send hashed password; backend keeps existing
-              }
-              await uilchilgee(token).put(`/ajiltan/${emp._id}`, payload);
+          if (!token || !emp?._id) return;
+          try {
+            // Send full employee with updated credentials so backend doesn't
+            // overwrite baiguullagiinId/barilguud (which would remove from list)
+            const payload: any = { ...emp, nevtrekhNer };
+            if (nuutsUg && nuutsUg.trim()) {
+              payload.nuutsUg = nuutsUg;
+            } else {
+              delete payload.nuutsUg; // Don't send hashed password; backend keeps existing
+            }
+            await uilchilgee(token).put(`/ajiltan/${emp._id}`, payload);
 
-              openSuccessOverlay("Нэвтрэх эрх шинэчлэгдлээ");
-              setShowCredentialsModal(false);
+            openSuccessOverlay("Нэвтрэх эрх шинэчлэгдлээ");
+            setShowCredentialsModal(false);
 
-              await data.ajiltniiJagsaaltMutate();
-
-           } catch (err: any) {
-              const msg = err?.response?.data?.aldaa || "Алдаа гарлаа";
-              openErrorOverlay(msg);
-           }
+            await data.ajiltniiJagsaaltMutate();
+          } catch (err: any) {
+            const msg = err?.response?.data?.aldaa || "Алдаа гарлаа";
+            openErrorOverlay(msg);
+          }
         }}
       />
-      
+
       {/* History Modal */}
       <HistoryModal
         show={state.showHistoryModal}

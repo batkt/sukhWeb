@@ -149,25 +149,38 @@ export function useGereeActions(
           erkh: "OrshinSuugch",
           taniltsuulgaKharakhEsekh: true,
           // Units (Multiple Units Support)
-          units: Array.isArray(newResident.units) && newResident.units.length > 0 
-            ? newResident.units 
-            : [{
-                toot: newResident.toot || "",
-                davkhar: newResident.davkhar || "",
-                orts: newResident.orts || "1",
-                ekhniiUldegdel: newResident.ekhniiUldegdel || 0,
-                tsahilgaaniiZaalt: newResident.tsahilgaaniiZaalt || 0,
-                khonogoorBodokhEsekh: newResident.khonogoorBodokhEsekh || false,
-                bodokhKhonog: newResident.bodokhKhonog || 0,
-              }],
+          units:
+            Array.isArray(newResident.units) && newResident.units.length > 0
+              ? newResident.units
+              : [
+                  {
+                    toot: newResident.toot || "",
+                    davkhar: newResident.davkhar || "",
+                    orts: newResident.orts || "1",
+                    ekhniiUldegdel: newResident.ekhniiUldegdel || 0,
+                    tsahilgaaniiZaalt: newResident.tsahilgaaniiZaalt || 0,
+                    khonogoorBodokhEsekh:
+                      newResident.khonogoorBodokhEsekh || false,
+                    bodokhKhonog: newResident.bodokhKhonog || 0,
+                  },
+                ],
           // Backward compatibility fields - pull from first unit if possible
           toot: newResident.units?.[0]?.toot || newResident.toot || "",
           davkhar: newResident.units?.[0]?.davkhar || newResident.davkhar || "",
           orts: newResident.units?.[0]?.orts || newResident.orts || "1",
-          ekhniiUldegdel: newResident.units?.[0]?.ekhniiUldegdel ?? (newResident.ekhniiUldegdel || 0),
-          tsahilgaaniiZaalt: newResident.units?.[0]?.tsahilgaaniiZaalt ?? (newResident.tsahilgaaniiZaalt || 0),
-          khonogoorBodokhEsekh: newResident.units?.[0]?.khonogoorBodokhEsekh ?? (newResident.khonogoorBodokhEsekh || false),
-          bodokhKhonog: Number(newResident.units?.[0]?.bodokhKhonog ?? (newResident.bodokhKhonog || 0)),
+          ekhniiUldegdel:
+            newResident.units?.[0]?.ekhniiUldegdel ??
+            (newResident.ekhniiUldegdel || 0),
+          tsahilgaaniiZaalt:
+            newResident.units?.[0]?.tsahilgaaniiZaalt ??
+            (newResident.tsahilgaaniiZaalt || 0),
+          khonogoorBodokhEsekh:
+            newResident.units?.[0]?.khonogoorBodokhEsekh ??
+            (newResident.khonogoorBodokhEsekh || false),
+          bodokhKhonog: Number(
+            newResident.units?.[0]?.bodokhKhonog ??
+              (newResident.bodokhKhonog || 0),
+          ),
           barilgiinId: selectedBarilga?._id || effectiveBid || "",
           bairniiNer: selectedBarilga?.ner || "",
           // Global settings
@@ -177,7 +190,10 @@ export function useGereeActions(
           soh: selectedBarilga?.tokhirgoo?.sohNer || "",
           sohNer: selectedBarilga?.tokhirgoo?.sohNer || "",
           // Temporary contract end date
-          duusakhOgnoo: newResident.turul === "Түр" ? (newResident.duusakhOgnoo || null) : null,
+          duusakhOgnoo:
+            newResident.turul === "Түр"
+              ? newResident.duusakhOgnoo || null
+              : null,
         };
 
         if (editingResident?._id) {
@@ -343,7 +359,12 @@ export function useGereeActions(
 
       console.log(`[DEBUG] Opening Resident Modal:`, {
         name: `${p.ovog} ${p.ner}`,
-        units: Array.isArray(p.toots) ? p.toots.map((t: any) => ({ toot: t.toot, balance: t.ekhniiUldegdel })) : "no toots"
+        units: Array.isArray(p.toots)
+          ? p.toots.map((t: any) => ({
+              toot: t.toot,
+              balance: t.ekhniiUldegdel,
+            }))
+          : "no toots",
       });
       setNewResident({
         ovog: p.ovog || "",
@@ -371,35 +392,39 @@ export function useGereeActions(
         duusakhOgnoo: p.duusakhOgnoo
           ? new Date(p.duusakhOgnoo).toISOString().split("T")[0]
           : "",
-        units: Array.isArray(p.toots) && p.toots.length > 0 
-          ? p.toots
-              .filter((t: any) => {
-                const currentBid = String(selectedBuildingId || barilgiinId || "");
-                const tootBid = String(t.barilgiinId || "");
-                return currentBid === tootBid;
-              })
-              .map((t: any) => ({
-                orts: t.orts || "1",
-                davkhar: t.davkhar || "",
-                toot: t.toot || "",
-                ekhniiUldegdel: (t.ekhniiUldegdel !== undefined && t.ekhniiUldegdel !== 0) 
-                  ? t.ekhniiUldegdel 
-                  : (ekhniiUldegdel || 0),
-                tsahilgaaniiZaalt: t.tsahilgaaniiZaalt ?? 0,
-                khonogoorBodokhEsekh: t.khonogoorBodokhEsekh || false,
-                bodokhKhonog: t.bodokhKhonog || 0,
-              }))
-          : [
-              {
-                orts: p.orts || "1",
-                davkhar: p.davkhar || "",
-                toot: p.toot || "",
-                ekhniiUldegdel: ekhniiUldegdel || 0,
-                tsahilgaaniiZaalt: p.tsahilgaaniiZaalt || 0,
-                khonogoorBodokhEsekh: p.khonogoorBodokhEsekh || false,
-                bodokhKhonog: p.bodokhKhonog || 0,
-              }
-            ],
+        units:
+          Array.isArray(p.toots) && p.toots.length > 0
+            ? p.toots
+                .filter((t: any) => {
+                  const currentBid = String(
+                    selectedBuildingId || barilgiinId || "",
+                  );
+                  const tootBid = String(t.barilgiinId || "");
+                  return currentBid === tootBid;
+                })
+                .map((t: any) => ({
+                  orts: t.orts || "1",
+                  davkhar: t.davkhar || "",
+                  toot: t.toot || "",
+                  ekhniiUldegdel:
+                    t.ekhniiUldegdel !== undefined && t.ekhniiUldegdel !== 0
+                      ? t.ekhniiUldegdel
+                      : ekhniiUldegdel || 0,
+                  tsahilgaaniiZaalt: t.tsahilgaaniiZaalt ?? 0,
+                  khonogoorBodokhEsekh: t.khonogoorBodokhEsekh || false,
+                  bodokhKhonog: t.bodokhKhonog || 0,
+                }))
+            : [
+                {
+                  orts: p.orts || "1",
+                  davkhar: p.davkhar || "",
+                  toot: p.toot || "",
+                  ekhniiUldegdel: ekhniiUldegdel || 0,
+                  tsahilgaaniiZaalt: p.tsahilgaaniiZaalt || 0,
+                  khonogoorBodokhEsekh: p.khonogoorBodokhEsekh || false,
+                  bodokhKhonog: p.bodokhKhonog || 0,
+                },
+              ],
       });
       setShowResidentModal(true);
     },
@@ -417,8 +442,17 @@ export function useGereeActions(
   );
 
   const addUnit = useCallback(
-    async (floor: string, values: string[], turul: "Тоот" | "Зогсоол" | "Агуулах" = "Тоот") => {
-      const propName = turul === "Зогсоол" ? "davkhariinZogsoolnuud" : turul === "Агуулах" ? "davkhariinAguulakhnuud" : "davkhariinToonuud";
+    async (
+      floor: string,
+      values: string[],
+      turul: "Тоот" | "Зогсоол" | "Агуулах" = "Тоот",
+    ) => {
+      const propName =
+        turul === "Зогсоол"
+          ? "davkhariinZogsoolnuud"
+          : turul === "Агуулах"
+            ? "davkhariinAguulakhnuud"
+            : "davkhariinToonuud";
       if (!token || !baiguullaga?._id) {
         openErrorOverlay("Мэдээлэл дутуу байна");
         return;
@@ -514,8 +548,17 @@ export function useGereeActions(
   );
 
   const deleteUnit = useCallback(
-    async (floor: string, unit: string, turul: "Тоот" | "Зогсоол" | "Агуулах" = "Тоот") => {
-      const propName = turul === "Зогсоол" ? "davkhariinZogsoolnuud" : turul === "Агуулах" ? "davkhariinAguulakhnuud" : "davkhariinToonuud";
+    async (
+      floor: string,
+      unit: string,
+      turul: "Тоот" | "Зогсоол" | "Агуулах" = "Тоот",
+    ) => {
+      const propName =
+        turul === "Зогсоол"
+          ? "davkhariinZogsoolnuud"
+          : turul === "Агуулах"
+            ? "davkhariinAguulakhnuud"
+            : "davkhariinToonuud";
       if (!token || !baiguullaga?._id) {
         openErrorOverlay("Мэдээлэл дутуу байна");
         return;
@@ -651,7 +694,12 @@ export function useGereeActions(
 
   const deleteFloor = useCallback(
     async (floor: string, turul: "Тоот" | "Зогсоол" | "Агуулах" = "Тоот") => {
-      const propName = turul === "Зогсоол" ? "davkhariinZogsoolnuud" : turul === "Агуулах" ? "davkhariinAguulakhnuud" : "davkhariinToonuud";
+      const propName =
+        turul === "Зогсоол"
+          ? "davkhariinZogsoolnuud"
+          : turul === "Агуулах"
+            ? "davkhariinAguulakhnuud"
+            : "davkhariinToonuud";
       if (!token || !baiguullaga?._id) {
         openErrorOverlay("Мэдээлэл дутуу байна");
         return;
@@ -791,7 +839,15 @@ export function useGereeActions(
       turul: "Үндсэн",
       tailbar: "",
       ekhniiUldegdel: 0,
-      units: [{ orts: "1", davkhar: "", toot: "", ekhniiUldegdel: 0, tsahilgaaniiZaalt: 0 }],
+      units: [
+        {
+          orts: "1",
+          davkhar: "",
+          toot: "",
+          ekhniiUldegdel: 0,
+          tsahilgaaniiZaalt: 0,
+        },
+      ],
     });
     setShowResidentModal?.(true);
   }, [setEditingResident, setNewResident, setShowResidentModal]);
@@ -1306,7 +1362,7 @@ export function useGereeActions(
           mutate(
             (key: any) => Array.isArray(key) && key[0] === "/ajiltan",
             undefined,
-            { revalidate: true }
+            { revalidate: true },
           );
         } catch (_e) {
           // Best-effort cache refresh
@@ -1385,7 +1441,7 @@ export function useGereeActions(
           mutate(
             (key: any) => Array.isArray(key) && key[0] === "/ajiltan",
             undefined,
-            { revalidate: true }
+            { revalidate: true },
           );
         } catch (_e) {
           // Best-effort cache refresh
@@ -1443,17 +1499,17 @@ export function useGereeActions(
   const handleCreateClient = useCallback(
     async (e: React.FormEvent, newClient: any, editingClient: any) => {
       e.preventDefault();
-      if (!token) return;
+      if (!token) return false;
 
       const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
       if (!baiguullaga?._id || !effectiveBarilgiinId) {
         openErrorOverlay("Байгууллага эсвэл барилга сонгоогүй байна.");
-        return;
+        return false;
       }
 
       if (!newClient.ovog || !newClient.ner || !newClient.utas) {
         openErrorOverlay("Овог, нэр, утас заавал оруулна уу.");
-        return;
+        return false;
       }
 
       try {
@@ -1473,13 +1529,16 @@ export function useGereeActions(
           openSuccessOverlay("Амжилттай бүртгэгдлээ");
         }
         mutate(
-          (key: any) =>
-            Array.isArray(key) && key[0] === "/khariltsagch",
+          (key: any) => Array.isArray(key) && key[0] === "/khariltsagch",
           undefined,
           { revalidate: true },
         );
+        return true;
       } catch (error: any) {
-        openErrorOverlay(`Алдаа гарлаа: ${error.response?.data?.error || error.message}`);
+        openErrorOverlay(
+          `Алдаа гарлаа: ${error.response?.data?.error || error.message}`,
+        );
+        return false;
       }
     },
     [token, baiguullaga, selectedBuildingId, barilgiinId, mutate],
@@ -1492,13 +1551,14 @@ export function useGereeActions(
         await uilchilgee(token).delete(`/khariltsagch/${client._id}`);
         openSuccessOverlay("Амжилттай устгагдлаа");
         mutate(
-          (key: any) =>
-            Array.isArray(key) && key[0] === "/khariltsagch",
+          (key: any) => Array.isArray(key) && key[0] === "/khariltsagch",
           undefined,
           { revalidate: true },
         );
       } catch (error: any) {
-        openErrorOverlay(`Алдаа: ${error.response?.data?.error || error.message}`);
+        openErrorOverlay(
+          `Алдаа: ${error.response?.data?.error || error.message}`,
+        );
       }
     },
     [token, mutate],
@@ -1515,7 +1575,18 @@ export function useGereeActions(
       let ekhniiUldegdel = p.ekhniiUldegdel ?? p.medeelel?.ekhniiUldegdel ?? 0;
       setNewClient({
         ...p,
-        units: Array.isArray(p.toots) && p.toots.length > 0 ? p.toots : [{ orts: p.orts || "1", davkhar: p.davkhar || "", toot: p.toot || "", ekhniiUldegdel: 0, tsahilgaaniiZaalt: 0 }],
+        units:
+          Array.isArray(p.toots) && p.toots.length > 0
+            ? p.toots
+            : [
+                {
+                  orts: p.orts || "1",
+                  davkhar: p.davkhar || "",
+                  toot: p.toot || "",
+                  ekhniiUldegdel: 0,
+                  tsahilgaaniiZaalt: 0,
+                },
+              ],
         ekhniiUldegdel,
       });
       setShowClientModal(true);
@@ -1524,7 +1595,12 @@ export function useGereeActions(
   );
 
   const handleRemoveClientToot = useCallback(
-    async (residentId: string, baiguullagiinId: string, barilgiinId: string, toot: string) => {
+    async (
+      residentId: string,
+      baiguullagiinId: string,
+      barilgiinId: string,
+      toot: string,
+    ) => {
       if (!token) return;
       try {
         await uilchilgee(token).post("/khariltsagch/remove-toot", {
@@ -1535,15 +1611,12 @@ export function useGereeActions(
         });
         openSuccessOverlay("Тоот амжилттай хасагдлаа");
         mutate(
-          (key: any) =>
-            Array.isArray(key) && key[0] === "/khariltsagch",
+          (key: any) => Array.isArray(key) && key[0] === "/khariltsagch",
           undefined,
           { revalidate: true },
         );
       } catch (error: any) {
-        openErrorOverlay(
-          `Тоот хасахад алдаа гарлаа: ${error.message}`,
-        );
+        openErrorOverlay(`Тоот хасахад алдаа гарлаа: ${error.message}`);
       }
     },
     [token, mutate],
@@ -1562,12 +1635,19 @@ export function useGereeActions(
       horoo: "",
       turul: "Үндсэн",
       tailbar: "",
-      units: [{ orts: "1", davkhar: "", toot: "", ekhniiUldegdel: 0, tsahilgaaniiZaalt: 0 }],
+      units: [
+        {
+          orts: "1",
+          davkhar: "",
+          toot: "",
+          ekhniiUldegdel: 0,
+          tsahilgaaniiZaalt: 0,
+        },
+      ],
       ekhniiUldegdel: undefined,
     });
     setShowClientModal?.(true);
   }, [setEditingClient, setNewClient, setShowClientModal]);
-
 
   return {
     handleCreateClient,
@@ -1583,8 +1663,12 @@ export function useGereeActions(
     handleDeleteEmployee,
     handleEditEmployee,
     handleEdit: (_contract: any) => {},
-    handleUpdateContract: async (_e: React.FormEvent) => { return true; },
-    handleCreateContract: async (_e: React.FormEvent) => { return true; },
+    handleUpdateContract: async (_e: React.FormEvent) => {
+      return true;
+    },
+    handleCreateContract: async (_e: React.FormEvent) => {
+      return true;
+    },
     handlePreviewContractTemplate: async (contract: any) => {
       if (!token || !ajiltan?.baiguullagiinId) {
         openErrorOverlay("Нэвтрэх шаардлагатай");
@@ -1594,32 +1678,39 @@ export function useGereeActions(
       try {
         // Find the first available template for this organization
         const templatesResp = await uilchilgee(token).get("/gereeniiZagvar", {
-          params: { baiguullagiinId: ajiltan.baiguullagiinId }
+          params: { baiguullagiinId: ajiltan.baiguullagiinId },
         });
-        
-        const templates = Array.isArray(templatesResp.data?.jagsaalt) 
-          ? templatesResp.data.jagsaalt 
-          : (Array.isArray(templatesResp.data) ? templatesResp.data : []);
-        
+
+        const templates = Array.isArray(templatesResp.data?.jagsaalt)
+          ? templatesResp.data.jagsaalt
+          : Array.isArray(templatesResp.data)
+            ? templatesResp.data
+            : [];
+
         if (templates.length === 0) {
-          openErrorOverlay("Гэрээний загвар олдсонгүй. Эхлээд загвар үүсгэнэ үү.");
+          openErrorOverlay(
+            "Гэрээний загвар олдсонгүй. Эхлээд загвар үүсгэнэ үү.",
+          );
           return;
         }
-        
+
         // Use the first template by default
         const selectedTemplate = templates[0];
-        
+
         // Fetch the filled template
         const resp = await uilchilgee(token).post("/gereeniiZagvarSoliyo", {
           gereeniiZagvariinId: selectedTemplate._id,
           gereeniiId: contract._id || contract.id,
         });
-        
+
         if (resp.data?.success && resp.data?.result) {
           if (setPreviewTemplate) setPreviewTemplate(resp.data.result);
           if (setShowPreviewModal) setShowPreviewModal(true);
         } else {
-          openErrorOverlay("Загвар боловсруулахад алдаа гарлаа: " + (resp.data?.message || "Тодорхойгүй алдаа"));
+          openErrorOverlay(
+            "Загвар боловсруулахад алдаа гарлаа: " +
+              (resp.data?.message || "Тодорхойгүй алдаа"),
+          );
         }
       } catch (err) {
         openErrorOverlay(getErrorMessage(err));
