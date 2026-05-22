@@ -165,7 +165,11 @@ export function useGereeData(
         Object.entries(map).forEach(([floor, val]) => {
           let units: string[] = [];
           if (Array.isArray(val)) {
-            units = val.flatMap((v) => String(v).split(/[\s,;|]+/).filter(Boolean));
+            units = val.flatMap((v) =>
+              String(v)
+                .split(/[\s,;|]+/)
+                .filter(Boolean),
+            );
           } else if (typeof val === "string") {
             units = val.split(/[\s,;|]+/).filter(Boolean);
           }
@@ -201,7 +205,11 @@ export function useGereeData(
   }, []);
 
   const getTootOptions = useCallback(
-    (orts: string, floor: string, turul: "Тоот" | "Зогсоол" | "Агуулах" = "Тоот") => {
+    (
+      orts: string,
+      floor: string,
+      turul: "Тоот" | "Зогсоол" | "Агуулах" = "Тоот",
+    ) => {
       try {
         const o = String(orts || "").trim();
         const f = String(floor || "").trim();
@@ -246,8 +254,6 @@ export function useGereeData(
     },
     [maps, composeKey],
   );
-
-
 
   const renderCellValue = useCallback(
     (contract: any, columnKey: string): React.ReactNode => {
@@ -346,7 +352,9 @@ export function useGereeData(
         }
 
         case "bairniiNer": {
-          const val = getStringValue(contract.bairniiNer) || getStringValue(contract.bairNer);
+          const val =
+            getStringValue(contract.bairniiNer) ||
+            getStringValue(contract.bairNer);
           if (val && val !== "-") return val;
           // Fallback to linked resident
           const orshinSuugchId = contract.orshinSuugchId;
@@ -357,7 +365,9 @@ export function useGereeData(
                 Array.isArray(resident.toots) && resident.toots.length > 0
                   ? resident.toots[0]?.bairniiNer
                   : null;
-              return getStringValue(tootsBairniiNer ?? resident.bairniiNer) || "-";
+              return (
+                getStringValue(tootsBairniiNer ?? resident.bairniiNer) || "-"
+              );
             }
           }
           return "-";
@@ -452,7 +462,7 @@ export function useGereeData(
         case "ognoo": {
           const createdDate = contract.ognoo || contract.createdAt;
           if (!createdDate) return "-";
-          
+
           try {
             const date = new Date(createdDate);
             if (!isNaN(date.getTime())) {
@@ -543,13 +553,20 @@ export function useGereeData(
         aVal = new Date(a?.createdAt || a?.updatedAt || 0).getTime();
         bVal = new Date(b?.createdAt || b?.updatedAt || 0).getTime();
       } else if (sortKey === "ner") {
-        const getStr = (v: any) => typeof v === "object" && v !== null ? `${v.ner || ""} ${v.kod || ""}`.trim() : String(v || "");
+        const getStr = (v: any) =>
+          typeof v === "object" && v !== null
+            ? `${v.ner || ""} ${v.kod || ""}`.trim()
+            : String(v || "");
         aVal = `${getStr(a?.ovog)} ${getStr(a?.ner)}`.trim().toLowerCase();
         bVal = `${getStr(b?.ovog)} ${getStr(b?.ner)}`.trim().toLowerCase();
-      } else if (sortKey === "toot" || sortKey === "orts" || sortKey === "davkhar") {
+      } else if (
+        sortKey === "toot" ||
+        sortKey === "orts" ||
+        sortKey === "davkhar"
+      ) {
         let aRaw = String(a?.[sortKey] || "").trim();
         let bRaw = String(b?.[sortKey] || "").trim();
-        
+
         if (sortKey === "toot") {
           aRaw = String(getResidentToot(a) || a?.toot || "").trim();
           bRaw = String(getResidentToot(b) || b?.toot || "").trim();
@@ -574,8 +591,12 @@ export function useGereeData(
         aVal = String(a?.utas || "").replace(/[^0-9]/g, "");
         bVal = String(b?.utas || "").replace(/[^0-9]/g, "");
       } else {
-        aVal = String(a?.[sortKey] || "").trim().toLowerCase();
-        bVal = String(b?.[sortKey] || "").trim().toLowerCase();
+        aVal = String(a?.[sortKey] || "")
+          .trim()
+          .toLowerCase();
+        bVal = String(b?.[sortKey] || "")
+          .trim()
+          .toLowerCase();
       }
 
       if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
@@ -620,8 +641,12 @@ export function useGereeData(
     }
 
     filtered.sort((a: any, b: any) => {
-      let aVal: any = String(a?.[sortKey] || "").trim().toLowerCase();
-      let bVal: any = String(b?.[sortKey] || "").trim().toLowerCase();
+      let aVal: any = String(a?.[sortKey] || "")
+        .trim()
+        .toLowerCase();
+      let bVal: any = String(b?.[sortKey] || "")
+        .trim()
+        .toLowerCase();
       if (sortKey === "ner") {
         aVal = `${a?.ovog || ""} ${a?.ner || ""}`.trim().toLowerCase();
         bVal = `${b?.ovog || ""} ${b?.ner || ""}`.trim().toLowerCase();
@@ -653,24 +678,28 @@ export function useGereeData(
       const filterOrts = String(selectedOrtsForContracts).trim();
       filtered = filtered.filter((c: any) => {
         const orshinSuugchId = c.orshinSuugchId;
-        
+
         // 1. If contract has its own explicit orts, use it strictly
         const cOrts = String(c?.orts || "").trim();
         if (cOrts !== "" && cOrts !== "-") {
           return cOrts === filterOrts;
         }
-        
+
         // 2. Otherwise, check linked resident's all units
         if (orshinSuugchId && residentsById[String(orshinSuugchId)]) {
           const resident = residentsById[String(orshinSuugchId)];
-          
+
           // Check all toots
           if (Array.isArray(resident.toots)) {
-            if (resident.toots.some((t: any) => String(t.orts || "").trim() === filterOrts)) {
+            if (
+              resident.toots.some(
+                (t: any) => String(t.orts || "").trim() === filterOrts,
+              )
+            ) {
               return true;
             }
           }
-          
+
           // Fallback to resident's top-level orts
           if (String(resident.orts || "").trim() === filterOrts) return true;
         }
@@ -682,7 +711,7 @@ export function useGereeData(
       const filterDawkhar = String(selectedDawkhar).trim();
       filtered = filtered.filter((c: any) => {
         const orshinSuugchId = c.orshinSuugchId;
-        
+
         // 1. If contract has its own explicit davkhar, use it strictly
         const cDavkhar = String(c?.davkhar || "").trim();
         if (cDavkhar !== "" && cDavkhar !== "-") {
@@ -692,16 +721,21 @@ export function useGereeData(
         // 2. Otherwise, check linked resident's all units
         if (orshinSuugchId && residentsById[String(orshinSuugchId)]) {
           const resident = residentsById[String(orshinSuugchId)];
-          
+
           // Check all toots
           if (Array.isArray(resident.toots)) {
-            if (resident.toots.some((t: any) => String(t.davkhar || "").trim() === filterDawkhar)) {
+            if (
+              resident.toots.some(
+                (t: any) => String(t.davkhar || "").trim() === filterDawkhar,
+              )
+            ) {
               return true;
             }
           }
-          
+
           // Fallback to resident's top-level davkhar
-          if (String(resident.davkhar || "").trim() === filterDawkhar) return true;
+          if (String(resident.davkhar || "").trim() === filterDawkhar)
+            return true;
         }
         return false;
       });
@@ -710,8 +744,19 @@ export function useGereeData(
     if (statusFilter && statusFilter !== "all") {
       filtered = filtered.filter((c: any) => {
         const status = String(c?.tuluv || c?.status || "Идэвхтэй").trim();
-        const isCancelled = status === "Цуцалсан" || status.toLowerCase() === "цуцалсан" || status === "tsutlsasan" || status.toLowerCase() === "tsutlsasan" || status === "Идэвхгүй" || status.toLowerCase() === "идэвхгүй";
-        const isActive = !isCancelled && (status === "Идэвхтэй" || status.toLowerCase() === "идэвхтэй" || !status || status === "");
+        const isCancelled =
+          status === "Цуцалсан" ||
+          status.toLowerCase() === "цуцалсан" ||
+          status === "tsutlsasan" ||
+          status.toLowerCase() === "tsutlsasan" ||
+          status === "Идэвхгүй" ||
+          status.toLowerCase() === "идэвхгүй";
+        const isActive =
+          !isCancelled &&
+          (status === "Идэвхтэй" ||
+            status.toLowerCase() === "идэвхтэй" ||
+            !status ||
+            status === "");
         if (statusFilter === "active") return isActive;
         if (statusFilter === "cancelled") return isCancelled;
         return true;
@@ -723,10 +768,18 @@ export function useGereeData(
       filtered = filtered.filter((c: any) => {
         const ner = String(c?.ner || "").toLowerCase();
         const ovog = String(c?.ovog || "").toLowerCase();
-        const utas = Array.isArray(c?.utas) ? c.utas.map((u: any) => String(u).toLowerCase()).join(" ") : String(c?.utas || "").toLowerCase();
+        const utas = Array.isArray(c?.utas)
+          ? c.utas.map((u: any) => String(u).toLowerCase()).join(" ")
+          : String(c?.utas || "").toLowerCase();
         const toot = String(c?.toot || "").toLowerCase();
         const gereeniiDugaar = String(c?.gereeniiDugaar || "").toLowerCase();
-        return ner.includes(term) || ovog.includes(term) || utas.includes(term) || toot.includes(term) || gereeniiDugaar.includes(term);
+        return (
+          ner.includes(term) ||
+          ovog.includes(term) ||
+          utas.includes(term) ||
+          toot.includes(term) ||
+          gereeniiDugaar.includes(term)
+        );
       });
     }
 
@@ -736,20 +789,32 @@ export function useGereeData(
       let bVal: any;
 
       if (sortKey === "createdAt") {
-        aVal = new Date(a?.createdAt || a?.ognoo || a?.updatedAt || 0).getTime();
-        bVal = new Date(b?.createdAt || b?.ognoo || b?.updatedAt || 0).getTime();
+        aVal = new Date(
+          a?.createdAt || a?.ognoo || a?.updatedAt || 0,
+        ).getTime();
+        bVal = new Date(
+          b?.createdAt || b?.ognoo || b?.updatedAt || 0,
+        ).getTime();
       } else if (sortKey === "ner") {
         aVal = `${a?.ovog || ""} ${a?.ner || ""}`.trim().toLowerCase();
         bVal = `${b?.ovog || ""} ${b?.ner || ""}`.trim().toLowerCase();
-      } else if (sortKey === "toot" || sortKey === "orts" || sortKey === "davkhar") {
+      } else if (
+        sortKey === "toot" ||
+        sortKey === "orts" ||
+        sortKey === "davkhar"
+      ) {
         const aValRaw = a?.[sortKey];
         const bValRaw = b?.[sortKey];
-        const aResident = a?.orshinSuugchId ? residentsById[String(a.orshinSuugchId)] : null;
-        const bResident = b?.orshinSuugchId ? residentsById[String(b.orshinSuugchId)] : null;
-        
+        const aResident = a?.orshinSuugchId
+          ? residentsById[String(a.orshinSuugchId)]
+          : null;
+        const bResident = b?.orshinSuugchId
+          ? residentsById[String(b.orshinSuugchId)]
+          : null;
+
         const aRaw = String(aValRaw ?? aResident?.[sortKey] ?? "").trim();
         const bRaw = String(bValRaw ?? bResident?.[sortKey] ?? "").trim();
-        
+
         const aNum = parseInt(aRaw);
         const bNum = parseInt(bRaw);
         if (!isNaN(aNum) && !isNaN(bNum)) {
@@ -765,11 +830,19 @@ export function useGereeData(
         aVal = String(aUtas || "").replace(/[^0-9]/g, "");
         bVal = String(bUtas || "").replace(/[^0-9]/g, "");
       } else if (sortKey === "tuluv") {
-        aVal = String(a?.tuluv || a?.status || "Идэвхтэй").trim().toLowerCase();
-        bVal = String(b?.tuluv || b?.status || "Идэвхтэй").trim().toLowerCase();
+        aVal = String(a?.tuluv || a?.status || "Идэвхтэй")
+          .trim()
+          .toLowerCase();
+        bVal = String(b?.tuluv || b?.status || "Идэвхтэй")
+          .trim()
+          .toLowerCase();
       } else {
-        aVal = String(a?.[sortKey] || "").trim().toLowerCase();
-        bVal = String(b?.[sortKey] || "").trim().toLowerCase();
+        aVal = String(a?.[sortKey] || "")
+          .trim()
+          .toLowerCase();
+        bVal = String(b?.[sortKey] || "")
+          .trim()
+          .toLowerCase();
       }
 
       if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
@@ -850,7 +923,8 @@ export function useGereeData(
       list = [...davkharOptions];
     } else {
       // For Зогсоол / Агуулах, extract unique floor names from the map keys
-      const activeMap = activeTab === "Зогсоол" ? maps.outZogsool : maps.outAguulakh;
+      const activeMap =
+        activeTab === "Зогсоол" ? maps.outZogsool : maps.outAguulakh;
       const floorsSet = new Set<string>();
       Object.keys(activeMap).forEach((key) => {
         // Keys are in format "orts::floor" or just "floor"
@@ -888,6 +962,7 @@ export function useGereeData(
     clientsList,
     currentClients,
     clientTotalPages,
+    totalClients: filteredClients.length,
     isValidatingClient,
     employeesList,
     davkharOptions,

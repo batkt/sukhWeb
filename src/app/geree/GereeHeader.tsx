@@ -46,6 +46,7 @@ interface GereeHeaderProps {
   onShowList2Modal: () => void;
   onSendInvoices: () => void;
   onShowResidentModal: () => void;
+  onShowClientModal: () => void;
   onExportResidentsExcel: () => void;
   onDownloadResidentsTemplate: () => void;
   onResidentsExcelImportClick: () => void;
@@ -85,6 +86,7 @@ export default function GereeHeader({
   onShowList2Modal,
   onSendInvoices,
   onShowResidentModal,
+  onShowClientModal,
   onExportResidentsExcel,
   onDownloadResidentsTemplate,
   onResidentsExcelImportClick,
@@ -294,7 +296,7 @@ export default function GereeHeader({
                     </button>
                     {isDesktopExcelOpen && (
                       <div className="absolute right-0 top-full mt-2 z-50 min-w-[180px] menu-surface rounded-xl shadow-lg overflow-hidden">
-                         <button
+                        <button
                           onClick={() => {
                             onResidentsExcelImportClick();
                             setIsDesktopExcelOpen(false);
@@ -377,6 +379,21 @@ export default function GereeHeader({
                     </span>
                   </button>
                 </div>
+              )}
+
+              {activeTab === "clients" && (
+                <button
+                  onClick={onShowClientModal}
+                  className="btn-minimal"
+                  aria-label="Харилцагч нэмэх"
+                  title="Харилцагч нэмэх"
+                  id="clients-new-btn-top"
+                >
+                  <UserPlus className="w-5 h-5" />
+                  <span className="hidden sm:inline text-xs ml-1">
+                    Харилцагч нэмэх
+                  </span>
+                </button>
               )}
             </div>
           </div>
@@ -838,6 +855,20 @@ export default function GereeHeader({
               </span>
             </button>
           </>
+        )}
+        {activeTab === "clients" && (
+          <button
+            onClick={onShowClientModal}
+            className="btn-minimal"
+            aria-label="Харилцагч нэмэх"
+            title="Харилцагч нэмэх"
+            id="clients-new-btn"
+          >
+            <UserPlus className="w-5 h-5" />
+            <span className="hidden sm:inline text-xs ml-1">
+              Харилцагч нэмэх
+            </span>
+          </button>
         )}
       </div>
 

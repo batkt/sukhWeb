@@ -978,6 +978,9 @@ export default function InvoicingZardluud() {
     undefined,
     undefined,
     undefined,
+    undefined,
+    undefined,
+    undefined,
     effectiveBarilgiinId || undefined,
   );
 
@@ -1108,7 +1111,11 @@ export default function InvoicingZardluud() {
           gereeniiDugaar: invoice.gereeniiDugaar || "",
           tuluv: invoice.tuluv || "",
           niitTulbur: invoice.niitTulbur || invoice.niitDun || 0,
-          uldegdel: invoice.uldegdel ?? (invoice.niitTulbur ? invoice.niitTulbur - (invoice.tulsunDun || 0) : 0),
+          uldegdel:
+            invoice.uldegdel ??
+            (invoice.niitTulbur
+              ? invoice.niitTulbur - (invoice.tulsunDun || 0)
+              : 0),
           tulsunDun: invoice.tulsunDun || 0,
           createdAt: invoice.createdAt || invoice.ognoo || "",
           // Keep reference to the invoice for payment status

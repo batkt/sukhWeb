@@ -7,19 +7,20 @@ import { useGereeContext } from "./GereeContext";
 
 interface GereeLayoutProps {
   children: React.ReactNode;
-  activeTab: "contracts" | "residents" | "employees" | "units";
+  activeTab: "contracts" | "residents" | "employees" | "units" | "clients";
 }
 
 export default function GereeLayout({ children, activeTab }: GereeLayoutProps) {
   const router = useRouter();
   const { state, data, actions, ajiltan, DEFAULT_HIDDEN } = useGereeContext();
 
-  const handleTabChange = (tab: "contracts" | "residents" | "employees" | "units") => {
+  const handleTabChange = (tab: "contracts" | "residents" | "employees" | "units" | "clients") => {
     const routes = {
       contracts: "/geree",
       residents: "/geree/orshinSuugch",
       employees: "/geree/ajiltan",
       units: "/geree/tootBurtgel",
+      clients: "/geree/khariltsagch",
     };
     router.push(routes[tab]);
   };

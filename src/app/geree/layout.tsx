@@ -13,7 +13,9 @@ function GereeLayoutWrapper({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { state, data, actions, ajiltan, DEFAULT_HIDDEN } = useGereeContext();
 
-  const hasGeree = ajiltan && (hasPermission(ajiltan, "/geree") || hasPermission(ajiltan, "geree"));
+  const hasGeree =
+    ajiltan &&
+    (hasPermission(ajiltan, "/geree") || hasPermission(ajiltan, "geree"));
   useEffect(() => {
     if (ajiltan && !hasGeree) {
       router.replace("/khynalt");
@@ -29,7 +31,9 @@ function GereeLayoutWrapper({ children }: { children: React.ReactNode }) {
     return "contracts";
   }, [pathname]);
 
-  const handleTabChange = (tab: "contracts" | "residents" | "employees" | "units" | "clients") => {
+  const handleTabChange = (
+    tab: "contracts" | "residents" | "employees" | "units" | "clients",
+  ) => {
     const routes = {
       contracts: "/geree",
       residents: "/geree/orshinSuugch",
@@ -123,8 +127,11 @@ function GereeLayoutWrapper({ children }: { children: React.ReactNode }) {
         DEFAULT_HIDDEN={DEFAULT_HIDDEN}
         onShowAvlagaModal={() => state.setShowAvlagaModal(true)}
         onShowList2Modal={() => state.setShowList2Modal(true)}
-        onSendInvoices={() => actions.handleSendInvoices(state.selectedContracts)}
+        onSendInvoices={() =>
+          actions.handleSendInvoices(state.selectedContracts)
+        }
         onShowResidentModal={handleOpenResidentModal}
+        onShowClientModal={actions.handleShowClientModal}
         onExportResidentsExcel={actions.handleExportResidentsExcel}
         onDownloadResidentsTemplate={actions.handleDownloadResidentsTemplate}
         onResidentsExcelImportClick={actions.handleResidentsExcelImportClick}
