@@ -5,6 +5,7 @@ import { Plus, Trash2 } from "lucide-react";
 import TusgaiZagvar from "../../../components/selectZagvar/tusgaiZagvar";
 import { UnitsTable, FloorItem } from "./UnitsTable";
 import { StandardPagination } from "@/components/ui/StandardTable";
+import Button from "@/components/ui/Button";
 
 interface UnitsSectionProps {
   davkharOptions: string[];
@@ -279,7 +280,7 @@ export default function UnitsSection({
                   loading={isSavingUnits}
                   page={unitPage}
                   pageSize={unitPageSize}
-                  maxHeight="calc(100vh - 520px)"
+                  maxHeight={propertyTab !== "Тоот" ? "200px" : "calc(100vh - 520px)"}
                   onAddUnit={onAddUnit}
                   onDeleteUnit={onDeleteUnit}
                   onDeleteFloor={onDeleteFloor}
@@ -321,24 +322,23 @@ export default function UnitsSection({
                   </div>
                   
                   <div className="flex items-center gap-3">
-                    <button
+                    <Button
                       onClick={() => onAddUnit(selectedFloor || "")}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-colors duration-150"
+                      variant="primary"
+                      leftIcon={<Plus className="w-4 h-4" />}
                     >
-                      <Plus className="w-4 h-4" />
                       Шинэ тоот нэмэх
-                    </button>
+                    </Button>
                     
-                    <button
+                    <Button
                       disabled={selectedFloorData.units.length === 0}
                       onClick={() => onDeleteFloor(selectedFloor || "")}
-                      className={`inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl border border-red-200 dark:border-red-900 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors duration-150 ${
-                        selectedFloorData.units.length === 0 ? "opacity-35 cursor-not-allowed" : ""
-                      }`}
+                      variant="ghost"
+                      className="border border-red-200 hover:bg-red-50 dark:border-red-900/50 dark:hover:bg-red-950/20 !text-red-600 dark:!text-red-400"
+                      leftIcon={<Trash2 className="w-4 h-4" />}
                     >
-                      <Trash2 className="w-4 h-4" />
                       Давхрыг бүхэлд нь устгах
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
@@ -347,16 +347,17 @@ export default function UnitsSection({
                     <span className="italic text-slate-400 dark:text-slate-500 text-sm mb-3">
                       Энэ давхарт одоогоор бүртгэлтэй тоот/зогсоол байхгүй байна.
                     </span>
-                    <button
+                    <Button
                       onClick={() => onAddUnit(selectedFloor || "")}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-950/20 dark:text-blue-400 transition-colors duration-150"
+                      variant="secondary"
+                      size="sm"
+                      leftIcon={<Plus className="w-3.5 h-3.5" />}
                     >
-                      <Plus className="w-3.5 h-3.5" />
                       Анхны тоот үүсгэх
-                    </button>
+                    </Button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-3 max-h-[400px] overflow-y-auto pr-2 no-scrollbar">
+                  <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-3 max-h-[320px] overflow-y-auto pr-2 custom-scrollbar">
                     {selectedFloorData.filteredUnits.map((unit) => {
                       const unitStr = String(unit).trim();
                       const hasActive = selectedFloorData.activeToots.has(unitStr);
