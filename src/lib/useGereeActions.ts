@@ -741,7 +741,7 @@ export function useGereeActions(
             ...b,
             tokhirgoo: {
               ...(b.tokhirgoo || {}),
-              davkhariinToonuud: updated,
+              [propName]: updated,
             },
           };
         });

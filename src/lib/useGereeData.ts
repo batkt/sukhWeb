@@ -938,6 +938,16 @@ export function useGereeData(
       const activeMap =
         activeTab === "Зогсоол" ? maps.outZogsool : maps.outAguulakh;
       const floorsSet = new Set<string>();
+
+      // 1. Add configured basement floors from davkharOptions (floors starting with "B" or "b")
+      davkharOptions.forEach((d) => {
+        const floorStr = String(d).trim();
+        if (floorStr.toLowerCase().startsWith("b")) {
+          floorsSet.add(floorStr);
+        }
+      });
+
+      // 2. Add existing floors from the map keys
       Object.keys(activeMap).forEach((key) => {
         // Keys are in format "orts::floor" or just "floor"
         if (key.includes("::")) {
