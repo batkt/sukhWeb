@@ -26,6 +26,9 @@ interface UnitsTableProps {
   sortOrder?: "asc" | "desc";
   /** Viewport-based scroll height (same idea as /tulbur) */
   maxHeight?: string | number;
+  propertyTab?: "Тоот" | "Зогсоол" | "Агуулах";
+  selectedFloor?: string | null;
+  onSelectFloor?: (floor: string) => void;
 }
 
 export const UnitsTable: React.FC<UnitsTableProps> = ({
@@ -40,150 +43,159 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
   sortKey,
   sortOrder,
   maxHeight = "calc(100vh - 460px)",
+  propertyTab = "Тоот",
+  selectedFloor = null,
+  onSelectFloor,
 }) => {
   const columns: ColumnsType<FloorItem> = useMemo(
-    () => [
-      {
-        title: <span className="text-slate-900 dark:text-slate-200">№</span>,
-        key: "index",
-        width: 50,
-        align: "center",
-        className: "text-slate-900 dark:text-slate-200",
-        render: (_: any, __: any, index: number) =>
-          (page - 1) * pageSize + index + 1,
-      },
-      {
-        title: (
-          <span className="text-slate-900 dark:text-slate-200">Нийт тоот</span>
-        ),
-        dataIndex: "units",
-        key: "unitsCount",
-        align: "center",
-        width: 100,
-        sorter: true,
-        sortOrder:
-          sortKey === "unitsCount" || sortKey === "units"
-            ? sortOrder === "asc"
-              ? "ascend"
-              : "descend"
-            : null,
-        className: "text-slate-900 dark:text-slate-200 font-medium",
-        render: (units: string[]) => (
-          <span className="text-slate-900 dark:text-slate-200 whitespace-nowrap">
-            {units ? units.length : 0}
-          </span>
-        ),
-      },
-      {
-        title: <span className="text-slate-900 dark:text-slate-200">Орц</span>,
-        dataIndex: "orts",
-        key: "orts",
-        align: "center",
-        width: 100,
-        sorter: true,
-        sortOrder:
-          sortKey === "orts"
-            ? sortOrder === "asc"
-              ? "ascend"
-              : "descend"
-            : null,
-        className: "text-slate-900 dark:text-slate-200",
-        render: (val: string) => (
-          <span className="text-slate-900 dark:text-slate-200 whitespace-nowrap">
-            {val ? `${val}-р орц` : "-"}
-          </span>
-        ),
-      },
-      {
-        title: (
-          <span className="text-slate-900 dark:text-slate-200">Давхар</span>
-        ),
-        dataIndex: "floor",
-        key: "floor",
-        align: "center",
-        width: 120,
-        sorter: true,
-        sortOrder:
-          sortKey === "floor"
-            ? sortOrder === "asc"
-              ? "ascend"
-              : "descend"
-            : null,
-        className: "text-slate-900 dark:text-slate-200",
-        render: (val: string) => (
-          <span className="text-slate-900 dark:text-slate-200 whitespace-nowrap">
-            {val}-р давхар
-          </span>
-        ),
-      },
-      {
-        title: (
-          <span className="text-slate-900 dark:text-slate-200 text-center block">
-            Тоотууд
-          </span>
-        ),
-        dataIndex: "filteredUnits",
-        key: "filteredUnits",
-        align: "center",
-        className: "text-slate-900 dark:text-slate-200",
-        render: (filteredUnits: string[], record: FloorItem) => {
-          if (!filteredUnits || filteredUnits.length === 0) {
+    () => {
+      const cols: ColumnsType<FloorItem> = [
+        {
+          title: <span className="text-slate-900 dark:text-slate-200">№</span>,
+          key: "index",
+          width: 50,
+          align: "center",
+          className: "text-slate-900 dark:text-slate-200",
+          render: (_: any, __: any, index: number) =>
+            (page - 1) * pageSize + index + 1,
+        },
+        {
+          title: (
+            <span className="text-slate-900 dark:text-slate-200">Нийт тоот</span>
+          ),
+          dataIndex: "units",
+          key: "unitsCount",
+          align: "center",
+          width: 100,
+          sorter: true,
+          sortOrder:
+            sortKey === "unitsCount" || sortKey === "units"
+              ? sortOrder === "asc"
+                ? "ascend"
+                : "descend"
+              : null,
+          className: "text-slate-900 dark:text-slate-200 font-medium",
+          render: (units: string[]) => (
+            <span className="text-slate-900 dark:text-slate-200 whitespace-nowrap">
+              {units ? units.length : 0}
+            </span>
+          ),
+        },
+        {
+          title: <span className="text-slate-900 dark:text-slate-200">Орц</span>,
+          dataIndex: "orts",
+          key: "orts",
+          align: "center",
+          width: 100,
+          sorter: true,
+          sortOrder:
+            sortKey === "orts"
+              ? sortOrder === "asc"
+                ? "ascend"
+                : "descend"
+              : null,
+          className: "text-slate-900 dark:text-slate-200",
+          render: (val: string) => (
+            <span className="text-slate-900 dark:text-slate-200 whitespace-nowrap">
+              {val ? `${val}-р орц` : "-"}
+            </span>
+          ),
+        },
+        {
+          title: (
+            <span className="text-slate-900 dark:text-slate-200">Давхар</span>
+          ),
+          dataIndex: "floor",
+          key: "floor",
+          align: "center",
+          width: 120,
+          sorter: true,
+          sortOrder:
+            sortKey === "floor"
+              ? sortOrder === "asc"
+                ? "ascend"
+                : "descend"
+              : null,
+          className: "text-slate-900 dark:text-slate-200",
+          render: (val: string) => (
+            <span className="text-slate-900 dark:text-slate-200 whitespace-nowrap">
+              {val}-р давхар
+            </span>
+          ),
+        },
+      ];
+
+      if (propertyTab === "Тоот") {
+        cols.push({
+          title: (
+            <span className="text-slate-900 dark:text-slate-200 text-center block">
+              Тоотууд
+            </span>
+          ),
+          dataIndex: "filteredUnits",
+          key: "filteredUnits",
+          align: "center",
+          className: "text-slate-900 dark:text-slate-200",
+          render: (filteredUnits: string[], record: FloorItem) => {
+            if (!filteredUnits || filteredUnits.length === 0) {
+              return (
+                <span className="italic text-slate-400 dark:text-slate-500">
+                  Хоосон
+                </span>
+              );
+            }
             return (
-              <span className="italic text-slate-400 dark:text-slate-500">
-                Хоосон
-              </span>
-            );
-          }
-          return (
-            <div
-              className="grid gap-1.5 py-1 justify-center"
-              style={{
-                gridTemplateColumns: "repeat(auto-fill, minmax(48px, 1fr))",
-                justifyItems: "center",
-              }}
-            >
-              {filteredUnits.map((unit) => {
-                const unitStr = String(unit).trim();
-                const hasActive = record.activeToots.has(unitStr);
-                return (
-                  <div
-                    key={unitStr}
-                    className={`group relative flex items-center justify-center w-[48px] h-[28px] rounded-lg border transition-all duration-150 ${
-                      hasActive
-                        ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-900/20 dark:border-emerald-600 shadow-sm ring-1 ring-emerald-500/10"
-                        : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 hover:border-blue-400 shadow-sm"
-                    }`}
-                  >
-                    <span
-                      className={`font-semibold ${
+              <div
+                className="grid gap-1.5 py-1 justify-center"
+                style={{
+                  gridTemplateColumns: "repeat(auto-fill, minmax(48px, 1fr))",
+                  justifyItems: "center",
+                }}
+              >
+                {filteredUnits.map((unit) => {
+                  const unitStr = String(unit).trim();
+                  const hasActive = record.activeToots.has(unitStr);
+                  return (
+                    <div
+                      key={unitStr}
+                      className={`group relative flex items-center justify-center w-[48px] h-[28px] rounded-lg border transition-all duration-150 ${
                         hasActive
-                          ? "text-emerald-700 dark:text-emerald-400"
-                          : "text-slate-600 dark:text-slate-300"
+                          ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-900/20 dark:border-emerald-600 shadow-sm ring-1 ring-emerald-500/10"
+                          : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 hover:border-blue-400 shadow-sm"
                       }`}
                     >
-                      {unitStr}
-                    </span>
-                    {hasActive && (
-                      <div className="absolute top-1 left-1 w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-                    )}
-                    <button
-                      className="absolute -top-1 -right-1 w-3.5 h-3.5 flex items-center justify-center rounded-full bg-slate-800 text-white opacity-0 group-hover:opacity-100 transition-all shadow-md hover:bg-red-600 z-20 scale-90 group-hover:scale-100"
-                      aria-label={`Устгах ${unitStr}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDeleteUnit?.(record.floor, unitStr);
-                      }}
-                    >
-                      <span className="text-xs leading-none">×</span>
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          );
-        },
-      },
-      {
+                      <span
+                        className={`font-semibold ${
+                          hasActive
+                            ? "text-emerald-700 dark:text-emerald-400"
+                            : "text-slate-600 dark:text-slate-300"
+                        }`}
+                      >
+                        {unitStr}
+                      </span>
+                      {hasActive && (
+                        <div className="absolute top-1 left-1 w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+                      )}
+                      <button
+                        className="absolute -top-1 -right-1 w-3.5 h-3.5 flex items-center justify-center rounded-full bg-slate-800 text-white opacity-0 group-hover:opacity-100 transition-all shadow-md hover:bg-red-600 z-20 scale-90 group-hover:scale-100"
+                        aria-label={`Устгах ${unitStr}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteUnit?.(record.floor, unitStr);
+                        }}
+                      >
+                        <span className="text-xs leading-none">×</span>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          },
+        });
+      }
+
+      cols.push({
         title: (
           <span className="text-slate-900 dark:text-slate-200">Үйлдэл</span>
         ),
@@ -196,7 +208,10 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
             <button
               className="p-1 rounded-xl hover-surface transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/30"
               title="Шинэ тоот нэмэх"
-              onClick={() => onAddUnit?.(record.floor)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddUnit?.(record.floor);
+              }}
             >
               <Plus className="w-4 h-4 text-blue-500 dark:text-blue-400" />
             </button>
@@ -211,18 +226,21 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
                   ? "Устгах тоот байхгүй"
                   : "Давхрын тоотуудыг устгах"
               }
-              onClick={() =>
-                record.units.length > 0 && onDeleteFloor?.(record.floor)
-              }
+              onClick={(e) => {
+                e.stopPropagation();
+                record.units.length > 0 && onDeleteFloor?.(record.floor);
+              }}
               disabled={record.units.length === 0}
             >
               <Trash2 className="w-4 h-4 text-red-500 dark:text-red-400" />
             </button>
           </div>
         ),
-      },
-    ],
-    [page, pageSize, onAddUnit, onDeleteUnit, onDeleteFloor],
+      });
+
+      return cols;
+    },
+    [page, pageSize, onAddUnit, onDeleteUnit, onDeleteFloor, propertyTab, sortKey, sortOrder]
   );
 
   return (
@@ -244,12 +262,24 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
             );
           }
         }}
+        onRow={(record) => ({
+          onClick: () => {
+            if (onSelectFloor) {
+              onSelectFloor(record.floor);
+            }
+          },
+        })}
         scroll={{ x: "max-content", y: maxHeight as any }}
         rowClassName={(record, index) => `
-          ${index % 2 === 0 ? "bg-white dark:bg-slate-900/40" : "bg-slate-50 dark:bg-slate-800/40"}
+          cursor-pointer
+          ${selectedFloor === record.floor
+            ? "bg-blue-50/70 dark:bg-blue-950/20 font-semibold shadow-inner"
+            : index % 2 === 0
+              ? "bg-white dark:bg-slate-900/40"
+              : "bg-slate-50 dark:bg-slate-800/40"}
           text-slate-900 dark:text-slate-200
           hover:bg-slate-100 dark:hover:bg-slate-800/60
-          transition-colors duration-200
+          transition-all duration-200
         `}
         locale={{
           emptyText: (

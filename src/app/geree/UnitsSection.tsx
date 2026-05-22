@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import TusgaiZagvar from "../../../components/selectZagvar/tusgaiZagvar";
 import { UnitsTable, FloorItem } from "./UnitsTable";
@@ -61,6 +61,8 @@ export default function UnitsSection({
   onDeleteUnit,
   onDeleteFloor,
 }: UnitsSectionProps) {
+  const [selectedFloor, setSelectedFloor] = useState<string | null>(null);
+
   // Compute floor data for UnitsTable
   const floorData = useMemo(() => {
     const targetOrtsList = selectedOrts ? [selectedOrts] : ortsOptions;
@@ -225,6 +227,23 @@ export default function UnitsSection({
     sortOrder,
   ]);
 
+  // Auto-select the first floor when data loads or activeTab/orts changes
+  useEffect(() => {
+    if (floorData && floorData.length > 0) {
+      const exists = floorData.some((f) => f.floor === selectedFloor);
+      if (!exists) {
+        setSelectedFloor(floorData[0].floor);
+      }
+    } else {
+      setSelectedFloor(null);
+    }
+  }, [floorData, selectedFloor]);
+
+  const selectedFloorData = useMemo(() => {
+    if (!selectedFloor) return null;
+    return floorData.find((f) => f.floor === selectedFloor) || null;
+  }, [floorData, selectedFloor]);
+
   if (davkharOptions.length === 0) {
     return (
       <div className="p-3 rounded-md border border-amber-300 text-amber-700 text-sm">
@@ -251,35 +270,152 @@ export default function UnitsSection({
         )}
 
         {(selectedOrts !== undefined) && (
-          <div className="table-surface w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl">
-            <div className="p-1 allow-overflow no-scrollbar" id="units-table">
-              <UnitsTable
-                data={floorData.slice((unitPage - 1) * unitPageSize, unitPage * unitPageSize)}
-                actions={actions}
-                loading={isSavingUnits}
-                page={unitPage}
-                pageSize={unitPageSize}
-                maxHeight="calc(100vh - 520px)"
-                onAddUnit={onAddUnit}
-                onDeleteUnit={onDeleteUnit}
-                onDeleteFloor={onDeleteFloor}
-                sortKey={sortKey}
-                sortOrder={sortOrder}
-              />
+          <>
+            <div className="table-surface w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl">
+              <div className="p-1 allow-overflow no-scrollbar" id="units-table">
+                <UnitsTable
+                  data={floorData.slice((unitPage - 1) * unitPageSize, unitPage * unitPageSize)}
+                  actions={actions}
+                  loading={isSavingUnits}
+                  page={unitPage}
+                  pageSize={unitPageSize}
+                  maxHeight="calc(100vh - 520px)"
+                  onAddUnit={onAddUnit}
+                  onDeleteUnit={onDeleteUnit}
+                  onDeleteFloor={onDeleteFloor}
+                  sortKey={sortKey}
+                  sortOrder={sortOrder}
+                  propertyTab={propertyTab}
+                  selectedFloor={selectedFloor}
+                  onSelectFloor={setSelectedFloor}
+                />
+              </div>
+              <div id="units-pagination">
+                <StandardPagination
+                  current={unitPage}
+                  total={floorData.length}
+                  pageSize={unitPageSize}
+                  onChange={setUnitPage}
+                  onPageSizeChange={(v) => {
+                    setUnitPageSize(v);
+                    setUnitPage(1);
+                  }}
+                />
+              </div>
             </div>
-            <div id="units-pagination">
-              <StandardPagination
-                current={unitPage}
-                total={floorData.length}
-                pageSize={unitPageSize}
-                onChange={setUnitPage}
-                onPageSizeChange={(v) => {
-                  setUnitPageSize(v);
-                  setUnitPage(1);
-                }}
-              />
-            </div>
-          </div>
+
+            {/* Bottom Grid Box for Parking/Storage */}
+            {(propertyTab === "Зогсоол" || propertyTab === "Агуулах") && selectedFloorData && (
+              <div className="mt-6 p-6 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm transition-all animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-4 mb-4 gap-2">
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                      <span>{propertyTab} давхрын тоотууд</span>
+                      <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400">
+                        {selectedFloor}-р давхар
+                      </span>
+                    </h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                      Нийт тохируулсан: <span className="font-semibold text-slate-700 dark:text-slate-300">{selectedFloorData.units.length}</span> тоот / зогсоол / агуулах.
+                    </p>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => onAddUnit(selectedFloor || "")}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-colors duration-150"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Шинэ тоот нэмэх
+                    </button>
+                    
+                    <button
+                      disabled={selectedFloorData.units.length === 0}
+                      onClick={() => onDeleteFloor(selectedFloor || "")}
+                      className={`inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl border border-red-200 dark:border-red-900 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors duration-150 ${
+                        selectedFloorData.units.length === 0 ? "opacity-35 cursor-not-allowed" : ""
+                      }`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Давхрыг бүхэлд нь устгах
+                    </button>
+                  </div>
+                </div>
+
+                {selectedFloorData.filteredUnits.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50/50 dark:bg-slate-900/20">
+                    <span className="italic text-slate-400 dark:text-slate-500 text-sm mb-3">
+                      Энэ давхарт одоогоор бүртгэлтэй тоот/зогсоол байхгүй байна.
+                    </span>
+                    <button
+                      onClick={() => onAddUnit(selectedFloor || "")}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-950/20 dark:text-blue-400 transition-colors duration-150"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Анхны тоот үүсгэх
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-3 max-h-[400px] overflow-y-auto pr-2 no-scrollbar">
+                    {selectedFloorData.filteredUnits.map((unit) => {
+                      const unitStr = String(unit).trim();
+                      const hasActive = selectedFloorData.activeToots.has(unitStr);
+                      return (
+                        <div
+                          key={unitStr}
+                          className={`group relative flex flex-col items-center justify-center min-h-[55px] p-2 rounded-xl border transition-all duration-150 shadow-sm ${
+                            hasActive
+                              ? "border-emerald-500 bg-emerald-50/60 dark:bg-emerald-950/20 dark:border-emerald-600 ring-1 ring-emerald-500/10"
+                              : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 hover:border-blue-400 hover:shadow-md cursor-default"
+                          }`}
+                        >
+                          <span
+                            className={`text-sm font-bold tracking-wide ${
+                              hasActive
+                                ? "text-emerald-700 dark:text-emerald-400"
+                                : "text-slate-600 dark:text-slate-300"
+                            }`}
+                          >
+                            {unitStr}
+                          </span>
+                          <span className={`text-[10px] mt-0.5 font-medium ${
+                            hasActive ? "text-emerald-500 dark:text-emerald-500" : "text-slate-400 dark:text-slate-500"
+                          }`}>
+                            {hasActive ? "Бүртгэлтэй" : "Сул"}
+                          </span>
+                          
+                          {hasActive && (
+                            <div className="absolute top-1.5 left-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          )}
+                          
+                          <button
+                            className="absolute -top-1.5 -right-1.5 w-5 h-5 flex items-center justify-center rounded-full bg-slate-800 dark:bg-slate-700 text-white opacity-0 group-hover:opacity-100 transition-all shadow-md hover:bg-red-600 dark:hover:bg-red-600 scale-75 group-hover:scale-100 z-10"
+                            title={`${unitStr} тоотыг устгах`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteUnit(selectedFloor || "", unitStr);
+                            }}
+                          >
+                            <span className="text-[11px] font-bold leading-none">×</span>
+                          </button>
+                        </div>
+                      );
+                    })}
+                    
+                    {/* Add Spot Dashed Box inside Grid for premium feel */}
+                    <div
+                      onClick={() => onAddUnit(selectedFloor || "")}
+                      className="group flex flex-col items-center justify-center min-h-[55px] p-2 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-blue-500 hover:bg-blue-50/10 cursor-pointer transition-all duration-150"
+                      title="Шинэ тоот нэмэх"
+                    >
+                      <Plus className="w-5 h-5 text-slate-400 group-hover:text-blue-500 group-hover:scale-110 transition-transform duration-150" />
+                      <span className="text-[10px] text-slate-400 group-hover:text-blue-500 font-semibold mt-0.5">Нэмэх</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
