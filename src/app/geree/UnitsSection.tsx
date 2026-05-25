@@ -89,6 +89,17 @@ export default function UnitsSection({
             status.toLowerCase() === "идэвхгүй";
           if (isCancelled) return;
 
+          // 1. Filter contract by type to prevent cross-tab duplicate activation
+          const cTurul = String(c?.turul || "").trim();
+          if (propertyTab === "Зогсоол") {
+            if (cTurul !== "Зогсоол") return;
+          } else if (propertyTab === "Агуулах") {
+            if (cTurul !== "Агуулах") return;
+          } else {
+            // "Тоот" tab
+            if (cTurul === "Зогсоол" || cTurul === "Агуулах") return;
+          }
+
           // Find all toots associated with this contract
           const tootsList: { o: string; f: string; t: string }[] = [];
 
@@ -104,6 +115,17 @@ export default function UnitsSection({
           ) {
             // Priority 1: Resident's modern toots array
             resident.toots.forEach((rt: any) => {
+              // 2. Filter resident toots by type
+              const rtTurul = String(rt.turul || "Орон сууц").trim();
+              if (propertyTab === "Зогсоол") {
+                if (rtTurul !== "Гараж") return;
+              } else if (propertyTab === "Агуулах") {
+                if (rtTurul !== "Агуулах") return;
+              } else {
+                // "Тоот" tab
+                if (rtTurul !== "Орон сууц") return;
+              }
+
               const rOrts = String(rt.orts || "").trim();
               const rFloor = String(rt.davkhar || "").trim();
               const rToots = String(rt.toot || "")
