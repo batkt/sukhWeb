@@ -593,14 +593,7 @@ export default function ZassanTuukh({ token, baiguullaga }: Props) {
                     render: (value: any) =>
                       modelNames.find((m) => m.value === value)?.label || value || "-",
                   },
-                  {
-                    key: "documentId",
-                    label: "Дугаар",
-                    align: "center",
-                    render: (val: any) => (
-                       <span className="text-gray-500">{val}</span>
-                    )
-                  },
+
                   {
                     key: "action",
                     label: "Үйлдэл",
