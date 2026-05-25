@@ -116,8 +116,13 @@ export function useGereeData(
         map[String(r._id)] = r;
       }
     });
+    clientsList.forEach((r: any) => {
+      if (r?._id) {
+        map[String(r._id)] = r;
+      }
+    });
     return map;
-  }, [residentsList]);
+  }, [residentsList, clientsList]);
 
   // Derived data
   const davkharOptions = useMemo(() => {
@@ -314,7 +319,7 @@ export function useGereeData(
           const val = getStringValue(contract.duureg);
           if (val && val !== "-") return val;
           // Fallback to linked resident
-          const orshinSuugchId = contract.orshinSuugchId;
+          const orshinSuugchId = contract.orshinSuugchId || contract.khariltsagchId;
           if (orshinSuugchId) {
             const resident = residentsById[String(orshinSuugchId)];
             if (resident) {
@@ -340,7 +345,7 @@ export function useGereeData(
             if (hVal && hVal !== "-") return hVal;
           }
           // Fallback to linked resident
-          const orshinSuugchId = contract.orshinSuugchId;
+          const orshinSuugchId = contract.orshinSuugchId || contract.khariltsagchId;
           if (orshinSuugchId) {
             const resident = residentsById[String(orshinSuugchId)];
             if (resident) {
@@ -370,7 +375,7 @@ export function useGereeData(
             getStringValue(contract.bairNer);
           if (val && val !== "-") return val;
           // Fallback to linked resident
-          const orshinSuugchId = contract.orshinSuugchId;
+          const orshinSuugchId = contract.orshinSuugchId || contract.khariltsagchId;
           if (orshinSuugchId) {
             const resident = residentsById[String(orshinSuugchId)];
             if (resident) {
@@ -390,7 +395,7 @@ export function useGereeData(
           const val = contract.orts != null ? String(contract.orts) : "";
           if (val && val !== "-") return val;
           // Fallback to linked resident
-          const orshinSuugchId = contract.orshinSuugchId;
+          const orshinSuugchId = contract.orshinSuugchId || contract.khariltsagchId;
           if (orshinSuugchId) {
             const resident = residentsById[String(orshinSuugchId)];
             if (resident) {
@@ -404,7 +409,7 @@ export function useGereeData(
           const val = contract.davkhar != null ? String(contract.davkhar) : "";
           if (val && val !== "-") return val;
           // Fallback to linked resident
-          const orshinSuugchId = contract.orshinSuugchId;
+          const orshinSuugchId = contract.orshinSuugchId || contract.khariltsagchId;
           if (orshinSuugchId) {
             const resident = residentsById[String(orshinSuugchId)];
             if (resident) {
@@ -418,7 +423,7 @@ export function useGereeData(
           const val = contract.toot != null ? String(contract.toot) : "";
           if (val && val !== "-") return val;
           // Fallback to linked resident
-          const orshinSuugchId = contract.orshinSuugchId;
+          const orshinSuugchId = contract.orshinSuugchId || contract.khariltsagchId;
           if (orshinSuugchId) {
             const resident = residentsById[String(orshinSuugchId)];
             if (resident) {
@@ -690,7 +695,7 @@ export function useGereeData(
     if (selectedOrtsForContracts && selectedOrtsForContracts.trim() !== "") {
       const filterOrts = String(selectedOrtsForContracts).trim();
       filtered = filtered.filter((c: any) => {
-        const orshinSuugchId = c.orshinSuugchId;
+        const orshinSuugchId = c.orshinSuugchId || c.khariltsagchId;
 
         // 1. If contract has its own explicit orts, use it strictly
         const cOrts = String(c?.orts || "").trim();
@@ -723,7 +728,7 @@ export function useGereeData(
     if (selectedDawkhar && selectedDawkhar.trim() !== "") {
       const filterDawkhar = String(selectedDawkhar).trim();
       filtered = filtered.filter((c: any) => {
-        const orshinSuugchId = c.orshinSuugchId;
+        const orshinSuugchId = c.orshinSuugchId || c.khariltsagchId;
 
         // 1. If contract has its own explicit davkhar, use it strictly
         const cDavkhar = String(c?.davkhar || "").trim();
@@ -818,11 +823,11 @@ export function useGereeData(
       ) {
         const aValRaw = a?.[sortKey];
         const bValRaw = b?.[sortKey];
-        const aResident = a?.orshinSuugchId
-          ? residentsById[String(a.orshinSuugchId)]
+        const aResident = (a?.orshinSuugchId || a?.khariltsagchId)
+          ? residentsById[String(a.orshinSuugchId || a.khariltsagchId)]
           : null;
-        const bResident = b?.orshinSuugchId
-          ? residentsById[String(b.orshinSuugchId)]
+        const bResident = (b?.orshinSuugchId || b?.khariltsagchId)
+          ? residentsById[String(b.orshinSuugchId || b.khariltsagchId)]
           : null;
 
         const aRaw = String(aValRaw ?? aResident?.[sortKey] ?? "").trim();

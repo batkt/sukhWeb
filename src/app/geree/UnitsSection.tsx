@@ -103,7 +103,7 @@ export default function UnitsSection({
           // Find all toots associated with this contract
           const tootsList: { o: string; f: string; t: string }[] = [];
 
-          const orshinSuugchId = c?.orshinSuugchId;
+          const orshinSuugchId = c?.orshinSuugchId || c?.khariltsagchId;
           const resident = orshinSuugchId
             ? residentsById[String(orshinSuugchId)]
             : null;
