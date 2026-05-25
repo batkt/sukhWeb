@@ -28,7 +28,7 @@ interface KhariltsagchModalProps {
   setNewClient: (val: any) => void;
   ortsOptions: string[];
   davkharOptions: string[];
-  getTootOptions: (orts: string, floor: string) => string[];
+  getTootOptions: (orts: string, floor: string, turul?: "Тоот" | "Зогсоол" | "Агуулах") => string[];
   selectedBarilga: any;
   baiguullaga: any;
   currentResidents: any[];
@@ -180,11 +180,17 @@ export default function KhariltsagchModal({
     } else {
       const uniqueUnitKeys = new Set();
       units.forEach((unit: any, index: number) => {
-        if (!unit.orts?.trim()) newErrors.push(`units.${index}.orts`);
-        if (!unit.davkhar?.trim()) newErrors.push(`units.${index}.davkhar`);
+        const isGarageOrStorage = unit.turul === "Гараж" || unit.turul === "Агуулах";
+        
+        if (!isGarageOrStorage) {
+          if (!unit.orts?.trim()) newErrors.push(`units.${index}.orts`);
+          if (!unit.davkhar?.trim()) newErrors.push(`units.${index}.davkhar`);
+        }
         if (!unit.toot?.trim()) newErrors.push(`units.${index}.toot`);
         
-        const key = `${unit.orts?.trim()}-${unit.davkhar?.trim()}-${unit.toot?.trim()}`;
+        const ortsVal = isGarageOrStorage ? "1" : (unit.orts?.trim() || "");
+        const davkharVal = isGarageOrStorage ? "" : (unit.davkhar?.trim() || "");
+        const key = `${ortsVal}-${davkharVal}-${unit.toot?.trim()}`;
         if (uniqueUnitKeys.has(key)) {
           newErrors.push(`units.${index}.duplicate`);
         } else {
@@ -289,7 +295,7 @@ export default function KhariltsagchModal({
               .join("; ");
 
             openErrorOverlay(
-              `Энэ овог, нэр, утасны оршин суугч дараах тоот дээр бүртгэлтэй байна: ${tootList}. Давхардсан бүртгэл үүсгэх боломжгүй.`,
+              `Энэ овог, нэр, утасны харилцагч дараах тоот дээр бүртгэлтэй байна: ${tootList}. Давхардсан бүртгэл үүсгэх боломжгүй.`,
             );
             setIsSubmitting(false);
             return;
@@ -442,6 +448,7 @@ export default function KhariltsagchModal({
               orts: p.orts || "1",
               davkhar: p.davkhar || "",
               toot: p.toot || "",
+              turul: p.turul || "Гараж",
               ekhniiUldegdel: p.ekhniiUldegdel || 0,
               tsahilgaaniiZaalt: p.tsahilgaaniiZaalt || 0,
               khonogoorBodokhEsekh: p.khonogoorBodokhEsekh || false,
@@ -465,6 +472,7 @@ export default function KhariltsagchModal({
           orts: "1",
           davkhar: "",
           toot: "",
+          turul: "Гараж",
           ekhniiUldegdel: 0,
           tsahilgaaniiZaalt: 0,
           khonogoorBodokhEsekh: false,
@@ -725,8 +733,8 @@ export default function KhariltsagchModal({
                   </svg>
                   <h2 className="text-lg text-slate-900 dark:text-white">
                     {editingClient
-                      ? "Оршин суугчийн мэдээлэл засах"
-                      : "Оршин суугч нэмэх"}
+                      ? "Харилцагчийн мэдээлэл засах"
+                      : "Харилцагч нэмэх"}
                   </h2>
                 </div>
                 <button
@@ -933,7 +941,7 @@ export default function KhariltsagchModal({
                                 <TusgaiZagvar
                                   value={unit.toot || ""}
                                   onChange={(val: string) => updateUnitRow(index, "toot", val)}
-                                  options={getTootOptions("1", "").map((t) => {
+                                  options={getTootOptions("1", "", unit.turul === "Гараж" ? "Зогсоол" : (unit.turul === "Агуулах" ? "Агуулах" : "Тоот")).map((t) => {
                                     const isOccupied = currentResidents?.some(
                                       (r: any) => {
                                         const rToot = String(getResidentToot(r) || "").trim();

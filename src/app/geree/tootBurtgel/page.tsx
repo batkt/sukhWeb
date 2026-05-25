@@ -31,7 +31,7 @@ export default function ӨмчБүртгэлPage() {
   }, [ajiltan, router]);
 
   return (
-    <div className="p-6 bg-white dark:bg-gray-900 min-h-screen w-full">
+    <div className="p-6 bg-white dark:bg-gray-900 min-h-full w-full">
       <div className="flex space-x-4 mb-6 border-b border-gray-200 dark:border-gray-700">
         {["Тоот", "Зогсоол", "Агуулах"].map((tab) => (
           <button

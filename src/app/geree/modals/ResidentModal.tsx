@@ -28,7 +28,7 @@ interface ResidentModalProps {
   setNewResident: (val: any) => void;
   ortsOptions: string[];
   davkharOptions: string[];
-  getTootOptions: (orts: string, floor: string) => string[];
+  getTootOptions: (orts: string, floor: string, turul?: "Тоот" | "Зогсоол" | "Агуулах") => string[];
   selectedBarilga: any;
   baiguullaga: any;
   currentResidents: any[];
@@ -180,11 +180,17 @@ export default function ResidentModal({
     } else {
       const uniqueUnitKeys = new Set();
       units.forEach((unit: any, index: number) => {
-        if (!unit.orts?.trim()) newErrors.push(`units.${index}.orts`);
-        if (!unit.davkhar?.trim()) newErrors.push(`units.${index}.davkhar`);
+        const isGarageOrStorage = unit.turul === "Гараж" || unit.turul === "Агуулах";
+        
+        if (!isGarageOrStorage) {
+          if (!unit.orts?.trim()) newErrors.push(`units.${index}.orts`);
+          if (!unit.davkhar?.trim()) newErrors.push(`units.${index}.davkhar`);
+        }
         if (!unit.toot?.trim()) newErrors.push(`units.${index}.toot`);
         
-        const key = `${unit.orts?.trim()}-${unit.davkhar?.trim()}-${unit.toot?.trim()}`;
+        const ortsVal = isGarageOrStorage ? "1" : (unit.orts?.trim() || "");
+        const davkharVal = isGarageOrStorage ? "" : (unit.davkhar?.trim() || "");
+        const key = `${ortsVal}-${davkharVal}-${unit.toot?.trim()}`;
         if (uniqueUnitKeys.has(key)) {
           newErrors.push(`units.${index}.duplicate`);
         } else {
@@ -965,7 +971,7 @@ export default function ResidentModal({
                                 <TusgaiZagvar
                                   value={unit.toot || ""}
                                   onChange={(val: string) => updateUnitRow(index, "toot", val)}
-                                  options={getTootOptions(unit.orts || "", unit.davkhar || "").map((t) => {
+                                  options={getTootOptions(unit.orts || "", unit.davkhar || "", unit.turul === "Гараж" ? "Зогсоол" : (unit.turul === "Агуулах" ? "Агуулах" : "Тоот")).map((t) => {
                                     const isOccupied = currentResidents?.some(
                                       (r: any) => {
                                         const rOrts = String(getResidentOrts(r) || "").trim();

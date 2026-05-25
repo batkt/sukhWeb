@@ -379,7 +379,7 @@ export default function UnitsSection({
                     </Button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-3 max-h-[320px] overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-3">
                     {selectedFloorData.filteredUnits.map((unit) => {
                       const unitStr = String(unit).trim();
                       const hasActive = selectedFloorData.activeToots.has(unitStr);

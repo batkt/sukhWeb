@@ -239,6 +239,13 @@ export function useGereeData(
           activeMap[f].length > 0
         ) {
           candidates = activeMap[f].slice();
+        } else if (!f && (turul === "Зогсоол" || turul === "Агуулах")) {
+          // If no floor is specified, aggregate all configured units across all floors
+          Object.values(activeMap).forEach((val) => {
+            if (Array.isArray(val)) {
+              candidates.push(...val);
+            }
+          });
         } else {
           return [];
         }
