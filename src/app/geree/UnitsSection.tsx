@@ -89,17 +89,6 @@ export default function UnitsSection({
             status.toLowerCase() === "идэвхгүй";
           if (isCancelled) return;
 
-          // 1. Filter contract by type to prevent cross-tab duplicate activation
-          const cTurul = String(c?.turul || "").trim();
-          if (propertyTab === "Зогсоол") {
-            if (cTurul !== "Зогсоол") return;
-          } else if (propertyTab === "Агуулах") {
-            if (cTurul !== "Агуулах") return;
-          } else {
-            // "Тоот" tab
-            if (cTurul === "Зогсоол" || cTurul === "Агуулах") return;
-          }
-
           // Find all toots associated with this contract
           const tootsList: { o: string; f: string; t: string }[] = [];
 
@@ -108,14 +97,26 @@ export default function UnitsSection({
             ? residentsById[String(orshinSuugchId)]
             : null;
 
+          const hasTootsArray = resident && Array.isArray(resident.toots) && resident.toots.length > 0;
+
+          if (!hasTootsArray) {
+            const cTurul = String(c?.turul || "").trim();
+            if (propertyTab === "Зогсоол") {
+              if (cTurul !== "Зогсоол") return;
+            } else if (propertyTab === "Агуулах") {
+              if (cTurul !== "Агуулах") return;
+            } else {
+              // "Тоот" tab
+              if (cTurul === "Зогсоол" || cTurul === "Агуулах") return;
+            }
+          }
+
           if (
             resident &&
             Array.isArray(resident.toots) &&
             resident.toots.length > 0
           ) {
-            // Priority 1: Resident's modern toots array
             resident.toots.forEach((rt: any) => {
-              // 2. Filter resident toots by type
               const rtTurul = String(rt.turul || "Орон сууц").trim();
               if (propertyTab === "Зогсоол") {
                 if (rtTurul !== "Гараж") return;
@@ -342,7 +343,7 @@ export default function UnitsSection({
                       Нийт тохируулсан: <span className="font-semibold text-slate-700 dark:text-slate-300">{selectedFloorData.units.length}</span> тоот / зогсоол / агуулах.
                     </p>
                   </div>
-                  
+
                   <div className="flex items-center gap-3">
                     <Button
                       onClick={() => onAddUnit(selectedFloor || "")}
@@ -351,7 +352,7 @@ export default function UnitsSection({
                     >
                       Шинэ тоот нэмэх
                     </Button>
-                    
+
                     <Button
                       disabled={selectedFloorData.units.length === 0}
                       onClick={() => onDeleteFloor(selectedFloor || "")}
@@ -386,31 +387,28 @@ export default function UnitsSection({
                       return (
                         <div
                           key={unitStr}
-                          className={`group relative flex flex-col items-center justify-center min-h-[55px] p-2 rounded-xl border transition-all duration-150 shadow-sm ${
-                            hasActive
+                          className={`group relative flex flex-col items-center justify-center min-h-[55px] p-2 rounded-xl border transition-all duration-150 shadow-sm ${hasActive
                               ? "border-emerald-500 bg-emerald-50/60 dark:bg-emerald-950/20 dark:border-emerald-600 ring-1 ring-emerald-500/10"
                               : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 hover:border-blue-400 hover:shadow-md cursor-default"
-                          }`}
+                            }`}
                         >
                           <span
-                            className={`text-sm font-bold tracking-wide ${
-                              hasActive
+                            className={`text-sm font-bold tracking-wide ${hasActive
                                 ? "text-emerald-700 dark:text-emerald-400"
                                 : "text-slate-600 dark:text-slate-300"
-                            }`}
+                              }`}
                           >
                             {unitStr}
                           </span>
-                          <span className={`text-[10px] mt-0.5 font-medium ${
-                            hasActive ? "text-emerald-500 dark:text-emerald-500" : "text-slate-400 dark:text-slate-500"
-                          }`}>
+                          <span className={`text-[10px] mt-0.5 font-medium ${hasActive ? "text-emerald-500 dark:text-emerald-500" : "text-slate-400 dark:text-slate-500"
+                            }`}>
                             {hasActive ? "Бүртгэлтэй" : "Сул"}
                           </span>
-                          
+
                           {hasActive && (
                             <div className="absolute top-1.5 left-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                           )}
-                          
+
                           <button
                             className="absolute -top-1.5 -right-1.5 w-5 h-5 flex items-center justify-center rounded-full bg-slate-800 dark:bg-slate-700 text-white opacity-0 group-hover:opacity-100 transition-all shadow-md hover:bg-red-600 dark:hover:bg-red-600 scale-75 group-hover:scale-100 z-10"
                             title={`${unitStr} тоотыг устгах`}
@@ -424,7 +422,7 @@ export default function UnitsSection({
                         </div>
                       );
                     })}
-                    
+
                     {/* Add Spot Dashed Box inside Grid for premium feel */}
                     <div
                       onClick={() => onAddUnit(selectedFloor || "")}
