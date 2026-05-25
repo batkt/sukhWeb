@@ -1517,6 +1517,9 @@ export function useGereeActions(
           ...newClient,
           baiguullagiinId: baiguullaga._id,
           barilgiinId: effectiveBarilgiinId,
+          utas: Array.isArray(newClient.utas)
+            ? newClient.utas[0] || ""
+            : newClient.utas || "",
         };
         if (editingClient?._id) {
           await uilchilgee(token).put(
