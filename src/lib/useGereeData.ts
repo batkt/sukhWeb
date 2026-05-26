@@ -420,7 +420,15 @@ export function useGereeData(
         }
 
         case "toot": {
-          const val = contract.toot != null ? String(contract.toot) : "";
+          let val = contract.toot != null ? String(contract.toot) : "";
+          if (Array.isArray(contract.nemeltTootnuud) && contract.nemeltTootnuud.length > 0) {
+            const extra = contract.nemeltTootnuud.map((n: any) => `${n.toot} (${n.turul === "Гараж" ? "Зогсоол" : n.turul})`).join(", ");
+            if (val) {
+              val = `${val}, ${extra}`;
+            } else {
+              val = extra;
+            }
+          }
           if (val && val !== "-") return val;
           // Fallback to linked resident
           const orshinSuugchId = contract.orshinSuugchId || contract.khariltsagchId;

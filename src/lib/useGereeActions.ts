@@ -406,6 +406,7 @@ export function useGereeActions(
                   orts: t.orts || "1",
                   davkhar: t.davkhar || "",
                   toot: t.toot || "",
+                  turul: t.turul || "Орон сууц",
                   ekhniiUldegdel:
                     t.ekhniiUldegdel !== undefined && t.ekhniiUldegdel !== 0
                       ? t.ekhniiUldegdel
@@ -419,6 +420,7 @@ export function useGereeActions(
                   orts: p.orts || "1",
                   davkhar: p.davkhar || "",
                   toot: p.toot || "",
+                  turul: p.turul || "Орон сууц",
                   ekhniiUldegdel: ekhniiUldegdel || 0,
                   tsahilgaaniiZaalt: p.tsahilgaaniiZaalt || 0,
                   khonogoorBodokhEsekh: p.khonogoorBodokhEsekh || false,
@@ -1280,6 +1282,195 @@ export function useGereeActions(
     [token, baiguullaga],
   );
 
+  const handleAddGarageCharges = useCallback(
+    async (residents: any[]) => {
+      if (!token || !baiguullaga?._id) {
+        openErrorOverlay("Нэвтэрч орсон хэрэглэгч олдсонгүй");
+        return;
+      }
+      const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
+      if (!effectiveBarilgiinId) {
+        openErrorOverlay("Барилга сонгоогүй байна");
+        return;
+      }
+
+      try {
+        // 1. Get building config
+        const barilga = baiguullaga.barilguud?.find(
+          (b: any) => String(b._id || b.id) === String(effectiveBarilgiinId),
+        );
+        const tok = barilga?.tokhirgoo || {};
+        const isEnabled = !!tok.garsiinTolborEnabled;
+        const method = tok.garsiinTolborArga || "Тогтмол";
+        const value = Number(tok.garsiinTolborUtga) || 0;
+
+        if (!isEnabled) {
+          openErrorOverlay("Грашийн төлбөрийн тохиргоо идэвхгүй байна");
+          return;
+        }
+        if (method === "Тогтмол" && value <= 0) {
+          openErrorOverlay("Грашийн төлбөрийн дүн оруулаагүй байна");
+          return;
+        }
+        if (method !== "Тогтмол") {
+          openErrorOverlay("Зөвхөн Тогтмол аргыг дэмжинэ");
+          return;
+        }
+
+        // 2. Build set of garage/storage unit keys (orts::davkhar::toot)
+        const garageKeys = new Set<string>();
+        const aguulakhKeys = new Set<string>();
+
+        const addKey = (
+          set: Set<string>,
+          orts: string,
+          davkhar: string,
+          toot: string,
+        ) => {
+          const o = String(orts || "1").trim();
+          const f = String(davkhar || "").trim();
+          const t = String(toot || "").trim();
+          // Store both orts::davkhar::toot and davkhar::toot for flexible matching
+          set.add(`${o}::${f}::${t}`);
+          if (o && o !== "1") set.add(`1::${f}::${t}`);
+        };
+
+        const parseMap = (map: any) => {
+          const out: Record<string, string[]> = {};
+          if (map && typeof map === "object" && !Array.isArray(map)) {
+            Object.entries(map).forEach(([key, val]: [string, any]) => {
+              let units: string[] = [];
+              if (Array.isArray(val)) {
+                units = val.flatMap((v: any) =>
+                  String(v)
+                    .split(/[\s,;|]+/)
+                    .filter(Boolean),
+                );
+              } else if (typeof val === "string") {
+                units = val.split(/[\s,;|]+/).filter(Boolean);
+              }
+              out[key] = units;
+            });
+          }
+          return out;
+        };
+
+        const zogsoolMap = parseMap(tok.davkhariinZogsoolnuud);
+        const aguulakhMap = parseMap(tok.davkhariinAguulakhnuud);
+
+        Object.entries(zogsoolMap).forEach(([key, units]) => {
+          const parts = key.split("::");
+          const orts = parts.length > 1 ? parts[0] : "";
+          const davkhar = parts.length > 1 ? parts[1] : key;
+          units.forEach((toot) => addKey(garageKeys, orts, davkhar, toot));
+        });
+        Object.entries(aguulakhMap).forEach(([key, units]) => {
+          const parts = key.split("::");
+          const orts = parts.length > 1 ? parts[0] : "";
+          const davkhar = parts.length > 1 ? parts[1] : key;
+          units.forEach((toot) => addKey(aguulakhKeys, orts, davkhar, toot));
+        });
+
+        // Add basement/parking floor units from davkhar array
+        const davkharArr = Array.isArray(tok.davkhar) ? tok.davkhar : [];
+        davkharArr.forEach((it: any) => {
+          const floor = String(it?.davkhar ?? it).trim();
+          const list = Array.isArray(it?.toonuud) ? it.toonuud : [];
+          if (/^B\d+$/i.test(floor) && list.length > 0) {
+            const orts = String(it?.orts || "1").trim();
+            list.forEach((toot: any) => addKey(garageKeys, orts, floor, toot));
+          }
+        });
+
+        // 3. For each resident, check if they have garage/storage units
+        let added = 0;
+        const today = new Date().toISOString().split("T")[0];
+
+        const residentHasGarage = (u: any) => {
+          const o = String(u.orts || "1").trim();
+          const f = String(u.davkhar || "").trim();
+          const t = String(u.toot || "").trim();
+          return (
+            garageKeys.has(`${o}::${f}::${t}`) ||
+            garageKeys.has(`1::${f}::${t}`)
+          );
+        };
+        const residentHasAguulakh = (u: any) => {
+          const o = String(u.orts || "1").trim();
+          const f = String(u.davkhar || "").trim();
+          const t = String(u.toot || "").trim();
+          return (
+            aguulakhKeys.has(`${o}::${f}::${t}`) ||
+            aguulakhKeys.has(`1::${f}::${t}`)
+          );
+        };
+
+        for (const resident of residents) {
+          const units = Array.isArray(resident.toots) ? resident.toots : [];
+          if (units.length === 0) continue;
+
+          const hasGarage = units.some(residentHasGarage);
+          const hasAguulakh = units.some(residentHasAguulakh);
+
+          if (hasGarage) {
+            await uilchilgee(token).post("/guilgeeAvlaguud", {
+              baiguullagiinId: baiguullaga._id,
+              barilgiinId: effectiveBarilgiinId,
+              orshinSuugchId: resident._id,
+              gereeniiId: resident.gereeniiId || resident.gereeId,
+              turul: "garage",
+              tulukhDun: value,
+              tulsunDun: 0,
+              dun: value,
+              tailbar: `Грашийн төлбөр - ${today}`,
+              ognoo: today,
+              guilgeeKhiisenAjiltniiId: ajiltan?._id,
+              guilgeeKhiisenAjiltniiNer:
+                `${ajiltan?.ovog || ""} ${ajiltan?.ner || ""}`.trim(),
+            });
+            added++;
+          }
+          if (hasAguulakh) {
+            await uilchilgee(token).post("/guilgeeAvlaguud", {
+              baiguullagiinId: baiguullaga._id,
+              barilgiinId: effectiveBarilgiinId,
+              orshinSuugchId: resident._id,
+              gereeniiId: resident.gereeniiId || resident.gereeId,
+              turul: "aguulakh",
+              tulukhDun: value,
+              tulsunDun: 0,
+              dun: value,
+              tailbar: `Агуулахын төлбөр - ${today}`,
+              ognoo: today,
+              guilgeeKhiisenAjiltniiId: ajiltan?._id,
+              guilgeeKhiisenAjiltniiNer:
+                `${ajiltan?.ovog || ""} ${ajiltan?.ner || ""}`.trim(),
+            });
+            added++;
+          }
+        }
+
+        openSuccessOverlay(`${added} оршин суугчид грашийн төлбөр нэмэгдлээ`);
+
+        // Refresh caches
+        mutate(
+          (key: any) =>
+            Array.isArray(key) &&
+            [
+              "/guilgeeAvlaguud",
+              "/nekhemjlekhiinTuukh",
+              "/orshinSuugch",
+            ].includes(key[0]),
+          undefined,
+          { revalidate: true },
+        );
+      } catch (error: any) {
+        openErrorOverlay(getErrorMessage(error));
+      }
+    },
+    [token, baiguullaga, selectedBuildingId, barilgiinId, ajiltan],
+  );
+
   const handleCreateOrUpdateEmployee = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
@@ -1580,14 +1771,26 @@ export function useGereeActions(
         ...p,
         units:
           Array.isArray(p.toots) && p.toots.length > 0
-            ? p.toots
+            ? p.toots.map((t: any) => ({
+                orts: t.orts || "1",
+                davkhar: t.davkhar || "",
+                toot: t.toot || "",
+                turul: t.turul || "Орон сууц",
+                ekhniiUldegdel: t.ekhniiUldegdel || 0,
+                tsahilgaaniiZaalt: t.tsahilgaaniiZaalt || 0,
+                khonogoorBodokhEsekh: t.khonogoorBodokhEsekh || false,
+                bodokhKhonog: t.bodokhKhonog || 0,
+              }))
             : [
                 {
                   orts: p.orts || "1",
                   davkhar: p.davkhar || "",
                   toot: p.toot || "",
-                  ekhniiUldegdel: 0,
-                  tsahilgaaniiZaalt: 0,
+                  turul: p.turul || "Орон сууц",
+                  ekhniiUldegdel: ekhniiUldegdel || 0,
+                  tsahilgaaniiZaalt: p.tsahilgaaniiZaalt || 0,
+                  khonogoorBodokhEsekh: p.khonogoorBodokhEsekh || false,
+                  bodokhKhonog: p.bodokhKhonog || 0,
                 },
               ],
         ekhniiUldegdel,
@@ -1749,6 +1952,7 @@ export function useGereeActions(
       [setSortKey, setSortOrder],
     ),
     handleSendInvoices,
+    handleAddGarageCharges,
     handlePreviewInvoice,
     deleteUnit,
     deleteFloor,

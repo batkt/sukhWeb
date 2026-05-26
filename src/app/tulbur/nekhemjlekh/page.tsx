@@ -958,33 +958,35 @@ export default function InvoicingZardluud() {
     return selectedBuildingId || barilgiinId || null;
   }, [selectedBarilga, selectedBuildingId, barilgiinId]);
 
-  const { handleSendInvoices: sendInvoicesApi } = useGereeActions(
-    token,
-    ajiltan,
-    barilgiinId || undefined,
-    selectedBuildingId || undefined,
-    baiguullaga,
-    baiguullagaMutate,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    effectiveBarilgiinId || undefined,
-  );
+  const { handleSendInvoices: sendInvoicesApi, handleAddGarageCharges } =
+    useGereeActions(
+      token,
+      ajiltan,
+      barilgiinId || undefined,
+      selectedBuildingId || undefined,
+      baiguullaga,
+      baiguullagaMutate,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      effectiveBarilgiinId || undefined,
+    );
 
   const [isSendingInvoices, setIsSendingInvoices] = useState(false);
+  const [isAddingGarageCharges, setIsAddingGarageCharges] = useState(false);
 
   const handleSendInvoices = async () => {
     if (selectedExpenses.length === 0) {
@@ -1011,6 +1013,21 @@ export default function InvoicingZardluud() {
       // Error handled in hook
     } finally {
       setIsSendingInvoices(false);
+    }
+  };
+
+  const handleAddGarageChargesClick = async () => {
+    if (displayResidents.length === 0) {
+      openErrorOverlay("Оршин суугч олдсонгүй");
+      return;
+    }
+    setIsAddingGarageCharges(true);
+    try {
+      await handleAddGarageCharges(displayResidents);
+    } catch (e) {
+      // Error handled in hook
+    } finally {
+      setIsAddingGarageCharges(false);
     }
   };
 
@@ -1748,6 +1765,28 @@ export default function InvoicingZardluud() {
             </div>
 
             <div className="flex flex-row gap-4 w-full lg:w-auto justify-end">
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+              >
+                <IconTextButton
+                  onClick={handleAddGarageChargesClick}
+                  icon={
+                    isAddingGarageCharges ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    ) : null
+                  }
+                  label={
+                    isAddingGarageCharges
+                      ? "Нэмж байна..."
+                      : "Грашийн төлбөр нэмэх"
+                  }
+                  disabled={isAddingGarageCharges}
+                  className="bg-indigo-500 text-white hover:bg-indigo-600 disabled:opacity-50 px-6 py-3 rounded-xl h-[40px] flex items-center shadow-lg"
+                />
+              </motion.div>
+
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}

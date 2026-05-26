@@ -967,32 +967,39 @@ export default function ResidentModal({
                               <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-500 mb-1">
                                 {unit.turul === "Гараж" || unit.turul === "Агуулах" ? "Дугаар" : "Тоот"}
                               </label>
-                              <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${index}.toot`) ? "input-error" : ""}`}>
-                                <TusgaiZagvar
-                                  value={unit.toot || ""}
-                                  onChange={(val: string) => updateUnitRow(index, "toot", val)}
-                                  options={getTootOptions(unit.orts || "", unit.davkhar || "", unit.turul === "Гараж" ? "Зогсоол" : (unit.turul === "Агуулах" ? "Агуулах" : "Тоот")).map((t) => {
-                                    const isOccupied = currentResidents?.some(
-                                      (r: any) => {
-                                        const rOrts = String(getResidentOrts(r) || "").trim();
-                                        const rDavkhar = String(getResidentDavkhar(r) || "").trim();
-                                        const rToot = String(getResidentToot(r) || "").trim();
-                                        const isSameUnit =
-                                          rOrts === String(unit.orts || "").trim() &&
-                                          rDavkhar === String(unit.davkhar || "").trim() &&
-                                          rToot === String(t || "").trim();
-                                        const isDifferentResident =
-                                          String(r._id || "") !== String(editingResident?._id || "");
-                                        return isSameUnit && isDifferentResident;
-                                      },
-                                    );
-                                    return { value: t, label: t, isOccupied };
-                                  })}
-                                  className="w-full h-full"
-                                  placeholder={unit.turul === "Гараж" || unit.turul === "Агуулах" ? "Дугаар..." : "Тоот..."}
-                                  disabled={!(unit.turul === "Гараж" || unit.turul === "Агуулах") && (!unit.orts || !unit.davkhar)}
-                                />
-                              </div>
+                              {(() => {
+                                const isGarageOrStorage = unit.turul === "Гараж" || unit.turul === "Агуулах";
+                                const tootTurul = unit.turul === "Гараж" ? "Зогсоол" : (unit.turul === "Агуулах" ? "Агуулах" : "Тоот");
+                                const opts = getTootOptions(unit.orts || "", unit.davkhar || "", tootTurul as any);
+                                return (
+                                  <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${index}.toot`) ? "input-error" : ""}`}>
+                                    <TusgaiZagvar
+                                      value={unit.toot || ""}
+                                      onChange={(val: string) => updateUnitRow(index, "toot", val)}
+                                      options={opts.map((t) => {
+                                        const isOccupied = currentResidents?.some(
+                                          (r: any) => {
+                                            const rOrts = String(getResidentOrts(r) || "").trim();
+                                            const rDavkhar = String(getResidentDavkhar(r) || "").trim();
+                                            const rToot = String(getResidentToot(r) || "").trim();
+                                            const isSameUnit =
+                                              rOrts === String(unit.orts || "").trim() &&
+                                              rDavkhar === String(unit.davkhar || "").trim() &&
+                                              rToot === String(t || "").trim();
+                                            const isDifferentResident =
+                                              String(r._id || "") !== String(editingResident?._id || "");
+                                            return isSameUnit && isDifferentResident;
+                                          },
+                                        );
+                                        return { value: t, label: t, isOccupied };
+                                      })}
+                                      className="w-full h-full"
+                                      placeholder={isGarageOrStorage ? "Дугаар..." : "Тоот..."}
+                                      disabled={!isGarageOrStorage && (!unit.orts || !unit.davkhar)}
+                                    />
+                                  </div>
+                                );
+                              })()}
                             </div>
 
                             <div className="md:col-span-2">
@@ -1002,7 +1009,17 @@ export default function ResidentModal({
                               <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${index}.turul`) ? "input-error" : ""}`}>
                                 <TusgaiZagvar
                                   value={unit.turul || "Орон сууц"}
-                                  onChange={(val: string) => updateUnitRow(index, "turul", val)}
+                                  onChange={(val: string) => {
+                                    // Clear toot when turul changes so stale value doesn't persist
+                                    setNewResident((p: any) => {
+                                      const newUnits = [...(p.units || [])];
+                                      newUnits[index] = { ...newUnits[index], turul: val, toot: "" };
+                                      if (index === 0) {
+                                        return { ...p, units: newUnits, turul: val, toot: "" };
+                                      }
+                                      return { ...p, units: newUnits };
+                                    });
+                                  }}
                                   options={[
                                     { value: "Орон сууц", label: "Орон сууц" },
                                     { value: "Гараж", label: "Гараж" },

@@ -28,7 +28,11 @@ interface KhariltsagchModalProps {
   setNewClient: (val: any) => void;
   ortsOptions: string[];
   davkharOptions: string[];
-  getTootOptions: (orts: string, floor: string, turul?: "Тоот" | "Зогсоол" | "Агуулах") => string[];
+  getTootOptions: (
+    orts: string,
+    floor: string,
+    turul?: "Тоот" | "Зогсоол" | "Агуулах",
+  ) => string[];
   selectedBarilga: any;
   baiguullaga: any;
   currentResidents: any[];
@@ -58,12 +62,18 @@ export default function KhariltsagchModal({
   const [showConfirmClose, setShowConfirmClose] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  const pendingCursorRef = React.useRef<{ index: number, field: string, validChars: number } | null>(null);
+  const pendingCursorRef = React.useRef<{
+    index: number;
+    field: string;
+    validChars: number;
+  } | null>(null);
 
   React.useLayoutEffect(() => {
     if (pendingCursorRef.current) {
       const { index, field, validChars } = pendingCursorRef.current;
-      const input = document.getElementById(`input-${field}-${index}`) as HTMLInputElement;
+      const input = document.getElementById(
+        `input-${field}-${index}`,
+      ) as HTMLInputElement;
       if (input) {
         const newVal = input.value;
         let charsFound = 0;
@@ -91,14 +101,15 @@ export default function KhariltsagchModal({
     if (show) {
       // Wait for units to be initialized (either from props or from the useEffect below)
       // to avoid false-positive "unsaved changes" warnings on new residents.
-      const hasUnits = Array.isArray(newClient?.units) && newClient.units.length > 0;
-      
+      const hasUnits =
+        Array.isArray(newClient?.units) && newClient.units.length > 0;
+
       if (!initialSnapshot.current) {
-          // Only take snapshot if units are populated (initialization done)
-          // OR if it's been a few renders and still no units (though should always have one)
-          if (hasUnits) {
-            initialSnapshot.current = JSON.stringify(newClient);
-          }
+        // Only take snapshot if units are populated (initialization done)
+        // OR if it's been a few renders and still no units (though should always have one)
+        if (hasUnits) {
+          initialSnapshot.current = JSON.stringify(newClient);
+        }
       }
       setErrors([]);
     } else {
@@ -112,45 +123,52 @@ export default function KhariltsagchModal({
 
   const hasChanges = React.useMemo(() => {
     if (!initialSnapshot.current || !newClient) return false;
-    
+
     // Compare normalized versions
     const normalize = (val: any) => {
-        if (!val) return {};
-        const obj = typeof val === "string" ? JSON.parse(val) : JSON.parse(JSON.stringify(val));
-        
-        // Remove volatile fields or normalize types
-        const clean = (o: any) => {
-            if (!o || typeof o !== "object") return o;
-            const result: any = Array.isArray(o) ? [] : {};
-            Object.keys(o).forEach(k => {
-                let v = o[k];
-                // Treat undefined, null, empty string as equivalent for ALL fields
-                if (v === undefined || v === null || v === "") {
-                    v = ""; 
-                }
-                // Special case for numbers: 0 is also an "empty" value for these specific fields
-                if (v === 0 || v === "0") {
-                    if (k === "ekhniiUldegdel" || k === "tsahilgaaniiZaalt" || k === "bodokhKhonog") {
-                        v = ""; // Normalize to empty string for comparison
-                    }
-                }
-                
-                if (Array.isArray(v)) {
-                   result[k] = v.map(clean);
-                } else if (v && typeof v === "object") {
-                   result[k] = clean(v);
-                } else {
-                   result[k] = v;
-                }
-            });
-            return result;
-        };
-        return clean(obj);
+      if (!val) return {};
+      const obj =
+        typeof val === "string"
+          ? JSON.parse(val)
+          : JSON.parse(JSON.stringify(val));
+
+      // Remove volatile fields or normalize types
+      const clean = (o: any) => {
+        if (!o || typeof o !== "object") return o;
+        const result: any = Array.isArray(o) ? [] : {};
+        Object.keys(o).forEach((k) => {
+          let v = o[k];
+          // Treat undefined, null, empty string as equivalent for ALL fields
+          if (v === undefined || v === null || v === "") {
+            v = "";
+          }
+          // Special case for numbers: 0 is also an "empty" value for these specific fields
+          if (v === 0 || v === "0") {
+            if (
+              k === "ekhniiUldegdel" ||
+              k === "tsahilgaaniiZaalt" ||
+              k === "bodokhKhonog"
+            ) {
+              v = ""; // Normalize to empty string for comparison
+            }
+          }
+
+          if (Array.isArray(v)) {
+            result[k] = v.map(clean);
+          } else if (v && typeof v === "object") {
+            result[k] = clean(v);
+          } else {
+            result[k] = v;
+          }
+        });
+        return result;
+      };
+      return clean(obj);
     };
-    
+
     const s1 = JSON.stringify(normalize(newClient));
     const s2 = JSON.stringify(normalize(initialSnapshot.current));
-    
+
     return s1 !== s2;
   }, [newClient, show]);
 
@@ -180,16 +198,17 @@ export default function KhariltsagchModal({
     } else {
       const uniqueUnitKeys = new Set();
       units.forEach((unit: any, index: number) => {
-        const isGarageOrStorage = unit.turul === "Гараж" || unit.turul === "Агуулах";
-        
+        const isGarageOrStorage =
+          unit.turul === "Гараж" || unit.turul === "Агуулах";
+
         if (!isGarageOrStorage) {
           if (!unit.orts?.trim()) newErrors.push(`units.${index}.orts`);
           if (!unit.davkhar?.trim()) newErrors.push(`units.${index}.davkhar`);
         }
         if (!unit.toot?.trim()) newErrors.push(`units.${index}.toot`);
-        
-        const ortsVal = isGarageOrStorage ? "1" : (unit.orts?.trim() || "");
-        const davkharVal = isGarageOrStorage ? "" : (unit.davkhar?.trim() || "");
+
+        const ortsVal = isGarageOrStorage ? "1" : unit.orts?.trim() || "";
+        const davkharVal = isGarageOrStorage ? "" : unit.davkhar?.trim() || "";
         const key = `${ortsVal}-${davkharVal}-${unit.toot?.trim()}`;
         if (uniqueUnitKeys.has(key)) {
           newErrors.push(`units.${index}.duplicate`);
@@ -215,13 +234,14 @@ export default function KhariltsagchModal({
         toot: "Тоот",
         duusakhOgnoo: "Гэрээ дуусах огноо",
       };
-      
+
       const missingFields = newErrors
         .map((e) => {
           if (e.startsWith("units.")) {
             const parts = e.split(".");
             const field = parts[2];
-            if (field === "duplicate") return `Мөр ${parseInt(parts[1]) + 1}: Давхардсан тоот (Орц/Давхар/Тоот)`;
+            if (field === "duplicate")
+              return `Мөр ${parseInt(parts[1]) + 1}: Давхардсан тоот (Орц/Давхар/Тоот)`;
             return `Мөр ${parseInt(parts[1]) + 1}: ${fieldNames[field] || field}`;
           }
           return fieldNames[e] || e;
@@ -271,13 +291,27 @@ export default function KhariltsagchModal({
               .split(", ")
               .map((t) => t.trim());
 
-            const units = Array.isArray(newClient.units) 
-              ? newClient.units 
+            const units = Array.isArray(newClient.units)
+              ? newClient.units
               : [{ toot: newClient.toot }];
 
-            const hasConflict = units.some((u: any) => 
-              rToots.includes(String(u.toot || "").trim())
-            );
+            const hasConflict = units.some((u: any) => {
+              const uOrts = String(u.orts || "1").trim();
+              const uDavkhar = String(u.davkhar || "").trim();
+              const uToot = String(u.toot || "").trim();
+              const existingUnits =
+                Array.isArray(r.toots) && r.toots.length > 0
+                  ? r.toots
+                  : [{ orts: r.orts, davkhar: r.davkhar, toot: r.toot }];
+              return existingUnits.some((rt: any) => {
+                const rtOrts = String(rt.orts || "1").trim();
+                const rtDavkhar = String(rt.davkhar || "").trim();
+                const rtToot = String(rt.toot || "").trim();
+                return (
+                  rtOrts === uOrts && rtDavkhar === uDavkhar && rtToot === uToot
+                );
+              });
+            });
 
             return (
               rOvog === ovog && rNer === ner && rPhone === phone && hasConflict
@@ -339,14 +373,16 @@ export default function KhariltsagchModal({
         },
       });
 
-      const found = Array.isArray(resp.data?.jagsaalt) ? resp.data.jagsaalt[0] : null;
+      const found = Array.isArray(resp.data?.jagsaalt)
+        ? resp.data.jagsaalt[0]
+        : null;
 
       if (found) {
         // Filter units by current building and exclude WALLET_API
         const filteredToots = (found.toots || []).filter(
           (t: any) =>
             String(t.barilgiinId) === String(selectedBarilga._id) &&
-            t.source !== "WALLET_API"
+            t.source !== "WALLET_API",
         );
 
         setNewClient((p: any) => ({
@@ -356,17 +392,18 @@ export default function KhariltsagchModal({
           register: found.register || p.register,
           mail: found.mail || found.email || p.mail,
           khayag: found.khayag || p.khayag,
-          units: filteredToots.length > 0 
-            ? filteredToots.map((t: any) => ({
-                orts: t.orts || "1",
-                davkhar: t.davkhar || "",
-                toot: t.toot || "",
-                ekhniiUldegdel: t.ekhniiUldegdel || 0,
-                tsahilgaaniiZaalt: t.tsahilgaaniiZaalt || 0,
-                khonogoorBodokhEsekh: t.khonogoorBodokhEsekh || false,
-                bodokhKhonog: t.bodokhKhonog || 0,
-              }))
-            : p.units
+          units:
+            filteredToots.length > 0
+              ? filteredToots.map((t: any) => ({
+                  orts: t.orts || "1",
+                  davkhar: t.davkhar || "",
+                  toot: t.toot || "",
+                  ekhniiUldegdel: t.ekhniiUldegdel || 0,
+                  tsahilgaaniiZaalt: t.tsahilgaaniiZaalt || 0,
+                  khonogoorBodokhEsekh: t.khonogoorBodokhEsekh || false,
+                  bodokhKhonog: t.bodokhKhonog || 0,
+                }))
+              : p.units,
         }));
       }
     } catch (err) {
@@ -377,7 +414,8 @@ export default function KhariltsagchModal({
   useModalHotkeys({
     isOpen: show,
     onClose: requestClose,
-    onSubmit: (e?: any) => handleLocalSubmit(e || { preventDefault: () => {} } as any),
+    onSubmit: (e?: any) =>
+      handleLocalSubmit(e || ({ preventDefault: () => {} } as any)),
     container: residentRef.current,
   });
 
@@ -404,22 +442,23 @@ export default function KhariltsagchModal({
   const formatWhileTyping = (val: string) => {
     // Remove commas for processing
     const clean = val.replace(/,/g, "");
-    
+
     // Split into integer and fractional parts
     const parts = clean.split(".");
     let integerPart = parts[0].replace(/\D/g, "");
     const hasDot = clean.includes(".");
-    let fractionalPart = parts.length > 1 ? parts[1].replace(/\D/g, "").slice(0, 2) : "";
-    
+    let fractionalPart =
+      parts.length > 1 ? parts[1].replace(/\D/g, "").slice(0, 2) : "";
+
     if (!integerPart && !hasDot) return "";
-    
+
     // Add commas to integer part
     if (integerPart) {
       integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     } else if (hasDot) {
       integerPart = "0"; // Show 0 if user starts with a dot
     }
-    
+
     return integerPart + (hasDot ? "." : "") + fractionalPart;
   };
 
@@ -427,7 +466,9 @@ export default function KhariltsagchModal({
     if (!editingClient) return false;
     const existing =
       editingClient.ekhniiUldegdel ?? editingClient.medeelel?.ekhniiUldegdel;
-    const parsedSnapshot = initialSnapshot.current ? JSON.parse(initialSnapshot.current) : null;
+    const parsedSnapshot = initialSnapshot.current
+      ? JSON.parse(initialSnapshot.current)
+      : null;
     const initial = parsedSnapshot?.ekhniiUldegdel;
     // Disable if original record has non-zero OR if it was non-zero when modal opened (e.g. fetched from history)
     return (
@@ -494,7 +535,8 @@ export default function KhariltsagchModal({
         updates.toot = newUnits[0].toot || "";
         updates.ekhniiUldegdel = newUnits[0].ekhniiUldegdel || 0;
         updates.tsahilgaaniiZaalt = newUnits[0].tsahilgaaniiZaalt || 0;
-        updates.khonogoorBodokhEsekh = newUnits[0].khonogoorBodokhEsekh || false;
+        updates.khonogoorBodokhEsekh =
+          newUnits[0].khonogoorBodokhEsekh || false;
         updates.bodokhKhonog = newUnits[0].bodokhKhonog || 0;
       }
       return { ...p, ...updates };
@@ -505,12 +547,12 @@ export default function KhariltsagchModal({
     setNewClient((p: any) => {
       const newUnits = [...(p.units || [])];
       newUnits[index] = { ...newUnits[index], [field]: value };
-      
+
       // If updating the first unit, also update top-level fields for backward compatibility
       if (index === 0) {
         return { ...p, units: newUnits, [field]: value };
       }
-      
+
       return { ...p, units: newUnits };
     });
   };
@@ -788,7 +830,8 @@ export default function KhariltsagchModal({
                               ...p,
                               turul: val,
                               // Clear end date when switching back to permanent
-                              duusakhOgnoo: val === "Үндсэн" ? "" : p.duusakhOgnoo,
+                              duusakhOgnoo:
+                                val === "Үндсэн" ? "" : p.duusakhOgnoo,
                             }));
                           }}
                           options={[
@@ -802,25 +845,35 @@ export default function KhariltsagchModal({
                     </div>
 
                     {/* Гэрээ дуусах огноо - only shown for Түр гэрээ */}
-                    {(newClient.turul === "Түр") && (
-                      <motion.div 
+                    {newClient.turul === "Түр" && (
+                      <motion.div
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         className="relative"
                       >
                         <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors flex items-center gap-1.5">
                           <Calendar className="w-3.5 h-3.5 text-blue-500" />
-                          Гэрээ дуусах огноо <span className="text-red-500">*</span>
+                          Гэрээ дуусах огноо{" "}
+                          <span className="text-red-500">*</span>
                         </label>
                         <div className="h-8">
                           <StandardDatePicker
                             value={newClient.duusakhOgnoo}
-                            onChange={(_date, dateString) => 
-                              setNewClient((p: any) => ({ ...p, duusakhOgnoo: dateString }))
+                            onChange={(_date, dateString) =>
+                              setNewClient((p: any) => ({
+                                ...p,
+                                duusakhOgnoo: dateString,
+                              }))
                             }
                             placeholder="Дуусах огноо..."
-                            className={errors.includes("duusakhOgnoo") ? "border-red-500" : ""}
-                            getPopupContainer={() => residentRef.current || document.body}
+                            className={
+                              errors.includes("duusakhOgnoo")
+                                ? "border-red-500"
+                                : ""
+                            }
+                            getPopupContainer={() =>
+                              residentRef.current || document.body
+                            }
                             popupStyle={{ zIndex: 13010 }}
                           />
                         </div>
@@ -895,7 +948,9 @@ export default function KhariltsagchModal({
                     {/* Units Section */}
                     <div className="md:col-span-2 space-y-4">
                       <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-2">
-                        <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">Бүртгэлтэй тоотнууд</h3>
+                        <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                          Бүртгэлтэй тоотнууд
+                        </h3>
                         <Button
                           type="button"
                           onClick={addUnitRow}
@@ -908,211 +963,339 @@ export default function KhariltsagchModal({
                       </div>
 
                       <div className="space-y-3">
-                        {(newClient.units || []).map((unit: any, index: number) => (
-                          <div 
-                            key={index} 
-                            className="relative grid grid-cols-1 md:grid-cols-14 gap-3 p-4 bg-slate-50/50 dark:bg-slate-900/30 rounded-xl border border-slate-100 dark:border-slate-800 transition-all hover:border-slate-200 dark:hover:border-slate-700"
-                          >
-                            {/* Remove Button - allow deleting any row as long as there are 2+ units */}
-                            {(newClient.units || []).length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => removeUnitRow(index)}
-                                className="absolute -right-2 -top-2 p-1.5 bg-white dark:bg-slate-800 text-rose-500 rounded-full shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all z-10"
-                              >
-                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                              </button>
-                            )}
-
-                            {/* Row Number Badge */}
-                            <div className="absolute -left-2 -top-2 w-6 h-6 flex items-center justify-center bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-full text-[10px] font-bold border border-white dark:border-slate-700 shadow-sm">
-                              {index + 1}
-                            </div>
-
-
-
-                            <div className="md:col-span-4">
-                              <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-500 mb-1">
-                                Дугаар
-                              </label>
-                              <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${index}.toot`) ? "input-error" : ""}`}>
-                                <TusgaiZagvar
-                                  value={unit.toot || ""}
-                                  onChange={(val: string) => updateUnitRow(index, "toot", val)}
-                                  options={getTootOptions("1", "", unit.turul === "Гараж" ? "Зогсоол" : (unit.turul === "Агуулах" ? "Агуулах" : "Тоот")).map((t) => {
-                                    const isOccupied = currentResidents?.some(
-                                      (r: any) => {
-                                        const rToot = String(getResidentToot(r) || "").trim();
-                                        const isSameUnit = rToot === String(t || "").trim();
-                                        const isDifferentResident =
-                                          String(r._id || "") !== String(editingClient?._id || "");
-                                        return isSameUnit && isDifferentResident;
-                                      },
-                                    );
-                                    return { value: t, label: t, isOccupied };
-                                  })}
-                                  className="w-full h-full"
-                                  placeholder="Дугаар..."
-                                />
-                              </div>
-                            </div>
-
-                            <div className="md:col-span-2">
-                              <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-500 mb-1">
-                                Төрөл
-                              </label>
-                              <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${index}.turul`) ? "input-error" : ""}`}>
-                                <TusgaiZagvar
-                                  value={unit.turul || "Орон сууц"}
-                                  onChange={(val: string) => updateUnitRow(index, "turul", val)}
-                                  options={[
-                                    { value: "Гараж", label: "Гараж" },
-                                    { value: "Агуулах", label: "Агуулах" },
-                                  ]}
-                                  className="w-full h-full"
-                                  placeholder="Төрөл..."
-                                />
-                              </div>
-                            </div>
-
-                            <div className="md:col-span-3">
-                              <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-500 mb-1">
-                                Эхний үлдэгдэл
-                              </label>
-                              <div className="relative group">
-                                <input
-                                  id={`input-ekhniiUldegdel-${index}`}
-                                  type="text"
-                                  value={
-                                    focusedInput === `ekhniiUldegdel-${index}`
-                                      ? formatWhileTyping(String(unit.ekhniiUldegdel || ""))
-                                      : formatWithCommas(unit.ekhniiUldegdel) || "0.00"
-                                  }
-                                  onFocus={(e) => {
-                                    setFocusedInput(`ekhniiUldegdel-${index}`);
-                                    if (unit.ekhniiUldegdel === 0 || !unit.ekhniiUldegdel) {
-                                      setTimeout(() => e.target.select(), 0);
-                                    }
-                                  }}
-                                  onBlur={() => setFocusedInput(null)}
-                                  onChange={(e) => {
-                                    const input = e.target;
-                                    const val = input.value;
-                                    const oldStart = input.selectionStart || 0;
-                                    
-                                    // Count valid characters (digits/dot) before cursor
-                                    const beforeCursor = val.slice(0, oldStart);
-                                    const validCharsBeforeCursor = beforeCursor.replace(/[^0-9.]/g, "").length;
-
-                                    pendingCursorRef.current = { index, field: "ekhniiUldegdel", validChars: validCharsBeforeCursor };
-
-                                    // Remove all commas (thousands separators) before processing decimals
-                                    let cleanVal = val.replace(/,/g, "");
-                                    cleanVal = cleanVal.replace(/[^0-9.]/g, "");
-                                    const dotIndex = cleanVal.indexOf(".");
-                                    if (dotIndex !== -1) {
-                                      cleanVal = cleanVal.slice(0, dotIndex + 1) + 
-                                                cleanVal.slice(dotIndex + 1).replace(/\./g, "").slice(0, 2);
-                                    }
-                                    updateUnitRow(index, "ekhniiUldegdel", cleanVal);
-                                  }}
-                                  className="modern-input w-full text-right font-mono"
-                                  placeholder="0.00"
-                                  disabled={isEkhniiUldegdelDisabled && index === 0}
-                                />
-                                <div className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                                  ₮
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="md:col-span-3">
-                              <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-500 mb-1">
-                                Цахилгаан кВт
-                              </label>
-                              <div className="relative group">
-                                <input
-                                  id={`input-tsahilgaaniiZaalt-${index}`}
-                                  type="text"
-                                  value={
-                                    focusedInput === `tsahilgaaniiZaalt-${index}`
-                                      ? formatWhileTyping(String(unit.tsahilgaaniiZaalt || ""))
-                                      : formatWithCommas(unit.tsahilgaaniiZaalt) || "0.00"
-                                  }
-                                  onFocus={(e) => {
-                                    setFocusedInput(`tsahilgaaniiZaalt-${index}`);
-                                    if (unit.tsahilgaaniiZaalt === 0 || !unit.tsahilgaaniiZaalt) {
-                                      setTimeout(() => e.target.select(), 0);
-                                    }
-                                  }}
-                                  onBlur={() => setFocusedInput(null)}
-                                  onChange={(e) => {
-                                    const input = e.target;
-                                    const val = input.value;
-                                    const oldStart = input.selectionStart || 0;
-                                    
-                                    // Count valid characters (digits/dot) before cursor
-                                    const beforeCursor = val.slice(0, oldStart);
-                                    const validCharsBeforeCursor = beforeCursor.replace(/[^0-9.]/g, "").length;
-
-                                    pendingCursorRef.current = { index, field: "tsahilgaaniiZaalt", validChars: validCharsBeforeCursor };
-
-                                    // Remove all commas (thousands separators) before processing decimals
-                                    let cleanVal = val.replace(/,/g, "");
-                                    cleanVal = cleanVal.replace(/[^0-9.]/g, "");
-                                    const dotIndex = cleanVal.indexOf(".");
-                                    if (dotIndex !== -1) {
-                                      cleanVal = cleanVal.slice(0, dotIndex + 1) + 
-                                                cleanVal.slice(dotIndex + 1).replace(/\./g, "").slice(0, 2);
-                                    }
-                                    updateUnitRow(index, "tsahilgaaniiZaalt", cleanVal);
-                                  }}
-                                  className="modern-input w-full text-right font-mono"
-                                  placeholder="0.00"
-                                />
-                                <div className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                                  кВт
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Pro-rating Row inside Unit */}
-                            <div className="md:col-span-14 flex items-center gap-4 mt-1 pt-2 border-t border-slate-100 dark:border-slate-800">
-                              <div className="flex items-center gap-2">
-                                <label className={`relative inline-flex items-center ${!!selectedBarilga?.tokhirgoo?.bodokhArgaEnabled ? "cursor-pointer" : "cursor-not-allowed opacity-50"} scale-75`}
-                                  title={!selectedBarilga?.tokhirgoo?.bodokhArgaEnabled ? "Барилгын тохиргоонд хоногоор бодох тохиргоо идэвхжээгүй байна" : ""}
+                        {(newClient.units || []).map(
+                          (unit: any, index: number) => (
+                            <div
+                              key={index}
+                              className="relative grid grid-cols-1 md:grid-cols-14 gap-3 p-4 bg-slate-50/50 dark:bg-slate-900/30 rounded-xl border border-slate-100 dark:border-slate-800 transition-all hover:border-slate-200 dark:hover:border-slate-700"
+                            >
+                              {/* Remove Button - allow deleting any row as long as there are 2+ units */}
+                              {(newClient.units || []).length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => removeUnitRow(index)}
+                                  className="absolute -right-2 -top-2 p-1.5 bg-white dark:bg-slate-800 text-rose-500 rounded-full shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all z-10"
                                 >
-                                  <input
-                                    type="checkbox"
-                                    checked={unit.khonogoorBodokhEsekh || false}
-                                    disabled={!selectedBarilga?.tokhirgoo?.bodokhArgaEnabled}
-                                    onChange={(e) => updateUnitRow(index, "khonogoorBodokhEsekh", e.target.checked)}
-                                    className="sr-only peer"
-                                  />
-                                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                                </label>
-                                <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400">Ирээдүйд ашиглах хоног</span>
+                                  <svg
+                                    className="w-3.5 h-3.5"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    strokeWidth={2}
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                    />
+                                  </svg>
+                                </button>
+                              )}
+
+                              {/* Row Number Badge */}
+                              <div className="absolute -left-2 -top-2 w-6 h-6 flex items-center justify-center bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-full text-[10px] font-bold border border-white dark:border-slate-700 shadow-sm">
+                                {index + 1}
                               </div>
 
-                              {unit.khonogoorBodokhEsekh && (
-                                <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200">
-                                  <input
-                                    type="number"
-                                    min={1}
-                                    max={31}
-                                    value={unit.bodokhKhonog || ""}
-                                    onChange={(e) => updateUnitRow(index, "bodokhKhonog", e.target.value)}
-                                    placeholder="Хоног"
-                                    className="modern-input !w-16 !h-7 text-center !py-0"
+                              <div className="md:col-span-4">
+                                <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-500 mb-1">
+                                  Дугаар
+                                </label>
+                                <div
+                                  className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${index}.toot`) ? "input-error" : ""}`}
+                                >
+                                  <TusgaiZagvar
+                                    value={unit.toot || ""}
+                                    onChange={(val: string) =>
+                                      updateUnitRow(index, "toot", val)
+                                    }
+                                    options={getTootOptions(
+                                      "1",
+                                      "",
+                                      unit.turul === "Гараж"
+                                        ? "Зогсоол"
+                                        : unit.turul === "Агуулах"
+                                          ? "Агуулах"
+                                          : "Тоот",
+                                    ).map((t) => {
+                                      const isOccupied = currentResidents?.some(
+                                        (r: any) => {
+                                          const rToot = String(
+                                            getResidentToot(r) || "",
+                                          ).trim();
+                                          const isSameUnit =
+                                            rToot === String(t || "").trim();
+                                          const isDifferentResident =
+                                            String(r._id || "") !==
+                                            String(editingClient?._id || "");
+                                          return (
+                                            isSameUnit && isDifferentResident
+                                          );
+                                        },
+                                      );
+                                      return { value: t, label: t, isOccupied };
+                                    })}
+                                    className="w-full h-full"
+                                    placeholder="Дугаар..."
                                   />
-                                  <span className="text-[11px] text-slate-500">хоногоор бодох</span>
                                 </div>
-                              )}
+                              </div>
+
+                              <div className="md:col-span-2">
+                                <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-500 mb-1">
+                                  Төрөл
+                                </label>
+                                <div
+                                  className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${index}.turul`) ? "input-error" : ""}`}
+                                >
+                                  <TusgaiZagvar
+                                    value={unit.turul || "Орон сууц"}
+                                    onChange={(val: string) =>
+                                      updateUnitRow(index, "turul", val)
+                                    }
+                                    options={[
+                                      { value: "Гараж", label: "Гараж" },
+                                      { value: "Агуулах", label: "Агуулах" },
+                                    ]}
+                                    className="w-full h-full"
+                                    placeholder="Төрөл..."
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="md:col-span-3">
+                                <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-500 mb-1">
+                                  Эхний үлдэгдэл
+                                </label>
+                                <div className="relative group">
+                                  <input
+                                    id={`input-ekhniiUldegdel-${index}`}
+                                    type="text"
+                                    value={
+                                      focusedInput === `ekhniiUldegdel-${index}`
+                                        ? formatWhileTyping(
+                                            String(unit.ekhniiUldegdel || ""),
+                                          )
+                                        : formatWithCommas(
+                                            unit.ekhniiUldegdel,
+                                          ) || "0.00"
+                                    }
+                                    onFocus={(e) => {
+                                      setFocusedInput(
+                                        `ekhniiUldegdel-${index}`,
+                                      );
+                                      if (
+                                        unit.ekhniiUldegdel === 0 ||
+                                        !unit.ekhniiUldegdel
+                                      ) {
+                                        setTimeout(() => e.target.select(), 0);
+                                      }
+                                    }}
+                                    onBlur={() => setFocusedInput(null)}
+                                    onChange={(e) => {
+                                      const input = e.target;
+                                      const val = input.value;
+                                      const oldStart =
+                                        input.selectionStart || 0;
+
+                                      // Count valid characters (digits/dot) before cursor
+                                      const beforeCursor = val.slice(
+                                        0,
+                                        oldStart,
+                                      );
+                                      const validCharsBeforeCursor =
+                                        beforeCursor.replace(
+                                          /[^0-9.]/g,
+                                          "",
+                                        ).length;
+
+                                      pendingCursorRef.current = {
+                                        index,
+                                        field: "ekhniiUldegdel",
+                                        validChars: validCharsBeforeCursor,
+                                      };
+
+                                      // Remove all commas (thousands separators) before processing decimals
+                                      let cleanVal = val.replace(/,/g, "");
+                                      cleanVal = cleanVal.replace(
+                                        /[^0-9.]/g,
+                                        "",
+                                      );
+                                      const dotIndex = cleanVal.indexOf(".");
+                                      if (dotIndex !== -1) {
+                                        cleanVal =
+                                          cleanVal.slice(0, dotIndex + 1) +
+                                          cleanVal
+                                            .slice(dotIndex + 1)
+                                            .replace(/\./g, "")
+                                            .slice(0, 2);
+                                      }
+                                      updateUnitRow(
+                                        index,
+                                        "ekhniiUldegdel",
+                                        cleanVal,
+                                      );
+                                    }}
+                                    className="modern-input w-full text-right font-mono"
+                                    placeholder="0.00"
+                                    disabled={
+                                      isEkhniiUldegdelDisabled && index === 0
+                                    }
+                                  />
+                                  <div className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                    ₮
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="md:col-span-3">
+                                <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-500 mb-1">
+                                  Цахилгаан кВт
+                                </label>
+                                <div className="relative group">
+                                  <input
+                                    id={`input-tsahilgaaniiZaalt-${index}`}
+                                    type="text"
+                                    value={
+                                      focusedInput ===
+                                      `tsahilgaaniiZaalt-${index}`
+                                        ? formatWhileTyping(
+                                            String(
+                                              unit.tsahilgaaniiZaalt || "",
+                                            ),
+                                          )
+                                        : formatWithCommas(
+                                            unit.tsahilgaaniiZaalt,
+                                          ) || "0.00"
+                                    }
+                                    onFocus={(e) => {
+                                      setFocusedInput(
+                                        `tsahilgaaniiZaalt-${index}`,
+                                      );
+                                      if (
+                                        unit.tsahilgaaniiZaalt === 0 ||
+                                        !unit.tsahilgaaniiZaalt
+                                      ) {
+                                        setTimeout(() => e.target.select(), 0);
+                                      }
+                                    }}
+                                    onBlur={() => setFocusedInput(null)}
+                                    onChange={(e) => {
+                                      const input = e.target;
+                                      const val = input.value;
+                                      const oldStart =
+                                        input.selectionStart || 0;
+
+                                      // Count valid characters (digits/dot) before cursor
+                                      const beforeCursor = val.slice(
+                                        0,
+                                        oldStart,
+                                      );
+                                      const validCharsBeforeCursor =
+                                        beforeCursor.replace(
+                                          /[^0-9.]/g,
+                                          "",
+                                        ).length;
+
+                                      pendingCursorRef.current = {
+                                        index,
+                                        field: "tsahilgaaniiZaalt",
+                                        validChars: validCharsBeforeCursor,
+                                      };
+
+                                      // Remove all commas (thousands separators) before processing decimals
+                                      let cleanVal = val.replace(/,/g, "");
+                                      cleanVal = cleanVal.replace(
+                                        /[^0-9.]/g,
+                                        "",
+                                      );
+                                      const dotIndex = cleanVal.indexOf(".");
+                                      if (dotIndex !== -1) {
+                                        cleanVal =
+                                          cleanVal.slice(0, dotIndex + 1) +
+                                          cleanVal
+                                            .slice(dotIndex + 1)
+                                            .replace(/\./g, "")
+                                            .slice(0, 2);
+                                      }
+                                      updateUnitRow(
+                                        index,
+                                        "tsahilgaaniiZaalt",
+                                        cleanVal,
+                                      );
+                                    }}
+                                    className="modern-input w-full text-right font-mono"
+                                    placeholder="0.00"
+                                  />
+                                  <div className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                    кВт
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Pro-rating Row inside Unit */}
+                              <div className="md:col-span-14 flex items-center gap-4 mt-1 pt-2 border-t border-slate-100 dark:border-slate-800">
+                                <div className="flex items-center gap-2">
+                                  <label
+                                    className={`relative inline-flex items-center ${!!selectedBarilga?.tokhirgoo?.bodokhArgaEnabled ? "cursor-pointer" : "cursor-not-allowed opacity-50"} scale-75`}
+                                    title={
+                                      !selectedBarilga?.tokhirgoo
+                                        ?.bodokhArgaEnabled
+                                        ? "Барилгын тохиргоонд хоногоор бодох тохиргоо идэвхжээгүй байна"
+                                        : ""
+                                    }
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={
+                                        unit.khonogoorBodokhEsekh || false
+                                      }
+                                      disabled={
+                                        !selectedBarilga?.tokhirgoo
+                                          ?.bodokhArgaEnabled
+                                      }
+                                      onChange={(e) =>
+                                        updateUnitRow(
+                                          index,
+                                          "khonogoorBodokhEsekh",
+                                          e.target.checked,
+                                        )
+                                      }
+                                      className="sr-only peer"
+                                    />
+                                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                                  </label>
+                                  <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400">
+                                    Ирээдүйд ашиглах хоног
+                                  </span>
+                                </div>
+
+                                {unit.khonogoorBodokhEsekh && (
+                                  <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200">
+                                    <input
+                                      type="number"
+                                      min={1}
+                                      max={31}
+                                      value={unit.bodokhKhonog || ""}
+                                      onChange={(e) =>
+                                        updateUnitRow(
+                                          index,
+                                          "bodokhKhonog",
+                                          e.target.value,
+                                        )
+                                      }
+                                      placeholder="Хоног"
+                                      className="modern-input !w-16 !h-7 text-center !py-0"
+                                    />
+                                    <span className="text-[11px] text-slate-500">
+                                      хоногоор бодох
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ),
+                        )}
                       </div>
                     </div>
 
@@ -1133,8 +1316,6 @@ export default function KhariltsagchModal({
                         placeholder="Тайлбар..."
                       />
                     </div>
-
-
                   </div>
                 </div>
 
@@ -1156,7 +1337,11 @@ export default function KhariltsagchModal({
                     data-modal-primary
                     disabled={isSubmitting}
                   >
-                    {isSubmitting ? "Түр хүлээнэ үү..." : (editingClient ? "Хадгалах" : "Хадгалах")}
+                    {isSubmitting
+                      ? "Түр хүлээнэ үү..."
+                      : editingClient
+                        ? "Хадгалах"
+                        : "Хадгалах"}
                   </Button>
                 </div>
               </form>
@@ -1168,7 +1353,10 @@ export default function KhariltsagchModal({
       <ConfirmCloseDialog
         open={showConfirmClose}
         onCancel={() => setShowConfirmClose(false)}
-        onConfirm={() => { setShowConfirmClose(false); onClose(); }}
+        onConfirm={() => {
+          setShowConfirmClose(false);
+          onClose();
+        }}
       />
     </>
   );
