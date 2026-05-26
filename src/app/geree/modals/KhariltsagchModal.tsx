@@ -233,6 +233,7 @@ export default function KhariltsagchModal({
         davkhar: "Давхар",
         toot: "Тоот",
         duusakhOgnoo: "Гэрээ дуусах огноо",
+        no_units: "Гараж эсвэл Агуулах сонгоно уу",
       };
 
       const missingFields = newErrors
@@ -241,7 +242,7 @@ export default function KhariltsagchModal({
             const parts = e.split(".");
             const field = parts[2];
             if (field === "duplicate")
-              return `Мөр ${parseInt(parts[1]) + 1}: Давхардсан тоот (Орц/Давхар/Тоот)`;
+              return `Мөр ${parseInt(parts[1]) + 1}: Давхардсан тоот`;
             return `Мөр ${parseInt(parts[1]) + 1}: ${fieldNames[field] || field}`;
           }
           return fieldNames[e] || e;
@@ -424,101 +425,49 @@ export default function KhariltsagchModal({
   const [zaaltInput, setZaaltInput] = React.useState("");
   const [focusedInput, setFocusedInput] = React.useState<string | null>(null);
 
-  const [mainUnits, setMainUnits] = React.useState<any[]>([]);
-  const [collapsedMains, setCollapsedMains] = React.useState<number[]>([]);
-  const toggleMainCollapse = (idx: number) => {
-    setCollapsedMains((p) => p.includes(idx) ? p.filter((i) => i !== idx) : [...p, idx]);
-  };
+  const [garages, setGarages] = React.useState<any[]>([]);
+  const [storages, setStorages] = React.useState<any[]>([]);
 
   const emptyGarage = () => ({ davkhar: "", toot: "", ekhniiUldegdel: 0, tsahilgaaniiZaalt: 0, khonogoorBodokhEsekh: false, bodokhKhonog: 0 });
   const emptyStorage = () => ({ davkhar: "", toot: "", ekhniiUldegdel: 0, tsahilgaaniiZaalt: 0, khonogoorBodokhEsekh: false, bodokhKhonog: 0 });
 
-  const addMainUnitRow = () => {
-    setMainUnits((prev) => [
-      ...prev,
-      {
-        orts: "1",
-        davkhar: "",
-        toot: "",
-        turul: "Орон сууц",
-        ekhniiUldegdel: 0,
-        tsahilgaaniiZaalt: 0,
-        khonogoorBodokhEsekh: false,
-        bodokhKhonog: 0,
-        garages: [],
-        storages: [],
-      },
-    ]);
-  };
-
-  const removeMainUnitRow = (index: number) => {
-    setMainUnits((prev) => { const n = [...prev]; n.splice(index, 1); return n; });
-  };
-
-  const updateMainUnitRow = (index: number, field: string, value: any) => {
-    setMainUnits((prev) => { const n = [...prev]; n[index] = { ...n[index], [field]: value }; return n; });
-  };
-
   // Garage helpers
-  const addGarageToUnit = (mainIndex: number) => {
-    setMainUnits((prev) => {
+  const addGarage = () => {
+    setGarages((prev) => [...prev, emptyGarage()]);
+  };
+  const removeGarage = (index: number) => {
+    setGarages((prev) => { const n = [...prev]; n.splice(index, 1); return n; });
+  };
+  const updateGarageField = (index: number, field: string, value: any) => {
+    setGarages((prev) => {
       const n = [...prev];
-      n[mainIndex] = { ...n[mainIndex], garages: [...(n[mainIndex].garages || []), emptyGarage()] };
+      n[index] = { ...n[index], [field]: value };
       return n;
-    });
-  };
-  const removeGarageFromUnit = (mainIndex: number, garageIndex: number) => {
-    setMainUnits((prev) => {
-      const n = [...prev]; const g = [...(n[mainIndex].garages || [])];
-      g.splice(garageIndex, 1); n[mainIndex] = { ...n[mainIndex], garages: g }; return n;
-    });
-  };
-  const updateGarageField = (mainIndex: number, garageIndex: number, field: string, value: any) => {
-    setMainUnits((prev) => {
-      const n = [...prev]; const g = [...(n[mainIndex].garages || [])];
-      g[garageIndex] = { ...g[garageIndex], [field]: value }; n[mainIndex] = { ...n[mainIndex], garages: g }; return n;
     });
   };
 
   // Storage helpers
-  const addStorageToUnit = (mainIndex: number) => {
-    setMainUnits((prev) => {
+  const addStorage = () => {
+    setStorages((prev) => [...prev, emptyStorage()]);
+  };
+  const removeStorage = (index: number) => {
+    setStorages((prev) => { const n = [...prev]; n.splice(index, 1); return n; });
+  };
+  const updateStorageField = (index: number, field: string, value: any) => {
+    setStorages((prev) => {
       const n = [...prev];
-      n[mainIndex] = { ...n[mainIndex], storages: [...(n[mainIndex].storages || []), emptyStorage()] };
+      n[index] = { ...n[index], [field]: value };
       return n;
-    });
-  };
-  const removeStorageFromUnit = (mainIndex: number, storageIndex: number) => {
-    setMainUnits((prev) => {
-      const n = [...prev]; const s = [...(n[mainIndex].storages || [])];
-      s.splice(storageIndex, 1); n[mainIndex] = { ...n[mainIndex], storages: s }; return n;
-    });
-  };
-  const updateStorageField = (mainIndex: number, storageIndex: number, field: string, value: any) => {
-    setMainUnits((prev) => {
-      const n = [...prev]; const s = [...(n[mainIndex].storages || [])];
-      s[storageIndex] = { ...s[storageIndex], [field]: value }; n[mainIndex] = { ...n[mainIndex], storages: s }; return n;
     });
   };
 
   // Flat index calculators
-  const getFlatIndex = (mainIndex: number, type: "main") => {
-    let flatIdx = 0;
-    for (let i = 0; i < mainIndex; i++) {
-      flatIdx++;
-      flatIdx += (mainUnits[i]?.garages || []).length;
-      flatIdx += (mainUnits[i]?.storages || []).length;
-    }
-    return flatIdx; // type === "main"
+  const getGarageFlatIndex = (garageIndex: number) => {
+    return garageIndex;
   };
-  const getGarageFlatIndex = (mainIndex: number, garageIndex: number) => {
-    let flatIdx = getFlatIndex(mainIndex, "main");
-    return flatIdx + 1 + garageIndex;
-  };
-  const getStorageFlatIndex = (mainIndex: number, storageIndex: number) => {
-    let flatIdx = getFlatIndex(mainIndex, "main");
-    return flatIdx + 1 + (mainUnits[mainIndex]?.garages || []).length + storageIndex;
-  };
+  const getStorageFlatIndex = (storageIndex: number) => {
+    return garages.length + storageIndex;
+  }
 
   const parseToNumber = (str: string) => {
     if (typeof str !== "string") return str || 0;
@@ -576,57 +525,33 @@ export default function KhariltsagchModal({
   // Sync local state when modal opens
   React.useEffect(() => {
     if (show) {
-      setCollapsedMains([]);
       const units = Array.isArray(newClient.units) ? newClient.units : [];
-      const foundMains = units.filter((u: any) => u.turul !== "Гараж" && u.turul !== "Агуулах");
       const allGarages = units.filter((u: any) => u.turul === "Гараж");
       const allStorages = units.filter((u: any) => u.turul === "Агуулах");
 
-      const initialMains = (foundMains.length > 0 ? foundMains : [{
-        orts: newClient.orts || "1",
-        davkhar: newClient.davkhar || "",
-        toot: newClient.toot || "",
-        turul: "Орон сууц",
-        ekhniiUldegdel: newClient.ekhniiUldegdel || 0,
-        tsahilgaaniiZaalt: newClient.tsahilgaaniiZaalt || 0,
-        khonogoorBodokhEsekh: newClient.khonogoorBodokhEsekh || false,
-        bodokhKhonog: newClient.bodokhKhonog || 0,
-      }]).map((m: any, idx: number) => ({
-        ...m,
-        garages: idx === 0 ? allGarages.map((g: any) => ({ ...g })) : [],
-        storages: idx === 0 ? allStorages.map((s: any) => ({ ...s })) : [],
-      }));
-
-      setMainUnits(initialMains);
-      const primaryMain = initialMains[0];
-      setUldegdelInput(formatWithCommas(primaryMain.ekhniiUldegdel) || "0");
-      setZaaltInput(formatWithCommas(primaryMain.tsahilgaaniiZaalt) || "0");
+      setGarages(allGarages.map((g: any) => ({ ...g })));
+      setStorages(allStorages.map((s: any) => ({ ...s })));
+      
+      const primary = allGarages[0] || allStorages[0] || {};
+      setUldegdelInput(formatWithCommas(primary.ekhniiUldegdel) || "0");
+      setZaaltInput(formatWithCommas(primary.tsahilgaaniiZaalt) || "0");
     }
-  }, [show]);
+  }, [show, newClient.units]);
 
   // Sync to parent component's newClient state
   React.useEffect(() => {
-    if (!show || mainUnits.length === 0) return;
+    if (!show) return;
     const activeUnits: any[] = [];
-    mainUnits.forEach((mu) => {
-      activeUnits.push({
-        orts: mu.orts || "1", davkhar: mu.davkhar || "", toot: mu.toot || "",
-        turul: mu.turul || "Орон сууц",
-        ekhniiUldegdel: Number(mu.ekhniiUldegdel || 0),
-        tsahilgaaniiZaalt: Number(mu.tsahilgaaniiZaalt || 0),
-        khonogoorBodokhEsekh: !!mu.khonogoorBodokhEsekh,
-        bodokhKhonog: Number(mu.bodokhKhonog || 0),
-      });
-      (mu.garages || []).forEach((g: any) => {
-        activeUnits.push({ orts: "1", davkhar: g.davkhar || "", toot: g.toot || "", turul: "Гараж",
-          ekhniiUldegdel: Number(g.ekhniiUldegdel || 0), tsahilgaaniiZaalt: Number(g.tsahilgaaniiZaalt || 0),
-          khonogoorBodokhEsekh: !!g.khonogoorBodokhEsekh, bodokhKhonog: Number(g.bodokhKhonog || 0) });
-      });
-      (mu.storages || []).forEach((s: any) => {
-        activeUnits.push({ orts: "1", davkhar: s.davkhar || "", toot: s.toot || "", turul: "Агуулах",
-          ekhniiUldegdel: Number(s.ekhniiUldegdel || 0), tsahilgaaniiZaalt: Number(s.tsahilgaaniiZaalt || 0),
-          khonogoorBodokhEsekh: !!s.khonogoorBodokhEsekh, bodokhKhonog: Number(s.bodokhKhonog || 0) });
-      });
+    
+    garages.forEach((g: any) => {
+      activeUnits.push({ orts: "1", davkhar: g.davkhar || "", toot: g.toot || "", turul: "Гараж",
+        ekhniiUldegdel: Number(g.ekhniiUldegdel || 0), tsahilgaaniiZaalt: Number(g.tsahilgaaniiZaalt || 0),
+        khonogoorBodokhEsekh: !!g.khonogoorBodokhEsekh, bodokhKhonog: Number(g.bodokhKhonog || 0) });
+    });
+    storages.forEach((s: any) => {
+      activeUnits.push({ orts: "1", davkhar: s.davkhar || "", toot: s.toot || "", turul: "Агуулах",
+        ekhniiUldegdel: Number(s.ekhniiUldegdel || 0), tsahilgaaniiZaalt: Number(s.tsahilgaaniiZaalt || 0),
+        khonogoorBodokhEsekh: !!s.khonogoorBodokhEsekh, bodokhKhonog: Number(s.bodokhKhonog || 0) });
     });
 
     setNewClient((p: any) => {
@@ -634,21 +559,21 @@ export default function KhariltsagchModal({
       const stringifiedExisting = JSON.stringify(p.units);
       if (stringifiedActive === stringifiedExisting) return p;
 
-      const primaryMain = mainUnits[0];
+      const primary = activeUnits[0] || { orts: "", davkhar: "", toot: "", ekhniiUldegdel: 0, tsahilgaaniiZaalt: 0, khonogoorBodokhEsekh: false, bodokhKhonog: 0 };
 
       return {
         ...p,
         units: activeUnits,
-        orts: primaryMain.orts || "",
-        davkhar: primaryMain.davkhar || "",
-        toot: primaryMain.toot || "",
-        ekhniiUldegdel: primaryMain.ekhniiUldegdel || 0,
-        tsahilgaaniiZaalt: primaryMain.tsahilgaaniiZaalt || 0,
-        khonogoorBodokhEsekh: primaryMain.khonogoorBodokhEsekh || false,
-        bodokhKhonog: primaryMain.bodokhKhonog || 0,
+        orts: primary.orts || "",
+        davkhar: primary.davkhar || "",
+        toot: primary.toot || "",
+        ekhniiUldegdel: primary.ekhniiUldegdel || 0,
+        tsahilgaaniiZaalt: primary.tsahilgaaniiZaalt || 0,
+        khonogoorBodokhEsekh: primary.khonogoorBodokhEsekh || false,
+        bodokhKhonog: primary.bodokhKhonog || 0,
       };
     });
-  }, [mainUnits, show]);
+  }, [garages, storages, show]);
 
   const additionalFloors = React.useMemo(() => {
     const filtered = davkharOptions.filter((d) => /^B\d+$/i.test(d));
@@ -1085,350 +1010,115 @@ export default function KhariltsagchModal({
                     {/* Units Section */}
                     <div className="md:col-span-2 space-y-4 pt-2">
                       <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-2">
-                        <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">Бүртгэлтэй тоотнууд</h3>
-                        <Button
-                          type="button"
-                          onClick={addMainUnitRow}
-                          variant="secondary"
-                          size="sm"
-                          leftIcon={<Plus className="w-3.5 h-3.5" />}
-                        >
-                          Тоот нэмэх
-                        </Button>
+                        <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">Гараж / Агуулах</h3>
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            onClick={addGarage}
+                            variant="secondary"
+                            size="sm"
+                            leftIcon={<Plus className="w-3.5 h-3.5" />}
+                          >
+                            Гараж нэмэх
+                          </Button>
+                          <Button
+                            type="button"
+                            onClick={addStorage}
+                            variant="secondary"
+                            size="sm"
+                            leftIcon={<Plus className="w-3.5 h-3.5" />}
+                          >
+                            Агуулах нэмэх
+                          </Button>
+                        </div>
                       </div>
 
-                      {/* Main Units (Тоот) */}
-                      {mainUnits.map((mainUnit, index) => {
+                      {/* Garage Cards */}
+                      {garages.map((garage: any, gIdx: number) => {
+                        const gFlatIdx = getGarageFlatIndex(gIdx);
                         return (
-                          <div key={index} className="relative rounded-xl border-l-4 border-l-blue-500 border border-slate-200/70 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900/60 overflow-hidden transition-all">
-                            {/* Toot Header — clickable to collapse */}
-                            <div
-                              className="flex items-center justify-between gap-2 px-4 py-2.5 bg-blue-50/50 dark:bg-blue-950/20 border-b border-blue-100 dark:border-blue-900/30"
-                            >
-                              <button
-                                type="button"
-                                onClick={() => toggleMainCollapse(index)}
-                                className="flex-1 flex items-center gap-2 cursor-pointer text-left min-w-0"
-                              >
-                                <span className="w-2 h-2 rounded-full bg-blue-500 shadow-sm shadow-blue-500/50 flex-shrink-0" />
-                                <h4 className="text-xs font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400 min-w-0 truncate">
-                                  Тоот {mainUnits.length > 1 ? `#${index + 1}` : "(Үндсэн)"}
-                                  {collapsedMains.includes(index) && mainUnit.toot && (
-                                    <span className="ml-2 font-normal text-blue-600 dark:text-blue-300 normal-case tracking-normal">
-                                      — {mainUnit.orts && `${mainUnit.orts} орц, `}{mainUnit.davkhar && `${mainUnit.davkhar} давхар, `}{mainUnit.toot} тоот
-                                    </span>
-                                  )}
-                                </h4>
+                          <div key={`garage-${gIdx}`} className="rounded-lg border-l-4 border-l-emerald-500 border border-emerald-100 dark:border-emerald-900/40 bg-emerald-50/30 dark:bg-emerald-950/10 overflow-hidden">
+                            <div className="flex items-center justify-between px-3 py-2 border-b border-emerald-100 dark:border-emerald-900/40 bg-emerald-50/60 dark:bg-emerald-950/20">
+                              <div className="flex items-center gap-2">
+                                <h5 className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                                  Гараж {garages.length > 1 ? `#${gIdx + 1}` : ""}
+                                </h5>
+                              </div>
+                              <button type="button" onClick={() => removeGarage(gIdx)}
+                                className="p-1 text-rose-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded transition-all">
+                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
                               </button>
-                              <div className="flex items-center gap-1 flex-shrink-0">
-                                <button
-                                  type="button"
-                                  onClick={() => toggleMainCollapse(index)}
-                                  className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors cursor-pointer"
-                                >
-                                  <svg
-                                    className={`w-3.5 h-3.5 transition-transform duration-200 ${collapsedMains.includes(index) ? "-rotate-90" : "rotate-0"}`}
-                                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
-                                  >
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                                  </svg>
-                                  {collapsedMains.includes(index) ? "Нээх" : "Нуух"}
-                                </button>
-                                {mainUnits.length > 1 && (
-                                  <button
-                                    type="button"
-                                    onClick={() => removeMainUnitRow(index)}
-                                    className="p-1.5 text-rose-400 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:text-rose-600 transition-all"
-                                  >
-                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                  </button>
-                                )}
-                              </div>
                             </div>
-
-                            {/* Toot Fields - collapsible */}
-                            {!collapsedMains.includes(index) && (<div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div className="p-3 grid grid-cols-2 gap-3">
                               <div>
-                                <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-400 mb-1">Орц</label>
-                                <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${getFlatIndex(index, "main")}.orts`) ? "input-error" : ""}`}>
-                                  <TusgaiZagvar
-                                    value={mainUnit.orts || ""}
-                                    onChange={(val: string) => updateMainUnitRow(index, "orts", val)}
-                                    options={ortsOptions.map((o) => ({ value: o, label: o }))}
-                                    className="w-full h-full"
-                                    placeholder="Орц..."
-                                  />
+                                <label className="block text-[10px] uppercase tracking-wider font-bold text-emerald-600 dark:text-emerald-500 mb-1">Давхар</label>
+                                <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${gFlatIdx}.davkhar`) ? "input-error" : ""}`}>
+                                  <TusgaiZagvar value={garage.davkhar || ""} onChange={(val: string) => updateGarageField(gIdx, "davkhar", val)}
+                                    options={additionalFloors.map((d) => ({ value: d, label: d }))} className="w-full h-full" placeholder="Давхар..." />
                                 </div>
                               </div>
-
                               <div>
-                                <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-400 mb-1">Давхар</label>
-                                <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${getFlatIndex(index, "main")}.davkhar`) ? "input-error" : ""}`}>
-                                  <TusgaiZagvar
-                                    value={mainUnit.davkhar || ""}
-                                    onChange={(val: string) => updateMainUnitRow(index, "davkhar", val)}
-                                    options={davkharOptions.map((d) => ({ value: d, label: d }))}
-                                    className="w-full h-full"
-                                    placeholder="Давхар..."
-                                  />
-                                </div>
-                              </div>
-
-                              <div>
-                                <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-400 mb-1">Тоот</label>
+                                <label className="block text-[10px] uppercase tracking-wider font-bold text-emerald-600 dark:text-emerald-500 mb-1">Дугаар</label>
                                 {(() => {
-                                  const opts = getTootOptions(mainUnit.orts || "", mainUnit.davkhar || "", "Тоот");
+                                  const opts = getTootOptions("1", garage.davkhar || "", "Зогсоол");
                                   return (
-                                    <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${getFlatIndex(index, "main")}.toot`) ? "input-error" : ""}`}>
-                                      <TusgaiZagvar
-                                        value={mainUnit.toot || ""}
-                                        onChange={(val: string) => updateMainUnitRow(index, "toot", val)}
-                                        options={opts.map((t) => {
-                                          const isOccupied = currentResidents?.some((r: any) => {
-                                            const rOrts = String(getResidentOrts(r) || "").trim();
-                                            const rDavkhar = String(getResidentDavkhar(r) || "").trim();
-                                            const rToot = String(getResidentToot(r) || "").trim();
-                                            const isSameUnit = rOrts === String(mainUnit.orts || "").trim() && rDavkhar === String(mainUnit.davkhar || "").trim() && rToot === String(t || "").trim();
-                                            const isDifferentResident = String(r._id || "") !== String(editingClient?._id || "");
-                                            return isSameUnit && isDifferentResident;
-                                          });
-                                          return { value: t, label: t, isOccupied };
-                                        })}
-                                        className="w-full h-full"
-                                        placeholder="Тоот..."
-                                        disabled={!mainUnit.orts || !mainUnit.davkhar}
-                                      />
+                                    <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${gFlatIdx}.toot`) ? "input-error" : ""}`}>
+                                      <TusgaiZagvar value={garage.toot || ""} onChange={(val: string) => updateGarageField(gIdx, "toot", val)}
+                                        options={opts.map((t) => ({ value: t, label: t }))} className="w-full h-full" placeholder="Дугаар..." disabled={!garage.davkhar} />
                                     </div>
                                   );
                                 })()}
                               </div>
+                            </div>
+                          </div>
+                        );
+                      })}
 
-                              <div>
-                                <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-400 mb-1">Эхний үлдэгдэл</label>
-                                <div className="relative group">
-                                  <input
-                                    id={`input-ekhniiUldegdel-${index}`}
-                                    type="text"
-                                    value={
-                                      focusedInput === `ekhniiUldegdel-${index}`
-                                        ? formatWhileTyping(String(mainUnit.ekhniiUldegdel || ""))
-                                        : formatWithCommas(mainUnit.ekhniiUldegdel) || "0.00"
-                                    }
-                                    onFocus={(e) => {
-                                      setFocusedInput(`ekhniiUldegdel-${index}`);
-                                      if (mainUnit.ekhniiUldegdel === 0 || !mainUnit.ekhniiUldegdel) setTimeout(() => e.target.select(), 0);
-                                    }}
-                                    onBlur={() => setFocusedInput(null)}
-                                    onChange={(e) => {
-                                      const input = e.target;
-                                      const val = input.value;
-                                      const oldStart = input.selectionStart || 0;
-                                      const beforeCursor = val.slice(0, oldStart);
-                                      const validCharsBeforeCursor = beforeCursor.replace(/[^0-9.]/g, "").length;
-                                      pendingCursorRef.current = { index, field: "ekhniiUldegdel", validChars: validCharsBeforeCursor };
-                                      let cleanVal = val.replace(/,/g, "").replace(/[^0-9.]/g, "");
-                                      const dotIndex = cleanVal.indexOf(".");
-                                      if (dotIndex !== -1) cleanVal = cleanVal.slice(0, dotIndex + 1) + cleanVal.slice(dotIndex + 1).replace(/\./g, "").slice(0, 2);
-                                      updateMainUnitRow(index, "ekhniiUldegdel", cleanVal);
-                                    }}
-                                    className="modern-input w-full text-right font-mono"
-                                    placeholder="0.00"
-                                    disabled={isEkhniiUldegdelDisabled && index === 0}
-                                  />
-                                  <div className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">₮</div>
-                                </div>
+                      {/* Storage Cards */}
+                      {storages.map((storage: any, sIdx: number) => {
+                        const sFlatIdxNested = getStorageFlatIndex(sIdx);
+                        return (
+                          <div key={`storage-${sIdx}`} className="rounded-lg border-l-4 border-l-indigo-500 border border-indigo-100 dark:border-indigo-900/40 bg-indigo-50/30 dark:bg-indigo-950/10 overflow-hidden">
+                            <div className="flex items-center justify-between px-3 py-2 border-b border-indigo-100 dark:border-indigo-900/40 bg-indigo-50/60 dark:bg-indigo-950/20">
+                              <div className="flex items-center gap-2">
+                                <h5 className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-400">
+                                  Агуулах {storages.length > 1 ? `#${sIdx + 1}` : ""}
+                                </h5>
                               </div>
-
-                              <div>
-                                <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-400 mb-1">Цахилгаан кВт</label>
-                                <div className="relative group">
-                                  <input
-                                    id={`input-tsahilgaaniiZaalt-${index}`}
-                                    type="text"
-                                    value={
-                                      focusedInput === `tsahilgaaniiZaalt-${index}`
-                                        ? formatWhileTyping(String(mainUnit.tsahilgaaniiZaalt || ""))
-                                        : formatWithCommas(mainUnit.tsahilgaaniiZaalt) || "0.00"
-                                    }
-                                    onFocus={(e) => {
-                                      setFocusedInput(`tsahilgaaniiZaalt-${index}`);
-                                      if (mainUnit.tsahilgaaniiZaalt === 0 || !mainUnit.tsahilgaaniiZaalt) setTimeout(() => e.target.select(), 0);
-                                    }}
-                                    onBlur={() => setFocusedInput(null)}
-                                    onChange={(e) => {
-                                      const input = e.target;
-                                      const val = input.value;
-                                      const oldStart = input.selectionStart || 0;
-                                      const beforeCursor = val.slice(0, oldStart);
-                                      const validCharsBeforeCursor = beforeCursor.replace(/[^0-9.]/g, "").length;
-                                      pendingCursorRef.current = { index, field: "tsahilgaaniiZaalt", validChars: validCharsBeforeCursor };
-                                      let cleanVal = val.replace(/,/g, "").replace(/[^0-9.]/g, "");
-                                      const dotIndex = cleanVal.indexOf(".");
-                                      if (dotIndex !== -1) cleanVal = cleanVal.slice(0, dotIndex + 1) + cleanVal.slice(dotIndex + 1).replace(/\./g, "").slice(0, 2);
-                                      updateMainUnitRow(index, "tsahilgaaniiZaalt", cleanVal);
-                                    }}
-                                    className="modern-input w-full text-right font-mono"
-                                    placeholder="0.00"
-                                  />
-                                  <div className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">кВт</div>
-                                </div>
-                              </div>
-
-                              <div className="flex items-center gap-3 md:col-span-3 pt-1">
-                                <label className={`relative inline-flex items-center ${!!selectedBarilga?.tokhirgoo?.bodokhArgaEnabled ? "cursor-pointer" : "cursor-not-allowed opacity-50"} scale-75`}>
-                                  <input
-                                    type="checkbox"
-                                    checked={mainUnit.khonogoorBodokhEsekh || false}
-                                    disabled={!selectedBarilga?.tokhirgoo?.bodokhArgaEnabled}
-                                    onChange={(e) => updateMainUnitRow(index, "khonogoorBodokhEsekh", e.target.checked)}
-                                    className="sr-only peer"
-                                  />
-                                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                                </label>
-                                <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400">Ирээдүйд ашиглах хоног</span>
-                                {mainUnit.khonogoorBodokhEsekh && (
-                                  <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200">
-                                    <input
-                                      type="number"
-                                      min={1}
-                                      max={31}
-                                      value={mainUnit.bodokhKhonog || ""}
-                                      onChange={(e) => updateMainUnitRow(index, "bodokhKhonog", e.target.value)}
-                                      placeholder="Хоног"
-                                      className="modern-input !w-16 !h-7 text-center !py-0"
-                                    />
-                                    <span className="text-[11px] text-slate-500">хоногоор бодох</span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>)}
-
-                            {/* Per-Toot action buttons */}
-                            {!collapsedMains.includes(index) && (<div className="px-4 pb-3 flex items-center gap-3 border-t border-slate-100 dark:border-slate-800 pt-3">
-                              {/* Add Garage button */}
-                              <button
-                                type="button"
-                                onClick={() => addGarageToUnit(index)}
-                                className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors px-2.5 py-1.5 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800"
-                              >
-                                Гараж нэмэх
-                                {(mainUnit.garages || []).length > 0 && (
-                                  <span className="ml-1 bg-emerald-500 text-white rounded-full px-1.5 py-0.5 text-[9px] font-bold">
-                                    {(mainUnit.garages || []).length}
-                                  </span>
-                                )}
+                              <button type="button" onClick={() => removeStorage(sIdx)}
+                                className="p-1 text-rose-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded transition-all">
+                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
                               </button>
-
-                              <div className="w-px h-4 bg-slate-200 dark:bg-slate-700" />
-                              {/* Add Storage button */}
-                              <button
-                                type="button"
-                                onClick={() => addStorageToUnit(index)}
-                                className="flex items-center gap-1.5 text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors px-2.5 py-1.5 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800"
-                              >
-                                Агуулах нэмэх
-                                {(mainUnit.storages || []).length > 0 && (
-                                  <span className="ml-1 bg-indigo-500 text-white rounded-full px-1.5 py-0.5 text-[9px] font-bold">
-                                    {(mainUnit.storages || []).length}
-                                  </span>
-                                )}
-                              </button>
-                            </div>)}
-
-                            {/* Nested Garage Cards */}
-                            {!collapsedMains.includes(index) && (<>
-                            {(mainUnit.garages || []).map((garage: any, gIdx: number) => {
-                              const gFlatIdx = getGarageFlatIndex(index, gIdx);
-                              return (
-                                <div key={gIdx} className="mx-4 mb-2 rounded-lg border-l-4 border-l-emerald-500 border border-emerald-100 dark:border-emerald-900/40 bg-emerald-50/30 dark:bg-emerald-950/10 overflow-hidden">
-                                  <div className="flex items-center justify-between px-3 py-2 border-b border-emerald-100 dark:border-emerald-900/40 bg-emerald-50/60 dark:bg-emerald-950/20">
-                                    <div className="flex items-center gap-2">
-                                      <h5 className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
-                                        Гараж {(mainUnit.garages || []).length > 1 ? `#${gIdx + 1}` : ""}
-                                      </h5>
-                                    </div>
-                                    <button type="button" onClick={() => removeGarageFromUnit(index, gIdx)}
-                                      className="p-1 text-rose-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded transition-all">
-                                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                      </svg>
-                                    </button>
-                                  </div>
-                                  <div className="p-3 grid grid-cols-2 gap-3">
-                                    <div>
-                                      <label className="block text-[10px] uppercase tracking-wider font-bold text-emerald-600 dark:text-emerald-500 mb-1">Давхар</label>
-                                      <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${gFlatIdx}.davkhar`) ? "input-error" : ""}`}>
-                                        <TusgaiZagvar value={garage.davkhar || ""} onChange={(val: string) => updateGarageField(index, gIdx, "davkhar", val)}
-                                          options={additionalFloors.map((d) => ({ value: d, label: d }))} className="w-full h-full" placeholder="Давхар..." />
-                                      </div>
-                                    </div>
-                                    <div>
-                                      <label className="block text-[10px] uppercase tracking-wider font-bold text-emerald-600 dark:text-emerald-500 mb-1">Дугаар</label>
-                                      {(() => {
-                                        const opts = getTootOptions("1", garage.davkhar || "", "Зогсоол");
-                                        return (
-                                          <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${gFlatIdx}.toot`) ? "input-error" : ""}`}>
-                                            <TusgaiZagvar value={garage.toot || ""} onChange={(val: string) => updateGarageField(index, gIdx, "toot", val)}
-                                              options={opts.map((t) => ({ value: t, label: t }))} className="w-full h-full" placeholder="Дугаар..." disabled={!garage.davkhar} />
-                                          </div>
-                                        );
-                                      })()}
-                                    </div>
-                                  </div>
+                            </div>
+                            <div className="p-3 grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-[10px] uppercase tracking-wider font-bold text-indigo-600 dark:text-indigo-500 mb-1">Давхар</label>
+                                <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${sFlatIdxNested}.davkhar`) ? "input-error" : ""}`}>
+                                  <TusgaiZagvar value={storage.davkhar || ""} onChange={(val: string) => updateStorageField(sIdx, "davkhar", val)}
+                                    options={additionalFloors.map((d) => ({ value: d, label: d }))} className="w-full h-full" placeholder="Давхар..." />
                                 </div>
-                              );
-                            })}
-
-                            {/* Nested Storage Cards */}
-                            {(mainUnit.storages || []).map((storage: any, sIdx: number) => {
-                              const sFlatIdxNested = getStorageFlatIndex(index, sIdx);
-                              return (
-                                <div key={sIdx} className="mx-4 mb-2 rounded-lg border-l-4 border-l-indigo-500 border border-indigo-100 dark:border-indigo-900/40 bg-indigo-50/30 dark:bg-indigo-950/10 overflow-hidden">
-                                  <div className="flex items-center justify-between px-3 py-2 border-b border-indigo-100 dark:border-indigo-900/40 bg-indigo-50/60 dark:bg-indigo-950/20">
-                                    <div className="flex items-center gap-2">
-                                      <h5 className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-400">
-                                        Агуулах {(mainUnit.storages || []).length > 1 ? `#${sIdx + 1}` : ""}
-                                      </h5>
+                              </div>
+                              <div>
+                                <label className="block text-[10px] uppercase tracking-wider font-bold text-indigo-600 dark:text-indigo-500 mb-1">Дугаар</label>
+                                {(() => {
+                                  const opts = getTootOptions("1", storage.davkhar || "", "Агуулах");
+                                  return (
+                                    <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${sFlatIdxNested}.toot`) ? "input-error" : ""}`}>
+                                      <TusgaiZagvar value={storage.toot || ""} onChange={(val: string) => updateStorageField(sIdx, "toot", val)}
+                                        options={opts.map((t) => ({ value: t, label: t }))} className="w-full h-full" placeholder="Дугаар..." disabled={!storage.davkhar} />
                                     </div>
-                                    <button type="button" onClick={() => removeStorageFromUnit(index, sIdx)}
-                                      className="p-1 text-rose-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded transition-all">
-                                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                      </svg>
-                                    </button>
-                                  </div>
-                                  <div className="p-3 grid grid-cols-2 gap-3">
-                                    <div>
-                                      <label className="block text-[10px] uppercase tracking-wider font-bold text-indigo-600 dark:text-indigo-500 mb-1">Давхар</label>
-                                      <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${sFlatIdxNested}.davkhar`) ? "input-error" : ""}`}>
-                                        <TusgaiZagvar value={storage.davkhar || ""} onChange={(val: string) => updateStorageField(index, sIdx, "davkhar", val)}
-                                          options={additionalFloors.map((d) => ({ value: d, label: d }))} className="w-full h-full" placeholder="Давхар..." />
-                                      </div>
-                                    </div>
-                                    <div>
-                                      <label className="block text-[10px] uppercase tracking-wider font-bold text-indigo-600 dark:text-indigo-500 mb-1">Дугаар</label>
-                                      {(() => {
-                                        const opts = getTootOptions("1", storage.davkhar || "", "Агуулах");
-                                        return (
-                                          <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${sFlatIdxNested}.toot`) ? "input-error" : ""}`}>
-                                            <TusgaiZagvar value={storage.toot || ""} onChange={(val: string) => updateStorageField(index, sIdx, "toot", val)}
-                                              options={opts.map((t) => ({ value: t, label: t }))} className="w-full h-full" placeholder="Дугаар..." disabled={!storage.davkhar} />
-                                          </div>
-                                        );
-                                      })()}
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </>)}
+                                  );
+                                })()}
+                              </div>
+                            </div>
                           </div>
                         );
                       })}
                     </div>
-
                     {/* Tailbar */}
                     <div className="md:col-span-2">
                       <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors">

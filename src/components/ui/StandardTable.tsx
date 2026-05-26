@@ -213,7 +213,7 @@ export function StandardPagination({
   pageSize,
   onChange,
   onPageSizeChange,
-  pageSizeOptions = [100, 200, 300, 400, 500, 1000],
+  pageSizeOptions = [50, 100, 200, 300, 400, 500],
 }: {
   current: number;
   total: number;
@@ -223,6 +223,16 @@ export function StandardPagination({
   pageSizeOptions?: number[];
 }) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  // Ensure current pageSize is in the options to avoid Radix Select infinite loops
+  const actualOptions = React.useMemo(() => {
+    const opts = [...pageSizeOptions];
+    if (!opts.includes(pageSize)) {
+      opts.push(pageSize);
+      opts.sort((a, b) => a - b);
+    }
+    return opts;
+  }, [pageSize, pageSizeOptions]);
 
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between w-full px-4 py-4 gap-4">
@@ -250,7 +260,7 @@ export function StandardPagination({
                 </span>
               </SelectTrigger>
               <SelectContent className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-xl">
-                {pageSizeOptions.map((opt) => (
+                {actualOptions.map((opt) => (
                   <SelectItem
                     key={opt}
                     value={opt.toString()}
