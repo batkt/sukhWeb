@@ -174,6 +174,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
                     toot: record.toot,
                     baiguullagiinId: record.baiguullagiinId,
                     barilgiinId: record.barilgiinId,
+                    turul: record.turul || "Орон сууц",
                   },
                 ];
           
@@ -181,6 +182,82 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
           if (currentBaiguullagiinId) {
             toots = toots.filter((t: any) => String(t.baiguullagiinId) === String(currentBaiguullagiinId));
           }
+
+          // Only show main housing units
+          toots = toots.filter((t: any) => t.turul !== "Гараж" && t.turul !== "Агуулах");
+
+          if (toots.length === 0) return "-";
+
+          if (toots.length === 1) {
+            return (
+              <span className="text-gray-900 dark:text-white whitespace-nowrap font-medium">
+                {toots[0].toot || "-"}
+              </span>
+            );
+          }
+
+          return (
+            <div className="flex flex-wrap gap-1 justify-center max-w-[200px] mx-auto">
+              {toots.map((t: any, idx: number) => (
+                <span
+                  key={idx}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-xs font-medium text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700"
+                >
+                  {t.toot}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.confirm(`${t.toot} тоотыг хасах уу?`)) {
+                        onRemoveToot?.(
+                          String(record._id),
+                          t.baiguullagiinId,
+                          t.barilgiinId,
+                          t.toot,
+                        );
+                      }
+                    }}
+                    className="p-0.5 hover:text-red-500 transition-colors rounded-full hover:bg-red-50 dark:hover:bg-red-900/20"
+                    title="Хасах"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          );
+        },
+      },
+      {
+        title: (
+          <span className="text-gray-900 dark:text-white text-center block">
+            Гараж / Агуулах
+          </span>
+        ),
+        key: "garage_storage",
+        width: 140,
+        align: "center",
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        render: (_: any, record: ResidentItem) => {
+          let toots =
+            Array.isArray(record.toots) && record.toots.length > 0
+              ? record.toots
+              : [
+                  {
+                    toot: record.toot,
+                    baiguullagiinId: record.baiguullagiinId,
+                    barilgiinId: record.barilgiinId,
+                    turul: record.turul || "Орон сууц",
+                  },
+                ];
+          
+          // Filter by currentBaiguullagiinId if provided
+          if (currentBaiguullagiinId) {
+            toots = toots.filter((t: any) => String(t.baiguullagiinId) === String(currentBaiguullagiinId));
+          }
+
+          // Only show Garage or Storage
+          toots = toots.filter((t: any) => t.turul === "Гараж" || t.turul === "Агуулах");
 
           if (toots.length === 0) return "-";
 
