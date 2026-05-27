@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import { useGereeContext } from "./GereeContext";
 import { motion } from "framer-motion";
 import {
   Download,
@@ -67,7 +68,7 @@ export default function GereeHeader({
   ortsOptions,
   selectedOrts,
   setSelectedOrts,
-  davkharOptions,
+  davkharOptions: originalDavkharOptions,
   selectedDawkhar,
   setSelectedDawkhar,
   selectedOrtsForContracts,
@@ -104,6 +105,16 @@ export default function GereeHeader({
   const [isMobileExcelOpen, setIsMobileExcelOpen] = useState(false);
   const desktopExcelRef = useRef<HTMLDivElement>(null);
   const mobileExcelRef = useRef<HTMLDivElement>(null);
+
+  const context = useGereeContext();
+  const activePropertyTab = context?.state?.propertyTab || "Тоот";
+
+  const davkharOptions = React.useMemo(() => {
+    if (activeTab === "units" && activePropertyTab === "Тоот") {
+      return originalDavkharOptions.filter((d) => !String(d).trim().toLowerCase().startsWith("b"));
+    }
+    return originalDavkharOptions;
+  }, [originalDavkharOptions, activeTab, activePropertyTab]);
 
   // Debugging
   useEffect(() => {

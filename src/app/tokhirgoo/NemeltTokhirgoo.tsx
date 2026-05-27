@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   NumberInput as MNumberInput,
   Button as MButton,
@@ -24,6 +24,8 @@ export default function NemeltTokhirgoo() {
     useAuth();
   const { selectedBuildingId } = useBuilding();
   const { showSpinner, hideSpinner } = useSpinner();
+
+  const lastInitializedKeyRef = useRef<string>("");
 
   // Invoice states
   const [invoiceDay, setInvoiceDay] = useState<number | null>(null);
@@ -297,6 +299,12 @@ export default function NemeltTokhirgoo() {
     if (!baiguullaga) {
       return;
     }
+
+    const currentKey = `${baiguullaga._id || ""}-${effectiveBarilgiinId || ""}`;
+    if (lastInitializedKeyRef.current === currentKey) {
+      return;
+    }
+    lastInitializedKeyRef.current = currentKey;
 
     let target: any = baiguullaga;
     let syncSource = "org-level";
@@ -1231,6 +1239,7 @@ export default function NemeltTokhirgoo() {
                         >
                           Тогтмол
                         </button>
+                        {/* Temporarily hidden:
                         <button
                           onClick={() => setGaragePaymentMethod("Хувьсах")}
                           className={`px-6 py-2 rounded-lg text-sm transition-all ${garagePaymentMethod === "Хувьсах"
@@ -1240,6 +1249,7 @@ export default function NemeltTokhirgoo() {
                         >
                           Хувьсах
                         </button>
+                        */}
                       </div>
                       <p className="text-xs text-[color:var(--muted-text)]">
                         {garagePaymentMethod === "Тогтмол"
@@ -1339,6 +1349,7 @@ export default function NemeltTokhirgoo() {
                         >
                           Тогтмол
                         </button>
+                        {/* Temporarily hidden:
                         <button
                           onClick={() => setStoragePaymentMethod("Хувьсах")}
                           className={`px-6 py-2 rounded-lg text-sm transition-all ${storagePaymentMethod === "Хувьсах"
@@ -1348,6 +1359,7 @@ export default function NemeltTokhirgoo() {
                         >
                           Хувьсах
                         </button>
+                        */}
                       </div>
                       <p className="text-xs text-[color:var(--muted-text)]">
                         {storagePaymentMethod === "Тогтмол"

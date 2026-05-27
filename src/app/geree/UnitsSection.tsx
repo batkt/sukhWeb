@@ -409,7 +409,7 @@ export default function UnitsSection({
                       Сонгосон давхар
                     </p>
                     <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">
-                      {selectedFloorData.units.length}
+                      {selectedFloorData.filteredUnits.length}
                     </p>
                   </div>
                 </div>

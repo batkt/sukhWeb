@@ -67,6 +67,8 @@ export default function ӨмчБүртгэлPage() {
         getTootOptions={data.getTootOptions}
         isSavingUnits={state.isSavingUnits}
         actions={actions}
+        sortKey={state.sortKey}
+        sortOrder={state.sortOrder}
         composeKey={data.composeKey}
         propertyTab={state.propertyTab}
         onAddUnit={(floor) => {

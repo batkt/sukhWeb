@@ -946,14 +946,19 @@ export function useGereeData(
     const activeTab = propertyTab || "Тоот";
 
     if (activeTab === "Тоот") {
-      // Only show floors that actually have unit numbers defined
+      // Only show floors that actually have unit numbers defined, excluding basement floors (B1, B2, etc.)
       const floorsSet = new Set<string>();
       Object.keys(maps.outToot).forEach((key) => {
+        let floorName = "";
         if (key.includes("::")) {
           const parts = key.split("::");
-          floorsSet.add(parts[1] || parts[0]);
+          floorName = parts[1] || parts[0];
         } else {
-          floorsSet.add(key);
+          floorName = key;
+        }
+        const isBasement = String(floorName).trim().toLowerCase().startsWith("b");
+        if (floorName && !isBasement) {
+          floorsSet.add(floorName);
         }
       });
       list = Array.from(floorsSet);
