@@ -778,7 +778,7 @@ export default function UnitsSection({
                         className="w-full border border-red-200 bg-red-50 hover:bg-red-100 dark:border-red-900/50 dark:bg-red-950/20 dark:hover:bg-red-950/30 !text-red-600 dark:!text-red-400"
                         leftIcon={<Trash2 className="w-4 h-4" />}
                       >
-                        Давхрыг устгах
+                        Давхараар нь устгах
                       </Button>
                     </div>
                   </div>
