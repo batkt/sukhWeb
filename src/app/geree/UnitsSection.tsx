@@ -591,22 +591,38 @@ export default function UnitsSection({
                                 .join(" ") ||
                               resident.ner ||
                               "Нэргүй";
+                            const btnLabel =
+                              propertyTab === "Зогсоол"
+                                ? "Зогсоолын төлбөр нэмэх"
+                                : "Агуулахын төлбөр нэмэх";
                             return (
-                              <div className="mb-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl space-y-2">
-                                <div className="flex items-center gap-2">
-                                  <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                                  <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">
-                                    {fullName}
-                                  </span>
-                                </div>
-                                {resident.utas && (
+                              <div className="space-y-3 mb-3">
+                                <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl space-y-2">
                                   <div className="flex items-center gap-2">
-                                    <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                                    <span className="text-sm text-slate-500 dark:text-slate-400">
-                                      {resident.utas}
+                                    <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">
+                                      {fullName}
                                     </span>
                                   </div>
-                                )}
+                                  {resident.utas && (
+                                    <div className="flex items-center gap-2">
+                                      <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                      <span className="text-sm text-slate-500 dark:text-slate-400">
+                                        {resident.utas}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                                <button
+                                  onClick={async () => {
+                                    if (actions.handleAddGarageCharges) {
+                                      await actions.handleAddGarageCharges([resident]);
+                                    }
+                                  }}
+                                  className="w-full flex items-center justify-center gap-1.5 py-2 text-sm font-semibold rounded-xl bg-orange-50 text-orange-600 hover:bg-orange-100 dark:bg-orange-950/20 dark:text-orange-400 dark:hover:bg-orange-950/30 transition-colors border border-orange-100 dark:border-orange-900/30"
+                                >
+                                  {btnLabel}
+                                </button>
                               </div>
                             );
                           })()}
