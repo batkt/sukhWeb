@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Table } from "antd";
+import { Table, Tooltip } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { FileText, Eye, CalendarX2, Edit } from "lucide-react";
 import { ALL_COLUMNS } from "./columns";
@@ -112,6 +112,91 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
           colWidth = 120;
         else if (columnKey === "gereeniiDugaar") colWidth = 100;
         else colWidth = 120;
+
+        if (columnKey === "toot") {
+          const targetKey = "toot";
+          const renderTootCell = (_: any, record: any) => {
+            const allUnits: { toot: string; turul: string }[] = [];
+            if (record.toot != null && String(record.toot).trim() !== "") {
+              allUnits.push({
+                toot: String(record.toot).trim(),
+                turul: record.turul || "Орон сууц",
+              });
+            }
+            if (Array.isArray(record.nemeltTootnuud)) {
+              record.nemeltTootnuud.forEach((n: any) => {
+                if (n && n.toot != null && String(n.toot).trim() !== "") {
+                  allUnits.push({
+                    toot: String(n.toot).trim(),
+                    turul: n.turul || "Зогсоол",
+                  });
+                }
+              });
+            }
+
+            if (allUnits.length === 0) {
+              const rawVal = renderCellValue(record, "toot");
+              return <span className="text-gray-900 dark:text-white">{rawVal}</span>;
+            }
+
+            if (allUnits.length === 1) {
+              return (
+                <span className="text-gray-900 dark:text-white font-medium">
+                  {allUnits[0].toot}
+                </span>
+              );
+            }
+
+            const tooltipContent = (
+              <div className="space-y-1.5 p-1 max-w-[220px]">
+                {allUnits.map((u: any, idx: number) => {
+                  const label = u.turul === "Гараж" ? "Зогсоол" : u.turul;
+                  return (
+                    <div key={idx} className="flex items-center gap-3 text-xs py-0.5">
+                      <span className="text-white font-medium">
+                        {u.toot} ({label})
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+
+            return (
+              <Tooltip title={tooltipContent} placement="top" color="#1e293b" trigger="hover">
+                <span className="inline-flex items-center gap-1.5 cursor-pointer px-2 py-0.5 rounded-lg bg-slate-50 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                  {allUnits[0].toot}
+                  <span className="text-[10px] text-slate-500 font-bold">
+                    +{allUnits.length - 1}
+                  </span>
+                </span>
+              </Tooltip>
+            );
+          };
+
+          return {
+            title: (
+              <span
+                className={`text-gray-900 dark:text-white ${alignClass === "center" ? "text-center block" : ""}`}
+              >
+                {column?.label}
+              </span>
+            ),
+            dataIndex: columnKey,
+            key: columnKey,
+            align: alignClass as any,
+            width: colWidth,
+            className: headerClassName,
+            sorter: true,
+            sortOrder:
+              sortKey === targetKey
+                ? sortOrder === "asc"
+                  ? "ascend"
+                  : "descend"
+                : null,
+            render: renderTootCell,
+          };
+        }
 
         if (isSortable) {
           const keyMap: Record<string, string> = {

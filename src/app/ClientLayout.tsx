@@ -3,6 +3,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { MantineProvider, createTheme } from "@mantine/core";
 import { ConfigProvider } from "antd";
+import mn_MN from "antd/lib/locale/mn_MN";
 import { Toaster } from "sonner";
 import "@mantine/core/styles.css";
 // Removed Mantine dates styles; using custom DatePicker component
@@ -77,8 +78,20 @@ const theme = createTheme({
 export default function ClientLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
 
+  const mongolianLocale = {
+    ...mn_MN,
+    Table: {
+      ...mn_MN?.Table,
+      sortTitle: "Эрэмбэлэх",
+      triggerDesc: "Буурахаар эрэмбэлэх",
+      triggerAsc: "Өсөхөөр эрэмбэлэх",
+      cancelSort: "Эрэмбэлэлтийг цуцлах",
+    },
+  };
+
   return (
     <ConfigProvider
+      locale={mongolianLocale}
       theme={{
         token: {
           fontFamily: '"Segoe UI", sans-serif',
