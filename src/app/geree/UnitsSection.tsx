@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useMemo, useState, useEffect } from "react";
-import { Plus, Trash2, Info, User, Phone } from "lucide-react";
+import { Plus, Trash2, Info, User, Phone, X } from "lucide-react";
 import TusgaiZagvar from "../../../components/selectZagvar/tusgaiZagvar";
 import { UnitsTable, FloorItem } from "./UnitsTable";
 import { StandardPagination } from "@/components/ui/StandardTable";
 import Button from "@/components/ui/Button";
 import QuickRegisterModal from "./modals/QuickRegisterModal";
+import { ModalPortal } from "../../../components/golContent";
 
 interface UnitsSectionProps {
   davkharOptions: string[];
@@ -83,6 +84,7 @@ export default function UnitsSection({
   const [selectedFloor, setSelectedFloor] = useState<string | null>(null);
   const [selectedUnit, setSelectedUnit] = useState<string | null>(null);
   const [quickRegister, setQuickRegister] = useState<{ unit: string; floor: string } | null>(null);
+  const [activeUnitDetails, setActiveUnitDetails] = useState<{ unit: string; floor: string; resident: any } | null>(null);
 
   // Compute floor data for UnitsTable
   const floorData = useMemo(() => {
@@ -456,7 +458,11 @@ export default function UnitsSection({
                                     if (!isOccupied) {
                                       setQuickRegister({ unit: unitStr, floor: selectedFloor || "" });
                                     } else {
-                                      setSelectedUnit(isSelected ? null : unitStr);
+                                      setActiveUnitDetails({
+                                        unit: unitStr,
+                                        floor: selectedFloor || "",
+                                        resident: selectedFloorData.unitToResident[unitStr],
+                                      });
                                     }
                                   }}
                                   className={`relative flex items-center justify-center w-14 h-10 text-sm font-bold transition-all duration-150 shadow-sm rounded-2xl
@@ -719,6 +725,99 @@ export default function UnitsSection({
           });
         }}
       />
+
+      {/* Occupied Unit Details Modal */}
+      {activeUnitDetails && (
+        <ModalPortal>
+          <div className="fixed inset-0 z-[12000] flex items-center justify-center">
+            {/* Backdrop */}
+            <div
+              className="absolute inset-0 bg-black/45 backdrop-blur-sm transition-all duration-300"
+              onClick={() => setActiveUnitDetails(null)}
+            />
+
+            {/* Modal */}
+            <div className="relative z-10 w-full max-w-md mx-4 bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100 dark:border-gray-800">
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">
+                    {propertyTab} холбоос
+                  </p>
+                  <h2 className="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                    <span className="px-2 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-sm font-bold">
+                      {activeUnitDetails.floor}-р давхар
+                    </span>
+                    <span className="text-slate-400 font-light">/</span>
+                    <span className="px-2 py-0.5 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-bold">
+                      {activeUnitDetails.unit}-р тоот
+                    </span>
+                  </h2>
+                </div>
+                <button
+                  onClick={() => setActiveUnitDetails(null)}
+                  className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="px-6 py-6 space-y-4">
+                {activeUnitDetails.resident ? (
+                  <div className="space-y-4">
+                    {/* Resident Info Card */}
+                    <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800/80 space-y-3">
+                      <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">
+                        Бүртгэлтэй оршин суугч
+                      </p>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-950/40 flex items-center justify-center shrink-0">
+                          <User className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-bold text-slate-800 dark:text-slate-200 truncate">
+                            {[activeUnitDetails.resident.ovog, activeUnitDetails.resident.ner]
+                              .filter(Boolean)
+                              .join(" ") ||
+                              activeUnitDetails.resident.ner ||
+                              "Нэргүй"}
+                          </p>
+                          {activeUnitDetails.resident.utas && (
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1">
+                              <Phone className="w-3 h-3" />
+                              {activeUnitDetails.resident.utas}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action Button: Send Manual Invoice */}
+                    <button
+                      onClick={async () => {
+                        if (actions.handleAddGarageCharges) {
+                          await actions.handleAddGarageCharges([activeUnitDetails.resident]);
+                          setActiveUnitDetails(null);
+                        }
+                      }}
+                      className="w-full flex items-center justify-center gap-2 py-3 px-4 text-sm font-bold rounded-2xl bg-orange-500 hover:bg-orange-600 text-white hover:scale-[1.02] active:scale-[0.98] transition-all shadow-md shadow-orange-500/10 cursor-pointer"
+                    >
+                      {propertyTab === "Зогсоол"
+                        ? "Зогсоолын төлбөр нэмэх"
+                        : "Агуулахын төлбөр нэмэх"}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-slate-400 dark:text-slate-500 italic text-sm">
+                    Энэ тоотод бүртгэлтэй оршин суугч олдсонгүй.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
     </div>
   );
 }
