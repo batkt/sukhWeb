@@ -286,17 +286,43 @@ export default function UnitsSection({
     sortOrder,
   ]);
 
+  const uniqueSortedFloorOptions = useMemo(() => {
+    const uniqueFloors = Array.from(new Set(floorData.map((f) => f.floor)));
+    
+    uniqueFloors.sort((a, b) => {
+      const aIsB = /^b/i.test(a);
+      const bIsB = /^b/i.test(b);
+
+      if (aIsB && !bIsB) return -1;
+      if (!aIsB && bIsB) return 1;
+
+      const aNum = parseInt(aIsB ? a.slice(1) : a, 10);
+      const bNum = parseInt(bIsB ? b.slice(1) : b, 10);
+
+      if (!isNaN(aNum) && !isNaN(bNum)) {
+        return aNum - bNum;
+      }
+
+      return a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
+    });
+
+    return uniqueFloors.map((floor) => ({
+      value: floor,
+      label: floor,
+    }));
+  }, [floorData]);
+
   // Auto-select the first floor when data loads or activeTab/orts changes
   useEffect(() => {
-    if (floorData && floorData.length > 0) {
-      const exists = floorData.some((f) => f.floor === selectedFloor);
+    if (uniqueSortedFloorOptions && uniqueSortedFloorOptions.length > 0) {
+      const exists = uniqueSortedFloorOptions.some((o) => o.value === selectedFloor);
       if (!exists) {
-        setSelectedFloor(floorData[0].floor);
+        setSelectedFloor(uniqueSortedFloorOptions[0].value);
       }
     } else {
       setSelectedFloor(null);
     }
-  }, [floorData, selectedFloor]);
+  }, [uniqueSortedFloorOptions, selectedFloor]);
 
   const selectedFloorData = useMemo(() => {
     if (!selectedFloor) return null;
@@ -304,11 +330,30 @@ export default function UnitsSection({
   }, [floorData, selectedFloor]);
 
   const stats = useMemo(() => {
-    const total = floorData.reduce((sum, f) => sum + f.units.length, 0);
-    const occupied = floorData.reduce((sum, f) => sum + f.activeToots.size, 0);
-    const free = total - occupied;
-    return { total, occupied, free };
-  }, [floorData]);
+    const rawTotal = floorData.reduce((sum, f) => sum + f.units.length, 0);
+    const rawOccupied = floorData.reduce((sum, f) => sum + f.activeToots.size, 0);
+    const rawFree = rawTotal - rawOccupied;
+
+    if (unitStatusFilter === "occupied") {
+      return {
+        total: rawOccupied,
+        occupied: rawOccupied,
+        free: 0,
+      };
+    } else if (unitStatusFilter === "free") {
+      return {
+        total: rawFree,
+        occupied: 0,
+        free: rawFree,
+      };
+    } else {
+      return {
+        total: rawTotal,
+        occupied: rawOccupied,
+        free: rawFree,
+      };
+    }
+  }, [floorData, unitStatusFilter]);
 
   if (davkharOptions.length === 0) {
     return (
@@ -545,7 +590,7 @@ export default function UnitsSection({
                           <TusgaiZagvar
                             value={selectedFloor || ""}
                             onChange={(val) => setSelectedFloor(val)}
-                            options={floorData.map((f) => ({ value: f.floor, label: f.floor }))}
+                            options={uniqueSortedFloorOptions}
                             placeholder="Давхар сонгох"
                           />
                         </div>
@@ -641,6 +686,28 @@ export default function UnitsSection({
                                   className="w-full flex items-center justify-center gap-1.5 py-2 text-sm font-semibold rounded-xl bg-orange-50 text-orange-600 hover:bg-orange-100 dark:bg-orange-950/20 dark:text-orange-400 dark:hover:bg-orange-950/30 transition-colors border border-orange-100 dark:border-orange-900/30"
                                 >
                                   {btnLabel}
+                                </button>
+                                <button
+                                  onClick={async () => {
+                                    const isClient = clientsList.some((c) => String(c._id) === String(resident._id));
+                                    const bId = resident.baiguullagiinId || selectedBarilga?.baiguullagiinId || "";
+                                    const barId = resident.barilgiinId || selectedBarilga?._id || selectedBarilga?.id || "";
+                                    
+                                    if (isClient) {
+                                      if (actions.handleRemoveClientToot) {
+                                        await actions.handleRemoveClientToot(resident._id, bId, barId, selectedUnit);
+                                      }
+                                    } else {
+                                      if (actions.handleRemoveResidentToot) {
+                                        await actions.handleRemoveResidentToot(resident._id, bId, barId, selectedUnit);
+                                      }
+                                    }
+                                    setSelectedUnit(null);
+                                    setActiveUnitDetails(null);
+                                  }}
+                                  className="w-full flex items-center justify-center gap-1.5 py-2 text-sm font-semibold rounded-xl bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-950/20 dark:text-red-400 dark:hover:bg-red-950/30 transition-colors border border-red-100 dark:border-red-900/30"
+                                >
+                                  Холбоос салгах
                                 </button>
                               </div>
                             );
@@ -819,6 +886,31 @@ export default function UnitsSection({
                       {propertyTab === "Зогсоол"
                         ? "Зогсоолын төлбөр нэмэх"
                         : "Агуулахын төлбөр нэмэх"}
+                    </button>
+                    {/* Action Button: Unlink User */}
+                    <button
+                      onClick={async () => {
+                        const resident = activeUnitDetails.resident;
+                        const isClient = clientsList.some((c) => String(c._id) === String(resident._id));
+                        const bId = resident.baiguullagiinId || selectedBarilga?.baiguullagiinId || "";
+                        const barId = resident.barilgiinId || selectedBarilga?._id || selectedBarilga?.id || "";
+                        
+                        if (isClient) {
+                          if (actions.handleRemoveClientToot) {
+                            await actions.handleRemoveClientToot(resident._id, bId, barId, activeUnitDetails.unit);
+                          }
+                        } else {
+                          if (actions.handleRemoveResidentToot) {
+                            await actions.handleRemoveResidentToot(resident._id, bId, barId, activeUnitDetails.unit);
+                          }
+                        }
+                        
+                        setSelectedUnit(null);
+                        setActiveUnitDetails(null);
+                      }}
+                      className="w-full flex items-center justify-center gap-2 py-3 px-4 text-sm font-bold rounded-2xl bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-950/20 dark:text-red-400 dark:hover:bg-red-950/30 hover:scale-[1.02] active:scale-[0.98] transition-all border border-red-100 dark:border-red-900/30 cursor-pointer mt-2"
+                    >
+                      Холбоос салгах
                     </button>
                   </div>
                 ) : (
