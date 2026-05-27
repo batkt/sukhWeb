@@ -32,6 +32,7 @@ interface UnitsSectionProps {
   composeKey: (orts: string, floor: string) => string;
   propertyTab: "Тоот" | "Зогсоол" | "Агуулах";
   unitStatusFilter: "all" | "occupied" | "free";
+  setUnitStatusFilter?: (val: "all" | "occupied" | "free") => void;
   getTootOptions: (
     orts: string,
     floor: string,
@@ -74,6 +75,7 @@ export default function UnitsSection({
   composeKey,
   propertyTab,
   unitStatusFilter,
+  setUnitStatusFilter,
   getTootOptions,
   onAddUnit,
   onDeleteUnit,
@@ -288,7 +290,7 @@ export default function UnitsSection({
 
   const uniqueSortedFloorOptions = useMemo(() => {
     const uniqueFloors = Array.from(new Set(floorData.map((f) => f.floor)));
-    
+
     uniqueFloors.sort((a, b) => {
       const aIsB = /^b/i.test(a);
       const bIsB = /^b/i.test(b);
@@ -330,30 +332,20 @@ export default function UnitsSection({
   }, [floorData, selectedFloor]);
 
   const stats = useMemo(() => {
-    const rawTotal = floorData.reduce((sum, f) => sum + f.units.length, 0);
-    const rawOccupied = floorData.reduce((sum, f) => sum + f.activeToots.size, 0);
-    const rawFree = rawTotal - rawOccupied;
+    let total = 0;
+    let occupied = 0;
 
-    if (unitStatusFilter === "occupied") {
-      return {
-        total: rawOccupied,
-        occupied: rawOccupied,
-        free: 0,
-      };
-    } else if (unitStatusFilter === "free") {
-      return {
-        total: rawFree,
-        occupied: 0,
-        free: rawFree,
-      };
-    } else {
-      return {
-        total: rawTotal,
-        occupied: rawOccupied,
-        free: rawFree,
-      };
-    }
-  }, [floorData, unitStatusFilter]);
+    floorData.forEach((f) => {
+      total += f.units.length;
+      occupied += f.activeToots.size;
+    });
+
+    return {
+      total,
+      occupied,
+      free: total - occupied,
+    };
+  }, [floorData]);
 
   if (davkharOptions.length === 0) {
     return (
@@ -425,33 +417,58 @@ export default function UnitsSection({
               <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                 {/* Stats Cards */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-                  <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm text-center">
+                  <button
+                    onClick={() => setUnitStatusFilter?.("all")}
+                    className={`text-center select-none outline-none focus:outline-none transition-all duration-200 cursor-pointer rounded-2xl p-4 shadow-sm border ${unitStatusFilter === "all"
+                      ? "bg-blue-50 dark:bg-blue-950/30 border-blue-300 dark:border-blue-700 ring-2 ring-blue-500/50 shadow-md scale-[1.02]"
+                      : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 hover:border-slate-300 dark:hover:border-slate-600 opacity-60 hover:opacity-100 hover:scale-[1.01]"
+                      }`}
+                  >
                     <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">
                       Нийт тоот
                     </p>
                     <p className="text-2xl font-bold text-slate-800 dark:text-slate-100">
                       {stats.total}
                     </p>
-                  </div>
-                  <div className="bg-orange-50 dark:bg-orange-950/20 rounded-2xl border border-orange-100 dark:border-orange-900/30 p-4 shadow-sm text-center">
-                    <p className="text-xs text-orange-600 dark:text-orange-400 mb-1">
+                  </button>
+
+                  <button
+                    onClick={() => setUnitStatusFilter?.("free")}
+                    className={`text-center select-none outline-none focus:outline-none transition-all duration-200 cursor-pointer rounded-2xl p-4 shadow-sm border ${unitStatusFilter === "free"
+                      ? "bg-orange-100 dark:bg-orange-950/40 border-orange-300 dark:border-orange-800 ring-2 ring-orange-500/50 shadow-md scale-[1.02]"
+                      : "bg-orange-50/40 dark:bg-orange-950/10 border-orange-100/60 dark:border-orange-900/10 hover:border-orange-200 dark:hover:border-orange-900/30 opacity-60 hover:opacity-100 hover:scale-[1.01]"
+                      }`}
+                  >
+                    <p className={`text-xs mb-1 font-semibold ${unitStatusFilter === "free" ? "text-orange-700 dark:text-orange-300" : "text-orange-600 dark:text-orange-400"
+                      }`}>
                       Чөлөөтэй
                     </p>
-                    <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                    <p className={`text-2xl font-bold ${unitStatusFilter === "free" ? "text-orange-700 dark:text-orange-300" : "text-orange-600 dark:text-orange-400"
+                      }`}>
                       {stats.free}
                     </p>
-                  </div>
-                  <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-2xl border border-emerald-100 dark:border-emerald-900/30 p-4 shadow-sm text-center">
-                    <p className="text-xs text-emerald-600 dark:text-emerald-400 mb-1">
+                  </button>
+
+                  <button
+                    onClick={() => setUnitStatusFilter?.("occupied")}
+                    className={`text-center select-none outline-none focus:outline-none transition-all duration-200 cursor-pointer rounded-2xl p-4 shadow-sm border ${unitStatusFilter === "occupied"
+                      ? "bg-emerald-100 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800 ring-2 ring-emerald-500/50 shadow-md scale-[1.02]"
+                      : "bg-emerald-50/40 dark:bg-emerald-950/10 border-emerald-100/60 dark:border-emerald-900/10 hover:border-emerald-200 dark:hover:border-emerald-900/30 opacity-60 hover:opacity-100 hover:scale-[1.01]"
+                      }`}
+                  >
+                    <p className={`text-xs mb-1 font-semibold ${unitStatusFilter === "occupied" ? "text-emerald-700 dark:text-emerald-300" : "text-emerald-600 dark:text-emerald-400"
+                      }`}>
                       Бүртгэлтэй
                     </p>
-                    <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                    <p className={`text-2xl font-bold ${unitStatusFilter === "occupied" ? "text-emerald-700 dark:text-emerald-300" : "text-emerald-600 dark:text-emerald-400"
+                      }`}>
                       {stats.occupied}
                     </p>
-                  </div>
+                  </button>
+
                   <div className="bg-amber-50 dark:bg-amber-950/20 rounded-2xl border border-amber-100 dark:border-amber-900/30 p-4 shadow-sm text-center">
                     <p className="text-xs text-amber-600 dark:text-amber-400 mb-1">
-                      Сонгосон давхар
+                      Тухайн давхрын тоотууд
                     </p>
                     <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">
                       {selectedFloorData.filteredUnits.length}
@@ -502,7 +519,7 @@ export default function UnitsSection({
                                 ? ([resident.ovog, resident.ner].filter(Boolean).join(" ") || resident.ner || "Нэргүй")
                                 : "";
                               const utas = resident?.utas || "";
-                              const tooltipTitle = isOccupied 
+                              const tooltipTitle = isOccupied
                                 ? (utas ? `${fullName} (${utas})` : fullName)
                                 : "Бүртгүүлэх";
 
@@ -524,15 +541,13 @@ export default function UnitsSection({
                                         });
                                       }
                                     }}
-                                    className={`w-14 h-10 rounded-2xl flex items-center justify-center font-bold text-xs border transition-all duration-200 cursor-pointer ${
-                                      isOccupied
-                                        ? "bg-emerald-500 hover:bg-emerald-600 border-emerald-600 dark:border-emerald-500 text-white shadow-sm shadow-emerald-500/20"
-                                        : "bg-orange-500 hover:bg-orange-600 border-orange-600 dark:border-orange-500 text-white shadow-sm shadow-orange-500/20"
-                                    } ${
-                                      isSelected
+                                    className={`w-14 h-10 rounded-2xl flex items-center justify-center font-bold text-xs border transition-all duration-200 cursor-pointer ${isOccupied
+                                      ? "bg-emerald-500 hover:bg-emerald-600 border-emerald-600 dark:border-emerald-500 text-white shadow-sm shadow-emerald-500/20"
+                                      : "bg-orange-500 hover:bg-orange-600 border-orange-600 dark:border-orange-500 text-white shadow-sm shadow-orange-500/20"
+                                      } ${isSelected
                                         ? "ring-2 ring-offset-2 ring-blue-500 dark:ring-offset-slate-900"
                                         : ""
-                                    }`}
+                                      }`}
                                   >
                                     {unitStr}
                                   </button>
@@ -582,7 +597,7 @@ export default function UnitsSection({
                     </h4>
 
                     <div className="space-y-3">
-                      <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                      <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
                         <span className="text-sm text-slate-500 dark:text-slate-400 shrink-0">
                           Давхар
                         </span>
@@ -595,7 +610,7 @@ export default function UnitsSection({
                           />
                         </div>
                       </div>
-                      <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                      <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
                         <span className="text-sm text-slate-500 dark:text-slate-400">
                           Нийт тоот
                         </span>
@@ -603,7 +618,7 @@ export default function UnitsSection({
                           {selectedFloorData.units.length}
                         </span>
                       </div>
-                      <div className="flex justify-between items-center p-3 bg-orange-50 dark:bg-orange-950/20 rounded-xl">
+                      <div className="flex justify-between items-center p-3 bg-orange-50 dark:bg-orange-950/20 rounded-2xl">
                         <span className="text-sm text-orange-600 dark:text-orange-400">
                           Чөлөөтэй
                         </span>
@@ -612,7 +627,7 @@ export default function UnitsSection({
                             selectedFloorData.activeToots.size}
                         </span>
                       </div>
-                      <div className="flex justify-between items-center p-3 bg-emerald-50 dark:bg-emerald-950/20 rounded-xl">
+                      <div className="flex justify-between items-center p-3 bg-emerald-50 dark:bg-emerald-950/20 rounded-2xl">
                         <span className="text-sm text-emerald-600 dark:text-emerald-400">
                           Бүртгэлтэй
                         </span>
@@ -633,11 +648,10 @@ export default function UnitsSection({
                               </p>
                             </div>
                             <span
-                              className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${
-                                selectedFloorData.activeToots.has(selectedUnit)
-                                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400"
-                                  : "bg-orange-100 text-orange-700 dark:bg-orange-950/30 dark:text-orange-400"
-                              }`}
+                              className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${selectedFloorData.activeToots.has(selectedUnit)
+                                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400"
+                                : "bg-orange-100 text-orange-700 dark:bg-orange-950/30 dark:text-orange-400"
+                                }`}
                             >
                               {selectedFloorData.activeToots.has(selectedUnit)
                                 ? "Бүртгэлтэй"
@@ -661,7 +675,7 @@ export default function UnitsSection({
                                 : "Агуулахын төлбөр нэмэх";
                             return (
                               <div className="space-y-3 mb-3">
-                                <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl space-y-2">
+                                <div className="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800/60 space-y-2.5">
                                   <div className="flex items-center gap-2">
                                     <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                                     <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">
@@ -676,23 +690,37 @@ export default function UnitsSection({
                                       </span>
                                     </div>
                                   )}
+                                  {resident.toot && (
+                                    <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-lg w-fit border border-slate-200 dark:border-slate-700/80 font-medium">
+                                      <span className="text-xs">🏠</span>
+                                      <span>
+                                        {[
+                                          resident.orts ? `${resident.orts}-р орц` : "",
+                                          resident.davkhar ? `${resident.davkhar}-р давхар` : "",
+                                          resident.toot ? `${resident.toot} тоот` : ""
+                                        ].filter(Boolean).join(", ")}
+                                      </span>
+                                    </div>
+                                  )}
                                 </div>
-                                <button
+                                <Button
                                   onClick={async () => {
                                     if (actions.handleAddGarageCharges) {
                                       await actions.handleAddGarageCharges([resident], propertyTab);
                                     }
                                   }}
-                                  className="w-full flex items-center justify-center gap-1.5 py-2 text-sm font-semibold rounded-xl bg-orange-50 text-orange-600 hover:bg-orange-100 dark:bg-orange-950/20 dark:text-orange-400 dark:hover:bg-orange-950/30 transition-colors border border-orange-100 dark:border-orange-900/30"
+                                  variant="secondary"
+                                  fullWidth
+                                  className="!bg-orange-500 hover:!bg-orange-600 !text-white rounded-2xl shadow-sm border-none"
                                 >
                                   {btnLabel}
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                   onClick={async () => {
                                     const isClient = clientsList.some((c) => String(c._id) === String(resident._id));
                                     const bId = resident.baiguullagiinId || selectedBarilga?.baiguullagiinId || "";
                                     const barId = resident.barilgiinId || selectedBarilga?._id || selectedBarilga?.id || "";
-                                    
+
                                     if (isClient) {
                                       if (actions.handleRemoveClientToot) {
                                         await actions.handleRemoveClientToot(resident._id, bId, barId, selectedUnit);
@@ -705,24 +733,28 @@ export default function UnitsSection({
                                     setSelectedUnit(null);
                                     setActiveUnitDetails(null);
                                   }}
-                                  className="w-full flex items-center justify-center gap-1.5 py-2 text-sm font-semibold rounded-xl bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-950/20 dark:text-red-400 dark:hover:bg-red-950/30 transition-colors border border-red-100 dark:border-red-900/30"
+                                  variant="ghost"
+                                  fullWidth
+                                  className="border border-red-200 bg-red-50/50 hover:bg-red-100/80 dark:border-red-900/40 dark:bg-red-950/20 dark:hover:bg-red-950/30 !text-red-600 dark:!text-red-400 rounded-2xl"
                                 >
                                   Холбоос салгах
-                                </button>
+                                </Button>
                               </div>
                             );
                           })()}
 
-                          <button
+                          <Button
                             onClick={() => {
                               onDeleteUnit(selectedFloor || "", selectedUnit);
                               setSelectedUnit(null);
                             }}
-                            className="w-full flex items-center justify-center gap-1.5 py-2 text-sm font-semibold rounded-xl bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-950/20 dark:text-red-400 dark:hover:bg-red-950/30 transition-colors border border-red-100 dark:border-red-900/30"
+                            variant="ghost"
+                            fullWidth
+                            leftIcon={<Trash2 className="w-4 h-4" />}
+                            className="border border-red-200 bg-red-50/50 hover:bg-red-100/80 dark:border-red-900/40 dark:bg-red-950/20 dark:hover:bg-red-950/30 !text-red-600 dark:!text-red-400 rounded-2xl"
                           >
-                            <Trash2 className="w-4 h-4" />
                             Устгах
-                          </button>
+                          </Button>
                         </div>
                       )}
                     </div>
@@ -869,32 +901,46 @@ export default function UnitsSection({
                               {activeUnitDetails.resident.utas}
                             </p>
                           )}
+                          {activeUnitDetails.resident.toot && (
+                            <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-2 flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 rounded-xl w-fit border border-slate-200 dark:border-slate-700/80 font-medium">
+                              <span className="text-xs">🏠</span>
+                              <span>
+                                {[
+                                  activeUnitDetails.resident.orts ? `${activeUnitDetails.resident.orts}-р орц` : "",
+                                  activeUnitDetails.resident.davkhar ? `${activeUnitDetails.resident.davkhar}-р давхар` : "",
+                                  activeUnitDetails.resident.toot ? `${activeUnitDetails.resident.toot} тоот` : ""
+                                ].filter(Boolean).join(", ")}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
 
                     {/* Action Button: Send Manual Invoice */}
-                    <button
+                    <Button
                       onClick={async () => {
                         if (actions.handleAddGarageCharges) {
                           await actions.handleAddGarageCharges([activeUnitDetails.resident], propertyTab);
                           setActiveUnitDetails(null);
                         }
                       }}
-                      className="w-full flex items-center justify-center gap-2 py-3 px-4 text-sm font-bold rounded-2xl bg-orange-500 hover:bg-orange-600 text-white hover:scale-[1.02] active:scale-[0.98] transition-all shadow-md shadow-orange-500/10 cursor-pointer"
+                      variant="secondary"
+                      fullWidth
+                      className="!bg-orange-500 hover:!bg-orange-600 !text-white rounded-2xl shadow-md shadow-orange-500/10"
                     >
                       {propertyTab === "Зогсоол"
                         ? "Зогсоолын төлбөр нэмэх"
                         : "Агуулахын төлбөр нэмэх"}
-                    </button>
+                    </Button>
                     {/* Action Button: Unlink User */}
-                    <button
+                    <Button
                       onClick={async () => {
                         const resident = activeUnitDetails.resident;
                         const isClient = clientsList.some((c) => String(c._id) === String(resident._id));
                         const bId = resident.baiguullagiinId || selectedBarilga?.baiguullagiinId || "";
                         const barId = resident.barilgiinId || selectedBarilga?._id || selectedBarilga?.id || "";
-                        
+
                         if (isClient) {
                           if (actions.handleRemoveClientToot) {
                             await actions.handleRemoveClientToot(resident._id, bId, barId, activeUnitDetails.unit);
@@ -904,14 +950,16 @@ export default function UnitsSection({
                             await actions.handleRemoveResidentToot(resident._id, bId, barId, activeUnitDetails.unit);
                           }
                         }
-                        
+
                         setSelectedUnit(null);
                         setActiveUnitDetails(null);
                       }}
-                      className="w-full flex items-center justify-center gap-2 py-3 px-4 text-sm font-bold rounded-2xl bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-950/20 dark:text-red-400 dark:hover:bg-red-950/30 hover:scale-[1.02] active:scale-[0.98] transition-all border border-red-100 dark:border-red-900/30 cursor-pointer mt-2"
+                      variant="ghost"
+                      fullWidth
+                      className="border border-red-200 bg-red-50/50 hover:bg-red-100/80 dark:border-red-900/40 dark:bg-red-950/20 dark:hover:bg-red-950/30 !text-red-600 dark:!text-red-400 rounded-2xl mt-2"
                     >
                       Холбоос салгах
-                    </button>
+                    </Button>
                   </div>
                 ) : (
                   <div className="text-center py-6 text-slate-400 dark:text-slate-500 italic text-sm">

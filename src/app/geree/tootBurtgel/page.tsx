@@ -64,6 +64,7 @@ export default function ӨмчБүртгэлPage() {
         setUnitPage={state.setUnitPage}
         setUnitPageSize={state.setUnitPageSize}
         unitStatusFilter={state.unitStatusFilter}
+        setUnitStatusFilter={state.setUnitStatusFilter}
         getTootOptions={data.getTootOptions}
         isSavingUnits={state.isSavingUnits}
         actions={actions}
