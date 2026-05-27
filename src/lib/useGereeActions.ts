@@ -1828,6 +1828,191 @@ export function useGereeActions(
     [token, mutate],
   );
 
+  const handleAssignToUnit = useCallback(
+    async (
+      personId: string,
+      personType: "orshinSuugch" | "khariltsagch",
+      orts: string,
+      floor: string,
+      unit: string,
+      propertyTab: "Тоот" | "Зогсоол" | "Агуулах",
+    ) => {
+      if (!token) {
+        openErrorOverlay("Нэвтрэх шаардлагатай");
+        return false;
+      }
+
+      const effectiveBid = selectedBuildingId || barilgiinId;
+      if (!baiguullaga?._id || !effectiveBid) {
+        openErrorOverlay("Байгууллага эсвэл барилга сонгоогүй байна.");
+        return false;
+      }
+
+      const unitTurul =
+        propertyTab === "Зогсоол"
+          ? "Гараж"
+          : propertyTab === "Агуулах"
+            ? "Агуулах"
+            : "Орон сууц";
+
+      try {
+        if (personType === "orshinSuugch") {
+          const resp = await uilchilgee(token).get(`/orshinSuugch/${personId}`, {
+            params: { baiguullagiinId: baiguullaga._id },
+          });
+          const resident = resp.data;
+          if (!resident) {
+            openErrorOverlay("Оршин суугч олдсонгүй");
+            return false;
+          }
+
+          const existingToots = Array.isArray(resident.toots) ? resident.toots : [];
+          const isDuplicate = existingToots.some(
+            (t: any) =>
+              String(t.toot).trim() === String(unit).trim() &&
+              String(t.barilgiinId) === String(effectiveBid) &&
+              String(t.baiguullagiinId) === String(baiguullaga._id)
+          );
+
+          if (isDuplicate) {
+            openErrorOverlay("Энэ тоот оршин суугчид бүртгэгдсэн байна.");
+            return false;
+          }
+
+          const selectedBarilga = baiguullaga.barilguud?.find(
+            (b: any) => String(b._id || b.id) === String(effectiveBid),
+          );
+
+          const newUnitEntry = {
+            orts: orts || "1",
+            davkhar: floor || "",
+            toot: unit,
+            turul: unitTurul,
+            ekhniiUldegdel: 0,
+            tsahilgaaniiZaalt: 0,
+            baiguullagiinId: baiguullaga._id,
+            barilgiinId: effectiveBid,
+            bairniiNer: selectedBarilga?.ner || "",
+            soh: selectedBarilga?.tokhirgoo?.sohNer || "",
+            sohNer: selectedBarilga?.tokhirgoo?.sohNer || "",
+            duureg: selectedBarilga?.duureg || "",
+            horoo: selectedBarilga?.horoo || "",
+          };
+
+          const updatedToots = [...existingToots, newUnitEntry];
+
+          const payload = {
+            ...resident,
+            toots: updatedToots,
+            units: updatedToots,
+            toot: updatedToots[0]?.toot || resident.toot || "",
+            davkhar: updatedToots[0]?.davkhar || resident.davkhar || "",
+            orts: updatedToots[0]?.orts || resident.orts || "1",
+            ekhniiUldegdel: updatedToots[0]?.ekhniiUldegdel || resident.ekhniiUldegdel || 0,
+            tsahilgaaniiZaalt: updatedToots[0]?.tsahilgaaniiZaalt || resident.tsahilgaaniiZaalt || 0,
+            barilgiinId: effectiveBid,
+            baiguullagiinId: baiguullaga._id,
+          };
+
+          await updateMethod("orshinSuugch", token, {
+            ...payload,
+            _id: personId,
+          });
+
+          openSuccessOverlay("Амжилттай холбогдлоо");
+          mutate(
+            (key: any) =>
+              Array.isArray(key) &&
+              (key[0] === "/orshinSuugch" || key[0] === "/geree"),
+            undefined,
+            { revalidate: true },
+          );
+          return true;
+        } else {
+          const resp = await uilchilgee(token).get(`/khariltsagch/${personId}`, {
+            params: { baiguullagiinId: baiguullaga._id },
+          });
+          const client = resp.data;
+          if (!client) {
+            openErrorOverlay("Харилцагч олдсонгүй");
+            return false;
+          }
+
+          const existingToots = Array.isArray(client.toots) ? client.toots : [];
+          const isDuplicate = existingToots.some(
+            (t: any) =>
+              String(t.toot).trim() === String(unit).trim() &&
+              String(t.barilgiinId) === String(effectiveBid) &&
+              String(t.baiguullagiinId) === String(baiguullaga._id)
+          );
+
+          if (isDuplicate) {
+            openErrorOverlay("Энэ тоот харилцагчид бүртгэгдсэн байна.");
+            return false;
+          }
+
+          const selectedBarilga = baiguullaga.barilguud?.find(
+            (b: any) => String(b._id || b.id) === String(effectiveBid),
+          );
+
+          const newUnitEntry = {
+            orts: orts || "1",
+            davkhar: floor || "",
+            toot: unit,
+            turul: unitTurul,
+            ekhniiUldegdel: 0,
+            tsahilgaaniiZaalt: 0,
+            baiguullagiinId: baiguullaga._id,
+            barilgiinId: effectiveBid,
+            bairniiNer: selectedBarilga?.ner || "",
+            soh: selectedBarilga?.tokhirgoo?.sohNer || "",
+            sohNer: selectedBarilga?.tokhirgoo?.sohNer || "",
+            duureg: selectedBarilga?.duureg || "",
+            horoo: selectedBarilga?.horoo || "",
+            khonogoorBodokhEsekh: false,
+            bodokhKhonog: 0,
+          };
+
+          const updatedToots = [...existingToots, newUnitEntry];
+
+          const payload = {
+            ...client,
+            toots: updatedToots,
+            units: updatedToots,
+            toot: updatedToots[0]?.toot || client.toot || "",
+            davkhar: updatedToots[0]?.davkhar || client.davkhar || "",
+            orts: updatedToots[0]?.orts || client.orts || "1",
+            ekhniiUldegdel: updatedToots[0]?.ekhniiUldegdel || client.ekhniiUldegdel || 0,
+            tsahilgaaniiZaalt: updatedToots[0]?.tsahilgaaniiZaalt || client.tsahilgaaniiZaalt || 0,
+            barilgiinId: effectiveBid,
+            baiguullagiinId: baiguullaga._id,
+            utas: Array.isArray(client.utas)
+              ? client.utas[0] || ""
+              : client.utas || "",
+          };
+
+          await uilchilgee(token).put(`/khariltsagch/${personId}`, payload);
+
+          openSuccessOverlay("Амжилттай холбогдлоо");
+          mutate(
+            (key: any) =>
+              Array.isArray(key) &&
+              (key[0] === "/khariltsagch" || key[0] === "/geree"),
+            undefined,
+            { revalidate: true },
+          );
+          return true;
+        }
+      } catch (err: any) {
+        openErrorOverlay(
+          `Алдаа гарлаа: ${err.response?.data?.error || err.message}`
+        );
+        return false;
+      }
+    },
+    [token, baiguullaga, selectedBuildingId, barilgiinId, mutate],
+  );
+
   const handleShowClientModal = useCallback(() => {
     setEditingClient?.(null);
     setNewClient?.({
@@ -1957,5 +2142,6 @@ export function useGereeActions(
     deleteUnit,
     deleteFloor,
     addUnit,
+    handleAssignToUnit,
   };
 }

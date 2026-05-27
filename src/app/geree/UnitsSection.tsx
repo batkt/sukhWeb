@@ -6,6 +6,7 @@ import TusgaiZagvar from "../../../components/selectZagvar/tusgaiZagvar";
 import { UnitsTable, FloorItem } from "./UnitsTable";
 import { StandardPagination } from "@/components/ui/StandardTable";
 import Button from "@/components/ui/Button";
+import QuickRegisterModal from "./modals/QuickRegisterModal";
 
 interface UnitsSectionProps {
   davkharOptions: string[];
@@ -37,6 +38,16 @@ interface UnitsSectionProps {
   onAddUnit: (floor: string) => void;
   onDeleteUnit: (floor: string, unit: string) => void;
   onDeleteFloor: (floor: string) => void;
+  residentsList: any[];
+  clientsList: any[];
+  onAssignToUnit: (
+    personId: string,
+    personType: "orshinSuugch" | "khariltsagch",
+    orts: string,
+    floor: string,
+    unit: string,
+    propertyTab: "Тоот" | "Зогсоол" | "Агуулах",
+  ) => Promise<boolean>;
 }
 
 export default function UnitsSection({
@@ -65,9 +76,13 @@ export default function UnitsSection({
   onAddUnit,
   onDeleteUnit,
   onDeleteFloor,
+  residentsList,
+  clientsList,
+  onAssignToUnit,
 }: UnitsSectionProps) {
   const [selectedFloor, setSelectedFloor] = useState<string | null>(null);
   const [selectedUnit, setSelectedUnit] = useState<string | null>(null);
+  const [quickRegister, setQuickRegister] = useState<{ unit: string; floor: string } | null>(null);
 
   // Compute floor data for UnitsTable
   const floorData = useMemo(() => {
@@ -286,17 +301,11 @@ export default function UnitsSection({
   }, [floorData, selectedFloor]);
 
   const stats = useMemo(() => {
-    if (selectedFloorData) {
-      const total = selectedFloorData.units.length;
-      const occupied = selectedFloorData.activeToots.size;
-      const free = total - occupied;
-      return { total, occupied, free };
-    }
     const total = floorData.reduce((sum, f) => sum + f.units.length, 0);
     const occupied = floorData.reduce((sum, f) => sum + f.activeToots.size, 0);
     const free = total - occupied;
     return { total, occupied, free };
-  }, [floorData, selectedFloorData]);
+  }, [floorData]);
 
   if (davkharOptions.length === 0) {
     return (
@@ -325,47 +334,47 @@ export default function UnitsSection({
 
         {selectedOrts !== undefined && (
           <>
-            <div className="table-surface w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl">
-              <div className="p-1 allow-overflow no-scrollbar" id="units-table">
-                <UnitsTable
-                  data={floorData.slice(
-                    (unitPage - 1) * unitPageSize,
-                    unitPage * unitPageSize,
-                  )}
-                  actions={actions}
-                  loading={isSavingUnits}
-                  page={unitPage}
-                  pageSize={unitPageSize}
-                  maxHeight={
-                    propertyTab !== "Тоот" ? "200px" : "calc(100vh - 520px)"
-                  }
-                  onAddUnit={onAddUnit}
-                  onDeleteUnit={onDeleteUnit}
-                  onDeleteFloor={onDeleteFloor}
-                  sortKey={sortKey}
-                  sortOrder={sortOrder}
-                  propertyTab={propertyTab}
-                  selectedFloor={selectedFloor}
-                  onSelectFloor={setSelectedFloor}
-                />
+            {propertyTab === "Тоот" && (
+              <div className="table-surface w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl">
+                <div className="p-1 allow-overflow no-scrollbar" id="units-table">
+                  <UnitsTable
+                    data={floorData.slice(
+                      (unitPage - 1) * unitPageSize,
+                      unitPage * unitPageSize,
+                    )}
+                    actions={actions}
+                    loading={isSavingUnits}
+                    page={unitPage}
+                    pageSize={unitPageSize}
+                    maxHeight="calc(100vh - 520px)"
+                    onAddUnit={onAddUnit}
+                    onDeleteUnit={onDeleteUnit}
+                    onDeleteFloor={onDeleteFloor}
+                    sortKey={sortKey}
+                    sortOrder={sortOrder}
+                    propertyTab={propertyTab}
+                    selectedFloor={selectedFloor}
+                    onSelectFloor={setSelectedFloor}
+                  />
+                </div>
+                <div id="units-pagination">
+                  <StandardPagination
+                    current={unitPage}
+                    total={floorData.length}
+                    pageSize={unitPageSize}
+                    onChange={setUnitPage}
+                    onPageSizeChange={(v) => {
+                      setUnitPageSize(v);
+                      setUnitPage(1);
+                    }}
+                  />
+                </div>
               </div>
-              <div id="units-pagination">
-                <StandardPagination
-                  current={unitPage}
-                  total={floorData.length}
-                  pageSize={unitPageSize}
-                  onChange={setUnitPage}
-                  onPageSizeChange={(v) => {
-                    setUnitPageSize(v);
-                    setUnitPage(1);
-                  }}
-                />
-              </div>
-            </div>
+            )}
 
-            {/* Visual Floor Units Map — for all property tabs */}
-            {selectedFloorData && (
-              <div className="mt-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            {/* Visual Floor Units Map — only for garage and storage */}
+            {selectedFloorData && propertyTab !== "Тоот" && (
+              <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                 {/* Stats Cards */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
                   <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm text-center">
@@ -443,9 +452,13 @@ export default function UnitsSection({
                               return (
                                 <button
                                   key={unitStr}
-                                  onClick={() =>
-                                    setSelectedUnit(isSelected ? null : unitStr)
-                                  }
+                                  onClick={() => {
+                                    if (!isOccupied) {
+                                      setQuickRegister({ unit: unitStr, floor: selectedFloor || "" });
+                                    } else {
+                                      setSelectedUnit(isSelected ? null : unitStr);
+                                    }
+                                  }}
                                   className={`relative flex items-center justify-center w-14 h-10 text-sm font-bold transition-all duration-150 shadow-sm rounded-2xl
                                     ${
                                       isOccupied
@@ -454,8 +467,9 @@ export default function UnitsSection({
                                           : "bg-emerald-400 text-white hover:bg-emerald-500"
                                         : isSelected
                                           ? "bg-orange-500 text-white ring-2 ring-orange-300 scale-105"
-                                          : "bg-orange-400 text-white hover:bg-orange-500"
+                                          : "bg-orange-400 text-white hover:bg-orange-500 hover:scale-105"
                                     }`}
+                                  title={isOccupied ? "Бүртгэлтэй" : "Бүртгүүлэх"}
                                 >
                                   {unitStr}
                                 </button>
@@ -505,12 +519,17 @@ export default function UnitsSection({
 
                     <div className="space-y-3">
                       <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-                        <span className="text-sm text-slate-500 dark:text-slate-400">
+                        <span className="text-sm text-slate-500 dark:text-slate-400 shrink-0">
                           Давхар
                         </span>
-                        <span className="text-sm font-bold text-slate-800 dark:text-slate-100">
-                          {selectedFloor}
-                        </span>
+                        <div className="w-32">
+                          <TusgaiZagvar
+                            value={selectedFloor || ""}
+                            onChange={(val) => setSelectedFloor(val)}
+                            options={floorData.map((f) => ({ value: f.floor, label: f.floor }))}
+                            placeholder="Давхар сонгох"
+                          />
+                        </div>
                       </div>
                       <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
                         <span className="text-sm text-slate-500 dark:text-slate-400">
@@ -635,6 +654,23 @@ export default function UnitsSection({
           </>
         )}
       </div>
+
+      {/* Quick Register Modal */}
+      <QuickRegisterModal
+        show={!!quickRegister}
+        onClose={() => setQuickRegister(null)}
+        unit={quickRegister?.unit || null}
+        floor={quickRegister?.floor || null}
+        orts={selectedOrts}
+        propertyTab={propertyTab}
+        residentsList={residentsList}
+        clientsList={clientsList}
+        onAssign={async (personId, type) => {
+          if (!quickRegister) return false;
+          const { unit, floor } = quickRegister;
+          return await onAssignToUnit(personId, type, selectedOrts, floor, unit, propertyTab);
+        }}
+      />
     </div>
   );
 }

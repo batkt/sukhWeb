@@ -82,6 +82,9 @@ export default function ӨмчБүртгэлPage() {
           state.setFloorToDelete(floor);
           state.setShowDeleteFloorModal(true);
         }}
+        residentsList={data.residentsList}
+        clientsList={data.clientsList}
+        onAssignToUnit={actions.handleAssignToUnit}
       />
     </div>
   );
