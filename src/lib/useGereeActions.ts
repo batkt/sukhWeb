@@ -1302,20 +1302,19 @@ export function useGereeActions(
           (b: any) => String(b._id || b.id) === String(effectiveBarilgiinId),
         );
         const tok = barilga?.tokhirgoo || {};
-        const isEnabled = !!tok.garsiinTolborEnabled;
-        const method = tok.garsiinTolborArga || "Тогтмол";
-        const value = Number(tok.garsiinTolborUtga) || 0;
+        
+        // Garage config
+        const garageEnabled = !!tok.garsiinTolborEnabled;
+        const garageMethod = tok.garsiinTolborArga || "Тогтмол";
+        const garageValue = Number(tok.garsiinTolborUtga) || 0;
 
-        if (!isEnabled) {
-          openErrorOverlay("Грашийн төлбөрийн тохиргоо идэвхгүй байна");
-          return;
-        }
-        if (method === "Тогтмол" && value <= 0) {
-          openErrorOverlay("Грашийн төлбөрийн дүн оруулаагүй байна");
-          return;
-        }
-        if (method !== "Тогтмол") {
-          openErrorOverlay("Зөвхөн Тогтмол аргыг дэмжинэ");
+        // Storage config
+        const storageEnabled = !!tok.aguulakhTolborEnabled;
+        const storageMethod = tok.aguulakhTolborArga || "Тогтмол";
+        const storageValue = Number(tok.aguulakhTolborUtga) || 0;
+
+        if (!garageEnabled && !storageEnabled) {
+          openErrorOverlay("Граш болон агуулахын төлбөрийн тохиргоо идэвхгүй байна");
           return;
         }
 
@@ -1417,7 +1416,7 @@ export function useGereeActions(
           const hasGarage = garageUnits.length > 0;
           const hasAguulakh = aguulakhUnits.length > 0;
 
-          if (hasGarage) {
+          if (hasGarage && garageEnabled && garageMethod === "Тогтмол" && garageValue > 0) {
             const garageToots = garageUnits.map((u: any) => u.toot).join(", ");
             await uilchilgee(token).post("/guilgeeAvlaguud", {
               baiguullagiinId: baiguullaga._id,
@@ -1425,9 +1424,9 @@ export function useGereeActions(
               orshinSuugchId: resident._id,
               gereeniiId: resident.gereeniiId || resident.gereeId,
               turul: "avlaga",
-              tulukhDun: value,
+              tulukhDun: garageValue,
               tulsunDun: 0,
-              dun: value,
+              dun: garageValue,
               tailbar: garageToots ? `Зогсоол (${garageToots})` : `Зогсоол`,
               ognoo: today,
               guilgeeKhiisenAjiltniiId: ajiltan?._id,
@@ -1436,7 +1435,7 @@ export function useGereeActions(
             });
             added++;
           }
-          if (hasAguulakh) {
+          if (hasAguulakh && storageEnabled && storageMethod === "Тогтмол" && storageValue > 0) {
             const aguulakhToots = aguulakhUnits.map((u: any) => u.toot).join(", ");
             await uilchilgee(token).post("/guilgeeAvlaguud", {
               baiguullagiinId: baiguullaga._id,
@@ -1444,9 +1443,9 @@ export function useGereeActions(
               orshinSuugchId: resident._id,
               gereeniiId: resident.gereeniiId || resident.gereeId,
               turul: "avlaga",
-              tulukhDun: value,
+              tulukhDun: storageValue,
               tulsunDun: 0,
-              dun: value,
+              dun: storageValue,
               tailbar: aguulakhToots ? `Агуулах (${aguulakhToots})` : `Агуулах`,
               ognoo: today,
               guilgeeKhiisenAjiltniiId: ajiltan?._id,
@@ -1457,7 +1456,7 @@ export function useGereeActions(
           }
         }
 
-        openSuccessOverlay(`${added} оршин суугчид грашийн төлбөр нэмэгдлээ`);
+        openSuccessOverlay(`${added} төлбөр амжилттай нэмэгдлээ`);
 
         // Refresh caches
         mutate(
