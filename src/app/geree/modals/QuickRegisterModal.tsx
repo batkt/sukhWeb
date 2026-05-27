@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { X, UserCheck, Building2, ArrowLeft, Search, Plus } from "lucide-react";
 import { ModalPortal } from "../../../../components/golContent";
+import { useRouter } from "next/navigation";
 
 interface QuickRegisterModalProps {
   show: boolean;
@@ -36,6 +37,7 @@ export default function QuickRegisterModal({
   const [searchQuery, setSearchQuery] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
   // Reset modal state on show/hide
   useEffect(() => {
@@ -216,9 +218,9 @@ export default function QuickRegisterModal({
                 type="button"
                 onClick={() => {
                   if (selectedType === "orshinSuugch") {
-                    onRegisterNewOrshinSuugch?.();
+                    router.push(`/geree/orshinSuugch?new=true&orts=${orts || ""}&davkhar=${floor || ""}&toot=${unit || ""}&turul=${unitTypeLabel}`);
                   } else {
-                    onRegisterNewKhariltsagch?.();
+                    router.push(`/geree/khariltsagch?new=true&orts=${orts || ""}&davkhar=${floor || ""}&toot=${unit || ""}&turul=${unitTypeLabel}`);
                   }
                   onClose();
                 }}

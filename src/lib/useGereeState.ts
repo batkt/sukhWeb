@@ -159,6 +159,85 @@ export function useGereeState(searchParams: any, didInitRef: any) {
     didInitRef.current = true;
   }, [searchParams]);
 
+  // Catch 'new=true' parameter to trigger automatic prefilled modals
+  useEffect(() => {
+    const isNew = searchParams.get("new") === "true";
+    if (isNew) {
+      const ortsVal = searchParams.get("orts") || "";
+      const davkharVal = searchParams.get("davkhar") || "";
+      const tootVal = searchParams.get("toot") || "";
+      const turulVal = searchParams.get("turul") || "Орон сууц";
+
+      if (typeof window !== "undefined") {
+        const path = window.location.pathname;
+        if (path.includes("/geree/orshinSuugch")) {
+          setNewResident({
+            ovog: "",
+            ner: "",
+            register: "",
+            utas: [""],
+            khayag: "",
+            aimag: "Улаанбаатар",
+            duureg: "",
+            horoo: "",
+            orts: ortsVal,
+            toot: tootVal,
+            davkhar: davkharVal,
+            tsahilgaaniiZaalt: "",
+            turul: "Үндсэн",
+            tailbar: "",
+            ekhniiUldegdel: undefined,
+            units: [
+              {
+                orts: ortsVal,
+                davkhar: davkharVal,
+                toot: tootVal,
+                turul: turulVal === "Гараж" ? "Гараж" : turulVal === "Агуулах" ? "Агуулах" : "Орон сууц",
+                ekhniiUldegdel: 0,
+                tsahilgaaniiZaalt: 0,
+              },
+            ],
+          });
+          setShowResidentModal(true);
+        } else if (path.includes("/geree/khariltsagch")) {
+          setNewClient({
+            ovog: "",
+            ner: "",
+            register: "",
+            utas: [""],
+            khayag: "",
+            aimag: "Улаанбаатар",
+            duureg: "",
+            horoo: "",
+            turul: "Үндсэн",
+            tailbar: "",
+            units: [
+              {
+                orts: ortsVal,
+                davkhar: davkharVal,
+                toot: tootVal,
+                turul: turulVal === "Гараж" ? "Гараж" : turulVal === "Агуулах" ? "Агуулах" : "Орон сууц",
+                ekhniiUldegdel: 0,
+                tsahilgaaniiZaalt: 0,
+              },
+            ],
+            ekhniiUldegdel: undefined,
+          });
+          setShowClientModal(true);
+        }
+
+        // Clean up URL parameters instantly to prevent double popup on refresh
+        const url = new URL(window.location.href);
+        url.searchParams.delete("new");
+        url.searchParams.delete("orts");
+        url.searchParams.delete("davkhar");
+        url.searchParams.delete("toot");
+        url.searchParams.delete("turul");
+        window.history.replaceState({}, "", url.toString());
+      }
+    }
+  }, [searchParams]);
+
   return {
     activeTab,
     setActiveTab,

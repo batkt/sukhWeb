@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState, useEffect } from "react";
 import { Plus, Trash2, Info, User, Phone, X } from "lucide-react";
+import { Tooltip } from "antd";
 import TusgaiZagvar from "../../../components/selectZagvar/tusgaiZagvar";
 import { UnitsTable, FloorItem } from "./UnitsTable";
 import { StandardPagination } from "@/components/ui/StandardTable";
@@ -451,34 +452,46 @@ export default function UnitsSection({
                               const isOccupied =
                                 selectedFloorData.activeToots.has(unitStr);
                               const isSelected = selectedUnit === unitStr;
+                              const resident = selectedFloorData.unitToResident[unitStr];
+                              const fullName = resident
+                                ? ([resident.ovog, resident.ner].filter(Boolean).join(" ") || resident.ner || "Нэргүй")
+                                : "";
+                              const utas = resident?.utas || "";
+                              const tooltipTitle = isOccupied 
+                                ? (utas ? `${fullName} (${utas})` : fullName)
+                                : "Бүртгүүлэх";
+
                               return (
-                                <button
-                                  key={unitStr}
-                                  onClick={() => {
-                                    if (!isOccupied) {
-                                      setQuickRegister({ unit: unitStr, floor: selectedFloor || "" });
-                                    } else {
-                                      setActiveUnitDetails({
-                                        unit: unitStr,
-                                        floor: selectedFloor || "",
-                                        resident: selectedFloorData.unitToResident[unitStr],
-                                      });
-                                    }
-                                  }}
-                                  className={`relative flex items-center justify-center w-14 h-10 text-sm font-bold transition-all duration-150 shadow-sm rounded-2xl
-                                    ${
+                                <Tooltip title={tooltipTitle} key={unitStr} color="#1e293b" placement="top">
+                                  <button
+                                    onClick={() => {
+                                      setSelectedUnit(unitStr);
+                                      if (isOccupied) {
+                                        setActiveUnitDetails({
+                                          unit: unitStr,
+                                          floor: selectedFloor || "",
+                                          resident,
+                                        });
+                                      } else {
+                                        setQuickRegister({
+                                          unit: unitStr,
+                                          floor: selectedFloor || "",
+                                        });
+                                      }
+                                    }}
+                                    className={`w-14 h-10 rounded-2xl flex items-center justify-center font-bold text-xs border transition-all duration-200 cursor-pointer ${
                                       isOccupied
-                                        ? isSelected
-                                          ? "bg-emerald-500 text-white ring-2 ring-emerald-300 scale-105"
-                                          : "bg-emerald-400 text-white hover:bg-emerald-500"
-                                        : isSelected
-                                          ? "bg-orange-500 text-white ring-2 ring-orange-300 scale-105"
-                                          : "bg-orange-400 text-white hover:bg-orange-500 hover:scale-105"
+                                        ? "bg-emerald-500 hover:bg-emerald-600 border-emerald-600 dark:border-emerald-500 text-white shadow-sm shadow-emerald-500/20"
+                                        : "bg-orange-500 hover:bg-orange-600 border-orange-600 dark:border-orange-500 text-white shadow-sm shadow-orange-500/20"
+                                    } ${
+                                      isSelected
+                                        ? "ring-2 ring-offset-2 ring-blue-500 dark:ring-offset-slate-900"
+                                        : ""
                                     }`}
-                                  title={isOccupied ? "Бүртгэлтэй" : "Бүртгүүлэх"}
-                                >
-                                  {unitStr}
-                                </button>
+                                  >
+                                    {unitStr}
+                                  </button>
+                                </Tooltip>
                               );
                             })}
                             <button
