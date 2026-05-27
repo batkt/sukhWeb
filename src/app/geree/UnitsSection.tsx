@@ -753,7 +753,7 @@ export default function UnitsSection({
                             leftIcon={<Trash2 className="w-4 h-4" />}
                             className="border border-red-200 bg-red-50/50 hover:bg-red-100/80 dark:border-red-900/40 dark:bg-red-950/20 dark:hover:bg-red-950/30 !text-red-600 dark:!text-red-400 rounded-2xl"
                           >
-                            Устгах
+                            Тоот устгах
                           </Button>
                         </div>
                       )}
