@@ -823,8 +823,9 @@ export function useGereeActions(
     ],
   );
 
-  const handleShowResidentModal = useCallback(() => {
+  const handleShowResidentModal = useCallback((initialUnit?: { orts?: string; davkhar?: string; toot?: string; turul?: string }) => {
     setEditingResident?.(null);
+    const isGarageOrStorage = initialUnit?.turul === "Гараж" || initialUnit?.turul === "Агуулах";
     setNewResident?.({
       ovog: "",
       ner: "",
@@ -834,18 +835,19 @@ export function useGereeActions(
       aimag: "Улаанбаатар",
       duureg: "",
       horoo: "",
-      orts: "",
-      toot: "",
-      davkhar: "",
+      orts: isGarageOrStorage ? "" : (initialUnit?.orts || ""),
+      toot: isGarageOrStorage ? "" : (initialUnit?.toot || ""),
+      davkhar: isGarageOrStorage ? "" : (initialUnit?.davkhar || ""),
       tsahilgaaniiZaalt: "",
       turul: "Үндсэн",
       tailbar: "",
       ekhniiUldegdel: 0,
       units: [
         {
-          orts: "1",
-          davkhar: "",
-          toot: "",
+          orts: initialUnit?.orts || "1",
+          davkhar: initialUnit?.davkhar || "",
+          toot: initialUnit?.toot || "",
+          turul: initialUnit?.turul || "Орон сууц",
           ekhniiUldegdel: 0,
           tsahilgaaniiZaalt: 0,
         },
@@ -1409,20 +1411,24 @@ export function useGereeActions(
           const units = Array.isArray(resident.toots) ? resident.toots : [];
           if (units.length === 0) continue;
 
-          const hasGarage = units.some(residentHasGarage);
-          const hasAguulakh = units.some(residentHasAguulakh);
+          const garageUnits = units.filter(residentHasGarage);
+          const aguulakhUnits = units.filter(residentHasAguulakh);
+
+          const hasGarage = garageUnits.length > 0;
+          const hasAguulakh = aguulakhUnits.length > 0;
 
           if (hasGarage) {
+            const garageToots = garageUnits.map((u: any) => u.toot).join(", ");
             await uilchilgee(token).post("/guilgeeAvlaguud", {
               baiguullagiinId: baiguullaga._id,
               barilgiinId: effectiveBarilgiinId,
               orshinSuugchId: resident._id,
               gereeniiId: resident.gereeniiId || resident.gereeId,
-              turul: "garage",
+              turul: "avlaga",
               tulukhDun: value,
               tulsunDun: 0,
               dun: value,
-              tailbar: `Грашийн төлбөр - ${today}`,
+              tailbar: garageToots ? `Зогсоол (${garageToots})` : `Зогсоол`,
               ognoo: today,
               guilgeeKhiisenAjiltniiId: ajiltan?._id,
               guilgeeKhiisenAjiltniiNer:
@@ -1431,16 +1437,17 @@ export function useGereeActions(
             added++;
           }
           if (hasAguulakh) {
+            const aguulakhToots = aguulakhUnits.map((u: any) => u.toot).join(", ");
             await uilchilgee(token).post("/guilgeeAvlaguud", {
               baiguullagiinId: baiguullaga._id,
               barilgiinId: effectiveBarilgiinId,
               orshinSuugchId: resident._id,
               gereeniiId: resident.gereeniiId || resident.gereeId,
-              turul: "aguulakh",
+              turul: "avlaga",
               tulukhDun: value,
               tulsunDun: 0,
               dun: value,
-              tailbar: `Агуулахын төлбөр - ${today}`,
+              tailbar: aguulakhToots ? `Агуулах (${aguulakhToots})` : `Агуулах`,
               ognoo: today,
               guilgeeKhiisenAjiltniiId: ajiltan?._id,
               guilgeeKhiisenAjiltniiNer:
@@ -2013,7 +2020,7 @@ export function useGereeActions(
     [token, baiguullaga, selectedBuildingId, barilgiinId, mutate],
   );
 
-  const handleShowClientModal = useCallback(() => {
+  const handleShowClientModal = useCallback((initialUnit?: { orts?: string; davkhar?: string; toot?: string; turul?: string }) => {
     setEditingClient?.(null);
     setNewClient?.({
       ovog: "",
@@ -2028,9 +2035,10 @@ export function useGereeActions(
       tailbar: "",
       units: [
         {
-          orts: "1",
-          davkhar: "",
-          toot: "",
+          orts: initialUnit?.orts || "1",
+          davkhar: initialUnit?.davkhar || "",
+          toot: initialUnit?.toot || "",
+          turul: initialUnit?.turul || "Орон сууц",
           ekhniiUldegdel: 0,
           tsahilgaaniiZaalt: 0,
         },

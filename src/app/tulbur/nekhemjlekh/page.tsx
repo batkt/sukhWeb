@@ -406,7 +406,14 @@ const InvoiceModal = ({
         // Add manual receivables from guilgeenuud to expenses
         const manualReceivables = guilgeenuudRows.filter((g: any) => {
           const t = String(g.turul || "").toLowerCase();
-          return t === "avlaga" || t === "авлага";
+          return (
+            t === "avlaga" ||
+            t === "авлага" ||
+            t === "garage" ||
+            t === "aguulakh" ||
+            t === "зогсоол" ||
+            t === "агуулах"
+          );
         });
         addToExpenseMap(manualReceivables);
 

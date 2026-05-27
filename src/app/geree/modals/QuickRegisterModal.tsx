@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { X, UserCheck, Building2, ArrowLeft, Search } from "lucide-react";
+import { X, UserCheck, Building2, ArrowLeft, Search, Plus } from "lucide-react";
+import { ModalPortal } from "../../../../components/golContent";
 
 interface QuickRegisterModalProps {
   show: boolean;
@@ -13,6 +14,8 @@ interface QuickRegisterModalProps {
   residentsList: any[];
   clientsList: any[];
   onAssign: (personId: string, personType: "orshinSuugch" | "khariltsagch") => Promise<boolean>;
+  onRegisterNewOrshinSuugch?: () => void;
+  onRegisterNewKhariltsagch?: () => void;
 }
 
 export default function QuickRegisterModal({
@@ -25,6 +28,8 @@ export default function QuickRegisterModal({
   residentsList,
   clientsList,
   onAssign,
+  onRegisterNewOrshinSuugch,
+  onRegisterNewKhariltsagch,
 }: QuickRegisterModalProps) {
   const [step, setStep] = useState<1 | 2>(1);
   const [selectedType, setSelectedType] = useState<"orshinSuugch" | "khariltsagch" | null>(null);
@@ -106,15 +111,16 @@ export default function QuickRegisterModal({
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
-        onClick={onClose}
-      />
+    <ModalPortal>
+      <div className="fixed inset-0 z-[12000] flex items-center justify-center">
+        {/* Backdrop */}
+        <div
+          className="absolute inset-0 bg-transparent"
+          onClick={onClose}
+        />
 
-      {/* Modal */}
-      <div className="relative z-10 w-full max-w-md mx-4 bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        {/* Modal */}
+        <div className="relative z-10 w-full max-w-md mx-4 bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100 dark:border-gray-800">
           <div className="flex items-center gap-3">
@@ -190,7 +196,7 @@ export default function QuickRegisterModal({
         {step === 2 && (
           <div className="flex flex-col h-[400px]">
             {/* Search Input */}
-            <div className="px-6 pt-4 pb-3">
+            <div className="px-6 pt-4 pb-2">
               <div className="relative">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
@@ -202,6 +208,25 @@ export default function QuickRegisterModal({
                   className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 dark:text-slate-100"
                 />
               </div>
+            </div>
+
+            {/* Quick Register/Create New Button */}
+            <div className="px-6 pb-3">
+              <button
+                type="button"
+                onClick={() => {
+                  if (selectedType === "orshinSuugch") {
+                    onRegisterNewOrshinSuugch?.();
+                  } else {
+                    onRegisterNewKhariltsagch?.();
+                  }
+                  onClose();
+                }}
+                className="w-full py-2 px-4 rounded-xl border border-dashed border-blue-200 dark:border-blue-800 bg-blue-50/30 dark:bg-blue-950/10 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 font-semibold text-xs transition-all flex items-center justify-center gap-1.5"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Шинэ {selectedType === "orshinSuugch" ? "оршин суугч" : "харилцагч"} бүртгэх
+              </button>
             </div>
 
             {/* List */}
@@ -254,6 +279,7 @@ export default function QuickRegisterModal({
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </ModalPortal>
   );
 }

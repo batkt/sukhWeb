@@ -670,6 +670,38 @@ export default function UnitsSection({
           const { unit, floor } = quickRegister;
           return await onAssignToUnit(personId, type, selectedOrts, floor, unit, propertyTab);
         }}
+        onRegisterNewOrshinSuugch={() => {
+          if (!quickRegister) return;
+          const { unit, floor } = quickRegister;
+          const unitTurul =
+            propertyTab === "Зогсоол"
+              ? "Гараж"
+              : propertyTab === "Агуулах"
+                ? "Агуулах"
+                : "Орон сууц";
+          actions.handleShowResidentModal?.({
+            orts: selectedOrts,
+            davkhar: floor,
+            toot: unit,
+            turul: unitTurul,
+          });
+        }}
+        onRegisterNewKhariltsagch={() => {
+          if (!quickRegister) return;
+          const { unit, floor } = quickRegister;
+          const unitTurul =
+            propertyTab === "Зогсоол"
+              ? "Гараж"
+              : propertyTab === "Агуулах"
+                ? "Агуулах"
+                : "Орон сууц";
+          actions.handleShowClientModal?.({
+            orts: selectedOrts,
+            davkhar: floor,
+            toot: unit,
+            turul: unitTurul,
+          });
+        }}
       />
     </div>
   );
