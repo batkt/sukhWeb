@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Table } from "antd";
+import { Table, Tooltip } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { Edit, Trash2, ChevronUp, ChevronDown, X } from "lucide-react";
 import { getPaymentStatusLabel } from "@/lib/utils";
@@ -149,35 +149,47 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
             );
           }
 
-          return (
-            <div className="flex flex-wrap gap-1 justify-center max-w-[200px] mx-auto">
-              {toots.map((t: any, idx: number) => (
-                <span
-                  key={idx}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-xs font-medium text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700"
-                >
-                  {t.toot}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (window.confirm(`${t.toot} тоотыг хасах уу?`)) {
-                        onRemoveToot?.(
-                          String(record._id),
-                          t.baiguullagiinId,
-                          t.barilgiinId,
-                          t.toot,
-                        );
-                      }
-                    }}
-                    className="p-0.5 hover:text-red-500 transition-colors rounded-full hover:bg-red-50 dark:hover:bg-red-900/20"
-                    title="Хасах"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              ))}
+          const tooltipContent = (
+            <div className="space-y-1.5 p-1 max-w-[220px]">
+              {toots.map((t: any, idx: number) => {
+                const label = t.turul === "Гараж" ? "Зогсооъл" : t.turul === "Агуулах" ? "Агуулах" : "Орон сууц";
+                const displayLabel = label === "Зогсооъл" ? "Зогсоол" : label;
+                return (
+                  <div key={idx} className="flex items-center justify-between gap-3 text-xs py-0.5">
+                    <span className="text-white font-medium">{t.toot} ({displayLabel})</span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm(`${t.toot} тоотыг хасах уу?`)) {
+                          onRemoveToot?.(
+                            String(record._id),
+                            t.baiguullagiinId,
+                            t.barilgiinId,
+                            t.toot,
+                          );
+                        }
+                      }}
+                      className="p-0.5 text-red-400 hover:text-red-500 rounded hover:bg-red-950/30 transition-colors"
+                      title="Хасах"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
+          );
+
+          return (
+            <Tooltip title={tooltipContent} placement="top" color="#1e293b" trigger="hover">
+              <span className="inline-flex items-center gap-1.5 cursor-pointer px-2.5 py-1 rounded-xl bg-slate-50 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                {toots[0].toot}
+                <span className="text-[10px] text-slate-500 font-bold">
+                  +{toots.length - 1}
+                </span>
+              </span>
+            </Tooltip>
           );
         },
       },
@@ -222,35 +234,48 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
             );
           }
 
-          return (
-            <div className="flex flex-wrap gap-1 justify-center max-w-[200px] mx-auto">
-              {toots.map((t: any, idx: number) => (
-                <span
-                  key={idx}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-xs font-medium text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700"
-                >
-                  {t.toot}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (window.confirm(`${t.toot} тоотыг хасах уу?`)) {
-                        onRemoveToot?.(
-                          String(record._id),
-                          t.baiguullagiinId,
-                          t.barilgiinId,
-                          t.toot,
-                        );
-                      }
-                    }}
-                    className="p-0.5 hover:text-red-500 transition-colors rounded-full hover:bg-red-50 dark:hover:bg-red-900/20"
-                    title="Хасах"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              ))}
+          const tooltipContent = (
+            <div className="space-y-1.5 p-1 max-w-[220px]">
+              {toots.map((t: any, idx: number) => {
+                const label = t.turul === "Гараж" ? "Зогсоол" : "Агуулах";
+                return (
+                  <div key={idx} className="flex items-center justify-between gap-3 text-xs py-0.5">
+                    <span className="text-white font-medium">{t.toot} ({label})</span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm(`${t.toot} тоотыг хасах уу?`)) {
+                          onRemoveToot?.(
+                            String(record._id),
+                            t.baiguullagiinId,
+                            t.barilgiinId,
+                            t.toot,
+                          );
+                        }
+                      }}
+                      className="p-0.5 text-red-400 hover:text-red-500 rounded hover:bg-red-950/30 transition-colors"
+                      title="Хасах"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
+          );
+
+          return (
+            <Tooltip title={tooltipContent} placement="top" color="#1e293b" trigger="hover">
+              <span className="inline-flex items-center gap-1.5 cursor-pointer px-2.5 py-1 rounded-xl bg-slate-50 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                {toots[0].toot}
+                {toots.length > 1 && (
+                  <span className="text-[10px] text-slate-500 font-bold">
+                    +{toots.length - 1}
+                  </span>
+                )}
+              </span>
+            </Tooltip>
           );
         },
       },
