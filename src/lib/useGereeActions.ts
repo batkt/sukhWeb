@@ -1416,13 +1416,55 @@ export function useGereeActions(
           const hasGarage = garageUnits.length > 0;
           const hasAguulakh = aguulakhUnits.length > 0;
 
+          if (!hasGarage && !hasAguulakh) continue;
+
+          // Resolve contract (gereeniiId) and contract number (gereeniiDugaar)
+          let gereeniiId = resident.gereeniiId || resident.gereeId || resident.geree?._id;
+          let gereeniiDugaar = resident.gereeniiDugaar || resident.geree?.gereeniiDugaar || resident.gereeDugaar;
+
+          if (!gereeniiId && Array.isArray(contracts)) {
+            // Find contract matching this resident in our contracts list
+            const matchedContract = contracts.find((c: any) => {
+              const status = String(c?.tuluv || c?.status || "Идэвхтэй").trim();
+              const isCancelled =
+                status === "Цуцалсан" ||
+                status.toLowerCase() === "цуцалсан" ||
+                status === "tsutlsasan" ||
+                status.toLowerCase() === "tsutlsasan" ||
+                status === "Идэвхгүй" ||
+                status.toLowerCase() === "идэвхгүй";
+
+              if (isCancelled) return false;
+
+              const cResId = c.orshinSuugchId || c.khariltsagchId;
+              return cResId && String(cResId) === String(resident._id);
+            }) || contracts.find((c: any) => {
+              const cResId = c.orshinSuugchId || c.khariltsagchId;
+              return cResId && String(cResId) === String(resident._id);
+            });
+
+            if (matchedContract) {
+              gereeniiId = matchedContract._id || matchedContract.id;
+              gereeniiDugaar = matchedContract.gereeniiDugaar;
+            }
+          }
+
+          if (!gereeniiId) {
+            openErrorOverlay(
+              `"${resident.ovog || ""} ${resident.ner || ""}"-д холбогдох идэвхтэй гэрээ олдсонгүй тул төлбөр нэмэх боломжгүй байна. Гэрээ байгуулагдсан эсэхийг шалгана уу.`
+            );
+            continue; // Skip this resident to avoid validation failure
+          }
+
           if (hasGarage && garageEnabled && garageMethod === "Тогтмол" && garageValue > 0) {
             const garageToots = garageUnits.map((u: any) => u.toot).join(", ");
             await uilchilgee(token).post("/guilgeeAvlaguud", {
               baiguullagiinId: baiguullaga._id,
               barilgiinId: effectiveBarilgiinId,
               orshinSuugchId: resident._id,
-              gereeniiId: resident.gereeniiId || resident.gereeId,
+              gereeniiId: gereeniiId,
+              gereeniiDugaar: gereeniiDugaar || "",
+              toot: garageToots || "",
               turul: "avlaga",
               tulukhDun: garageValue,
               tulsunDun: 0,
@@ -1441,7 +1483,9 @@ export function useGereeActions(
               baiguullagiinId: baiguullaga._id,
               barilgiinId: effectiveBarilgiinId,
               orshinSuugchId: resident._id,
-              gereeniiId: resident.gereeniiId || resident.gereeId,
+              gereeniiId: gereeniiId,
+              gereeniiDugaar: gereeniiDugaar || "",
+              toot: aguulakhToots || "",
               turul: "avlaga",
               tulukhDun: storageValue,
               tulsunDun: 0,
