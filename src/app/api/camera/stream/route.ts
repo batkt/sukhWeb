@@ -70,11 +70,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Forward WebRTC signaling to go2rtc running at 103.236.194.106:8084
-    // This runs server-side (no browser CORS restrictions apply)
+    // Forward request to streaming proxy service
+    // The proxy service should be running (e.g., on port 8083)
+    // This service converts RTSP to WebRTC for browser compatibility
     const streamingProxyUrl =
       process.env.STREAMING_PROXY_URL ||
-      "http://103.236.194.106:8084/stream";
+      process.env.NEXT_PUBLIC_STREAMING_PROXY_URL ||
+      "http://127.0.0.1:8083/stream";
 
     try {
       // Format 1: JSON format with url and sdp64 parameters
@@ -137,11 +139,11 @@ export async function POST(request: NextRequest) {
 
       // Get response from proxy service
       const contentType = proxyResponse.headers.get("content-type");
-      
+
       // If response is JSON (SDP answer or stream details)
       if (contentType?.includes("application/json")) {
         const proxyData = await proxyResponse.json();
-        
+
         // R2WPlayer expects sdp64 in the response
         if (proxyData.sdp64 || proxyData.sdp) {
           return NextResponse.json({
@@ -154,7 +156,7 @@ export async function POST(request: NextRequest) {
             },
           });
         }
-        
+
         // If proxy returns SDP in 'data' / 'answer' fields
         if (proxyData.data || proxyData.answer) {
           const sdpData = proxyData.data || proxyData.answer;
@@ -171,7 +173,7 @@ export async function POST(request: NextRequest) {
             },
           });
         }
-        
+
         // Return as-is if it's already in the right format
         return NextResponse.json(proxyData, {
           headers: {
@@ -212,7 +214,7 @@ export async function POST(request: NextRequest) {
 
     } catch (proxyError: any) {
       console.error("Streaming proxy error:", proxyError);
-      
+
       // If proxy service is not available, return helpful error
       return NextResponse.json(
         {

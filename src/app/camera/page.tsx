@@ -3,18 +3,18 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
-import { 
-  Video, 
-  VideoOff, 
-  Maximize2, 
-  Minimize2, 
-  Search, 
-  Grid, 
-  Tv, 
-  RefreshCw, 
-  Settings, 
-  X, 
-  Save, 
+import {
+  Video,
+  VideoOff,
+  Maximize2,
+  Minimize2,
+  Search,
+  Grid,
+  Tv,
+  RefreshCw,
+  Settings,
+  X,
+  Save,
   Edit3,
   Sliders
 } from "lucide-react";
@@ -45,7 +45,7 @@ const DEFAULT_16_CAMERAS: CustomCamera[] = Array.from({ length: 16 }, (_, index)
     username: "admin",
     password: "Admin123", // Automatically send NVR password by default
     // Pre-configured paths for Hikvision NVR channels (Main streams 101 through 1601)
-    root: `Streaming/Channels/${channelNum}01`, 
+    root: `Streaming/Channels/${channelNum}01`,
     enabled: true, // Enable all 16 cameras statically by default
   };
 });
@@ -77,12 +77,12 @@ export default function CameraVideoWall() {
   const { token, ajiltan, barilgiinId } = useAuth();
   const { selectedBuildingId } = useBuilding();
   const effectiveBarilgiinId = selectedBuildingId || barilgiinId || undefined;
-  
+
   const [searchTerm, setSearchTerm] = useState("");
   const [cols, setCols] = useState<number>(0); // 0 means automatic layout
   const [isWallMode, setIsWallMode] = useState(false); // Video Wall Mode
   const [isConfigOpen, setIsConfigOpen] = useState(false); // Settings Panel Toggle
-  
+
   // Custom camera feeds list state (persisted in localStorage)
   const [cameras, setCameras] = useState<CustomCamera[]>([]);
   const [editingCamera, setEditingCamera] = useState<CustomCamera | null>(null);
@@ -152,7 +152,7 @@ export default function CameraVideoWall() {
     return cameras.filter((cam) => {
       // Must be enabled to show on the main monitoring grid
       if (!cam.enabled) return false;
-      
+
       if (searchTerm) {
         const query = searchTerm.toLowerCase();
         const ipMatch = cam.ip.toLowerCase().includes(query);
@@ -189,7 +189,7 @@ export default function CameraVideoWall() {
   return (
     <div className={`h-full overflow-y-auto overflow-x-hidden custom-scrollbar bg-slate-950 text-white rounded-3xl relative ${isWallMode ? "p-2" : "p-4 md:p-6"}`}>
       <div className="space-y-4">
-        
+
         {/* Main Header Bar */}
         {!isWallMode && (
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/5 pb-4">
@@ -207,7 +207,7 @@ export default function CameraVideoWall() {
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-4 shrink-0">
               <RealTimeClock />
               <button
@@ -285,17 +285,16 @@ export default function CameraVideoWall() {
             {/* Video Wall Toggler */}
             <button
               onClick={() => setIsWallMode(!isWallMode)}
-              className={`flex items-center gap-2 px-4 h-9 rounded-xl border text-xs font-bold transition-all ${
-                isWallMode 
-                  ? "bg-theme border-theme text-white shadow-lg animate-pulse" 
-                  : "bg-slate-950 border-white/10 text-slate-300 hover:text-white"
-              }`}
+              className={`flex items-center gap-2 px-4 h-9 rounded-xl border text-xs font-bold transition-all ${isWallMode
+                ? "bg-theme border-theme text-white shadow-lg animate-pulse"
+                : "bg-slate-950 border-white/10 text-slate-300 hover:text-white"
+                }`}
               title="Бүтэн дэлгэцээр хянах"
             >
               <Tv className="w-4 h-4" />
               <span>{isWallMode ? "Энгийн харагдац" : "Видео Хана"}</span>
             </button>
-            
+
             {isWallMode && (
               <button
                 onClick={() => setIsConfigOpen(true)}
@@ -328,7 +327,7 @@ export default function CameraVideoWall() {
         ) : (
           <div className={`grid gap-4 ${gridClassName} transition-all duration-500`}>
             {filteredCameras.map((camera) => (
-              <div 
+              <div
                 key={camera.id}
                 className="relative overflow-hidden rounded-3xl bg-black border border-white/5 shadow-2xl hover:border-white/15 transition-all duration-300 group/card aspect-video"
               >
@@ -367,7 +366,7 @@ export default function CameraVideoWall() {
       {isConfigOpen && (
         <div className="fixed inset-0 z-[1200] flex justify-end">
           {/* Backdrop */}
-          <div 
+          <div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300"
             onClick={() => {
               setIsConfigOpen(false);
@@ -376,14 +375,14 @@ export default function CameraVideoWall() {
           />
           {/* Drawer Body */}
           <div className="relative w-full max-w-md h-full bg-slate-900 border-l border-white/10 shadow-2xl flex flex-col text-slate-200 z-10 animate-slideLeft">
-            
+
             {/* Drawer Header */}
             <div className="p-4 border-b border-white/5 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Sliders className="w-4 h-4 text-theme" />
                 <span className="text-sm font-bold text-white uppercase tracking-wider">Камер тохиргоо (16 суваг)</span>
               </div>
-              <button 
+              <button
                 onClick={() => {
                   setIsConfigOpen(false);
                   setEditingCamera(null);
@@ -396,18 +395,18 @@ export default function CameraVideoWall() {
 
             {/* Config Content (Scrollable list of 16 slots) */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
-              
+
               {/* Quick controls */}
               <div className="flex items-center justify-between bg-slate-950 p-3 rounded-xl border border-white/5 text-xs font-bold">
                 <span>Нийтийн удирдлага:</span>
                 <div className="flex gap-2">
-                  <button 
+                  <button
                     onClick={() => handleToggleAll(true)}
                     className="px-2.5 py-1 rounded bg-slate-800 border border-white/5 hover:bg-slate-700 transition-colors text-slate-300 font-bold"
                   >
                     Бүгдийг нээх
                   </button>
-                  <button 
+                  <button
                     onClick={() => handleToggleAll(false)}
                     className="px-2.5 py-1 rounded bg-slate-800 border border-white/5 hover:bg-slate-700 transition-colors text-slate-300 font-bold"
                   >
@@ -424,7 +423,7 @@ export default function CameraVideoWall() {
                       <Edit3 className="w-3.5 h-3.5" />
                       Засах: {editingCamera.name}
                     </span>
-                    <button 
+                    <button
                       onClick={() => setEditingCamera(null)}
                       className="text-xs text-slate-400 hover:text-white transition-colors"
                     >
@@ -435,29 +434,29 @@ export default function CameraVideoWall() {
                   <div className="space-y-3 text-xs">
                     <div>
                       <label className="block text-slate-400 font-bold mb-1">Камерын нэр:</label>
-                      <input 
-                        type="text" 
-                        value={editingCamera.name} 
+                      <input
+                        type="text"
+                        value={editingCamera.name}
                         onChange={(e) => setEditingCamera({ ...editingCamera, name: e.target.value })}
                         className="w-full h-8 px-3 rounded-lg bg-slate-900 border border-white/10 text-white outline-none focus:border-theme/40"
                       />
                     </div>
-                    
+
                     <div className="grid grid-cols-3 gap-2">
                       <div className="col-span-2">
                         <label className="block text-slate-400 font-bold mb-1">IP хаяг:</label>
-                        <input 
-                          type="text" 
-                          value={editingCamera.ip} 
+                        <input
+                          type="text"
+                          value={editingCamera.ip}
                           onChange={(e) => setEditingCamera({ ...editingCamera, ip: e.target.value })}
                           className="w-full h-8 px-3 rounded-lg bg-slate-900 border border-white/10 text-white font-mono outline-none focus:border-theme/40"
                         />
                       </div>
                       <div>
                         <label className="block text-slate-400 font-bold mb-1">RTSP Порт:</label>
-                        <input 
-                          type="number" 
-                          value={editingCamera.port} 
+                        <input
+                          type="number"
+                          value={editingCamera.port}
                           onChange={(e) => setEditingCamera({ ...editingCamera, port: Number(e.target.value) })}
                           className="w-full h-8 px-2 rounded-lg bg-slate-900 border border-white/10 text-white font-mono outline-none focus:border-theme/40"
                         />
@@ -467,18 +466,18 @@ export default function CameraVideoWall() {
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <label className="block text-slate-400 font-bold mb-1">Нэвтрэх нэр (User):</label>
-                        <input 
-                          type="text" 
-                          value={editingCamera.username || ""} 
+                        <input
+                          type="text"
+                          value={editingCamera.username || ""}
                           onChange={(e) => setEditingCamera({ ...editingCamera, username: e.target.value })}
                           className="w-full h-8 px-3 rounded-lg bg-slate-900 border border-white/10 text-white outline-none focus:border-theme/40"
                         />
                       </div>
                       <div>
                         <label className="block text-slate-400 font-bold mb-1">Нууц үг (Password):</label>
-                        <input 
-                          type="password" 
-                          value={editingCamera.password || ""} 
+                        <input
+                          type="password"
+                          value={editingCamera.password || ""}
                           onChange={(e) => setEditingCamera({ ...editingCamera, password: e.target.value })}
                           className="w-full h-8 px-3 rounded-lg bg-slate-900 border border-white/10 text-white outline-none focus:border-theme/40"
                         />
@@ -487,9 +486,9 @@ export default function CameraVideoWall() {
 
                     <div>
                       <label className="block text-slate-400 font-bold mb-1">Сувгийн зам (RTSP Path):</label>
-                      <input 
-                        type="text" 
-                        value={editingCamera.root} 
+                      <input
+                        type="text"
+                        value={editingCamera.root}
                         onChange={(e) => setEditingCamera({ ...editingCamera, root: e.target.value })}
                         className="w-full h-8 px-3 rounded-lg bg-slate-900 border border-white/10 text-white font-mono outline-none focus:border-theme/40"
                         placeholder="e.g., Streaming/Channels/101"
@@ -524,15 +523,14 @@ export default function CameraVideoWall() {
                   const isEditing = editingCamera?.id === cam.id;
                   const channelCode = cam.root.replace("Streaming/Channels/", "");
                   return (
-                    <div 
+                    <div
                       key={cam.id}
-                      className={`p-3 rounded-2xl bg-slate-950/80 border transition-all ${
-                        isEditing 
-                          ? "border-theme/40 bg-slate-950 shadow-md" 
-                          : cam.enabled 
-                            ? "border-emerald-500/10 hover:border-emerald-500/20" 
-                            : "border-white/5 opacity-70"
-                      }`}
+                      className={`p-3 rounded-2xl bg-slate-950/80 border transition-all ${isEditing
+                        ? "border-theme/40 bg-slate-950 shadow-md"
+                        : cam.enabled
+                          ? "border-emerald-500/10 hover:border-emerald-500/20"
+                          : "border-white/5 opacity-70"
+                        }`}
                     >
                       <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0 flex-1 flex items-center gap-2">
@@ -542,7 +540,7 @@ export default function CameraVideoWall() {
                           >
                             <div className={`w-3 h-3 rounded-full bg-white transition-all ${cam.enabled ? "translate-x-3" : "translate-x-0"}`}></div>
                           </button>
-                          
+
                           <div className="min-w-0">
                             <span className="block text-xs font-bold text-white truncate">
                               {idx + 1}. {cam.name}
@@ -705,14 +703,14 @@ const CameraStream = React.memo(
               <p className="text-[9px] text-slate-500 font-mono mb-4">
                 {ip}:{port}
               </p>
-              
+
               <div className="flex flex-col gap-2">
                 {connectionState && (
                   <div className="px-2 py-1 rounded bg-slate-800/80 border border-white/5 text-[9px] text-slate-400 font-mono">
                     Төлөв: {connectionState}
                   </div>
                 )}
-                <button 
+                <button
                   onClick={() => setError(false)}
                   className="px-4 py-1.5 rounded-lg bg-slate-850 border border-white/10 hover:bg-slate-750 transition-colors text-[10px] font-bold uppercase tracking-wider"
                 >
@@ -732,14 +730,14 @@ const CameraStream = React.memo(
         style={
           isFullscreen
             ? {
-                position: "fixed",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                zIndex: 9999,
-                backgroundColor: "#000",
-              }
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 9999,
+              backgroundColor: "#000",
+            }
             : {}
         }
       >
@@ -749,7 +747,7 @@ const CameraStream = React.memo(
           USER={username}
           PASSWD={password}
           ROOT={root}
-          serverPath="/api/camera/stream"
+          serverPath="http://127.0.0.1:8083"
           onError={handleError}
           onConnectionStateChange={handleConnectionStateChange}
           style={{
@@ -761,9 +759,8 @@ const CameraStream = React.memo(
         {/* Fullscreen Button */}
         <button
           onClick={toggleFullscreen}
-          className={`absolute top-4 right-4 z-20 p-2 rounded-xl bg-black/60 hover:bg-black/80 border border-white/10 text-white transition-all duration-200 ${
-            isFullscreen ? "opacity-100" : "opacity-0 group-hover/stream:opacity-100"
-          }`}
+          className={`absolute top-4 right-4 z-20 p-2 rounded-xl bg-black/60 hover:bg-black/80 border border-white/10 text-white transition-all duration-200 ${isFullscreen ? "opacity-100" : "opacity-0 group-hover/stream:opacity-100"
+            }`}
           aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
         >
           {isFullscreen ? (

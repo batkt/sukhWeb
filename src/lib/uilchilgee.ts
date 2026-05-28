@@ -16,7 +16,7 @@ export function getApiUrl(): string {
     process.env.GITHUB_REF_NAME === "dev" ||
     process.env.BRANCH === "dev"
   ) {
-    return "http://103.236.194.106:8084/";
+    return "https://amarhome.mn/api/";
   }
 
   // Otherwise, use env variable if set
@@ -30,11 +30,11 @@ export function getApiUrl(): string {
 
   if (
     typeof window !== "undefined" &&
-    window.location.hostname === "http://103.236.194.106:8084"
+    window.location.hostname === "amarhome.mn"
   ) {
-    return "http://103.236.194.106:8084/";
+    return "https://amarhome.mn/api/";
   }
-  return "http://103.236.194.106:8084/";
+  return "https://amarhome.mn/api/";
 }
 
 /** Base URL for medegdel static assets (images/audio). Use origin + /medegdel/ so nginx can serve or proxy without /api. */
@@ -89,7 +89,7 @@ export const socket = (): Socket => {
   // or use the current API host
   const endpoint = socketBase.includes("localhost")
     ? socketBase
-    : "http://103.236.194.106:8084";
+    : "https://amarhome.mn";
 
   socketInstance = io(endpoint, {
     path: "/socket.io",
