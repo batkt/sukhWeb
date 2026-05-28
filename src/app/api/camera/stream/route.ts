@@ -79,18 +79,59 @@ export async function POST(request: NextRequest) {
       "http://127.0.0.1:8083/stream";
 
     try {
-      // Forward POST request to streaming proxy service
-      // R2WPlayer expects the endpoint to be at serverPath + "/answer"
-      const proxyResponse = await fetch(streamingProxyUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          rtsp: rtspUrl,
-          sdp64: sdp64, // Forward the SDP offer if provided
-        }),
-      });
+      // Format 1: JSON format with url and sdp64 parameters
+      const proxyRequestBodyJson: { url?: string; rtsp?: string; sdp64?: string; data?: string } = {
+        url: rtspUrl,
+        rtsp: rtspUrl,
+      };
+      if (sdp64) {
+        proxyRequestBodyJson.sdp64 = sdp64;
+        proxyRequestBodyJson.data = sdp64;
+      }
+
+      // Format 2: Form-encoded format (highly compatible with direct RTSPtoWebRTC Go server)
+      const formData = new URLSearchParams();
+      formData.append("url", rtspUrl);
+      formData.append("rtsp", rtspUrl);
+      if (sdp64) {
+        formData.append("sdp64", sdp64);
+        formData.append("data", sdp64); // RTSPtoWebRTC Go server expects the SDP offer in 'data' parameter
+      }
+
+      let proxyResponse: Response;
+      let requestBodyString: string;
+      let contentTypeUsed: string;
+
+      try {
+        // Try form-encoded first
+        requestBodyString = formData.toString();
+        contentTypeUsed = "application/x-www-form-urlencoded";
+
+        proxyResponse = await fetch(streamingProxyUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": contentTypeUsed,
+          },
+          body: requestBodyString,
+        });
+
+        if (!proxyResponse.ok) {
+          throw new Error("Form-encoded proxy failed, trying JSON format");
+        }
+      } catch (e) {
+        // Fallback to JSON
+        requestBodyString = JSON.stringify(proxyRequestBodyJson);
+        contentTypeUsed = "application/json";
+
+        proxyResponse = await fetch(streamingProxyUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": contentTypeUsed,
+            "Accept": "application/json",
+          },
+          body: requestBodyString,
+        });
+      }
 
       if (!proxyResponse.ok) {
         throw new Error(`Proxy service returned ${proxyResponse.status}`);
@@ -99,7 +140,7 @@ export async function POST(request: NextRequest) {
       // Get response from proxy service
       const contentType = proxyResponse.headers.get("content-type");
       
-      // If response is JSON (SDP answer or stream URL)
+      // If response is JSON (SDP answer or stream details)
       if (contentType?.includes("application/json")) {
         const proxyData = await proxyResponse.json();
         
@@ -116,9 +157,15 @@ export async function POST(request: NextRequest) {
           });
         }
         
-        // If proxy returns a stream URL instead
-        if (proxyData.streamUrl || proxyData.url) {
-          return NextResponse.json(proxyData, {
+        // If proxy returns SDP in 'data' / 'answer' fields
+        if (proxyData.data || proxyData.answer) {
+          const sdpData = proxyData.data || proxyData.answer;
+          const encodedSdp = typeof sdpData === "string"
+            ? (sdpData.includes("v=0") ? btoa(sdpData) : sdpData)
+            : sdpData;
+          return NextResponse.json({
+            sdp64: encodedSdp,
+          }, {
             headers: {
               "Access-Control-Allow-Origin": "*",
               "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -136,8 +183,24 @@ export async function POST(request: NextRequest) {
           },
         });
       }
-      
-      // If response is the stream itself (shouldn't happen for WebRTC, but handle it)
+
+      // If response is plain text (raw SDP answer)
+      if (contentType?.includes("text/plain") || contentType?.includes("text")) {
+        const textData = await proxyResponse.text();
+        if (textData.includes("v=0") || textData.includes("m=video")) {
+          return NextResponse.json({
+            sdp64: btoa(textData),
+          }, {
+            headers: {
+              "Access-Control-Allow-Origin": "*",
+              "Access-Control-Allow-Methods": "POST, OPTIONS",
+              "Access-Control-Allow-Headers": "Content-Type",
+            },
+          });
+        }
+      }
+
+      // If response is the stream itself
       const streamData = await proxyResponse.arrayBuffer();
       return new NextResponse(streamData, {
         status: 200,
@@ -148,6 +211,7 @@ export async function POST(request: NextRequest) {
           "Access-Control-Allow-Headers": "Content-Type",
         },
       });
+
     } catch (proxyError: any) {
       console.error("Streaming proxy error:", proxyError);
       

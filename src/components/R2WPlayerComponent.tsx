@@ -6,6 +6,67 @@ import { useEffect, useRef, useMemo } from "react";
 // @ts-ignore - R2WPlayer is exported from the minified file
 import { R2WPlayer } from "../../components/streamPlayer/R2Wplayer.min.js";
 
+// Override R2WPlayer.AJAX to intercept and format requests properly for direct streaming proxy connections
+if (R2WPlayer && typeof (R2WPlayer as any).AJAX === "function" && !(R2WPlayer as any).__patched) {
+  (R2WPlayer as any).__patched = true;
+  const originalAJAX = (R2WPlayer as any).AJAX;
+  
+  (R2WPlayer as any).AJAX = function(method: string, urlStr: string, data: any, successCb: any, errorCb: any, async: any, context: any) {
+    const isDirectProxy = urlStr.startsWith("http") && !urlStr.includes("/api/");
+    
+    if (isDirectProxy && urlStr.endsWith("/answer")) {
+      // 1. Rewrite the URL from /answer to /stream for Go RTSPtoWebRTC server
+      const newUrl = urlStr.replace(/\/answer$/, "/stream");
+      console.log(`[R2WPlayer.AJAX Patch] Intercepting request. Rewriting direct proxy URL from ${urlStr} to ${newUrl}`);
+      
+      // 2. Format payload as application/x-www-form-urlencoded (what Go RTSPtoWebRTC expects)
+      const formData = new URLSearchParams();
+      if (data) {
+        formData.append("url", data.url || "");
+        formData.append("data", data.sdp64 || ""); // Go server expects the sdp64 in 'data' field
+      }
+      
+      fetch(newUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: formData.toString(),
+      })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const text = await response.text();
+        
+        // Parse Go server's response.
+        // Go RTSPtoWebRTC responds with either raw SDP answer (text containing v=0) or JSON { sdp64: "..." }
+        let parsedData: any = {};
+        try {
+          parsedData = JSON.parse(text);
+        } catch (e) {
+          parsedData = {
+            sdp64: text.includes("v=0") || text.includes("m=video") ? btoa(text) : text,
+          };
+        }
+        
+        if (successCb) {
+          successCb(parsedData, context);
+        }
+      })
+      .catch((err) => {
+        console.error("[R2WPlayer.AJAX Patch] Request failed:", err);
+        if (errorCb) {
+          errorCb(err.message, context);
+        }
+      });
+      return;
+    }
+    
+    return originalAJAX.apply(this, arguments as any);
+  };
+}
+
 interface R2WPlayerComponentProps {
   Camer: string; // Camera IP
   PORT: number | string; // Camera port
