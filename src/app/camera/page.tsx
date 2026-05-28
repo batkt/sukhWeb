@@ -34,7 +34,7 @@ interface CustomCamera {
   enabled: boolean;
 }
 
-// Default pre-populated configurations for 16 static channels (101 - 1601)
+// Default pre-populated configurations for 16 static channels with admin:Admin123 credentials
 const DEFAULT_16_CAMERAS: CustomCamera[] = Array.from({ length: 16 }, (_, index) => {
   const channelNum = index + 1;
   return {
@@ -43,10 +43,10 @@ const DEFAULT_16_CAMERAS: CustomCamera[] = Array.from({ length: 16 }, (_, index)
     ip: "192.168.1.228", // NVR default IP
     port: 554, // RTSP default port
     username: "admin",
-    password: "",
+    password: "Admin123", // Automatically send NVR password by default
     // Pre-configured paths for Hikvision NVR channels (Main streams 101 through 1601)
     root: `Streaming/Channels/${channelNum}01`, 
-    enabled: true, // Enable all 16 cameras statically by default!
+    enabled: true, // Enable all 16 cameras statically by default
   };
 });
 
@@ -90,14 +90,14 @@ export default function CameraVideoWall() {
   // Load custom camera list on component mount
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("sukh_custom_cameras");
+      const saved = localStorage.getItem("sukh_custom_cameras_v2");
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
           // Auto migrate/reset if the stored list is not 16 items long
           if (Array.isArray(parsed) && parsed.length !== 16) {
             setCameras(DEFAULT_16_CAMERAS);
-            localStorage.setItem("sukh_custom_cameras", JSON.stringify(DEFAULT_16_CAMERAS));
+            localStorage.setItem("sukh_custom_cameras_v2", JSON.stringify(DEFAULT_16_CAMERAS));
           } else {
             setCameras(parsed);
           }
@@ -107,7 +107,7 @@ export default function CameraVideoWall() {
         }
       } else {
         setCameras(DEFAULT_16_CAMERAS);
-        localStorage.setItem("sukh_custom_cameras", JSON.stringify(DEFAULT_16_CAMERAS));
+        localStorage.setItem("sukh_custom_cameras_v2", JSON.stringify(DEFAULT_16_CAMERAS));
       }
     }
   }, []);
@@ -116,7 +116,7 @@ export default function CameraVideoWall() {
   const handleUpdateCamera = (updated: CustomCamera) => {
     const nextList = cameras.map((cam) => (cam.id === updated.id ? updated : cam));
     setCameras(nextList);
-    localStorage.setItem("sukh_custom_cameras", JSON.stringify(nextList));
+    localStorage.setItem("sukh_custom_cameras_v2", JSON.stringify(nextList));
     toast.success(`"${updated.name}" тохиргоо түр хадгалагдлаа`);
     setEditingCamera(null);
   };
@@ -125,7 +125,7 @@ export default function CameraVideoWall() {
   const handleToggleEnabled = (id: string, state: boolean) => {
     const nextList = cameras.map((cam) => (cam.id === id ? { ...cam, enabled: state } : cam));
     setCameras(nextList);
-    localStorage.setItem("sukh_custom_cameras", JSON.stringify(nextList));
+    localStorage.setItem("sukh_custom_cameras_v2", JSON.stringify(nextList));
     toast.success(state ? "Камер идэвхжлээ" : "Камер идэвхгүй боллоо");
   };
 
@@ -133,7 +133,7 @@ export default function CameraVideoWall() {
   const handleToggleAll = (state: boolean) => {
     const nextList = cameras.map((cam) => ({ ...cam, enabled: state }));
     setCameras(nextList);
-    localStorage.setItem("sukh_custom_cameras", JSON.stringify(nextList));
+    localStorage.setItem("sukh_custom_cameras_v2", JSON.stringify(nextList));
     toast.success(state ? "Бүх камерыг идэвхжүүллээ" : "Бүх камерыг идэвхгүй болголоо");
   };
 
@@ -141,7 +141,7 @@ export default function CameraVideoWall() {
   const handleResetDefaults = () => {
     if (window.confirm("Та бүх камерын тохиргоог анхны хэвэнд нь оруулахдаа итгэлтэй байна уу?")) {
       setCameras(DEFAULT_16_CAMERAS);
-      localStorage.setItem("sukh_custom_cameras", JSON.stringify(DEFAULT_16_CAMERAS));
+      localStorage.setItem("sukh_custom_cameras_v2", JSON.stringify(DEFAULT_16_CAMERAS));
       setEditingCamera(null);
       toast.success("Камерын тохиргоонуудыг 101-1601 сувгуудаар шинэчиллээ");
     }
