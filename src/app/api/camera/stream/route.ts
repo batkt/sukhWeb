@@ -18,7 +18,38 @@ import { NextRequest, NextResponse } from "next/server";
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const contentType = request.headers.get("content-type") || "";
+    let body: any = {};
+
+    const rawText = await request.text();
+
+    if (contentType.includes("application/json")) {
+      try {
+        body = JSON.parse(rawText);
+      } catch (e) {
+        throw new Error("Invalid JSON format");
+      }
+    } else if (contentType.includes("application/x-www-form-urlencoded") || rawText.includes("url=") || rawText.includes("rtsp=")) {
+      const params = new URLSearchParams(rawText);
+      body = {
+        url: params.get("url") || params.get("rtsp") || null,
+        rtsp: params.get("rtsp") || params.get("url") || null,
+        sdp64: params.get("sdp64") || params.get("sdp") || null,
+      };
+    } else {
+      try {
+        body = JSON.parse(rawText);
+      } catch (e) {
+        const urlMatch = rawText.match(/(?:url|rtsp)=([^&\s]+)/);
+        const sdpMatch = rawText.match(/sdp64=([^&\s]+)/);
+        body = {
+          url: urlMatch ? decodeURIComponent(urlMatch[1]) : null,
+          rtsp: urlMatch ? decodeURIComponent(urlMatch[1]) : null,
+          sdp64: sdpMatch ? decodeURIComponent(sdpMatch[1]) : null,
+        };
+      }
+    }
+
     const { url: rtsp, sdp64 } = body;
 
     // R2WPlayer sends 'url' instead of 'rtsp'

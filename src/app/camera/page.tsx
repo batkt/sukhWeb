@@ -743,26 +743,20 @@ const CameraStream = React.memo(
             : {}
         }
       >
-        {barilgiinId ? (
-          <R2WPlayerComponent
-            Camer={ip}
-            PORT={port}
-            USER={username}
-            PASSWD={password}
-            ROOT={root}
-            serverPath={`http://localhost:5000/camera/stream/${barilgiinId}`}
-            onError={handleError}
-            onConnectionStateChange={handleConnectionStateChange}
-            style={{
-              width: "100%",
-              height: "100%",
-            }}
-          />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm text-slate-400 text-xs">
-            <span className="animate-pulse">Холбогдож байна...</span>
-          </div>
-        )}
+        <R2WPlayerComponent
+          Camer={ip}
+          PORT={port}
+          USER={username}
+          PASSWD={password}
+          ROOT={root}
+          serverPath="http://127.0.0.1:8083"
+          onError={handleError}
+          onConnectionStateChange={handleConnectionStateChange}
+          style={{
+            width: "100%",
+            height: "100%",
+          }}
+        />
 
         {/* Fullscreen Button */}
         <button
