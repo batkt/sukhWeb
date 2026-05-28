@@ -229,6 +229,7 @@ function ZogsoolBurtgekh(
               min={0}
               classNames={{ input: "!rounded-lg h-10 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
               style={{ borderRadius: '0.5rem' }}
+              thousandSeparator=","
             />
           </div>
         </div>
@@ -270,6 +271,7 @@ function ZogsoolBurtgekh(
               min={0}
               classNames={{ input: "!rounded-lg h-10 bg-[color:var(--surface-bg)] border border-green-300 dark:border-green-700 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
               style={{ borderRadius: '0.5rem' }}
+              thousandSeparator=","
             />
           </div>
         )}
@@ -463,6 +465,7 @@ function ZogsoolBurtgekh(
                         min={0}
                         classNames={{ input: "!rounded-lg h-10 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
                         style={{ borderRadius: '0.5rem' }}
+                        thousandSeparator=","
                       />
                     </div>
                     <button

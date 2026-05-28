@@ -1276,6 +1276,7 @@ export default function NemeltTokhirgoo() {
                           min={0}
                           size="md"
                           className="w-full md:w-48"
+                          thousandSeparator=","
                         />
                       </div>
                     )}
@@ -1386,6 +1387,7 @@ export default function NemeltTokhirgoo() {
                           min={0}
                           size="md"
                           className="w-full md:w-48"
+                          thousandSeparator=","
                         />
                       </div>
                     )}

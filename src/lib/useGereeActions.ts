@@ -1748,8 +1748,8 @@ export function useGereeActions(
         return false;
       }
 
-      if (!newClient.ovog || !newClient.ner || !newClient.utas) {
-        openErrorOverlay("Овог, нэр, утас заавал оруулна уу.");
+      if (!newClient.ner || !newClient.utas) {
+        openErrorOverlay("Нэр, утас заавал оруулна уу.");
         return false;
       }
 

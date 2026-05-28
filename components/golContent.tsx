@@ -315,7 +315,7 @@ export default function GolContent({ children }: GolContentProps) {
     { label: "Хяналт", path: "khynalt" },
     { label: "Бүртгэл", path: "geree" },
     { label: "Төлбөр", path: "tulbur" },
-    { label: "Камер", path: "camera" },
+    // { label: "Камер", path: "camera" },
     {
       label: "Тайлан",
       path: "tailan",
@@ -339,7 +339,7 @@ export default function GolContent({ children }: GolContentProps) {
       path: "zogsool",
       submenu: [
         { label: "Жагсаалт", path: "jagsaalt" },
-        { label: "Камер касс", path: "camera" },
+        // { label: "Камер касс", path: "camera" },
         { label: "Машин бүртгэл", path: "orshinSuugch" },
       ],
     },
