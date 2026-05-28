@@ -16,7 +16,7 @@ export function getApiUrl(): string {
     process.env.GITHUB_REF_NAME === "dev" ||
     process.env.BRANCH === "dev"
   ) {
-    return "https://amarhome.mn/api/";
+    return "http://103.236.194.106:8084/";
   }
 
   // Otherwise, use env variable if set
@@ -30,11 +30,11 @@ export function getApiUrl(): string {
 
   if (
     typeof window !== "undefined" &&
-    window.location.hostname === "amarhome.mn"
+    window.location.hostname === "http://103.236.194.106:8084"
   ) {
-    return "https://amarhome.mn/api/";
+    return "http://103.236.194.106:8084/";
   }
-  return "https://amarhome.mn/api/";
+  return "http://103.236.194.106:8084/";
 }
 
 /** Base URL for medegdel static assets (images/audio). Use origin + /medegdel/ so nginx can serve or proxy without /api. */
@@ -89,7 +89,7 @@ export const socket = (): Socket => {
   // or use the current API host
   const endpoint = socketBase.includes("localhost")
     ? socketBase
-    : "https://amarhome.mn";
+    : "http://103.236.194.106:8084";
 
   socketInstance = io(endpoint, {
     path: "/socket.io",
@@ -192,7 +192,7 @@ export const togloomUilchilgee = (token?: string): AxiosInstance => {
         }
         config.params = p;
       }
-    } catch {}
+    } catch { }
     return config;
   });
   return instance;
@@ -243,7 +243,7 @@ export const zogsoolUilchilgee = (token?: string): AxiosInstance => {
         }
         config.params = p;
       }
-    } catch {}
+    } catch { }
     return config;
   });
   return instance;
@@ -300,7 +300,7 @@ const uilchilgee = (token?: string): AxiosInstance => {
 
         config.params = p;
       }
-    } catch {}
+    } catch { }
     return config;
   });
 
