@@ -11,8 +11,9 @@ if (R2WPlayer && typeof (R2WPlayer as any).AJAX === "function" && !(R2WPlayer as
   (R2WPlayer as any).__patched = true;
   const originalAJAX = (R2WPlayer as any).AJAX;
   
-  (R2WPlayer as any).AJAX = function(method: string, urlStr: string, data: any, successCb: any, errorCb: any, async: any, context: any) {
-    const isDirectProxy = urlStr.startsWith("http") && !urlStr.includes("/api/");
+  (R2WPlayer as any).AJAX = function(...args: any[]) {
+    const [method, urlStr, data, successCb, errorCb, async, context] = args;
+    const isDirectProxy = urlStr && urlStr.startsWith("http") && !urlStr.includes("/api/");
     
     if (isDirectProxy && urlStr.endsWith("/answer")) {
       // 1. Rewrite the URL from /answer to /stream for Go RTSPtoWebRTC server
@@ -63,7 +64,7 @@ if (R2WPlayer && typeof (R2WPlayer as any).AJAX === "function" && !(R2WPlayer as
       return;
     }
     
-    return originalAJAX.apply(this, arguments as any);
+    return originalAJAX.apply(this, args);
   };
 }
 
