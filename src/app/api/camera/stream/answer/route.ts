@@ -71,13 +71,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Forward request to streaming proxy service
-    // The proxy service should be running (e.g., on port 8083)
-    // This service converts RTSP to WebRTC for browser compatibility
-    const streamingProxyUrl = 
-      process.env.STREAMING_PROXY_URL || 
-      process.env.NEXT_PUBLIC_STREAMING_PROXY_URL || 
-      "http://127.0.0.1:8083/stream";
+    // Forward WebRTC signaling to go2rtc running at 103.236.194.106:8084
+    // This runs server-side — no browser CORS restrictions apply
+    const GO2RTC_BASE =
+      process.env.STREAMING_PROXY_URL ||
+      "http://103.236.194.106:8084";
+
+    // Derive stream name from RTSP path for go2rtc (?src= parameter)
+    // go2rtc accepts the full RTSP URL as the src parameter
+    const streamingProxyUrl = `${GO2RTC_BASE}/api/webrtc?src=${encodeURIComponent(rtspUrl)}`;
 
     try {
       // Format 1: JSON format with url and sdp64 parameters
@@ -100,37 +102,34 @@ export async function POST(request: NextRequest) {
       }
 
       let proxyResponse: Response;
-      let requestBodyString: string;
-      let contentTypeUsed: string;
 
-      try {
-        // Try form-encoded first
-        requestBodyString = formData.toString();
-        contentTypeUsed = "application/x-www-form-urlencoded";
-
-        proxyResponse = await fetch(streamingProxyUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": contentTypeUsed,
-          },
-          body: requestBodyString,
-        });
-
-        if (!proxyResponse.ok) {
-          throw new Error("Form-encoded proxy failed, trying JSON format");
+      // go2rtc WebRTC API: POST /api/webrtc?src=<rtsp_url>
+      // Body: the raw SDP offer as plain text (base64-decoded if needed)
+      let sdpOffer: string;
+      if (sdp64) {
+        try {
+          sdpOffer = atob(sdp64);
+        } catch {
+          sdpOffer = sdp64; // already plain text
         }
-      } catch (e) {
-        // Fallback to JSON
-        requestBodyString = JSON.stringify(proxyRequestBodyJson);
-        contentTypeUsed = "application/json";
+      } else {
+        sdpOffer = "";
+      }
 
+      proxyResponse = await fetch(streamingProxyUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({ data: sdp64 || "", url: rtspUrl }).toString(),
+      });
+
+      if (!proxyResponse.ok) {
+        // Fallback: try sending raw SDP as body
         proxyResponse = await fetch(streamingProxyUrl, {
           method: "POST",
-          headers: {
-            "Content-Type": contentTypeUsed,
-            "Accept": "application/json",
-          },
-          body: requestBodyString,
+          headers: { "Content-Type": "application/sdp" },
+          body: sdpOffer,
         });
       }
 
