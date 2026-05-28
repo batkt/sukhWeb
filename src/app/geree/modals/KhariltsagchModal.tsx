@@ -8,8 +8,7 @@ import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { ConfirmCloseDialog } from "@/components/ui/ConfirmCloseDialog";
 import Button from "@/components/ui/Button";
-import { Plus, Calendar } from "lucide-react";
-import StandardDatePicker from "@/components/ui/StandardDatePicker";
+import { Plus } from "lucide-react";
 import uilchilgee from "@/lib/uilchilgee";
 import {
   getResidentToot,
@@ -218,10 +217,6 @@ export default function KhariltsagchModal({
       });
     }
 
-    // Require end date for temporary contracts
-    if (newClient.turul === "Түр" && !newClient.duusakhOgnoo?.trim()) {
-      newErrors.push("duusakhOgnoo");
-    }
 
     setErrors(newErrors);
 
@@ -536,7 +531,7 @@ export default function KhariltsagchModal({
       setUldegdelInput(formatWithCommas(primary.ekhniiUldegdel) || "0");
       setZaaltInput(formatWithCommas(primary.tsahilgaaniiZaalt) || "0");
     }
-  }, [show, newClient.units]);
+  }, [show]);
 
   // Sync to parent component's newClient state
   React.useEffect(() => {
@@ -579,6 +574,51 @@ export default function KhariltsagchModal({
     const filtered = davkharOptions.filter((d) => /^B\d+$/i.test(d));
     return filtered.length > 0 ? filtered : ["B1", "B2", "B3"];
   }, [davkharOptions]);
+
+  const isTootOccupied = React.useCallback(
+    (tootVal: string, floorVal: string, propertyType: "Зогсоол" | "Агуулах") => {
+      if (!Array.isArray(currentResidents)) return false;
+      const uOrts = "1";
+      const uDavkhar = String(floorVal || "").trim().toLowerCase();
+      const uToot = String(tootVal || "").trim().toLowerCase();
+      if (!uToot) return false;
+
+      return currentResidents.some((r: any) => {
+        if (editingClient && String(editingClient._id || "") === String(r._id || "")) {
+          return false;
+        }
+
+        const existingUnits =
+          Array.isArray(r.toots) && r.toots.length > 0
+            ? r.toots
+            : [{ orts: r.orts, davkhar: r.davkhar, toot: r.toot, turul: r.turul }];
+
+        return existingUnits.some((rt: any) => {
+          const rtOrts = String(rt.orts || "1").trim().toLowerCase();
+          const rtDavkhar = String(rt.davkhar || "").trim().toLowerCase();
+          const rtToot = String(rt.toot || "").trim().toLowerCase();
+          const rtTurul = String(rt.turul || "Орон сууц").trim().toLowerCase();
+
+          let rtPropertyType = "";
+          if (rtTurul === "гараж" || rtTurul === "зогсоол" || rtTurul === "parking" || rtTurul === "garage") {
+            rtPropertyType = "Зогсоол";
+          } else if (rtTurul === "агуулах" || rtTurul === "storage") {
+            rtPropertyType = "Агуулах";
+          } else {
+            rtPropertyType = "Тоот";
+          }
+
+          return (
+            rtOrts === uOrts &&
+            rtDavkhar === uDavkhar &&
+            rtToot === uToot &&
+            rtPropertyType === propertyType
+          );
+        });
+      });
+    },
+    [currentResidents, editingClient]
+  );
 
   if (!show) return null;
 
@@ -803,7 +843,7 @@ export default function KhariltsagchModal({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[12000]"
+            className="fixed inset-0 z-[12000] flex items-center justify-center p-4"
           >
             <div className="absolute inset-0 bg-transparent" />
             <motion.div
@@ -818,7 +858,7 @@ export default function KhariltsagchModal({
               dragConstraints={constraintsRef}
               dragMomentum={false}
               onClick={(e) => e.stopPropagation()}
-              className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-2xl modal-surface modal-responsive rounded-xl shadow-2xl p-0 flex flex-col max-h-[85vh] overflow-hidden"
+              className="relative z-[12001] w-full max-w-2xl modal-surface modal-responsive rounded-xl shadow-2xl p-0 flex flex-col max-h-[85vh] overflow-hidden"
             >
               <div
                 onPointerDown={(e) => dragControls.start(e)}
@@ -881,11 +921,6 @@ export default function KhariltsagchModal({
                         <label className="block text-xs text-slate-600 dark:text-slate-400 transition-colors">
                           Төрөл
                         </label>
-                        {newClient.turul === "Түр" && (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-200 dark:border-amber-800 animate-pulse">
-                            Түр гэрээ
-                          </span>
-                        )}
                       </div>
                       <div className="tusgai-wrapper w-full flex items-center">
                         <TusgaiZagvar
@@ -894,56 +929,16 @@ export default function KhariltsagchModal({
                             setNewClient((p: any) => ({
                               ...p,
                               turul: val,
-                              // Clear end date when switching back to permanent
-                              duusakhOgnoo:
-                                val === "Үндсэн" ? "" : p.duusakhOgnoo,
                             }));
                           }}
                           options={[
                             { value: "Үндсэн", label: "Үндсэн" },
-                            { value: "Түр", label: "Түр" },
                           ]}
                           className="w-full h-full"
                           placeholder="Төрөл сонгох..."
                         />
                       </div>
                     </div>
-
-                    {/* Гэрээ дуусах огноо - only shown for Түр гэрээ */}
-                    {newClient.turul === "Түр" && (
-                      <motion.div
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="relative"
-                      >
-                        <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors flex items-center gap-1.5">
-                          <Calendar className="w-3.5 h-3.5 text-blue-500" />
-                          Гэрээ дуусах огноо{" "}
-                          <span className="text-red-500">*</span>
-                        </label>
-                        <div className="h-8">
-                          <StandardDatePicker
-                            value={newClient.duusakhOgnoo}
-                            onChange={(_date, dateString) =>
-                              setNewClient((p: any) => ({
-                                ...p,
-                                duusakhOgnoo: dateString,
-                              }))
-                            }
-                            placeholder="Дуусах огноо..."
-                            className={
-                              errors.includes("duusakhOgnoo")
-                                ? "border-red-500"
-                                : ""
-                            }
-                            getPopupContainer={() =>
-                              residentRef.current || document.body
-                            }
-                            popupStyle={{ zIndex: 13010 }}
-                          />
-                        </div>
-                      </motion.div>
-                    )}
 
                     {/* Овог */}
                     <div>
@@ -1066,7 +1061,7 @@ export default function KhariltsagchModal({
                                   return (
                                     <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${gFlatIdx}.toot`) ? "input-error" : ""}`}>
                                       <TusgaiZagvar value={garage.toot || ""} onChange={(val: string) => updateGarageField(gIdx, "toot", val)}
-                                        options={opts.map((t) => ({ value: t, label: t }))} className="w-full h-full" placeholder="Дугаар..." disabled={!garage.davkhar} />
+                                        options={opts.map((t) => ({ value: t, label: t, isOccupied: isTootOccupied(t, garage.davkhar || "", "Зогсоол") }))} className="w-full h-full" placeholder="Дугаар..." disabled={!garage.davkhar} />
                                     </div>
                                   );
                                 })()}
@@ -1109,7 +1104,7 @@ export default function KhariltsagchModal({
                                   return (
                                     <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${sFlatIdxNested}.toot`) ? "input-error" : ""}`}>
                                       <TusgaiZagvar value={storage.toot || ""} onChange={(val: string) => updateStorageField(sIdx, "toot", val)}
-                                        options={opts.map((t) => ({ value: t, label: t }))} className="w-full h-full" placeholder="Дугаар..." disabled={!storage.davkhar} />
+                                        options={opts.map((t) => ({ value: t, label: t, isOccupied: isTootOccupied(t, storage.davkhar || "", "Агуулах") }))} className="w-full h-full" placeholder="Дугаар..." disabled={!storage.davkhar} />
                                     </div>
                                   );
                                 })()}

@@ -103,99 +103,6 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
       {
         title: (
           <span className="text-gray-900 dark:text-white text-center block">
-            Тоот
-          </span>
-        ),
-        key: "toot",
-        dataIndex: "toot",
-        width: 140,
-        sorter: true,
-        sortOrder:
-          sortKey === "toot"
-            ? sortOrder === "asc"
-              ? "ascend"
-              : "descend"
-            : null,
-        align: "center",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
-        render: (_: any, record: ClientItem) => {
-          let toots =
-            Array.isArray(record.toots) && record.toots.length > 0
-              ? record.toots
-              : [
-                  {
-                    toot: record.toot,
-                    baiguullagiinId: record.baiguullagiinId,
-                    barilgiinId: record.barilgiinId,
-                    turul: record.turul || "Орон сууц",
-                  },
-                ];
-          
-          // Filter by currentBaiguullagiinId if provided
-          if (currentBaiguullagiinId) {
-            toots = toots.filter((t: any) => String(t.baiguullagiinId) === String(currentBaiguullagiinId));
-          }
-
-          // Only show main housing units
-          toots = toots.filter((t: any) => t.turul !== "Гараж" && t.turul !== "Агуулах");
-
-          if (toots.length === 0) return "-";
-
-          if (toots.length === 1) {
-            return (
-              <span className="text-gray-900 dark:text-white whitespace-nowrap font-medium">
-                {toots[0].toot || "-"}
-              </span>
-            );
-          }
-
-          const tooltipContent = (
-            <div className="space-y-1.5 p-1 max-w-[220px]">
-              {toots.map((t: any, idx: number) => {
-                const label = t.turul === "Гараж" ? "Зогсооъл" : t.turul === "Агуулах" ? "Агуулах" : "Орон сууц";
-                const displayLabel = label === "Зогсооъл" ? "Зогсоол" : label;
-                return (
-                  <div key={idx} className="flex items-center justify-between gap-3 text-xs py-0.5">
-                    <span className="text-white font-medium">{t.toot} ({displayLabel})</span>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (window.confirm(`${t.toot} тоотыг хасах уу?`)) {
-                          onRemoveToot?.(
-                            String(record._id),
-                            t.baiguullagiinId,
-                            t.barilgiinId,
-                            t.toot,
-                          );
-                        }
-                      }}
-                      className="p-0.5 text-red-400 hover:text-red-500 rounded hover:bg-red-950/30 transition-colors"
-                      title="Хасах"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          );
-
-          return (
-            <Tooltip title={tooltipContent} placement="top" color="#1e293b" trigger="hover">
-              <span className="inline-flex items-center gap-1.5 cursor-pointer px-2.5 py-1 rounded-xl bg-slate-50 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-                {toots[0].toot}
-                <span className="text-[10px] text-slate-500 font-bold">
-                  +{toots.length - 1}
-                </span>
-              </span>
-            </Tooltip>
-          );
-        },
-      },
-      {
-        title: (
-          <span className="text-gray-900 dark:text-white text-center block">
             Зогсоол / Агуулах
           </span>
         ),
@@ -315,17 +222,14 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: any) => {
           const uldegdel = Number(record?.uldegdel ?? record?.ekhniiUldegdel ?? 0);
-          const label = uldegdel <= 0 ? "Төлсөн" : "Төлөөгүй";
-          const cls =
-            label === "Төлсөн"
-              ? "badge-paid"
-              : "badge-unpaid";
+          const payLabel = uldegdel <= 0 ? "Төлсөн" : "Төлөөгүй";
+          const payClass = payLabel === "Төлсөн" ? "badge-paid" : "badge-unpaid";
           return (
-            <span
-              className={`inline-flex items-center px-2 py-0.5 font-normal rounded-full ${cls}`}
-            >
-              {label}
-            </span>
+            <div className="flex justify-center">
+              <span className={`inline-flex items-center px-2 py-0.5 font-normal rounded-full text-xs ${payClass}`}>
+                {payLabel}
+              </span>
+            </div>
           );
         },
       },

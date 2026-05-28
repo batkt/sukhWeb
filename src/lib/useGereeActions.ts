@@ -1773,7 +1773,9 @@ export function useGereeActions(
           openSuccessOverlay("Амжилттай бүртгэгдлээ");
         }
         mutate(
-          (key: any) => Array.isArray(key) && key[0] === "/khariltsagch",
+          (key: any) =>
+            Array.isArray(key) &&
+            (key[0] === "/khariltsagch" || key[0] === "/geree"),
           undefined,
           { revalidate: true },
         );
@@ -1795,7 +1797,9 @@ export function useGereeActions(
         await uilchilgee(token).delete(`/khariltsagch/${client._id}`);
         openSuccessOverlay("Амжилттай устгагдлаа");
         mutate(
-          (key: any) => Array.isArray(key) && key[0] === "/khariltsagch",
+          (key: any) =>
+            Array.isArray(key) &&
+            (key[0] === "/khariltsagch" || key[0] === "/geree"),
           undefined,
           { revalidate: true },
         );
@@ -1860,6 +1864,7 @@ export function useGereeActions(
       if (!token) return;
       try {
         await uilchilgee(token).post("/khariltsagch/remove-toot", {
+          id: residentId,
           residentId,
           baiguullagiinId,
           barilgiinId,
@@ -1867,7 +1872,9 @@ export function useGereeActions(
         });
         openSuccessOverlay("Тоот амжилттай хасагдлаа");
         mutate(
-          (key: any) => Array.isArray(key) && key[0] === "/khariltsagch",
+          (key: any) =>
+            Array.isArray(key) &&
+            (key[0] === "/khariltsagch" || key[0] === "/geree"),
           undefined,
           { revalidate: true },
         );

@@ -32,6 +32,10 @@ export default function GereeModals() {
   const [showPermissionsModal, setShowPermissionsModal] = useState(false);
   const [permissionsEmployee, setPermissionsEmployee] = useState<any>(null);
 
+  const combinedResidentsAndClients = React.useMemo(() => {
+    return [...(data.residentsList || []), ...(data.clientsList || [])];
+  }, [data.residentsList, data.clientsList]);
+
   // Credentials Modal State
   const [showCredentialsModal, setShowCredentialsModal] = useState(false);
   const [credentialsEmployee, setCredentialsEmployee] = useState<any>(null);
@@ -159,7 +163,7 @@ export default function GereeModals() {
         getTootOptions={data.getTootOptions}
         selectedBarilga={data.selectedBarilga}
         baiguullaga={baiguullaga}
-        currentResidents={data.residentsList}
+        currentResidents={combinedResidentsAndClients}
         onSubmit={async (e) => {
           const success = await actions.handleCreateResident(
             e,
@@ -190,7 +194,7 @@ export default function GereeModals() {
         getTootOptions={data.getTootOptions}
         selectedBarilga={data.selectedBarilga}
         baiguullaga={baiguullaga}
-        currentResidents={data.residentsList}
+        currentResidents={combinedResidentsAndClients}
         onSubmit={async (e) => {
           const success = await actions.handleCreateClient(
             e,

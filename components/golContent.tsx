@@ -315,6 +315,7 @@ export default function GolContent({ children }: GolContentProps) {
     { label: "Хяналт", path: "khynalt" },
     { label: "Бүртгэл", path: "geree" },
     { label: "Төлбөр", path: "tulbur" },
+    { label: "Камер", path: "camera" },
     {
       label: "Тайлан",
       path: "tailan",

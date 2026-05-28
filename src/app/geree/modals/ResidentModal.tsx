@@ -616,6 +616,49 @@ export default function ResidentModal({
     return filtered.length > 0 ? filtered : ["B1", "B2", "B3"];
   }, [davkharOptions]);
 
+  const isTootOccupied = React.useCallback(
+    (tootVal: string, floorVal: string, ortsVal: string, propertyType: "Тоот" | "Зогсоол" | "Агуулах") => {
+      if (!Array.isArray(currentResidents)) return false;
+      const uOrts = String(ortsVal || "1").trim().toLowerCase();
+      const uDavkhar = String(floorVal || "").trim().toLowerCase();
+      const uToot = String(tootVal || "").trim().toLowerCase();
+      if (!uToot) return false;
+
+      return currentResidents.some((r: any) => {
+        if (editingResident && String(editingResident._id || "") === String(r._id || "")) {
+          return false;
+        }
+
+        const existingUnits =
+          Array.isArray(r.toots) && r.toots.length > 0
+            ? r.toots
+            : [{ orts: r.orts, davkhar: r.davkhar, toot: r.toot, turul: r.turul }];
+
+        return existingUnits.some((rt: any) => {
+          const rtOrts = String(rt.orts || "1").trim().toLowerCase();
+          const rtDavkhar = String(rt.davkhar || "").trim().toLowerCase();
+          const rtToot = String(rt.toot || "").trim().toLowerCase();
+          const rtTurul = String(rt.turul || "Орон сууц").trim().toLowerCase();
+
+          let rtPropertyType = "Тоот";
+          if (rtTurul === "гараж" || rtTurul === "зогсоол" || rtTurul === "parking" || rtTurul === "garage") {
+            rtPropertyType = "Зогсоол";
+          } else if (rtTurul === "агуулах" || rtTurul === "storage") {
+            rtPropertyType = "Агуулах";
+          }
+
+          return (
+            rtOrts === uOrts &&
+            rtDavkhar === uDavkhar &&
+            rtToot === uToot &&
+            rtPropertyType === propertyType
+          );
+        });
+      });
+    },
+    [currentResidents, editingResident]
+  );
+
   if (!show) return null;
 
   return (
@@ -1138,17 +1181,11 @@ export default function ResidentModal({
                                       <TusgaiZagvar
                                         value={mainUnit.toot || ""}
                                         onChange={(val: string) => updateMainUnitRow(index, "toot", val)}
-                                        options={opts.map((t) => {
-                                          const isOccupied = currentResidents?.some((r: any) => {
-                                            const rOrts = String(getResidentOrts(r) || "").trim();
-                                            const rDavkhar = String(getResidentDavkhar(r) || "").trim();
-                                            const rToot = String(getResidentToot(r) || "").trim();
-                                            const isSameUnit = rOrts === String(mainUnit.orts || "").trim() && rDavkhar === String(mainUnit.davkhar || "").trim() && rToot === String(t || "").trim();
-                                            const isDifferentResident = String(r._id || "") !== String(editingResident?._id || "");
-                                            return isSameUnit && isDifferentResident;
-                                          });
-                                          return { value: t, label: t, isOccupied };
-                                        })}
+                                        options={opts.map((t) => ({
+                                          value: t,
+                                          label: t,
+                                          isOccupied: isTootOccupied(t, mainUnit.davkhar || "", mainUnit.orts || "1", "Тоот")
+                                        }))}
                                         className="w-full h-full"
                                         placeholder="Тоот..."
                                         disabled={!mainUnit.orts || !mainUnit.davkhar}
@@ -1324,7 +1361,7 @@ export default function ResidentModal({
                                         return (
                                           <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${gFlatIdx}.toot`) ? "input-error" : ""}`}>
                                             <TusgaiZagvar value={garage.toot || ""} onChange={(val: string) => updateGarageField(index, gIdx, "toot", val)}
-                                              options={opts.map((t) => ({ value: t, label: t }))} className="w-full h-full" placeholder="Дугаар..." disabled={!garage.davkhar} />
+                                              options={opts.map((t) => ({ value: t, label: t, isOccupied: isTootOccupied(t, garage.davkhar || "", "1", "Зогсоол") }))} className="w-full h-full" placeholder="Дугаар..." disabled={!garage.davkhar} />
                                           </div>
                                         );
                                       })()}
@@ -1367,7 +1404,7 @@ export default function ResidentModal({
                                         return (
                                           <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${sFlatIdxNested}.toot`) ? "input-error" : ""}`}>
                                             <TusgaiZagvar value={storage.toot || ""} onChange={(val: string) => updateStorageField(index, sIdx, "toot", val)}
-                                              options={opts.map((t) => ({ value: t, label: t }))} className="w-full h-full" placeholder="Дугаар..." disabled={!storage.davkhar} />
+                                              options={opts.map((t) => ({ value: t, label: t, isOccupied: isTootOccupied(t, storage.davkhar || "", "1", "Агуулах") }))} className="w-full h-full" placeholder="Дугаар..." disabled={!storage.davkhar} />
                                           </div>
                                         );
                                       })()}

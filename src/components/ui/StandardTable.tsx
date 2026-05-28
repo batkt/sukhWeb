@@ -22,13 +22,6 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Field, FieldLabel } from "@/components/ui/field";
 
 interface Column<T> {
@@ -246,31 +239,24 @@ export function StandardPagination({
 
         {onPageSizeChange && (
           <div className="relative group">
-            <Select
-              value={pageSize.toString()}
-              onValueChange={(v) => {
-                const newSize = parseInt(v);
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                const newSize = parseInt(e.target.value);
                 onPageSizeChange(newSize);
                 onChange(1, newSize);
               }}
+              className="h-8 border-none bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl px-3 pr-7 text-[13px] font-normal text-slate-800 dark:text-slate-200 appearance-none cursor-pointer outline-none transition-colors"
             >
-              <SelectTrigger className="h-8 border-none bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl px-3 gap-2 transition-colors !shadow-none">
-                <span className="text-[13px] font-normal text-slate-800 dark:text-slate-200">
-                  {pageSize} / хуудас
-                </span>
-              </SelectTrigger>
-              <SelectContent className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-xl">
-                {actualOptions.map((opt) => (
-                  <SelectItem
-                    key={opt}
-                    value={opt.toString()}
-                    className="text-[13px] focus:bg-emerald-50 focus:text-emerald-600 dark:focus:bg-emerald-950/20 dark:focus:text-emerald-400 rounded-xl cursor-pointer"
-                  >
-                    {opt}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              {actualOptions.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt} / хуудас
+                </option>
+              ))}
+            </select>
+            <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400">
+              ▾
+            </span>
           </div>
         )}
       </div>
