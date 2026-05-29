@@ -4,6 +4,7 @@ import React, { useState, useMemo, useEffect, useRef } from "react";
 import { X, UserCheck, Building2, ArrowLeft, Search, Plus } from "lucide-react";
 import { ModalPortal } from "../../../../components/golContent";
 import { useRouter } from "next/navigation";
+import useModalHotkeys from "@/lib/useModalHotkeys";
 
 interface QuickRegisterModalProps {
   show: boolean;
@@ -109,6 +110,16 @@ export default function QuickRegisterModal({
       onClose();
     }
   };
+
+  // ESC closes, Enter submits if there's exactly one result in the list
+  useModalHotkeys({
+    isOpen: show,
+    onClose,
+    onSubmit:
+      step === 2 && filteredList.length === 1
+        ? () => handleAssignPerson(filteredList[0]._id)
+        : undefined,
+  });
 
   if (!show) return null;
 

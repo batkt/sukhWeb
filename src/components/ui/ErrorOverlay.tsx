@@ -10,6 +10,17 @@ export function openErrorOverlay(message: string, duration = 3000) {
   });
 }
 
+export function openWarningOverlay(message: string, duration = 4000) {
+  toast(message, {
+    duration,
+    position: "top-right",
+    icon: "⚠️",
+    style: {
+      borderLeft: "4px solid #f97316",
+    }
+  });
+}
+
 export function ErrorOverlayHost() {
   return (
     <Toaster

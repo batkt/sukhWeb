@@ -10,6 +10,7 @@ import Button from "@/components/ui/Button";
 import QuickRegisterModal from "./modals/QuickRegisterModal";
 import SendInvoiceConfirmModal from "./modals/SendInvoiceConfirmModal";
 import { ModalPortal } from "../../../components/golContent";
+import useModalHotkeys from "@/lib/useModalHotkeys";
 
 interface UnitsSectionProps {
   davkharOptions: string[];
@@ -89,6 +90,11 @@ export default function UnitsSection({
   const [selectedUnit, setSelectedUnit] = useState<string | null>(null);
   const [quickRegister, setQuickRegister] = useState<{ unit: string; floor: string } | null>(null);
   const [activeUnitDetails, setActiveUnitDetails] = useState<{ unit: string; floor: string; resident: any } | null>(null);
+  const [checkedUnits, setCheckedUnits] = useState<string[]>([]);
+
+  useEffect(() => {
+    setCheckedUnits([]);
+  }, [selectedFloor, selectedOrts, propertyTab]);
   const [confirmModal, setConfirmModal] = useState<{
     show: boolean;
     title: string;
@@ -101,7 +107,18 @@ export default function UnitsSection({
     onConfirm: async () => {},
   });
 
-  // Compute floor data for UnitsTable
+  // Keyboard shortcuts for inline modals
+  useModalHotkeys({
+    isOpen: !!activeUnitDetails,
+    onClose: () => setActiveUnitDetails(null),
+  });
+  useModalHotkeys({
+    isOpen: confirmModal.show,
+    onClose: () => setConfirmModal((m) => ({ ...m, show: false })),
+    onSubmit: confirmModal.show ? () => confirmModal.onConfirm() : undefined,
+  });
+
+
   const floorData = useMemo(() => {
     const targetOrtsList = selectedOrts ? [selectedOrts] : ortsOptions;
     if (targetOrtsList.length === 0) return [];
@@ -359,129 +376,34 @@ export default function UnitsSection({
     };
   }, [floorData]);
 
-  const handleSendFloorInvoices = async () => {
-    if (!selectedFloor || !selectedFloorData) return;
-    
+  const handleSendCheckedInvoices = async () => {
+    if (!selectedFloor || !selectedFloorData || checkedUnits.length === 0) return;
+
     const tootsBilled = new Set<string>();
-    
-    const floorContractIds = contracts
-      .filter((c) => {
-        const status = String(c?.tuluv || c?.status || "Идэвхтэй").trim();
-        const isCancelled =
-          status === "Цуцалсан" ||
-          status.toLowerCase() === "цуцалсан" ||
-          status === "Идэвхгүй" ||
-          status.toLowerCase() === "идэвхгүй";
-        if (isCancelled) return false;
+    const dedicatedIds: string[] = [];
+    const nestedIds: string[] = [];
 
-        // 1. Check if contract has a matching primary unit on this floor and tab
-        const cFloor = String(c?.davkhar || "").trim();
-        const cOrts = String(c?.orts || "").trim();
-        const cToot = String(c?.toot || "").trim();
-        const cTurul = String(c?.turul || "").trim();
+    contracts.forEach((c) => {
+      const status = String(c?.tuluv || c?.status || "Идэвхтэй").trim();
+      const isCancelled =
+        status === "Цуцалсан" ||
+        status.toLowerCase() === "цуцалсан" ||
+        status === "Идэвхгүй" ||
+        status.toLowerCase() === "идэвхгүй";
+      if (isCancelled) return;
 
-        const matchFloor = cFloor === selectedFloor;
-        const matchOrts = selectedOrts ? cOrts === selectedOrts : true;
-        const matchToot = selectedFloorData.activeToots.has(cToot);
+      const cFloor = String(c?.davkhar || "").trim();
+      const cOrts  = String(c?.orts  || "").trim();
+      const cToot  = String(c?.toot  || "").trim();
+      const cTurul = String(c?.turul || "").trim();
 
-        let matchPrimary = false;
-        if (matchFloor && matchOrts && matchToot) {
-          if (propertyTab === "Зогсоол") {
-            matchPrimary = cTurul === "Зогсоол" || cTurul === "Гараж";
-          } else if (propertyTab === "Агуулах") {
-            matchPrimary = cTurul === "Агуулах";
-          } else {
-            matchPrimary = cTurul !== "Зогсоол" && cTurul !== "Гараж" && cTurul !== "Агуулах";
-          }
-        }
+      const matchFloor = cFloor === selectedFloor;
+      const matchOrts  = selectedOrts ? cOrts === selectedOrts : true;
+      const matchToot  = checkedUnits.includes(cToot);
 
-        let isMatched = false;
-        if (matchPrimary) {
-          tootsBilled.add(cToot);
-          isMatched = true;
-        }
-
-        // 2. Check if contract has a nested unit on this floor matching this propertyTab
-        const orshinSuugchId = c?.orshinSuugchId || c?.khariltsagchId;
-        const resident = orshinSuugchId ? residentsById[String(orshinSuugchId)] : null;
-        if (resident && Array.isArray(resident.toots) && resident.toots.length > 0) {
-          const hasNestedMatch = resident.toots.some((rt: any) => {
-            const rtTurul = String(rt.turul || "Орон сууц").trim();
-            let matchType = false;
-            if (propertyTab === "Зогсоол") {
-              matchType = rtTurul === "Гараж" || rtTurul === "Зогсоол";
-            } else if (propertyTab === "Агуулах") {
-              matchType = rtTurul === "Агуулах";
-            } else {
-              matchType = rtTurul === "Орон сууц" || rtTurul === "Тоот";
-            }
-
-            if (!matchType) return false;
-
-            const rOrts = String(rt.orts || "").trim();
-            const rFloor = String(rt.davkhar || "").trim();
-            const rToots = String(rt.toot || "")
-              .split(",")
-              .map((x) => x.trim())
-              .filter(Boolean);
-
-            const matchOrtsNested = selectedOrts ? rOrts === selectedOrts : true;
-            const matchFloorNested = rFloor === selectedFloor;
-            const matchTootsNested = rToots.some(t => selectedFloorData.activeToots.has(t));
-
-            if (matchOrtsNested && matchFloorNested && matchTootsNested) {
-              rToots.forEach(t => {
-                if (selectedFloorData.activeToots.has(t)) {
-                  tootsBilled.add(t);
-                }
-              });
-              return true;
-            }
-            return false;
-          });
-
-          if (hasNestedMatch) {
-            isMatched = true;
-          }
-        }
-
-        return isMatched;
-      })
-      .map((c) => String(c._id));
-
-    if (floorContractIds.length === 0) {
-      alert(`Энэ давхарт идэвхтэй ${propertyTab === "Зогсоол" ? "Зогсоол/Гараж" : propertyTab === "Агуулах" ? "Агуулах" : "Орон сууц/Тоот"} гэрээ олдсонгүй.`);
-      return;
-    }
-
-    const typeLabel = propertyTab === "Зогсоол" ? "Зогсоол/Гараж" : propertyTab === "Агуулах" ? "Агуулах" : "Орон сууц/Тоот";
-    const isGarageOrStorage = propertyTab === "Зогсоол" || propertyTab === "Агуулах";
-    setConfirmModal({
-      show: true,
-      title: "Давхарт нэхэмжлэх илгээх",
-      message: `${selectedFloor}-р давхрын бүх ${typeLabel} гэрээнүүдэд (${tootsBilled.size} тоот) нэхэмжлэх илгээх үү?`,
-      onConfirm: async () => {
-        await actions.handleSendInvoices(floorContractIds, isGarageOrStorage);
-      }
-    });
-  };
-
-  const handleSendAllFloorsInvoices = async () => {
-    const tootsBilled = new Set<string>();
-
-    const allContractIds = contracts
-      .filter((c) => {
-        const status = String(c?.tuluv || c?.status || "Идэвхтэй").trim();
-        const isCancelled =
-          status === "Цуцалсан" ||
-          status.toLowerCase() === "цуцалсан" ||
-          status === "Идэвхгүй" ||
-          status.toLowerCase() === "идэвхгүй";
-        if (isCancelled) return false;
-
-        const cTurul = String(c?.turul || "").trim();
-        const cToot = String(c?.toot || "").trim();
-        let matchPrimary = false;
+      // Check primary matching
+      let matchPrimary = false;
+      if (matchFloor && matchOrts && matchToot) {
         if (propertyTab === "Зогсоол") {
           matchPrimary = cTurul === "Зогсоол" || cTurul === "Гараж";
         } else if (propertyTab === "Агуулах") {
@@ -489,61 +411,309 @@ export default function UnitsSection({
         } else {
           matchPrimary = cTurul !== "Зогсоол" && cTurul !== "Гараж" && cTurul !== "Агуулах";
         }
+      }
 
-        let isMatched = false;
-        if (matchPrimary) {
-          tootsBilled.add(cToot);
-          isMatched = true;
-        }
+      if (matchPrimary) {
+        tootsBilled.add(cToot);
+        dedicatedIds.push(String(c._id));
+        return;
+      }
 
-        // Check nested units
-        const orshinSuugchId = c?.orshinSuugchId || c?.khariltsagchId;
-        const resident = orshinSuugchId ? residentsById[String(orshinSuugchId)] : null;
-        if (resident && Array.isArray(resident.toots) && resident.toots.length > 0) {
-          const hasNestedMatch = resident.toots.some((rt: any) => {
-            const rtTurul = String(rt.turul || "Орон сууц").trim();
-            let matchType = false;
-            if (propertyTab === "Зогсоол") {
-              matchType = rtTurul === "Гараж" || rtTurul === "Зогсоол";
-            } else if (propertyTab === "Агуулах") {
-              matchType = rtTurul === "Агуулах";
-            } else {
-              matchType = rtTurul === "Орон сууц" || rtTurul === "Тоот";
-            }
+      // Check nested matching
+      const orshinSuugchId = c?.orshinSuugchId || c?.khariltsagchId;
+      const resident = orshinSuugchId ? residentsById[String(orshinSuugchId)] : null;
+      if (resident && Array.isArray(resident.toots) && resident.toots.length > 0) {
+        const hasNestedMatch = resident.toots.some((rt: any) => {
+          const rtTurul = String(rt.turul || "Орон сууц").trim();
+          
+          let matchesTab = false;
+          if (propertyTab === "Зогсоол") {
+            matchesTab = rtTurul === "Гараж" || rtTurul === "Зогсоол";
+          } else if (propertyTab === "Агуулах") {
+            matchesTab = rtTurul === "Агуулах";
+          } else {
+            matchesTab = rtTurul === "Орон сууц" || rtTurul === "Тоот";
+          }
+          if (!matchesTab) return false;
 
-            if (!matchType) return false;
+          const rOrts  = String(rt.orts    || "").trim();
+          const rFloor = String(rt.davkhar || "").trim();
+          const rToots = String(rt.toot    || "").split(",").map((x) => x.trim()).filter(Boolean);
+          const matchOrtsNested  = selectedOrts ? rOrts === selectedOrts : true;
+          const matchFloorNested = rFloor === selectedFloor;
+          const matchTootsNested = rToots.some((t) => checkedUnits.includes(t));
 
-            const rToots = String(rt.toot || "")
-              .split(",")
-              .map((x) => x.trim())
-              .filter(Boolean);
-
-            rToots.forEach(t => tootsBilled.add(t));
+          if (matchOrtsNested && matchFloorNested && matchTootsNested) {
+            rToots.forEach((t) => { if (checkedUnits.includes(t)) tootsBilled.add(t); });
             return true;
-          });
+          }
+          return false;
+        });
 
-          if (hasNestedMatch) {
-            isMatched = true;
+        if (hasNestedMatch) {
+          if (propertyTab === "Зогсоол" || propertyTab === "Агуулах") {
+            nestedIds.push(String(c._id));
+          } else {
+            dedicatedIds.push(String(c._id));
           }
         }
+      }
+    });
 
-        return isMatched;
-      })
-      .map((c) => String(c._id));
+    const totalCount = dedicatedIds.length + nestedIds.length;
+    if (totalCount === 0) {
+      alert(`Сонгосон тоотуудад идэвхтэй ${propertyTab === "Зогсоол" ? "Зогсоол/Гараж" : propertyTab === "Агуулах" ? "Агуулах" : "Орон сууц/Тоот"} гэрээ олдсонгүй.`);
+      return;
+    }
 
-    if (allContractIds.length === 0) {
+    const typeLabel = propertyTab === "Зогсоол" ? "Зогсоол/Гараж" : propertyTab === "Агуулах" ? "Агуулах" : "Орон сууц/Тоот";
+    setConfirmModal({
+      show: true,
+      title: `Сонгосон тоотуудад ${propertyTab === "Зогсоол" || propertyTab === "Агуулах" ? "авлага нэмэх" : "нэхэмжлэх илгээх"}`,
+      message: `Сонгосон ${tootsBilled.size} тоотын ${typeLabel} гэрээнүүдэд ${propertyTab === "Зогсоол" || propertyTab === "Агуулах" ? "авлага нэмэх" : "нэхэмжлэх илгээх"} үү?`,
+      onConfirm: async () => {
+        if (propertyTab === "Зогсоол" || propertyTab === "Агуулах") {
+          const allIds = [...dedicatedIds, ...nestedIds];
+          const residents = allIds
+            .map(id => {
+              const c = contracts.find((x: any) => String(x._id) === id);
+              if (!c) return null;
+              const resId = c.orshinSuugchId || c.khariltsagchId;
+              return resId ? residentsById[String(resId)] : null;
+            })
+            .filter(Boolean)
+            .filter((r: any, i: number, arr: any[]) =>
+              arr.findIndex((x: any) => String(x._id) === String(r._id)) === i
+            );
+          await actions.handleAddGarageCharges(residents, propertyTab === "Зогсоол" ? "Зогсоол" : "Агуулах");
+        } else {
+          await actions.handleSendInvoices(dedicatedIds, nestedIds, {
+            onlyGarage: false,
+            onlyStorage: false,
+          });
+        }
+        setCheckedUnits([]);
+      }
+    });
+  };
+
+  const handleSendFloorInvoices = async () => {
+    if (!selectedFloor || !selectedFloorData) return;
+
+    const tootsBilled = new Set<string>();
+    const dedicatedIds: string[] = [];
+    const nestedIds: string[] = [];
+
+    contracts.forEach((c) => {
+      const status = String(c?.tuluv || c?.status || "Идэвхтэй").trim();
+      const isCancelled =
+        status === "Цуцалсан" ||
+        status.toLowerCase() === "цуцалсан" ||
+        status === "Идэвхгүй" ||
+        status.toLowerCase() === "идэвхгүй";
+      if (isCancelled) return;
+
+      const cFloor = String(c?.davkhar || "").trim();
+      const cOrts  = String(c?.orts  || "").trim();
+      const cToot  = String(c?.toot  || "").trim();
+      const cTurul = String(c?.turul || "").trim();
+
+      const matchFloor = cFloor === selectedFloor;
+      const matchOrts  = selectedOrts ? cOrts === selectedOrts : true;
+      const matchToot  = selectedFloorData.activeToots.has(cToot);
+
+      // Check primary matching
+      let matchPrimary = false;
+      if (matchFloor && matchOrts && matchToot) {
+        if (propertyTab === "Зогсоол") {
+          matchPrimary = cTurul === "Зогсоол" || cTurul === "Гараж";
+        } else if (propertyTab === "Агуулах") {
+          matchPrimary = cTurul === "Агуулах";
+        } else {
+          matchPrimary = cTurul !== "Зогсоол" && cTurul !== "Гараж" && cTurul !== "Агуулах";
+        }
+      }
+
+      if (matchPrimary) {
+        tootsBilled.add(cToot);
+        dedicatedIds.push(String(c._id));
+        return;
+      }
+
+      // Check nested matching
+      const orshinSuugchId = c?.orshinSuugchId || c?.khariltsagchId;
+      const resident = orshinSuugchId ? residentsById[String(orshinSuugchId)] : null;
+      if (resident && Array.isArray(resident.toots) && resident.toots.length > 0) {
+        const hasNestedMatch = resident.toots.some((rt: any) => {
+          const rtTurul = String(rt.turul || "Орон сууц").trim();
+          
+          let matchesTab = false;
+          if (propertyTab === "Зогсоол") {
+            matchesTab = rtTurul === "Гараж" || rtTurul === "Зогсоол";
+          } else if (propertyTab === "Агуулах") {
+            matchesTab = rtTurul === "Агуулах";
+          } else {
+            matchesTab = rtTurul === "Орон сууц" || rtTurul === "Тоот";
+          }
+          if (!matchesTab) return false;
+
+          const rOrts  = String(rt.orts    || "").trim();
+          const rFloor = String(rt.davkhar || "").trim();
+          const rToots = String(rt.toot    || "").split(",").map((x) => x.trim()).filter(Boolean);
+          const matchOrtsNested  = selectedOrts ? rOrts === selectedOrts : true;
+          const matchFloorNested = rFloor === selectedFloor;
+          const matchTootsNested = rToots.some((t) => selectedFloorData.activeToots.has(t));
+
+          if (matchOrtsNested && matchFloorNested && matchTootsNested) {
+            rToots.forEach((t) => { if (selectedFloorData.activeToots.has(t)) tootsBilled.add(t); });
+            return true;
+          }
+          return false;
+        });
+
+        if (hasNestedMatch) {
+          if (propertyTab === "Зогсоол" || propertyTab === "Агуулах") {
+            nestedIds.push(String(c._id));
+          } else {
+            dedicatedIds.push(String(c._id));
+          }
+        }
+      }
+    });
+
+    const totalCount = dedicatedIds.length + nestedIds.length;
+    if (totalCount === 0) {
+      alert(`Энэ давхарт идэвхтэй ${propertyTab === "Зогсоол" ? "Зогсоол/Гараж" : propertyTab === "Агуулах" ? "Агуулах" : "Орон сууц/Тоот"} гэрээ олдсонгүй.`);
+      return;
+    }
+
+    const typeLabel = propertyTab === "Зогсоол" ? "Зогсоол/Гараж" : propertyTab === "Агуулах" ? "Агуулах" : "Орон сууц/Тоот";
+    setConfirmModal({
+      show: true,
+      title: `Давхарт ${propertyTab === "Зогсоол" || propertyTab === "Агуулах" ? "авлага нэмэх" : "нэхэмжлэх илгээх"}`,
+      message: `${selectedFloor}-р давхрын бүх ${typeLabel} гэрээнүүдэд (${tootsBilled.size} тоот) ${propertyTab === "Зогсоол" || propertyTab === "Агуулах" ? "авлага нэмэх" : "нэхэмжлэх илгээх"} үү?`,
+      onConfirm: async () => {
+        if (propertyTab === "Зогсоол" || propertyTab === "Агуулах") {
+          const allIds = [...dedicatedIds, ...nestedIds];
+          const residents = allIds
+            .map(id => {
+              const c = contracts.find((x: any) => String(x._id) === id);
+              if (!c) return null;
+              const resId = c.orshinSuugchId || c.khariltsagchId;
+              return resId ? residentsById[String(resId)] : null;
+            })
+            .filter(Boolean)
+            .filter((r: any, i: number, arr: any[]) =>
+              arr.findIndex((x: any) => String(x._id) === String(r._id)) === i
+            );
+          await actions.handleAddGarageCharges(residents, propertyTab === "Зогсоол" ? "Зогсоол" : "Агуулах");
+        } else {
+          await actions.handleSendInvoices(dedicatedIds, nestedIds, {
+            onlyGarage: false,
+            onlyStorage: false,
+          });
+        }
+      }
+    });
+  };
+
+  const handleSendAllFloorsInvoices = async () => {
+    const tootsBilled = new Set<string>();
+    const dedicatedIds: string[] = [];
+    const nestedIds: string[] = [];
+
+    contracts.forEach((c) => {
+      const status = String(c?.tuluv || c?.status || "Идэвхтэй").trim();
+      const isCancelled =
+        status === "Цуцалсан" ||
+        status.toLowerCase() === "цуцалсан" ||
+        status === "Идэвхгүй" ||
+        status.toLowerCase() === "идэвхгүй";
+      if (isCancelled) return;
+
+      const cTurul = String(c?.turul || "").trim();
+      const cToot  = String(c?.toot  || "").trim();
+
+      // Check primary matching
+      let matchPrimary = false;
+      if (propertyTab === "Зогсоол") {
+        matchPrimary = cTurul === "Зогсоол" || cTurul === "Гараж";
+      } else if (propertyTab === "Агуулах") {
+        matchPrimary = cTurul === "Агуулах";
+      } else {
+        matchPrimary = cTurul !== "Зогсоол" && cTurul !== "Гараж" && cTurul !== "Агуулах";
+      }
+
+      if (matchPrimary) {
+        tootsBilled.add(cToot);
+        dedicatedIds.push(String(c._id));
+        return;
+      }
+
+      // Check nested matching
+      const orshinSuugchId = c?.orshinSuugchId || c?.khariltsagchId;
+      const resident = orshinSuugchId ? residentsById[String(orshinSuugchId)] : null;
+      if (resident && Array.isArray(resident.toots) && resident.toots.length > 0) {
+        const hasNestedMatch = resident.toots.some((rt: any) => {
+          const rtTurul = String(rt.turul || "Орон сууц").trim();
+          
+          let matchesTab = false;
+          if (propertyTab === "Зогсоол") {
+            matchesTab = rtTurul === "Гараж" || rtTurul === "Зогсоол";
+          } else if (propertyTab === "Агуулах") {
+            matchesTab = rtTurul === "Агуулах";
+          } else {
+            matchesTab = rtTurul === "Орон сууц" || rtTurul === "Тоот";
+          }
+          if (!matchesTab) return false;
+
+          const rToots = String(rt.toot || "").split(",").map((x) => x.trim()).filter(Boolean);
+          rToots.forEach((t) => tootsBilled.add(t));
+          return true;
+        });
+
+        if (hasNestedMatch) {
+          if (propertyTab === "Зогсоол" || propertyTab === "Агуулах") {
+            nestedIds.push(String(c._id));
+          } else {
+            dedicatedIds.push(String(c._id));
+          }
+        }
+      }
+    });
+
+    const totalCount = dedicatedIds.length + nestedIds.length;
+    if (totalCount === 0) {
       alert(`Идэвхтэй ${propertyTab === "Зогсоол" ? "Зогсоол/Гараж" : propertyTab === "Агуулах" ? "Агуулах" : "Орон сууц/Тоот"} гэрээ олдсонгүй.`);
       return;
     }
 
     const typeLabel = propertyTab === "Зогсоол" ? "Зогсоол/Гараж" : propertyTab === "Агуулах" ? "Агуулах" : "Орон сууц/Тоот";
-    const isGarageOrStorage = propertyTab === "Зогсоол" || propertyTab === "Агуулах";
     setConfirmModal({
       show: true,
-      title: "Бүх давхарт нэхэмжлэх илгээх",
-      message: `Бүх давхрын бүх ${typeLabel} гэрээнүүдэд (${tootsBilled.size} тоот) нэхэмжлэх илгээх үү?`,
+      title: `Бүх давхарт ${propertyTab === "Зогсоол" || propertyTab === "Агуулах" ? "авлага нэмэх" : "нэхэмжлэх илгээх"}`,
+      message: `Бүх давхрын бүх ${typeLabel} гэрээнүүдэд (${tootsBilled.size} тоот) ${propertyTab === "Зогсоол" || propertyTab === "Агуулах" ? "авлага нэмэх" : "нэхэмжлэх илгээх"} үү?`,
       onConfirm: async () => {
-        await actions.handleSendInvoices(allContractIds, isGarageOrStorage);
+        if (propertyTab === "Зогсоол" || propertyTab === "Агуулах") {
+          const allIds = [...dedicatedIds, ...nestedIds];
+          const residents = allIds
+            .map(id => {
+              const c = contracts.find((x: any) => String(x._id) === id);
+              if (!c) return null;
+              const resId = c.orshinSuugchId || c.khariltsagchId;
+              return resId ? residentsById[String(resId)] : null;
+            })
+            .filter(Boolean)
+            .filter((r: any, i: number, arr: any[]) =>
+              arr.findIndex((x: any) => String(x._id) === String(r._id)) === i
+            );
+          await actions.handleAddGarageCharges(residents, propertyTab === "Зогсоол" ? "Зогсоол" : "Агуулах");
+        } else {
+          await actions.handleSendInvoices(dedicatedIds, nestedIds, {
+            onlyGarage: false,
+            onlyStorage: false,
+          });
+        }
       }
     });
   };
@@ -576,15 +746,35 @@ export default function UnitsSection({
     });
 
     if (activeContract && actions.handleSendInvoices) {
-      const isGarageOrStorage = propertyTab === "Зогсоол" || propertyTab === "Агуулах";
+      const isDedicatedGarageTab =
+        (propertyTab === "Зогсоол" || propertyTab === "Агуулах") &&
+        (() => {
+          const t = String(activeContract?.turul || "").trim().toLowerCase();
+          return t === "зогсоол" || t === "гараж" || t === "агуулах";
+        })();
+      const isNestedGarage = (propertyTab === "Зогсоол" || propertyTab === "Агуулах") && !isDedicatedGarageTab;
       const typeLabel = propertyTab === "Зогсоол" ? "Зогсоол/Гараж" : propertyTab === "Агуулах" ? "Агуулах" : "Орон сууц/Тоот";
-      
+
       setConfirmModal({
         show: true,
-        title: "Нэхэмжлэх илгээх",
-        message: `Тоот ${unit}-ийн ${typeLabel} гэрээнд нэхэмжлэх илгээх үү?`,
+        title: propertyTab === "Зогсоол" || propertyTab === "Агуулах" ? "Авлага нэмэх" : "Нэхэмжлэх илгээх",
+        message: propertyTab === "Зогсоол" || propertyTab === "Агуулах"
+          ? `Тоот ${unit}-ийн ${typeLabel} авлага нэмэх үү?`
+          : `Тоот ${unit}-ийн ${typeLabel} гэрээнд нэхэмжлэх илгээх үү?`,
         onConfirm: async () => {
-          await actions.handleSendInvoices([activeContract._id], isGarageOrStorage);
+          if (propertyTab === "Зогсоол" || propertyTab === "Агуулах") {
+            await actions.handleAddGarageCharges(
+              [resident],
+              propertyTab === "Зогсоол" ? "Зогсоол" : "Агуулах"
+            );
+          } else {
+            const dedicated = isNestedGarage ? [] : [String(activeContract._id)];
+            const nested = isNestedGarage ? [String(activeContract._id)] : [];
+            await actions.handleSendInvoices(dedicated, nested, {
+              onlyGarage: false,
+              onlyStorage: false,
+            });
+          }
           setActiveUnitDetails(null);
         }
       });
@@ -734,6 +924,21 @@ export default function UnitsSection({
                       </h3>
                       {selectedFloor && selectedFloorData && selectedFloorData.filteredUnits.length > 0 && (
                         <div className="flex items-center gap-2">
+                          {checkedUnits.length > 0 && (
+                            <Button
+                              onClick={handleSendCheckedInvoices}
+                              variant="primary"
+                              size="sm"
+                              leftIcon={<Send className="w-3.5 h-3.5" />}
+                              className="rounded-2xl transition-all duration-200 shadow-md !bg-gradient-to-r !from-orange-500 !to-amber-500 !border-none !text-white hover:scale-[1.01] font-semibold"
+                            >
+                              {propertyTab === "Зогсоол"
+                                ? `Сонгосонд илгээх (${checkedUnits.length} зогсоол)`
+                                : propertyTab === "Агуулах"
+                                  ? `Сонгосонд илгээх (${checkedUnits.length} агуулах)`
+                                  : `Сонгосонд илгээх (${checkedUnits.length} тоот)`}
+                            </Button>
+                          )}
                           <Button
                             onClick={handleSendFloorInvoices}
                             variant="secondary"
@@ -791,35 +996,54 @@ export default function UnitsSection({
                                 ? (utas ? `${fullName} (${utas})` : fullName)
                                 : "Бүртгүүлэх";
 
+                              const isChecked = checkedUnits.includes(unitStr);
+
                               return (
-                                <Tooltip title={tooltipTitle} key={unitStr} color="#1e293b" placement="top">
-                                  <button
-                                    onClick={() => {
-                                      setSelectedUnit(unitStr);
-                                      if (isOccupied) {
-                                        setActiveUnitDetails({
-                                          unit: unitStr,
-                                          floor: selectedFloor || "",
-                                          resident,
-                                        });
-                                      } else {
-                                        setQuickRegister({
-                                          unit: unitStr,
-                                          floor: selectedFloor || "",
-                                        });
-                                      }
-                                    }}
-                                    className={`w-14 h-10 rounded-2xl flex items-center justify-center font-bold text-xs border transition-all duration-200 cursor-pointer ${isOccupied
-                                      ? "bg-emerald-500 hover:bg-emerald-600 border-emerald-600 dark:border-emerald-500 text-white shadow-sm shadow-emerald-500/20"
-                                      : "bg-orange-500 hover:bg-orange-600 border-orange-600 dark:border-orange-500 text-white shadow-sm shadow-orange-500/20"
-                                      } ${isSelected
-                                        ? "ring-2 ring-offset-2 ring-blue-500 dark:ring-offset-slate-900"
-                                        : ""
-                                      }`}
-                                  >
-                                    {unitStr}
-                                  </button>
-                                </Tooltip>
+                                <div key={unitStr} className="relative flex items-center justify-center">
+                                  {isOccupied && (
+                                    <input
+                                      type="checkbox"
+                                      checked={isChecked}
+                                      onChange={(e) => {
+                                        e.stopPropagation();
+                                        if (e.target.checked) {
+                                          setCheckedUnits((prev) => [...prev, unitStr]);
+                                        } else {
+                                          setCheckedUnits((prev) => prev.filter((x) => x !== unitStr));
+                                        }
+                                      }}
+                                      className="absolute -top-1.5 -left-1.5 z-10 w-4 h-4 rounded-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-orange-500 focus:ring-orange-500 cursor-pointer shadow-sm transition-transform hover:scale-110"
+                                    />
+                                  )}
+                                  <Tooltip title={tooltipTitle} color="#1e293b" placement="top">
+                                    <button
+                                      onClick={() => {
+                                        setSelectedUnit(unitStr);
+                                        if (isOccupied) {
+                                          setActiveUnitDetails({
+                                            unit: unitStr,
+                                            floor: selectedFloor || "",
+                                            resident,
+                                          });
+                                        } else {
+                                          setQuickRegister({
+                                            unit: unitStr,
+                                            floor: selectedFloor || "",
+                                          });
+                                        }
+                                      }}
+                                      className={`w-14 h-10 rounded-2xl flex items-center justify-center font-bold text-xs border transition-all duration-200 cursor-pointer ${isOccupied
+                                        ? "bg-emerald-500 hover:bg-emerald-600 border-emerald-600 dark:border-emerald-500 text-white shadow-sm shadow-emerald-500/20"
+                                        : "bg-orange-500 hover:bg-orange-600 border-orange-600 dark:border-orange-500 text-white shadow-sm shadow-orange-500/20"
+                                        } ${isSelected
+                                          ? "ring-2 ring-offset-2 ring-blue-500 dark:ring-offset-slate-900"
+                                          : ""
+                                        }`}
+                                    >
+                                      {unitStr}
+                                    </button>
+                                  </Tooltip>
+                                </div>
                               );
                             })}
                             <button

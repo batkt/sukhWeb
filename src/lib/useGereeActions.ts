@@ -1,7 +1,7 @@
 import React, { useCallback } from "react";
 import { useSWRConfig } from "swr";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
-import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
+import { openErrorOverlay, openWarningOverlay } from "@/components/ui/ErrorOverlay";
 import uilchilgee, { getErrorMessage } from "@/lib/uilchilgee";
 import createMethod from "../../tools/function/createMethod";
 import updateMethod from "../../tools/function/updateMethod";
@@ -1210,70 +1210,129 @@ export function useGereeActions(
   );
 
   // Manual send invoice handler
+  //
+  // When propertyTab is Зогсоол / Агуулах there are TWO kinds of contracts:
+  //   1. dedicatedIds   – contracts whose turul IS "Зогсоол"/"Гараж"/"Агуулах"
+  //                       → they own their invoice; send as a normal invoice (onlyGarageOrStorage=false)
+  //   2. mainWithNestedIds – main apartment contracts that have the garage/storage in nemeltTootnuud
+  //                       → append only the garage/storage charges to the existing invoice
+  //
+  // For backward-compat, the old (ids, bool) signature still works.
   const handleSendInvoices = useCallback(
-    async (selectedContractIds: string[], onlyGarageOrStorage?: boolean) => {
+    async (
+      dedicatedOrAllIds: string[],
+      onlyGarageOrStorageOrMainIds?: boolean | string[],
+      options?: { onlyGarage?: boolean; onlyStorage?: boolean },
+    ) => {
       if (!token || !baiguullaga?._id) {
         openErrorOverlay("Нэвтэрч орсон хэрэглэгч олдсонгүй");
         return;
       }
 
-      if (!selectedContractIds || selectedContractIds.length === 0) {
+      // Normalise arguments
+      const dedicatedIds: string[] = dedicatedOrAllIds;
+      const mainWithNestedIds: string[] = Array.isArray(onlyGarageOrStorageOrMainIds)
+        ? onlyGarageOrStorageOrMainIds
+        : [];
+      // legacy boolean flag → treat all IDs as dedicated (no nested split needed)
+      const legacyFlag: boolean =
+        typeof onlyGarageOrStorageOrMainIds === "boolean"
+          ? onlyGarageOrStorageOrMainIds
+          : false;
+
+      const allIds = [...dedicatedIds, ...mainWithNestedIds];
+      if (allIds.length === 0) {
         openErrorOverlay("Нэхэмжлэх илгээх гэрээ сонгоно уу");
         return;
       }
 
       try {
-        // Get current month and year as default
         const now = new Date();
-
-        const body = {
-          gereeIds: selectedContractIds,
+        const baseBody = {
           baiguullagiinId: baiguullaga._id,
           override: false,
           targetMonth: now.getMonth() + 1,
           targetYear: now.getFullYear(),
-          onlyGarageOrStorage: !!onlyGarageOrStorage,
         };
 
-        const response = await uilchilgee(token).post("/manualSend", body);
+        let totalCreated = 0;
+        const combinedErrors: any[] = [];
 
-        if (response.data?.success) {
-          const createdCount = Number(response.data?.data?.created ?? 0) || 0;
-          const message =
-            response.data.message ||
-            `${createdCount} нэхэмжлэх амжилттай үүсгэгдлээ`;
-          openSuccessOverlay(message);
-          if (createdCount <= 0) {
-            openErrorOverlay(
-              "Шинэ нэхэмжлэх үүсээгүй байна (created = 0). Давхар үүсгэх тохиргоо (override) эсвэл тухайн сар аль хэдийн үүссэн эсэхийг шалгана уу.",
-            );
+        // ── 1. Dedicated garage/storage contracts ──────────────────────────
+        if (dedicatedIds.length > 0) {
+          const body = {
+            ...baseBody,
+            gereeIds: dedicatedIds,
+            onlyGarageOrStorage: legacyFlag, // false for new split-calls, preserved for legacy
+            ...(options?.onlyGarage ? { onlyGarage: true } : {}),
+            ...(options?.onlyStorage ? { onlyStorage: true } : {}),
+          };
+          const res = await uilchilgee(token).post("/manualSend", body);
+          if (res.data?.success) {
+            totalCreated += Number(res.data?.data?.created ?? 0) || 0;
+            (res.data?.data?.errorsList || []).forEach((e: any) => combinedErrors.push(e));
           }
+        }
 
-          // Notify any open invoice UIs to refresh their history lists.
-          // (E.g. InvoiceModal sidebar should show the newly created "version" immediately.)
-          if (typeof window !== "undefined") {
-            window.dispatchEvent(
-              new CustomEvent("sukh:invoices-sent", {
-                detail: {
-                  baiguullagiinId: baiguullaga._id,
-                  gereeIds: selectedContractIds,
-                  created: createdCount,
-                  at: Date.now(),
-                },
-              }),
-            );
+        // ── 2. Main contracts whose nested unit is a garage/storage ────────
+        if (mainWithNestedIds.length > 0) {
+          const body = {
+            ...baseBody,
+            gereeIds: mainWithNestedIds,
+            onlyGarageOrStorage: true,
+            ...(options?.onlyGarage ? { onlyGarage: true } : {}),
+            ...(options?.onlyStorage ? { onlyStorage: true } : {}),
+          };
+          const res = await uilchilgee(token).post("/manualSend", body);
+          if (res.data?.success) {
+            totalCreated += Number(res.data?.data?.created ?? 0) || 0;
+            (res.data?.data?.errorsList || []).forEach((e: any) => combinedErrors.push(e));
           }
+        }
 
-          // If there are errors, show them
-          if (
-            response.data.data?.errors > 0 &&
-            response.data.data?.errorsList?.length > 0
-          ) {
-            const errorMessages = response.data.data.errorsList
-              .map(
-                (err: any) => `${err.gereeniiDugaar || "Гэрээ"}: ${err.error}`,
-              )
-              .join("\n");
+        const message = `${totalCreated} нэхэмжлэх амжилттай үүсгэгдлээ`;
+        openSuccessOverlay(message);
+
+        if (totalCreated <= 0 && !legacyFlag && mainWithNestedIds.length === 0) {
+          openErrorOverlay(
+            "Шинэ нэхэмжлэх үүсээгүй байна (created = 0). Давхар үүсгэх тохиргоо (override) эсвэл тухайн сар аль хэдийн үүссэн эсэхийг шалгана уу.",
+          );
+        }
+
+        // Notify open invoice UIs to refresh
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("sukh:invoices-sent", {
+              detail: {
+                baiguullagiinId: baiguullaga._id,
+                gereeIds: allIds,
+                created: totalCreated,
+                at: Date.now(),
+              },
+            }),
+          );
+        }
+
+        // Show errors
+        if (combinedErrors.length > 0) {
+          const errorMessages = combinedErrors
+            .map((err: any) => {
+              const errMsg = String(err.error || "");
+              if (errMsg.includes("үүссэн байна") || errMsg.includes("хэдийн")) {
+                return `${err.gereeniiDugaar || "Гэрээ"} аль хэдийн үүссэн байна.`;
+              }
+              return `${err.gereeniiDugaar || "Гэрээ"}: ${err.error}`;
+            })
+            .join("\n");
+
+          const isAllDuplicate = combinedErrors.every((err: any) => {
+            const errMsg = String(err.error || "");
+            return errMsg.includes("үүссэн байна") || errMsg.includes("хэдийн");
+          });
+
+          if (isAllDuplicate) {
+            openWarningOverlay(`Анхааруулга:\n${errorMessages}`);
+          } else {
             openErrorOverlay(`Зарим алдаа гарлаа:\n${errorMessages}`);
           }
         }
@@ -1384,8 +1443,35 @@ export function useGereeActions(
           }
         });
 
-        // 3. For each resident, check if they have garage/storage units
+        // 3. Fetch cron schedule to determine billing cycle bounds
+        let cronDay = 1;
+        try {
+          const cronRes = await uilchilgee(token).get(`/nekhemjlekhCron/${baiguullaga._id}`, {
+            params: effectiveBarilgiinId ? { barilgiinId: effectiveBarilgiinId } : {}
+          });
+          const schedules = cronRes.data?.data || cronRes.data || [];
+          const schedule = Array.isArray(schedules) ? schedules[schedules.length - 1] : schedules;
+          if (schedule?.nekhemjlekhUusgekhOgnoo) cronDay = Number(schedule.nekhemjlekhUusgekhOgnoo);
+        } catch {}
+
+        const now = new Date();
+        let cycleStartYear = now.getFullYear();
+        let cycleStartMonth = now.getMonth(); // 0-indexed
+        if (now.getDate() < cronDay) {
+          cycleStartMonth--;
+          if (cycleStartMonth < 0) { cycleStartMonth = 11; cycleStartYear--; }
+        }
+        const cycleStart = new Date(cycleStartYear, cycleStartMonth, cronDay);
+        const cycleEndMonth = cycleStartMonth === 11 ? 0 : cycleStartMonth + 1;
+        const cycleEndYear = cycleStartMonth === 11 ? cycleStartYear + 1 : cycleStartYear;
+        // Day before next billing day (cronDay=1 → last day of current month via day 0)
+        const cycleEnd = new Date(cycleEndYear, cycleEndMonth, cronDay - 1 || 0);
+        const cycleStartStr = cycleStart.toISOString().split("T")[0];
+        const cycleEndStr = cycleEnd.toISOString().split("T")[0];
+
+        // 4. For each resident, check if they have garage/storage units
         let added = 0;
+        let skipped = 0;
         const today = new Date().toISOString().split("T")[0];
 
         const residentHasGarage = (u: any) => {
@@ -1457,51 +1543,101 @@ export function useGereeActions(
             continue; // Skip this resident to avoid validation failure
           }
 
-          if (garageEnabled && hasGarage && garageMethod === "Тогтмол" && garageValue > 0) {
-            const garageToots = garageUnits.map((u: any) => u.toot).join(", ");
-            await uilchilgee(token).post("/guilgeeAvlaguud", {
-              baiguullagiinId: baiguullaga._id,
-              barilgiinId: effectiveBarilgiinId,
-              orshinSuugchId: resident._id,
-              gereeniiId: gereeniiId,
-              gereeniiDugaar: gereeniiDugaar || "",
-              toot: garageToots || "",
-              turul: "avlaga",
-              tulukhDun: garageValue,
-              tulsunDun: 0,
-              dun: garageValue,
-              tailbar: garageToots ? `Зогсоол (тоот ${garageToots})` : `Зогсоол`,
-              ognoo: today,
-              guilgeeKhiisenAjiltniiId: ajiltan?._id,
-              guilgeeKhiisenAjiltniiNer:
-                `${ajiltan?.ovog || ""} ${ajiltan?.ner || ""}`.trim(),
+          // Fetch all avlaga for this contract once, then check both types client-side
+          // (avoids MongoDB date-type mismatch when filtering by ognoo range)
+          let contractAvlaga: any[] = [];
+          try {
+            const checkRes = await uilchilgee(token).get("/guilgeeAvlaguud", {
+              params: {
+                baiguullagiinId: baiguullaga._id,
+                query: JSON.stringify({ gereeniiId: String(gereeniiId) }),
+                khuudasniiDugaar: 1,
+                khuudasniiKhemjee: 200,
+              },
             });
-            added++;
+            contractAvlaga = checkRes.data?.data || checkRes.data || [];
+            if (!Array.isArray(contractAvlaga)) contractAvlaga = [];
+          } catch {}
+
+          const inCycle = (r: any) => {
+            const raw = r.ognoo || r.createdAt || "";
+            const str = typeof raw === "string" ? raw.slice(0, 10) : new Date(raw).toISOString().slice(0, 10);
+            return str >= cycleStartStr && str <= cycleEndStr;
+          };
+
+          if (garageEnabled && hasGarage && garageMethod === "Тогтмол" && garageValue > 0) {
+            for (const gu of garageUnits) {
+              const toot = String(gu.toot || "");
+              const alreadyBilled = contractAvlaga.some(
+                (r: any) => /зогсоол/i.test(r.tailbar || "") && String(r.toot || "") === toot && inCycle(r)
+              );
+              if (alreadyBilled) {
+                skipped++;
+              } else {
+                try {
+                  await uilchilgee(token).post("/guilgeeAvlaguud", {
+                    baiguullagiinId: baiguullaga._id,
+                    barilgiinId: effectiveBarilgiinId,
+                    orshinSuugchId: resident._id,
+                    gereeniiId: gereeniiId,
+                    gereeniiDugaar: gereeniiDugaar || "",
+                    toot,
+                    turul: "avlaga",
+                    tulukhDun: garageValue,
+                    tulsunDun: 0,
+                    dun: garageValue,
+                    tailbar: `Зогсоол (тоот ${toot})`,
+                    ognoo: today,
+                    guilgeeKhiisenAjiltniiId: ajiltan?._id,
+                    guilgeeKhiisenAjiltniiNer: `${ajiltan?.ovog || ""} ${ajiltan?.ner || ""}`.trim(),
+                  });
+                  added++;
+                } catch (postErr: any) {
+                  if (postErr?.response?.status === 409) { skipped++; } else { throw postErr; }
+                }
+              }
+            }
           }
           if (storageEnabled && hasAguulakh && storageMethod === "Тогтмол" && storageValue > 0) {
-            const aguulakhToots = aguulakhUnits.map((u: any) => u.toot).join(", ");
-            await uilchilgee(token).post("/guilgeeAvlaguud", {
-              baiguullagiinId: baiguullaga._id,
-              barilgiinId: effectiveBarilgiinId,
-              orshinSuugchId: resident._id,
-              gereeniiId: gereeniiId,
-              gereeniiDugaar: gereeniiDugaar || "",
-              toot: aguulakhToots || "",
-              turul: "avlaga",
-              tulukhDun: storageValue,
-              tulsunDun: 0,
-              dun: storageValue,
-              tailbar: aguulakhToots ? `Агуулах (тоот ${aguulakhToots})` : `Агуулах`,
-              ognoo: today,
-              guilgeeKhiisenAjiltniiId: ajiltan?._id,
-              guilgeeKhiisenAjiltniiNer:
-                `${ajiltan?.ovog || ""} ${ajiltan?.ner || ""}`.trim(),
-            });
-            added++;
+            for (const su of aguulakhUnits) {
+              const toot = String(su.toot || "");
+              const alreadyBilled = contractAvlaga.some(
+                (r: any) => /агуулах/i.test(r.tailbar || "") && String(r.toot || "") === toot && inCycle(r)
+              );
+              if (alreadyBilled) {
+                skipped++;
+              } else {
+                try {
+                  await uilchilgee(token).post("/guilgeeAvlaguud", {
+                    baiguullagiinId: baiguullaga._id,
+                    barilgiinId: effectiveBarilgiinId,
+                    orshinSuugchId: resident._id,
+                    gereeniiId: gereeniiId,
+                    gereeniiDugaar: gereeniiDugaar || "",
+                    toot,
+                    turul: "avlaga",
+                    tulukhDun: storageValue,
+                    tulsunDun: 0,
+                    dun: storageValue,
+                    tailbar: `Агуулах (тоот ${toot})`,
+                    ognoo: today,
+                    guilgeeKhiisenAjiltniiId: ajiltan?._id,
+                    guilgeeKhiisenAjiltniiNer: `${ajiltan?.ovog || ""} ${ajiltan?.ner || ""}`.trim(),
+                  });
+                  added++;
+                } catch (postErr: any) {
+                  if (postErr?.response?.status === 409) { skipped++; } else { throw postErr; }
+                }
+              }
+            }
           }
         }
 
-        openSuccessOverlay(`${added} төлбөр амжилттай нэмэгдлээ`);
+        if (skipped > 0) {
+          openWarningOverlay(`${added} төлбөр нэмэгдлээ, ${skipped} нь энэ мөчлөгт аль хэдийн бүртгэгдсэн тул алгасав`);
+        } else {
+          openSuccessOverlay(`${added} төлбөр амжилттай нэмэгдлээ`);
+        }
 
         // Refresh caches
         mutate(

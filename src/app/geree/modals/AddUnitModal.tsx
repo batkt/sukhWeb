@@ -39,10 +39,7 @@ export default function AddUnitModal({
     }
   };
 
-  useModalHotkeys({
-    isOpen: show,
-    onClose: requestClose,
-  });
+
 
   const parseToots = (input: string): string[] => {
     const trimmed = input.trim();
@@ -83,6 +80,12 @@ export default function AddUnitModal({
       console.error("Failed to add unit:", err);
     }
   };
+
+  useModalHotkeys({
+    isOpen: show,
+    onClose: requestClose,
+    onSubmit: handleSubmit,
+  });
 
   if (!show) return null;
 
