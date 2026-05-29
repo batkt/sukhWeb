@@ -25,6 +25,7 @@ interface CustomSelectProps {
   // When used on white surfaces, don't inherit themed text colors
   // and use neutral colors for better contrast.
   tone?: "theme" | "neutral";
+  allowCustomInput?: boolean;
 }
 
 export default function TusgaiZagvar({
@@ -38,6 +39,7 @@ export default function TusgaiZagvar({
   className = "",
   disabled = false,
   tone = "theme",
+  allowCustomInput = false,
 }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -142,38 +144,86 @@ export default function TusgaiZagvar({
 
   return (
     <div ref={ref} className={`relative ${className}`}>
-      <button
-        type="button"
-        onClick={() => {
-          if (disabled) return;
-          const next = !isOpen;
-          if (next) {
-            window.dispatchEvent(
-              new CustomEvent("tusgai-select-open", {
-                detail: { id: instanceId.current },
-              })
-            );
-          }
-          setIsOpen(next);
-        }}
-        disabled={disabled}
-        className={`btn-minimal w-full justify-between cursor-pointer flex items-center h-full ${
-          tone === "neutral" ? "!text-slate-900" : ""
-        } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
-      >
-        <span
-          className={`block truncate text-left flex-1 min-w-0 ${
+      {allowCustomInput ? (
+        <div className="w-full h-full flex items-center justify-between">
+          <input
+            type="text"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            disabled={disabled}
+            placeholder={placeholder}
+            onFocus={() => {
+              if (!disabled) {
+                window.dispatchEvent(
+                  new CustomEvent("tusgai-select-open", {
+                    detail: { id: instanceId.current },
+                  })
+                );
+                setIsOpen(true);
+              }
+            }}
+            className={`w-full h-full px-2.5 bg-transparent border-none outline-none focus:ring-0 text-sm ${
+              tone === "neutral" ? "!text-slate-900" : "text-theme"
+            } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+          />
+          <button
+            type="button"
+            onClick={() => {
+              if (disabled) return;
+              const next = !isOpen;
+              if (next) {
+                window.dispatchEvent(
+                  new CustomEvent("tusgai-select-open", {
+                    detail: { id: instanceId.current },
+                  })
+                );
+              }
+              setIsOpen(next);
+            }}
+            disabled={disabled}
+            className="h-full px-2 flex items-center justify-center cursor-pointer border-none bg-transparent"
+          >
+            <ChevronDown
+              className={`w-4 h-4 transition-transform ${
+                isOpen ? "rotate-180" : ""
+              } ${tone === "neutral" ? "text-slate-500" : ""}`}
+            />
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => {
+            if (disabled) return;
+            const next = !isOpen;
+            if (next) {
+              window.dispatchEvent(
+                new CustomEvent("tusgai-select-open", {
+                  detail: { id: instanceId.current },
+                })
+              );
+            }
+            setIsOpen(next);
+          }}
+          disabled={disabled}
+          className={`btn-minimal w-full justify-between cursor-pointer flex items-center h-full ${
             tone === "neutral" ? "!text-slate-900" : ""
-          }`}
+          } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
         >
-          {selectedOption?.label || placeholder}
-        </span>
-        <ChevronDown
-          className={`w-4 h-4 ml-2 flex-shrink-0 transition-transform ${
-            isOpen ? "rotate-180" : ""
-          } ${tone === "neutral" ? "text-slate-500" : ""}`}
-        />
-      </button>
+          <span
+            className={`block truncate text-left flex-1 min-w-0 ${
+              tone === "neutral" ? "!text-slate-900" : ""
+            }`}
+          >
+            {selectedOption?.label || placeholder}
+          </span>
+          <ChevronDown
+            className={`w-4 h-4 ml-2 flex-shrink-0 transition-transform ${
+              isOpen ? "rotate-180" : ""
+            } ${tone === "neutral" ? "text-slate-500" : ""}`}
+          />
+        </button>
+      )}
 
       {isOpen &&
         typeof document !== "undefined" &&

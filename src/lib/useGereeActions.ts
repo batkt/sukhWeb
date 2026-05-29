@@ -1211,7 +1211,7 @@ export function useGereeActions(
 
   // Manual send invoice handler
   const handleSendInvoices = useCallback(
-    async (selectedContractIds: string[]) => {
+    async (selectedContractIds: string[], onlyGarageOrStorage?: boolean) => {
       if (!token || !baiguullaga?._id) {
         openErrorOverlay("Нэвтэрч орсон хэрэглэгч олдсонгүй");
         return;
@@ -1232,6 +1232,7 @@ export function useGereeActions(
           override: false,
           targetMonth: now.getMonth() + 1,
           targetYear: now.getFullYear(),
+          onlyGarageOrStorage: !!onlyGarageOrStorage,
         };
 
         const response = await uilchilgee(token).post("/manualSend", body);

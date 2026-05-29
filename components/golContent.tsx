@@ -239,15 +239,15 @@ export default function GolContent({ children }: GolContentProps) {
   useEffect(() => {
     if (filteredBuildings.length > 0) {
       const isSelectionValid = selectedBuildingId && filteredBuildings.some((b: any) => b._id === selectedBuildingId);
-      
+
       if (!isSelectionValid) {
         const stored = typeof window !== "undefined" ? localStorage.getItem("selectedBuildingId") : null;
         const isStoredValid = stored && filteredBuildings.some((b: any) => b._id === stored);
 
         if (isStoredValid && stored) {
-           setSelectedBuildingId(stored);
+          setSelectedBuildingId(stored);
         } else {
-           setSelectedBuildingId(filteredBuildings[0]._id);
+          setSelectedBuildingId(filteredBuildings[0]._id);
         }
       }
     }
@@ -339,7 +339,7 @@ export default function GolContent({ children }: GolContentProps) {
       path: "zogsool",
       submenu: [
         { label: "Жагсаалт", path: "jagsaalt" },
-        // { label: "Камер касс", path: "camera" },
+        { label: "Камер касс", path: "camera" },
         { label: "Машин бүртгэл", path: "orshinSuugch" },
       ],
     },
@@ -394,7 +394,7 @@ export default function GolContent({ children }: GolContentProps) {
 
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'general' | 'font-size'>('general');
-  
+
   const fontSizeOptions = [
     { value: 0, label: 'Хамгийн жижиг', size: '10px' },
     { value: 1, label: 'Маш жижиг', size: '11px' },
@@ -583,11 +583,11 @@ export default function GolContent({ children }: GolContentProps) {
 
                   const activeStyle: React.CSSProperties = isParentActive
                     ? {
-                        background: "rgba(16,185,129,0.12)",
-                        boxShadow: "0 2px 8px rgba(16,185,129,0.15)",
-                        border: "1px solid rgba(16,185,129,0.25)",
-                        color: "#10b981",
-                      }
+                      background: "rgba(16,185,129,0.12)",
+                      boxShadow: "0 2px 8px rgba(16,185,129,0.15)",
+                      border: "1px solid rgba(16,185,129,0.25)",
+                      color: "#10b981",
+                    }
                     : {};
 
                   const itemStyle: React.CSSProperties = {
@@ -1108,13 +1108,11 @@ export default function GolContent({ children }: GolContentProps) {
                             setMobileMenuOpen(false);
                           }
                         }}
-                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
-                          item.comingSoon ? "cursor-not-allowed opacity-60 text-theme" : ""
-                        } ${
-                          isParentActive
+                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${item.comingSoon ? "cursor-not-allowed opacity-60 text-theme" : ""
+                          } ${isParentActive
                             ? "bg-[color:var(--theme)] text-white shadow-lg"
                             : "text-theme hover:bg-[color:var(--surface-hover)]"
-                        }`}
+                          }`}
                       >
                         <span>{item.label}</span>
                         {hasSubmenu && (
@@ -1143,11 +1141,10 @@ export default function GolContent({ children }: GolContentProps) {
                                   setMobileMenuOpen(false);
                                   setOpenSubmenuIndex(null);
                                 }}
-                                className={`w-full text-left px-4 py-2.5 rounded-lg text-sm transition-all duration-200 ${
-                                  isSubActive
-                                    ? "bg-[color:var(--theme)]/10 text-[color:var(--theme)] font-semibold border-l-2 border-[color:var(--theme)]"
-                                    : "text-theme hover:bg-[color:var(--surface-hover)] hover:translate-x-1"
-                                }`}
+                                className={`w-full text-left px-4 py-2.5 rounded-lg text-sm transition-all duration-200 ${isSubActive
+                                  ? "bg-[color:var(--theme)]/10 text-[color:var(--theme)] font-semibold border-l-2 border-[color:var(--theme)]"
+                                  : "text-theme hover:bg-[color:var(--surface-hover)] hover:translate-x-1"
+                                  }`}
                               >
                                 {sub.label}
                               </button>
@@ -1167,9 +1164,9 @@ export default function GolContent({ children }: GolContentProps) {
       <main className="flex-1 relative">
         <div className="max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 lg:py-6 h-full">
           <div className="relative">
-            <div 
+            <div
               className="neu-panel rounded-[2rem] p-2 min-h-[60vh] md:h-[calc(100vh-140px)] overflow-y-auto overflow-x-hidden overscroll-contain"
-              style={{ 
+              style={{
                 WebkitOverflowScrolling: 'touch',
                 touchAction: 'pan-y',
                 overflowY: 'auto',
@@ -1238,11 +1235,10 @@ export default function GolContent({ children }: GolContentProps) {
               <div className="flex gap-2 px-6 pt-4 pb-2 bg-[color:var(--surface-hover)] dark:bg-[color:var(--panel)] overflow-x-auto border-b border-[color:var(--surface-border)]">
                 <button
                   onClick={() => setActiveTab('general')}
-                  className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 whitespace-nowrap ${
-                    activeTab === 'general'
-                      ? 'bg-[color:var(--theme)] text-white shadow-lg shadow-[color:var(--theme)]/20 dark:shadow-[color:var(--theme)]/40 transform scale-105'
-                      : 'bg-[color:var(--surface-bg)] dark:bg-[color:var(--surface-bg)] text-theme hover:bg-[color:var(--surface-border)] dark:hover:bg-[color:var(--surface-hover)] hover:scale-102 shadow-sm'
-                  }`}
+                  className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 whitespace-nowrap ${activeTab === 'general'
+                    ? 'bg-[color:var(--theme)] text-white shadow-lg shadow-[color:var(--theme)]/20 dark:shadow-[color:var(--theme)]/40 transform scale-105'
+                    : 'bg-[color:var(--surface-bg)] dark:bg-[color:var(--surface-bg)] text-theme hover:bg-[color:var(--surface-border)] dark:hover:bg-[color:var(--surface-hover)] hover:scale-102 shadow-sm'
+                    }`}
                   style={{ borderRadius: '0.75rem' }}
                 >
                   <div className="flex items-center gap-2">
@@ -1252,11 +1248,10 @@ export default function GolContent({ children }: GolContentProps) {
                 </button>
                 <button
                   onClick={() => setActiveTab('font-size')}
-                  className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 whitespace-nowrap ${
-                    activeTab === 'font-size'
-                      ? 'bg-[color:var(--theme)] text-white shadow-lg shadow-[color:var(--theme)]/20 dark:shadow-[color:var(--theme)]/40 transform scale-105'
-                      : 'bg-[color:var(--surface-bg)] dark:bg-[color:var(--surface-bg)] text-theme hover:bg-[color:var(--surface-border)] dark:hover:bg-[color:var(--surface-hover)] hover:scale-102 shadow-sm'
-                  }`}
+                  className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 whitespace-nowrap ${activeTab === 'font-size'
+                    ? 'bg-[color:var(--theme)] text-white shadow-lg shadow-[color:var(--theme)]/20 dark:shadow-[color:var(--theme)]/40 transform scale-105'
+                    : 'bg-[color:var(--surface-bg)] dark:bg-[color:var(--surface-bg)] text-theme hover:bg-[color:var(--surface-border)] dark:hover:bg-[color:var(--surface-hover)] hover:scale-102 shadow-sm'
+                    }`}
                   style={{ borderRadius: '0.75rem' }}
                 >
                   <div className="flex items-center gap-2">
@@ -1320,7 +1315,7 @@ export default function GolContent({ children }: GolContentProps) {
                           <Type className="w-4 h-4" />
                           Жишээ текст
                         </p>
-                        <p 
+                        <p
                           className="text-theme dark:text-[color:var(--panel-text)] font-semibold transition-all duration-300 drop-shadow-sm"
                           style={{ fontSize: fontSizeOptions[fontSizeIndex].size }}
                         >
@@ -1339,7 +1334,7 @@ export default function GolContent({ children }: GolContentProps) {
                           {fontSizeOptions[fontSizeIndex].size}
                         </span>
                       </div>
-                      
+
                       <div className="relative">
                         <input
                           type="range"
@@ -1356,11 +1351,10 @@ export default function GolContent({ children }: GolContentProps) {
                           {fontSizeOptions.map((_, idx) => (
                             <div
                               key={idx}
-                              className={`w-0.5 h-2 rounded-full transition-all duration-200 ${
-                                idx === fontSizeIndex 
-                                  ? 'bg-[color:var(--theme)] h-4 shadow-lg shadow-[color:var(--theme)]/30' 
-                                  : 'bg-gray-400 dark:bg-gray-500'
-                              }`}
+                              className={`w-0.5 h-2 rounded-full transition-all duration-200 ${idx === fontSizeIndex
+                                ? 'bg-[color:var(--theme)] h-4 shadow-lg shadow-[color:var(--theme)]/30'
+                                : 'bg-gray-400 dark:bg-gray-500'
+                                }`}
                             />
                           ))}
                         </div>
@@ -1370,33 +1364,30 @@ export default function GolContent({ children }: GolContentProps) {
                     <div className="grid grid-cols-3 gap-3">
                       <button
                         onClick={() => handleFontSizeChange(2)}
-                        className={`px-4 py-3 rounded-xl font-semibold transition-all duration-200 border shadow-sm hover:shadow-lg hover:scale-105 ${
-                          fontSizeIndex === 2
-                            ? 'bg-[color:var(--theme)] text-white border-transparent shadow-lg shadow-[color:var(--theme)]/20'
-                            : 'bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 text-theme dark:text-[color:var(--panel-text)] border-blue-200/50 dark:border-blue-600/50 hover:bg-[color:var(--theme)] hover:text-white hover:border-transparent'
-                        }`}
+                        className={`px-4 py-3 rounded-xl font-semibold transition-all duration-200 border shadow-sm hover:shadow-lg hover:scale-105 ${fontSizeIndex === 2
+                          ? 'bg-[color:var(--theme)] text-white border-transparent shadow-lg shadow-[color:var(--theme)]/20'
+                          : 'bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 text-theme dark:text-[color:var(--panel-text)] border-blue-200/50 dark:border-blue-600/50 hover:bg-[color:var(--theme)] hover:text-white hover:border-transparent'
+                          }`}
                         style={{ borderRadius: '0.75rem' }}
                       >
                         Жижиг
                       </button>
                       <button
                         onClick={() => handleFontSizeChange(6)}
-                        className={`px-4 py-3 rounded-xl font-semibold transition-all duration-200 border shadow-sm hover:shadow-lg hover:scale-105 ${
-                          fontSizeIndex === 6
-                            ? 'bg-[color:var(--theme)] text-white border-transparent shadow-lg shadow-[color:var(--theme)]/20'
-                            : 'bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 text-theme dark:text-[color:var(--panel-text)] border-green-200/50 dark:border-green-600/50 hover:bg-[color:var(--theme)] hover:text-white hover:border-transparent'
-                        }`}
+                        className={`px-4 py-3 rounded-xl font-semibold transition-all duration-200 border shadow-sm hover:shadow-lg hover:scale-105 ${fontSizeIndex === 6
+                          ? 'bg-[color:var(--theme)] text-white border-transparent shadow-lg shadow-[color:var(--theme)]/20'
+                          : 'bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 text-theme dark:text-[color:var(--panel-text)] border-green-200/50 dark:border-green-600/50 hover:bg-[color:var(--theme)] hover:text-white hover:border-transparent'
+                          }`}
                         style={{ borderRadius: '0.75rem' }}
                       >
                         Дунд
                       </button>
                       <button
                         onClick={() => handleFontSizeChange(10)}
-                        className={`px-4 py-3 rounded-xl font-semibold transition-all duration-200 border shadow-sm hover:shadow-lg hover:scale-105 ${
-                          fontSizeIndex === 10
-                            ? 'bg-[color:var(--theme)] text-white border-transparent shadow-lg shadow-[color:var(--theme)]/20'
-                            : 'bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/30 dark:to-amber-900/30 text-theme dark:text-[color:var(--panel-text)] border-orange-200/50 dark:border-orange-600/50 hover:bg-[color:var(--theme)] hover:text-white hover:border-transparent'
-                        }`}
+                        className={`px-4 py-3 rounded-xl font-semibold transition-all duration-200 border shadow-sm hover:shadow-lg hover:scale-105 ${fontSizeIndex === 10
+                          ? 'bg-[color:var(--theme)] text-white border-transparent shadow-lg shadow-[color:var(--theme)]/20'
+                          : 'bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/30 dark:to-amber-900/30 text-theme dark:text-[color:var(--panel-text)] border-orange-200/50 dark:border-orange-600/50 hover:bg-[color:var(--theme)] hover:text-white hover:border-transparent'
+                          }`}
                         style={{ borderRadius: '0.75rem' }}
                       >
                         Том
@@ -1431,16 +1422,15 @@ export default function GolContent({ children }: GolContentProps) {
                   <X className="w-6 h-6 text-theme group-hover:scale-110 transition-transform" />
                 </button>
               </div>
-              
+
               {/* Tab Selector */}
               <div className="flex gap-2 px-6 pt-4 pb-2 bg-[color:var(--surface-hover)] dark:bg-[color:var(--panel)] overflow-x-auto border-b border-[color:var(--surface-border)] shrink-0">
                 <button
                   onClick={() => setTuslamjTab('instructions')}
-                  className={`px-6 py-2.5 rounded-xl font-semibold transition-all duration-300 whitespace-nowrap text-sm ${
-                    tuslamjTab === 'instructions'
-                      ? 'bg-[color:var(--theme)] text-white shadow-lg shadow-[color:var(--theme)]/20 dark:shadow-[color:var(--theme)]/40 transform scale-102'
-                      : 'bg-[color:var(--surface-bg)] dark:bg-[color:var(--surface-bg)] text-theme hover:bg-[color:var(--surface-border)] dark:hover:bg-[color:var(--surface-hover)] hover:scale-101 shadow-sm'
-                  }`}
+                  className={`px-6 py-2.5 rounded-xl font-semibold transition-all duration-300 whitespace-nowrap text-sm ${tuslamjTab === 'instructions'
+                    ? 'bg-[color:var(--theme)] text-white shadow-lg shadow-[color:var(--theme)]/20 dark:shadow-[color:var(--theme)]/40 transform scale-102'
+                    : 'bg-[color:var(--surface-bg)] dark:bg-[color:var(--surface-bg)] text-theme hover:bg-[color:var(--surface-border)] dark:hover:bg-[color:var(--surface-hover)] hover:scale-101 shadow-sm'
+                    }`}
                   style={{ borderRadius: '0.75rem' }}
                 >
                   <div className="flex items-center gap-2">
@@ -1450,11 +1440,10 @@ export default function GolContent({ children }: GolContentProps) {
                 </button>
                 <button
                   onClick={() => setTuslamjTab('chat')}
-                  className={`px-6 py-2.5 rounded-xl font-semibold transition-all duration-300 whitespace-nowrap text-sm ${
-                    tuslamjTab === 'chat'
-                      ? 'bg-[color:var(--theme)] text-white shadow-lg shadow-[color:var(--theme)]/20 dark:shadow-[color:var(--theme)]/40 transform scale-102'
-                      : 'bg-[color:var(--surface-bg)] dark:bg-[color:var(--surface-bg)] text-theme hover:bg-[color:var(--surface-border)] dark:hover:bg-[color:var(--surface-hover)] hover:scale-101 shadow-sm'
-                  }`}
+                  className={`px-6 py-2.5 rounded-xl font-semibold transition-all duration-300 whitespace-nowrap text-sm ${tuslamjTab === 'chat'
+                    ? 'bg-[color:var(--theme)] text-white shadow-lg shadow-[color:var(--theme)]/20 dark:shadow-[color:var(--theme)]/40 transform scale-102'
+                    : 'bg-[color:var(--surface-bg)] dark:bg-[color:var(--surface-bg)] text-theme hover:bg-[color:var(--surface-border)] dark:hover:bg-[color:var(--surface-hover)] hover:scale-101 shadow-sm'
+                    }`}
                   style={{ borderRadius: '0.75rem' }}
                 >
                   <div className="flex items-center gap-2">

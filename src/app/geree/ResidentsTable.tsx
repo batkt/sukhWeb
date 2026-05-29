@@ -188,21 +188,13 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
 
           if (toots.length === 0) return "-";
 
-          if (toots.length === 1) {
-            return (
-              <span className="text-gray-900 dark:text-white whitespace-nowrap font-medium">
-                {toots[0].toot || "-"}
-              </span>
-            );
-          }
-
           const tooltipContent = (
             <div className="space-y-1.5 p-1 max-w-[220px]">
               {toots.map((t: any, idx: number) => {
                 const label = t.turul === "Гараж" ? "Зогсоол" : t.turul === "Агуулах" ? "Агуулах" : "Орон сууц";
                 return (
                   <div key={idx} className="flex items-center justify-between gap-3 text-xs py-0.5">
-                    <span className="text-white font-medium">{t.toot} ({label})</span>
+                    <span className="text-white font-medium">Тоот {t.toot} {label}</span>
                     <button
                       type="button"
                       onClick={(e) => {
@@ -231,9 +223,11 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
             <Tooltip title={tooltipContent} placement="top" color="#1e293b" trigger="hover">
               <span className="inline-flex items-center gap-1.5 cursor-pointer px-2.5 py-1 rounded-xl bg-slate-50 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
                 {toots[0].toot}
-                <span className="text-[10px] text-slate-500 font-bold">
-                  +{toots.length - 1}
-                </span>
+                {toots.length > 1 && (
+                  <span className="text-[10px] text-slate-500 font-bold">
+                    +{toots.length - 1}
+                  </span>
+                )}
               </span>
             </Tooltip>
           );
@@ -278,7 +272,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
                 const label = t.turul === "Гараж" ? "Зогсоол" : "Агуулах";
                 return (
                   <div key={idx} className="flex items-center justify-between gap-3 text-xs py-0.5">
-                    <span className="text-white font-medium">{t.toot} ({label})</span>
+                    <span className="text-white font-medium">Тоот {t.toot} {label}</span>
                     <button
                       type="button"
                       onClick={(e) => {

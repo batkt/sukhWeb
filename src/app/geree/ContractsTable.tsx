@@ -154,7 +154,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
                   return (
                     <div key={idx} className="flex items-center gap-3 text-xs py-0.5">
                       <span className="text-white font-medium">
-                        {u.toot} ({label})
+                        Тоот {u.toot} {label}
                       </span>
                     </div>
                   );

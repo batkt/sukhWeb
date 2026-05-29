@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useMemo, useState, useEffect } from "react";
-import { Plus, Trash2, Info, User, Phone, X } from "lucide-react";
+import { Plus, Trash2, Info, User, Phone, X, Send } from "lucide-react";
 import { Tooltip } from "antd";
 import TusgaiZagvar from "../../../components/selectZagvar/tusgaiZagvar";
 import { UnitsTable, FloorItem } from "./UnitsTable";
 import { StandardPagination } from "@/components/ui/StandardTable";
 import Button from "@/components/ui/Button";
 import QuickRegisterModal from "./modals/QuickRegisterModal";
+import SendInvoiceConfirmModal from "./modals/SendInvoiceConfirmModal";
 import { ModalPortal } from "../../../components/golContent";
 
 interface UnitsSectionProps {
@@ -88,6 +89,17 @@ export default function UnitsSection({
   const [selectedUnit, setSelectedUnit] = useState<string | null>(null);
   const [quickRegister, setQuickRegister] = useState<{ unit: string; floor: string } | null>(null);
   const [activeUnitDetails, setActiveUnitDetails] = useState<{ unit: string; floor: string; resident: any } | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{
+    show: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => Promise<void>;
+  }>({
+    show: false,
+    title: "",
+    message: "",
+    onConfirm: async () => {},
+  });
 
   // Compute floor data for UnitsTable
   const floorData = useMemo(() => {
@@ -347,6 +359,240 @@ export default function UnitsSection({
     };
   }, [floorData]);
 
+  const handleSendFloorInvoices = async () => {
+    if (!selectedFloor || !selectedFloorData) return;
+    
+    const tootsBilled = new Set<string>();
+    
+    const floorContractIds = contracts
+      .filter((c) => {
+        const status = String(c?.tuluv || c?.status || "Идэвхтэй").trim();
+        const isCancelled =
+          status === "Цуцалсан" ||
+          status.toLowerCase() === "цуцалсан" ||
+          status === "Идэвхгүй" ||
+          status.toLowerCase() === "идэвхгүй";
+        if (isCancelled) return false;
+
+        // 1. Check if contract has a matching primary unit on this floor and tab
+        const cFloor = String(c?.davkhar || "").trim();
+        const cOrts = String(c?.orts || "").trim();
+        const cToot = String(c?.toot || "").trim();
+        const cTurul = String(c?.turul || "").trim();
+
+        const matchFloor = cFloor === selectedFloor;
+        const matchOrts = selectedOrts ? cOrts === selectedOrts : true;
+        const matchToot = selectedFloorData.activeToots.has(cToot);
+
+        let matchPrimary = false;
+        if (matchFloor && matchOrts && matchToot) {
+          if (propertyTab === "Зогсоол") {
+            matchPrimary = cTurul === "Зогсоол" || cTurul === "Гараж";
+          } else if (propertyTab === "Агуулах") {
+            matchPrimary = cTurul === "Агуулах";
+          } else {
+            matchPrimary = cTurul !== "Зогсоол" && cTurul !== "Гараж" && cTurul !== "Агуулах";
+          }
+        }
+
+        let isMatched = false;
+        if (matchPrimary) {
+          tootsBilled.add(cToot);
+          isMatched = true;
+        }
+
+        // 2. Check if contract has a nested unit on this floor matching this propertyTab
+        const orshinSuugchId = c?.orshinSuugchId || c?.khariltsagchId;
+        const resident = orshinSuugchId ? residentsById[String(orshinSuugchId)] : null;
+        if (resident && Array.isArray(resident.toots) && resident.toots.length > 0) {
+          const hasNestedMatch = resident.toots.some((rt: any) => {
+            const rtTurul = String(rt.turul || "Орон сууц").trim();
+            let matchType = false;
+            if (propertyTab === "Зогсоол") {
+              matchType = rtTurul === "Гараж" || rtTurul === "Зогсоол";
+            } else if (propertyTab === "Агуулах") {
+              matchType = rtTurul === "Агуулах";
+            } else {
+              matchType = rtTurul === "Орон сууц" || rtTurul === "Тоот";
+            }
+
+            if (!matchType) return false;
+
+            const rOrts = String(rt.orts || "").trim();
+            const rFloor = String(rt.davkhar || "").trim();
+            const rToots = String(rt.toot || "")
+              .split(",")
+              .map((x) => x.trim())
+              .filter(Boolean);
+
+            const matchOrtsNested = selectedOrts ? rOrts === selectedOrts : true;
+            const matchFloorNested = rFloor === selectedFloor;
+            const matchTootsNested = rToots.some(t => selectedFloorData.activeToots.has(t));
+
+            if (matchOrtsNested && matchFloorNested && matchTootsNested) {
+              rToots.forEach(t => {
+                if (selectedFloorData.activeToots.has(t)) {
+                  tootsBilled.add(t);
+                }
+              });
+              return true;
+            }
+            return false;
+          });
+
+          if (hasNestedMatch) {
+            isMatched = true;
+          }
+        }
+
+        return isMatched;
+      })
+      .map((c) => String(c._id));
+
+    if (floorContractIds.length === 0) {
+      alert(`Энэ давхарт идэвхтэй ${propertyTab === "Зогсоол" ? "Зогсоол/Гараж" : propertyTab === "Агуулах" ? "Агуулах" : "Орон сууц/Тоот"} гэрээ олдсонгүй.`);
+      return;
+    }
+
+    const typeLabel = propertyTab === "Зогсоол" ? "Зогсоол/Гараж" : propertyTab === "Агуулах" ? "Агуулах" : "Орон сууц/Тоот";
+    const isGarageOrStorage = propertyTab === "Зогсоол" || propertyTab === "Агуулах";
+    setConfirmModal({
+      show: true,
+      title: "Давхарт нэхэмжлэх илгээх",
+      message: `${selectedFloor}-р давхрын бүх ${typeLabel} гэрээнүүдэд (${tootsBilled.size} тоот) нэхэмжлэх илгээх үү?`,
+      onConfirm: async () => {
+        await actions.handleSendInvoices(floorContractIds, isGarageOrStorage);
+      }
+    });
+  };
+
+  const handleSendAllFloorsInvoices = async () => {
+    const tootsBilled = new Set<string>();
+
+    const allContractIds = contracts
+      .filter((c) => {
+        const status = String(c?.tuluv || c?.status || "Идэвхтэй").trim();
+        const isCancelled =
+          status === "Цуцалсан" ||
+          status.toLowerCase() === "цуцалсан" ||
+          status === "Идэвхгүй" ||
+          status.toLowerCase() === "идэвхгүй";
+        if (isCancelled) return false;
+
+        const cTurul = String(c?.turul || "").trim();
+        const cToot = String(c?.toot || "").trim();
+        let matchPrimary = false;
+        if (propertyTab === "Зогсоол") {
+          matchPrimary = cTurul === "Зогсоол" || cTurul === "Гараж";
+        } else if (propertyTab === "Агуулах") {
+          matchPrimary = cTurul === "Агуулах";
+        } else {
+          matchPrimary = cTurul !== "Зогсоол" && cTurul !== "Гараж" && cTurul !== "Агуулах";
+        }
+
+        let isMatched = false;
+        if (matchPrimary) {
+          tootsBilled.add(cToot);
+          isMatched = true;
+        }
+
+        // Check nested units
+        const orshinSuugchId = c?.orshinSuugchId || c?.khariltsagchId;
+        const resident = orshinSuugchId ? residentsById[String(orshinSuugchId)] : null;
+        if (resident && Array.isArray(resident.toots) && resident.toots.length > 0) {
+          const hasNestedMatch = resident.toots.some((rt: any) => {
+            const rtTurul = String(rt.turul || "Орон сууц").trim();
+            let matchType = false;
+            if (propertyTab === "Зогсоол") {
+              matchType = rtTurul === "Гараж" || rtTurul === "Зогсоол";
+            } else if (propertyTab === "Агуулах") {
+              matchType = rtTurul === "Агуулах";
+            } else {
+              matchType = rtTurul === "Орон сууц" || rtTurul === "Тоот";
+            }
+
+            if (!matchType) return false;
+
+            const rToots = String(rt.toot || "")
+              .split(",")
+              .map((x) => x.trim())
+              .filter(Boolean);
+
+            rToots.forEach(t => tootsBilled.add(t));
+            return true;
+          });
+
+          if (hasNestedMatch) {
+            isMatched = true;
+          }
+        }
+
+        return isMatched;
+      })
+      .map((c) => String(c._id));
+
+    if (allContractIds.length === 0) {
+      alert(`Идэвхтэй ${propertyTab === "Зогсоол" ? "Зогсоол/Гараж" : propertyTab === "Агуулах" ? "Агуулах" : "Орон сууц/Тоот"} гэрээ олдсонгүй.`);
+      return;
+    }
+
+    const typeLabel = propertyTab === "Зогсоол" ? "Зогсоол/Гараж" : propertyTab === "Агуулах" ? "Агуулах" : "Орон сууц/Тоот";
+    const isGarageOrStorage = propertyTab === "Зогсоол" || propertyTab === "Агуулах";
+    setConfirmModal({
+      show: true,
+      title: "Бүх давхарт нэхэмжлэх илгээх",
+      message: `Бүх давхрын бүх ${typeLabel} гэрээнүүдэд (${tootsBilled.size} тоот) нэхэмжлэх илгээх үү?`,
+      onConfirm: async () => {
+        await actions.handleSendInvoices(allContractIds, isGarageOrStorage);
+      }
+    });
+  };
+
+  const handleSendSingleUnitInvoice = async (resident: any, unit: string) => {
+    if (!resident) return;
+
+    const residentId = resident._id;
+    const activeContract = contracts.find(c => {
+      const status = String(c?.tuluv || c?.status || "Идэвхтэй").trim();
+      if (status === "Цуцалсан" || status === "Идэвхгүй") return false;
+
+      const orshinSuugchId = c?.orshinSuugchId || c?.khariltsagchId;
+      if (String(orshinSuugchId) !== String(residentId)) return false;
+
+      // Check if it's the primary contract for this unit
+      const cToots = String(c?.toot || "").split(",").map(x => x.trim());
+      if (cToots.includes(unit)) return true;
+
+      // Or nested
+      const res = residentsById[String(orshinSuugchId)];
+      if (res && Array.isArray(res.toots)) {
+        return res.toots.some((rt: any) => {
+          const rToots = String(rt.toot || "").split(",").map(x => x.trim());
+          return rToots.includes(unit);
+        });
+      }
+
+      return false;
+    });
+
+    if (activeContract && actions.handleSendInvoices) {
+      const isGarageOrStorage = propertyTab === "Зогсоол" || propertyTab === "Агуулах";
+      const typeLabel = propertyTab === "Зогсоол" ? "Зогсоол/Гараж" : propertyTab === "Агуулах" ? "Агуулах" : "Орон сууц/Тоот";
+      
+      setConfirmModal({
+        show: true,
+        title: "Нэхэмжлэх илгээх",
+        message: `Тоот ${unit}-ийн ${typeLabel} гэрээнд нэхэмжлэх илгээх үү?`,
+        onConfirm: async () => {
+          await actions.handleSendInvoices([activeContract._id], isGarageOrStorage);
+          setActiveUnitDetails(null);
+        }
+      });
+    } else {
+      alert("Энэ тоотод холбоотой идэвхтэй гэрээ олдсонгүй.");
+    }
+  };
+
   if (davkharOptions.length === 0) {
     return (
       <div className="p-3 rounded-md border border-amber-300 text-amber-700 text-sm">
@@ -479,13 +725,35 @@ export default function UnitsSection({
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
                   {/* Left: Floor Map */}
                   <div className="lg:col-span-2 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-5">
-                    <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-100 dark:border-gray-800">
+                    <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-100 dark:border-gray-800 gap-4 flex-wrap">
                       <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                         <span>{propertyTab} давхрын тоотууд</span>
                         <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400">
                           {selectedFloor}-р давхар
                         </span>
                       </h3>
+                      {selectedFloor && selectedFloorData && selectedFloorData.filteredUnits.length > 0 && (
+                        <div className="flex items-center gap-2">
+                          <Button
+                            onClick={handleSendFloorInvoices}
+                            variant="secondary"
+                            size="sm"
+                            leftIcon={<Send className="w-3.5 h-3.5 text-slate-500" />}
+                            className="rounded-2xl transition-all duration-200 shadow-sm border border-slate-200 dark:border-slate-800 hover:border-slate-300 hover:scale-[1.01] font-semibold"
+                          >
+                            {propertyTab === "Зогсоол" ? "Давхрын зогсоолуудад илгээх" : propertyTab === "Агуулах" ? "Давхрын агуулахуудад илгээх" : "Давхрын тоотуудад илгээх"}
+                          </Button>
+                          <Button
+                            onClick={handleSendAllFloorsInvoices}
+                            variant="primary"
+                            size="sm"
+                            leftIcon={<Send className="w-3.5 h-3.5" />}
+                            className="rounded-2xl transition-all duration-200 shadow-md shadow-orange-500/10 hover:shadow-orange-500/20 hover:scale-[1.01] font-semibold"
+                          >
+                            {propertyTab === "Зогсоол" ? "Бүх давхрын зогсоолуудад илгээх" : propertyTab === "Агуулах" ? "Бүх давхрын агуулахуудад илгээх" : "Бүх давхрын тоотуудад илгээх"}
+                          </Button>
+                        </div>
+                      )}
                     </div>
 
                     {selectedFloorData.filteredUnits.length === 0 ? (
@@ -705,15 +973,15 @@ export default function UnitsSection({
                                 </div>
                                 <Button
                                   onClick={async () => {
-                                    if (actions.handleAddGarageCharges) {
-                                      await actions.handleAddGarageCharges([resident], propertyTab);
-                                    }
+                                    await handleSendSingleUnitInvoice(resident, selectedUnit || "");
                                   }}
                                   variant="secondary"
                                   fullWidth
-                                  className="!bg-orange-500 hover:!bg-orange-600 !text-white rounded-2xl shadow-sm border-none"
+                                  className="!bg-orange-500 hover:!bg-orange-600 !text-white rounded-2xl shadow-sm border-none font-semibold hover:scale-[1.01] transition-all"
                                 >
-                                  {btnLabel}
+                                  {propertyTab === "Зогсоол"
+                                    ? "Зогсоолын нэхэмжлэх илгээх"
+                                    : "Агуулахын нэхэмжлэх илгээх"}
                                 </Button>
                                 <Button
                                   onClick={async () => {
@@ -920,18 +1188,15 @@ export default function UnitsSection({
                     {/* Action Button: Send Manual Invoice */}
                     <Button
                       onClick={async () => {
-                        if (actions.handleAddGarageCharges) {
-                          await actions.handleAddGarageCharges([activeUnitDetails.resident], propertyTab);
-                          setActiveUnitDetails(null);
-                        }
+                        await handleSendSingleUnitInvoice(activeUnitDetails.resident, activeUnitDetails.unit);
                       }}
                       variant="secondary"
                       fullWidth
-                      className="!bg-orange-500 hover:!bg-orange-600 !text-white rounded-2xl shadow-md shadow-orange-500/10"
+                      className="!bg-orange-500 hover:!bg-orange-600 !text-white rounded-2xl shadow-md shadow-orange-500/10 font-semibold"
                     >
                       {propertyTab === "Зогсоол"
-                        ? "Зогсоолын төлбөр нэмэх"
-                        : "Агуулахын төлбөр нэмэх"}
+                        ? "Зогсоолын нэхэмжлэх илгээх"
+                        : "Агуулахын нэхэмжлэх илгээх"}
                     </Button>
                     {/* Action Button: Unlink User */}
                     <Button
@@ -971,6 +1236,13 @@ export default function UnitsSection({
           </div>
         </ModalPortal>
       )}
+      <SendInvoiceConfirmModal
+        show={confirmModal.show}
+        onClose={() => setConfirmModal((prev) => ({ ...prev, show: false }))}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+      />
     </div>
   );
 }

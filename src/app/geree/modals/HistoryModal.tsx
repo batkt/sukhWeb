@@ -1015,7 +1015,7 @@ export default function HistoryModal({
           query: JSON.stringify({
             baiguullagiinId: baiguullagiinId || undefined,
             // Filter by contract if possible
-            ...(explicitGereeId ? { gereeniiId: explicitGereeId } : {}),
+            ...(contractIdToFetch ? { gereeniiId: contractIdToFetch } : {}),
           }),
         },
       });
@@ -1060,22 +1060,22 @@ export default function HistoryModal({
       })();
 
       // Filter for this specific contract/resident using multiple strategies
-      // When gereeniiId is available, REQUIRE it to match - otherwise we'd pull in invoices
+      // When contractIdToFetch is available, REQUIRE it to match - otherwise we'd pull in invoices
       // from other contracts (same resident, different apartment) and double-count charges
       const contractItems = rawList.filter((item: any) => {
         const itemGereeId = String(item?.gereeniiId || "").trim();
         const itemGereeDugaar = String(item?.gereeniiDugaar || "").trim();
 
-        // If we have gereeniiId, require it to match - strict contract scoping
-        if (gereeniiId && itemGereeId && itemGereeId === gereeniiId) {
+        // If we have contractIdToFetch, require it to match - strict contract scoping
+        if (contractIdToFetch && itemGereeId && itemGereeId === contractIdToFetch) {
           return true;
         }
-        // If we have gereeDugaar but no gereeniiId, use dugaar
+        // If we have gereeDugaar but no contractIdToFetch, use dugaar
         if (gereeDugaar && itemGereeDugaar && itemGereeDugaar === gereeDugaar) {
           return true;
         }
-        // Fallback: when no gereeniiId/gereeDugaar, use other strategies
-        if (!gereeniiId && !gereeDugaar) {
+        // Fallback: when no contractIdToFetch/gereeDugaar, use other strategies
+        if (!contractIdToFetch && !gereeDugaar) {
           const itemResidentId = String(item?.orshinSuugchId || "").trim();
           if (residentId && itemResidentId && itemResidentId === residentId)
             return true;
@@ -1108,16 +1108,16 @@ export default function HistoryModal({
         return false;
       });
 
-      // Filter payment records for this contract (require gereeniiId when available)
+      // Filter payment records for this contract (require contractIdToFetch when available)
       const matchedPayments = paymentRecords.filter((rec: any) => {
         const recGereeId = String(rec?.gereeniiId || "").trim();
         const recOrshinSuugchId = String(rec?.orshinSuugchId || "").trim();
         const recGereeDugaar = String(rec?.gereeniiDugaar || "").trim();
-        if (gereeniiId && recGereeId && recGereeId === gereeniiId) return true;
+        if (contractIdToFetch && recGereeId && recGereeId === contractIdToFetch) return true;
         if (gereeDugaar && recGereeDugaar && recGereeDugaar === gereeDugaar)
           return true;
         if (
-          !gereeniiId &&
+          !contractIdToFetch &&
           !gereeDugaar &&
           residentId &&
           recOrshinSuugchId &&
@@ -1127,16 +1127,16 @@ export default function HistoryModal({
         return false;
       });
 
-      // Filter receivable records for this contract (require gereeniiId when available)
+      // Filter receivable records for this contract (require contractIdToFetch when available)
       const matchedReceivables = receivableRecords.filter((rec: any) => {
         const recGereeId = String(rec?.gereeniiId || "").trim();
         const recOrshinSuugchId = String(rec?.orshinSuugchId || "").trim();
         const recGereeDugaar = String(rec?.gereeniiDugaar || "").trim();
-        if (gereeniiId && recGereeId && recGereeId === gereeniiId) return true;
+        if (contractIdToFetch && recGereeId && recGereeId === contractIdToFetch) return true;
         if (gereeDugaar && recGereeDugaar && recGereeDugaar === gereeDugaar)
           return true;
         if (
-          !gereeniiId &&
+          !contractIdToFetch &&
           !gereeDugaar &&
           residentId &&
           recOrshinSuugchId &&

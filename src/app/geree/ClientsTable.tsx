@@ -133,13 +133,7 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
 
           if (toots.length === 0) return "-";
 
-          if (toots.length === 1) {
-            return (
-              <span className="text-gray-900 dark:text-white whitespace-nowrap font-medium">
-                {toots[0].toot || "-"}
-              </span>
-            );
-          }
+
 
           const tooltipContent = (
             <div className="space-y-1.5 p-1 max-w-[220px]">
@@ -147,7 +141,7 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
                 const label = t.turul === "Гараж" ? "Зогсоол" : "Агуулах";
                 return (
                   <div key={idx} className="flex items-center justify-between gap-3 text-xs py-0.5">
-                    <span className="text-white font-medium">{t.toot} ({label})</span>
+                    <span className="text-white font-medium">Тоот {t.toot} {label}</span>
                     <button
                       type="button"
                       onClick={(e) => {

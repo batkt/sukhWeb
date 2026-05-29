@@ -1361,7 +1361,7 @@ export default function ResidentModal({
                                         return (
                                           <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${gFlatIdx}.toot`) ? "input-error" : ""}`}>
                                             <TusgaiZagvar value={garage.toot || ""} onChange={(val: string) => updateGarageField(index, gIdx, "toot", val)}
-                                              options={opts.map((t) => ({ value: t, label: t, isOccupied: isTootOccupied(t, garage.davkhar || "", "1", "Зогсоол") }))} className="w-full h-full" placeholder="Дугаар..." disabled={!garage.davkhar} />
+                                              options={opts.map((t) => ({ value: t, label: t, isOccupied: isTootOccupied(t, garage.davkhar || "", "1", "Зогсоол") }))} className="w-full h-full" placeholder="Дугаар..." disabled={!garage.davkhar} allowCustomInput={true} />
                                           </div>
                                         );
                                       })()}
@@ -1404,7 +1404,7 @@ export default function ResidentModal({
                                         return (
                                           <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${sFlatIdxNested}.toot`) ? "input-error" : ""}`}>
                                             <TusgaiZagvar value={storage.toot || ""} onChange={(val: string) => updateStorageField(index, sIdx, "toot", val)}
-                                              options={opts.map((t) => ({ value: t, label: t, isOccupied: isTootOccupied(t, storage.davkhar || "", "1", "Агуулах") }))} className="w-full h-full" placeholder="Дугаар..." disabled={!storage.davkhar} />
+                                              options={opts.map((t) => ({ value: t, label: t, isOccupied: isTootOccupied(t, storage.davkhar || "", "1", "Агуулах") }))} className="w-full h-full" placeholder="Дугаар..." disabled={!storage.davkhar} allowCustomInput={true} />
                                           </div>
                                         );
                                       })()}
