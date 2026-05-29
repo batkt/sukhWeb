@@ -49,6 +49,9 @@ interface MedegdelItem {
   parentId?: string | null;
   status: string;
   orshinSuugchId: string | null;
+  orshinSuugchNer?: string;
+  orshinSuugchUtas?: string;
+  orshinSuugchGereeniiDugaar?: string;
   baiguullagiinId: string;
   barilgiinId: string;
   title: string;
@@ -1022,6 +1025,13 @@ export default function SanalKhuselt() {
                     >
                       {item.title}
                     </h3>
+                    {(item.orshinSuugchNer || item.orshinSuugchGereeniiDugaar || item.orshinSuugchUtas) && (
+                      <p className="text-[10px] text-theme/50 mb-1 flex items-center gap-1.5">
+                        {item.orshinSuugchNer && <span>{item.orshinSuugchNer}</span>}
+                        {item.orshinSuugchGereeniiDugaar && <span>· {item.orshinSuugchGereeniiDugaar}</span>}
+                        {item.orshinSuugchUtas && <span>· {item.orshinSuugchUtas}</span>}
+                      </p>
+                    )}
                     <p className="text-xs text-theme/60 line-clamp-2 leading-relaxed">
                       {item.message}
                     </p>
@@ -1083,6 +1093,13 @@ export default function SanalKhuselt() {
                     <h2 className="text-xl md:text-2xl  text-theme leading-tight">
                       {selectedMedegdel.title}
                     </h2>
+                    {(selectedMedegdel.orshinSuugchNer || selectedMedegdel.orshinSuugchGereeniiDugaar || selectedMedegdel.orshinSuugchUtas) && (
+                      <div className="flex items-center gap-2 mt-2 text-xs text-theme/60">
+                        {selectedMedegdel.orshinSuugchNer && <span>{selectedMedegdel.orshinSuugchNer}</span>}
+                        {selectedMedegdel.orshinSuugchGereeniiDugaar && <span>· {selectedMedegdel.orshinSuugchGereeniiDugaar}</span>}
+                        {selectedMedegdel.orshinSuugchUtas && <span>· {selectedMedegdel.orshinSuugchUtas}</span>}
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex flex-col items-end gap-3 min-w-[200px]">

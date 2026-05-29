@@ -473,19 +473,10 @@ export default function UnitsSection({
       message: `Сонгосон ${tootsBilled.size} тоотын ${typeLabel} гэрээнүүдэд ${propertyTab === "Зогсоол" || propertyTab === "Агуулах" ? "авлага нэмэх" : "нэхэмжлэх илгээх"} үү?`,
       onConfirm: async () => {
         if (propertyTab === "Зогсоол" || propertyTab === "Агуулах") {
-          const allIds = [...dedicatedIds, ...nestedIds];
-          const residents = allIds
-            .map(id => {
-              const c = contracts.find((x: any) => String(x._id) === id);
-              if (!c) return null;
-              const resId = c.orshinSuugchId || c.khariltsagchId;
-              return resId ? residentsById[String(resId)] : null;
-            })
-            .filter(Boolean)
-            .filter((r: any, i: number, arr: any[]) =>
-              arr.findIndex((x: any) => String(x._id) === String(r._id)) === i
-            );
-          await actions.handleAddGarageCharges(residents, propertyTab === "Зогсоол" ? "Зогсоол" : "Агуулах");
+          await actions.handleAddGarageChargesForContracts(
+            [...dedicatedIds, ...nestedIds],
+            propertyTab === "Зогсоол" ? "Зогсоол" : "Агуулах"
+          );
         } else {
           await actions.handleSendInvoices(dedicatedIds, nestedIds, {
             onlyGarage: false,
@@ -594,19 +585,10 @@ export default function UnitsSection({
       message: `${selectedFloor}-р давхрын бүх ${typeLabel} гэрээнүүдэд (${tootsBilled.size} тоот) ${propertyTab === "Зогсоол" || propertyTab === "Агуулах" ? "авлага нэмэх" : "нэхэмжлэх илгээх"} үү?`,
       onConfirm: async () => {
         if (propertyTab === "Зогсоол" || propertyTab === "Агуулах") {
-          const allIds = [...dedicatedIds, ...nestedIds];
-          const residents = allIds
-            .map(id => {
-              const c = contracts.find((x: any) => String(x._id) === id);
-              if (!c) return null;
-              const resId = c.orshinSuugchId || c.khariltsagchId;
-              return resId ? residentsById[String(resId)] : null;
-            })
-            .filter(Boolean)
-            .filter((r: any, i: number, arr: any[]) =>
-              arr.findIndex((x: any) => String(x._id) === String(r._id)) === i
-            );
-          await actions.handleAddGarageCharges(residents, propertyTab === "Зогсоол" ? "Зогсоол" : "Агуулах");
+          await actions.handleAddGarageChargesForContracts(
+            [...dedicatedIds, ...nestedIds],
+            propertyTab === "Зогсоол" ? "Зогсоол" : "Агуулах"
+          );
         } else {
           await actions.handleSendInvoices(dedicatedIds, nestedIds, {
             onlyGarage: false,
@@ -695,19 +677,10 @@ export default function UnitsSection({
       message: `Бүх давхрын бүх ${typeLabel} гэрээнүүдэд (${tootsBilled.size} тоот) ${propertyTab === "Зогсоол" || propertyTab === "Агуулах" ? "авлага нэмэх" : "нэхэмжлэх илгээх"} үү?`,
       onConfirm: async () => {
         if (propertyTab === "Зогсоол" || propertyTab === "Агуулах") {
-          const allIds = [...dedicatedIds, ...nestedIds];
-          const residents = allIds
-            .map(id => {
-              const c = contracts.find((x: any) => String(x._id) === id);
-              if (!c) return null;
-              const resId = c.orshinSuugchId || c.khariltsagchId;
-              return resId ? residentsById[String(resId)] : null;
-            })
-            .filter(Boolean)
-            .filter((r: any, i: number, arr: any[]) =>
-              arr.findIndex((x: any) => String(x._id) === String(r._id)) === i
-            );
-          await actions.handleAddGarageCharges(residents, propertyTab === "Зогсоол" ? "Зогсоол" : "Агуулах");
+          await actions.handleAddGarageChargesForContracts(
+            [...dedicatedIds, ...nestedIds],
+            propertyTab === "Зогсоол" ? "Зогсоол" : "Агуулах"
+          );
         } else {
           await actions.handleSendInvoices(dedicatedIds, nestedIds, {
             onlyGarage: false,

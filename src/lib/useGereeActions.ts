@@ -80,7 +80,7 @@ export function useGereeActions(
       try {
         const firstPhone = Array.isArray(newResident.utas)
           ? newResident.utas.find((p: any) => String(p || "").trim() !== "") ||
-            ""
+          ""
           : String(newResident.utas || "");
 
         // Find the selected building from baiguullaga
@@ -153,17 +153,17 @@ export function useGereeActions(
             Array.isArray(newResident.units) && newResident.units.length > 0
               ? newResident.units
               : [
-                  {
-                    toot: newResident.toot || "",
-                    davkhar: newResident.davkhar || "",
-                    orts: newResident.orts || "1",
-                    ekhniiUldegdel: newResident.ekhniiUldegdel || 0,
-                    tsahilgaaniiZaalt: newResident.tsahilgaaniiZaalt || 0,
-                    khonogoorBodokhEsekh:
-                      newResident.khonogoorBodokhEsekh || false,
-                    bodokhKhonog: newResident.bodokhKhonog || 0,
-                  },
-                ],
+                {
+                  toot: newResident.toot || "",
+                  davkhar: newResident.davkhar || "",
+                  orts: newResident.orts || "1",
+                  ekhniiUldegdel: newResident.ekhniiUldegdel || 0,
+                  tsahilgaaniiZaalt: newResident.tsahilgaaniiZaalt || 0,
+                  khonogoorBodokhEsekh:
+                    newResident.khonogoorBodokhEsekh || false,
+                  bodokhKhonog: newResident.bodokhKhonog || 0,
+                },
+              ],
           // Backward compatibility fields - pull from first unit if possible
           toot: newResident.units?.[0]?.toot || newResident.toot || "",
           davkhar: newResident.units?.[0]?.davkhar || newResident.davkhar || "",
@@ -179,7 +179,7 @@ export function useGereeActions(
             (newResident.khonogoorBodokhEsekh || false),
           bodokhKhonog: Number(
             newResident.units?.[0]?.bodokhKhonog ??
-              (newResident.bodokhKhonog || 0),
+            (newResident.bodokhKhonog || 0),
           ),
           barilgiinId: selectedBarilga?._id || effectiveBid || "",
           bairniiNer: selectedBarilga?.ner || "",
@@ -361,9 +361,9 @@ export function useGereeActions(
         name: `${p.ovog} ${p.ner}`,
         units: Array.isArray(p.toots)
           ? p.toots.map((t: any) => ({
-              toot: t.toot,
-              balance: t.ekhniiUldegdel,
-            }))
+            toot: t.toot,
+            balance: t.ekhniiUldegdel,
+          }))
           : "no toots",
       });
       setNewResident({
@@ -395,38 +395,38 @@ export function useGereeActions(
         units:
           Array.isArray(p.toots) && p.toots.length > 0
             ? p.toots
-                .filter((t: any) => {
-                  const currentBid = String(
-                    selectedBuildingId || barilgiinId || "",
-                  );
-                  const tootBid = String(t.barilgiinId || "");
-                  return currentBid === tootBid;
-                })
-                .map((t: any) => ({
-                  orts: t.orts || "1",
-                  davkhar: t.davkhar || "",
-                  toot: t.toot || "",
-                  turul: t.turul || "Орон сууц",
-                  ekhniiUldegdel:
-                    t.ekhniiUldegdel !== undefined && t.ekhniiUldegdel !== 0
-                      ? t.ekhniiUldegdel
-                      : ekhniiUldegdel || 0,
-                  tsahilgaaniiZaalt: t.tsahilgaaniiZaalt ?? 0,
-                  khonogoorBodokhEsekh: t.khonogoorBodokhEsekh || false,
-                  bodokhKhonog: t.bodokhKhonog || 0,
-                }))
+              .filter((t: any) => {
+                const currentBid = String(
+                  selectedBuildingId || barilgiinId || "",
+                );
+                const tootBid = String(t.barilgiinId || "");
+                return currentBid === tootBid;
+              })
+              .map((t: any) => ({
+                orts: t.orts || "1",
+                davkhar: t.davkhar || "",
+                toot: t.toot || "",
+                turul: t.turul || "Орон сууц",
+                ekhniiUldegdel:
+                  t.ekhniiUldegdel !== undefined && t.ekhniiUldegdel !== 0
+                    ? t.ekhniiUldegdel
+                    : ekhniiUldegdel || 0,
+                tsahilgaaniiZaalt: t.tsahilgaaniiZaalt ?? 0,
+                khonogoorBodokhEsekh: t.khonogoorBodokhEsekh || false,
+                bodokhKhonog: t.bodokhKhonog || 0,
+              }))
             : [
-                {
-                  orts: p.orts || "1",
-                  davkhar: p.davkhar || "",
-                  toot: p.toot || "",
-                  turul: p.turul || "Орон сууц",
-                  ekhniiUldegdel: ekhniiUldegdel || 0,
-                  tsahilgaaniiZaalt: p.tsahilgaaniiZaalt || 0,
-                  khonogoorBodokhEsekh: p.khonogoorBodokhEsekh || false,
-                  bodokhKhonog: p.bodokhKhonog || 0,
-                },
-              ],
+              {
+                orts: p.orts || "1",
+                davkhar: p.davkhar || "",
+                toot: p.toot || "",
+                turul: p.turul || "Орон сууц",
+                ekhniiUldegdel: ekhniiUldegdel || 0,
+                tsahilgaaniiZaalt: p.tsahilgaaniiZaalt || 0,
+                khonogoorBodokhEsekh: p.khonogoorBodokhEsekh || false,
+                bodokhKhonog: p.bodokhKhonog || 0,
+              },
+            ],
       });
       setShowResidentModal(true);
     },
@@ -1362,7 +1362,7 @@ export function useGereeActions(
           (b: any) => String(b._id || b.id) === String(effectiveBarilgiinId),
         );
         const tok = barilga?.tokhirgoo || {};
-        
+
         // Garage config
         const garageEnabled = (chargeType === undefined || chargeType === "Зогсоол") && !!tok.garsiinTolborEnabled;
         const garageMethod = tok.garsiinTolborArga || "Тогтмол";
@@ -1452,7 +1452,7 @@ export function useGereeActions(
           const schedules = cronRes.data?.data || cronRes.data || [];
           const schedule = Array.isArray(schedules) ? schedules[schedules.length - 1] : schedules;
           if (schedule?.nekhemjlekhUusgekhOgnoo) cronDay = Number(schedule.nekhemjlekhUusgekhOgnoo);
-        } catch {}
+        } catch { }
 
         const now = new Date();
         let cycleStartYear = now.getFullYear();
@@ -1557,7 +1557,7 @@ export function useGereeActions(
             });
             contractAvlaga = checkRes.data?.data || checkRes.data || [];
             if (!Array.isArray(contractAvlaga)) contractAvlaga = [];
-          } catch {}
+          } catch { }
 
           const inCycle = (r: any) => {
             const raw = r.ognoo || r.createdAt || "";
@@ -1634,7 +1634,11 @@ export function useGereeActions(
         }
 
         if (skipped > 0) {
-          openWarningOverlay(`${added} төлбөр нэмэгдлээ, ${skipped} нь энэ мөчлөгт аль хэдийн бүртгэгдсэн тул алгасав`);
+          openWarningOverlay(
+            added > 0
+              ? `${added} төлбөр нэмэгдлээ, ${skipped} нь энэ мөчлөгт аль хэдийн бүртгэгдсэн тул алгасав`
+              : `${skipped} нь энэ мөчлөгт аль хэдийн бүртгэгдсэн тул алгасав`
+          );
         } else {
           openSuccessOverlay(`${added} төлбөр амжилттай нэмэгдлээ`);
         }
@@ -1963,27 +1967,27 @@ export function useGereeActions(
         units:
           Array.isArray(p.toots) && p.toots.length > 0
             ? p.toots.map((t: any) => ({
-                orts: t.orts || "1",
-                davkhar: t.davkhar || "",
-                toot: t.toot || "",
-                turul: t.turul || "Орон сууц",
-                ekhniiUldegdel: t.ekhniiUldegdel || 0,
-                tsahilgaaniiZaalt: t.tsahilgaaniiZaalt || 0,
-                khonogoorBodokhEsekh: t.khonogoorBodokhEsekh || false,
-                bodokhKhonog: t.bodokhKhonog || 0,
-              }))
+              orts: t.orts || "1",
+              davkhar: t.davkhar || "",
+              toot: t.toot || "",
+              turul: t.turul || "Орон сууц",
+              ekhniiUldegdel: t.ekhniiUldegdel || 0,
+              tsahilgaaniiZaalt: t.tsahilgaaniiZaalt || 0,
+              khonogoorBodokhEsekh: t.khonogoorBodokhEsekh || false,
+              bodokhKhonog: t.bodokhKhonog || 0,
+            }))
             : [
-                {
-                  orts: p.orts || "1",
-                  davkhar: p.davkhar || "",
-                  toot: p.toot || "",
-                  turul: p.turul || "Орон сууц",
-                  ekhniiUldegdel: ekhniiUldegdel || 0,
-                  tsahilgaaniiZaalt: p.tsahilgaaniiZaalt || 0,
-                  khonogoorBodokhEsekh: p.khonogoorBodokhEsekh || false,
-                  bodokhKhonog: p.bodokhKhonog || 0,
-                },
-              ],
+              {
+                orts: p.orts || "1",
+                davkhar: p.davkhar || "",
+                toot: p.toot || "",
+                turul: p.turul || "Орон сууц",
+                ekhniiUldegdel: ekhniiUldegdel || 0,
+                tsahilgaaniiZaalt: p.tsahilgaaniiZaalt || 0,
+                khonogoorBodokhEsekh: p.khonogoorBodokhEsekh || false,
+                bodokhKhonog: p.bodokhKhonog || 0,
+              },
+            ],
         ekhniiUldegdel,
       });
       setShowClientModal(true);
@@ -2235,6 +2239,150 @@ export function useGereeActions(
     setShowClientModal?.(true);
   }, [setEditingClient, setNewClient, setShowClientModal]);
 
+  const handleAddGarageChargesForContracts = useCallback(
+    async (contractIds: string[], chargeType: "Зогсоол" | "Агуулах") => {
+      if (!token || !baiguullaga?._id) {
+        openErrorOverlay("Нэвтэрч орсон хэрэглэгч олдсонгүй");
+        return;
+      }
+      const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
+      if (!effectiveBarilgiinId) {
+        openErrorOverlay("Барилга сонгоогүй байна");
+        return;
+      }
+      try {
+        const barilga = baiguullaga.barilguud?.find(
+          (b: any) => String(b._id || b.id) === String(effectiveBarilgiinId),
+        );
+        const tok = barilga?.tokhirgoo || {};
+        const isGarage = chargeType === "Зогсоол";
+        const enabled = isGarage ? !!tok.garsiinTolborEnabled : !!tok.aguulakhTolborEnabled;
+        const method = isGarage ? (tok.garsiinTolborArga || "Тогтмол") : (tok.aguulakhTolborArga || "Тогтмол");
+        const value = isGarage ? (Number(tok.garsiinTolborUtga) || 0) : (Number(tok.aguulakhTolborUtga) || 0);
+
+        if (!enabled || method !== "Тогтмол" || value <= 0) {
+          openErrorOverlay("Сонгосон төрлийн төлбөрийн тохиргоо идэвхгүй байна");
+          return;
+        }
+
+        // Billing cycle bounds
+        let cronDay = 1;
+        try {
+          const cronRes = await uilchilgee(token).get(`/nekhemjlekhCron/${baiguullaga._id}`, {
+            params: effectiveBarilgiinId ? { barilgiinId: effectiveBarilgiinId } : {}
+          });
+          const schedules = cronRes.data?.data || cronRes.data || [];
+          const schedule = Array.isArray(schedules) ? schedules[schedules.length - 1] : schedules;
+          if (schedule?.nekhemjlekhUusgekhOgnoo) cronDay = Number(schedule.nekhemjlekhUusgekhOgnoo);
+        } catch { }
+
+        const now = new Date();
+        let csYear = now.getFullYear(), csMonth = now.getMonth();
+        if (now.getDate() < cronDay) { csMonth--; if (csMonth < 0) { csMonth = 11; csYear--; } }
+        const cycleStart = new Date(csYear, csMonth, cronDay);
+        const ceMonth = csMonth === 11 ? 0 : csMonth + 1;
+        const ceYear = csMonth === 11 ? csYear + 1 : csYear;
+        const cycleEnd = new Date(ceYear, ceMonth, cronDay - 1 || 0);
+        const cycleStartStr = cycleStart.toISOString().split("T")[0];
+        const cycleEndStr = cycleEnd.toISOString().split("T")[0];
+
+        const today = now.toISOString().split("T")[0];
+        const tailbarKeyword = isGarage ? "зогсоол" : "агуулах";
+        let added = 0, skipped = 0;
+
+        for (const id of contractIds) {
+          const c = (contracts || []).find((x: any) => String(x._id) === id);
+          if (!c) continue;
+
+          // Determine which unit toots to bill for this contract
+          const cTurul = String(c.turul || "").trim();
+          const unitToots: string[] = [];
+
+          if (isGarage && (cTurul === "Зогсоол" || cTurul === "Гараж")) {
+            unitToots.push(String(c.toot || ""));
+          } else if (!isGarage && cTurul === "Агуулах") {
+            unitToots.push(String(c.toot || ""));
+          } else {
+            const nemelt = Array.isArray(c.nemeltTootnuud) ? c.nemeltTootnuud : [];
+            for (const n of nemelt) {
+              const nt = String(n.turul || "");
+              if (isGarage && (nt === "Гараж" || nt === "Зогсоол")) unitToots.push(String(n.toot || ""));
+              if (!isGarage && nt === "Агуулах") unitToots.push(String(n.toot || ""));
+            }
+          }
+
+          if (unitToots.length === 0) continue;
+
+          // Fetch existing avlaga for this contract once
+          let contractAvlaga: any[] = [];
+          try {
+            const checkRes = await uilchilgee(token).get("/guilgeeAvlaguud", {
+              params: {
+                baiguullagiinId: baiguullaga._id,
+                query: JSON.stringify({ gereeniiId: String(c._id) }),
+                khuudasniiDugaar: 1, khuudasniiKhemjee: 200,
+              },
+            });
+            contractAvlaga = checkRes.data?.data || checkRes.data || [];
+            if (!Array.isArray(contractAvlaga)) contractAvlaga = [];
+          } catch { }
+
+          const inCycle = (r: any) => {
+            const raw = r.ognoo || r.createdAt || "";
+            const s = typeof raw === "string" ? raw.slice(0, 10) : new Date(raw).toISOString().slice(0, 10);
+            return s >= cycleStartStr && s <= cycleEndStr;
+          };
+
+          for (const toot of unitToots) {
+            const alreadyBilled = contractAvlaga.some(
+              (r: any) => new RegExp(tailbarKeyword, "i").test(r.tailbar || "") && String(r.toot || "") === toot && inCycle(r)
+            );
+            if (alreadyBilled) { skipped++; continue; }
+            try {
+              await uilchilgee(token).post("/guilgeeAvlaguud", {
+                baiguullagiinId: baiguullaga._id,
+                barilgiinId: effectiveBarilgiinId,
+                orshinSuugchId: c.orshinSuugchId || c.khariltsagchId || "",
+                gereeniiId: String(c._id),
+                gereeniiDugaar: c.gereeniiDugaar || "",
+                toot,
+                turul: "avlaga",
+                tulukhDun: value,
+                tulsunDun: 0,
+                dun: value,
+                tailbar: `${chargeType} (тоот ${toot})`,
+                ognoo: today,
+                guilgeeKhiisenAjiltniiId: ajiltan?._id,
+                guilgeeKhiisenAjiltniiNer: `${ajiltan?.ovog || ""} ${ajiltan?.ner || ""}`.trim(),
+              });
+              added++;
+            } catch (e: any) {
+              if (e?.response?.status === 409) { skipped++; } else { throw e; }
+            }
+          }
+        }
+
+        if (skipped > 0) {
+          openWarningOverlay(
+            added > 0
+              ? `Энэ мөчлөгт аль хэдийн бүртгэгдсэн тул алгасав`
+              : `${skipped} нь энэ мөчлөгт аль хэдийн бүртгэгдсэн тул алгасав`
+          );
+        } else {
+          openSuccessOverlay(`${added} төлбөр амжилттай нэмэгдлээ`);
+        }
+
+        mutate(
+          (key: any) => Array.isArray(key) && ["/guilgeeAvlaguud", "/nekhemjlekhiinTuukh", "/orshinSuugch"].includes(key[0]),
+          undefined, { revalidate: true },
+        );
+      } catch (error: any) {
+        openErrorOverlay(getErrorMessage(error));
+      }
+    },
+    [token, baiguullaga, selectedBuildingId, barilgiinId, ajiltan, contracts],
+  );
+
   return {
     handleCreateClient,
     handleDeleteClient,
@@ -2248,7 +2396,7 @@ export function useGereeActions(
     handleCreateOrUpdateEmployee,
     handleDeleteEmployee,
     handleEditEmployee,
-    handleEdit: (_contract: any) => {},
+    handleEdit: (_contract: any) => { },
     handleUpdateContract: async (_e: React.FormEvent) => {
       return true;
     },
@@ -2295,7 +2443,7 @@ export function useGereeActions(
         } else {
           openErrorOverlay(
             "Загвар боловсруулахад алдаа гарлаа: " +
-              (resp.data?.message || "Тодорхойгүй алдаа"),
+            (resp.data?.message || "Тодорхойгүй алдаа"),
           );
         }
       } catch (err) {
@@ -2304,8 +2452,8 @@ export function useGereeActions(
         if (onLoadingChange) onLoadingChange(false);
       }
     },
-    handleOpenPaymentModal: (_resident: any) => {},
-    handleMarkAsPaid: async () => {},
+    handleOpenPaymentModal: (_resident: any) => { },
+    handleMarkAsPaid: async () => { },
     handleShowResidentModal,
     handleShowEmployeeModal,
     handleExportResidentsExcel,
@@ -2315,9 +2463,9 @@ export function useGereeActions(
     handleDownloadUnitsTemplate,
     handleUnitsExcelImportClick,
     onUnitsExcelFileChange,
-    handlePreviewTemplate: (_id: string) => {},
-    handleEditTemplate: (_id: string) => {},
-    handleDeleteTemplate: (_id: string) => {},
+    handlePreviewTemplate: (_id: string) => { },
+    handleEditTemplate: (_id: string) => { },
+    handleDeleteTemplate: (_id: string) => { },
     toggleSortFor: useCallback(
       (key: any, order?: "ascend" | "descend" | null) => {
         if (!setSortKey || !setSortOrder) return;
@@ -2333,6 +2481,7 @@ export function useGereeActions(
     ),
     handleSendInvoices,
     handleAddGarageCharges,
+    handleAddGarageChargesForContracts,
     handlePreviewInvoice,
     deleteUnit,
     deleteFloor,
