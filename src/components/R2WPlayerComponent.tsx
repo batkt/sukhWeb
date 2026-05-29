@@ -12,7 +12,7 @@ if (R2WPlayer && typeof (R2WPlayer as any).AJAX === "function" && !(R2WPlayer as
   const originalAJAX = (R2WPlayer as any).AJAX;
   
   (R2WPlayer as any).AJAX = function(...args: any[]) {
-    const [method, urlStr, data, successCb, errorCb, async, context] = args;
+    const [_method, urlStr, data, successCb, errorCb, _async, context] = args;
     const isDirectProxy = urlStr && urlStr.startsWith("http") && !urlStr.includes("/api/");
     
     if (isDirectProxy && urlStr.endsWith("/answer")) {
@@ -24,7 +24,8 @@ if (R2WPlayer && typeof (R2WPlayer as any).AJAX === "function" && !(R2WPlayer as
       const formData = new URLSearchParams();
       if (data) {
         formData.append("url", data.url || "");
-        formData.append("data", data.sdp64 || ""); // Go server expects the sdp64 in 'data' field
+        formData.append("sdp64", data.sdp64 || ""); // backend relay expects 'sdp64'
+        formData.append("data", data.sdp64 || "");  // Go RTSPtoWebRTC expects 'data'
       }
       
       fetch(newUrl, {

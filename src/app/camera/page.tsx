@@ -18,7 +18,7 @@ import {
   Edit3,
   Sliders
 } from "lucide-react";
-import uilchilgee, { url as apiUrl } from "@/lib/uilchilgee";
+import { url as apiUrl } from "@/lib/uilchilgee";
 import R2WPlayerComponent from "@/components/R2WPlayerComponent";
 import { toast } from "react-hot-toast";
 
@@ -82,6 +82,21 @@ export default function CameraVideoWall() {
   const [cols, setCols] = useState<number>(0); // 0 means automatic layout
   const [isWallMode, setIsWallMode] = useState(false); // Video Wall Mode
   const [isConfigOpen, setIsConfigOpen] = useState(false); // Settings Panel Toggle
+
+  // Stream server URL — "http://127.0.0.1:8083" for local, or backend relay URL for public access
+  const [streamServerUrl, setStreamServerUrl] = useState("http://127.0.0.1:8083");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("sukh_stream_server_url");
+      if (saved) setStreamServerUrl(saved);
+    }
+  }, []);
+
+  const handleStreamServerUrlChange = (val: string) => {
+    setStreamServerUrl(val);
+    localStorage.setItem("sukh_stream_server_url", val);
+  };
 
   // Custom camera feeds list state (persisted in localStorage)
   const [cameras, setCameras] = useState<CustomCamera[]>([]);
@@ -354,6 +369,7 @@ export default function CameraVideoWall() {
                     password={camera.password}
                     root={camera.root}
                     barilgiinId={effectiveBarilgiinId}
+                    streamServerUrl={streamServerUrl}
                   />
                 </div>
               </div>
@@ -395,6 +411,34 @@ export default function CameraVideoWall() {
 
             {/* Config Content (Scrollable list of 16 slots) */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+
+              {/* Stream Server URL */}
+              <div className="p-3 rounded-xl bg-slate-950 border border-white/5 space-y-2">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Стрим Сервер</p>
+                <div className="flex gap-1.5">
+                  <button
+                    onClick={() => handleStreamServerUrlChange("http://127.0.0.1:8083")}
+                    className={`flex-1 px-2 py-1.5 rounded text-[10px] font-bold border transition-colors ${streamServerUrl === "http://127.0.0.1:8083" ? "bg-theme/20 border-theme/50 text-theme" : "bg-slate-800 border-white/5 text-slate-400 hover:bg-slate-700"}`}
+                  >
+                    Локал
+                  </button>
+                  <button
+                    onClick={() => {
+                      const relayUrl = `${apiUrl}/camera/stream/${effectiveBarilgiinId}`;
+                      handleStreamServerUrlChange(relayUrl);
+                    }}
+                    className={`flex-1 px-2 py-1.5 rounded text-[10px] font-bold border transition-colors ${streamServerUrl !== "http://127.0.0.1:8083" ? "bg-theme/20 border-theme/50 text-theme" : "bg-slate-800 border-white/5 text-slate-400 hover:bg-slate-700"}`}
+                  >
+                    Цахим (Relay)
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  value={streamServerUrl}
+                  onChange={(e) => handleStreamServerUrlChange(e.target.value)}
+                  className="w-full h-7 px-2 rounded bg-slate-900 border border-white/10 text-white font-mono text-[9px] outline-none focus:border-theme/40"
+                />
+              </div>
 
               {/* Quick controls */}
               <div className="flex items-center justify-between bg-slate-950 p-3 rounded-xl border border-white/5 text-xs font-bold">
@@ -604,6 +648,7 @@ const CameraStream = React.memo(
     password,
     root = "stream",
     barilgiinId,
+    streamServerUrl = "http://127.0.0.1:8083",
   }: {
     ip: string;
     port: number;
@@ -612,6 +657,7 @@ const CameraStream = React.memo(
     password?: string;
     root?: string;
     barilgiinId?: string;
+    streamServerUrl?: string;
   }) => {
     const [error, setError] = useState(false);
     const [connectionState, setConnectionState] = useState<string>("");
@@ -747,7 +793,7 @@ const CameraStream = React.memo(
           USER={username}
           PASSWD={password}
           ROOT={root}
-          serverPath="http://127.0.0.1:8083"
+          serverPath={streamServerUrl}
           onError={handleError}
           onConnectionStateChange={handleConnectionStateChange}
           style={{
