@@ -115,7 +115,6 @@ export default function BlogNiitlelPage() {
     return () => {
       attachPreviewUrls.forEach((url) => URL.revokeObjectURL(url));
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSave = async () => {
