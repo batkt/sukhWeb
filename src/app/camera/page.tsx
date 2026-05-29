@@ -44,8 +44,8 @@ const DEFAULT_16_CAMERAS: CustomCamera[] = Array.from({ length: 16 }, (_, index)
     port: 554, // RTSP default port
     username: "admin",
     password: "Admin123", // Automatically send NVR password by default
-    // Pre-configured paths for Hikvision NVR channels (Main streams 101 through 1601)
-    root: `Streaming/Channels/${channelNum}01`,
+    // Sub-streams (H.264) for WebRTC compatibility — main streams are H.265 which WebRTC doesn't support
+    root: `Streaming/Channels/${channelNum}02`,
     enabled: true, // Enable all 16 cameras statically by default
   };
 });
@@ -491,10 +491,10 @@ export default function CameraVideoWall() {
                         value={editingCamera.root}
                         onChange={(e) => setEditingCamera({ ...editingCamera, root: e.target.value })}
                         className="w-full h-8 px-3 rounded-lg bg-slate-900 border border-white/10 text-white font-mono outline-none focus:border-theme/40"
-                        placeholder="e.g., Streaming/Channels/101"
+                        placeholder="e.g., Streaming/Channels/102"
                       />
                       <p className="text-[9px] text-slate-500 mt-1">
-                        * Channel Main Stream range: <strong>101 - 1601</strong> (e.g. `Streaming/Channels/101`, `Streaming/Channels/201` ... `Streaming/Channels/1601`).
+                        * Sub-stream (H.264) range: <strong>102 - 1602</strong> (e.g. `Streaming/Channels/102`, `Streaming/Channels/202` ... `Streaming/Channels/1602`).
                       </p>
                     </div>
                   </div>
