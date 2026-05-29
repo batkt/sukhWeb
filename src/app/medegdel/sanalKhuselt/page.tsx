@@ -26,6 +26,9 @@ import {
   ImagePlus,
   Mic,
   Square,
+  User,
+  Home,
+  Phone,
 } from "lucide-react";
 import { useTourSteps } from "@/lib/useTourSteps";
 import { useRegisterTourSteps } from "@/context/TourContext";
@@ -49,9 +52,6 @@ interface MedegdelItem {
   parentId?: string | null;
   status: string;
   orshinSuugchId: string | null;
-  orshinSuugchNer?: string;
-  orshinSuugchUtas?: string;
-  orshinSuugchGereeniiDugaar?: string;
   baiguullagiinId: string;
   barilgiinId: string;
   title: string;
@@ -95,6 +95,9 @@ export default function SanalKhuselt() {
   const [showDetail, setShowDetail] = useState(false);
   const [filterType, setFilterType] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [residentsMap, setResidentsMap] = useState<
+    Record<string, { ner: string; toot: string; utas: string }>
+  >({});
   const [threadMessages, setThreadMessages] = useState<MedegdelItem[]>([]);
   const [threadLoading, setThreadLoading] = useState(false);
   const [replyInput, setReplyInput] = useState("");
@@ -144,6 +147,75 @@ export default function SanalKhuselt() {
           "count=",
           res.data.data.length,
         );
+
+        // Fetch any missing residents in thread messages
+        const threadIds = [
+          ...new Set(
+            res.data.data
+              .map((it: MedegdelItem) => it.orshinSuugchId)
+              .filter(Boolean),
+          ),
+        ] as string[];
+        const missingIds = threadIds.filter((id) => !residentsMap[id]);
+        if (missingIds.length > 0 && ajiltan?.baiguullagiinId) {
+          const newMap: Record<
+            string,
+            { ner: string; toot: string; utas: string }
+          > = {};
+          await Promise.all(
+            missingIds.map(async (id) => {
+              let r: any = null;
+              try {
+                const rRes = await uilchilgee(token || undefined).get(
+                  `/orshinSuugch/${id}`,
+                  {
+                    params: { baiguullagiinId: ajiltan.baiguullagiinId },
+                  },
+                );
+                console.log(
+                  "[sanalKhuselt] thread orshinSuugch raw",
+                  id,
+                  rRes.data,
+                );
+                r = rRes.data;
+              } catch {
+                // ignore, try fallback
+              }
+              if (!r || !r._id) {
+                try {
+                  const rRes = await uilchilgee(token || undefined).get(
+                    `/khariltsagch/${id}`,
+                    {
+                      params: { baiguullagiinId: ajiltan.baiguullagiinId },
+                    },
+                  );
+                  console.log(
+                    "[sanalKhuselt] thread khariltsagch raw",
+                    id,
+                    rRes.data,
+                  );
+                  r = rRes.data;
+                } catch {
+                  // ignore
+                }
+              }
+              if (r && r._id) {
+                const ner = `${r.ovog || ""} ${r.ner || ""}`.trim();
+                const toot =
+                  Array.isArray(r.toots) && r.toots.length > 0
+                    ? r.toots.map((t: any) => t.toot || t).join(", ")
+                    : r.toot || "";
+                const utas = Array.isArray(r.utas)
+                  ? r.utas[0] || ""
+                  : r.utas || "";
+                newMap[String(r._id)] = { ner, toot, utas };
+              }
+            }),
+          );
+          if (Object.keys(newMap).length > 0) {
+            setResidentsMap((prev) => ({ ...prev, ...newMap }));
+          }
+        }
       } else {
         setThreadMessages([]);
       }
@@ -271,6 +343,67 @@ export default function SanalKhuselt() {
             new Date(a.updatedAt || a.createdAt).getTime(),
         );
         setMedegdelList(filteredData);
+
+        // Fetch resident info for each unique orshinSuugchId individually
+        const uniqueIds = [
+          ...new Set(
+            filteredData
+              .map((it: MedegdelItem) => it.orshinSuugchId)
+              .filter(Boolean),
+          ),
+        ] as string[];
+        if (uniqueIds.length > 0) {
+          const map: Record<
+            string,
+            { ner: string; toot: string; utas: string }
+          > = {};
+          await Promise.all(
+            uniqueIds.map(async (id) => {
+              let r: any = null;
+              // Try /orshinSuugch first (same pattern as useGereeActions.ts)
+              try {
+                const rRes = await uilchilgee(token || undefined).get(
+                  `/orshinSuugch/${id}`,
+                  {
+                    params: { baiguullagiinId },
+                  },
+                );
+                console.log("[sanalKhuselt] orshinSuugch raw", id, rRes.data);
+                r = rRes.data;
+              } catch {
+                // ignore, try fallback
+              }
+              // Fallback to /khariltsagch
+              if (!r || !r._id) {
+                try {
+                  const rRes = await uilchilgee(token || undefined).get(
+                    `/khariltsagch/${id}`,
+                    {
+                      params: { baiguullagiinId },
+                    },
+                  );
+                  console.log("[sanalKhuselt] khariltsagch raw", id, rRes.data);
+                  r = rRes.data;
+                } catch {
+                  // ignore
+                }
+              }
+              if (r && r._id) {
+                const ner = `${r.ovog || ""} ${r.ner || ""}`.trim();
+                const toot =
+                  Array.isArray(r.toots) && r.toots.length > 0
+                    ? r.toots.map((t: any) => t.toot || t).join(", ")
+                    : r.toot || "";
+                const utas = Array.isArray(r.utas)
+                  ? r.utas[0] || ""
+                  : r.utas || "";
+                map[String(r._id)] = { ner, toot, utas };
+              }
+            }),
+          );
+          setResidentsMap(map);
+        }
+
         console.log(
           "[sanalKhuselt] fetchMedegdelData ok count=",
           filteredData.length,
@@ -286,7 +419,7 @@ export default function SanalKhuselt() {
             String(
               ((selectedMedegdelRef.current as MedegdelItem)?.parentId ||
                 selectedMedegdelRef.current?._id) ??
-                "",
+              "",
             );
           keepSelectionRootIdRef.current = null;
           const fresh = filteredData.find(
@@ -551,8 +684,8 @@ export default function SanalKhuselt() {
   const sendAdminReply = async () => {
     const rootId = selectedMedegdel
       ? String(
-          (selectedMedegdel as MedegdelItem).parentId || selectedMedegdel._id,
-        )
+        (selectedMedegdel as MedegdelItem).parentId || selectedMedegdel._id,
+      )
       : null;
     const hasText = replyInput.trim().length > 0;
     const hasImage = !!replyImage;
@@ -724,10 +857,10 @@ export default function SanalKhuselt() {
         setSelectedMedegdel((prev) =>
           prev
             ? {
-                ...prev,
-                status: pendingStatusChange.newStatus,
-                tailbar: tailbarText.trim() || prev.tailbar,
-              }
+              ...prev,
+              status: pendingStatusChange.newStatus,
+              tailbar: tailbarText.trim() || prev.tailbar,
+            }
             : null,
         );
         setMedegdelList((prev) =>
@@ -865,11 +998,10 @@ export default function SanalKhuselt() {
               id="feedback-filter-all"
               type="button"
               onClick={() => setDashboardFilter("all")}
-              className={`rounded-2xl border p-3 text-center transition-all ${
-                dashboardActive.all
-                  ? "border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400"
-                  : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] hover:bg-[color:var(--surface-hover)] text-theme"
-              }`}
+              className={`rounded-2xl border p-3 text-center transition-all ${dashboardActive.all
+                ? "border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] hover:bg-[color:var(--surface-hover)] text-theme"
+                }`}
             >
               <div className="text-lg ">{dashboardCounts.all}</div>
               <div className="text-[10px] opacity-80">{t("Бүгд")}</div>
@@ -878,11 +1010,10 @@ export default function SanalKhuselt() {
               id="feedback-filter-done"
               type="button"
               onClick={() => setDashboardFilter("shiidegdsen")}
-              className={`rounded-2xl border p-3 text-center transition-all ${
-                dashboardActive.shiidegdsen
-                  ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                  : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] hover:bg-[color:var(--surface-hover)] text-theme"
-              }`}
+              className={`rounded-2xl border p-3 text-center transition-all ${dashboardActive.shiidegdsen
+                ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] hover:bg-[color:var(--surface-hover)] text-theme"
+                }`}
             >
               <div className="text-lg ">{dashboardCounts.shiidegdsen}</div>
               <div className="text-[10px] opacity-80">{t("Шийдэгдсэн")}</div>
@@ -891,11 +1022,10 @@ export default function SanalKhuselt() {
               id="feedback-filter-gomdol"
               type="button"
               onClick={() => setDashboardFilter("gomdol")}
-              className={`rounded-2xl border p-3 text-center transition-all ${
-                dashboardActive.gomdol
-                  ? "border-red-500 bg-red-500/10 text-red-600 dark:text-red-400"
-                  : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] hover:bg-[color:var(--surface-hover)] text-theme"
-              }`}
+              className={`rounded-2xl border p-3 text-center transition-all ${dashboardActive.gomdol
+                ? "border-red-500 bg-red-500/10 text-red-600 dark:text-red-400"
+                : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] hover:bg-[color:var(--surface-hover)] text-theme"
+                }`}
             >
               <div className="text-lg ">{dashboardCounts.gomdol}</div>
               <div className="text-[10px] opacity-80">{t("Гомдол")}</div>
@@ -904,11 +1034,10 @@ export default function SanalKhuselt() {
               id="feedback-filter-sanal"
               type="button"
               onClick={() => setDashboardFilter("sanal")}
-              className={`rounded-2xl border p-3 text-center transition-all ${
-                dashboardActive.sanal
-                  ? "border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400"
-                  : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] hover:bg-[color:var(--surface-hover)] text-theme"
-              }`}
+              className={`rounded-2xl border p-3 text-center transition-all ${dashboardActive.sanal
+                ? "border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] hover:bg-[color:var(--surface-hover)] text-theme"
+                }`}
             >
               <div className="text-lg ">{dashboardCounts.sanal}</div>
               <div className="text-[10px] opacity-80">{t("Санал")}</div>
@@ -964,7 +1093,10 @@ export default function SanalKhuselt() {
             </div>
           </div>
 
-          <div id="sanal-list" className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-3">
+          <div
+            id="sanal-list"
+            className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-3"
+          >
             {loading ? (
               <div className="py-10 text-center text-theme/50 text-sm">
                 {t("Уншиж байна...")}
@@ -991,22 +1123,20 @@ export default function SanalKhuselt() {
                       setSelectedMedegdel(item);
                       setShowDetail(true);
                     }}
-                    className={`group relative p-4 rounded-2xl border transition-all cursor-pointer ${
-                      isSelected
-                        ? "bg-blue-200 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 shadow-sm"
-                        : "bg-[color:var(--surface-bg)] border-[color:var(--surface-border)] hover:border-blue-300/50 hover:bg-[color:var(--surface-hover)]"
-                    }`}
+                    className={`group relative p-4 rounded-2xl border transition-all cursor-pointer ${isSelected
+                      ? "bg-blue-200 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 shadow-sm"
+                      : "bg-[color:var(--surface-bg)] border-[color:var(--surface-border)] hover:border-blue-300/50 hover:bg-[color:var(--surface-hover)]"
+                      }`}
                   >
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span
-                          className={`inline-flex px-2 py-0.5 rounded-2xl text-[10px]  tracking-wide border ${
-                            (item.turul?.toLowerCase() || "").includes(
-                              "sanal",
-                            ) || (item.turul ?? "").includes("санал")
-                              ? "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-400/50"
-                              : "bg-red-500/15 text-red-700 dark:text-red-300 border-red-400/50"
-                          }`}
+                          className={`inline-flex px-2 py-0.5 rounded-2xl text-[10px]  tracking-wide border ${(item.turul?.toLowerCase() || "").includes(
+                            "sanal",
+                          ) || (item.turul ?? "").includes("санал")
+                            ? "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-400/50"
+                            : "bg-red-500/15 text-red-700 dark:text-red-300 border-red-400/50"
+                            }`}
                         >
                           {turulToLabel(item.turul)}
                         </span>
@@ -1025,13 +1155,38 @@ export default function SanalKhuselt() {
                     >
                       {item.title}
                     </h3>
-                    {(item.orshinSuugchNer || item.orshinSuugchGereeniiDugaar || item.orshinSuugchUtas) && (
-                      <p className="text-[10px] text-theme/50 mb-1 flex items-center gap-1.5">
-                        {item.orshinSuugchNer && <span>{item.orshinSuugchNer}</span>}
-                        {item.orshinSuugchGereeniiDugaar && <span>· {item.orshinSuugchGereeniiDugaar}</span>}
-                        {item.orshinSuugchUtas && <span>· {item.orshinSuugchUtas}</span>}
-                      </p>
-                    )}
+                    {item.orshinSuugchId &&
+                      residentsMap[item.orshinSuugchId] && (
+                        <div className="mb-2 p-2 rounded-xl bg-blue-50/60 dark:bg-blue-950/10 border border-blue-100/60 dark:border-blue-900/20">
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <User className="w-3 h-3 text-blue-500 shrink-0" />
+                            <span className="text-[10px] text-blue-400 dark:text-blue-500 shrink-0">Нэр:</span>
+                            <span className="text-[11px] font-semibold text-blue-700 dark:text-blue-300 truncate">
+                              {residentsMap[item.orshinSuugchId].ner}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            {residentsMap[item.orshinSuugchId].toot && (
+                              <div className="flex items-center gap-1">
+                                <Home className="w-3 h-3 text-blue-400 shrink-0" />
+                                <span className="text-[10px] text-blue-400 dark:text-blue-500 shrink-0">Тоот:</span>
+                                <span className="text-[10px] text-blue-600 dark:text-blue-400">
+                                  {residentsMap[item.orshinSuugchId].toot}
+                                </span>
+                              </div>
+                            )}
+                            {residentsMap[item.orshinSuugchId].utas && (
+                              <div className="flex items-center gap-1">
+                                <Phone className="w-3 h-3 text-blue-400 shrink-0" />
+                                <span className="text-[10px] text-blue-400 dark:text-blue-500 shrink-0">Утас:</span>
+                                <span className="text-[10px] text-blue-600 dark:text-blue-400">
+                                  {residentsMap[item.orshinSuugchId].utas}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     <p className="text-xs text-theme/60 line-clamp-2 leading-relaxed">
                       {item.message}
                     </p>
@@ -1076,11 +1231,10 @@ export default function SanalKhuselt() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-3">
                       <span
-                        className={`px-2 py-1 rounded-2xl text-[10px] tracking-wider border ${
-                          isSanal(selectedMedegdel.turul)
-                            ? "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-400/50"
-                            : "bg-red-500/15 text-red-700 dark:text-red-300 border-red-400/50"
-                        }`}
+                        className={`px-2 py-1 rounded-2xl text-[10px] tracking-wider border ${isSanal(selectedMedegdel.turul)
+                          ? "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-400/50"
+                          : "bg-red-500/15 text-red-700 dark:text-red-300 border-red-400/50"
+                          }`}
                       >
                         {turulToLabel(selectedMedegdel.turul)}
                       </span>
@@ -1093,13 +1247,38 @@ export default function SanalKhuselt() {
                     <h2 className="text-xl md:text-2xl  text-theme leading-tight">
                       {selectedMedegdel.title}
                     </h2>
-                    {(selectedMedegdel.orshinSuugchNer || selectedMedegdel.orshinSuugchGereeniiDugaar || selectedMedegdel.orshinSuugchUtas) && (
-                      <div className="flex items-center gap-2 mt-2 text-xs text-theme/60">
-                        {selectedMedegdel.orshinSuugchNer && <span>{selectedMedegdel.orshinSuugchNer}</span>}
-                        {selectedMedegdel.orshinSuugchGereeniiDugaar && <span>· {selectedMedegdel.orshinSuugchGereeniiDugaar}</span>}
-                        {selectedMedegdel.orshinSuugchUtas && <span>· {selectedMedegdel.orshinSuugchUtas}</span>}
-                      </div>
-                    )}
+                    {selectedMedegdel.orshinSuugchId &&
+                      residentsMap[selectedMedegdel.orshinSuugchId] && (
+                        <div className="mt-3 p-3 rounded-xl bg-blue-50/60 dark:bg-blue-950/10 border border-blue-100/60 dark:border-blue-900/20 inline-flex flex-col gap-1.5">
+                          <div className="flex items-center gap-2">
+                            <User className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                            <span className="text-xs text-blue-400 dark:text-blue-500 shrink-0">Нэр:</span>
+                            <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">
+                              {residentsMap[selectedMedegdel.orshinSuugchId].ner}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            {residentsMap[selectedMedegdel.orshinSuugchId].toot && (
+                              <div className="flex items-center gap-1.5">
+                                <Home className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                                <span className="text-xs text-blue-400 dark:text-blue-500 shrink-0">Тоот:</span>
+                                <span className="text-xs text-blue-600 dark:text-blue-400">
+                                  {residentsMap[selectedMedegdel.orshinSuugchId].toot}
+                                </span>
+                              </div>
+                            )}
+                            {residentsMap[selectedMedegdel.orshinSuugchId].utas && (
+                              <div className="flex items-center gap-1.5">
+                                <Phone className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                                <span className="text-xs text-blue-400 dark:text-blue-500 shrink-0">Утас:</span>
+                                <span className="text-xs text-blue-600 dark:text-blue-400">
+                                  {residentsMap[selectedMedegdel.orshinSuugchId].utas}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                   </div>
 
                   <div className="flex flex-col items-end gap-3 min-w-[200px]">
@@ -1158,32 +1337,32 @@ export default function SanalKhuselt() {
                         >
                           {(pendingStatusChange.newStatus === "done" ||
                             pendingStatusChange.newStatus === "rejected") && (
-                            <div>
-                              <label className="block text-xs  text-theme/70 mb-1.5">
-                                {t("Хариу тайлбар")}{" "}
-                                {pendingStatusChange.newStatus === "rejected" &&
-                                  `(${t("Татгалзсан шалтгаан")})`}
-                              </label>
-                              <textarea
-                                value={tailbarText}
-                                onChange={(e) => setTailbarText(e.target.value)}
-                                placeholder={
-                                  pendingStatusChange.newStatus === "done"
-                                    ? t(
+                              <div>
+                                <label className="block text-xs  text-theme/70 mb-1.5">
+                                  {t("Хариу тайлбар")}{" "}
+                                  {pendingStatusChange.newStatus === "rejected" &&
+                                    `(${t("Татгалзсан шалтгаан")})`}
+                                </label>
+                                <textarea
+                                  value={tailbarText}
+                                  onChange={(e) => setTailbarText(e.target.value)}
+                                  placeholder={
+                                    pendingStatusChange.newStatus === "done"
+                                      ? t(
                                         "Шийдвэрийн тайлбар (хэрэглэгчид илгээгдэнэ)",
                                       )
-                                    : t(
+                                      : t(
                                         "Татгалзсан шалтгаанаа бичнэ үү (хэрэглэгчид илгээгдэнэ)",
                                       )
-                                }
-                                rows={3}
-                                className="w-full px-3 py-2 rounded-2xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] text-theme placeholder:text-theme/40 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm resize-none"
-                              />
-                              <p className="text-[10px] text-theme/50 mt-1">
-                                {t("Хэрэглэгчийн апп-д шууд мэдэгдэл ирнэ")}
-                              </p>
-                            </div>
-                          )}
+                                  }
+                                  rows={3}
+                                  className="w-full px-3 py-2 rounded-2xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] text-theme placeholder:text-theme/40 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm resize-none"
+                                />
+                                <p className="text-[10px] text-theme/50 mt-1">
+                                  {t("Хэрэглэгчийн апп-д шууд мэдэгдэл ирнэ")}
+                                </p>
+                              </div>
+                            )}
                           <div className="flex gap-2">
                             <button
                               onClick={confirmStatusChange}
@@ -1263,12 +1442,34 @@ export default function SanalKhuselt() {
                             className={`flex ${isUser ? "justify-end" : "justify-start"}`}
                           >
                             <div
-                              className={`max-w-[85%] rounded-2xl px-4 py-3 ${
-                                isUser
-                                  ? "bg-blue-100 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-br-md"
-                                  : "bg-[color:var(--surface-hover)] border border-[color:var(--surface-border)] rounded-bl-md"
-                              }`}
+                              className={`max-w-[85%] rounded-2xl px-4 py-3 ${isUser
+                                ? "bg-blue-100 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-br-md"
+                                : "bg-[color:var(--surface-hover)] border border-[color:var(--surface-border)] rounded-bl-md"
+                                }`}
                             >
+                              {/* Sender label */}
+                              <div
+                                className={`flex items-center gap-1.5 mb-1.5 ${isUser ? "justify-end" : "justify-start"}`}
+                              >
+                                {isUser ? (
+                                  <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wide">
+                                    Админ
+                                  </span>
+                                ) : (
+                                  <>
+                                    {msg.orshinSuugchId &&
+                                      residentsMap[msg.orshinSuugchId] ? (
+                                      <span className="text-[10px] font-semibold text-theme/70 dark:text-theme/60 truncate max-w-[200px]">
+                                        {residentsMap[msg.orshinSuugchId].ner}
+                                      </span>
+                                    ) : (
+                                      <span className="text-[10px] font-semibold text-theme/50 uppercase tracking-wide">
+                                        Оршин суугч
+                                      </span>
+                                    )}
+                                  </>
+                                )}
+                              </div>
                               {msg.zurag &&
                                 (() => {
                                   const paths = String(msg.zurag)
