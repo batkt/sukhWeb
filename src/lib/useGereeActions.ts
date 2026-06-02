@@ -1844,6 +1844,7 @@ export function useGereeActions(
       baiguullagiinId: string,
       barilgiinId: string,
       toot: string,
+      turul?: string,
     ) => {
       if (!token) {
         openErrorOverlay("Нэвтрэх шаардлагатай");
@@ -1856,6 +1857,7 @@ export function useGereeActions(
           baiguullagiinId,
           barilgiinId,
           toot,
+          ...(turul ? { turul } : {}),
         });
         openSuccessOverlay("Тоот амжилттай хасагдлаа");
         // Refresh resident lists across the app
@@ -2001,6 +2003,7 @@ export function useGereeActions(
       baiguullagiinId: string,
       barilgiinId: string,
       toot: string,
+      turul?: string,
     ) => {
       if (!token) return;
       try {
@@ -2010,6 +2013,7 @@ export function useGereeActions(
           baiguullagiinId,
           barilgiinId,
           toot,
+          ...(turul ? { turul } : {}),
         });
         openSuccessOverlay("Тоот амжилттай хасагдлаа");
         mutate(

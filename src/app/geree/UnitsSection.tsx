@@ -1188,11 +1188,11 @@ export default function UnitsSection({
 
                                     if (isClient) {
                                       if (actions.handleRemoveClientToot) {
-                                        await actions.handleRemoveClientToot(resident._id, bId, barId, selectedUnit);
+                                        await actions.handleRemoveClientToot(resident._id, bId, barId, selectedUnit, propertyTab);
                                       }
                                     } else {
                                       if (actions.handleRemoveResidentToot) {
-                                        await actions.handleRemoveResidentToot(resident._id, bId, barId, selectedUnit);
+                                        await actions.handleRemoveResidentToot(resident._id, bId, barId, selectedUnit, propertyTab);
                                       }
                                     }
                                     setSelectedUnit(null);
@@ -1405,11 +1405,11 @@ export default function UnitsSection({
 
                         if (isClient) {
                           if (actions.handleRemoveClientToot) {
-                            await actions.handleRemoveClientToot(resident._id, bId, barId, activeUnitDetails.unit);
+                            await actions.handleRemoveClientToot(resident._id, bId, barId, activeUnitDetails.unit, propertyTab);
                           }
                         } else {
                           if (actions.handleRemoveResidentToot) {
-                            await actions.handleRemoveResidentToot(resident._id, bId, barId, activeUnitDetails.unit);
+                            await actions.handleRemoveResidentToot(resident._id, bId, barId, activeUnitDetails.unit, propertyTab);
                           }
                         }
 
