@@ -21,6 +21,7 @@ const ZassanTuukh = lazy(() => import("./ZassanTuukh"));
 const BarilgiinTokhirgoo = lazy(() => import("./BarilgiinTokhirgoo"));
 const NemeltTokhirgoo = lazy(() => import("./NemeltTokhirgoo"));
 const TuslamjTokhirgoo = lazy(() => import("./TuslamjTokhirgoo"));
+const KameriinTokhirgoo = lazy(() => import("./KameriinTokhirgoo"));
 
 // Error boundary for chunk loading errors
 class ChunkErrorBoundary extends Component<
@@ -93,7 +94,7 @@ const AdminLayout = ({
       </h1>
     </header>
 
-    <main className="flex-1 min-h-0 overflow-hidden px-4 flex flex-col">
+    <main className="flex-1 min-h-0 overflow-visible px-4 flex flex-col">
       <div className="flex-1 min-h-0 flex flex-col lg:grid lg:grid-cols-12 gap-6">
         {children}
       </div>
@@ -142,6 +143,7 @@ function Tokhirgoo() {
       { perm: "tokhirgoo.ustsanTuukh", text: "Устгасан түүх", tsonkh: UstgasanTuukh, comingSoon: false },
       { perm: "tokhirgoo.zassanTuukh", text: "Зассан түүх", tsonkh: ZassanTuukh, comingSoon: false },
       { perm: "tokhirgoo.tuslamj", text: "Ерөнхий тусламж", tsonkh: TuslamjTokhirgoo, comingSoon: false },
+      { perm: "tokhirgoo.kamer", text: "Камерийн тохиргоо", tsonkh: KameriinTokhirgoo, comingSoon: false },
       { perm: "tokhirgoo.baaz", text: "Бааз", tsonkh: Baaz, comingSoon: true },
     ];
 
@@ -182,7 +184,7 @@ function Tokhirgoo() {
   return (
     <AdminLayout title="Тохиргоо">
       {tokhirgoo.length > 0 && (
-      <div className="w-full lg:col-span-3 min-h-0 flex flex-col overflow-hidden">
+      <div className="w-full lg:col-span-3 lg:sticky lg:top-4 h-fit self-start overflow-hidden">
         <div className="bg-transparent rounded-2xl shadow-lg overflow-hidden flex-1 min-h-0 flex flex-col">
           <div className="p-5 space-y-2 bg-transparent overflow-y-auto custom-scrollbar flex-1 min-h-0">
             {tokhirgoo.map((item: any, i) => {

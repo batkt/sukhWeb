@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
 import {
@@ -19,7 +19,7 @@ import {
   Sliders
 } from "lucide-react";
 import { url as apiUrl } from "@/lib/uilchilgee";
-import R2WPlayerComponent from "@/components/R2WPlayerComponent";
+import WebRTCVideoPlayer from "@/components/WebRTCVideoPlayer";
 import { toast } from "react-hot-toast";
 
 // Interface for customizable camera configuration
@@ -369,7 +369,7 @@ export default function CameraVideoWall() {
                     password={camera.password}
                     root={camera.root}
                     barilgiinId={effectiveBarilgiinId}
-                    streamServerUrl={streamServerUrl}
+                    token={token ?? undefined}
                   />
                 </div>
               </div>
@@ -648,7 +648,7 @@ const CameraStream = React.memo(
     password,
     root = "stream",
     barilgiinId,
-    streamServerUrl = "http://127.0.0.1:8083",
+    token,
   }: {
     ip: string;
     port: number;
@@ -657,26 +657,12 @@ const CameraStream = React.memo(
     password?: string;
     root?: string;
     barilgiinId?: string;
-    streamServerUrl?: string;
+    token?: string;
   }) => {
     const [error, setError] = useState(false);
-    const [connectionState, setConnectionState] = useState<string>("");
     const [isFullscreen, setIsFullscreen] = useState(false);
     const streamContainerRef = useRef<HTMLDivElement>(null);
 
-    const handleError = useCallback((err: any) => {
-      console.error("R2WPlayer error:", err);
-      setError(true);
-    }, []);
-
-    const handleConnectionStateChange = useCallback((state: string) => {
-      setConnectionState(state);
-      if (state === "failed" || state === "disconnected") {
-        setError(true);
-      } else if (state === "connected") {
-        setError(false);
-      }
-    }, []);
 
     const toggleFullscreen = () => {
       if (!streamContainerRef.current) return;
@@ -751,11 +737,6 @@ const CameraStream = React.memo(
               </p>
 
               <div className="flex flex-col gap-2">
-                {connectionState && (
-                  <div className="px-2 py-1 rounded bg-slate-800/80 border border-white/5 text-[9px] text-slate-400 font-mono">
-                    Төлөв: {connectionState}
-                  </div>
-                )}
                 <button
                   onClick={() => setError(false)}
                   className="px-4 py-1.5 rounded-lg bg-slate-850 border border-white/10 hover:bg-slate-750 transition-colors text-[10px] font-bold uppercase tracking-wider"
@@ -787,19 +768,11 @@ const CameraStream = React.memo(
             : {}
         }
       >
-        <R2WPlayerComponent
-          Camer={ip}
-          PORT={port}
-          USER={username}
-          PASSWD={password}
-          ROOT={root}
-          serverPath={streamServerUrl}
-          onError={handleError}
-          onConnectionStateChange={handleConnectionStateChange}
-          style={{
-            width: "100%",
-            height: "100%",
-          }}
+        <WebRTCVideoPlayer
+          rtspUrl={`rtsp://${encodeURIComponent(username ?? "")}:${encodeURIComponent(password ?? "")}@${ip}:${port}/${root}`}
+          barilgiinId={barilgiinId ?? ""}
+          token={token}
+          style={{ width: "100%", height: "100%" }}
         />
 
         {/* Fullscreen Button */}
