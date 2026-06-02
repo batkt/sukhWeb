@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Table, Tooltip } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { Edit, Trash2, ChevronUp, ChevronDown, X } from "lucide-react";
+import { ConfirmCloseDialog } from "@/components/ui/ConfirmCloseDialog";
 import { getPaymentStatusLabel } from "@/lib/utils";
 import {
   getResidentToot,
@@ -57,6 +58,14 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
   onSort,
   maxHeight = "calc(100vh - 460px)",
 }) => {
+  const [pendingTootRemove, setPendingTootRemove] = useState<{
+    clientId: string;
+    baiguullagiinId: string;
+    barilgiinId: string;
+    toot: string;
+    label: string;
+  } | null>(null);
+
   const columns: ColumnsType<ClientItem> = useMemo(
     () => [
       // ... (index and ner columns omitted for brevity, keeping them as they are)
@@ -146,14 +155,13 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (window.confirm(`${t.toot} тоотыг хасах уу?`)) {
-                          onRemoveToot?.(
-                            String(record._id),
-                            t.baiguullagiinId,
-                            t.barilgiinId,
-                            t.toot,
-                          );
-                        }
+                        setPendingTootRemove({
+                          clientId: String(record._id),
+                          baiguullagiinId: t.baiguullagiinId,
+                          barilgiinId: t.barilgiinId,
+                          toot: t.toot,
+                          label: `${t.toot} (${t.turul === "Гараж" ? "Зогсоол" : "Агуулах"})`,
+                        });
                       }}
                       className="p-0.5 text-red-400 hover:text-red-500 rounded hover:bg-red-950/30 transition-colors"
                       title="Хасах"
@@ -266,10 +274,12 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
       onDelete,
       onRemoveToot,
       onSort,
+      setPendingTootRemove,
     ],
   );
 
   return (
+    <>
     <div className="w-full overflow-hidden">
       <div className="w-full overflow-x-auto hide-scrollbar">
         <Table
@@ -306,6 +316,28 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
         />
       </div>
     </div>
+
+    <ConfirmCloseDialog
+      open={!!pendingTootRemove}
+      title="Тоот хасах уу?"
+      description={`"${pendingTootRemove?.label}" тоотыг харилцагчаас хасах гэж байна.`}
+      confirmLabel="Хасах"
+      cancelLabel="Болих"
+      confirmVariant="danger"
+      onCancel={() => setPendingTootRemove(null)}
+      onConfirm={() => {
+        if (pendingTootRemove) {
+          onRemoveToot?.(
+            pendingTootRemove.clientId,
+            pendingTootRemove.baiguullagiinId,
+            pendingTootRemove.barilgiinId,
+            pendingTootRemove.toot,
+          );
+        }
+        setPendingTootRemove(null);
+      }}
+    />
+    </>
   );
 });
 

@@ -188,12 +188,10 @@ export default function KhariltsagchModal({
     )
       newErrors.push("utas");
 
-    // Validate each unit
+    // Кhariltsagch must have at least one garage or storage unit.
     const units = Array.isArray(newClient.units) ? newClient.units : [];
     if (units.length === 0) {
-      if (!newClient.orts?.trim()) newErrors.push("orts");
-      if (!newClient.davkhar?.trim()) newErrors.push("davkhar");
-      if (!newClient.toot?.trim()) newErrors.push("toot");
+      newErrors.push("no_units");
     } else {
       const uniqueUnitKeys = new Set();
       units.forEach((unit: any, index: number) => {

@@ -4,14 +4,16 @@ import React from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle } from "lucide-react";
-import Button from "@/components/ui/Button";
 
 interface ConfirmCloseDialogProps {
   open: boolean;
-  onCancel: () => void;   // Stay in modal
-  onConfirm: () => void;  // Leave / discard
+  onCancel: () => void;
+  onConfirm: () => void;
   title?: string;
   description?: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  confirmVariant?: "primary" | "danger";
 }
 
 export function ConfirmCloseDialog({
@@ -20,6 +22,9 @@ export function ConfirmCloseDialog({
   onConfirm,
   title = "Өөрчлөлт хадгалагдахгүй",
   description = "Та гарахдаа итгэлтэй байна уу? Оруулсан мэдээлэл хадгалагдахгүй.",
+  confirmLabel = "Тийм",
+  cancelLabel = "Хаах",
+  confirmVariant = "primary",
 }: ConfirmCloseDialogProps) {
   // Close on Escape
   React.useEffect(() => {
@@ -75,20 +80,23 @@ export function ConfirmCloseDialog({
 
           {/* Actions */}
           <div className="px-5 pb-5 rounded-xl flex gap-2 justify-end">
-            <Button
+            <button
+              type="button"
               onClick={onCancel}
-              variant="secondary"
-              className="px-6"
+              className="inline-flex items-center justify-center px-5 py-2 rounded-2xl text-xs font-semibold transition-all duration-300 bg-slate-200/50 hover:bg-slate-200/80 text-slate-700 dark:bg-slate-800 dark:text-gray-400 dark:hover:bg-slate-700"
             >
-              Хаах
-            </Button>
-            <Button
+              {cancelLabel}
+            </button>
+            <button
+              type="button"
               onClick={onConfirm}
-              variant="primary"
-              className="px-6 ant-btn ant-btn-primary"
+              className={`inline-flex items-center justify-center px-5 py-2 rounded-2xl text-xs font-semibold text-white shadow-sm transition-all duration-300 ${confirmVariant === "danger"
+                ? "bg-red-500 hover:bg-red-400 dark:bg-red-600 dark:hover:bg-red-500"
+                : "bg-emerald-500 hover:bg-emerald-400 dark:bg-emerald-600 dark:hover:bg-emerald-500"
+                }`}
             >
-              Тийм
-            </Button>
+              {confirmLabel}
+            </button>
           </div>
         </motion.div>
       </motion.div>

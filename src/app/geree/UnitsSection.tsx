@@ -91,9 +91,11 @@ export default function UnitsSection({
   const [quickRegister, setQuickRegister] = useState<{ unit: string; floor: string } | null>(null);
   const [activeUnitDetails, setActiveUnitDetails] = useState<{ unit: string; floor: string; resident: any } | null>(null);
   const [checkedUnits, setCheckedUnits] = useState<string[]>([]);
+  const [selectionMode, setSelectionMode] = useState(false);
 
   useEffect(() => {
     setCheckedUnits([]);
+    setSelectionMode(false);
   }, [selectedFloor, selectedOrts, propertyTab]);
   const [confirmModal, setConfirmModal] = useState<{
     show: boolean;
@@ -104,7 +106,7 @@ export default function UnitsSection({
     show: false,
     title: "",
     message: "",
-    onConfirm: async () => {},
+    onConfirm: async () => { },
   });
 
   // Keyboard shortcuts for inline modals
@@ -382,6 +384,7 @@ export default function UnitsSection({
     const tootsBilled = new Set<string>();
     const dedicatedIds: string[] = [];
     const nestedIds: string[] = [];
+    const nestedTootsMap: Record<string, string[]> = {};
 
     contracts.forEach((c) => {
       const status = String(c?.tuluv || c?.status || "Идэвхтэй").trim();
@@ -393,13 +396,13 @@ export default function UnitsSection({
       if (isCancelled) return;
 
       const cFloor = String(c?.davkhar || "").trim();
-      const cOrts  = String(c?.orts  || "").trim();
-      const cToot  = String(c?.toot  || "").trim();
+      const cOrts = String(c?.orts || "").trim();
+      const cToot = String(c?.toot || "").trim();
       const cTurul = String(c?.turul || "").trim();
 
       const matchFloor = cFloor === selectedFloor;
-      const matchOrts  = selectedOrts ? cOrts === selectedOrts : true;
-      const matchToot  = checkedUnits.includes(cToot);
+      const matchOrts = selectedOrts ? cOrts === selectedOrts : true;
+      const matchToot = checkedUnits.includes(cToot);
 
       // Check primary matching
       let matchPrimary = false;
@@ -425,7 +428,7 @@ export default function UnitsSection({
       if (resident && Array.isArray(resident.toots) && resident.toots.length > 0) {
         const hasNestedMatch = resident.toots.some((rt: any) => {
           const rtTurul = String(rt.turul || "Орон сууц").trim();
-          
+
           let matchesTab = false;
           if (propertyTab === "Зогсоол") {
             matchesTab = rtTurul === "Гараж" || rtTurul === "Зогсоол";
@@ -436,10 +439,10 @@ export default function UnitsSection({
           }
           if (!matchesTab) return false;
 
-          const rOrts  = String(rt.orts    || "").trim();
+          const rOrts = String(rt.orts || "").trim();
           const rFloor = String(rt.davkhar || "").trim();
-          const rToots = String(rt.toot    || "").split(",").map((x) => x.trim()).filter(Boolean);
-          const matchOrtsNested  = selectedOrts ? rOrts === selectedOrts : true;
+          const rToots = String(rt.toot || "").split(",").map((x) => x.trim()).filter(Boolean);
+          const matchOrtsNested = selectedOrts ? rOrts === selectedOrts : true;
           const matchFloorNested = rFloor === selectedFloor;
           const matchTootsNested = rToots.some((t) => checkedUnits.includes(t));
 
@@ -452,7 +455,20 @@ export default function UnitsSection({
 
         if (hasNestedMatch) {
           if (propertyTab === "Зогсоол" || propertyTab === "Агуулах") {
-            nestedIds.push(String(c._id));
+            const contractId = String(c._id);
+            nestedIds.push(contractId);
+            // Collect the exact nested toot numbers so handleAddGarageChargesForContracts
+            // can bill them directly (they live in resident.toots, not in c.nemeltTootnuud)
+            const nestedTurul = propertyTab === "Зогсоол" ? ["Гараж", "Зогсоол"] : ["Агуулах"];
+            const matchedToots: string[] = [];
+            resident.toots.forEach((rt: any) => {
+              if (!nestedTurul.includes(String(rt.turul || "").trim())) return;
+              const rFloor = String(rt.davkhar || "").trim();
+              if (rFloor !== selectedFloor) return;
+              String(rt.toot || "").split(",").map((x: string) => x.trim()).filter(Boolean)
+                .forEach((t: string) => { if (checkedUnits.includes(t)) matchedToots.push(t); });
+            });
+            if (matchedToots.length) nestedTootsMap[contractId] = matchedToots;
           } else {
             dedicatedIds.push(String(c._id));
           }
@@ -475,7 +491,8 @@ export default function UnitsSection({
         if (propertyTab === "Зогсоол" || propertyTab === "Агуулах") {
           await actions.handleAddGarageChargesForContracts(
             [...dedicatedIds, ...nestedIds],
-            propertyTab === "Зогсоол" ? "Зогсоол" : "Агуулах"
+            propertyTab === "Зогсоол" ? "Зогсоол" : "Агуулах",
+            nestedTootsMap
           );
         } else {
           await actions.handleSendInvoices(dedicatedIds, nestedIds, {
@@ -494,6 +511,7 @@ export default function UnitsSection({
     const tootsBilled = new Set<string>();
     const dedicatedIds: string[] = [];
     const nestedIds: string[] = [];
+    const nestedTootsMap: Record<string, string[]> = {};
 
     contracts.forEach((c) => {
       const status = String(c?.tuluv || c?.status || "Идэвхтэй").trim();
@@ -505,13 +523,13 @@ export default function UnitsSection({
       if (isCancelled) return;
 
       const cFloor = String(c?.davkhar || "").trim();
-      const cOrts  = String(c?.orts  || "").trim();
-      const cToot  = String(c?.toot  || "").trim();
+      const cOrts = String(c?.orts || "").trim();
+      const cToot = String(c?.toot || "").trim();
       const cTurul = String(c?.turul || "").trim();
 
       const matchFloor = cFloor === selectedFloor;
-      const matchOrts  = selectedOrts ? cOrts === selectedOrts : true;
-      const matchToot  = selectedFloorData.activeToots.has(cToot);
+      const matchOrts = selectedOrts ? cOrts === selectedOrts : true;
+      const matchToot = selectedFloorData.activeToots.has(cToot);
 
       // Check primary matching
       let matchPrimary = false;
@@ -537,7 +555,7 @@ export default function UnitsSection({
       if (resident && Array.isArray(resident.toots) && resident.toots.length > 0) {
         const hasNestedMatch = resident.toots.some((rt: any) => {
           const rtTurul = String(rt.turul || "Орон сууц").trim();
-          
+
           let matchesTab = false;
           if (propertyTab === "Зогсоол") {
             matchesTab = rtTurul === "Гараж" || rtTurul === "Зогсоол";
@@ -548,10 +566,10 @@ export default function UnitsSection({
           }
           if (!matchesTab) return false;
 
-          const rOrts  = String(rt.orts    || "").trim();
+          const rOrts = String(rt.orts || "").trim();
           const rFloor = String(rt.davkhar || "").trim();
-          const rToots = String(rt.toot    || "").split(",").map((x) => x.trim()).filter(Boolean);
-          const matchOrtsNested  = selectedOrts ? rOrts === selectedOrts : true;
+          const rToots = String(rt.toot || "").split(",").map((x) => x.trim()).filter(Boolean);
+          const matchOrtsNested = selectedOrts ? rOrts === selectedOrts : true;
           const matchFloorNested = rFloor === selectedFloor;
           const matchTootsNested = rToots.some((t) => selectedFloorData.activeToots.has(t));
 
@@ -564,7 +582,17 @@ export default function UnitsSection({
 
         if (hasNestedMatch) {
           if (propertyTab === "Зогсоол" || propertyTab === "Агуулах") {
-            nestedIds.push(String(c._id));
+            const contractId = String(c._id);
+            nestedIds.push(contractId);
+            const nestedTurul = propertyTab === "Зогсоол" ? ["Гараж", "Зогсоол"] : ["Агуулах"];
+            const matchedToots: string[] = [];
+            resident.toots.forEach((rt: any) => {
+              if (!nestedTurul.includes(String(rt.turul || "").trim())) return;
+              if (String(rt.davkhar || "").trim() !== selectedFloor) return;
+              String(rt.toot || "").split(",").map((x: string) => x.trim()).filter(Boolean)
+                .forEach((t: string) => { if (selectedFloorData.activeToots.has(t)) matchedToots.push(t); });
+            });
+            if (matchedToots.length) nestedTootsMap[contractId] = matchedToots;
           } else {
             dedicatedIds.push(String(c._id));
           }
@@ -587,7 +615,8 @@ export default function UnitsSection({
         if (propertyTab === "Зогсоол" || propertyTab === "Агуулах") {
           await actions.handleAddGarageChargesForContracts(
             [...dedicatedIds, ...nestedIds],
-            propertyTab === "Зогсоол" ? "Зогсоол" : "Агуулах"
+            propertyTab === "Зогсоол" ? "Зогсоол" : "Агуулах",
+            nestedTootsMap
           );
         } else {
           await actions.handleSendInvoices(dedicatedIds, nestedIds, {
@@ -614,7 +643,7 @@ export default function UnitsSection({
       if (isCancelled) return;
 
       const cTurul = String(c?.turul || "").trim();
-      const cToot  = String(c?.toot  || "").trim();
+      const cToot = String(c?.toot || "").trim();
 
       // Check primary matching
       let matchPrimary = false;
@@ -638,7 +667,7 @@ export default function UnitsSection({
       if (resident && Array.isArray(resident.toots) && resident.toots.length > 0) {
         const hasNestedMatch = resident.toots.some((rt: any) => {
           const rtTurul = String(rt.turul || "Орон сууц").trim();
-          
+
           let matchesTab = false;
           if (propertyTab === "Зогсоол") {
             matchesTab = rtTurul === "Гараж" || rtTurul === "Зогсоол";
@@ -896,40 +925,65 @@ export default function UnitsSection({
                         </span>
                       </h3>
                       {selectedFloor && selectedFloorData && selectedFloorData.filteredUnits.length > 0 && (
-                        <div className="flex items-center gap-2">
-                          {checkedUnits.length > 0 && (
-                            <Button
-                              onClick={handleSendCheckedInvoices}
-                              variant="primary"
-                              size="sm"
-                              leftIcon={<Send className="w-3.5 h-3.5" />}
-                              className="rounded-2xl transition-all duration-200 shadow-md !bg-gradient-to-r !from-orange-500 !to-amber-500 !border-none !text-white hover:scale-[1.01] font-semibold"
-                            >
-                              {propertyTab === "Зогсоол"
-                                ? `Сонгосонд илгээх (${checkedUnits.length} зогсоол)`
-                                : propertyTab === "Агуулах"
-                                  ? `Сонгосонд илгээх (${checkedUnits.length} агуулах)`
-                                  : `Сонгосонд илгээх (${checkedUnits.length} тоот)`}
-                            </Button>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {selectionMode ? (
+                            <>
+                              {checkedUnits.length > 0 && (
+                                <Button
+                                  onClick={() => { handleSendCheckedInvoices(); setSelectionMode(false); setCheckedUnits([]); }}
+                                  variant="primary"
+                                  size="sm"
+                                  leftIcon={<Send className="w-3.5 h-3.5" />}
+                                  className="rounded-2xl transition-all duration-200 shadow-md !bg-gradient-to-r !from-orange-500 !to-amber-500 !border-none !text-white hover:scale-[1.01] font-semibold"
+                                >
+                                  {propertyTab === "Зогсоол"
+                                    ? `Илгээх (${checkedUnits.length} зогсоол)`
+                                    : propertyTab === "Агуулах"
+                                      ? `Илгээх (${checkedUnits.length} агуулах)`
+                                      : `Илгээх (${checkedUnits.length} тоот)`}
+                                </Button>
+                              )}
+                              <Button
+                                onClick={() => { setSelectionMode(false); setCheckedUnits([]); }}
+                                variant="secondary"
+                                size="sm"
+                                leftIcon={<X className="w-3.5 h-3.5" />}
+                                className="rounded-2xl font-semibold"
+                              >
+                                Болих
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <Button
+                                onClick={() => setSelectionMode(true)}
+                                variant="secondary"
+                                size="sm"
+                                leftIcon={<Send className="w-3.5 h-3.5 text-slate-500" />}
+                                className="rounded-2xl transition-all duration-200 shadow-sm border border-slate-200 dark:border-slate-800 hover:border-slate-300 hover:scale-[1.01] font-semibold"
+                              >
+                                Сонголтоор илгээх
+                              </Button>
+                              <Button
+                                onClick={handleSendFloorInvoices}
+                                variant="secondary"
+                                size="sm"
+                                leftIcon={<Send className="w-3.5 h-3.5 text-slate-500" />}
+                                className="rounded-2xl transition-all duration-200 shadow-sm border border-slate-200 dark:border-slate-800 hover:border-slate-300 hover:scale-[1.01] font-semibold"
+                              >
+                                {propertyTab === "Зогсоол" ? "Давхрын зогсоолуудад илгээх" : propertyTab === "Агуулах" ? "Давхрын агуулахуудад илгээх" : "Давхрын тоотуудад илгээх"}
+                              </Button>
+                              <Button
+                                onClick={handleSendAllFloorsInvoices}
+                                variant="primary"
+                                size="sm"
+                                leftIcon={<Send className="w-3.5 h-3.5" />}
+                                className="rounded-2xl transition-all duration-200 shadow-md shadow-orange-500/10 hover:shadow-orange-500/20 hover:scale-[1.01] font-semibold"
+                              >
+                                {propertyTab === "Зогсоол" ? "Бүх давхрын зогсоолуудад илгээх" : propertyTab === "Агуулах" ? "Бүх давхрын агуулахуудад илгээх" : "Бүх давхрын тоотуудад илгээх"}
+                              </Button>
+                            </>
                           )}
-                          <Button
-                            onClick={handleSendFloorInvoices}
-                            variant="secondary"
-                            size="sm"
-                            leftIcon={<Send className="w-3.5 h-3.5 text-slate-500" />}
-                            className="rounded-2xl transition-all duration-200 shadow-sm border border-slate-200 dark:border-slate-800 hover:border-slate-300 hover:scale-[1.01] font-semibold"
-                          >
-                            {propertyTab === "Зогсоол" ? "Давхрын зогсоолуудад илгээх" : propertyTab === "Агуулах" ? "Давхрын агуулахуудад илгээх" : "Давхрын тоотуудад илгээх"}
-                          </Button>
-                          <Button
-                            onClick={handleSendAllFloorsInvoices}
-                            variant="primary"
-                            size="sm"
-                            leftIcon={<Send className="w-3.5 h-3.5" />}
-                            className="rounded-2xl transition-all duration-200 shadow-md shadow-orange-500/10 hover:shadow-orange-500/20 hover:scale-[1.01] font-semibold"
-                          >
-                            {propertyTab === "Зогсоол" ? "Бүх давхрын зогсоолуудад илгээх" : propertyTab === "Агуулах" ? "Бүх давхрын агуулахуудад илгээх" : "Бүх давхрын тоотуудад илгээх"}
-                          </Button>
                         </div>
                       )}
                     </div>
@@ -973,7 +1027,7 @@ export default function UnitsSection({
 
                               return (
                                 <div key={unitStr} className="relative flex items-center justify-center">
-                                  {isOccupied && (
+                                  {isOccupied && selectionMode && (
                                     <input
                                       type="checkbox"
                                       checked={isChecked}

@@ -1633,14 +1633,14 @@ export function useGereeActions(
           }
         }
 
-        if (skipped > 0) {
-          openWarningOverlay(
-            added > 0
-              ? `${added} төлбөр нэмэгдлээ, ${skipped} нь энэ мөчлөгт аль хэдийн бүртгэгдсэн тул алгасав`
-              : `${skipped} нь энэ мөчлөгт аль хэдийн бүртгэгдсэн тул алгасав`
-          );
+        if (added > 0 && skipped > 0) {
+          openSuccessOverlay(`${added} төлбөр амжилттай нэмэгдлээ. ${skipped} нь энэ мөчлөгт аль хэдийн бүртгэгдсэн тул алгасав.`);
+        } else if (added > 0) {
+          openSuccessOverlay(`${added} төлбөр амжилттай нэмэгдлээ.`);
+        } else if (skipped > 0) {
+          openWarningOverlay(`${skipped} нь энэ мөчлөгт аль хэдийн бүртгэгдсэн тул бүгд алгасав.`);
         } else {
-          openSuccessOverlay(`${added} төлбөр амжилттай нэмэгдлээ`);
+          openWarningOverlay(`Нэмэх тоот олдсонгүй.`);
         }
 
         // Refresh caches
@@ -2244,7 +2244,7 @@ export function useGereeActions(
   }, [setEditingClient, setNewClient, setShowClientModal]);
 
   const handleAddGarageChargesForContracts = useCallback(
-    async (contractIds: string[], chargeType: "Зогсоол" | "Агуулах") => {
+    async (contractIds: string[], chargeType: "Зогсоол" | "Агуулах", contractTootsMap?: Record<string, string[]>) => {
       if (!token || !baiguullaga?._id) {
         openErrorOverlay("Нэвтэрч орсон хэрэглэгч олдсонгүй");
         return;
@@ -2302,7 +2302,10 @@ export function useGereeActions(
           const cTurul = String(c.turul || "").trim();
           const unitToots: string[] = [];
 
-          if (isGarage && (cTurul === "Зогсоол" || cTurul === "Гараж")) {
+          if (contractTootsMap?.[id]?.length) {
+            // Caller explicitly provided the toot numbers (e.g. from resident.toots for nested units)
+            unitToots.push(...contractTootsMap[id]);
+          } else if (isGarage && (cTurul === "Зогсоол" || cTurul === "Гараж")) {
             unitToots.push(String(c.toot || ""));
           } else if (!isGarage && cTurul === "Агуулах") {
             unitToots.push(String(c.toot || ""));
@@ -2366,14 +2369,14 @@ export function useGereeActions(
           }
         }
 
-        if (skipped > 0) {
-          openWarningOverlay(
-            added > 0
-              ? `Энэ мөчлөгт аль хэдийн бүртгэгдсэн тул алгасав`
-              : `${skipped} нь энэ мөчлөгт аль хэдийн бүртгэгдсэн тул алгасав`
-          );
+        if (added > 0 && skipped > 0) {
+          openSuccessOverlay(`${added} төлбөр амжилттай нэмэгдлээ. ${skipped} нь энэ мөчлөгт аль хэдийн бүртгэгдсэн тул алгасав.`);
+        } else if (added > 0) {
+          openSuccessOverlay(`${added} төлбөр амжилттай нэмэгдлээ.`);
+        } else if (skipped > 0) {
+          openWarningOverlay(`${skipped} нь энэ мөчлөгт аль хэдийн бүртгэгдсэн тул бүгд алгасав.`);
         } else {
-          openSuccessOverlay(`${added} төлбөр амжилттай нэмэгдлээ`);
+          openWarningOverlay(`Нэмэх тоот олдсонгүй.`);
         }
 
         mutate(
