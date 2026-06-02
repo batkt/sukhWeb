@@ -142,6 +142,24 @@ export default function TusgaiZagvar({
   const mergedOptions = options && options.length > 0 ? options : childOptions;
   const selectedOption = mergedOptions.find((opt) => opt.value === value);
 
+  const trimmedValue = value.trim();
+
+  // Filter list while typing (combobox behaviour)
+  const filteredOptions =
+    allowCustomInput && trimmedValue
+      ? mergedOptions.filter(
+          (opt) =>
+            opt.label.toLowerCase().includes(trimmedValue.toLowerCase()) ||
+            opt.value.toLowerCase().includes(trimmedValue.toLowerCase())
+        )
+      : mergedOptions;
+
+  // Show typed value as the first selectable entry when it is not already an exact match
+  const typedCustomEntry =
+    allowCustomInput && trimmedValue && !mergedOptions.some((opt) => opt.value === trimmedValue)
+      ? { value: trimmedValue, label: trimmedValue }
+      : null;
+
   return (
     <div ref={ref} className={`relative ${className}`}>
       {allowCustomInput ? (
@@ -149,7 +167,17 @@ export default function TusgaiZagvar({
           <input
             type="text"
             value={value}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={(e) => {
+              onChange(e.target.value);
+              if (!disabled && !isOpen) {
+                window.dispatchEvent(
+                  new CustomEvent("tusgai-select-open", {
+                    detail: { id: instanceId.current },
+                  })
+                );
+                setIsOpen(true);
+              }
+            }}
             disabled={disabled}
             placeholder={placeholder}
             onFocus={() => {
@@ -248,7 +276,27 @@ export default function TusgaiZagvar({
               }`}
             >
               <ul className="py-2 overflow-y-auto max-h-60 custom-scrollbar">
-                {mergedOptions.map((opt) => (
+                {typedCustomEntry && (
+                  <li key="__custom__">
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={true}
+                      onClick={() => {
+                        onChange(typedCustomEntry.value);
+                        setIsOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-sm transition-all truncate font-semibold ${
+                        tone === "neutral"
+                          ? "text-blue-700 bg-blue-50 hover:bg-blue-100"
+                          : "text-blue-500 bg-blue-500/10 hover:bg-blue-500/20"
+                      }`}
+                    >
+                      {typedCustomEntry.label}
+                    </button>
+                  </li>
+                )}
+                {filteredOptions.map((opt) => (
                   <li key={opt.value}>
                     <button
                       type="button"
