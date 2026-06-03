@@ -721,6 +721,7 @@ export default function SanalKhuselt() {
         parentId: string;
         message: string;
         baiguullagiinId: string;
+        ajiltanId?: string;
         tukhainBaaziinKholbolt?: string;
         zurag?: string;
         voiceUrl?: string;
@@ -728,6 +729,7 @@ export default function SanalKhuselt() {
         parentId: rootId,
         message: replyInput.trim() || "",
         baiguullagiinId: ajiltan.baiguullagiinId,
+        ajiltanId: ajiltan._id ? String(ajiltan._id) : undefined,
       };
       if (zuragPath) body.zurag = zuragPath;
       if (voicePath) body.voiceUrl = voicePath;

@@ -129,7 +129,7 @@ export default function GolContent({ children }: GolContentProps) {
     const missingIds = receivedMedegdelList
       .map((it) => (it as any).orshinSuugchId)
       .filter((id) => id && !residentsMap[id]) as string[];
-    
+
     if (!missingIds.length) return;
 
     missingIds.forEach(async (id) => {
@@ -210,7 +210,8 @@ export default function GolContent({ children }: GolContentProps) {
         const medId = payload?.data?.medegdelId || replyId;
         const sentBy = payload?.sentBy ? String(payload.sentBy) : null;
         const myId = ajiltan?._id ? String(ajiltan._id) : null;
-        const sentByMe = sentBy && myId && sentBy === myId;
+        const sentByMe = (sentBy && myId && sentBy === myId) ||
+          (replyId && typeof window !== "undefined" && (window as any).__medegdelLastSentReplyId === replyId);
         if (!sentByMe) {
           toast("Шинэ чат мессеж ирлээ", {
             description: "Харилцаанд шинэ хариу орсон байна.",
@@ -392,9 +393,12 @@ export default function GolContent({ children }: GolContentProps) {
       ],
     },
     {
-      label: "Санал хүсэлт",
+      label: "Мэдэгдэл",
       path: "medegdel",
-      directPath: "/medegdel/sanalKhuselt",
+      submenu: [
+        { label: "Мэдэгдэл", path: "medegdel" },
+        { label: "Санал хүсэлт", path: "sanalKhuselt" },
+      ]
     },
     {
       label: "Зогсоол",
@@ -836,9 +840,12 @@ export default function GolContent({ children }: GolContentProps) {
                                     >
                                       <MessageSquare className={`w-4 h-4 mt-0.5 shrink-0 ${iconClass}`} />
                                       <div className="min-w-0 flex-1">
-                                        <div className="flex items-center gap-2 flex-wrap">
+                                        <div className="flex items-center gap-2 flex-wrap mb-1">
                                           <span className={badgeClass}>{typeLabel}</span>
-                                          <span className="truncate">{item.title || "Мэдэгдэл"}</span>
+                                          {isUnread && (
+                                            <span className="px-1.5 py-0.5 rounded text-[9px] bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-400/50">Хүлээгдэж байна</span>
+                                          )}
+                                          <span className="truncate text-[11px]">{item.title || "Мэдэгдэл"}</span>
                                         </div>
                                         {item.message && (
                                           <div className="text-xs text-[color:var(--panel-text)]/70 truncate mt-0.5">{item.message}</div>
@@ -887,7 +894,7 @@ export default function GolContent({ children }: GolContentProps) {
                                           )}
                                         </div>
                                         <span className="truncate block text-sm font-semibold mb-1 text-slate-800 dark:text-white">{item.title || "QPay төлөлт"}</span>
-                                        
+
                                         {/* Resident info box */}
                                         <div className="my-1.5 p-2 rounded-xl bg-slate-100/50 dark:bg-white/5 border border-slate-200 dark:border-slate-800 flex flex-col gap-1 text-[11px] text-theme/80">
                                           <div>
@@ -1133,9 +1140,12 @@ export default function GolContent({ children }: GolContentProps) {
                                     >
                                       <MessageSquare className={`w-4 h-4 mt-0.5 shrink-0 ${iconClass}`} />
                                       <div className="min-w-0 flex-1">
-                                        <div className="flex items-center gap-2 flex-wrap">
+                                        <div className="flex items-center gap-2 flex-wrap mb-1">
                                           <span className={badgeClass}>{typeLabel}</span>
-                                          <span className="truncate">{item.title || "Мэдэгдэл"}</span>
+                                          {isUnread && (
+                                            <span className="px-1.5 py-0.5 rounded text-[9px] bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-400/50">Хүлээгдэж байна</span>
+                                          )}
+                                          <span className="truncate text-[11px]">{item.title || "Мэдэгдэл"}</span>
                                         </div>
                                         {item.message && (
                                           <div className="text-xs text-[color:var(--panel-text)]/70 truncate mt-0.5">{item.message}</div>
@@ -1184,7 +1194,7 @@ export default function GolContent({ children }: GolContentProps) {
                                           )}
                                         </div>
                                         <span className="truncate block text-sm font-semibold mb-1 text-slate-800 dark:text-white">{item.title || "QPay төлөлт"}</span>
-                                        
+
                                         {/* Resident info box */}
                                         <div className="my-1.5 p-2 rounded-xl bg-slate-100/50 dark:bg-white/5 border border-slate-200 dark:border-slate-800 flex flex-col gap-1 text-[11px] text-theme/80">
                                           <div>
