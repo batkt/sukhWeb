@@ -1634,11 +1634,11 @@ export function useGereeActions(
         }
 
         if (added > 0 && skipped > 0) {
-          openSuccessOverlay(`${added} төлбөр амжилттай нэмэгдлээ. ${skipped} нь энэ мөчлөгт аль хэдийн бүртгэгдсэн тул алгасав.`);
+          openSuccessOverlay(`${added} төлбөр амжилттай нэмэгдлээ. ${skipped} нь энэ сард аль хэдийн бүртгэгдсэн тул алгасав.`);
         } else if (added > 0) {
           openSuccessOverlay(`${added} төлбөр амжилттай нэмэгдлээ.`);
         } else if (skipped > 0) {
-          openWarningOverlay(`${skipped} нь энэ мөчлөгт аль хэдийн бүртгэгдсэн тул бүгд алгасав.`);
+          openWarningOverlay(`${skipped} нь энэ сард аль хэдийн бүртгэгдсэн тул бүгд алгасав.`);
         } else {
           openWarningOverlay(`Нэмэх тоот олдсонгүй.`);
         }
@@ -2370,11 +2370,11 @@ export function useGereeActions(
         }
 
         if (added > 0 && skipped > 0) {
-          openSuccessOverlay(`${added} төлбөр амжилттай нэмэгдлээ. ${skipped} нь энэ мөчлөгт аль хэдийн бүртгэгдсэн тул алгасав.`);
+          openSuccessOverlay(`${added} төлбөр амжилттай нэмэгдлээ. ${skipped} нь энэ сард аль хэдийн бүртгэгдсэн тул алгасав.`);
         } else if (added > 0) {
           openSuccessOverlay(`${added} төлбөр амжилттай нэмэгдлээ.`);
         } else if (skipped > 0) {
-          openWarningOverlay(`${skipped} нь энэ мөчлөгт аль хэдийн бүртгэгдсэн тул бүгд алгасав.`);
+          openWarningOverlay(`${skipped} нь энэ сард аль хэдийн бүртгэгдсэн тул бүгд алгасав.`);
         } else {
           openWarningOverlay(`Нэмэх тоот олдсонгүй.`);
         }
