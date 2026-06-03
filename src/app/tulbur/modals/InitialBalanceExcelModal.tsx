@@ -170,7 +170,7 @@ export default function InitialBalanceExcelModal({
                 </div>
               </div>
               <p className="text-[10px] text-gray-500 dark:text-slate-400 italic">
-                * Excel файл дотор "Огноо" багана ашиглан мөр бүрт өөр огноо өгөх боломжтой.
+                * Сонгосон огноогоор эхний үлдэгдэл бүртгэгдэнэ.
               </p>
             </div>
 

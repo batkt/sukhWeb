@@ -60,6 +60,7 @@ export default function ChatWidget({ inline = false }: ChatWidgetProps): JSX.Ele
   const [operatorLoading, setOperatorLoading] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const socketRef = useRef<Socket | null>(null);
+  const prevMsgCountRef = useRef<number>(0);
 
   const t = (key: string): string => {
     const translations: Record<"mn" | "en", Record<string, string>> = {
@@ -116,13 +117,19 @@ export default function ChatWidget({ inline = false }: ChatWidgetProps): JSX.Ele
     }
   }, [inline]);
 
-  const scrollToBottom = (): void => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  useEffect(() => {
+    if (messages.length === 0) return;
+    const isNewMessage = messages.length > prevMsgCountRef.current;
+    const behavior = prevMsgCountRef.current === 0 ? "auto" : (isNewMessage ? "smooth" : "auto");
+    messagesEndRef.current?.scrollIntoView({ behavior });
+    prevMsgCountRef.current = messages.length;
+  }, [messages]);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, isOpen]);
+    if (isOpen) {
+      prevMsgCountRef.current = 0;
+    }
+  }, [isOpen]);
 
   const fetchConfig = async (): Promise<void> => {
     try {

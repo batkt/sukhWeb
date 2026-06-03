@@ -117,6 +117,13 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
         ),
         key: "garage_storage",
         width: 140,
+        sorter: true,
+        sortOrder:
+          sortKey === "garage_storage"
+            ? sortOrder === "asc"
+              ? "ascend"
+              : "descend"
+            : null,
         align: "center",
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: ClientItem) => {
@@ -220,6 +227,13 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
         ),
         key: "tuluv",
         width: 110,
+        sorter: true,
+        sortOrder:
+          sortKey === "tuluv"
+            ? sortOrder === "asc"
+              ? "ascend"
+              : "descend"
+            : null,
         align: "center",
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: any) => {

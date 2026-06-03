@@ -676,6 +676,14 @@ export function useGereeData(
       if (sortKey === "ner") {
         aVal = `${a?.ovog || ""} ${a?.ner || ""}`.trim().toLowerCase();
         bVal = `${b?.ovog || ""} ${b?.ner || ""}`.trim().toLowerCase();
+      } else if (sortKey === "tuluv") {
+        aVal = Number(a?.uldegdel ?? a?.ekhniiUldegdel ?? 0);
+        bVal = Number(b?.uldegdel ?? b?.ekhniiUldegdel ?? 0);
+      } else if (sortKey === "garage_storage") {
+        const aToots = (Array.isArray(a?.toots) ? a.toots : []).filter((t: any) => t?.turul === "Гараж" || t?.turul === "Агуулах");
+        const bToots = (Array.isArray(b?.toots) ? b.toots : []).filter((t: any) => t?.turul === "Гараж" || t?.turul === "Агуулах");
+        aVal = aToots.length > 0 ? String(aToots[0]?.toot || "").toLowerCase() : "zzz";
+        bVal = bToots.length > 0 ? String(bToots[0]?.toot || "").toLowerCase() : "zzz";
       }
       if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
       if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;

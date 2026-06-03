@@ -41,6 +41,7 @@ interface MenuItem {
   path: string;
   submenu?: SubMenuItem[];
   comingSoon?: boolean;
+  directPath?: string;
 }
 
 interface SubMenuItem {
@@ -152,12 +153,11 @@ export default function GolContent({ children }: GolContentProps) {
         mutate((k: unknown) => Array.isArray(k) && k[0] === "/medegdel/unreadCount", undefined, { revalidate: true });
       }
       if (payload?.type === "medegdelAdminReply") {
-        const win = typeof window !== "undefined" ? (window as any) : undefined;
-        const sendingReply = win?.__medegdelSendingReply === true;
         const replyId = payload?.data?._id != null ? String(payload.data._id) : null;
         const medId = payload?.data?.medegdelId || replyId;
-        const lastSentId = win?.__medegdelLastSentReplyId;
-        const sentByMe = sendingReply || (replyId && lastSentId === replyId);
+        const sentBy = payload?.sentBy ? String(payload.sentBy) : null;
+        const myId = ajiltan?._id ? String(ajiltan._id) : null;
+        const sentByMe = sentBy && myId && sentBy === myId;
         if (!sentByMe) {
           toast("Шинэ чат мессеж ирлээ", {
             description: "Харилцаанд шинэ хариу орсон байна.",
@@ -186,6 +186,18 @@ export default function GolContent({ children }: GolContentProps) {
       }
       if (payload?.type === "blogReactionUpdate") {
         mutate((k: unknown) => Array.isArray(k) && k[0] === "/blog", undefined, { revalidate: true });
+      }
+      if (payload?.type === "qpayPayment") {
+        toast("QPay төлбөр орлоо", {
+          description: `${payload.data?.toot ? payload.data.toot + ' тоот, ' : ''}${payload.data?.ner || ''} ${payload.data?.amount?.toLocaleString() || 0}₮ төллөө.`,
+          duration: 8000,
+          action: {
+            label: "Түүх харах",
+            onClick: () => {
+              router.push("/tulbur/guilgeeTuukh");
+            }
+          }
+        });
       }
     };
     socket.on(event, handler);
@@ -315,7 +327,7 @@ export default function GolContent({ children }: GolContentProps) {
     { label: "Хяналт", path: "khynalt" },
     { label: "Бүртгэл", path: "geree" },
     { label: "Төлбөр", path: "tulbur" },
-    // { label: "Камер", path: "camera" },
+    { label: "Камер", path: "camera" },
     {
       label: "Тайлан",
       path: "tailan",
@@ -327,12 +339,9 @@ export default function GolContent({ children }: GolContentProps) {
       ],
     },
     {
-      label: "Мэдэгдэл",
+      label: "Санал хүсэлт",
       path: "medegdel",
-      submenu: [
-        { label: "Мэдэгдэл", path: "medegdel" },
-        { label: "Санал хүсэлт", path: "sanalKhuselt" },
-      ],
+      directPath: "/medegdel/sanalKhuselt",
     },
     {
       label: "Зогсоол",
@@ -652,7 +661,7 @@ export default function GolContent({ children }: GolContentProps) {
                         </>
                       ) : (
                         <Link
-                          href={item.path === "geree" ? "/geree/orshinSuugch" : `/${item.path}`}
+                          href={item.directPath ?? (item.path === "geree" ? "/geree/orshinSuugch" : `/${item.path}`)}
                           onClick={() => {
                             if (item.comingSoon) return;
                             setOpenSubmenuIndex(null);
@@ -1104,7 +1113,7 @@ export default function GolContent({ children }: GolContentProps) {
                           if (hasSubmenu) {
                             setOpenSubmenuIndex(isOpen ? null : i);
                           } else {
-                            router.push(item.path === "geree" ? "/geree/orshinSuugch" : `/${item.path}`);
+                            router.push(item.directPath ?? (item.path === "geree" ? "/geree/orshinSuugch" : `/${item.path}`));
                             setMobileMenuOpen(false);
                           }
                         }}

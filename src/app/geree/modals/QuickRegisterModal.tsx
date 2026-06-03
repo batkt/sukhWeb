@@ -254,7 +254,16 @@ export default function QuickRegisterModal({
                   const utasStr = Array.isArray(person.utas)
                     ? person.utas.filter(Boolean).join(", ")
                     : person.utas || "-";
-                  const tootsCount = Array.isArray(person.toots) ? person.toots.length : 0;
+                  // Show actual apartment toot numbers so admin can distinguish residents
+                  const apartmentToots = Array.isArray(person.toots) && person.toots.length > 0
+                    ? person.toots
+                        .filter((t: any) => t.turul === "Орон сууц" || !t.turul)
+                        .map((t: any) => t.toot)
+                        .filter(Boolean)
+                    : person.toot
+                      ? [person.toot]
+                      : [];
+                  const tootLabel = apartmentToots.length > 0 ? apartmentToots.join(", ") : null;
 
                   return (
                     <button
@@ -278,10 +287,10 @@ export default function QuickRegisterModal({
                         </div>
                       </div>
 
-                      {/* Right indicator: number of connected toots */}
-                      {tootsCount > 0 && (
+                      {/* Right indicator: resident's own apartment toot number(s) */}
+                      {tootLabel && (
                         <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/30">
-                          {tootsCount} тоот
+                          {tootLabel} тоот
                         </span>
                       )}
                     </button>

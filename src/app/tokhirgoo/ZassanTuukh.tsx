@@ -235,7 +235,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
     erkh: "Эрх",
     une: "Үнэ",
     khemjee: "Хэмжээ",
-    talbai: "Талбай",
+    talbai: "Тоот",
     zoriulalt: "Зориулалт",
     barilgiinId: "Барилгын ID",
     baiguullagiinId: "Байгууллагын ID",
@@ -347,7 +347,8 @@ export default function ZassanTuukh({ token, baiguullaga }: Props) {
     () => [
       { value: "geree", label: "Гэрээ" },
       { value: "orshinSuugch", label: "Оршин суугч" },
-      { value: "talbai", label: "Талбай" },
+      { value: "talbai", label: "Тоот" },
+      { value: "khariltsagch", label: "Харилцагч" },
       { value: "nekhemjlekh", label: "Нэхэмжлэх" },
       { value: "nekhemjlekhiinTuukh", label: "Нэхэмжлэлийн түүх" },
       { value: "guilgee", label: "Гүйлгээ" },
@@ -421,7 +422,7 @@ export default function ZassanTuukh({ token, baiguullaga }: Props) {
   const normalizationAdapter = (records: any[]): EditRecord[] => {
     return records.map((r: any) => ({
       _id: r._id,
-      modelName: r.modelName || r.className || r.collection || "-",
+      modelName: r.modelName || r.classType || r.className || r.collection || "-",
       documentId: r.documentId || r.classDugaar || r.id || "-",
       ajiltniiNer: r.ajiltniiNer || r.workerName || r.ajiltan?.ner || "-",
       ajiltniiId: r.ajiltniiId,
@@ -444,7 +445,7 @@ export default function ZassanTuukh({ token, baiguullaga }: Props) {
 
   const filteredRecords = useMemo(() => {
     return allRecords.filter((r) => {
-      const matchesModel = !selectedModel || r.modelName === selectedModel;
+      const matchesModel = !selectedModel || r.modelName?.toLowerCase() === selectedModel.toLowerCase();
       const matchesEmployee =
         !selectedEmployee || 
         r.changes?.some((c: any) => c.ajiltniiId === selectedEmployee) || 
