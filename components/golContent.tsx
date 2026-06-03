@@ -62,6 +62,7 @@ export default function GolContent({ children }: GolContentProps) {
   const [mounted, setMounted] = useState<boolean>(false);
   const [showLogout, setShowLogout] = useState<boolean>(false);
   const [showSanalDropdown, setShowSanalDropdown] = useState<boolean>(false);
+  const [sanalDropdownTab, setSanalDropdownTab] = useState<"sanal" | "medegdel">("sanal");
   const [tuslamjModalOpen, setTuslamjModalOpen] = useState<boolean>(false);
   const [tuslamjTab, setTuslamjTab] = useState<"instructions" | "chat">("instructions");
   const { searchTerm, setSearchTerm } = useSearch();
@@ -97,8 +98,9 @@ export default function GolContent({ children }: GolContentProps) {
     },
     { revalidateOnFocus: false, refreshInterval: 300000 }
   );
+  // Only count sanal/gomdol for the bell badge — medegdel/tulult items are auto-marked as read
   const sanalUnreadCount = Number(sanalUnreadData?.count ?? 0) || 0;
-  const { data: sanalUnreadListData } = useSWR(
+  const { data: sanalUnreadListData, mutate: mutateSanalList } = useSWR(
     token && ajiltan?.baiguullagiinId && canSeeSanalKhuselt && showSanalDropdown
       ? ["/medegdel/unreadList", token, ajiltan.baiguullagiinId, selectedBuildingId]
       : null,
@@ -113,7 +115,58 @@ export default function GolContent({ children }: GolContentProps) {
   const isSanal = (t: string | undefined) => { const x = (t ?? "").toLowerCase().trim(); return x === "sanal" || x === "санал"; };
   const isGomdol = (t: string | undefined) => { const x = (t ?? "").toLowerCase().trim(); return x === "gomdol" || x === "гомдол"; };
   const sanalUnreadList = sanalUnreadListRaw.filter((item) => isSanal(item.turul) || isGomdol(item.turul));
+  const receivedMedegdelList = sanalUnreadListRaw.filter((item) => !isSanal(item.turul) && !isGomdol(item.turul));
+  // Bell badge only shows sanal/gomdol count, NOT medegdel/tulult
+  const bellBadgeCount = sanalUnreadList.filter((item) => item.status === "pending" && !item.kharsanEsekh).length;
   const socket = useSocket();
+
+  const [residentsMap, setResidentsMap] = useState<
+    Record<string, { ner: string; toot: string; utas: string }>
+  >({});
+
+  useEffect(() => {
+    if (!token || !receivedMedegdelList.length || !ajiltan?.baiguullagiinId) return;
+    const missingIds = receivedMedegdelList
+      .map((it) => (it as any).orshinSuugchId)
+      .filter((id) => id && !residentsMap[id]) as string[];
+    
+    if (!missingIds.length) return;
+
+    missingIds.forEach(async (id) => {
+      try {
+        const res = await uilchilgee(token).get(`/orshinSuugch/${id}`, {
+          params: { baiguullagiinId: ajiltan.baiguullagiinId }
+        });
+        if (res.data) {
+          const r = res.data;
+          const ner = `${r.ovog || ""} ${r.ner || ""}`.trim();
+          const toot = Array.isArray(r.toots) && r.toots.length > 0
+            ? r.toots.map((t: any) => t.toot || t).join(", ")
+            : r.toot || "";
+          const utas = Array.isArray(r.utas) ? r.utas[0] || "" : r.utas || "";
+          setResidentsMap(prev => ({ ...prev, [id]: { ner, toot, utas } }));
+        }
+      } catch (e) {
+        console.warn("Dropdown failed to fetch resident", id, e);
+      }
+    });
+  }, [receivedMedegdelList, token, ajiltan?.baiguullagiinId]);
+
+  // Auto mark medegdel/tulult items as read when the dropdown is open showing them
+  useEffect(() => {
+    if (!showSanalDropdown || !token || !ajiltan?.baiguullagiinId) return;
+    const unreadItems = receivedMedegdelList.filter((item) => !item.kharsanEsekh);
+    if (!unreadItems.length) return;
+    unreadItems.forEach(async (item) => {
+      try {
+        await uilchilgee(token).patch(`/medegdel/${item._id}/kharsanEsekh`);
+      } catch (e) {
+        console.warn("Failed to auto-mark medegdel as read", item._id, e);
+      }
+    });
+    // Revalidate unread count after marking
+    mutate((k: unknown) => Array.isArray(k) && k[0] === "/medegdel/unreadCount", undefined, { revalidate: true });
+  }, [showSanalDropdown, receivedMedegdelList]);
 
   useEffect(() => {
     if (!socket || !ajiltan?.baiguullagiinId || !canSeeSanalKhuselt) return;
@@ -718,77 +771,162 @@ export default function GolContent({ children }: GolContentProps) {
                     >
                       <Bell className="w-4 h-4 xl:w-5 xl:h-5 text-[color:var(--panel-text)]" />
                     </button>
-                    {sanalUnreadCount > 0 && (
+                    {bellBadgeCount > 0 && (
                       <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[20px] h-[20px] px-1.5 py-0 rounded-full bg-red-500 text-white text-[11px] leading-none shadow-sm ring-2 ring-white/90 dark:ring-slate-800/90">
-                        {sanalUnreadCount > 99 ? "99+" : sanalUnreadCount}
+                        {bellBadgeCount > 99 ? "99+" : bellBadgeCount}
                       </span>
                     )}
                   </div>
                   {showSanalDropdown && (
                     <div
-                      className="absolute right-0 mt-2 w-[400px] max-w-[calc(100vw-2rem)] max-h-[360px] overflow-y-auto overflow-x-hidden menu-surface rounded-xl transition-all duration-300 z-[9999] shadow-xl pointer-events-auto"
+                      className="absolute right-0 mt-2 w-[400px] max-w-[calc(100vw-2rem)] menu-surface rounded-xl transition-all duration-300 z-[9999] shadow-xl pointer-events-auto flex flex-col overflow-hidden"
+                      style={{ maxHeight: "400px" }}
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <div className="px-3 py-2 border-b border-[color:var(--panel-text)]/20">
-                        <span className="text-sm text-[color:var(--panel-text)]">Санал хүсэлт</span>
+                      {/* Tab header */}
+                      <div className="flex gap-1 p-2 border-b border-[color:var(--panel-text)]/20 shrink-0">
+                        <button
+                          type="button"
+                          onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); setSanalDropdownTab("sanal"); }}
+                          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-full text-xs font-semibold transition-all ${sanalDropdownTab === "sanal" ? "bg-[#059669] text-white shadow-sm" : "text-[color:var(--panel-text)]/60 hover:text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"}`}
+                        >
+                          <MessageSquare className="w-3.5 h-3.5" />
+                          Санал хүсэлт
+                          {sanalUnreadCount > 0 && <span className="ml-0.5 bg-white/30 text-inherit rounded-full px-1.5 text-[10px]">{sanalUnreadCount}</span>}
+                        </button>
+                        <button
+                          type="button"
+                          onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); setSanalDropdownTab("medegdel"); }}
+                          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-full text-xs font-semibold transition-all ${sanalDropdownTab === "medegdel" ? "bg-[#059669] text-white shadow-sm" : "text-[color:var(--panel-text)]/60 hover:text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"}`}
+                        >
+                          <Bell className="w-3.5 h-3.5" />
+                          Мэдэгдэл
+                        </button>
                       </div>
-                      <ul className="py-2">
-                        {sanalUnreadList.length === 0 ? (
-                          <li className="px-4 py-3 text-sm text-[color:var(--panel-text)]/70">Мэдэгдэл алга</li>
-                        ) : (
-                          sanalUnreadList.map((item) => {
-                            const isUnread = item.status === "pending" && !item.kharsanEsekh;
-                            const isSanalItem = isSanal(item.turul);
-                            const typeLabel = isSanalItem ? "Санал" : "Гомдол";
-                            const unreadSanal = "bg-blue-500/15 dark:bg-blue-500/25 border-l-4 border-blue-500 text-[color:var(--panel-text)] hover:bg-blue-500/20 dark:hover:bg-blue-500/30";
-                            const unreadGomdol = "bg-red-500/15 dark:bg-red-500/25 border-l-4 border-red-500 text-[color:var(--panel-text)] hover:bg-red-500/20 dark:hover:bg-red-500/30";
-                            const unreadClass = isUnread ? (isSanalItem ? unreadSanal : unreadGomdol) : "text-[color:var(--panel-text)]/80 hover:bg-[color:var(--surface-hover)]/50 border-l-4 border-transparent";
-                            const iconClass = isUnread ? (isSanalItem ? "opacity-100 text-blue-600 dark:text-blue-400" : "opacity-100 text-red-600 dark:text-red-400") : "opacity-60";
-                            const badgeSanal = "px-1.5 py-0.5 rounded text-[10px] bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-400/50";
-                            const badgeGomdol = "px-1.5 py-0.5 rounded text-[10px] bg-red-500/20 text-red-700 dark:text-red-300 border border-red-400/50";
-                            const badgeClass = isSanalItem ? badgeSanal : badgeGomdol;
-                            return (
-                              <li key={item._id}>
-                                <button
-                                  type="button"
-                                  onMouseDown={(e) => {
-                                    e.stopPropagation();
-                                    e.preventDefault();
-                                    setShowSanalDropdown(false);
-                                    router.push(`/medegdel/sanalKhuselt?id=${item._id}`);
-                                  }}
-                                  className={`w-full flex items-start gap-2 text-left px-4 py-3 text-sm rounded-lg transition-all cursor-pointer mx-2 my-0.5 ${unreadClass}`}
-                                >
-                                  <MessageSquare className={`w-4 h-4 mt-0.5 shrink-0 ${iconClass}`} />
-                                  <div className="min-w-0 flex-1">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                      <span className={badgeClass}>{typeLabel}</span>
-                                      <span className="truncate">{item.title || "Мэдэгдэл"}</span>
-                                    </div>
-                                    {item.message && (
-                                      <div className="text-xs text-[color:var(--panel-text)]/70 truncate mt-0.5">{item.message}</div>
-                                    )}
-                                    {item.createdAt && (
-                                      <div className="text-[10px] text-[color:var(--panel-text)]/50 mt-1">
-                                        {new Date(item.createdAt).toLocaleDateString("mn-MN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+
+                      {/* Tab content */}
+                      <div className="overflow-y-auto flex-1">
+                        {sanalDropdownTab === "sanal" ? (
+                          <ul className="py-2">
+                            {sanalUnreadList.length === 0 ? (
+                              <li className="px-4 py-6 text-sm text-[color:var(--panel-text)]/70 text-center">Мэдэгдэл алга</li>
+                            ) : (
+                              sanalUnreadList.map((item) => {
+                                const isUnread = item.status === "pending" && !item.kharsanEsekh;
+                                const isSanalItem = isSanal(item.turul);
+                                const typeLabel = isSanalItem ? "Санал" : "Гомдол";
+                                const unreadSanal = "bg-blue-500/15 dark:bg-blue-500/25 border-l-4 border-blue-500 text-[color:var(--panel-text)] hover:bg-blue-500/20 dark:hover:bg-blue-500/30";
+                                const unreadGomdol = "bg-red-500/15 dark:bg-red-500/25 border-l-4 border-red-500 text-[color:var(--panel-text)] hover:bg-red-500/20 dark:hover:bg-red-500/30";
+                                const unreadClass = isUnread ? (isSanalItem ? unreadSanal : unreadGomdol) : "text-[color:var(--panel-text)]/80 hover:bg-[color:var(--surface-hover)]/50 border-l-4 border-transparent";
+                                const iconClass = isUnread ? (isSanalItem ? "opacity-100 text-blue-600 dark:text-blue-400" : "opacity-100 text-red-600 dark:text-red-400") : "opacity-60";
+                                const badgeSanal = "px-1.5 py-0.5 rounded text-[10px] bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-400/50";
+                                const badgeGomdol = "px-1.5 py-0.5 rounded text-[10px] bg-red-500/20 text-red-700 dark:text-red-300 border border-red-400/50";
+                                const badgeClass = isSanalItem ? badgeSanal : badgeGomdol;
+                                return (
+                                  <li key={item._id}>
+                                    <button
+                                      type="button"
+                                      onMouseDown={(e) => {
+                                        e.stopPropagation();
+                                        e.preventDefault();
+                                        setShowSanalDropdown(false);
+                                        router.push(`/medegdel/sanalKhuselt?id=${item._id}`);
+                                      }}
+                                      className={`w-full flex items-start gap-2 text-left px-4 py-3 text-sm rounded-lg transition-all cursor-pointer my-0.5 ${unreadClass}`}
+                                    >
+                                      <MessageSquare className={`w-4 h-4 mt-0.5 shrink-0 ${iconClass}`} />
+                                      <div className="min-w-0 flex-1">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                          <span className={badgeClass}>{typeLabel}</span>
+                                          <span className="truncate">{item.title || "Мэдэгдэл"}</span>
+                                        </div>
+                                        {item.message && (
+                                          <div className="text-xs text-[color:var(--panel-text)]/70 truncate mt-0.5">{item.message}</div>
+                                        )}
+                                        {item.createdAt && (
+                                          <div className="text-[10px] text-[color:var(--panel-text)]/50 mt-1">
+                                            {new Date(item.createdAt).toLocaleDateString("mn-MN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                                          </div>
+                                        )}
                                       </div>
-                                    )}
-                                  </div>
-                                  <ChevronRight className="w-4 h-4 shrink-0 opacity-60" />
-                                </button>
-                              </li>
-                            );
-                          })
+                                      <ChevronRight className="w-4 h-4 shrink-0 opacity-60" />
+                                    </button>
+                                  </li>
+                                );
+                              })
+                            )}
+                          </ul>
+                        ) : (
+                          <ul className="py-2">
+                            {receivedMedegdelList.length === 0 ? (
+                              <li className="px-4 py-6 text-sm text-[color:var(--panel-text)]/70 text-center">Мэдэгдэл алга</li>
+                            ) : (
+                              receivedMedegdelList.map((item) => {
+                                const itemAny = item as any;
+                                const rInfo = itemAny.orshinSuugchId ? ((residentsMap[itemAny.orshinSuugchId] || {}) as any) : {};
+                                return (
+                                  <li key={item._id}>
+                                    <button
+                                      type="button"
+                                      onMouseDown={(e) => {
+                                        e.stopPropagation();
+                                        e.preventDefault();
+                                        setShowSanalDropdown(false);
+                                        router.push("/medegdel/medegdel?tab=tulult");
+                                      }}
+                                      className="w-full flex items-start gap-2 text-left px-4 py-3 text-sm rounded-lg transition-all cursor-pointer my-0.5 text-[color:var(--panel-text)]/80 hover:bg-[color:var(--surface-hover)]/50 border-l-4 border-[#059669]/40"
+                                    >
+                                      <Bell className="w-4 h-4 mt-0.5 shrink-0 opacity-60 text-[#059669]" />
+                                      <div className="min-w-0 flex-1">
+                                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                                          <span className="px-1.5 py-0.5 rounded text-[9px] bg-red-500/20 text-red-700 dark:text-red-300 border border-red-400/50">Мэдэгдэл</span>
+                                          {item.createdAt && (
+                                            <span className="text-[9px] text-[color:var(--panel-text)]/50">
+                                              {new Date(item.createdAt).toLocaleDateString("mn-MN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <span className="truncate block text-sm font-semibold mb-1 text-slate-800 dark:text-white">{item.title || "QPay төлөлт"}</span>
+                                        
+                                        {/* Resident info box */}
+                                        <div className="my-1.5 p-2 rounded-xl bg-slate-100/50 dark:bg-white/5 border border-slate-200 dark:border-slate-800 flex flex-col gap-1 text-[11px] text-theme/80">
+                                          <div>
+                                            <span className="text-[10px] text-slate-400 dark:text-slate-500">Нэр:</span>{" "}
+                                            <span className="font-semibold">{rInfo.ner || itemAny.orshinSuugchNer || "..."}</span>
+                                          </div>
+                                          <div>
+                                            <span className="text-[10px] text-slate-400 dark:text-slate-500">Тоот:</span>{" "}
+                                            <span className="font-semibold">{rInfo.toot || itemAny.gereeniiDugaar || "..."}</span>
+                                          </div>
+                                          <div>
+                                            <span className="text-[10px] text-slate-400 dark:text-slate-500">Утас:</span>{" "}
+                                            <span className="font-semibold">{rInfo.utas || itemAny.orshinSuugchUtas || "..."}</span>
+                                          </div>
+                                        </div>
+
+                                        {item.message && (
+                                          <div className="text-xs text-[color:var(--panel-text)]/70 truncate mt-0.5">{item.message}</div>
+                                        )}
+                                      </div>
+                                      <ChevronRight className="w-4 h-4 shrink-0 opacity-60" />
+                                    </button>
+                                  </li>
+                                );
+                              })
+                            )}
+                          </ul>
                         )}
-                      </ul>
-                      <div className="border-t border-[color:var(--panel-text)]/20 px-3 py-2">
+                      </div>
+
+                      {/* Footer */}
+                      <div className="border-t border-[color:var(--panel-text)]/20 px-3 py-2 shrink-0">
                         <button
                           type="button"
                           onMouseDown={(e) => {
                             e.stopPropagation();
                             e.preventDefault();
                             setShowSanalDropdown(false);
-                            router.push("/medegdel/sanalKhuselt");
+                            router.push(sanalDropdownTab === "sanal" ? "/medegdel/sanalKhuselt" : "/medegdel/medegdel?tab=tulult");
                           }}
                           className="w-full flex items-center justify-center gap-2 text-sm text-[color:var(--theme)] hover:underline"
                         >
@@ -930,77 +1068,162 @@ export default function GolContent({ children }: GolContentProps) {
                     >
                       <Bell className="w-4 h-4 text-[color:var(--panel-text)]" />
                     </button>
-                    {sanalUnreadCount > 0 && (
+                    {bellBadgeCount > 0 && (
                       <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1.5 py-0 rounded-full bg-red-500 text-white text-[10px] leading-none shadow-sm ring-2 ring-white/90 dark:ring-slate-800/90">
-                        {sanalUnreadCount > 99 ? "99+" : sanalUnreadCount}
+                        {bellBadgeCount > 99 ? "99+" : bellBadgeCount}
                       </span>
                     )}
                   </div>
                   {showSanalDropdown && (
                     <div
-                      className="absolute right-0 mt-2 w-[400px] max-w-[calc(100vw-2rem)] max-h-[360px] overflow-y-auto overflow-x-hidden menu-surface rounded-xl transition-all duration-300 z-[9999] shadow-xl pointer-events-auto"
+                      className="absolute right-0 mt-2 w-[400px] max-w-[calc(100vw-2rem)] menu-surface rounded-xl transition-all duration-300 z-[9999] shadow-xl pointer-events-auto flex flex-col overflow-hidden"
+                      style={{ maxHeight: "400px" }}
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <div className="px-3 py-2 border-b border-[color:var(--panel-text)]/20">
-                        <span className="text-sm text-[color:var(--panel-text)]">Санал хүсэлт</span>
+                      {/* Tab header */}
+                      <div className="flex gap-1 p-2 border-b border-[color:var(--panel-text)]/20 shrink-0">
+                        <button
+                          type="button"
+                          onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); setSanalDropdownTab("sanal"); }}
+                          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-full text-xs font-semibold transition-all ${sanalDropdownTab === "sanal" ? "bg-[#059669] text-white shadow-sm" : "text-[color:var(--panel-text)]/60 hover:text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"}`}
+                        >
+                          <MessageSquare className="w-3.5 h-3.5" />
+                          Санал хүсэлт
+                          {sanalUnreadCount > 0 && <span className="ml-0.5 bg-white/30 text-inherit rounded-full px-1.5 text-[10px]">{sanalUnreadCount}</span>}
+                        </button>
+                        <button
+                          type="button"
+                          onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); setSanalDropdownTab("medegdel"); }}
+                          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-full text-xs font-semibold transition-all ${sanalDropdownTab === "medegdel" ? "bg-[#059669] text-white shadow-sm" : "text-[color:var(--panel-text)]/60 hover:text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"}`}
+                        >
+                          <Bell className="w-3.5 h-3.5" />
+                          Мэдэгдэл
+                        </button>
                       </div>
-                      <ul className="py-2">
-                        {sanalUnreadList.length === 0 ? (
-                          <li className="px-4 py-3 text-sm text-[color:var(--panel-text)]/70">Мэдэгдэл алга</li>
-                        ) : (
-                          sanalUnreadList.map((item) => {
-                            const isUnread = item.status === "pending" && !item.kharsanEsekh;
-                            const isSanalItem = isSanal(item.turul);
-                            const typeLabel = isSanalItem ? "Санал" : "Гомдол";
-                            const unreadSanal = "bg-red-500/15 dark:bg-red-500/25 border-l-4 border-red-500 text-[color:var(--panel-text)] hover:bg-red-500/20 dark:hover:bg-red-500/30";
-                            const unreadGomdol = "bg-blue-500/15 dark:bg-blue-500/25 border-l-4 border-blue-500 text-[color:var(--panel-text)] hover:bg-blue-500/20 dark:hover:bg-blue-500/30";
-                            const unreadClass = isUnread ? (isSanalItem ? unreadSanal : unreadGomdol) : "text-[color:var(--panel-text)]/80 hover:bg-[color:var(--surface-hover)]/50 border-l-4 border-transparent";
-                            const iconClass = isUnread ? (isSanalItem ? "opacity-100 text-red-600 dark:text-red-400" : "opacity-100 text-blue-600 dark:text-blue-400") : "opacity-60";
-                            const badgeSanal = "px-1.5 py-0.5 rounded text-[10px] bg-red-500/20 text-red-700 dark:text-red-300 border border-red-400/50";
-                            const badgeGomdol = "px-1.5 py-0.5 rounded text-[10px] bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-400/50";
-                            const badgeClass = isSanalItem ? badgeSanal : badgeGomdol;
-                            return (
-                              <li key={item._id}>
-                                <button
-                                  type="button"
-                                  onMouseDown={(e) => {
-                                    e.stopPropagation();
-                                    e.preventDefault();
-                                    setShowSanalDropdown(false);
-                                    router.push(`/medegdel/sanalKhuselt?id=${item._id}`);
-                                  }}
-                                  className={`w-full flex items-start gap-2 text-left px-4 py-3 text-sm rounded-lg transition-all cursor-pointer mx-2 my-0.5 ${unreadClass}`}
-                                >
-                                  <MessageSquare className={`w-4 h-4 mt-0.5 shrink-0 ${iconClass}`} />
-                                  <div className="min-w-0 flex-1">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                      <span className={badgeClass}>{typeLabel}</span>
-                                      <span className="truncate">{item.title || "Мэдэгдэл"}</span>
-                                    </div>
-                                    {item.message && (
-                                      <div className="text-xs text-[color:var(--panel-text)]/70 truncate mt-0.5">{item.message}</div>
-                                    )}
-                                    {item.createdAt && (
-                                      <div className="text-[10px] text-[color:var(--panel-text)]/50 mt-1">
-                                        {new Date(item.createdAt).toLocaleDateString("mn-MN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+
+                      {/* Tab content */}
+                      <div className="overflow-y-auto flex-1">
+                        {sanalDropdownTab === "sanal" ? (
+                          <ul className="py-2">
+                            {sanalUnreadList.length === 0 ? (
+                              <li className="px-4 py-6 text-sm text-[color:var(--panel-text)]/70 text-center">Мэдэгдэл алга</li>
+                            ) : (
+                              sanalUnreadList.map((item) => {
+                                const isUnread = item.status === "pending" && !item.kharsanEsekh;
+                                const isSanalItem = isSanal(item.turul);
+                                const typeLabel = isSanalItem ? "Санал" : "Гомдол";
+                                const unreadSanal = "bg-blue-500/15 dark:bg-blue-500/25 border-l-4 border-blue-500 text-[color:var(--panel-text)] hover:bg-blue-500/20 dark:hover:bg-blue-500/30";
+                                const unreadGomdol = "bg-red-500/15 dark:bg-red-500/25 border-l-4 border-red-500 text-[color:var(--panel-text)] hover:bg-red-500/20 dark:hover:bg-red-500/30";
+                                const unreadClass = isUnread ? (isSanalItem ? unreadSanal : unreadGomdol) : "text-[color:var(--panel-text)]/80 hover:bg-[color:var(--surface-hover)]/50 border-l-4 border-transparent";
+                                const iconClass = isUnread ? (isSanalItem ? "opacity-100 text-blue-600 dark:text-blue-400" : "opacity-100 text-red-600 dark:text-red-400") : "opacity-60";
+                                const badgeSanal = "px-1.5 py-0.5 rounded text-[10px] bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-400/50";
+                                const badgeGomdol = "px-1.5 py-0.5 rounded text-[10px] bg-red-500/20 text-red-700 dark:text-red-300 border border-red-400/50";
+                                const badgeClass = isSanalItem ? badgeSanal : badgeGomdol;
+                                return (
+                                  <li key={item._id}>
+                                    <button
+                                      type="button"
+                                      onMouseDown={(e) => {
+                                        e.stopPropagation();
+                                        e.preventDefault();
+                                        setShowSanalDropdown(false);
+                                        router.push(`/medegdel/sanalKhuselt?id=${item._id}`);
+                                      }}
+                                      className={`w-full flex items-start gap-2 text-left px-4 py-3 text-sm rounded-lg transition-all cursor-pointer my-0.5 ${unreadClass}`}
+                                    >
+                                      <MessageSquare className={`w-4 h-4 mt-0.5 shrink-0 ${iconClass}`} />
+                                      <div className="min-w-0 flex-1">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                          <span className={badgeClass}>{typeLabel}</span>
+                                          <span className="truncate">{item.title || "Мэдэгдэл"}</span>
+                                        </div>
+                                        {item.message && (
+                                          <div className="text-xs text-[color:var(--panel-text)]/70 truncate mt-0.5">{item.message}</div>
+                                        )}
+                                        {item.createdAt && (
+                                          <div className="text-[10px] text-[color:var(--panel-text)]/50 mt-1">
+                                            {new Date(item.createdAt).toLocaleDateString("mn-MN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                                          </div>
+                                        )}
                                       </div>
-                                    )}
-                                  </div>
-                                  <ChevronRight className="w-4 h-4 shrink-0 opacity-60" />
-                                </button>
-                              </li>
-                            );
-                          })
+                                      <ChevronRight className="w-4 h-4 shrink-0 opacity-60" />
+                                    </button>
+                                  </li>
+                                );
+                              })
+                            )}
+                          </ul>
+                        ) : (
+                          <ul className="py-2">
+                            {receivedMedegdelList.length === 0 ? (
+                              <li className="px-4 py-6 text-sm text-[color:var(--panel-text)]/70 text-center">Мэдэгдэл алга</li>
+                            ) : (
+                              receivedMedegdelList.map((item) => {
+                                const itemAny = item as any;
+                                const rInfo = itemAny.orshinSuugchId ? ((residentsMap[itemAny.orshinSuugchId] || {}) as any) : {};
+                                return (
+                                  <li key={item._id}>
+                                    <button
+                                      type="button"
+                                      onMouseDown={(e) => {
+                                        e.stopPropagation();
+                                        e.preventDefault();
+                                        setShowSanalDropdown(false);
+                                        router.push("/medegdel/medegdel?tab=tulult");
+                                      }}
+                                      className="w-full flex items-start gap-2 text-left px-4 py-3 text-sm rounded-lg transition-all cursor-pointer my-0.5 text-[color:var(--panel-text)]/80 hover:bg-[color:var(--surface-hover)]/50 border-l-4 border-[#059669]/40"
+                                    >
+                                      <Bell className="w-4 h-4 mt-0.5 shrink-0 opacity-60 text-[#059669]" />
+                                      <div className="min-w-0 flex-1">
+                                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                                          <span className="px-1.5 py-0.5 rounded text-[9px] bg-red-500/20 text-red-700 dark:text-red-300 border border-red-400/50">Мэдэгдэл</span>
+                                          {item.createdAt && (
+                                            <span className="text-[9px] text-[color:var(--panel-text)]/50">
+                                              {new Date(item.createdAt).toLocaleDateString("mn-MN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <span className="truncate block text-sm font-semibold mb-1 text-slate-800 dark:text-white">{item.title || "QPay төлөлт"}</span>
+                                        
+                                        {/* Resident info box */}
+                                        <div className="my-1.5 p-2 rounded-xl bg-slate-100/50 dark:bg-white/5 border border-slate-200 dark:border-slate-800 flex flex-col gap-1 text-[11px] text-theme/80">
+                                          <div>
+                                            <span className="text-[10px] text-slate-400 dark:text-slate-500">Нэр:</span>{" "}
+                                            <span className="font-semibold">{rInfo.ner || itemAny.orshinSuugchNer || "..."}</span>
+                                          </div>
+                                          <div>
+                                            <span className="text-[10px] text-slate-400 dark:text-slate-500">Тоот:</span>{" "}
+                                            <span className="font-semibold">{rInfo.toot || itemAny.gereeniiDugaar || "..."}</span>
+                                          </div>
+                                          <div>
+                                            <span className="text-[10px] text-slate-400 dark:text-slate-500">Утас:</span>{" "}
+                                            <span className="font-semibold">{rInfo.utas || itemAny.orshinSuugchUtas || "..."}</span>
+                                          </div>
+                                        </div>
+
+                                        {item.message && (
+                                          <div className="text-xs text-[color:var(--panel-text)]/70 truncate mt-0.5">{item.message}</div>
+                                        )}
+                                      </div>
+                                      <ChevronRight className="w-4 h-4 shrink-0 opacity-60" />
+                                    </button>
+                                  </li>
+                                );
+                              })
+                            )}
+                          </ul>
                         )}
-                      </ul>
-                      <div className="border-t border-[color:var(--panel-text)]/20 px-3 py-2">
+                      </div>
+
+                      {/* Footer */}
+                      <div className="border-t border-[color:var(--panel-text)]/20 px-3 py-2 shrink-0">
                         <button
                           type="button"
                           onMouseDown={(e) => {
                             e.stopPropagation();
                             e.preventDefault();
                             setShowSanalDropdown(false);
-                            router.push("/medegdel/sanalKhuselt");
+                            router.push(sanalDropdownTab === "sanal" ? "/medegdel/sanalKhuselt" : "/medegdel/medegdel?tab=tulult");
                           }}
                           className="w-full flex items-center justify-center gap-2 text-sm text-[color:var(--theme)] hover:underline"
                         >

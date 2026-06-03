@@ -6,7 +6,7 @@ import { Input, Modal, notification, Card, Popconfirm } from "antd";
 import Button from "@/components/ui/Button";
 import Aos from "aos";
 import { motion, AnimatePresence } from "framer-motion";
-import { SearchIcon, Bell, Users, Mail, MessageSquare, Smartphone, FileText, Plus, ImagePlus, X } from "lucide-react";
+import { SearchIcon, Bell, Users, Mail, MessageSquare, Smartphone, FileText, Plus, ImagePlus, X, Home, Phone, User, Check, Search, CheckCheck } from "lucide-react";
 import uilchilgee, { getApiUrl } from "@/lib/uilchilgee";
 import { useAuth } from "@/lib/useAuth";
 import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
@@ -17,6 +17,7 @@ import useSWR from "swr"; // Added SWR import if not there
 import BlogManagement from "./BlogManagement";
 import { useTourSteps } from "@/lib/useTourSteps";
 import { useRegisterTourSteps } from "@/context/TourContext";
+import { useSocket } from "@/context/SocketContext";
 interface Geree {
   _id: string;
   ner: string;
@@ -67,21 +68,31 @@ function MedegdelContent() {
   const { selectedBuildingId } = useBuilding();
   const searchParams = useSearchParams();
   const router = useRouter();
-  
-  const initialTab = searchParams.get("tab") === "niitlel" ? "niitlel" : "medegdel";
-  const [activeTab, setActiveTab] = useState<"medegdel" | "niitlel">(initialTab);
+
+  const initialTab =
+    searchParams.get("tab") === "niitlel"
+      ? "niitlel"
+      : searchParams.get("tab") === "tulult"
+        ? "tulult"
+        : "medegdel";
+  const [activeTab, setActiveTab] = useState<"medegdel" | "niitlel" | "tulult">(initialTab);
 
   const tourSteps = useTourSteps(activeTab === "niitlel" ? "niitlel" : "notifications");
   useRegisterTourSteps("/medegdel/medegdel", tourSteps);
 
   useEffect(() => {
-    const tab = searchParams.get("tab") === "niitlel" ? "niitlel" : "medegdel";
+    const tab =
+      searchParams.get("tab") === "niitlel"
+        ? "niitlel"
+        : searchParams.get("tab") === "tulult"
+          ? "tulult"
+          : "medegdel";
     if (tab !== activeTab) {
       setActiveTab(tab);
     }
   }, [searchParams]);
 
-  const handleTabChange = (tab: "medegdel" | "niitlel") => {
+  const handleTabChange = (tab: "medegdel" | "niitlel" | "tulult") => {
     setActiveTab(tab);
     router.push(`/medegdel/medegdel?tab=${tab}`);
   };
@@ -116,6 +127,138 @@ function MedegdelContent() {
   const [composerTemplateImage, setComposerTemplateImage] = useState<string | null>(null);
   const attachInputRef = useRef<HTMLInputElement>(null);
   const templateImageInputRef = useRef<HTMLInputElement>(null);
+  // ── States and helper functions for Tulult (payment notifications) tab ──
+  const [tulultList, setTulultList] = useState<any[]>([]);
+  const [selectedTulult, setSelectedTulult] = useState<any | null>(null);
+  const [tulultLoading, setTulultLoading] = useState(false);
+  const [tulultSearch, setTulultSearch] = useState("");
+  const [residentsMap, setResidentsMap] = useState<
+    Record<string, { ner: string; toot: string; utas: string }>
+  >({});
+
+  const socket = useSocket();
+
+  const fetchResidentInfo = async (orshinSuugchId: string) => {
+    if (!orshinSuugchId || residentsMap[orshinSuugchId] || !token || !baiguullagiinId) return;
+    try {
+      const res = await uilchilgee(token).get(`/orshinSuugch/${orshinSuugchId}`, {
+        params: { baiguullagiinId }
+      });
+      if (res.data) {
+        const r = res.data;
+        const ner = `${r.ovog || ""} ${r.ner || ""}`.trim();
+        const toot = Array.isArray(r.toots) && r.toots.length > 0
+          ? r.toots.map((t: any) => t.toot || t).join(", ")
+          : r.toot || "";
+        const utas = Array.isArray(r.utas) ? r.utas[0] || "" : r.utas || "";
+        setResidentsMap(prev => ({ ...prev, [orshinSuugchId]: { ner, toot, utas } }));
+      }
+    } catch (e) {
+      console.warn("Failed to fetch resident", orshinSuugchId, e);
+    }
+  };
+
+  const fetchTulultData = async () => {
+    if (!token || !baiguullagiinId) return;
+    setTulultLoading(true);
+    try {
+      const res = await uilchilgee(token).get("/medegdel", {
+        params: {
+          baiguullagiinId,
+          barilgiinId: effectiveBarilgiinId,
+        }
+      });
+      if (res.data?.success) {
+        const filtered = res.data.data.filter((item: any) => {
+          const type = (item.turul || "").toLowerCase().trim();
+          return type === "medegdel" || type === "мэдэгдэл";
+        });
+        filtered.sort((a: any, b: any) => new Date(b.createdAt || b.ognoo).getTime() - new Date(a.createdAt || a.ognoo).getTime());
+        setTulultList(filtered);
+
+        if (filtered.length > 0) {
+          setSelectedTulult((prev: any) => {
+            const stillExists = prev ? filtered.find((x: any) => x._id === prev._id) : null;
+            return stillExists || filtered[0];
+          });
+        } else {
+          setSelectedTulult(null);
+        }
+
+        filtered.forEach((item: any) => {
+          if (item.orshinSuugchId) {
+            fetchResidentInfo(item.orshinSuugchId);
+          }
+        });
+      }
+    } catch (err) {
+      console.error("Failed to fetch tulult notifications:", err);
+    } finally {
+      setTulultLoading(false);
+    }
+  };
+
+  const markAsRead = async (item: any) => {
+    if (!item || !token || !baiguullagiinId) return;
+    try {
+      await uilchilgee(token).patch(
+        `/medegdel/${item._id}/kharsanEsekh`,
+        {},
+        {
+          params: { baiguullagiinId },
+        }
+      );
+
+      setTulultList((prev) =>
+        prev.map((it) => (it._id === item._id ? { ...it, kharsanEsekh: true } : it))
+      );
+      setSelectedTulult((prev: any) =>
+        prev && prev._id === item._id ? { ...prev, kharsanEsekh: true } : prev
+      );
+
+      // Revalidate count in sidebar dropdown if necessary by calling api
+      try {
+        await uilchilgee(token).get("/medegdel/unreadCount", {
+          params: {
+            baiguullagiinId,
+            ...(effectiveBarilgiinId ? { barilgiinId: effectiveBarilgiinId } : {}),
+          },
+        });
+      } catch (cErr) { }
+    } catch (err) {
+      console.warn("Failed to automatically mark as read:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "tulult" && selectedTulult && !selectedTulult.kharsanEsekh) {
+      markAsRead(selectedTulult);
+    }
+  }, [selectedTulult, activeTab]);
+
+  useEffect(() => {
+    if (activeTab === "tulult" && baiguullagiinId) {
+      fetchTulultData();
+    }
+  }, [activeTab, baiguullagiinId, effectiveBarilgiinId]);
+
+  useEffect(() => {
+    if (!socket || !baiguullagiinId) return;
+    const bId = String(baiguullagiinId);
+
+    const onNewMedegdel = (payload: any) => {
+      if (payload?.type === "medegdelNew") {
+        if (activeTab === "tulult") {
+          fetchTulultData();
+        }
+      }
+    };
+    socket.on("baiguullagiin" + bId, onNewMedegdel);
+    return () => {
+      socket.off("baiguullagiin" + bId, onNewMedegdel);
+    };
+  }, [socket, baiguullagiinId, activeTab, effectiveBarilgiinId]);
+
   const attachPreviewUrlsRef = useRef<string[]>([]);
 
   const { orshinSuugchGaralt, isValidating, setOrshinSuugchKhuudaslalt } =
@@ -278,8 +421,8 @@ function MedegdelContent() {
           attachImages.length > 0
             ? attachImages
             : templateAsFile
-            ? [templateAsFile]
-            : [];
+              ? [templateAsFile]
+              : [];
 
         if (allFiles.length > 0) {
           const formData = new FormData();
@@ -324,8 +467,8 @@ function MedegdelContent() {
         turul === "Мессеж"
           ? "Мессеж амжилттай илгээгдлээ"
           : turul === "Mail"
-          ? "Имэйл амжилттай илгээгдлээ"
-          : "Мэдэгдэл амжилттай илгээгдлээ";
+            ? "Имэйл амжилттай илгээгдлээ"
+            : "Мэдэгдэл амжилттай илгээгдлээ";
 
       openSuccessOverlay(successMessage);
 
@@ -365,10 +508,20 @@ function MedegdelContent() {
     const utasMatch = Array.isArray(mur.utas)
       ? mur.utas.some((utas) => utas?.toLowerCase().includes(query))
       : typeof mur.utas === "string"
-      ? mur.utas.toLowerCase().includes(query)
-      : false;
+        ? mur.utas.toLowerCase().includes(query)
+        : false;
 
     return nerMatch || utasMatch;
+  });
+
+  const filteredTulult = tulultList.filter((item: any) => {
+    const query = tulultSearch.toLowerCase();
+    const matchesSearch =
+      (item.title || "").toLowerCase().includes(query) ||
+      (item.message || "").toLowerCase().includes(query) ||
+      (item.orshinSuugchNer || "").toLowerCase().includes(query) ||
+      (item.orshinSuugchUtas || "").toLowerCase().includes(query);
+    return matchesSearch;
   });
 
   const channelIcons = { App: Smartphone, Мессеж: MessageSquare, Mail: Mail } as const;
@@ -395,21 +548,28 @@ function MedegdelContent() {
         <div id="medegdel-tab-switch" className="flex p-1  rounded-2xl neu-panel bg-white/5 backdrop-blur-sm self-stretch sm:self-auto">
           <button
             onClick={() => handleTabChange("medegdel")}
-            className={`flex-1  sm:flex-none px-6 py-2 rounded-xl text-sm transition-all duration-200 ${
-              activeTab === "medegdel"
-                ? "bg-theme !text-white neu-panel-2 shadow-lg"
-                : "text-slate-500 hover:text-theme"
-            }`}
+            className={`flex-1  sm:flex-none px-6 py-2 rounded-xl text-sm transition-all duration-200 ${activeTab === "medegdel"
+              ? "bg-theme !text-white neu-panel-2 shadow-lg"
+              : "text-slate-500 hover:text-theme"
+              }`}
           >
             Мэдэгдэл
           </button>
           <button
+            onClick={() => handleTabChange("tulult")}
+            className={`flex-1 sm:flex-none px-6 py-2 rounded-xl text-sm transition-all duration-200 ${activeTab === "tulult"
+              ? "bg-theme !text-white neu-panel-2 shadow-lg"
+              : "text-slate-500 hover:text-theme"
+              }`}
+          >
+            Төлөлтүүд
+          </button>
+          <button
             onClick={() => handleTabChange("niitlel")}
-            className={`flex-1 sm:flex-none px-6 py-2 rounded-xl text-sm transition-all duration-200 ${
-              activeTab === "niitlel"
-                ? "bg-theme !text-white neu-panel-2 shadow-lg"
-                : "text-slate-500 hover:text-theme"
-            }`}
+            className={`flex-1 sm:flex-none px-6 py-2 rounded-xl text-sm transition-all duration-200 ${activeTab === "niitlel"
+              ? "bg-theme !text-white neu-panel-2 shadow-lg"
+              : "text-slate-500 hover:text-theme"
+              }`}
           >
             Нийтлэл
           </button>
@@ -426,424 +586,558 @@ function MedegdelContent() {
             transition={{ duration: 0.2 }}
             className="flex flex-col lg:flex-row gap-3 sm:gap-4 lg:gap-5 flex-1 min-h-0 lg:max-h-[calc(100vh-16rem)]"
           >
-        {/* Left: Channel & Templates */}
-        <motion.section
-          initial={{ opacity: 0, x: -16 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.35 }}
-          className="neu-panel p-4 sm:p-5 flex flex-col min-w-0 lg:flex-1"
-          id="medegdel-channels-section"
-        >
-          
-          <div id="medegdel-channels" className="grid grid-cols-3 gap-1.5 sm:gap-2 mb-4 min-w-0">
-            {(["App", "Мессеж", "Mail"] as const).map((m) => {
-              const Icon = channelIcons[m];
-              return (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => setTurul(m)}
-                  className={`min-w-0 flex items-center justify-center gap-1 py-2 px-1.5 sm:px-2 rounded-xl text-[11px] sm:text-xs  transition-all duration-200 truncate ${
-                    turul === m
-                      ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm"
-                      : "hover:bg-white/10"
-                  }`}
-                >
-                  <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
-                  <span className="truncate">{m}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          <div id="medegdel-templates" className="flex items-center justify-between mt-2 mb-2">
-            <span className="text-xs  text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
-              <FileText className="w-3.5 h-3.5" />
-              Загвар
-            </span>
-            <button
-              id="medegdel-template-add-btn"
-              type="button"
-              onClick={handleOpenTemplateModal}
-              className="btn-minimal-sm btn-minimal inline-flex items-center gap-1.5 px-2 py-1 text-xs"
+            {/* Left: Channel & Templates */}
+            <motion.section
+              initial={{ opacity: 0, x: -16 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.35 }}
+              className="neu-panel p-4 sm:p-5 flex flex-col min-w-0 lg:flex-1"
+              id="medegdel-channels-section"
             >
-               
-              Нэмэх
-            </button>
-          </div>
 
-          {templates.length > 0 ? (
-            <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar">
-              {templates.map((t) => (
+              <div id="medegdel-channels" className="grid grid-cols-3 gap-1.5 sm:gap-2 mb-4 min-w-0">
+                {(["App", "Мессеж", "Mail"] as const).map((m) => {
+                  const Icon = channelIcons[m];
+                  return (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setTurul(m)}
+                      className={`min-w-0 flex items-center justify-center gap-1 py-2 px-1.5 sm:px-2 rounded-xl text-[11px] sm:text-xs  transition-all duration-200 truncate ${turul === m
+                        ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm"
+                        : "hover:bg-white/10"
+                        }`}
+                    >
+                      <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
+                      <span className="truncate">{m}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div id="medegdel-templates" className="flex items-center justify-between mt-2 mb-2">
+                <span className="text-xs  text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5" />
+                  Загвар
+                </span>
                 <button
-                  key={t.id}
+                  id="medegdel-template-add-btn"
                   type="button"
-                  onClick={() => handleApplyTemplate(t)}
-                  className="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-200 border-b border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-white/15 transition-all truncate"
+                  onClick={handleOpenTemplateModal}
+                  className="btn-minimal-sm btn-minimal inline-flex items-center gap-1.5 px-2 py-1 text-xs"
                 >
-                  {t.name}
+
+                  Нэмэх
                 </button>
-              ))}
-            </div>
-          ) : (
-            <p className="text-xs text-slate-500 dark:text-slate-400 py-4">
-              Загвар байхгүй. &quot;Нэмэх&quot; дарж нэмнэ үү.
-            </p>
-          )}
-
-          <Modal
-            title="Загвар нэмэх"
-            open={templateModalOpen}
-            onOk={handleSaveTemplate}
-            onCancel={() => setTemplateModalOpen(false)}
-            okText="Хадгалах"
-            cancelText="Хаах"
-            destroyOnHidden
-            className="[&_.ant-modal-content]:rounded-2xl"
-          >
-            <div className="flex flex-col gap-4 pt-2">
-              <div>
-                <label className="block text-sm  text-slate-700 dark:text-slate-300 mb-1">Нэр</label>
-                <Input
-                  placeholder="Загварын нэр"
-                  value={templateName}
-                  onChange={(e) => setTemplateName(e.target.value)}
-                  className="rounded-xl"
-                />
               </div>
-              <div>
-                <label className="block text-sm  text-slate-700 dark:text-slate-300 mb-1">Гарчиг</label>
-                <Input
-                  placeholder="Мэдэгдлийн гарчиг"
-                  value={templateTitle}
-                  onChange={(e) => setTemplateTitle(e.target.value)}
-                  className="rounded-xl"
-                />
-              </div>
-              <div>
-                <label className="block text-sm  text-slate-700 dark:text-slate-300 mb-1">Агуулга</label>
-                <Input.TextArea
-                  placeholder="Мэдэгдлийн агуулга"
-                  value={templateBody}
-                  onChange={(e) => setTemplateBody(e.target.value)}
-                  rows={5}
-                  className="rounded-xl"
-                />
-              </div>
-              <div>
-                <label className="block text-sm  text-slate-700 dark:text-slate-300 mb-1">Зураг (заавал биш)</label>
-                <input
-                  ref={templateImageInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) {
-                      const reader = new FileReader();
-                      reader.onload = () => setTemplateImageDataUrl(reader.result as string);
-                      reader.readAsDataURL(f);
-                    }
-                    e.target.value = "";
-                  }}
-                />
-                <div className="flex items-center gap-2 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={() => templateImageInputRef.current?.click()}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs  border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-white/10"
-                  >
-                    <ImagePlus className="w-4 h-4" />
-                    Зураг сонгох
-                  </button>
-                  {templateImageDataUrl && (
-                    <div className="relative inline-block">
-                      <img
-                        src={templateImageDataUrl}
-                        alt=""
-                        className="w-20 h-20 object-cover rounded-xl border"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setTemplateImageDataUrl(null)}
-                        className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center"
-                        aria-label="Зураг хасах"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </Modal>
-        </motion.section>
 
-        {/* Middle: Recipients */}
-        <motion.section
-          id="medegdel-contacts-section"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: 0.05 }}
-          className="neu-panel p-4 sm:p-5 flex flex-col min-w-0 lg:flex-1"
-        >
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm  flex items-center gap-2 text-slate-700 dark:text-white">
-              <Users className="w-4 h-4 text-theme" />
-              Харилцагчид
-            </h3>
-            {orshinSuugchGaralt && (
-              <span className="text-xs text-slate-500 bg-white/10 px-2 py-0.5 rounded-2xl">
-                {orshinSuugchGaralt.niitMur || 0}
-              </span>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2 mb-3 flex-wrap">
-            <label id="medegdel-select-all" className="flex items-center gap-2 cursor-pointer text-sm">
-              <input
-                type="checkbox"
-                checked={
-                  songogdsonKhariltsagch.length === filteredGeree.length &&
-                  filteredGeree.length > 0
-                }
-                onChange={handleSelectAll}
-                className="w-4 h-4 rounded"
-              />
-              <span className="text-slate-700 dark:text-slate-200">Бүгд сонгох</span>
-            </label>
-            {songogdsonKhariltsagch.length > 0 && (
-              <span className="text-xs text-theme ">
-                {songogdsonKhariltsagch.length} сонгогдсон
-              </span>
-            )}
-          </div>
-
-          <div id="medegdel-contact-search" className="relative h-9 w-full neu-panel mb-3 flex items-center">
-            <SearchIcon className="absolute left-3 w-4 h-4 text-slate-500 pointer-events-none" />
-            <input
-              aria-label="Хайх"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-full pl-9 pr-3 rounded-2xl bg-transparent border-0 text-sm text-theme placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/50"
-              placeholder="Нэр, утас хайх..."
-            />
-          </div>
-
-          <div id="medegdel-contact-list" className="flex-1 min-h-0 overflow-y-auto space-y-2 px-1 pr-1 custom-scrollbar">
-              {isValidating ? (
-                <div className="text-center py-12 text-slate-500 text-sm">
-                  Уншиж байна...
-                </div>
-              ) : filteredGeree.length === 0 ? (
-                <div className="text-center py-12 text-slate-500 text-sm">
-                  Оршин суугч олдсонгүй
+              {templates.length > 0 ? (
+                <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar">
+                  {templates.map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => handleApplyTemplate(t)}
+                      className="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-200 border-b border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-white/15 transition-all truncate"
+                    >
+                      {t.name}
+                    </button>
+                  ))}
                 </div>
               ) : (
-                filteredGeree.map((mur) => {
-                  const isActive = khariltsagch?._id === mur._id;
-                  const isChecked = songogdsonKhariltsagch.some(
-                    (k) => k._id === mur._id
-                  );
-                  return (
-                    <motion.div
-                      key={mur._id}
-                      layout
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      onClick={() => khariltsagchSongokh(mur)}
-                      className={`flex items-center gap-3 py-2 px-3 rounded-2xl cursor-pointer transition-all duration-200 border-2 ${
-                        isActive
-                          ? "bg-blue-50 dark:bg-blue-500/20 border-blue-500"
-                          : "border-transparent hover:bg-white/10"
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        readOnly
-                        className="w-4 h-4 rounded shrink-0 pointer-events-none"
-                      />
-                      <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 flex items-center justify-center text-white text-sm  shrink-0">
-                        {mur.ner?.[0] || "?"}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className=" text-sm text-slate-800 dark:text-white truncate">
-                          {mur.ner}
-                        </div>
-                        <div className="text-xs text-slate-500 truncate">
-                          {Array.isArray(mur.utas)
-                            ? mur.utas.join(", ")
-                            : mur.utas}
-                        </div>
-                      </div>
-                    </motion.div>
-                  );
-                })
+                <p className="text-xs text-slate-500 dark:text-slate-400 py-4">
+                  Загвар байхгүй. &quot;Нэмэх&quot; дарж нэмнэ үү.
+                </p>
               )}
-            </div>
-        </motion.section>
-        {/* Right: Message composer */}
-        <motion.section
-          id="medegdel-composer-section"
-          initial={{ opacity: 0, x: 16 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.35, delay: 0.1 }}
-          className="neu-panel p-4 sm:p-5 flex flex-col min-w-0 lg:flex-1"
-        >
-          <AnimatePresence mode="wait">
-            {songogdsonKhariltsagch.length > 0 ? (
-              <motion.div
-                key="composer"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.25 }}
-                className="flex flex-col gap-4 flex-1 min-h-0"
-              >
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm  text-slate-700 dark:text-slate-200">
-                    Сонгогдсон: {songogdsonKhariltsagch.length}
-                  </span>
-                  <div className="flex flex-wrap gap-1.5 max-h-16 overflow-y-auto">
-                    {songogdsonKhariltsagch.map((mur) => (
-                      <span
-                        key={mur._id}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 border border-white/20 text-xs "
-                      >
-                        <span className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-400 to-purple-400 flex items-center justify-center text-white text-[10px]">
-                          {mur.ner?.[0] || "?"}
-                        </span>
-                        {mur.ner}
-                      </span>
-                    ))}
-                  </div>
-                </div>
 
-                <div className="flex flex-col gap-3 flex-1 min-h-0">
-                  <Input
-                    id="medegdel-title-input"
-                    placeholder="Гарчиг"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    className="!rounded-xl !h-11 text-sm bg-white/20 dark:bg-white/10 border border-white/30"
-                  />
-                  <Input.TextArea
-                    id="medegdel-content-input"
-                    rows={6}
-                    placeholder="Мэдэгдлийн агуулга бичих..."
-                    value={msj}
-                    onChange={(e) => setMsj(e.target.value)}
-                    className="!rounded-xl text-sm bg-white/20 dark:bg-white/10 border border-white/30 !min-h-[100px] !resize-none"
-                  />
-                  <div className="flex items-center gap-2 flex-wrap">
+              <Modal
+                title="Загвар нэмэх"
+                open={templateModalOpen}
+                onOk={handleSaveTemplate}
+                onCancel={() => setTemplateModalOpen(false)}
+                okText="Хадгалах"
+                cancelText="Хаах"
+                destroyOnHidden
+                className="[&_.ant-modal-content]:rounded-2xl"
+              >
+                <div className="flex flex-col gap-4 pt-2">
+                  <div>
+                    <label className="block text-sm  text-slate-700 dark:text-slate-300 mb-1">Нэр</label>
+                    <Input
+                      placeholder="Загварын нэр"
+                      value={templateName}
+                      onChange={(e) => setTemplateName(e.target.value)}
+                      className="rounded-xl"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm  text-slate-700 dark:text-slate-300 mb-1">Гарчиг</label>
+                    <Input
+                      placeholder="Мэдэгдлийн гарчиг"
+                      value={templateTitle}
+                      onChange={(e) => setTemplateTitle(e.target.value)}
+                      className="rounded-xl"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm  text-slate-700 dark:text-slate-300 mb-1">Агуулга</label>
+                    <Input.TextArea
+                      placeholder="Мэдэгдлийн агуулга"
+                      value={templateBody}
+                      onChange={(e) => setTemplateBody(e.target.value)}
+                      rows={5}
+                      className="rounded-xl"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm  text-slate-700 dark:text-slate-300 mb-1">Зураг (заавал биш)</label>
                     <input
-                      ref={attachInputRef}
+                      ref={templateImageInputRef}
                       type="file"
                       accept="image/*"
-                      multiple
                       className="hidden"
                       onChange={(e) => {
-                        const files = e.target.files;
-                        if (files?.length) {
-                          setComposerTemplateImage(null);
-                          const prev = attachImages.length;
-                          const maxAdd = Math.max(0, 10 - prev);
-                          const newFiles = Array.from(files).slice(0, maxAdd);
-                          if (newFiles.length === 0 && files.length > 0) {
-                            notification.warning({ message: "Дээд тал нь 10 зураг нэмнэ", style: { zIndex: 99999 } });
-                            e.target.value = "";
-                            return;
-                          }
-                          const newUrls = newFiles.map((f) => URL.createObjectURL(f));
-                          attachPreviewUrlsRef.current.push(...newUrls);
-                          setAttachImages((p) => [...p, ...newFiles]);
+                        const f = e.target.files?.[0];
+                        if (f) {
+                          const reader = new FileReader();
+                          reader.onload = () => setTemplateImageDataUrl(reader.result as string);
+                          reader.readAsDataURL(f);
                         }
                         e.target.value = "";
                       }}
                     />
-                    <button
-                      id="medegdel-image-btn"
-                      type="button"
-                      onClick={() => attachInputRef.current?.click()}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs  bg-white/20 dark:bg-white/10 border border-white/30 hover:bg-white/30 transition-colors"
-                    >
-                      <ImagePlus className="w-4 h-4" />
-                      Зураг нэмэх
-                    </button>
-                    {composerTemplateImage && (
-                      <div className="relative inline-block">
-                        <img
-                          src={composerTemplateImage}
-                          alt=""
-                          className="w-16 h-16 object-cover rounded-xl border border-white/30"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setComposerTemplateImage(null)}
-                          className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow hover:bg-red-600"
-                          aria-label="Зураг хасах"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    )}
-                    {attachImages.map((file, idx) => (
-                      <div key={`img-${idx}-${file.size}`} className="relative inline-block">
-                        <img
-                          src={attachPreviewUrlsRef.current[idx] ?? ""}
-                          alt=""
-                          className="w-16 h-16 object-cover rounded-xl border border-white/30"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const url = attachPreviewUrlsRef.current[idx];
-                            if (url) URL.revokeObjectURL(url);
-                            attachPreviewUrlsRef.current = attachPreviewUrlsRef.current.filter((_, i) => i !== idx);
-                            setAttachImages((prev) => prev.filter((_, i) => i !== idx));
-                          }}
-                          className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow hover:bg-red-600"
-                          aria-label="Зураг хасах"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    ))}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => templateImageInputRef.current?.click()}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs  border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-white/10"
+                      >
+                        <ImagePlus className="w-4 h-4" />
+                        Зураг сонгох
+                      </button>
+                      {templateImageDataUrl && (
+                        <div className="relative inline-block">
+                          <img
+                            src={templateImageDataUrl}
+                            alt=""
+                            className="w-20 h-20 object-cover rounded-xl border"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setTemplateImageDataUrl(null)}
+                            className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center"
+                            aria-label="Зураг хасах"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <Button
-                    id="medegdel-new-btn"
-                    type="primary"
-                    onClick={send}
-                    loading={loading}
-                    disabled={!title || (!msj && attachImages.length === 0 && !composerTemplateImage)}
-                    className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 !text-white  border-0 shadow-lg hover:shadow-xl hover:opacity-95 transition-all"
-                  >
-                    Илгээх
-                  </Button>
                 </div>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="empty"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex-1 flex flex-col items-center justify-center text-center py-12 px-4"
-              >
-                <div className="w-16 h-16 rounded-2xl neu-panel flex items-center justify-center mb-4">
-                  <MessageSquare className="w-8 h-8 text-slate-400" />
-                </div>
-                <h3 className="text-sm  text-slate-600 dark:text-slate-300 mb-1">
-                  Харилцагч сонгоно уу
+              </Modal>
+            </motion.section>
+
+            {/* Middle: Recipients */}
+            <motion.section
+              id="medegdel-contacts-section"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: 0.05 }}
+              className="neu-panel p-4 sm:p-5 flex flex-col min-w-0 lg:flex-1"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm  flex items-center gap-2 text-slate-700 dark:text-white">
+                  <Users className="w-4 h-4 text-theme" />
+                  Харилцагчид
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-[240px]">
-                  Зүүн талын жагсаалтаас мэдэгдэл илгээх хүмүүсийг сонгоод бичлэгээ үргэлжлүүлнэ үү.
-                </p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.section>
+                {orshinSuugchGaralt && (
+                  <span className="text-xs text-slate-500 bg-white/10 px-2 py-0.5 rounded-2xl">
+                    {orshinSuugchGaralt.niitMur || 0}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 mb-3 flex-wrap">
+                <label id="medegdel-select-all" className="flex items-center gap-2 cursor-pointer text-sm">
+                  <input
+                    type="checkbox"
+                    checked={
+                      songogdsonKhariltsagch.length === filteredGeree.length &&
+                      filteredGeree.length > 0
+                    }
+                    onChange={handleSelectAll}
+                    className="w-4 h-4 rounded"
+                  />
+                  <span className="text-slate-700 dark:text-slate-200">Бүгд сонгох</span>
+                </label>
+                {songogdsonKhariltsagch.length > 0 && (
+                  <span className="text-xs text-theme ">
+                    {songogdsonKhariltsagch.length} сонгогдсон
+                  </span>
+                )}
+              </div>
+
+              <div id="medegdel-contact-search" className="relative h-9 w-full neu-panel mb-3 flex items-center">
+                <SearchIcon className="absolute left-3 w-4 h-4 text-slate-500 pointer-events-none" />
+                <input
+                  aria-label="Хайх"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full h-full pl-9 pr-3 rounded-2xl bg-transparent border-0 text-sm text-theme placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/50"
+                  placeholder="Нэр, утас хайх..."
+                />
+              </div>
+
+              <div id="medegdel-contact-list" className="flex-1 min-h-0 overflow-y-auto space-y-2 px-1 pr-1 custom-scrollbar">
+                {isValidating ? (
+                  <div className="text-center py-12 text-slate-500 text-sm">
+                    Уншиж байна...
+                  </div>
+                ) : filteredGeree.length === 0 ? (
+                  <div className="text-center py-12 text-slate-500 text-sm">
+                    Оршин суугч олдсонгүй
+                  </div>
+                ) : (
+                  filteredGeree.map((mur) => {
+                    const isActive = khariltsagch?._id === mur._id;
+                    const isChecked = songogdsonKhariltsagch.some(
+                      (k) => k._id === mur._id
+                    );
+                    return (
+                      <motion.div
+                        key={mur._id}
+                        layout
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        onClick={() => khariltsagchSongokh(mur)}
+                        className={`flex items-center gap-3 py-2 px-3 rounded-2xl cursor-pointer transition-all duration-200 border-2 ${isActive
+                          ? "bg-blue-50 dark:bg-blue-500/20 border-blue-500"
+                          : "border-transparent hover:bg-white/10"
+                          }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          readOnly
+                          className="w-4 h-4 rounded shrink-0 pointer-events-none"
+                        />
+                        <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 flex items-center justify-center text-white text-sm  shrink-0">
+                          {mur.ner?.[0] || "?"}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className=" text-sm text-slate-800 dark:text-white truncate">
+                            {mur.ner}
+                          </div>
+                          <div className="text-xs text-slate-500 truncate">
+                            {Array.isArray(mur.utas)
+                              ? mur.utas.join(", ")
+                              : mur.utas}
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })
+                )}
+              </div>
+            </motion.section>
+            {/* Right: Message composer */}
+            <motion.section
+              id="medegdel-composer-section"
+              initial={{ opacity: 0, x: 16 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.35, delay: 0.1 }}
+              className="neu-panel p-4 sm:p-5 flex flex-col min-w-0 lg:flex-1"
+            >
+              <AnimatePresence mode="wait">
+                {songogdsonKhariltsagch.length > 0 ? (
+                  <motion.div
+                    key="composer"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.25 }}
+                    className="flex flex-col gap-4 flex-1 min-h-0"
+                  >
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm  text-slate-700 dark:text-slate-200">
+                        Сонгогдсон: {songogdsonKhariltsagch.length}
+                      </span>
+                      <div className="flex flex-wrap gap-1.5 max-h-16 overflow-y-auto">
+                        {songogdsonKhariltsagch.map((mur) => (
+                          <span
+                            key={mur._id}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 border border-white/20 text-xs "
+                          >
+                            <span className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-400 to-purple-400 flex items-center justify-center text-white text-[10px]">
+                              {mur.ner?.[0] || "?"}
+                            </span>
+                            {mur.ner}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-3 flex-1 min-h-0">
+                      <Input
+                        id="medegdel-title-input"
+                        placeholder="Гарчиг"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        className="!rounded-xl !h-11 text-sm bg-white/20 dark:bg-white/10 border border-white/30"
+                      />
+                      <Input.TextArea
+                        id="medegdel-content-input"
+                        rows={6}
+                        placeholder="Мэдэгдлийн агуулга бичих..."
+                        value={msj}
+                        onChange={(e) => setMsj(e.target.value)}
+                        className="!rounded-xl text-sm bg-white/20 dark:bg-white/10 border border-white/30 !min-h-[100px] !resize-none"
+                      />
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <input
+                          ref={attachInputRef}
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          className="hidden"
+                          onChange={(e) => {
+                            const files = e.target.files;
+                            if (files?.length) {
+                              setComposerTemplateImage(null);
+                              const prev = attachImages.length;
+                              const maxAdd = Math.max(0, 10 - prev);
+                              const newFiles = Array.from(files).slice(0, maxAdd);
+                              if (newFiles.length === 0 && files.length > 0) {
+                                notification.warning({ message: "Дээд тал нь 10 зураг нэмнэ", style: { zIndex: 99999 } });
+                                e.target.value = "";
+                                return;
+                              }
+                              const newUrls = newFiles.map((f) => URL.createObjectURL(f));
+                              attachPreviewUrlsRef.current.push(...newUrls);
+                              setAttachImages((p) => [...p, ...newFiles]);
+                            }
+                            e.target.value = "";
+                          }}
+                        />
+                        <button
+                          id="medegdel-image-btn"
+                          type="button"
+                          onClick={() => attachInputRef.current?.click()}
+                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs  bg-white/20 dark:bg-white/10 border border-white/30 hover:bg-white/30 transition-colors"
+                        >
+                          <ImagePlus className="w-4 h-4" />
+                          Зураг нэмэх
+                        </button>
+                        {composerTemplateImage && (
+                          <div className="relative inline-block">
+                            <img
+                              src={composerTemplateImage}
+                              alt=""
+                              className="w-16 h-16 object-cover rounded-xl border border-white/30"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setComposerTemplateImage(null)}
+                              className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow hover:bg-red-600"
+                              aria-label="Зураг хасах"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+                        {attachImages.map((file, idx) => (
+                          <div key={`img-${idx}-${file.size}`} className="relative inline-block">
+                            <img
+                              src={attachPreviewUrlsRef.current[idx] ?? ""}
+                              alt=""
+                              className="w-16 h-16 object-cover rounded-xl border border-white/30"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const url = attachPreviewUrlsRef.current[idx];
+                                if (url) URL.revokeObjectURL(url);
+                                attachPreviewUrlsRef.current = attachPreviewUrlsRef.current.filter((_, i) => i !== idx);
+                                setAttachImages((prev) => prev.filter((_, i) => i !== idx));
+                              }}
+                              className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow hover:bg-red-600"
+                              aria-label="Зураг хасах"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                      <Button
+                        id="medegdel-new-btn"
+                        type="primary"
+                        onClick={send}
+                        loading={loading}
+                        disabled={!title || (!msj && attachImages.length === 0 && !composerTemplateImage)}
+                        className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 !text-white  border-0 shadow-lg hover:shadow-xl hover:opacity-95 transition-all"
+                      >
+                        Илгээх
+                      </Button>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="empty"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex-1 flex flex-col items-center justify-center text-center py-12 px-4"
+                  >
+                    <div className="w-16 h-16 rounded-2xl neu-panel flex items-center justify-center mb-4">
+                      <MessageSquare className="w-8 h-8 text-slate-400" />
+                    </div>
+                    <h3 className="text-sm  text-slate-600 dark:text-slate-300 mb-1">
+                      Харилцагч сонгоно уу
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 max-w-[240px]">
+                      Зүүн талын жагсаалтаас мэдэгдэл илгээх хүмүүсийг сонгоод бичлэгээ үргэлжлүүлнэ үү.
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.section>
+          </motion.div>
+        ) : activeTab === "tulult" ? (
+          <motion.div
+            key="tulult-tab"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.2 }}
+            className="flex flex-col lg:flex-row gap-3 sm:gap-4 lg:gap-5 flex-1 min-h-0 lg:max-h-[calc(100vh-16rem)]"
+          >
+            {/* Left side: List of notifications */}
+            <div className="neu-panel p-4 sm:p-5 flex flex-col min-w-0 lg:w-[420px] shrink-0">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold flex items-center gap-2 text-slate-700 dark:text-white">
+                  <Bell className="w-4 h-4 text-emerald-500" />
+                  Төлөлтийн мэдэгдлүүд
+                </h3>
+                <span className="text-xs bg-slate-100 dark:bg-white/10 px-2 py-0.5 rounded-2xl text-slate-600 dark:text-slate-300">
+                  {filteredTulult.length}
+                </span>
+              </div>
+
+              {/* Search input */}
+              <div className="relative h-9 w-full neu-panel mb-4 flex items-center">
+                <Search className="absolute left-3 w-4 h-4 text-slate-500 pointer-events-none" />
+                <input
+                  aria-label="Хайх"
+                  value={tulultSearch}
+                  onChange={(e) => setTulultSearch(e.target.value)}
+                  className="w-full h-full pl-9 pr-3 rounded-2xl bg-transparent border-0 text-sm text-theme placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/50"
+                  placeholder="Нэр, тоот, утас хайх..."
+                />
+              </div>
+
+              {/* List */}
+              <div className="flex-1 min-h-0 overflow-y-auto space-y-2.5 pr-1 custom-scrollbar">
+                {tulultLoading ? (
+                  <div className="text-center py-12 text-slate-500 text-sm">Уншиж байна...</div>
+                ) : filteredTulult.length === 0 ? (
+                  <div className="text-center py-12 text-slate-500 text-sm">Төлөлтийн мэдэгдэл олдсонгүй</div>
+                ) : (
+                  filteredTulult.map((item: any) => {
+                    const isSelected = selectedTulult?._id === item._id;
+                    const isUnread = !item.kharsanEsekh;
+                    return (
+                      <div
+                        key={item._id}
+                        onClick={() => setSelectedTulult(item)}
+                        className={`p-3.5 rounded-2xl cursor-pointer transition-all duration-200 border-2 flex flex-col gap-2 relative ${isSelected
+                          ? "bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-500 shadow-sm"
+                          : "border-transparent bg-white/5 hover:bg-white/10"
+                          }`}
+                      >
+
+                        <div className="flex items-center gap-2">
+
+                          <span className="text-[10px] text-slate-500">
+                            {new Date(item.createdAt || item.ognoo).toLocaleDateString("mn-MN", {
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit"
+                            })}
+                          </span>
+                        </div>
+                        <h4 className="text-sm font-semibold text-slate-800 dark:text-white line-clamp-1">
+                          {item.title || "QPay төлөлт"}
+                        </h4>
+                        <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
+                          {item.message}
+                        </p>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            {/* Right side: Detail view */}
+            <div className="neu-panel p-4 sm:p-5 flex flex-col min-w-0 flex-1 relative">
+              {selectedTulult ? (
+                <div className="flex flex-col gap-4 flex-1 min-h-0">
+                  <div className="flex items-center justify-between border-b border-slate-300 dark:border-slate-600 pb-3">
+                    <div>
+                      <h2 className="text-base font-bold text-slate-800 dark:text-white">
+                        {selectedTulult.title || "QPay төлөлт"}
+                      </h2>
+                      <span className="text-xs text-slate-500">
+                        {new Date(selectedTulult.createdAt || selectedTulult.ognoo).toLocaleString("mn-MN")}
+                      </span>
+                    </div>
+
+                  </div>
+
+                  {/* Resident Info Box */}
+                  <div className="p-4 rounded-2xl bg-emerald-50/20 dark:bg-emerald-950/5 border border-emerald-500/10 flex flex-col gap-3">
+                    <div className="flex items-center gap-2">
+                      <User className="w-4 h-4 text-emerald-500 shrink-0" />
+                      <span className="text-xs text-slate-500 shrink-0">Нэр:</span>
+                      <span className="text-xs font-semibold text-slate-800 dark:text-white truncate">
+                        {residentsMap[selectedTulult.orshinSuugchId]?.ner || selectedTulult.orshinSuugchNer || "..."}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Home className="w-4 h-4 text-emerald-500 shrink-0" />
+                      <span className="text-xs text-slate-500 shrink-0">Тоот:</span>
+                      <span className="text-xs font-semibold text-slate-800 dark:text-white">
+                        {residentsMap[selectedTulult.orshinSuugchId]?.toot || selectedTulult.gereeniiDugaar || "..."}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-emerald-500 shrink-0" />
+                      <span className="text-xs text-slate-500 shrink-0">Утас:</span>
+                      <span className="text-xs font-semibold text-slate-800 dark:text-white">
+                        {residentsMap[selectedTulult.orshinSuugchId]?.utas || selectedTulult.orshinSuugchUtas || "..."}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Message body */}
+                  <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-white/5 rounded-2xl p-4 border border-slate-300 dark:border-slate-600 text-sm text-slate-700 dark:text-slate-200 leading-relaxed whitespace-pre-wrap">
+                    {selectedTulult.message}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center text-center py-12 px-4">
+                  <div className="w-16 h-16 rounded-2xl neu-panel flex items-center justify-center mb-4">
+                    <Bell className="w-8 h-8 text-slate-400" />
+                  </div>
+                  <h3 className="text-sm text-slate-600 dark:text-slate-300 mb-1">Мэдэгдэл сонгоно уу</h3>
+                  <p className="text-xs text-slate-500 max-w-[240px]">
+                    Зүүн талын жагсаалтаас дэлгэрэнгүй харах мэдэгдэлийг сонгоно уу.
+                  </p>
+                </div>
+              )}
+            </div>
           </motion.div>
         ) : (
           <motion.div

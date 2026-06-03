@@ -326,7 +326,7 @@ export default function SanalKhuselt() {
       });
 
       if (response.data.success) {
-        // Filter for only "sanal" and "gomdol" types (checking both Latin's and Cyrillic)
+        // Filter for "sanal" and "gomdol" types (checking both Latin's and Cyrillic)
         const filteredData = response.data.data.filter((item: MedegdelItem) => {
           const turul = item.turul?.toLowerCase() || "";
           return (

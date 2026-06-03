@@ -309,7 +309,7 @@ export function useGereeActions(
               ? resp.data
               : [];
 
-          // Find the latest invoice for this resident
+          // Find the latest invoice for this resident's primary unit
           const residentInvoices = list.filter((item: any) => {
             const pNer = String(p.ner || "")
               .trim()
@@ -325,10 +325,11 @@ export function useGereeActions(
               .toLowerCase();
 
             return (
-              (iNer === pNer && iOvog === pOvog) ||
-              (item.register &&
-                p.register &&
-                String(item.register).trim() === String(p.register).trim())
+              ((iNer === pNer && iOvog === pOvog) ||
+                (item.register &&
+                  p.register &&
+                  String(item.register).trim() === String(p.register).trim())) &&
+              String(item.toot || "").trim() === String(p.toot || "").trim()
             );
           });
 
@@ -410,7 +411,7 @@ export function useGereeActions(
                 ekhniiUldegdel:
                   t.ekhniiUldegdel !== undefined && t.ekhniiUldegdel !== 0
                     ? t.ekhniiUldegdel
-                    : ekhniiUldegdel || 0,
+                    : (String(t.toot || "").trim() === String(p.toot || "").trim() ? ekhniiUldegdel || 0 : 0),
                 tsahilgaaniiZaalt: t.tsahilgaaniiZaalt ?? 0,
                 khonogoorBodokhEsekh: t.khonogoorBodokhEsekh || false,
                 bodokhKhonog: t.bodokhKhonog || 0,
