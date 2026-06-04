@@ -63,6 +63,7 @@ export default function DansniiKhuulga() {
   const [uldegdel, setUldegdel] = useState<number | null>(null);
   const [isLoadingUldegdel, setIsLoadingUldegdel] = useState(false);
 
+  const [activeStatFilter, setActiveStatFilter] = useState<number | null>(null);
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(100);
   const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<DateRangeValue>(() => {
@@ -512,11 +513,27 @@ export default function DansniiKhuulga() {
     ];
   }, [filteredData]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredData.length / rowsPerPage));
+  const statFiltered = useMemo(() => {
+    if (activeStatFilter === null || activeStatFilter === 0) return filteredData;
+    if (activeStatFilter === 1) return filteredData.filter((f) => (f.contractIds?.length || 0) === 0);
+    if (activeStatFilter === 2) return filteredData.filter((f) => (f.contractIds?.length || 0) > 0);
+    if (activeStatFilter === 3) {
+      const seen = new Set<string>();
+      return filteredData.filter((f) => {
+        const acc = String(f.account || "");
+        if (!acc || seen.has(acc)) return false;
+        seen.add(acc);
+        return true;
+      });
+    }
+    return filteredData;
+  }, [filteredData, activeStatFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(statFiltered.length / rowsPerPage));
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
   }, [page, totalPages]);
-  const paginated = filteredData.slice(
+  const paginated = statFiltered.slice(
     (page - 1) * rowsPerPage,
     page * rowsPerPage,
   );
@@ -548,17 +565,20 @@ export default function DansniiKhuulga() {
             {stats.map((stat, idx) => (
               <div
                 key={idx}
-                className="relative group rounded-[32px] neu-panel p-6 shadow-sm hover:shadow-md transition-all"
+                onClick={() => { setActiveStatFilter(activeStatFilter === idx ? null : idx); setPage(1); }}
+                className={`relative group rounded-2xl neu-panel transition-all cursor-pointer select-none ${
+                  activeStatFilter === idx
+                    ? "ring-2 ring-blue-500 shadow-lg"
+                    : "hover:bg-[color:var(--surface-hover)] hover:scale-105"
+                }`}
               >
-                <div
-                  className={`text-3xl mb-1 text-theme ${stat.title === "Нийт" || stat.title === "Нийт дүн" ? "force-bold" : ""}`}
-                >
-                  {stat.value}
-                </div>
-                <div
-                  className={`text-[10px] uppercase tracking-widest text-theme opacity-60 ${stat.title === "Нийт" || stat.title === "Нийт дүн" ? "force-bold" : ""}`}
-                >
-                  {stat.title}
+                <div className="relative rounded-2xl p-5 overflow-hidden">
+                  <div className="text-3xl mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme">
+                    {stat.value}
+                  </div>
+                  <div className="text-[13px] text-theme leading-tight">
+                    {stat.title}
+                  </div>
                 </div>
               </div>
             ))}
