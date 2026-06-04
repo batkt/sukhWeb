@@ -663,7 +663,7 @@ export default function ZogsoolTailanPage() {
           <h3 className="p-4 text-theme border-b">
             Зочдын дэлгэрэнгүй тайлан
             {selectedResident && (
-              <span className="ml-2 text-sm font-normal text-theme/70">
+              <span className="ml-2 text-sm font-normal text-theme">
                 — Нэр: {selectedResident.ner}
               </span>
             )}

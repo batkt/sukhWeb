@@ -113,7 +113,7 @@ export default function RBACModal({ show, onClose, employee, onSave }: RBACModal
                 </div>
                 <div>
                   <h2 className="text-xl  text-theme">Эрхийн тохиргоо</h2>
-                  <p className="text-sm text-theme/60">
+                  <p className="text-sm text-theme">
                     {employee.ner || "Ажилтан"} - {employee.albanTushaal || ""}
                   </p>
                 </div>

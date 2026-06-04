@@ -28,6 +28,7 @@ interface DansItem {
   dansniiNer: string;
   valyut: string;
   bank: "khanbank" | "tdb";
+  ibanDugaar?: string;
   corporateAshiglakhEsekh?: boolean;
   corporateNevtrekhNer?: string;
   corporateNuutsUg?: string;
@@ -50,6 +51,9 @@ function DansTile({ data, onEdit, onDelete, t }: DansTileProps) {
         <div>
           <div className=" text-theme dark:text-white text-sm mb-1">{t("Данс")}</div>
           <div className="text-theme dark:text-gray-300 font-mono">{data.dugaar}</div>
+          {data.ibanDugaar && (
+            <div className="text-xs text-gray-400 dark:text-gray-500 font-mono mt-0.5">{data.ibanDugaar}</div>
+          )}
         </div>
         <div className="sm:text-right">
           <div className=" text-theme dark:text-white text-sm mb-1">{t("Дансны нэр")}</div>
@@ -116,7 +120,7 @@ function DansTile({ data, onEdit, onDelete, t }: DansTileProps) {
 
 function Dans() {
   const t = (key: string) => key;
-  const { token, ajiltan } = useAuth();
+  const { token, ajiltan, barilgiinId } = useAuth();
   const { showSpinner, hideSpinner } = useSpinner();
   // Load all accounts using shared list hook
   const orgQuery = useMemo(
@@ -135,19 +139,26 @@ function Dans() {
   const [tdbCorporate, setTdbCorporate] = useState<Partial<DansItem>>({
     corporateAshiglakhEsekh: false,
   });
-  const [tdbMessage, setTdbMessage] = useState("");
-  const [loadingCheck, setLoadingCheck] = useState(false);
+
+  // Seed corporate state from first matching dans once loaded
+  React.useEffect(() => {
+    if (!allDans) return;
+    const kh = allDans.find((d) => d.bank === "khanbank");
+    if (kh) setKhanBankCorporate({ corporateAshiglakhEsekh: kh.corporateAshiglakhEsekh || false, corporateNevtrekhNer: kh.corporateNevtrekhNer || "", corporateNuutsUg: kh.corporateNuutsUg || "" });
+    const td = allDans.find((d) => d.bank === "tdb");
+    if (td) setTdbCorporate({ corporateAshiglakhEsekh: td.corporateAshiglakhEsekh || false, corporateNevtrekhNer: td.corporateNevtrekhNer || "", corporateNuutsUg: td.corporateNuutsUg || "" });
+  }, [allDans]);
 
   // Modal state for add/edit
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<DansItem | null>(null);
   const [formState, setFormState] = useState<
-    Pick<DansItem, "dugaar" | "dansniiNer" | "valyut" | "bank">
-  >({ dugaar: "", dansniiNer: "", valyut: "MNT", bank: "khanbank" });
+    Pick<DansItem, "dugaar" | "dansniiNer" | "valyut" | "bank" | "ibanDugaar" | "corporateAshiglakhEsekh" | "corporateNevtrekhNer" | "corporateNuutsUg">
+  >({ dugaar: "", dansniiNer: "", valyut: "MNT", bank: "khanbank", ibanDugaar: "", corporateAshiglakhEsekh: false, corporateNevtrekhNer: "", corporateNuutsUg: "" });
 
   const openAdd = (bank: "khanbank" | "tdb") => {
     setEditing(null);
-    setFormState({ dugaar: "", dansniiNer: "", valyut: "MNT", bank });
+    setFormState({ dugaar: "", dansniiNer: "", valyut: "MNT", bank, ibanDugaar: "", corporateAshiglakhEsekh: false, corporateNevtrekhNer: "", corporateNuutsUg: "" });
     setModalOpen(true);
   };
 
@@ -158,6 +169,10 @@ function Dans() {
       dansniiNer: data.dansniiNer || "",
       valyut: data.valyut || "MNT",
       bank: data.bank,
+      ibanDugaar: data.ibanDugaar || "",
+      corporateAshiglakhEsekh: data.corporateAshiglakhEsekh || false,
+      corporateNevtrekhNer: data.corporateNevtrekhNer || "",
+      corporateNuutsUg: data.corporateNuutsUg || "",
     });
     setModalOpen(true);
   };
@@ -167,17 +182,19 @@ function Dans() {
 
     showSpinner();
     try {
+      const payload: Record<string, any> = {
+        ...formState,
+        baiguullagiinId: ajiltan?.baiguullagiinId,
+        barilgiinId: barilgiinId || ajiltan?.barilgiinId || null,
+      };
+      if (!formState.corporateAshiglakhEsekh) {
+        payload.corporateNevtrekhNer = "";
+        payload.corporateNuutsUg = "";
+      }
       if (editing?._id) {
-        await updateMethod("dans", token, {
-          _id: editing._id,
-          ...formState,
-          baiguullagiinId: ajiltan?.baiguullagiinId,
-        });
+        await updateMethod("dans", token, { _id: editing._id, ...payload });
       } else {
-        await createMethod("dans", token, {
-          ...formState,
-          baiguullagiinId: ajiltan?.baiguullagiinId,
-        });
+        await createMethod("dans", token, payload);
       }
       toast.success(t("Амжилттай хадгаллаа"));
       setModalOpen(false);
@@ -201,17 +218,33 @@ function Dans() {
     }
   };
 
-  const saveBank = (bank: "khanbank" | "tdb") => {
-    toast.success(t("Амжилттай хадгаллаа"));
+  const saveBank = async (bank: "khanbank" | "tdb") => {
+    if (!token) return;
+    const corporateState = bank === "khanbank" ? khanbankCorporate : tdbCorporate;
+    const dansList = (allDans || []).filter((d) => d.bank === bank);
+    if (dansList.length === 0) { toast.success(t("Амжилттай хадгаллаа")); return; }
+    showSpinner();
+    try {
+      await Promise.all(
+        dansList.map((d) =>
+          updateMethod("dans", token, {
+            _id: d._id,
+            corporateAshiglakhEsekh: corporateState.corporateAshiglakhEsekh || false,
+            corporateNevtrekhNer: corporateState.corporateAshiglakhEsekh ? corporateState.corporateNevtrekhNer || "" : "",
+            corporateNuutsUg: corporateState.corporateAshiglakhEsekh ? corporateState.corporateNuutsUg || "" : "",
+            baiguullagiinId: ajiltan?.baiguullagiinId,
+          })
+        )
+      );
+      toast.success(t("Амжилттай хадгаллаа"));
+      refetchDans();
+    } catch (e) {
+      aldaaBarigch(e);
+    } finally {
+      hideSpinner();
+    }
   };
 
-  const checkTdbConnection = () => {
-    setLoadingCheck(true);
-    setTimeout(() => {
-      setTdbMessage("Холболт амжилттай");
-      setLoadingCheck(false);
-    }, 1000);
-  };
 
   const BankCard = ({
     title,
@@ -255,11 +288,12 @@ function Dans() {
           />
         </div>
 
-        {bankKey === "tdb" && corporateState.corporateAshiglakhEsekh && (
+        {corporateState.corporateAshiglakhEsekh && (
           <div className="flex flex-col gap-3 mb-4 p-4 bg-white/50 dark:bg-gray-800/30 rounded-xl">
             <TextInput
-              placeholder={t("Нэвтрэх нэр")}
-              value={corporateState.corporateNevtrekhNer}
+              label={t("Нэвтрэх нэр")}
+              placeholder="CAdmin1"
+              value={corporateState.corporateNevtrekhNer || ""}
               onChange={(e) =>
                 setCorporateState({
                   ...corporateState,
@@ -269,8 +303,9 @@ function Dans() {
               className="text-theme"
             />
             <PasswordInput
-              placeholder={t("Нэвтрэх нууц үг")}
-              value={corporateState.corporateNuutsUg}
+              label={t("Нэвтрэх нууц үг")}
+              placeholder="••••••••"
+              value={corporateState.corporateNuutsUg || ""}
               onChange={(e) =>
                 setCorporateState({
                   ...corporateState,
@@ -279,16 +314,6 @@ function Dans() {
               }
               className="text-theme"
             />
-            <Button 
-              onClick={checkTdbConnection} 
-              variant="primary"
-              size="sm"
-              style={{ borderRadius: '0.75rem', backgroundColor: '#10b981', borderColor: '#10b981' }}
-              isLoading={loadingCheck}
-            >
-              {t("Шалгах")}
-            </Button>
-            {tdbMessage && <div className="text-green-600 dark:text-green-400 ">{tdbMessage}</div>}
           </div>
         )}
 
@@ -395,6 +420,18 @@ function Dans() {
                   className="text-theme"
                 />
               </div>
+              <div>
+                <div className="text-sm mb-1">{t("IBAN дугаар")}</div>
+                <TextInput
+                  placeholder="MN76000500XXXXXXXXXX"
+                  value={formState.ibanDugaar || ""}
+                  onChange={(e) =>
+                    setFormState((s) => ({ ...s, ibanDugaar: e.target.value }))
+                  }
+                  className="text-theme"
+                />
+              </div>
+
 
           <div className="flex justify-end gap-2 mt-2">
                 <Button

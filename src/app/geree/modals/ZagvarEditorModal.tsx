@@ -104,7 +104,7 @@ export default function ZagvarEditorModal({
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600 mx-auto mb-4" />
-                <p className="text-theme/70">Уншиж байна...</p>
+                <p className="text-theme">Уншиж байна...</p>
               </div>
             </div>
           ) : (

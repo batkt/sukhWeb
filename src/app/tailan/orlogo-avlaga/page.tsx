@@ -889,7 +889,7 @@ export default function OrlogoAvlagaPage() {
                   setExpandedLedger([]);
                   setCurrentPage(1);
                 }}
-                className={`px-4 py-2 rounded-xl transition-all duration-200 ${activeTab === tab ? "bg-theme/15 text-theme font-medium shadow-sm" : "text-theme/60 hover:bg-theme/10 hover:text-theme"}`}
+                className={`px-4 py-2 rounded-xl transition-all duration-200 ${activeTab === tab ? "bg-theme/15 text-theme font-medium shadow-sm" : "text-theme hover:bg-theme/10 hover:text-theme"}`}
               >
                 {label}
               </button>
@@ -940,7 +940,7 @@ export default function OrlogoAvlagaPage() {
             className="rounded-xl h-[40px] w-full sm:w-[280px] flex items-center"
           >
             <div className="flex items-center gap-2 w-full min-w-0">
-              <label className="text-sm text-theme/80 shrink-0 whitespace-nowrap w-[90px] text-right pr-2">
+              <label className="text-sm text-theme shrink-0 whitespace-nowrap w-[90px] text-right pr-2">
                 {label}
               </label>
               <input
@@ -949,7 +949,7 @@ export default function OrlogoAvlagaPage() {
                 onChange={(e) =>
                   setFilters((p) => ({ ...p, [key]: e.target.value }))
                 }
-                className="flex-1 px-3 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
+                className="flex-1 px-3 rounded-lg neu-panel text-theme placeholder:text-theme !h-[40px]"
                 placeholder={placeholder}
               />
             </div>

@@ -237,7 +237,7 @@ export default function GereeHeader({
                     </button>
                     {showColumnSelector && (
                       <div className="absolute right-0 top-full mt-2 z-[100] min-w-[200px] menu-surface rounded-xl shadow-lg overflow-hidden p-2">
-                        <div className="text-xs font-medium text-theme/70 px-2 py-1 border-b border-white/10 mb-1">
+                        <div className="text-xs font-medium text-theme px-2 py-1 border-b border-white/10 mb-1">
                           Баганууд
                         </div>
                         {visibleColumns &&
@@ -422,7 +422,7 @@ export default function GereeHeader({
                   className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 hover:translate-y-0 ${
                     activeTab === "residents"
                       ? "bg-theme/15 text-theme font-medium shadow-sm ring-1 ring-theme/30"
-                      : "text-theme/60 hover:bg-theme/10 hover:text-theme"
+                      : "text-theme hover:bg-theme/10 hover:text-theme"
                   }`}
                 >
                   Оршин суугч
@@ -435,7 +435,7 @@ export default function GereeHeader({
                   className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 hover:translate-y-0 ${
                     activeTab === "contracts"
                       ? "bg-theme/15 text-theme font-medium shadow-sm ring-1 ring-theme/30"
-                      : "text-theme/60 hover:bg-theme/10 hover:text-theme"
+                      : "text-theme hover:bg-theme/10 hover:text-theme"
                   }`}
                 >
                   Гэрээ
@@ -448,7 +448,7 @@ export default function GereeHeader({
                   className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 hover:translate-y-0 ${
                     activeTab === "units"
                       ? "bg-theme/15 text-theme font-medium shadow-sm ring-1 ring-theme/30"
-                      : "text-theme/60 hover:bg-theme/10 hover:text-theme"
+                      : "text-theme hover:bg-theme/10 hover:text-theme"
                   }`}
                 >
                   Өмч бүртгэл
@@ -461,7 +461,7 @@ export default function GereeHeader({
                   className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 hover:translate-y-0 ${
                     activeTab === "employees"
                       ? "bg-theme/15 text-theme font-medium shadow-sm ring-1 ring-theme/30"
-                      : "text-theme/60 hover:bg-theme/10 hover:text-theme"
+                      : "text-theme hover:bg-theme/10 hover:text-theme"
                   }`}
                 >
                   Ажилтан
@@ -474,7 +474,7 @@ export default function GereeHeader({
                   className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 hover:translate-y-0 ${
                     activeTab === "clients"
                       ? "bg-theme/15 text-theme font-medium shadow-sm ring-1 ring-theme/30"
-                      : "text-theme/60 hover:bg-theme/10 hover:text-theme"
+                      : "text-theme hover:bg-theme/10 hover:text-theme"
                   }`}
                 >
                   Харилцагч
@@ -489,7 +489,7 @@ export default function GereeHeader({
                   <>
                     {ortsOptions.length > 0 && (
                       <div className="flex items-center gap-1.5">
-                        <label className="text-sm text-theme/60 whitespace-nowrap tracking-wider font-normal">
+                        <label className="text-sm text-theme whitespace-nowrap tracking-wider font-normal">
                           Орц:
                         </label>
                         <div className="w-26">
@@ -511,7 +511,7 @@ export default function GereeHeader({
                     )}
                     {davkharOptions.length > 0 && (
                       <div className="flex items-center gap-1.5">
-                        <label className="text-sm text-theme/60 whitespace-nowrap tracking-wider font-normal">
+                        <label className="text-sm text-theme whitespace-nowrap tracking-wider font-normal">
                           Давхар:
                         </label>
                         <div className="w-26">
@@ -532,7 +532,7 @@ export default function GereeHeader({
                       </div>
                     )}
                     <div className="flex items-center gap-1.5">
-                      <label className="text-sm text-theme/60 whitespace-nowrap tracking-wider font-normal">
+                      <label className="text-sm text-theme whitespace-nowrap tracking-wider font-normal">
                         Төлөв:
                       </label>
                       <div className="w-38">
@@ -559,7 +559,7 @@ export default function GereeHeader({
                 {activeTab === "units" && (
                   <>
                     <div className="flex items-center gap-1.5">
-                      <label className="text-sm text-theme/60 whitespace-nowrap tracking-wider font-normal">
+                      <label className="text-sm text-theme whitespace-nowrap tracking-wider font-normal">
                         Орц:
                       </label>
                       <div className="w-26">
@@ -579,7 +579,7 @@ export default function GereeHeader({
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <label className="text-sm text-theme/60 whitespace-nowrap tracking-wider font-normal">
+                      <label className="text-sm text-theme whitespace-nowrap tracking-wider font-normal">
                         Давхар:
                       </label>
                       <div className="w-26">
@@ -599,7 +599,7 @@ export default function GereeHeader({
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <label className="text-sm text-theme/60 whitespace-nowrap tracking-wider font-normal">
+                      <label className="text-sm text-theme whitespace-nowrap tracking-wider font-normal">
                         Төлөв:
                       </label>
                       <div className="w-38">
@@ -634,7 +634,7 @@ export default function GereeHeader({
               <>
                 {ortsOptions.length > 0 && (
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs text-theme/60 font-normal">
+                    <label className="text-xs text-theme font-normal">
                       Орц:
                     </label>
                     <TusgaiZagvar
@@ -651,7 +651,7 @@ export default function GereeHeader({
                 )}
                 {davkharOptions.length > 0 && (
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs text-theme/60 font-normal">
+                    <label className="text-xs text-theme font-normal">
                       Давхар:
                     </label>
                     <TusgaiZagvar
@@ -667,7 +667,7 @@ export default function GereeHeader({
                   </div>
                 )}
                 <div className="flex flex-col gap-1 col-span-2">
-                  <label className="text-xs text-theme/60 font-normal">
+                  <label className="text-xs text-theme font-normal">
                     Төлөв:
                   </label>
                   <TusgaiZagvar
@@ -690,7 +690,7 @@ export default function GereeHeader({
             {activeTab === "units" && (
               <>
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs text-theme/60 font-normal">
+                  <label className="text-xs text-theme font-normal">
                     Орц:
                   </label>
                   <TusgaiZagvar
@@ -708,7 +708,7 @@ export default function GereeHeader({
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs text-theme/60 font-normal">
+                  <label className="text-xs text-theme font-normal">
                     Давхар:
                   </label>
                   <TusgaiZagvar
@@ -726,7 +726,7 @@ export default function GereeHeader({
                   />
                 </div>
                 <div className="flex flex-col gap-1 col-span-2">
-                  <label className="text-xs text-theme/60 font-normal">
+                  <label className="text-xs text-theme font-normal">
                     Төлөв:
                   </label>
                   <TusgaiZagvar

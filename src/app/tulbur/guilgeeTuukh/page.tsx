@@ -3097,7 +3097,7 @@ export default function DansniiKhuulga() {
               <div className="flex flex-wrap gap-3">
                 {/* Орц filter */}
                 <div className="flex items-center gap-1.5">
-                  <label className="text-[13px] text-theme/60 whitespace-nowrap  tracking-wider font-normal">
+                  <label className="text-[13px] text-theme whitespace-nowrap  tracking-wider font-normal">
                     Орц:
                   </label>
                   <div className="w-[100px]">
@@ -3105,14 +3105,14 @@ export default function DansniiKhuulga() {
                       type="text"
                       value={selectedOrtsFilter}
                       onChange={(e) => setSelectedOrtsFilter(e.target.value)}
-                      className="w-full h-[40px] px-3 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]/60 text-[13px] focus:outline-none focus:ring-1 focus:ring-[color:var(--theme)] focus:border-[color:var(--theme)] transition-all"
+                      className="w-full h-[40px] px-3 rounded-2xl neu-panel text-theme text-[13px] focus:outline-none transition-all"
                       placeholder="Бүгд"
                     />
                   </div>
                 </div>
 
                 <div className="flex items-center gap-1.5">
-                  <label className="text-[11px] text-theme/60 whitespace-nowrap text-[13px]  tracking-wider font-normal">
+                  <label className="text-[11px] text-theme whitespace-nowrap text-[13px]  tracking-wider font-normal">
                     Давхар:
                   </label>
                   <div className="w-[100px]">
@@ -3121,13 +3121,13 @@ export default function DansniiKhuulga() {
                       min={1}
                       value={selectedDavkharFilter}
                       onChange={(e) => setSelectedDavkharFilter(e.target.value)}
-                      className="w-full h-[40px] px-3 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]/60 text-[13px] focus:outline-none focus:ring-1 focus:ring-[color:var(--theme)] focus:border-[color:var(--theme)] transition-all"
+                      className="w-full h-[40px] px-3 rounded-2xl neu-panel text-theme text-[13px] focus:outline-none transition-all"
                       placeholder="Бүгд"
                     />
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <label className="text-[13px] text-theme/60 whitespace-nowrap  tracking-wider font-normal">
+                  <label className="text-[13px] text-theme whitespace-nowrap  tracking-wider font-normal">
                     Тоот:
                   </label>
                   <div className="w-[100px]">
@@ -3135,7 +3135,7 @@ export default function DansniiKhuulga() {
                       type="text"
                       value={selectedTootFilter}
                       onChange={(e) => setSelectedTootFilter(e.target.value)}
-                      className="w-full h-[40px] px-3 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]/60 text-[13px] focus:outline-none focus:ring-1 focus:ring-[color:var(--theme)] focus:border-[color:var(--theme)] transition-all"
+                      className="w-full h-[40px] px-3 rounded-2xl neu-panel text-theme text-[13px] focus:outline-none transition-all"
                       placeholder="Бүгд"
                     />
                   </div>
@@ -3255,7 +3255,7 @@ export default function DansniiKhuulga() {
 
                 {isColumnModalOpen && (
                   <div className="absolute right-0 top-full mt-2 z-50 min-w-[200px] menu-surface rounded-xl shadow-lg overflow-hidden max-h-[60vh] overflow-y-auto">
-                    <div className="px-3 py-2 border-b border-white/10 text-sm font-medium text-theme/80">
+                    <div className="px-3 py-2 border-b border-white/10 text-sm font-medium text-theme">
                       Багана сонгох
                     </div>
                     {selectableColumnDefs.map((col) => (

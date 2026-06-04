@@ -353,7 +353,7 @@ export default function AvlagiinNasjiltPage() {
             <h1 className="text-2xl font-bold text-theme tracking-tight">
               Насжилтын тайлан
             </h1>
-            <p className="text-sm text-theme/60">
+            <p className="text-sm text-theme">
               {summary?.count || 0} хэрэглэгчийн нийт {formatNumber(totals?.uldegdel || 0, 0)} ₮ авлага
             </p>
           </div>

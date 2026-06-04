@@ -224,7 +224,7 @@ function Tokhirgoo() {
       <div className={`w-full text-theme min-h-0 flex flex-col overflow-hidden ${tokhirgoo.length > 0 ? "lg:col-span-9" : "lg:col-span-12"}`}>
         <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
           {tokhirgoo.length === 0 && ajiltan && (
-            <div className="flex flex-col items-center justify-center p-12 text-theme/70">
+            <div className="flex flex-col items-center justify-center p-12 text-theme">
               <Settings className="w-16 h-16 mb-4 opacity-50" />
               <p className="text-lg ">Тохиргооны эрх олдсонгүй</p>
               <p className="text-sm mt-2">Админ тань тохиргооны эрх олгоно уу.</p>

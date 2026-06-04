@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import Button from "@/components/ui/Button";
+import { useSocket } from "@/context/SocketContext";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useSearch } from "@/context/SearchContext";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
@@ -8,22 +10,16 @@ import { useAuth } from "@/lib/useAuth";
 import { DANS_ENDPOINT } from "@/lib/endpoints";
 import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
 import useJagsaalt from "@/lib/useJagsaalt";
-import uilchilgee, { url as API_URL } from "@/lib/uilchilgee";
+import uilchilgee from "@/lib/uilchilgee";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { getErrorMessage } from "@/lib/uilchilgee";
 import formatNumber from "../../../../tools/function/formatNumber";
 import { useBuilding } from "@/context/BuildingContext";
 import matchesSearch from "@/tools/function/matchesSearch";
-import {
-  getPaymentStatusLabel,
-  isPaidLike,
-  isUnpaidLike,
-  isOverdueLike,
-  getDefaultDateRange,
-} from "@/lib/utils";
+import { getDefaultDateRange } from "@/lib/utils";
 import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
 import TulburLayout from "../TulburLayout";
-import { DansKhuulgaTable, DansKhuulgaItem } from "./DansKhuulgaTable";
+import { DansKhuulgaTable } from "./DansKhuulgaTable";
 import { StandardPagination } from "@/components/ui/StandardTable";
 
 type TableItem = {
@@ -50,6 +46,7 @@ export default function DansniiKhuulga() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { token, ajiltan, barilgiinId } = useAuth();
+  const socket = useSocket();
 
   useEffect(() => {
     if (ajiltan) {
@@ -59,9 +56,12 @@ export default function DansniiKhuulga() {
     }
   }, [ajiltan, router]);
 
+  const [isFetchingStatement, setIsFetchingStatement] = useState(false);
+  const [uldegdel, setUldegdel] = useState<number | null>(null);
+  const [isLoadingUldegdel, setIsLoadingUldegdel] = useState(false);
+
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(100);
-  const todayStr = new Date().toISOString().split("T")[0];
   const [ekhlekhOgnoo, setEkhlekhOgnoo] =
     useState<DateRangeValue>(getDefaultDateRange);
   const [selectedDansId, setSelectedDansId] = useState<string | undefined>(
@@ -114,7 +114,6 @@ export default function DansniiKhuulga() {
 
   const t = (text: string) => text;
 
-  // Bank transfers (банкны гүйлгээ) fetched from /bankniiGuilgee
   const [bankRows, setBankRows] = useState<any[]>([]);
   const [isLoadingBankRows, setIsLoadingBankRows] = useState(false);
 
@@ -154,133 +153,146 @@ export default function DansniiKhuulga() {
   );
   useRegisterTourSteps("/tulbur/dansKhuulga", tourSteps);
 
+  // Fetch account balance via CGW
   useEffect(() => {
-    const fetchBankTransfers = async () => {
-      if (!token || !ajiltan?.baiguullagiinId) return;
-      setIsLoadingBankRows(true);
+    const fetchUldegdel = async () => {
+      if (!token || !selectedDansId) {
+        setUldegdel(null);
+        return;
+      }
+      const selectedDans = (dansList || []).find(
+        (d: any) => String(d._id) === String(selectedDansId) || String(d.dugaar) === String(selectedDansId),
+      );
+      if (!selectedDans) return;
+      setIsLoadingUldegdel(true);
       try {
-        const resp = await uilchilgee(token).get("/bankniiGuilgee", {
-          params: {
-            baiguullagiinId: ajiltan.baiguullagiinId,
-            barilgiinId: selectedBuildingId || barilgiinId || null,
-            khuudasniiDugaar: 1,
-            khuudasniiKhemjee: 20000,
-          },
+        const resp = await uilchilgee(token).post("/dansniiUldegdelAvya", {
+          dansniiDugaar: selectedDans.dugaar,
+          tukhainBaaziinKholbolt: ajiltan?.tukhainBaaziinKholbolt,
         });
-        const list = Array.isArray(resp.data?.jagsaalt)
-          ? resp.data.jagsaalt
-          : Array.isArray(resp.data)
-            ? resp.data
-            : [];
-        setBankRows(list);
-      } catch (e) {
-        openErrorOverlay(getErrorMessage(e));
+        setUldegdel(resp.data?.uldegdel ?? null);
+      } catch {
+        setUldegdel(null);
       } finally {
-        setIsLoadingBankRows(false);
+        setIsLoadingUldegdel(false);
       }
     };
+    fetchUldegdel();
+  }, [token, selectedDansId, dansList, ajiltan?.tukhainBaaziinKholbolt]);
 
-    fetchBankTransfers();
-  }, [token, ajiltan?.baiguullagiinId, selectedBuildingId, barilgiinId]);
+  const handleKhuulgaTatakh = async () => {
+    if (!token || !ajiltan?.baiguullagiinId) return;
+    setIsFetchingStatement(true);
+    try {
+      const body: Record<string, any> = {
+        baiguullagiinId: ajiltan.baiguullagiinId,
+        barilgiinId: selectedBuildingId || barilgiinId || null,
+        tukhainBaaziinKholbolt: ajiltan?.tukhainBaaziinKholbolt,
+      };
+      if (selectedDansId) {
+        const selectedDans = (dansList || []).find(
+          (d: any) => String(d._id) === String(selectedDansId) || String(d.dugaar) === String(selectedDansId),
+        );
+        if (selectedDans?.dugaar) body.dansniiDugaar = selectedDans.dugaar;
+      }
+      if (ekhlekhOgnoo?.[0]) body.ognoo = ekhlekhOgnoo[0];
+      await uilchilgee(token).post("/bankniiKhuulgaTatajKhadgalya", body);
+      await fetchBankTransfers();
+    } catch (e) {
+      openErrorOverlay(getErrorMessage(e));
+    } finally {
+      setIsFetchingStatement(false);
+    }
+  };
 
-  // Map bankRows to table items and apply filters (date range + selected account)
-  useEffect(() => {
-    const toDate = (val: any) => {
-      if (!val) return null;
-      const d = new Date(val);
-      return isNaN(d.getTime()) ? null : d;
-    };
-    // If no account (данс) selected, don't show any bank rows
-    if (!selectedDansId) {
-      setFilteredData([]);
+  // Resolve selectedDansId → dugaar string
+  const selectedDugaar = useMemo(() => {
+    if (!selectedDansId) return null;
+    const byId = (dansList || []).find((d: any) => String(d._id) === String(selectedDansId));
+    if (byId?.dugaar) return String(byId.dugaar);
+    const byDugaar = (dansList || []).find((d: any) => String(d.dugaar) === String(selectedDansId));
+    if (byDugaar?.dugaar) return String(byDugaar.dugaar);
+    return null;
+  }, [selectedDansId, dansList]);
+
+  // Fetch only when a dans is selected — server-side filter by dansniiDugaar
+  const fetchBankTransfers = useCallback(async () => {
+    if (!token || !ajiltan?.baiguullagiinId || !selectedDugaar) {
+      setBankRows([]);
       return;
     }
+    setIsLoadingBankRows(true);
+    try {
+      const resp = await uilchilgee(token).get("/bankniiGuilgee", {
+        params: {
+          baiguullagiinId: ajiltan.baiguullagiinId,
+          barilgiinId: selectedBuildingId || barilgiinId || null,
+          dansniiDugaar: selectedDugaar,
+          khuudasniiDugaar: 1,
+          khuudasniiKhemjee: 5000,
+        },
+      });
+      const list = Array.isArray(resp.data?.jagsaalt)
+        ? resp.data.jagsaalt
+        : Array.isArray(resp.data)
+          ? resp.data
+          : [];
+      setBankRows(list);
+    } catch (e) {
+      openErrorOverlay(getErrorMessage(e));
+    } finally {
+      setIsLoadingBankRows(false);
+    }
+  }, [token, ajiltan?.baiguullagiinId, selectedBuildingId, barilgiinId, selectedDugaar]);
 
+  useEffect(() => { fetchBankTransfers(); }, [fetchBankTransfers]);
+
+  // Real-time: refetch when backend emits bankniiGuilgeeShine for this org
+  useEffect(() => {
+    if (!socket || !ajiltan?.baiguullagiinId) return;
+    const event = "baiguullagiin" + ajiltan.baiguullagiinId;
+    const handler = (data: any) => {
+      if (data?.turul === "bankniiGuilgeeShine") fetchBankTransfers();
+    };
+    socket.on(event, handler);
+    return () => { socket.off(event, handler); };
+  }, [socket, ajiltan?.baiguullagiinId, fetchBankTransfers]);
+
+  // Map + client-side date/search filter (on the small per-account result set)
+  useEffect(() => {
+    if (!selectedDugaar) { setFilteredData([]); return; }
+    const toDate = (val: any) => { if (!val) return null; const d = new Date(val); return isNaN(d.getTime()) ? null : d; };
     const start = ekhlekhOgnoo?.[0] ? toDate(ekhlekhOgnoo[0]) : null;
     const end = ekhlekhOgnoo?.[1] ? toDate(ekhlekhOgnoo[1]) : null;
 
     const mapped = (bankRows || []).map((r: any, idx: number) => {
-      const dateVal =
-        r.postDate ||
-        r.tranDate ||
-        r.ognoo ||
-        r.createdAt ||
-        r.date ||
-        r.togtoo ||
-        null;
+      const dateVal = r.postDate || r.tranDate || r.ognoo || r.createdAt || r.date || r.togtoo || null;
       const d = dateVal ? new Date(dateVal) : null;
-      const month = d
-        ? d.toLocaleDateString("mn-MN", { year: "numeric", month: "2-digit" })
-        : r.sar || "";
-      const total =
-        Number(r.amount ?? r.kholbosonDun ?? r.niitTulbur ?? r.total ?? 0) || 0;
-      const action = r.description || r.ner || r.tovch || "Банкны гүйлгээ";
-      const contractIds = Array.isArray(r.kholbosonGereeniiId)
-        ? r.kholbosonGereeniiId
-        : r.kholbosonGereeniiId
-          ? [String(r.kholbosonGereeniiId)]
-          : [];
-      // bank API uses `dansniiDugaar` or `accNum`/`dugaar` depending on source
-      const account = String(
-        r.dansniiDugaar || r.accNum || r.dugaar || r.accountId || "",
-      );
       return {
         id: r._id || `bank-${idx}`,
         date: d ? d.toLocaleDateString("mn-MN") : "-",
-        month,
-        total,
-        action,
-        contractIds,
-        account,
+        month: d ? d.toLocaleDateString("mn-MN", { year: "numeric", month: "2-digit" }) : r.sar || "",
+        total: Number(r.amount ?? r.Amt ?? r.tranAmount ?? r.income ?? r.kholbosonDun ?? 0) || 0,
+        action: r.description || r.TxAddInf || r.tranDesc || r.txnDesc || r.ner || "Банкны гүйлгээ",
+        contractIds: Array.isArray(r.kholbosonGereeniiId) ? r.kholbosonGereeniiId : r.kholbosonGereeniiId ? [String(r.kholbosonGereeniiId)] : [],
+        account: String(r.dansniiDugaar || r.accNum || ""),
         raw: r,
-      } as TableItem & { raw?: any };
+      } as TableItem;
     });
-    // Resolve selectedDansId (may be _id) to the actual account number (dugaar)
-    const selectedAccount = (() => {
-      if (!selectedDansId) return undefined;
-      // try to find by _id first
-      const byId = (dansList || []).find(
-        (d: any) => String(d._id) === String(selectedDansId),
-      );
-      if (byId && byId.dugaar) return String(byId.dugaar);
-      // fallback: maybe the option stored dugaar directly
-      const byDugaar = (dansList || []).find(
-        (d: any) => String(d.dugaar) === String(selectedDansId),
-      );
-      if (byDugaar && byDugaar.dugaar) return String(byDugaar.dugaar);
-      return String(selectedDansId);
-    })();
 
     const filtered = mapped.filter((m) => {
-      // account filter: compare the normalized account string on the mapped item
-      if (
-        selectedAccount &&
-        String(m.account || "") !== String(selectedAccount)
-      )
-        return false;
       if (start || end) {
-        const raw = m.raw || {};
-        // use the same date fields we used when mapping rows
-        const dateVal =
-          raw.postDate ||
-          raw.tranDate ||
-          raw.ognoo ||
-          raw.createdAt ||
-          raw.date ||
-          raw.togtoo ||
-          null;
-        if (!dateVal) return false;
-        const d = new Date(dateVal);
+        const dv = (m.raw as any)?.postDate || (m.raw as any)?.tranDate || (m.raw as any)?.ognoo || (m.raw as any)?.createdAt || null;
+        if (!dv) return false;
+        const d = new Date(dv);
         if (start && d < start) return false;
         if (end && d > end) return false;
       }
-      // global search filtering
       if (searchTerm && !matchesSearch(m, searchTerm)) return false;
       return true;
     });
-
-    setFilteredData(filtered as TableItem[]);
-  }, [bankRows, selectedDansId, ekhlekhOgnoo, searchTerm]);
+    setFilteredData(filtered);
+  }, [bankRows, selectedDugaar, ekhlekhOgnoo, searchTerm]);
 
   // Dashboard statistics derived from filteredData for admin
   const stats = useMemo(() => {
@@ -292,22 +304,6 @@ export default function DansniiKhuulga() {
       (f) => (f.contractIds?.length || 0) > 0,
     ).length;
     const withoutContracts = totalCount - withContracts;
-    const maxAmount = filteredData.reduce(
-      (m, r) => Math.max(m, r.total || 0),
-      0,
-    );
-    const latestDate = (() => {
-      let latest: Date | null = null;
-      for (const r of filteredData) {
-        const raw = (r as any).raw || {};
-        const dateVal =
-          raw.ognoo || raw.createdAt || raw.date || r.date || null;
-        const d = dateVal ? new Date(dateVal) : null;
-        if (d && (!latest || d > latest)) latest = d;
-      }
-      return latest ? latest.toLocaleDateString("mn-MN") : "-";
-    })();
-
     return [
       // Total transactions
       { title: "Нийт", value: totalCount },
@@ -356,15 +352,15 @@ export default function DansniiKhuulga() {
             {stats.map((stat, idx) => (
               <div
                 key={idx}
-                className="relative group rounded-[32px] bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 p-6 backdrop-blur-xl shadow-sm hover:shadow-md transition-all"
+                className="relative group rounded-[32px] neu-panel p-6 shadow-sm hover:shadow-md transition-all"
               >
                 <div
-                  className={`text-3xl mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent ${stat.title === "Нийт" || stat.title === "Нийт дүн" ? "force-bold" : ""}`}
+                  className={`text-3xl mb-1 text-theme ${stat.title === "Нийт" || stat.title === "Нийт дүн" ? "force-bold" : ""}`}
                 >
                   {stat.value}
                 </div>
                 <div
-                  className={`text-[10px] uppercase tracking-widest text-slate-400 ${stat.title === "Нийт" || stat.title === "Нийт дүн" ? "force-bold" : ""}`}
+                  className={`text-[10px] uppercase tracking-widest text-theme opacity-60 ${stat.title === "Нийт" || stat.title === "Нийт дүн" ? "force-bold" : ""}`}
                 >
                   {stat.title}
                 </div>
@@ -372,9 +368,9 @@ export default function DansniiKhuulga() {
             ))}
           </div>
 
-          <div className="relative z-10 px-6 py-4 rounded-[32px] bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-sm shadow-slate-200/50 backdrop-blur-xl">
+          <div className="relative z-10 px-6 py-4 rounded-[32px] neu-panel shadow-sm">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+              <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto flex-wrap">
                 <div id="dans-date" className="h-10 w-full sm:w-[320px]">
                   <StandardDatePicker
                     isRange={true}
@@ -394,7 +390,27 @@ export default function DansniiKhuulga() {
                     className="h-full w-full rounded-2xl !border-slate-200 dark:!border-slate-800 !bg-white/50 dark:!bg-slate-900/50 hover:!border-slate-300 dark:hover:!border-slate-700 transition-all font-inter"
                   />
                 </div>
+                {selectedDansId && (
+                  <div className="flex items-center h-10 px-4 rounded-2xl neu-panel text-sm text-theme whitespace-nowrap">
+                    {isLoadingUldegdel ? (
+                      <span className="opacity-60">Үлдэгдэл...</span>
+                    ) : uldegdel !== null ? (
+                      <span>Үлдэгдэл: <strong>{formatNumber(uldegdel, 2)}</strong></span>
+                    ) : (
+                      <span className="opacity-60">Үлдэгдэл авах боломжгүй</span>
+                    )}
+                  </div>
+                )}
               </div>
+              <Button
+                variant="primary"
+                size="lg"
+                onClick={handleKhuulgaTatakh}
+                isLoading={isFetchingStatement}
+                className="flex-shrink-0 rounded-2xl"
+              >
+                Хуулга татах
+              </Button>
             </div>
           </div>
 

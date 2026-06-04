@@ -482,13 +482,13 @@ export default function NekhemjlekhiinTuukhPage() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={11} className="p-8 text-center text-theme/70">
+                    <td colSpan={11} className="p-8 text-center text-theme">
                       <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
                     </td>
                   </tr>
                 ) : data.length === 0 ? (
                   <tr>
-                    <td colSpan={11} className="p-8 text-center text-theme/60">
+                    <td colSpan={11} className="p-8 text-center text-theme">
                       Мэдээлэл алга байна
                     </td>
                   </tr>
@@ -578,7 +578,7 @@ export default function NekhemjlekhiinTuukhPage() {
       </div>
 
       <div className="flex items-center justify-between no-print">
-        <div className="text-sm text-theme/70">Нийт: {data.length}</div>
+        <div className="text-sm text-theme">Нийт: {data.length}</div>
         <div className="flex items-center gap-3">
           <PageSongokh
             value={pageSize}
@@ -596,7 +596,7 @@ export default function NekhemjlekhiinTuukhPage() {
             >
               Өмнөх
             </button>
-            <div className="text-theme/70 px-1">{currentPage}</div>
+            <div className="text-theme px-1">{currentPage}</div>
             <button
               className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
               disabled={currentPage * pageSize >= data.length}

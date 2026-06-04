@@ -20,7 +20,7 @@ export default function TulburLayout({
   const { ajiltan } = useAuth();
 
   const showGuilgee = hasPermission(ajiltan, "/tulbur");
-  const showDans = false; // hasPermission(ajiltan, "/tulbur/dansKhuulga");
+  const showDans = hasPermission(ajiltan, "/tulbur/dansKhuulga");
   const showEbarimt = hasPermission(ajiltan, "/tulbur/ebarimt");
 
   const routes = {
@@ -77,7 +77,7 @@ export default function TulburLayout({
                 className={`px-3 neu-panel md:px-5 py-2.5 md:py-2  text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 ${
                   activeTab === "guilgee"
                     ? "bg-theme/15 text-theme font-medium"
-                    : "text-theme/60  hover:text-theme"
+                    : "text-theme  hover:text-theme"
                 }`}
               >
                 Гүйлгээний түүх
@@ -90,7 +90,7 @@ export default function TulburLayout({
                 className={`px-3 neu-panel  md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 ${
                   activeTab === "dansKhuulga"
                     ? "bg-theme/15 text-theme font-medium"
-                    : "text-theme/60 hover:bg-theme/10 hover:text-theme"
+                    : "text-theme hover:bg-theme/10 hover:text-theme"
                 }`}
               >
                 Дансны хуулга
@@ -103,7 +103,7 @@ export default function TulburLayout({
                 className={`px-3 neu-panel  md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 ${
                   activeTab === "ebarimt"
                     ? "bg-theme/15 text-theme font-medium"
-                    : "text-theme/60 hover:bg-theme/10 hover:text-theme"
+                    : "text-theme hover:bg-theme/10 hover:text-theme"
                 }`}
               >
                 И-баримт
