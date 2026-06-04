@@ -1,6 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Modal, TextInput, Loader } from "@mantine/core";
+import toast from "react-hot-toast";
+import moment from "moment";
+import { CloseCircleOutlined } from "@ant-design/icons";
 import Button from "@/components/ui/Button";
 import { useSocket } from "@/context/SocketContext";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -16,7 +20,6 @@ import { getErrorMessage } from "@/lib/uilchilgee";
 import formatNumber from "../../../../tools/function/formatNumber";
 import { useBuilding } from "@/context/BuildingContext";
 import matchesSearch from "@/tools/function/matchesSearch";
-import { getDefaultDateRange } from "@/lib/utils";
 import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
 import TulburLayout from "../TulburLayout";
 import { DansKhuulgaTable } from "./DansKhuulgaTable";
@@ -62,12 +65,24 @@ export default function DansniiKhuulga() {
 
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(100);
-  const [ekhlekhOgnoo, setEkhlekhOgnoo] =
-    useState<DateRangeValue>(getDefaultDateRange);
+  const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<DateRangeValue>(() => {
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    return [today, today];
+  });
   const [selectedDansId, setSelectedDansId] = useState<string | undefined>(
     undefined,
   );
   const [filteredData, setFilteredData] = useState<TableItem[]>([]);
+
+  // States for transaction linking (гүйлгээ холбох)
+  const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+  const [selectedGuilgee, setSelectedGuilgee] = useState<TableItem | null>(null);
+  const [searchContractQuery, setSearchContractQuery] = useState("");
+  const [contractsList, setContractsList] = useState<any[]>([]);
+  const [isSearchingContracts, setIsSearchingContracts] = useState(false);
+  const [selectedContract, setSelectedContract] = useState<any | null>(null);
+  const [showDropdown, setShowDropdown] = useState(false);
 
   const { selectedBuildingId } = useBuilding();
 
@@ -111,6 +126,13 @@ export default function DansniiKhuulga() {
       })),
     [dansList],
   );
+
+  // Auto-select first dans when list loads and nothing is selected
+  useEffect(() => {
+    if (!selectedDansId && dansList && dansList.length > 0) {
+      setSelectedDansId(String(dansList[0]._id || dansList[0].dugaar || ""));
+    }
+  }, [dansList]);
 
   const t = (text: string) => text;
 
@@ -197,6 +219,10 @@ export default function DansniiKhuulga() {
       }
       if (ekhlekhOgnoo?.[0]) body.ognoo = ekhlekhOgnoo[0];
       await uilchilgee(token).post("/bankniiKhuulgaTatajKhadgalya", body);
+      await uilchilgee(token).post("/tulultTaniya", {
+        baiguullagiinId: ajiltan.baiguullagiinId,
+        tukhainBaaziinKholbolt: ajiltan?.tukhainBaaziinKholbolt,
+      }).catch(() => {});
       await fetchBankTransfers();
     } catch (e) {
       openErrorOverlay(getErrorMessage(e));
@@ -205,15 +231,16 @@ export default function DansniiKhuulga() {
     }
   };
 
-  // Resolve selectedDansId → dugaar string
-  const selectedDugaar = useMemo(() => {
+  // Resolve selectedDansId → { dugaar, bank }
+  const selectedDans = useMemo(() => {
     if (!selectedDansId) return null;
     const byId = (dansList || []).find((d: any) => String(d._id) === String(selectedDansId));
-    if (byId?.dugaar) return String(byId.dugaar);
+    if (byId?.dugaar) return byId;
     const byDugaar = (dansList || []).find((d: any) => String(d.dugaar) === String(selectedDansId));
-    if (byDugaar?.dugaar) return String(byDugaar.dugaar);
+    if (byDugaar?.dugaar) return byDugaar;
     return null;
   }, [selectedDansId, dansList]);
+  const selectedDugaar = selectedDans?.dugaar ? String(selectedDans.dugaar) : null;
 
   // Fetch only when a dans is selected — server-side filter by dansniiDugaar
   const fetchBankTransfers = useCallback(async () => {
@@ -228,8 +255,10 @@ export default function DansniiKhuulga() {
           baiguullagiinId: ajiltan.baiguullagiinId,
           barilgiinId: selectedBuildingId || barilgiinId || null,
           dansniiDugaar: selectedDugaar,
+          ...(selectedDans?.bank ? { bank: selectedDans.bank } : {}),
           khuudasniiDugaar: 1,
           khuudasniiKhemjee: 5000,
+          order: { createdAt: -1 },
         },
       });
       const list = Array.isArray(resp.data?.jagsaalt)
@@ -243,7 +272,7 @@ export default function DansniiKhuulga() {
     } finally {
       setIsLoadingBankRows(false);
     }
-  }, [token, ajiltan?.baiguullagiinId, selectedBuildingId, barilgiinId, selectedDugaar]);
+  }, [token, ajiltan?.baiguullagiinId, selectedBuildingId, barilgiinId, selectedDugaar, selectedDans?.bank]);
 
   useEffect(() => { fetchBankTransfers(); }, [fetchBankTransfers]);
 
@@ -258,26 +287,193 @@ export default function DansniiKhuulga() {
     return () => { socket.off(event, handler); };
   }, [socket, ajiltan?.baiguullagiinId, fetchBankTransfers]);
 
+  // Contract search for linking
+  const performContractSearch = useCallback(async (searchVal: string) => {
+    if (!token || !ajiltan?.baiguullagiinId) return;
+    setIsSearchingContracts(true);
+    try {
+      const queryObj: any = {
+        baiguullagiinId: ajiltan.baiguullagiinId,
+        barilgiinId: selectedBuildingId || barilgiinId || null,
+      };
+      if (searchVal.trim()) {
+        queryObj.$or = [
+          { ner: { $regex: searchVal.trim(), $options: "i" } },
+          { gereeniiDugaar: { $regex: searchVal.trim(), $options: "i" } },
+          { register: { $regex: searchVal.trim(), $options: "i" } },
+          { toot: { $regex: searchVal.trim(), $options: "i" } },
+        ];
+      }
+      const resp = await uilchilgee(token).get("/geree", {
+        params: {
+          baiguullagiinId: ajiltan.baiguullagiinId,
+          barilgiinId: selectedBuildingId || barilgiinId || null,
+          khuudasniiDugaar: 1,
+          khuudasniiKhemjee: 30,
+          query: JSON.stringify(queryObj),
+        },
+      });
+      const list = resp.data?.jagsaalt || resp.data?.list || resp.data || [];
+      setContractsList(list);
+    } catch (err) {
+      console.error(err);
+      toast.error("Гэрээ хайхад алдаа гарлаа");
+    } finally {
+      setIsSearchingContracts(false);
+    }
+  }, [token, ajiltan?.baiguullagiinId, selectedBuildingId, barilgiinId]);
+
+  // Debounced search trigger when modal is open and search query changes
+  useEffect(() => {
+    if (isLinkModalOpen) {
+      const delayDebounce = setTimeout(() => {
+        performContractSearch(searchContractQuery);
+      }, 300);
+      return () => clearTimeout(delayDebounce);
+    }
+  }, [searchContractQuery, isLinkModalOpen, performContractSearch]);
+
+  const handleOpenLinkModal = useCallback((item: TableItem) => {
+    setSelectedGuilgee(item);
+    setIsLinkModalOpen(true);
+    setSearchContractQuery("");
+    setContractsList([]);
+    setSelectedContract(null);
+  }, []);
+
+  const handleLinkTransaction = useCallback(async (gereeId: string) => {
+    if (!token || !ajiltan || !selectedGuilgee) return;
+
+    const loadingToast = toast.loading("Гүйлгээг гэрээнд холбож байна...");
+    try {
+      const resp = await uilchilgee(token).post("/guilgeeKholbyo", {
+        bankniiGuilgeeId: selectedGuilgee.id,
+        gereeniiId: gereeId,
+        tukhainBaaziinKholbolt: ajiltan.tukhainBaaziinKholbolt,
+      });
+      if (resp.data?.success) {
+        toast.success("Гүйлгээ амжилттай холбогдлоо", { id: loadingToast });
+        setIsLinkModalOpen(false);
+        setSelectedGuilgee(null);
+        setSelectedContract(null);
+        fetchBankTransfers();
+      } else {
+        toast.error(resp.data?.message || resp.data?.error || "Алдаа гарлаа", { id: loadingToast });
+      }
+    } catch (e: any) {
+      console.error(e);
+      toast.error(getErrorMessage(e) || "Алдаа гарлаа", { id: loadingToast });
+    }
+  }, [token, ajiltan, selectedGuilgee, fetchBankTransfers]);
+
+  const handleUnlinkTransaction = useCallback((item: TableItem) => {
+    toast.success("Гүйлгээ холбогдсон байна");
+  }, []);
+
   // Map + client-side date/search filter (on the small per-account result set)
   useEffect(() => {
     if (!selectedDugaar) { setFilteredData([]); return; }
-    const toDate = (val: any) => { if (!val) return null; const d = new Date(val); return isNaN(d.getTime()) ? null : d; };
-    const start = ekhlekhOgnoo?.[0] ? toDate(ekhlekhOgnoo[0]) : null;
-    const end = ekhlekhOgnoo?.[1] ? toDate(ekhlekhOgnoo[1]) : null;
+    const toLocalDate = (val: any): Date | null => {
+      if (!val) return null;
+      if (typeof val === "string") {
+        const parts = val.slice(0, 10).split("-");
+        if (parts.length === 3) return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      }
+      const d = new Date(val as any);
+      return isNaN(d.getTime()) ? null : new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    };
+    const startRaw = toLocalDate(ekhlekhOgnoo?.[0]);
+    const start = startRaw ? new Date(startRaw.getFullYear(), startRaw.getMonth(), startRaw.getDate(), 0, 0, 0, 0) : null;
+    const endRaw = toLocalDate(ekhlekhOgnoo?.[1]);
+    const end = endRaw ? new Date(endRaw.getFullYear(), endRaw.getMonth(), endRaw.getDate(), 23, 59, 59, 999) : null;
 
-    const mapped = (bankRows || []).map((r: any, idx: number) => {
+    const mapped = (bankRows || []).filter((r: any) => r.bank !== "qpay").map((r: any, idx: number) => {
       const dateVal = r.postDate || r.tranDate || r.ognoo || r.createdAt || r.date || r.togtoo || null;
       const d = dateVal ? new Date(dateVal) : null;
+      
+      const pad = (n: number) => String(n).padStart(2, "0");
+      let dateStr = d ? `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}` : "-";
+      
+      let timeStr = "";
+      if (r.time) {
+        const cleanTime = String(r.time).trim().replace(/[^0-9:]/g, "");
+        if (cleanTime.includes(":")) {
+          timeStr = cleanTime;
+        } else if (cleanTime.length >= 6) {
+          timeStr = `${cleanTime.slice(0, 2)}:${cleanTime.slice(2, 4)}:${cleanTime.slice(4, 6)}`;
+        } else if (cleanTime.length === 4) {
+          timeStr = `${cleanTime.slice(0, 2)}:${cleanTime.slice(2, 4)}`;
+        } else {
+          timeStr = cleanTime;
+        }
+      } else if (d) {
+        const isUtcMidnight = d.getUTCHours() === 0 && d.getUTCMinutes() === 0 && d.getUTCSeconds() === 0;
+        if (!isUtcMidnight) {
+          timeStr = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+        }
+      }
+      
+      const dateValFormatted = timeStr ? `${dateStr} ${timeStr}` : dateStr;
+
       return {
         id: r._id || `bank-${idx}`,
-        date: d ? d.toLocaleDateString("mn-MN") : "-",
+        date: dateValFormatted,
         month: d ? d.toLocaleDateString("mn-MN", { year: "numeric", month: "2-digit" }) : r.sar || "",
         total: Number(r.amount ?? r.Amt ?? r.tranAmount ?? r.income ?? r.kholbosonDun ?? 0) || 0,
         action: r.description || r.TxAddInf || r.tranDesc || r.txnDesc || r.ner || "Банкны гүйлгээ",
         contractIds: Array.isArray(r.kholbosonGereeniiId) ? r.kholbosonGereeniiId : r.kholbosonGereeniiId ? [String(r.kholbosonGereeniiId)] : [],
-        account: String(r.dansniiDugaar || r.accNum || ""),
+        account: String(r.relatedAccount || r.accNum || r.accVal || r.CtAcct || r.CtAcntOrg || r.dansniiDugaar || ""),
         raw: r,
       } as TableItem;
+    });
+
+    const getSortTime = (item: any) => {
+      const dateVal = item.postDate || item.tranDate || item.ognoo || item.createdAt || item.date || item.togtoo || null;
+      if (!dateVal) return 0;
+      const d = new Date(dateVal);
+      if (isNaN(d.getTime())) return 0;
+      
+      const isUtcMidnight = d.getUTCHours() === 0 && d.getUTCMinutes() === 0 && d.getUTCSeconds() === 0;
+      if (isUtcMidnight && item.time) {
+        const cleanTime = String(item.time).trim();
+        let h = 0, m = 0, s = 0;
+        if (cleanTime.includes(":")) {
+          const parts = cleanTime.split(":");
+          h = parseInt(parts[0], 10) || 0;
+          m = parseInt(parts[1], 10) || 0;
+          s = parseInt(parts[2], 10) || 0;
+        } else if (cleanTime.length === 6) {
+          h = parseInt(cleanTime.slice(0, 2), 10) || 0;
+          m = parseInt(cleanTime.slice(2, 4), 10) || 0;
+          s = parseInt(cleanTime.slice(4, 6), 10) || 0;
+        } else if (cleanTime.length === 4) {
+          h = parseInt(cleanTime.slice(0, 2), 10) || 0;
+          m = parseInt(cleanTime.slice(2, 4), 10) || 0;
+        }
+        d.setHours(h, m, s, 0);
+      }
+      return d.getTime();
+    };
+
+    // Sort descending by date/time/createdAt: latest first
+    mapped.sort((a, b) => {
+      const timeA = getSortTime(a.raw);
+      const timeB = getSortTime(b.raw);
+      if (timeA === timeB) {
+        const recA = (a.raw as any).record;
+        const recB = (b.raw as any).record;
+        if (recA && recB) {
+          const numA = Number(recA);
+          const numB = Number(recB);
+          if (!isNaN(numA) && !isNaN(numB)) {
+            return numB - numA;
+          }
+        }
+        const idA = String((a.raw as any)._id || "");
+        const idB = String((b.raw as any)._id || "");
+        return idB.localeCompare(idA);
+      }
+      return timeB - timeA;
     });
 
     const filtered = mapped.filter((m) => {
@@ -395,22 +591,13 @@ export default function DansniiKhuulga() {
                     {isLoadingUldegdel ? (
                       <span className="opacity-60">Үлдэгдэл...</span>
                     ) : uldegdel !== null ? (
-                      <span>Үлдэгдэл: <strong>{formatNumber(uldegdel, 2)}</strong></span>
+                      <span>Үлдэгдэл: <strong>{formatNumber(uldegdel, 2)}₮</strong></span>
                     ) : (
                       <span className="opacity-60">Үлдэгдэл авах боломжгүй</span>
                     )}
                   </div>
                 )}
               </div>
-              <Button
-                variant="primary"
-                size="lg"
-                onClick={handleKhuulgaTatakh}
-                isLoading={isFetchingStatement}
-                className="flex-shrink-0 rounded-2xl"
-              >
-                Хуулга татах
-              </Button>
             </div>
           </div>
 
@@ -422,6 +609,8 @@ export default function DansniiKhuulga() {
                 page={page}
                 rowsPerPage={rowsPerPage}
                 maxHeight="calc(100vh - 550px)"
+                onLink={handleOpenLinkModal}
+                onUnlink={handleUnlinkTransaction}
               />
             </div>
             <div id="dans-pagination">
@@ -437,6 +626,181 @@ export default function DansniiKhuulga() {
           </div>
         </div>
       </div>
+
+      <Modal
+        opened={isLinkModalOpen}
+        onClose={() => {
+          setIsLinkModalOpen(false);
+          setSelectedGuilgee(null);
+          setSelectedContract(null);
+        }}
+        title={null}
+        size="xl"
+        centered
+        withCloseButton={false}
+        classNames={{
+          content: "dark:!bg-slate-900 dark:!text-white rounded-lg !p-6 border dark:border-slate-800",
+          body: "!p-0 font-inter",
+        }}
+      >
+        {selectedGuilgee && (
+          <div className="flex w-full flex-col space-y-2 min-h-[500px] justify-between">
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-semibold dark:text-gray-100 lg:text-xl">
+                  Гүйлгээний мэдээлэл
+                </span>
+                <span className="dark:text-gray-200 text-sm font-mono">
+                  {moment().format("YYYY-MM-DD")}
+                </span>
+              </div>
+              <div className="box grid w-full grid-cols-4 rounded-md border border-gray-400 bg-gray-100 p-2 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 text-xs gap-1">
+                <div className="col-span-4 lg:col-span-1 truncate font-mono">
+                  {selectedGuilgee.account || selectedGuilgee.raw?.accNum || selectedGuilgee.raw?.CtAcct || "-"}
+                </div>
+                <div className="col-span-4 lg:col-span-1 truncate">
+                  {selectedGuilgee.raw?.accName || selectedGuilgee.raw?.ner || selectedGuilgee.raw?.CtActnName || "-"}
+                </div>
+                <div className="col-span-2 text-center lg:col-span-1">
+                  {selectedGuilgee.date.split(" ")[0]}
+                </div>
+                <div className="col-span-2 text-right text-red-600 dark:text-red-400 font-semibold lg:col-span-1">
+                  {formatNumber(selectedGuilgee.total)}
+                </div>
+                <div className="col-span-4 mt-2">
+                  <input
+                    className="w-full rounded-md border border-gray-400 bg-gray-200/50 px-2 py-1 text-xs dark:bg-gray-750 dark:border-gray-700 dark:text-white"
+                    value={selectedGuilgee.action}
+                    disabled
+                  />
+                </div>
+              </div>
+              <div className="font-medium dark:text-gray-200 lg:text-xl pt-2">
+                Гүйлгээ холбох
+              </div>
+              <div className="relative w-full">
+                <input
+                  autoComplete="off"
+                  id="baiguullagaSongokh"
+                  onFocus={() => setShowDropdown(true)}
+                  onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+                  className="w-full rounded-md border border-gray-400 p-1.5 px-3 text-sm text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  placeholder="Оршин суугч/Гэрээ сонгох"
+                  value={searchContractQuery}
+                  onChange={(e) => {
+                    setSearchContractQuery(e.target.value);
+                    setShowDropdown(true);
+                  }}
+                />
+                {showDropdown && (
+                  <div className="absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto rounded-md border border-gray-300 bg-white p-1 shadow-lg dark:bg-gray-900 dark:border-gray-700 text-xs">
+                    {isSearchingContracts ? (
+                      <div className="p-3 text-center text-gray-500">Уншиж байна...</div>
+                    ) : contractsList.length === 0 ? (
+                      <div className="p-3 text-center text-gray-500">Үр дүн олдсонгүй</div>
+                    ) : (
+                      contractsList.map((geree: any) => (
+                        <div
+                          key={geree._id}
+                          className="grid cursor-pointer grid-cols-3 gap-2 rounded-md border border-transparent p-2 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-900 dark:text-gray-200"
+                          onMouseDown={() => {
+                            setSelectedContract(geree);
+                            setShowDropdown(false);
+                          }}
+                        >
+                          <div className="font-semibold truncate">{geree.toot ? `${geree.toot} тоот` : "-"}</div>
+                          <div className="truncate">{geree.ner || `${geree.ovog || ""} ${geree.ner || ""}`}</div>
+                          <div className="truncate text-gray-500">{geree.gereeniiDugaar || "-"}</div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2 px-2 pt-2">
+              {selectedContract && (
+                <div className="space-y-2 rounded-md border border-gray-400 p-2 dark:border-gray-700">
+                  <div className="flex w-full justify-between items-center text-sm font-medium dark:text-gray-200">
+                    <span>
+                      {selectedContract.toot ? `${selectedContract.toot} тоот` : "-"} -- {selectedContract.ner || `${selectedContract.ovog || ""} ${selectedContract.ner || ""}`} -- {selectedContract.gereeniiDugaar || "-"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedContract(null)}
+                      className="h-8 w-8 p-1 text-lg text-red-500 hover:text-red-700 transition-colors"
+                      title="Сонголт арилгах"
+                    >
+                      <CloseCircleOutlined />
+                    </button>
+                  </div>
+
+                  {/* Төлбөрийн үлдэгдэл box */}
+                  <div className="box grid w-full grid-cols-3 rounded-md border border-gray-400 bg-gray-100 p-2 dark:bg-gray-800 dark:border-gray-700 text-xs">
+                    <div className="col-span-3 font-semibold mb-1">Төлбөрийн үлдэгдэл</div>
+                    <div className="text-red-500 dark:text-red-400 font-medium">
+                      {formatNumber(selectedContract.uldegdel || 0, 2)}
+                    </div>
+                    <div className="text-gray-500 dark:text-gray-400">
+                      {selectedContract.register || selectedContract.gereeniiDugaar || ""}
+                    </div>
+                    <div className="text-right text-green-600 dark:text-green-400">
+                      <input
+                        className="w-full rounded-md border border-gray-400 bg-gray-200 px-2 py-0.5 text-right dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        placeholder="Төлөх дүн"
+                        value={formatNumber(selectedGuilgee.total)}
+                        disabled
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <hr className="border-gray-300 dark:border-gray-700 my-3" />
+
+              <div className="grid w-full grid-cols-2 divide-x-2 divide-gray-300 dark:divide-gray-700 px-2">
+                <div className="flex flex-col justify-between pr-2 lg:flex-row text-xs">
+                  <div className="dark:text-gray-200">Холбосон дүн:</div>
+                  <div className="text-right text-base font-bold text-green-600 dark:text-green-400">
+                    {formatNumber(selectedContract ? selectedGuilgee.total : 0)}
+                  </div>
+                </div>
+                <div className="flex flex-col justify-between pl-2 lg:flex-row text-xs">
+                  <div className="dark:text-gray-200">Холбоогүй дүн:</div>
+                  <div className="text-right text-base font-bold text-red-600 dark:text-red-400">
+                    {formatNumber(selectedContract ? 0 : selectedGuilgee.total)}
+                  </div>
+                </div>
+              </div>
+
+              <hr className="border-gray-300 dark:border-gray-700 my-3" />
+
+              <div className="flex justify-end gap-3 pt-2">
+                <Button
+                  onClick={() => {
+                    setIsLinkModalOpen(false);
+                    setSelectedGuilgee(null);
+                    setSelectedContract(null);
+                  }}
+                  variant="secondary"
+                  className="rounded-md h-9 px-4 text-xs font-semibold"
+                >
+                  Хаах
+                </Button>
+                <Button
+                  onClick={() => selectedContract && handleLinkTransaction(selectedContract._id)}
+                  disabled={!selectedContract}
+                  variant="primary"
+                  className="rounded-md h-9 px-4 text-xs font-semibold"
+                >
+                  Хадгалах
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal>
     </TulburLayout>
   );
 }

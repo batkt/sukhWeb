@@ -3,6 +3,7 @@
 import React, { useMemo } from "react";
 import { Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
+import { CheckOutlined, ExclamationOutlined } from "@ant-design/icons";
 import formatNumber from "../../../../tools/function/formatNumber";
 
 export interface DansKhuulgaItem {
@@ -23,6 +24,8 @@ interface DansKhuulgaTableProps {
   page?: number;
   rowsPerPage?: number;
   maxHeight?: string | number;
+  onLink?: (item: DansKhuulgaItem) => void;
+  onUnlink?: (item: DansKhuulgaItem) => void;
 }
 
 export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
@@ -31,6 +34,8 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
   page = 1,
   rowsPerPage = 100,
   maxHeight = "calc(100vh - 500px)",
+  onLink,
+  onUnlink,
 }) => {
   const columns: ColumnsType<DansKhuulgaItem> = useMemo(
     () => [
@@ -48,7 +53,7 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
         dataIndex: "date",
         key: "date",
         align: "center",
-        width: 100,
+        width: 150,
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (val: string) => (
           <span className="text-gray-900 dark:text-white whitespace-nowrap">
@@ -58,11 +63,12 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
       },
       {
         title: (
-          <span className="text-gray-900 dark:text-white">Гүйлгээний утга</span>
+          <span className="text-gray-900 dark:text-white text-center block w-full">Гүйлгээний утга</span>
         ),
         dataIndex: "action",
-        align: "center",
+        align: "left",
         key: "action",
+        width: 350,
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (val: string, item: DansKhuulgaItem) => (
           <span className="text-gray-900 dark:text-white" title={val}>
@@ -72,16 +78,16 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
       },
       {
         title: (
-          <span className="text-gray-900 dark:text-white">Гүйлгээний дүн</span>
+          <span className="text-gray-900 dark:text-white text-center block w-full">Гүйлгээний дүн</span>
         ),
         dataIndex: "total",
         key: "total",
-        align: "center",
+        align: "right",
         width: 140,
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (val: number) => (
           <span className="text-gray-900 dark:text-white whitespace-nowrap font-medium">
-            {formatNumber(val || 0, 0)}
+            {formatNumber(val || 0, 2)}₮
           </span>
         ),
       },
@@ -100,8 +106,60 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
           </span>
         ),
       },
+      {
+        title: (
+          <span className="text-gray-900 dark:text-white">Холбосон огноо</span>
+        ),
+        dataIndex: "updatedAt",
+        key: "linkedDate",
+        align: "center",
+        width: 150,
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        render: (_: any, item: DansKhuulgaItem) => {
+          const isLinked = (item.contractIds?.length || 0) > 0;
+          if (!isLinked) return "-";
+          const dateVal = item.raw?.updatedAt || null;
+          const d = dateVal ? new Date(dateVal) : null;
+          if (!d) return "-";
+          const pad = (n: number) => String(n).padStart(2, "0");
+          return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        },
+      },
+      {
+        title: (
+          <span className="text-gray-900 dark:text-white">Төлөв</span>
+        ),
+        key: "status",
+        align: "center",
+        width: 100,
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        render: (_: any, item: DansKhuulgaItem) => {
+          const isLinked = (item.contractIds?.length || 0) > 0;
+          return (
+            <div className="flex items-center justify-center">
+              {isLinked ? (
+                <button
+                  onClick={() => onUnlink?.(item)}
+                  className="flex items-center justify-center w-8 h-8 rounded-full bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30 hover:scale-105 active:scale-95 transition-all duration-200"
+                  title="Холболт салгах"
+                >
+                  <CheckOutlined className="text-base" />
+                </button>
+              ) : (
+                <button
+                  onClick={() => onLink?.(item)}
+                  className="flex items-center justify-center w-8 h-8 rounded-full bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/30 hover:scale-105 active:scale-95 transition-all duration-200"
+                  title="Гүйлгээ холбох"
+                >
+                  <ExclamationOutlined className="text-base" />
+                </button>
+              )}
+            </div>
+          );
+        },
+      },
     ],
-    [page, rowsPerPage],
+    [page, rowsPerPage, onLink, onUnlink],
   );
 
   const totalSum = useMemo(
@@ -146,17 +204,13 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
                     colSpan={2}
                     align="center"
                     className="dark:border-gray-700"
-                  >
-                    <span className="font-bold text-gray-900 dark:text-white">
-                      Нийт:
-                    </span>
-                  </Table.Summary.Cell>
+                  />
                   <Table.Summary.Cell
                     index={1}
                     align="right"
                     className="dark:border-gray-700"
                   >
-                    <span className="text-[10px] text-gray-900 dark:text-gray-400 uppercase tracking-widest">
+                    <span className="text-sm font-bold text-gray-900 dark:text-white">
                       Нийт дүн:
                     </span>
                   </Table.Summary.Cell>
@@ -165,8 +219,8 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
                     align="right"
                     className="dark:border-gray-700"
                   >
-                    <span className="font-bold text-gray-900 dark:text-white text-xs">
-                      {formatNumber(totalSum, 0)}
+                    <span className="font-bold text-gray-900 dark:text-white text-sm">
+                      {formatNumber(totalSum, 2)}₮
                     </span>
                   </Table.Summary.Cell>
                   <Table.Summary.Cell
