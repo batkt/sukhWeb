@@ -187,7 +187,7 @@ export default function WebRTCVideoPlayer({
               </span>
               <button
                 onClick={connect}
-                className="mt-1 px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-[10px] transition-colors"
+                className="mt-1 px-4 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-[10px] transition-colors"
               >
                 Дахин оролдох
               </button>

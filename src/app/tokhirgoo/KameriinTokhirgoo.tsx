@@ -43,7 +43,7 @@ const defaultCamera = (): CameraConfig => ({
 });
 
 const INPUT_CLS =
-  "w-full px-3 py-2 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] text-sm";
+  "w-full px-3 py-2 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] text-sm";
 
 function CameraRow({
   cam,
@@ -61,7 +61,7 @@ function CameraRow({
 
   return (
     <div
-      className={`rounded-xl border transition-all ${
+      className={`rounded-2xl border transition-all ${
         cam.enabled
           ? "border-blue-500/20 bg-blue-50/30 dark:bg-blue-950/10"
           : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] opacity-60"
@@ -100,7 +100,7 @@ function CameraRow({
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="p-1.5 rounded-lg hover:bg-[color:var(--surface-hover)] transition-colors text-[color:var(--muted-text)]"
+          className="p-1.5 rounded-full hover:bg-[color:var(--surface-hover)] transition-colors text-[color:var(--muted-text)]"
         >
           <ChevronDown
             className={`w-4 h-4 transition-transform ${expanded ? "rotate-180" : ""}`}
@@ -110,7 +110,7 @@ function CameraRow({
         <button
           type="button"
           onClick={onRemove}
-          className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 text-red-400 hover:text-red-500 transition-colors"
+          className="p-1.5 rounded-full hover:bg-red-50 dark:hover:bg-red-950/30 text-red-400 hover:text-red-500 transition-colors"
         >
           <Trash2 className="w-4 h-4" />
         </button>
@@ -181,9 +181,14 @@ export default function KameriinTokhirgoo() {
 
   const [buildings, setBuildings] = useState<any[]>([]);
   const [selectedBarilgiinId, setSelectedBarilgiinId] = useState<string>("");
-  const [cameras, setCameras] = useState<CameraConfig[]>([]);
+  const [sohCameras, setSohCameras] = useState<CameraConfig[]>([]);
+  const [residentCameras, setResidentCameras] = useState<CameraConfig[]>([]);
+  const [activeTab, setActiveTab] = useState<"soh" | "resident">("soh");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  const activeCameras = activeTab === "soh" ? sohCameras : residentCameras;
+  const setActiveCameras = activeTab === "soh" ? setSohCameras : setResidentCameras;
 
   // Building-level NVR settings
   const [cameraIp, setCameraIp] = useState("");
@@ -229,7 +234,8 @@ export default function KameriinTokhirgoo() {
   useEffect(() => {
     if (!selectedBarilgiinId || buildings.length === 0) return;
     const b = buildings.find((x: any) => x._id === selectedBarilgiinId);
-    setCameras((b?.cameruud ?? []) as CameraConfig[]);
+    setSohCameras((b?.sohCameruud ?? []) as CameraConfig[]);
+    setResidentCameras((b?.cameruud ?? []) as CameraConfig[]);
     setCameraIp(b?.cameraIp ?? "");
     setCameraPort(b?.cameraPort ?? 554);
     setCameraUsername(b?.cameraUsername ?? "admin");
@@ -238,17 +244,17 @@ export default function KameriinTokhirgoo() {
 
   const handleAddCamera = () => {
     const next = defaultCamera();
-    next.id = `cam-${cameras.length + 1}`;
-    next.name = `Камер ${cameras.length + 1}`;
-    setCameras((prev) => [...prev, next]);
+    next.id = `cam-${activeCameras.length + 1}`;
+    next.name = `Камер ${activeCameras.length + 1}`;
+    setActiveCameras((prev) => [...prev, next]);
   };
 
   const handleChange = (idx: number, updated: CameraConfig) => {
-    setCameras((prev) => prev.map((c, i) => (i === idx ? updated : c)));
+    setActiveCameras((prev) => prev.map((c, i) => (i === idx ? updated : c)));
   };
 
   const handleRemove = (idx: number) => {
-    setCameras((prev) => prev.filter((_, i) => i !== idx));
+    setActiveCameras((prev) => prev.filter((_, i) => i !== idx));
   };
 
 
@@ -259,7 +265,7 @@ export default function KameriinTokhirgoo() {
     }
 
     // Validate NVR IP if cameras are configured
-    if (cameras.length > 0 && !cameraIp.trim()) {
+    if ((sohCameras.length > 0 || residentCameras.length > 0) && !cameraIp.trim()) {
       openErrorOverlay("Холболтын үндсэн IP хаяг бөглөнө үү");
       return;
     }
@@ -276,7 +282,8 @@ export default function KameriinTokhirgoo() {
             cameraPort: Number(cameraPort) || 554,
             cameraUsername,
             cameraPassword,
-            cameruud: cameras,
+            cameruud: residentCameras,
+            sohCameruud: sohCameras,
           };
         }
         return b;
@@ -306,7 +313,7 @@ export default function KameriinTokhirgoo() {
     <div className="space-y-6 p-4">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/30">
+        <div className="p-2.5 rounded-2xl bg-blue-50 dark:bg-blue-950/30">
           <Video className="w-5 h-5 text-blue-500" />
         </div>
         <div>
@@ -340,7 +347,7 @@ export default function KameriinTokhirgoo() {
       )}
 
       {buildings.length === 1 && selectedBuilding && (
-        <div className="px-3 py-2 rounded-lg bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)]">
+        <div className="px-4 py-2.5 rounded-xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)]">
           <p className="text-sm text-[color:var(--panel-text)] font-semibold">
             {selectedBuilding.ner}
           </p>
@@ -359,7 +366,7 @@ export default function KameriinTokhirgoo() {
       ) : (
         <>
           {/* Холболтын үндсэн мэдээлэл */}
-          <div className="p-4 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] space-y-4">
+          <div className="p-4 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] space-y-4">
             <h3 className="text-sm font-semibold text-[color:var(--panel-text)] flex items-center gap-2">
               <Sliders className="w-4 h-4 text-blue-500" />
               Холболтын үндсэн мэдээлэл (NVR)
@@ -419,10 +426,36 @@ export default function KameriinTokhirgoo() {
             </div>
           </div>
 
+          {/* Tab selector */}
+          <div className="flex border-b border-[color:var(--surface-border)]">
+            <button
+              type="button"
+              onClick={() => setActiveTab("soh")}
+              className={`flex-1 py-3 text-center text-sm font-semibold border-b-2 transition-all ${
+                activeTab === "soh"
+                  ? "border-blue-500 text-blue-500 font-bold"
+                  : "border-transparent text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+              }`}
+            >
+              СӨХ-ийн харах камер ({sohCameras.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("resident")}
+              className={`flex-1 py-3 text-center text-sm font-semibold border-b-2 transition-all ${
+                activeTab === "resident"
+                  ? "border-blue-500 text-blue-500 font-bold"
+                  : "border-transparent text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+              }`}
+            >
+              Оршин суугчдын харах камер ({residentCameras.length})
+            </button>
+          </div>
+
           {/* Camera list */}
           <div className="space-y-3">
-            {cameras.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 rounded-xl border-2 border-dashed border-[color:var(--surface-border)] text-[color:var(--muted-text)]">
+            {activeCameras.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 rounded-3xl border-2 border-dashed border-[color:var(--surface-border)] text-[color:var(--muted-text)]">
                 <VideoOff className="w-10 h-10 mb-2 opacity-40" />
                 <p className="text-sm font-medium">Камер нэмэгдээгүй байна</p>
                 <p className="text-xs mt-1 opacity-70">
@@ -430,7 +463,7 @@ export default function KameriinTokhirgoo() {
                 </p>
               </div>
             ) : (
-              cameras.map((cam, idx) => (
+              activeCameras.map((cam, idx) => (
                 <CameraRow
                   key={cam.id + idx}
                   cam={cam}
@@ -446,7 +479,7 @@ export default function KameriinTokhirgoo() {
           <button
             type="button"
             onClick={handleAddCamera}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-blue-300 dark:border-blue-700 text-blue-500 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-colors text-sm font-semibold"
+            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-full border-2 border-dashed border-blue-300 dark:border-blue-700 text-blue-500 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-colors text-sm font-semibold shadow-sm"
           >
             <Plus className="w-4 h-4" />
             Камер нэмэх
@@ -457,11 +490,11 @@ export default function KameriinTokhirgoo() {
             <p className="text-sm text-[color:var(--muted-text)]">
               Нийт{" "}
               <span className="font-semibold text-[color:var(--panel-text)]">
-                {cameras.length}
+                {activeCameras.length}
               </span>{" "}
               камер,{" "}
               <span className="font-semibold text-[color:var(--panel-text)]">
-                {cameras.filter((c) => c.enabled).length}
+                {activeCameras.filter((c) => c.enabled).length}
               </span>{" "}
               идэвхтэй
             </p>
