@@ -810,14 +810,14 @@ export default function GolContent({ children }: GolContentProps) {
                         <button
                           type="button"
                           onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); setSanalDropdownTab("sanal"); }}
-                          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-full text-xs font-semibold transition-all ${sanalDropdownTab === "sanal" ? "bg-[#059669] text-white shadow-sm" : "text-[color:var(--panel-text)]/60 hover:text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"}`}
+                          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-full text-xs font-semibold transition-all ${sanalDropdownTab === "sanal" ? "bg-[#f59e0b] !text-white shadow-sm" : "text-[color:var(--panel-text)]/60 hover:text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"}`}
                         >
                           <MessageSquare className="w-3.5 h-3.5" />
                           Санал хүсэлт
                           {unreadSanalCount > 0 && (
                             <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
                               sanalDropdownTab === "sanal"
-                                ? "bg-white/20 text-white"
+                                ? "bg-white/20 !text-white"
                                 : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
                             }`}>
                               {unreadSanalCount}
@@ -827,14 +827,14 @@ export default function GolContent({ children }: GolContentProps) {
                         <button
                           type="button"
                           onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); setSanalDropdownTab("medegdel"); }}
-                          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-full text-xs font-semibold transition-all ${sanalDropdownTab === "medegdel" ? "bg-[#059669] text-white shadow-sm" : "text-[color:var(--panel-text)]/60 hover:text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"}`}
+                          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-full text-xs font-semibold transition-all ${sanalDropdownTab === "medegdel" ? "bg-[#059669] !text-white shadow-sm" : "text-[color:var(--panel-text)]/60 hover:text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"}`}
                         >
                           <Bell className="w-3.5 h-3.5" />
                           Мэдэгдэл
                           {unreadMedegdelCount > 0 && (
                             <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
                               sanalDropdownTab === "medegdel"
-                                ? "bg-white/20 text-white"
+                                ? "bg-white/20 !text-white"
                                 : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
                             }`}>
                               {unreadMedegdelCount}
@@ -854,9 +854,9 @@ export default function GolContent({ children }: GolContentProps) {
                                 const isUnread = item.status === "pending" && !item.kharsanEsekh;
                                 const isSanalItem = isSanal(item.turul);
                                 const typeLabel = isSanalItem ? "Санал" : "Гомдол";
-                                const unreadSanal = "bg-blue-500/15 dark:bg-blue-500/25 border-l-4 border-blue-500 text-[color:var(--panel-text)] hover:bg-blue-500/20 dark:hover:bg-blue-500/30";
-                                const unreadGomdol = "bg-red-500/15 dark:bg-red-500/25 border-l-4 border-red-500 text-[color:var(--panel-text)] hover:bg-red-500/20 dark:hover:bg-red-500/30";
-                                const unreadClass = isUnread ? (isSanalItem ? unreadSanal : unreadGomdol) : "text-[color:var(--panel-text)]/80 hover:bg-[color:var(--surface-hover)]/50 border-l-4 border-transparent";
+                                const unreadSanal = "bg-blue-500/15 dark:bg-blue-500/25 border-l-4 border-blue-500 text-[color:var(--panel-text)] hover:bg-blue-600 hover:!text-white dark:hover:bg-blue-500/80";
+                                const unreadGomdol = "bg-red-500/15 dark:bg-red-500/25 border-l-4 border-red-500 text-[color:var(--panel-text)] hover:bg-red-600 hover:!text-white dark:hover:bg-red-500/80";
+                                const unreadClass = isUnread ? (isSanalItem ? unreadSanal : unreadGomdol) : "text-[color:var(--panel-text)]/80 hover:bg-slate-200 dark:hover:bg-white/20 border-l-4 border-transparent";
                                 const iconClass = isUnread ? (isSanalItem ? "opacity-100 text-blue-600 dark:text-blue-400" : "opacity-100 text-red-600 dark:text-red-400") : "opacity-60";
                                 const badgeSanal = "px-1.5 py-0.5 rounded text-[10px] bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-400/50";
                                 const badgeGomdol = "px-1.5 py-0.5 rounded text-[10px] bg-red-500/20 text-red-700 dark:text-red-300 border border-red-400/50";
@@ -871,7 +871,7 @@ export default function GolContent({ children }: GolContentProps) {
                                         setShowSanalDropdown(false);
                                         router.push(`/medegdel/sanalKhuselt?id=${item._id}`);
                                       }}
-                                      className={`w-full flex items-start gap-2 text-left px-4 py-3 text-sm rounded-lg transition-all cursor-pointer my-0.5 ${unreadClass}`}
+                                      className={`w-full flex items-start gap-2 text-left px-4 py-3 text-sm rounded-lg transition-all cursor-pointer my-0.5 group ${unreadClass}`}
                                     >
                                       <MessageSquare className={`w-4 h-4 mt-0.5 shrink-0 ${iconClass}`} />
                                       <div className="min-w-0 flex-1">
@@ -880,7 +880,7 @@ export default function GolContent({ children }: GolContentProps) {
                                           {isUnread && (
                                             <span className="px-1.5 py-0.5 rounded text-[9px] bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-400/50">Хүлээгдэж байна</span>
                                           )}
-                                          <span className="truncate text-[11px]">{item.title || "Мэдэгдэл"}</span>
+                                          <span className={`truncate block text-xs font-semibold text-slate-800 dark:text-white ${isUnread ? "group-hover:text-white" : "group-hover:text-slate-900 dark:group-hover:text-white"}`}>{item.title || "Мэдэгдэл"}</span>
                                         </div>
                                         {item.message && (
                                           <div className="text-xs text-[color:var(--panel-text)]/70 truncate mt-0.5">{item.message}</div>
@@ -914,7 +914,7 @@ export default function GolContent({ children }: GolContentProps) {
                                         e.preventDefault();
                                         handleMedegdelClick(item);
                                       }}
-                                      className={`w-full flex items-start gap-2 text-left px-4 py-2.5 text-sm rounded-lg transition-all cursor-pointer my-0.5 border-l-4 ${isUnread ? "bg-emerald-500/10 border-emerald-500 hover:bg-emerald-500/15" : "border-[#059669]/30 text-[color:var(--panel-text)]/80 hover:bg-[color:var(--surface-hover)]/50"}`}
+                                      className={`w-full flex items-start gap-2 text-left px-4 py-2.5 text-sm rounded-lg transition-all cursor-pointer my-0.5 border-l-2 group ${isUnread ? "bg-emerald-500/10 border-emerald-500 hover:bg-emerald-600 hover:!text-white dark:hover:bg-emerald-500/80" : "border-[#059669]/30 text-[color:var(--panel-text)]/80 hover:bg-emerald-500/15 dark:hover:bg-emerald-500/25"}`}
                                     >
                                       <Bell className={`w-4 h-4 mt-0.5 shrink-0 ${isUnread ? "text-emerald-600 dark:text-emerald-400" : "opacity-60 text-[#059669]"}`} />
                                       <div className="min-w-0 flex-1">
@@ -927,7 +927,7 @@ export default function GolContent({ children }: GolContentProps) {
                                             </span>
                                           )}
                                         </div>
-                                        <span className="truncate block text-xs font-semibold text-slate-800 dark:text-white">{item.title || "QPay төлөлт"}</span>
+                                        <span className={`truncate block text-xs font-semibold text-slate-800 dark:text-white ${isUnread ? "group-hover:text-white" : "group-hover:text-slate-900 dark:group-hover:text-white"}`}>{item.title || "QPay төлөлт"}</span>
                                         {item.message && (
                                           <div className="text-xs text-[color:var(--panel-text)]/70 truncate mt-0.5">{item.message}</div>
                                         )}
@@ -1109,14 +1109,14 @@ export default function GolContent({ children }: GolContentProps) {
                         <button
                           type="button"
                           onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); setSanalDropdownTab("sanal"); }}
-                          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-full text-xs font-semibold transition-all ${sanalDropdownTab === "sanal" ? "bg-[#059669] text-white shadow-sm" : "text-[color:var(--panel-text)]/60 hover:text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"}`}
+                          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-full text-xs font-semibold transition-all ${sanalDropdownTab === "sanal" ? "bg-[#f59e0b] !text-white shadow-sm" : "text-[color:var(--panel-text)]/60 hover:text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"}`}
                         >
                           <MessageSquare className="w-3.5 h-3.5" />
                           Санал хүсэлт
                           {unreadSanalCount > 0 && (
                             <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
                               sanalDropdownTab === "sanal"
-                                ? "bg-white/20 text-white"
+                                ? "bg-white/20 !text-white"
                                 : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
                             }`}>
                               {unreadSanalCount}
@@ -1126,14 +1126,14 @@ export default function GolContent({ children }: GolContentProps) {
                         <button
                           type="button"
                           onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); setSanalDropdownTab("medegdel"); }}
-                          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-full text-xs font-semibold transition-all ${sanalDropdownTab === "medegdel" ? "bg-[#059669] text-white shadow-sm" : "text-[color:var(--panel-text)]/60 hover:text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"}`}
+                          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-full text-xs font-semibold transition-all ${sanalDropdownTab === "medegdel" ? "bg-[#059669] !text-white shadow-sm" : "text-[color:var(--panel-text)]/60 hover:text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"}`}
                         >
                           <Bell className="w-3.5 h-3.5" />
                           Мэдэгдэл
                           {unreadMedegdelCount > 0 && (
                             <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
                               sanalDropdownTab === "medegdel"
-                                ? "bg-white/20 text-white"
+                                ? "bg-white/20 !text-white"
                                 : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
                             }`}>
                               {unreadMedegdelCount}
@@ -1153,9 +1153,9 @@ export default function GolContent({ children }: GolContentProps) {
                                 const isUnread = item.status === "pending" && !item.kharsanEsekh;
                                 const isSanalItem = isSanal(item.turul);
                                 const typeLabel = isSanalItem ? "Санал" : "Гомдол";
-                                const unreadSanal = "bg-blue-500/15 dark:bg-blue-500/25 border-l-4 border-blue-500 text-[color:var(--panel-text)] hover:bg-blue-500/20 dark:hover:bg-blue-500/30";
-                                const unreadGomdol = "bg-red-500/15 dark:bg-red-500/25 border-l-4 border-red-500 text-[color:var(--panel-text)] hover:bg-red-500/20 dark:hover:bg-red-500/30";
-                                const unreadClass = isUnread ? (isSanalItem ? unreadSanal : unreadGomdol) : "text-[color:var(--panel-text)]/80 hover:bg-[color:var(--surface-hover)]/50 border-l-4 border-transparent";
+                                const unreadSanal = "bg-blue-500/15 dark:bg-blue-500/25 border-l-4 border-blue-500 text-[color:var(--panel-text)] hover:bg-blue-600 hover:!text-white dark:hover:bg-blue-500/80";
+                                const unreadGomdol = "bg-red-500/15 dark:bg-red-500/25 border-l-4 border-red-500 text-[color:var(--panel-text)] hover:bg-red-600 hover:!text-white dark:hover:bg-red-500/80";
+                                const unreadClass = isUnread ? (isSanalItem ? unreadSanal : unreadGomdol) : "text-[color:var(--panel-text)]/80 hover:bg-slate-200 dark:hover:bg-white/20 border-l-4 border-transparent";
                                 const iconClass = isUnread ? (isSanalItem ? "opacity-100 text-blue-600 dark:text-blue-400" : "opacity-100 text-red-600 dark:text-red-400") : "opacity-60";
                                 const badgeSanal = "px-1.5 py-0.5 rounded text-[10px] bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-400/50";
                                 const badgeGomdol = "px-1.5 py-0.5 rounded text-[10px] bg-red-500/20 text-red-700 dark:text-red-300 border border-red-400/50";
@@ -1170,7 +1170,7 @@ export default function GolContent({ children }: GolContentProps) {
                                         setShowSanalDropdown(false);
                                         router.push(`/medegdel/sanalKhuselt?id=${item._id}`);
                                       }}
-                                      className={`w-full flex items-start gap-2 text-left px-4 py-3 text-sm rounded-lg transition-all cursor-pointer my-0.5 ${unreadClass}`}
+                                      className={`w-full flex items-start gap-2 text-left px-4 py-3 text-sm rounded-lg transition-all cursor-pointer my-0.5 group ${unreadClass}`}
                                     >
                                       <MessageSquare className={`w-4 h-4 mt-0.5 shrink-0 ${iconClass}`} />
                                       <div className="min-w-0 flex-1">
@@ -1179,7 +1179,7 @@ export default function GolContent({ children }: GolContentProps) {
                                           {isUnread && (
                                             <span className="px-1.5 py-0.5 rounded text-[9px] bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-400/50">Хүлээгдэж байна</span>
                                           )}
-                                          <span className="truncate text-[11px]">{item.title || "Мэдэгдэл"}</span>
+                                          <span className={`truncate block text-xs font-semibold text-slate-800 dark:text-white ${isUnread ? "group-hover:text-white" : "group-hover:text-slate-900 dark:group-hover:text-white"}`}>{item.title || "Мэдэгдэл"}</span>
                                         </div>
                                         {item.message && (
                                           <div className="text-xs text-[color:var(--panel-text)]/70 truncate mt-0.5">{item.message}</div>
@@ -1213,7 +1213,7 @@ export default function GolContent({ children }: GolContentProps) {
                                         e.preventDefault();
                                         handleMedegdelClick(item);
                                       }}
-                                      className={`w-full flex items-start gap-2 text-left px-4 py-2.5 text-sm rounded-lg transition-all cursor-pointer my-0.5 border-l-4 ${isUnread ? "bg-emerald-500/10 border-emerald-500 hover:bg-emerald-500/15" : "border-[#059669]/30 text-[color:var(--panel-text)]/80 hover:bg-[color:var(--surface-hover)]/50"}`}
+                                      className={`w-full flex items-start gap-2 text-left px-4 py-2.5 text-sm rounded-lg transition-all cursor-pointer my-0.5 border-l-2 group ${isUnread ? "bg-emerald-500/10 border-emerald-500 hover:bg-emerald-600 hover:!text-white dark:hover:bg-emerald-500/80" : "border-[#059669]/30 text-[color:var(--panel-text)]/80 hover:bg-emerald-500/15 dark:hover:bg-emerald-500/25"}`}
                                     >
                                       <Bell className={`w-4 h-4 mt-0.5 shrink-0 ${isUnread ? "text-emerald-600 dark:text-emerald-400" : "opacity-60 text-[#059669]"}`} />
                                       <div className="min-w-0 flex-1">
@@ -1226,7 +1226,7 @@ export default function GolContent({ children }: GolContentProps) {
                                             </span>
                                           )}
                                         </div>
-                                        <span className="truncate block text-xs font-semibold text-slate-800 dark:text-white">{item.title || "QPay төлөлт"}</span>
+                                        <span className={`truncate block text-xs font-semibold text-slate-800 dark:text-white ${isUnread ? "group-hover:text-white" : "group-hover:text-slate-900 dark:group-hover:text-white"}`}>{item.title || "QPay төлөлт"}</span>
                                         {item.message && (
                                           <div className="text-xs text-[color:var(--panel-text)]/70 truncate mt-0.5">{item.message}</div>
                                         )}
