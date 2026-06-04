@@ -116,8 +116,9 @@ export default function GolContent({ children }: GolContentProps) {
   const isGomdol = (t: string | undefined) => { const x = (t ?? "").toLowerCase().trim(); return x === "gomdol" || x === "гомдол"; };
   const sanalUnreadList = sanalUnreadListRaw.filter((item) => isSanal(item.turul) || isGomdol(item.turul));
   const receivedMedegdelList = sanalUnreadListRaw.filter((item) => !isSanal(item.turul) && !isGomdol(item.turul));
-  // Bell badge only shows sanal/gomdol count, NOT medegdel/tulult
-  const bellBadgeCount = sanalUnreadList.filter((item) => item.status === "pending" && !item.kharsanEsekh).length;
+  const unreadSanalCount = sanalUnreadList.filter(item => item.status === "pending" && !item.kharsanEsekh).length;
+  const unreadMedegdelCount = receivedMedegdelList.filter(item => !item.kharsanEsekh).length;
+  const bellBadgeCount = sanalUnreadCount;
   const socket = useSocket();
 
   const [residentsMap, setResidentsMap] = useState<
@@ -152,21 +153,39 @@ export default function GolContent({ children }: GolContentProps) {
     });
   }, [receivedMedegdelList, token, ajiltan?.baiguullagiinId]);
 
-  // Auto mark medegdel/tulult items as read when the dropdown is open showing them
-  useEffect(() => {
-    if (!showSanalDropdown || !token || !ajiltan?.baiguullagiinId) return;
-    const unreadItems = receivedMedegdelList.filter((item) => !item.kharsanEsekh);
-    if (!unreadItems.length) return;
-    unreadItems.forEach(async (item) => {
+  const handleMedegdelClick = async (item: any) => {
+    if (!item.kharsanEsekh && token) {
       try {
-        await uilchilgee(token).patch(`/medegdel/${item._id}/kharsanEsekh`);
+        try {
+          await uilchilgee(token).post(
+            `/medegdel/${item._id}/kharsanEsekh`,
+            {},
+            {
+              params: { baiguullagiinId: ajiltan?.baiguullagiinId }
+            }
+          );
+        } catch (postErr: any) {
+          if (postErr?.response?.status === 404 || postErr?.response?.status === 405) {
+            await uilchilgee(token).patch(
+              `/medegdel/${item._id}/kharsanEsekh`,
+              {},
+              {
+                params: { baiguullagiinId: ajiltan?.baiguullagiinId }
+              }
+            );
+          } else {
+            throw postErr;
+          }
+        }
+        mutate((k: unknown) => Array.isArray(k) && k[0] === "/medegdel/unreadCount", undefined, { revalidate: true });
+        mutate((k: unknown) => Array.isArray(k) && k[0] === "/medegdel/unreadList", undefined, { revalidate: true });
       } catch (e) {
-        console.warn("Failed to auto-mark medegdel as read", item._id, e);
+        console.warn("Failed to mark medegdel as read on click", e);
       }
-    });
-    // Revalidate unread count after marking
-    mutate((k: unknown) => Array.isArray(k) && k[0] === "/medegdel/unreadCount", undefined, { revalidate: true });
-  }, [showSanalDropdown, receivedMedegdelList]);
+    }
+    setShowSanalDropdown(false);
+    router.push(`/medegdel/medegdel?tab=tulult&id=${item._id}`);
+  };
 
   useEffect(() => {
     if (!socket || !ajiltan?.baiguullagiinId || !canSeeSanalKhuselt) return;
@@ -182,8 +201,7 @@ export default function GolContent({ children }: GolContentProps) {
             action: {
               label: "Харах",
               onClick: () => {
-                if (payload?.data?._id) router.push(`/medegdel?id=${payload.data._id}`);
-                else router.push("/medegdel");
+                router.push("/medegdel/medegdel?tab=tulult");
               }
             }
           });
@@ -796,7 +814,15 @@ export default function GolContent({ children }: GolContentProps) {
                         >
                           <MessageSquare className="w-3.5 h-3.5" />
                           Санал хүсэлт
-                          {sanalUnreadCount > 0 && <span className="ml-0.5 bg-white/30 text-inherit rounded-full px-1.5 text-[10px]">{sanalUnreadCount}</span>}
+                          {unreadSanalCount > 0 && (
+                            <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
+                              sanalDropdownTab === "sanal"
+                                ? "bg-white/20 text-white"
+                                : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                            }`}>
+                              {unreadSanalCount}
+                            </span>
+                          )}
                         </button>
                         <button
                           type="button"
@@ -805,6 +831,15 @@ export default function GolContent({ children }: GolContentProps) {
                         >
                           <Bell className="w-3.5 h-3.5" />
                           Мэдэгдэл
+                          {unreadMedegdelCount > 0 && (
+                            <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
+                              sanalDropdownTab === "medegdel"
+                                ? "bg-white/20 text-white"
+                                : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                            }`}>
+                              {unreadMedegdelCount}
+                            </span>
+                          )}
                         </button>
                       </div>
 
@@ -869,8 +904,7 @@ export default function GolContent({ children }: GolContentProps) {
                               <li className="px-4 py-6 text-sm text-[color:var(--panel-text)]/70 text-center">Мэдэгдэл алга</li>
                             ) : (
                               receivedMedegdelList.map((item) => {
-                                const itemAny = item as any;
-                                const rInfo = itemAny.orshinSuugchId ? ((residentsMap[itemAny.orshinSuugchId] || {}) as any) : {};
+                                const isUnread = !item.kharsanEsekh;
                                 return (
                                   <li key={item._id}>
                                     <button
@@ -878,39 +912,22 @@ export default function GolContent({ children }: GolContentProps) {
                                       onMouseDown={(e) => {
                                         e.stopPropagation();
                                         e.preventDefault();
-                                        setShowSanalDropdown(false);
-                                        router.push("/medegdel/medegdel?tab=tulult");
+                                        handleMedegdelClick(item);
                                       }}
-                                      className="w-full flex items-start gap-2 text-left px-4 py-3 text-sm rounded-lg transition-all cursor-pointer my-0.5 text-[color:var(--panel-text)]/80 hover:bg-[color:var(--surface-hover)]/50 border-l-4 border-[#059669]/40"
+                                      className={`w-full flex items-start gap-2 text-left px-4 py-2.5 text-sm rounded-lg transition-all cursor-pointer my-0.5 border-l-4 ${isUnread ? "bg-emerald-500/10 border-emerald-500 hover:bg-emerald-500/15" : "border-[#059669]/30 text-[color:var(--panel-text)]/80 hover:bg-[color:var(--surface-hover)]/50"}`}
                                     >
-                                      <Bell className="w-4 h-4 mt-0.5 shrink-0 opacity-60 text-[#059669]" />
+                                      <Bell className={`w-4 h-4 mt-0.5 shrink-0 ${isUnread ? "text-emerald-600 dark:text-emerald-400" : "opacity-60 text-[#059669]"}`} />
                                       <div className="min-w-0 flex-1">
-                                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                                          <span className="px-1.5 py-0.5 rounded text-[9px] bg-red-500/20 text-red-700 dark:text-red-300 border border-red-400/50">Мэдэгдэл</span>
+                                        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                                          <span className="px-1.5 py-0.5 rounded text-[9px] bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-400/50">Мэдэгдэл</span>
+                                          {isUnread && <span className="px-1.5 py-0.5 rounded text-[9px] bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-400/50">Шинэ</span>}
                                           {item.createdAt && (
                                             <span className="text-[9px] text-[color:var(--panel-text)]/50">
                                               {new Date(item.createdAt).toLocaleDateString("mn-MN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                                             </span>
                                           )}
                                         </div>
-                                        <span className="truncate block text-sm font-semibold mb-1 text-slate-800 dark:text-white">{item.title || "QPay төлөлт"}</span>
-
-                                        {/* Resident info box */}
-                                        <div className="my-1.5 p-2 rounded-xl bg-slate-100/50 dark:bg-white/5 border border-slate-200 dark:border-slate-800 flex flex-col gap-1 text-[11px] text-theme/80">
-                                          <div>
-                                            <span className="text-[10px] text-slate-400 dark:text-slate-500">Нэр:</span>{" "}
-                                            <span className="font-semibold">{rInfo.ner || itemAny.orshinSuugchNer || "..."}</span>
-                                          </div>
-                                          <div>
-                                            <span className="text-[10px] text-slate-400 dark:text-slate-500">Тоот:</span>{" "}
-                                            <span className="font-semibold">{rInfo.toot || itemAny.gereeniiDugaar || "..."}</span>
-                                          </div>
-                                          <div>
-                                            <span className="text-[10px] text-slate-400 dark:text-slate-500">Утас:</span>{" "}
-                                            <span className="font-semibold">{rInfo.utas || itemAny.orshinSuugchUtas || "..."}</span>
-                                          </div>
-                                        </div>
-
+                                        <span className="truncate block text-xs font-semibold text-slate-800 dark:text-white">{item.title || "QPay төлөлт"}</span>
                                         {item.message && (
                                           <div className="text-xs text-[color:var(--panel-text)]/70 truncate mt-0.5">{item.message}</div>
                                         )}
@@ -1096,7 +1113,15 @@ export default function GolContent({ children }: GolContentProps) {
                         >
                           <MessageSquare className="w-3.5 h-3.5" />
                           Санал хүсэлт
-                          {sanalUnreadCount > 0 && <span className="ml-0.5 bg-white/30 text-inherit rounded-full px-1.5 text-[10px]">{sanalUnreadCount}</span>}
+                          {unreadSanalCount > 0 && (
+                            <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
+                              sanalDropdownTab === "sanal"
+                                ? "bg-white/20 text-white"
+                                : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                            }`}>
+                              {unreadSanalCount}
+                            </span>
+                          )}
                         </button>
                         <button
                           type="button"
@@ -1105,6 +1130,15 @@ export default function GolContent({ children }: GolContentProps) {
                         >
                           <Bell className="w-3.5 h-3.5" />
                           Мэдэгдэл
+                          {unreadMedegdelCount > 0 && (
+                            <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
+                              sanalDropdownTab === "medegdel"
+                                ? "bg-white/20 text-white"
+                                : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                            }`}>
+                              {unreadMedegdelCount}
+                            </span>
+                          )}
                         </button>
                       </div>
 
@@ -1169,8 +1203,7 @@ export default function GolContent({ children }: GolContentProps) {
                               <li className="px-4 py-6 text-sm text-[color:var(--panel-text)]/70 text-center">Мэдэгдэл алга</li>
                             ) : (
                               receivedMedegdelList.map((item) => {
-                                const itemAny = item as any;
-                                const rInfo = itemAny.orshinSuugchId ? ((residentsMap[itemAny.orshinSuugchId] || {}) as any) : {};
+                                const isUnread = !item.kharsanEsekh;
                                 return (
                                   <li key={item._id}>
                                     <button
@@ -1178,39 +1211,22 @@ export default function GolContent({ children }: GolContentProps) {
                                       onMouseDown={(e) => {
                                         e.stopPropagation();
                                         e.preventDefault();
-                                        setShowSanalDropdown(false);
-                                        router.push("/medegdel/medegdel?tab=tulult");
+                                        handleMedegdelClick(item);
                                       }}
-                                      className="w-full flex items-start gap-2 text-left px-4 py-3 text-sm rounded-lg transition-all cursor-pointer my-0.5 text-[color:var(--panel-text)]/80 hover:bg-[color:var(--surface-hover)]/50 border-l-4 border-[#059669]/40"
+                                      className={`w-full flex items-start gap-2 text-left px-4 py-2.5 text-sm rounded-lg transition-all cursor-pointer my-0.5 border-l-4 ${isUnread ? "bg-emerald-500/10 border-emerald-500 hover:bg-emerald-500/15" : "border-[#059669]/30 text-[color:var(--panel-text)]/80 hover:bg-[color:var(--surface-hover)]/50"}`}
                                     >
-                                      <Bell className="w-4 h-4 mt-0.5 shrink-0 opacity-60 text-[#059669]" />
+                                      <Bell className={`w-4 h-4 mt-0.5 shrink-0 ${isUnread ? "text-emerald-600 dark:text-emerald-400" : "opacity-60 text-[#059669]"}`} />
                                       <div className="min-w-0 flex-1">
-                                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                                          <span className="px-1.5 py-0.5 rounded text-[9px] bg-red-500/20 text-red-700 dark:text-red-300 border border-red-400/50">Мэдэгдэл</span>
+                                        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                                          <span className="px-1.5 py-0.5 rounded text-[9px] bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-400/50">Мэдэгдэл</span>
+                                          {isUnread && <span className="px-1.5 py-0.5 rounded text-[9px] bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-400/50">Шинэ</span>}
                                           {item.createdAt && (
                                             <span className="text-[9px] text-[color:var(--panel-text)]/50">
                                               {new Date(item.createdAt).toLocaleDateString("mn-MN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                                             </span>
                                           )}
                                         </div>
-                                        <span className="truncate block text-sm font-semibold mb-1 text-slate-800 dark:text-white">{item.title || "QPay төлөлт"}</span>
-
-                                        {/* Resident info box */}
-                                        <div className="my-1.5 p-2 rounded-xl bg-slate-100/50 dark:bg-white/5 border border-slate-200 dark:border-slate-800 flex flex-col gap-1 text-[11px] text-theme/80">
-                                          <div>
-                                            <span className="text-[10px] text-slate-400 dark:text-slate-500">Нэр:</span>{" "}
-                                            <span className="font-semibold">{rInfo.ner || itemAny.orshinSuugchNer || "..."}</span>
-                                          </div>
-                                          <div>
-                                            <span className="text-[10px] text-slate-400 dark:text-slate-500">Тоот:</span>{" "}
-                                            <span className="font-semibold">{rInfo.toot || itemAny.gereeniiDugaar || "..."}</span>
-                                          </div>
-                                          <div>
-                                            <span className="text-[10px] text-slate-400 dark:text-slate-500">Утас:</span>{" "}
-                                            <span className="font-semibold">{rInfo.utas || itemAny.orshinSuugchUtas || "..."}</span>
-                                          </div>
-                                        </div>
-
+                                        <span className="truncate block text-xs font-semibold text-slate-800 dark:text-white">{item.title || "QPay төлөлт"}</span>
                                         {item.message && (
                                           <div className="text-xs text-[color:var(--panel-text)]/70 truncate mt-0.5">{item.message}</div>
                                         )}

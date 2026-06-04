@@ -13,7 +13,7 @@ import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
 import { useBuilding } from "@/context/BuildingContext";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
-import useSWR from "swr"; // Added SWR import if not there
+import useSWR, { mutate } from "swr"; // Added SWR import if not there
 import BlogManagement from "./BlogManagement";
 import { useTourSteps } from "@/lib/useTourSteps";
 import { useRegisterTourSteps } from "@/context/TourContext";
@@ -178,6 +178,11 @@ function MedegdelContent() {
 
         if (filtered.length > 0) {
           setSelectedTulult((prev: any) => {
+            const queryId = searchParams.get("id");
+            if (queryId) {
+              const matched = filtered.find((x: any) => x._id === queryId);
+              if (matched) return matched;
+            }
             const stillExists = prev ? filtered.find((x: any) => x._id === prev._id) : null;
             return stillExists || filtered[0];
           });
@@ -199,15 +204,38 @@ function MedegdelContent() {
   };
 
   const markAsRead = async (item: any) => {
-    if (!item || !token || !baiguullagiinId) return;
+    console.log("[markAsRead] Called with item:", item?._id, "title:", item?.title, "kharsanEsekh:", item?.kharsanEsekh);
+    if (!item || !token || !baiguullagiinId) {
+      console.log("[markAsRead] Missing requirements:", { hasItem: !!item, hasToken: !!token, baiguullagiinId });
+      return;
+    }
     try {
-      await uilchilgee(token).patch(
-        `/medegdel/${item._id}/kharsanEsekh`,
-        {},
-        {
-          params: { baiguullagiinId },
+      console.log("[markAsRead] Sending POST request for:", item._id);
+      let res;
+      try {
+        res = await uilchilgee(token).post(
+          `/medegdel/${item._id}/kharsanEsekh`,
+          {},
+          {
+            params: { baiguullagiinId },
+          }
+        );
+        console.log("[markAsRead] POST response:", res.data);
+      } catch (postErr: any) {
+        if (postErr?.response?.status === 404 || postErr?.response?.status === 405) {
+          console.log("[markAsRead] POST not supported, falling back to PATCH");
+          res = await uilchilgee(token).patch(
+            `/medegdel/${item._id}/kharsanEsekh`,
+            {},
+            {
+              params: { baiguullagiinId },
+            }
+          );
+          console.log("[markAsRead] PATCH response:", res.data);
+        } else {
+          throw postErr;
         }
-      );
+      }
 
       setTulultList((prev) =>
         prev.map((it) => (it._id === item._id ? { ...it, kharsanEsekh: true } : it))
@@ -216,21 +244,21 @@ function MedegdelContent() {
         prev && prev._id === item._id ? { ...prev, kharsanEsekh: true } : prev
       );
 
-      // Revalidate count in sidebar dropdown if necessary by calling api
-      try {
-        await uilchilgee(token).get("/medegdel/unreadCount", {
-          params: {
-            baiguullagiinId,
-            ...(effectiveBarilgiinId ? { barilgiinId: effectiveBarilgiinId } : {}),
-          },
-        });
-      } catch (cErr) { }
+      // Revalidate count in sidebar dropdown and unread lists instantly
+      console.log("[markAsRead] Mutating SWR counts...");
+      mutate((k: unknown) => Array.isArray(k) && k[0] === "/medegdel/unreadCount", undefined, { revalidate: true });
+      mutate((k: unknown) => Array.isArray(k) && k[0] === "/medegdel/unreadList", undefined, { revalidate: true });
     } catch (err) {
-      console.warn("Failed to automatically mark as read:", err);
+      console.error("[markAsRead] Failed to mark as read:", err);
     }
   };
 
   useEffect(() => {
+    console.log("[useEffect selectedTulult] Triggered:", {
+      activeTab,
+      hasSelected: !!selectedTulult,
+      kharsanEsekh: selectedTulult?.kharsanEsekh
+    });
     if (activeTab === "tulult" && selectedTulult && !selectedTulult.kharsanEsekh) {
       markAsRead(selectedTulult);
     }
@@ -241,6 +269,16 @@ function MedegdelContent() {
       fetchTulultData();
     }
   }, [activeTab, baiguullagiinId, effectiveBarilgiinId]);
+
+  useEffect(() => {
+    const queryId = searchParams.get("id");
+    if (queryId && tulultList.length > 0) {
+      const found = tulultList.find((x) => x._id === queryId);
+      if (found) {
+        setSelectedTulult(found);
+      }
+    }
+  }, [searchParams, tulultList]);
 
   useEffect(() => {
     if (!socket || !baiguullagiinId) return;
@@ -1013,7 +1051,7 @@ function MedegdelContent() {
             className="flex flex-col lg:flex-row gap-3 sm:gap-4 lg:gap-5 flex-1 min-h-0 lg:max-h-[calc(100vh-16rem)]"
           >
             {/* Left side: List of notifications */}
-            <div className="neu-panel p-4 sm:p-5 flex flex-col min-w-0 lg:w-[420px] shrink-0">
+            <div className="neu-panel p-4 sm:p-5 flex flex-col min-w-0 lg:w-[350px] shrink-0">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-semibold flex items-center gap-2 text-slate-700 dark:text-white">
                   <Bell className="w-4 h-4 text-emerald-500" />
@@ -1037,7 +1075,7 @@ function MedegdelContent() {
               </div>
 
               {/* List */}
-              <div className="flex-1 min-h-0 overflow-y-auto space-y-2.5 pr-1 custom-scrollbar">
+              <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
                 {tulultLoading ? (
                   <div className="text-center py-12 text-slate-500 text-sm">Уншиж байна...</div>
                 ) : filteredTulult.length === 0 ? (
@@ -1050,13 +1088,15 @@ function MedegdelContent() {
                       <div
                         key={item._id}
                         onClick={() => setSelectedTulult(item)}
-                        className={`p-3.5 rounded-2xl cursor-pointer transition-all duration-200 border-2 flex flex-col gap-2 relative ${isSelected
-                          ? "bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-500 shadow-sm"
-                          : "border-transparent bg-white/5 hover:bg-white/10"
+                        className={`p-2.5 rounded-xl cursor-pointer transition-all duration-200 border flex flex-col gap-1.5 relative ${isSelected
+                          ? "bg-emerald-500/10 dark:bg-emerald-500/20 border-emerald-500 shadow-sm"
+                          : isUnread
+                            ? "border-orange-500/30 bg-orange-500/5 hover:bg-orange-500/10"
+                            : "border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/10"
                           }`}
                       >
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center justify-between w-full">
 
                           <span className="text-[10px] text-slate-500">
                             {new Date(item.createdAt || item.ognoo).toLocaleDateString("mn-MN", {
@@ -1066,11 +1106,20 @@ function MedegdelContent() {
                               minute: "2-digit"
                             })}
                           </span>
+                          {isUnread ? (
+                            <span className="px-1.5 py-0.5 rounded text-[9px] bg-orange-500/20 text-orange-700 dark:text-orange-300 border border-orange-400/50 shrink-0">
+                              Шинэ
+                            </span>
+                          ) : (
+                            <span className="px-1.5 py-0.5 rounded text-[9px] bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-400/50 shrink-0">
+                              Уншсан
+                            </span>
+                          )}
                         </div>
-                        <h4 className="text-sm font-semibold text-slate-800 dark:text-white line-clamp-1">
+                        <h4 className="text-xs font-semibold text-slate-800 dark:text-white line-clamp-1">
                           {item.title || "QPay төлөлт"}
                         </h4>
-                        <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
+                        <p className="text-[11px] text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
                           {item.message}
                         </p>
                       </div>

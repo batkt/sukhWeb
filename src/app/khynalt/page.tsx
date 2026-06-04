@@ -469,6 +469,51 @@ export default function Khynalt() {
 
   const avlagiinNasjiltData: any = null; // Removed broken 501 /tailan/avlagiin-nasjilt
 
+  const { data: medegdelData, isLoading: medegdelLoading } = useSWR(
+    token && ajiltan?.baiguullagiinId
+      ? ["/medegdel/history", token, ajiltan.baiguullagiinId, effectiveBarilgiinId]
+      : null,
+    async ([, tkn, bId, barId]) => {
+      const res = await uilchilgee(tkn).get("/medegdel", {
+        params: {
+          baiguullagiinId: bId,
+          ...(barId ? { barilgiinId: barId } : {}),
+        },
+      });
+      return res.data?.data || [];
+    },
+    { revalidateOnFocus: false }
+  );
+
+  const paymentHistory = useMemo(() => {
+    if (!Array.isArray(medegdelData)) return [];
+    const payments = medegdelData.filter((item: any) => {
+      const type = (item.turul || "").toLowerCase().trim();
+      return type === "medegdel" || type === "мэдэгдэл";
+    });
+    return payments.filter((item: any) => {
+      const dateStr = item.createdAt || item.ognoo;
+      if (!dateStr) return false;
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return false;
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      const itemLocalDateStr = `${year}-${month}-${day}`;
+      
+      let inRange = true;
+      if (rangeStart) {
+        inRange = inRange && itemLocalDateStr >= rangeStart;
+      }
+      if (rangeEnd) {
+        inRange = inRange && itemLocalDateStr <= rangeEnd;
+      }
+      return inRange;
+    }).sort((a: any, b: any) => {
+      return new Date(b.createdAt || b.ognoo).getTime() - new Date(a.createdAt || a.ognoo).getTime();
+    });
+  }, [medegdelData, rangeStart, rangeEnd]);
+
   const { data: tulukhAvlagaData } = useSWR(
     token && ajiltan?.baiguullagiinId && rangeStart && rangeEnd
       ? [
@@ -1496,6 +1541,80 @@ export default function Khynalt() {
                     }}
                   />
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Төлөлтийн түүх */}
+          <div
+            id="khynalt-payment-history"
+            className={`neu-panel allow-overflow rounded-3xl p-5 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col ${
+              mounted
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-4"
+            }`}
+            style={{
+              transitionDelay: "900ms",
+              willChange: "opacity, box-shadow",
+            }}
+          >
+            <div className="flex flex-col flex-1 min-h-0">
+              <div className="mb-4 flex flex-row items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-2">
+                  <Wallet className="w-5 h-5 text-emerald-500" />
+                  <h3 className="text-lg font-medium leading-snug text-[color:var(--panel-text)]">
+                    Төлөлтийн түүх (Мэдэгдлээр)
+                  </h3>
+                </div>
+                <span className="text-xs bg-slate-100 dark:bg-white/10 px-2 py-0.5 rounded-2xl text-slate-600 dark:text-slate-300">
+                  Сонгосон хугацаанд: {paymentHistory.length}
+                </span>
+              </div>
+
+              {/* History List */}
+              <div className="overflow-y-auto max-h-[350px] pr-1 custom-scrollbar space-y-2">
+                {medegdelLoading ? (
+                  <div className="text-center py-8 text-slate-500 text-sm">Уншиж байна...</div>
+                ) : paymentHistory.length === 0 ? (
+                  <div className="text-center py-8 text-slate-500 text-sm">
+                    Сонгосон хугацаанд төлөлтийн түүх олдсонгүй
+                  </div>
+                ) : (
+                  paymentHistory.map((item: any) => {
+                    const ognoo = new Date(item.createdAt || item.ognoo);
+                    return (
+                      <div
+                        key={item._id}
+                        className="p-3 rounded-2xl border border-[color:var(--panel-text)]/10 hover:bg-[color:var(--surface-hover)]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm transition-all"
+                      >
+                        <div className="flex flex-col gap-1 min-w-0">
+                          <h4 className="font-semibold text-slate-800 dark:text-white truncate">
+                            {item.title || "QPay төлөлт"}
+                          </h4>
+                          <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed break-words">
+                            {item.message}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-center">
+                          <span className="text-[11px] text-slate-500 bg-white/10 px-2 py-0.5 rounded-full whitespace-nowrap">
+                            {ognoo.toLocaleDateString("mn-MN", {
+                              month: "short",
+                              day: "numeric",
+                            })}{" "}
+                            {ognoo.toLocaleTimeString("mn-MN", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              second: "2-digit"
+                            })}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-400/50 whitespace-nowrap">
+                            Амжилттай
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
           </div>

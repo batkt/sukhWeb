@@ -254,13 +254,27 @@ export default function SanalKhuselt() {
       if (item.status !== "pending" || item.kharsanEsekh) return;
 
       try {
-        await uilchilgee(token).patch(
-          `/medegdel/${item._id}/kharsanEsekh`,
-          {},
-          {
-            params: { baiguullagiinId: ajiltan.baiguullagiinId },
-          },
-        );
+        try {
+          await uilchilgee(token).post(
+            `/medegdel/${item._id}/kharsanEsekh`,
+            {},
+            {
+              params: { baiguullagiinId: ajiltan.baiguullagiinId },
+            },
+          );
+        } catch (postErr: any) {
+          if (postErr?.response?.status === 404 || postErr?.response?.status === 405) {
+            await uilchilgee(token).patch(
+              `/medegdel/${item._id}/kharsanEsekh`,
+              {},
+              {
+                params: { baiguullagiinId: ajiltan.baiguullagiinId },
+              },
+            );
+          } else {
+            throw postErr;
+          }
+        }
         markedSeenRootIds.current.add(rootId);
         // Backend marks root + all replies in thread; update all list rows that belong to this thread
         setMedegdelList((prev) =>
