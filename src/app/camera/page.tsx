@@ -85,21 +85,29 @@ export default function CameraVideoWall() {
 
   // Custom camera feeds list state loaded from backend
   const [cameras, setCameras] = useState<CustomCamera[]>([]);
-
   // Load custom camera list from SOH settings in MongoDB
   useEffect(() => {
-    if (!token || !effectiveBaiguullagiinId || !effectiveBarilgiinId) return;
+    if (!token || !effectiveBaiguullagiinId) return;
 
     let active = true;
     const fetchCameras = async () => {
       try {
         setLoading(true);
+        // Pass barilgiinId via Axios params (not URL string) to avoid the
+        // uilchilgee interceptor doubling it up → Express getting an array → find() breaking
         const res = await uilchilgee(token).get(
-          `/baiguullaga/${effectiveBaiguullagiinId}?barilgiinId=${effectiveBarilgiinId}`
+          `/baiguullaga/${effectiveBaiguullagiinId}`,
+          effectiveBarilgiinId ? { params: { barilgiinId: effectiveBarilgiinId } } : {}
         );
         if (!active) return;
 
-        const b = res.data?.barilguud?.find((x: any) => String(x._id) === String(effectiveBarilgiinId));
+        const barilguud: any[] = res.data?.barilguud || [];
+
+        // Match by selected building, or fall back to first building
+        const b = effectiveBarilgiinId
+          ? (barilguud.find((x: any) => String(x._id) === String(effectiveBarilgiinId)) || barilguud[0])
+          : barilguud[0];
+
         const fetchedCams = (b?.sohCameruud ?? []) as CustomCamera[];
         setCameras(fetchedCams);
       } catch (e) {
@@ -107,6 +115,7 @@ export default function CameraVideoWall() {
       } finally {
         if (active) setLoading(false);
       }
+
     };
 
     fetchCameras();
@@ -194,7 +203,7 @@ export default function CameraVideoWall() {
                 className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-slate-900 border border-white/10 hover:bg-slate-800 transition-all hover:scale-105 active:scale-95 text-xs  text-slate-200 shadow-md"
                 title="Тохиргоо нээх"
               >
-                <Settings className="w-4 h-4 text-theme" />
+                <Settings className="w-4 h-4 text-[color:var(--theme)]" />
                 <span>Тохиргоо</span>
               </button>
             </div>
@@ -280,7 +289,7 @@ export default function CameraVideoWall() {
                 className="w-9 h-9 flex items-center justify-center rounded-full bg-slate-900 border border-white/10 hover:bg-slate-800 transition-colors"
                 title="Тохиргоо"
               >
-                <Settings className="w-4 h-4 text-theme" />
+                <Settings className="w-4 h-4 text-[color:var(--theme)]" />
               </button>
             )}
           </div>
@@ -289,7 +298,7 @@ export default function CameraVideoWall() {
         {/* Live Camera Surveillance Grid */}
         {loading ? (
           <div className="flex flex-col items-center justify-center p-36 rounded-3xl bg-slate-900/40 border border-white/5 shadow-inner">
-            <RefreshCw className="w-14 h-14 text-slate-700 mb-4 animate-spin text-theme" />
+            <RefreshCw className="w-14 h-14 text-slate-700 mb-4 animate-spin text-[color:var(--theme)]" />
             <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">
               Уншиж байна...
             </p>
@@ -375,8 +384,8 @@ export default function CameraVideoWall() {
             {/* Drawer Header */}
             <div className="p-4 border-b border-white/5 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Sliders className="w-4 h-4 text-theme" />
-                <span className="text-sm  text-white uppercase tracking-wider">Камер тохиргоо</span>
+                <Sliders className="w-4 h-4 text-[color:var(--theme)]" />
+                <span className="text-sm font-bold text-white uppercase tracking-wider">Камер тохиргоо</span>
               </div>
               <button
                 onClick={() => {
@@ -393,11 +402,11 @@ export default function CameraVideoWall() {
 
               {/* Stream Server URL */}
               <div className="p-4 rounded-2xl bg-slate-950 border border-white/5 space-y-3">
-                <p className="text-[10px]  text-slate-400 uppercase tracking-wider">Стрим Сервер</p>
+                <p className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">Стрим Сервер</p>
                 <div className="flex gap-1.5">
                   <button
                     onClick={() => handleStreamServerUrlChange("http://127.0.0.1:8083")}
-                    className={`flex-1 px-3 py-2 rounded-xl text-[10px]  border transition-colors ${streamServerUrl === "http://127.0.0.1:8083" ? "bg-theme/20 border-theme/50 text-theme" : "bg-slate-800 border-white/5 text-slate-400 hover:bg-slate-700"}`}
+                    className={`flex-1 px-3 py-2 rounded-xl text-[10px] font-bold border transition-colors ${streamServerUrl === "http://127.0.0.1:8083" ? "bg-theme border-theme !text-white" : "bg-slate-800 border-white/5 text-slate-300 hover:bg-slate-700"}`}
                   >
                     Локал
                   </button>
@@ -406,7 +415,7 @@ export default function CameraVideoWall() {
                       const relayUrl = `${apiUrl}/camera/stream/${effectiveBarilgiinId}`;
                       handleStreamServerUrlChange(relayUrl);
                     }}
-                    className={`flex-1 px-3 py-2 rounded-xl text-[10px]  border transition-colors ${streamServerUrl !== "http://127.0.0.1:8083" ? "bg-theme/20 border-theme/50 text-theme" : "bg-slate-800 border-white/5 text-slate-400 hover:bg-slate-700"}`}
+                    className={`flex-1 px-3 py-2 rounded-xl text-[10px] font-bold border transition-colors ${streamServerUrl !== "http://127.0.0.1:8083" ? "bg-theme border-theme !text-white" : "bg-slate-800 border-white/5 text-slate-300 hover:bg-slate-700"}`}
                   >
                     Цахим (Relay)
                   </button>
@@ -415,23 +424,23 @@ export default function CameraVideoWall() {
                   type="text"
                   value={streamServerUrl}
                   onChange={(e) => handleStreamServerUrlChange(e.target.value)}
-                  className="w-full h-8 px-3 rounded-xl bg-slate-900 border border-white/10 text-white font-mono text-[10px] outline-none focus:border-theme/40"
+                  className="w-full h-8 px-3 rounded-xl bg-slate-950 border border-white/10 !text-white font-mono text-[10px] outline-none focus:border-theme/40"
                 />
               </div>
 
               {/* Quick controls */}
-              <div className="flex items-center justify-between bg-slate-950 p-4 rounded-2xl border border-white/5 text-xs ">
-                <span>Харагдац тохируулах:</span>
+              <div className="flex items-center justify-between bg-slate-950 p-4 rounded-2xl border border-white/5 text-xs font-bold">
+                <span className="text-white">Харагдац тохируулах:</span>
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleToggleAll(true)}
-                    className="px-3.5 py-1.5 rounded-full bg-slate-800 border border-white/5 hover:bg-slate-700 transition-colors text-slate-300 "
+                    className="px-3.5 py-1.5 rounded-full bg-slate-800 border border-white/5 hover:bg-slate-700 transition-colors text-white"
                   >
                     Бүгдийг нээх
                   </button>
                   <button
                     onClick={() => handleToggleAll(false)}
-                    className="px-3.5 py-1.5 rounded-full bg-slate-800 border border-white/5 hover:bg-slate-700 transition-colors text-slate-300 "
+                    className="px-3.5 py-1.5 rounded-full bg-slate-800 border border-white/5 hover:bg-slate-700 transition-colors text-white"
                   >
                     Бүгдийг хаах
                   </button>
@@ -460,10 +469,10 @@ export default function CameraVideoWall() {
                           </button>
 
                           <div className="min-w-0">
-                            <span className="block text-xs  text-white truncate">
+                            <span className="block text-xs font-bold text-white truncate">
                               {idx + 1}. {cam.name}
                             </span>
-                            <span className="block text-[9px] text-slate-500 font-mono truncate mt-0.5">
+                            <span className="block text-[9px] text-slate-400 font-mono truncate mt-0.5">
                               {cam.ip}:{cam.port} / CH {channelCode}
                             </span>
                           </div>

@@ -61,11 +61,10 @@ function CameraRow({
 
   return (
     <div
-      className={`rounded-2xl border transition-all ${
-        cam.enabled
-          ? "border-blue-500/20 bg-blue-50/30 dark:bg-blue-950/10"
-          : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] opacity-60"
-      }`}
+      className={`rounded-2xl border transition-all ${cam.enabled
+        ? "border-theme/20 bg-theme/5 dark:bg-theme/5"
+        : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] opacity-60"
+        }`}
     >
       {/* Header row */}
       <div className="flex items-center gap-3 px-4 py-3">
@@ -73,14 +72,12 @@ function CameraRow({
         <button
           type="button"
           onClick={() => onChange({ ...cam, enabled: !cam.enabled })}
-          className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ${
-            cam.enabled ? "bg-blue-500" : "bg-gray-300 dark:bg-gray-600"
-          }`}
+          className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ${cam.enabled ? "bg-theme" : "bg-gray-300 dark:bg-gray-600"
+            }`}
         >
           <span
-            className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${
-              cam.enabled ? "translate-x-5" : "translate-x-0"
-            }`}
+            className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${cam.enabled ? "translate-x-5" : "translate-x-0"
+              }`}
           />
         </button>
 
@@ -189,6 +186,59 @@ export default function KameriinTokhirgoo() {
 
   const activeCameras = activeTab === "soh" ? sohCameras : residentCameras;
   const setActiveCameras = activeTab === "soh" ? setSohCameras : setResidentCameras;
+
+  // Mass add settings states
+  const [isMassAddOpen, setIsMassAddOpen] = useState(false);
+  const [massPrefix, setMassPrefix] = useState("Streaming/Channels/");
+  const [massStart, setMassStart] = useState(102);
+  const [massEnd, setMassEnd] = useState(1602);
+  const [massStep, setMassStep] = useState(100);
+  const [massNamePrefix, setMassNamePrefix] = useState("Камер");
+  const [massNamingStyle, setMassNamingStyle] = useState<"seq" | "num">("seq");
+
+  // Compute preview cameras list dynamically
+  const previewCameras = React.useMemo(() => {
+    if (massStart <= 0 || massEnd <= 0 || massStep <= 0 || massStart > massEnd) {
+      return [];
+    }
+    const list = [];
+    let counter = 1;
+    const limit = 200; // safety limit to prevent freezing
+    let iterations = 0;
+    for (let num = massStart; num <= massEnd && iterations < limit; num += massStep) {
+      iterations++;
+      const rootPath = `${massPrefix}${num}`;
+      const name = massNamingStyle === "seq" ? `${massNamePrefix} ${counter}` : `${massNamePrefix} ${num}`;
+      list.push({
+        name,
+        root: rootPath,
+      });
+      counter++;
+    }
+    return list;
+  }, [massPrefix, massStart, massEnd, massStep, massNamePrefix, massNamingStyle]);
+
+  const handleGenerateMassCameras = () => {
+    if (previewCameras.length === 0) {
+      openErrorOverlay("Камерын тохиргоог зөв оруулна уу");
+      return;
+    }
+
+    const nextCams = previewCameras.map((p, idx) => ({
+      id: `cam-${Date.now()}-${idx}-${Math.random().toString(36).substr(2, 5)}`,
+      name: p.name,
+      ip: cameraIp || "",
+      port: Number(cameraPort) || 554,
+      username: cameraUsername || "admin",
+      password: cameraPassword || "Admin123",
+      root: p.root,
+      enabled: true,
+    }));
+
+    setActiveCameras((prev) => [...prev, ...nextCams]);
+    setIsMassAddOpen(false);
+    openSuccessOverlay(`${nextCams.length} камер амжилттай үүсгэлээ`);
+  };
 
   // Building-level NVR settings
   const [cameraIp, setCameraIp] = useState("");
@@ -313,8 +363,8 @@ export default function KameriinTokhirgoo() {
     <div className="space-y-6 p-4">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="p-2.5 rounded-2xl bg-blue-50 dark:bg-blue-950/30">
-          <Video className="w-5 h-5 text-blue-500" />
+        <div className="p-2.5 rounded-2xl bg-theme/10">
+          <Video className="w-5 h-5 text-[color:var(--theme)]" />
         </div>
         <div>
           <h2 className="text-lg font-bold text-[color:var(--panel-text)]">
@@ -356,7 +406,7 @@ export default function KameriinTokhirgoo() {
 
       {loading ? (
         <div className="flex items-center justify-center py-16">
-          <RefreshCw className="w-6 h-6 animate-spin text-blue-500" />
+          <RefreshCw className="w-6 h-6 animate-spin text-theme" />
         </div>
       ) : !selectedBarilgiinId ? (
         <div className="flex flex-col items-center justify-center py-16 text-[color:var(--muted-text)]">
@@ -368,7 +418,7 @@ export default function KameriinTokhirgoo() {
           {/* Холболтын үндсэн мэдээлэл */}
           <div className="p-4 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] space-y-4">
             <h3 className="text-sm font-semibold text-[color:var(--panel-text)] flex items-center gap-2">
-              <Sliders className="w-4 h-4 text-blue-500" />
+              <Sliders className="w-4 h-4 text-[color:var(--theme)]" />
               Холболтын үндсэн мэдээлэл (NVR)
             </h3>
             <p className="text-xs text-[color:var(--muted-text)]">
@@ -431,22 +481,20 @@ export default function KameriinTokhirgoo() {
             <button
               type="button"
               onClick={() => setActiveTab("soh")}
-              className={`flex-1 py-3 text-center text-sm font-semibold border-b-2 transition-all ${
-                activeTab === "soh"
-                  ? "border-blue-500 text-blue-500 font-bold"
-                  : "border-transparent text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
-              }`}
+              className={`flex-1 py-3 text-center text-sm font-semibold border-b-2 transition-all ${activeTab === "soh"
+                ? "border-theme text-[color:var(--theme)] font-bold"
+                : "border-transparent text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+                }`}
             >
               СӨХ-ийн харах камер ({sohCameras.length})
             </button>
             <button
               type="button"
               onClick={() => setActiveTab("resident")}
-              className={`flex-1 py-3 text-center text-sm font-semibold border-b-2 transition-all ${
-                activeTab === "resident"
-                  ? "border-blue-500 text-blue-500 font-bold"
-                  : "border-transparent text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
-              }`}
+              className={`flex-1 py-3 text-center text-sm font-semibold border-b-2 transition-all ${activeTab === "resident"
+                ? "border-theme text-[color:var(--theme)] font-bold"
+                : "border-transparent text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+                }`}
             >
               Оршин суугчдын харах камер ({residentCameras.length})
             </button>
@@ -475,15 +523,25 @@ export default function KameriinTokhirgoo() {
             )}
           </div>
 
-          {/* Add camera button */}
-          <button
-            type="button"
-            onClick={handleAddCamera}
-            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-full border-2 border-dashed border-blue-300 dark:border-blue-700 text-blue-500 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-colors text-sm font-semibold shadow-sm"
-          >
-            <Plus className="w-4 h-4" />
-            Камер нэмэх
-          </button>
+          {/* Add camera buttons */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              type="button"
+              onClick={handleAddCamera}
+              className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-full border-2 border-dashed border-theme/30 text-[color:var(--theme)] hover:bg-theme/5 transition-colors text-sm font-semibold shadow-sm"
+            >
+              <Plus className="w-4 h-4" />
+              Камер нэмэх
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsMassAddOpen(true)}
+              className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-full border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] transition-colors text-sm font-semibold shadow-sm"
+            >
+              <Plus className="w-4 h-4 text-[color:var(--theme)]" />
+              Олноор нэмэх
+            </button>
+          </div>
 
           {/* Action bar */}
           <div className="flex items-center justify-between pt-2 border-t border-[color:var(--surface-border)]">
@@ -507,6 +565,149 @@ export default function KameriinTokhirgoo() {
               Хадгалах
             </Button>
           </div>
+
+          {/* Mass Add Modal */}
+          {isMassAddOpen && (
+            <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4">
+              <div
+                className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300"
+                onClick={() => setIsMassAddOpen(false)}
+              />
+              <div className="relative w-full max-w-lg modal-surface border border-[color:var(--surface-border)] rounded-3xl shadow-2xl flex flex-col overflow-hidden max-h-[90vh]">
+                {/* Header */}
+                <div className="px-6 py-4 border-b border-[color:var(--surface-border)] flex items-center justify-between bg-[color:var(--surface-bg)]">
+                  <h3 className="font-bold text-sm text-[color:var(--panel-text)] uppercase tracking-wider">
+                    Олноор камер нэмэх
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setIsMassAddOpen(false)}
+                    className="p-1 rounded-full hover:bg-[color:var(--surface-hover)] transition-colors text-[color:var(--muted-text)]"
+                  >
+                    <Plus className="w-5 h-5 rotate-45" />
+                  </button>
+                </div>
+
+                {/* Body */}
+                <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="col-span-2 space-y-1.5">
+                      <label className="block text-xs font-semibold text-[color:var(--muted-text)] uppercase tracking-wide">
+                        Угтвар зам (Prefix)
+                      </label>
+                      <input
+                        type="text"
+                        value={massPrefix}
+                        onChange={(e) => setMassPrefix(e.target.value)}
+                        className={INPUT_CLS}
+                        placeholder="Streaming/Channels/"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-semibold text-[color:var(--muted-text)] uppercase tracking-wide">
+                        Эхлэх суваг / дугаар
+                      </label>
+                      <input
+                        type="number"
+                        value={massStart}
+                        onChange={(e) => setMassStart(Number(e.target.value) || 0)}
+                        className={INPUT_CLS}
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-semibold text-[color:var(--muted-text)] uppercase tracking-wide">
+                        Дуусах суваг / дугаар
+                      </label>
+                      <input
+                        type="number"
+                        value={massEnd}
+                        onChange={(e) => setMassEnd(Number(e.target.value) || 0)}
+                        className={INPUT_CLS}
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-semibold text-[color:var(--muted-text)] uppercase tracking-wide">
+                        Алхам (Step)
+                      </label>
+                      <input
+                        type="number"
+                        value={massStep}
+                        onChange={(e) => setMassStep(Number(e.target.value) || 1)}
+                        className={INPUT_CLS}
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-semibold text-[color:var(--muted-text)] uppercase tracking-wide">
+                        Нэрний угтвар
+                      </label>
+                      <input
+                        type="text"
+                        value={massNamePrefix}
+                        onChange={(e) => setMassNamePrefix(e.target.value)}
+                        className={INPUT_CLS}
+                      />
+                    </div>
+
+                    <div className="col-span-2 space-y-1.5">
+                      <label className="block text-xs font-semibold text-[color:var(--muted-text)] uppercase tracking-wide">
+                        Нэрлэх хэлбэр (Naming style)
+                      </label>
+                      <select
+                        value={massNamingStyle}
+                        onChange={(e) => setMassNamingStyle(e.target.value as "seq" | "num")}
+                        className={INPUT_CLS}
+                      >
+                        <option value="seq">Дарааллаар (Камер 1, Камер 2...)</option>
+                        <option value="num">Сувгийн дугаараар (Камер 102, Камер 202...)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Preview */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-[color:var(--panel-text)]">
+                      Үүсэх камеруудын жагсаалт ({previewCameras.length} камер)
+                    </p>
+                    <div className="max-h-40 overflow-y-auto p-3 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] space-y-1.5 custom-scrollbar font-mono text-[10px]">
+                      {previewCameras.length === 0 ? (
+                        <p className="text-center text-[color:var(--muted-text)] py-4">Эхлэх/дуусах дугааруудыг зөв оруулна уу</p>
+                      ) : (
+                        previewCameras.map((p, idx) => (
+                          <div key={idx} className="flex justify-between items-center py-1 border-b border-[color:var(--surface-border)]/50 last:border-b-0">
+                            <span className="text-[color:var(--panel-text)] font-semibold">{p.name}</span>
+                            <span className="text-[color:var(--muted-text)]">{p.root}</span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="px-6 py-4 border-t border-[color:var(--surface-border)] flex justify-end gap-3 bg-[color:var(--surface-bg)]">
+                  <button
+                    type="button"
+                    onClick={() => setIsMassAddOpen(false)}
+                    className="px-5 py-2 rounded-full border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors text-xs font-semibold text-[color:var(--panel-text)]"
+                  >
+                    Цуцлах
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleGenerateMassCameras}
+                    disabled={previewCameras.length === 0}
+                    className="px-5 py-2 rounded-full bg-[color:var(--theme)] hover:bg-[color:var(--theme)]/90 text-white transition-colors text-xs font-semibold shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Үүсгэх ({previewCameras.length})
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>

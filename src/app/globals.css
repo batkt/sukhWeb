@@ -353,6 +353,7 @@
   --color-button: var(--button);
   --color-border: var(--border);
   --color-primary: var(--primary);
+  --color-theme: var(--theme);
   --font-sans: "Segoe UI", sans-serif;
   --font-mono: "Segoe UI", sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
@@ -1034,6 +1035,13 @@ textarea:-moz-autofill:focus {
   --glass-highlight: rgba(255, 255, 255, 0.6);
   --glass-shadow: rgba(14, 30, 60, 0.12);
   --table-hover-bg: color-mix(in oklch, #3b82f6, transparent 90%);
+}
+
+[data-theme="blue-gradient"][data-mode="dark"] {
+  --surface-bg: #0f172a;
+  --surface-border: rgba(255, 255, 255, 0.12);
+  --surface-hover: rgba(255, 255, 255, 0.06);
+  --panel-text: #f1f5f9;
 }
 
 /* New theme: gentle static green (eye-friendly) */
