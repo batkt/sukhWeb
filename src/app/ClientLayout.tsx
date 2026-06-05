@@ -44,23 +44,32 @@ function parseJwt(token: string) {
 
 function isTokenValid(token: string): boolean {
   if (!token || token === "undefined" || token === "null") {
+    console.log("🔑 [AuthCheck] Token is empty, undefined, or null string:", token);
     return false;
   }
 
   const payload = parseJwt(token);
-  if (!payload || !payload.id) {
+  if (!payload) {
+    console.log("🔑 [AuthCheck] Failed to decode JWT payload. Token:", token);
+    return false;
+  }
+  if (!payload.id) {
+    console.log("🔑 [AuthCheck] Token payload is missing 'id':", payload);
     return false;
   }
 
   // Require a valid expiration; tokens without exp are treated as invalid
   if (typeof payload.exp !== "number") {
+    console.log("🔑 [AuthCheck] Token payload 'exp' is not a number:", payload.exp);
     return false;
   }
   const currentTime = Math.floor(Date.now() / 1000);
   if (payload.exp < currentTime) {
+    console.log(`🔑 [AuthCheck] Token expired! exp: ${payload.exp}, current: ${currentTime}, diff: ${currentTime - payload.exp}s ago`);
     return false;
   }
 
+  console.log("🔑 [AuthCheck] Token is valid. payload:", payload);
   return true;
 }
 
