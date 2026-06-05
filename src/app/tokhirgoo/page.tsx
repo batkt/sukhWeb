@@ -144,7 +144,7 @@ function Tokhirgoo() {
       { perm: "tokhirgoo.zassanTuukh", text: "Зассан түүх", tsonkh: ZassanTuukh, comingSoon: false },
       { perm: "tokhirgoo.tuslamj", text: "Ерөнхий тусламж", tsonkh: TuslamjTokhirgoo, comingSoon: false },
       { perm: "tokhirgoo.kamer", text: "Камерийн тохиргоо", tsonkh: KameriinTokhirgoo, comingSoon: false },
-      { perm: "tokhirgoo.baaz", text: "Бааз", tsonkh: Baaz, comingSoon: true },
+      { perm: "tokhirgoo.baaz", text: "Бааз", tsonkh: Baaz, comingSoon: false },
     ];
 
     if (isAdmin) {

@@ -1,49 +1,47 @@
 "use client";
 
-import React, { useState } from "react";
-import { Download } from "lucide-react";
-import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
+import React, { useState, useEffect } from "react";
+import { Download, HardDrive } from "lucide-react";
 import { t } from "i18next";
 import formatNumber from "../../../tools/function/formatNumber";
 import Button from "@/components/ui/Button";
-import { getDefaultDateRange } from "@/lib/utils";
+import uilchilgee from "@/lib/uilchilgee";
 
-interface BackItem {
-  _id: number;
-  ognoo: string | Date;
-  ajiltniiNer: string;
-  khemjee: number;
+interface StorageInfo {
+  total: { dataSize: number; storageSize: number; indexSize: number };
 }
 
 interface BaazProps {
   token?: string;
+  ajiltan?: any;
 }
 
-function Baaz({ token }: BaazProps) {
+function fmtBytes(bytes: number): string {
+  if (bytes >= 1024 * 1024 * 1024) return `${formatNumber(bytes / (1024 * 1024 * 1024), 2)} GB`;
+  if (bytes >= 1024 * 1024) return `${formatNumber(bytes / (1024 * 1024), 2)} MB`;
+  if (bytes >= 1024) return `${formatNumber(bytes / 1024, 2)} KB`;
+  return `${formatNumber(bytes, 0)} B`;
+}
+
+function Baaz({ token, ajiltan }: BaazProps) {
   const [loading, setLoading] = useState(false);
-  const [ognoo, setOgnoo] = useState<[Date | null, Date | null] | null>(() => {
-    const [start, end] = getDefaultDateRange();
-    return [new Date(start), new Date(end)];
-  });
+  const [storageInfo, setStorageInfo] = useState<StorageInfo | null>(null);
+  const [storageLoading, setStorageLoading] = useState(false);
 
-  const backAwsanTuukh = {
-    jagsaalt: [
-      { _id: 1, ognoo: new Date(), ajiltniiNer: "Бат", khemjee: 120 },
-      { _id: 2, ognoo: new Date(), ajiltniiNer: "Сара", khemjee: 340 },
-    ],
-    khuudasniiDugaar: 1,
-    khuudasniiKhemjee: 10,
-    niit: 2,
-  };
-
+  useEffect(() => {
+    if (!token) return;
+    setStorageLoading(true);
+    uilchilgee(token)
+      .get("/storageInfo", { params: { baiguullagiinId: ajiltan?.baiguullagiinId } })
+      .then((res) => setStorageInfo(res.data))
+      .catch(() => setStorageInfo(null))
+      .finally(() => setStorageLoading(false));
+  }, [token, ajiltan?.baiguullagiinId]);
 
   function backTatya() {
     setLoading(true);
-
     setTimeout(() => {
-      const blob = new Blob(["Mock backup content"], {
-        type: "application/rar",
-      });
+      const blob = new Blob(["Mock backup content"], { type: "application/rar" });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.style.display = "none";
@@ -59,10 +57,41 @@ function Baaz({ token }: BaazProps) {
   return (
     <div className="relative">
       <div className="grid grid-cols-12 gap-6 mt-6">
-        <div className="col-span-12 lg:col-span-5 xl:col-span-4">
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 shadow-lg dark:shadow-blue-900/20 hover:shadow-xl dark:hover:shadow-blue-900/30 transition-all duration-300 rounded-2xl overflow-hidden border border-blue-200/50 dark:border-blue-600/50">
+
+        {/* Storage Info Card */}
+        <div className="col-span-12 lg:col-span-6">
+          <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/30 dark:to-teal-900/30 shadow-lg rounded-2xl overflow-hidden border border-emerald-200/50 dark:border-emerald-600/50">
+            <div className="px-6 py-4 border-b border-emerald-200/50 dark:border-emerald-600/50 bg-gradient-to-r from-emerald-100/50 to-teal-100/50 dark:from-emerald-800/20 dark:to-teal-800/20 flex items-center gap-2">
+              <HardDrive className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              <h2 className="text-lg text-theme">{t("Ашиглаж буй Storage")}</h2>
+            </div>
+            <div className="p-6">
+              {storageLoading ? (
+                <div className="text-sm text-theme opacity-60">Уншиж байна...</div>
+              ) : storageInfo ? (
+                <div className="flex items-center gap-4">
+                  <HardDrive className="w-10 h-10 text-emerald-500 flex-shrink-0" />
+                  <div>
+                    <div className="text-3xl font-semibold text-emerald-600 dark:text-emerald-400">
+                      {fmtBytes(storageInfo.total.dataSize)}
+                    </div>
+                    <div className="text-xs text-theme opacity-60 mt-1 uppercase tracking-wide">
+                      Нийт ашиглаж буй өгөгдөл
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-sm text-theme opacity-50">Storage мэдээлэл авах боломжгүй</div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Backup Card */}
+        <div className="col-span-12 lg:col-span-6">
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl overflow-hidden border border-blue-200/50 dark:border-blue-600/50">
             <div className="px-6 py-4 border-b border-blue-200/50 dark:border-blue-600/50 bg-gradient-to-r from-blue-100/50 to-indigo-100/50 dark:from-blue-800/20 dark:to-indigo-800/20">
-              <h2 className="text-lg  text-theme dark:text-white flex items-center gap-2">
+              <h2 className="text-lg text-theme flex items-center gap-2">
                 <div className="p-2 bg-blue-500/10 dark:bg-blue-400/20 rounded-lg">
                   <Download className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 </div>
@@ -71,9 +100,7 @@ function Baaz({ token }: BaazProps) {
             </div>
             <div className="p-6 flex items-center justify-between">
               <div>
-                <div className="text-theme dark:text-white  mb-1">
-                  {t("Системийн өгөгдөл")}
-                </div>
+                <div className="text-theme mb-1">{t("Системийн өгөгдөл")}</div>
                 <p className="text-sm text-[color:var(--muted-text)] dark:text-gray-400">
                   {t("Сүүлд шинэчилсэн")} {new Date().toLocaleDateString()}
                 </p>
@@ -82,7 +109,7 @@ function Baaz({ token }: BaazProps) {
                 variant="primary"
                 size="sm"
                 className="text-white transition-all duration-200"
-                style={{ borderRadius: '0.75rem' }}
+                style={{ borderRadius: "0.75rem" }}
                 isLoading={loading}
                 onClick={backTatya}
                 leftIcon={<Download className="w-4 h-4" />}
@@ -93,59 +120,6 @@ function Baaz({ token }: BaazProps) {
           </div>
         </div>
 
-        <div className="col-span-12 lg:col-span-7 xl:col-span-8">
-          <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 shadow-lg dark:shadow-purple-900/20 hover:shadow-xl dark:hover:shadow-purple-900/30 transition-all duration-300 rounded-2xl overflow-hidden border border-purple-200/50 dark:border-purple-600/50">
-            <div className="px-6 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 border-b border-purple-200/50 dark:border-purple-600/50 bg-gradient-to-r from-purple-100/50 to-pink-100/50 dark:from-purple-800/20 dark:to-pink-800/20">
-              <h2 className="text-lg  text-theme dark:text-white">
-                {t("Татсан түүх")}
-              </h2>
-              <StandardDatePicker
-                isRange={true}
-                value={ognoo || undefined}
-                onChange={(dates) =>
-                  setOgnoo((dates || null) as [Date | null, Date | null] | null)
-                }
-                className="w-full md:w-auto bg-transparent"
-              />
-            </div>
-
-            <div className="p-4">
-              <div className="overflow-x-auto custom-scrollbar">
-                <table className="w-full text-left text-sm">
-                  <thead>
-                    <tr className="border-b border-purple-200/50 dark:border-purple-600/30">
-                      <th className="px-4 py-3 text-center text-theme dark:text-white ">№</th>
-                      <th className="px-4 py-3 text-center text-theme dark:text-white ">{t("Огноо")}</th>
-                      <th className="px-4 py-3 text-center text-theme dark:text-white ">{t("Ажилтан")}</th>
-                      <th className="px-4 py-3 text-center text-theme dark:text-white ">{t("Хэмжээ")}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {backAwsanTuukh.jagsaalt.map((row, index) => (
-                      <tr key={row._id} className="border-b border-purple-100/50 dark:border-purple-800/30 hover:bg-purple-100/30 dark:hover:bg-purple-800/20 transition-colors duration-150">
-                        <td className="px-4 py-3 text-center text-theme dark:text-gray-300">
-                          {(backAwsanTuukh.khuudasniiDugaar - 1) *
-                            backAwsanTuukh.khuudasniiKhemjee +
-                            index +
-                            1}
-                        </td>
-                        <td className="px-4 py-3 text-center text-theme dark:text-gray-300">
-                          {row.ognoo ? new Date(row.ognoo).toLocaleString() : ""}
-                        </td>
-                        <td className="px-4 py-3 text-center text-theme dark:text-gray-300">{row.ajiltniiNer}</td>
-                        <td className="px-4 py-3 text-center">
-                          <span className=" text-purple-600 dark:text-purple-400">
-                            {formatNumber(row.khemjee)} MB
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import {
   Video,
   VideoOff,
@@ -12,6 +13,7 @@ import {
   Eye,
   EyeOff,
   Sliders,
+  User,
 } from "lucide-react";
 import uilchilgee, { aldaaBarigch } from "@/lib/uilchilgee";
 import { useAuth } from "@/lib/useAuth";
@@ -29,6 +31,7 @@ interface CameraConfig {
   password: string;
   root: string;
   enabled: boolean;
+  residentVisible: boolean;
 }
 
 const defaultCamera = (): CameraConfig => ({
@@ -40,6 +43,7 @@ const defaultCamera = (): CameraConfig => ({
   password: "Admin123",
   root: "Streaming/Channels/102",
   enabled: true,
+  residentVisible: false,
 });
 
 const INPUT_CLS =
@@ -92,6 +96,21 @@ function CameraRow({
               rtsp://{cam.ip}:{cam.port}/{cam.root}
             </p>
           )}
+        </div>
+
+        {/* Resident visible toggle */}
+        <div className="flex flex-col items-center gap-0.5 flex-shrink-0">
+          <button
+            type="button"
+            title={cam.residentVisible ? "Оршин суугч харах боломжтой" : "Оршин суугч харах боломжгүй"}
+            onClick={() => onChange({ ...cam, residentVisible: !cam.residentVisible })}
+            className={`relative w-10 h-5 rounded-full transition-colors ${cam.residentVisible ? "bg-blue-500" : "bg-gray-300 dark:bg-gray-600"}`}
+          >
+            <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${cam.residentVisible ? "translate-x-5" : "translate-x-0"}`} />
+          </button>
+          <span className="text-[9px] text-[color:var(--muted-text)] leading-none">
+            <User className="w-2.5 h-2.5 inline-block" />
+          </span>
         </div>
 
         <button
@@ -179,16 +198,33 @@ export default function KameriinTokhirgoo() {
   const [buildings, setBuildings] = useState<any[]>([]);
   const [selectedBarilgiinId, setSelectedBarilgiinId] = useState<string>("");
   const [sohCameras, setSohCameras] = useState<CameraConfig[]>([]);
-  const [residentCameras, setResidentCameras] = useState<CameraConfig[]>([]);
   const [activeTab, setActiveTab] = useState<"soh" | "resident">("soh");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  const residentCameras = sohCameras.filter((c) => c.residentVisible);
   const activeCameras = activeTab === "soh" ? sohCameras : residentCameras;
-  const setActiveCameras = activeTab === "soh" ? setSohCameras : setResidentCameras;
+  const setActiveCameras = setSohCameras;
 
   // Mass add settings states
   const [isMassAddOpen, setIsMassAddOpen] = useState(false);
+
+  useEffect(() => {
+    if (isMassAddOpen) {
+      document.documentElement.style.overflow = "hidden";
+      document.body.style.overflow = "hidden";
+      const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setIsMassAddOpen(false); };
+      window.addEventListener("keydown", onKey);
+      return () => {
+        window.removeEventListener("keydown", onKey);
+        document.documentElement.style.overflow = "";
+        document.body.style.overflow = "";
+      };
+    } else {
+      document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
+    }
+  }, [isMassAddOpen]);
   const [massPrefix, setMassPrefix] = useState("Streaming/Channels/");
   const [massStart, setMassStart] = useState(102);
   const [massEnd, setMassEnd] = useState(1602);
@@ -233,6 +269,7 @@ export default function KameriinTokhirgoo() {
       password: cameraPassword || "Admin123",
       root: p.root,
       enabled: true,
+      residentVisible: false,
     }));
 
     setActiveCameras((prev) => [...prev, ...nextCams]);
@@ -285,7 +322,6 @@ export default function KameriinTokhirgoo() {
     if (!selectedBarilgiinId || buildings.length === 0) return;
     const b = buildings.find((x: any) => x._id === selectedBarilgiinId);
     setSohCameras((b?.sohCameruud ?? []) as CameraConfig[]);
-    setResidentCameras((b?.cameruud ?? []) as CameraConfig[]);
     setCameraIp(b?.cameraIp ?? "");
     setCameraPort(b?.cameraPort ?? 554);
     setCameraUsername(b?.cameraUsername ?? "admin");
@@ -500,35 +536,12 @@ export default function KameriinTokhirgoo() {
             </button>
           </div>
 
-          {/* Camera list */}
-          <div className="space-y-3">
-            {activeCameras.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 rounded-3xl border-2 border-dashed border-[color:var(--surface-border)] text-[color:var(--muted-text)]">
-                <VideoOff className="w-10 h-10 mb-2 opacity-40" />
-                <p className="text-sm font-medium">Камер нэмэгдээгүй байна</p>
-                <p className="text-xs mt-1 opacity-70">
-                  Доорх товчийг дарж камер нэмнэ үү
-                </p>
-              </div>
-            ) : (
-              activeCameras.map((cam, idx) => (
-                <CameraRow
-                  key={cam.id + idx}
-                  cam={cam}
-                  index={idx}
-                  onChange={(updated) => handleChange(idx, updated)}
-                  onRemove={() => handleRemove(idx)}
-                />
-              ))
-            )}
-          </div>
-
-          {/* Add camera buttons */}
+          {/* Add camera buttons — top */}
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               type="button"
               onClick={handleAddCamera}
-              className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-full border-2 border-dashed border-theme/30 text-[color:var(--theme)] hover:bg-theme/5 transition-colors text-sm font-semibold shadow-sm"
+              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-full border-2 border-dashed border-theme/30 text-[color:var(--theme)] hover:bg-theme/5 transition-colors text-sm font-semibold shadow-sm"
             >
               <Plus className="w-4 h-4" />
               Камер нэмэх
@@ -536,11 +549,34 @@ export default function KameriinTokhirgoo() {
             <button
               type="button"
               onClick={() => setIsMassAddOpen(true)}
-              className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-full border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] transition-colors text-sm font-semibold shadow-sm"
+              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-full border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] transition-colors text-sm font-semibold shadow-sm"
             >
               <Plus className="w-4 h-4 text-[color:var(--theme)]" />
               Олноор нэмэх
             </button>
+          </div>
+
+          {/* Camera list — scrollable container showing ~5 rows */}
+          <div className="rounded-2xl border border-[color:var(--surface-border)] overflow-hidden">
+            <div className="overflow-y-auto custom-scrollbar max-h-[340px] p-3 space-y-3">
+              {activeCameras.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 rounded-3xl border-2 border-dashed border-[color:var(--surface-border)] text-[color:var(--muted-text)]">
+                  <VideoOff className="w-10 h-10 mb-2 opacity-40" />
+                  <p className="text-sm font-medium">Камер нэмэгдээгүй байна</p>
+                  <p className="text-xs mt-1 opacity-70">Дээрх товчийг дарж камер нэмнэ үү</p>
+                </div>
+              ) : (
+                activeCameras.map((cam, idx) => (
+                  <CameraRow
+                    key={cam.id + idx}
+                    cam={cam}
+                    index={idx}
+                    onChange={(updated) => handleChange(idx, updated)}
+                    onRemove={() => handleRemove(idx)}
+                  />
+                ))
+              )}
+            </div>
           </div>
 
           {/* Action bar */}
@@ -567,13 +603,16 @@ export default function KameriinTokhirgoo() {
           </div>
 
           {/* Mass Add Modal */}
-          {isMassAddOpen && (
-            <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4">
+          {isMassAddOpen && createPortal(
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center px-4 py-6">
               <div
-                className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300"
+                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
                 onClick={() => setIsMassAddOpen(false)}
               />
-              <div className="relative w-full max-w-lg modal-surface border border-[color:var(--surface-border)] rounded-3xl shadow-2xl flex flex-col overflow-hidden max-h-[90vh]">
+              <div
+                className="relative w-full max-w-2xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-2xl shadow-2xl flex flex-col overflow-hidden max-h-[90vh]"
+                onClick={(e) => e.stopPropagation()}
+              >
                 {/* Header */}
                 <div className="px-6 py-4 border-b border-[color:var(--surface-border)] flex items-center justify-between bg-[color:var(--surface-bg)]">
                   <h3 className="font-bold text-sm text-[color:var(--panel-text)] uppercase tracking-wider">
@@ -696,17 +735,17 @@ export default function KameriinTokhirgoo() {
                   >
                     Цуцлах
                   </button>
-                  <button
-                    type="button"
+                  <Button
+                    variant="primary"
                     onClick={handleGenerateMassCameras}
                     disabled={previewCameras.length === 0}
-                    className="px-5 py-2 rounded-full bg-[color:var(--theme)] hover:bg-[color:var(--theme)]/90 text-white transition-colors text-xs font-semibold shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Үүсгэх ({previewCameras.length})
-                  </button>
+                  </Button>
                 </div>
               </div>
-            </div>
+            </div>,
+            document.body
           )}
         </>
       )}
