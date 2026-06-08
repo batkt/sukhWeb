@@ -23,7 +23,7 @@ interface TransactionModalProps {
 }
 
 export interface TransactionData {
-  type: "voucher" | "avlaga" | "turul" | "ashiglalt" | "tulult";
+  type: "voucher" | "avlaga" | "turul" | "ashiglalt" | "torguuli" | "tulult";
   date: string;
   amount: number;
   residentId?: string;
@@ -444,98 +444,97 @@ export default function TransactionModal({
     <>
       <ModalPortal>
         <AnimatePresence>
-          <div
-            ref={constraintsRef}
-            className="fixed inset-0 z-[12000]"
-          >
-          {contextHolder}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-transparent"
-            onClick={requestClose}
-          />
+          <div ref={constraintsRef} className="fixed inset-0 z-[12000]">
+            {contextHolder}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-transparent"
+              onClick={requestClose}
+            />
 
-          <motion.div
-            ref={modalRef}
-            initial={{ scale: 0.95, opacity: 0, y: 10 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.95, opacity: 0, y: 10 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            drag
-            dragListener={false}
-            dragControls={dragControls}
-            dragConstraints={constraintsRef}
-            dragMomentum={false}
-            className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 modal-surface rounded-2xl shadow-2xl w-[min(700px,95vw)] h-[70vh] flex flex-col border border-[color:var(--surface-border)] overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Draggable Title Bar */}
-            <div
-              onPointerDown={(e) => dragControls.start(e)}
-              className="px-6 py-3 border-b border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] flex items-center justify-between cursor-move select-none"
+            <motion.div
+              ref={modalRef}
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              drag
+              dragListener={false}
+              dragControls={dragControls}
+              dragConstraints={constraintsRef}
+              dragMomentum={false}
+              className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 modal-surface rounded-2xl shadow-2xl w-[min(700px,95vw)] h-[70vh] flex flex-col border border-[color:var(--surface-border)] overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
             >
-              <div className="text-sm font-semibold text-[color:var(--panel-text)]">
-                Гүйлгээ хийх
-              </div>
-              <button
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={requestClose}
-                className="p-2 rounded-full hover:bg-[color:var(--surface-hover)] transition-colors"
-                title="Хаах"
+              {/* Draggable Title Bar */}
+              <div
+                onPointerDown={(e) => dragControls.start(e)}
+                className="px-6 py-3 border-b border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] flex items-center justify-between cursor-move select-none"
               >
-                <X className="w-5 h-5 text-[color:var(--muted-text)]" />
-              </button>
-            </div>
-
-            {/* Body */}
-            <div className="flex-1 px-6 py-5 space-y-5 bg-[color:var(--surface-bg)] overflow-y-auto">
-              {/* Resident Info Card */}
-              {resident && (
-                <div className="bg-[color:var(--surface-hover)]/50 rounded-2xl p-3 border border-[color:var(--surface-border)] flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[color:var(--theme)]/10 flex items-center justify-center text-[color:var(--theme)]  text-sm">
-                    {resident?.toot || "?"}
-                  </div>
-                  <div>
-                    <p className="text-sm  text-[color:var(--panel-text)]">
-                      {resident?.ovog || ""} {resident?.ner}
-                    </p>
-                    <p className="text-xs text-[color:var(--muted-text)]">
-                      Оршин суугч
-                    </p>
-                  </div>
+                <div className="text-sm font-semibold text-[color:var(--panel-text)]">
+                  Гүйлгээ хийх
                 </div>
-              )}
+                <button
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={requestClose}
+                  className="p-2 rounded-full hover:bg-[color:var(--surface-hover)] transition-colors"
+                  title="Хаах"
+                >
+                  <X className="w-5 h-5 text-[color:var(--muted-text)]" />
+                </button>
+              </div>
 
-              {/* Transaction Type Segmented Control */}
-              <div>
-                <label className="block text-xs  text-[color:var(--panel-text)] mb-1.5">
-                  Гүйлгээний төрөл
-                </label>
-                <div className="grid grid-cols-3 neu-panel gap-1 p-1 bg-[color:var(--surface-hover)] rounded-2xl">
-                  {[
-                    { value: "avlaga", label: "Авлага" },
-                    { value: "ashiglalt", label: "Ашиглалт" },
-                    { value: "tulult", label: "Төлөлт" },
-                  ].map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => {
-                        const newType = option.value as TransactionData["type"];
-                        if (newType !== transactionType) {
-                          setAmount("0.00");
-                          setTailbar("");
-                          setEkhniiUldegdel(false);
-                          setAshiglaltZardal("");
-                          setUmnukhZaalt("");
-                          setSuuliinZaalt("");
-                        }
-                        setTransactionType(newType);
-                      }}
-                      disabled={isProcessing}
-                      className={`
+              {/* Body */}
+              <div className="flex-1 px-6 py-5 space-y-5 bg-[color:var(--surface-bg)] overflow-y-auto">
+                {/* Resident Info Card */}
+                {resident && (
+                  <div className="bg-[color:var(--surface-hover)]/50 rounded-2xl p-3 border border-[color:var(--surface-border)] flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-[color:var(--theme)]/10 flex items-center justify-center text-[color:var(--theme)]  text-sm">
+                      {resident?.toot || "?"}
+                    </div>
+                    <div>
+                      <p className="text-sm  text-[color:var(--panel-text)]">
+                        {resident?.ovog || ""} {resident?.ner}
+                      </p>
+                      <p className="text-xs text-[color:var(--muted-text)]">
+                        Оршин суугч
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Transaction Type Segmented Control */}
+                <div>
+                  <label className="block text-xs  text-[color:var(--panel-text)] mb-1.5">
+                    Гүйлгээний төрөл
+                  </label>
+                  <div className="grid grid-cols-4 neu-panel gap-1 p-1 bg-[color:var(--surface-hover)] rounded-2xl">
+                    {[
+                      { value: "avlaga", label: "Авлага" },
+                      { value: "ashiglalt", label: "Ашиглалт" },
+                      { value: "torguuli", label: "Торгууль" },
+                      { value: "tulult", label: "Төлөлт" },
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => {
+                          const newType =
+                            option.value as TransactionData["type"];
+                          if (newType !== transactionType) {
+                            setAmount("0.00");
+                            setTailbar("");
+                            setEkhniiUldegdel(false);
+                            setAshiglaltZardal("");
+                            setUmnukhZaalt("");
+                            setSuuliinZaalt("");
+                          }
+                          setTransactionType(newType);
+                        }}
+                        disabled={isProcessing}
+                        className={`
                       relative py-1.5 px-3 text-sm rounded-2xl transition-all duration-200
                       ${
                         transactionType === option.value
@@ -543,42 +542,113 @@ export default function TransactionModal({
                           : "text-[color:var(--panel-text)] hover:bg-[color:var(--surface-bg)]/40"
                       }
                     `}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              {/* Initial Balance Checkbox - only for avlaga type */}
-              <AnimatePresence>
-                {transactionType === "avlaga" && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="flex items-center gap-2 p-3  rounded-2xl overflow-hidden"
-                  >
-                    <input
-                      type="checkbox"
-                      id="ekhniiUldegdel"
-                      checked={ekhniiUldegdel}
-                      onChange={(e) => setEkhniiUldegdel(e.target.checked)}
-                      className="w-4 h-4 rounded border-rose-300 text-rose-600 focus:ring-rose-500 cursor-pointer"
-                    />
-                    <label
-                      htmlFor="ekhniiUldegdel"
-                      className="text-xs  text-rose-700 cursor-pointer select-none"
+                {/* Initial Balance Checkbox - only for avlaga type */}
+                <AnimatePresence>
+                  {transactionType === "avlaga" && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="flex items-center gap-2 p-3  rounded-2xl overflow-hidden"
                     >
-                      Эхний үлдэгдэл эсэх
-                    </label>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                      <input
+                        type="checkbox"
+                        id="ekhniiUldegdel"
+                        checked={ekhniiUldegdel}
+                        onChange={(e) => setEkhniiUldegdel(e.target.checked)}
+                        className="w-4 h-4 rounded border-rose-300 text-rose-600 focus:ring-rose-500 cursor-pointer"
+                      />
+                      <label
+                        htmlFor="ekhniiUldegdel"
+                        className="text-xs  text-rose-700 cursor-pointer select-none"
+                      >
+                        Эхний үлдэгдэл эсэх
+                      </label>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
-              {/* Form Content */}
-              {transactionType === "ashiglalt" ? (
-                <div className="space-y-4">
+                {/* Form Content */}
+                {transactionType === "ashiglalt" ? (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="block text-xs text-[color:var(--panel-text)] mb-1.5">
+                          Огноо
+                        </label>
+                        <input
+                          type="date"
+                          value={transactionDate}
+                          onChange={(e) => setTransactionDate(e.target.value)}
+                          disabled={isProcessing}
+                          className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm"
+                        />
+                      </div>
+                      <div className="space-y-1.5 relative group">
+                        <div className="flex justify-between items-end mb-1.5">
+                          <label className="block text-xs text-[color:var(--panel-text)]">
+                            Дүн
+                          </label>
+                        </div>
+                        <div className="relative w-full group/input">
+                          <input
+                            type="text"
+                            ref={amountInputRef}
+                            value={amount}
+                            inputMode="decimal"
+                            onChange={handleAmountInputChange}
+                            onBlur={() => {
+                              if (amount) setAmount(formatAmount(amount));
+                            }}
+                            disabled={isProcessing}
+                            placeholder="0.00"
+                            className="w-full px-3 py-2.5 pr-[38px] border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-right tracking-wide text-lg font-semibold"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-xs pointer-events-none select-none font-medium" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="block text-xs text-[color:var(--panel-text)] mb-1.5">
+                        Зардлын төрөл
+                      </label>
+                      <select
+                        value={ashiglaltZardal}
+                        onChange={(e) =>
+                          setAshiglaltZardal(
+                            e.target.value as "" | "tsakhilgaan_kv",
+                          )
+                        }
+                        disabled={isProcessing}
+                        className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm"
+                      >
+                        <option value="">Сонгоно уу</option>
+                        <option value="tsakhilgaan_kv">Цахилгаан кВ</option>
+                      </select>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-[color:var(--muted-text)]">
+                        Суурь хураамж:{" "}
+                        {(calcBreakdown?.suuriKhuraamj ?? 0).toLocaleString(
+                          "en-US",
+                          {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          },
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <label className="block text-xs text-[color:var(--panel-text)] mb-1.5">
@@ -597,162 +667,91 @@ export default function TransactionModal({
                         <label className="block text-xs text-[color:var(--panel-text)]">
                           Дүн
                         </label>
+                        {residentBalance !== null &&
+                          transactionType === "tulult" && (
+                            <motion.div
+                              initial={{ opacity: 0, x: 5 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              onDoubleClick={fillAmountWithBalance}
+                              title="Хоёр товшиж дүнг оруулах"
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-2xl border cursor-pointer transition-all select-none ${
+                                isFetchingBalance
+                                  ? "bg-gray-100 text-gray-400 border-gray-200 animate-pulse"
+                                  : "bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100 active:scale-95"
+                              }`}
+                            >
+                              Үлдэгдэл:{" "}
+                              {residentBalance.toLocaleString("en-US", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}
+                            </motion.div>
+                          )}
                       </div>
                       <div className="relative w-full group/input">
                         <input
                           type="text"
                           ref={amountInputRef}
                           value={amount}
-                          inputMode="decimal"
                           onChange={handleAmountInputChange}
+                          onDoubleClick={
+                            transactionType === "tulult"
+                              ? fillAmountWithBalance
+                              : undefined
+                          }
                           onBlur={() => {
-                            if (amount) setAmount(formatAmount(amount));
+                            if (amount) {
+                              setAmount(formatAmount(amount));
+                            }
                           }}
                           disabled={isProcessing}
                           placeholder="0.00"
                           className="w-full px-3 py-2.5 pr-[38px] border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-right tracking-wide text-lg font-semibold"
                         />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-xs pointer-events-none select-none font-medium" />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-xs pointer-events-none select-none font-medium"></span>
                       </div>
                     </div>
                   </div>
+                )}
 
+                {transactionType !== "ashiglalt" && (
                   <div className="space-y-1.5">
                     <label className="block text-xs text-[color:var(--panel-text)] mb-1.5">
-                      Зардлын төрөл
+                      Тайлбар
                     </label>
-                    <select
-                      value={ashiglaltZardal}
-                      onChange={(e) =>
-                        setAshiglaltZardal(
-                          e.target.value as "" | "tsakhilgaan_kv",
-                        )
-                      }
+                    <textarea
+                      value={tailbar}
+                      onChange={(e) => setTailbar(e.target.value)}
                       disabled={isProcessing}
-                      className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm"
-                    >
-                      <option value="">Сонгоно уу</option>
-                      <option value="tsakhilgaan_kv">Цахилгаан кВ</option>
-                    </select>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-[color:var(--muted-text)]">
-                      Суурь хураамж:{" "}
-                      {(calcBreakdown?.suuriKhuraamj ?? 0).toLocaleString(
-                        "en-US",
-                        {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        },
-                      )}
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="block text-xs text-[color:var(--panel-text)] mb-1.5">
-                      Огноо
-                    </label>
-                    <input
-                      type="date"
-                      value={transactionDate}
-                      onChange={(e) => setTransactionDate(e.target.value)}
-                      disabled={isProcessing}
-                      className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm"
+                      placeholder="Гүйлгээний утга..."
+                      rows={3}
+                      className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm resize-none"
                     />
                   </div>
-                  <div className="space-y-1.5 relative group">
-                    <div className="flex justify-between items-end mb-1.5">
-                      <label className="block text-xs text-[color:var(--panel-text)]">
-                        Дүн
-                      </label>
-                      {residentBalance !== null &&
-                        transactionType === "tulult" && (
-                          <motion.div
-                            initial={{ opacity: 0, x: 5 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            onDoubleClick={fillAmountWithBalance}
-                            title="Хоёр товшиж дүнг оруулах"
-                            className={`text-[10px] font-bold px-2 py-0.5 rounded-2xl border cursor-pointer transition-all select-none ${
-                              isFetchingBalance
-                                ? "bg-gray-100 text-gray-400 border-gray-200 animate-pulse"
-                                : "bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100 active:scale-95"
-                            }`}
-                          >
-                            Үлдэгдэл:{" "}
-                            {residentBalance.toLocaleString("en-US", {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })}
-                          </motion.div>
-                        )}
-                    </div>
-                    <div className="relative w-full group/input">
-                      <input
-                        type="text"
-                        ref={amountInputRef}
-                        value={amount}
-                        onChange={handleAmountInputChange}
-                        onDoubleClick={
-                          transactionType === "tulult"
-                            ? fillAmountWithBalance
-                            : undefined
-                        }
-                        onBlur={() => {
-                          if (amount) {
-                            setAmount(formatAmount(amount));
-                          }
-                        }}
-                        disabled={isProcessing}
-                        placeholder="0.00"
-                        className="w-full px-3 py-2.5 pr-[38px] border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-right tracking-wide text-lg font-semibold"
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-xs pointer-events-none select-none font-medium"></span>
-                    </div>
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
 
-              {transactionType !== "ashiglalt" && (
-                <div className="space-y-1.5">
-                  <label className="block text-xs text-[color:var(--panel-text)] mb-1.5">
-                    Тайлбар
-                  </label>
-                  <textarea
-                    value={tailbar}
-                    onChange={(e) => setTailbar(e.target.value)}
-                    disabled={isProcessing}
-                    placeholder="Гүйлгээний утга..."
-                    rows={3}
-                    className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm resize-none"
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="px-6 py-4 border-t flex justify-end gap-3">
-              <Button
-                onClick={requestClose}
-                disabled={isProcessing}
-                variant="secondary"
-                className="ant-btn w-20 color-black"
-              >
-                Хаах
-              </Button>
-              <Button
-                onClick={handleSubmit}
-                isLoading={isProcessing}
-                variant="primary"
-                className="ant-btn w-20 ant-btn-primary !text-white"
-              >
-                Хадгалах
-              </Button>
-            </div>
-          </motion.div>
-        </div>
+              {/* Footer */}
+              <div className="px-6 py-4 border-t flex justify-end gap-3">
+                <Button
+                  onClick={requestClose}
+                  disabled={isProcessing}
+                  variant="secondary"
+                  className="ant-btn w-20 color-black"
+                >
+                  Хаах
+                </Button>
+                <Button
+                  onClick={handleSubmit}
+                  isLoading={isProcessing}
+                  variant="primary"
+                  className="ant-btn w-20 ant-btn-primary !text-white"
+                >
+                  Хадгалах
+                </Button>
+              </div>
+            </motion.div>
+          </div>
         </AnimatePresence>
       </ModalPortal>
 

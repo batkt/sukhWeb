@@ -81,10 +81,12 @@ const toMonthKey = (v?: string | null) => {
 };
 
 /** Сарын Dayjs → тухайн сарын [эхний өдөр, сүүлийн өдөр] + YYYY-MM түлхүүр */
-function monthPickToStartEnd(d: {
-  isValid?: () => boolean;
-  format?: (f: string) => string;
-} | null): { start: string; end: string; ym: string } | null {
+function monthPickToStartEnd(
+  d: {
+    isValid?: () => boolean;
+    format?: (f: string) => string;
+  } | null,
+): { start: string; end: string; ym: string } | null {
   if (!d || typeof d.format !== "function") return null;
   if (typeof d.isValid === "function" && !d.isValid()) return null;
   const ym = d.format("YYYY-MM");
@@ -155,8 +157,10 @@ export default function DansniiKhuulga() {
   const emptyQuery = useMemo(() => ({}), []);
 
   const todayStr = new Date().toISOString().split("T")[0];
-  const [ekhlekhOgnoo, setEkhlekhOgnoo] =
-    useState<DateRangeValue>([null, null]);
+  const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<DateRangeValue>([
+    null,
+    null,
+  ]);
   const [tuluvFilter, setTuluvFilter] = useState<
     "all" | "paid" | "unpaid" | "partiallyPaid" | "overdue"
   >("all");
@@ -177,23 +181,23 @@ export default function DansniiKhuulga() {
     // Өмнөх сарууд (жишээ нь 4-р сар сонгосон ч одоо 5-р сар болсон): зөвхөн тухайн сарын өгөгдөл.
     const isLatestMonthView = Boolean(
       hasDateFilter &&
-        rawStart &&
-        rawEnd &&
-        startKey &&
-        endKey &&
-        startKey === endKey &&
-        startKey === currentMonthKey,
+      rawStart &&
+      rawEnd &&
+      startKey &&
+      endKey &&
+      startKey === endKey &&
+      startKey === currentMonthKey,
     );
 
     const currentMonthRange = getDefaultDateRange();
-
 
     return {
       hasDateFilter,
       isLatestMonthView,
       start:
         hasDateFilter && !isLatestMonthView ? rawStart || undefined : undefined,
-      end: hasDateFilter && !isLatestMonthView ? rawEnd || undefined : undefined,
+      end:
+        hasDateFilter && !isLatestMonthView ? rawEnd || undefined : undefined,
       startMs: rawStart ? new Date(rawStart + "T00:00:00").getTime() : 0,
       endMs: rawEnd
         ? new Date(rawEnd + "T23:59:59").getTime()
@@ -217,11 +221,11 @@ export default function DansniiKhuulga() {
     () =>
       Boolean(
         effectiveDateFilter.hasDateFilter &&
-          !effectiveDateFilter.isLatestMonthView,
+        !effectiveDateFilter.isLatestMonthView,
       ),
     [effectiveDateFilter],
   );
-  
+
   // ALWAYS fetch all data from API (no date params) — date filtering done client-side in allHistoryItems.
   // This avoids SWR cache key switching (full vs bounded) that caused stale/mixed data on date change.
 
@@ -443,7 +447,11 @@ export default function DansniiKhuulga() {
 
   const { data: invoiceCronData, error: invoiceCronError } = useSWR(
     token && ajiltan?.baiguullagiinId
-      ? [`/nekhemjlekhCron/${ajiltan.baiguullagiinId}`, token, effectiveBarilgiinId]
+      ? [
+          `/nekhemjlekhCron/${ajiltan.baiguullagiinId}`,
+          token,
+          effectiveBarilgiinId,
+        ]
       : null,
     async ([url, tkn, bId]) => {
       const resp = await uilchilgee(tkn).get(url, {
@@ -477,8 +485,6 @@ export default function DansniiKhuulga() {
 
   const isInvoiceDayLoading = !invoiceCronData && !invoiceCronError;
 
-
-
   // Derive legacy data structures from unified data for backward compatibility in this page
   const historyData = useMemo(() => {
     if (!unifiedData?.jagsaalt) return { jagsaalt: [] };
@@ -493,14 +499,18 @@ export default function DansniiKhuulga() {
   const receivableData = useMemo(() => {
     if (!unifiedData?.jagsaalt) return { jagsaalt: [] };
     return {
-      jagsaalt: unifiedData.jagsaalt.filter((r: any) => Number(r.tulukhDun) > 0),
+      jagsaalt: unifiedData.jagsaalt.filter(
+        (r: any) => Number(r.tulukhDun) > 0,
+      ),
     };
   }, [unifiedData]);
 
   const paymentRecordsData = useMemo(() => {
     if (!unifiedData?.jagsaalt) return { jagsaalt: [] };
     return {
-      jagsaalt: unifiedData.jagsaalt.filter((r: any) => Number(r.tulsunDun) > 0),
+      jagsaalt: unifiedData.jagsaalt.filter(
+        (r: any) => Number(r.tulsunDun) > 0,
+      ),
     };
   }, [unifiedData]);
 
@@ -508,8 +518,6 @@ export default function DansniiKhuulga() {
   const mutateReceivable = mutateUnified;
   const mutatePaymentRecords = mutateUnified;
   const mutateMonthlyMatrix = mutateUnified;
-
-
 
   /** Жагсаалтын SWR түлхүүрүүдийг шууд revalidate — global mutate заримдаа бүрэн ажиллахгүй (тусгайлбал ашиглалт) */
   /** Сарын хязгаар: эхний сарын 1-ний өдрөөс сүүлийн сарын сүүлийн өдөр хүртэл (YYYY-MM-DD). */
@@ -646,9 +654,7 @@ export default function DansniiKhuulga() {
 
     // Return everything. Date filtering for DISPLAY is handled in filteredItems.
     // This ensures tableDisplayBalances always has the full history to calculate correct balances.
-    return combined.sort(
-      (a, b) => itemPrimaryDateMs(a) - itemPrimaryDateMs(b),
-    );
+    return combined.sort((a, b) => itemPrimaryDateMs(a) - itemPrimaryDateMs(b));
   }, [
     historyData,
     receivableData,
@@ -728,7 +734,6 @@ export default function DansniiKhuulga() {
       return false;
     });
   }, [allHistoryItems, effectiveBarilgiinId, contractsById, residentsById]);
-
 
   const tableDisplayBalances = useMemo(() => {
     const out: Record<string, number> = {};
@@ -1119,7 +1124,13 @@ export default function DansniiKhuulga() {
         g?._id || g?.gereeniiId || g?.gereeId || "",
       ).trim();
       const gereeDugaar = String(g?.gereeniiDugaar || "").trim();
-      const key = gereeId || gereeDugaar || (String(g?.orshinSuugchId || g?.residentId || "").trim()) || `${String((r?.ner ?? g?.ner) || "").trim().toLowerCase()}|${String((r?.utas ?? g?.utas) || "").trim()}|${String((r?.toot ?? g?.toot) || "").trim()}`;
+      const key =
+        gereeId ||
+        gereeDugaar ||
+        String(g?.orshinSuugchId || g?.residentId || "").trim() ||
+        `${String((r?.ner ?? g?.ner) || "")
+          .trim()
+          .toLowerCase()}|${String((r?.utas ?? g?.utas) || "").trim()}|${String((r?.toot ?? g?.toot) || "").trim()}`;
       if (key) residentKeysFromProfile.add(key);
 
       // Pre-populate map with contract-sourced rows.
@@ -1128,7 +1139,7 @@ export default function DansniiKhuulga() {
       if (!map.has(key)) {
         map.set(key, {
           ...g,
-          gereeniiId: gereeId || g?._id,  // ensure lookup key is present
+          gereeniiId: gereeId || g?._id, // ensure lookup key is present
           gereeId: gereeId || g?._id,
           _historyCount: 0,
           _totalTulbur: 0,
@@ -1268,11 +1279,11 @@ export default function DansniiKhuulga() {
 
       // Calculate base amounts for this specific record
       const rawDun = Number(it?.dun ?? 0);
-      
+
       // If it's an invoice record (nekhemjlekh), it represents a collection of charges.
       // However, our new ledger approach records individual charges with dun > 0.
       // Payment records have dun < 0.
-      
+
       let chargeForRow = 0;
       let paidForRow = 0;
 
@@ -1802,13 +1813,11 @@ export default function DansniiKhuulga() {
     const start = ekhlekhOgnoo?.[0];
     const end = ekhlekhOgnoo?.[1];
     if (!start || !end) return undefined;
-    
+
     // Return the selected natural month range (e.g., 2026-02-01 to 2026-02-28)
     // without any custom billing cycle (invoiceDay) offsets.
     return [start, end];
   }, [ekhlekhOgnoo]);
-
-
 
   // Fetch accurate server-computed balances via /uldegdelBodyo for all contracts.
   // This replaces the old per-resident /guilgeeAvlaguud fetch which tried to read
@@ -2192,7 +2201,8 @@ export default function DansniiKhuulga() {
       if (bulkResp.data?.summaries) {
         bulkResp.data.summaries.forEach((s: any) => {
           if (s.gereeniiId) exportSummaries.set(String(s.gereeniiId), s);
-          if (s.gereeniiDugaar) exportSummaries.set(String(s.gereeniiDugaar), s);
+          if (s.gereeniiDugaar)
+            exportSummaries.set(String(s.gereeniiDugaar), s);
         });
       }
 
@@ -2480,47 +2490,41 @@ export default function DansniiKhuulga() {
           }
         }
       } else {
-        // Other transaction types (avlaga, ashiglalt): create a transaction record without marking as paid
-        // Ашиглалт: нэхэмжлэхийн guilgeenuudForNekhemjlekh-тай ижил — дүнг tulsunDun-д (tulukhDun=0)
+        // Other transaction types (avlaga, ashiglalt, torguuli): create a transaction record as a charge
         const isAshiglalt = data.type === "ashiglalt";
+        const isTorguuli = data.type === "torguuli";
         const baseTailbar =
           data.tailbar ||
           (data.ekhniiUldegdel
             ? `Эхний үлдэгдэл - ${data.date}`
-            : `${data.type === "avlaga" ? "Авлага" : data.type === "ashiglalt" ? "Цахилгаан" : data.type} - ${data.date}`);
+            : `${data.type === "avlaga" ? "Авлага" : data.type === "ashiglalt" ? "Цахилгаан" : data.type === "torguuli" ? "Торгууль" : data.type} - ${data.date}`);
         const normalizedTailbar = isAshiglalt
           ? String(baseTailbar).replace(/^(ашиглалт|ashiglalt)/i, "Цахилгаан")
           : baseTailbar;
-        // Сервер заримдаа dun-г шууд tulukhDun-д тавьдаг тул ашиглалт дээр dun=0,
-        // дүнг зөвхөн tulsunDun-аар дамжуулна (guilgeenuudForNekhemjlekh-тай нийцнэ).
-        const response = await uilchilgee(token).post(
-          "/guilgeeAvlaguud",
-          {
-            baiguullagiinId: ajiltan.baiguullagiinId,
-            barilgiinId: effectiveBarilgiinId,
-            tukhainBaaziinKholbolt: ajiltan?.tukhainBaaziinKholbolt,
-            turul: data.type,
-            source: "gar",
-            ...(isAshiglalt
-              ? {
-                  tulukhDun: 0,
-                  tulsunDun: data.amount,
-                  dun: -data.amount, // Negative dun indicates payment/credit in the hook
-                }
-              : {
-                  tulukhDun: data.amount,
-                  tulsunDun: 0,
-                  dun: data.amount, // Positive dun indicates charge
-                }),
-            orshinSuugchId: data.residentId,
-            gereeniiId: data.gereeniiId,
-            tailbar: normalizedTailbar,
-            ognoo: data.date,
-            ...(data.ekhniiUldegdel && { ekhniiUldegdelEsekh: true }),
-            guilgeeKhiisenAjiltniiId: ajiltan._id,
-            guilgeeKhiisenAjiltniiNer: `${(ajiltan as any).ovog || ""} ${ajiltan.ner || ""}`.trim(),
-          },
-        );
+        // All non-payment types (avlaga, ashiglalt, torguuli) are charges: positive dun, tulukhDun
+        const response = await uilchilgee(token).post("/guilgeeAvlaguud", {
+          baiguullagiinId: ajiltan.baiguullagiinId,
+          barilgiinId: effectiveBarilgiinId,
+          tukhainBaaziinKholbolt: ajiltan?.tukhainBaaziinKholbolt,
+          turul: "Авлага",
+          source: "gar",
+          zardliinTurul: isAshiglalt
+            ? "Ашиглалт"
+            : isTorguuli
+              ? "Торгууль"
+              : undefined,
+          tulukhDun: data.amount,
+          tulsunDun: 0,
+          dun: data.amount,
+          orshinSuugchId: data.residentId,
+          gereeniiId: data.gereeniiId,
+          tailbar: normalizedTailbar,
+          ognoo: data.date,
+          ...(data.ekhniiUldegdel && { ekhniiUldegdelEsekh: true }),
+          guilgeeKhiisenAjiltniiId: ajiltan._id,
+          guilgeeKhiisenAjiltniiNer:
+            `${(ajiltan as any).ovog || ""} ${ajiltan.ner || ""}`.trim(),
+        });
 
         if (isTransactionHttpOk(response)) {
           toast.success("Гүйлгээ амжилттай бүртгэгдлээ");
@@ -3023,17 +3027,15 @@ export default function DansniiKhuulga() {
       </div> */}
 
       <div className="space-y-6">
-        <div id="guilgee-status-filter" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div
+          id="guilgee-status-filter"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+        >
           {stats.map((stat, idx) => {
             // Map stat titles to filter values
             const getFilterValue = (
               title: string,
-            ):
-              | "all"
-              | "paid"
-              | "unpaid"
-              | "overdue"
-              | null => {
+            ): "all" | "paid" | "unpaid" | "overdue" | null => {
               if (title === "Оршин суугч" || title === "Нийт гүйлгээ")
                 return "all";
               if (title === "Төлсөн") return "paid";
@@ -3451,14 +3453,12 @@ export default function DansniiKhuulga() {
             { revalidate: true },
           );
           mutate(
-            (key: any) =>
-              Array.isArray(key) && key[0] === "/guilgeeAvlaguud",
+            (key: any) => Array.isArray(key) && key[0] === "/guilgeeAvlaguud",
             undefined,
             { revalidate: true },
           );
           mutate(
-            (key: any) =>
-              Array.isArray(key) && key[0] === "/guilgeeAvlaguud",
+            (key: any) => Array.isArray(key) && key[0] === "/guilgeeAvlaguud",
             undefined,
             { revalidate: true },
           );
@@ -3510,8 +3510,7 @@ export default function DansniiKhuulga() {
             { revalidate: true },
           );
           mutate(
-            (key: any) =>
-              Array.isArray(key) && key[0] === "/guilgeeAvlaguud",
+            (key: any) => Array.isArray(key) && key[0] === "/guilgeeAvlaguud",
             undefined,
             { revalidate: true },
           );
