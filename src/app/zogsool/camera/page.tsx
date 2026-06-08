@@ -139,6 +139,10 @@ export default function Camera() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [ebarimtResult, setEbarimtResult] = useState<any>(null);
+  const [discountModalTransaction, setDiscountModalTransaction] =
+    useState<Uilchluulegch | null>(null);
+  const [discountAmount, setDiscountAmount] = useState("");
+  const [discountMinutes, setDiscountMinutes] = useState("");
 
   const [dateRange, setDateRange] = useState<
     [string | null, string | null] | undefined
@@ -287,31 +291,13 @@ export default function Camera() {
   const fetchList = useCallback(async () => {
     if (!rangeStart || !rangeEnd || !token) return;
 
-    // archive.md logic: Handle Archive collections based on date range
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth() + 1;
-
-    const startObj = new Date(rangeStart);
-    const endObj = new Date(rangeEnd);
-    const startYear = startObj.getFullYear();
-    const startMonth = startObj.getMonth() + 1;
-    const endYear = endObj.getFullYear();
-    const endMonth = endObj.getMonth() + 1;
-
-    let archiveName = undefined;
-
-    // Spans multiple months?
-    if (startYear !== endYear || startMonth !== endMonth) {
-      archiveName = "multi-month";
-    } else if (startYear !== currentYear || startMonth !== currentMonth) {
-      // Past month
-      archiveName = `Uilchluulegch${startYear}${String(startMonth).padStart(2, "0")}`;
-    }
-
     const query: any = {
       baiguullagiinId: ajiltan?.baiguullagiinId,
       barilgiinId: effectiveBarilgiinId || undefined,
+      createdAt: {
+        $gte: `${rangeStart} 00:00:00`,
+        $lte: `${rangeEnd} 23:59:59`,
+      },
     };
 
     if (searchTerm) {
@@ -319,7 +305,7 @@ export default function Camera() {
     }
 
     if (typeFilter !== "all") {
-      query.turul = "Үйлчлүүлэгч";
+      query.turul = typeFilter;
     }
 
     if (statusFilter === "active") {
@@ -350,33 +336,6 @@ export default function Camera() {
       query.niitDun = 0;
     }
 
-    // The mandatory $or structure for date filtering as requested
-    const exitCameraIP = activeExitIP || exitCameras[0]?.cameraIP;
-
-    const dateOr = [
-      {
-        ...(exitCameraIP ? { "tuukh.0.garsanKhaalga": exitCameraIP } : {}),
-        "tuukh.tsagiinTuukh.garsanTsag": {
-          $gte: `${rangeStart} 00:00:00`,
-          $lte: `${rangeEnd} 23:59:59`,
-        },
-      },
-      {
-        "tuukh.0.garsanKhaalga": { $exists: false },
-        createdAt: {
-          $gte: `${rangeStart} 00:00:00`,
-          $lte: `${rangeEnd} 23:59:59`,
-        },
-      },
-    ];
-
-    // Merge date filter with status filter
-    if (statusFilter === "unpaid" && query.$and) {
-      query.$and.push({ $or: dateOr });
-    } else {
-      query.$or = dateOr;
-    }
-
     const sortObj =
       durationFilter === "longest"
         ? { "tuukh.0.niitKhugatsaa": -1 }
@@ -391,15 +350,17 @@ export default function Camera() {
           : { "tuukh.0.tsagiinTuukh.0.garsanTsag": -1 };
 
     try {
-      const resp = await uilchilgee(token).get("/zogsoolUilchluulegch", {
-        params: {
-          khuudasniiDugaar: 1,
-          khuudasniiKhemjee: 10000, // Fetch all data for client-side filtering and pagination
-          query: JSON.stringify(query),
-          order: JSON.stringify(sortObj),
-          archiveName: archiveName,
+      const resp = await uilchilgee(token).get(
+        "/zogsoolUilchluulegchJagsaalt",
+        {
+          params: {
+            khuudasniiDugaar: 1,
+            khuudasniiKhemjee: 10000,
+            query: JSON.stringify(query),
+            order: JSON.stringify(sortObj),
+          },
         },
-      });
+      );
       setListData(resp.data);
     } catch (e) {
       console.error("Fetch error", e);
@@ -415,8 +376,6 @@ export default function Camera() {
     searchTerm,
     typeFilter,
     statusFilter,
-    activeExitIP,
-    exitCameras,
     durationFilter,
   ]);
 
@@ -479,13 +438,18 @@ export default function Camera() {
             },
           },
         );
-        
-        if ((resp.status === 200 && !resp.data.aldaa) || resp.data === "Amjilttai") {
+
+        if (
+          (resp.status === 200 && !resp.data.aldaa) ||
+          resp.data === "Amjilttai"
+        ) {
           toast.success("Гаралтын команд амжилттай");
           setConfirmExitId(null);
           fetchList();
         } else {
-          toast.error("Алдаа: " + (resp.data.aldaa || resp.data?.message || "Амжилтгүй"));
+          toast.error(
+            "Алдаа: " + (resp.data.aldaa || resp.data?.message || "Амжилтгүй"),
+          );
         }
       } catch (err) {
         console.error("SDK Error:", err);
@@ -727,7 +691,7 @@ export default function Camera() {
     if (typeFilter !== "all") {
       merged = merged.filter((t) => {
         const type = t.turul || t.tuukh?.[0]?.turul || "Үйлчлүүлэгч";
-        return type === "Үйлчлүүлэгч";
+        return type === typeFilter;
       });
     }
 
@@ -1135,7 +1099,7 @@ export default function Camera() {
             </div>
 
             {/* Right: Search + Register + DatePicker */}
-            <div className="flex items-center gap-2.5 flex-wrap font-[family-name:var(--font-mono)]">
+            <div className="flex items-center gap-2.5 flex-wrap">
               {/* Search */}
               <div className="relative group">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 dark:text-slate-500 group-focus-within:text-blue-500 transition-colors" />
@@ -1163,7 +1127,7 @@ export default function Camera() {
                   format="YYYY-MM-DD"
                   classNames={{
                     input:
-                      "flex items-center gap-2 rounded-full bg-slate-100/60 dark:bg-white/[0.03] border border-slate-200/40 dark:border-white/[0.06] h-9 px-4 text-[11px] text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-blue-500/10 transition-all font-[family-name:var(--font-mono)]",
+                      "flex items-center gap-2 rounded-full bg-slate-100/60 dark:bg-white/[0.03] border border-slate-200/40 dark:border-white/[0.06] h-9 px-4 text-[11px] text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-blue-500/10 transition-all",
                   }}
                   allowClear
                 />
@@ -1186,11 +1150,11 @@ export default function Camera() {
             style={{ overflow: "visible" }}
           >
             <div
-              className="overflow-x-auto overflow-y-auto custom-scrollbar flex-1"
-              style={{ maxHeight: `${pageSize * 60}px` }}
+              className="custom-scrollbar flex-1"
+              style={{ maxHeight: `${pageSize * 36}px` }}
             >
               <table className="w-full text-[11px] border-collapse bg-white dark:bg-slate-950/50">
-                <thead className="sticky top-0 z-20">
+                <thead className="sticky top-0 z-40">
                   <tr className="dark:bg-slate-900 border-y border-slate-200 dark:border-white/10 shadow-sm">
                     {[
                       { id: "no", label: "№", width: "w-12" },
@@ -1239,7 +1203,9 @@ export default function Camera() {
                         },
                         options: [
                           { label: "Бүгд", value: "all" },
-                          { label: "Төлбөртэй", value: "client" },
+                          { label: "Үйлчлүүлэгч", value: "Үйлчлүүлэгч" },
+                          { label: "Оршин суугч", value: "Оршин суугч" },
+                          { label: "Зочин", value: "Зочин" },
                         ],
                       },
                       { id: "discount", label: "Хөнгөлөлт", width: "w-28" },
@@ -1268,7 +1234,7 @@ export default function Camera() {
                     ].map((h, i) => (
                       <th
                         key={h.id}
-                        className={`group relative py-4 px-3 text-slate-700 dark:text-slate-300  uppercase tracking-wider text-xs border-r border-slate-200 dark:border-white/5 last:border-r-0 text-center ${h.width || ""} hover:bg-slate-50 dark:hover:bg-white/5 transition-colors`}
+                        className={`group relative py-1.5 px-3 text-slate-700 dark:text-slate-300  uppercase tracking-wider text-[11px] border-r border-slate-200 dark:border-white/5 last:border-r-0 text-center ${h.width || ""} hover:bg-slate-50 dark:hover:bg-white/5 transition-colors hover:z-[100]`}
                       >
                         <div
                           className="flex items-center justify-center gap-2 cursor-pointer h-full"
@@ -1286,29 +1252,18 @@ export default function Camera() {
                         {h.options && (
                           <div className="absolute top-full left-1/2 -translate-x-1/2 mt-0 w-52 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] p-1.5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[100] translate-y-2 group-hover:translate-y-0 overflow-hidden scale-95 group-hover:scale-100 origin-top text-left">
                             <div className="relative flex flex-col gap-0 z-10">
-                              <div className="px-3 py-2 mb-1 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-white/5">
+                              <div className="px-3 py-2 mb-1 text-[10px]  text-black dark:text-white">
                                 {h.label} Сонгох
                               </div>
                               {h.options.map((opt, idx, arr) => (
                                 <div key={idx}>
                                   <div
                                     onClick={() => (h as any).set?.(opt.value)}
-                                    className={`px-3 py-2.5 rounded-md text-[11px] text-left flex items-center justify-between cursor-pointer transition-all duration-200 border border-transparent ${
+                                    className={`px-3 py-2.5 rounded-xl text-[11px] text-left flex items-center justify-between cursor-pointer transition-all duration-200 border border-transparent ${
                                       (h as any).current === opt.value
-                                        ? "bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400"
-                                        : "hover:bg-slate-100 dark:hover:bg-white/5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                                        ? "bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-white"
+                                        : "hover:bg-slate-100 dark:hover:bg-white/5 text-slate-600 dark:text-white hover:text-slate-900"
                                     }`}
-                                    style={{
-                                      borderRadius: "0.375rem",
-                                    }}
-                                    onMouseEnter={(e) => {
-                                      e.currentTarget.style.borderRadius =
-                                        "0.5rem";
-                                    }}
-                                    onMouseLeave={(e) => {
-                                      e.currentTarget.style.borderRadius =
-                                        "0.375rem";
-                                    }}
                                   >
                                     <span>{opt.label}</span>
                                     {(h as any).current === opt.value && (
@@ -1367,12 +1322,12 @@ export default function Camera() {
                           key={transaction._id || idx}
                           className={`hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-all duration-200 group border-b border-slate-200 dark:border-white/5 ${isActive ? "bg-blue-50/40 dark:bg-blue-900/10" : ""}`}
                         >
-                          <td className="py-3 px-3 text-center text-gray-400 border-r border-slate-200 dark:border-white/5 text-xs">
+                          <td className="py-1.5 px-3 text-center text-gray-400 border-r border-slate-200 dark:border-white/5 text-[11px]">
                             {(page - 1) * pageSize + idx + 1}
                           </td>
-                          <td className="py-3 px-3 border-r border-slate-200 dark:border-white/5 text-center">
+                          <td className="py-1.5 px-3 border-r border-slate-200 dark:border-white/5 text-center">
                             <div className="flex items-center justify-center gap-2">
-                              <span className=" text-slate-700 dark:text-slate-300  font-[family-name:var(--font-mono)] text-sm">
+                              <span className=" text-slate-700 dark:text-slate-300  font-[family-name:var(--font-mono)] text-[11px]">
                                 {transaction.mashiniiDugaar || "-"}
                               </span>
                               <Copy
@@ -1383,21 +1338,21 @@ export default function Camera() {
                               />
                             </div>
                           </td>
-                          <td className="py-3 px-3 whitespace-nowrap border-r border-slate-200 dark:border-white/5 text-center">
-                            <span className=" text-slate-600 dark:text-slate-400  font-[family-name:var(--font-mono)] text-xs">
+                          <td className="py-1.5 px-3 whitespace-nowrap border-r border-slate-200 dark:border-white/5 text-center">
+                            <span className=" text-slate-600 dark:text-slate-400  font-[family-name:var(--font-mono)] text-[11px]">
                               {orsonTsag
                                 ? moment(orsonTsag).format("MM-DD HH:mm:ss")
                                 : "-"}
                             </span>
                           </td>
-                          <td className="py-3 px-3 whitespace-nowrap border-r border-slate-200 dark:border-white/5 text-center">
-                            <span className=" text-slate-600 dark:text-slate-400  font-[family-name:var(--font-mono)] text-xs">
+                          <td className="py-1.5 px-3 whitespace-nowrap border-r border-slate-200 dark:border-white/5 text-center">
+                            <span className=" text-slate-600 dark:text-slate-400  font-[family-name:var(--font-mono)] text-[11px]">
                               {garsanTsag
                                 ? moment(garsanTsag).format("MM-DD HH:mm:ss")
                                 : ""}
                             </span>
                           </td>
-                          <td className="py-3 px-3 border-r border-slate-200 dark:border-white/5 text-center">
+                          <td className="py-1.5 px-3 border-r border-slate-200 dark:border-white/5 text-center">
                             {(() => {
                               // Match duration color to status color - must follow exact same logic order as status column
                               const getStatusColor = () => {
@@ -1420,7 +1375,7 @@ export default function Camera() {
 
                               return (
                                 <div
-                                  className={`flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-1.5 rounded-[6px] overflow-hidden border shadow-sm text-xs ${getStatusColor()}`}
+                                  className={`flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-1.5 rounded-[6px] overflow-hidden border shadow-sm text-[11px] ${getStatusColor()}`}
                                   style={{ borderRadius: "6px" }}
                                 >
                                   <RealTimeDuration
@@ -1431,18 +1386,18 @@ export default function Camera() {
                               );
                             })()}
                           </td>
-                          <td className="py-3 px-3 text-slate-600 dark:text-slate-400 text-center  border-r border-slate-200 dark:border-white/5 text-sm">
+                          <td className="py-1.5 px-3 text-slate-600 dark:text-slate-400 text-center  border-r border-slate-200 dark:border-white/5 text-[11px]">
                             {transaction.turul ||
                               transaction.tuukh?.[0]?.turul ||
                               "Үйлчлүүлэгч"}
                           </td>
-                          <td className="py-3 px-3 text-slate-600 dark:text-slate-400 text-right  border-r border-slate-200 dark:border-white/5 text-sm">
+                          <td className="py-1.5 px-3 text-slate-600 dark:text-slate-400 text-right  border-r border-slate-200 dark:border-white/5 text-[11px]">
                             {transaction.tuukh?.[0]?.khungulult || "0"}
                           </td>
-                          <td className="py-3 px-3 text-slate-700 dark:text-slate-300 text-right  border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] text-sm">
+                          <td className="py-1.5 px-3 text-slate-700 dark:text-slate-300 text-right  border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] text-[11px]">
                             {formatNumber(transaction.niitDun || 0)}
                           </td>
-                          <td className="py-3 px-3 text-right  relative border-r border-slate-200 dark:border-white/5 text-sm">
+                          <td className="py-1.5 px-3 text-right  relative border-r border-slate-200 dark:border-white/5 text-[11px]">
                             {(() => {
                               const history = transaction.tuukh?.[0];
                               const tulsunDun = history?.tulsunDun || 0;
@@ -1513,10 +1468,10 @@ export default function Camera() {
                                 );
                                 return (
                                   <div className="group/pay relative inline-block cursor-pointer ml-auto">
-                                    <span className="text-sm  text-slate-700 dark:text-slate-300 hover:text-blue-600 transition-colors border-b border-dashed border-slate-300 dark:border-slate-600 pb-0.5 font-[family-name:var(--font-mono)]">
+                                    <span className="text-[11px]  text-slate-700 dark:text-slate-300 hover:text-blue-600 transition-colors border-b border-dashed border-slate-300 dark:border-slate-600 pb-0.5 font-[family-name:var(--font-mono)]">
                                       {formatNumber(totalPaid)}
                                       {payHistory.length > 1 && (
-                                        <span className="ml-1 text-[10px] text-slate-400">
+                                        <span className="ml-1 text-[11px] text-slate-400">
                                           ({payHistory.length})
                                         </span>
                                       )}
@@ -1569,7 +1524,7 @@ export default function Camera() {
                                         <span className="text-[10px] font-black text-slate-400 uppercase">
                                           НИЙТ
                                         </span>
-                                        <span className="text-sm font-black text-emerald-600 font-[family-name:var(--font-mono)]">
+                                        <span className="text-[11px] font-black text-emerald-600 font-[family-name:var(--font-mono)]">
                                           {formatNumber(totalPaid)}
                                         </span>
                                       </div>
@@ -1580,7 +1535,7 @@ export default function Camera() {
 
                               if (tulsunDun > 0) {
                                 return (
-                                  <span className="text-sm  text-slate-700 dark:text-slate-300 font-[family-name:var(--font-mono)]">
+                                  <span className="text-[11px]  text-slate-700 dark:text-slate-300 font-[family-name:var(--font-mono)]">
                                     {formatNumber(tulsunDun)}
                                   </span>
                                 );
@@ -1599,23 +1554,23 @@ export default function Camera() {
                                 (garsanTsag && tulsunDun === 0)
                               ) {
                                 return (
-                                  <span className="text-emerald-600 dark:text-emerald-400  text-[10px] uppercase tracking-widest bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded inline-block">
+                                  <span className="text-emerald-600 dark:text-emerald-400  text-[11px] uppercase tracking-widest bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded inline-block">
                                     Үнэгүй
                                   </span>
                                 );
                               }
 
                               return (
-                                <span className="font-[family-name:var(--font-mono)] text-slate-700 dark:text-slate-300 text-sm">
+                                <span className="font-[family-name:var(--font-mono)] text-slate-700 dark:text-slate-300 text-[11px]">
                                   {formatNumber(tulsunDun)}
                                 </span>
                               );
                             })()}
                           </td>
-                          <td className="py-3 px-3 text-slate-600 dark:text-slate-400 text-right  border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] text-sm">
+                          <td className="py-1.5 px-3 text-slate-600 dark:text-slate-400 text-right  border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] text-[11px]">
                             {transaction.tuukh?.[0]?.ebarimtId || ""}
                           </td>
-                          <td className="py-3 px-3 relative border-r border-slate-200 dark:border-white/5 text-center">
+                          <td className="py-1.5 px-3 relative border-r border-slate-200 dark:border-white/5 text-center">
                             {showActionBtn ? (
                               <div className="flex items-center justify-center gap-1 action-menu-container">
                                 <Button
@@ -1667,11 +1622,14 @@ export default function Camera() {
                                               label: "Хөнгөлөлт",
                                               icon: Tag,
                                               color: "amber",
-                                              action: () =>
-                                                handleManualExit(
+                                              action: () => {
+                                                setDiscountModalTransaction(
                                                   transaction,
-                                                  "pay",
-                                                ),
+                                                );
+                                                setDiscountAmount("");
+                                                setDiscountMinutes("");
+                                                setConfirmExitId(null);
+                                              },
                                             },
                                             {
                                               label: "Гаргах",
@@ -1824,7 +1782,7 @@ export default function Camera() {
                               })()
                             )}
                           </td>
-                          <td className="py-3 px-3 text-gray-400 italic truncate max-w-[100px] border-r border-slate-200 dark:border-white/5 text-[10px] text-center">
+                          <td className="py-1.5 px-3 text-gray-400 italic truncate max-w-[100px] border-r border-slate-200 dark:border-white/5 text-[10px] text-center">
                             {transaction.zurchil || ""}
                           </td>
                         </tr>
@@ -1832,46 +1790,48 @@ export default function Camera() {
                     })
                   )}
                 </tbody>
-                <tfoot className="bg-slate-50 dark:bg-slate-900 border-t-2 border-slate-200 dark:border-white/10  text-slate-800 dark:text-white sticky bottom-0 z-30 shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="py-3 px-3 text-right text-xs uppercase tracking-wider border-r border-slate-200 dark:border-white/5"
-                    >
-                      Нийт Дүн:
-                    </td>
-                    <td className="py-3 px-3 text-right border-r border-slate-200 dark:border-white/5 text-sm font-[family-name:var(--font-mono)] whitespace-nowrap">
-                      {formatNumber(
-                        transactions.reduce(
-                          (sum, t) =>
-                            sum + (Number(t.tuukh?.[0]?.khungulult) || 0),
-                          0,
-                        ),
-                      )}
-                    </td>
-                    <td className="py-3 px-3 text-right border-r border-slate-200 dark:border-white/5 text-sm font-[family-name:var(--font-mono)] whitespace-nowrap">
-                      {formatNumber(
-                        transactions.reduce(
-                          (sum, t) => sum + (Number(t.niitDun) || 0),
-                          0,
-                        ),
-                      )}
-                    </td>
-                    <td className="py-3 px-3 text-right border-r border-slate-200 dark:border-white/5 text-sm font-[family-name:var(--font-mono)] whitespace-nowrap">
-                      {formatNumber(
-                        transactions.reduce(
-                          (sum, t) =>
-                            sum + (Number(t.tuukh?.[0]?.tulsunDun) || 0),
-                          0,
-                        ),
-                      )}
-                    </td>
-                    <td
-                      colSpan={4}
-                      className="border-r border-slate-200 dark:border-white/5"
-                    ></td>
-                  </tr>
-                </tfoot>
+                {transactions.length > 0 && (
+                  <tfoot className="bg-slate-50 dark:bg-slate-900 border-t-2 border-slate-200 dark:border-white/10  text-slate-800 dark:text-white sticky bottom-0 z-10 shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
+                    <tr>
+                      <td
+                        colSpan={6}
+                        className="py-1.5 px-3 text-right text-[11px] uppercase tracking-wider border-r border-slate-200 dark:border-white/5"
+                      >
+                        Нийт Дүн:
+                      </td>
+                      <td className="py-1.5 px-3 text-right border-r border-slate-200 dark:border-white/5 text-[11px] font-[family-name:var(--font-mono)] whitespace-nowrap">
+                        {formatNumber(
+                          transactions.reduce(
+                            (sum, t) =>
+                              sum + (Number(t.tuukh?.[0]?.khungulult) || 0),
+                            0,
+                          ),
+                        )}
+                      </td>
+                      <td className="py-1.5 px-3 text-right border-r border-slate-200 dark:border-white/5 text-[11px] font-[family-name:var(--font-mono)] whitespace-nowrap">
+                        {formatNumber(
+                          transactions.reduce(
+                            (sum, t) => sum + (Number(t.niitDun) || 0),
+                            0,
+                          ),
+                        )}
+                      </td>
+                      <td className="py-1.5 px-3 text-right border-r border-slate-200 dark:border-white/5 text-[11px] font-[family-name:var(--font-mono)] whitespace-nowrap">
+                        {formatNumber(
+                          transactions.reduce(
+                            (sum, t) =>
+                              sum + (Number(t.tuukh?.[0]?.tulsunDun) || 0),
+                            0,
+                          ),
+                        )}
+                      </td>
+                      <td
+                        colSpan={4}
+                        className="border-r border-slate-200 dark:border-white/5"
+                      ></td>
+                    </tr>
+                  </tfoot>
+                )}
               </table>
             </div>
 
@@ -2113,6 +2073,139 @@ export default function Camera() {
             }}
           />
         )}
+        {/* Discount Modal */}
+        {discountModalTransaction && (
+          <div
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+            onClick={() => setDiscountModalTransaction(null)}
+            style={{
+              background: "rgba(0,0,0,0.45)",
+              backdropFilter: "blur(12px)",
+            }}
+          >
+            <div
+              className="relative w-[380px] max-w-full rounded-[28px] overflow-hidden shadow-2xl border bg-white dark:bg-[#18181b] border-slate-200/40 dark:border-white/[0.06]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="relative px-7 pt-6 pb-5 border-b border-slate-100 dark:border-white/[0.06]">
+                <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-amber-500 via-rose-500 to-pink-500 opacity-80" />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-slate-100 dark:bg-white/[0.06] border border-slate-200/50 dark:border-white/[0.06]">
+                      <Tag className="w-5 h-5 text-amber-500 dark:text-amber-400" />
+                    </div>
+                    <div>
+                      <h2 className="text-[15px] text-slate-800 dark:text-white tracking-tight">
+                        Хөнгөлөх
+                      </h2>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setDiscountModalTransaction(null)}
+                    className="w-9 h-9 rounded-full bg-slate-100 dark:bg-white/[0.06] flex items-center justify-center text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className="px-7 py-6 space-y-5">
+                <div>
+                  <label className="block text-[11px] text-slate-500 dark:text-white uppercase tracking-wider mb-1.5">
+                    Хөнгөлөх дүн
+                  </label>
+                  <input
+                    type="number"
+                    value={discountAmount}
+                    onChange={(e) => setDiscountAmount(e.target.value)}
+                    className="w-full h-11 px-4 rounded-xl bg-slate-50 dark:bg-white/[0.04] border border-slate-200/60 dark:border-white/[0.08] text-slate-800 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/50 transition-all"
+                    placeholder="0"
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-slate-500 dark:text-white uppercase tracking-wider mb-1.5">
+                    Хөнгөлөх минут
+                  </label>
+                  <input
+                    type="number"
+                    value={discountMinutes}
+                    onChange={(e) => setDiscountMinutes(e.target.value)}
+                    className="w-full h-11 px-4 rounded-xl bg-slate-50 dark:bg-white/[0.04] border border-slate-200/60 dark:border-white/[0.08] text-slate-800 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/50 transition-all"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="px-7 pb-6 pt-2 flex items-center justify-end gap-3">
+                <button
+                  onClick={() => setDiscountModalTransaction(null)}
+                  className="h-10 px-5 rounded border border-slate-200 dark:border-white/[0.08] text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.06] text-sm font-medium active:scale-[0.97] transition-all"
+                >
+                  Хаах
+                </button>
+                <button
+                  onClick={async () => {
+                    const amount = parseFloat(discountAmount);
+                    if (!amount || amount <= 0) {
+                      toast.error("Хөнгөлөх дүн оруулна уу");
+                      return;
+                    }
+                    try {
+                      const zogsooliinId =
+                        discountModalTransaction.tuukh?.[0]?.zogsooliinId ||
+                        discountModalTransaction.barilgiinId ||
+                        effectiveBarilgiinId;
+                      const tulburArray = [
+                        {
+                          ognoo: new Date().toISOString(),
+                          turul: "Хөнгөлөлт",
+                          dun: amount,
+                          khariu: {
+                            khungulsunKhugatsaa: parseInt(discountMinutes) || 0,
+                          },
+                          baiguullagiinId: ajiltan?.baiguullagiinId,
+                          barilgiinId: effectiveBarilgiinId,
+                          burtgesenAjiltaniiId: ajiltan?._id,
+                          burtgesenAjiltaniiNer: ajiltan?.ner,
+                          zogsooliinId,
+                        },
+                      ];
+                      const resp = await uilchilgee(token || "").post(
+                        "/zogsooliinTulburTulye",
+                        {
+                          id: discountModalTransaction._id,
+                          tulbur: tulburArray,
+                        },
+                      );
+                      if (resp.status === 200 || resp.data === "Amjилттай") {
+                        toast.success("Хөнгөлөлт амжилттай бүртгэгдлээ");
+                        setDiscountModalTransaction(null);
+                        fetchList();
+                      } else {
+                        toast.error("Алдаа гарлаа");
+                      }
+                    } catch (err) {
+                      console.error("Discount error:", err);
+                      toast.error("Хөнгөлөлт бүртгэхэд алдаа гарлаа");
+                    }
+                  }}
+                  className="h-10 px-5 rounded !text-white text-sm font-medium active:scale-[0.97] transition-all flex items-center justify-center gap-2 shadow-lg"
+                  style={{
+                    background: "linear-gradient(135deg, #10b981, #059669)",
+                    boxShadow: "0 6px 20px rgba(16, 185, 129, 0.3)",
+                  }}
+                >
+                  Хөнгөлөх
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {isRegModalOpen && (
           <VehicleRegistrationModal
             onClose={() => setIsRegModalOpen(false)}
@@ -2259,25 +2352,29 @@ const CameraStream = React.memo(
     }, []);
 
     if (error) {
+      const rtspUrl = `rtsp://${username || "admin"}:${password || "***"}@${ip}:${port}/${root}`;
       return (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white">
-          <div className="relative">
+          <div className="relative max-w-md px-4">
             <div className="absolute inset-0 bg-red-500/20 rounded-full blur-2xl animate-pulse"></div>
-            <div className="relative p-6 rounded-3xl bg-gray-900/80 backdrop-blur-sm border border-red-500/30">
-              <VideoOff className="w-16 h-16 mb-4 mx-auto opacity-75 animate-pulse" />
-              <p className="text-base mb-2 text-center">
-                Камер холбогдохгүй байна
-              </p>
-              <p className="text-xs opacity-60 text-center mb-3 font-mono">
-                {ip}:{port}
+            <div className="relative p-6 rounded-3xl bg-gray-900/80 backdrop-blur-sm border border-red-500/30 space-y-3">
+              <VideoOff className="w-16 h-16 mb-2 mx-auto opacity-75 animate-pulse" />
+              <p className="text-base text-center">Камер холбогдохгүй байна</p>
+              <p className="text-[10px] opacity-50 text-center font-mono break-all">
+                {rtspUrl}
               </p>
               {connectionState && (
                 <div className="px-3 py-1.5 rounded-lg bg-red-500/20 border border-red-500/30">
-                  <p className="text-xs opacity-80 text-center">
-                    Төлөв: {connectionState}
+                  <p className="text-[10px] opacity-80 text-center">
+                    Алдаа: {connectionState}
                   </p>
                 </div>
               )}
+              <p className="text-[10px] text-slate-400 text-center leading-relaxed">
+                Stream path (&quot;{root}&quot;) буруу байж магадгүй.
+                <br />
+                Камер тохиргооноос ROOT-г шалгана уу.
+              </p>
             </div>
           </div>
         </div>
