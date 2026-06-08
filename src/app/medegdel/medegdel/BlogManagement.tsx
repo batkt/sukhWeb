@@ -4,7 +4,16 @@ import { useEffect, useState, useRef } from "react";
 import { Input, Modal, notification, Popconfirm } from "antd";
 import Button from "@/components/ui/Button";
 import { motion, AnimatePresence } from "framer-motion";
-import { SearchIcon, Plus, ImagePlus, X, Edit2, Trash2, MessageSquare, Loader2 } from "lucide-react";
+import {
+  SearchIcon,
+  Plus,
+  ImagePlus,
+  X,
+  Edit2,
+  Trash2,
+  MessageSquare,
+  Loader2,
+} from "lucide-react";
 import uilchilgee, { getApiUrl, getMedegdelAssetUrl } from "@/lib/uilchilgee";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
@@ -45,7 +54,7 @@ export default function BlogManagement() {
   const { token, ajiltan } = useAuth();
   const baiguullagiinId = ajiltan?.baiguullagiinId;
   const { selectedBuildingId } = useBuilding();
-  
+
   useEffect(() => {
     Aos.init({ once: true });
   }, []);
@@ -54,44 +63,55 @@ export default function BlogManagement() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBlog, setEditingBlog] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(false);
-  
+
   // Pagination
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(16);
-  
+
   // Form states
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [attachImages, setAttachImages] = useState<File[]>([]);
-  const [existingImages, setExistingImages] = useState<(string | BlogImage)[]>([]);
+  const [existingImages, setExistingImages] = useState<(string | BlogImage)[]>(
+    [],
+  );
   const attachInputRef = useRef<HTMLInputElement>(null);
   const [attachPreviewUrls, setAttachPreviewUrls] = useState<string[]>([]);
 
   const getImageUrl = (img: any) => {
     if (!img) return "";
-    
+
     // Handle both string paths and object paths as seen in the API response
     let path = "";
-    if (typeof img === 'string') {
+    if (typeof img === "string") {
       path = img;
-    } else if (img && typeof img.path === 'string') {
+    } else if (img && typeof img.path === "string") {
       path = img.path;
     }
 
     if (!path) return "";
-    if (path.startsWith("http") || path.startsWith("blob:") || path.startsWith("data:")) return path;
-    
+    if (
+      path.startsWith("http") ||
+      path.startsWith("blob:") ||
+      path.startsWith("data:")
+    )
+      return path;
+
     const baseUrl = getApiUrl().replace(/\/?$/, ""); // Use api URL as is, just trim trailing slash
-    
+
     // If the path already includes the organization ID (contains a slash), don't prepend it again
     if (path.includes("/")) {
       return `${baseUrl}/${path}`;
     }
-    
+
     return `${baseUrl}/medegdel/${baiguullagiinId}/${path}`;
   };
 
-  const { data: blogData, mutate: revalidateBlogs, isValidating } = useSWR(
+  const {
+    data: blogData,
+    mutate: revalidateBlogs,
+    isValidating,
+  } = useSWR(
     token && baiguullagiinId
       ? ["/blog", token, baiguullagiinId, selectedBuildingId]
       : null,
@@ -110,7 +130,7 @@ export default function BlogManagement() {
               ? d
               : [];
       return lst as BlogPost[];
-    }
+    },
   );
 
   const handleOpenModal = (blog: BlogPost | null = null) => {
@@ -132,7 +152,10 @@ export default function BlogManagement() {
 
   const handleSave = async () => {
     if (!title.trim() || !content.trim()) {
-      notification.warning({ message: "Гарчиг болон агуулга оруулна уу", style: { zIndex: 99999 } });
+      notification.warning({
+        message: "Гарчиг болон агуулга оруулна уу",
+        style: { zIndex: 99999 },
+      });
       return;
     }
 
@@ -144,18 +167,23 @@ export default function BlogManagement() {
       formData.append("title", title);
       formData.append("content", content);
       formData.append("baiguullagiinId", baiguullagiinId);
-      if (selectedBuildingId) formData.append("barilgiinId", selectedBuildingId);
-      
+      if (selectedBuildingId)
+        formData.append("barilgiinId", selectedBuildingId);
+
       attachImages.forEach((file) => formData.append("images", file));
-      
+
       if (editingBlog) {
         // Send paths as strings for the backend to identify which ones to keep
-        const pathsToKeep = existingImages.map(img => typeof img === 'string' ? img : img.path);
+        const pathsToKeep = existingImages.map((img) =>
+          typeof img === "string" ? img : img.path,
+        );
         formData.append("existingImages", JSON.stringify(pathsToKeep));
       }
 
       const baseUrl = getApiUrl().replace(/\/$/, "");
-      const url = editingBlog ? `${baseUrl}/blog/${editingBlog._id}` : `${baseUrl}/blog`;
+      const url = editingBlog
+        ? `${baseUrl}/blog/${editingBlog._id}`
+        : `${baseUrl}/blog`;
       const method = editingBlog ? "PUT" : "POST";
 
       const res = await fetch(url, {
@@ -171,7 +199,9 @@ export default function BlogManagement() {
         throw new Error(errText || `HTTP ${res.status}`);
       }
 
-      openSuccessOverlay(editingBlog ? "Нийтлэл шинэчлэгдлээ" : "Нийтлэл амжилттай нэмэгдлээ");
+      openSuccessOverlay(
+        editingBlog ? "Нийтлэл шинэчлэгдлээ" : "Нийтлэл амжилттай нэмэгдлээ",
+      );
       setIsModalOpen(false);
       revalidateBlogs();
     } catch (err) {
@@ -194,12 +224,16 @@ export default function BlogManagement() {
   };
 
   const blogs = Array.isArray(blogData) ? blogData : [];
-  const filteredBlogs = blogs.filter(blog => 
-    blog.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    blog.content.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredBlogs = blogs.filter(
+    (blog) =>
+      blog.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      blog.content.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  const paginatedBlogs = filteredBlogs.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+  const paginatedBlogs = filteredBlogs.slice(
+    (page - 1) * rowsPerPage,
+    page * rowsPerPage,
+  );
 
   useEffect(() => {
     setPage(1);
@@ -214,7 +248,10 @@ export default function BlogManagement() {
           Нийтлэлүүд
         </h2>
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <div id="niitlel-search" className="relative h-10 flex-1 sm:w-64 flex items-center neu-panel">
+          <div
+            id="niitlel-search"
+            className="relative h-10 flex-1 sm:w-64 flex items-center neu-panel"
+          >
             <SearchIcon className="absolute left-3 w-4 h-4 text-slate-500 pointer-events-none" />
             <input
               placeholder="Нийтлэл хайх..."
@@ -246,11 +283,16 @@ export default function BlogManagement() {
             <div className="w-16 h-16 rounded-2xl neu-panel flex items-center justify-center mb-4">
               <MessageSquare className="w-8 h-8 text-slate-400" />
             </div>
-            <h3 className="text-base  text-slate-700 dark:text-slate-200">Нийтлэл олдсонгүй</h3>
+            <h3 className="text-base  text-slate-700 dark:text-slate-200">
+              Нийтлэл олдсонгүй
+            </h3>
           </div>
         ) : (
           <div className="flex flex-col gap-6">
-            <div id="niitlel-list" className="table-surface rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 sm:p-5">
+            <div
+              id="niitlel-list"
+              className="table-surface rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 sm:p-5"
+            >
               <div className="max-h-[calc(100vh-360px)] overflow-auto custom-scrollbar">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {paginatedBlogs.map((blog) => (
@@ -270,13 +312,32 @@ export default function BlogManagement() {
                         />
                       </div>
                       <div className="h-1/2 bg-white border-t border-slate-200 p-4 flex flex-col">
-                        <h3 className="text-sm font-medium text-slate-900 line-clamp-1 mb-1">{blog.title}</h3>
+                        <h3 className="text-sm font-medium text-slate-900 line-clamp-1 mb-1">
+                          {blog.title}
+                        </h3>
                         <p className="text-[11px] text-slate-500 mb-2">
                           {new Date(blog.createdAt).toLocaleString("mn-MN")}
                         </p>
                         <p className="text-sm text-slate-600 line-clamp-3 flex-1">
                           {blog.content}
                         </p>
+                        {/* Reactions */}
+                        {blog.reactions && blog.reactions.length > 0 && (
+                          <div className="mt-2 flex items-center gap-2 flex-wrap">
+                            {blog.reactions.map((reaction, idx) => (
+                              <span
+                                key={idx}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-50 border border-slate-100 text-xs text-slate-600"
+                                title={reaction.users?.join(", ") || ""}
+                              >
+                                <span>{reaction.emoji}</span>
+                                <span className="font-medium">
+                                  {reaction.count}
+                                </span>
+                              </span>
+                            ))}
+                          </div>
+                        )}
                         <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
                           <button
                             onClick={() => handleOpenModal(blog)}
@@ -327,8 +388,22 @@ export default function BlogManagement() {
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         footer={[
-          <Button key="cancel" onClick={() => setIsModalOpen(false)} className="rounded-lg h-10">Хаах</Button>,
-          <Button key="save" type="primary" loading={loading} onClick={handleSave} className="rounded-lg h-10 bg-theme">Хадгалах</Button>
+          <Button
+            key="cancel"
+            onClick={() => setIsModalOpen(false)}
+            className="rounded-lg h-10"
+          >
+            Хаах
+          </Button>,
+          <Button
+            key="save"
+            type="primary"
+            loading={loading}
+            onClick={handleSave}
+            className="rounded-lg h-10 bg-theme"
+          >
+            Хадгалах
+          </Button>,
         ]}
         width={600}
         className="[&_.ant-modal-content]:rounded-3xl"
@@ -344,7 +419,7 @@ export default function BlogManagement() {
               className="h-10 rounded-xl bg-slate-50 dark:bg-white/5 border-0 focus:ring-2 focus:ring-theme/30"
             />
           </div>
-          
+
           <div>
             <label className="block text-sm  mb-1 ml-1">Агуулга</label>
             <Input.TextArea
@@ -360,29 +435,40 @@ export default function BlogManagement() {
             <label className="block text-sm  mb-1 ml-1">Зураг</label>
             <div className="flex flex-wrap gap-2">
               {existingImages.map((url, idx) => (
-                <div key={`existing-${idx}`} className="relative group w-16 h-16">
-                  <img 
-                    src={getImageUrl(url)} 
-                    alt="" 
-                    className="w-full h-full object-cover rounded-xl border border-slate-200 dark:border-white/10" 
+                <div
+                  key={`existing-${idx}`}
+                  className="relative group w-16 h-16"
+                >
+                  <img
+                    src={getImageUrl(url)}
+                    alt=""
+                    className="w-full h-full object-cover rounded-xl border border-slate-200 dark:border-white/10"
                   />
                   <button
-                    onClick={() => setExistingImages(p => p.filter((_, i) => i !== idx))}
+                    onClick={() =>
+                      setExistingImages((p) => p.filter((_, i) => i !== idx))
+                    }
                     className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg"
                   >
                     <X size={12} />
                   </button>
                 </div>
               ))}
-              
+
               {attachPreviewUrls.map((url, idx) => (
                 <div key={`new-${idx}`} className="relative group w-16 h-16">
-                  <img src={url} alt="" className="w-full h-full object-cover rounded-xl border border-slate-200 dark:border-white/10" />
+                  <img
+                    src={url}
+                    alt=""
+                    className="w-full h-full object-cover rounded-xl border border-slate-200 dark:border-white/10"
+                  />
                   <button
                     onClick={() => {
                       URL.revokeObjectURL(url);
-                      setAttachPreviewUrls(p => p.filter((_, i) => i !== idx));
-                      setAttachImages(p => p.filter((_, i) => i !== idx));
+                      setAttachPreviewUrls((p) =>
+                        p.filter((_, i) => i !== idx),
+                      );
+                      setAttachImages((p) => p.filter((_, i) => i !== idx));
                     }}
                     className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg"
                   >
@@ -408,9 +494,9 @@ export default function BlogManagement() {
                   const files = e.target.files;
                   if (files?.length) {
                     const newFiles = Array.from(files);
-                    const newUrls = newFiles.map(f => URL.createObjectURL(f));
-                    setAttachPreviewUrls(p => [...p, ...newUrls]);
-                    setAttachImages(p => [...p, ...newFiles]);
+                    const newUrls = newFiles.map((f) => URL.createObjectURL(f));
+                    setAttachPreviewUrls((p) => [...p, ...newUrls]);
+                    setAttachImages((p) => [...p, ...newFiles]);
                   }
                   e.target.value = "";
                 }}
