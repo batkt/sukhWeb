@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Modal } from "antd";
-import { Table } from "antd";
+import { Modal, Table, ConfigProvider } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { X } from "lucide-react";
 import { motion, useDragControls } from "framer-motion";
 import formatNumber from "../../../../tools/function/formatNumber";
+import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 
 export interface OrlogoAvlagaItem {
   _id?: string;
@@ -74,10 +74,12 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
 }) => {
   const dragControls = useDragControls();
   const [ledgerPage, setLedgerPage] = React.useState(1);
+  const [ledgerDateRange, setLedgerDateRange] = React.useState<[string | null, string | null] | null | undefined>(dateRange);
 
   React.useEffect(() => {
     if (modalOpen) {
       setLedgerPage(1);
+      setLedgerDateRange(dateRange);
     }
   }, [modalOpen, selectedRecord]);
 
@@ -156,9 +158,9 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
     const titleInfo = [fullName, toot, utas].filter(Boolean).join(" | ");
 
     const filteredLedger = (() => {
-      if (!dateRange?.[0] && !dateRange?.[1]) return expandedLedger;
-      const startDate = dateRange[0] ? new Date(dateRange[0]) : null;
-      const endDate = dateRange[1] ? new Date(dateRange[1]) : null;
+      if (!ledgerDateRange?.[0] && !ledgerDateRange?.[1]) return expandedLedger;
+      const startDate = ledgerDateRange[0] ? new Date(ledgerDateRange[0]) : null;
+      const endDate = ledgerDateRange[1] ? new Date(ledgerDateRange[1]) : null;
       if (endDate) endDate.setHours(23, 59, 59, 999);
       return expandedLedger.filter((row: any) => {
         const rowDate = row?.ognoo ? new Date(row.ognoo) : null;
@@ -191,8 +193,34 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
     return (
       <div className="flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-2xl overflow-hidden">
         <div onPointerDown={(e) => dragControls.start(e)} className="p-4 border-b border-gray-200 dark:border-gray-700 cursor-move select-none bg-gray-50 dark:bg-gray-800">
-          <h2 className="text-xl   text-gray-900 dark:text-white">Дэлгэрэнгүй мэдээлэл</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{titleInfo || gd}</p>
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl text-gray-900 dark:text-white">Дэлгэрэнгүй мэдээлэл</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{titleInfo || gd}</p>
+            </div>
+            <div
+              onPointerDown={(e) => e.stopPropagation()}
+              className="shrink-0 w-[240px]"
+            >
+              <ConfigProvider theme={{ token: { zIndexPopupBase: 9000 } }}>
+                <StandardDatePicker
+                  isRange={true}
+                  value={ledgerDateRange ?? undefined}
+                  onChange={(_, dateStr: any) => {
+                    if (!dateStr || (!dateStr[0] && !dateStr[1])) {
+                      setLedgerDateRange(null);
+                    } else {
+                      setLedgerDateRange([dateStr[0] || null, dateStr[1] || null]);
+                    }
+                    setLedgerPage(1);
+                  }}
+                  allowClear
+                  placeholder={["Эхлэх огноо", "Дуусах огноо"]}
+                  getPopupContainer={() => document.body}
+                />
+              </ConfigProvider>
+            </div>
+          </div>
         </div>
         {expandedLoading ? (
           <div className="py-4 text-center text-gray-500 dark:text-gray-400">Уншиж байна...</div>

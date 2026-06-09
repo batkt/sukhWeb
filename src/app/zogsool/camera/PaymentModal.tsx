@@ -478,13 +478,13 @@ export default function PaymentModal({
   /* ═══════════════════════ RENDER ═══════════════════════ */
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(12px)" }}
-    >
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
       <div
-        className="w-full max-w-[920px] rounded-[28px] overflow-hidden flex flex-col max-h-[92vh] shadow-2xl border
-                   bg-white dark:bg-[#18181b] border-slate-200/40 dark:border-white/[0.06]"
+        className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity duration-300"
+        onClick={onClose}
+      />
+      <div
+        className="relative w-full max-w-[920px] rounded-2xl overflow-hidden flex flex-col max-h-[92vh] shadow-2xl border bg-white dark:bg-slate-900 border-slate-200/50 dark:border-white/10 animate-in zoom-in-95 duration-300"
       >
         {/* ─── Header ─── */}
         <div className="relative px-7 pt-6 pb-5 border-b border-slate-100 dark:border-white/[0.06]">
@@ -600,7 +600,7 @@ export default function PaymentModal({
                         </div>
                         {isActive && (
                           <div
-                            className={`absolute -top-1 -right-1 w-5 h-5 rounded-full ${ac.badge} flex items-center justify-center shadow-lg ring-2 ring-white dark:ring-[#18181b]`}
+                            className={`absolute -top-1 -right-1 w-5 h-5 rounded-full ${ac.badge} flex items-center justify-center shadow-lg ring-2 ring-white dark:ring-slate-900`}
                           >
                             <Check
                               className="w-3 h-3 text-white"

@@ -7,10 +7,11 @@ import React, {
   useRef,
   useCallback,
 } from "react";
+import { createPortal } from "react-dom";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
+import { useSearch } from "@/context/SearchContext";
 import {
-  Search,
   Calendar,
   DollarSign,
   Video,
@@ -43,6 +44,7 @@ import {
   Receipt,
 } from "lucide-react";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
+import { ConfigProvider } from "antd";
 import moment from "moment";
 import { getDefaultDateRange } from "@/lib/utils";
 import useSWR from "swr";
@@ -57,6 +59,7 @@ import R2WPlayerComponent from "@/components/R2WPlayerComponent";
 import { type Uilchluulegch } from "@/lib/useParkingSocket";
 import PaymentModal from "./PaymentModal";
 import VehicleRegistrationModal from "./VehicleRegistrationModal";
+import { PaymentPopup } from "./PaymentPopup";
 import { toast } from "react-hot-toast";
 import Button from "@/components/ui/Button";
 
@@ -128,11 +131,71 @@ const RealTimeClock = () => {
   );
 };
 
+const FilterPopover = ({
+  label,
+  options,
+  current,
+  onSelect,
+  children,
+}: {
+  label: string;
+  options: { label: string; value: string }[];
+  current: string;
+  onSelect: (v: string) => void;
+  children: React.ReactNode;
+}) => {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const triggerRef = useRef<HTMLDivElement>(null);
+
+  const show = () => {
+    if (triggerRef.current) {
+      const r = triggerRef.current.getBoundingClientRect();
+      setPos({ top: r.bottom + 2, left: r.left + r.width / 2 });
+    }
+    setOpen(true);
+  };
+
+  return (
+    <div ref={triggerRef} onMouseEnter={show} onMouseLeave={() => setOpen(false)} className="h-full">
+      {children}
+      {open && createPortal(
+        <div
+          style={{ position: "fixed", top: pos.top, left: pos.left, transform: "translateX(-50%)", zIndex: 99999 }}
+          className="w-52 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.25)] p-1.5"
+          onMouseEnter={() => setOpen(true)}
+          onMouseLeave={() => setOpen(false)}
+        >
+          <div className="px-3 py-2 mb-1 text-[10px] text-black dark:text-white">{label} Сонгох</div>
+          {options.map((opt, idx, arr) => (
+            <div key={idx}>
+              <div
+                onClick={() => { onSelect(opt.value); setOpen(false); }}
+                className={`px-3 py-2.5 rounded-xl text-[11px] text-left flex items-center justify-between cursor-pointer transition-all border border-transparent ${current === opt.value
+                  ? "bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-white"
+                  : "hover:bg-slate-100 dark:hover:bg-white/5 text-slate-600 dark:text-white hover:text-slate-900"
+                  }`}
+              >
+                <span>{opt.label}</span>
+                {current === opt.value && (
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)] animate-pulse" />
+                )}
+              </div>
+              {idx < arr.length - 1 && <div className="h-px bg-slate-200 dark:bg-white/10 mx-2 my-1" />}
+            </div>
+          ))}
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+};
+
 export default function Camera() {
   const { token, ajiltan, baiguullaga, barilgiinId } = useAuth();
   const { selectedBuildingId, isInitialized } = useBuilding();
   const effectiveBarilgiinId = selectedBuildingId || barilgiinId || undefined;
-  const [searchTerm, setSearchTerm] = useState("");
+  const { searchTerm } = useSearch();
   const [page, setPage] = useState(1);
   const [selectedTransaction, setSelectedTransaction] =
     useState<Uilchluulegch | null>(null);
@@ -149,26 +212,31 @@ export default function Camera() {
   const [customFreeExitReason, setCustomFreeExitReason] = useState<string>("");
   const [isExiting, setIsExiting] = useState(false);
   const [isRegModalOpen, setIsRegModalOpen] = useState(false);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(20);
   const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
   const pageSizeRef = useRef<HTMLDivElement>(null);
   const [durationFilter, setDurationFilter] = useState("latest_out");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [openFilter, setOpenFilter] = useState<string | null>(null);
+
+  const [sortConfig, setSortConfig] = useState<{ col: string; dir: "asc" | "desc" } | null>(null);
   const [ebarimtResult, setEbarimtResult] = useState<any>(null);
   const [discountModalTransaction, setDiscountModalTransaction] =
     useState<Uilchluulegch | null>(null);
   const [discountAmount, setDiscountAmount] = useState("");
   const [discountMinutes, setDiscountMinutes] = useState("");
   const [revenueModalOpen, setRevenueModalOpen] = useState(false);
+  const [revenueDateRange, setRevenueDateRange] = useState<[string | null, string | null] | undefined>(undefined);
+  const [revenueListData, setRevenueListData] = useState<any>(null);
+  const [revenueLoading, setRevenueLoading] = useState(false);
 
   const [dateRange, setDateRange] = useState<
     [string | null, string | null] | undefined
-  >(getDefaultDateRange);
+  >(() => { const today = moment().format("YYYY-MM-DD"); return [today, today]; });
 
   const { start: rangeStart, end: rangeEnd } = useMemo(() => {
-    const range = dateRange || getDefaultDateRange();
+    const today = moment().format("YYYY-MM-DD");
+    const range = dateRange || [today, today];
     return {
       start: range[0] || "",
       end: range[1] || "",
@@ -283,6 +351,16 @@ export default function Camera() {
     () => cameras.filter((cam) => cam.cameraType === "exit"),
     [camerasHash],
   );
+
+  const garakhTsag = useMemo(() => {
+    const list = Array.isArray(parkingConfigData?.jagsaalt)
+      ? parkingConfigData.jagsaalt
+      : Array.isArray(parkingConfigData)
+        ? parkingConfigData
+        : [];
+    const val = list[0]?.garakhTsag;
+    return val ? Number(val) : null;
+  }, [parkingConfigData]);
 
   // Reset live updates when filters or page change
   useEffect(() => {
@@ -424,6 +502,71 @@ export default function Camera() {
     fetchList();
   }, [fetchList]);
 
+  // Auto-exit: exit vehicles that have exceeded garakhTsag minutes
+  useEffect(() => {
+    if (!garakhTsag || garakhTsag <= 0 || !token || !ajiltan?.baiguullagiinId) return;
+
+    const runAutoExit = async () => {
+      try {
+        const resp = await uilchilgee(token).get("/zogsoolUilchluulegchJagsaalt", {
+          params: {
+            khuudasniiDugaar: 1,
+            khuudasniiKhemjee: 500,
+            query: JSON.stringify({
+              baiguullagiinId: ajiltan.baiguullagiinId,
+              ...(effectiveBarilgiinId ? { barilgiinId: effectiveBarilgiinId } : {}),
+              "tuukh.garsanKhaalga": { $exists: false },
+              "tuukh.tsagiinTuukh.garsanTsag": { $exists: false },
+            }),
+          },
+        });
+
+        const activeList: any[] = resp.data?.jagsaalt || resp.data || [];
+        if (!activeList.length) return;
+
+        const now = moment();
+        const exitIP = exitCameras[0]?.cameraIP || "";
+        let exited = 0;
+
+        for (const t of activeList) {
+          const orsonTsag = t.tuukh?.[0]?.tsagiinTuukh?.[0]?.orsonTsag;
+          if (!orsonTsag) continue;
+          const minutesIn = now.diff(moment(orsonTsag), "minutes");
+          if (minutesIn < garakhTsag) continue;
+
+          const garsanTsag = new Date();
+          const khugatsaaMin = Math.max(
+            0,
+            Math.ceil((garsanTsag.getTime() - new Date(orsonTsag).getTime()) / 60000),
+          );
+          try {
+            await uilchilgee(token).put(`/uilchluulegch/${t._id}`, {
+              "tuukh.0.garsanKhaalga": exitIP,
+              "tuukh.0.tsagiinTuukh.0.garsanTsag": garsanTsag.toISOString(),
+              "tuukh.0.tsagiinTuukh.0.khugatsaa": khugatsaaMin,
+              "tuukh.0.niitKhugatsaa": khugatsaaMin,
+              "tuukh.0.tuluv": -1,
+              "tuukh.0.uneguiGarsan": "Автомат гарсан",
+              "tuukh.0.burtgesenAjiltaniiId": ajiltan._id || "",
+              "tuukh.0.burtgesenAjiltaniiNer": ajiltan.ner || "CAdmin",
+            });
+            exited++;
+          } catch (err) {
+            console.error("Auto-exit PUT error:", t._id, err);
+          }
+        }
+
+        if (exited > 0) fetchList();
+      } catch (err) {
+        console.error("Auto-exit check error:", err);
+      }
+    };
+
+    const interval = setInterval(runAutoExit, 60000);
+    runAutoExit();
+    return () => clearInterval(interval);
+  }, [garakhTsag, token, ajiltan, effectiveBarilgiinId, exitCameras, fetchList]);
+
   const khaalgaNeey = useCallback(
     (ip: string) => {
       if (!ip) return;
@@ -492,11 +635,11 @@ export default function Camera() {
       const garsanTsag = new Date();
       const khugatsaaMin = orsonTsag
         ? Math.max(
-            0,
-            Math.ceil(
-              (garsanTsag.getTime() - new Date(orsonTsag).getTime()) / 60000,
-            ),
-          )
+          0,
+          Math.ceil(
+            (garsanTsag.getTime() - new Date(orsonTsag).getTime()) / 60000,
+          ),
+        )
         : 0;
       const exitIP = activeExitIP || exitCameras[0]?.cameraIP || undefined;
 
@@ -524,15 +667,15 @@ export default function Camera() {
       } else {
         toast.error(
           "Алдаа: " +
-            (resp.data?.message ||
-              (typeof resp.data === "string" ? resp.data : "Амжилтгүй")),
+          (resp.data?.message ||
+            (typeof resp.data === "string" ? resp.data : "Амжилтгүй")),
         );
       }
     } catch (err: any) {
       console.error("Manual exit PUT error:", err);
       toast.error(
         "Команд илгээхэд алдаа гарлаа: " +
-          (err.response?.data?.aldaa || err.message),
+        (err.response?.data?.aldaa || err.message),
       );
     }
   }
@@ -648,8 +791,6 @@ export default function Camera() {
       )
         return;
 
-      let dugaar = u.mashiniiDugaar?.replace("???", "");
-      const garsanKhaalga = u?.tuukh?.[0]?.garsanKhaalga;
       let niit = u?.niitDun || 0;
       if (u?.tuukh?.[0]?.tulbur?.length > 0) {
         niit =
@@ -664,15 +805,6 @@ export default function Camera() {
       }
       if (niit < 0) niit = 0;
 
-      let url = `/sambar/${garsanKhaalga}/${dugaar}/${niit}`;
-      if (
-        bId === "65cf2f027fbc788f85e50b90" ||
-        bId === "6549bbe0d437e6d25d557341"
-      ) {
-        const start = moment(u?.createdAt).format("YYYY-MM-DD HH:mm:ss");
-        const end = moment().format("YYYY-MM-DD HH:mm:ss");
-        url = `/sambarOgnootoi/${garsanKhaalga}/${dugaar}/${niit}/${start}/${end}`;
-      }
 
       if (u?.turul === "Үнэгүй" || niit === 0) {
         if (u?.tuukh?.[0]?.garsanKhaalga) {
@@ -761,7 +893,14 @@ export default function Camera() {
         return;
       }
       const key = update._id || update.mashiniiDugaar;
-      if (key) transactionMap.set(key, update);
+      if (key) {
+        const existing = transactionMap.get(key);
+        // Don't override a properly exited record (has garsanTsag) with a stale live update that lacks it
+        const existingGarsan = existing?.tuukh?.[0]?.tsagiinTuukh?.[0]?.garsanTsag;
+        const updateGarsan = update?.tuukh?.[0]?.tsagiinTuukh?.[0]?.garsanTsag;
+        if (existing && existingGarsan && !updateGarsan) return;
+        transactionMap.set(key, update);
+      }
     });
 
     let merged = Array.from(transactionMap.values());
@@ -820,7 +959,42 @@ export default function Camera() {
           ? new Date(t.tuukh?.[0]?.tsagiinTuukh?.[0]?.garsanTsag).getTime()
           : 0;
 
-      // Sorting by duration filter (which includes exit time sorting)
+      if (sortConfig) {
+        const d = sortConfig.dir === "asc" ? 1 : -1;
+        let aVal: any, bVal: any;
+        switch (sortConfig.col) {
+          case "dugaar":
+            return d * (a.mashiniiDugaar || "").localeCompare(b.mashiniiDugaar || "");
+          case "orson":
+            return d * (getInTime(a) - getInTime(b));
+          case "garsan":
+            return d * (getOutTime(a) - getOutTime(b));
+          case "duration":
+            aVal = getOutTime(a) ? getOutTime(a) - getInTime(a) : Date.now() - getInTime(a);
+            bVal = getOutTime(b) ? getOutTime(b) - getInTime(b) : Date.now() - getInTime(b);
+            return d * (aVal - bVal);
+          case "type":
+            return d * (a.turul || a.tuukh?.[0]?.turul || "").localeCompare(b.turul || b.tuukh?.[0]?.turul || "");
+          case "discount":
+            return d * ((Number(a.tuukh?.[0]?.khungulult) || 0) - (Number(b.tuukh?.[0]?.khungulult) || 0));
+          case "amount":
+            return d * ((a.niitDun || 0) - (b.niitDun || 0));
+          case "payment":
+            aVal = (Array.isArray(a.tuukh?.[0]?.tulbur) ? a.tuukh![0].tulbur! : []).reduce((s: number, p: any) => s + (p.dun || 0), 0);
+            bVal = (Array.isArray(b.tuukh?.[0]?.tulbur) ? b.tuukh![0].tulbur! : []).reduce((s: number, p: any) => s + (p.dun || 0), 0);
+            return d * (aVal - bVal);
+          case "ebarimt":
+            return d * (((a.tuukh?.[0] as any)?.ebarimtDugaar || "").localeCompare((b.tuukh?.[0] as any)?.ebarimtDugaar || ""));
+          case "status":
+            return d * ((a.tuukh?.[0]?.tuluv ?? -99) - (b.tuukh?.[0]?.tuluv ?? -99));
+          case "reason":
+            return d * (a.tuukh?.[0]?.uneguiGarsan || "").localeCompare(b.tuukh?.[0]?.uneguiGarsan || "");
+          default:
+            return 0;
+        }
+      }
+
+      // Default: durationFilter
       if (durationFilter === "longest") {
         const durA = getOutTime(a)
           ? getOutTime(a) - getInTime(a)
@@ -832,7 +1006,6 @@ export default function Camera() {
       } else if (durationFilter === "latest_in") {
         return getInTime(b) - getInTime(a);
       } else {
-        // latest_out - sort by exit time (latest exit first), fallback to entry time if not exited
         const timeA = getOutTime(a) || getInTime(a);
         const timeB = getOutTime(b) || getInTime(b);
         return timeB - timeA;
@@ -856,6 +1029,7 @@ export default function Camera() {
     durationFilter,
     typeFilter,
     statusFilter,
+    sortConfig,
   ]);
 
   const total = totalFiltered;
@@ -950,6 +1124,77 @@ export default function Camera() {
     return { items, totalAmount };
   }, [listData]);
 
+  const fetchRevenueData = useCallback(async (start: string, end: string) => {
+    if (!token || !start || !end) return;
+    setRevenueLoading(true);
+    try {
+      const resp = await uilchilgee(token).get("/zogsoolUilchluulegchJagsaalt", {
+        params: {
+          khuudasniiDugaar: 1,
+          khuudasniiKhemjee: 10000,
+          query: JSON.stringify({
+            baiguullagiinId: ajiltan?.baiguullagiinId,
+            ...(effectiveBarilgiinId ? { barilgiinId: effectiveBarilgiinId } : {}),
+            createdAt: { $gte: `${start} 00:00:00`, $lte: `${end} 23:59:59` },
+          }),
+        },
+      });
+      setRevenueListData(resp.data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setRevenueLoading(false);
+    }
+  }, [token, ajiltan?.baiguullagiinId, effectiveBarilgiinId]);
+
+  useEffect(() => {
+    if (!revenueModalOpen) return;
+    const [start, end] = revenueDateRange || [null, null];
+    if (start && end) fetchRevenueData(start, end);
+  }, [revenueModalOpen, revenueDateRange, fetchRevenueData]);
+
+  const revenueModalBreakdown = useMemo(() => {
+    const allList = revenueListData?.jagsaalt || [];
+    const methodLabels: Record<string, string> = {
+      belen: "Бэлэн", cash: "Бэлэн", khaan: "Карт",
+      khariltsakh: "Дансаар", transfer: "Дансаар", qpay: "QPay",
+      khungulult: "Хөнгөлөлт", discount: "Хөнгөлөлт",
+    };
+    const methodIcons: Record<string, React.ReactNode> = {
+      belen: <Banknote className="w-4 h-4" />, cash: <Banknote className="w-4 h-4" />,
+      khaan: <CreditCard className="w-4 h-4" />, khariltsakh: <ArrowRight className="w-4 h-4" />,
+      transfer: <ArrowRight className="w-4 h-4" />, qpay: <Landmark className="w-4 h-4" />,
+      khungulult: <Tag className="w-4 h-4" />, discount: <Tag className="w-4 h-4" />,
+    };
+    const methodColors: Record<string, string> = {
+      belen: "bg-emerald-500", cash: "bg-emerald-500", khaan: "bg-sky-500",
+      khariltsakh: "bg-violet-500", transfer: "bg-violet-500", qpay: "bg-amber-500",
+      khungulult: "bg-rose-500", discount: "bg-rose-500",
+    };
+    const methodMap: Record<string, { amount: number; count: number }> = {};
+    allList.forEach((t: any) => {
+      (t.tuukh?.[0]?.tulbur || []).forEach((p: any) => {
+        const m = p.turul || "unknown";
+        if (!methodMap[m]) methodMap[m] = { amount: 0, count: 0 };
+        methodMap[m].amount += p.dun || 0;
+        methodMap[m].count += 1;
+      });
+    });
+    const totalAmount = Object.values(methodMap).reduce((s, v) => s + v.amount, 0);
+    const items = Object.entries(methodMap)
+      .map(([key, val]) => ({
+        key,
+        name: methodLabels[key] || key,
+        icon: methodIcons[key] || <Wallet className="w-4 h-4" />,
+        color: methodColors[key] || "bg-slate-500",
+        amount: val.amount,
+        count: val.count,
+        pct: totalAmount > 0 ? ((val.amount / totalAmount) * 100).toFixed(2) : "0.00",
+      }))
+      .sort((a, b) => b.amount - a.amount);
+    return { items, totalAmount };
+  }, [revenueListData]);
+
   const totalPages = Math.ceil(total / pageSize);
 
   // Keyboard Shortcuts (shortcut.md / zogsool.md)
@@ -1011,6 +1256,13 @@ export default function Camera() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [confirmExitId]);
 
+  useEffect(() => {
+    if (!revenueModalOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setRevenueModalOpen(false); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [revenueModalOpen]);
+
   // Click outside listener for page size dropdown
   useEffect(() => {
     if (!isPageSizeOpen) return;
@@ -1071,14 +1323,41 @@ export default function Camera() {
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           {/* Entry Camera Stream */}
           <div className="relative group/camera overflow-hidden rounded-3xl bg-black shadow-2xl transition-all duration-500">
-            <div className="absolute top-4 left-4 z-40 flex items-center gap-2">
-              <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div>
-                <span className="text-[10px] font-black text-white uppercase tracking-widest">
-                  Орох Камер
-                </span>
+            {/* Top-Right Badge and Selection Dropdown */}
+            {entryCameras.length > 0 && (
+              <div className="absolute top-4 right-4 z-40 flex flex-col items-end gap-2">
+                <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div>
+                  <span className="text-[10px] font-black !text-white uppercase tracking-widest">
+                    Орох Камер
+                  </span>
+                  <span className="text-[9px] font-mono !text-slate-300 ml-1">
+                    ({activeEntryIP || entryCameras[0]?.cameraIP || "-"})
+                  </span>
+                </div>
+
+                {entryCameras.length > 1 && (
+                  <div className="relative group/dropdown">
+                    <select
+                      value={activeEntryIP}
+                      onChange={(e) => setActiveEntryIP(e.target.value)}
+                      className="appearance-none bg-black/60 backdrop-blur-xl border border-white/20 rounded-full px-5 py-2 pr-10 text-[10px] font-black !text-white uppercase tracking-widest cursor-pointer hover:bg-black/80 transition-all outline-none"
+                    >
+                      {entryCameras.map((cam) => (
+                        <option
+                          key={cam.cameraIP}
+                          value={cam.cameraIP}
+                          className="bg-zinc-900 text-white"
+                        >
+                          {cam.cameraIP}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-white/60 pointer-events-none group-hover/dropdown:text-white transition-colors" />
+                  </div>
+                )}
               </div>
-            </div>
+            )}
 
             <div className="aspect-video relative">
               {entryCameras.length === 0 ? (
@@ -1090,29 +1369,6 @@ export default function Camera() {
                 </div>
               ) : (
                 <div className="h-full">
-                  {/* Camera Selection Dropdown */}
-                  {entryCameras.length > 1 && (
-                    <div className="absolute top-4 right-4 z-[50]">
-                      <div className="relative group/dropdown">
-                        <select
-                          value={activeEntryIP}
-                          onChange={(e) => setActiveEntryIP(e.target.value)}
-                          className="appearance-none bg-black/60 backdrop-blur-xl border border-white/20 rounded-full px-5 py-2 pr-10 text-[10px] font-black text-white uppercase tracking-widest cursor-pointer hover:bg-black/80 transition-all outline-none"
-                        >
-                          {entryCameras.map((cam) => (
-                            <option
-                              key={cam.cameraIP}
-                              value={cam.cameraIP}
-                              className="bg-zinc-900 text-white"
-                            >
-                              {cam.cameraIP}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-white/60 pointer-events-none group-hover/dropdown:text-white transition-colors" />
-                      </div>
-                    </div>
-                  )}
 
                   {entryCameras
                     .filter(
@@ -1147,14 +1403,41 @@ export default function Camera() {
 
           {/* Exit Camera Stream */}
           <div className="relative group/camera overflow-hidden rounded-3xl bg-black shadow-2xl transition-all duration-500">
-            <div className="absolute top-4 left-4 z-40 flex items-center gap-2">
-              <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10">
-                <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]"></div>
-                <span className="text-[10px] font-black text-white uppercase tracking-widest">
-                  Гарах Камер
-                </span>
+            {/* Top-Right Badge and Selection Dropdown */}
+            {exitCameras.length > 0 && (
+              <div className="absolute top-4 right-4 z-40 flex flex-col items-end gap-2">
+                <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10">
+                  <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]"></div>
+                  <span className="text-[10px] font-black !text-white uppercase tracking-widest">
+                    Гарах Камер
+                  </span>
+                  <span className="text-[9px] font-mono !text-slate-300 ml-1">
+                    ({activeExitIP || exitCameras[0]?.cameraIP || "-"})
+                  </span>
+                </div>
+
+                {exitCameras.length > 1 && (
+                  <div className="relative group/dropdown">
+                    <select
+                      value={activeExitIP}
+                      onChange={(e) => setActiveExitIP(e.target.value)}
+                      className="appearance-none bg-black/60 backdrop-blur-xl border border-white/20 rounded-full px-5 py-2 pr-10 text-[10px] font-black !text-white uppercase tracking-widest cursor-pointer hover:bg-black/80 transition-all outline-none"
+                    >
+                      {exitCameras.map((cam) => (
+                        <option
+                          key={cam.cameraIP}
+                          value={cam.cameraIP}
+                          className="bg-zinc-900 text-white"
+                        >
+                          {cam.cameraIP}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-white/60 pointer-events-none group-hover/dropdown:text-white transition-colors" />
+                  </div>
+                )}
               </div>
-            </div>
+            )}
 
             <div className="aspect-video relative">
               {exitCameras.length === 0 ? (
@@ -1166,29 +1449,6 @@ export default function Camera() {
                 </div>
               ) : (
                 <div className="h-full">
-                  {/* Camera Selection Dropdown */}
-                  {exitCameras.length > 1 && (
-                    <div className="absolute top-4 right-4 z-[50]">
-                      <div className="relative group/dropdown">
-                        <select
-                          value={activeExitIP}
-                          onChange={(e) => setActiveExitIP(e.target.value)}
-                          className="appearance-none bg-black/60 backdrop-blur-xl border border-white/20 rounded-full px-5 py-2 pr-10 text-[10px] font-black text-white uppercase tracking-widest cursor-pointer hover:bg-black/80 transition-all outline-none"
-                        >
-                          {exitCameras.map((cam) => (
-                            <option
-                              key={cam.cameraIP}
-                              value={cam.cameraIP}
-                              className="bg-zinc-900 text-white"
-                            >
-                              {cam.cameraIP}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-white/60 pointer-events-none group-hover/dropdown:text-white transition-colors" />
-                      </div>
-                    </div>
-                  )}
 
                   {exitCameras
                     .filter(
@@ -1244,23 +1504,8 @@ export default function Camera() {
               </div>
             </div>
 
-            {/* Right: Search + Register + DatePicker */}
+            {/* Right: Register + DatePicker */}
             <div className="flex items-center gap-2.5 flex-wrap">
-              {/* Search */}
-              <div className="relative group">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 dark:text-slate-500 group-focus-within:text-blue-500 transition-colors" />
-                <input
-                  type="text"
-                  placeholder="Улсын дугаар хайх..."
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setPage(1);
-                  }}
-                  className="w-56 pl-10 pr-4 h-9 rounded-full bg-slate-100/60 dark:bg-white/[0.03] border border-slate-200/40 dark:border-white/[0.06] text-[11px] text-slate-600 dark:text-slate-300 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-500/20 dark:focus:border-blue-500/20 outline-none transition-all"
-                />
-              </div>
-
               {/* Date picker */}
               <div className="min-w-[220px] h-9">
                 <StandardDatePicker
@@ -1281,10 +1526,10 @@ export default function Camera() {
 
               {/* Revenue report button */}
               <Button
-                onClick={() => setRevenueModalOpen(true)}
-                variant="secondary"
+                onClick={() => { const today = moment().format("YYYY-MM-DD"); setRevenueDateRange([today, today]); setRevenueModalOpen(true); }}
+                variant="primary"
                 size="sm"
-                className="rounded-lg h-8 px-4 text-[9px] bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 shadow-sm"
+                className="rounded-lg h-8 px-4 text-[9px] shadow-sm"
               >
                 <Receipt className="w-3.5 h-3.5 mr-1.5" />
                 Орлого тайлан
@@ -1293,9 +1538,9 @@ export default function Camera() {
               {/* Register button */}
               <Button
                 onClick={() => setIsRegModalOpen(true)}
-                variant="secondary"
+                variant="primary"
                 size="sm"
-                className="rounded-lg h-8 px-4 text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10 hover:bg-slate-200 dark:hover:bg-slate-700 shadow-sm"
+                className="rounded-lg h-8 px-4 text-[9px] shadow-sm"
               >
                 Машин бүртгэх
               </Button>
@@ -1314,8 +1559,8 @@ export default function Camera() {
                 <colgroup>
                   <col style={{ width: "50px" }} />
                   <col style={{ width: "110px" }} />
-                  <col style={{ width: "140px" }} />
-                  <col style={{ width: "140px" }} />
+                  <col style={{ width: "115px" }} />
+                  <col style={{ width: "115px" }} />
                   <col style={{ width: "120px" }} />
                   <col style={{ width: "100px" }} />
                   <col style={{ width: "90px" }} />
@@ -1329,23 +1574,9 @@ export default function Camera() {
                   <tr className="border-y border-slate-200 dark:border-white/10 shadow-sm h-[32px]">
                     {[
                       { id: "no", label: "№", width: "w-12" },
-                      { id: "dugaar", label: "Дугаар", width: "w-28" },
-                      { id: "orson", label: "Орсон", width: "w-36" },
-                      {
-                        id: "garsan",
-                        label: "Гарсан",
-                        width: "w-36",
-                        sortable: true,
-                        onClick: () => {
-                          // Toggle between latest_out and other duration filters
-                          if (durationFilter === "latest_out") {
-                            setDurationFilter("latest_in");
-                          } else {
-                            setDurationFilter("latest_out");
-                          }
-                          setPage(1);
-                        },
-                      },
+                      { id: "dugaar", label: "Дугаар", width: "w-28", sortable: true },
+                      { id: "orson", label: "Орсон", width: "w-36", sortable: true },
+                      { id: "garsan", label: "Гарсан", width: "w-36", sortable: true },
                       {
                         id: "duration",
                         label: "Хугацаа/мин",
@@ -1354,6 +1585,7 @@ export default function Camera() {
                         current: durationFilter,
                         set: (v: string) => {
                           setDurationFilter(v);
+                          setSortConfig(null);
                           setPage(1);
                         },
                         options: [
@@ -1379,10 +1611,10 @@ export default function Camera() {
                           { label: "Зочин", value: "Зочин" },
                         ],
                       },
-                      { id: "discount", label: "Хөнгөлөлт", width: "w-28" },
-                      { id: "amount", label: "Дүн", width: "w-28" },
-                      { id: "payment", label: "Төлбөр", width: "w-36" },
-                      { id: "ebarimt", label: "И-Баримт", width: "w-28" },
+                      { id: "discount", label: "Хөнгөлөлт", width: "w-28", sortable: true },
+                      { id: "amount", label: "Дүн", width: "w-28", sortable: true },
+                      { id: "payment", label: "Төлбөр", width: "w-36", sortable: true },
+                      { id: "ebarimt", label: "И-Баримт", width: "w-28", sortable: true },
                       {
                         id: "status",
                         label: "Төлөв",
@@ -1401,66 +1633,53 @@ export default function Camera() {
                           { label: "Үнэгүй", value: "free" },
                         ],
                       },
-                      { id: "reason", label: "Шалтгаан", width: "w-36" },
-                    ].map((h, i) => (
-                      <th
-                        key={h.id}
-                        className={`group relative py-1.5 px-3 text-slate-700 dark:text-slate-300  uppercase tracking-wider text-[11px] border-r border-slate-200 dark:border-white/5 last:border-r-0 text-center ${h.width || ""} hover:bg-slate-50 dark:hover:bg-white/5 transition-colors hover:z-[100]`}
-                      >
-                        <div
-                          className="flex items-center justify-center gap-2 cursor-pointer h-full"
-                          onClick={() => {
-                            if ((h as any).onClick) {
-                              (h as any).onClick();
-                            } else if ((h as any).filter) {
-                              setOpenFilter(openFilter === h.id ? null : h.id);
-                            }
-                          }}
+                      { id: "reason", label: "Шалтгаан", width: "w-36", sortable: true },
+                    ].map((h, i) => {
+                      const isActive = sortConfig?.col === h.id;
+                      return (
+                        <th
+                          key={h.id}
+                          className={`filter-header-cell group relative py-1.5 px-3 text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[11px] border-r border-slate-200 dark:border-white/5 last:border-r-0 text-center ${h.width || ""} hover:bg-slate-50 dark:hover:bg-white/5 transition-colors hover:z-[100]`}
                         >
-                          {h.filter && (
-                            <Filter className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400 transition-colors" />
-                          )}
-                          <span>{h.label}</span>
-                          {h.sortable && (
-                            <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 opacity-50 group-hover:opacity-100 transition-opacity" />
-                          )}
-                        </div>
-
-                        {h.options && (
-                          <div
-                            className={`absolute top-full left-1/2 -translate-x-1/2 mt-0 w-52 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] p-1.5 transition-all duration-200 z-[100] overflow-hidden origin-top text-left ${openFilter === h.id ? "opacity-100 visible translate-y-0 scale-100" : "opacity-0 invisible translate-y-2 scale-95 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 group-hover:scale-100"}`}
-                          >
-                            <div className="relative flex flex-col gap-0 z-10">
-                              <div className="px-3 py-2 mb-1 text-[10px]  text-black dark:text-white">
-                                {h.label} Сонгох
+                          {(h as any).options ? (
+                            <FilterPopover
+                              label={h.label}
+                              options={(h as any).options}
+                              current={(h as any).current}
+                              onSelect={(v) => { (h as any).set?.(v); }}
+                            >
+                              <div className="flex items-center justify-center gap-2 cursor-pointer h-full">
+                                <Filter className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
+                                <span>{h.label}</span>
                               </div>
-                              {h.options.map((opt, idx, arr) => (
-                                <div key={idx}>
-                                  <div
-                                    onClick={() => {
-                                      (h as any).set?.(opt.value);
-                                      setOpenFilter(null);
-                                    }}
-                                    className={`px-3 py-2.5 rounded-xl text-[11px] text-left flex items-center justify-between cursor-pointer transition-all duration-200 border border-transparent ${(h as any).current === opt.value
-                                      ? "bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-white"
-                                      : "hover:bg-slate-100 dark:hover:bg-white/5 text-slate-600 dark:text-white hover:text-slate-900"
-                                      }`}
-                                  >
-                                    <span>{opt.label}</span>
-                                    {(h as any).current === opt.value && (
-                                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)] animate-pulse" />
-                                    )}
-                                  </div>
-                                  {idx < arr.length - 1 && (
-                                    <div className="h-px bg-slate-200 dark:bg-white/10 mx-2 my-1" />
-                                  )}
-                                </div>
-                              ))}
+                            </FilterPopover>
+                          ) : (
+                            <div
+                              className="flex items-center justify-center gap-2 cursor-pointer h-full"
+                              onClick={() => {
+                                if ((h as any).sortable && h.id !== "no") {
+                                  setSortConfig(prev => {
+                                    if (prev?.col !== h.id) return { col: h.id, dir: "asc" };
+                                    if (prev.dir === "asc") return { col: h.id, dir: "desc" };
+                                    return null;
+                                  });
+                                  setPage(1);
+                                }
+                              }}
+                            >
+                              <span>{h.label}</span>
+                              {(h as any).sortable && h.id !== "no" && (
+                                isActive
+                                  ? sortConfig!.dir === "asc"
+                                    ? <ArrowUpDown className="w-3.5 h-3.5 text-blue-500" />
+                                    : <ArrowUpDown className="w-3.5 h-3.5 text-blue-500 rotate-180" />
+                                  : <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 opacity-40" />
+                              )}
                             </div>
-                          </div>
-                        )}
-                      </th>
-                    ))}
+                          )}
+                        </th>
+                      );
+                    })}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
@@ -1587,150 +1806,31 @@ export default function Camera() {
                           <td className="py-1.5 px-3 text-slate-700 dark:text-slate-300 text-right  border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] text-[11px]">
                             {formatNumber(transaction.niitDun || 0)}
                           </td>
-                          <td className="py-1.5 px-3 text-right  relative border-r border-slate-200 dark:border-white/5 text-[11px]">
+                          <td className="py-1.5 px-3 text-center relative border-r border-slate-200 dark:border-white/5 text-[11px]">
                             {(() => {
                               const history = transaction.tuukh?.[0];
                               const tulsunDun = history?.tulsunDun || 0;
-                              // Ensure tulbur is always an array - handle both array and single object cases
-                              const rawTulbur = history?.tulbur;
-                              let payHistory: any[] = [];
+                              // Aggregate tulbur from ALL tuukh entries so payment details are complete regardless of type filter
+                              const payHistory: any[] = (transaction.tuukh || []).flatMap((th: any) => {
+                                const raw = th?.tulbur;
+                                if (Array.isArray(raw)) return raw;
+                                if (raw && typeof raw === "object") return [raw];
+                                return [];
+                              });
 
-                              if (Array.isArray(rawTulbur)) {
-                                // It's already an array - use it directly
-                                payHistory = rawTulbur;
-                              } else if (
-                                rawTulbur &&
-                                typeof rawTulbur === "object"
-                              ) {
-                                // It's a single object - wrap it in an array
-                                payHistory = [rawTulbur];
-                              } else {
-                                // It's null/undefined - use empty array
-                                payHistory = [];
-                              }
-
-                              // ... (labels logic) ...
-                              const labels: Record<string, string> = {
-                                belen: "Бэлэн",
-                                cash: "Бэлэн",
-                                khaan: "Карт",
-                                qpay: "QPay",
-                                khariltsakh: "Дансаар",
-                                transfer: "Дансаар",
-                                khungulult: "Хөнгөлөлт",
-                                discount: "Хөнгөлөлт",
-                                free: "Үнэгүй",
-                                monpay: "MonPay",
-                                socialpay: "SocialPay",
-                                toki: "Toki",
-                              };
-                              const colorMap: Record<string, string> = {
-                                belen:
-                                  "bg-emerald-100 text-emerald-700 border-emerald-200",
-                                cash: "bg-emerald-100 text-emerald-700 border-emerald-200",
-                                khaan:
-                                  "bg-teal-100 text-teal-700 border-teal-200",
-                                qpay: "bg-purple-100 text-purple-700 border-purple-200",
-                                khariltsakh:
-                                  "bg-blue-100 text-blue-700 border-blue-200",
-                                transfer:
-                                  "bg-blue-100 text-blue-700 border-blue-200",
-                                khungulult:
-                                  "bg-amber-100 text-amber-700 border-amber-200",
-                                discount:
-                                  "bg-amber-100 text-amber-700 border-amber-200",
-                              };
-                              const textColorMap: Record<string, string> = {
-                                belen: "text-emerald-600 dark:text-emerald-400",
-                                cash: "text-emerald-600 dark:text-emerald-400",
-                                khaan: "text-teal-600 dark:text-teal-400",
-                                qpay: "text-purple-600 dark:text-purple-400",
-                                khariltsakh: "text-blue-600 dark:text-blue-400",
-                                transfer: "text-blue-600 dark:text-blue-400",
-                                khungulult:
-                                  "text-amber-600 dark:text-amber-400",
-                                discount: "text-amber-600 dark:text-amber-400",
-                              };
                               if (payHistory.length > 0) {
                                 const totalPaid = payHistory.reduce(
-                                  (s: number, p: any) => s + (p.dun || 0),
-                                  0,
+                                  (s: number, p: any) => s + (p.dun || 0), 0,
                                 );
-                                // Get unique payment types
                                 const uniqueTypes = [
-                                  ...new Set(
-                                    payHistory
-                                      .map((p: any) => p.turul)
-                                      .filter(Boolean),
-                                  ),
-                                ];
+                                  ...new Set(payHistory.map((p: any) => p.turul).filter(Boolean)),
+                                ] as string[];
                                 return (
-                                  <div className="group/pay relative inline-flex flex-wrap items-center justify-end gap-1 cursor-pointer ml-auto">
-                                    {uniqueTypes.map((type: string) => (
-                                      <span
-                                        key={type}
-                                        className={`text-[9px] px-1.5 py-0.5 rounded border ${colorMap[type] || "bg-slate-100 text-slate-600 border-slate-200"}`}
-                                      >
-                                        {labels[type] || type}
-                                      </span>
-                                    ))}
-                                    <span className="text-[11px] text-slate-700 dark:text-slate-300 font-[family-name:var(--font-mono)] ml-1">
-                                      {formatNumber(totalPaid)}
-                                    </span>
-
-                                    {/* Popup reused logic */}
-                                    <div
-                                      className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-[99999] min-w-[220px] max-w-[320px] max-h-[400px] overflow-y-auto p-3.5 bg-white dark:bg-slate-900 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] opacity-0 invisible group-hover/pay:opacity-100 group-hover/pay:visible transition-all duration-200 translate-y-1 group-hover/pay:translate-y-0 scale-95 group-hover/pay:scale-100 pointer-events-none group-hover/pay:pointer-events-auto text-left"
-                                      style={{
-                                        position: "absolute",
-                                        zIndex: 99999,
-                                      }}
-                                    >
-                                      <div className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2.5 pb-2 border-b border-slate-100 dark:border-white/5 sticky top-0 bg-white dark:bg-slate-900 backdrop-blur-sm z-10">
-                                        Төлбөрийн дэлгэрэнгүй (
-                                        {payHistory.length})
-                                      </div>
-                                      <div className="space-y-2">
-                                        {payHistory && payHistory.length > 0 ? (
-                                          payHistory.map(
-                                            (p: any, pi: number) => {
-                                              // Use a unique key combining index, turul, and dun to ensure proper rendering
-                                              const uniqueKey = `${pi}-${p.turul || "unknown"}-${p.dun || 0}-${p.ognoo || ""}`;
-                                              return (
-                                                <div
-                                                  key={uniqueKey}
-                                                  className="flex items-center justify-between gap-4 py-1"
-                                                >
-                                                  <span
-                                                    className={`text-[10px]  ${textColorMap[p.turul] || "text-slate-600 dark:text-slate-400"}`}
-                                                  >
-                                                    {labels[p.turul] ||
-                                                      p.turul ||
-                                                      "Төлбөр"}
-                                                  </span>
-                                                  <span className="text-[11px] text-slate-800 dark:text-gray-200 whitespace-nowrap font-[family-name:var(--font-mono)] ">
-                                                    {formatNumber(p.dun || 0)}
-                                                  </span>
-                                                </div>
-                                              );
-                                            },
-                                          )
-                                        ) : (
-                                          <div className="text-[10px] text-slate-400 text-center py-2">
-                                            Төлбөр байхгүй
-                                          </div>
-                                        )}
-                                      </div>
-                                      <div className="mt-3 pt-2 border-t border-slate-100 dark:border-white/5 flex justify-between items-center sticky bottom-0 bg-white dark:bg-slate-900 backdrop-blur-sm z-10">
-                                        <span className="text-[10px] font-black text-slate-400 uppercase">
-                                          НИЙТ
-                                        </span>
-                                        <span className="text-[11px] font-black text-emerald-600 font-[family-name:var(--font-mono)]">
-                                          {formatNumber(totalPaid)}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  </div>
+                                  <PaymentPopup
+                                    payHistory={payHistory}
+                                    totalPaid={totalPaid}
+                                    uniqueTypes={uniqueTypes}
+                                  />
                                 );
                               }
 
@@ -1754,11 +1854,7 @@ export default function Camera() {
                                 "Үнэгүй хугацаанд" ||
                                 (garsanTsag && tulsunDun === 0)
                               ) {
-                                return (
-                                  <span className="text-emerald-600 dark:text-emerald-400  text-[11px] uppercase tracking-widest bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded inline-block">
-                                    Үнэгүй
-                                  </span>
-                                );
+                                return null;
                               }
 
                               return (
@@ -2204,7 +2300,7 @@ export default function Camera() {
           </div>
         </div> */}
 
-        {selectedTransaction && (
+        {selectedTransaction && createPortal(
           <PaymentModal
             transaction={selectedTransaction}
             onClose={() => setSelectedTransaction(null)}
@@ -2295,7 +2391,8 @@ export default function Camera() {
                 toast.error("Төлбөр бүртгэхэд алдаа гарлаа");
               }
             }}
-          />
+          />,
+          document.body
         )}
         {/* Discount Modal */}
         {discountModalTransaction && (
@@ -2373,11 +2470,8 @@ export default function Camera() {
                 </button>
                 <button
                   onClick={async () => {
-                    const amount = parseFloat(discountAmount);
-                    if (!amount || amount <= 0) {
-                      toast.error("Хөнгөлөх дүн оруулна уу");
-                      return;
-                    }
+                    const amount = parseFloat(discountAmount) || 0;
+                    const minutes = parseInt(discountMinutes) || 0;
                     try {
                       const zogsooliinId =
                         discountModalTransaction.tuukh?.[0]?.zogsooliinId ||
@@ -2389,7 +2483,7 @@ export default function Camera() {
                           turul: "Хөнгөлөлт",
                           dun: amount,
                           khariu: {
-                            khungulsunKhugatsaa: parseInt(discountMinutes) || 0,
+                            khungulsunKhugatsaa: minutes,
                           },
                           baiguullagiinId: ajiltan?.baiguullagiinId,
                           barilgiinId: effectiveBarilgiinId,
@@ -2431,152 +2525,124 @@ export default function Camera() {
         )}
 
         {/* Free Exit Reason Modal */}
-        {freeExitModalTransaction && (
+        {freeExitModalTransaction && createPortal(
           <div
             className="fixed inset-0 z-[200] flex items-center justify-center p-4"
-            style={{
-              background: "rgba(0,0,0,0.45)",
-              backdropFilter: "blur(12px)",
-            }}
+            style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(12px)" }}
             onClick={() => setFreeExitModalTransaction(null)}
           >
             <div
-              className="relative w-[560px] max-w-full rounded-[20px] overflow-hidden shadow-2xl border bg-[#1a2333] border-slate-700/50 text-white p-6 flex flex-col gap-6 animate-in fade-in slide-in-from-top-4 duration-200"
+              className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-2xl border border-slate-200/50 dark:border-white/10 animate-in zoom-in-95 duration-200"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="flex items-center justify-between border-b border-slate-700/50 pb-4">
-                <h2 className="text-sm font-semibold tracking-tight text-slate-200">
-                  Үнэгүй үйлчлүүлэгчийн төрөл сонгох
-                </h2>
+              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200/50 dark:border-white/10 bg-white dark:bg-slate-900">
+                <div>
+                  <h2 className="text-sm font-black text-slate-800 dark:text-white tracking-tight">
+                    Үнэгүй үйлчлүүлэгчийн төрөл сонгох
+                  </h2>
+                  <p className="text-[9px] text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-0.5">
+                    {freeExitModalTransaction.mashiniiDugaar}
+                  </p>
+                </div>
                 <button
                   onClick={() => setFreeExitModalTransaction(null)}
-                  className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
+                  className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 hover:text-slate-600 dark:hover:text-slate-100 transition-all"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
               {/* Body */}
-              <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-                {/* Column 1 */}
-                <div className="space-y-3">
-                  {[
-                    "Цагдаа",
-                    "Гал",
-                    "Эмнэлэг",
-                    "Онцгой",
-                    "Борлуулалтын машин",
-                    "Хөгжлийн бэрхшээлтэй",
-                    "Хогны машин",
-                    "Шуудан",
-                    "Дэлгүүрийн үйлчлүүлэгч"
-                  ].map((reason) => (
-                    <label
-                      key={reason}
-                      className="flex items-center gap-3 cursor-pointer text-[13px] text-slate-300 hover:text-white select-none"
-                    >
-                      <input
-                        type="radio"
-                        name="freeExitReason"
-                        value={reason}
-                        checked={freeExitReason === reason}
-                        onChange={() => {
-                          setFreeExitReason(reason);
-                          setCustomFreeExitReason("");
-                        }}
-                        className="w-4 h-4 rounded-full border border-white/40 bg-transparent checked:bg-white checked:border-white focus:ring-0 focus:outline-none appearance-none cursor-pointer transition-all relative flex items-center justify-center after:content-[''] after:w-2 after:h-2 after:rounded-full after:bg-[#1a2333] checked:after:bg-[#1a2333] after:opacity-0 checked:after:opacity-100"
-                      />
-                      <span>{reason}</span>
-                    </label>
-                  ))}
+              <div className="p-5 space-y-4">
+                <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+                  {/* Column 1 */}
+                  <div className="space-y-2">
+                    {["Цагдаа","Гал","Эмнэлэг","Онцгой","Борлуулалтын машин","Хөгжлийн бэрхшээлтэй","Хогны машин","Шуудан","Дэлгүүрийн үйлчлүүлэгч"].map((reason) => (
+                      <label key={reason} className="flex items-center gap-2.5 cursor-pointer select-none group">
+                        <input
+                          type="radio"
+                          name="freeExitReason"
+                          value={reason}
+                          checked={freeExitReason === reason}
+                          onChange={() => { setFreeExitReason(reason); setCustomFreeExitReason(""); }}
+                          className="w-3.5 h-3.5 accent-emerald-500 cursor-pointer"
+                        />
+                        <span className="text-[12px] text-slate-600 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">{reason}</span>
+                      </label>
+                    ))}
+                  </div>
+                  {/* Column 2 */}
+                  <div className="space-y-2">
+                    {["Бүртгэл хийгдээгүй айл","Бүртгэл хийгдээгүй үйлчилгээ эрхлэгч","Хүргэлтийн машин","Компаниин ажилчдын машин","Такси","Бүртгэл хийгдэх тоот","Тусгай зочид","Банк хамгаалалт","Цэцэрлэг","Авто угаалга","Агуулах"].map((reason) => (
+                      <label key={reason} className="flex items-center gap-2.5 cursor-pointer select-none group">
+                        <input
+                          type="radio"
+                          name="freeExitReason"
+                          value={reason}
+                          checked={freeExitReason === reason}
+                          onChange={() => { setFreeExitReason(reason); setCustomFreeExitReason(""); }}
+                          className="w-3.5 h-3.5 accent-emerald-500 cursor-pointer"
+                        />
+                        <span className="text-[12px] text-slate-600 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">{reason}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
 
-                {/* Column 2 */}
-                <div className="space-y-3">
-                  {[
-                    "Бүртгэл хийгдээгүй айл",
-                    "Бүртгэл хийгдээгүй үйлчилгээ эрхлэгч",
-                    "Хүргэлтийн машин",
-                    "Компаниин ажилчдын машин",
-                    "Такси",
-                    "Бүртгэл хийгдэх тоот",
-                    "Тусгай зочид",
-                    "Банк хамгаалалт",
-                    "Цэцэрлэг",
-                    "Авто угаалга",
-                    "Агуулах"
-                  ].map((reason) => (
-                    <label
-                      key={reason}
-                      className="flex items-center gap-3 cursor-pointer text-[13px] text-slate-300 hover:text-white select-none"
-                    >
-                      <input
-                        type="radio"
-                        name="freeExitReason"
-                        value={reason}
-                        checked={freeExitReason === reason}
-                        onChange={() => {
-                          setFreeExitReason(reason);
-                          setCustomFreeExitReason("");
-                        }}
-                        className="w-4 h-4 rounded-full border border-white/40 bg-transparent checked:bg-white checked:border-white focus:ring-0 focus:outline-none appearance-none cursor-pointer transition-all relative flex items-center justify-center after:content-[''] after:w-2 after:h-2 after:rounded-full after:bg-[#1a2333] checked:after:bg-[#1a2333] after:opacity-0 checked:after:opacity-100"
-                      />
-                      <span>{reason}</span>
-                    </label>
-                  ))}
+                {/* Custom reason */}
+                <div className="flex items-center gap-3 pt-3 border-t border-slate-200/50 dark:border-white/10">
+                  <label className="flex items-center gap-2.5 cursor-pointer select-none shrink-0">
+                    <input
+                      type="radio"
+                      name="freeExitReason"
+                      value="Бусад"
+                      checked={freeExitReason === "Бусад"}
+                      onChange={() => setFreeExitReason("Бусад")}
+                      className="w-3.5 h-3.5 accent-emerald-500 cursor-pointer"
+                    />
+                    <span className="text-[12px] text-slate-600 dark:text-slate-300">Бусад</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={customFreeExitReason}
+                    onChange={(e) => { setCustomFreeExitReason(e.target.value); setFreeExitReason("Бусад"); }}
+                    placeholder="Шалтгаан бичих..."
+                    className="flex-1 h-9 px-3 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white text-[12px] focus:outline-none focus:border-blue-400 dark:focus:border-blue-500 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                  />
                 </div>
               </div>
 
-              {/* Other Custom Reason Input */}
-              <div className="flex items-center gap-3 mt-2 pt-4 border-t border-slate-700/50">
-                <span className="text-[13px] text-slate-300 min-w-[50px] select-none">Бусад</span>
-                <input
-                  type="text"
-                  value={customFreeExitReason}
-                  onChange={(e) => {
-                    setCustomFreeExitReason(e.target.value);
-                    setFreeExitReason("Бусад");
-                  }}
-                  placeholder="Бусад шалтгаан бичих..."
-                  className="flex-1 h-9 px-4 rounded-lg bg-transparent border border-slate-600 text-white text-[13px] focus:outline-none focus:border-slate-400 transition-all placeholder:text-slate-500"
-                />
-              </div>
-
-              {/* Footer Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-2">
+              {/* Footer */}
+              <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-slate-200/50 dark:border-white/10">
                 <button
                   onClick={() => setFreeExitModalTransaction(null)}
-                  className="h-9 px-5 rounded-lg text-xs font-semibold text-white transition-all bg-[#0e9f6e] hover:bg-[#0b8a5f] active:scale-95"
+                  className="h-9 px-5 rounded-lg border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 text-xs font-medium transition-all"
                 >
                   Хаах
                 </button>
                 <button
                   onClick={async () => {
-                    const finalReason =
-                      freeExitReason === "Бусад"
-                        ? customFreeExitReason.trim()
-                        : freeExitReason;
-                    if (!finalReason) {
-                      toast.error("Шалтгаан сонгох эсвэл бичнэ үү");
-                      return;
-                    }
+                    const finalReason = freeExitReason === "Бусад" ? customFreeExitReason.trim() : freeExitReason;
+                    if (!finalReason) { toast.error("Шалтгаан сонгох эсвэл бичнэ үү"); return; }
                     await handleWarehouseExit(freeExitModalTransaction, finalReason);
                     setFreeExitModalTransaction(null);
                   }}
-                  className="h-9 px-5 rounded-lg text-xs font-semibold text-white transition-all bg-[#0e9f6e] hover:bg-[#0b8a5f] active:scale-95"
+                  className="h-9 px-5 rounded-lg text-xs font-medium text-white transition-all active:scale-95"
+                  style={{ background: "linear-gradient(135deg, #10b981, #059669)", boxShadow: "0 4px 14px rgba(16,185,129,0.3)" }}
                 >
                   Хадгалах
                 </button>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
         {/* Revenue Report Modal */}
-        {revenueModalOpen && (
+        {revenueModalOpen && createPortal(
           <div
-            className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
             style={{
               background: "rgba(0,0,0,0.45)",
               backdropFilter: "blur(12px)",
@@ -2599,10 +2665,21 @@ export default function Camera() {
                       <h2 className="text-[15px] text-slate-800 dark:text-white tracking-tight">
                         Орлого тайлан
                       </h2>
-                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 flex items-center gap-1.5">
-                        <Calendar className="w-3 h-3" />
-                        {rangeStart} → {rangeEnd}
-                      </p>
+                      <div className="mt-1.5 min-w-[220px]">
+                        <ConfigProvider theme={{ token: { zIndexPopupBase: 9000 } }}>
+                          <StandardDatePicker
+                            isRange={true}
+                            value={revenueDateRange}
+                            onChange={(_: any, dateStrings: [string, string]) => setRevenueDateRange(dateStrings)}
+                            format="YYYY-MM-DD"
+                            classNames={{
+                              input: "flex items-center gap-2 rounded-full bg-slate-100 dark:bg-white/[0.06] border border-slate-200/40 dark:border-white/[0.06] h-8 px-3 text-[11px] text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-blue-500/10 transition-all",
+                            }}
+                            allowClear
+                            getPopupContainer={() => document.body}
+                          />
+                        </ConfigProvider>
+                      </div>
                     </div>
                   </div>
                   <button
@@ -2619,7 +2696,10 @@ export default function Camera() {
                 <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em] mb-1">
                   Төлбөрийн хэлбэр
                 </p>
-                {revenueBreakdown.items.map((item) => (
+                {revenueLoading && (
+                  <div className="text-center py-8 text-[11px] text-slate-400">Уншиж байна...</div>
+                )}
+                {!revenueLoading && revenueModalBreakdown.items.map((item) => (
                   <div
                     key={item.key}
                     className="relative flex items-center gap-3 py-2.5 px-3 rounded-2xl border border-slate-100 dark:border-white/[0.06] bg-slate-50/50 dark:bg-white/[0.02] overflow-hidden"
@@ -2651,7 +2731,7 @@ export default function Camera() {
                     </span>
                   </div>
                 ))}
-                {revenueBreakdown.items.length === 0 && (
+                {!revenueLoading && revenueModalBreakdown.items.length === 0 && (
                   <p className="text-center text-[11px] text-slate-400 dark:text-slate-500 py-8">
                     Төлбөрийн мэдээлэл олдсонгүй
                   </p>
@@ -2665,15 +2745,16 @@ export default function Camera() {
                     Нийт орлого
                   </span>
                   <span className="text-[14px] font-black text-emerald-700 dark:text-emerald-400 font-[family-name:var(--font-mono)]">
-                    {formatNumber(revenueBreakdown.totalAmount)}₮
+                    {formatNumber(revenueModalBreakdown.totalAmount)}₮
                   </span>
                 </div>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
-        {isRegModalOpen && (
+        {isRegModalOpen && createPortal(
           <VehicleRegistrationModal
             onClose={() => setIsRegModalOpen(false)}
             token={token || ""}
@@ -2681,7 +2762,8 @@ export default function Camera() {
             entryCameras={entryCameras}
             selectedCameraIP={activeEntryIP}
             onSuccess={() => fetchList()}
-          />
+          />,
+          document.body
         )}
       </div>
     </div>
@@ -2927,17 +3009,6 @@ const CameraStream = React.memo(
           )}
         </button>
 
-        {/* Camera Info Overlay */}
-        {!isFullscreen && (
-          <div className="absolute top-2 left-2 z-20 px-2 py-1 rounded bg-black/60 text-white text-xs  opacity-0 group-hover/stream:opacity-100 transition-opacity duration-200">
-            {gateName && (
-              <span className="hidden sm:inline">{gateName} - </span>
-            )}
-            <span className="font-mono">
-              {ip}:{port}
-            </span>
-          </div>
-        )}
 
         {/* Fullscreen overlay info */}
         {isFullscreen && (

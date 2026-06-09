@@ -1,12 +1,16 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Delete, Camera, Keyboard, Calendar } from "lucide-react";
+import { X, Delete, Camera, Keyboard } from "lucide-react";
 import moment from "moment";
+import "moment/locale/mn";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import Button from "@/components/ui/Button";
 import useModalHotkeys from "@/lib/useModalHotkeys";
+import { DatePicker, ConfigProvider } from "antd";
+import mn_MN from "antd/lib/locale/mn_MN";
+import dayjs from "dayjs";
 
 interface VehicleRegistrationModalProps {
   onClose: () => void;
@@ -224,9 +228,7 @@ export default function VehicleRegistrationModal({
                   )}
                 </div>
               </div>
-              <p className="text-[8px]  text-center text-slate-500 dark:text-slate-400 tracking-wide">
-                Улсын дугаарыг кирил үсгээр оруулна уу
-              </p>
+
             </div>
 
             {/* Input: Camera Select */}
@@ -255,21 +257,28 @@ export default function VehicleRegistrationModal({
 
             {/* Input: Date Select */}
             <div className="space-y-1.5">
-              <label className="text-[9px]  text-slate-600 dark:text-slate-400 uppercase tracking-wider ml-1">
+              <label className="text-[9px] text-slate-600 dark:text-slate-400 uppercase tracking-wider ml-1">
                 Огноо сонголт
               </label>
-              <div className="relative group">
-                <input
-                  type="datetime-local"
-                  value={regDate}
-                  onChange={(e) => setRegDate(e.target.value)}
-                  className="w-full h-10 pl-3 pr-9 rounded-lg bg-slate-50 dark:bg-white/5 border-2 border-slate-200 dark:border-white/10  text-slate-700 dark:text-slate-300 text-xs focus:bg-white dark:focus:bg-slate-800 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/10 transition-all outline-none shadow-sm [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-9 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                  style={{ borderRadius: "0.5rem" }}
+              <ConfigProvider
+                locale={mn_MN}
+                theme={{
+                  token: { colorPrimary: "#3b82f6", borderRadius: 8 },
+                }}
+              >
+                <DatePicker
+                  showTime={{ format: "HH:mm" }}
+                  value={regDate ? dayjs(regDate) : null}
+                  onChange={(date) =>
+                    setRegDate(date ? date.format("YYYY-MM-DDTHH:mm") : "")
+                  }
+                  format="YYYY-MM-DD HH:mm"
+                  allowClear={false}
+                  getPopupContainer={() => document.body}
+                  style={{ width: "100%", height: "40px", borderRadius: "0.5rem" }}
+                  className="!bg-slate-50 dark:!bg-white/5 !border-2 !border-slate-200 dark:!border-white/10 !text-slate-700 dark:!text-slate-300 !text-xs hover:!border-blue-500 focus:!border-blue-500"
                 />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-500 group-hover:text-blue-500 transition-colors">
-                  <Calendar className="w-3.5 h-3.5" />
-                </div>
-              </div>
+              </ConfigProvider>
             </div>
           </div>
 

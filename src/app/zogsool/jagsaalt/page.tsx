@@ -18,6 +18,8 @@ import {
   Info,
   ExternalLink,
   MoreHorizontal,
+  X,
+  Download,
 } from "lucide-react";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import moment from "moment";
@@ -28,6 +30,8 @@ import formatNumber from "../../../../tools/function/formatNumber";
 import { toast } from "react-hot-toast";
 import { LiquidGlassCard } from "@/components/ui/liquid-glass";
 import { StandardPagination } from "@/components/ui/StandardTable";
+import * as XLSX from "xlsx";
+import { PaymentPopup } from "../camera/PaymentPopup";
 
 const RealTimeDuration = ({
   orsonTsag,
@@ -99,6 +103,7 @@ interface Vehicle {
   }>;
 }
 
+
 export default function Jagsaalt() {
   const { token, ajiltan, barilgiinId } = useAuth();
   const { selectedBuildingId, isInitialized } = useBuilding();
@@ -117,11 +122,13 @@ export default function Jagsaalt() {
     toast.success("Хуулагдлаа");
   };
 
+  // null = explicitly cleared (no date filter), undefined = not yet init
   const [dateRange, setDateRange] = useState<
-    [string | null, string | null] | undefined
+    [string | null, string | null] | null | undefined
   >(getDefaultDateRange);
 
   const { start: rangeStart, end: rangeEnd } = useMemo(() => {
+    if (dateRange === null) return { start: "", end: "" };
     const range = dateRange || getDefaultDateRange();
     return {
       start: range[0] || "",
@@ -164,11 +171,13 @@ export default function Jagsaalt() {
       const query: any = {
         baiguullagiinId: bId,
         barilgiinId: barId || undefined,
-        createdAt: {
+      };
+      if (start && end) {
+        query.createdAt = {
           $gte: `${start} 00:00:00`,
           $lte: `${end} 23:59:59`,
-        },
-      };
+        };
+      }
 
       if (search) {
         query.mashiniiDugaar = { $regex: search, $options: "i" };
@@ -244,33 +253,102 @@ export default function Jagsaalt() {
 
   const totalPages = Math.ceil((vehiclesData?.niitMur || 0) / pageSize);
 
+  const downloadExcel = () => {
+    if (!filteredVehicles.length) {
+      toast.error("Татаж авах мэдээлэл байхгүй");
+      return;
+    }
+
+    const STATUS_LABEL: Record<number, string> = {
+      1: "Төлсөн", 2: "Төлсөн", 0: "Идэвхтэй", [-2]: "Идэвхтэй", [-4]: "Төлбөртэй",
+    };
+
+    const rows = filteredVehicles.map((t, i) => {
+      const mur = t.tuukh?.[0];
+      const tsag = mur?.tsagiinTuukh?.[0];
+      const orsonTsag = tsag?.orsonTsag;
+      const garsanTsag = tsag?.garsanTsag;
+      const niitDun = t.niitDun || 0;
+      const tulsunDun = mur?.tulsunDun || 0;
+      const tuluv = mur?.tuluv;
+      const isCurrentlyIn = !mur?.garsanKhaalga;
+
+      const khugatsaa = (() => {
+        if (!orsonTsag) return "";
+        const s = moment(orsonTsag);
+        const e = garsanTsag ? moment(garsanTsag) : moment();
+        const mins = Math.max(0, Math.ceil(e.diff(s, "minutes", true)));
+        const h = Math.floor(mins / 60);
+        const m = mins % 60;
+        return h > 0 ? `${h}ц ${m}м` : `${m}м`;
+      })();
+
+      const status = isCurrentlyIn
+        ? "Идэвхтэй"
+        : tuluv !== undefined
+          ? STATUS_LABEL[tuluv] ?? "Гарсан"
+          : niitDun > 0 ? "Төлбөртэй" : "Гарсан";
+
+      return {
+        "№": i + 1,
+        "Улсын дугаар": t.mashiniiDugaar || "",
+        "Төрөл": t.turul || mur?.turul || "Үйлчлүүлэгч",
+        "Орсон": orsonTsag ? moment(orsonTsag).format("YYYY-MM-DD HH:mm:ss") : "",
+        "Гарсан": garsanTsag ? moment(garsanTsag).format("YYYY-MM-DD HH:mm:ss") : "",
+        "Хугацаа": khugatsaa,
+        "Бодогдсон дүн": niitDun || "",
+        "Төлсөн дүн": tulsunDun || "",
+        "Төлөв": status,
+        "Хөнгөлөлт": mur?.khungulult || "",
+        "Шалтгаан": t.zurchil || "",
+        "Бүртгэсэн": mur?.burtgesenAjiltaniiNer || "",
+        "И-Баримт": mur?.ebarimtId || "",
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws["!cols"] = [
+      { wch: 5 }, { wch: 14 }, { wch: 14 }, { wch: 20 }, { wch: 20 },
+      { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 12 },
+      { wch: 10 }, { wch: 20 }, { wch: 16 }, { wch: 14 },
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Жагсаалт");
+
+    const fileName = `zogsool_${rangeStart || "all"}_${rangeEnd || "all"}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+    toast.success(`${rows.length} мөр татагдлаа`);
+  };
+
   return (
     <div className="h-full overflow-y-auto custom-scrollbar">
       <div className="p-4 sm:p-8 max-w-[1700px] mx-auto min-h-full flex flex-col gap-6">
         <div className="relative z-10 px-6 py-4 rounded-[32px] bg-var(--color-bg-primary) border border-slate-200 dark:border-slate-800 shadow-sm shadow-slate-200/50">
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
-            {/* Left: Title and Stats */}
+            {/* Left: Date picker */}
             <div className="flex items-center gap-4 shrink-0">
               <div className="w-[50px] sm:w-40 lg:w-[300px] h-11">
                 <StandardDatePicker
                   isRange={true}
-                  value={dateRange}
+                  value={dateRange ?? undefined}
                   onChange={(v: any) => {
-                    setDateRange(v);
+                    setDateRange(v ?? null);
                     setPage(1);
                   }}
                   format="YYYY-MM-DD"
                   className="w-full"
                   classNames={{
                     input:
-                      "h-11 rounded-[30px] bg-slate-50 dark:bg-slate-800/50 border-0  text-[11px] text-slate-700 dark:text-slate-200 shadow-inner px-6",
+                      "h-11 rounded-[30px] bg-slate-50 dark:bg-slate-800/50 border-0 text-[11px] text-slate-700 dark:text-slate-200 shadow-inner px-6",
                   }}
+                  allowClear
                 />
               </div>
             </div>
 
-            {/* Right: Integrated Controls Row */}
-            <div className="flex  gap-4 flex-1 lg:justify-between">
+            {/* Right: Search + Export */}
+            <div className="flex items-center gap-3 flex-1 lg:justify-between">
               <div className="relative group w-full sm:w-72 max-w-sm">
                 <input
                   type="text"
@@ -280,11 +358,55 @@ export default function Jagsaalt() {
                     setSearchTerm(e.target.value);
                     setPage(1);
                   }}
-                  className="w-full pl-11 pr-4 h-11 rounded-[30px] bg-slate-50 dark:bg-slate-800/50 border-0 text-[11px]  text-slate-700 dark:text-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-[#4285F4]/20 transition-all shadow-inner"
+                  className="w-full pl-11 pr-4 h-11 rounded-[30px] bg-slate-50 dark:bg-slate-800/50 border-0 text-[11px] text-slate-700 dark:text-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-[#4285F4]/20 transition-all shadow-inner"
                 />
               </div>
+              <button
+                onClick={downloadExcel}
+                className="flex items-center gap-2 h-11 px-5 rounded-[30px] bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white text-[11px] font-semibold shadow-sm transition-all whitespace-nowrap flex-shrink-0"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Excel татах
+              </button>
             </div>
           </div>
+
+          {/* Active filter chips */}
+          {(typeFilter !== "all" || statusFilter !== "all") && (
+            <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-slate-200 dark:border-slate-700/50">
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">Шүүлт:</span>
+              {typeFilter !== "all" && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] rounded-full border border-blue-200 dark:border-blue-500/20">
+                  Төрөл: {typeFilter}
+                  <button
+                    onClick={() => { setTypeFilter("all"); setPage(1); }}
+                    className="ml-0.5 hover:text-blue-800 dark:hover:text-blue-200 transition-colors"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
+              {statusFilter !== "all" && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 text-[10px] rounded-full border border-violet-200 dark:border-violet-500/20">
+                  Төлөв: {
+                    { active: "Идэвхтэй", paid: "Төлсөн", unpaid: "Төлөөгүй", free: "Үнэгүй" }[statusFilter] || statusFilter
+                  }
+                  <button
+                    onClick={() => { setStatusFilter("all"); setPage(1); }}
+                    className="ml-0.5 hover:text-violet-800 dark:hover:text-violet-200 transition-colors"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
+              <button
+                onClick={() => { setTypeFilter("all"); setStatusFilter("all"); setPage(1); }}
+                className="text-[10px] text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 transition-colors ml-1 underline underline-offset-2"
+              >
+                Бүгдийг арилгах
+              </button>
+            </div>
+          )}
         </div>
         <div className="relative rounded-[32px] border border-slate-200 dark:border-slate-800 bg-var(--color-bg-primary) backdrop-blur-xl shadow-2xl flex-1 mt-2">
           <div>
@@ -323,6 +445,8 @@ export default function Jagsaalt() {
                     },
                     { id: "calc", label: "Бодогдсон" },
                     { id: "payment", label: "Төлбөр" },
+                    { id: "discount", label: "Хөнгөлөлт" },
+                    { id: "ebarimt", label: "И-Баримт" },
                     {
                       id: "status",
                       label: "Төлөв",
@@ -339,8 +463,6 @@ export default function Jagsaalt() {
                     },
                     { id: "reason", label: "Шалтгаан" },
                     { id: "staff", label: "Бүртгэсэн" },
-                    { id: "discount", label: "Хөнгөлөлт" },
-                    { id: "ebarimt", label: "И-Баримт" },
                   ].map((h) => (
                     <th
                       key={h.id}
@@ -354,7 +476,11 @@ export default function Jagsaalt() {
                         }}
                       >
                         {h.filter && (
-                          <Filter className="w-3 h-3 text-slate-500 group-hover:text-blue-400" />
+                          <Filter className={`w-3 h-3 transition-colors ${
+                            h.current !== "all" && h.current !== undefined
+                              ? "text-blue-400"
+                              : "text-slate-500 group-hover:text-blue-400"
+                          }`} />
                         )}
                         {h.label}
                       </div>
@@ -417,7 +543,11 @@ export default function Jagsaalt() {
                     return (
                       <tr
                         key={transaction._id || idx}
-                        className="border-b border-slate-100 dark:border-slate-800/50 hover:bg-blue-50/40 dark:hover:bg-blue-900/10 transition-colors group relative"
+                        className={`border-b border-slate-100 dark:border-slate-800/50 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors group relative ${
+                          idx % 2 === 0
+                            ? "bg-white dark:bg-transparent"
+                            : "bg-slate-50/70 dark:bg-slate-800/20"
+                        }`}
                       >
                         <td className="py-4 px-3 text-center text-[10px] text-slate-400 ">
                           {isCurrentlyIn && (
@@ -483,32 +613,30 @@ export default function Jagsaalt() {
                           </span>
                         </td>
                         <td className="py-4 px-3 text-center">
-                          <div className="flex flex-col items-center gap-0.5">
-                            {(() => {
-                              const tulsunDun = mur?.tulsunDun || 0;
-                              const payHistory = mur?.tulbur?.[0];
-                              const method = payHistory?.turul;
-                              const labels: any = {
-                                cash: "Бэлэн",
-                                khaan: "Хаан",
-                                qpay: "QPay",
-                                transfer: "Дансаар",
-                                discount: "Хөнгөлөлт",
-                              };
-                              if (tulsunDun > 0)
-                                return (
-                                  <>
-                                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400">
-                                      {formatNumber(tulsunDun)}
-                                    </span>
-                                    <span className="text-[9px]  text-slate-400 uppercase tracking-widest">
-                                      {(method && labels[method]) || "Төлсөн"}
-                                    </span>
-                                  </>
-                                );
-                              return <span />;
-                            })()}
-                          </div>
+                          {(() => {
+                            const payHistory: any[] = (transaction.tuukh || []).flatMap((th: any) => {
+                              const raw = th?.tulbur;
+                              if (Array.isArray(raw)) return raw;
+                              if (raw && typeof raw === "object") return [raw];
+                              return [];
+                            });
+                            if (!payHistory.length) return <span />;
+                            const totalPaid = payHistory.reduce((s: number, p: any) => s + (p.dun || 0), 0);
+                            const uniqueTypes = [...new Set(payHistory.map((p: any) => p.turul).filter(Boolean))] as string[];
+                            return (
+                              <PaymentPopup
+                                payHistory={payHistory}
+                                totalPaid={totalPaid}
+                                uniqueTypes={uniqueTypes}
+                              />
+                            );
+                          })()}
+                        </td>
+                        <td className="py-4 px-3 text-[11px] text-slate-500 text-center">
+                          {mur?.khungulult || ""}
+                        </td>
+                        <td className="py-4 px-3 text-[11px] text-slate-500 text-center">
+                          {mur?.ebarimtId || ""}
                         </td>
                         <td className="py-4 px-3 text-center">
                           {(() => {
@@ -560,22 +688,16 @@ export default function Jagsaalt() {
                           })()}
                         </td>
                         <td className="py-4 px-3 max-w-[150px]">
-                          <p className="text-[10px] text-slate-400 dark:text-slate-500 italic truncate group-hover:whitespace-normal  text-center">
+                          <p className="text-[10px] text-slate-400 dark:text-slate-500 italic truncate group-hover:whitespace-normal text-center">
                             {transaction.zurchil || ""}
                           </p>
                         </td>
                         <td className="py-4 px-3 text-center">
                           <div className="flex flex-col">
-                            <span className="text-[11px]  text-slate-600 dark:text-slate-400">
+                            <span className="text-[11px] text-slate-600 dark:text-slate-400">
                               {mur?.burtgesenAjiltaniiNer || ""}
                             </span>
                           </div>
-                        </td>
-                        <td className="py-4 px-3 text-[11px]  text-slate-500 text-center">
-                          {mur?.khungulult || ""}
-                        </td>
-                        <td className="py-4 px-3 text-[11px]  text-slate-500 text-center">
-                          {mur?.ebarimtId || ""}
                         </td>
                       </tr>
                     );
