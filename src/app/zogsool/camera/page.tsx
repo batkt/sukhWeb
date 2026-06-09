@@ -55,7 +55,7 @@ import uilchilgee, {
   url as apiUrl,
 } from "@/lib/uilchilgee";
 import formatNumber from "../../../../tools/function/formatNumber";
-import R2WPlayerComponent from "@/components/R2WPlayerComponent";
+import WebRTCVideoPlayer from "@/components/WebRTCVideoPlayer";
 import { type Uilchluulegch } from "@/lib/useParkingSocket";
 import PaymentModal from "./PaymentModal";
 import VehicleRegistrationModal from "./VehicleRegistrationModal";
@@ -570,17 +570,15 @@ export default function Camera() {
   const khaalgaNeey = useCallback(
     (ip: string) => {
       if (!ip) return;
-      // Call local .NET service directly as requested
-      axios.get(`http://localhost:5000/api/neeye/${ip}`).catch((err) => {
-        console.error("Local gate error, falling back to server:", err);
-        if (token) {
-          uilchilgee(token)
-            .get("/neeye/" + ip)
-            .catch(aldaaBarigch);
-        }
-      });
+      if (token) {
+        uilchilgee(token)
+          .get("/neeye/" + ip, {
+            params: { barilgiinId: effectiveBarilgiinId },
+          })
+          .catch(aldaaBarigch);
+      }
     },
-    [token],
+    [token, effectiveBarilgiinId],
   );
 
   async function handleManualExit(
@@ -1393,6 +1391,7 @@ export default function Camera() {
                           cameraType="entry"
                           onOpenGate={khaalgaNeey}
                           barilgiinId={effectiveBarilgiinId}
+                          token={token || undefined}
                         />
                       </div>
                     ))}
@@ -1473,6 +1472,7 @@ export default function Camera() {
                           cameraType="exit"
                           onOpenGate={khaalgaNeey}
                           barilgiinId={effectiveBarilgiinId}
+                          token={token || undefined}
                         />
                       </div>
                     ))}
@@ -2783,6 +2783,7 @@ const CameraStream = React.memo(
     cameraType,
     onOpenGate,
     barilgiinId,
+    token,
   }: {
     ip: string;
     port: number;
@@ -2794,6 +2795,7 @@ const CameraStream = React.memo(
     cameraType?: "entry" | "exit";
     onOpenGate?: (ip: string) => void;
     barilgiinId?: string;
+    token?: string;
   }) => {
     const [error, setError] = useState(false);
     const [connectionState, setConnectionState] = useState<string>("");
@@ -2948,19 +2950,15 @@ const CameraStream = React.memo(
             : {}
         }
       >
-        <R2WPlayerComponent
-          Camer={ip}
-          PORT={port}
-          USER={username}
-          PASSWD={password}
-          ROOT={root}
-          serverPath={`${apiUrl.endsWith("/") ? apiUrl : apiUrl + "/"}camera/stream/${barilgiinId}`}
-          onError={handleError}
-          onConnectionStateChange={handleConnectionStateChange}
-          style={{
-            width: "100%",
-            height: "100%",
-          }}
+        <WebRTCVideoPlayer
+          rtspUrl={username && password
+            ? `rtsp://${encodeURIComponent(username)}:${encodeURIComponent(password)}@${ip}:${port}/${root}`
+            : `rtsp://${ip}:${port}/${root}`
+          }
+          barilgiinId={barilgiinId || ""}
+          token={token}
+          className="w-full h-full"
+          style={{ width: "100%", height: "100%" }}
         />
 
         {/* Manual Gate Control Button - Modernized */}

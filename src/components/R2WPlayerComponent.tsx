@@ -13,14 +13,14 @@ if (R2WPlayer && typeof (R2WPlayer as any).AJAX === "function" && !(R2WPlayer as
   
   (R2WPlayer as any).AJAX = function(...args: any[]) {
     const [_method, urlStr, data, successCb, errorCb, _async, context] = args;
-    const isDirectProxy = urlStr && urlStr.startsWith("http") && !urlStr.includes("/api/");
+    const isR2WRequest = urlStr && (urlStr.endsWith("/answer") || urlStr.endsWith("/stream"));
     
-    if (isDirectProxy && urlStr.endsWith("/answer")) {
+    if (isR2WRequest) {
       // 1. Rewrite the URL from /answer to /stream for Go RTSPtoWebRTC server
       const newUrl = urlStr.replace(/\/answer$/, "/stream");
-      console.log(`[R2WPlayer.AJAX Patch] Intercepting request. Rewriting direct proxy URL from ${urlStr} to ${newUrl}`);
+      console.log(`[R2WPlayer.AJAX Patch] Intercepting request. URL: ${urlStr} -> ${newUrl}`);
       
-      // 2. Format payload as application/x-www-form-urlencoded (what Go RTSPtoWebRTC expects)
+      // 2. Format payload as application/x-www-form-urlencoded
       const formData = new URLSearchParams();
       if (data) {
         formData.append("url", data.url || "");
@@ -41,8 +41,8 @@ if (R2WPlayer && typeof (R2WPlayer as any).AJAX === "function" && !(R2WPlayer as
         }
         const text = await response.text();
         
-        // Parse Go server's response.
-        // Go RTSPtoWebRTC responds with either raw SDP answer (text containing v=0) or JSON { sdp64: "..." }
+        // Parse server's response.
+        // Responds with either raw SDP answer (text containing v=0) or JSON { sdp64: "..." }
         let parsedData: any = {};
         try {
           parsedData = JSON.parse(text);
@@ -50,6 +50,31 @@ if (R2WPlayer && typeof (R2WPlayer as any).AJAX === "function" && !(R2WPlayer as
           parsedData = {
             sdp64: text.includes("v=0") || text.includes("m=video") ? btoa(text) : text,
           };
+        }
+        
+        // Standardize and sanitize the parsedData to ensure maximum compatibility
+        if (parsedData && typeof parsedData.sdp64 === "string") {
+          try {
+            const cleanedBase64 = parsedData.sdp64.replace(/\s/g, "");
+            const rawSdp = atob(cleanedBase64);
+            const cleanBase64 = btoa(rawSdp);
+            parsedData.sdp64 = cleanBase64;
+            parsedData.data = cleanBase64;
+            parsedData.sdp = rawSdp;
+          } catch (e) {
+            console.error("[R2WPlayer.AJAX Patch] Failed to clean/decode sdp64:", e);
+          }
+        } else if (parsedData && typeof parsedData.data === "string") {
+          try {
+            const cleanedBase64 = parsedData.data.replace(/\s/g, "");
+            const rawSdp = atob(cleanedBase64);
+            const cleanBase64 = btoa(rawSdp);
+            parsedData.sdp64 = cleanBase64;
+            parsedData.data = cleanBase64;
+            parsedData.sdp = rawSdp;
+          } catch (e) {
+            console.error("[R2WPlayer.AJAX Patch] Failed to clean/decode data:", e);
+          }
         }
         
         if (successCb) {
