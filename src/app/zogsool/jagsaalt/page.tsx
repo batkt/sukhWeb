@@ -54,14 +54,14 @@ const RealTimeDuration = ({
   const seconds = diff.seconds();
   if (!garsanTsag) {
     return (
-      <span className="text-[11px]  font-mono text-slate-800">
+      <span className="text-[11px] font-mono">
         {String(hours).padStart(2, "0")} : {String(minutes).padStart(2, "0")} :{" "}
         {String(seconds).padStart(2, "0")}
       </span>
     );
   }
   return (
-    <span className="text-[10px]  uppercase tracking-wide text-slate-800">
+    <span className="text-[10px] uppercase tracking-wide">
       {hours > 0 ? `${hours} цаг ${minutes} мин` : `${minutes} мин`}
     </span>
   );
@@ -438,10 +438,13 @@ export default function Jagsaalt() {
                         </td>
                         <td className="py-4 px-3 text-center">
                           <div
-                            className={`px-2.5 py-1.5 rounded-2xl text-center w-[130px] inline-block whitespace-nowrap border-2 transition-all ${
+                            className={`px-2.5 py-1.5 rounded-2xl text-center w-[130px] inline-block whitespace-nowrap border transition-all ${
                               !garsanTsag
-                                ? "bg-blue-50 border-blue-100 text-blue-900 dark:bg-blue-900/30 dark:border-blue-800/50 dark:text-blue-200 shadow-sm"
-                                : "bg-slate-50 border-slate-100 text-slate-600 dark:bg-slate-800/30 dark:border-slate-800/50 dark:text-slate-400"
+                                ? "bg-blue-500 border-blue-600 text-white shadow-sm"
+                                : tuluv === -4 ||
+                                    (niitDun > 0 && !isCurrentlyIn)
+                                  ? "bg-amber-600 border-amber-700 text-white shadow-sm"
+                                  : "bg-gray-500 border-gray-600 text-white"
                             }`}
                           >
                             <RealTimeDuration
@@ -485,33 +488,47 @@ export default function Jagsaalt() {
                         </td>
                         <td className="py-4 px-3 text-center">
                           {(() => {
+                            const badgeClass =
+                              "flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-1.5 rounded-[6px] overflow-hidden border";
                             if (tuluv === 1)
                               return (
-                                <div className="flex items-center justify-center">
-                                  <span className="px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[9px] uppercase border border-emerald-200 dark:border-emerald-800/50">
+                                <div
+                                  className={`${badgeClass} bg-emerald-500 border-emerald-600`}
+                                  style={{ borderRadius: "6px" }}
+                                >
+                                  <span className="text-[10px] !text-white uppercase whitespace-nowrap">
                                     Төлсөн
                                   </span>
                                 </div>
                               );
                             if (isCurrentlyIn)
                               return (
-                                <div className="flex items-center justify-center">
-                                  <span className="px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[9px] uppercase border border-blue-200 dark:border-blue-800/50">
+                                <div
+                                  className={`${badgeClass} bg-blue-500 border-blue-600`}
+                                  style={{ borderRadius: "6px" }}
+                                >
+                                  <span className="text-[10px] !text-white uppercase whitespace-nowrap">
                                     Идэвхтэй
                                   </span>
                                 </div>
                               );
                             if (tuluv === -4 || (niitDun > 0 && !isCurrentlyIn))
                               return (
-                                <div className="flex items-center justify-center">
-                                  <span className="px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[9px] uppercase border border-amber-200 dark:border-amber-800/50">
+                                <div
+                                  className={`${badgeClass} bg-amber-600 border-amber-700`}
+                                  style={{ borderRadius: "6px" }}
+                                >
+                                  <span className="text-[10px] !text-white uppercase whitespace-nowrap">
                                     Төлбөртэй
                                   </span>
                                 </div>
                               );
                             return (
-                              <div className="flex items-center justify-center">
-                                <span className="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 text-[9px] font-black uppercase border border-slate-200 dark:border-slate-800/50">
+                              <div
+                                className={`${badgeClass} bg-gray-500 border-gray-600`}
+                                style={{ borderRadius: "6px" }}
+                              >
+                                <span className="text-[10px] !text-white uppercase whitespace-nowrap">
                                   Гарсан
                                 </span>
                               </div>

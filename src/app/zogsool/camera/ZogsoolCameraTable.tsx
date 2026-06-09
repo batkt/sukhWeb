@@ -181,27 +181,30 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
           const isDebt =
             tuluv === -4 || (tuluv === 0 && niitDun > 0 && !isCurrentlyIn);
 
+          const badgeClass =
+            "flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-1 rounded-[6px] overflow-hidden border text-[10px] !text-white uppercase whitespace-nowrap";
           const getStatusColor = () => {
             if (tuluv === 1) {
               return isCurrentlyIn && niitDun === 0
-                ? "bg-blue-500 text-white border-blue-600"
-                : "bg-green-500 text-white border-green-600";
+                ? "bg-blue-500 border-blue-600"
+                : "bg-emerald-500 border-emerald-600";
             }
             if (!isCurrentlyIn && (niitDun > 0 || isDebt)) {
-              return "bg-amber-600 text-white border-amber-700";
+              return "bg-amber-500 border-amber-600";
             }
             if (tuluv === -2 || tuluv === -1) {
-              return "bg-red-500 text-white border-red-600";
+              return "bg-red-500 border-red-600";
             }
             if (!isCurrentlyIn && niitDun === 0) {
-              return "bg-gray-500 text-white border-gray-600";
+              return "bg-gray-500 border-gray-600";
             }
-            return "bg-blue-500 text-white border-blue-600";
+            return "bg-blue-500 border-blue-600";
           };
 
           return (
             <div
-              className={`flex items-center justify-center px-2 py-1.5 rounded-md overflow-hidden border shadow-sm text-xs ${getStatusColor()}`}
+              className={`${badgeClass} ${getStatusColor()}`}
+              style={{ color: "white" }}
             >
               <RealTimeDuration orsonTsag={orsonTsag} garsanTsag={garsanTsag} />
             </div>
@@ -339,51 +342,52 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
           const isDebt =
             tuluv === -4 || (tuluv === 0 && niitDun > 0 && !isCurrentlyIn);
           const showActionBtn = isCurrentlyIn || isDebt;
+          const badgeClass =
+            "flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-1 rounded-[6px] overflow-hidden border text-[10px] !text-white uppercase whitespace-nowrap";
 
           if (showActionBtn) {
+            const actionClass =
+              isPaid && niitDun > 0
+                ? "bg-emerald-500 border-emerald-600"
+                : !isCurrentlyIn && isDebt
+                  ? "bg-amber-500 border-amber-600"
+                  : tuluv === -1 || tuluv === -2
+                    ? "bg-red-500 border-red-600"
+                    : "bg-blue-500 border-blue-600";
+            const actionText = !isCurrentlyIn
+              ? isDebt
+                ? "Төлбөртэй"
+                : "Дууссан"
+              : isPaid && niitDun > 0
+                ? "Төлсөн"
+                : tuluv === 2
+                  ? "Төлбөртэй"
+                  : niitDun > 0
+                    ? "Төлбөр"
+                    : "Идэвхтэй";
             return (
               <div className="flex items-center justify-center gap-1">
-                <Button
+                <div
                   onClick={(e) => {
                     e?.stopPropagation();
                     setConfirmExitId(
                       confirmExitId === record._id ? null : record._id || null,
                     );
                   }}
-                  variant={
-                    isPaid && niitDun > 0
-                      ? "success"
-                      : !isCurrentlyIn && isDebt
-                        ? "warning"
-                        : tuluv === -1 || tuluv === -2
-                          ? "danger"
-                          : "primary"
-                  }
-                  size="sm"
-                  className="w-[90px] mx-auto uppercase tracking-wide text-[10px]"
+                  className={`${badgeClass} ${actionClass} cursor-pointer`}
+                  style={{ color: "white" }}
                 >
-                  {!isCurrentlyIn
-                    ? isDebt
-                      ? "Төлбөртэй"
-                      : "Дууссан"
-                    : isPaid && niitDun > 0
-                      ? "Төлсөн"
-                      : tuluv === 2
-                        ? "Төлбөртэй"
-                        : niitDun > 0
-                          ? "Төлбөр"
-                          : "Идэвхтэй"}
-                </Button>
+                  {actionText}
+                </div>
               </div>
             );
           }
 
-          const badgeClass =
-            "flex items-center justify-center px-2 py-1.5 rounded-[6px] overflow-hidden border text-[10px] uppercase whitespace-nowrap";
           if (tuluv === 1) {
             return (
               <div
-                className={`${badgeClass} ${isCurrentlyIn && niitDun === 0 ? "bg-blue-500 text-white border-blue-600" : "bg-green-500 text-white border-green-600"}`}
+                className={`${badgeClass} ${isCurrentlyIn && niitDun === 0 ? "bg-blue-500 border-blue-600" : "bg-emerald-500 border-emerald-600"}`}
+                style={{ color: "white" }}
               >
                 {isCurrentlyIn && niitDun === 0 ? "Идэвхтэй" : "Төлсөн"}
               </div>
@@ -392,7 +396,8 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
           if (!isCurrentlyIn && (niitDun > 0 || isDebt)) {
             return (
               <div
-                className={`${badgeClass} bg-amber-600 text-white border-amber-700`}
+                className={`${badgeClass} bg-amber-500 border-amber-600`}
+                style={{ color: "white" }}
               >
                 Төлбөртэй
               </div>
@@ -401,7 +406,8 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
           if (tuluv === -2 || tuluv === -1) {
             return (
               <div
-                className={`${badgeClass} bg-red-500 text-white border-red-600`}
+                className={`${badgeClass} bg-red-500 border-red-600`}
+                style={{ color: "white" }}
               >
                 Зөрчилтэй
               </div>
@@ -410,7 +416,8 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
           if (!isCurrentlyIn && niitDun === 0) {
             return (
               <div
-                className={`${badgeClass} bg-gray-500 text-white border-gray-600`}
+                className={`${badgeClass} bg-gray-500 border-gray-600`}
+                style={{ color: "white" }}
               >
                 Үнэгүй
               </div>
@@ -418,7 +425,8 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
           }
           return (
             <div
-              className={`${badgeClass} bg-blue-500 text-white border-blue-600`}
+              className={`${badgeClass} bg-blue-500 border-blue-600`}
+              style={{ color: "white" }}
             >
               Идэвхтэй
             </div>

@@ -236,10 +236,15 @@ export const ZogsoolJagsaaltTable: React.FC<ZogsoolJagsaaltTableProps> = ({
           const niitDun = record.niitDun || 0;
           const isCurrentlyIn = !mur?.garsanKhaalga;
 
+          const badgeClass =
+            "flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-1.5 rounded-[6px] overflow-hidden border";
           if (tuluv === 1) {
             return (
-              <div className="flex items-center justify-center">
-                <span className="px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[9px] font-black uppercase border border-emerald-200 dark:border-emerald-800/50">
+              <div
+                className={`${badgeClass} bg-emerald-500 border-emerald-600`}
+                style={{ borderRadius: "6px" }}
+              >
+                <span className="text-[10px] text-white uppercase whitespace-nowrap">
                   Төлсөн
                 </span>
               </div>
@@ -247,8 +252,11 @@ export const ZogsoolJagsaaltTable: React.FC<ZogsoolJagsaaltTableProps> = ({
           }
           if (isCurrentlyIn) {
             return (
-              <div className="flex items-center justify-center">
-                <span className="px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[9px] font-black uppercase border border-blue-200 dark:border-blue-800/50">
+              <div
+                className={`${badgeClass} bg-blue-500 border-blue-600`}
+                style={{ borderRadius: "6px" }}
+              >
+                <span className="text-[10px] text-white uppercase whitespace-nowrap">
                   Идэвхтэй
                 </span>
               </div>
@@ -256,16 +264,22 @@ export const ZogsoolJagsaaltTable: React.FC<ZogsoolJagsaaltTableProps> = ({
           }
           if (tuluv === -4 || (niitDun > 0 && !isCurrentlyIn)) {
             return (
-              <div className="flex items-center justify-center">
-                <span className="px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[9px] font-black uppercase border border-amber-200 dark:border-amber-800/50">
+              <div
+                className={`${badgeClass} bg-amber-600 border-amber-700`}
+                style={{ borderRadius: "6px" }}
+              >
+                <span className="text-[10px] text-white uppercase whitespace-nowrap">
                   Төлбөртэй
                 </span>
               </div>
             );
           }
           return (
-            <div className="flex items-center justify-center">
-              <span className="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 text-[9px] font-black uppercase border border-slate-200 dark:border-slate-800/50">
+            <div
+              className={`${badgeClass} bg-gray-500 border-gray-600`}
+              style={{ borderRadius: "6px" }}
+            >
+              <span className="text-[10px] text-white uppercase whitespace-nowrap">
                 Гарсан
               </span>
             </div>

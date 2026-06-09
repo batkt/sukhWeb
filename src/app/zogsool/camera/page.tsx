@@ -1443,25 +1443,28 @@ export default function Camera() {
                               const getStatusColor = () => {
                                 if (tuluv === 1) {
                                   return isCurrentlyIn && niitDun === 0
-                                    ? "bg-blue-500 text-white border-blue-600"
-                                    : "bg-green-500 text-white border-green-600";
+                                    ? "bg-blue-500 border-blue-600"
+                                    : "bg-emerald-500 border-emerald-600";
                                 }
                                 if (!isCurrentlyIn && (niitDun > 0 || isDebt)) {
-                                  return "bg-yellow-500 text-white border-yellow-600";
+                                  return "bg-amber-500 border-amber-600";
                                 }
                                 if (tuluv === -2 || tuluv === -1) {
-                                  return "bg-red-500 text-white border-red-600";
+                                  return "bg-red-500 border-red-600";
                                 }
                                 if (!isCurrentlyIn && niitDun === 0) {
-                                  return "bg-gray-500 text-white border-gray-600";
+                                  return "bg-gray-500 border-gray-600";
                                 }
-                                return "bg-blue-500 text-white border-blue-600";
+                                return "bg-blue-500 border-blue-600";
                               };
 
                               return (
                                 <div
-                                  className={`flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-1.5 rounded-[6px] overflow-hidden border shadow-sm text-[11px] ${getStatusColor()}`}
-                                  style={{ borderRadius: "6px" }}
+                                  className={`flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-1 rounded-[6px] overflow-hidden border text-[10px] text-white ${getStatusColor()}`}
+                                  style={{
+                                    borderRadius: "6px",
+                                    color: "white",
+                                  }}
                                 >
                                   <RealTimeDuration
                                     orsonTsag={orsonTsag}
@@ -1669,7 +1672,7 @@ export default function Camera() {
                           <td className="py-1.5 px-3 relative border-r border-slate-200 dark:border-white/5 text-center">
                             {showActionBtn ? (
                               <div className="flex items-center justify-center gap-1 action-menu-container">
-                                <Button
+                                <div
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setConfirmExitId(
@@ -1678,21 +1681,16 @@ export default function Camera() {
                                         : transaction._id,
                                     );
                                   }}
-                                  variant={
+                                  className={`flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-1 rounded-[6px] overflow-hidden border text-[10px] uppercase whitespace-nowrap cursor-pointer ${
                                     isPaid && niitDun > 0
-                                      ? "success"
+                                      ? "bg-emerald-500 border-emerald-600"
                                       : !isCurrentlyIn && isDebt
-                                        ? "warning"
+                                        ? "bg-amber-500 border-amber-600"
                                         : tuluv === -1 || tuluv === -2
-                                          ? "danger"
-                                          : "primary"
-                                  }
-                                  size="sm"
-                                  className="group/btn w-[100px] min-w-[100px] max-w-[100px] mx-auto uppercase tracking-wide overflow-hidden"
-                                  style={{
-                                    borderRadius: "6px",
-                                    overflow: "hidden",
-                                  }}
+                                          ? "bg-red-500 border-red-600"
+                                          : "bg-blue-500 border-blue-600"
+                                  }`}
+                                  style={{ color: "white" }}
                                 >
                                   {!isCurrentlyIn
                                     ? isDebt
@@ -1705,7 +1703,7 @@ export default function Camera() {
                                         : niitDun > 0
                                           ? "Төлбөр"
                                           : "Идэвхтэй"}
-                                </Button>
+                                </div>
                                 {/* ... dropdown menu code ... */}
                                 {confirmExitId === transaction._id && (
                                   <div className="absolute right-0 top-full mt-2 z-[60] min-w-[170px] p-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] animate-in fade-in slide-in-from-top-2 duration-200 text-left">
@@ -1818,14 +1816,17 @@ export default function Camera() {
                               (() => {
                                 // Status badges logic
                                 const badgeClass =
-                                  "flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-1.5 rounded-[6px] overflow-hidden border";
+                                  "flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-1 rounded-[6px] overflow-hidden border";
                                 if (tuluv === 1)
                                   return (
                                     <div
-                                      className={`${badgeClass} ${isCurrentlyIn && niitDun === 0 ? "bg-blue-500 !text-white border-blue-600 shadow-sm" : "bg-green-500 !text-white border-green-600 shadow-sm"}`}
-                                      style={{ borderRadius: "6px" }}
+                                      className={`${badgeClass} ${isCurrentlyIn && niitDun === 0 ? "bg-blue-500 border-blue-600" : "bg-emerald-500 border-emerald-600"}`}
+                                      style={{
+                                        borderRadius: "6px",
+                                        color: "white",
+                                      }}
                                     >
-                                      <span className="text-[10px] !text-white uppercase whitespace-nowrap">
+                                      <span className="text-[10px] uppercase whitespace-nowrap">
                                         {isCurrentlyIn && niitDun === 0
                                           ? "Идэвхтэй"
                                           : "Төлсөн"}
@@ -1835,10 +1836,13 @@ export default function Camera() {
                                 if (!isCurrentlyIn && (niitDun > 0 || isDebt))
                                   return (
                                     <div
-                                      className={`${badgeClass} bg-amber-600 !text-white border-amber-700 shadow-sm`}
-                                      style={{ borderRadius: "6px" }}
+                                      className={`${badgeClass} bg-amber-500 border-amber-600`}
+                                      style={{
+                                        borderRadius: "6px",
+                                        color: "white",
+                                      }}
                                     >
-                                      <span className="text-[10px] !text-white uppercase whitespace-nowrap">
+                                      <span className="text-[10px] uppercase whitespace-nowrap">
                                         Төлбөртэй
                                       </span>
                                     </div>
@@ -1846,10 +1850,13 @@ export default function Camera() {
                                 if (tuluv === -2 || tuluv === -1)
                                   return (
                                     <div
-                                      className={`${badgeClass} bg-red-500 !text-white border-red-600 shadow-sm`}
-                                      style={{ borderRadius: "6px" }}
+                                      className={`${badgeClass} bg-red-500 border-red-600`}
+                                      style={{
+                                        borderRadius: "6px",
+                                        color: "white",
+                                      }}
                                     >
-                                      <span className="text-[10px] !text-white uppercase whitespace-nowrap">
+                                      <span className="text-[10px] uppercase whitespace-nowrap">
                                         Зөрчилтэй
                                       </span>
                                     </div>
@@ -1857,20 +1864,26 @@ export default function Camera() {
                                 if (!isCurrentlyIn && niitDun === 0)
                                   return (
                                     <div
-                                      className={`${badgeClass} bg-gray-500 !text-white border-gray-600 shadow-sm`}
-                                      style={{ borderRadius: "6px" }}
+                                      className={`${badgeClass} bg-gray-500 border-gray-600`}
+                                      style={{
+                                        borderRadius: "6px",
+                                        color: "white",
+                                      }}
                                     >
-                                      <span className="text-[10px] !text-white uppercase whitespace-nowrap">
+                                      <span className="text-[10px] uppercase whitespace-nowrap">
                                         Үнэгүй
                                       </span>
                                     </div>
                                   );
                                 return (
                                   <div
-                                    className={`${badgeClass} bg-blue-500 !text-white border-blue-600 shadow-sm`}
-                                    style={{ borderRadius: "6px" }}
+                                    className={`${badgeClass} bg-blue-500 border-blue-600`}
+                                    style={{
+                                      borderRadius: "6px",
+                                      color: "white",
+                                    }}
                                   >
-                                    <span className="text-[10px] !text-white uppercase tracking-tight whitespace-nowrap text-center">
+                                    <span className="text-[10px] uppercase tracking-tight whitespace-nowrap text-center">
                                       Идэвхтэй
                                     </span>
                                   </div>
