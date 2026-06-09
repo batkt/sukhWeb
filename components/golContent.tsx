@@ -425,6 +425,7 @@ export default function GolContent({ children }: GolContentProps) {
         { label: "Жагсаалт", path: "jagsaalt" },
         { label: "Камер касс", path: "camera" },
         { label: "Машин бүртгэл", path: "orshinSuugch" },
+        { label: "Урьсан түүх", path: "urisan" },
       ],
     },
   ];

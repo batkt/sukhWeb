@@ -203,6 +203,7 @@ export default function Camera() {
   const [liveUpdates, setLiveUpdates] = useState<Record<string, Uilchluulegch>>(
     {},
   );
+  const latestPlatesRef = useRef<Record<string, string>>({});
   const [activeEntryIP, setActiveEntryIP] = useState<string>("");
   const [activeExitIP, setActiveExitIP] = useState<string>("");
   const [confirmExitId, setConfirmExitId] = useState<string | null>(null);
@@ -567,18 +568,69 @@ export default function Camera() {
     return () => clearInterval(interval);
   }, [garakhTsag, token, ajiltan, effectiveBarilgiinId, exitCameras, fetchList]);
 
+  const getLatestPlateForCamera = useCallback((ip: string) => {
+    // 1. Check our live socket updates cache first (most real-time)
+    if (latestPlatesRef.current[ip]) {
+      return latestPlatesRef.current[ip];
+    }
+
+    // 2. Fallback: Search in active transactions from listData and liveUpdates
+    let list: Uilchluulegch[] = [];
+    if (Array.isArray(listData?.jagsaalt)) list = listData.jagsaalt;
+    else if (Array.isArray(listData?.list)) list = listData.list;
+    else if (Array.isArray(listData?.data)) list = listData.data;
+    else if (Array.isArray(listData)) list = listData;
+
+    // Merge list and liveUpdates
+    const allTxMap = new Map<string, Uilchluulegch>();
+    list.forEach((item, index) => {
+      const key = item._id || `list_${index}_${item.mashiniiDugaar || "unknown"}`;
+      allTxMap.set(key, item);
+    });
+    Object.values(liveUpdates).forEach((update: any) => {
+      const key = update._id || update.mashiniiDugaar;
+      if (key) allTxMap.set(key, update);
+    });
+
+    const allTx = Array.from(allTxMap.values());
+    const matchingTx = allTx
+      .filter((t: any) => {
+        const lastTuukh = t.tuukh?.[0];
+        return lastTuukh?.orsonKhaalga === ip || lastTuukh?.garsanKhaalga === ip;
+      })
+      .sort((a: any, b: any) => {
+        const timeA = new Date(a.createdAt || a.tuukh?.[0]?.tsagiinTuukh?.[0]?.orsonTsag || 0).getTime();
+        const timeB = new Date(b.createdAt || b.tuukh?.[0]?.tsagiinTuukh?.[0]?.orsonTsag || 0).getTime();
+        return timeB - timeA;
+      });
+
+    if (matchingTx.length > 0) {
+      return matchingTx[0].mashiniiDugaar || "";
+    }
+
+    // 3. Fallback to the general latest active car
+    const fallbackActive = listData?.jagsaalt?.find((t: any) => !t.tuukh?.[0]?.garsanKhaalga)?.mashiniiDugaar || "";
+    return fallbackActive;
+  }, [listData, liveUpdates]);
+
   const khaalgaNeey = useCallback(
     (ip: string) => {
       if (!ip) return;
       if (token) {
+        // Find latest recognized plate for this specific camera IP
+        const latestPlate = getLatestPlateForCamera(ip);
+
         uilchilgee(token)
           .get("/neeye/" + ip, {
-            params: { barilgiinId: effectiveBarilgiinId },
+            params: { 
+              barilgiinId: effectiveBarilgiinId,
+              mashiniiDugaar: latestPlate
+            },
           })
           .catch(aldaaBarigch);
       }
     },
-    [token, effectiveBarilgiinId],
+    [token, effectiveBarilgiinId, getLatestPlateForCamera],
   );
 
   async function handleManualExit(
@@ -698,6 +750,9 @@ export default function Camera() {
           data?.baiguullagiinId !== baiguullaga?._id
         )
           return;
+        if (data.cameraIP && data.mashiniiDugaar) {
+          latestPlatesRef.current[data.cameraIP] = data.mashiniiDugaar;
+        }
         khaalgaNeey(data.cameraIP);
       };
       s.on(eventName, handleGarahTulsun);
@@ -725,6 +780,17 @@ export default function Camera() {
 
     const handleGeneralUpdate = (data: any) => {
       if (data?._id && data?.baiguullagiinId === bId) {
+        // Cache recognized plate mapping
+        const lastTuukh = data.tuukh?.[0];
+        if (data.mashiniiDugaar) {
+          if (lastTuukh?.garsanKhaalga) {
+            latestPlatesRef.current[lastTuukh.garsanKhaalga] = data.mashiniiDugaar;
+          }
+          if (lastTuukh?.orsonKhaalga) {
+            latestPlatesRef.current[lastTuukh.orsonKhaalga] = data.mashiniiDugaar;
+          }
+        }
+
         setLiveUpdates((prev: Record<string, Uilchluulegch>) => {
           const newState: Record<string, Uilchluulegch> = {
             ...prev,
@@ -751,6 +817,10 @@ export default function Camera() {
         data?.baiguullagiinId !== bId
       )
         return;
+
+      if (data.cameraIP && data.mashiniiDugaar) {
+        latestPlatesRef.current[data.cameraIP] = data.mashiniiDugaar;
+      }
 
       if (!data?.oruulakhguiEsekh) {
         khaalgaNeey(data.cameraIP);
@@ -789,6 +859,11 @@ export default function Camera() {
       )
         return;
 
+      const exitIP = u.tuukh?.[0]?.garsanKhaalga;
+      if (exitIP && u.mashiniiDugaar) {
+        latestPlatesRef.current[exitIP] = u.mashiniiDugaar;
+      }
+
       let niit = u?.niitDun || 0;
       if (u?.tuukh?.[0]?.tulbur?.length > 0) {
         niit =
@@ -820,6 +895,9 @@ export default function Camera() {
         data?.baiguullagiinId !== bId
       )
         return;
+      if (data.cameraIP && data.mashiniiDugaar) {
+        latestPlatesRef.current[data.cameraIP] = data.mashiniiDugaar;
+      }
       khaalgaNeey(data.cameraIP);
       fetchList();
     };
