@@ -188,7 +188,7 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
                 : "bg-green-500 text-white border-green-600";
             }
             if (!isCurrentlyIn && (niitDun > 0 || isDebt)) {
-              return "bg-yellow-500 text-white border-yellow-600";
+              return "bg-amber-600 text-white border-amber-700";
             }
             if (tuluv === -2 || tuluv === -1) {
               return "bg-red-500 text-white border-red-600";
@@ -392,7 +392,7 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
           if (!isCurrentlyIn && (niitDun > 0 || isDebt)) {
             return (
               <div
-                className={`${badgeClass} bg-yellow-500 text-white border-yellow-600`}
+                className={`${badgeClass} bg-amber-600 text-white border-amber-700`}
               >
                 Төлбөртэй
               </div>

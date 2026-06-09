@@ -45,7 +45,7 @@ const RealTimeDuration = ({
       return () => clearInterval(interval);
     }
   }, [garsanTsag]);
-  if (!orsonTsag) return <span>00 : 00 : 00</span>;
+  if (!orsonTsag) return <span />;
   const start = moment(orsonTsag);
   const end = garsanTsag ? moment(garsanTsag) : now;
   const diff = moment.duration(end.diff(start));
@@ -269,8 +269,8 @@ export default function Jagsaalt() {
             </div>
           </div>
         </div>
-        <div className="relative overflow-y-auto custom-scrollbar max-h-[65vh] rounded-[32px] border border-slate-200 dark:border-slate-800 bg-var(--color-bg-primary) backdrop-blur-xl shadow-2xl flex-1 mt-2">
-          <div className="overflow-x-auto custom-scrollbar">
+        <div className="relative rounded-[32px] border border-slate-200 dark:border-slate-800 bg-var(--color-bg-primary) backdrop-blur-xl shadow-2xl flex-1 mt-2">
+          <div>
             <table className="w-full border-collapse min-w-[1300px]">
               <thead className="bg-slate-900 dark:bg-black/40 border-b border-white/5">
                 <tr className="overflow-x-auto whitespace-nowrap">
@@ -325,7 +325,7 @@ export default function Jagsaalt() {
                   ].map((h) => (
                     <th
                       key={h.id}
-                      className={`group relative py-4 px-4 text-slate-400 uppercase tracking-tighter text-[10px] text-center ${h.width || ""}`}
+                      className={`group relative py-4 px-4 text-slate-400 uppercase tracking-tighter text-[10px] font-black text-center ${h.width || ""}`}
                     >
                       <div
                         className={`flex items-center justify-center gap-2 cursor-pointer hover:text-white transition-colors ${h.width ? "" : "w-full"}`}
@@ -352,7 +352,7 @@ export default function Jagsaalt() {
                                   h.set?.(opt.value);
                                   setPage(1);
                                 }}
-                                className={`px-4 py-2.5 rounded-xl text-[10px] font-black text-left flex items-center justify-between cursor-pointer transition-all duration-200 ${
+                                className={`px-4 py-2.5 rounded-xl text-[10px] text-left flex items-center justify-between cursor-pointer transition-all duration-200 ${
                                   h.current === opt.value
                                     ? "bg-blue-500 text-white shadow-lg shadow-blue-500/40"
                                     : "hover:bg-white/10 text-slate-300 hover:text-white"
@@ -407,7 +407,7 @@ export default function Jagsaalt() {
                             <span className="text-[11px]  text-slate-700 dark:text-slate-300">
                               {orsonTsag
                                 ? moment(orsonTsag).format("MM-DD HH:mm:ss")
-                                : "-"}
+                                : ""}
                             </span>
                           </div>
                         </td>
@@ -415,7 +415,7 @@ export default function Jagsaalt() {
                           <span className="text-[11px]  text-slate-500 dark:text-slate-400">
                             {garsanTsag
                               ? moment(garsanTsag).format("MM-DD HH:mm:ss")
-                              : "-"}
+                              : ""}
                           </span>
                         </td>
                         <td className="py-4 px-3 text-center">
@@ -425,8 +425,8 @@ export default function Jagsaalt() {
                         </td>
                         <td className="py-4 px-3 text-center">
                           <div className="flex items-center justify-center gap-2 group/copy">
-                            <span className="text-xs font-black text-slate-800 dark:text-slate-200 tracking-tight">
-                              {transaction.mashiniiDugaar || "-"}
+                            <span className="text-xs text-slate-800 dark:text-slate-200 tracking-tight">
+                              {transaction.mashiniiDugaar || ""}
                             </span>
                             <Copy
                               className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 cursor-pointer hover:text-blue-500 transition-all opacity-0 group-hover/copy:opacity-100 scale-90 group-hover/copy:scale-100"
@@ -452,7 +452,7 @@ export default function Jagsaalt() {
                         </td>
                         <td className="py-4 px-3 text-center">
                           <span className="text-xs font-black text-slate-900 dark:text-white">
-                            {formatNumber(niitDun)}
+                            {niitDun ? formatNumber(niitDun) : ""}
                           </span>
                         </td>
                         <td className="py-4 px-3 text-center">
@@ -471,7 +471,7 @@ export default function Jagsaalt() {
                               if (tulsunDun > 0)
                                 return (
                                   <>
-                                    <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400">
+                                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400">
                                       {formatNumber(tulsunDun)}
                                     </span>
                                     <span className="text-[9px]  text-slate-400 uppercase tracking-widest">
@@ -479,11 +479,7 @@ export default function Jagsaalt() {
                                     </span>
                                   </>
                                 );
-                              return (
-                                <span className="text-[11px]  text-slate-300">
-                                  0.00
-                                </span>
-                              );
+                              return <span />;
                             })()}
                           </div>
                         </td>
@@ -492,7 +488,7 @@ export default function Jagsaalt() {
                             if (tuluv === 1)
                               return (
                                 <div className="flex items-center justify-center">
-                                  <span className="px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[9px] font-black uppercase border border-emerald-200 dark:border-emerald-800/50">
+                                  <span className="px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[9px] uppercase border border-emerald-200 dark:border-emerald-800/50">
                                     Төлсөн
                                   </span>
                                 </div>
@@ -500,15 +496,15 @@ export default function Jagsaalt() {
                             if (isCurrentlyIn)
                               return (
                                 <div className="flex items-center justify-center">
-                                  <span className="px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[9px] font-black uppercase border border-blue-200 dark:border-blue-800/50">
-                                    Зогсож буй
+                                  <span className="px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[9px] uppercase border border-blue-200 dark:border-blue-800/50">
+                                    Идэвхтэй
                                   </span>
                                 </div>
                               );
                             if (tuluv === -4 || (niitDun > 0 && !isCurrentlyIn))
                               return (
                                 <div className="flex items-center justify-center">
-                                  <span className="px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[9px] font-black uppercase border border-amber-200 dark:border-amber-800/50">
+                                  <span className="px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[9px] uppercase border border-amber-200 dark:border-amber-800/50">
                                     Төлбөртэй
                                   </span>
                                 </div>
@@ -524,30 +520,60 @@ export default function Jagsaalt() {
                         </td>
                         <td className="py-4 px-3 max-w-[150px]">
                           <p className="text-[10px] text-slate-400 dark:text-slate-500 italic truncate group-hover:whitespace-normal  text-center">
-                            {transaction.zurchil ||
-                              (!isCurrentlyIn && !garsanTsag
-                                ? "Гарсан цаг тодорхойгүй!"
-                                : "-")}
+                            {transaction.zurchil || ""}
                           </p>
                         </td>
                         <td className="py-4 px-3 text-center">
                           <div className="flex flex-col">
                             <span className="text-[11px]  text-slate-600 dark:text-slate-400">
-                              {mur?.burtgesenAjiltaniiNer || "-"}
+                              {mur?.burtgesenAjiltaniiNer || ""}
                             </span>
                           </div>
                         </td>
                         <td className="py-4 px-3 text-[11px]  text-slate-500 text-center">
-                          {mur?.khungulult || "-"}
+                          {mur?.khungulult || ""}
                         </td>
                         <td className="py-4 px-3 text-[11px]  text-slate-500 text-center">
-                          {mur?.ebarimtId || "-"}
+                          {mur?.ebarimtId || ""}
                         </td>
                       </tr>
                     );
                   })
                 )}
               </tbody>
+              {filteredVehicles.length > 0 && (
+                <tfoot className="bg-slate-50 dark:bg-slate-900 border-t-2 border-slate-200 dark:border-white/10 text-slate-800 dark:text-white sticky bottom-0 z-10">
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="py-3 px-3 text-right text-[11px] font-black uppercase tracking-wider border-r border-slate-200 dark:border-white/5"
+                    >
+                      Нийт Дүн:
+                    </td>
+                    <td className="py-3 px-3 text-center border-r border-slate-200 dark:border-white/5 text-xs font-black font-[family-name:var(--font-mono)] whitespace-nowrap">
+                      {formatNumber(
+                        filteredVehicles.reduce(
+                          (sum, t) => sum + (Number(t.niitDun) || 0),
+                          0,
+                        ),
+                      )}
+                    </td>
+                    <td className="py-3 px-3 text-center border-r border-slate-200 dark:border-white/5 text-xs font-black font-[family-name:var(--font-mono)] whitespace-nowrap">
+                      {formatNumber(
+                        filteredVehicles.reduce(
+                          (sum, t) =>
+                            sum + (Number(t.tuukh?.[0]?.tulsunDun) || 0),
+                          0,
+                        ),
+                      )}
+                    </td>
+                    <td
+                      colSpan={5}
+                      className="border-r border-slate-200 dark:border-white/5"
+                    />
+                  </tr>
+                </tfoot>
+              )}
             </table>
           </div>
         </div>

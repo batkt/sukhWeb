@@ -55,7 +55,7 @@ const RealTimeDuration = ({
     }
   }, [garsanTsag]);
 
-  if (!orsonTsag) return <span>00 : 00 : 00</span>;
+  if (!orsonTsag) return <span />;
   const start = moment(orsonTsag);
   const end = garsanTsag ? moment(garsanTsag) : now;
   const diff = moment.duration(end.diff(start));
@@ -110,7 +110,7 @@ export const ZogsoolJagsaaltTable: React.FC<ZogsoolJagsaaltTableProps> = ({
           return (
             <div className="flex flex-col">
               <span className="text-[11px] text-slate-700 dark:text-slate-300">
-                {orsonTsag ? moment(orsonTsag).format("MM-DD HH:mm:ss") : "-"}
+                {orsonTsag ? moment(orsonTsag).format("MM-DD HH:mm:ss") : ""}
               </span>
             </div>
           );
@@ -126,7 +126,7 @@ export const ZogsoolJagsaaltTable: React.FC<ZogsoolJagsaaltTableProps> = ({
           const garsanTsag = tsag?.garsanTsag;
           return (
             <span className="text-[11px] text-slate-500 dark:text-slate-400">
-              {garsanTsag ? moment(garsanTsag).format("MM-DD HH:mm:ss") : "-"}
+              {garsanTsag ? moment(garsanTsag).format("MM-DD HH:mm:ss") : ""}
             </span>
           );
         },
@@ -151,7 +151,7 @@ export const ZogsoolJagsaaltTable: React.FC<ZogsoolJagsaaltTableProps> = ({
         render: (_: any, record: Vehicle) => (
           <div className="flex items-center justify-center gap-2 group/copy">
             <span className="text-xs font-black text-slate-800 dark:text-slate-200 tracking-tight">
-              {record.mashiniiDugaar || "-"}
+              {record.mashiniiDugaar || ""}
             </span>
             <Copy
               className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 cursor-pointer hover:text-blue-500 transition-all opacity-0 group-hover/copy:opacity-100 scale-90 group-hover/copy:scale-100"
@@ -190,7 +190,7 @@ export const ZogsoolJagsaaltTable: React.FC<ZogsoolJagsaaltTableProps> = ({
         align: "center",
         render: (_: any, record: Vehicle) => (
           <span className="text-xs font-black text-slate-900 dark:text-white">
-            {formatNumber(record.niitDun || 0)}
+            {record.niitDun ? formatNumber(record.niitDun) : ""}
           </span>
         ),
       },
@@ -222,7 +222,7 @@ export const ZogsoolJagsaaltTable: React.FC<ZogsoolJagsaaltTableProps> = ({
               </div>
             );
           }
-          return <span className="text-[11px] text-slate-300">0.00</span>;
+          return <span />;
         },
       },
       {
@@ -249,7 +249,7 @@ export const ZogsoolJagsaaltTable: React.FC<ZogsoolJagsaaltTableProps> = ({
             return (
               <div className="flex items-center justify-center">
                 <span className="px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[9px] font-black uppercase border border-blue-200 dark:border-blue-800/50">
-                  Зогсож буй
+                  Идэвхтэй
                 </span>
               </div>
             );
@@ -282,10 +282,7 @@ export const ZogsoolJagsaaltTable: React.FC<ZogsoolJagsaaltTableProps> = ({
           const isCurrentlyIn = !mur?.garsanKhaalga;
           return (
             <p className="text-[10px] text-slate-400 dark:text-slate-500 italic truncate text-center">
-              {record.zurchil ||
-                (!isCurrentlyIn && !garsanTsag
-                  ? "Гарсан цаг тодорхойгүй!"
-                  : "-")}
+              {record.zurchil || ""}
             </p>
           );
         },
@@ -299,7 +296,7 @@ export const ZogsoolJagsaaltTable: React.FC<ZogsoolJagsaaltTableProps> = ({
           return (
             <div className="flex flex-col">
               <span className="text-[11px] text-slate-600 dark:text-slate-400">
-                {mur?.burtgesenAjiltaniiNer || "-"}
+                {mur?.burtgesenAjiltaniiNer || ""}
               </span>
             </div>
           );
@@ -313,7 +310,7 @@ export const ZogsoolJagsaaltTable: React.FC<ZogsoolJagsaaltTableProps> = ({
           const mur = record.tuukh?.[0];
           return (
             <span className="text-[11px] text-slate-500 text-center">
-              {mur?.khungulult || "-"}
+              {mur?.khungulult || ""}
             </span>
           );
         },
@@ -326,7 +323,7 @@ export const ZogsoolJagsaaltTable: React.FC<ZogsoolJagsaaltTableProps> = ({
           const mur = record.tuukh?.[0];
           return (
             <span className="text-[11px] text-slate-500 text-center">
-              {mur?.ebarimtId || "-"}
+              {mur?.ebarimtId || ""}
             </span>
           );
         },

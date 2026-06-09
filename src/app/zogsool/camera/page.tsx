@@ -35,6 +35,12 @@ import {
   Tag,
   ChevronLeft,
   ChevronRight,
+  Banknote,
+  CreditCard,
+  Landmark,
+  ArrowRight,
+  Wallet,
+  Receipt,
 } from "lucide-react";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import moment from "moment";
@@ -143,6 +149,7 @@ export default function Camera() {
     useState<Uilchluulegch | null>(null);
   const [discountAmount, setDiscountAmount] = useState("");
   const [discountMinutes, setDiscountMinutes] = useState("");
+  const [revenueModalOpen, setRevenueModalOpen] = useState(false);
 
   const [dateRange, setDateRange] = useState<
     [string | null, string | null] | undefined
@@ -804,6 +811,73 @@ export default function Camera() {
     return { total, paid, unpaid, count, paidCount };
   }, [transactions]);
 
+  const revenueBreakdown = useMemo(() => {
+    const allList = listData?.jagsaalt || [];
+    const methodMap: Record<string, { amount: number; count: number }> = {};
+    const methodLabels: Record<string, string> = {
+      belen: "Бэлэн",
+      cash: "Бэлэн",
+      khaan: "Карт",
+      khariltsakh: "Дансаар",
+      transfer: "Дансаар",
+      qpay: "QPay",
+      khungulult: "Хөнгөлөлт",
+      discount: "Хөнгөлөлт",
+    };
+    const methodIcons: Record<string, React.ReactNode> = {
+      belen: <Banknote className="w-4 h-4" />,
+      cash: <Banknote className="w-4 h-4" />,
+      khaan: <CreditCard className="w-4 h-4" />,
+      khariltsakh: <ArrowRight className="w-4 h-4" />,
+      transfer: <ArrowRight className="w-4 h-4" />,
+      qpay: <Landmark className="w-4 h-4" />,
+      khungulult: <Tag className="w-4 h-4" />,
+      discount: <Tag className="w-4 h-4" />,
+    };
+    const methodColors: Record<string, string> = {
+      belen: "bg-emerald-500",
+      cash: "bg-emerald-500",
+      khaan: "bg-sky-500",
+      khariltsakh: "bg-violet-500",
+      transfer: "bg-violet-500",
+      qpay: "bg-amber-500",
+      khungulult: "bg-rose-500",
+      discount: "bg-rose-500",
+    };
+
+    allList.forEach((t: any) => {
+      const tulburArr = t.tuukh?.[0]?.tulbur || [];
+      tulburArr.forEach((p: any) => {
+        const m = p.turul || "unknown";
+        if (!methodMap[m]) methodMap[m] = { amount: 0, count: 0 };
+        methodMap[m].amount += p.dun || 0;
+        methodMap[m].count += 1;
+      });
+    });
+
+    const totalAmount = Object.values(methodMap).reduce(
+      (s, v) => s + v.amount,
+      0,
+    );
+
+    const items = Object.entries(methodMap)
+      .map(([key, val]) => ({
+        key,
+        name: methodLabels[key] || key,
+        icon: methodIcons[key] || <Wallet className="w-4 h-4" />,
+        color: methodColors[key] || "bg-slate-500",
+        amount: val.amount,
+        count: val.count,
+        pct:
+          totalAmount > 0
+            ? ((val.amount / totalAmount) * 100).toFixed(2)
+            : "0.00",
+      }))
+      .sort((a, b) => b.amount - a.amount);
+
+    return { items, totalAmount };
+  }, [listData]);
+
   const totalPages = Math.ceil(total / pageSize);
 
   // Keyboard Shortcuts (shortcut.md / zogsool.md)
@@ -1120,8 +1194,8 @@ export default function Camera() {
                 <StandardDatePicker
                   isRange={true}
                   value={dateRange}
-                  onChange={(v: any) => {
-                    setDateRange(v);
+                  onChange={(_: any, dateStrings: [string, string]) => {
+                    setDateRange(dateStrings);
                     setPage(1);
                   }}
                   format="YYYY-MM-DD"
@@ -1132,6 +1206,17 @@ export default function Camera() {
                   allowClear
                 />
               </div>
+
+              {/* Revenue report button */}
+              <Button
+                onClick={() => setRevenueModalOpen(true)}
+                variant="secondary"
+                size="sm"
+                className="rounded-lg h-8 px-4 text-[9px] bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 shadow-sm"
+              >
+                <Receipt className="w-3.5 h-3.5 mr-1.5" />
+                Орлого тайлан
+              </Button>
 
               {/* Register button */}
               <Button
@@ -1466,15 +1551,26 @@ export default function Camera() {
                                   (s: number, p: any) => s + (p.dun || 0),
                                   0,
                                 );
+                                // Get unique payment types
+                                const uniqueTypes = [
+                                  ...new Set(
+                                    payHistory
+                                      .map((p: any) => p.turul)
+                                      .filter(Boolean),
+                                  ),
+                                ];
                                 return (
-                                  <div className="group/pay relative inline-block cursor-pointer ml-auto">
-                                    <span className="text-[11px]  text-slate-700 dark:text-slate-300 hover:text-blue-600 transition-colors border-b border-dashed border-slate-300 dark:border-slate-600 pb-0.5 font-[family-name:var(--font-mono)]">
+                                  <div className="group/pay relative inline-flex flex-wrap items-center justify-end gap-1 cursor-pointer ml-auto">
+                                    {uniqueTypes.map((type: string) => (
+                                      <span
+                                        key={type}
+                                        className={`text-[9px] px-1.5 py-0.5 rounded border ${colorMap[type] || "bg-slate-100 text-slate-600 border-slate-200"}`}
+                                      >
+                                        {labels[type] || type}
+                                      </span>
+                                    ))}
+                                    <span className="text-[11px] text-slate-700 dark:text-slate-300 font-[family-name:var(--font-mono)] ml-1">
                                       {formatNumber(totalPaid)}
-                                      {payHistory.length > 1 && (
-                                        <span className="ml-1 text-[11px] text-slate-400">
-                                          ({payHistory.length})
-                                        </span>
-                                      )}
                                     </span>
 
                                     {/* Popup reused logic */}
@@ -1739,7 +1835,7 @@ export default function Camera() {
                                 if (!isCurrentlyIn && (niitDun > 0 || isDebt))
                                   return (
                                     <div
-                                      className={`${badgeClass} bg-yellow-500 !text-white border-yellow-600 shadow-sm`}
+                                      className={`${badgeClass} bg-amber-600 !text-white border-amber-700 shadow-sm`}
                                       style={{ borderRadius: "6px" }}
                                     >
                                       <span className="text-[10px] !text-white uppercase whitespace-nowrap">
@@ -2201,6 +2297,106 @@ export default function Camera() {
                 >
                   Хөнгөлөх
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Revenue Report Modal */}
+        {revenueModalOpen && (
+          <div
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+            style={{
+              background: "rgba(0,0,0,0.45)",
+              backdropFilter: "blur(12px)",
+            }}
+            onClick={() => setRevenueModalOpen(false)}
+          >
+            <div
+              className="relative w-[420px] max-w-full rounded-[28px] overflow-hidden shadow-2xl border bg-white dark:bg-[#18181b] border-slate-200/40 dark:border-white/[0.06]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="relative px-7 pt-6 pb-5 border-b border-slate-100 dark:border-white/[0.06]">
+                <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-emerald-500 via-teal-500 to-green-500 opacity-80" />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-slate-100 dark:bg-white/[0.06] border border-slate-200/50 dark:border-white/[0.06]">
+                      <Receipt className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+                    </div>
+                    <div>
+                      <h2 className="text-[15px] text-slate-800 dark:text-white tracking-tight">
+                        Орлого тайлан
+                      </h2>
+                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 flex items-center gap-1.5">
+                        <Calendar className="w-3 h-3" />
+                        {rangeStart} → {rangeEnd}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setRevenueModalOpen(false)}
+                    className="w-9 h-9 rounded-full bg-slate-100 dark:bg-white/[0.06] flex items-center justify-center text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className="p-5 space-y-2 max-h-[60vh] overflow-y-auto">
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em] mb-1">
+                  Төлбөрийн хэлбэр
+                </p>
+                {revenueBreakdown.items.map((item) => (
+                  <div
+                    key={item.key}
+                    className="relative flex items-center gap-3 py-2.5 px-3 rounded-2xl border border-slate-100 dark:border-white/[0.06] bg-slate-50/50 dark:bg-white/[0.02] overflow-hidden"
+                  >
+                    {/* Percentage fill background */}
+                    <div
+                      className={`absolute inset-y-0 left-0 ${item.color} opacity-[0.08] dark:opacity-[0.06] transition-all duration-500`}
+                      style={{ width: `${item.pct}%` }}
+                    />
+                    <div
+                      className={`w-1 h-8 rounded-full ${item.color} shrink-0 relative z-10`}
+                    />
+                    <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-white/[0.06] flex items-center justify-center text-slate-500 dark:text-slate-400 shrink-0 relative z-10">
+                      {item.icon}
+                    </div>
+                    <div className="flex-1 min-w-0 relative z-10">
+                      <span className="text-[12px] text-slate-700 dark:text-slate-200 block">
+                        {item.name}
+                      </span>
+                    </div>
+                    <span className="text-[13px] font-black text-slate-800 dark:text-white font-[family-name:var(--font-mono)] shrink-0 relative z-10">
+                      {formatNumber(item.amount)}₮
+                    </span>
+                    <span className="text-[11px] text-slate-400 dark:text-slate-500 font-[family-name:var(--font-mono)] w-6 text-center shrink-0 relative z-10">
+                      {item.count}
+                    </span>
+                    <span className="text-[11px] text-slate-400 dark:text-slate-500 font-[family-name:var(--font-mono)] w-12 text-right shrink-0 relative z-10">
+                      {item.pct}%
+                    </span>
+                  </div>
+                ))}
+                {revenueBreakdown.items.length === 0 && (
+                  <p className="text-center text-[11px] text-slate-400 dark:text-slate-500 py-8">
+                    Төлбөрийн мэдээлэл олдсонгүй
+                  </p>
+                )}
+              </div>
+
+              {/* Footer total */}
+              <div className="px-7 pb-6 pt-2">
+                <div className="flex justify-between items-center py-3 px-4 rounded-2xl bg-emerald-50 dark:bg-emerald-500/[0.08] border border-emerald-200 dark:border-emerald-500/20">
+                  <span className="text-[11px] font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
+                    Нийт орлого
+                  </span>
+                  <span className="text-[14px] font-black text-emerald-700 dark:text-emerald-400 font-[family-name:var(--font-mono)]">
+                    {formatNumber(revenueBreakdown.totalAmount)}₮
+                  </span>
+                </div>
               </div>
             </div>
           </div>

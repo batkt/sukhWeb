@@ -701,7 +701,7 @@ export default function PaymentModal({
                       key={val}
                       onClick={() => hylbarNemekh(val)}
                       disabled={isProcessing}
-                      className="px-3 py-2 rounded-xl border border-slate-200/60 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] text-[12px]  text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.06] hover:border-slate-300 dark:hover:border-white/[0.12] active:scale-95 transition-all disabled:opacity-40"
+                      className="px-3 py-2 rounded-2xl border border-slate-200/60 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] text-[12px]  text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.06] hover:border-slate-300 dark:hover:border-white/[0.12] active:scale-95 transition-all disabled:opacity-40"
                     >
                       +{formatNumber(val)}
                     </button>
@@ -715,12 +715,12 @@ export default function PaymentModal({
                   <span className="text-[10px]  text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em]">
                     И-Баримт
                   </span>
-                  <div className="flex p-[3px] rounded-xl bg-slate-200/50 dark:bg-white/[0.06]">
+                  <div className="flex p-[3px] rounded-2xl bg-slate-200/50 dark:bg-white/[0.06]">
                     {(["1", "3"] as const).map((v) => (
                       <button
                         key={v}
                         onClick={() => setEbarimtType(v)}
-                        className={`px-3.5 py-1.5 rounded-lg text-[11px]  transition-all duration-200 ${
+                        className={`px-3.5 py-1.5 rounded-2xl text-[11px]  transition-all duration-200 ${
                           ebarimtType === v
                             ? "bg-white dark:bg-white/[0.12] shadow-sm text-slate-800 dark:text-white"
                             : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
@@ -764,15 +764,16 @@ export default function PaymentModal({
             <div className="lg:col-span-2 p-6 flex flex-col gap-5 bg-slate-50/30 dark:bg-white/[0.01]">
               {/* Amount display */}
               <div className="text-center py-3 px-4 rounded-2xl bg-white dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] shadow-sm">
-                <p className="text-[10px]  text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
-                  Оруулах дүн
-                </p>
-                <div className="text-3xl tracking-tight text-slate-800 dark:text-white">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                    Оруулах дүн
+                  </p>
+                </div>
+                <div className="text-3xl font-black tracking-tight text-slate-800 dark:text-white">
                   {formatNumber(tuljBuiDun)}
-                  <span className="text-lg text-slate-300 dark:text-slate-600 ml-0.5"></span>
                 </div>
                 {tulukhDun !== tuljBuiDun && tulukhDun > 0 && (
-                  <p className="text-[10px] mt-1 text-slate-400 dark:text-slate-500 ">
+                  <p className="text-[10px] mt-1 text-slate-400 dark:text-slate-500">
                     Үлдэгдэл: {formatNumber(tulukhDun)}
                   </p>
                 )}
@@ -785,7 +786,7 @@ export default function PaymentModal({
                     key={num}
                     onClick={() => mungunDunNemekh(num.toString())}
                     disabled={isProcessing}
-                    className="h-[52px] rounded-xl border border-slate-200/60 dark:border-white/[0.08] bg-white dark:bg-white/[0.04]  text-xl text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/[0.07] hover:border-slate-300 dark:hover:border-white/[0.12] active:scale-95 transition-all disabled:opacity-40"
+                    className="h-[52px] rounded-2xl border border-slate-200/60 dark:border-white/[0.08] bg-white dark:bg-white/[0.04]  text-xl text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/[0.07] hover:border-slate-300 dark:hover:border-white/[0.12] active:scale-95 transition-all disabled:opacity-40"
                   >
                     {num}
                   </button>
@@ -793,21 +794,21 @@ export default function PaymentModal({
                 <button
                   onClick={handleClear}
                   disabled={isProcessing}
-                  className="h-[52px] rounded-xl border border-amber-200/60 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/[0.08]  text-sm text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-500/[0.15] active:scale-95 transition-all disabled:opacity-40"
+                  className="h-[52px] rounded-2xl border border-amber-200/60 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/[0.08]  text-sm text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-500/[0.15] active:scale-95 transition-all disabled:opacity-40"
                 >
                   AC
                 </button>
                 <button
                   onClick={() => mungunDunNemekh("0")}
                   disabled={isProcessing}
-                  className="h-[52px] rounded-xl border border-slate-200/60 dark:border-white/[0.08] bg-white dark:bg-white/[0.04]  text-xl text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/[0.07] hover:border-slate-300 dark:hover:border-white/[0.12] active:scale-95 transition-all disabled:opacity-40"
+                  className="h-[52px] rounded-2xl border border-slate-200/60 dark:border-white/[0.08] bg-white dark:bg-white/[0.04]  text-xl text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/[0.07] hover:border-slate-300 dark:hover:border-white/[0.12] active:scale-95 transition-all disabled:opacity-40"
                 >
                   0
                 </button>
                 <button
                   onClick={handleBackspace}
                   disabled={isProcessing}
-                  className="h-[52px] rounded-xl border border-rose-200/60 dark:border-rose-500/20 bg-rose-50 dark:bg-rose-500/[0.08] text-rose-500 dark:text-rose-400 flex items-center justify-center hover:bg-rose-100 dark:hover:bg-rose-500/[0.15] active:scale-95 transition-all disabled:opacity-40"
+                  className="h-[52px] rounded-2xl border border-rose-200/60 dark:border-rose-500/20 bg-rose-50 dark:bg-rose-500/[0.08] text-rose-500 dark:text-rose-400 flex items-center justify-center hover:bg-rose-100 dark:hover:bg-rose-500/[0.15] active:scale-95 transition-all disabled:opacity-40"
                 >
                   <Delete className="w-5 h-5" />
                 </button>
@@ -815,14 +816,18 @@ export default function PaymentModal({
 
               {/* Summary */}
               <div className="rounded-2xl border border-slate-100 dark:border-white/[0.06] bg-white dark:bg-white/[0.03] overflow-hidden">
-                <div className="px-4 py-2.5 flex justify-between text-[11px] border-b border-slate-50 dark:border-white/[0.04]">
-                  <span className="force-bold text-slate-400 dark:text-slate-500 uppercase">
-                    Нийт
+                <button
+                  onClick={() => setTurulruuKhiikhDun(niitDun.toString())}
+                  disabled={isProcessing}
+                  className="w-full px-4 py-2.5 flex justify-between text-[11px] border-b border-slate-50 dark:border-white/[0.04] hover:bg-blue-50 dark:hover:bg-blue-500/5 transition-colors disabled:opacity-40 text-left"
+                >
+                  <span className="font-black text-slate-400 dark:text-slate-500 uppercase">
+                    Бодогдсон дүн
                   </span>
-                  <span className="force-bold text-slate-700 dark:text-slate-200">
+                  <span className="font-black text-blue-600 dark:text-blue-400">
                     {formatNumber(niitDun)}
                   </span>
-                </div>
+                </button>
                 <div className="px-4 py-2.5 flex justify-between text-[11px] border-b border-slate-50 dark:border-white/[0.04]">
                   <span className=" text-slate-400 dark:text-slate-500 uppercase">
                     Оруулсан
@@ -867,14 +872,14 @@ export default function PaymentModal({
                       });
                   }}
                   disabled={isProcessing}
-                  className="py-3 rounded-xl border border-amber-200 dark:border-amber-500/20 text-amber-600 dark:text-amber-400  uppercase text-[10px] tracking-wider hover:bg-amber-50 dark:hover:bg-amber-500/[0.08] active:scale-[0.97] transition-all disabled:opacity-40"
+                  className="py-3 rounded-2xl border border-amber-200 dark:border-amber-500/20 text-amber-600 dark:text-amber-400  uppercase text-[10px] tracking-wider hover:bg-amber-50 dark:hover:bg-amber-500/[0.08] active:scale-[0.97] transition-all disabled:opacity-40"
                 >
                   Үнэгүй [F7]
                 </button>
                 <button
                   onClick={f4Darsan}
                   disabled={isProcessing}
-                  className="py-3 rounded-xl  uppercase text-[10px] tracking-wider active:scale-[0.97] transition-all disabled:opacity-40 flex items-center justify-center gap-2 text-white shadow-lg"
+                  className="py-3 rounded-2xl  uppercase text-[10px] tracking-wider active:scale-[0.97] transition-all disabled:opacity-40 flex items-center justify-center gap-2 text-white shadow-lg"
                   style={{
                     background: "linear-gradient(135deg, #10b981, #059669)",
                     boxShadow: "0 6px 20px rgba(16, 185, 129, 0.3)",
@@ -882,7 +887,7 @@ export default function PaymentModal({
                 >
                   {isProcessing ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <Loader2 className="w-4 h-4 animate-spin rounded-2xl" />
                       Уншиж байна...
                     </>
                   ) : (
