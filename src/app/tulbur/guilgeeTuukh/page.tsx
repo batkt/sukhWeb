@@ -828,9 +828,9 @@ export default function DansniiKhuulga() {
             it?.ortsDugaar ??
             it?.ortsNer,
         );
-        const davkhar = toStr(r?.davkhar ?? c?.davkhar ?? it?.davkhar);
+        const davkhar = toStr(c?.davkhar ?? r?.davkhar ?? it?.davkhar);
         const currentToot = toStr(
-          r?.toot ?? c?.toot ?? it?.toot ?? it?.medeelel?.toot,
+          c?.toot ?? r?.toot ?? it?.toot ?? it?.medeelel?.toot,
         );
 
         if (selectedOrtsFilter) {
@@ -984,9 +984,9 @@ export default function DansniiKhuulga() {
             it?.ortsDugaar ??
             it?.ortsNer,
         );
-        const davkhar = toStr(r?.davkhar ?? c?.davkhar ?? it?.davkhar);
+        const davkhar = toStr(c?.davkhar ?? r?.davkhar ?? it?.davkhar);
         const currentToot = toStr(
-          r?.toot ?? c?.toot ?? it?.toot ?? it?.medeelel?.toot,
+          c?.toot ?? r?.toot ?? it?.toot ?? it?.medeelel?.toot,
         );
         if (selectedOrtsFilter && (!orts || orts !== toStr(selectedOrtsFilter)))
           return false;

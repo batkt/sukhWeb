@@ -25,6 +25,7 @@ interface Vehicle {
     ebarimtId?: string;
     tuluv?: number;
     garsanKhaalga?: string;
+    niitKhugatsaa?: number;
     burtgesenAjiltaniiNer?: string;
     tulbur?: Array<{
       turul?: string;
@@ -42,9 +43,11 @@ interface ZogsoolJagsaaltTableProps {
 const RealTimeDuration = ({
   orsonTsag,
   garsanTsag,
+  niitKhugatsaa,
 }: {
   orsonTsag?: string;
   garsanTsag?: string;
+  niitKhugatsaa?: number;
 }) => {
   const [now, setNow] = React.useState(moment());
 
@@ -71,9 +74,13 @@ const RealTimeDuration = ({
       </span>
     );
   }
+  const khugatsaaMin =
+    niitKhugatsaa ?? Math.max(0, Math.ceil(diff.asMinutes()));
+  const h = Math.floor(khugatsaaMin / 60);
+  const m = khugatsaaMin % 60;
   return (
     <span className="text-[10px] uppercase tracking-wide text-slate-800">
-      {hours > 0 ? `${hours} цаг ${minutes} мин` : `${minutes} мин`}
+      {h > 0 ? `${h} цаг ${m} мин` : `${m} мин`}
     </span>
   );
 };
@@ -170,6 +177,7 @@ export const ZogsoolJagsaaltTable: React.FC<ZogsoolJagsaaltTableProps> = ({
           const tsag = mur?.tsagiinTuukh?.[0];
           const orsonTsag = tsag?.orsonTsag;
           const garsanTsag = tsag?.garsanTsag;
+          const niitKhugatsaa = mur?.niitKhugatsaa;
           const isCurrentlyIn = !mur?.garsanKhaalga;
           return (
             <div
@@ -179,7 +187,11 @@ export const ZogsoolJagsaaltTable: React.FC<ZogsoolJagsaaltTableProps> = ({
                   : "bg-slate-50 border-slate-100 text-slate-600 dark:bg-slate-800/30 dark:border-slate-800/50 dark:text-slate-400"
               }`}
             >
-              <RealTimeDuration orsonTsag={orsonTsag} garsanTsag={garsanTsag} />
+              <RealTimeDuration
+                orsonTsag={orsonTsag}
+                garsanTsag={garsanTsag}
+                niitKhugatsaa={niitKhugatsaa}
+              />
             </div>
           );
         },

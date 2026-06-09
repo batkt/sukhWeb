@@ -26,6 +26,8 @@ interface ParkingTransaction {
     ebarimtId?: string;
     tuluv?: number;
     garsanKhaalga?: string;
+    niitKhugatsaa?: number;
+    uneguiGarsan?: string;
     burtgesenAjiltaniiNer?: string;
     tulbur?:
       | Array<{
@@ -55,9 +57,11 @@ interface ZogsoolCameraTableProps {
 const RealTimeDuration = ({
   orsonTsag,
   garsanTsag,
+  niitKhugatsaa,
 }: {
   orsonTsag?: string;
   garsanTsag?: string;
+  niitKhugatsaa?: number;
 }) => {
   const [now, setNow] = React.useState(moment());
 
@@ -84,9 +88,13 @@ const RealTimeDuration = ({
       </span>
     );
   }
+  const khugatsaaMin =
+    niitKhugatsaa ?? Math.max(0, Math.ceil(diff.asMinutes()));
+  const h = Math.floor(khugatsaaMin / 60);
+  const m = khugatsaaMin % 60;
   return (
     <span className="text-[10px] uppercase tracking-wide">
-      {hours > 0 ? `${hours} цаг ${minutes} мин` : `${minutes} мин`}
+      {h > 0 ? `${h} цаг ${m} мин` : `${m} мин`}
     </span>
   );
 };
@@ -175,15 +183,21 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
           const tsag = mur?.tsagiinTuukh?.[0];
           const orsonTsag = tsag?.orsonTsag;
           const garsanTsag = tsag?.garsanTsag;
+          const niitKhugatsaa = mur?.niitKhugatsaa;
           const niitDun = record.niitDun || 0;
           const tuluv = mur?.tuluv;
           const isCurrentlyIn = !mur?.garsanKhaalga;
+          const isFreeExit = !!mur?.uneguiGarsan;
           const isDebt =
-            tuluv === -4 || (tuluv === 0 && niitDun > 0 && !isCurrentlyIn);
+            !isFreeExit &&
+            (tuluv === -4 || (tuluv === 0 && niitDun > 0 && !isCurrentlyIn));
 
           const badgeClass =
             "flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-1 rounded-[6px] overflow-hidden border text-[10px] !text-white uppercase whitespace-nowrap";
           const getStatusColor = () => {
+            if (isFreeExit) {
+              return "bg-gray-500 border-gray-600";
+            }
             if (tuluv === 1) {
               return isCurrentlyIn && niitDun === 0
                 ? "bg-blue-500 border-blue-600"
@@ -206,7 +220,11 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
               className={`${badgeClass} ${getStatusColor()}`}
               style={{ color: "white" }}
             >
-              <RealTimeDuration orsonTsag={orsonTsag} garsanTsag={garsanTsag} />
+              <RealTimeDuration
+                orsonTsag={orsonTsag}
+                garsanTsag={garsanTsag}
+                niitKhugatsaa={niitKhugatsaa}
+              />
             </div>
           );
         },

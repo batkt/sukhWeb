@@ -63,9 +63,11 @@ import Button from "@/components/ui/Button";
 const RealTimeDuration = ({
   orsonTsag,
   garsanTsag,
+  niitKhugatsaa,
 }: {
   orsonTsag?: string;
   garsanTsag?: string;
+  niitKhugatsaa?: number;
 }) => {
   const [now, setNow] = useState(moment());
 
@@ -97,9 +99,13 @@ const RealTimeDuration = ({
     );
   }
 
+  const khugatsaaMin =
+    niitKhugatsaa ?? Math.max(0, Math.ceil(diff.asMinutes()));
+  const h = Math.floor(khugatsaaMin / 60);
+  const m = khugatsaaMin % 60;
   return (
     <span className="text-[10px]  uppercase tracking-wide text-slate-800">
-      {hours > 0 ? `${hours} цаг ${minutes} мин` : `${minutes} мин`}
+      {h > 0 ? `${h} цаг ${m} мин` : `${m} мин`}
     </span>
   );
 };
@@ -137,6 +143,7 @@ export default function Camera() {
   const [activeEntryIP, setActiveEntryIP] = useState<string>("");
   const [activeExitIP, setActiveExitIP] = useState<string>("");
   const [confirmExitId, setConfirmExitId] = useState<string | null>(null);
+  const [isExiting, setIsExiting] = useState(false);
   const [isRegModalOpen, setIsRegModalOpen] = useState(false);
   const [pageSize, setPageSize] = useState(10);
   const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
@@ -144,6 +151,7 @@ export default function Camera() {
   const [durationFilter, setDurationFilter] = useState("latest_out");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [openFilter, setOpenFilter] = useState<string | null>(null);
   const [ebarimtResult, setEbarimtResult] = useState<any>(null);
   const [discountModalTransaction, setDiscountModalTransaction] =
     useState<Uilchluulegch | null>(null);
@@ -312,7 +320,16 @@ export default function Camera() {
     }
 
     if (typeFilter !== "all") {
-      query.turul = typeFilter;
+      if (typeFilter === "Үйлчлүүлэгч") {
+        query.$or = [
+          { turul: "Үйлчлүүлэгч" },
+          { turul: { $exists: false } },
+          { turul: null },
+          { turul: "" },
+        ];
+      } else {
+        query.turul = typeFilter;
+      }
     }
 
     if (statusFilter === "active") {
@@ -348,12 +365,12 @@ export default function Camera() {
         ? { "tuukh.0.niitKhugatsaa": -1 }
         : durationFilter === "latest_in"
           ? {
-              "tuukh.tsagiinTuukh.garsanTsag": 1,
-              niitDun: 1,
-              "tuukh.tuluv": 1,
-              "tuukh.tsagiinTuukh.orsonTsag": -1,
-              zurchil: 1,
-            }
+            "tuukh.tsagiinTuukh.garsanTsag": 1,
+            niitDun: 1,
+            "tuukh.tuluv": 1,
+            "tuukh.tsagiinTuukh.orsonTsag": -1,
+            zurchil: 1,
+          }
           : { "tuukh.0.tsagiinTuukh.0.garsanTsag": -1 };
 
     try {
@@ -1235,12 +1252,12 @@ export default function Camera() {
             style={{ overflow: "visible" }}
           >
             <div
-              className="custom-scrollbar flex-1"
-              style={{ maxHeight: `${pageSize * 36}px` }}
+              className="overflow-auto custom-scrollbar"
+              style={{ maxHeight: "calc(100vh - 340px)" }}
             >
               <table className="w-full text-[11px] border-collapse bg-white dark:bg-slate-950/50">
-                <thead className="sticky top-0 z-40">
-                  <tr className="dark:bg-slate-900 border-y border-slate-200 dark:border-white/10 shadow-sm">
+                <thead className="sticky top-0 z-40 bg-white dark:bg-slate-900">
+                  <tr className="border-y border-slate-200 dark:border-white/10 shadow-sm h-[32px]">
                     {[
                       { id: "no", label: "№", width: "w-12" },
                       { id: "dugaar", label: "Дугаар", width: "w-28" },
@@ -1323,7 +1340,13 @@ export default function Camera() {
                       >
                         <div
                           className="flex items-center justify-center gap-2 cursor-pointer h-full"
-                          onClick={() => (h as any).onClick?.()}
+                          onClick={() => {
+                            if ((h as any).onClick) {
+                              (h as any).onClick();
+                            } else if ((h as any).filter) {
+                              setOpenFilter(openFilter === h.id ? null : h.id);
+                            }
+                          }}
                         >
                           {h.filter && (
                             <Filter className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400 transition-colors" />
@@ -1335,7 +1358,9 @@ export default function Camera() {
                         </div>
 
                         {h.options && (
-                          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-0 w-52 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] p-1.5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[100] translate-y-2 group-hover:translate-y-0 overflow-hidden scale-95 group-hover:scale-100 origin-top text-left">
+                          <div
+                            className={`absolute top-full left-1/2 -translate-x-1/2 mt-0 w-52 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] p-1.5 transition-all duration-200 z-[100] overflow-hidden origin-top text-left ${openFilter === h.id ? "opacity-100 visible translate-y-0 scale-100" : "opacity-0 invisible translate-y-2 scale-95 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 group-hover:scale-100"}`}
+                          >
                             <div className="relative flex flex-col gap-0 z-10">
                               <div className="px-3 py-2 mb-1 text-[10px]  text-black dark:text-white">
                                 {h.label} Сонгох
@@ -1343,12 +1368,14 @@ export default function Camera() {
                               {h.options.map((opt, idx, arr) => (
                                 <div key={idx}>
                                   <div
-                                    onClick={() => (h as any).set?.(opt.value)}
-                                    className={`px-3 py-2.5 rounded-xl text-[11px] text-left flex items-center justify-between cursor-pointer transition-all duration-200 border border-transparent ${
-                                      (h as any).current === opt.value
-                                        ? "bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-white"
-                                        : "hover:bg-slate-100 dark:hover:bg-white/5 text-slate-600 dark:text-white hover:text-slate-900"
-                                    }`}
+                                    onClick={() => {
+                                      (h as any).set?.(opt.value);
+                                      setOpenFilter(null);
+                                    }}
+                                    className={`px-3 py-2.5 rounded-xl text-[11px] text-left flex items-center justify-between cursor-pointer transition-all duration-200 border border-transparent ${(h as any).current === opt.value
+                                      ? "bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-white"
+                                      : "hover:bg-slate-100 dark:hover:bg-white/5 text-slate-600 dark:text-white hover:text-slate-900"
+                                      }`}
                                   >
                                     <span>{opt.label}</span>
                                     {(h as any).current === opt.value && (
@@ -1394,10 +1421,12 @@ export default function Camera() {
                       const tuluv = mur?.tuluv;
                       const niitDun = transaction.niitDun || 0;
                       const isCurrentlyIn = !mur?.garsanKhaalga;
+                      const isFreeExit = !!mur?.uneguiGarsan;
                       const isPaid = tuluv === 1;
                       const isDebt =
-                        tuluv === -4 ||
-                        (tuluv === 0 && niitDun > 0 && !isCurrentlyIn);
+                        !isFreeExit &&
+                        (tuluv === -4 ||
+                          (tuluv === 0 && niitDun > 0 && !isCurrentlyIn));
                       const isActive = isCurrentlyIn;
                       const showActionBtn = isCurrentlyIn || isDebt;
                       const hasPayment = niitDun > 0 || isDebt;
@@ -1405,7 +1434,7 @@ export default function Camera() {
                       return (
                         <tr
                           key={transaction._id || idx}
-                          className={`hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-all duration-200 group border-b border-slate-200 dark:border-white/5 ${isActive ? "bg-blue-50/40 dark:bg-blue-900/10" : ""}`}
+                          className={`hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-all duration-200 group border-b border-slate-200 dark:border-white/5 h-[32px] ${isActive ? "bg-blue-50/40 dark:bg-blue-900/10" : ""}`}
                         >
                           <td className="py-1.5 px-3 text-center text-gray-400 border-r border-slate-200 dark:border-white/5 text-[11px]">
                             {(page - 1) * pageSize + idx + 1}
@@ -1441,6 +1470,9 @@ export default function Camera() {
                             {(() => {
                               // Match duration color to status color - must follow exact same logic order as status column
                               const getStatusColor = () => {
+                                if (isFreeExit) {
+                                  return "bg-gray-500 border-gray-600";
+                                }
                                 if (tuluv === 1) {
                                   return isCurrentlyIn && niitDun === 0
                                     ? "bg-blue-500 border-blue-600"
@@ -1469,6 +1501,7 @@ export default function Camera() {
                                   <RealTimeDuration
                                     orsonTsag={orsonTsag}
                                     garsanTsag={garsanTsag}
+                                    niitKhugatsaa={mur?.niitKhugatsaa}
                                   />
                                 </div>
                               );
@@ -1647,9 +1680,9 @@ export default function Camera() {
 
                               if (
                                 (history as any)?.zurchil ===
-                                  "Үнэгүй хугацаанд" ||
+                                "Үнэгүй хугацаанд" ||
                                 (transaction as any).zurchil ===
-                                  "Үнэгүй хугацаанд" ||
+                                "Үнэгүй хугацаанд" ||
                                 (garsanTsag && tulsunDun === 0)
                               ) {
                                 return (
@@ -1681,15 +1714,14 @@ export default function Camera() {
                                         : transaction._id,
                                     );
                                   }}
-                                  className={`flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-1 rounded-[6px] overflow-hidden border text-[10px] uppercase whitespace-nowrap cursor-pointer ${
-                                    isPaid && niitDun > 0
-                                      ? "bg-emerald-500 border-emerald-600"
-                                      : !isCurrentlyIn && isDebt
-                                        ? "bg-amber-500 border-amber-600"
-                                        : tuluv === -1 || tuluv === -2
-                                          ? "bg-red-500 border-red-600"
-                                          : "bg-blue-500 border-blue-600"
-                                  }`}
+                                  className={`flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-1 rounded-[6px] overflow-hidden border text-[10px] uppercase whitespace-nowrap cursor-pointer ${isPaid && niitDun > 0
+                                    ? "bg-emerald-500 border-emerald-600"
+                                    : !isCurrentlyIn && isDebt
+                                      ? "bg-amber-500 border-amber-600"
+                                      : tuluv === -1 || tuluv === -2
+                                        ? "bg-red-500 border-red-600"
+                                        : "bg-blue-500 border-blue-600"
+                                    }`}
                                   style={{ color: "white" }}
                                 >
                                   {!isCurrentlyIn
@@ -1712,70 +1744,69 @@ export default function Camera() {
                                       {/* Re-implement dropdown buttons with same logic but larger padding text */}
                                       {(isCurrentlyIn
                                         ? [
-                                            {
-                                              label: "Хөнгөлөлт",
-                                              icon: Tag,
-                                              color: "amber",
-                                              action: () => {
-                                                setDiscountModalTransaction(
+                                          {
+                                            label: "Хөнгөлөлт",
+                                            icon: Tag,
+                                            color: "amber",
+                                            action: () => {
+                                              setDiscountModalTransaction(
+                                                transaction,
+                                              );
+                                              setDiscountAmount("");
+                                              setDiscountMinutes("");
+                                              setConfirmExitId(null);
+                                            },
+                                          },
+                                          {
+                                            label: "Гаргах",
+                                            icon: ArrowUpDown,
+                                            color: "blue",
+                                            action: () =>
+                                              isPaid || niitDun === 0
+                                                ? handleManualExit(
                                                   transaction,
-                                                );
-                                                setDiscountAmount("");
-                                                setDiscountMinutes("");
-                                                setConfirmExitId(null);
-                                              },
-                                            },
-                                            {
-                                              label: "Гаргах",
-                                              icon: ArrowUpDown,
-                                              color: "blue",
-                                              action: () =>
-                                                isPaid || niitDun === 0
-                                                  ? handleManualExit(
-                                                      transaction,
-                                                      "free",
-                                                    )
-                                                  : handleManualExit(
-                                                      transaction,
-                                                      "pay",
-                                                    ),
-                                            },
-                                          ]
-                                        : [
-                                            {
-                                              label: "Төлөх",
-                                              icon: DollarSign,
-                                              color: "emerald",
-                                              action: () =>
-                                                handleManualExit(
+                                                  "free",
+                                                )
+                                                : handleManualExit(
                                                   transaction,
                                                   "pay",
                                                 ),
-                                            },
-                                            {
-                                              label: "Үнэгүй",
-                                              icon: Info,
-                                              color: "slate",
-                                              action: () =>
-                                                handleManualExit(
-                                                  transaction,
-                                                  "free",
-                                                ),
-                                            },
-                                          ]
+                                          },
+                                        ]
+                                        : [
+                                          {
+                                            label: "Төлөх",
+                                            icon: DollarSign,
+                                            color: "emerald",
+                                            action: () =>
+                                              handleManualExit(
+                                                transaction,
+                                                "pay",
+                                              ),
+                                          },
+                                          {
+                                            label: "Үнэгүй",
+                                            icon: Info,
+                                            color: "slate",
+                                            action: () =>
+                                              handleManualExit(
+                                                transaction,
+                                                "free",
+                                              ),
+                                          },
+                                        ]
                                       ).map((btn, bi, arr) => (
                                         <div key={bi}>
                                           <button
                                             onClick={btn.action}
-                                            className={`flex items-center justify-between w-full px-3 py-2.5 rounded-md text-[11px] text-slate-700 dark:text-slate-300 transition-all duration-200 group/item ${
-                                              btn.color === "amber"
-                                                ? "hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-500/10"
-                                                : btn.color === "blue"
-                                                  ? "hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-500/10"
-                                                  : btn.color === "emerald"
-                                                    ? "hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-500/10"
-                                                    : "hover:bg-slate-50 hover:text-slate-600 dark:hover:bg-slate-500/10"
-                                            } hover:rounded-lg`}
+                                            className={`flex items-center justify-between w-full px-3 py-2.5 rounded-md text-[11px] text-slate-700 dark:text-slate-300 transition-all duration-200 group/item ${btn.color === "amber"
+                                              ? "hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-500/10"
+                                              : btn.color === "blue"
+                                                ? "hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-500/10"
+                                                : btn.color === "emerald"
+                                                  ? "hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-500/10"
+                                                  : "hover:bg-slate-50 hover:text-slate-600 dark:hover:bg-slate-500/10"
+                                              } hover:rounded-lg`}
                                             style={{
                                               borderRadius: "0.375rem",
                                             }}
@@ -1790,15 +1821,14 @@ export default function Camera() {
                                           >
                                             <div className="flex items-center gap-2">
                                               <btn.icon
-                                                className={`w-3.5 h-3.5 ${
-                                                  btn.color === "amber"
-                                                    ? "text-amber-600 dark:text-amber-400"
-                                                    : btn.color === "blue"
-                                                      ? "text-blue-600 dark:text-blue-400"
-                                                      : btn.color === "emerald"
-                                                        ? "text-emerald-600 dark:text-emerald-400"
-                                                        : "text-slate-600 dark:text-slate-400"
-                                                } group-hover/item:scale-110 transition-transform`}
+                                                className={`w-3.5 h-3.5 ${btn.color === "amber"
+                                                  ? "text-amber-600 dark:text-amber-400"
+                                                  : btn.color === "blue"
+                                                    ? "text-blue-600 dark:text-blue-400"
+                                                    : btn.color === "emerald"
+                                                      ? "text-emerald-600 dark:text-emerald-400"
+                                                      : "text-slate-600 dark:text-slate-400"
+                                                  } group-hover/item:scale-110 transition-transform`}
                                               />
                                               <span>{btn.label}</span>
                                             </div>
@@ -1817,6 +1847,20 @@ export default function Camera() {
                                 // Status badges logic
                                 const badgeClass =
                                   "flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-1 rounded-[6px] overflow-hidden border";
+                                if (isFreeExit)
+                                  return (
+                                    <div
+                                      className={`${badgeClass} bg-gray-500 border-gray-600`}
+                                      style={{
+                                        borderRadius: "6px",
+                                        color: "white",
+                                      }}
+                                    >
+                                      <span className="text-[10px] uppercase whitespace-nowrap">
+                                        Үнэгүй
+                                      </span>
+                                    </div>
+                                  );
                                 if (tuluv === 1)
                                   return (
                                     <div
@@ -1892,23 +1936,29 @@ export default function Camera() {
                             )}
                           </td>
                           <td className="py-1.5 px-3 text-gray-400 italic truncate max-w-[100px] border-r border-slate-200 dark:border-white/5 text-[10px] text-center">
-                            {transaction.zurchil || ""}
+                            {transaction.zurchil ||
+                              transaction.tuukh?.[0]?.uneguiGarsan ||
+                              ""}
                           </td>
                         </tr>
                       );
                     })
                   )}
                 </tbody>
-                {transactions.length > 0 && (
-                  <tfoot className="bg-slate-50 dark:bg-slate-900 border-t-2 border-slate-200 dark:border-white/10  text-slate-800 dark:text-white sticky bottom-0 z-10 shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
-                    <tr>
+              </table>
+
+              {/* Summary Footer - inside scroll container for alignment */}
+              {transactions.length > 0 && (
+                <table className="w-full text-[11px] border-collapse bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-white/10 text-slate-800 dark:text-white">
+                  <tbody>
+                    <tr className="h-[32px]">
                       <td
                         colSpan={6}
-                        className="py-1.5 px-3 text-right text-[11px] uppercase tracking-wider border-r border-slate-200 dark:border-white/5"
+                        className="py-1.5 px-3 text-right uppercase tracking-wider border-r border-slate-200 dark:border-white/5"
                       >
                         Нийт Дүн:
                       </td>
-                      <td className="py-1.5 px-3 text-right border-r border-slate-200 dark:border-white/5 text-[11px] font-[family-name:var(--font-mono)] whitespace-nowrap">
+                      <td className="py-1.5 px-3 text-right border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] whitespace-nowrap">
                         {formatNumber(
                           transactions.reduce(
                             (sum, t) =>
@@ -1917,7 +1967,7 @@ export default function Camera() {
                           ),
                         )}
                       </td>
-                      <td className="py-1.5 px-3 text-right border-r border-slate-200 dark:border-white/5 text-[11px] font-[family-name:var(--font-mono)] whitespace-nowrap">
+                      <td className="py-1.5 px-3 text-right border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] whitespace-nowrap">
                         {formatNumber(
                           transactions.reduce(
                             (sum, t) => sum + (Number(t.niitDun) || 0),
@@ -1925,7 +1975,7 @@ export default function Camera() {
                           ),
                         )}
                       </td>
-                      <td className="py-1.5 px-3 text-right border-r border-slate-200 dark:border-white/5 text-[11px] font-[family-name:var(--font-mono)] whitespace-nowrap">
+                      <td className="py-1.5 px-3 text-right border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] whitespace-nowrap">
                         {formatNumber(
                           transactions.reduce(
                             (sum, t) =>
@@ -1939,9 +1989,9 @@ export default function Camera() {
                         className="border-r border-slate-200 dark:border-white/5"
                       ></td>
                     </tr>
-                  </tfoot>
-                )}
-              </table>
+                  </tbody>
+                </table>
+              )}
             </div>
 
             {/* Pagination */}
@@ -1967,11 +2017,10 @@ export default function Camera() {
                             setPage(1);
                             setIsPageSizeOpen(false);
                           }}
-                          className={`w-full px-3 py-2 rounded-lg text-xs  text-left transition-all duration-200 ${
-                            pageSize === size
-                              ? "bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400"
-                              : "hover:bg-slate-100 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-                          }`}
+                          className={`w-full px-3 py-2 rounded-lg text-xs  text-left transition-all duration-200 ${pageSize === size
+                            ? "bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400"
+                            : "hover:bg-slate-100 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+                            }`}
                           style={{
                             borderRadius: "0.5rem",
                           }}
@@ -2172,7 +2221,7 @@ export default function Camera() {
                 } else {
                   toast.error(
                     "Алдаа гарлаа: " +
-                      (resp.data?.message || "Үл мэдэгдэх алдаа"),
+                    (resp.data?.message || "Үл мэдэгдэх алдаа"),
                   );
                 }
               } catch (err) {
@@ -2597,14 +2646,14 @@ const CameraStream = React.memo(
         style={
           isFullscreen
             ? {
-                position: "fixed",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                zIndex: 9999,
-                backgroundColor: "#000",
-              }
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 9999,
+              backgroundColor: "#000",
+            }
             : {}
         }
       >
@@ -2636,11 +2685,10 @@ const CameraStream = React.memo(
             transition-all duration-300 active:scale-90
             backdrop-blur-xl border-2
             shadow-[0_8px_32px_rgba(0,0,0,0.3)]
-            ${
-              cameraType === "entry"
+            ${cameraType === "entry"
                 ? "bg-emerald-500/20 border-emerald-500/40 text-white hover:bg-emerald-500 hover:border-emerald-400"
                 : "bg-rose-500/20 border-rose-500/40 text-white hover:bg-rose-500 hover:border-rose-400"
-            }
+              }
           `}
           >
             <div
@@ -2654,11 +2702,10 @@ const CameraStream = React.memo(
         {/* Fullscreen Button */}
         <button
           onClick={toggleFullscreen}
-          className={`absolute top-2 right-2 z-20 p-1.5 rounded bg-black/60 hover:bg-black/80 text-white transition-all duration-200 ${
-            isFullscreen
-              ? "opacity-100"
-              : "opacity-0 group-hover/stream:opacity-100"
-          } focus:opacity-100`}
+          className={`absolute top-2 right-2 z-20 p-1.5 rounded bg-black/60 hover:bg-black/80 text-white transition-all duration-200 ${isFullscreen
+            ? "opacity-100"
+            : "opacity-0 group-hover/stream:opacity-100"
+            } focus:opacity-100`}
           aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
           title={
             isFullscreen ? "Бүтэн дэлгэцнээс гарах (ESC)" : "Бүтэн дэлгэц (F)"

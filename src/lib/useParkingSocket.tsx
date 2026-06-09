@@ -18,6 +18,8 @@ interface TuukhEntry {
   tulbur?: any[];
   turul?: string;
   khungulult?: string;
+  niitKhugatsaa?: number;
+  uneguiGarsan?: string;
   tulsunDun?: number;
   ebarimtId?: string;
 }

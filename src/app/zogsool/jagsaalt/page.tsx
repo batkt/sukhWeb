@@ -32,9 +32,11 @@ import { StandardPagination } from "@/components/ui/StandardTable";
 const RealTimeDuration = ({
   orsonTsag,
   garsanTsag,
+  niitKhugatsaa,
 }: {
   orsonTsag?: string;
   garsanTsag?: string;
+  niitKhugatsaa?: number;
 }) => {
   const [now, setNow] = useState(moment());
   useEffect(() => {
@@ -60,9 +62,13 @@ const RealTimeDuration = ({
       </span>
     );
   }
+  const khugatsaaMin =
+    niitKhugatsaa ?? Math.max(0, Math.ceil(diff.asMinutes()));
+  const h = Math.floor(khugatsaaMin / 60);
+  const m = khugatsaaMin % 60;
   return (
     <span className="text-[10px] uppercase tracking-wide">
-      {hours > 0 ? `${hours} цаг ${minutes} мин` : `${minutes} мин`}
+      {h > 0 ? `${h} цаг ${m} мин` : `${m} мин`}
     </span>
   );
 };
@@ -84,6 +90,7 @@ interface Vehicle {
     ebarimtId?: string;
     tuluv?: number;
     garsanKhaalga?: string;
+    niitKhugatsaa?: number;
     burtgesenAjiltaniiNer?: string;
     tulbur?: Array<{
       turul?: string;
@@ -103,6 +110,7 @@ export default function Jagsaalt() {
   const [durationFilter, setDurationFilter] = useState("latest_out");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [openFilter, setOpenFilter] = useState<string | null>(null);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -167,7 +175,16 @@ export default function Jagsaalt() {
       }
 
       if (type !== "all") {
-        query.turul = "Үйлчлүүлэгч";
+        if (type === "Үйлчлүүлэгч") {
+          query.$or = [
+            { turul: "Үйлчлүүлэгч" },
+            { turul: { $exists: false } },
+            { turul: null },
+            { turul: "" },
+          ];
+        } else {
+          query.turul = type;
+        }
       }
 
       if (status === "active") {
@@ -286,7 +303,9 @@ export default function Jagsaalt() {
                       set: setTypeFilter,
                       options: [
                         { label: "Бүгд", value: "all" },
-                        { label: "Төлбөртэй", value: "client" },
+                        { label: "Үйлчлүүлэгч", value: "Үйлчлүүлэгч" },
+                        { label: "Оршин суугч", value: "Оршин суугч" },
+                        { label: "Зочин", value: "Зочин" },
                       ],
                     },
                     { id: "dugaar", label: "Дугааp" },
@@ -331,6 +350,7 @@ export default function Jagsaalt() {
                         className={`flex items-center justify-center gap-2 cursor-pointer hover:text-white transition-colors ${h.width ? "" : "w-full"}`}
                         onClick={() => {
                           if (!h.filter) return;
+                          setOpenFilter(openFilter === h.id ? null : h.id);
                         }}
                       >
                         {h.filter && (
@@ -340,7 +360,9 @@ export default function Jagsaalt() {
                       </div>
 
                       {h.options && (
-                        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-48 bg-slate-900/98 backdrop-blur-2xl text-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-[100] border border-white/5 translate-y-3 group-hover:translate-y-0 overflow-hidden ring-1 ring-white/10">
+                        <div
+                          className={`absolute top-full left-1/2 -translate-x-1/2 mt-3 w-48 bg-slate-900/98 backdrop-blur-2xl text-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-2 transition-all duration-300 z-[100] border border-white/5 overflow-hidden ring-1 ring-white/10 ${openFilter === h.id ? "opacity-100 visible translate-y-0" : "opacity-0 invisible translate-y-3 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0"}`}
+                        >
                           <div className="relative flex flex-col gap-1 z-10">
                             <div className="px-3 py-1.5 mb-1 text-[9px]  text-slate-500 uppercase tracking-widest border-b border-white/5">
                               Сонгох
@@ -351,6 +373,7 @@ export default function Jagsaalt() {
                                 onClick={() => {
                                   h.set?.(opt.value);
                                   setPage(1);
+                                  setOpenFilter(null);
                                 }}
                                 className={`px-4 py-2.5 rounded-xl text-[10px] text-left flex items-center justify-between cursor-pointer transition-all duration-200 ${
                                   h.current === opt.value
@@ -450,6 +473,7 @@ export default function Jagsaalt() {
                             <RealTimeDuration
                               orsonTsag={orsonTsag}
                               garsanTsag={garsanTsag}
+                              niitKhugatsaa={mur?.niitKhugatsaa}
                             />
                           </div>
                         </td>

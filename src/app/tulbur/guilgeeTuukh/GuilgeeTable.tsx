@@ -288,9 +288,15 @@ export default function GuilgeeTable({
                 Array.isArray(resident?.toots) && resident.toots.length > 0
                   ? resident.toots[0]?.davkhar
                   : resident?.davkhar;
+              const ct =
+                (record?.gereeniiId &&
+                  contractsById[String(record.gereeniiId)]) ||
+                (record?.gereeniiDugaar &&
+                  contractsByNumber[String(record.gereeniiDugaar)]) ||
+                undefined;
               return (
                 <span className="text-gray-900 dark:text-white">
-                  {String(residentDavkhar ?? record?.davkhar ?? "-")}
+                  {String(ct?.davkhar ?? residentDavkhar ?? record?.davkhar ?? "-")}
                 </span>
               );
             },
