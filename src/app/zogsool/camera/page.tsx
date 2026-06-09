@@ -143,6 +143,10 @@ export default function Camera() {
   const [activeEntryIP, setActiveEntryIP] = useState<string>("");
   const [activeExitIP, setActiveExitIP] = useState<string>("");
   const [confirmExitId, setConfirmExitId] = useState<string | null>(null);
+  const [freeExitModalTransaction, setFreeExitModalTransaction] =
+    useState<Uilchluulegch | null>(null);
+  const [freeExitReason, setFreeExitReason] = useState<string>("Агуулах");
+  const [customFreeExitReason, setCustomFreeExitReason] = useState<string>("");
   const [isExiting, setIsExiting] = useState(false);
   const [isRegModalOpen, setIsRegModalOpen] = useState(false);
   const [pageSize, setPageSize] = useState(10);
@@ -479,6 +483,57 @@ export default function Camera() {
         console.error("SDK Error:", err);
         toast.error("Команд илгээхэд алдаа гарлаа");
       }
+    }
+  }
+
+  async function handleWarehouseExit(transaction: Uilchluulegch, reason: string) {
+    try {
+      const orsonTsag = transaction.tuukh?.[0]?.tsagiinTuukh?.[0]?.orsonTsag;
+      const garsanTsag = new Date();
+      const khugatsaaMin = orsonTsag
+        ? Math.max(
+            0,
+            Math.ceil(
+              (garsanTsag.getTime() - new Date(orsonTsag).getTime()) / 60000,
+            ),
+          )
+        : 0;
+      const exitIP = activeExitIP || exitCameras[0]?.cameraIP || undefined;
+
+      const payload = {
+        "tuukh.0.garsanKhaalga": exitIP,
+        "tuukh.0.tsagiinTuukh.0.garsanTsag": garsanTsag.toISOString(),
+        "tuukh.0.tsagiinTuukh.0.khugatsaa": khugatsaaMin,
+        "tuukh.0.niitKhugatsaa": khugatsaaMin,
+        "tuukh.0.tuluv": -1,
+        "tuukh.0.uneguiGarsan": reason,
+        "tuukh.0.burtgesenAjiltaniiId": ajiltan?._id || "",
+        "tuukh.0.burtgesenAjiltaniiNer": ajiltan?.ner || "CAdmin",
+      };
+
+      const resp = await uilchilgee(token || undefined).put(
+        `/uilchluulegch/${transaction._id}`,
+        payload,
+      );
+
+      if (resp.status === 200 || resp.data === "Amjilttai") {
+        toast.success("Гаралтын команд амжилттай");
+        if (exitIP) khaalgaNeey(exitIP);
+        setConfirmExitId(null);
+        fetchList();
+      } else {
+        toast.error(
+          "Алдаа: " +
+            (resp.data?.message ||
+              (typeof resp.data === "string" ? resp.data : "Амжилтгүй")),
+        );
+      }
+    } catch (err: any) {
+      console.error("Manual exit PUT error:", err);
+      toast.error(
+        "Команд илгээхэд алдаа гарлаа: " +
+          (err.response?.data?.aldaa || err.message),
+      );
     }
   }
 
@@ -982,8 +1037,8 @@ export default function Camera() {
   };
 
   return (
-    <div className="h-full overflow-y-auto overflow-x-hidden custom-scrollbar bg-[color:var(--surface-bg)]">
-      <div className="min-h-full p-4 lg:p-6 space-y-6">
+    <div className="w-full bg-[color:var(--surface-bg)]">
+      <div className="p-4 lg:p-6 space-y-6">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div className="flex items-center justify-between w-full">
@@ -1248,14 +1303,28 @@ export default function Camera() {
           </div>
 
           <div
-            className="relative rounded-3xl border border-[color:var(--surface-border)] bg-var(--color-bg-primary) backdrop-blur-md shadow-xl  min-h-[600px] flex flex-col"
+            className="relative rounded-3xl border border-[color:var(--surface-border)] bg-var(--color-bg-primary) backdrop-blur-md shadow-xl flex flex-col"
             style={{ overflow: "visible" }}
           >
             <div
               className="overflow-auto custom-scrollbar"
               style={{ maxHeight: "calc(100vh - 340px)" }}
             >
-              <table className="w-full text-[11px] border-collapse bg-white dark:bg-slate-950/50">
+              <table className="w-full min-w-[1300px] text-[11px] border-collapse bg-white dark:bg-slate-950/50 table-fixed">
+                <colgroup>
+                  <col style={{ width: "50px" }} />
+                  <col style={{ width: "110px" }} />
+                  <col style={{ width: "140px" }} />
+                  <col style={{ width: "140px" }} />
+                  <col style={{ width: "120px" }} />
+                  <col style={{ width: "100px" }} />
+                  <col style={{ width: "90px" }} />
+                  <col style={{ width: "90px" }} />
+                  <col style={{ width: "110px" }} />
+                  <col style={{ width: "100px" }} />
+                  <col style={{ width: "120px" }} />
+                  <col style={{ width: "130px" }} />
+                </colgroup>
                 <thead className="sticky top-0 z-40 bg-white dark:bg-slate-900">
                   <tr className="border-y border-slate-200 dark:border-white/10 shadow-sm h-[32px]">
                     {[
@@ -1788,11 +1857,12 @@ export default function Camera() {
                                             label: "Үнэгүй",
                                             icon: Info,
                                             color: "slate",
-                                            action: () =>
-                                              handleManualExit(
-                                                transaction,
-                                                "free",
-                                              ),
+                                            action: () => {
+                                              setFreeExitModalTransaction(transaction);
+                                              setFreeExitReason("Агуулах");
+                                              setCustomFreeExitReason("");
+                                              setConfirmExitId(null);
+                                            },
                                           },
                                         ]
                                       ).map((btn, bi, arr) => (
@@ -1945,16 +2015,12 @@ export default function Camera() {
                     })
                   )}
                 </tbody>
-              </table>
-
-              {/* Summary Footer - inside scroll container for alignment */}
-              {transactions.length > 0 && (
-                <table className="w-full text-[11px] border-collapse bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-white/10 text-slate-800 dark:text-white">
-                  <tbody>
-                    <tr className="h-[32px]">
+                {transactions.length > 0 && (
+                  <tfoot className="bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-white/10 text-slate-800 dark:text-white font-[family-name:var(--font-mono)] text-[11px] sticky bottom-0 z-40">
+                    <tr className="h-[32px] border-t border-slate-200 dark:border-white/10">
                       <td
                         colSpan={6}
-                        className="py-1.5 px-3 text-right uppercase tracking-wider border-r border-slate-200 dark:border-white/5"
+                        className="py-1.5 px-3 text-right uppercase tracking-wider border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-sans)] font-bold text-slate-500"
                       >
                         Нийт Дүн:
                       </td>
@@ -1985,13 +2051,13 @@ export default function Camera() {
                         )}
                       </td>
                       <td
-                        colSpan={4}
-                        className="border-r border-slate-200 dark:border-white/5"
+                        colSpan={3}
+                        className="border-r border-slate-200 dark:border-white/5 last:border-r-0"
                       ></td>
                     </tr>
-                  </tbody>
-                </table>
-              )}
+                  </tfoot>
+                )}
+              </table>
             </div>
 
             {/* Pagination */}
@@ -2358,6 +2424,149 @@ export default function Camera() {
                   }}
                 >
                   Хөнгөлөх
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Free Exit Reason Modal */}
+        {freeExitModalTransaction && (
+          <div
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+            style={{
+              background: "rgba(0,0,0,0.45)",
+              backdropFilter: "blur(12px)",
+            }}
+            onClick={() => setFreeExitModalTransaction(null)}
+          >
+            <div
+              className="relative w-[560px] max-w-full rounded-[20px] overflow-hidden shadow-2xl border bg-[#1a2333] border-slate-700/50 text-white p-6 flex flex-col gap-6 animate-in fade-in slide-in-from-top-4 duration-200"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-slate-700/50 pb-4">
+                <h2 className="text-sm font-semibold tracking-tight text-slate-200">
+                  Үнэгүй үйлчлүүлэгчийн төрөл сонгох
+                </h2>
+                <button
+                  onClick={() => setFreeExitModalTransaction(null)}
+                  className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                {/* Column 1 */}
+                <div className="space-y-3">
+                  {[
+                    "Цагдаа",
+                    "Гал",
+                    "Эмнэлэг",
+                    "Онцгой",
+                    "Борлуулалтын машин",
+                    "Хөгжлийн бэрхшээлтэй",
+                    "Хогны машин",
+                    "Шуудан",
+                    "Дэлгүүрийн үйлчлүүлэгч"
+                  ].map((reason) => (
+                    <label
+                      key={reason}
+                      className="flex items-center gap-3 cursor-pointer text-[13px] text-slate-300 hover:text-white select-none"
+                    >
+                      <input
+                        type="radio"
+                        name="freeExitReason"
+                        value={reason}
+                        checked={freeExitReason === reason}
+                        onChange={() => {
+                          setFreeExitReason(reason);
+                          setCustomFreeExitReason("");
+                        }}
+                        className="w-4 h-4 rounded-full border border-white/40 bg-transparent checked:bg-white checked:border-white focus:ring-0 focus:outline-none appearance-none cursor-pointer transition-all relative flex items-center justify-center after:content-[''] after:w-2 after:h-2 after:rounded-full after:bg-[#1a2333] checked:after:bg-[#1a2333] after:opacity-0 checked:after:opacity-100"
+                      />
+                      <span>{reason}</span>
+                    </label>
+                  ))}
+                </div>
+
+                {/* Column 2 */}
+                <div className="space-y-3">
+                  {[
+                    "Бүртгэл хийгдээгүй айл",
+                    "Бүртгэл хийгдээгүй үйлчилгээ эрхлэгч",
+                    "Хүргэлтийн машин",
+                    "Компаниин ажилчдын машин",
+                    "Такси",
+                    "Бүртгэл хийгдэх тоот",
+                    "Тусгай зочид",
+                    "Банк хамгаалалт",
+                    "Цэцэрлэг",
+                    "Авто угаалга",
+                    "Агуулах"
+                  ].map((reason) => (
+                    <label
+                      key={reason}
+                      className="flex items-center gap-3 cursor-pointer text-[13px] text-slate-300 hover:text-white select-none"
+                    >
+                      <input
+                        type="radio"
+                        name="freeExitReason"
+                        value={reason}
+                        checked={freeExitReason === reason}
+                        onChange={() => {
+                          setFreeExitReason(reason);
+                          setCustomFreeExitReason("");
+                        }}
+                        className="w-4 h-4 rounded-full border border-white/40 bg-transparent checked:bg-white checked:border-white focus:ring-0 focus:outline-none appearance-none cursor-pointer transition-all relative flex items-center justify-center after:content-[''] after:w-2 after:h-2 after:rounded-full after:bg-[#1a2333] checked:after:bg-[#1a2333] after:opacity-0 checked:after:opacity-100"
+                      />
+                      <span>{reason}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Other Custom Reason Input */}
+              <div className="flex items-center gap-3 mt-2 pt-4 border-t border-slate-700/50">
+                <span className="text-[13px] text-slate-300 min-w-[50px] select-none">Бусад</span>
+                <input
+                  type="text"
+                  value={customFreeExitReason}
+                  onChange={(e) => {
+                    setCustomFreeExitReason(e.target.value);
+                    setFreeExitReason("Бусад");
+                  }}
+                  placeholder="Бусад шалтгаан бичих..."
+                  className="flex-1 h-9 px-4 rounded-lg bg-transparent border border-slate-600 text-white text-[13px] focus:outline-none focus:border-slate-400 transition-all placeholder:text-slate-500"
+                />
+              </div>
+
+              {/* Footer Buttons */}
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  onClick={() => setFreeExitModalTransaction(null)}
+                  className="h-9 px-5 rounded-lg text-xs font-semibold text-white transition-all bg-[#0e9f6e] hover:bg-[#0b8a5f] active:scale-95"
+                >
+                  Хаах
+                </button>
+                <button
+                  onClick={async () => {
+                    const finalReason =
+                      freeExitReason === "Бусад"
+                        ? customFreeExitReason.trim()
+                        : freeExitReason;
+                    if (!finalReason) {
+                      toast.error("Шалтгаан сонгох эсвэл бичнэ үү");
+                      return;
+                    }
+                    await handleWarehouseExit(freeExitModalTransaction, finalReason);
+                    setFreeExitModalTransaction(null);
+                  }}
+                  className="h-9 px-5 rounded-lg text-xs font-semibold text-white transition-all bg-[#0e9f6e] hover:bg-[#0b8a5f] active:scale-95"
+                >
+                  Хадгалах
                 </button>
               </div>
             </div>
