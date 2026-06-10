@@ -154,9 +154,25 @@ export default function PaymentModal({
 }: PaymentModalProps) {
   const niitDun = transaction.niitDun || 0;
 
+  // Account for discounts/payments already recorded in DB
+  const existingTulbur: any[] = useMemo(() => {
+    const raw = (transaction as any).tuukh?.[0]?.tulbur;
+    return Array.isArray(raw) ? raw : raw ? [raw] : [];
+  }, [transaction]);
+  const discountInDB = useMemo(
+    () => existingTulbur.reduce((s: number, t: any) => s + (t?.dun < 0 ? Math.abs(t.dun) : 0), 0),
+    [existingTulbur],
+  );
+  const alreadyPaidInDB = useMemo(
+    () => existingTulbur.reduce((s: number, t: any) => s + (t?.dun > 0 ? t.dun : 0), 0),
+    [existingTulbur],
+  );
+  // Remaining amount the user actually needs to pay right now
+  const effectiveNiitDun = Math.max(0, niitDun - discountInDB - alreadyPaidInDB);
+
   const [tulbur, setTulbur] = useState<TulburEntry[]>([]);
   const [turulruuKhiikhDun, setTurulruuKhiikhDun] = useState<string>(
-    niitDun.toString(),
+    effectiveNiitDun.toString(),
   );
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingTurul, setProcessingTurul] = useState<string | null>(null);
@@ -180,7 +196,7 @@ export default function PaymentModal({
     () => tulbur.reduce((s, t) => s + t.dun, 0),
     [tulbur],
   );
-  const tulukhDun = Math.max(0, niitDun - paidSoFar);
+  const tulukhDun = Math.max(0, effectiveNiitDun - paidSoFar);
   const tuljBuiDun = parseInt(turulruuKhiikhDun) || 0;
 
   // Duration display
@@ -202,12 +218,12 @@ export default function PaymentModal({
         const newTulbur = tulbur.filter((_, i) => i !== existingIdx);
         setTulbur(newTulbur);
         const newPaid = newTulbur.reduce((s, t) => s + t.dun, 0);
-        setTurulruuKhiikhDun(Math.max(0, niitDun - newPaid).toString());
+        setTurulruuKhiikhDun(Math.max(0, effectiveNiitDun - newPaid).toString());
         return;
       }
 
       const dun = tuljBuiDun;
-      const remaining = niitDun - paidSoFar;
+      const remaining = effectiveNiitDun - paidSoFar;
 
       if (dun <= 0) {
         toast.error("Дүн 0-ээс их байх ёстой");
@@ -233,14 +249,14 @@ export default function PaymentModal({
       setTulbur(newTulbur);
 
       const newPaid = newTulbur.reduce((s, t) => s + t.dun, 0);
-      setTurulruuKhiikhDun(Math.max(0, niitDun - newPaid).toString());
+      setTurulruuKhiikhDun(Math.max(0, effectiveNiitDun - newPaid).toString());
       setDiscountReason("");
 
       if (turul === "khaan" && dun > 0) {
         await batalgaajuulaltKhiiya(turul, newEntry, newTulbur);
       }
     },
-    [tulbur, tuljBuiDun, niitDun, paidSoFar, discountReason],
+    [tulbur, tuljBuiDun, effectiveNiitDun, paidSoFar, discountReason],
   );
 
   /* ─── Terminal ─── */
@@ -278,7 +294,7 @@ export default function PaymentModal({
             const np = currentTulbur
               .filter((t) => t !== entry)
               .reduce((s, t) => s + t.dun, 0);
-            setTurulruuKhiikhDun(Math.max(0, niitDun - np).toString());
+            setTurulruuKhiikhDun(Math.max(0, effectiveNiitDun - np).toString());
           }
         } catch {
           toast.error("Терминалын сервис холбогдоогүй (127.0.0.1:27028)");
@@ -286,14 +302,14 @@ export default function PaymentModal({
           const np = currentTulbur
             .filter((t) => t !== entry)
             .reduce((s, t) => s + t.dun, 0);
-          setTurulruuKhiikhDun(Math.max(0, niitDun - np).toString());
+          setTurulruuKhiikhDun(Math.max(0, effectiveNiitDun - np).toString());
         } finally {
           setIsProcessing(false);
           setProcessingTurul(null);
         }
       }
     },
-    [niitDun],
+    [effectiveNiitDun],
   );
 
   /* ─── Save ─── */
@@ -308,14 +324,14 @@ export default function PaymentModal({
     const nonDiscount = validTulbur
       .filter((t) => t.turul !== "khungulult")
       .reduce((s, t) => s + t.dun, 0);
-    const discount = validTulbur
+    const sessionDiscount = validTulbur
       .filter((t) => t.turul === "khungulult")
       .reduce((s, t) => s + t.dun, 0);
-    const expected = niitDun - discount;
+    const expected = effectiveNiitDun - sessionDiscount;
 
     if (Math.abs(nonDiscount - expected) > 1) {
       toast.error(
-        `Төлбөрын дүн зөрүүтэй. Нийт: ${formatNumber(niitDun)}, Оруулсан: ${formatNumber(nonDiscount)}`,
+        `Төлбөрын дүн зөрүүтэй. Төлөх: ${formatNumber(effectiveNiitDun)}, Оруулсан: ${formatNumber(nonDiscount)}`,
       );
       return;
     }
@@ -330,26 +346,44 @@ export default function PaymentModal({
         },
       });
     }
-  }, [tulbur, niitDun, onConfirm, ebarimtType, register]);
+  }, [tulbur, effectiveNiitDun, onConfirm, ebarimtType, register]);
 
   /* ─── F4 quick-pay ─── */
 
   const f4Darsan = useCallback(() => {
     if (tulbur.length === 0) {
+      if (activeMethod === "khungulult") {
+        if (!discountReason) {
+          toast.error("Хөнгөлөлтийн тайлбар оруулна уу");
+          return;
+        }
+        const entry: TulburEntry = {
+          turul: "khungulult",
+          dun: effectiveNiitDun,
+          ognoo: new Date().toISOString(),
+          khariu: { reason: discountReason },
+        };
+        setTulbur([entry]);
+        setTurulruuKhiikhDun("0");
+        if (onConfirm) {
+          onConfirm(effectiveNiitDun, "khungulult", {
+            tulbur: [entry],
+            ebarimt: { type: ebarimtType, register: ebarimtType === "3" ? register : undefined },
+          });
+        }
+        return;
+      }
       const entry: TulburEntry = {
-        turul: "belen",
-        dun: niitDun,
+        turul: activeMethod,
+        dun: effectiveNiitDun,
         ognoo: new Date().toISOString(),
       };
       setTulbur([entry]);
       setTurulruuKhiikhDun("0");
       if (onConfirm) {
-        onConfirm(niitDun, "belen", {
+        onConfirm(effectiveNiitDun, activeMethod, {
           tulbur: [entry],
-          ebarimt: {
-            type: ebarimtType,
-            register: ebarimtType === "3" ? register : undefined,
-          },
+          ebarimt: { type: ebarimtType, register: ebarimtType === "3" ? register : undefined },
         });
       }
     } else {
@@ -357,7 +391,9 @@ export default function PaymentModal({
     }
   }, [
     tulbur,
-    niitDun,
+    effectiveNiitDun,
+    activeMethod,
+    discountReason,
     onConfirm,
     ebarimtType,
     register,
@@ -381,7 +417,7 @@ export default function PaymentModal({
   const hylbarNemekh = (val: number) => {
     setTurulruuKhiikhDun((prev) => {
       const next = (parseInt(prev) || 0) + val;
-      return Math.min(next, niitDun - paidSoFar).toString();
+      return Math.min(next, effectiveNiitDun - paidSoFar).toString();
     });
   };
 
@@ -473,7 +509,7 @@ export default function PaymentModal({
   /* ─── Progress ─── */
 
   const progressPct =
-    niitDun > 0 ? Math.min(100, (paidSoFar / niitDun) * 100) : 0;
+    effectiveNiitDun > 0 ? Math.min(100, (paidSoFar / effectiveNiitDun) * 100) : 0;
 
   /* ═══════════════════════ RENDER ═══════════════════════ */
 
@@ -573,8 +609,10 @@ export default function PaymentModal({
                         key={method.id}
                         onClick={() => {
                           setActiveMethod(method.id);
-                          if (!isProcessing)
+                          if (!isProcessing) {
+                            if (method.id === "khungulult" && !discountReason) return;
                             turulruuTooKhiikhFunction(method.id);
+                          }
                         }}
                         disabled={isProcessing && processingTurul !== method.id}
                         className={`relative flex items-center gap-3 px-4 py-3.5 rounded-2xl border transition-all duration-200 ${ac.container} ${isProcessing ? "opacity-50 cursor-not-allowed" : "cursor-pointer active:scale-[0.97]"}`}
@@ -817,7 +855,7 @@ export default function PaymentModal({
               {/* Summary */}
               <div className="rounded-2xl border border-slate-100 dark:border-white/[0.06] bg-white dark:bg-white/[0.03] overflow-hidden">
                 <button
-                  onClick={() => setTurulruuKhiikhDun(niitDun.toString())}
+                  onClick={() => setTurulruuKhiikhDun(effectiveNiitDun.toString())}
                   disabled={isProcessing}
                   className="w-full px-4 py-2.5 flex justify-between text-[11px] border-b border-slate-50 dark:border-white/[0.04] hover:bg-blue-50 dark:hover:bg-blue-500/5 transition-colors disabled:opacity-40 text-left"
                 >
@@ -825,7 +863,10 @@ export default function PaymentModal({
                     Бодогдсон дүн
                   </span>
                   <span className="font-black text-blue-600 dark:text-blue-400">
-                    {formatNumber(niitDun)}
+                    {formatNumber(effectiveNiitDun)}
+                    {discountInDB > 0 && (
+                      <span className="ml-1 text-[9px] text-rose-400 font-normal">(-{formatNumber(discountInDB)})</span>
+                    )}
                   </span>
                 </button>
                 <div className="px-4 py-2.5 flex justify-between text-[11px] border-b border-slate-50 dark:border-white/[0.04]">

@@ -42,6 +42,7 @@ import {
   ArrowRight,
   Wallet,
   Receipt,
+  AlertTriangle,
 } from "lucide-react";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { ConfigProvider } from "antd";
@@ -207,9 +208,13 @@ export default function Camera() {
   const [activeEntryIP, setActiveEntryIP] = useState<string>("");
   const [activeExitIP, setActiveExitIP] = useState<string>("");
   const [confirmExitId, setConfirmExitId] = useState<string | null>(null);
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; right: number } | null>(null);
   const [freeExitModalTransaction, setFreeExitModalTransaction] =
     useState<Uilchluulegch | null>(null);
   const [freeExitReason, setFreeExitReason] = useState<string>("Агуулах");
+  const [violationModalTransaction, setViolationModalTransaction] =
+    useState<Uilchluulegch | null>(null);
+  const [violationReason, setViolationReason] = useState<string>("");
   const [customFreeExitReason, setCustomFreeExitReason] = useState<string>("");
   const [isExiting, setIsExiting] = useState(false);
   const [isRegModalOpen, setIsRegModalOpen] = useState(false);
@@ -362,6 +367,36 @@ export default function Camera() {
     const val = list[0]?.garakhTsag;
     return val ? Number(val) : null;
   }, [parkingConfigData]);
+
+  const parkingPricing = useMemo(() => {
+    const list = Array.isArray(parkingConfigData?.jagsaalt)
+      ? parkingConfigData.jagsaalt
+      : Array.isArray(parkingConfigData)
+        ? parkingConfigData
+        : [];
+    const cfg = list[0];
+    if (!cfg) return null;
+    // tulburuud[0].tariff[0].tulbur===0 means free minutes up to .minut
+    const firstTariff = cfg.tulburuud?.[0]?.tariff?.[0];
+    const uneguiMin = (firstTariff?.tulbur === 0 && firstTariff?.minut > 0) ? Number(firstTariff.minut) : 0;
+    return {
+      undsenUne: Number(cfg.undsenUne) || 0,
+      undsenMin: !!cfg.undsenMin,  // true=30min unit, false=60min unit
+      togtmolTulburEsekh: !!cfg.togtmolTulburEsekh,
+      togtmolTulburiinDun: Number(cfg.togtmolTulburiinDun) || 0,
+      uneguiMin,
+    };
+  }, [parkingConfigData]);
+
+  function calculateParkingFee(khugatsaaMin: number): number {
+    if (!parkingPricing) return 0;
+    if (parkingPricing.togtmolTulburEsekh) return parkingPricing.togtmolTulburiinDun;
+    const billable = Math.max(0, khugatsaaMin - parkingPricing.uneguiMin);
+    if (billable === 0) return 0;
+    // undsenMin=true → per 30min; undsenMin=false → per 60min (hour)
+    const unit = parkingPricing.undsenMin ? 30 : 60;
+    return Math.ceil(billable / unit) * parkingPricing.undsenUne;
+  }
 
   // Reset live updates when filters or page change
   useEffect(() => {
@@ -622,7 +657,7 @@ export default function Camera() {
 
         uilchilgee(token)
           .get("/neeye/" + ip, {
-            params: { 
+            params: {
               barilgiinId: effectiveBarilgiinId,
               mashiniiDugaar: latestPlate
             },
@@ -727,6 +762,44 @@ export default function Camera() {
         "Команд илгээхэд алдаа гарлаа: " +
         (err.response?.data?.aldaa || err.message),
       );
+    }
+  }
+
+  async function handleViolationSubmit(transaction: Uilchluulegch, reason: string) {
+    try {
+      const orsonTsag = transaction.tuukh?.[0]?.tsagiinTuukh?.[0]?.orsonTsag;
+      const garsanTsag = new Date();
+      const khugatsaaMin = orsonTsag
+        ? Math.max(0, Math.ceil((garsanTsag.getTime() - new Date(orsonTsag).getTime()) / 60000))
+        : 0;
+      const exitIP = activeExitIP || exitCameras[0]?.cameraIP || "ЗӨРЧИЛ";
+
+      const zurchilText = reason || "Зөрчил бүртгэгдлээ";
+      const calculatedFee = calculateParkingFee(khugatsaaMin);
+      const resp = await uilchilgee(token || "").put(`/uilchluulegch/${transaction._id}`, {
+        "tuukh.0.tuluv": -2,
+        "tuukh.0.garsanKhaalga": exitIP,
+        "tuukh.0.tsagiinTuukh.0.garsanTsag": garsanTsag.toISOString(),
+        "tuukh.0.tsagiinTuukh.0.khugatsaa": khugatsaaMin,
+        "tuukh.0.niitKhugatsaa": khugatsaaMin,
+        "tuukh.0.burtgesenAjiltaniiId": ajiltan?._id || "",
+        "tuukh.0.burtgesenAjiltaniiNer": ajiltan?.ner || "",
+        "tuukh.0.uneguiGarsan": zurchilText,
+        "tuukh.0.zurchil": zurchilText,
+        zurchil: zurchilText,
+        ...(calculatedFee > 0 ? { niitDun: calculatedFee } : {}),
+      });
+      if (resp.status === 200 || resp.data === "Amjilttai") {
+        toast.success("Зөрчил амжилттай бүртгэгдлээ");
+        setViolationModalTransaction(null);
+        setViolationReason("");
+        fetchList();
+      } else {
+        toast.error("Алдаа: " + (resp.data?.message || "Амжилтгүй"));
+      }
+    } catch (err: any) {
+      console.error("Violation record error:", err);
+      toast.error("Зөрчил бүртгэхэд алдаа гарлаа: " + (err.response?.data?.aldaa || err.message));
     }
   }
 
@@ -1319,17 +1392,23 @@ export default function Camera() {
     return () => window.removeEventListener("keydown", handleShortcuts);
   }, [entryCameras, exitCameras, transactions, khaalgaNeey, handleManualExit]);
 
-  // Click outside listener for action menu
+  // Click outside + scroll listener for action menu
   useEffect(() => {
     if (!confirmExitId) return;
-    const handleClickOutside = (e: MouseEvent) => {
+    const close = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       if (!target.closest(".action-menu-container")) {
         setConfirmExitId(null);
+        setDropdownPos(null);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    const closeOnScroll = () => { setConfirmExitId(null); setDropdownPos(null); };
+    document.addEventListener("mousedown", close);
+    window.addEventListener("scroll", closeOnScroll, true);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      window.removeEventListener("scroll", closeOnScroll, true);
+    };
   }, [confirmExitId]);
 
   useEffect(() => {
@@ -1631,7 +1710,7 @@ export default function Camera() {
           >
             <div
               className="overflow-auto custom-scrollbar"
-              style={{ maxHeight: "calc(100vh - 340px)" }}
+              style={{ maxHeight: "calc(100vh - 340px)", minHeight: "400px" }}
             >
               <table className="w-full min-w-[1300px] text-[11px] border-collapse bg-white dark:bg-slate-950/50 table-fixed">
                 <colgroup>
@@ -1764,8 +1843,8 @@ export default function Camera() {
                   {transactions.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={14}
-                        className="py-40 text-center rounded-b-3xl"
+                        colSpan={12}
+                        className="py-40 text-center"
                       >
                         <div className="flex flex-col items-center justify-center gap-4 opacity-40">
                           <div className="p-6 rounded-full bg-slate-100 dark:bg-slate-800/50 shadow-inner">
@@ -1787,14 +1866,22 @@ export default function Camera() {
                       const tuluv = mur?.tuluv;
                       const niitDun = transaction.niitDun || 0;
                       const isCurrentlyIn = !mur?.garsanKhaalga;
-                      const isFreeExit = !!mur?.uneguiGarsan;
+                      const isFreeExit = !!mur?.uneguiGarsan && tuluv !== -2 && tuluv !== -1;
                       const isPaid = tuluv === 1;
                       const isDebt =
                         !isFreeExit &&
                         (tuluv === -4 ||
                           (tuluv === 0 && niitDun > 0 && !isCurrentlyIn));
+                      const rawTulbur = mur?.tulbur;
+                      const tulburArr: any[] = Array.isArray(rawTulbur) ? rawTulbur : (rawTulbur ? [rawTulbur] : []);
+                      const positivePaid = tulburArr.reduce((s: number, p: any) => s + (p?.dun > 0 ? p.dun : 0), 0);
+                      const discountTotal = tulburArr
+                        .filter((p: any) => p?.turul === "khungulult" || p?.turul === "discount" || p?.turul === "Хөнгөлөлт")
+                        .reduce((s: number, p: any) => s + Math.abs(p?.dun ?? 0), 0);
+                      const effectiveOwed = Math.max(0, niitDun - discountTotal);
+                      const hasRemainingBalance = tuluv === 1 && effectiveOwed > 0 && !isCurrentlyIn && positivePaid < effectiveOwed;
                       const isActive = isCurrentlyIn;
-                      const showActionBtn = isCurrentlyIn || isDebt;
+                      const showActionBtn = isCurrentlyIn || isDebt || hasRemainingBalance;
                       const hasPayment = niitDun > 0 || isDebt;
 
                       return (
@@ -1836,6 +1923,12 @@ export default function Camera() {
                             {(() => {
                               // Match duration color to status color - must follow exact same logic order as status column
                               const getStatusColor = () => {
+                                if (tuluv === -2 || tuluv === -1) {
+                                  return "bg-red-500 border-red-600";
+                                }
+                                if (hasRemainingBalance) {
+                                  return "bg-amber-500 border-amber-600";
+                                }
                                 if (isFreeExit) {
                                   return "bg-gray-500 border-gray-600";
                                 }
@@ -1846,9 +1939,6 @@ export default function Camera() {
                                 }
                                 if (!isCurrentlyIn && (niitDun > 0 || isDebt)) {
                                   return "bg-amber-500 border-amber-600";
-                                }
-                                if (tuluv === -2 || tuluv === -1) {
-                                  return "bg-red-500 border-red-600";
                                 }
                                 if (!isCurrentlyIn && niitDun === 0) {
                                   return "bg-gray-500 border-gray-600";
@@ -1879,7 +1969,7 @@ export default function Camera() {
                               "Үйлчлүүлэгч"}
                           </td>
                           <td className="py-1.5 px-3 text-slate-600 dark:text-slate-400 text-right  border-r border-slate-200 dark:border-white/5 text-[11px]">
-                            {transaction.tuukh?.[0]?.khungulult || "0"}
+                            {discountTotal > 0 ? formatNumber(discountTotal) : (mur?.khungulult || "")}
                           </td>
                           <td className="py-1.5 px-3 text-slate-700 dark:text-slate-300 text-right  border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] text-[11px]">
                             {formatNumber(transaction.niitDun || 0)}
@@ -1897,19 +1987,22 @@ export default function Camera() {
                               });
 
                               if (payHistory.length > 0) {
-                                const totalPaid = payHistory.reduce(
-                                  (s: number, p: any) => s + (p.dun || 0), 0,
-                                );
-                                const uniqueTypes = [
-                                  ...new Set(payHistory.map((p: any) => p.turul).filter(Boolean)),
-                                ] as string[];
-                                return (
-                                  <PaymentPopup
-                                    payHistory={payHistory}
-                                    totalPaid={totalPaid}
-                                    uniqueTypes={uniqueTypes}
-                                  />
-                                );
+                                const payOnly = payHistory.filter((p: any) => (p?.dun ?? 0) > 0 && p?.turul !== "khungulult" && p?.turul !== "discount" && p?.turul !== "Хөнгөлөлт");
+                                if (payOnly.length > 0) {
+                                  const totalPaid = payOnly.reduce(
+                                    (s: number, p: any) => s + (p.dun || 0), 0,
+                                  );
+                                  const uniqueTypes = [
+                                    ...new Set(payOnly.map((p: any) => p.turul).filter(Boolean)),
+                                  ] as string[];
+                                  return (
+                                    <PaymentPopup
+                                      payHistory={payOnly}
+                                      totalPaid={totalPaid}
+                                      uniqueTypes={uniqueTypes}
+                                    />
+                                  );
+                                }
                               }
 
                               if (tulsunDun > 0) {
@@ -1935,11 +2028,11 @@ export default function Camera() {
                                 return null;
                               }
 
-                              return (
+                              return tulsunDun > 0 ? (
                                 <span className="font-[family-name:var(--font-mono)] text-slate-700 dark:text-slate-300 text-[11px]">
                                   {formatNumber(tulsunDun)}
                                 </span>
-                              );
+                              ) : null;
                             })()}
                           </td>
                           <td className="py-1.5 px-3 text-slate-600 dark:text-slate-400 text-right  border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] text-[11px]">
@@ -1951,14 +2044,17 @@ export default function Camera() {
                                 <div
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    setConfirmExitId(
-                                      confirmExitId === transaction._id
-                                        ? null
-                                        : transaction._id,
-                                    );
+                                    if (confirmExitId === transaction._id) {
+                                      setConfirmExitId(null);
+                                      setDropdownPos(null);
+                                    } else {
+                                      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                                      setDropdownPos({ top: rect.bottom + 6, right: window.innerWidth - rect.right });
+                                      setConfirmExitId(transaction._id ?? null);
+                                    }
                                   }}
-                                  className={`flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-1 rounded-[6px] overflow-hidden border text-[10px] uppercase whitespace-nowrap cursor-pointer ${isPaid && niitDun > 0
-                                    ? "bg-emerald-500 border-emerald-600"
+                                  className={`flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-1 rounded-[6px] overflow-hidden border text-[10px] uppercase whitespace-nowrap cursor-pointer ${hasRemainingBalance
+                                    ? "bg-amber-500 border-amber-600"
                                     : !isCurrentlyIn && isDebt
                                       ? "bg-amber-500 border-amber-600"
                                       : tuluv === -1 || tuluv === -2
@@ -1968,9 +2064,11 @@ export default function Camera() {
                                   style={{ color: "white" }}
                                 >
                                   {!isCurrentlyIn
-                                    ? isDebt
-                                      ? "Төлбөртэй"
-                                      : "Дууссан"
+                                    ? hasRemainingBalance
+                                      ? "Төлбөр"
+                                      : isDebt
+                                        ? "Төлбөртэй"
+                                        : "Дууссан"
                                     : isPaid && niitDun > 0
                                       ? "Төлсөн"
                                       : tuluv === 2
@@ -1980,8 +2078,8 @@ export default function Camera() {
                                           : "Идэвхтэй"}
                                 </div>
                                 {/* ... dropdown menu code ... */}
-                                {confirmExitId === transaction._id && (
-                                  <div className="absolute right-0 top-full mt-2 z-[60] min-w-[170px] p-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] animate-in fade-in slide-in-from-top-2 duration-200 text-left">
+                                {confirmExitId === transaction._id && dropdownPos && createPortal(
+                                  <div className="fixed z-[9999] min-w-[170px] p-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] animate-in fade-in slide-in-from-top-2 duration-200 text-left action-menu-container" style={{ top: dropdownPos.top, right: dropdownPos.right }}>
                                     {/* ... dropdown content ... */}
                                     <div className="space-y-0">
                                       {/* Re-implement dropdown buttons with same logic but larger padding text */}
@@ -2014,6 +2112,16 @@ export default function Camera() {
                                                   transaction,
                                                   "pay",
                                                 ),
+                                          },
+                                          {
+                                            label: "Зөрчил",
+                                            icon: AlertTriangle,
+                                            color: "red",
+                                            action: () => {
+                                              setViolationModalTransaction(transaction);
+                                              setViolationReason("");
+                                              setConfirmExitId(null);
+                                            },
                                           },
                                         ]
                                         : [
@@ -2049,7 +2157,9 @@ export default function Camera() {
                                                 ? "hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-500/10"
                                                 : btn.color === "emerald"
                                                   ? "hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-500/10"
-                                                  : "hover:bg-slate-50 hover:text-slate-600 dark:hover:bg-slate-500/10"
+                                                  : btn.color === "red"
+                                                    ? "hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10"
+                                                    : "hover:bg-slate-50 hover:text-slate-600 dark:hover:bg-slate-500/10"
                                               } hover:rounded-lg`}
                                             style={{
                                               borderRadius: "0.375rem",
@@ -2071,7 +2181,9 @@ export default function Camera() {
                                                     ? "text-blue-600 dark:text-blue-400"
                                                     : btn.color === "emerald"
                                                       ? "text-emerald-600 dark:text-emerald-400"
-                                                      : "text-slate-600 dark:text-slate-400"
+                                                      : btn.color === "red"
+                                                        ? "text-red-600 dark:text-red-400"
+                                                        : "text-slate-600 dark:text-slate-400"
                                                   } group-hover/item:scale-110 transition-transform`}
                                               />
                                               <span>{btn.label}</span>
@@ -2083,7 +2195,8 @@ export default function Camera() {
                                         </div>
                                       ))}
                                     </div>
-                                  </div>
+                                  </div>,
+                                  document.body
                                 )}
                               </div>
                             ) : (
@@ -2121,20 +2234,6 @@ export default function Camera() {
                                       </span>
                                     </div>
                                   );
-                                if (!isCurrentlyIn && (niitDun > 0 || isDebt))
-                                  return (
-                                    <div
-                                      className={`${badgeClass} bg-amber-500 border-amber-600`}
-                                      style={{
-                                        borderRadius: "6px",
-                                        color: "white",
-                                      }}
-                                    >
-                                      <span className="text-[10px] uppercase whitespace-nowrap">
-                                        Төлбөртэй
-                                      </span>
-                                    </div>
-                                  );
                                 if (tuluv === -2 || tuluv === -1)
                                   return (
                                     <div
@@ -2146,6 +2245,31 @@ export default function Camera() {
                                     >
                                       <span className="text-[10px] uppercase whitespace-nowrap">
                                         Зөрчилтэй
+                                      </span>
+                                    </div>
+                                  );
+                                if (hasRemainingBalance)
+                                  return (
+                                    <div
+                                      className={`${badgeClass} bg-amber-500 border-amber-600`}
+                                      style={{ borderRadius: "6px", color: "white" }}
+                                    >
+                                      <span className="text-[10px] uppercase whitespace-nowrap">
+                                        Төлбөртэй
+                                      </span>
+                                    </div>
+                                  );
+                                if (!isCurrentlyIn && (niitDun > 0 || isDebt))
+                                  return (
+                                    <div
+                                      className={`${badgeClass} bg-amber-500 border-amber-600`}
+                                      style={{
+                                        borderRadius: "6px",
+                                        color: "white",
+                                      }}
+                                    >
+                                      <span className="text-[10px] uppercase whitespace-nowrap">
+                                        Төлбөртэй
                                       </span>
                                     </div>
                                   );
@@ -2180,8 +2304,9 @@ export default function Camera() {
                             )}
                           </td>
                           <td className="py-1.5 px-3 text-gray-400 italic truncate max-w-[100px] border-r border-slate-200 dark:border-white/5 text-[10px] text-center">
-                            {transaction.zurchil ||
-                              transaction.tuukh?.[0]?.uneguiGarsan ||
+                            {transaction.tuukh?.[0]?.uneguiGarsan ||
+                              transaction.zurchil ||
+                              (transaction.tuukh?.[0] as any)?.zurchil ||
                               ""}
                           </td>
                         </tr>
@@ -2200,11 +2325,14 @@ export default function Camera() {
                       </td>
                       <td className="py-1.5 px-3 text-right border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] whitespace-nowrap">
                         {formatNumber(
-                          transactions.reduce(
-                            (sum, t) =>
-                              sum + (Number(t.tuukh?.[0]?.khungulult) || 0),
-                            0,
-                          ),
+                          transactions.reduce((sum, t) => {
+                            const rawT = t.tuukh?.[0]?.tulbur;
+                            const tArr: any[] = Array.isArray(rawT) ? rawT : (rawT ? [rawT] : []);
+                            const disc = tArr
+                              .filter((p: any) => p?.turul === "khungulult" || p?.turul === "discount" || p?.turul === "Хөнгөлөлт")
+                              .reduce((s: number, p: any) => s + Math.abs(p?.dun ?? 0), 0);
+                            return sum + (disc > 0 ? disc : (Number(t.tuukh?.[0]?.khungulult) || 0));
+                          }, 0),
                         )}
                       </td>
                       <td className="py-1.5 px-3 text-right border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] whitespace-nowrap">
@@ -2397,7 +2525,7 @@ export default function Camera() {
                     ognoo: new Date().toISOString(),
                   },
                 ];
-                const tulburArray = splitEntries
+                const newEntries = splitEntries
                   .filter((t: any) => t.dun > 0 || amount === 0) // keep zero for free exits
                   .map((t: any) => ({
                     ...t,
@@ -2407,6 +2535,16 @@ export default function Camera() {
                     burtgesenAjiltaniiNer: ajiltan?.ner,
                     zogsooliinId: zogsooliinId,
                   }));
+
+                // Preserve existing discount entries from DB so they aren't wiped on payment
+                const existingDbTulbur: any[] = (() => {
+                  const raw = selectedTransaction.tuukh?.[0]?.tulbur;
+                  return Array.isArray(raw) ? raw : raw ? [raw] : [];
+                })();
+                const existingDiscounts = existingDbTulbur
+                  .filter((t: any) => (t?.dun ?? 0) < 0)
+                  .map((t: any) => ({ ...t, zogsooliinId: zogsooliinId }));
+                const tulburArray = [...existingDiscounts, ...newEntries];
 
                 const payload = {
                   id: selectedTransaction._id,
@@ -2473,7 +2611,7 @@ export default function Camera() {
           document.body
         )}
         {/* Discount Modal */}
-        {discountModalTransaction && (
+        {discountModalTransaction && createPortal(
           <div
             className="fixed inset-0 z-[200] flex items-center justify-center p-4"
             onClick={() => setDiscountModalTransaction(null)}
@@ -2511,31 +2649,57 @@ export default function Camera() {
 
               {/* Body */}
               <div className="px-7 py-6 space-y-5">
-                <div>
-                  <label className="block text-[11px] text-slate-500 dark:text-white uppercase tracking-wider mb-1.5">
-                    Хөнгөлөх дүн
-                  </label>
-                  <input
-                    type="number"
-                    value={discountAmount}
-                    onChange={(e) => setDiscountAmount(e.target.value)}
-                    className="w-full h-11 px-4 rounded-xl bg-slate-50 dark:bg-white/[0.04] border border-slate-200/60 dark:border-white/[0.08] text-slate-800 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/50 transition-all"
-                    placeholder="0"
-                    autoFocus
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] text-slate-500 dark:text-white uppercase tracking-wider mb-1.5">
-                    Хөнгөлөх минут
-                  </label>
-                  <input
-                    type="number"
-                    value={discountMinutes}
-                    onChange={(e) => setDiscountMinutes(e.target.value)}
-                    className="w-full h-11 px-4 rounded-xl bg-slate-50 dark:bg-white/[0.04] border border-slate-200/60 dark:border-white/[0.08] text-slate-800 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/50 transition-all"
-                    placeholder="0"
-                  />
-                </div>
+                {(() => {
+                  const orsonTsag = discountModalTransaction.tuukh?.[0]?.tsagiinTuukh?.[0]?.orsonTsag;
+                  const elapsedMin = orsonTsag ? Math.ceil((Date.now() - new Date(orsonTsag).getTime()) / 60000) : 0;
+                  const isInFreePeriod = !discountModalTransaction.tuukh?.[0]?.garsanKhaalga &&
+                    calculateParkingFee(elapsedMin) === 0 &&
+                    !((discountModalTransaction.tuukh?.[0]?.tulbur?.length ?? 0) > 0);
+                  return isInFreePeriod;
+                })() ? (
+                  <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30">
+                    <span className="text-amber-500 mt-0.5 shrink-0">⚠</span>
+                    <p className="text-[12px] text-amber-700 dark:text-amber-400">
+                      Үнэгүй хугацаанд байгаа тул хөнгөлөлт оруулах боломжгүй. Машин гарсны дараа хөнгөлөх боломжтой.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <label className="block text-[11px] text-slate-500 dark:text-white uppercase tracking-wider mb-1.5">
+                        Хөнгөлөх дүн
+                      </label>
+                      <input
+                        type="number"
+                        value={discountAmount}
+                        onChange={(e) => setDiscountAmount(e.target.value)}
+                        className="w-full h-11 px-4 rounded-xl bg-slate-50 dark:bg-white/[0.04] border border-slate-200/60 dark:border-white/[0.08] text-slate-800 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/50 transition-all"
+                        placeholder="0"
+                        autoFocus
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] text-slate-500 dark:text-white uppercase tracking-wider mb-1.5">
+                        Хөнгөлөх минут
+                      </label>
+                      <input
+                        type="number"
+                        value={discountMinutes}
+                        onChange={(e) => {
+                          setDiscountMinutes(e.target.value);
+                          const min = parseInt(e.target.value) || 0;
+                          if (min > 0 && parkingPricing && !parkingPricing.togtmolTulburEsekh) {
+                            const unit = parkingPricing.undsenMin ? 30 : 60;
+                            const value = Math.ceil(min / unit) * parkingPricing.undsenUne;
+                            setDiscountAmount(value.toString());
+                          }
+                        }}
+                        className="w-full h-11 px-4 rounded-xl bg-slate-50 dark:bg-white/[0.04] border border-slate-200/60 dark:border-white/[0.08] text-slate-800 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/50 transition-all"
+                        placeholder="0"
+                      />
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Footer */}
@@ -2546,60 +2710,71 @@ export default function Camera() {
                 >
                   Хаах
                 </button>
-                <button
-                  onClick={async () => {
-                    const amount = parseFloat(discountAmount) || 0;
-                    const minutes = parseInt(discountMinutes) || 0;
-                    try {
-                      const zogsooliinId =
-                        discountModalTransaction.tuukh?.[0]?.zogsooliinId ||
-                        discountModalTransaction.barilgiinId ||
-                        effectiveBarilgiinId;
-                      const tulburArray = [
-                        {
-                          ognoo: new Date().toISOString(),
-                          turul: "Хөнгөлөлт",
-                          dun: amount,
-                          khariu: {
-                            khungulsunKhugatsaa: minutes,
+                {(() => {
+                  const orsonTsag = discountModalTransaction.tuukh?.[0]?.tsagiinTuukh?.[0]?.orsonTsag;
+                  const elapsedMin = orsonTsag ? Math.ceil((Date.now() - new Date(orsonTsag).getTime()) / 60000) : 0;
+                  return !(!discountModalTransaction.tuukh?.[0]?.garsanKhaalga &&
+                    calculateParkingFee(elapsedMin) === 0 &&
+                    !((discountModalTransaction.tuukh?.[0]?.tulbur?.length ?? 0) > 0));
+                })() && (
+                  <button
+                    onClick={async () => {
+                      const amount = parseFloat(discountAmount) || 0;
+                      const minutes = parseInt(discountMinutes) || 0;
+                      try {
+                        const zogsooliinId =
+                          discountModalTransaction.tuukh?.[0]?.zogsooliinId ||
+                          discountModalTransaction.barilgiinId ||
+                          effectiveBarilgiinId;
+                        const isActive = !discountModalTransaction.tuukh?.[0]?.garsanKhaalga;
+                        const tulburArray = [
+                          {
+                            ognoo: new Date().toISOString(),
+                            turul: "khungulult",
+                            dun: -amount,
+                            khariu: {
+                              khungulsunKhugatsaa: minutes,
+                            },
+                            baiguullagiinId: ajiltan?.baiguullagiinId,
+                            barilgiinId: effectiveBarilgiinId,
+                            burtgesenAjiltaniiId: ajiltan?._id,
+                            burtgesenAjiltaniiNer: ajiltan?.ner,
+                            zogsooliinId,
                           },
-                          baiguullagiinId: ajiltan?.baiguullagiinId,
-                          barilgiinId: effectiveBarilgiinId,
-                          burtgesenAjiltaniiId: ajiltan?._id,
-                          burtgesenAjiltaniiNer: ajiltan?.ner,
-                          zogsooliinId,
-                        },
-                      ];
-                      const resp = await uilchilgee(token || "").post(
-                        "/zogsooliinTulburTulye",
-                        {
-                          id: discountModalTransaction._id,
-                          tulbur: tulburArray,
-                        },
-                      );
-                      if (resp.status === 200 || resp.data === "Amjилттай") {
-                        toast.success("Хөнгөлөлт амжилттай бүртгэгдлээ");
-                        setDiscountModalTransaction(null);
-                        fetchList();
-                      } else {
-                        toast.error("Алдаа гарлаа");
+                        ];
+                        const resp = await uilchilgee(token || "").post(
+                          "/zogsooliinTulburTulye",
+                          {
+                            id: discountModalTransaction._id,
+                            tulbur: tulburArray,
+                            ...(isActive ? { urdchilsan: true } : {}),
+                          },
+                        );
+                        if (resp.status === 200 || resp.data === "Amjилттай") {
+                          toast.success("Хөнгөлөлт амжилттай бүртгэгдлээ");
+                          setDiscountModalTransaction(null);
+                          fetchList();
+                        } else {
+                          toast.error("Алдаа гарлаа");
+                        }
+                      } catch (err) {
+                        console.error("Discount error:", err);
+                        toast.error("Хөнгөлөлт бүртгэхэд алдаа гарлаа");
                       }
-                    } catch (err) {
-                      console.error("Discount error:", err);
-                      toast.error("Хөнгөлөлт бүртгэхэд алдаа гарлаа");
-                    }
-                  }}
-                  className="h-10 px-5 rounded !text-white text-sm font-medium active:scale-[0.97] transition-all flex items-center justify-center gap-2 shadow-lg"
-                  style={{
-                    background: "linear-gradient(135deg, #10b981, #059669)",
-                    boxShadow: "0 6px 20px rgba(16, 185, 129, 0.3)",
-                  }}
-                >
-                  Хөнгөлөх
-                </button>
+                    }}
+                    className="h-10 px-5 rounded !text-white text-sm font-medium active:scale-[0.97] transition-all flex items-center justify-center gap-2 shadow-lg"
+                    style={{
+                      background: "linear-gradient(135deg, #10b981, #059669)",
+                      boxShadow: "0 6px 20px rgba(16, 185, 129, 0.3)",
+                    }}
+                  >
+                    Хөнгөлөх
+                  </button>
+                )}
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
         {/* Free Exit Reason Modal */}
@@ -2636,7 +2811,7 @@ export default function Camera() {
                 <div className="grid grid-cols-2 gap-x-6 gap-y-2">
                   {/* Column 1 */}
                   <div className="space-y-2">
-                    {["Цагдаа","Гал","Эмнэлэг","Онцгой","Борлуулалтын машин","Хөгжлийн бэрхшээлтэй","Хогны машин","Шуудан","Дэлгүүрийн үйлчлүүлэгч"].map((reason) => (
+                    {["Цагдаа", "Гал", "Эмнэлэг", "Онцгой", "Борлуулалтын машин", "Хөгжлийн бэрхшээлтэй", "Хогны машин", "Шуудан", "Дэлгүүрийн үйлчлүүлэгч"].map((reason) => (
                       <label key={reason} className="flex items-center gap-2.5 cursor-pointer select-none group">
                         <input
                           type="radio"
@@ -2652,7 +2827,7 @@ export default function Camera() {
                   </div>
                   {/* Column 2 */}
                   <div className="space-y-2">
-                    {["Бүртгэл хийгдээгүй айл","Бүртгэл хийгдээгүй үйлчилгээ эрхлэгч","Хүргэлтийн машин","Компаниин ажилчдын машин","Такси","Бүртгэл хийгдэх тоот","Тусгай зочид","Банк хамгаалалт","Цэцэрлэг","Авто угаалга","Агуулах"].map((reason) => (
+                    {["Бүртгэл хийгдээгүй айл", "Бүртгэл хийгдээгүй үйлчилгээ эрхлэгч", "Хүргэлтийн машин", "Компаниин ажилчдын машин", "Такси", "Бүртгэл хийгдэх тоот", "Тусгай зочид", "Банк хамгаалалт", "Цэцэрлэг", "Авто угаалга", "Агуулах"].map((reason) => (
                       <label key={reason} className="flex items-center gap-2.5 cursor-pointer select-none group">
                         <input
                           type="radio"
@@ -2710,6 +2885,91 @@ export default function Camera() {
                   style={{ background: "linear-gradient(135deg, #10b981, #059669)", boxShadow: "0 4px 14px rgba(16,185,129,0.3)" }}
                 >
                   Хадгалах
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+        {/* Violation Modal */}
+        {violationModalTransaction && createPortal(
+          <div
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+            style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(12px)" }}
+            onClick={() => setViolationModalTransaction(null)}
+          >
+            <div
+              className="relative w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-2xl border border-slate-200/50 dark:border-white/10 animate-in zoom-in-95 duration-200"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="relative px-6 pt-5 pb-4 border-b border-slate-100 dark:border-white/[0.06]">
+                <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-red-500 via-rose-500 to-red-600" />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200/60 dark:border-red-500/20 flex items-center justify-center">
+                      <AlertTriangle className="w-5 h-5 text-red-500" />
+                    </div>
+                    <div>
+                      <h2 className="text-sm font-semibold text-slate-800 dark:text-white">Зөрчил бүртгэх</h2>
+                      <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 font-mono uppercase tracking-wide">
+                        {violationModalTransaction.mashiniiDugaar}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setViolationModalTransaction(null)}
+                    className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/[0.06] flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className="px-6 py-5 space-y-4">
+                <div>
+                  <label className="block text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                    Зөрчлийн шалтгаан
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={violationReason}
+                    onChange={(e) => setViolationReason(e.target.value)}
+                    placeholder="Зөрчлийн тайлбар оруулна уу..."
+                    autoFocus
+                    className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08] text-sm text-slate-800 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500/50 transition-all resize-none"
+                  />
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {["Төлбөр төлөөгүй гарсан", "Зугтаасан", "Зөвшөөрөлгүй зогссон", "Бусад"].map((preset) => (
+                    <button
+                      key={preset}
+                      onClick={() => setViolationReason(preset)}
+                      className={`px-3 py-1.5 rounded-full text-[11px] border transition-all ${violationReason === preset ? "bg-red-500 border-red-500 text-white" : "border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:border-red-300 hover:text-red-600"}`}
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="px-6 pb-5 flex items-center justify-end gap-2">
+                <button
+                  onClick={() => setViolationModalTransaction(null)}
+                  className="h-9 px-4 rounded-xl border border-slate-200 dark:border-white/[0.08] text-slate-600 dark:text-slate-300 text-sm hover:bg-slate-50 dark:hover:bg-white/[0.06] transition-all"
+                >
+                  Цуцлах
+                </button>
+                <button
+                  onClick={() => handleViolationSubmit(violationModalTransaction, violationReason)}
+                  className="h-9 px-5 rounded-xl text-white text-sm font-medium transition-all active:scale-95 flex items-center gap-2"
+                  style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)", boxShadow: "0 4px 14px rgba(239,68,68,0.35)" }}
+                >
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  Бүртгэх
                 </button>
               </div>
             </div>
