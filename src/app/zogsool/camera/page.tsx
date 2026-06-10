@@ -474,9 +474,10 @@ export default function Camera() {
         },
       ];
     } else if (statusFilter === "free") {
-      // Үнэгүй: Exited with no payment
+      // Үнэгүй: Exited with no payment, excluding violations
       query["tuukh.garsanKhaalga"] = { $exists: true };
       query.niitDun = 0;
+      query["tuukh.0.tuluv"] = { $nin: [-1, -2] };
     }
 
     const sortObj =
@@ -785,7 +786,6 @@ export default function Camera() {
         "tuukh.0.niitKhugatsaa": khugatsaaMin,
         "tuukh.0.burtgesenAjiltaniiId": ajiltan?._id || "",
         "tuukh.0.burtgesenAjiltaniiNer": ajiltan?.ner || "",
-        "tuukh.0.uneguiGarsan": zurchilText,
         "tuukh.0.zurchil": zurchilText,
         zurchil: zurchilText,
         ...(calculatedFee > 0 ? { niitDun: calculatedFee } : {}),
@@ -1089,8 +1089,8 @@ export default function Camera() {
           return !isCurrentlyIn && (niitDun > 0 || isDebt);
         }
         if (statusFilter === "free") {
-          // Үнэгүй: Exited with no payment
-          return !isCurrentlyIn && niitDun === 0;
+          // Үнэгүй: Exited with no payment, excluding violations
+          return !isCurrentlyIn && niitDun === 0 && tuluv !== -2 && tuluv !== -1;
         }
         return true;
       });

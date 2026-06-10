@@ -187,7 +187,7 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
           const niitDun = record.niitDun || 0;
           const tuluv = mur?.tuluv;
           const isCurrentlyIn = !mur?.garsanKhaalga;
-          const isFreeExit = !!mur?.uneguiGarsan;
+          const isFreeExit = !!mur?.uneguiGarsan && tuluv !== -2 && tuluv !== -1;
           const isDebt =
             !isFreeExit &&
             (tuluv === -4 || (tuluv === 0 && niitDun > 0 && !isCurrentlyIn));

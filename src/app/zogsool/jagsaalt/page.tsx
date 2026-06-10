@@ -125,7 +125,6 @@ export default function Jagsaalt() {
   const pageSize = 1000;
 
   const [durationFilter, setDurationFilter] = useState("latest_out");
-  const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [openFilter, setOpenFilter] = useState<string | null>(null);
 
@@ -170,7 +169,6 @@ export default function Jagsaalt() {
         rangeStart,
         rangeEnd,
         durationFilter,
-        typeFilter,
         statusFilter,
       ]
       : null,
@@ -184,7 +182,6 @@ export default function Jagsaalt() {
       start,
       end,
       dur,
-      type,
       status,
     ]): Promise<any> => {
       // Build query similar to fetchList in camera page
@@ -201,19 +198,6 @@ export default function Jagsaalt() {
 
       if (search) {
         query.mashiniiDugaar = { $regex: search, $options: "i" };
-      }
-
-      if (type !== "all") {
-        if (type === "Үйлчлүүлэгч") {
-          query.$or = [
-            { turul: "Үйлчлүүлэгч" },
-            { turul: { $exists: false } },
-            { turul: null },
-            { turul: "" },
-          ];
-        } else {
-          query.turul = type;
-        }
       }
 
       if (status === "active") {
@@ -414,7 +398,6 @@ export default function Jagsaalt() {
       return {
         "№": i + 1,
         "Улсын дугаар": t.mashiniiDugaar || "",
-        "Төрөл": t.turul || mur?.turul || "Үйлчлүүлэгч",
         "Орсон": orsonTsag ? moment(orsonTsag).format("YYYY-MM-DD HH:mm:ss") : "",
         "Гарсан": garsanTsag ? moment(garsanTsag).format("YYYY-MM-DD HH:mm:ss") : "",
         "Хугацаа": khugatsaa,
@@ -491,20 +474,9 @@ export default function Jagsaalt() {
           </div>
 
           {/* Active filter chips */}
-          {(typeFilter !== "all" || statusFilter !== "all") && (
+          {statusFilter !== "all" && (
             <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-slate-200 dark:border-slate-700/50">
               <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">Шүүлт:</span>
-              {typeFilter !== "all" && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] rounded-full border border-blue-200 dark:border-blue-500/20">
-                  Төрөл: {typeFilter}
-                  <button
-                    onClick={() => { setTypeFilter("all"); setPage(1); }}
-                    className="ml-0.5 hover:text-blue-800 dark:hover:text-blue-200 transition-colors"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              )}
               {statusFilter !== "all" && (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 text-[10px] rounded-full border border-violet-200 dark:border-violet-500/20">
                   Төлөв: {
@@ -518,12 +490,6 @@ export default function Jagsaalt() {
                   </button>
                 </span>
               )}
-              <button
-                onClick={() => { setTypeFilter("all"); setStatusFilter("all"); setPage(1); }}
-                className="text-[10px] text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 transition-colors ml-1 underline underline-offset-2"
-              >
-                Бүгдийг арилгах
-              </button>
             </div>
           )}
         </div>
@@ -536,19 +502,6 @@ export default function Jagsaalt() {
                     { id: "no", label: "№", width: "w-12" },
                     { id: "orson", label: "Орсон" },
                     { id: "garsan", label: "Гарсан" },
-                    {
-                      id: "type",
-                      label: "Төрөл",
-                      filter: true,
-                      current: typeFilter,
-                      set: setTypeFilter,
-                      options: [
-                        { label: "Бүгд", value: "all" },
-                        { label: "Үйлчлүүлэгч", value: "Үйлчлүүлэгч" },
-                        { label: "Оршин суугч", value: "Оршин суугч" },
-                        { label: "Зочин", value: "Зочин" },
-                      ],
-                    },
                     { id: "dugaar", label: "Дугааp" },
                     {
                       id: "duration",
@@ -704,11 +657,6 @@ export default function Jagsaalt() {
                             {garsanTsag
                               ? moment(garsanTsag).format("MM-DD HH:mm:ss")
                               : ""}
-                          </span>
-                        </td>
-                        <td className="py-4 px-3 text-center">
-                          <span className="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-[10px]  text-slate-500 uppercase tracking-tighter">
-                            {transaction.turul || mur?.turul || "Үйлчлүүлэгч"}
                           </span>
                         </td>
                         <td className="py-4 px-3 text-center">
