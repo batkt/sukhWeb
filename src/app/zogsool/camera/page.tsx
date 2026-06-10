@@ -218,7 +218,7 @@ export default function Camera() {
   const [customFreeExitReason, setCustomFreeExitReason] = useState<string>("");
   const [isExiting, setIsExiting] = useState(false);
   const [isRegModalOpen, setIsRegModalOpen] = useState(false);
-  const [pageSize, setPageSize] = useState(20);
+  const [pageSize, setPageSize] = useState(50);
   const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
   const pageSizeRef = useRef<HTMLDivElement>(null);
   const [durationFilter, setDurationFilter] = useState("latest_out");
@@ -1243,9 +1243,10 @@ export default function Camera() {
     allList.forEach((t: any) => {
       const tulburArr = t.tuukh?.[0]?.tulbur || [];
       tulburArr.forEach((p: any) => {
-        const m = p.turul || "unknown";
+        const rawTurul = p.turul || "unknown";
+        const m = (rawTurul === "discount" || rawTurul === "Хөнгөлөлт") ? "khungulult" : rawTurul;
         if (!methodMap[m]) methodMap[m] = { amount: 0, count: 0 };
-        methodMap[m].amount += p.dun || 0;
+        methodMap[m].amount += Math.abs(p.dun || 0);
         methodMap[m].count += 1;
       });
     });
@@ -1323,9 +1324,10 @@ export default function Camera() {
     const methodMap: Record<string, { amount: number; count: number }> = {};
     allList.forEach((t: any) => {
       (t.tuukh?.[0]?.tulbur || []).forEach((p: any) => {
-        const m = p.turul || "unknown";
+        const rawTurul = p.turul || "unknown";
+        const m = (rawTurul === "discount" || rawTurul === "Хөнгөлөлт") ? "khungulult" : rawTurul;
         if (!methodMap[m]) methodMap[m] = { amount: 0, count: 0 };
-        methodMap[m].amount += p.dun || 0;
+        methodMap[m].amount += Math.abs(p.dun || 0);
         methodMap[m].count += 1;
       });
     });
@@ -1768,9 +1770,9 @@ export default function Camera() {
                           { label: "Зочин", value: "Зочин" },
                         ],
                       },
-                      { id: "discount", label: "Хөнгөлөлт", width: "w-28", sortable: true },
                       { id: "amount", label: "Дүн", width: "w-28", sortable: true },
                       { id: "payment", label: "Төлбөр", width: "w-36", sortable: true },
+                      { id: "discount", label: "Хөнгөлөлт", width: "w-28", sortable: true },
                       { id: "ebarimt", label: "И-Баримт", width: "w-28", sortable: true },
                       {
                         id: "status",
@@ -1887,7 +1889,7 @@ export default function Camera() {
                       return (
                         <tr
                           key={transaction._id || idx}
-                          className={`hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-all duration-200 group border-b border-slate-200 dark:border-white/5 h-[32px] ${isActive ? "bg-blue-50/40 dark:bg-blue-900/10" : ""}`}
+                          className={`hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-all duration-200 group border-b border-slate-200 dark:border-white/5 h-[32px] ${isActive ? "bg-blue-50/40 dark:bg-blue-900/10" : idx % 2 === 0 ? "bg-slate-100 dark:bg-slate-800/40" : "bg-white dark:bg-transparent"}`}
                         >
                           <td className="py-1.5 px-3 text-center text-gray-400 border-r border-slate-200 dark:border-white/5 text-[11px]">
                             {(page - 1) * pageSize + idx + 1}
@@ -1968,9 +1970,6 @@ export default function Camera() {
                               transaction.tuukh?.[0]?.turul ||
                               "Үйлчлүүлэгч"}
                           </td>
-                          <td className="py-1.5 px-3 text-slate-600 dark:text-slate-400 text-right  border-r border-slate-200 dark:border-white/5 text-[11px]">
-                            {discountTotal > 0 ? formatNumber(discountTotal) : (mur?.khungulult || "")}
-                          </td>
                           <td className="py-1.5 px-3 text-slate-700 dark:text-slate-300 text-right  border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] text-[11px]">
                             {formatNumber(transaction.niitDun || 0)}
                           </td>
@@ -2034,6 +2033,9 @@ export default function Camera() {
                                 </span>
                               ) : null;
                             })()}
+                          </td>
+                          <td className="py-1.5 px-3 text-slate-600 dark:text-slate-400 text-right  border-r border-slate-200 dark:border-white/5 text-[11px]">
+                            {discountTotal > 0 ? formatNumber(discountTotal) : (mur?.khungulult || "")}
                           </td>
                           <td className="py-1.5 px-3 text-slate-600 dark:text-slate-400 text-right  border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] text-[11px]">
                             {transaction.tuukh?.[0]?.ebarimtId || ""}
@@ -2319,11 +2321,34 @@ export default function Camera() {
                     <tr className="h-[32px] border-t border-slate-200 dark:border-white/10">
                       <td
                         colSpan={6}
-                        className="py-1.5 px-3 text-right uppercase tracking-wider border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-sans)] font-bold text-slate-500"
+                        className="py-1.5 px-3 text-right font-black uppercase tracking-wider border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-sans)] font-bold "
                       >
                         Нийт Дүн:
                       </td>
-                      <td className="py-1.5 px-3 text-right border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] whitespace-nowrap">
+                      <td className="py-1.5 px-3 text-right font-bold border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] whitespace-nowrap">
+                        {formatNumber(
+                          transactions.reduce(
+                            (sum, t) => sum + (Number(t.niitDun) || 0),
+                            0,
+                          ),
+                        )}
+                      </td>
+                      <td className="py-1.5 px-3 text-right font-bold border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] whitespace-nowrap">
+                        {formatNumber(
+                          transactions.reduce((sum, t) => {
+                            const payHistory: any[] = (t.tuukh || []).flatMap((th: any) => {
+                              const raw = th?.tulbur;
+                              return Array.isArray(raw) ? raw : raw ? [raw] : [];
+                            });
+                            const payOnly = payHistory.filter((p: any) => (p?.dun ?? 0) > 0 && p?.turul !== "khungulult" && p?.turul !== "discount" && p?.turul !== "Хөнгөлөлт");
+                            if (payOnly.length > 0) {
+                              return sum + payOnly.reduce((s: number, p: any) => s + (p.dun || 0), 0);
+                            }
+                            return sum + (Number(t.tuukh?.[0]?.tulsunDun) || 0);
+                          }, 0),
+                        )}
+                      </td>
+                      <td className="py-1.5 px-3 text-right font-bold border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] whitespace-nowrap">
                         {formatNumber(
                           transactions.reduce((sum, t) => {
                             const rawT = t.tuukh?.[0]?.tulbur;
@@ -2333,23 +2358,6 @@ export default function Camera() {
                               .reduce((s: number, p: any) => s + Math.abs(p?.dun ?? 0), 0);
                             return sum + (disc > 0 ? disc : (Number(t.tuukh?.[0]?.khungulult) || 0));
                           }, 0),
-                        )}
-                      </td>
-                      <td className="py-1.5 px-3 text-right border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] whitespace-nowrap">
-                        {formatNumber(
-                          transactions.reduce(
-                            (sum, t) => sum + (Number(t.niitDun) || 0),
-                            0,
-                          ),
-                        )}
-                      </td>
-                      <td className="py-1.5 px-3 text-right border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] whitespace-nowrap">
-                        {formatNumber(
-                          transactions.reduce(
-                            (sum, t) =>
-                              sum + (Number(t.tuukh?.[0]?.tulsunDun) || 0),
-                            0,
-                          ),
                         )}
                       </td>
                       <td
@@ -2717,60 +2725,60 @@ export default function Camera() {
                     calculateParkingFee(elapsedMin) === 0 &&
                     !((discountModalTransaction.tuukh?.[0]?.tulbur?.length ?? 0) > 0));
                 })() && (
-                  <button
-                    onClick={async () => {
-                      const amount = parseFloat(discountAmount) || 0;
-                      const minutes = parseInt(discountMinutes) || 0;
-                      try {
-                        const zogsooliinId =
-                          discountModalTransaction.tuukh?.[0]?.zogsooliinId ||
-                          discountModalTransaction.barilgiinId ||
-                          effectiveBarilgiinId;
-                        const isActive = !discountModalTransaction.tuukh?.[0]?.garsanKhaalga;
-                        const tulburArray = [
-                          {
-                            ognoo: new Date().toISOString(),
-                            turul: "khungulult",
-                            dun: -amount,
-                            khariu: {
-                              khungulsunKhugatsaa: minutes,
+                    <button
+                      onClick={async () => {
+                        const amount = parseFloat(discountAmount) || 0;
+                        const minutes = parseInt(discountMinutes) || 0;
+                        try {
+                          const zogsooliinId =
+                            discountModalTransaction.tuukh?.[0]?.zogsooliinId ||
+                            discountModalTransaction.barilgiinId ||
+                            effectiveBarilgiinId;
+                          const isActive = !discountModalTransaction.tuukh?.[0]?.garsanKhaalga;
+                          const tulburArray = [
+                            {
+                              ognoo: new Date().toISOString(),
+                              turul: "khungulult",
+                              dun: -amount,
+                              khariu: {
+                                khungulsunKhugatsaa: minutes,
+                              },
+                              baiguullagiinId: ajiltan?.baiguullagiinId,
+                              barilgiinId: effectiveBarilgiinId,
+                              burtgesenAjiltaniiId: ajiltan?._id,
+                              burtgesenAjiltaniiNer: ajiltan?.ner,
+                              zogsooliinId,
                             },
-                            baiguullagiinId: ajiltan?.baiguullagiinId,
-                            barilgiinId: effectiveBarilgiinId,
-                            burtgesenAjiltaniiId: ajiltan?._id,
-                            burtgesenAjiltaniiNer: ajiltan?.ner,
-                            zogsooliinId,
-                          },
-                        ];
-                        const resp = await uilchilgee(token || "").post(
-                          "/zogsooliinTulburTulye",
-                          {
-                            id: discountModalTransaction._id,
-                            tulbur: tulburArray,
-                            ...(isActive ? { urdchilsan: true } : {}),
-                          },
-                        );
-                        if (resp.status === 200 || resp.data === "Amjилттай") {
-                          toast.success("Хөнгөлөлт амжилттай бүртгэгдлээ");
-                          setDiscountModalTransaction(null);
-                          fetchList();
-                        } else {
-                          toast.error("Алдаа гарлаа");
+                          ];
+                          const resp = await uilchilgee(token || "").post(
+                            "/zogsooliinTulburTulye",
+                            {
+                              id: discountModalTransaction._id,
+                              tulbur: tulburArray,
+                              ...(isActive ? { urdchilsan: true } : {}),
+                            },
+                          );
+                          if (resp.status === 200 || resp.data === "Amjилттай") {
+                            toast.success("Хөнгөлөлт амжилттай бүртгэгдлээ");
+                            setDiscountModalTransaction(null);
+                            fetchList();
+                          } else {
+                            toast.error("Алдаа гарлаа");
+                          }
+                        } catch (err) {
+                          console.error("Discount error:", err);
+                          toast.error("Хөнгөлөлт бүртгэхэд алдаа гарлаа");
                         }
-                      } catch (err) {
-                        console.error("Discount error:", err);
-                        toast.error("Хөнгөлөлт бүртгэхэд алдаа гарлаа");
-                      }
-                    }}
-                    className="h-10 px-5 rounded !text-white text-sm font-medium active:scale-[0.97] transition-all flex items-center justify-center gap-2 shadow-lg"
-                    style={{
-                      background: "linear-gradient(135deg, #10b981, #059669)",
-                      boxShadow: "0 6px 20px rgba(16, 185, 129, 0.3)",
-                    }}
-                  >
-                    Хөнгөлөх
-                  </button>
-                )}
+                      }}
+                      className="h-10 px-5 rounded !text-white text-sm font-medium active:scale-[0.97] transition-all flex items-center justify-center gap-2 shadow-lg"
+                      style={{
+                        background: "linear-gradient(135deg, #10b981, #059669)",
+                        boxShadow: "0 6px 20px rgba(16, 185, 129, 0.3)",
+                      }}
+                    >
+                      Хөнгөлөх
+                    </button>
+                  )}
               </div>
             </div>
           </div>,
@@ -3004,7 +3012,7 @@ export default function Camera() {
                         Орлого тайлан
                       </h2>
                       <div className="mt-1.5 min-w-[220px]">
-                        <ConfigProvider theme={{ token: { zIndexPopupBase: 9000 } }}>
+                        <ConfigProvider theme={{ token: { zIndexPopupBase: 10000 } }}>
                           <StandardDatePicker
                             isRange={true}
                             value={revenueDateRange}

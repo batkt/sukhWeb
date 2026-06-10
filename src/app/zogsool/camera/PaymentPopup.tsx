@@ -8,21 +8,22 @@ import formatNumber from "../../../../tools/function/formatNumber";
 export const PAY_LABELS: Record<string, string> = {
   belen: "Бэлэн", cash: "Бэлэн", khaan: "Карт", qpay: "QPay",
   khariltsakh: "Дансаар", transfer: "Дансаар", khungulult: "Хөнгөлөлт",
-  discount: "Хөнгөлөлт", free: "Үнэгүй", monpay: "MonPay",
+  discount: "Хөнгөлөлт", "Хөнгөлөлт": "Хөнгөлөлт", free: "Үнэгүй", monpay: "MonPay",
   socialpay: "SocialPay", toki: "Toki",
 };
 export const PAY_COLOR: Record<string, string> = {
-  belen: "bg-emerald-100 text-emerald-700 border-emerald-200",
-  cash: "bg-emerald-100 text-emerald-700 border-emerald-200",
-  khaan: "bg-teal-100 text-teal-700 border-teal-200",
-  qpay: "bg-purple-100 text-purple-700 border-purple-200",
-  khariltsakh: "bg-blue-100 text-blue-700 border-blue-200",
-  transfer: "bg-blue-100 text-blue-700 border-blue-200",
-  khungulult: "bg-amber-100 text-amber-700 border-amber-200",
-  discount: "bg-amber-100 text-amber-700 border-amber-200",
-  monpay: "bg-sky-100 text-sky-700 border-sky-200",
-  socialpay: "bg-indigo-100 text-indigo-700 border-indigo-200",
-  toki: "bg-orange-100 text-orange-700 border-orange-200",
+  belen: "bg-emerald-100 !text-emerald-700 dark:!text-emerald-800 border-emerald-200",
+  cash: "bg-emerald-100 !text-emerald-700 dark:!text-emerald-800 border-emerald-200",
+  khaan: "bg-teal-100 !text-teal-700 dark:!text-teal-800 border-teal-200",
+  qpay: "bg-purple-100 !text-purple-700 dark:!text-purple-800 border-purple-200",
+  khariltsakh: "bg-blue-100 !text-blue-700 dark:!text-blue-800 border-blue-200",
+  transfer: "bg-blue-100 !text-blue-700 dark:!text-blue-800 border-blue-200",
+  khungulult: "bg-amber-100 !text-amber-700 dark:!text-amber-800 border-amber-200",
+  discount: "bg-amber-100 !text-amber-700 dark:!text-amber-800 border-amber-200",
+  "Хөнгөлөлт": "bg-amber-100 !text-amber-700 dark:!text-amber-800 border-amber-200",
+  monpay: "bg-sky-100 !text-sky-700 dark:!text-sky-800 border-sky-200",
+  socialpay: "bg-indigo-100 !text-indigo-700 dark:!text-indigo-800 border-indigo-200",
+  toki: "bg-orange-100 !text-orange-700 dark:!text-orange-800 border-orange-200",
 };
 export const PAY_TEXT_COLOR: Record<string, string> = {
   belen: "text-emerald-600 dark:text-emerald-400",
@@ -33,6 +34,7 @@ export const PAY_TEXT_COLOR: Record<string, string> = {
   transfer: "text-blue-600 dark:text-blue-400",
   khungulult: "text-amber-600 dark:text-amber-400",
   discount: "text-amber-600 dark:text-amber-400",
+  "Хөнгөлөлт": "text-amber-600 dark:text-amber-400",
   monpay: "text-sky-600 dark:text-sky-400",
   socialpay: "text-indigo-600 dark:text-indigo-400",
   toki: "text-orange-600 dark:text-orange-400",
@@ -41,7 +43,7 @@ export const PAY_BG: Record<string, string> = {
   belen: "bg-emerald-500", cash: "bg-emerald-500",
   khaan: "bg-teal-500", qpay: "bg-purple-500",
   khariltsakh: "bg-blue-500", transfer: "bg-blue-500",
-  khungulult: "bg-amber-500", discount: "bg-amber-500",
+  khungulult: "bg-amber-500", discount: "bg-amber-500", "Хөнгөлөлт": "bg-amber-500",
   monpay: "bg-sky-500", socialpay: "bg-indigo-500", toki: "bg-orange-500",
 };
 export const PAY_ICON_BG: Record<string, string> = {
@@ -53,6 +55,7 @@ export const PAY_ICON_BG: Record<string, string> = {
   transfer: "bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400",
   khungulult: "bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400",
   discount: "bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400",
+  "Хөнгөлөлт": "bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400",
   monpay: "bg-sky-100 dark:bg-sky-500/20 text-sky-600 dark:text-sky-400",
   socialpay: "bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400",
   toki: "bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400",
@@ -118,7 +121,7 @@ export const PaymentPopup = ({
         ) : (
           <>
             {uniqueTypes.map((type) => (
-              <span key={type} className={`text-[9px] px-1.5 py-0.5 rounded border ${PAY_COLOR[type] || "bg-slate-100 text-slate-600 border-slate-200"}`}>
+              <span key={type} className={`text-[9px] px-1.5 py-0.5 rounded border ${PAY_COLOR[type] || "bg-slate-100 !text-slate-700 border-slate-200"}`}>
                 {PAY_LABELS[type] || type}
               </span>
             ))}
@@ -138,9 +141,6 @@ export const PaymentPopup = ({
           <div className="px-4 py-3 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
             <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
               Төлбөрийн дэлгэрэнгүй
-            </span>
-            <span className="text-[10px] text-slate-400 dark:text-slate-500">
-              {payHistory.length} бичлэг
             </span>
           </div>
           <div className="p-2 space-y-1.5">

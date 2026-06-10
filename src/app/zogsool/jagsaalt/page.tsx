@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
+import { useSearch } from "@/context/SearchContext";
 import {
   Search,
   Plus,
@@ -20,7 +22,16 @@ import {
   MoreHorizontal,
   X,
   Download,
+  Receipt,
+  Banknote,
+  CreditCard,
+  Landmark,
+  Tag,
+  Wallet,
+  ArrowRight,
+  TrendingUp,
 } from "lucide-react";
+import { ConfigProvider } from "antd";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import moment from "moment";
 import useSWR from "swr";
@@ -108,7 +119,7 @@ export default function Jagsaalt() {
   const { token, ajiltan, barilgiinId } = useAuth();
   const { selectedBuildingId, isInitialized } = useBuilding();
   const effectiveBarilgiinId = selectedBuildingId || barilgiinId || undefined;
-  const [searchTerm, setSearchTerm] = useState("");
+  const { searchTerm, setSearchTerm } = useSearch();
   const [page, setPage] = useState(1);
   const pageSize = 1000;
 
@@ -116,6 +127,14 @@ export default function Jagsaalt() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [openFilter, setOpenFilter] = useState<string | null>(null);
+
+  const [revenueModalOpen, setRevenueModalOpen] = useState(false);
+  const [revenueDateRange, setRevenueDateRange] = useState<[string | null, string | null] | undefined>(() => {
+    const today = moment().format("YYYY-MM-DD");
+    return [today, today];
+  });
+  const [revenueListData, setRevenueListData] = useState<any>(null);
+  const [revenueLoading, setRevenueLoading] = useState(false);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -141,18 +160,18 @@ export default function Jagsaalt() {
   const { data: vehiclesData, mutate } = useSWR(
     shouldFetch
       ? [
-          "/zogsoolUilchluulegchJagsaalt",
-          token,
-          ajiltan?.baiguullagiinId,
-          effectiveBarilgiinId,
-          page,
-          searchTerm,
-          rangeStart,
-          rangeEnd,
-          durationFilter,
-          typeFilter,
-          statusFilter,
-        ]
+        "/zogsoolUilchluulegchJagsaalt",
+        token,
+        ajiltan?.baiguullagiinId,
+        effectiveBarilgiinId,
+        page,
+        searchTerm,
+        rangeStart,
+        rangeEnd,
+        durationFilter,
+        typeFilter,
+        statusFilter,
+      ]
       : null,
     async ([
       url,
@@ -214,12 +233,12 @@ export default function Jagsaalt() {
           ? { "tuukh.0.niitKhugatsaa": -1 }
           : dur === "latest_in"
             ? {
-                "tuukh.tsagiinTuukh.garsanTsag": 1,
-                niitDun: 1,
-                "tuukh.tuluv": 1,
-                "tuukh.tsagiinTuukh.orsonTsag": -1,
-                zurchil: 1,
-              }
+              "tuukh.tsagiinTuukh.garsanTsag": 1,
+              niitDun: 1,
+              "tuukh.tuluv": 1,
+              "tuukh.tsagiinTuukh.orsonTsag": -1,
+              zurchil: 1,
+            }
             : { "tuukh.0.tsagiinTuukh.0.garsanTsag": -1 };
 
       const resp = await uilchilgee(tkn).get("/zogsoolUilchluulegchJagsaalt", {
@@ -240,21 +259,98 @@ export default function Jagsaalt() {
     [vehiclesData],
   );
 
-  const filteredVehicles = useMemo(() => {
-    if (!searchTerm) return vehicles;
-    const term = searchTerm.toLowerCase();
-    return vehicles.filter(
-      (v) =>
-        v.mashiniiDugaar?.toLowerCase().includes(term) ||
-        v.zurchil?.toLowerCase().includes(term) ||
-        v.tuukh?.[0]?.burtgesenAjiltaniiNer?.toLowerCase().includes(term),
-    );
-  }, [vehicles, searchTerm]);
+  // Force revalidate when searchTerm changes
+  useEffect(() => {
+    if (shouldFetch) {
+      mutate();
+    }
+  }, [searchTerm, mutate, shouldFetch]);
+
+  // Vehicles are already filtered by search on the API side
 
   const totalPages = Math.ceil((vehiclesData?.niitMur || 0) / pageSize);
 
+  const fetchRevenueData = useCallback(async (start: string, end: string) => {
+    if (!token || !start || !end) return;
+    setRevenueLoading(true);
+    try {
+      const resp = await uilchilgee(token).get("/zogsoolUilchluulegchJagsaalt", {
+        params: {
+          khuudasniiDugaar: 1,
+          khuudasniiKhemjee: 10000,
+          query: JSON.stringify({
+            baiguullagiinId: ajiltan?.baiguullagiinId,
+            ...(effectiveBarilgiinId ? { barilgiinId: effectiveBarilgiinId } : {}),
+            createdAt: { $gte: `${start} 00:00:00`, $lte: `${end} 23:59:59` },
+          }),
+        },
+      });
+      setRevenueListData(resp.data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setRevenueLoading(false);
+    }
+  }, [token, ajiltan?.baiguullagiinId, effectiveBarilgiinId]);
+
+  useEffect(() => {
+    if (!revenueModalOpen) return;
+    const [start, end] = revenueDateRange || [null, null];
+    if (start && end) fetchRevenueData(start, end);
+  }, [revenueModalOpen, revenueDateRange, fetchRevenueData]);
+
+  useEffect(() => {
+    if (!revenueModalOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setRevenueModalOpen(false); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [revenueModalOpen]);
+
+  const revenueModalBreakdown = useMemo(() => {
+    const allList = revenueListData?.jagsaalt || [];
+    const methodLabels: Record<string, string> = {
+      belen: "Бэлэн", cash: "Бэлэн", khaan: "Карт",
+      khariltsakh: "Дансаар", transfer: "Дансаар", qpay: "QPay",
+      khungulult: "Хөнгөлөлт", discount: "Хөнгөлөлт",
+    };
+    const methodIcons: Record<string, React.ReactNode> = {
+      belen: <Banknote className="w-4 h-4" />, cash: <Banknote className="w-4 h-4" />,
+      khaan: <CreditCard className="w-4 h-4" />, khariltsakh: <ArrowRight className="w-4 h-4" />,
+      transfer: <ArrowRight className="w-4 h-4" />, qpay: <Landmark className="w-4 h-4" />,
+      khungulult: <Tag className="w-4 h-4" />, discount: <Tag className="w-4 h-4" />,
+    };
+    const methodColors: Record<string, string> = {
+      belen: "bg-emerald-500", cash: "bg-emerald-500", khaan: "bg-sky-500",
+      khariltsakh: "bg-violet-500", transfer: "bg-violet-500", qpay: "bg-amber-500",
+      khungulult: "bg-rose-500", discount: "bg-rose-500",
+    };
+    const methodMap: Record<string, { amount: number; count: number }> = {};
+    allList.forEach((t: any) => {
+      (t.tuukh?.[0]?.tulbur || []).forEach((p: any) => {
+        const rawTurul = p.turul || "unknown";
+        const m = (rawTurul === "discount" || rawTurul === "Хөнгөлөлт") ? "khungulult" : rawTurul;
+        if (!methodMap[m]) methodMap[m] = { amount: 0, count: 0 };
+        methodMap[m].amount += Math.abs(p.dun || 0);
+        methodMap[m].count += 1;
+      });
+    });
+    const totalAmount = Object.values(methodMap).reduce((s, v) => s + v.amount, 0);
+    const items = Object.entries(methodMap)
+      .map(([key, val]) => ({
+        key,
+        name: methodLabels[key] || key,
+        icon: methodIcons[key] || <Wallet className="w-4 h-4" />,
+        color: methodColors[key] || "bg-slate-500",
+        amount: val.amount,
+        count: val.count,
+        pct: totalAmount > 0 ? ((val.amount / totalAmount) * 100).toFixed(2) : "0.00",
+      }))
+      .sort((a, b) => b.amount - a.amount);
+    return { items, totalAmount };
+  }, [revenueListData]);
+
   const downloadExcel = () => {
-    if (!filteredVehicles.length) {
+    if (!vehicles.length) {
       toast.error("Татаж авах мэдээлэл байхгүй");
       return;
     }
@@ -263,15 +359,29 @@ export default function Jagsaalt() {
       1: "Төлсөн", 2: "Төлсөн", 0: "Идэвхтэй", [-2]: "Идэвхтэй", [-4]: "Төлбөртэй",
     };
 
-    const rows = filteredVehicles.map((t, i) => {
+    const rows = vehicles.map((t, i) => {
       const mur = t.tuukh?.[0];
       const tsag = mur?.tsagiinTuukh?.[0];
       const orsonTsag = tsag?.orsonTsag;
       const garsanTsag = tsag?.garsanTsag;
       const niitDun = t.niitDun || 0;
-      const tulsunDun = mur?.tulsunDun || 0;
       const tuluv = mur?.tuluv;
       const isCurrentlyIn = !mur?.garsanKhaalga;
+
+      // Calculate payment and discount separately from tulbur array
+      const tulburArray = mur?.tulbur || [];
+      const payments = Array.isArray(tulburArray) ? tulburArray.filter((p: any) => {
+        const turul = p.turul || "";
+        const dun = p.dun || 0;
+        return turul !== "discount" && turul !== "khungulult" && turul !== "Хөнгөлөлт" && dun >= 0;
+      }) : [];
+      const discounts = Array.isArray(tulburArray) ? tulburArray.filter((p: any) => {
+        const turul = p.turul || "";
+        const dun = p.dun || 0;
+        return turul === "discount" || turul === "khungulult" || turul === "Хөнгөлөлт" || dun < 0;
+      }) : [];
+      const paymentAmount = payments.reduce((s: number, p: any) => s + (p.dun || 0), 0);
+      const discountAmount = discounts.reduce((s: number, p: any) => s + Math.abs(p.dun || 0), 0);
 
       const khugatsaa = (() => {
         if (!orsonTsag) return "";
@@ -297,9 +407,9 @@ export default function Jagsaalt() {
         "Гарсан": garsanTsag ? moment(garsanTsag).format("YYYY-MM-DD HH:mm:ss") : "",
         "Хугацаа": khugatsaa,
         "Бодогдсон дүн": niitDun || "",
-        "Төлсөн дүн": tulsunDun || "",
+        "Төлбөр": paymentAmount || "",
+        "Хөнгөлөлт": discountAmount || "",
         "Төлөв": status,
-        "Хөнгөлөлт": mur?.khungulult || "",
         "Шалтгаан": t.zurchil || "",
         "Бүртгэсэн": mur?.burtgesenAjiltaniiNer || "",
         "И-Баримт": mur?.ebarimtId || "",
@@ -309,8 +419,8 @@ export default function Jagsaalt() {
     const ws = XLSX.utils.json_to_sheet(rows);
     ws["!cols"] = [
       { wch: 5 }, { wch: 14 }, { wch: 14 }, { wch: 20 }, { wch: 20 },
-      { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 12 },
-      { wch: 10 }, { wch: 20 }, { wch: 16 }, { wch: 14 },
+      { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 12 },
+      { wch: 20 }, { wch: 16 }, { wch: 14 },
     ];
 
     const wb = XLSX.utils.book_new();
@@ -322,52 +432,49 @@ export default function Jagsaalt() {
   };
 
   return (
-    <div className="h-full overflow-y-auto custom-scrollbar">
-      <div className="p-4 sm:p-8 max-w-[1700px] mx-auto min-h-full flex flex-col gap-6">
-        <div className="relative z-10 px-6 py-4 rounded-[32px] bg-var(--color-bg-primary) border border-slate-200 dark:border-slate-800 shadow-sm shadow-slate-200/50">
+    <div className="fixed inset-0 flex flex-col">
+      <div className="flex-1 flex flex-col gap-4 px-4 py-4 max-w-[1700px] mx-auto w-full h-full overflow-hidden">
+        <div className="relative z-10 px-6 py-4 rounded-[32px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm shadow-slate-200/50">
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
-            {/* Left: Date picker */}
+            {/* Left: Date picker + Search */}
             <div className="flex items-center gap-4 shrink-0">
-              <div className="w-[50px] sm:w-40 lg:w-[300px] h-11">
+              <div className="w-[50px] sm:w-40 lg:w-[300px] h-11 [&_.ant-picker-input]:!bg-transparent [&_input]:!bg-transparent [&_.ant-picker-input-active]:!bg-transparent dark:[&_.ant-picker-suffix]:!text-white dark:[&_.ant-picker-suffix_svg]:!fill-white dark:[&_.ant-picker:hover]:!bg-slate-700 dark:[&_.ant-picker-focused]:!bg-slate-700 [&_.ant-picker-range-separator]:!text-slate-400 dark:[&_.ant-picker-range-separator]:!text-slate-400">
                 <StandardDatePicker
                   isRange={true}
                   value={dateRange ?? undefined}
-                  onChange={(v: any) => {
-                    setDateRange(v ?? null);
+                  onChange={(date: any, dateString: [string, string]) => {
+                    setDateRange(dateString);
                     setPage(1);
                   }}
                   format="YYYY-MM-DD"
-                  className="w-full"
+                  className="w-full !bg-white dark:!bg-slate-700 hover:!bg-white dark:hover:!bg-slate-700 !border-slate-200 dark:!border-slate-500 hover:!border-slate-300 dark:hover:!border-slate-500 shadow-sm"
                   classNames={{
-                    input:
-                      "h-11 rounded-[30px] bg-slate-50 dark:bg-slate-800/50 border-0 text-[11px] text-slate-700 dark:text-slate-200 shadow-inner px-6",
+                    input: "!bg-transparent !border-0 !shadow-none text-[11px] !text-slate-700 dark:!text-slate-100 px-2",
                   }}
                   allowClear
                 />
               </div>
+
             </div>
 
-            {/* Right: Search + Export */}
-            <div className="flex items-center gap-3 flex-1 lg:justify-between">
-              <div className="relative group w-full sm:w-72 max-w-sm">
-                <input
-                  type="text"
-                  placeholder="Улсын дугаар хайх..."
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setPage(1);
-                  }}
-                  className="w-full pl-11 pr-4 h-11 rounded-[30px] bg-slate-50 dark:bg-slate-800/50 border-0 text-[11px] text-slate-700 dark:text-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-[#4285F4]/20 transition-all shadow-inner"
-                />
+            {/* Right: Export + Revenue Report */}
+            <div className="flex items-center gap-3 flex-1 justify-end">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setRevenueModalOpen(true)}
+                  className="flex items-center gap-2 h-11 px-5 rounded-[30px] bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white text-[11px] font-semibold shadow-sm transition-all whitespace-nowrap flex-shrink-0"
+                >
+                  <TrendingUp className="w-3.5 h-3.5" />
+                  Орлого тайлан
+                </button>
+                <button
+                  onClick={downloadExcel}
+                  className="flex items-center gap-2 h-11 px-5 rounded-[30px] bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white text-[11px] font-semibold shadow-sm transition-all whitespace-nowrap flex-shrink-0"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Excel татах
+                </button>
               </div>
-              <button
-                onClick={downloadExcel}
-                className="flex items-center gap-2 h-11 px-5 rounded-[30px] bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white text-[11px] font-semibold shadow-sm transition-all whitespace-nowrap flex-shrink-0"
-              >
-                <Download className="w-3.5 h-3.5" />
-                Excel татах
-              </button>
             </div>
           </div>
 
@@ -408,10 +515,10 @@ export default function Jagsaalt() {
             </div>
           )}
         </div>
-        <div className="relative rounded-[32px] border border-slate-200 dark:border-slate-800 bg-var(--color-bg-primary) backdrop-blur-xl shadow-2xl flex-1 mt-2">
-          <div>
-            <table className="w-full border-collapse min-w-[1300px]">
-              <thead className="bg-slate-900 dark:bg-black/40 border-b border-white/5">
+        <div className="relative rounded-[32px] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 backdrop-blur-xl shadow-2xl flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+          <div className="overflow-x-auto h-full">
+            <table className="w-full border-collapse min-w-[1300px] relative">
+              <thead className="bg-slate-900 dark:bg-slate-950 border-b border-white/5 sticky top-0 z-20">
                 <tr className="overflow-x-auto whitespace-nowrap">
                   {[
                     { id: "no", label: "№", width: "w-12" },
@@ -476,11 +583,10 @@ export default function Jagsaalt() {
                         }}
                       >
                         {h.filter && (
-                          <Filter className={`w-3 h-3 transition-colors ${
-                            h.current !== "all" && h.current !== undefined
-                              ? "text-blue-400"
-                              : "text-slate-500 group-hover:text-blue-400"
-                          }`} />
+                          <Filter className={`w-3 h-3 transition-colors ${h.current !== "all" && h.current !== undefined
+                            ? "text-blue-400"
+                            : "text-slate-500 group-hover:text-blue-400"
+                            }`} />
                         )}
                         {h.label}
                       </div>
@@ -501,11 +607,10 @@ export default function Jagsaalt() {
                                   setPage(1);
                                   setOpenFilter(null);
                                 }}
-                                className={`px-4 py-2.5 rounded-xl text-[10px] text-left flex items-center justify-between cursor-pointer transition-all duration-200 ${
-                                  h.current === opt.value
-                                    ? "bg-blue-500 text-white shadow-lg shadow-blue-500/40"
-                                    : "hover:bg-white/10 text-slate-300 hover:text-white"
-                                }`}
+                                className={`px-4 py-2.5 rounded-xl text-[10px] text-left flex items-center justify-between cursor-pointer transition-all duration-200 ${h.current === opt.value
+                                  ? "bg-blue-500 text-white shadow-lg shadow-blue-500/40"
+                                  : "hover:bg-white/10 text-slate-300 hover:text-white"
+                                  }`}
                               >
                                 <span>{opt.label}</span>
                               </div>
@@ -518,7 +623,7 @@ export default function Jagsaalt() {
                 </tr>
               </thead>
               <tbody>
-                {filteredVehicles.length === 0 ? (
+                {vehicles.length === 0 ? (
                   <tr>
                     <td
                       colSpan={13}
@@ -531,7 +636,7 @@ export default function Jagsaalt() {
                     </td>
                   </tr>
                 ) : (
-                  filteredVehicles.map((transaction, idx) => {
+                  vehicles.map((transaction, idx) => {
                     const mur = transaction.tuukh?.[0];
                     const tsag = mur?.tsagiinTuukh?.[0];
                     const orsonTsag = tsag?.orsonTsag;
@@ -539,15 +644,33 @@ export default function Jagsaalt() {
                     const tuluv = mur?.tuluv;
                     const niitDun = transaction.niitDun || 0;
                     const isCurrentlyIn = !mur?.garsanKhaalga;
+                    const isFreeExit = !!mur?.uneguiGarsan && tuluv !== -2 && tuluv !== -1;
+                    const rawTulbur = mur?.tulbur;
+                    const tulburArr: any[] = Array.isArray(rawTulbur) ? rawTulbur : (rawTulbur ? [rawTulbur] : []);
+                    const discountTotal = tulburArr
+                      .filter((p: any) => p?.turul === "khungulult" || p?.turul === "discount" || p?.turul === "Хөнгөлөлт")
+                      .reduce((s: number, p: any) => s + Math.abs(p?.dun ?? 0), 0);
+                    const effectiveOwed = Math.max(0, niitDun - discountTotal);
+                    const positivePaid = tulburArr.reduce((s: number, p: any) => s + (p?.dun > 0 ? p.dun : 0), 0);
+                    const isDebt = !isFreeExit && (tuluv === -4 || (tuluv === 0 && niitDun > 0 && !isCurrentlyIn));
+                    const hasRemainingBalance = tuluv === 1 && effectiveOwed > 0 && !isCurrentlyIn && positivePaid < effectiveOwed;
+                    const getStatusColor = () => {
+                      if (tuluv === -2 || tuluv === -1) return "bg-red-500 border-red-600";
+                      if (hasRemainingBalance) return "bg-amber-500 border-amber-600";
+                      if (isFreeExit) return "bg-gray-500 border-gray-600";
+                      if (tuluv === 1) return isCurrentlyIn && niitDun === 0 ? "bg-blue-500 border-blue-600" : "bg-emerald-500 border-emerald-600";
+                      if (!isCurrentlyIn && (niitDun > 0 || isDebt)) return "bg-amber-500 border-amber-600";
+                      if (!isCurrentlyIn && niitDun === 0) return "bg-gray-500 border-gray-600";
+                      return "bg-blue-500 border-blue-600";
+                    };
 
                     return (
                       <tr
                         key={transaction._id || idx}
-                        className={`border-b border-slate-100 dark:border-slate-800/50 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors group relative ${
-                          idx % 2 === 0
-                            ? "bg-white dark:bg-transparent"
-                            : "bg-slate-50/70 dark:bg-slate-800/20"
-                        }`}
+                        className={`border-b border-slate-100 dark:border-slate-800/50 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors group relative ${idx % 2 === 0
+                          ? "bg-slate-100 dark:bg-slate-800/40"
+                          : "bg-white dark:bg-transparent"
+                          }`}
                       >
                         <td className="py-4 px-3 text-center text-[10px] text-slate-400 ">
                           {isCurrentlyIn && (
@@ -578,7 +701,7 @@ export default function Jagsaalt() {
                         </td>
                         <td className="py-4 px-3 text-center">
                           <div className="flex items-center justify-center gap-2 group/copy">
-                            <span className="text-xs text-slate-800 dark:text-slate-200 tracking-tight">
+                            <span className="px-2.5 py-0.5 rounded-full bg-blue-600 text-[11px] font-bold !text-white tracking-widest font-[family-name:var(--font-mono)]">
                               {transaction.mashiniiDugaar || ""}
                             </span>
                             <Copy
@@ -591,14 +714,8 @@ export default function Jagsaalt() {
                         </td>
                         <td className="py-4 px-3 text-center">
                           <div
-                            className={`px-2.5 py-1.5 rounded-2xl text-center w-[130px] inline-block whitespace-nowrap border transition-all ${
-                              !garsanTsag
-                                ? "bg-blue-500 border-blue-600 text-white shadow-sm"
-                                : tuluv === -4 ||
-                                    (niitDun > 0 && !isCurrentlyIn)
-                                  ? "bg-amber-600 border-amber-700 text-white shadow-sm"
-                                  : "bg-gray-500 border-gray-600 text-white"
-                            }`}
+                            className={`flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-1 rounded-[6px] overflow-hidden border text-[10px] text-white ${getStatusColor()}`}
+                            style={{ borderRadius: "6px", color: "white" }}
                           >
                             <RealTimeDuration
                               orsonTsag={orsonTsag}
@@ -608,8 +725,8 @@ export default function Jagsaalt() {
                           </div>
                         </td>
                         <td className="py-4 px-3 text-center">
-                          <span className="text-xs font-black text-slate-900 dark:text-white">
-                            {niitDun ? formatNumber(niitDun) : ""}
+                          <span className="text-xs text-slate-700 dark:text-slate-300 font-[family-name:var(--font-mono)]">
+                            {formatNumber(niitDun, 2)}
                           </span>
                         </td>
                         <td className="py-4 px-3 text-center">
@@ -620,69 +737,67 @@ export default function Jagsaalt() {
                               if (raw && typeof raw === "object") return [raw];
                               return [];
                             });
-                            if (!payHistory.length) return <span />;
-                            const totalPaid = payHistory.reduce((s: number, p: any) => s + (p.dun || 0), 0);
-                            const uniqueTypes = [...new Set(payHistory.map((p: any) => p.turul).filter(Boolean))] as string[];
+                            // Filter only actual payments (not discounts)
+                            const paymentHistory = payHistory.filter((p: any) => {
+                              const turul = p.turul || "";
+                              const dun = p.dun || 0;
+                              return turul !== "discount" && turul !== "khungulult" && turul !== "Хөнгөлөлт" && dun >= 0;
+                            });
+                            if (!paymentHistory.length) return <span />;
+                            const totalPaid = paymentHistory.reduce((s: number, p: any) => s + (p.dun || 0), 0);
+                            const uniqueTypes = [...new Set(paymentHistory.map((p: any) => p.turul).filter(Boolean))] as string[];
                             return (
                               <PaymentPopup
-                                payHistory={payHistory}
+                                payHistory={paymentHistory}
                                 totalPaid={totalPaid}
                                 uniqueTypes={uniqueTypes}
                               />
                             );
                           })()}
                         </td>
-                        <td className="py-4 px-3 text-[11px] text-slate-500 text-center">
-                          {mur?.khungulult || ""}
+                        <td className="py-4 px-3 text-center">
+                          {(() => {
+                            const payHistory: any[] = (transaction.tuukh || []).flatMap((th: any) => {
+                              const raw = th?.tulbur;
+                              if (Array.isArray(raw)) return raw;
+                              if (raw && typeof raw === "object") return [raw];
+                              return [];
+                            });
+                            // Filter only discounts
+                            const discountHistory = payHistory.filter((p: any) => {
+                              const turul = p.turul || "";
+                              const dun = p.dun || 0;
+                              return turul === "discount" || turul === "khungulult" || turul === "Хөнгөлөлт" || dun < 0;
+                            });
+                            if (!discountHistory.length) return <span />;
+                            const totalDiscount = discountHistory.reduce((s: number, p: any) => s + Math.abs(p.dun || 0), 0);
+                            const uniqueTypes = [...new Set(discountHistory.map((p: any) => p.turul).filter(Boolean))] as string[];
+                            return (
+                              <PaymentPopup
+                                payHistory={discountHistory}
+                                totalPaid={totalDiscount}
+                                uniqueTypes={uniqueTypes}
+                              />
+                            );
+                          })()}
                         </td>
                         <td className="py-4 px-3 text-[11px] text-slate-500 text-center">
                           {mur?.ebarimtId || ""}
                         </td>
                         <td className="py-4 px-3 text-center">
                           {(() => {
-                            const badgeClass =
-                              "flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-1.5 rounded-[6px] overflow-hidden border";
-                            if (tuluv === 1)
-                              return (
-                                <div
-                                  className={`${badgeClass} bg-emerald-500 border-emerald-600`}
-                                  style={{ borderRadius: "6px" }}
-                                >
-                                  <span className="text-[10px] !text-white uppercase whitespace-nowrap">
-                                    Төлсөн
-                                  </span>
-                                </div>
-                              );
-                            if (isCurrentlyIn)
-                              return (
-                                <div
-                                  className={`${badgeClass} bg-blue-500 border-blue-600`}
-                                  style={{ borderRadius: "6px" }}
-                                >
-                                  <span className="text-[10px] !text-white uppercase whitespace-nowrap">
-                                    Идэвхтэй
-                                  </span>
-                                </div>
-                              );
-                            if (tuluv === -4 || (niitDun > 0 && !isCurrentlyIn))
-                              return (
-                                <div
-                                  className={`${badgeClass} bg-amber-600 border-amber-700`}
-                                  style={{ borderRadius: "6px" }}
-                                >
-                                  <span className="text-[10px] !text-white uppercase whitespace-nowrap">
-                                    Төлбөртэй
-                                  </span>
-                                </div>
-                              );
+                            const badgeClass = `flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-1.5 rounded-[6px] overflow-hidden border ${getStatusColor()}`;
+                            const label =
+                              tuluv === -2 || tuluv === -1 ? "Зөрчилтэй"
+                                : hasRemainingBalance ? "Төлбөр"
+                                  : isFreeExit ? "Төлсөн"
+                                    : tuluv === 1 ? (isCurrentlyIn && niitDun === 0 ? "Идэвхтэй" : "Төлсөн")
+                                      : isCurrentlyIn ? "Идэвхтэй"
+                                        : niitDun > 0 || isDebt ? "Төлбөртэй"
+                                          : "Үнэгүй";
                             return (
-                              <div
-                                className={`${badgeClass} bg-gray-500 border-gray-600`}
-                                style={{ borderRadius: "6px" }}
-                              >
-                                <span className="text-[10px] !text-white uppercase whitespace-nowrap">
-                                  Гарсан
-                                </span>
+                              <div className={badgeClass} style={{ borderRadius: "6px" }}>
+                                <span className="text-[10px] !text-white uppercase whitespace-nowrap">{label}</span>
                               </div>
                             );
                           })()}
@@ -704,39 +819,65 @@ export default function Jagsaalt() {
                   })
                 )}
               </tbody>
-              {filteredVehicles.length > 0 && (
-                <tfoot className="bg-slate-50 dark:bg-slate-900 border-t-2 border-slate-200 dark:border-white/10 text-slate-800 dark:text-white sticky bottom-0 z-10">
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="py-3 px-3 text-right text-[11px] font-black uppercase tracking-wider border-r border-slate-200 dark:border-white/5"
-                    >
-                      Нийт Дүн:
-                    </td>
-                    <td className="py-3 px-3 text-center border-r border-slate-200 dark:border-white/5 text-xs font-black font-[family-name:var(--font-mono)] whitespace-nowrap">
-                      {formatNumber(
-                        filteredVehicles.reduce(
-                          (sum, t) => sum + (Number(t.niitDun) || 0),
-                          0,
-                        ),
-                      )}
-                    </td>
-                    <td className="py-3 px-3 text-center border-r border-slate-200 dark:border-white/5 text-xs font-black font-[family-name:var(--font-mono)] whitespace-nowrap">
-                      {formatNumber(
-                        filteredVehicles.reduce(
-                          (sum, t) =>
-                            sum + (Number(t.tuukh?.[0]?.tulsunDun) || 0),
-                          0,
-                        ),
-                      )}
-                    </td>
-                    <td
-                      colSpan={5}
-                      className="border-r border-slate-200 dark:border-white/5"
-                    />
-                  </tr>
-                </tfoot>
-              )}
+              <tfoot className="bg-slate-50 dark:bg-slate-900 border-t-2 border-slate-200 dark:border-white/10 text-slate-800 dark:text-white sticky bottom-0 z-10">
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="py-3 px-3 text-right text-[11px] font-black uppercase tracking-wider border-r border-slate-200 dark:border-white/5"
+                  >
+                    Нийт Дүн:
+                  </td>
+                  <td className="py-3 px-3 text-center border-r border-slate-200 dark:border-white/5 text-xs font-black font-[family-name:var(--font-mono)] whitespace-nowrap">
+                    {formatNumber(
+                      vehicles.reduce(
+                        (sum, t) => sum + (Number(t.niitDun) || 0),
+                        0,
+                      ), 2)}
+                  </td>
+                  <td className="py-3 px-3 text-center border-r border-slate-200 dark:border-white/5 text-xs font-black font-[family-name:var(--font-mono)] whitespace-nowrap">
+                    {formatNumber(
+                      vehicles.reduce(
+                        (sum, t) => {
+                          const tulburArray = t.tuukh?.[0]?.tulbur || [];
+                          const totalPaid = Array.isArray(tulburArray)
+                            ? tulburArray.reduce((s: number, p: any) => {
+                              const turul = p.turul || "";
+                              const dun = p.dun || 0;
+                              if (turul === "discount" || turul === "khungulult" || turul === "Хөнгөлөлт" || dun < 0) return s;
+                              return s + dun;
+                            }, 0)
+                            : 0;
+                          return sum + totalPaid;
+                        },
+                        0,
+                      ), 2)}
+                  </td>
+                  <td className="py-3 px-3 text-center border-r border-slate-200 dark:border-white/5 text-xs font-black font-[family-name:var(--font-mono)] whitespace-nowrap">
+                    {formatNumber(
+                      vehicles.reduce(
+                        (sum, t) => {
+                          const tulburArray = t.tuukh?.[0]?.tulbur || [];
+                          const totalDiscount = Array.isArray(tulburArray)
+                            ? tulburArray.reduce((s: number, p: any) => {
+                              const turul = p.turul || "";
+                              const dun = p.dun || 0;
+                              if (turul === "discount" || turul === "khungulult" || turul === "Хөнгөлөлт" || dun < 0) {
+                                return s + Math.abs(dun);
+                              }
+                              return s;
+                            }, 0)
+                            : 0;
+                          return sum + totalDiscount;
+                        },
+                        0,
+                      ), 2)}
+                  </td>
+                  <td
+                    colSpan={4}
+                    className="border-r border-slate-200 dark:border-white/5"
+                  />
+                </tr>
+              </tfoot>
             </table>
           </div>
         </div>
@@ -747,6 +888,119 @@ export default function Jagsaalt() {
           pageSize={pageSize}
           onChange={setPage}
         />
+        {revenueModalOpen && createPortal(
+          <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+            style={{
+              background: "rgba(0,0,0,0.45)",
+              backdropFilter: "blur(12px)",
+            }}
+            onClick={() => setRevenueModalOpen(false)}
+          >
+            <div
+              className="relative w-[420px] max-w-full rounded-[28px] overflow-hidden shadow-2xl border bg-white dark:bg-[#18181b] border-slate-200/40 dark:border-white/[0.06]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="relative px-7 pt-6 pb-5 border-b border-slate-100 dark:border-white/[0.06]">
+                <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-emerald-500 via-teal-500 to-green-500 opacity-80" />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-slate-100 dark:bg-white/[0.06] border border-slate-200/50 dark:border-white/[0.06]">
+                      <Receipt className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+                    </div>
+                    <div>
+                      <h2 className="text-[15px] text-slate-800 dark:text-white tracking-tight">
+                        Орлого тайлан
+                      </h2>
+                      <div className="mt-1.5 min-w-[220px]">
+                        <ConfigProvider theme={{ token: { zIndexPopupBase: 10000 } }}>
+                          <StandardDatePicker
+                            isRange={true}
+                            value={revenueDateRange}
+                            onChange={(_: any, dateStrings: [string, string]) => setRevenueDateRange(dateStrings)}
+                            format="YYYY-MM-DD"
+                            classNames={{
+                              input: "flex items-center gap-2 rounded-full border border-slate-200/40 dark:border-white/[0.06] h-8 px-3 text-[11px] text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-blue-500/10 transition-all",
+                            }}
+                            allowClear
+                            getPopupContainer={() => document.body}
+                          />
+                        </ConfigProvider>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setRevenueModalOpen(false)}
+                    className="w-9 h-9 rounded-full bg-slate-100 dark:bg-white/[0.06] flex items-center justify-center text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className="p-5 space-y-2 max-h-[60vh] overflow-y-auto">
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em] mb-1">
+                  Төлбөрийн хэлбэр
+                </p>
+                {revenueLoading && (
+                  <div className="text-center py-8 text-[11px] text-slate-400">Уншиж байна...</div>
+                )}
+                {!revenueLoading && revenueModalBreakdown.items.map((item) => (
+                  <div
+                    key={item.key}
+                    className="relative flex items-center gap-3 py-2.5 px-3 rounded-2xl border border-slate-100 dark:border-white/[0.06] bg-slate-50/50 dark:bg-white/[0.02] overflow-hidden"
+                  >
+                    {/* Percentage fill background */}
+                    <div
+                      className={`absolute inset-y-0 left-0 ${item.color} opacity-[0.08] dark:opacity-[0.06] transition-all duration-500`}
+                      style={{ width: `${item.pct}%` }}
+                    />
+                    <div
+                      className={`w-1 h-8 rounded-full ${item.color} shrink-0 relative z-10`}
+                    />
+                    <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-white/[0.06] flex items-center justify-center text-slate-500 dark:text-slate-400 shrink-0 relative z-10">
+                      {item.icon}
+                    </div>
+                    <div className="flex-1 min-w-0 relative z-10">
+                      <span className="text-[12px] text-slate-700 dark:text-slate-200 block">
+                        {item.name}
+                      </span>
+                    </div>
+                    <span className="text-[13px] font-black text-slate-800 dark:text-white font-[family-name:var(--font-mono)] shrink-0 relative z-10">
+                      {formatNumber(item.amount)}₮
+                    </span>
+                    <span className="text-[11px] text-slate-400 dark:text-slate-500 font-[family-name:var(--font-mono)] w-6 text-center shrink-0 relative z-10">
+                      {item.count}
+                    </span>
+                    <span className="text-[11px] text-slate-400 dark:text-slate-500 font-[family-name:var(--font-mono)] w-12 text-right shrink-0 relative z-10">
+                      {item.pct}%
+                    </span>
+                  </div>
+                ))}
+                {!revenueLoading && revenueModalBreakdown.items.length === 0 && (
+                  <p className="text-center text-[11px] text-slate-400 dark:text-slate-500 py-8">
+                    Төлбөрийн мэдээлэл олдсонгүй
+                  </p>
+                )}
+              </div>
+
+              {/* Footer total */}
+              <div className="px-7 pb-6 pt-2">
+                <div className="flex justify-between items-center py-3 px-4 rounded-2xl bg-emerald-50 dark:bg-emerald-500/[0.08] border border-emerald-200 dark:border-emerald-500/20">
+                  <span className="text-[11px] font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
+                    Нийт орлого
+                  </span>
+                  <span className="text-[14px] font-black text-emerald-700 dark:text-emerald-400 font-[family-name:var(--font-mono)]">
+                    {formatNumber(revenueModalBreakdown.totalAmount)}₮
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
       </div>
     </div>
   );

@@ -75,7 +75,7 @@ export function StandardDatePicker({
 
   // Combine passed className with standardized ones, removing the harsh default white background
   const combinedClassName =
-    `w-full rounded-2xl !border-slate-200 dark:!border-slate-800 hover:!border-slate-300 dark:hover:!border-slate-700 focus:!border-sky-500 transition-all font-inter h-full ${className} ${rootClassName} ${inputClassName}`.trim();
+    `w-full rounded-2xl !border-slate-200 dark:!border-slate-800 hover:!border-slate-300 dark:hover:!border-slate-700 focus:!border-sky-500 transition-all font-inter h-full ${className} ${rootClassName}`.trim();
 
   // Monitor dark mode
   const [isDark, setIsDark] = React.useState(false);
@@ -105,6 +105,8 @@ export function StandardDatePicker({
           colorTextPlaceholder: isDark ? "#64748b" : "#94a3b8",
           colorIcon: isDark ? "#94a3b8" : "#64748b",
           colorIconHover: isDark ? "#f1f5f9" : "#0f172a",
+          colorBorder: isDark ? "#64748b" : "#e2e8f0",
+          colorSplit: isDark ? "#334155" : "#f1f5f9",
 
           // Selection colors
           colorPrimary: "#10b981", // emerald-500
@@ -140,6 +142,7 @@ export function StandardDatePicker({
           allowClear={allowClear}
           style={customStyles}
           className={combinedClassName}
+          classNames={inputClassName ? { input: inputClassName } : undefined}
           {...(props as any)}
         />
       ) : (
@@ -151,6 +154,7 @@ export function StandardDatePicker({
           allowClear={allowClear}
           style={customStyles}
           className={combinedClassName}
+          classNames={inputClassName ? { input: inputClassName } : undefined}
           {...(props as any)}
         />
       )}
