@@ -8,8 +8,6 @@ import axios from "axios";
 import { toast } from "react-hot-toast";
 import Button from "@/components/ui/Button";
 import useModalHotkeys from "@/lib/useModalHotkeys";
-import { DatePicker, ConfigProvider } from "antd";
-import mn_MN from "antd/lib/locale/mn_MN";
 import dayjs from "dayjs";
 
 interface VehicleRegistrationModalProps {
@@ -88,6 +86,29 @@ export default function VehicleRegistrationModal({
     }
     if (!selectedIP) {
       toast.error("Камер сонгоно уу");
+      return;
+    }
+    if (!regDate) {
+      toast.error("Огноо сонгоно уу");
+      return;
+    }
+    const parsed = dayjs(regDate);
+    if (!parsed.isValid()) {
+      toast.error("Буруу огноо оруулсан байна");
+      return;
+    }
+    if (parsed.isAfter(dayjs())) {
+      toast.error("Ирээдүйн огноо сонгох боломжгүй");
+      return;
+    }
+    const h = parsed.hour();
+    const m = parsed.minute();
+    if (h < 0 || h > 23) {
+      toast.error("Цаг 00-23 байх ёстой");
+      return;
+    }
+    if (m < 0 || m > 59) {
+      toast.error("Минут 00-59 байх ёстой");
       return;
     }
 
@@ -260,25 +281,14 @@ export default function VehicleRegistrationModal({
               <label className="text-[9px] text-slate-600 dark:text-slate-400 uppercase tracking-wider ml-1">
                 Огноо сонголт
               </label>
-              <ConfigProvider
-                locale={mn_MN}
-                theme={{
-                  token: { colorPrimary: "#3b82f6", borderRadius: 8 },
-                }}
-              >
-                <DatePicker
-                  showTime={{ format: "HH:mm" }}
-                  value={regDate ? dayjs(regDate) : null}
-                  onChange={(date) =>
-                    setRegDate(date ? date.format("YYYY-MM-DDTHH:mm") : "")
-                  }
-                  format="YYYY-MM-DD HH:mm"
-                  allowClear={false}
-                  getPopupContainer={() => document.body}
-                  style={{ width: "100%", height: "40px", borderRadius: "0.5rem" }}
-                  className="!bg-slate-50 dark:!bg-white/5 !border-2 !border-slate-200 dark:!border-white/10 !text-slate-700 dark:!text-slate-300 !text-xs hover:!border-blue-500 focus:!border-blue-500"
-                />
-              </ConfigProvider>
+              <input
+                type="datetime-local"
+                value={regDate}
+                max={moment().format("YYYY-MM-DDTHH:mm")}
+                onChange={(e) => setRegDate(e.target.value)}
+                className="w-full h-10 px-3 rounded-lg bg-slate-50 dark:bg-white/5 border-2 border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 text-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 outline-none transition-all"
+                style={{ borderRadius: "0.5rem" }}
+              />
             </div>
           </div>
 
