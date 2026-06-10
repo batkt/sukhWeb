@@ -107,6 +107,7 @@ interface Vehicle {
     garsanKhaalga?: string;
     niitKhugatsaa?: number;
     burtgesenAjiltaniiNer?: string;
+    uneguiGarsan?: boolean;
     tulbur?: Array<{
       turul?: string;
       dun?: number;
@@ -324,6 +325,16 @@ export default function Jagsaalt() {
       khariltsakh: "bg-violet-500", transfer: "bg-violet-500", qpay: "bg-amber-500",
       khungulult: "bg-rose-500", discount: "bg-rose-500",
     };
+    const methodCardColors: Record<string, string> = {
+      belen: "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400",
+      cash: "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400",
+      khaan: "bg-sky-50 dark:bg-sky-500/10 border-sky-200 dark:border-sky-500/20 text-sky-700 dark:text-sky-400",
+      khariltsakh: "bg-violet-50 dark:bg-violet-500/10 border-violet-200 dark:border-violet-500/20 text-violet-700 dark:text-violet-400",
+      transfer: "bg-violet-50 dark:bg-violet-500/10 border-violet-200 dark:border-violet-500/20 text-violet-700 dark:text-violet-400",
+      qpay: "bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20 text-amber-700 dark:text-amber-400",
+      khungulult: "bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20 text-rose-700 dark:text-rose-400",
+      discount: "bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20 text-rose-700 dark:text-rose-400",
+    };
     const methodMap: Record<string, { amount: number; count: number }> = {};
     allList.forEach((t: any) => {
       (t.tuukh?.[0]?.tulbur || []).forEach((p: any) => {
@@ -341,6 +352,7 @@ export default function Jagsaalt() {
         name: methodLabels[key] || key,
         icon: methodIcons[key] || <Wallet className="w-4 h-4" />,
         color: methodColors[key] || "bg-slate-500",
+        cardColor: methodCardColors[key] || "bg-slate-50 dark:bg-slate-500/10 border-slate-200 dark:border-slate-500/20 text-slate-700 dark:text-slate-400",
         amount: val.amount,
         count: val.count,
         pct: totalAmount > 0 ? ((val.amount / totalAmount) * 100).toFixed(2) : "0.00",
@@ -940,50 +952,59 @@ export default function Jagsaalt() {
               </div>
 
               {/* Body */}
-              <div className="p-5 space-y-2 max-h-[60vh] overflow-y-auto">
-                <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em] mb-1">
+              <div className="p-5 max-h-[60vh] overflow-y-auto">
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em] mb-3">
                   Төлбөрийн хэлбэр
                 </p>
                 {revenueLoading && (
                   <div className="text-center py-8 text-[11px] text-slate-400">Уншиж байна...</div>
                 )}
-                {!revenueLoading && revenueModalBreakdown.items.map((item) => (
-                  <div
-                    key={item.key}
-                    className="relative flex items-center gap-3 py-2.5 px-3 rounded-2xl border border-slate-100 dark:border-white/[0.06] bg-slate-50/50 dark:bg-white/[0.02] overflow-hidden"
-                  >
-                    {/* Percentage fill background */}
-                    <div
-                      className={`absolute inset-y-0 left-0 ${item.color} opacity-[0.08] dark:opacity-[0.06] transition-all duration-500`}
-                      style={{ width: `${item.pct}%` }}
-                    />
-                    <div
-                      className={`w-1 h-8 rounded-full ${item.color} shrink-0 relative z-10`}
-                    />
-                    <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-white/[0.06] flex items-center justify-center text-slate-500 dark:text-slate-400 shrink-0 relative z-10">
-                      {item.icon}
-                    </div>
-                    <div className="flex-1 min-w-0 relative z-10">
-                      <span className="text-[12px] text-slate-700 dark:text-slate-200 block">
-                        {item.name}
-                      </span>
-                    </div>
-                    <span className="text-[13px] font-black text-slate-800 dark:text-white font-[family-name:var(--font-mono)] shrink-0 relative z-10">
-                      {formatNumber(item.amount)}₮
-                    </span>
-                    <span className="text-[11px] text-slate-400 dark:text-slate-500 font-[family-name:var(--font-mono)] w-6 text-center shrink-0 relative z-10">
-                      {item.count}
-                    </span>
-                    <span className="text-[11px] text-slate-400 dark:text-slate-500 font-[family-name:var(--font-mono)] w-12 text-right shrink-0 relative z-10">
-                      {item.pct}%
-                    </span>
-                  </div>
-                ))}
                 {!revenueLoading && revenueModalBreakdown.items.length === 0 && (
                   <p className="text-center text-[11px] text-slate-400 dark:text-slate-500 py-8">
                     Төлбөрийн мэдээлэл олдсонгүй
                   </p>
                 )}
+                {!revenueLoading && revenueModalBreakdown.items.length > 0 && (() => {
+                  const discount = revenueModalBreakdown.items.find(i => i.key === "khungulult");
+                  const others = revenueModalBreakdown.items.filter(i => i.key !== "khungulult");
+                  const renderCard = (item: typeof revenueModalBreakdown.items[0], tall = false) => (
+                    <div
+                      key={item.key}
+                      className={`relative flex flex-col justify-between p-3.5 rounded-2xl border overflow-hidden ${item.cardColor} ${tall ? "h-full min-h-[120px]" : ""}`}
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className={`w-7 h-7 rounded-xl flex items-center justify-center ${item.color} bg-opacity-20 shrink-0`}>
+                          <span className="text-white [&_svg]:w-3.5 [&_svg]:h-3.5">{item.icon}</span>
+                        </div>
+                        <span className="text-[11px] font-semibold">{item.name}</span>
+                        <span className="ml-auto text-[10px] opacity-60">×{item.count}</span>
+                      </div>
+                      <div className="mt-auto">
+                        <div className="text-[15px] font-black font-[family-name:var(--font-mono)] leading-tight">
+                          {formatNumber(item.amount)}₮
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-1.5">
+                          <div className="flex-1 h-1 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+                            <div className={`h-full rounded-full ${item.color}`} style={{ width: `${item.pct}%` }} />
+                          </div>
+                          <span className="text-[10px] opacity-60 font-[family-name:var(--font-mono)]">{item.pct}%</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                  return (
+                    <div className="flex gap-3">
+                      <div className="flex-1 grid grid-cols-2 gap-3">
+                        {others.map(item => renderCard(item))}
+                      </div>
+                      {discount && (
+                        <div className="w-[140px] shrink-0">
+                          {renderCard(discount, true)}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Footer total */}

@@ -87,53 +87,38 @@ function accentClasses(accent: string, isActive: boolean) {
     }
   > = {
     emerald: {
-      active:
-        "bg-emerald-500/10 dark:bg-emerald-500/15 border-emerald-500 ring-2 ring-emerald-500/25",
-      inactive:
-        "bg-white dark:bg-white/[0.04] border-slate-200/60 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/[0.15] hover:shadow-md",
-      icon: "bg-slate-100 dark:bg-white/[0.06] text-slate-400 dark:text-slate-500",
-      activeIcon:
-        "bg-emerald-500/15 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400",
+      active:  "bg-emerald-500 border-emerald-600 ring-2 ring-emerald-500/30 text-white",
+      inactive: "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-500/20",
+      icon: "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400",
+      activeIcon: "bg-white/20 text-white",
       badge: "bg-emerald-500",
     },
     sky: {
-      active:
-        "bg-sky-500/10 dark:bg-sky-500/15 border-sky-500 ring-2 ring-sky-500/25",
-      inactive:
-        "bg-white dark:bg-white/[0.04] border-slate-200/60 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/[0.15] hover:shadow-md",
-      icon: "bg-slate-100 dark:bg-white/[0.06] text-slate-400 dark:text-slate-500",
-      activeIcon:
-        "bg-sky-500/15 dark:bg-sky-500/20 text-sky-600 dark:text-sky-400",
+      active:  "bg-sky-500 border-sky-600 ring-2 ring-sky-500/30 text-white",
+      inactive: "bg-sky-50 dark:bg-sky-500/10 border-sky-200 dark:border-sky-500/30 text-sky-700 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-500/20",
+      icon: "bg-sky-100 dark:bg-sky-500/20 text-sky-600 dark:text-sky-400",
+      activeIcon: "bg-white/20 text-white",
       badge: "bg-sky-500",
     },
     violet: {
-      active:
-        "bg-violet-500/10 dark:bg-violet-500/15 border-violet-500 ring-2 ring-violet-500/25",
-      inactive:
-        "bg-white dark:bg-white/[0.04] border-slate-200/60 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/[0.15] hover:shadow-md",
-      icon: "bg-slate-100 dark:bg-white/[0.06] text-slate-400 dark:text-slate-500",
-      activeIcon:
-        "bg-violet-500/15 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400",
+      active:  "bg-violet-500 border-violet-600 ring-2 ring-violet-500/30 text-white",
+      inactive: "bg-violet-50 dark:bg-violet-500/10 border-violet-200 dark:border-violet-500/30 text-violet-700 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-500/20",
+      icon: "bg-violet-100 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400",
+      activeIcon: "bg-white/20 text-white",
       badge: "bg-violet-500",
     },
     amber: {
-      active:
-        "bg-amber-500/10 dark:bg-amber-500/15 border-amber-500 ring-2 ring-amber-500/25",
-      inactive:
-        "bg-white dark:bg-white/[0.04] border-slate-200/60 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/[0.15] hover:shadow-md",
-      icon: "bg-slate-100 dark:bg-white/[0.06] text-slate-400 dark:text-slate-500",
-      activeIcon:
-        "bg-amber-500/15 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400",
+      active:  "bg-amber-500 border-amber-600 ring-2 ring-amber-500/30 text-white",
+      inactive: "bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-500/20",
+      icon: "bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400",
+      activeIcon: "bg-white/20 text-white",
       badge: "bg-amber-500",
     },
     rose: {
-      active:
-        "bg-rose-500/10 dark:bg-rose-500/15 border-rose-500 ring-2 ring-rose-500/25",
-      inactive:
-        "bg-white dark:bg-white/[0.04] border-slate-200/60 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/[0.15] hover:shadow-md",
-      icon: "bg-slate-100 dark:bg-white/[0.06] text-slate-400 dark:text-slate-500",
-      activeIcon:
-        "bg-rose-500/15 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400",
+      active:  "bg-rose-500 border-rose-600 ring-2 ring-rose-500/30 text-white",
+      inactive: "bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-500/20",
+      icon: "bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400",
+      activeIcon: "bg-white/20 text-white",
       badge: "bg-rose-500",
     },
   };
@@ -529,25 +514,20 @@ export default function PaymentModal({
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-slate-100 dark:bg-white/[0.06] border border-slate-200/50 dark:border-white/[0.06]">
-                <Wallet className="w-5 h-5 text-slate-500 dark:text-slate-400" />
-              </div>
+              <Wallet className="w-5 h-5 text-slate-400 dark:text-slate-500 shrink-0" />
               <div>
-                <h2 className="text-[15px]  text-slate-800 dark:text-white tracking-tight">
+                <h2 className="text-[15px] font-bold text-slate-800 dark:text-white tracking-tight">
                   Тооцоо хийх
                 </h2>
-                <div className="flex items-center gap-3 mt-0.5">
-                  <div className="flex items-center gap-1.5 text-[11px] text-slate-400 dark:text-slate-500">
-                    <Car className="w-3.5 h-3.5" />
-                    <span className=" uppercase tracking-wide">
-                      {transaction.mashiniiDugaar}
-                    </span>
-                  </div>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="px-2.5 py-0.5 rounded-full bg-blue-600 text-[11px] font-bold !text-white tracking-widest font-[family-name:var(--font-mono)]">
+                    {transaction.mashiniiDugaar}
+                  </span>
                   {duration && (
-                    <div className="flex items-center gap-1 text-[11px] text-slate-400 dark:text-slate-500">
+                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-white/[0.08] text-[11px] text-slate-500 dark:text-slate-400">
                       <Clock className="w-3 h-3" />
-                      <span className="">{durationStr}</span>
-                    </div>
+                      {durationStr}
+                    </span>
                   )}
                 </div>
               </div>
@@ -561,29 +541,24 @@ export default function PaymentModal({
             </button>
           </div>
 
-          {/* Progress bar */}
-          <div className="mt-4 h-1.5 rounded-full bg-slate-100 dark:bg-white/[0.06] overflow-hidden">
-            <div
-              className="h-full rounded-full transition-all duration-500 ease-out"
-              style={{
-                width: `${progressPct}%`,
-                background:
-                  progressPct >= 100
+          {/* Progress bar + stats */}
+          <div className="mt-4 flex items-center gap-3">
+            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-white/[0.06] text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">
+              Оруулсан: <span className="font-black text-slate-700 dark:text-slate-200 font-[family-name:var(--font-mono)]">{formatNumber(paidSoFar)}₮</span>
+            </span>
+            <div className="flex-1 h-2 rounded-full bg-slate-100 dark:bg-white/[0.06] overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-500 ease-out"
+                style={{
+                  width: `${progressPct}%`,
+                  background: progressPct >= 100
                     ? "linear-gradient(90deg, #10b981, #34d399)"
                     : "linear-gradient(90deg, #3b82f6, #6366f1)",
-              }}
-            />
-          </div>
-          <div className="flex justify-between mt-1.5 text-[10px]  uppercase tracking-wider">
-            <span className="text-slate-400 dark:text-slate-500">
-              Оруулсан: {formatNumber(paidSoFar)}
-            </span>
-            <span
-              className={`${tulukhDun > 0 ? "text-rose-500" : "text-emerald-500"}`}
-            >
-              {tulukhDun > 0
-                ? `Дутуу: ${formatNumber(tulukhDun)}`
-                : "Бүрэн төлсөн ✓"}
+                }}
+              />
+            </div>
+            <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider whitespace-nowrap font-[family-name:var(--font-mono)] ${tulukhDun > 0 ? "bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400" : "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"}`}>
+              {tulukhDun > 0 ? `Дутуу: ${formatNumber(tulukhDun)}₮` : "Бүрэн ✓"}
             </span>
           </div>
         </div>
@@ -598,57 +573,71 @@ export default function PaymentModal({
                 <p className="text-[10px]  text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em] mb-3">
                   Төлбөрийн хэлбэр
                 </p>
-                <div className="grid grid-cols-2 gap-3">
-                  {PAYMENT_METHODS.map((method) => {
+                <div className="flex gap-3">
+                  {/* 2×2 grid of regular methods */}
+                  <div className="flex-1 grid grid-cols-2 gap-3">
+                    {PAYMENT_METHODS.filter((m) => m.id !== "khungulult").map((method) => {
+                      const isActive = (value[method.id] || 0) > 0;
+                      const ac = accentClasses(method.accent, isActive);
+                      const isLoading = processingTurul === method.id;
+                      return (
+                        <button
+                          key={method.id}
+                          onClick={() => {
+                            setActiveMethod(method.id);
+                            if (!isProcessing) turulruuTooKhiikhFunction(method.id);
+                          }}
+                          disabled={isProcessing && processingTurul !== method.id}
+                          className={`relative flex items-center gap-3 px-4 py-3.5 rounded-2xl border transition-all duration-200 ${ac.container} ${isProcessing ? "opacity-50 cursor-not-allowed" : "cursor-pointer active:scale-[0.97]"}`}
+                        >
+                          {isLoading ? <Loader2 className="w-4.5 h-4.5 animate-spin shrink-0" /> : <span className="shrink-0">{method.icon}</span>}
+                          <div className="flex-1 text-left min-w-0">
+                            <span className="text-[13px] font-semibold block leading-tight">{method.label}</span>
+                            {isActive && (
+                              <span className="text-[11px] opacity-80 block mt-0.5">{formatNumber(value[method.id])}</span>
+                            )}
+                          </div>
+                          {isActive && (
+                            <div className={`absolute -top-1 -right-1 w-5 h-5 rounded-full ${ac.badge} flex items-center justify-center shadow-lg ring-2 ring-white dark:ring-slate-900`}>
+                              <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {/* Хөнгөлөлт — tall bento card */}
+                  {(() => {
+                    const method = PAYMENT_METHODS.find((m) => m.id === "khungulult")!;
                     const isActive = (value[method.id] || 0) > 0;
                     const ac = accentClasses(method.accent, isActive);
                     const isLoading = processingTurul === method.id;
-
                     return (
                       <button
                         key={method.id}
                         onClick={() => {
                           setActiveMethod(method.id);
                           if (!isProcessing) {
-                            if (method.id === "khungulult" && !discountReason) return;
+                            if (!discountReason) return;
                             turulruuTooKhiikhFunction(method.id);
                           }
                         }}
                         disabled={isProcessing && processingTurul !== method.id}
-                        className={`relative flex items-center gap-3 px-4 py-3.5 rounded-2xl border transition-all duration-200 ${ac.container} ${isProcessing ? "opacity-50 cursor-not-allowed" : "cursor-pointer active:scale-[0.97]"}`}
+                        className={`relative flex flex-col items-center justify-center gap-2 w-[110px] shrink-0 rounded-2xl border transition-all duration-200 ${ac.container} ${isProcessing ? "opacity-50 cursor-not-allowed" : "cursor-pointer active:scale-[0.97]"}`}
                       >
-                        <div
-                          className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors duration-200 ${ac.icon}`}
-                        >
-                          {isLoading ? (
-                            <Loader2 className="w-4.5 h-4.5 animate-spin" />
-                          ) : (
-                            method.icon
-                          )}
-                        </div>
-                        <div className="flex-1 text-left min-w-0">
-                          <span className="text-[13px]  text-slate-700 dark:text-slate-200 block leading-tight">
-                            {method.label}
-                          </span>
-                          {isActive && (
-                            <span className="text-[11px]  text-emerald-600 dark:text-emerald-400 block mt-0.5">
-                              {formatNumber(value[method.id])}
-                            </span>
-                          )}
-                        </div>
+                        {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : method.icon}
+                        <span className="text-[13px] font-semibold leading-tight">{method.label}</span>
                         {isActive && (
-                          <div
-                            className={`absolute -top-1 -right-1 w-5 h-5 rounded-full ${ac.badge} flex items-center justify-center shadow-lg ring-2 ring-white dark:ring-slate-900`}
-                          >
-                            <Check
-                              className="w-3 h-3 text-white"
-                              strokeWidth={3}
-                            />
-                          </div>
+                          <>
+                            <span className="text-[11px] opacity-80">{formatNumber(value[method.id])}</span>
+                            <div className={`absolute -top-1 -right-1 w-5 h-5 rounded-full ${ac.badge} flex items-center justify-center shadow-lg ring-2 ring-white dark:ring-slate-900`}>
+                              <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                            </div>
+                          </>
                         )}
                       </button>
                     );
-                  })}
+                  })()}
                 </div>
               </div>
 
