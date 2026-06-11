@@ -256,9 +256,14 @@ export default function OrshinSuugch() {
         count: list.filter((it: any) => it.turul === "Түрээслэгч" || it.zochinTurul === "Түрээслэгч" || it.orshinSuugchTurul === "Түрээслэгч").length 
       },
       { 
+        label: "Харилцагч", 
+        value: "Харилцагч", 
+        count: list.filter((it: any) => it.turul === "Харилцагч" || it.zochinTurul === "Харилцагч" || it.orshinSuugchTurul === "Харилцагч").length 
+      },
+      { 
         label: "Бусад", 
         value: "Бусад", 
-        count: list.filter((it: any) => !["Оршин суугч", "СӨХ", "Ажилтан", "Түрээслэгч"].includes(it.turul || it.zochinTurul || it.orshinSuugchTurul)).length 
+        count: list.filter((it: any) => !["Оршин суугч", "СӨХ", "Ажилтан", "Түрээслэгч", "Харилцагч"].includes(it.turul || it.zochinTurul || it.orshinSuugchTurul)).length 
       },
     ];
   }, [statsData, totalCount]);
@@ -287,12 +292,12 @@ export default function OrshinSuugch() {
   };
 
   return (
-    <div className="h-[100vh] flex flex-col overflow-hidden">
+    <div className="h-full flex flex-col overflow-hidden">
       <div className="p-4 sm:p-8 max-w-[1700px] mx-auto w-full flex-1 flex flex-col gap-6 overflow-hidden bg-transparent">
 
 
         {/* Category Filter Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
           {categoryStats.map((stat) => {
             const isActive = turulFilter === stat.value;
             return (
@@ -337,7 +342,7 @@ export default function OrshinSuugch() {
             onClick={() => setShowRegistrationModal(true)}
             variant="primary"
             leftIcon={<Plus className="w-4 h-4" />}
-            className="h-11 px-8 rounded-[30px] uppercase text-[10px] shadow-lg shadow-blue-500/20 hover:scale-105 transition-transform font-sans"
+            className="h-11 px-8 rounded-xl uppercase text-[10px] shadow-lg shadow-blue-500/20 hover:scale-105 transition-transform font-sans"
           >
             Нэмэх
           </Button>
@@ -357,7 +362,7 @@ export default function OrshinSuugch() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-sm bg-white dark:bg-[#0f1117] rounded-[32px] shadow-2xl overflow-hidden border border-white/20 dark:border-white/5 p-8"
+              className="relative w-full max-w-sm bg-white dark:bg-[#0f1117] rounded-2xl shadow-2xl overflow-hidden border border-white/20 dark:border-white/5 p-8"
             >
               <div className="flex flex-col items-center text-center">
                 <div className="w-16 h-16 rounded-full bg-red-50 dark:bg-red-500/10 flex items-center justify-center mb-6">
@@ -375,13 +380,13 @@ export default function OrshinSuugch() {
                 <div className="flex flex-col w-full gap-3">
                   <button
                     onClick={confirmDelete}
-                    className="w-full h-12 bg-red-500 hover:bg-red-600 text-white rounded-2xl font-medium transition-all hover:scale-105 active:scale-95 shadow-lg shadow-red-500/20"
+                    className="w-full h-12 bg-red-500 hover:bg-red-600 text-white rounded-xl font-medium transition-all hover:scale-105 active:scale-95 shadow-lg shadow-red-500/20"
                   >
                     Устгах
                   </button>
                   <button
                     onClick={() => setShowDeleteModal(false)}
-                    className="w-full h-12 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 rounded-2xl font-medium transition-all"
+                    className="w-full h-12 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 rounded-xl font-medium transition-all"
                   >
                     Цуцлах
                   </button>
@@ -417,7 +422,7 @@ export default function OrshinSuugch() {
         )}
 
         {/* Content Table */}
-        <div className="relative rounded-[32px] border border-slate-200 dark:border-slate-800 backdrop-blur-xl shadow-2xl mt-2 flex-1 min-h-0 overflow-hidden">
+        <div className="relative rounded-2xl border border-slate-200 dark:border-slate-800 backdrop-blur-xl shadow-2xl mt-2 flex-1 min-h-0 overflow-hidden">
           <ZogsoolOrshinSuugchTable
             data={residents}
             loading={!residentsData && !residents.length}

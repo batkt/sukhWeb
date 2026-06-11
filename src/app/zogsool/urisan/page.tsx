@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
-import { Search, X, User } from "lucide-react";
+import { Search, X, User, BarChart2, Users, Key, Monitor, Filter } from "lucide-react";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import moment from "moment";
 import useSWR from "swr";
@@ -194,6 +194,8 @@ export default function UrisanTuukh() {
   const [page, setPage] = useState(1);
   const pageSize = 50;
   const [selectedLog, setSelectedLog] = useState<GateOpenLog | null>(null);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [openFilter, setOpenFilter] = useState<string | null>(null);
 
   const [dateRange, setDateRange] = useState<
     [string | null, string | null] | null | undefined
@@ -221,9 +223,10 @@ export default function UrisanTuukh() {
           searchTerm,
           rangeStart,
           rangeEnd,
+          statusFilter,
         ]
       : null,
-    async ([url, tkn, bId, barId, pg, search, start, end]): Promise<any> => {
+    async ([url, tkn, bId, barId, pg, search, start, end, status]): Promise<any> => {
       const resp = await uilchilgee(tkn).get(url, {
         params: {
           baiguullagiinId: bId,
@@ -233,6 +236,7 @@ export default function UrisanTuukh() {
           start: start || undefined,
           end: end || undefined,
           searchUtga: search || undefined,
+          turul: status || undefined,
         },
       });
       return resp.data;
@@ -246,6 +250,48 @@ export default function UrisanTuukh() {
   );
   const totalCount = logsData?.niitMur || 0;
 
+  const { data: statsData } = useSWR(
+    shouldFetch
+      ? [
+          "/khaalgaNeeyeTuukh/stats",
+          token,
+          ajiltan?.baiguullagiinId,
+          effectiveBarilgiinId,
+          rangeStart,
+          rangeEnd,
+        ]
+      : null,
+    async ([url, tkn, bId, barId, start, end]): Promise<any> => {
+      const resp = await uilchilgee(tkn).get(url, {
+        params: {
+          baiguullagiinId: bId,
+          barilgiinId: barId || undefined,
+          start: start || undefined,
+          end: end || undefined,
+        },
+      });
+      return resp.data;
+    },
+    { revalidateOnFocus: false },
+  );
+
+  const counts = useMemo(
+    () => statsData?.counts || { total: 0, urisan: 0, neesen: 0 },
+    [statsData]
+  );
+  const topResidents = useMemo(
+    () => statsData?.topResidents || [],
+    [statsData]
+  );
+  const topGates = useMemo(
+    () => statsData?.topGates || [],
+    [statsData]
+  );
+  const dailyActivity = useMemo(
+    () => statsData?.dailyActivity || [],
+    [statsData]
+  );
+
   const { baiguullaga } = useAuth();
   const getBuildingName = (bId: string) => {
     if (!bId) return "-";
@@ -253,11 +299,32 @@ export default function UrisanTuukh() {
     return building?.ner || bId;
   };
 
-  const HEADERS = ["№", "Огноо", "Төлөв", "Камер IP", "Оршин суугч", "Тоот", "Утас", "Улсын дугаар", "Барилга"];
+  const HEADERS = [
+    { id: "no", label: "№", width: "w-12" },
+    { id: "ognoo", label: "Огноо" },
+    {
+      id: "status",
+      label: "Төлөв",
+      filter: true,
+      current: statusFilter,
+      set: setStatusFilter,
+      options: [
+        { label: "Бүгд", value: "all" },
+        { label: "Урьсан", value: "urisan" },
+        { label: "Нээсэн", value: "neesen" },
+      ],
+    },
+    { id: "ip", label: "Камер IP" },
+    { id: "suugch", label: "Оршин суугч" },
+    { id: "toot", label: "Тоот" },
+    { id: "utas", label: "Утас" },
+    { id: "dugaar", label: "Улсын дугаар" },
+    { id: "barilga", label: "Барилга" },
+  ];
 
   return (
     <div className="h-full overflow-y-auto custom-scrollbar">
-      <div className="flex-1 flex flex-col gap-4 px-4 py-4 max-w-[1700px] mx-auto w-full h-full overflow-hidden">
+      <div className="flex-1 flex flex-col gap-4 px-4 py-4 max-w-[1700px] mx-auto w-full pb-8">
         {/* Filter bar */}
         <div className="relative z-10 px-6 py-4 rounded-[32px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm shadow-slate-200/50">
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
@@ -296,7 +363,77 @@ export default function UrisanTuukh() {
               />
             </div>
           </div>
+
+          {statusFilter !== "all" && (
+            <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-slate-200 dark:border-slate-700/50">
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">Шүүлт:</span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 text-[10px] rounded-full border border-violet-200 dark:border-violet-500/20">
+                Төлөв: {
+                  { urisan: "Урьсан", neesen: "Нээсэн" }[statusFilter] || statusFilter
+                }
+                <button
+                  onClick={() => { setStatusFilter("all"); setPage(1); }}
+                  className="ml-0.5 hover:text-violet-800 dark:hover:text-violet-200 transition-colors"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            </div>
+          )}
         </div>
+
+        {/* Dashboard Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="relative overflow-hidden p-6 rounded-[28px] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-500 dark:text-indigo-400">
+                <BarChart2 className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 uppercase font-black tracking-wider">Нийт хандалт</p>
+                <p className="text-2xl font-black text-slate-800 dark:text-white mt-0.5">{counts.total}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="relative overflow-hidden p-6 rounded-[28px] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center text-amber-500 dark:text-amber-400">
+                <Users className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 uppercase font-black tracking-wider">Урьсан</p>
+                <p className="text-2xl font-black text-slate-800 dark:text-white mt-0.5">{counts.urisan}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="relative overflow-hidden p-6 rounded-[28px] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-sky-50 dark:bg-sky-500/10 flex items-center justify-center text-sky-500 dark:text-sky-400">
+                <Key className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 uppercase font-black tracking-wider">Нээсэн</p>
+                <p className="text-2xl font-black text-slate-800 dark:text-white mt-0.5">{counts.neesen}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="relative overflow-hidden p-6 rounded-[28px] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-500 dark:text-emerald-400">
+                <Monitor className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 uppercase font-black tracking-wider">Идэвхтэй камер</p>
+                <p className="text-2xl font-black text-slate-800 dark:text-white mt-0.5">{topGates.length}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
 
         {/* Table */}
         <div className="relative rounded-[32px] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 backdrop-blur-xl shadow-2xl flex-1 overflow-hidden">
@@ -306,10 +443,52 @@ export default function UrisanTuukh() {
                 <tr>
                   {HEADERS.map((h) => (
                     <th
-                      key={h}
-                      className="py-3.5 px-4 text-center text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap"
+                      key={h.id}
+                      className={`group relative py-3.5 px-4 text-center text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap ${h.width || ""}`}
                     >
-                      {h}
+                      <div
+                        className="flex items-center justify-center gap-2 cursor-pointer hover:text-white transition-colors"
+                        onClick={() => {
+                          if (!h.filter) return;
+                          setOpenFilter(openFilter === h.id ? null : h.id);
+                        }}
+                      >
+                        {h.filter && (
+                          <Filter className={`w-3 h-3 transition-colors ${h.current !== "all" && h.current !== undefined
+                            ? "text-blue-400"
+                            : "text-slate-500 group-hover:text-blue-400"
+                            }`} />
+                        )}
+                        <span>{h.label}</span>
+                      </div>
+
+                      {h.options && (
+                        <div
+                          className={`absolute top-full left-1/2 -translate-x-1/2 mt-3 w-48 bg-slate-900/98 backdrop-blur-2xl text-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-2 transition-all duration-300 z-[100] border border-white/5 overflow-hidden ring-1 ring-white/10 ${openFilter === h.id ? "opacity-100 visible translate-y-0" : "opacity-0 invisible translate-y-3 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0"}`}
+                        >
+                          <div className="relative flex flex-col gap-1 z-10">
+                            <div className="px-3 py-1.5 mb-1 text-[9px] text-slate-500 uppercase tracking-widest border-b border-white/5 normal-case font-semibold">
+                              Сонгох
+                            </div>
+                            {h.options.map((opt, idx) => (
+                              <div
+                                key={idx}
+                                onClick={() => {
+                                  h.set?.(opt.value);
+                                  setPage(1);
+                                  setOpenFilter(null);
+                                }}
+                                className={`px-4 py-2.5 rounded-xl text-[10px] text-left flex items-center justify-between cursor-pointer transition-all duration-200 normal-case font-normal ${h.current === opt.value
+                                  ? "bg-blue-500 text-white shadow-lg shadow-blue-500/40"
+                                  : "hover:bg-white/10 text-slate-300 hover:text-white"
+                                  }`}
+                              >
+                                <span>{opt.label}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </th>
                   ))}
                 </tr>

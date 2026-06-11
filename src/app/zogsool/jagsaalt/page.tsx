@@ -126,6 +126,7 @@ export default function Jagsaalt() {
 
   const [durationFilter, setDurationFilter] = useState("latest_out");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState("all");
   const [openFilter, setOpenFilter] = useState<string | null>(null);
 
   const [revenueModalOpen, setRevenueModalOpen] = useState(false);
@@ -170,6 +171,7 @@ export default function Jagsaalt() {
         rangeEnd,
         durationFilter,
         statusFilter,
+        paymentMethodFilter,
       ]
       : null,
     async ([
@@ -183,6 +185,7 @@ export default function Jagsaalt() {
       end,
       dur,
       status,
+      payMethod,
     ]): Promise<any> => {
       // Build query similar to fetchList in camera page
       const query: any = {
@@ -201,16 +204,38 @@ export default function Jagsaalt() {
       }
 
       if (status === "active") {
-        query["tuukh.tuluv"] = { $in: [0, -2] };
         query["tuukh.garsanKhaalga"] = { $exists: false };
       } else if (status === "paid") {
         query["tuukh.tuluv"] = { $in: [1, 2] };
       } else if (status === "unpaid") {
-        query["tuukh.tuluv"] = { $in: [0, -4] };
-        query.niitDun = { $gt: 0 };
+        query.$and = [
+          {
+            $or: [
+              { "tuukh.tuluv": -4 },
+              {
+                "tuukh.tuluv": 0,
+                niitDun: { $gt: 0 },
+                "tuukh.garsanKhaalga": { $exists: true }
+              }
+            ]
+          }
+        ];
       } else if (status === "free") {
+        query["tuukh.garsanKhaalga"] = { $exists: true };
         query.niitDun = 0;
-        query["tuukh.tuluv"] = { $nin: [0, -2] };
+        query["tuukh.0.tuluv"] = { $nin: [-1, -2] };
+      }
+
+      if (payMethod && payMethod !== "all") {
+        if (payMethod === "qpay") {
+          query["tuukh.0.tulbur.turul"] = { $in: ["qpay", "QPay", "Qpay", "qPay", "GadaaQR", "DotorQR", "bankQR", "toki", "киоск", "tseneglelt"] };
+        } else if (payMethod === "card") {
+          query["tuukh.0.tulbur.turul"] = { $in: ["khaan", "card", "Card", "Khaan", "Карт", "карт", "golomt", "tdb", "has", "Golomt", "TDB", "Has", "pos", "POS"] };
+        } else if (payMethod === "cash") {
+          query["tuukh.0.tulbur.turul"] = { $in: ["belen", "cash", "Cash", "Belen", "Бэлэн", "бэлэн"] };
+        } else if (payMethod === "transfer") {
+          query["tuukh.0.tulbur.turul"] = { $in: ["khariltsakh", "transfer", "Transfer", "Khariltsakh", "Dans", "dans", "Dansaar", "Дансаар", "дансаар"] };
+        }
       }
 
       const sortObj =
@@ -309,16 +334,6 @@ export default function Jagsaalt() {
       khariltsakh: "bg-violet-500", transfer: "bg-violet-500", qpay: "bg-amber-500",
       khungulult: "bg-rose-500", discount: "bg-rose-500",
     };
-    const methodCardColors: Record<string, string> = {
-      belen: "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400",
-      cash: "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400",
-      khaan: "bg-sky-50 dark:bg-sky-500/10 border-sky-200 dark:border-sky-500/20 text-sky-700 dark:text-sky-400",
-      khariltsakh: "bg-violet-50 dark:bg-violet-500/10 border-violet-200 dark:border-violet-500/20 text-violet-700 dark:text-violet-400",
-      transfer: "bg-violet-50 dark:bg-violet-500/10 border-violet-200 dark:border-violet-500/20 text-violet-700 dark:text-violet-400",
-      qpay: "bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20 text-amber-700 dark:text-amber-400",
-      khungulult: "bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20 text-rose-700 dark:text-rose-400",
-      discount: "bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20 text-rose-700 dark:text-rose-400",
-    };
     const methodMap: Record<string, { amount: number; count: number }> = {};
     allList.forEach((t: any) => {
       (t.tuukh?.[0]?.tulbur || []).forEach((p: any) => {
@@ -336,7 +351,6 @@ export default function Jagsaalt() {
         name: methodLabels[key] || key,
         icon: methodIcons[key] || <Wallet className="w-4 h-4" />,
         color: methodColors[key] || "bg-slate-500",
-        cardColor: methodCardColors[key] || "bg-slate-50 dark:bg-slate-500/10 border-slate-200 dark:border-slate-500/20 text-slate-700 dark:text-slate-400",
         amount: val.amount,
         count: val.count,
         pct: totalAmount > 0 ? ((val.amount / totalAmount) * 100).toFixed(2) : "0.00",
@@ -474,24 +488,7 @@ export default function Jagsaalt() {
           </div>
 
           {/* Active filter chips */}
-          {statusFilter !== "all" && (
-            <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-slate-200 dark:border-slate-700/50">
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">Шүүлт:</span>
-              {statusFilter !== "all" && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 text-[10px] rounded-full border border-violet-200 dark:border-violet-500/20">
-                  Төлөв: {
-                    { active: "Идэвхтэй", paid: "Төлсөн", unpaid: "Төлөөгүй", free: "Үнэгүй" }[statusFilter] || statusFilter
-                  }
-                  <button
-                    onClick={() => { setStatusFilter("all"); setPage(1); }}
-                    className="ml-0.5 hover:text-violet-800 dark:hover:text-violet-200 transition-colors"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              )}
-            </div>
-          )}
+
         </div>
         <div className="relative rounded-[32px] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 backdrop-blur-xl shadow-2xl flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
           <div className="overflow-x-auto h-full">
@@ -516,7 +513,20 @@ export default function Jagsaalt() {
                       ],
                     },
                     { id: "calc", label: "Бодогдсон" },
-                    { id: "payment", label: "Төлбөр" },
+                    {
+                      id: "payment",
+                      label: "Төлбөр",
+                      filter: true,
+                      current: paymentMethodFilter,
+                      set: setPaymentMethodFilter,
+                      options: [
+                        { label: "Бүгд", value: "all" },
+                        { label: "Бэлэн", value: "cash" },
+                        { label: "Карт", value: "card" },
+                        { label: "Дансаар", value: "transfer" },
+                        { label: "QPay", value: "qpay" },
+                      ],
+                    },
                     { id: "discount", label: "Хөнгөлөлт" },
                     { id: "ebarimt", label: "И-Баримт" },
                     {
@@ -900,59 +910,50 @@ export default function Jagsaalt() {
               </div>
 
               {/* Body */}
-              <div className="p-5 max-h-[60vh] overflow-y-auto">
-                <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em] mb-3">
+              <div className="p-5 space-y-2 max-h-[60vh] overflow-y-auto">
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em] mb-1">
                   Төлбөрийн хэлбэр
                 </p>
                 {revenueLoading && (
                   <div className="text-center py-8 text-[11px] text-slate-400">Уншиж байна...</div>
                 )}
+                {!revenueLoading && revenueModalBreakdown.items.map((item) => (
+                  <div
+                    key={item.key}
+                    className="relative flex items-center gap-3 py-2.5 px-3 rounded-2xl border border-slate-100 dark:border-white/[0.06] bg-slate-50/50 dark:bg-white/[0.02] overflow-hidden"
+                  >
+                    {/* Percentage fill background */}
+                    <div
+                      className={`absolute inset-y-0 left-0 ${item.color} opacity-[0.08] dark:opacity-[0.06] transition-all duration-500`}
+                      style={{ width: `${item.pct}%` }}
+                    />
+                    <div
+                      className={`w-1 h-8 rounded-full ${item.color} shrink-0 relative z-10`}
+                    />
+                    <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-white/[0.06] flex items-center justify-center text-slate-500 dark:text-slate-400 shrink-0 relative z-10">
+                      {item.icon}
+                    </div>
+                    <div className="flex-1 min-w-0 relative z-10">
+                      <span className="text-[12px] text-slate-700 dark:text-slate-200 block">
+                        {item.name}
+                      </span>
+                    </div>
+                    <span className="text-[13px] font-black text-slate-800 dark:text-white font-[family-name:var(--font-mono)] shrink-0 relative z-10">
+                      {formatNumber(item.amount)}₮
+                    </span>
+                    <span className="text-[11px] text-slate-400 dark:text-slate-500 font-[family-name:var(--font-mono)] w-6 text-center shrink-0 relative z-10">
+                      {item.count}
+                    </span>
+                    <span className="text-[11px] text-slate-400 dark:text-slate-500 font-[family-name:var(--font-mono)] w-12 text-right shrink-0 relative z-10">
+                      {item.pct}%
+                    </span>
+                  </div>
+                ))}
                 {!revenueLoading && revenueModalBreakdown.items.length === 0 && (
                   <p className="text-center text-[11px] text-slate-400 dark:text-slate-500 py-8">
                     Төлбөрийн мэдээлэл олдсонгүй
                   </p>
                 )}
-                {!revenueLoading && revenueModalBreakdown.items.length > 0 && (() => {
-                  const discount = revenueModalBreakdown.items.find(i => i.key === "khungulult");
-                  const others = revenueModalBreakdown.items.filter(i => i.key !== "khungulult");
-                  const renderCard = (item: typeof revenueModalBreakdown.items[0], tall = false) => (
-                    <div
-                      key={item.key}
-                      className={`relative flex flex-col justify-between p-3.5 rounded-2xl border overflow-hidden ${item.cardColor} ${tall ? "h-full min-h-[120px]" : ""}`}
-                    >
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className={`w-7 h-7 rounded-xl flex items-center justify-center ${item.color} bg-opacity-20 shrink-0`}>
-                          <span className="text-white [&_svg]:w-3.5 [&_svg]:h-3.5">{item.icon}</span>
-                        </div>
-                        <span className="text-[11px] font-semibold">{item.name}</span>
-                        <span className="ml-auto text-[10px] opacity-60">×{item.count}</span>
-                      </div>
-                      <div className="mt-auto">
-                        <div className="text-[15px] font-black font-[family-name:var(--font-mono)] leading-tight">
-                          {formatNumber(item.amount)}₮
-                        </div>
-                        <div className="flex items-center gap-1.5 mt-1.5">
-                          <div className="flex-1 h-1 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
-                            <div className={`h-full rounded-full ${item.color}`} style={{ width: `${item.pct}%` }} />
-                          </div>
-                          <span className="text-[10px] opacity-60 font-[family-name:var(--font-mono)]">{item.pct}%</span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                  return (
-                    <div className="flex gap-3">
-                      <div className="flex-1 grid grid-cols-2 gap-3">
-                        {others.map(item => renderCard(item))}
-                      </div>
-                      {discount && (
-                        <div className="w-[140px] shrink-0">
-                          {renderCard(discount, true)}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
               </div>
 
               {/* Footer total */}

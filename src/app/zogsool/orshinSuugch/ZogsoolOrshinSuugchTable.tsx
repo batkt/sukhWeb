@@ -96,13 +96,13 @@ export const ZogsoolOrshinSuugchTable: React.FC<
         render: (_: any, record: ResidentParking) => (
           <div className="flex flex-wrap gap-2 justify-center">
             {record.mashiniiDugaar && record.mashiniiDugaar !== "БҮРТГЭЛГҮЙ" ? (
-              <div className="flex items-center gap-1.5 px-2 py-1 rounded-2xl bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10">
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10">
                 <span className="text-[10px] text-black dark:text-white">
                   {record.mashiniiDugaar}
                 </span>
               </div>
             ) : (
-              <div className="flex items-center gap-1.5 px-2 py-1 rounded-2xl bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10">
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10">
                 <span className="text-[10px] text-black dark:text-white">
                   БҮРТГЭЛГҮЙ
                 </span>
@@ -149,7 +149,7 @@ export const ZogsoolOrshinSuugchTable: React.FC<
           
           return (
             <div className="flex items-center justify-center gap-2">
-              <span className="px-2.5 py-1 rounded-2xl bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10 text-[10px] text-black dark:text-white">
+              <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10 text-[10px] text-black dark:text-white">
                   {tootValue}
                   <span className="ml-1 opacity-70">тоот</span>
               </span>
@@ -167,7 +167,7 @@ export const ZogsoolOrshinSuugchTable: React.FC<
             <button
               id="resident-edit-btn"
               onClick={() => onEdit(record)}
-              className="p-2 rounded-2xl action-edit hover-surface transition-colors hover:bg-slate-200 dark:hover:bg-white/20"
+              className="p-2 rounded-lg action-edit hover-surface transition-colors hover:bg-slate-200 dark:hover:bg-white/20"
               title="Засах"
             >
               <Edit className="w-5 h-5 text-black dark:text-white" />
@@ -176,7 +176,7 @@ export const ZogsoolOrshinSuugchTable: React.FC<
               id="resident-delete-btn"
               onClick={() => onDelete(record)}
               disabled={!record.mashiniiDugaar || record.mashiniiDugaar === "БҮРТГЭЛГҮЙ"}
-              className={`p-2 rounded-2xl action-delete transition-all ${
+              className={`p-2 rounded-lg action-delete transition-all ${
                 (!record.mashiniiDugaar || record.mashiniiDugaar === "БҮРТГЭЛГҮЙ")
                   ? "opacity-20 cursor-not-allowed text-slate-400"
                   : "hover-surface hover:bg-red-50 dark:hover:bg-red-500/10 text-black dark:text-white hover:text-red-500"
@@ -210,7 +210,7 @@ export const ZogsoolOrshinSuugchTable: React.FC<
         loading={loading}
         className="guilgee-table"
         onChange={handleTableChange}
-        scroll={{ x: "max-content", y: "calc(100vh - 550px)" }}
+        scroll={{ x: "max-content", y: "calc(100vh - 450px)" }}
         locale={{ emptyText: "Оршин суугчийн мэдээлэл олдсонгүй" }}
       />
     </div>

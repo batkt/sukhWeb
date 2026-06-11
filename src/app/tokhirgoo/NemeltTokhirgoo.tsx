@@ -55,6 +55,9 @@ export default function NemeltTokhirgoo() {
     number | string
   >("");
 
+  // Resident Gate Open state
+  const [residentGateOpenEnabled, setResidentGateOpenEnabled] = useState<boolean>(false);
+
   // Calculation states
   const [calculationEnabled, setCalculationEnabled] = useState<boolean>(false);
   const [calculationMethod, setCalculationMethod] = useState<string>("Хуанли");
@@ -383,6 +386,8 @@ export default function NemeltTokhirgoo() {
     setStoragePaymentMethod(find("aguulakhTolborArga", "Тогтмол"));
     setStoragePaymentValue(find("aguulakhTolborUtga", ""));
     setStoragePaymentEnabled(!!find("aguulakhTolborEnabled", false));
+
+    setResidentGateOpenEnabled(!!find("orshinSuugchKhaalgaNeehEsekh", false));
   }, [baiguullaga, selectedBuildingId, barilgiinId]);
 
   const fetchGuestSettings = async () => {
@@ -653,6 +658,64 @@ export default function NemeltTokhirgoo() {
         await baiguullagaMutate(result.data.result || result.data, false);
         await baiguullagaMutate();
         openSuccessOverlay("Амжилттай хадгаллаа");
+      }
+    } catch (error: any) {
+      openErrorOverlay(error?.message || "Хадгалахад алдаа гарлаа");
+    } finally {
+      hideSpinner();
+    }
+  };
+
+  const saveResidentGateOpenSettings = async (overrideEnabled?: boolean) => {
+    if (!token || !ajiltan?.baiguullagiinId) {
+      openErrorOverlay("Нэвтрэх шаардлагатай");
+      return;
+    }
+    showSpinner();
+    try {
+      const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
+      const resp = await uilchilgee(token).get(
+        `/baiguullaga/${ajiltan.baiguullagiinId}`,
+        {
+          headers: { "X-Org-Only": "1" },
+        },
+      );
+      const freshOrg = resp.data;
+      let payload: any = JSON.parse(JSON.stringify(freshOrg));
+
+      const isOverrideBool = typeof overrideEnabled === "boolean";
+      const isEnabled = isOverrideBool ? overrideEnabled : residentGateOpenEnabled;
+
+      const residentGateData = {
+        orshinSuugchKhaalgaNeehEsekh: isEnabled,
+      };
+
+      if (effectiveBarilgiinId && payload.barilguud) {
+        payload.barilguud = payload.barilguud.map((b: any) => {
+          const bId = b._id || b.id;
+          if (String(bId).trim() === String(effectiveBarilgiinId).trim()) {
+            return {
+              ...b,
+              tokhirgoo: {
+                ...(b.tokhirgoo || {}),
+                ...residentGateData,
+              },
+            };
+          }
+          return b;
+        });
+      } else {
+        payload.tokhirgoo = {
+          ...(payload.tokhirgoo || {}),
+          ...residentGateData,
+        };
+      }
+
+      const result = await updateMethod("baiguullaga", token, payload);
+      if (result?.data) {
+        await baiguullagaMutate(result.data.result || result.data, false);
+        await baiguullagaMutate();
+        openSuccessOverlay("Оршин суугч хаалга нээх эрхийн тохиргоо хадгалагдлаа");
       }
     } catch (error: any) {
       openErrorOverlay(error?.message || "Хадгалахад алдаа гарлаа");
@@ -1077,6 +1140,41 @@ export default function NemeltTokhirgoo() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Resident Gate Open Permission Box */}
+        <div id="nemelt-resident-gate-box">
+          <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden">
+            <div className="p-5 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-rose-50 to-red-50 dark:from-rose-900/20 dark:to-red-900/20">
+              <div className="flex items-center gap-3">
+                <div>
+                  <h3 className="text-lg text-theme">Оршин суугчийн хаалт нээх эрх</h3>
+                  <p className="text-xs text-[color:var(--muted-text)]">
+                    Оршин суугчийн аппликейшн дээр хаалт нээх товч харуулах эсэх
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-theme">
+                  {residentGateOpenEnabled ? "Идэвхтэй" : "Идэвхгүй"}
+                </span>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={residentGateOpenEnabled}
+                    onChange={(e) => {
+                      const val = e.currentTarget.checked;
+                      setResidentGateOpenEnabled(val);
+                      saveResidentGateOpenSettings(val);
+                    }}
+                    className="sr-only peer"
+                    aria-label="Хаалт нээх эрх идэвхжүүлэх"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 dark:peer-focus:ring-red-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 dark:peer-checked:bg-rose-600 peer-checked:bg-rose-600"></div>
+                </label>
+              </div>
+            </div>
           </div>
         </div>
 

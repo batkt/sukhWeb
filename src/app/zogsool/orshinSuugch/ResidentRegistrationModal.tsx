@@ -61,7 +61,7 @@ export default function ResidentRegistrationModal({
     rightsCount: editData?.zochinErkhiinToo ?? 1,
     freeMinutes: editData?.zochinTusBurUneguiMinut ?? 8,
     description: editData?.zochinTailbar || editData?.tailbar || "",
-    orshinSuugchTurul: editData?.orshinSuugchTurul || "",
+    orshinSuugchTurul: editData?.orshinSuugchTurul || editData?.zochinTurul || editData?.turul || "Оршин суугч",
   });
 
   // Fetch guest defaults from Barilga - Disabled as endpoint /barilga does not exist
@@ -342,6 +342,7 @@ export default function ResidentRegistrationModal({
                     className="w-full h-12 pl-10 pr-8 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 rounded-xl text-sm  text-slate-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer"
                   >
                     <option value="Оршин суугч">Оршин суугч</option>
+                    <option value="Харилцагч">Харилцагч</option>
                     <option value="Ажилтан">Ажилтан</option>
                     <option value="СӨХ">СӨХ</option>
                     <option value="Үнэгүй">Үнэгүй</option>
@@ -416,7 +417,7 @@ export default function ResidentRegistrationModal({
                         placeholder="88888888"
                       />
 
-                      {!["СӨХ", "Ажилтан", "Үнэгүй", "Дотоод"].includes(formData.orshinSuugchTurul) && (
+                      {!["СӨХ", "Ажилтан", "Үнэгүй", "Дотоод", "Харилцагч"].includes(formData.orshinSuugchTurul) && (
                         <div className="group relative">
                           <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors z-10">
                             <Home className="w-4 h-4" />
@@ -462,7 +463,7 @@ export default function ResidentRegistrationModal({
                         />
                       </div>
 
-                      {!["СӨХ", "Ажилтан", "Үнэгүй", "Дотоод"].includes(formData.orshinSuugchTurul) && (
+                      {!["СӨХ", "Ажилтан", "Үнэгүй", "Дотоод", "Харилцагч"].includes(formData.orshinSuugchTurul) && (
                         <div className="group relative">
                           <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
                             <Home className="w-4 h-4" />
