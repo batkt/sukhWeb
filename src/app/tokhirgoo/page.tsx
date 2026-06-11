@@ -177,48 +177,47 @@ function Tokhirgoo() {
       setSelectedIndexInternal(0);
       try {
         localStorage.setItem(STORAGE_KEY, "0");
-      } catch (e) {}
+      } catch (e) { }
     }
   }, [tokhirgoo.length, selectedIndexInternal]);
 
   return (
     <AdminLayout title="Тохиргоо">
       {tokhirgoo.length > 0 && (
-      <div className="w-full lg:col-span-3 lg:sticky lg:top-4 h-fit self-start overflow-hidden">
-        <div className="bg-transparent rounded-2xl shadow-lg overflow-hidden flex-1 min-h-0 flex flex-col">
-          <div className="p-5 space-y-2 bg-transparent overflow-y-auto custom-scrollbar flex-1 min-h-0">
-            {tokhirgoo.map((item: any, i) => {
-              const isActive = i === selectedIndexInternal;
-              const isSoon = Boolean(item?.comingSoon);
-              return (
-                <button
-                  key={item.text}
-                  onClick={() => {
-                    if (isSoon) return;
-                    setSelectedIndex(i);
-                  }}
-                  aria-disabled={isSoon}
-                  className={`relative btn-minimal flex items-center w-full justify-start gap-3 text-left transition-all duration-200 ${
-                    isActive
+        <div className="w-full lg:col-span-3 lg:sticky lg:top-4 h-fit self-start overflow-hidden">
+          <div className="bg-transparent rounded-2xl shadow-lg overflow-hidden flex-1 min-h-0 flex flex-col">
+            <div className="p-5 space-y-2 bg-transparent overflow-y-auto custom-scrollbar flex-1 min-h-0">
+              {tokhirgoo.map((item: any, i) => {
+                const isActive = i === selectedIndexInternal;
+                const isSoon = Boolean(item?.comingSoon);
+                return (
+                  <button
+                    key={item.text}
+                    onClick={() => {
+                      if (isSoon) return;
+                      setSelectedIndex(i);
+                    }}
+                    aria-disabled={isSoon}
+                    className={`relative btn-minimal flex items-center w-full justify-start gap-3 text-left transition-all duration-200 ${isActive
                       ? "bg-[var(--btn-bg-hover)] border border-[var(--btn-border)] text-theme "
                       : "text-theme opacity-80 hover:opacity-100"
-                  } ${isSoon ? "cursor-not-allowed pr-24" : ""} px-4 py-2.5 rounded-2xl`}
-                >
-                  {item.icon}
-                  <span className="flex-1 min-w-0 overflow-hidden whitespace-nowrap text-left">
-                    {item.text}
-                  </span>
-                  {isSoon && (
-                    <span className="text-xs  text-green-500 whitespace-nowrap flex-shrink-0 overflow-hidden text-ellipsis max-w-20">
-                      Тун удахгүй
+                      } ${isSoon ? "cursor-not-allowed pr-24" : ""} px-4 py-2.5 rounded-2xl`}
+                  >
+                    {item.icon}
+                    <span className="flex-1 min-w-0 overflow-hidden whitespace-nowrap text-left">
+                      {item.text}
                     </span>
-                  )}
-                </button>
-              );
-            })}
+                    {isSoon && (
+                      <span className="text-xs  text-green-500 whitespace-nowrap flex-shrink-0 overflow-hidden text-ellipsis max-w-20">
+                        Тун удахгүй
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
-      </div>
       )}
 
       <div className={`w-full text-theme min-h-0 flex flex-col overflow-hidden ${tokhirgoo.length > 0 ? "lg:col-span-9" : "lg:col-span-12"}`}>

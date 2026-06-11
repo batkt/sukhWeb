@@ -230,6 +230,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             // Set ajiltan in both state and localStorage
             ajiltanMutate(result);
 
+            // Call systemiinMedeelelAvya when first logging in
+            uilchilgee(newToken)
+              .get("/systemiinMedeelelAvya")
+              .then((systemRes) => {
+                console.log("System memory information response:", systemRes.data);
+              })
+              .catch((sysErr) => {
+                console.error("Failed to fetch system information:", sysErr);
+              });
+
             if (
               (result?.barilguud && result.barilguud.length > 0) ||
               result.erkh === "Admin"

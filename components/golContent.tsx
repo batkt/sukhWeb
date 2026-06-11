@@ -84,6 +84,46 @@ export default function GolContent({ children }: GolContentProps) {
   }, []);
 
   const { ajiltan, token, garya } = useAuth();
+
+  const remainingDays = (() => {
+    if (!ajiltan?.salbaruud || !selectedBuildingId) return null;
+    const salbar = ajiltan.salbaruud.find(
+      (s: any) => String(s.salbariinId) === String(selectedBuildingId)
+    );
+    if (!salbar || !salbar.duusakhOgnoo) return null;
+
+    const end = new Date(salbar.duusakhOgnoo);
+    const now = new Date();
+    const diffTime = end.getTime() - now.getTime();
+    if (diffTime < 0) return 0;
+
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  })();
+
+  const { data: storageInfo } = useSWR(
+    token && ajiltan?.baiguullagiinId
+      ? ["/storageInfo", token, ajiltan.baiguullagiinId]
+      : null,
+    async ([url, tkn, bId]) => {
+      const res = await uilchilgee(tkn).get(url, {
+        params: { baiguullagiinId: bId },
+      });
+      return res.data;
+    },
+    { revalidateOnFocus: false, refreshInterval: 600000 }
+  );
+
+  const formatBytes = (bytes: number) => {
+    if (!bytes || bytes <= 0) return "0B";
+    if (bytes >= 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)}GB`;
+    if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+    if (bytes >= 1024) return `${(bytes / 1024).toFixed(0)}KB`;
+    return `${bytes}B`;
+  };
+
+  const dbSizeFormatted = storageInfo ? formatBytes(storageInfo.dbSize) : null;
+  const imagesSizeFormatted = storageInfo ? formatBytes(storageInfo.imagesSize) : null;
+
   const has = (path: string) => hasPermission(ajiltan, path);
   const canSeeSanalKhuselt = has("medegdel") || has("/medegdel") || has("medegdel.sanalKhuselt") || has("/medegdel/sanalKhuselt") || ajiltan?.erkh?.toLowerCase() === "admin";
   const { data: sanalUnreadData } = useSWR(
@@ -611,8 +651,16 @@ export default function GolContent({ children }: GolContentProps) {
         <div className="max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-2 sm:py-3">
           {/* Top row on mobile: Logo + Building Selector */}
           <div className="flex lg:hidden items-center justify-between gap-2 mb-2">
-            <div className="shrink-0">
+            <div className="flex items-center gap-2 shrink-0">
               <ThemedLogo size={32} padding={4} radius={8} />
+              {remainingDays !== null && (
+                <span className="text-[11px] whitespace-nowrap text-black dark:text-white">
+                  Лиценз-
+                  <span style={{ color: remainingDays <= 10 ? "#ef4444" : "#10b981" }}>
+                    {remainingDays}
+                  </span>
+                </span>
+              )}
             </div>
             <div
               id="barilga-songoh-mobile"
@@ -756,6 +804,7 @@ export default function GolContent({ children }: GolContentProps) {
 
             {/* Desktop actions */}
             <div className="flex items-center justify-end gap-1.5 xl:gap-3 shrink-0">
+
               <div className="relative h-9 xl:h-10 w-40 xl:w-64 flex items-center neu-panel">
                 <SearchIcon className="absolute left-2 xl:left-3 top-1/2 -translate-y-1/2 w-3.5 xl:w-4 h-3.5 xl:h-4 text-[color:var(--panel-text)] opacity-60 pointer-events-none" />
                 <input
@@ -816,11 +865,10 @@ export default function GolContent({ children }: GolContentProps) {
                           <MessageSquare className="w-3.5 h-3.5" />
                           Санал хүсэлт
                           {unreadSanalCount > 0 && (
-                            <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
-                              sanalDropdownTab === "sanal"
-                                ? "bg-white/20 !text-white"
-                                : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
-                            }`}>
+                            <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${sanalDropdownTab === "sanal"
+                              ? "bg-white/20 !text-white"
+                              : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                              }`}>
                               {unreadSanalCount}
                             </span>
                           )}
@@ -833,11 +881,10 @@ export default function GolContent({ children }: GolContentProps) {
                           <Bell className="w-3.5 h-3.5" />
                           Мэдэгдэл
                           {unreadMedegdelCount > 0 && (
-                            <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
-                              sanalDropdownTab === "medegdel"
-                                ? "bg-white/20 !text-white"
-                                : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
-                            }`}>
+                            <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${sanalDropdownTab === "medegdel"
+                              ? "bg-white/20 !text-white"
+                              : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                              }`}>
                               {unreadMedegdelCount}
                             </span>
                           )}
@@ -1115,11 +1162,10 @@ export default function GolContent({ children }: GolContentProps) {
                           <MessageSquare className="w-3.5 h-3.5" />
                           Санал хүсэлт
                           {unreadSanalCount > 0 && (
-                            <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
-                              sanalDropdownTab === "sanal"
-                                ? "bg-white/20 !text-white"
-                                : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
-                            }`}>
+                            <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${sanalDropdownTab === "sanal"
+                              ? "bg-white/20 !text-white"
+                              : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                              }`}>
                               {unreadSanalCount}
                             </span>
                           )}
@@ -1132,11 +1178,10 @@ export default function GolContent({ children }: GolContentProps) {
                           <Bell className="w-3.5 h-3.5" />
                           Мэдэгдэл
                           {unreadMedegdelCount > 0 && (
-                            <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
-                              sanalDropdownTab === "medegdel"
-                                ? "bg-white/20 !text-white"
-                                : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
-                            }`}>
+                            <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${sanalDropdownTab === "medegdel"
+                              ? "bg-white/20 !text-white"
+                              : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                              }`}>
                               {unreadMedegdelCount}
                             </span>
                           )}
@@ -1423,6 +1468,62 @@ export default function GolContent({ children }: GolContentProps) {
       <main className="flex-1 relative">
         <div className="max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 lg:py-6 h-full">
           <div className="relative">
+            {(remainingDays !== null || dbSizeFormatted !== null || imagesSizeFormatted !== null) && (
+              <div
+                className={`fixed right-0 top-28 hidden lg:flex flex-col items-center justify-center w-14 xl:w-16 py-2.5 rounded-l-2xl border-y border-l transition-all duration-300 z-50 bg-white dark:bg-slate-900 ${remainingDays !== null && remainingDays <= 10
+                  ? "border-red-500/30"
+                  : "border-slate-200 dark:border-slate-800"
+                  }`}
+              >
+                {remainingDays !== null && (
+                  <div className="flex flex-col items-center">
+                    <span className="text-[9px] xl:text-[10px] font-medium uppercase tracking-widest opacity-60 text-theme mb-1 select-none">
+                      Лиценз
+                    </span>
+                    <span
+                      className={`text-xl xl:text-2xl font-black tracking-tighter ${remainingDays <= 10 ? "animate-pulse" : ""
+                        }`}
+                      style={{ color: remainingDays <= 10 ? "#ef4444" : "#10b981" }}
+                    >
+                      {remainingDays}
+                    </span>
+                    <span className="text-[9px] xl:text-[10px] opacity-70 text-theme mt-0.5 select-none">
+                      хоног
+                    </span>
+                  </div>
+                )}
+                
+                {remainingDays !== null && (dbSizeFormatted !== null || imagesSizeFormatted !== null) && (
+                  <div className="w-full border-t border-slate-200 dark:border-slate-800 my-2" />
+                )}
+
+                {dbSizeFormatted !== null && (
+                  <div className="flex flex-col items-center">
+                    <span className="text-[9px] xl:text-[10px] font-medium uppercase tracking-widest opacity-60 text-theme mb-0.5 select-none">
+                      Өгөгдөл
+                    </span>
+                    <span className="text-xs xl:text-sm font-bold tracking-tight text-theme select-none">
+                      {dbSizeFormatted}
+                    </span>
+                  </div>
+                )}
+
+                {dbSizeFormatted !== null && imagesSizeFormatted !== null && (
+                  <div className="w-full border-t border-slate-200 dark:border-slate-800 my-2" />
+                )}
+
+                {imagesSizeFormatted !== null && (
+                  <div className="flex flex-col items-center">
+                    <span className="text-[9px] xl:text-[10px] font-medium uppercase tracking-widest opacity-60 text-theme mb-0.5 select-none">
+                      Зураг
+                    </span>
+                    <span className="text-xs xl:text-sm font-bold tracking-tight text-theme select-none">
+                      {imagesSizeFormatted}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
             <div
               className="neu-panel rounded-[2rem] p-2 min-h-[60vh] md:h-[calc(100vh-140px)] overflow-y-auto overflow-x-hidden overscroll-contain"
               style={{
