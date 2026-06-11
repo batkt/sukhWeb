@@ -359,6 +359,31 @@ export default function KameriinTokhirgoo() {
     try {
       setSaving(true);
 
+      const b = buildings.find((x: any) => x._id === selectedBarilgiinId);
+      const oldIp = b?.cameraIp ?? "";
+      const oldPort = b?.cameraPort ?? 554;
+      const oldUsername = b?.cameraUsername ?? "admin";
+      const oldPassword = b?.cameraPassword ?? "Admin123";
+
+      const nextSohCameras = sohCameras.map(cam => {
+        const updated = { ...cam };
+        if (!updated.ip || updated.ip === oldIp) {
+          updated.ip = cameraIp;
+        }
+        if (!updated.port || updated.port === oldPort) {
+          updated.port = Number(cameraPort) || 554;
+        }
+        if (!updated.username || updated.username === oldUsername) {
+          updated.username = cameraUsername;
+        }
+        if (!updated.password || updated.password === oldPassword) {
+          updated.password = cameraPassword;
+        }
+        return updated;
+      });
+
+      const nextResidentCameras = nextSohCameras.filter((c) => c.residentVisible);
+
       // Build updated barilguud array
       const updatedBarilguud = buildings.map((b: any) => {
         if (b._id === selectedBarilgiinId) {
@@ -368,8 +393,8 @@ export default function KameriinTokhirgoo() {
             cameraPort: Number(cameraPort) || 554,
             cameraUsername,
             cameraPassword,
-            cameruud: residentCameras,
-            sohCameruud: sohCameras,
+            cameruud: nextResidentCameras,
+            sohCameruud: nextSohCameras,
           };
         }
         return b;
