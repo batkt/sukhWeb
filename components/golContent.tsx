@@ -113,16 +113,14 @@ export default function GolContent({ children }: GolContentProps) {
     { revalidateOnFocus: false, refreshInterval: 600000 }
   );
 
-  const formatBytes = (bytes: number) => {
-    if (!bytes || bytes <= 0) return "0B";
+  const baazSizeFormatted = (() => {
+    if (!storageInfo || !storageInfo.total) return null;
+    const bytes = storageInfo.total.dataSize || 0;
     if (bytes >= 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)}GB`;
     if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
     if (bytes >= 1024) return `${(bytes / 1024).toFixed(0)}KB`;
     return `${bytes}B`;
-  };
-
-  const dbSizeFormatted = storageInfo ? formatBytes(storageInfo.dbSize) : null;
-  const imagesSizeFormatted = storageInfo ? formatBytes(storageInfo.imagesSize) : null;
+  })();
 
   const has = (path: string) => hasPermission(ajiltan, path);
   const canSeeSanalKhuselt = has("medegdel") || has("/medegdel") || has("medegdel.sanalKhuselt") || has("/medegdel/sanalKhuselt") || ajiltan?.erkh?.toLowerCase() === "admin";
@@ -1468,7 +1466,7 @@ export default function GolContent({ children }: GolContentProps) {
       <main className="flex-1 relative">
         <div className="max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 lg:py-6 h-full">
           <div className="relative">
-            {(remainingDays !== null || dbSizeFormatted !== null || imagesSizeFormatted !== null) && (
+            {(remainingDays !== null || baazSizeFormatted !== null) && (
               <div
                 className={`fixed right-0 top-28 hidden lg:flex flex-col items-center justify-center w-14 xl:w-16 py-2.5 rounded-l-2xl border-y border-l transition-all duration-300 z-50 bg-white dark:bg-slate-900 ${remainingDays !== null && remainingDays <= 10
                   ? "border-red-500/30"
@@ -1481,7 +1479,7 @@ export default function GolContent({ children }: GolContentProps) {
                       Лиценз
                     </span>
                     <span
-                      className={`text-xl xl:text-2xl font-black tracking-tighter ${remainingDays <= 10 ? "animate-pulse" : ""
+                      className={`text-xl xl:text-2xl  tracking-tighter ${remainingDays <= 10 ? "animate-pulse" : ""
                         }`}
                       style={{ color: remainingDays <= 10 ? "#ef4444" : "#10b981" }}
                     >
@@ -1492,33 +1490,18 @@ export default function GolContent({ children }: GolContentProps) {
                     </span>
                   </div>
                 )}
-                
-                {remainingDays !== null && (dbSizeFormatted !== null || imagesSizeFormatted !== null) && (
+
+                {remainingDays !== null && baazSizeFormatted !== null && (
                   <div className="w-full border-t border-slate-200 dark:border-slate-800 my-2" />
                 )}
 
-                {dbSizeFormatted !== null && (
+                {baazSizeFormatted !== null && (
                   <div className="flex flex-col items-center">
                     <span className="text-[9px] xl:text-[10px] font-medium uppercase tracking-widest opacity-60 text-theme mb-0.5 select-none">
-                      Өгөгдөл
+                      Дата
                     </span>
-                    <span className="text-xs xl:text-sm font-bold tracking-tight text-theme select-none">
-                      {dbSizeFormatted}
-                    </span>
-                  </div>
-                )}
-
-                {dbSizeFormatted !== null && imagesSizeFormatted !== null && (
-                  <div className="w-full border-t border-slate-200 dark:border-slate-800 my-2" />
-                )}
-
-                {imagesSizeFormatted !== null && (
-                  <div className="flex flex-col items-center">
-                    <span className="text-[9px] xl:text-[10px] font-medium uppercase tracking-widest opacity-60 text-theme mb-0.5 select-none">
-                      Зураг
-                    </span>
-                    <span className="text-xs xl:text-sm font-bold tracking-tight text-theme select-none">
-                      {imagesSizeFormatted}
+                    <span className="text-xs xl:text-sm  tracking-tight text-theme select-none">
+                      {baazSizeFormatted}
                     </span>
                   </div>
                 )}
