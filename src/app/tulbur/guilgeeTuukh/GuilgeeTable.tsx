@@ -588,7 +588,10 @@ export default function GuilgeeTable({
               const historyAggregate =
                 Number(record?._totalTulbur || 0) -
                 Number(record?._totalTulsun || 0);
-              const remainingValue = historyAggregate;
+              const remainingValue = historyScopedByDate
+                ? (bestKnownBalances[gid] ?? historyAggregate)
+                : (bestKnownBalances[gid] ??
+                  (historyAggregate || Number(record?.uldegdel ?? 0)));
 
               const residentData = resident
                 ? {
