@@ -10,16 +10,16 @@ import { R2WPlayer } from "../../components/streamPlayer/R2Wplayer.min.js";
 if (R2WPlayer && typeof (R2WPlayer as any).AJAX === "function" && !(R2WPlayer as any).__patched) {
   (R2WPlayer as any).__patched = true;
   const originalAJAX = (R2WPlayer as any).AJAX;
-  
-  (R2WPlayer as any).AJAX = function(...args: any[]) {
+
+  (R2WPlayer as any).AJAX = function (...args: any[]) {
     const [_method, urlStr, data, successCb, errorCb, _async, context] = args;
     const isR2WRequest = urlStr && (urlStr.endsWith("/answer") || urlStr.endsWith("/stream"));
-    
+
     if (isR2WRequest) {
       // 1. Rewrite the URL from /answer to /stream for Go RTSPtoWebRTC server
       const newUrl = urlStr.replace(/\/answer$/, "/stream");
       console.log(`[R2WPlayer.AJAX Patch] Intercepting request. URL: ${urlStr} -> ${newUrl}`);
-      
+
       // 2. Format payload as application/x-www-form-urlencoded
       const formData = new URLSearchParams();
       if (data) {
@@ -27,7 +27,7 @@ if (R2WPlayer && typeof (R2WPlayer as any).AJAX === "function" && !(R2WPlayer as
         formData.append("sdp64", data.sdp64 || ""); // backend relay expects 'sdp64'
         formData.append("data", data.sdp64 || "");  // Go RTSPtoWebRTC expects 'data'
       }
-      
+
       fetch(newUrl, {
         method: "POST",
         headers: {
@@ -35,61 +35,59 @@ if (R2WPlayer && typeof (R2WPlayer as any).AJAX === "function" && !(R2WPlayer as
         },
         body: formData.toString(),
       })
-      .then(async (response) => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const text = await response.text();
-        
-        // Parse server's response.
-        // Responds with either raw SDP answer (text containing v=0) or JSON { sdp64: "..." }
-        let parsedData: any = {};
-        try {
-          parsedData = JSON.parse(text);
-        } catch (e) {
-          parsedData = {
-            sdp64: text.includes("v=0") || text.includes("m=video") ? btoa(text) : text,
-          };
-        }
-        
-        // Standardize and sanitize the parsedData to ensure maximum compatibility
-        if (parsedData && typeof parsedData.sdp64 === "string") {
-          try {
-            const cleanedBase64 = parsedData.sdp64.replace(/\s/g, "");
-            const rawSdp = atob(cleanedBase64);
-            const cleanBase64 = btoa(rawSdp);
-            parsedData.sdp64 = cleanBase64;
-            parsedData.data = cleanBase64;
-            parsedData.sdp = rawSdp;
-          } catch (e) {
-            console.error("[R2WPlayer.AJAX Patch] Failed to clean/decode sdp64:", e);
+        .then(async (response) => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
           }
-        } else if (parsedData && typeof parsedData.data === "string") {
+          const text = await response.text();
+
+          let parsedData: any = {};
           try {
-            const cleanedBase64 = parsedData.data.replace(/\s/g, "");
-            const rawSdp = atob(cleanedBase64);
-            const cleanBase64 = btoa(rawSdp);
-            parsedData.sdp64 = cleanBase64;
-            parsedData.data = cleanBase64;
-            parsedData.sdp = rawSdp;
+            parsedData = JSON.parse(text);
           } catch (e) {
-            console.error("[R2WPlayer.AJAX Patch] Failed to clean/decode data:", e);
+            parsedData = {
+              sdp64: text.includes("v=0") || text.includes("m=video") ? btoa(text) : text,
+            };
           }
-        }
-        
-        if (successCb) {
-          successCb(parsedData, context);
-        }
-      })
-      .catch((err) => {
-        console.error("[R2WPlayer.AJAX Patch] Request failed:", err);
-        if (errorCb) {
-          errorCb(err.message, context);
-        }
-      });
+
+          // Standardize and sanitize the parsedData to ensure maximum compatibility
+          if (parsedData && typeof parsedData.sdp64 === "string") {
+            try {
+              const cleanedBase64 = parsedData.sdp64.replace(/\s/g, "");
+              const rawSdp = atob(cleanedBase64);
+              const cleanBase64 = btoa(rawSdp);
+              parsedData.sdp64 = cleanBase64;
+              parsedData.data = cleanBase64;
+              parsedData.sdp = rawSdp;
+            } catch (e) {
+              console.error("[R2WPlayer.AJAX Patch] Failed to clean/decode sdp64:", e);
+            }
+          } else if (parsedData && typeof parsedData.data === "string") {
+            try {
+              const cleanedBase64 = parsedData.data.replace(/\s/g, "");
+              const rawSdp = atob(cleanedBase64);
+              const cleanBase64 = btoa(rawSdp);
+              parsedData.sdp64 = cleanBase64;
+              parsedData.data = cleanBase64;
+              parsedData.sdp = rawSdp;
+            } catch (e) {
+              console.error("[R2WPlayer.AJAX Patch] Failed to clean/decode data:", e);
+            }
+          }
+
+          if (successCb) {
+            successCb(parsedData, context);
+          }
+        })
+        .catch((err) => {
+          console.error("[R2WPlayer.AJAX Patch] Request failed:", err);
+          if (errorCb) {
+            errorCb(err.message, context);
+          }
+        });
       return;
     }
-    
+
     return originalAJAX.apply(this, args);
   };
 }
@@ -144,7 +142,7 @@ export default function R2WPlayerComponent({
     // Generate unique container ID if not provided (only once)
     const uniqueContainerId =
       containerId || `r2w-player-${Camer}-${PORT}`;
-    
+
     // Ensure container has the ID
     if (!containerRef.current.id) {
       containerRef.current.id = uniqueContainerId;
@@ -216,7 +214,7 @@ export default function R2WPlayerComponent({
             videoElement.muted = true;
             videoElement.autoplay = true;
             videoElement.playsInline = true;
-            
+
             // CSS optimizations for smooth playback
             videoElement.style.transform = 'translateZ(0)';
             videoElement.style.willChange = 'transform';
@@ -224,20 +222,20 @@ export default function R2WPlayerComponent({
             videoElement.style.perspective = '1000px';
             videoElement.style.contain = 'layout style paint';
             videoElement.style.isolation = 'isolate';
-            
+
             // Buffer optimizations
             try {
               videoElement.preload = 'auto';
             } catch (e) {
               // Ignore if not supported
             }
-            
+
             // Force hardware acceleration
             (videoElement.style as any).webkitTransform = 'translateZ(0)';
             (videoElement.style as any).mozTransform = 'translateZ(0)';
             (videoElement.style as any).msTransform = 'translateZ(0)';
             (videoElement.style as any).oTransform = 'translateZ(0)';
-            
+
             return true;
           } else if (attempts < 5) {
             // Retry if video element not found yet
@@ -246,7 +244,7 @@ export default function R2WPlayerComponent({
         }
         return false;
       };
-      
+
       // Try to optimize immediately and with retries
       optimizeVideo();
 
