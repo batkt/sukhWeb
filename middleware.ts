@@ -10,6 +10,7 @@ const PUBLIC_PATHS = new Set<string>([
 
 function isPublicPath(pathname: string): boolean {
   if (PUBLIC_PATHS.has(pathname)) return true;
+  if (pathname.startsWith("/pay/")) return true;
   // Allow static files
   if (
     pathname.startsWith("/_next/") ||

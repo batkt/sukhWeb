@@ -178,12 +178,12 @@ function LayoutContent({ children }: { children: ReactNode }) {
           regs?.forEach((r) => r.unregister());
         });
       }
-    } catch {}
+    } catch { }
 
     // Set global locale for date handling to Mongolian
     try {
       dayjs.locale("mn");
-    } catch (_) {}
+    } catch (_) { }
 
     // Apply saved theme on every route change (so login page also follows theme)
     try {
@@ -196,8 +196,8 @@ function LayoutContent({ children }: { children: ReactNode }) {
       const mode =
         savedMode ||
         (typeof window !== "undefined" &&
-        window.matchMedia &&
-        window.matchMedia("(prefers-color-scheme: dark)").matches
+          window.matchMedia &&
+          window.matchMedia("(prefers-color-scheme: dark)").matches
           ? "dark"
           : "light");
       root.setAttribute("data-mode", mode);
@@ -209,19 +209,20 @@ function LayoutContent({ children }: { children: ReactNode }) {
         (typeof window !== "undefined" && localStorage.getItem("app-theme")) ||
         "colorful";
       root.setAttribute("data-theme", savedTheme);
-    } catch (_) {}
+    } catch (_) { }
 
     const checkAuth = () => {
       const cookies = parseCookies();
       const token = cookies.tureestoken;
 
-      if (pathname === "/login") {
-        // Always show login page
+      if (pathname === "/login" || (pathname && pathname.startsWith("/pay/"))) {
+        // Always show login page or payment page
         setAuthChecked(true);
         return;
       }
 
       if (!token || !isTokenValid(token)) {
+
         if (token) {
           destroyCookie(null, "tureestoken", { path: "/" });
         }
@@ -282,7 +283,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
             (key: any) =>
               Array.isArray(key) && key[0] === "/tokenoorAjiltanAvya",
           );
-        } catch (_) {}
+        } catch (_) { }
       };
       s.on("ajiltan.created", onEmployeeChanged);
       s.on("ajiltan.updated", onEmployeeChanged);
@@ -310,7 +311,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
   if (!authChecked) {
     return (
       <>
-            <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/10 backdrop-blur-[2px] pointer-events-none transition-all duration-300">
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/10 backdrop-blur-[2px] pointer-events-none transition-all duration-300">
           <div className="flex flex-col items-center justify-center p-8 rounded-[32px] pointer-events-auto gap-4">
             <div className="w-40 h-40 lg:w-56 lg:h-56">
               <DotLottieReact
@@ -342,7 +343,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
 
           {/* Global loading overlay */}
           {(spinnerLoading || isNavigating) && (
-                <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/10 backdrop-blur-[4px] pointer-events-none transition-all duration-300">
+            <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/10 backdrop-blur-[4px] pointer-events-none transition-all duration-300">
               <div className="flex flex-col items-center justify-center p-8 rounded-[32px] pointer-events-auto gap-4">
                 <div className="w-40 h-40 lg:w-56 lg:h-56">
                   <DotLottieReact
