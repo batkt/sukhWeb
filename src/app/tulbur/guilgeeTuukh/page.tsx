@@ -33,6 +33,8 @@ import {
   Columns,
   Banknote,
   Send,
+  MessageSquare,
+  X,
 } from "lucide-react";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { getErrorMessage } from "@/lib/uilchilgee";
@@ -271,6 +273,44 @@ export default function DansniiKhuulga() {
   // Selection state for "Send Invoice"
   const [selectedGereeIds, setSelectedGereeIds] = useState<string[]>([]);
   const [isSendingInvoices, setIsSendingInvoices] = useState(false);
+
+  // SMS History modal state
+  const [isSmsHistoryOpen, setIsSmsHistoryOpen] = useState(false);
+  const [smsHistoryList, setSmsHistoryList] = useState<any[]>([]);
+  const [isLoadingSmsHistory, setIsLoadingSmsHistory] = useState(false);
+  const [smsHistoryPage, setSmsHistoryPage] = useState(1);
+  const [smsHistoryTotal, setSmsHistoryTotal] = useState(0);
+  const smsHistoryLimit = 15;
+
+  const fetchSmsHistory = useCallback(async (pageNo: number) => {
+    if (!token || !ajiltan?.baiguullagiinId) return;
+    setIsLoadingSmsHistory(true);
+    try {
+      const resp = await uilchilgee(token).get("/msgTuukhAvya", {
+        params: {
+          baiguullagiinId: ajiltan.baiguullagiinId,
+          barilgiinId: selectedBuildingId || barilgiinId || null,
+          page: pageNo,
+          limit: smsHistoryLimit,
+        },
+      });
+      if (resp.data?.success) {
+        setSmsHistoryList(resp.data.list || []);
+        setSmsHistoryTotal(resp.data.total || 0);
+        setSmsHistoryPage(pageNo);
+      }
+    } catch (err) {
+      toast.error("SMS түүх авахад алдаа гарлаа");
+    } finally {
+      setIsLoadingSmsHistory(false);
+    }
+  }, [token, ajiltan?.baiguullagiinId, selectedBuildingId, barilgiinId]);
+
+  useEffect(() => {
+    if (isSmsHistoryOpen) {
+      fetchSmsHistory(1);
+    }
+  }, [isSmsHistoryOpen, fetchSmsHistory]);
 
   const columnDefs = useMemo(
     () => [
@@ -2936,11 +2976,11 @@ export default function DansniiKhuulga() {
 
   // Handle modal body overflow
   useEffect(() => {
-    document.body.style.overflow = isModalOpen || isHistoryOpen ? "hidden" : "";
+    document.body.style.overflow = isModalOpen || isHistoryOpen || isSmsHistoryOpen ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
-  }, [isModalOpen, isHistoryOpen]);
+  }, [isModalOpen, isHistoryOpen, isSmsHistoryOpen]);
 
   // Modal keyboard shortcuts for history modal
   useModalHotkeys({
@@ -3148,6 +3188,17 @@ export default function DansniiKhuulga() {
             </div>
 
             <div className="flex items-center gap-2">
+              <Tooltip title="SMS илгээсэн түүх">
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  transition={{ duration: 0.3 }}
+                  onClick={() => setIsSmsHistoryOpen(true)}
+                  className="btn-minimal inline-flex items-center justify-center h-[40px] w-[40px] px-0"
+                  id="sms-history-btn"
+                >
+                  <MessageSquare className="text-slate-500 shrink-0" style={{ width: 26, height: 26 }} strokeWidth={2.3} />
+                </motion.button>
+              </Tooltip>
               <div ref={zaaltButtonRef} className="relative">
                 <Tooltip title="Заалт">
                   <motion.button
@@ -3518,6 +3569,114 @@ export default function DansniiKhuulga() {
           latestRowUldegdelRequestedRef.current.clear();
         }}
       />
+
+      {/* SMS History Modal */}
+      {isSmsHistoryOpen && (
+        <ModalPortal>
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[12000]"
+              onClick={() => setIsSmsHistoryOpen(false)}
+            />
+            <motion.div
+              initial={{ scale: 0.98, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.98, opacity: 0 }}
+              className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[850px] rounded-3xl overflow-hidden shadow-2xl modal-surface font-sans"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-800">
+                <div className="flex items-center gap-2 text-lg font-bold text-slate-800 dark:text-white">
+                  <MessageSquare className="w-5 h-5 text-blue-500" />
+                  <span>Илгээсэн SMS түүх</span>
+                </div>
+                <Button
+                  onClick={() => setIsSmsHistoryOpen(false)}
+                  variant="ghost"
+                  className="p-2 rounded-full"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </Button>
+              </div>
+
+              <div className="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                {isLoadingSmsHistory ? (
+                  <div className="flex items-center justify-center py-20">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                  </div>
+                ) : smsHistoryList.length === 0 ? (
+                  <div className="text-center py-20 text-slate-500 dark:text-slate-400">
+                    Илгээсэн SMS олдсонгүй.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-[13px] border-collapse">
+                        <thead>
+                          <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 font-semibold uppercase text-[10px] tracking-wider">
+                            <th className="pb-3 pr-4">Хүлээн авагч</th>
+                            <th className="pb-3 pr-4">Мессеж</th>
+                            <th className="pb-3 pr-4">Огноо</th>
+                            <th className="pb-3">Төлөв</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {smsHistoryList.map((item, idx) => (
+                            <tr
+                              key={idx}
+                              className="border-b border-slate-50 dark:border-slate-900 last:border-0 hover:bg-slate-50/50 dark:hover:bg-white/[0.02]"
+                            >
+                              <td className="py-3 pr-4 font-medium text-slate-800 dark:text-slate-200">
+                                {Array.isArray(item.dugaar) ? item.dugaar.join(", ") : item.dugaar || "-"}
+                              </td>
+                              <td className="py-3 pr-4 text-slate-600 dark:text-slate-400 max-w-[300px] break-words">
+                                {item.msg || "-"}
+                              </td>
+                              <td className="py-3 pr-4 text-slate-500 dark:text-slate-500 whitespace-nowrap">
+                                {item.createdAt ? new Date(item.createdAt).toLocaleString("mn-MN") : "-"}
+                              </td>
+                              <td className="py-3 whitespace-nowrap">
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-500/10 text-green-500 border border-green-500/20">
+                                  Амжилттай
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {smsHistoryTotal > smsHistoryLimit && (
+                      <div className="flex justify-end pt-4 border-t border-slate-100 dark:border-slate-800">
+                        <StandardPagination
+                          current={smsHistoryPage}
+                          total={smsHistoryTotal}
+                          pageSize={smsHistoryLimit}
+                          onChange={(p) => fetchSmsHistory(p)}
+                          pageSizeOptions={[smsHistoryLimit]}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="p-6 border-t border-slate-200 dark:border-slate-800 flex justify-end">
+                <Button
+                  onClick={() => setIsSmsHistoryOpen(false)}
+                  variant="secondary"
+                  className="px-6 py-2"
+                >
+                  Хаах
+                </Button>
+              </div>
+            </motion.div>
+          </>
+        </ModalPortal>
+      )}
     </div>
   );
 }

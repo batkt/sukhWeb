@@ -5,16 +5,16 @@ import { useParams } from "next/navigation";
 import useSWR from "swr";
 import { QRCodeSVG } from "qrcode.react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Building, 
-  User, 
-  Hash, 
-  Calendar, 
-  CheckCircle2, 
-  AlertTriangle, 
-  Copy, 
-  QrCode, 
-  Smartphone, 
+import {
+  Building,
+  User,
+  Hash,
+  Calendar,
+  CheckCircle2,
+  AlertTriangle,
+  Copy,
+  QrCode,
+  Smartphone,
   RefreshCw,
   ArrowRight,
   ExternalLink
@@ -100,7 +100,7 @@ export default function PaymentLandingPage() {
 
   if (error) {
     return (
-      <div 
+      <div
         className="min-h-screen flex items-center justify-center p-4"
         style={{ background: "radial-gradient(circle at center, #1e293b 0%, #0f172a 100%)" }}
       >
@@ -128,7 +128,7 @@ export default function PaymentLandingPage() {
 
   if (!data) {
     return (
-      <div 
+      <div
         className="min-h-screen flex items-center justify-center p-4"
         style={{ background: "radial-gradient(circle at center, #1e293b 0%, #0f172a 100%)" }}
       >
@@ -157,27 +157,22 @@ export default function PaymentLandingPage() {
   }
 
   return (
-    <div 
-      className="min-h-screen flex flex-col items-center justify-center p-4 font-sans selection:bg-blue-500/30 text-slate-100 relative overflow-hidden"
+    <div
+      className="min-h-screen flex flex-col items-center justify-center p-4 font-sans selection:bg-blue-500/30 text-slate-100 relative overflow-x-hidden overflow-y-auto"
       style={{ background: "radial-gradient(circle at top right, #1e1b4b 0%, #09090b 100%)" }}
     >
-      {/* Dynamic background glow shapes */}
-      <span className="pointer-events-none absolute -top-48 -left-48 w-96 h-96 rounded-full bg-blue-500/10 blur-[100px]" />
-      <span className="pointer-events-none absolute -bottom-48 -right-48 w-[450px] h-[450px] rounded-full bg-purple-500/10 blur-[120px]" />
+      {/* Dynamic background glow shapes (only rendered on desktop to avoid mobile rendering lag) */}
+      <span className="hidden sm:block pointer-events-none absolute -top-48 -left-48 w-96 h-96 rounded-full bg-blue-500/10 blur-[100px]" />
+      <span className="hidden sm:block pointer-events-none absolute -bottom-48 -right-48 w-[450px] h-[450px] rounded-full bg-purple-500/10 blur-[120px]" />
 
       <div className="w-full max-w-lg relative z-10 my-8">
-        
+
         {/* Brand logo header */}
         <div className="flex flex-col items-center gap-2 mb-6">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-              </svg>
-            </div>
-            <span className="text-base font-black tracking-wider text-white">AMARHOME</span>
+            <img src="/Main.png" alt="AMARHOME Logo" className="w-8 h-8 object-contain shrink-0" />
+            <span className="text-base text-slate-400 text-white">AMARHOME</span>
           </div>
-          <span className="text-[10px] text-slate-500 font-medium uppercase tracking-widest">Төлбөрийн гарц</span>
         </div>
 
         <AnimatePresence mode="wait">
@@ -210,33 +205,33 @@ export default function PaymentLandingPage() {
 
               {/* Receipt Summary */}
               <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 text-left space-y-3">
-                <div className="flex justify-between items-center text-sm py-1 border-b border-white/5">
-                  <span className="text-slate-400">Хүлээн авагч</span>
-                  <span className="font-semibold text-white truncate max-w-[200px]">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-4 text-sm py-1 border-b border-white/5">
+                  <span className="text-slate-400 shrink-0">Хүлээн авагч</span>
+                  <span className="font-semibold text-white sm:text-right break-words sm:max-w-[65%]">
                     {invoice.baiguullagiinNer}
                   </span>
                 </div>
-                <div className="flex justify-between items-center text-sm py-1 border-b border-white/5">
-                  <span className="text-slate-400">Төлөгч оршин суугч</span>
-                  <span className="font-semibold text-white">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-4 text-sm py-1 border-b border-white/5">
+                  <span className="text-slate-400 shrink-0">Төлөгч оршин суугч</span>
+                  <span className="font-semibold text-white sm:text-right break-words sm:max-w-[65%]">
                     {invoice.ner || "Тодорхойгүй"}
                   </span>
                 </div>
-                <div className="flex justify-between items-center text-sm py-1 border-b border-white/5">
-                  <span className="text-slate-400">Тоот</span>
-                  <span className="font-semibold text-white">
+                <div className="flex justify-between items-center gap-4 text-sm py-1 border-b border-white/5">
+                  <span className="text-slate-400 shrink-0">Тоот</span>
+                  <span className="font-semibold text-white text-right">
                     {invoice.toot ? `${invoice.toot} тоот` : "Тодорхойгүй"}
                   </span>
                 </div>
-                <div className="flex justify-between items-center text-sm py-1 border-b border-white/5">
-                  <span className="text-slate-400">Нэхэмжлэхийн дугаар</span>
-                  <span className="font-semibold text-white font-mono">
+                <div className="flex justify-between items-center gap-4 text-sm py-1 border-b border-white/5">
+                  <span className="text-slate-400 shrink-0">Нэхэмжлэхийн дугаар</span>
+                  <span className="font-semibold text-white text-right font-mono">
                     {invoice.nekhemjlekhiinDugaar}
                   </span>
                 </div>
-                <div className="flex justify-between items-center text-sm py-1">
-                  <span className="text-slate-400">Төлсөн огноо</span>
-                  <span className="font-semibold text-white">
+                <div className="flex justify-between items-center gap-4 text-sm py-1">
+                  <span className="text-slate-400 shrink-0">Төлсөн огноо</span>
+                  <span className="font-semibold text-white text-right">
                     {formatDate(new Date().toISOString())}
                   </span>
                 </div>
@@ -278,46 +273,46 @@ export default function PaymentLandingPage() {
 
               {/* Invoice breakdown details */}
               <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 text-xs sm:text-sm space-y-2.5">
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-400 flex items-center gap-1.5">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-4">
+                  <span className="text-slate-400 flex items-center gap-1.5 shrink-0">
                     <Building className="w-3.5 h-3.5 text-slate-500" /> СӨХ-ийн нэр
                   </span>
-                  <span className="font-semibold text-white truncate max-w-[200px]">
+                  <span className="font-semibold text-white sm:text-right break-words sm:max-w-[65%]">
                     {invoice.baiguullagiinNer}
                   </span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-400 flex items-center gap-1.5">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-4">
+                  <span className="text-slate-400 flex items-center gap-1.5 shrink-0">
                     <User className="w-3.5 h-3.5 text-slate-500" /> Оршин суугч
                   </span>
-                  <span className="font-semibold text-white">
+                  <span className="font-semibold text-white sm:text-right break-words sm:max-w-[65%]">
                     {invoice.ner || "Тодорхойгүй"}
                   </span>
                 </div>
                 {invoice.toot && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-400 flex items-center gap-1.5">
+                  <div className="flex justify-between items-center gap-4">
+                    <span className="text-slate-400 flex items-center gap-1.5 shrink-0">
                       <Hash className="w-3.5 h-3.5 text-slate-500" /> Тоот
                     </span>
-                    <span className="font-semibold text-white">
+                    <span className="font-semibold text-white text-right">
                       {invoice.toot} тоот
                     </span>
                   </div>
                 )}
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-400 flex items-center gap-1.5">
+                <div className="flex justify-between items-center gap-4">
+                  <span className="text-slate-400 flex items-center gap-1.5 shrink-0">
                     <Hash className="w-3.5 h-3.5 text-slate-500" /> Нэхэмжлэх №
                   </span>
-                  <span className="font-semibold text-white font-mono">
+                  <span className="font-semibold text-white text-right font-mono">
                     {invoice.nekhemjlekhiinDugaar}
                   </span>
                 </div>
                 {invoice.ognoo && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-400 flex items-center gap-1.5">
+                  <div className="flex justify-between items-center gap-4">
+                    <span className="text-slate-400 flex items-center gap-1.5 shrink-0">
                       <Calendar className="w-3.5 h-3.5 text-slate-500" /> Огноо
                     </span>
-                    <span className="font-semibold text-white">
+                    <span className="font-semibold text-white text-right">
                       {formatDate(invoice.ognoo)}
                     </span>
                   </div>
@@ -325,25 +320,23 @@ export default function PaymentLandingPage() {
               </div>
 
               {/* Selector Tabs (Deep Link vs QR Code) */}
-              <div className="flex p-1 rounded-2xl bg-white/[0.03] border border-white/5">
+              <div className="flex p-1 rounded-full bg-white/[0.03] border border-white/5">
                 <button
                   onClick={() => setActiveTab("deeplink")}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 ${
-                    activeTab === "deeplink"
-                      ? "bg-blue-600 text-white shadow-lg shadow-blue-600/15"
-                      : "text-slate-400 hover:text-white"
-                  }`}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 ${activeTab === "deeplink"
+                    ? "bg-[#10b981] text-white shadow-lg shadow-[#10b981]/15"
+                    : "text-slate-400 hover:text-white"
+                    }`}
                 >
                   <Smartphone className="w-4 h-4" />
                   Банкны Апп
                 </button>
                 <button
                   onClick={() => setActiveTab("qrcode")}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 ${
-                    activeTab === "qrcode"
-                      ? "bg-blue-600 text-white shadow-lg shadow-blue-600/15"
-                      : "text-slate-400 hover:text-white"
-                  }`}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 ${activeTab === "qrcode"
+                    ? "bg-[#10b981] text-white shadow-lg shadow-[#10b981]/15"
+                    : "text-slate-400 hover:text-white"
+                    }`}
                 >
                   <QrCode className="w-4 h-4" />
                   QR Код
@@ -371,7 +364,7 @@ export default function PaymentLandingPage() {
                               <img
                                 src={bank.logo}
                                 alt={bank.name}
-                                className="w-8 h-8 rounded-xl object-contain bg-white p-0.5 shrink-0"
+                                className="w-8 h-8 rounded-xl object-contain shrink-0"
                                 onError={(e) => {
                                   e.currentTarget.style.display = "none";
                                 }}
@@ -408,37 +401,43 @@ export default function PaymentLandingPage() {
                     <div className="text-center text-slate-400 text-xs max-w-sm">
                       Гар утасныхаа банкны апп-ын QR уншуулагчаар доорх кодыг уншуулна уу.
                     </div>
-                    
+
                     {invoice.qpayUrl ? (
-                      <div className="relative p-5 bg-white rounded-3xl shadow-xl">
-                        <QRCodeSVG
-                          value={invoice.qpayUrl}
-                          size={180}
-                          bgColor="#ffffff"
-                          fgColor="#09090b"
-                          level="M"
-                        />
-                        {/* Subtle QPay mini-logo in center */}
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-xl bg-slate-900 border-2 border-white flex items-center justify-center shadow-lg font-black text-[9px] text-white">
-                          QP
-                        </div>
+                      <div className="relative p-5 bg-white rounded-3xl shadow-xl flex items-center justify-center">
+                        {invoice.qpayUrl.startsWith("data:image/") || invoice.qpayUrl.length > 500 ? (
+                          <div className="relative w-36 h-36 sm:w-44 sm:h-44 flex items-center justify-center">
+                            <img
+                              src={invoice.qpayUrl.startsWith("data:image/") ? invoice.qpayUrl : `data:image/png;base64,${invoice.qpayUrl}`}
+                              alt="QPay QR Code"
+                              className="w-36 h-36 sm:w-44 sm:h-44 object-contain"
+                            />
+                            {/* Overlay Amarhome logo in center */}
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-white border-2 border-white flex items-center justify-center shadow-lg p-0.5">
+                              <img src="/Main.png" alt="Amarhome Logo" className="w-full h-full object-contain" />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="relative w-36 h-36 sm:w-44 sm:h-44 flex items-center justify-center">
+                            <QRCodeSVG
+                              value={invoice.qpayUrl}
+                              size={144}
+                              bgColor="#ffffff"
+                              fgColor="#09090b"
+                              level="M"
+                              className="w-36 h-36 sm:w-44 sm:h-44"
+                            />
+                            {/* Overlay Amarhome logo in center */}
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-white border-2 border-white flex items-center justify-center shadow-lg p-0.5">
+                              <img src="/Main.png" alt="Amarhome Logo" className="w-full h-full object-contain" />
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <div className="w-44 h-44 rounded-3xl bg-slate-800/50 border border-slate-700/50 flex flex-col items-center justify-center gap-2">
                         <AlertTriangle className="w-6 h-6 text-slate-500" />
                         <span className="text-[10px] text-slate-400">QR код олдсонгүй</span>
                       </div>
-                    )}
-
-                    {/* Copy manual QPay URL text */}
-                    {invoice.qpayUrl && (
-                      <button
-                        onClick={handleCopyLink}
-                        className="h-10 px-4 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.06] text-xs text-slate-300 hover:text-white transition-all flex items-center justify-center gap-2 w-full max-w-xs"
-                      >
-                        <Copy className="w-3.5 h-3.5" />
-                        {copied ? "Хуулагдлаа" : "Төлбөрийн линк хуулах"}
-                      </button>
                     )}
                   </div>
                 )}
@@ -453,8 +452,7 @@ export default function PaymentLandingPage() {
             </motion.div>
           )}
         </AnimatePresence>
-        
-        {/* Footer info */}
+
         <p className="text-center text-[10px] text-slate-600 mt-6 tracking-wide">
           ЗЭВТАБС © Amarhome Төлбөрийн Систем
         </p>
