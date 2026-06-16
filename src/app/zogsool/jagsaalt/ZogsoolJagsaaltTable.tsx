@@ -14,6 +14,16 @@ interface Vehicle {
   niitDun?: number;
   zurchil?: string;
   turul?: string;
+  toot?: string;
+  ezenToot?: string;
+  orshinSuugchiinNer?: string;
+  // Nested mashin object from API
+  mashin?: {
+    turul?: string;
+    ezenToot?: string;
+    ezemshigchiinNer?: string;
+    orshinSuugchiinId?: string;
+  };
   tuukh?: Array<{
     tsagiinTuukh?: Array<{
       orsonTsag?: string;
@@ -144,9 +154,18 @@ export const ZogsoolJagsaaltTable: React.FC<ZogsoolJagsaaltTableProps> = ({
         align: "center",
         render: (_: any, record: Vehicle) => {
           const mur = record.tuukh?.[0];
+          // Check all possible locations for type info (root, history, or mashin object)
+          const typeValue = record.turul || mur?.turul || record.mashin?.turul;
+          // Check all possible locations for resident indicators
+          const isResident = record.toot 
+            || record.ezenToot 
+            || record.orshinSuugchiinNer
+            || record.mashin?.ezenToot
+            || record.mashin?.orshinSuugchiinId
+            || record.mashin?.ezemshigchiinNer;
           return (
             <span className="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-[10px] text-slate-500 uppercase tracking-tighter">
-              {record.turul || mur?.turul || "Үйлчлүүлэгч"}
+              {typeValue || (isResident ? "Оршин суугч" : "Үйлчлүүлэгч")}
             </span>
           );
         },
@@ -246,7 +265,8 @@ export const ZogsoolJagsaaltTable: React.FC<ZogsoolJagsaaltTableProps> = ({
           const tuluv = mur?.tuluv;
           const garsanTsag = mur?.tsagiinTuukh?.[0]?.garsanTsag;
           const niitDun = record.niitDun || 0;
-          const isCurrentlyIn = !mur?.garsanKhaalga;
+          // Car is currently in if no exit gate AND no exit timestamp
+          const isCurrentlyIn = !mur?.garsanKhaalga && !garsanTsag;
 
           const badgeClass =
             "flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-1.5 rounded-[6px] overflow-hidden border";

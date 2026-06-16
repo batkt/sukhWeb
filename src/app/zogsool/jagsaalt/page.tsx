@@ -94,6 +94,15 @@ interface Vehicle {
   niitDun?: number;
   zurchil?: string;
   turul?: string; // Type
+  toot?: string;
+  ezenToot?: string;
+  orshinSuugchiinNer?: string;
+  mashin?: {
+    turul?: string;
+    ezenToot?: string;
+    ezemshigchiinNer?: string;
+    orshinSuugchiinId?: string;
+  };
   tuukh?: Array<{
     tsagiinTuukh?: Array<{
       orsonTsag?: string;
@@ -264,10 +273,26 @@ export default function Jagsaalt() {
     { revalidateOnFocus: false },
   );
 
-  const vehicles: Vehicle[] = useMemo(
-    () => vehiclesData?.jagsaalt || [],
-    [vehiclesData],
-  );
+  const vehicles: Vehicle[] = useMemo(() => {
+    const list = vehiclesData?.jagsaalt || [];
+    // Normalize: ensure turul is populated at root level from mashin object
+    return list.map((v: any) => {
+      const mashin = v.mashin;
+      const hasResidentData = mashin?.ezenToot || mashin?.orshinSuugchiinId || mashin?.ezemshigchiinNer;
+      const mashinTurul = mashin?.turul;
+      
+      // If root turul is missing but mashin has it, or mashin has resident indicators
+      if (!v.turul && (mashinTurul || hasResidentData)) {
+        return {
+          ...v,
+          turul: mashinTurul || "Оршин суугч",
+          toot: v.toot || mashin?.ezenToot,
+          orshinSuugchiinNer: v.orshinSuugchiinNer || mashin?.ezemshigchiinNer,
+        };
+      }
+      return v;
+    });
+  }, [vehiclesData]);
 
   // Force revalidate when searchTerm changes
   useEffect(() => {
