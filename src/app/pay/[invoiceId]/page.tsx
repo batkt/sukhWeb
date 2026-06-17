@@ -59,7 +59,15 @@ export default function PaymentLandingPage() {
   );
 
   const invoice = data?.invoice;
-  const isPaid = invoice?.tuluv === "Төлсөн";
+  
+  // One-time payment link: if ANY payment has been made, show as paid
+  const hasPayment = Number(invoice?.tulsunDun || 0) > 0;
+  const remainingAmount = invoice?.uldegdel !== undefined && invoice?.uldegdel !== null 
+    ? Number(invoice.uldegdel) 
+    : Number(invoice?.niitTulbur || 0) - Number(invoice?.tulsunDun || 0);
+  const actualIsPaid = invoice?.tuluv === "Төлсөн" || hasPayment || remainingAmount <= 0.01;
+  const displayAmount = actualIsPaid ? Number(invoice?.niitTulbur || 0) : remainingAmount;
+  const isPaid = actualIsPaid;
 
   // Handle mobile detection to set default tab
   useEffect(() => {
@@ -261,14 +269,21 @@ export default function PaymentLandingPage() {
             >
               {/* Header section with amount */}
               <div className="text-center space-y-2 pb-2">
-                <span className="text-xs text-slate-400 uppercase tracking-widest">Төлөх нийт дүн</span>
+                <span className="text-xs text-slate-400 uppercase tracking-widest">{actualIsPaid ? 'Төлсөн нийт дүн' : 'Төлөх нийт дүн'}</span>
                 <h2 className="text-4xl font-black text-white tracking-tight">
-                  {formatAmount(invoice.niitTulbur)}
+                  {formatAmount(displayAmount)}
                 </h2>
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                  Төлбөр хүлээгдэж байна
-                </div>
+                {actualIsPaid ? (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                    Төлбөр төлөгдсөн
+                  </div>
+                ) : (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                    Төлбөр хүлээгдэж байна
+                  </div>
+                )}
               </div>
 
               {/* Invoice breakdown details */}
