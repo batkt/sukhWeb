@@ -898,27 +898,27 @@ export default function Camera() {
 
       if (!data?.oruulakhguiEsekh) {
         khaalgaNeey(data.cameraIP);
-      }
 
-      // Create synthetic update to avoid REST fetch and update "Идэвхтэй" list
-      // Use plate as ID to ensure we only have one entry for this car in liveUpdates
-      const plate = data.mashiniiDugaar;
-      setLiveUpdates((prev) => ({
-        ...prev,
-        [plate]: {
-          _id: plate, // Use plate as stable ID for synthetic entry
-          mashiniiDugaar: plate,
-          baiguullagiinId: data.baiguullagiinId,
-          createdAt: new Date().toISOString(),
-          tuukh: [
-            {
-              tsagiinTuukh: [{ orsonTsag: new Date().toISOString() }],
-              orsonKhaalga: data.cameraIP,
-              tuluv: 0,
-            },
-          ],
-        },
-      }));
+        // Create synthetic update to avoid REST fetch and update "Идэвхтэй" list
+        // Use plate as ID to ensure we only have one entry for this car in liveUpdates
+        const plate = data.mashiniiDugaar;
+        setLiveUpdates((prev) => ({
+          ...prev,
+          [plate]: {
+            _id: plate, // Use plate as stable ID for synthetic entry
+            mashiniiDugaar: plate,
+            baiguullagiinId: data.baiguullagiinId,
+            createdAt: new Date().toISOString(),
+            tuukh: [
+              {
+                tsagiinTuukh: [{ orsonTsag: new Date().toISOString() }],
+                orsonKhaalga: data.cameraIP,
+                tuluv: 0,
+              },
+            ],
+          },
+        }));
+      }
 
       fetchList();
       const dugaar = data.mashiniiDugaar?.replace("???", "");
