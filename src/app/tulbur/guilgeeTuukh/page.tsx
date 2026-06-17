@@ -34,6 +34,7 @@ import {
   Banknote,
   Send,
   MessageSquare,
+  Mail,
   X,
 } from "lucide-react";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
@@ -254,6 +255,7 @@ export default function DansniiKhuulga() {
   const khungulultRef = useRef<HTMLDivElement | null>(null);
   const [isZaaltDropdownOpen, setIsZaaltDropdownOpen] = useState(false);
   const zaaltButtonRef = useRef<HTMLDivElement | null>(null);
+  const smsHistoryButtonRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isColumnModalOpen, setIsColumnModalOpen] = useState(false);
   const columnDropdownRef = useRef<HTMLDivElement | null>(null);
@@ -274,7 +276,8 @@ export default function DansniiKhuulga() {
   const [selectedGereeIds, setSelectedGereeIds] = useState<string[]>([]);
   const [isSendingInvoices, setIsSendingInvoices] = useState(false);
 
-  // SMS History modal state
+  // SMS History modal state + date filter
+  const [smsDateRange, setSmsDateRange] = useState<[string | null, string | null]>([null, null]);
   const [isSmsHistoryOpen, setIsSmsHistoryOpen] = useState(false);
   const [smsHistoryList, setSmsHistoryList] = useState<any[]>([]);
   const [isLoadingSmsHistory, setIsLoadingSmsHistory] = useState(false);
@@ -3188,17 +3191,19 @@ export default function DansniiKhuulga() {
             </div>
 
             <div className="flex items-center gap-2">
-              <Tooltip title="SMS илгээсэн түүх">
-                <motion.button
-                  whileHover={{ scale: 1.03 }}
-                  transition={{ duration: 0.3 }}
-                  onClick={() => setIsSmsHistoryOpen(true)}
-                  className="btn-minimal inline-flex items-center justify-center h-[40px] w-[40px] px-0"
-                  id="sms-history-btn"
-                >
-                  <MessageSquare className="text-slate-500 shrink-0" style={{ width: 26, height: 26 }} strokeWidth={2.3} />
-                </motion.button>
-              </Tooltip>
+              <div ref={smsHistoryButtonRef} className="relative">
+                <Tooltip title="SMS илгээсэн түүх">
+                  <motion.button
+                    whileHover={{ scale: 1.03 }}
+                    transition={{ duration: 0.3 }}
+                    onClick={() => setIsSmsHistoryOpen(true)}
+                    className="btn-minimal inline-flex items-center gap-1 h-[40px] px-2"
+                    id="sms-history-btn"
+                  >
+                    <Mail className="w-5 h-5" />
+                  </motion.button>
+                </Tooltip>
+              </div>
               <div ref={zaaltButtonRef} className="relative">
                 <Tooltip title="Заалт">
                   <motion.button
@@ -3578,100 +3583,152 @@ export default function DansniiKhuulga() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[12000]"
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[12000]"
               onClick={() => setIsSmsHistoryOpen(false)}
             />
             <motion.div
-              initial={{ scale: 0.98, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.98, opacity: 0 }}
-              className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[850px] rounded-3xl overflow-hidden shadow-2xl modal-surface font-sans"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[900px] max-h-[85vh] rounded-2xl overflow-hidden shadow-2xl bg-white dark:bg-slate-900 ring-1 ring-slate-200 dark:ring-slate-800 font-sans flex flex-col"
               onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') {
+                  setIsSmsHistoryOpen(false);
+                }
+              }}
+              tabIndex={-1}
+              autoFocus
             >
-              <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-800">
-                <div className="flex items-center gap-2 text-lg font-bold text-slate-800 dark:text-white">
-                  <MessageSquare className="w-5 h-5 text-blue-500" />
-                  <span>Илгээсэн SMS түүх</span>
+              {/* Gradient Header - Green Theme */}
+              <div className="relative bg-gradient-to-r from-emerald-600 to-green-600 px-6 py-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl backdrop-blur-sm flex items-center justify-center">
+                      <Mail className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-white">Илгээсэн SMS түүх</h3>
+                      <p className="text-sm text-emerald-100">Нийт {smsHistoryTotal} мессеж</p>
+                    </div>
+                  </div>
                 </div>
-                <Button
-                  onClick={() => setIsSmsHistoryOpen(false)}
-                  variant="ghost"
-                  className="p-2 rounded-full"
-                >
-                  <X className="w-5 h-5 text-gray-500" />
-                </Button>
               </div>
 
-              <div className="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
+              {/* Content Area */}
+              <div className="flex flex-col flex-1 min-h-0 bg-slate-50 dark:bg-slate-950">
                 {isLoadingSmsHistory ? (
-                  <div className="flex items-center justify-center py-20">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="animate-spin rounded-full h-10 w-10 border-3 border-blue-500 border-t-transparent" />
+                      <span className="text-slate-500 dark:text-slate-400 text-sm">Ачаалж байна...</span>
+                    </div>
                   </div>
                 ) : smsHistoryList.length === 0 ? (
-                  <div className="text-center py-20 text-slate-500 dark:text-slate-400">
-                    Илгээсэн SMS олдсонгүй.
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-4 text-center">
+                      <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                        <Mail className="w-8 h-8 text-slate-400" />
+                      </div>
+                      <div>
+                        <p className="text-slate-600 dark:text-slate-300 font-medium">Илгээсэн SMS олдсонгүй</p>
+                        <p className="text-slate-400 dark:text-slate-500 text-sm mt-1">Мессеж илгээсэн түүх хоосон байна</p>
+                      </div>
+                    </div>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-[13px] border-collapse">
-                        <thead>
-                          <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 font-semibold uppercase text-[10px] tracking-wider">
-                            <th className="pb-3 pr-4">Хүлээн авагч</th>
-                            <th className="pb-3 pr-4">Мессеж</th>
-                            <th className="pb-3 pr-4">Огноо</th>
-                            <th className="pb-3">Төлөв</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {smsHistoryList.map((item, idx) => (
-                            <tr
-                              key={idx}
-                              className="border-b border-slate-50 dark:border-slate-900 last:border-0 hover:bg-slate-50/50 dark:hover:bg-white/[0.02]"
-                            >
-                              <td className="py-3 pr-4 font-medium text-slate-800 dark:text-slate-200">
-                                {Array.isArray(item.dugaar) ? item.dugaar.join(", ") : item.dugaar || "-"}
-                              </td>
-                              <td className="py-3 pr-4 text-slate-600 dark:text-slate-400 max-w-[300px] break-words">
-                                {item.msg || "-"}
-                              </td>
-                              <td className="py-3 pr-4 text-slate-500 dark:text-slate-500 whitespace-nowrap">
-                                {item.createdAt ? new Date(item.createdAt).toLocaleString("mn-MN") : "-"}
-                              </td>
-                              <td className="py-3 whitespace-nowrap">
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-500/10 text-green-500 border border-green-500/20">
-                                  Амжилттай
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                  <>
+                    {/* Date Filter & Stats Summary */}
+                    <div className="px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+                      <div className="flex items-center gap-3">
+                        <div className="w-[50px] sm:w-40 lg:w-[280px] h-11 z-[12002] [&_.ant-picker-dropdown]:!z-[12003] [&_.ant-picker-input]:!bg-transparent [&_input]:!bg-transparent [&_.ant-picker-input-active]:!bg-transparent dark:[&_.ant-picker-suffix]:!text-white dark:[&_.ant-picker-suffix_svg]:!fill-white dark:[&_.ant-picker:hover]:!bg-slate-700 dark:[&_.ant-picker-focused]:!bg-slate-700 [&_.ant-picker-range-separator]:!text-slate-400 dark:[&_.ant-picker-range-separator]:!text-slate-400">
+                          <StandardDatePicker
+                            isRange={true}
+                            value={smsDateRange}
+                            onChange={(_, dateString) => setSmsDateRange(dateString)}
+                            className="w-full"
+                            format="YYYY-MM-DD"
+                            popupClassName="!z-[12003]"
+                          />
+                        </div>
+                      
+                        <div className="flex items-center gap-2 text-sm ml-auto">
+                          <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                          <span className="text-slate-600 dark:text-slate-400">
+                            Амжилттай: <span className="font-semibold text-emerald-600 dark:text-emerald-400">{smsHistoryList.length}</span>
+                          </span>
+                        </div>
+                      </div>
                     </div>
 
+                    {/* Cards List */}
+                    <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                      {smsHistoryList.map((item, idx) => (
+                        <motion.div
+                          key={idx}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: idx * 0.05 }}
+                          className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow"
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                                  {Array.isArray(item.dugaar) ? item.dugaar.join(", ") : item.dugaar || "-"}
+                                </span>
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400">
+                                  Амжилттай
+                                </span>
+                              </div>
+                              <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed break-words">
+                                {item.msg || "-"}
+                              </p>
+                            </div>
+                            <div className="text-right whitespace-nowrap">
+                              <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-xs">
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                {item.createdAt ? new Date(item.createdAt).toLocaleString("mn-MN", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).replace(/\//g, ".") : "-"}
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+
+                    {/* Pagination */}
                     {smsHistoryTotal > smsHistoryLimit && (
-                      <div className="flex justify-end pt-4 border-t border-slate-100 dark:border-slate-800">
-                        <StandardPagination
-                          current={smsHistoryPage}
-                          total={smsHistoryTotal}
-                          pageSize={smsHistoryLimit}
-                          onChange={(p) => fetchSmsHistory(p)}
-                          pageSizeOptions={[smsHistoryLimit]}
-                        />
+                      <div className="px-4 py-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-slate-500 dark:text-slate-400">
+                            Нийт {smsHistoryTotal} бичлэг
+                          </span>
+                          <StandardPagination
+                            current={smsHistoryPage}
+                            total={smsHistoryTotal}
+                            pageSize={smsHistoryLimit}
+                            onChange={(p) => fetchSmsHistory(p)}
+                            pageSizeOptions={[smsHistoryLimit]}
+                          />
+                        </div>
                       </div>
                     )}
-                  </div>
-                )}
-              </div>
 
-              <div className="p-6 border-t border-slate-200 dark:border-slate-800 flex justify-end">
-                <Button
-                  onClick={() => setIsSmsHistoryOpen(false)}
-                  variant="secondary"
-                  className="px-6 py-2"
-                >
-                  Хаах
-                </Button>
+                    {/* Close Button */}
+                    <div className="px-4 py-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex justify-end">
+                      <button
+                        onClick={() => setIsSmsHistoryOpen(false)}
+                        className="py-2 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-2xl transition-colors"
+                      >
+                        Хаах
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </motion.div>
           </>
