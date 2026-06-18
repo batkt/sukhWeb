@@ -250,7 +250,7 @@ export default function PaymentLandingPage() {
                   Нийт төлсөн дүн:
                 </div>
                 <div className="text-3xl font-black text-white bg-slate-950/40 p-4 rounded-2xl border border-white/5">
-                  {formatAmount(invoice.niitTulbur)}
+                  {formatAmount(Number(invoice.tulsunDun) || Number(invoice.niitTulbur))}
                 </div>
               </div>
 
