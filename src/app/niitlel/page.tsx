@@ -259,27 +259,27 @@ export default function BlogNiitlelPage() {
                     {pagedBlogs.map((blog) => (
                       <article
                         key={blog._id}
-                        className="h-[380px] rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm flex flex-col"
+                        className="h-[380px] rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900 shadow-sm flex flex-col"
                       >
-                        <div className="h-1/2 bg-slate-100">
+                        <div className="h-1/2 bg-slate-100 dark:bg-slate-950/40 flex items-center justify-center overflow-hidden">
                           <img
                             src={blog.images?.[0] || "/placeholder-blog.png"}
                             alt={blog.title}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-contain"
                           />
                         </div>
-                        <div className="h-1/2 bg-white border-t border-slate-200 p-4 flex flex-col">
-                          <h3 className="text-sm font-medium text-slate-900 line-clamp-1 mb-1">{blog.title}</h3>
-                          <p className="text-[11px] text-slate-500 mb-2">
+                        <div className="h-1/2 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 p-4 flex flex-col">
+                          <h3 className="text-sm font-medium text-slate-900 dark:text-white line-clamp-1 mb-1">{blog.title}</h3>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-2">
                             {new Date(blog.createdAt).toLocaleString("mn-MN")}
                           </p>
-                          <p className="text-sm text-slate-600 line-clamp-3 flex-1">
+                          <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-3 flex-1">
                             {blog.content}
                           </p>
-                          <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                          <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2">
                             <button
                               onClick={() => handleOpenModal(blog)}
-                              className="h-8 px-3 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors inline-flex items-center gap-1.5 text-xs"
+                              className="h-8 px-3 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-950/50 dark:text-blue-400 dark:hover:bg-blue-900/50 transition-colors inline-flex items-center gap-1.5 text-xs font-medium"
                               title="Засах"
                             >
                               <Edit2 size={14} />
@@ -293,7 +293,7 @@ export default function BlogNiitlelPage() {
                               placement="topRight"
                             >
                               <button
-                                className="h-8 px-3 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-colors inline-flex items-center gap-1.5 text-xs"
+                                className="h-8 px-3 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-950/50 dark:text-red-400 dark:hover:bg-red-900/50 transition-colors inline-flex items-center gap-1.5 text-xs font-medium"
                                 title="Устгах"
                               >
                                 <Trash2 size={14} />
