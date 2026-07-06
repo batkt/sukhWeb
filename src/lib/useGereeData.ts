@@ -954,8 +954,19 @@ export function useGereeData(
     const activeTab = propertyTab || "Тоот";
 
     if (activeTab === "Тоот") {
-      // Only show floors that actually have unit numbers defined, excluding basement floors (B1, B2, etc.)
+      // Show non-basement floors from davkharOptions, and any floors from maps.outToot keys
       const floorsSet = new Set<string>();
+
+      // 1. Add configured non-basement floors from davkharOptions
+      davkharOptions.forEach((d) => {
+        const floorStr = String(d).trim();
+        const isBasement = floorStr.toLowerCase().startsWith("b");
+        if (floorStr && !isBasement) {
+          floorsSet.add(floorStr);
+        }
+      });
+
+      // 2. Add existing floors from maps.outToot keys
       Object.keys(maps.outToot).forEach((key) => {
         let floorName = "";
         if (key.includes("::")) {
