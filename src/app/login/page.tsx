@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/useAuth";
@@ -18,7 +18,7 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  // Removed animation states for performance
+  const [isDesktop, setIsDesktop] = useState<boolean>(false);
 
   // Load saved username on first mount
   useEffect(() => {
@@ -29,6 +29,16 @@ export default function LoginPage() {
         setRememberMe(true);
       }
     } catch {}
+  }, []);
+
+  // Screen size detection for lazy loading Lottie animations
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 768);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -83,7 +93,7 @@ export default function LoginPage() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center relative overflow-hidden p-2"
+      className="min-h-screen flex items-center justify-center relative overflow-hidden p-4"
       style={{ background: "var(--gradient-bg)" }}
     >
       {/* Decorative gradient blobs */}
@@ -111,24 +121,22 @@ export default function LoginPage() {
         <ӨнгөнийЗагварСонгох />
       </div>
 
-      <div className="pointer-events-none absolute right-6 top-1/2 -translate-y-1/2 hidden md:block lg:right-10 z-[15]">
-        <div className="w-40 h-40 lg:w-64 lg:h-64 opacity-95">
-          <DotLottieReact
-            src="https://lottie.host/d17186d3-f164-4808-a9a1-4dd3d95d1f49/0L9eXuFSaO.lottie"
-            loop
-            autoplay
-            style={{ width: "100%", height: "100%" }}
-          />
+      {/* Foreground Lottie (Only load on desktop to prevent mobile lag) */}
+      {isDesktop && (
+        <div className="pointer-events-none absolute right-6 top-1/2 -translate-y-1/2 hidden md:block lg:right-10 z-[15]">
+          <div className="w-40 h-40 lg:w-64 lg:h-64 opacity-95">
+            <DotLottieReact
+              src="https://lottie.host/d17186d3-f164-4808-a9a1-4dd3d95d1f49/0L9eXuFSaO.lottie"
+              loop
+              autoplay
+              style={{ width: "100%", height: "100%" }}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="w-full max-w-md relative z-10">
-        <div
-          className="menu-surface rounded-3xl overflow-hidden"
-          style={{
-            padding: "48px 40px 32px",
-          }}
-        >
+        <div className="menu-surface rounded-3xl overflow-hidden px-5 py-8 sm:px-10 sm:py-12">
           <div className="text-center mb-8 flex flex-col items-center gap-3">
             <div className="w-[88px] h-[88px] flex items-center justify-center">
               <ThemedLogo
@@ -142,7 +150,7 @@ export default function LoginPage() {
                 }}
               />
             </div>
-            <h1 className="text-3xl  text-theme">Нэвтрэх</h1>
+            <h1 className="text-3xl text-theme">Нэвтрэх</h1>
             <p className="text-sm text-[color:var(--muted-text)]">
               Амар СӨХ тавтай морилно уу
             </p>
@@ -150,7 +158,7 @@ export default function LoginPage() {
 
           <form className="space-y-5" onSubmit={handleSubmit}>
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm  text-theme">
+              <label htmlFor="email" className="text-sm text-theme">
                 Нэвтрэх нэр
               </label>
               <div className="relative">
@@ -182,7 +190,7 @@ export default function LoginPage() {
                   className="w-full h-12 rounded-2xl border pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   style={
                     {
-                      background: "var(--surface-bg) !important",
+                      background: "var(--surface-bg)",
                       color: "var(--panel-text)",
                       borderColor: "var(--surface-border)",
                       "--tw-ring-color": "var(--surface-border)",
@@ -195,7 +203,7 @@ export default function LoginPage() {
             <div className="space-y-2">
               <label
                 htmlFor="password"
-                className="text-sm  text-theme"
+                className="text-sm text-theme"
               >
                 Нууц үг
               </label>
@@ -256,16 +264,12 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-12 rounded-2xl  transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-6 relative overflow-hidden"
+              className="w-full h-12 rounded-2xl transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-6 relative overflow-hidden"
               style={{
                 background:
                   "linear-gradient(180deg, var(--glass-tint), var(--glass-tint-2))",
                 color: "var(--panel-text)",
-                border:
-                  "1px solid " +
-                  (getComputedStyle?.(document.documentElement)
-                    .getPropertyValue("--surface-border")
-                    ?.trim() || "rgba(15,23,42,0.12)"),
+                border: "1px solid var(--surface-border, rgba(15,23,42,0.12))",
                 boxShadow:
                   "0 12px 28px var(--glass-shadow), inset 0 1px 0 var(--glass-highlight)",
               }}

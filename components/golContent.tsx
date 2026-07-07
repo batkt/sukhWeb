@@ -1508,13 +1508,17 @@ export default function GolContent({ children }: GolContentProps) {
               </div>
             )}
             <div
-              className="neu-panel rounded-[2rem] p-2 min-h-[60vh] md:h-[calc(100vh-140px)] overflow-y-auto overflow-x-hidden overscroll-contain"
-              style={{
-                WebkitOverflowScrolling: 'touch',
-                touchAction: 'pan-y',
-                overflowY: 'auto',
-                overflowX: 'hidden'
-              }}
+              className={`neu-panel rounded-[2rem] p-2 min-h-[60vh] ${isMobile ? "" : "md:h-[calc(100vh-140px)] overflow-y-auto overflow-x-hidden overscroll-contain"}`}
+              style={
+                isMobile
+                  ? {}
+                  : {
+                      WebkitOverflowScrolling: 'touch',
+                      touchAction: 'pan-y',
+                      overflowY: 'auto',
+                      overflowX: 'hidden'
+                    }
+              }
             >
               {children}
             </div>

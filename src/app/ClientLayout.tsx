@@ -14,7 +14,6 @@ import { parseCookies, destroyCookie } from "nookies";
 import { SpinnerProvider, useSpinner } from "../../src/context/SpinnerContext";
 import { SuccessOverlayHost } from "@/components/ui/SuccessOverlay";
 import { ErrorOverlayHost } from "@/components/ui/ErrorOverlay";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { mutate } from "swr";
 import { socket } from "@/lib/uilchilgee";
 import { SocketProvider } from "../context/SocketContext";
@@ -132,7 +131,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
     // Small delay before hiding the loader to prevent page-mount flickering
     const timer = setTimeout(() => {
       setIsNavigating(false);
-    }, 400);
+    }, 150);
     return () => clearTimeout(timer);
   }, [pathname]);
 
@@ -311,16 +310,13 @@ function LayoutContent({ children }: { children: ReactNode }) {
   if (!authChecked) {
     return (
       <>
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/10 backdrop-blur-[2px] pointer-events-none transition-all duration-300">
-          <div className="flex flex-col items-center justify-center p-8 rounded-[32px] pointer-events-auto gap-4">
-            <div className="w-40 h-40 lg:w-56 lg:h-56">
-              <DotLottieReact
-                src="/cat-loading.json"
-                loop
-                autoplay
-                style={{ width: "100%", height: "100%" }}
-              />
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/15 backdrop-blur-[2px] pointer-events-none transition-all duration-300">
+          <div className="flex flex-col items-center justify-center p-6 rounded-3xl bg-slate-900/80 border border-white/10 pointer-events-auto gap-3 shadow-2xl">
+            <div className="relative w-12 h-12">
+              <div className="absolute inset-0 rounded-full border-4 border-white/20"></div>
+              <div className="absolute inset-0 rounded-full border-4 border-t-emerald-500 border-r-transparent border-b-transparent border-l-transparent animate-spin"></div>
             </div>
+            <span className="text-white/80 text-[10px] uppercase tracking-widest font-mono select-none">Уншиж байна...</span>
           </div>
         </div>
         {/* Always mount overlay hosts so they can receive events during loading */}
@@ -343,16 +339,13 @@ function LayoutContent({ children }: { children: ReactNode }) {
 
           {/* Global loading overlay */}
           {(spinnerLoading || isNavigating) && (
-            <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/10 backdrop-blur-[4px] pointer-events-none transition-all duration-300">
-              <div className="flex flex-col items-center justify-center p-8 rounded-[32px] pointer-events-auto gap-4">
-                <div className="w-40 h-40 lg:w-56 lg:h-56">
-                  <DotLottieReact
-                    src="/cat-loading.json"
-                    loop
-                    autoplay
-                    style={{ width: "100%", height: "100%" }}
-                  />
+            <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/15 backdrop-blur-[2px] pointer-events-none transition-all duration-300">
+              <div className="flex flex-col items-center justify-center p-6 rounded-3xl bg-slate-900/80 border border-white/10 pointer-events-auto gap-3 shadow-2xl">
+                <div className="relative w-12 h-12">
+                  <div className="absolute inset-0 rounded-full border-4 border-white/20"></div>
+                  <div className="absolute inset-0 rounded-full border-4 border-t-emerald-500 border-r-transparent border-b-transparent border-l-transparent animate-spin"></div>
                 </div>
+                <span className="text-white/80 text-[10px] uppercase tracking-widest font-mono select-none">Уншиж байна...</span>
               </div>
             </div>
           )}

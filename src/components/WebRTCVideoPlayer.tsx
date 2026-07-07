@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useRef, useState, useCallback } from "react";
 import { getApiUrl } from "@/lib/uilchilgee";
 
@@ -20,10 +19,15 @@ export default function WebRTCVideoPlayer({
   className,
   style,
 }: WebRTCVideoPlayerProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
+  
   const [status, setStatus] = useState<Status>("connecting");
   const [errorMsg, setErrorMsg] = useState<string>("");
+  const [isVisible, setIsVisible] = useState<boolean>(false);
+  const [isTabVisible, setIsTabVisible] = useState<boolean>(true);
+
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const retryCountRef = useRef(0);
   const mountedRef = useRef(true);
@@ -144,17 +148,55 @@ export default function WebRTCVideoPlayer({
     }, delay);
   }, [connect]);
 
+  // Viewport Intersection Observer (Lazy Loading)
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsVisible(entry.isIntersecting);
+      },
+      { threshold: 0.05 } // triggers when even 5% of player is visible
+    );
+    observer.observe(el);
+
+    return () => {
+      observer.unobserve(el);
+    };
+  }, []);
+
+  // Browser Tab Visibility API
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsTabVisible(document.visibilityState === "visible");
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+
+  // Manage Stream Lifecycle based on visibility & active states
   useEffect(() => {
     mountedRef.current = true;
-    connect();
+    const shouldStream = isVisible && isTabVisible;
+
+    if (shouldStream) {
+      connect();
+    } else {
+      stop();
+    }
+
     return () => {
       mountedRef.current = false;
       stop();
     };
-  }, [rtspUrl, barilgiinId]);
+  }, [rtspUrl, barilgiinId, isVisible, isTabVisible, connect, stop]);
 
   return (
-    <div className={`relative w-full h-full bg-black ${className ?? ""}`} style={style}>
+    <div ref={containerRef} className={`relative w-full h-full bg-black ${className ?? ""}`} style={style}>
       <video
         ref={videoRef}
         autoPlay

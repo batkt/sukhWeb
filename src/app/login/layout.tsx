@@ -10,6 +10,8 @@ export default function LoginLayout({
   const bgRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    if (typeof window === "undefined" || window.innerWidth < 768) return;
+
     const scriptId = "dotlottie-wc-script";
     if (!document.getElementById(scriptId)) {
       const s = document.createElement("script");
