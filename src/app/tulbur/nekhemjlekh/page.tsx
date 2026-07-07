@@ -13,7 +13,9 @@ import {
   ChevronRight,
   Printer,
   Download,
+  MessageSquare,
 } from "lucide-react";
+import { toast } from "sonner";
 import IconTextButton from "@/components/ui/IconTextButton";
 import {
   getPaymentStatusLabel,
@@ -878,6 +880,24 @@ export default function InvoicingZardluud() {
   const router = useRouter();
   const { token, ajiltan, barilgiinId } = useAuth();
   const { selectedBuildingId } = useBuilding();
+  const [sendingSmsId, setSendingSmsId] = useState<string | null>(null);
+
+  const handleSendReminderSms = async (record: any) => {
+    if (!token) return;
+    setSendingSmsId(record._id);
+    try {
+      const res = await uilchilgee(token).post(`/nekhemjlekh/${record._id}/send-reminder-sms`);
+      if (res.data?.success) {
+        toast.success(res.data.message || "Төлбөр сануулах SMS амжилттай илгээгдлээ.");
+      } else {
+        toast.error(res.data?.message || "SMS илгээхэд алдаа гарлаа.");
+      }
+    } catch (e: any) {
+      toast.error(getErrorMessage(e) || "SMS илгээхэд алдаа гарлаа.");
+    } finally {
+      setSendingSmsId(null);
+    }
+  };
   const [tuluvByResidentId, setTuluvByResidentId] = useState<
     Record<string, "Төлсөн" | "Төлөөгүй" | "Хугацаа хэтэрсэн" | "">
   >({});
@@ -1543,13 +1563,27 @@ export default function InvoicingZardluud() {
         title: <span className="text-gray-900 dark:text-white">Үйлдэл</span>,
         key: "action",
         align: "center" as const,
-        width: 80,
+        width: 120,
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: any) => (
           <div
             className="flex justify-center items-center gap-2"
-            style={{ minWidth: 70 }}
+            style={{ minWidth: 100 }}
           >
+            <motion.button
+              onClick={() => handleSendReminderSms(record)}
+              className="px-3 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white transition-colors text-sm flex items-center justify-center gap-1 disabled:opacity-50"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              disabled={sendingSmsId === record._id}
+              title="Төлбөр сануулах SMS илгээх"
+            >
+              {sendingSmsId === record._id ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              ) : (
+                <MessageSquare className="w-4 h-4" />
+              )}
+            </motion.button>
             <motion.button
               onClick={() => {
                 const params = new URLSearchParams();
@@ -1568,7 +1602,7 @@ export default function InvoicingZardluud() {
         ),
       },
     ],
-    [tuluvByResidentId, router],
+    [tuluvByResidentId, router, sendingSmsId, handleSendReminderSms],
   );
 
   if (!ajiltan || !ajiltan.baiguullagiinId) {
@@ -1672,8 +1706,8 @@ export default function InvoicingZardluud() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-            <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+          <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
+            <div className="flex flex-col lg:flex-row gap-4 w-full xl:w-auto">
               <StandardDatePicker
                 value={selectedDate}
                 onChange={(v: string | null) => setSelectedDate(v)}

@@ -3117,8 +3117,8 @@ export default function DansniiKhuulga() {
           })}
         </div>
         <div className="rounded-2xl">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
+            <div className="flex flex-col lg:flex-row gap-3 w-full xl:w-auto">
               <div
                 id="guilgee-date"
                 className="btn-minimal h-[40px] w-[min(100%,320px)] sm:w-[320px] flex items-center px-3"

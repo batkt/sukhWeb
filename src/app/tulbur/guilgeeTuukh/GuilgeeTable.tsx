@@ -4,7 +4,8 @@ import React, { useMemo } from "react";
 import { Table, Spin } from "antd";
 import useSWR from "swr";
 import uilchilgee from "@/lib/uilchilgee";
-import { Eye, History, Banknote } from "lucide-react";
+import { Eye, History, Banknote, MessageSquare } from "lucide-react";
+import toast from "react-hot-toast";
 import formatNumber from "../../../../tools/function/formatNumber";
 import { getPaymentStatusLabel } from "@/lib/utils";
 import { pickMonthSlice } from "./guilgeeMonthMatrix";
@@ -85,6 +86,34 @@ export default function GuilgeeTable({
   const isCheckboxVisible = visibleColumns.some(
     (col) => col.key === "checkbox",
   );
+
+  const [sendingSmsId, setSendingSmsId] = React.useState<string | null>(null);
+
+  const handleSendReminderSms = async (record: any) => {
+    if (!token) return;
+    const gid = getGereeId(record);
+    if (!gid) {
+      toast.error("Гэрээний ID олдсонгүй.");
+      return;
+    }
+    setSendingSmsId(gid);
+    try {
+      const res = await uilchilgee(token).post(`/nekhemjlekh/${gid}/send-reminder-sms`);
+      if (res.data?.success) {
+        toast.success(res.data.message || "Төлбөр сануулах SMS амжилттай илгээгдлээ.");
+      } else {
+        toast.error(res.data?.message || "SMS илгээхэд алдаа гарлаа.");
+      }
+    } catch (e: any) {
+      toast.error(
+        e?.response?.data?.message ||
+        e?.message ||
+        "SMS илгээхэд алдаа гарлаа."
+      );
+    } finally {
+      setSendingSmsId(null);
+    }
+  };
 
   // Build Ant Design columns from visibleColumns
   const columns = useMemo(() => {
@@ -621,6 +650,18 @@ export default function GuilgeeTable({
                     </button>
                   )}
                   <button
+                    onClick={() => handleSendReminderSms(record)}
+                    disabled={sendingSmsId === gid}
+                    className="p-1.5 rounded hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors disabled:opacity-50"
+                    title="Төлбөр сануулах SMS"
+                  >
+                    {sendingSmsId === gid ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-emerald-500"></div>
+                    ) : (
+                      <MessageSquare className="w-5 h-5 text-emerald-500 dark:text-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-300" />
+                    )}
+                  </button>
+                  <button
                     onClick={() => onViewHistory(residentData)}
                     className="p-1.5 rounded hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
                     title="Түүх харах"
@@ -658,6 +699,8 @@ export default function GuilgeeTable({
     matrixMonthKey,
     historyScopedByDate,
     canCreateTransaction,
+    sendingSmsId,
+    handleSendReminderSms,
   ]);
 
   // Handle table change (sorting)
