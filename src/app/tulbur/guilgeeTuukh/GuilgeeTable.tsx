@@ -169,13 +169,13 @@ export default function GuilgeeTable({
                   : undefined);
               const ner = resident
                 ? [resident.ner]
-                    .map((v) => (v ? String(v).trim() : ""))
-                    .filter(Boolean)
-                    .join(" ") || "-"
+                  .map((v) => (v ? String(v).trim() : ""))
+                  .filter(Boolean)
+                  .join(" ") || "-"
                 : [record.ner]
-                    .map((v) => (v ? String(v).trim() : ""))
-                    .filter(Boolean)
-                    .join(" ") || "-";
+                  .map((v) => (v ? String(v).trim() : ""))
+                  .filter(Boolean)
+                  .join(" ") || "-";
               return (
                 <span className="text-gray-900 dark:text-white">{ner}</span>
               );
@@ -204,8 +204,8 @@ export default function GuilgeeTable({
                   contractsByNumber[String(record.gereeniiDugaar)]) ||
                 undefined;
               return (
-                <span className="text-center block text-gray-900 dark:text-white">
-                  {String(ct?.toot || record?.toot || residentToot || "-")}
+                <span className="text-center block text-gray-900 dark:text-white text-[9px] leading-tight">
+                  {residentToot}
                 </span>
               );
             },
@@ -285,17 +285,17 @@ export default function GuilgeeTable({
                 <span className="text-gray-900 dark:text-white">
                   {String(
                     ct?.orts ??
-                      ct?.ortsDugaar ??
-                      ct?.ortsNer ??
-                      record?.orts ??
-                      record?.ortsDugaar ??
-                      record?.ortsNer ??
-                      residentOrts ??
-                      resident?.orts ??
-                      resident?.ortsDugaar ??
-                      resident?.ortsNer ??
-                      resident?.block ??
-                      "-",
+                    ct?.ortsDugaar ??
+                    ct?.ortsNer ??
+                    record?.orts ??
+                    record?.ortsDugaar ??
+                    record?.ortsNer ??
+                    residentOrts ??
+                    resident?.orts ??
+                    resident?.ortsDugaar ??
+                    resident?.ortsNer ??
+                    resident?.block ??
+                    "-",
                   )}
                 </span>
               );
@@ -394,9 +394,9 @@ export default function GuilgeeTable({
             render: (_: any, record: any) => {
               const gid = getGereeId(record);
               const gDugaar = record?.gereeniiDugaar || (record?.gereeniiId && contractsById[String(record.gereeniiId)]?.gereeniiDugaar);
-              
+
               const monthlyData = gid ? monthlyDataByGereeId?.get(gid) : (gDugaar ? monthlyDataByGereeId?.get(String(gDugaar)) : null);
-              
+
               const monthSlice = pickMonthSlice(
                 monthlyData,
                 monthlyPeriods,
@@ -441,7 +441,7 @@ export default function GuilgeeTable({
             render: (_: any, record: any) => {
               const gid = getGereeId(record);
               const gDugaar = record?.gereeniiDugaar || (record?.gereeniiId && contractsById[String(record.gereeniiId)]?.gereeniiDugaar);
-              
+
               // 1. Prioritize server-computed balance (uldegdelBodyo)
               const serverBalance = gid ? bestKnownBalances[gid] : null;
               if (serverBalance != null) {
@@ -513,7 +513,7 @@ export default function GuilgeeTable({
                         : tuluvLabel === "Цуцалсан"
                           ? "bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400"
                           : tuluvLabel === "Төлөөгүй" ||
-                              tuluvLabel === "Хугацаа хэтэрсэн"
+                            tuluvLabel === "Хугацаа хэтэрсэн"
                             ? "badge-unpaid"
                             : "badge-neutral")
                     }
@@ -569,13 +569,13 @@ export default function GuilgeeTable({
               );
               const ner = resident
                 ? [resident.ner]
-                    .map((v) => (v ? String(v).trim() : ""))
-                    .filter(Boolean)
-                    .join(" ") || "-"
+                  .map((v) => (v ? String(v).trim() : ""))
+                  .filter(Boolean)
+                  .join(" ") || "-"
                 : [record.ner]
-                    .map((v) => (v ? String(v).trim() : ""))
-                    .filter(Boolean)
-                    .join(" ") || "-";
+                  .map((v) => (v ? String(v).trim() : ""))
+                  .filter(Boolean)
+                  .join(" ") || "-";
               const residentToot =
                 Array.isArray(resident?.toots) && resident.toots.length > 0
                   ? resident.toots[0]?.toot
@@ -624,19 +624,19 @@ export default function GuilgeeTable({
 
               const residentData = resident
                 ? {
-                    ...resident,
-                    gereeniiDugaar: dugaar,
-                    gereeniiId: gid || record?.gereeniiId || ct?._id,
-                  }
+                  ...resident,
+                  gereeniiDugaar: dugaar,
+                  gereeniiId: gid || record?.gereeniiId || ct?._id,
+                }
                 : {
-                    _id: record?.orshinSuugchId,
-                    ner: ner,
-                    toot: toot,
-                    utas: utas,
-                    gereeniiDugaar: dugaar,
-                    gereeniiId: gid || record?.gereeniiId || ct?._id,
-                    ...record,
-                  };
+                  _id: record?.orshinSuugchId,
+                  ner: ner,
+                  toot: toot,
+                  utas: utas,
+                  gereeniiDugaar: dugaar,
+                  gereeniiId: gid || record?.gereeniiId || ct?._id,
+                  ...record,
+                };
 
               return (
                 <div className="flex items-center justify-around">
@@ -810,13 +810,12 @@ export default function GuilgeeTable({
               <Table.Summary.Cell
                 key={col.key}
                 index={colIdx + checkboxOffset}
-                className={`${
-                  col.align === "end"
-                    ? "text-right"
-                    : col.align === "start"
-                      ? "text-left"
-                      : "text-center"
-                }`}
+                className={`${col.align === "end"
+                  ? "text-right"
+                  : col.align === "start"
+                    ? "text-left"
+                    : "text-center"
+                  }`}
               >
                 {content}
               </Table.Summary.Cell>
@@ -827,13 +826,13 @@ export default function GuilgeeTable({
     );
   };
 
-  console.info("%c📊 [DASHBOARD SUMMARY] FINAL:", "color: purple; font-weight: bold;", { 
+  console.info("%c📊 [DASHBOARD SUMMARY] FINAL:", "color: purple; font-weight: bold;", {
     residents: deduplicatedResidents.length,
     paid: Object.values(monthPaidByGereeId).reduce((a, b) => a + (b || 0), 0),
     balance: deduplicatedResidents.reduce((s, it) => {
-       const gid = getGereeId(it);
-       const historyAggregate = Number(it?._totalTulbur || 0) - Number(it?._totalTulsun || 0);
-       return s + (bestKnownBalances[gid] ?? (historyScopedByDate ? historyAggregate : (historyAggregate || Number(it?.uldegdel ?? 0))));
+      const gid = getGereeId(it);
+      const historyAggregate = Number(it?._totalTulbur || 0) - Number(it?._totalTulsun || 0);
+      return s + (bestKnownBalances[gid] ?? (historyScopedByDate ? historyAggregate : (historyAggregate || Number(it?.uldegdel ?? 0))));
     }, 0)
   });
 
@@ -852,18 +851,18 @@ export default function GuilgeeTable({
           rowSelection={
             isCheckboxVisible
               ? {
-                  type: "checkbox",
-                  selectedRowKeys: selectedGereeIds,
-                  onChange: (selectedKeys) => {
-                    onSelectionChange(selectedKeys as string[]);
-                  },
-                  getCheckboxProps: (record: any) => {
-                    const gid = getGereeId(record);
-                    return {
-                      disabled: !gid || gid.length <= 5,
-                    };
-                  },
-                }
+                type: "checkbox",
+                selectedRowKeys: selectedGereeIds,
+                onChange: (selectedKeys) => {
+                  onSelectionChange(selectedKeys as string[]);
+                },
+                getCheckboxProps: (record: any) => {
+                  const gid = getGereeId(record);
+                  return {
+                    disabled: !gid || gid.length <= 5,
+                  };
+                },
+              }
               : undefined
           }
           onChange={handleTableChange}
