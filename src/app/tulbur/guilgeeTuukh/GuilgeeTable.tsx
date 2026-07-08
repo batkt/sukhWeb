@@ -205,7 +205,7 @@ export default function GuilgeeTable({
                 undefined;
               return (
                 <span className="text-center block text-gray-900 dark:text-white">
-                  {String(ct?.toot || residentToot || record?.toot || "-")}
+                  {String(ct?.toot || record?.toot || residentToot || "-")}
                 </span>
               );
             },
@@ -287,14 +287,14 @@ export default function GuilgeeTable({
                     ct?.orts ??
                       ct?.ortsDugaar ??
                       ct?.ortsNer ??
+                      record?.orts ??
+                      record?.ortsDugaar ??
+                      record?.ortsNer ??
                       residentOrts ??
                       resident?.orts ??
                       resident?.ortsDugaar ??
                       resident?.ortsNer ??
                       resident?.block ??
-                      record?.orts ??
-                      record?.ortsDugaar ??
-                      record?.ortsNer ??
                       "-",
                   )}
                 </span>
@@ -325,7 +325,7 @@ export default function GuilgeeTable({
                 undefined;
               return (
                 <span className="text-gray-900 dark:text-white">
-                  {String(ct?.davkhar ?? residentDavkhar ?? record?.davkhar ?? "-")}
+                  {String(ct?.davkhar ?? record?.davkhar ?? residentDavkhar ?? "-")}
                 </span>
               );
             },
