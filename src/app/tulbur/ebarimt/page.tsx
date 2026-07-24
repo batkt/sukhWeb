@@ -529,11 +529,13 @@ export default function Ebarimt() {
                   <StandardDatePicker
                     isRange={true}
                     value={ekhlekhOgnoo ?? undefined}
-                    onChange={(v) =>
-                      setEkhlekhOgnoo(
-                        (v || [null, null]) as [Date | null, Date | null],
-                      )
-                    }
+                    onChange={(v) => {
+                      const [s, e] = (v || [null, null]) as [any, any];
+                      setEkhlekhOgnoo([
+                        s ? new Date(s.valueOf()) : null,
+                        e ? new Date(e.valueOf()) : null,
+                      ]);
+                    }}
                     allowClear
                     placeholder="Огноо сонгох"
                     classNames={{
