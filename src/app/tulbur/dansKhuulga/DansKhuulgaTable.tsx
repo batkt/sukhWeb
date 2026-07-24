@@ -3,7 +3,11 @@
 import React, { useMemo } from "react";
 import { Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { CheckOutlined, ExclamationOutlined, RightOutlined } from "@ant-design/icons";
+import {
+  CheckOutlined,
+  ExclamationOutlined,
+  RightOutlined,
+} from "@ant-design/icons";
 import formatNumber from "../../../../tools/function/formatNumber";
 
 const bankLabelMap: Record<string, string> = {
@@ -72,7 +76,9 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
       },
       {
         title: (
-          <span className="text-gray-900 dark:text-white text-center block w-full">Гүйлгээний утга</span>
+          <span className="text-gray-900 dark:text-white text-center block w-full">
+            Гүйлгээний утга
+          </span>
         ),
         dataIndex: "action",
         align: "left",
@@ -87,7 +93,9 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
       },
       {
         title: (
-          <span className="text-gray-900 dark:text-white text-center block w-full">Гүйлгээний дүн</span>
+          <span className="text-gray-900 dark:text-white text-center block w-full">
+            Гүйлгээний дүн
+          </span>
         ),
         dataIndex: "total",
         key: "total",
@@ -135,9 +143,7 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
         },
       },
       {
-        title: (
-          <span className="text-gray-900 dark:text-white">Төлөв</span>
-        ),
+        title: <span className="text-gray-900 dark:text-white">Төлөв</span>,
         key: "status",
         align: "center",
         width: 100,
@@ -275,7 +281,7 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
                   </div>
                   <div>
                     <div className="text-gray-500 dark:text-gray-400 mb-0.5">
-                      Э-баримт
+                      и-баримт
                     </div>
                     <div className="font-medium text-gray-900 dark:text-white">
                       {raw.ebarimtAvsanEsekh ? "Авсан" : "Аваагүй"}

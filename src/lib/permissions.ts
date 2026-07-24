@@ -84,8 +84,8 @@ export const ALL_PERMISSIONS: PermissionItem[] = [
       },
       {
         id: "tulbur.ebarimt",
-        label: "Э-баримт",
-        description: "Э-баримт харах",
+        label: "и-баримт",
+        description: "и-баримт харах",
       },
     ],
   },
