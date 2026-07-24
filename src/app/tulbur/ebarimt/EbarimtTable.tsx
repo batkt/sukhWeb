@@ -195,7 +195,7 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
                   </Table.Summary.Cell>
                   <Table.Summary.Cell index={1} align="right" className="bg-gray-50 dark:bg-gray-800">
                     <span className="font-bold text-gray-900 dark:!text-white">
-                      {formatNumber(totalAmount)}
+                      {formatNumber(totalAmount)}₮
                     </span>
                   </Table.Summary.Cell>
                   <Table.Summary.Cell index={2} align="center">
