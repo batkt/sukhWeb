@@ -721,7 +721,7 @@ export default function AshiglaltiinZardluud() {
                           })}
                       </tbody>
                       <tfoot className="sticky bottom-0 z-10 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-t-2 border-blue-200 dark:border-blue-800">
-                        <tr className="bg-white/50 dark:bg-black/20">
+                        <tr className="bg-white dark:bg-gray-900">
                           <td className="py-2 sm:py-3 px-2 sm:px-4 text-theme w-1/3">
                             <div
                               className="text-[11px] sm:text-xs font-sans font-bold tracking-wide opacity-60 whitespace-nowrap"
@@ -914,7 +914,7 @@ export default function AshiglaltiinZardluud() {
                           })}
                       </tbody>
                       <tfoot className="sticky bottom-0 z-10 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-t-2 border-emerald-200 dark:border-emerald-800">
-                        <tr className="bg-white/50 dark:bg-black/20">
+                        <tr className="bg-white dark:bg-gray-900">
                           <td className="py-2 sm:py-3 px-2 sm:px-4 text-theme w-1/3">
                             <div
                               className="text-[11px] sm:text-xs font-sans font-bold tracking-wide opacity-60 whitespace-nowrap"

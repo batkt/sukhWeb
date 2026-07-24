@@ -4593,6 +4593,11 @@ a:active {
   @apply bg-gray-100 dark:bg-gray-900 font-semibold;
 }
 
+/* Expanded (drilldown) row */
+.guilgee-table .ant-table-expanded-row > td {
+  @apply bg-gray-50 dark:bg-gray-800;
+}
+
 /* Checkbox column */
 .guilgee-table .ant-table-row-selection {
   @apply text-center;
