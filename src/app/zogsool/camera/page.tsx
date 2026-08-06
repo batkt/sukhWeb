@@ -2024,7 +2024,25 @@ export default function Camera() {
                             {formatNumber(discountTotal || 0, 2)}
                           </td>
                           <td className="py-1.5 px-3 text-slate-600 dark:text-slate-400 text-center border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] text-[11px]">
-                            {transaction.tuukh?.[0]?.ebarimtId || "-"}
+                            {(() => {
+                              const mur = transaction.tuukh?.[0] as any;
+                              const ebarimtId =
+                                mur?.ebarimtId ||
+                                mur?.ebarimtDugaar ||
+                                mur?.lottery ||
+                                mur?.receiptId ||
+                                mur?.ebarimt?.id ||
+                                mur?.ebarimt?.lottery ||
+                                (transaction as any)?.ebarimtId ||
+                                (transaction as any)?.ebarimtDugaar ||
+                                (transaction as any)?.lottery;
+
+                              if (ebarimtId) return ebarimtId;
+
+                              const ebDun = (mur?.ebarimtAvsanDun ?? (transaction as any)?.ebarimtAvsanDun) || 0;
+
+                              return ebDun > 0 ? formatNumber(ebDun, 2) : "-";
+                            })()}
                           </td>
                           <td className="py-1.5 px-3 relative border-r border-slate-200 dark:border-white/5 text-center">
                             {showActionBtn ? (

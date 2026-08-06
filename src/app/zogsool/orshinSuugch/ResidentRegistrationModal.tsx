@@ -515,10 +515,11 @@ export default function ResidentRegistrationModal({
                       </div>
 
                       {/* License Plate Special Input */}
-                      <div className="relative p-6 rounded-2xl bg-[#edf2f7] bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px] dark:bg-slate-900/50 flex flex-col justify-center items-center overflow-hidden group border border-slate-200/60 dark:border-white/10 shadow-inner">
-
-                        <div className="relative w-64 h-[72px] bg-white rounded-lg border-[2px] flex items-center  transform group-hover:scale-102 transition-transform duration-300">
-
+                      <div className="relative p-5 rounded-2xl bg-[#edf2f7] bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px] dark:bg-slate-900/50 flex flex-col justify-center items-center overflow-hidden group border border-slate-200/60 dark:border-white/10 shadow-inner">
+                        <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2 uppercase tracking-wider">
+                          Улсын дугаар (4 тоо + 3 Монгол кирилл үсэг)
+                        </label>
+                        <div className="relative w-64 h-[68px] bg-white dark:bg-slate-900 rounded-xl border-2 border-slate-300 dark:border-slate-700 flex items-center shadow-md transform group-hover:scale-102 transition-transform duration-300">
                           <input
                             type="text"
                             value={formData.plate === "БҮРТГЭЛГҮЙ" ? "" : formData.plate}
@@ -529,16 +530,27 @@ export default function ResidentRegistrationModal({
                               const digits = input.slice(0, 4);
                               const chars = input.slice(4);
 
-                              // Strict validation: first 4 must be digits, rest letters
-                              if (/^\d*$/.test(digits) && /^[A-ZА-ЯӨҮЁ]*$/.test(chars)) {
-                                setFormData({ ...formData, plate: input });
+                              const latinToCyrillic: Record<string, string> = {
+                                A: "А", B: "В", C: "С", E: "Е", H: "Н", K: "К", M: "М",
+                                O: "О", P: "Р", T: "Т", U: "У", X: "Х", Y: "Ү", D: "Д",
+                                G: "Г", I: "И", J: "Ж", L: "Л", N: "Н", Q: "Ө", R: "Р",
+                                S: "С", V: "В", W: "В", Z: "З",
+                              };
+
+                              let convertedChars = "";
+                              for (const c of chars) {
+                                convertedChars += latinToCyrillic[c] || c;
+                              }
+
+                              const fullPlate = digits + convertedChars;
+                              if (/^\d*$/.test(digits) && /^[А-ЯӨҮЁ]*$/.test(convertedChars)) {
+                                setFormData({ ...formData, plate: fullPlate });
                               }
                             }}
-                            className="w-full h-full  text-center text-3xl font-bold uppercase tracking-[0.15em]  outline-none font-mono focus:ring-0"
-                            placeholder="0000УБА"
+                            className="w-full h-full text-center text-3xl font-bold uppercase tracking-[0.15em] outline-none font-mono focus:ring-0 text-slate-800 dark:text-slate-100 placeholder:text-slate-300 dark:placeholder:text-slate-600"
+                            placeholder="1234УБҮ"
                           />
                         </div>
-
                       </div>
 
                       <InputField

@@ -76,7 +76,7 @@ export function useTourSteps(activeTab: string): DriverStep[] {
           element: "#tab-residents",
           popover: {
             title: "Оршин суугчдын хэсэг",
-            description: "Эндээс оршин суугчдын жагсаалтыг харах боломжтой.",
+            description: "Эндээс оршин суугчид болон тэдний тээврийн хэрэгслийн мэдээллийг нэгдсэн байдлаар харах болон удирдана.",
             side: "bottom",
           },
         },
@@ -84,39 +84,7 @@ export function useTourSteps(activeTab: string): DriverStep[] {
           element: "#resident-new-btn-top, #resident-new-btn",
           popover: {
             title: "Оршин суугч бүртгэх",
-            description: "Шинэ оршин суугч гараас бүртгэх товч. Дараад шаардлагатай мэдээллээ бөглөнө.",
-            side: "bottom",
-          },
-        },
-        {
-          element: "#resident-excel-btn-top, #resident-excel-btn",
-          popover: {
-            title: "Excel үйлдлүүд",
-            description: "Энд дарж Excel-ээр өгөгдөл татах, оруулах цэсийг нээнэ.",
-            side: "bottom",
-          },
-        },
-        {
-          element: "#resident-download-list-btn-top, #resident-download-list-btn",
-          popover: {
-            title: "Жагсаалт татах",
-            description: "Оршин суугчдын жагсаалтыг Excel файлаар татаж авна.",
-            side: "bottom",
-          },
-        },
-        {
-          element: "#resident-download-template-btn, #resident-download-template-btn-top",
-          popover: {
-            title: "Загвар татах",
-            description: "Excel загвар файлыг татаж авч, өгөгдлөө бэлтгэх боломжтой.",
-            side: "bottom",
-          },
-        },
-        {
-          element: "#resident-upload-template-btn, #resident-upload-template-btn-top",
-          popover: {
-            title: "Загвар оруулах",
-            description: "Бэлтгэсэн Excel файлаа эндээс системд оруулна.",
+            description: "Шинэ оршин суугч болон тээврийн хэрэгслийн дугаарыг гараас бүртгэх товч.",
             side: "bottom",
           },
         },
@@ -124,15 +92,7 @@ export function useTourSteps(activeTab: string): DriverStep[] {
           element: "#residents-table",
           popover: {
             title: "Оршин суугчдын жагсаалт",
-            description: "Бүх оршин суугчдын мэдээлэл энд жагсаалт хэлбэрээр харагдана.",
-            side: "top",
-          },
-        },
-        {
-          element: "#resident-edit-btn",
-          popover: {
-            title: "Мэдээлэл засах",
-            description: "Сонгосон оршин суугчийн мэдээллийг эндээс засаж шинэчилнэ.",
+            description: "Бүх оршин суугчдын болон тэдний тээврийн хэрэгслийн мэдээлэл энд харагдана.",
             side: "top",
           },
         },

@@ -335,8 +335,7 @@ export default function OrshinSuugch() {
         </div>
 
         {/* Table Actions */}
-        <div className="flex items-center justify-end px-1">
-         
+        <div className="flex items-center justify-end gap-3 px-1">
           <Button
             id="resident-new-btn"
             onClick={() => setShowRegistrationModal(true)}
@@ -346,7 +345,6 @@ export default function OrshinSuugch() {
           >
             Нэмэх
           </Button>
-         
         </div>
 
         {showDeleteModal && itemToDelete && (

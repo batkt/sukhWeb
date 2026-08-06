@@ -366,11 +366,38 @@ export const ZogsoolJagsaaltTable: React.FC<ZogsoolJagsaaltTableProps> = ({
         key: "ebarimt",
         align: "center",
         render: (_: any, record: Vehicle) => {
-          const mur = record.tuukh?.[0];
+          const mur = record.tuukh?.[0] as any;
+          const ebarimtId =
+            mur?.ebarimtId ||
+            mur?.ebarimtDugaar ||
+            mur?.lottery ||
+            mur?.receiptId ||
+            mur?.ebarimt?.id ||
+            mur?.ebarimt?.lottery ||
+            (record as any)?.ebarimtId ||
+            (record as any)?.ebarimtDugaar ||
+            (record as any)?.lottery;
+
+          if (ebarimtId) {
+            return (
+              <span className="text-[11px] text-slate-500 font-mono text-center">
+                {ebarimtId}
+              </span>
+            );
+          }
+
+          const ebDun = (mur?.ebarimtAvsanDun ?? (record as any)?.ebarimtAvsanDun) || 0;
+
+          if (ebDun > 0) {
+            return (
+              <span className="text-[11px] text-emerald-600 font-mono text-center">
+                {formatNumber(ebDun, 2)}
+              </span>
+            );
+          }
+
           return (
-            <span className="text-[11px] text-slate-500 text-center">
-              {mur?.ebarimtId || ""}
-            </span>
+            <span className="text-[11px] text-slate-400 font-mono text-center">-</span>
           );
         },
       },

@@ -168,49 +168,42 @@ export default function Zogsool({
 
   if (view === "form") {
     return (
-      <div className="h-full overflow-y-auto custom-scrollbar">
-        <div className="bg-[color:var(--surface-bg)] rounded-3xl border border-[color:var(--surface-border)] p-6 lg:p-8 space-y-6">
+      <div className="h-full flex flex-col overflow-hidden">
+        <div className="bg-[color:var(--surface-bg)] rounded-2xl border border-[color:var(--surface-border)] p-4 sm:p-6 flex-1 flex flex-col overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between pb-5 border-b border-[color:var(--surface-border)]">
-            <div className="flex items-center gap-3.5">
-              <button
-                onClick={handleCloseForm}
-                className="px-3 py-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-slate-500 hover:text-slate-900 dark:hover:text-white text-xs"
-                type="button"
-              >
-                Өмнөх
-              </button>
-              <div>
-                <h2 className="text-xl text-[color:var(--panel-text)] tracking-tight">
-                  {editingItem ? "Зогсоол засах" : "Шинэ зогсоол бүртгэх"}
-                </h2>
-                <p className="text-xs text-[color:var(--muted-text)] mt-0.5">
-                  {editingItem ? `ID: ${editingItem._id || editingItem.key}` : "Системд шинэ зогсоолын талбай үүсгэх"}
-                </p>
-              </div>
+          <div className="flex items-center justify-between pb-4 border-b border-[color:var(--surface-border)] shrink-0">
+            <div>
+              <h2 className="text-lg text-[color:var(--panel-text)] tracking-tight">
+                {editingItem ? "Зогсоол засах" : "Шинэ зогсоол бүртгэх"}
+              </h2>
+              <p className="text-xs text-[color:var(--muted-text)]">
+                {editingItem ? `ID: ${editingItem._id || editingItem.key}` : "Системд шинэ зогсоолын талбай үүсгэх"}
+              </p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <Button
                 onClick={handleCloseForm}
                 variant="ghost"
-                size="md"
-                className="!rounded-xl"
+                size="sm"
+                style={{ borderRadius: '10px' }}
+                className="px-3"
               >
                 Хаах
               </Button>
               <Button
                 onClick={() => zogsoolRef.current?.khadgalya()}
                 variant="primary"
-                size="md"
+                size="sm"
                 isLoading={isValidating}
-                className="!rounded-xl"
+                style={{ borderRadius: '10px' }}
+                className="px-4"
               >
                 Хадгалах
               </Button>
             </div>
           </div>
 
-          <div className="bg-[color:var(--surface-bg)] rounded-2xl border border-[color:var(--surface-border)] p-6 shadow-sm">
+          <div className="flex-1 overflow-y-auto custom-scrollbar pt-4">
             <ZogsoolBurtgekh
               ref={zogsoolRef}
               data={editingItem}
@@ -228,81 +221,73 @@ export default function Zogsool({
 
   return (
     <div className="h-full overflow-y-auto custom-scrollbar">
-      <div className="bg-[color:var(--surface-bg)] rounded-3xl border border-[color:var(--surface-border)] p-6 lg:p-8 space-y-6">
-        {/* Top Header Card */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-[color:var(--surface-border)]">
-          <div>
-            <h2 className="text-2xl text-[color:var(--panel-text)] tracking-tight">
-              Зогсоолын тохиргоо
-            </h2>
-            <p className="text-xs text-[color:var(--muted-text)] mt-1">
-              Нийт <span className="text-blue-600 dark:text-blue-400">{totalRecords}</span> талбай тохируулагдсан байна
-            </p>
+      <div className="bg-[color:var(--surface-bg)] rounded-2xl border border-[color:var(--surface-border)] p-4 sm:p-5 space-y-4">
+        {/* Top Header Row with Metrics */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-[color:var(--surface-border)] shrink-0">
+          <div className="flex items-center gap-4 flex-wrap">
+            <div>
+              <h2 className="text-xl text-[color:var(--panel-text)] tracking-tight">
+                Зогсоолын тохиргоо
+              </h2>
+              <p className="text-xs text-[color:var(--muted-text)]">
+                Нийт <span className="text-blue-600 dark:text-blue-400">{totalRecords}</span> талбай тохируулагдсан
+              </p>
+            </div>
+            
+            {/* Quick Metrics Pills */}
+            <div className="flex items-center gap-2 text-xs">
+              <span style={{ borderRadius: '10px' }} className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 font-medium">
+                Нийт талбай: <span className="text-blue-700 dark:text-blue-400 font-semibold">{totalRecords}</span>
+              </span>
+              <span style={{ borderRadius: '10px' }} className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/60 text-emerald-950 dark:text-emerald-100 border border-emerald-300 dark:border-emerald-700 font-medium">
+                Багтаамж: <span className="text-emerald-800 dark:text-emerald-300 font-semibold">{totalCapacity} машин</span>
+              </span>
+              <span style={{ borderRadius: '10px' }} className="px-3 py-1 bg-blue-100 dark:bg-blue-900/60 text-blue-950 dark:text-blue-100 border border-blue-300 dark:border-blue-700 font-medium">
+                Хаалга: <span className="text-blue-800 dark:text-blue-300 font-semibold">{totalGates}</span>
+              </span>
+            </div>
           </div>
 
           <Button
             onClick={openAdd}
             variant="primary"
-            size="md"
-            className="!rounded-xl"
+            size="sm"
+            style={{ borderRadius: '10px' }}
+            className="shrink-0 px-4"
           >
             Шинэ зогсоол нэмэх
           </Button>
         </div>
 
-        {/* Quick Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-white/5 flex items-center justify-between">
-            <div className="space-y-1">
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wider">Нийт талбай</p>
-              <p className="text-2xl text-slate-900 dark:text-white">{totalRecords}</p>
-            </div>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-white/5 flex items-center justify-between">
-            <div className="space-y-1">
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wider">Нийт багтаамж</p>
-              <p className="text-2xl text-slate-900 dark:text-white">{totalCapacity} <span className="text-xs text-slate-400">машин</span></p>
-            </div>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-white/5 flex items-center justify-between">
-            <div className="space-y-1">
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wider">Холбосон хаалга</p>
-              <p className="text-2xl text-slate-900 dark:text-white">{totalGates} <span className="text-xs text-slate-400">хаалга</span></p>
-            </div>
-          </div>
-        </div>
-
-        {/* Table Section */}
+        {/* Table Section — Fits content height naturally */}
         {isValidating ? (
-          <div className="flex flex-col items-center justify-center py-16 gap-3">
+          <div className="flex flex-col items-center justify-center py-12 gap-3">
             <Loader size="md" />
             <span className="text-xs text-[color:var(--muted-text)]">Мэдээлэл уншиж байна...</span>
           </div>
         ) : (
           <>
-            <div className="rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] overflow-hidden shadow-sm">
+            <div style={{ borderRadius: '14px' }} className="border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-[13px]">
-                  <thead>
-                    <tr className="bg-slate-100/70 dark:bg-slate-800/60 border-b border-[color:var(--surface-border)]">
-                      <th className="px-4 py-3.5 text-xs text-slate-700 dark:text-slate-300 text-center w-14">
+                  <thead className="sticky top-0 z-10 bg-slate-100 dark:bg-slate-800 border-b border-[color:var(--surface-border)]">
+                    <tr>
+                      <th className="px-3 py-2.5 text-xs text-slate-700 dark:text-slate-300 text-center w-12">
                         №
                       </th>
-                      <th className="px-4 py-3.5 text-xs text-slate-700 dark:text-slate-300 text-left">
+                      <th className="px-4 py-2.5 text-xs text-slate-700 dark:text-slate-300 text-left w-1/4">
                         Зогсоолын нэр
                       </th>
-                      <th className="px-4 py-3.5 text-xs text-slate-700 dark:text-slate-300 text-center">
+                      <th className="px-4 py-2.5 text-xs text-slate-700 dark:text-slate-300 text-center w-28">
                         Багтаамж
                       </th>
-                      <th className="px-4 py-3.5 text-xs text-slate-700 dark:text-slate-300 text-right">
+                      <th className="px-4 py-2.5 text-xs text-slate-700 dark:text-slate-300 text-right w-36">
                         Үндсэн тариф
                       </th>
-                      <th className="px-4 py-3.5 text-xs text-slate-700 dark:text-slate-300 text-left">
+                      <th className="px-4 py-2.5 text-xs text-slate-700 dark:text-slate-300 text-left">
                         Хаалганууд
                       </th>
-                      <th className="px-4 py-3.5 text-xs text-slate-700 dark:text-slate-300 text-center w-28">
+                      <th className="px-4 py-2.5 text-xs text-slate-700 dark:text-slate-300 text-center w-24">
                         Үйлдэл
                       </th>
                     </tr>
@@ -331,54 +316,57 @@ export default function Zogsool({
                             key={record._id || record.key || index}
                             className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
                           >
-                            <td className="px-4 py-3.5 text-center text-slate-500 dark:text-slate-400 text-xs">
+                            <td className="px-3 py-2.5 text-center text-slate-500 dark:text-slate-400 text-xs">
                               {(page - 1) * pageSize + index + 1}
                             </td>
-                            <td className="px-4 py-3.5 text-slate-900 dark:text-white">
+                            <td className="px-4 py-2.5 text-slate-900 dark:text-white">
                               <span className="text-slate-800 dark:text-slate-100">{record.ner}</span>
                             </td>
-                            <td className="px-4 py-3.5 text-center">
-                              <span className="inline-flex items-center px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs border border-slate-200/60 dark:border-white/5">
-                                {record.too} <span className="text-[10px] text-slate-400 ml-1">машин</span>
+                            <td className="px-4 py-2.5 text-center">
+                              <span style={{ borderRadius: '8px' }} className="inline-flex items-center px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white text-xs border border-slate-300 dark:border-slate-700">
+                                {record.too} <span className="text-[10px] text-slate-600 dark:text-slate-300 ml-1">машин</span>
                               </span>
                             </td>
-                            <td className="px-4 py-3.5 text-right">
-                              <span className="inline-flex items-center px-3 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs border border-emerald-200/60 dark:border-emerald-500/20">
+                            <td className="px-4 py-2.5 text-right">
+                              <span style={{ borderRadius: '8px' }} className="inline-flex items-center px-3 py-1 bg-emerald-100 dark:bg-emerald-900/60 text-emerald-950 dark:text-emerald-100 text-xs border border-emerald-300 dark:border-emerald-700">
                                 {formatNumber(record.undsenUne)} ₮
                               </span>
                             </td>
-                            <td className="px-4 py-3.5">
+                            <td className="px-4 py-2.5">
                               <div className="flex flex-wrap gap-1.5">
                                 {record.khaalga && record.khaalga.length > 0 ? (
                                   record.khaalga.map((gate: any, gateIdx: number) => (
                                     <span
                                       key={gateIdx}
-                                      className="inline-flex items-center px-2.5 py-1 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 text-xs border border-indigo-200/60 dark:border-indigo-500/20"
+                                      style={{ borderRadius: '8px' }}
+                                      className="inline-flex items-center px-3 py-1 bg-blue-100 dark:bg-blue-900/60 text-blue-950 dark:text-blue-100 text-xs border border-blue-300 dark:border-blue-700"
                                     >
                                       {gate.ner}
                                     </span>
                                   ))
                                 ) : (
-                                  <span className="text-xs text-slate-400 italic">
+                                  <span className="text-xs text-slate-500 italic">
                                     Хаалга холбоогүй
                                   </span>
                                 )}
                               </div>
                             </td>
-                            <td className="px-4 py-3.5 text-center">
-                              <div className="flex items-center justify-center gap-2">
+                            <td className="px-4 py-2.5 text-center">
+                              <div className="flex items-center justify-center gap-1.5">
                                 <button
                                   onClick={() => openEdit(record)}
-                                  className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                                  className="p-1.5 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors"
+                                  title="Засах"
                                 >
-                                  Засах
+                                  <Edit className="w-4 h-4" />
                                 </button>
                                 {record._id && (
                                   <button
                                     onClick={() => deleteZogsool(record._id!)}
-                                    className="text-xs text-rose-600 dark:text-rose-400 hover:underline"
+                                    className="p-1.5 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors"
+                                    title="Устгах"
                                   >
-                                    Устгах
+                                    <Trash2 className="w-4 h-4" />
                                   </button>
                                 )}
                               </div>
@@ -392,9 +380,9 @@ export default function Zogsool({
               </div>
             </div>
 
-            {/* Pagination Controls */}
+            {/* Pagination Controls — Fixed at bottom */}
             {totalPages > 0 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0 pt-1 border-t border-[color:var(--surface-border)]">
                 <div className="flex items-center gap-3">
                   <span className="text-xs text-[color:var(--panel-text)]">
                     Нийт <span>{totalRecords}</span> талбай

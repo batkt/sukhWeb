@@ -319,11 +319,38 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
         width: 110,
         align: "center",
         render: (_: any, record: ParkingTransaction) => {
-          const mur = record.tuukh?.[0];
+          const mur = record.tuukh?.[0] as any;
+          const ebarimtId =
+            mur?.ebarimtId ||
+            mur?.ebarimtDugaar ||
+            mur?.lottery ||
+            mur?.receiptId ||
+            mur?.ebarimt?.id ||
+            mur?.ebarimt?.lottery ||
+            (record as any)?.ebarimtId ||
+            (record as any)?.ebarimtDugaar ||
+            (record as any)?.lottery;
+
+          if (ebarimtId) {
+            return (
+              <span className="text-slate-600 dark:text-slate-400 font-mono text-[11px]">
+                {ebarimtId}
+              </span>
+            );
+          }
+
+          const ebDun = (mur?.ebarimtAvsanDun ?? (record as any)?.ebarimtAvsanDun) || 0;
+
+          if (ebDun > 0) {
+            return (
+              <span className="text-emerald-600 dark:text-emerald-400 font-mono text-[11px]">
+                {formatNumber(ebDun, 2)}
+              </span>
+            );
+          }
+
           return (
-            <span className="text-slate-600 dark:text-slate-400 font-mono text-[11px]">
-              {mur?.ebarimtId || "-"}
-            </span>
+            <span className="text-slate-400 font-mono text-[11px]">-</span>
           );
         },
       },
