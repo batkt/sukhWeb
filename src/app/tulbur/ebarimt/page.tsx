@@ -2,7 +2,8 @@
 
 import { useMemo, useState, useEffect, useCallback } from "react";
 import useSWR from "swr";
-import { Spin, message } from "antd";
+import { Spin } from "antd";
+import toast from "react-hot-toast";
 import Button from "@/components/ui/Button";
 import { getDefaultDateRange } from "@/lib/utils";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
@@ -404,7 +405,7 @@ export default function Ebarimt() {
   const exceleerTatya = async () => {
     try {
       if (!token || !ajiltan?.baiguullagiinId) {
-        message.warning("Нэвтэрсэн эсэхээ шалгана уу");
+        toast.error("Нэвтэрсэн эсэхээ шалгана уу");
         return;
       }
       const [s, e] = ekhlekhOgnoo || [];
@@ -423,10 +424,7 @@ export default function Ebarimt() {
       };
 
       const path = "/ebarimtExcelDownload";
-      const hide = message.loading({
-        content: "Excel бэлдэж байна…",
-        duration: 0,
-      });
+      const hide = toast.loading("Excel бэлдэж байна…");
       let resp: any;
       try {
         resp = await uilchilgee(token).post(path, body, {
@@ -443,7 +441,7 @@ export default function Ebarimt() {
           throw err;
         }
       }
-      hide();
+      toast.dismiss(hide);
 
       const blob = new Blob([resp.data], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -466,15 +464,31 @@ export default function Ebarimt() {
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
-      message.success("Excel татагдлаа");
+      toast.success("Excel татагдлаа");
     } catch (e) {
       console.error(e);
-      message.error("Excel татахад алдаа гарлаа");
+      toast.dismiss();
+      toast.error("Excel татахад алдаа гарлаа");
     }
   };
-  const ebarimtIlgeeye = () => {
+  const ebarimtIlgeeye = async () => {
+    if (!token || !ajiltan?.baiguullagiinId) {
+      toast.error("Нэвтэрсэн эсэхээ шалгана уу");
+      return;
+    }
     setLoading(true);
-    setTimeout(() => setLoading(false), 2000);
+    try {
+      await uilchilgee(token).post("/ebarimtIlgeeye", {
+        baiguullagiinId: ajiltan.baiguullagiinId,
+        barilgiinId: barilgiinId || null,
+      });
+      toast.success("Татварт амжилттай илгээлээ");
+    } catch (e) {
+      console.error(e);
+      toast.error("Татварт илгээхэд алдаа гарлаа");
+    } finally {
+      setLoading(false);
+    }
   };
   const t = (text: string) => text;
 
@@ -485,7 +499,7 @@ export default function Ebarimt() {
     const b2b = displayedData.filter((r) => r.type === "B2B_RECEIPT").length;
     return [
       { title: "Нийт баримт", value: displayedData.length },
-      { title: "Нийт дүн", value: formatNumber(total) },
+      { title: "Нийт дүн", value: formatNumber(total) + "₮" },
       { title: "Байгууллага", value: b2b },
       { title: "Иргэн", value: b2c },
     ];
@@ -529,11 +543,13 @@ export default function Ebarimt() {
                   <StandardDatePicker
                     isRange={true}
                     value={ekhlekhOgnoo ?? undefined}
-                    onChange={(v) =>
-                      setEkhlekhOgnoo(
-                        (v || [null, null]) as [Date | null, Date | null],
-                      )
-                    }
+                    onChange={(v) => {
+                      const [s, e] = (v || [null, null]) as [any, any];
+                      setEkhlekhOgnoo([
+                        s ? new Date(s.valueOf()) : null,
+                        e ? new Date(e.valueOf()) : null,
+                      ]);
+                    }}
                     allowClear
                     placeholder="Огноо сонгох"
                     classNames={{

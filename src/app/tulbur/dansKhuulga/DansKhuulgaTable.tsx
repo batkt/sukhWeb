@@ -3,8 +3,21 @@
 import React, { useMemo } from "react";
 import { Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { CheckOutlined, ExclamationOutlined } from "@ant-design/icons";
+import {
+  CheckOutlined,
+  ExclamationOutlined,
+  RightOutlined,
+} from "@ant-design/icons";
 import formatNumber from "../../../../tools/function/formatNumber";
+
+const bankLabelMap: Record<string, string> = {
+  khanbank: "Хаан банк",
+  golomt: "Голомт банк",
+  tdb: "ХХБанк",
+  bogd: "Богд банк",
+  trans: "Тэнгэр",
+  qpay: "QPay",
+};
 
 export interface DansKhuulgaItem {
   id: string | number;
@@ -63,7 +76,9 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
       },
       {
         title: (
-          <span className="text-gray-900 dark:text-white text-center block w-full">Гүйлгээний утга</span>
+          <span className="text-gray-900 dark:text-white text-center block w-full">
+            Гүйлгээний утга
+          </span>
         ),
         dataIndex: "action",
         align: "left",
@@ -78,7 +93,9 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
       },
       {
         title: (
-          <span className="text-gray-900 dark:text-white text-center block w-full">Гүйлгээний дүн</span>
+          <span className="text-gray-900 dark:text-white text-center block w-full">
+            Гүйлгээний дүн
+          </span>
         ),
         dataIndex: "total",
         key: "total",
@@ -122,13 +139,11 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
           const d = dateVal ? new Date(dateVal) : null;
           if (!d) return "-";
           const pad = (n: number) => String(n).padStart(2, "0");
-          return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+          return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
         },
       },
       {
-        title: (
-          <span className="text-gray-900 dark:text-white">Төлөв</span>
-        ),
+        title: <span className="text-gray-900 dark:text-white">Төлөв</span>,
         key: "status",
         align: "center",
         width: 100,
@@ -180,6 +195,102 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
           loading={loading}
           className="guilgee-table min-w-[1000px] dark:bg-gray-900 dark:text-gray-100"
           scroll={{ x: "max-content", y: maxHeight }}
+          expandable={{
+            expandIconColumnIndex: columns.length,
+            expandRowByClick: false,
+            expandIcon: ({ expanded, onExpand, record }) => (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onExpand(record, e);
+                }}
+                className="flex items-center justify-center w-6 h-6 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                title={expanded ? "Хураах" : "Дэлгэрэнгүй"}
+              >
+                <RightOutlined
+                  className={`text-xs transition-transform duration-150 ${expanded ? "rotate-90" : ""}`}
+                />
+              </button>
+            ),
+            expandedRowRender: (record) => {
+              const raw = record.raw || {};
+              const txnNo =
+                raw.record ||
+                raw.tranId ||
+                raw.recNum ||
+                raw.jrno ||
+                raw.NtryRef ||
+                raw.refno ||
+                raw.requestId ||
+                "-";
+              const bankLabel = bankLabelMap[raw.bank] || raw.bank || "-";
+              const contractLabel =
+                record.contractIds && record.contractIds.length > 0
+                  ? record.contractIds.join(", ")
+                  : "-";
+              return (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-3 p-4 bg-gray-50 dark:bg-gray-800/60 rounded-lg text-xs">
+                  <div>
+                    <div className="text-gray-500 dark:text-gray-400 mb-0.5">
+                      Гүйлгээний №
+                    </div>
+                    <div className="font-medium text-gray-900 dark:text-white font-mono">
+                      {txnNo}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500 dark:text-gray-400 mb-0.5">
+                      Огноо, цаг
+                    </div>
+                    <div className="font-medium text-gray-900 dark:text-white">
+                      {record.date || "-"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500 dark:text-gray-400 mb-0.5">
+                      Төрөл
+                    </div>
+                    <div className="font-medium text-gray-900 dark:text-white">
+                      {bankLabel}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500 dark:text-gray-400 mb-0.5">
+                      Дансны эзэмшигч
+                    </div>
+                    <div className="font-medium text-gray-900 dark:text-white">
+                      {raw.accName || "-"}
+                    </div>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <div className="text-gray-500 dark:text-gray-400 mb-0.5">
+                      Тайлбар
+                    </div>
+                    <div className="font-medium text-gray-900 dark:text-white break-words">
+                      {record.action || "-"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500 dark:text-gray-400 mb-0.5">
+                      Холбогдсон гэрээ
+                    </div>
+                    <div className="font-medium text-gray-900 dark:text-white">
+                      {contractLabel}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500 dark:text-gray-400 mb-0.5">
+                      и-баримт
+                    </div>
+                    <div className="font-medium text-gray-900 dark:text-white">
+                      {raw.ebarimtAvsanEsekh ? "Авсан" : "Аваагүй"}
+                    </div>
+                  </div>
+                </div>
+              );
+            },
+          }}
           rowClassName={(record, index) => `
           ${index % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-700/50"}
           text-gray-900 dark:text-white
@@ -197,7 +308,7 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
           }}
           summary={() =>
             data.length > 0 ? (
-              <Table.Summary fixed="bottom">
+              <Table.Summary>
                 <Table.Summary.Row className="bg-gray-50 dark:bg-gray-800">
                   <Table.Summary.Cell
                     index={0}
@@ -210,7 +321,7 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
                     align="right"
                     className="dark:border-gray-700"
                   >
-                    <span className="text-sm font-bold text-gray-900 dark:text-white">
+                    <span className="text-sm font-bold text-gray-900 dark:!text-white">
                       Нийт дүн:
                     </span>
                   </Table.Summary.Cell>
@@ -219,7 +330,7 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
                     align="right"
                     className="dark:border-gray-700"
                   >
-                    <span className="font-bold text-gray-900 dark:text-white text-sm">
+                    <span className="font-medium text-gray-900 dark:!text-white text-xs">
                       {formatNumber(totalSum, 2)}₮
                     </span>
                   </Table.Summary.Cell>

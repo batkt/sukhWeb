@@ -393,7 +393,7 @@ export default function DansniiKhuulga() {
       const d = dateVal ? new Date(dateVal) : null;
       
       const pad = (n: number) => String(n).padStart(2, "0");
-      let dateStr = d ? `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}` : "-";
+      let dateStr = d ? `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` : "-";
       
       let timeStr = "";
       if (r.time) {
@@ -479,7 +479,7 @@ export default function DansniiKhuulga() {
 
     const filtered = mapped.filter((m) => {
       if (start || end) {
-        const dv = (m.raw as any)?.postDate || (m.raw as any)?.tranDate || (m.raw as any)?.ognoo || (m.raw as any)?.createdAt || null;
+        const dv = (m.raw as any)?.postDate || (m.raw as any)?.tranDate || (m.raw as any)?.ognoo || (m.raw as any)?.createdAt || (m.raw as any)?.date || (m.raw as any)?.togtoo || null;
         if (!dv) return false;
         const d = new Date(dv);
         if (start && d < start) return false;
@@ -591,7 +591,13 @@ export default function DansniiKhuulga() {
                   <StandardDatePicker
                     isRange={true}
                     value={ekhlekhOgnoo}
-                    onChange={setEkhlekhOgnoo}
+                    onChange={(_dates, dateStrings) => {
+                      const [s, e] = (dateStrings || []) as [
+                        string | undefined,
+                        string | undefined,
+                      ];
+                      setEkhlekhOgnoo([s || null, e || null]);
+                    }}
                     allowClear
                     placeholder="Огноо сонгох"
                     className="text-theme !px-3"
