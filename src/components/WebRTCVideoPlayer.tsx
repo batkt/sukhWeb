@@ -29,6 +29,7 @@ export default function WebRTCVideoPlayer({
   const [isTabVisible, setIsTabVisible] = useState<boolean>(true);
 
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const disconnectGraceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const retryCountRef = useRef(0);
   const mountedRef = useRef(true);
 
@@ -36,6 +37,10 @@ export default function WebRTCVideoPlayer({
     if (retryTimeoutRef.current) {
       clearTimeout(retryTimeoutRef.current);
       retryTimeoutRef.current = null;
+    }
+    if (disconnectGraceRef.current) {
+      clearTimeout(disconnectGraceRef.current);
+      disconnectGraceRef.current = null;
     }
     if (pcRef.current) {
       pcRef.current.close();
@@ -76,8 +81,31 @@ export default function WebRTCVideoPlayer({
       pc.onconnectionstatechange = () => {
         if (!mountedRef.current) return;
         const state = pc.connectionState;
-        if (state === "failed" || state === "disconnected") {
+        if (state === "connected") {
+          // ICE self-healed after a transient blip - cancel any pending retry
+          if (disconnectGraceRef.current) {
+            clearTimeout(disconnectGraceRef.current);
+            disconnectGraceRef.current = null;
+          }
+          if (retryTimeoutRef.current) {
+            clearTimeout(retryTimeoutRef.current);
+            retryTimeoutRef.current = null;
+          }
+          setStatus("connected");
+          retryCountRef.current = 0;
+        } else if (state === "failed" || state === "closed") {
           scheduleRetry();
+        } else if (state === "disconnected") {
+          // "disconnected" is often a momentary ICE hiccup that recovers on its own -
+          // give it a grace period instead of tearing the connection down immediately
+          if (disconnectGraceRef.current) return;
+          disconnectGraceRef.current = setTimeout(() => {
+            disconnectGraceRef.current = null;
+            if (!mountedRef.current || pcRef.current !== pc) return;
+            if (pc.connectionState !== "connected") {
+              scheduleRetry();
+            }
+          }, 4000);
         }
       };
 
@@ -144,7 +172,10 @@ export default function WebRTCVideoPlayer({
     const delay = Math.min(3000 * retryCountRef.current, 15000);
     setStatus("retrying");
     retryTimeoutRef.current = setTimeout(() => {
-      if (mountedRef.current) connect();
+      retryTimeoutRef.current = null;
+      if (!mountedRef.current) return;
+      if (pcRef.current && pcRef.current.connectionState === "connected") return;
+      connect();
     }, delay);
   }, [connect]);
 
@@ -153,15 +184,30 @@ export default function WebRTCVideoPlayer({
     const el = containerRef.current;
     if (!el) return;
 
+    let leaveTimer: ReturnType<typeof setTimeout> | null = null;
+
     const observer = new IntersectionObserver(
       ([entry]) => {
-        setIsVisible(entry.isIntersecting);
+        if (entry.isIntersecting) {
+          if (leaveTimer) {
+            clearTimeout(leaveTimer);
+            leaveTimer = null;
+          }
+          setIsVisible(true);
+        } else if (!leaveTimer) {
+          // debounce leaving the viewport so a brief layout shift doesn't tear the stream down
+          leaveTimer = setTimeout(() => {
+            leaveTimer = null;
+            setIsVisible(false);
+          }, 1000);
+        }
       },
       { threshold: 0.05 } // triggers when even 5% of player is visible
     );
     observer.observe(el);
 
     return () => {
+      if (leaveTimer) clearTimeout(leaveTimer);
       observer.unobserve(el);
     };
   }, []);
@@ -194,6 +240,48 @@ export default function WebRTCVideoPlayer({
       stop();
     };
   }, [rtspUrl, barilgiinId, isVisible, isTabVisible, connect, stop]);
+
+  // Freeze watchdog: pc.connectionState can stay "connected" while the actual
+  // media has stalled upstream (e.g. the RTSP source hiccups on the gate
+  // worker) - WebRTC gives us no event for that, so we watch for rendered
+  // frames directly and force a reconnect if none arrive for too long.
+  useEffect(() => {
+    if (status !== "connected") return;
+    const video = videoRef.current;
+    if (!video) return;
+
+    let lastProgressAt = Date.now();
+    const markProgress = () => {
+      lastProgressAt = Date.now();
+    };
+
+    const hasRvfc = typeof (video as any).requestVideoFrameCallback === "function";
+    let rafActive = true;
+    if (hasRvfc) {
+      const onFrame = () => {
+        if (!rafActive) return;
+        markProgress();
+        (video as any).requestVideoFrameCallback(onFrame);
+      };
+      (video as any).requestVideoFrameCallback(onFrame);
+    } else {
+      video.addEventListener("timeupdate", markProgress);
+    }
+
+    const STALL_MS = 8000;
+    const watchdog = setInterval(() => {
+      if (Date.now() - lastProgressAt > STALL_MS) {
+        console.warn("[WebRTCVideoPlayer] No frames for", STALL_MS, "ms while connected - forcing reconnect");
+        scheduleRetry();
+      }
+    }, 3000);
+
+    return () => {
+      rafActive = false;
+      clearInterval(watchdog);
+      if (!hasRvfc) video.removeEventListener("timeupdate", markProgress);
+    };
+  }, [status, scheduleRetry]);
 
   return (
     <div ref={containerRef} className={`relative w-full h-full bg-black ${className ?? ""}`} style={style}>
