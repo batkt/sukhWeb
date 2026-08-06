@@ -2,13 +2,176 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence, useDragControls } from "framer-motion";
-import { X } from "lucide-react";
+import { X, Calendar, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import uilchilgee from "@/lib/uilchilgee";
 import { message } from "antd";
 import Button from "@/components/ui/Button";
 import { ConfirmCloseDialog } from "@/components/ui/ConfirmCloseDialog";
 import { ModalPortal } from "../../../../components/golContent";
+
+function DoubleYearMonthPicker({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  disabled?: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  const initialYear = value ? parseInt(value.split("-")[0], 10) : new Date().getFullYear();
+  const [startYear, setStartYear] = useState(initialYear || 2026);
+
+  React.useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen]);
+
+  const months = [
+    { num: 1, label: "1 cap" },
+    { num: 2, label: "2 cap" },
+    { num: 3, label: "3 cap" },
+    { num: 4, label: "4 cap" },
+    { num: 5, label: "5 cap" },
+    { num: 6, label: "6 cap" },
+    { num: 7, label: "7 cap" },
+    { num: 8, label: "8 cap" },
+    { num: 9, label: "9 cap" },
+    { num: 10, label: "10 cap" },
+    { num: 11, label: "11 cap" },
+    { num: 12, label: "12 cap" },
+  ];
+
+  const handleSelectMonth = (year: number, monthNum: number) => {
+    const paddedMonth = String(monthNum).padStart(2, "0");
+    onChange(`${year}-${paddedMonth}`);
+    setIsOpen(false);
+  };
+
+  const formattedDisplay = (() => {
+    if (!value) return "Сар сонгоно уу";
+    const [y, m] = value.split("-");
+    const monthInt = parseInt(m, 10);
+    return `${y} он ${monthInt} сар`;
+  })();
+
+  return (
+    <div ref={containerRef} className="relative w-full">
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setIsOpen((prev) => !prev)}
+        className="w-full px-3 py-2.5 border border-emerald-300 bg-white text-emerald-950 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all text-sm font-medium flex items-center justify-between cursor-pointer dark:bg-slate-900 dark:border-emerald-800 dark:text-emerald-100"
+      >
+        <span>{formattedDisplay}</span>
+        <Calendar className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 6, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 6, scale: 0.98 }}
+            transition={{ duration: 0.15 }}
+            className="absolute left-0 top-full mt-2 z-[13000] !bg-white !opacity-100 border border-slate-200 rounded-2xl shadow-2xl p-4 w-[480px] sm:w-[520px] select-none text-slate-800 shadow-slate-400/30"
+          >
+            {/* Top Navigation Bar: <<  2026                 2027  >> */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-3 px-2">
+              <button
+                type="button"
+                onClick={() => setStartYear((prev) => prev - 2)}
+                className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors font-bold text-xs flex items-center gap-1"
+                title="Өмнөх 2 он"
+              >
+                <ChevronsLeft className="w-4 h-4" />
+              </button>
+
+              <div className="flex-1 grid grid-cols-2 text-center font-bold text-slate-800 dark:text-slate-100 text-sm">
+                <div>{startYear}</div>
+                <div>{startYear + 1}</div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setStartYear((prev) => prev + 2)}
+                className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors font-bold text-xs flex items-center gap-1"
+                title="Дараах 2 он"
+              >
+                <ChevronsRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Side-by-Side Year Grids */}
+            <div className="grid grid-cols-2 gap-6">
+              {/* Year 1 Grid */}
+              <div className="grid grid-cols-3 gap-y-3 gap-x-2">
+                {months.map((m) => {
+                  const monthVal = `${startYear}-${String(m.num).padStart(2, "0")}`;
+                  const isSelected = value === monthVal;
+                  return (
+                    <button
+                      key={m.num}
+                      type="button"
+                      onClick={() => handleSelectMonth(startYear, m.num)}
+                      className={`
+                        py-2 px-1 text-center text-xs font-medium rounded-xl transition-all
+                        ${
+                          isSelected
+                            ? "bg-emerald-600 text-white font-bold shadow-sm"
+                            : "text-slate-700 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:text-emerald-700"
+                        }
+                      `}
+                    >
+                      {m.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Year 2 Grid */}
+              <div className="grid grid-cols-3 gap-y-3 gap-x-2 border-l border-slate-100 dark:border-slate-800 pl-4">
+                {months.map((m) => {
+                  const monthVal = `${startYear + 1}-${String(m.num).padStart(2, "0")}`;
+                  const isSelected = value === monthVal;
+                  return (
+                    <button
+                      key={m.num}
+                      type="button"
+                      onClick={() => handleSelectMonth(startYear + 1, m.num)}
+                      className={`
+                        py-2 px-1 text-center text-xs font-medium rounded-xl transition-all
+                        ${
+                          isSelected
+                            ? "bg-emerald-600 text-white font-bold shadow-sm"
+                            : "text-slate-700 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:text-emerald-700"
+                        }
+                      `}
+                    >
+                      {m.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 interface TransactionModalProps {
   show: boolean;
@@ -23,13 +186,16 @@ interface TransactionModalProps {
 }
 
 export interface TransactionData {
-  type: "voucher" | "avlaga" | "turul" | "ashiglalt" | "torguuli" | "tulult";
+  type: "voucher" | "avlaga" | "turul" | "ashiglalt" | "torguuli" | "tulult" | "khungulult";
   date: string;
   amount: number;
   residentId?: string;
   gereeniiId?: string;
   tailbar?: string;
   ekhniiUldegdel: boolean;
+  discountType?: "percent" | "amount";
+  discountValue?: number;
+  reason?: string;
 }
 
 export default function TransactionModal({
@@ -56,6 +222,14 @@ export default function TransactionModal({
   const [tailbar, setTailbar] = useState("");
   const [ekhniiUldegdel, setEkhniiUldegdel] = useState(false);
   const [lastShow, setLastShow] = useState(false);
+
+  // Хөнгөлөлт (Discount) fields
+  const [discountType, setDiscountType] = useState<"percent" | "amount">("percent");
+  const [discountMonth, setDiscountMonth] = useState(
+    new Date().toISOString().slice(0, 7)
+  );
+  const [discountValue, setDiscountValue] = useState("");
+  const [discountReason, setDiscountReason] = useState("");
 
   // Ашиглалтын зардал (цахилгаан кВт) – additional fields when type === "ashiglalt"
   const [ashiglaltZardal, setAshiglaltZardal] = useState<"" | "tsakhilgaan_kv">(
@@ -170,6 +344,10 @@ export default function TransactionModal({
     setShowUsageOnInvoice(true);
     setIncludeSuuriKhuraamj(true);
     setCalcBreakdown(null);
+    setDiscountType("percent");
+    setDiscountMonth(new Date().toISOString().slice(0, 7));
+    setDiscountValue("");
+    setDiscountReason("");
   };
 
   const handleClose = () => {
@@ -183,7 +361,9 @@ export default function TransactionModal({
     (amount !== "" && amount !== "0" && amount !== "0.00") ||
     tailbar.trim() !== "" ||
     umnukhZaalt.trim() !== "" ||
-    suuliinZaalt.trim() !== "";
+    suuliinZaalt.trim() !== "" ||
+    discountValue.trim() !== "" ||
+    discountReason.trim() !== "";
 
   const requestClose = () => {
     if (hasChanges) {
@@ -217,7 +397,6 @@ export default function TransactionModal({
       if (res.data?.success && res.data.data) {
         const d = res.data.data;
         console.log("[LATEST] Found:", d);
-        // Pre-fill both to show the current state/calculation immediately
         if (d.umnukhZaalt != null) setUmnukhZaalt(String(d.umnukhZaalt));
         if (d.suuliinZaalt != null) setSuuliinZaalt(String(d.suuliinZaalt));
       }
@@ -231,7 +410,7 @@ export default function TransactionModal({
   React.useEffect(() => {
     if (show && !lastShow) {
       resetForm();
-      setAmount(""); // Default to empty instead of "0.00" for placeholder
+      setAmount("");
     }
     setLastShow(show);
   }, [show, lastShow]);
@@ -303,7 +482,6 @@ export default function TransactionModal({
         const formatted = formatAmount(res.data.niitDun);
         setAmount(formatted);
 
-        // Save breakdown for UI display
         setCalcBreakdown({
           usageAmount:
             res.data.usageAmount ??
@@ -347,7 +525,6 @@ export default function TransactionModal({
   const fillAmountWithBalance = () => {
     if (residentBalance !== null && transactionType === "tulult") {
       const amountToFill = Math.max(0, residentBalance);
-      // Keep decimals (2dp) when auto-filling from balance
       setAmount(formatAmount(amountToFill));
     }
   };
@@ -359,7 +536,6 @@ export default function TransactionModal({
     }
   }, [show, resident]);
 
-  // Auto-calculate when user finishes typing or changes toggles
   React.useEffect(() => {
     if (
       useLegacyAshiglaltCalculator &&
@@ -371,7 +547,7 @@ export default function TransactionModal({
     ) {
       const timer = setTimeout(() => {
         handleTsakhilgaanTootsool();
-      }, 600); // Debounce to prevent glitching while typing
+      }, 600);
       return () => clearTimeout(timer);
     }
   }, [
@@ -385,7 +561,48 @@ export default function TransactionModal({
   ]);
 
   const handleSubmit = async () => {
-    // Build tailbar including optional ashiglalt (electricity) details
+    if (transactionType === "khungulult") {
+      const rawVal = discountValue.replace(/%/g, "").replace(/,/g, "");
+      const valNum = parseFloat(rawVal) || 0;
+      if (valNum <= 0) {
+        messageApi.warning("Хөнгөлөх дүн эсвэл хувийг зөв оруулна уу.");
+        return;
+      }
+
+      let calculatedAmount = 0;
+      if (discountType === "percent") {
+        const bal = residentBalance ?? Number(resident?.uldegdel ?? 0);
+        calculatedAmount = Math.round(bal * (valNum / 100) * 100) / 100;
+      } else {
+        calculatedAmount = valNum;
+      }
+
+      if (calculatedAmount <= 0) {
+        messageApi.warning("Хөнгөлөх дүн 0-ээс их байх шаардлагатай.");
+        return;
+      }
+
+      const dateTag = discountMonth ? `(${discountMonth})` : "";
+      const percentTag = discountType === "percent" ? ` ${valNum}%` : "";
+      const finalTailbar = `Хөнгөлөлт${percentTag} ${dateTag}`.trim();
+
+      const data: TransactionData = {
+        type: "khungulult",
+        date: discountMonth ? `${discountMonth}-01` : transactionDate,
+        amount: calculatedAmount,
+        residentId: resident?._id || resident?.orshinSuugchId,
+        gereeniiId: resident?.gereeniiId,
+        tailbar: finalTailbar,
+        ekhniiUldegdel: false,
+        discountType,
+        discountValue: valNum,
+      };
+
+      await onSubmit(data);
+      resetForm();
+      return;
+    }
+
     let finalTailbar = tailbar;
     if (
       transactionType === "ashiglalt" &&
@@ -407,16 +624,13 @@ export default function TransactionModal({
       }
     }
 
-    // If it's an initial balance, format the tailbar as requested
     if (ekhniiUldegdel) {
       const dateStr = transactionDate.replace(/-/g, ".");
       const prefix = "Эхний үлдэгдэл";
       if (finalTailbar) {
-        // Only prepend if not already there to avoid duplicates
         if (!finalTailbar.startsWith(prefix)) {
           finalTailbar = `${prefix} - ${finalTailbar} - ${dateStr}`;
         } else if (!finalTailbar.includes(dateStr)) {
-          // If prefix exists but date doesn't (maybe manually typed prefix), still append date
           finalTailbar = `${finalTailbar} - ${dateStr}`;
         }
       } else {
@@ -429,7 +643,7 @@ export default function TransactionModal({
       date: transactionDate,
       amount: parseFloat(amount.replace(/,/g, "")) || 0,
       residentId: resident?._id || resident?.orshinSuugchId,
-      gereeniiId: resident?.gereeniiId, // Use the gereeniiId that was passed in
+      gereeniiId: resident?.gereeniiId,
       tailbar: finalTailbar,
       ekhniiUldegdel,
     };
@@ -465,7 +679,7 @@ export default function TransactionModal({
               dragControls={dragControls}
               dragConstraints={constraintsRef}
               dragMomentum={false}
-              className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 modal-surface rounded-2xl shadow-2xl w-[min(700px,95vw)] h-[70vh] flex flex-col border border-[color:var(--surface-border)] overflow-hidden"
+              className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 modal-surface rounded-2xl shadow-2xl w-[min(700px,95vw)] max-h-[85vh] flex flex-col border border-[color:var(--surface-border)] overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Draggable Title Bar */}
@@ -491,11 +705,11 @@ export default function TransactionModal({
                 {/* Resident Info Card */}
                 {resident && (
                   <div className="bg-[color:var(--surface-hover)]/50 rounded-2xl p-3 border border-[color:var(--surface-border)] flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[color:var(--theme)]/10 flex items-center justify-center text-[color:var(--theme)]  text-sm">
+                    <div className="w-10 h-10 rounded-full bg-[color:var(--theme)]/10 flex items-center justify-center text-[color:var(--theme)] text-sm font-bold">
                       {resident?.toot || "?"}
                     </div>
                     <div>
-                      <p className="text-sm  text-[color:var(--panel-text)]">
+                      <p className="text-sm font-semibold text-[color:var(--panel-text)]">
                         {resident?.ovog || ""} {resident?.ner}
                       </p>
                       <p className="text-xs text-[color:var(--muted-text)]">
@@ -507,15 +721,16 @@ export default function TransactionModal({
 
                 {/* Transaction Type Segmented Control */}
                 <div>
-                  <label className="block text-xs  text-[color:var(--panel-text)] mb-1.5">
-                    Гүйлгээний төрөл
+                  <label className="block text-xs font-medium text-[color:var(--panel-text)] mb-1.5">
+                    ГҮЙЛГЭЭНИЙ ТӨРӨЛ
                   </label>
-                  <div className="grid grid-cols-4 neu-panel gap-1 p-1 bg-[color:var(--surface-hover)] rounded-2xl">
+                  <div className="grid grid-cols-5 neu-panel gap-1 p-1 bg-[color:var(--surface-hover)] rounded-2xl">
                     {[
                       { value: "avlaga", label: "Авлага" },
                       { value: "ashiglalt", label: "Ашиглалт" },
                       { value: "torguuli", label: "Торгууль" },
                       { value: "tulult", label: "Төлөлт" },
+                      { value: "khungulult", label: "Хөнгөлөлт" },
                     ].map((option) => (
                       <button
                         key={option.value}
@@ -530,15 +745,19 @@ export default function TransactionModal({
                             setAshiglaltZardal("");
                             setUmnukhZaalt("");
                             setSuuliinZaalt("");
+                            setDiscountValue("");
+                            setDiscountReason("");
                           }
                           setTransactionType(newType);
                         }}
                         disabled={isProcessing}
                         className={`
-                      relative py-1.5 px-3 text-sm rounded-2xl transition-all duration-200
+                      relative py-1.5 px-2 text-xs font-semibold rounded-2xl transition-all duration-200
                       ${
                         transactionType === option.value
-                          ? "neu-panel-2 !text-white scale-[1.02]"
+                          ? option.value === "khungulult"
+                            ? "!bg-emerald-600 !text-white shadow-md scale-[1.02]"
+                            : "neu-panel-2 !text-white scale-[1.02]"
                           : "text-[color:var(--panel-text)] hover:bg-[color:var(--surface-bg)]/40"
                       }
                     `}
@@ -556,7 +775,7 @@ export default function TransactionModal({
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
-                      className="flex items-center gap-2 p-3  rounded-2xl overflow-hidden"
+                      className="flex items-center gap-2 p-3 rounded-2xl overflow-hidden"
                     >
                       <input
                         type="checkbox"
@@ -567,7 +786,7 @@ export default function TransactionModal({
                       />
                       <label
                         htmlFor="ekhniiUldegdel"
-                        className="text-xs  text-rose-700 cursor-pointer select-none"
+                        className="text-xs text-rose-700 cursor-pointer select-none"
                       >
                         Эхний үлдэгдэл эсэх
                       </label>
@@ -576,7 +795,96 @@ export default function TransactionModal({
                 </AnimatePresence>
 
                 {/* Form Content */}
-                {transactionType === "ashiglalt" ? (
+                {transactionType === "khungulult" ? (
+                  <div className="bg-emerald-50/70 border border-emerald-200 text-emerald-900 rounded-2xl p-4 space-y-4 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-100">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+                          ХӨНГӨЛӨХ САР
+                        </label>
+                        <DoubleYearMonthPicker
+                          value={discountMonth}
+                          onChange={(val) => setDiscountMonth(val)}
+                          disabled={isProcessing}
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+                          ХӨНГӨЛӨЛТИЙН ХЭЛБЭР
+                        </label>
+                        <select
+                          value={discountType}
+                          onChange={(e) => {
+                            setDiscountType(e.target.value as "percent" | "amount");
+                            setDiscountValue("");
+                          }}
+                          disabled={isProcessing}
+                          className="w-full px-3 py-2.5 border border-emerald-300 bg-white text-emerald-950 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all text-sm font-medium dark:bg-slate-900 dark:border-emerald-800 dark:text-emerald-100"
+                        >
+                          <option value="percent">Хувиар</option>
+                          <option value="amount">Дүнгээр</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between items-center">
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+                          ХӨНГӨЛӨХ ДҮН / ХӨНГӨЛӨХ ХУВЬ
+                        </label>
+                        {residentBalance !== null && (
+                          <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-medium">
+                            Сүүлчийн үлдэгдэл: {residentBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}₮
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={discountValue}
+                          onChange={(e) => setDiscountValue(e.target.value)}
+                          placeholder={discountType === "percent" ? "50%" : "0.00"}
+                          disabled={isProcessing}
+                          className="w-full px-3 py-2.5 border border-emerald-300 bg-white text-emerald-950 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all text-sm font-semibold tracking-wide dark:bg-slate-900 dark:border-emerald-800 dark:text-emerald-100"
+                        />
+                      </div>
+
+                      {discountValue && residentBalance !== null && (
+                        <div className="flex items-center justify-between text-xs text-emerald-700 dark:text-emerald-400 font-medium pt-1">
+                          <span>
+                            {discountType === "percent" ? (
+                              (() => {
+                                const p = parseFloat(discountValue.replace(/%/g, "")) || 0;
+                                const calculated = Math.round((residentBalance || 0) * (p / 100) * 100) / 100;
+                                return `Хөнгөлөх дүн: ${calculated.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}₮ (${p}% хөнгөлөлт)`;
+                              })()
+                            ) : (
+                              (() => {
+                                const amt = parseFloat(discountValue.replace(/,/g, "")) || 0;
+                                return `Хөнгөлөх дүн: ${amt.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}₮`;
+                              })()
+                            )}
+                          </span>
+                          <span>
+                            {(() => {
+                              let calculated = 0;
+                              if (discountType === "percent") {
+                                const p = parseFloat(discountValue.replace(/%/g, "")) || 0;
+                                calculated = Math.round((residentBalance || 0) * (p / 100) * 100) / 100;
+                              } else {
+                                calculated = parseFloat(discountValue.replace(/,/g, "")) || 0;
+                              }
+                              const remaining = Math.round(((residentBalance || 0) - calculated) * 100) / 100;
+                              return `Үлдэгдэл дүн: ${remaining.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}₮`;
+                            })()}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : transactionType === "ashiglalt" ? (
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1.5">

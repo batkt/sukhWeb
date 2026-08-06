@@ -922,7 +922,7 @@ export default function OrlogoAvlagaPage() {
             classNames={{
               root: "!h-full !w-full",
               input:
-                "text-theme placeholder:text-theme h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
+                "text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
             }}
           />
         </div>
@@ -949,7 +949,7 @@ export default function OrlogoAvlagaPage() {
                 onChange={(e) =>
                   setFilters((p) => ({ ...p, [key]: e.target.value }))
                 }
-                className="flex-1 px-3 rounded-lg neu-panel text-theme placeholder:text-theme !h-[40px]"
+                className="flex-1 px-3 rounded-lg neu-panel text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 !h-[40px]"
                 placeholder={placeholder}
               />
             </div>

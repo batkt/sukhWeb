@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import { Plus, Edit, Trash2, Car, ChevronLeft, ChevronRight, Loader as LoaderIcon } from "lucide-react";
+import { Plus, Edit, Trash2, Car, ChevronLeft, ChevronRight, DoorOpen, Layers, DollarSign, CheckCircle2 } from "lucide-react";
 import ZogsoolBurtgekh from "./ZogsoolBurtgekh";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
@@ -41,10 +41,10 @@ export default function Zogsool({
   const { selectedBuildingId, isInitialized } = useBuilding();
   const effectiveBarilgiinId = selectedBuildingId || barilgiinId || undefined;
   const token = propToken || authToken || "";
-  
+
   const effectiveAjiltan = ajiltan || authAjiltan;
   const effectiveBaiguullagiinId = effectiveAjiltan?.baiguullagiinId;
-  
+
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [editingItem, setEditingItem] = useState<ZogsoolItem | null>(null);
@@ -72,7 +72,7 @@ export default function Zogsool({
           khuudasniiKhemjee: 10000, // Fetch all for client-side pagination
         },
       });
-      
+
       const data = resp.data;
       if (Array.isArray(data)) {
         return {
@@ -107,6 +107,14 @@ export default function Zogsool({
 
   const totalPages = Math.ceil(zogsoolData.length / pageSize);
   const totalRecords = zogsoolData.length;
+
+  const totalCapacity = useMemo(() => {
+    return zogsoolData.reduce((sum, item) => sum + (Number(item.too) || 0), 0);
+  }, [zogsoolData]);
+
+  const totalGates = useMemo(() => {
+    return zogsoolData.reduce((sum, item) => sum + (Array.isArray(item.khaalga) ? item.khaalga.length : 0), 0);
+  }, [zogsoolData]);
 
   const deleteZogsool = async (id: string) => {
     if (!confirm("Устгахдаа итгэлтэй байна уу?")) return;
@@ -161,20 +169,19 @@ export default function Zogsool({
   if (view === "form") {
     return (
       <div className="h-full overflow-y-auto custom-scrollbar">
-        <div className="bg-[color:var(--surface-bg)] rounded-2xl border border-[color:var(--surface-border)] shadow-lg p-6 space-y-6">
+        <div className="bg-[color:var(--surface-bg)] rounded-3xl border border-[color:var(--surface-border)] p-6 lg:p-8 space-y-6">
           {/* Header */}
-          <div className="flex items-center justify-between pb-4 border-b border-[color:var(--surface-border)]">
-            <div className="flex items-center gap-3">
-              <button 
+          <div className="flex items-center justify-between pb-5 border-b border-[color:var(--surface-border)]">
+            <div className="flex items-center gap-3.5">
+              <button
                 onClick={handleCloseForm}
-                className="p-2 rounded-lg hover:bg-[color:var(--surface-hover)] transition-colors text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+                className="px-3 py-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-slate-500 hover:text-slate-900 dark:hover:text-white text-xs"
                 type="button"
               >
-                <ChevronLeft className="w-5 h-5" />
+                Өмнөх
               </button>
-              <Car className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               <div>
-                <h2 className="text-xl  text-[color:var(--panel-text)]">
+                <h2 className="text-xl text-[color:var(--panel-text)] tracking-tight">
                   {editingItem ? "Зогсоол засах" : "Шинэ зогсоол бүртгэх"}
                 </h2>
                 <p className="text-xs text-[color:var(--muted-text)] mt-0.5">
@@ -187,8 +194,7 @@ export default function Zogsool({
                 onClick={handleCloseForm}
                 variant="ghost"
                 size="md"
-                className="!rounded-lg"
-                style={{ borderRadius: '0.5rem' }}
+                className="!rounded-xl"
               >
                 Хаах
               </Button>
@@ -197,15 +203,14 @@ export default function Zogsool({
                 variant="primary"
                 size="md"
                 isLoading={isValidating}
-                className="!rounded-lg"
-                style={{ borderRadius: '0.5rem' }}
+                className="!rounded-xl"
               >
                 Хадгалах
               </Button>
             </div>
           </div>
 
-          <div className="bg-[color:var(--surface-bg)] rounded-lg border border-[color:var(--surface-border)] p-4">
+          <div className="bg-[color:var(--surface-bg)] rounded-2xl border border-[color:var(--surface-border)] p-6 shadow-sm">
             <ZogsoolBurtgekh
               ref={zogsoolRef}
               data={editingItem}
@@ -223,155 +228,158 @@ export default function Zogsool({
 
   return (
     <div className="h-full overflow-y-auto custom-scrollbar">
-      <div className="bg-[color:var(--surface-bg)] rounded-2xl border border-[color:var(--surface-border)] shadow-lg p-6 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-[color:var(--surface-border)]">
-          <div className="flex items-center gap-3">
-            <Car className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-            <div>
-              <h2 className="text-xl  text-[color:var(--panel-text)]">
-                Зогсоолын тохиргоо
-              </h2>
-              <p className="text-xs text-[color:var(--muted-text)] mt-0.5">
-                Нийт {totalRecords} талбай тохируулагдсан байна
-              </p>
-            </div>
+      <div className="bg-[color:var(--surface-bg)] rounded-3xl border border-[color:var(--surface-border)] p-6 lg:p-8 space-y-6">
+        {/* Top Header Card */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-[color:var(--surface-border)]">
+          <div>
+            <h2 className="text-2xl text-[color:var(--panel-text)] tracking-tight">
+              Зогсоолын тохиргоо
+            </h2>
+            <p className="text-xs text-[color:var(--muted-text)] mt-1">
+              Нийт <span className="text-blue-600 dark:text-blue-400">{totalRecords}</span> талбай тохируулагдсан байна
+            </p>
           </div>
+
           <Button
             onClick={openAdd}
             variant="primary"
             size="md"
-            leftIcon={<Plus className="w-4 h-4" />}
-            className="!rounded-2xl"
-            style={{ borderRadius: '0.5rem' }}
+            className="!rounded-xl"
           >
             Шинэ зогсоол нэмэх
           </Button>
         </div>
 
-        {/* Table */}
+        {/* Quick Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-white/5 flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wider">Нийт талбай</p>
+              <p className="text-2xl text-slate-900 dark:text-white">{totalRecords}</p>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-white/5 flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wider">Нийт багтаамж</p>
+              <p className="text-2xl text-slate-900 dark:text-white">{totalCapacity} <span className="text-xs text-slate-400">машин</span></p>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-white/5 flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wider">Холбосон хаалга</p>
+              <p className="text-2xl text-slate-900 dark:text-white">{totalGates} <span className="text-xs text-slate-400">хаалга</span></p>
+            </div>
+          </div>
+        </div>
+
+        {/* Table Section */}
         {isValidating ? (
-          <div className="flex items-center justify-center py-12">
+          <div className="flex flex-col items-center justify-center py-16 gap-3">
             <Loader size="md" />
+            <span className="text-xs text-[color:var(--muted-text)]">Мэдээлэл уншиж байна...</span>
           </div>
         ) : (
           <>
-            <div className="rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] overflow-hidden" style={{ maxHeight: `${pageSize * 60}px`, overflowY: 'auto' }}>
+            <div className="rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead className="bg-[color:var(--surface-hover)] sticky top-0 border border-b">
-                    <tr>
-                      <th className="px-4 py-3 text-xs border-r  text-[color:var(--panel-text)] text-center w-16 !rounded-tl-lg">
-                        #
+                <table className="w-full text-left border-collapse text-[13px]">
+                  <thead>
+                    <tr className="bg-slate-100/70 dark:bg-slate-800/60 border-b border-[color:var(--surface-border)]">
+                      <th className="px-4 py-3.5 text-xs text-slate-700 dark:text-slate-300 text-center w-14">
+                        №
                       </th>
-                      <th className="px-4 py-3 text-xs border-r text-center  text-[color:var(--panel-text)]">
+                      <th className="px-4 py-3.5 text-xs text-slate-700 dark:text-slate-300 text-left">
                         Зогсоолын нэр
                       </th>
-                      <th className="px-4 py-3 text-xs  border-r text-center text-[color:var(--panel-text)]">
+                      <th className="px-4 py-3.5 text-xs text-slate-700 dark:text-slate-300 text-center">
                         Багтаамж
                       </th>
-                      <th className="px-4 py-3 text-xs  border-r text-center text-[color:var(--panel-text)]">
-                        Тариф
+                      <th className="px-4 py-3.5 text-xs text-slate-700 dark:text-slate-300 text-right">
+                        Үндсэн тариф
                       </th>
-                      <th className="px-4 py-3 text-xs border-r text-center  text-[color:var(--panel-text)]">
+                      <th className="px-4 py-3.5 text-xs text-slate-700 dark:text-slate-300 text-left">
                         Хаалганууд
                       </th>
-                      <th className="px-4 py-3 text-xs  text-[color:var(--panel-text)] text-center !rounded-tr-lg">
+                      <th className="px-4 py-3.5 text-xs text-slate-700 dark:text-slate-300 text-center w-28">
                         Үйлдэл
                       </th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-[color:var(--surface-border)]">
                     {paginatedData.length === 0 ? (
                       <tr>
                         <td
                           colSpan={6}
-                          className="px-4 py-12 text-center text-[color:var(--muted-text)]"
+                          className="px-4 py-16 text-center text-[color:var(--muted-text)]"
                         >
-                          <div className="flex flex-col items-center gap-3">
-                            <div className="p-4 rounded-full bg-slate-100 dark:bg-white/5 text-slate-300">
-                              <Car className="w-12 h-12" />
-                            </div>
-                            <div>
-                              <p className=" text-sm text-[color:var(--panel-text)]">
-                                Мэдээлэл олдсонгүй
-                              </p>
-                              <p className="text-xs text-[color:var(--muted-text)] mt-1">
-                                "Шинэ зогсоол нэмэх" товчийг дарж бүртгэнэ үү
-                              </p>
-                            </div>
+                          <div>
+                            <p className="text-slate-700 dark:text-slate-200">
+                              Зогсоолын талбай бүртгэгдээгүй байна
+                            </p>
+                            <p className="text-xs text-slate-400 mt-1">
+                              "Шинэ зогсоол нэмэх" товчийг дарж зогсоолын систем тохируулна уу
+                            </p>
                           </div>
                         </td>
                       </tr>
                     ) : (
                       paginatedData.map((record, index) => {
-                        const isLast = index === paginatedData.length - 1;
                         return (
                           <tr
                             key={record._id || record.key || index}
-                            className={`border-b border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors ${isLast ? 'last:border-b-0' : ''}`}
+                            className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
                           >
-                            <td className="px-4 py-3 border-r text-sm text-[color:var(--panel-text)] text-center">
+                            <td className="px-4 py-3.5 text-center text-slate-500 dark:text-slate-400 text-xs">
                               {(page - 1) * pageSize + index + 1}
                             </td>
-                            <td className="px-4 py-3  border-r text-sm text-[color:var(--panel-text)]">
-                              <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-2xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400  text-xs">
-                                  {record.ner?.charAt(0).toUpperCase()}
-                                </div>
-                                <span className="">{record.ner}</span>
-                              </div>
+                            <td className="px-4 py-3.5 text-slate-900 dark:text-white">
+                              <span className="text-slate-800 dark:text-slate-100">{record.ner}</span>
                             </td>
-                            <td className="px-4 text-center border-r py-3 text-sm text-[color:var(--panel-text)]">
-                              <span className="">{record.too}</span>
-                              <span className="text-xs text-[color:var(--muted-text)] ml-1">машин</span>
-                            </td>
-                            <td className="px-4  border-r py-3 text-sm text-[color:var(--panel-text)]">
-                              <span className="px-2 py-1 rounded-2xl bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs ">
-                                {formatNumber(record.undsenUne)} 
+                            <td className="px-4 py-3.5 text-center">
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs border border-slate-200/60 dark:border-white/5">
+                                {record.too} <span className="text-[10px] text-slate-400 ml-1">машин</span>
                               </span>
                             </td>
-                            <td className="px-4 border-r py-3 text-sm text-[color:var(--panel-text)]">
+                            <td className="px-4 py-3.5 text-right">
+                              <span className="inline-flex items-center px-3 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs border border-emerald-200/60 dark:border-emerald-500/20">
+                                {formatNumber(record.undsenUne)} ₮
+                              </span>
+                            </td>
+                            <td className="px-4 py-3.5">
                               <div className="flex flex-wrap gap-1.5">
                                 {record.khaalga && record.khaalga.length > 0 ? (
                                   record.khaalga.map((gate: any, gateIdx: number) => (
                                     <span
                                       key={gateIdx}
-                                      className="px-2 py-1 rounded-2xl bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 text-xs border border-slate-200 dark:border-white/10"
+                                      className="inline-flex items-center px-2.5 py-1 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 text-xs border border-indigo-200/60 dark:border-indigo-500/20"
                                     >
                                       {gate.ner}
                                     </span>
                                   ))
                                 ) : (
-                                  <span className="text-xs text-[color:var(--muted-text)] italic">
-                                    Тохируулаагүй
+                                  <span className="text-xs text-slate-400 italic">
+                                    Хаалга холбоогүй
                                   </span>
                                 )}
                               </div>
                             </td>
-                            <td className="px-4 py-3 text-sm text-center">
+                            <td className="px-4 py-3.5 text-center">
                               <div className="flex items-center justify-center gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
+                                <button
                                   onClick={() => openEdit(record)}
-                                  className="!rounded-2xl"
-                                  style={{ borderRadius: '0.5rem' }}
-                                  title="Засах"
+                                  className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
                                 >
-                                  <Edit className="w-4 h-4 text-blue-600" />
-                                </Button>
+                                  Засах
+                                </button>
                                 {record._id && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
+                                  <button
                                     onClick={() => deleteZogsool(record._id!)}
-                                    className="!rounded-2xl hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-600 dark:hover:text-red-400"
-                                    style={{ borderRadius: '0.5rem' }}
-                                    title="Устгах"
+                                    className="text-xs text-rose-600 dark:text-rose-400 hover:underline"
                                   >
-                                    <Trash2 className="w-4 h-4 text-red-600" />
-                                  </Button>
+                                    Устгах
+                                  </button>
                                 )}
                               </div>
                             </td>
@@ -384,27 +392,26 @@ export default function Zogsool({
               </div>
             </div>
 
-            {/* Pagination */}
+            {/* Pagination Controls */}
             {totalPages > 0 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-[color:var(--surface-border)]">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-[color:var(--panel-text)]">
-                    Нийт {totalRecords} талбай
+                  <span className="text-xs text-[color:var(--panel-text)]">
+                    Нийт <span>{totalRecords}</span> талбай
                   </span>
-                  
+
                   {/* Page Size Selector */}
                   <div className="relative page-size-selector">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => setIsPageSizeOpen(!isPageSizeOpen)}
-                      className="!rounded-2xl"
-                      style={{ borderRadius: '0.5rem' }}
+                      className="!rounded-xl border border-slate-200 dark:border-white/10"
                     >
                       {pageSize} / хуудас
                     </Button>
                     {isPageSizeOpen && (
-                      <div className="absolute bottom-full mb-2 left-0 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg shadow-lg z-10 min-w-[100px] overflow-hidden">
+                      <div className="absolute bottom-full mb-2 left-0 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-2xl shadow-xl z-20 min-w-[110px] overflow-hidden p-1">
                         {[10, 20, 50, 100, 500].map((size) => (
                           <button
                             key={size}
@@ -413,10 +420,10 @@ export default function Zogsool({
                               setPage(1);
                               setIsPageSizeOpen(false);
                             }}
-                            className={`w-full px-4 py-2 text-left text-sm hover:bg-[color:var(--surface-hover)] transition-colors ${
+                            className={`w-full px-3 py-1.5 rounded-xl text-left text-xs transition-colors ${
                               pageSize === size
-                                ? "bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400"
-                                : "text-[color:var(--panel-text)]"
+                                ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                                : "text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"
                             }`}
                           >
                             {size}
@@ -433,13 +440,12 @@ export default function Zogsool({
                     size="sm"
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page === 1}
-                    className="!rounded-2xl"
-                    style={{ borderRadius: '0.5rem' }}
+                    className="!rounded-xl border border-slate-200 dark:border-white/10"
                     leftIcon={<ChevronLeft className="w-4 h-4" />}
                   >
                     Өмнөх
                   </Button>
-                  <span className="text-sm text-[color:var(--panel-text)] px-3">
+                  <span className="text-xs text-[color:var(--panel-text)] px-3">
                     {page} / {totalPages || 1}
                   </span>
                   <Button
@@ -447,8 +453,7 @@ export default function Zogsool({
                     size="sm"
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page >= totalPages}
-                    className="!rounded-2xl"
-                    style={{ borderRadius: '0.5rem' }}
+                    className="!rounded-xl border border-slate-200 dark:border-white/10"
                     rightIcon={<ChevronRight className="w-4 h-4" />}
                   >
                     Дараах
@@ -462,3 +467,4 @@ export default function Zogsool({
     </div>
   );
 }
+

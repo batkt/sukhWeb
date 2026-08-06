@@ -1971,8 +1971,8 @@ export default function Camera() {
                               transaction.tuukh?.[0]?.turul ||
                               "Үйлчлүүлэгч"}
                           </td>
-                          <td className="py-1.5 px-3 text-slate-700 dark:text-slate-300 text-right  border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] text-[11px]">
-                            {formatNumber(transaction.niitDun || 0)}
+                          <td className="py-1.5 px-3 text-slate-700 dark:text-slate-300 text-right border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] text-[11px]">
+                            {formatNumber(transaction.niitDun || 0, 2)}
                           </td>
                           <td className="py-1.5 px-3 text-center relative border-r border-slate-200 dark:border-white/5 text-[11px]">
                             {(() => {
@@ -2007,39 +2007,24 @@ export default function Camera() {
 
                               if (tulsunDun > 0) {
                                 return (
-                                  <span className="text-[11px]  text-slate-700 dark:text-slate-300 font-[family-name:var(--font-mono)]">
-                                    {formatNumber(tulsunDun)}
+                                  <span className="text-[11px] text-slate-700 dark:text-slate-300 font-[family-name:var(--font-mono)]">
+                                    {formatNumber(tulsunDun, 2)}
                                   </span>
                                 );
                               }
 
-                              if (!history && !garsanTsag)
-                                return (
-                                  <span className="text-slate-300">0</span>
-                                );
-
-                              if (
-                                (history as any)?.zurchil ===
-                                "Үнэгүй хугацаанд" ||
-                                (transaction as any).zurchil ===
-                                "Үнэгүй хугацаанд" ||
-                                (garsanTsag && tulsunDun === 0)
-                              ) {
-                                return null;
-                              }
-
-                              return tulsunDun > 0 ? (
+                              return (
                                 <span className="font-[family-name:var(--font-mono)] text-slate-700 dark:text-slate-300 text-[11px]">
-                                  {formatNumber(tulsunDun)}
+                                  {formatNumber(tulsunDun || 0, 2)}
                                 </span>
-                              ) : null;
+                              );
                             })()}
                           </td>
-                          <td className="py-1.5 px-3 text-slate-600 dark:text-slate-400 text-right  border-r border-slate-200 dark:border-white/5 text-[11px]">
-                            {discountTotal > 0 ? formatNumber(discountTotal) : (mur?.khungulult || "")}
+                          <td className="py-1.5 px-3 text-slate-600 dark:text-slate-400 text-right border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] text-[11px]">
+                            {formatNumber(discountTotal || 0, 2)}
                           </td>
-                          <td className="py-1.5 px-3 text-slate-600 dark:text-slate-400 text-right  border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] text-[11px]">
-                            {transaction.tuukh?.[0]?.ebarimtId || ""}
+                          <td className="py-1.5 px-3 text-slate-600 dark:text-slate-400 text-center border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] text-[11px]">
+                            {transaction.tuukh?.[0]?.ebarimtId || "-"}
                           </td>
                           <td className="py-1.5 px-3 relative border-r border-slate-200 dark:border-white/5 text-center">
                             {showActionBtn ? (

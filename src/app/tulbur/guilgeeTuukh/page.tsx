@@ -71,7 +71,10 @@ import {
   itemPrimaryDateMs,
   computeLedgerRunningBalancesByGereeId,
 } from "./ledgerRunningBalances";
-import { aggregateLedgerTulsunByGereeIdInRange } from "./guilgeePaidDisplay";
+import {
+  aggregateLedgerTulsunByGereeIdInRange,
+  aggregateLedgerKhungulultByGereeIdInRange,
+} from "./guilgeePaidDisplay";
 
 const formatDate = (d?: string) =>
   d ? new Date(d).toLocaleDateString("mn-MN") : "-";
@@ -379,6 +382,7 @@ export default function DansniiKhuulga() {
         minWidth: 110,
       },
       { key: "paid", label: "Гүйцэтгэл", align: "end", minWidth: 110 },
+      { key: "khungulult", label: "Хөнгөлөлт", align: "end", minWidth: 110 },
       { key: "tuluv", label: "Төлөв", align: "start", minWidth: 110 },
       {
         key: "lastLog",
@@ -394,7 +398,6 @@ export default function DansniiKhuulga() {
     Record<string, boolean>
   >(() => {
     const hiddenByDefault = [
-      "orts",
       "davkhar",
       "tulbur",
       "ekhniiUldegdel",
@@ -427,6 +430,7 @@ export default function DansniiKhuulga() {
     "uldegdel",
     "sariinTurees",
     "paid",
+    "khungulult",
     "tuluv",
     "lastLog",
   ] as const;
@@ -812,6 +816,21 @@ export default function DansniiKhuulga() {
   /** Гүйцэтгэл: зөвхөн `monthlyMatrixRange` сарын төлөлт (бүх түүхийн харагдац ч ижил) */
   const monthPaidByGereeId = useMemo(() => {
     return aggregateLedgerTulsunByGereeIdInRange(
+      buildingHistoryItems,
+      contractsByNumber,
+      effectiveDateFilter.paidRangeStartMs,
+      effectiveDateFilter.paidRangeEndMs,
+    );
+  }, [
+    buildingHistoryItems,
+    contractsByNumber,
+    effectiveDateFilter.paidRangeStartMs,
+    effectiveDateFilter.paidRangeEndMs,
+  ]);
+
+  /** Хөнгөлөлт: зөвхөн `monthlyMatrixRange` сарын хөнгөлөлт */
+  const monthKhungulultByGereeId = useMemo(() => {
+    return aggregateLedgerKhungulultByGereeIdInRange(
       buildingHistoryItems,
       contractsByNumber,
       effectiveDateFilter.paidRangeStartMs,
@@ -1649,6 +1668,8 @@ export default function DansniiKhuulga() {
         type === "tulult" ||
         type === "төлбөр" ||
         type === "төлөлт" ||
+        type === "khungulult" ||
+        type === "хөнгөлөлт" ||
         (itemAmount < 0 && !isStandaloneEkhniiUldegdel);
 
       let ekhniiUldegdelDelta = isStandaloneEkhniiUldegdel ? itemAmount : 0;
@@ -2532,6 +2553,70 @@ export default function DansniiKhuulga() {
             }
           }
         }
+      } else if (data.type === "khungulult") {
+        const response = await uilchilgee(token).post("/guilgeeAvlaguud", {
+          baiguullagiinId: ajiltan.baiguullagiinId,
+          barilgiinId: effectiveBarilgiinId,
+          tukhainBaaziinKholbolt: ajiltan?.tukhainBaaziinKholbolt,
+          turul: "Хөнгөлөлт",
+          zardliinTurul: "Хөнгөлөлт",
+          source: "gar",
+          tulsunDun: data.amount,
+          tulukhDun: 0,
+          dun: -Math.abs(data.amount),
+          orshinSuugchId: data.residentId,
+          gereeniiId: data.gereeniiId,
+          tailbar: data.tailbar || `Хөнгөлөлт - ${data.date}`,
+          ognoo: data.date,
+          guilgeeKhiisenAjiltniiId: ajiltan._id,
+          guilgeeKhiisenAjiltniiNer:
+            `${(ajiltan as any).ovog || ""} ${ajiltan.ner || ""}`.trim(),
+        });
+
+        if (isTransactionHttpOk(response)) {
+          toast.success("Хөнгөлөлт амжилттай бүртгэгдлээ");
+          setIsTransactionModalOpen(false);
+          setSelectedTransactionResident(null);
+
+          if (data.gereeniiId) {
+            const gid = data.gereeniiId;
+            latestRowUldegdelRequestedRef.current.delete(gid);
+            setLatestRowUldegdelByGereeId((prev) => {
+              const updated = { ...prev };
+              delete (updated as any)[gid];
+              return updated;
+            });
+          }
+
+          await revalidateTulburCaches();
+          setInvoiceRefreshTrigger((t) => t + 1);
+
+          if (data.residentId) {
+            try {
+              const res = await uilchilgee(token).get(
+                `/orshinSuugch/${data.residentId}`,
+                {
+                  params: { baiguullagiinId: ajiltan.baiguullagiinId },
+                },
+              );
+              const freshResident = res.data;
+              if (freshResident && freshResident._id) {
+                setSelectedResident((prev: any) =>
+                  prev && String(prev._id) === String(freshResident._id)
+                    ? { ...prev, ...freshResident }
+                    : prev,
+                );
+                setSelectedTransactionResident((prev: any) =>
+                  prev && String(prev._id) === String(freshResident._id)
+                    ? { ...prev, ...freshResident }
+                    : prev,
+                );
+              }
+            } catch {
+              // best-effort refresh
+            }
+          }
+        }
       } else {
         // Other transaction types (avlaga, ashiglalt, torguuli): create a transaction record as a charge
         const isAshiglalt = data.type === "ashiglalt";
@@ -3135,7 +3220,7 @@ export default function DansniiKhuulga() {
                   classNames={{
                     root: "!h-full !w-full",
                     input:
-                      "text-theme placeholder:text-theme h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
+                      "text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
                   }}
                 />
               </div>
@@ -3150,7 +3235,7 @@ export default function DansniiKhuulga() {
                       type="text"
                       value={selectedOrtsFilter}
                       onChange={(e) => setSelectedOrtsFilter(e.target.value)}
-                      className="w-full h-[40px] px-3 rounded-2xl neu-panel text-theme text-[13px] focus:outline-none transition-all"
+                      className="w-full h-[40px] px-3 rounded-2xl neu-panel text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 text-[13px] focus:outline-none transition-all"
                       placeholder="Бүгд"
                     />
                   </div>
@@ -3166,7 +3251,7 @@ export default function DansniiKhuulga() {
                       min={1}
                       value={selectedDavkharFilter}
                       onChange={(e) => setSelectedDavkharFilter(e.target.value)}
-                      className="w-full h-[40px] px-3 rounded-2xl neu-panel text-theme text-[13px] focus:outline-none transition-all"
+                      className="w-full h-[40px] px-3 rounded-2xl neu-panel text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 text-[13px] focus:outline-none transition-all"
                       placeholder="Бүгд"
                     />
                   </div>
@@ -3180,7 +3265,7 @@ export default function DansniiKhuulga() {
                       type="text"
                       value={selectedTootFilter}
                       onChange={(e) => setSelectedTootFilter(e.target.value)}
-                      className="w-full h-[40px] px-3 rounded-2xl neu-panel text-theme text-[13px] focus:outline-none transition-all"
+                      className="w-full h-[40px] px-3 rounded-2xl neu-panel text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 text-[13px] focus:outline-none transition-all"
                       placeholder="Бүгд"
                     />
                   </div>
@@ -3378,6 +3463,7 @@ export default function DansniiKhuulga() {
               residentsById={residentsById}
               monthPaidByGereeId={monthPaidByGereeId}
               bestKnownBalances={tableDisplayBalances}
+              khungulultMap={monthKhungulultByGereeId}
               sortField={sortField}
               sortOrder={sortOrder}
               onSortChange={(field: string | null, order: "asc" | "desc") => {

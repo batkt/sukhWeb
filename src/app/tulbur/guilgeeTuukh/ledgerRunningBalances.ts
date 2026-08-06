@@ -209,12 +209,23 @@ export function computeLedgerRunningBalancesByGereeId(
     const type = String(it?.turul || it?.type || "").toLowerCase();
     const khelber = String(it?.khelber || "").toLowerCase();
     const source = String(it?.sourceCollection || "").toLowerCase();
+    const zardliinTurul = String(it?.zardliinTurul || "").toLowerCase();
+
+    const isDiscount =
+      type === "khungulult" ||
+      type === "хөнгөлөлт" ||
+      type === "discount" ||
+      khelber === "хөнгөлөлт" ||
+      khelber === "khungulult" ||
+      zardliinTurul === "хөнгөлөлт";
+
     const isPayment =
       type === "tulult" ||
       type === "төлбөр" ||
       type === "төлөлт" ||
       khelber === "төлөлт" ||
       khelber === "tulult" ||
+      isDiscount ||
       source === "guilgeeavlaguud" ||
       (itemAmount < 0 && !isStandaloneEkhnii);
     const fromTulsun = Number(it?.tulsunDun ?? it?.tulsun ?? 0) || 0;

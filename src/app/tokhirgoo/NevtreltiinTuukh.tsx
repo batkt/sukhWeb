@@ -161,7 +161,7 @@ export default function NevtreltiinTuukh({
               classNames={{
                 root: "!h-full !w-full",
                 input:
-                  "text-theme placeholder:text-theme h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
+                  "text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
               }}
             />
           </div>

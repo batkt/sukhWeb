@@ -1069,7 +1069,7 @@ export default function SanalKhuselt() {
                 placeholder={t("Хайх...")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] text-theme placeholder:text-theme focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm transition-all"
+                className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm transition-all"
               />
             </div>
             <div id="feedback-filters" className="grid grid-cols-2 gap-2">
@@ -1372,7 +1372,7 @@ export default function SanalKhuselt() {
                                       )
                                   }
                                   rows={3}
-                                  className="w-full px-3 py-2 rounded-2xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] text-theme placeholder:text-theme focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm resize-none"
+                                  className="w-full px-3 py-2 rounded-2xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm resize-none"
                                 />
                                 <p className="text-[10px] text-theme mt-1">
                                   {t("Хэрэглэгчийн апп-д шууд мэдэгдэл ирнэ")}
@@ -1649,7 +1649,7 @@ export default function SanalKhuselt() {
                         }
                       }}
                       placeholder={t("Хариу бичих...")}
-                      className="flex-1 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-ground)] px-4 py-3 text-theme placeholder:text-theme focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)]"
+                      className="flex-1 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-ground)] px-4 py-3 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)]"
                       disabled={replySending}
                     />
                     <button

@@ -24,6 +24,7 @@ interface GuilgeeTableProps {
   residentsById: Record<string, any>;
   /** Сонгосон сарын төлсөн дүн (Гүйцэтгэл) — `monthlyMatrixRange`-тай нийцнэ */
   monthPaidByGereeId: Record<string, number>;
+  khungulultMap?: Record<string, number>;
   bestKnownBalances: Record<string, number>;
   sortField: string | null;
   sortOrder: "asc" | "desc";
@@ -60,6 +61,7 @@ export default function GuilgeeTable({
   contractsByNumber,
   residentsById,
   monthPaidByGereeId,
+  khungulultMap = {},
   bestKnownBalances,
   sortField,
   sortOrder,
@@ -382,6 +384,21 @@ export default function GuilgeeTable({
               return (
                 <span className="text-gray-900 dark:text-white">
                   {formatNumber(paidDisplay, 2)}
+                </span>
+              );
+            },
+          };
+        }
+
+        if (col.key === "khungulult") {
+          return {
+            ...baseColumn,
+            render: (_: any, record: any) => {
+              const gid = getGereeId(record);
+              const discVal = gid && khungulultMap[gid] ? Number(khungulultMap[gid]) : 0;
+              return (
+                <span className="text-gray-900 dark:text-white">
+                  {formatNumber(discVal, 2)}
                 </span>
               );
             },

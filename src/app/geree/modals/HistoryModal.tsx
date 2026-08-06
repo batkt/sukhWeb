@@ -59,6 +59,7 @@ interface LedgerEntry {
   sourceCollection?:
     | "nekhemjlekhiinTuukh"
     | "guilgeeAvlaguud";
+  khungulultDun?: number;
 }
 
 type LedgerDetailSelection =
@@ -335,8 +336,11 @@ function recomputeLedgerRunningBalances(
       ? ledgerOpeningBeforeFirstEntry(rows[0])
       : 0;
   rows.forEach((row) => {
+    // tulsunDun = actual payments only (0 for discounts)
+    // khungulultDun = discount amount (0 for payments)
+    const discountAmt = Number(row.khungulultDun ?? 0);
     running = roundLedgerRunningStep(
-      running + Number(row.tulukhDun || 0) - Number(row.tulsunDun || 0),
+      running + Number(row.tulukhDun || 0) - Number(row.tulsunDun || 0) - discountAmt,
     );
     row.uldegdel = running;
   });
@@ -1626,38 +1630,52 @@ export default function HistoryModal({
           payment.ognoo || payment.createdAt || new Date().toISOString(),
         );
         const ajiltan = coalesceRegisteredAjiltan(payment);
-        const tulsunDun = Number(payment.tulsunDun || payment.tulsun || payment.dun || 0);
-        const turul = payment.turul || "tulbur";
+        const rawVal = Number(payment.tulsunDun ?? payment.tulsun ?? payment.dun ?? 0);
+        const turul = String(payment.turul || "").toLowerCase();
+        const isDiscount =
+          turul === "khungulult" ||
+          turul === "хөнгөлөлт" ||
+          turul === "discount" ||
+          String(payment.zardliinTurul || "").toLowerCase() === "хөнгөлөлт";
+
+        let tulsunDun = 0;
+        let khungulultDun = 0;
+
+        if (isDiscount) {
+          khungulultDun = Math.abs(rawVal);
+        } else {
+          tulsunDun = Math.abs(rawVal);
+        }
 
         // Determine the name based on type
         let name = "Төлөлт";
         let khelber = "Төлбөр";
-        if (turul === "ashiglalt" || turul === "Ашиглалт") {
+        if (turul === "ashiglalt" || turul === "ашиглалт") {
           name = "Ашиглалт";
           khelber = "Төлбөр";
+        } else if (isDiscount) {
+          name = "Хөнгөлөлт";
+          khelber = "Хөнгөлөлт";
         } else if (
           turul === "tulult" ||
-          turul === "Төлөлт" ||
-          turul === "tulbur"
-        ) {
-          name = "Төлөлт";
-          khelber = "Төлбөр";
-        } else if (
+          turul === "төлөлт" ||
+          turul === "tulbur" ||
           turul === "prepayment" ||
-          turul === "Урьдчилсан төлбөр" ||
+          turul === "урьдчилсан төлбөр" ||
           turul === "invoice_payment"
         ) {
           name = "Төлөлт";
           khelber = "Төлбөр";
         }
 
-        if (tulsunDun > 0) {
+        if (tulsunDun > 0 || khungulultDun > 0) {
           flatLedger.push({
             _id: payment._id,
             ognoo: paymentDate,
             ner: name,
             tulukhDun: 0,
             tulsunDun: tulsunDun,
+            khungulultDun: khungulultDun,
             uldegdel: 0,
             isSystem: false,
             ajiltan,
@@ -1736,23 +1754,38 @@ export default function HistoryModal({
 
             // Use backend ledger and recompute uldegdel on frontend
             const mapped = sortedBackend.map((r: any) => {
-              let tulukhDun = Number(r.tulukhDun ?? r.dun ?? r.niitDun ?? 0) || 0;
+              let tulukhDun = Number(r.tulukhDun ?? 0) || 0;
               let tulsunDun = Number(r.tulsunDun ?? r.tulsun ?? 0) || 0;
+              let khungulultDun = 0;
               const rowTurul = String(r.turul || "").toLowerCase();
+              const isDiscount =
+                rowTurul === "khungulult" ||
+                rowTurul === "хөнгөлөлт" ||
+                rowTurul === "discount" ||
+                String(r.zardliinTurul || "").toLowerCase() === "хөнгөлөлт";
+
               if (rowTurul === "ashiglalt" && tulukhDun > 0 && tulsunDun === 0) {
                 tulsunDun = tulukhDun;
                 tulukhDun = 0;
+              } else if (isDiscount) {
+                khungulultDun = Math.abs(Number(r.dun ?? r.tulsunDun ?? r.tulukhDun ?? 0));
+                tulsunDun = 0;
+                tulukhDun = 0;
+              } else if (tulsunDun === 0 && Number(r.dun || 0) < 0) {
+                tulsunDun = Math.abs(Number(r.dun));
               }
+
               const entry: LedgerEntry = {
                 ognoo: normalizeLedgerOgnooStorage(r.ognoo || ""),
-                ner: r.ner || "",
+                ner: isDiscount ? "Хөнгөлөлт" : (r.ner || (tulsunDun > 0 ? "Төлөлт" : "Авлага")),
                 tulukhDun,
                 tulsunDun,
+                khungulultDun,
                 uldegdel: Number(r.uldegdel ?? 0), // Preserve original balance for recompute starting point
                 isSystem: !!r.ekhniiUldegdelEsekh,
                 ajiltan: r.guilgeeKhiisenAjiltniiNer || "",
-                khelber: r.turul,
-                tailbar: r.tailbar,
+                khelber: isDiscount ? "Хөнгөлөлт" : (r.khelber || r.turul || (tulsunDun > 0 ? "Төлбөр" : "Авлага")),
+                tailbar: r.tailbar || (isDiscount ? "Хөнгөлөлт" : ""),
                 burtgesenOgnoo: r.createdAt,
                 _id: r._id,
                 parentInvoiceId: r.nekhemjlekhId,
@@ -2039,6 +2072,13 @@ export default function HistoryModal({
     const totalPayments = roundLedgerRunningStep(
       filteredData.reduce((sum, row) => sum + Number(row.tulsunDun || 0), 0),
     );
+    const totalDiscounts = roundLedgerRunningStep(
+      filteredData.reduce(
+        (sum, row) =>
+          sum + Number(row.khungulultDun ?? (row.khelber === "Хөнгөлөлт" ? row.tulsunDun : 0) ?? 0),
+        0,
+      ),
+    );
     if (chronologicalFilteredEntries.length === 0) {
       const fallback =
         globalUldegdel != null && Number.isFinite(Number(globalUldegdel))
@@ -2047,6 +2087,7 @@ export default function HistoryModal({
       return {
         totalCharges,
         totalPayments,
+        totalDiscounts,
         balance: roundLedgerRunningStep(fallback),
       };
     }
@@ -2058,9 +2099,10 @@ export default function HistoryModal({
         : roundLedgerRunningStep(
             ledgerOpeningBeforeFirstEntry(chronologicalFilteredEntries[0]) +
               totalCharges -
-              totalPayments,
+              totalPayments -
+              totalDiscounts,
           );
-    return { totalCharges, totalPayments, balance };
+    return { totalCharges, totalPayments, totalDiscounts, balance };
   }, [
     filteredData,
     chronologicalFilteredEntries,
@@ -2251,6 +2293,9 @@ export default function HistoryModal({
                           Төлсөн дүн
                         </th>
                         <th className="py-1 px-2 text-center text-[9px] border-r border-b border-slate-400 dark:border-slate-500 text-slate-900 dark:text-slate-100 uppercase font-semibold tracking-wide">
+                          Хөнгөлөлт
+                        </th>
+                        <th className="py-1 px-2 text-center text-[9px] border-r border-b border-slate-400 dark:border-slate-500 text-slate-900 dark:text-slate-100 uppercase font-semibold tracking-wide">
                           Үлдэгдэл сараар
                         </th>
                         <th className="py-1 px-2 text-center text-[9px] border-r border-b border-slate-400 dark:border-slate-500 text-slate-900 dark:text-slate-100 uppercase font-semibold tracking-wide hidden md:table-cell print:table-cell">
@@ -2304,7 +2349,14 @@ export default function HistoryModal({
                                 {formatCurrency(row.tulukhDun)}
                               </td>
                               <td className="py-1 px-2 text-right border-r border-b border-slate-300 dark:border-slate-600 whitespace-nowrap text-slate-900 dark:text-slate-200">
-                                {formatCurrency(row.tulsunDun)}
+                                {row.khelber === "Хөнгөлөлт" ? formatCurrency(0) : formatCurrency(row.tulsunDun ?? 0)}
+                              </td>
+                              <td className="py-1 px-2 text-right border-r border-b border-slate-300 dark:border-slate-600 whitespace-nowrap text-slate-900 dark:text-slate-200">
+                                {(row.khungulultDun ?? 0) > 0
+                                  ? formatCurrency(row.khungulultDun ?? 0)
+                                  : row.khelber === "Хөнгөлөлт" && row.tulsunDun > 0
+                                    ? formatCurrency(row.tulsunDun)
+                                    : formatCurrency(0)}
                               </td>
                               <td
                                 role="button"
@@ -2399,7 +2451,7 @@ export default function HistoryModal({
                           ))}
                           {/* Total Summary Row — үлдэгдэл = эхний мөрийн өмнөх үлдэгдэл + Нийт төлөх - Нийт төлсөн (сарын задралын эцсийн дүнтэй ижил) */}
                           {(() => {
-                            const { totalCharges, totalPayments, balance } =
+                            const { totalCharges, totalPayments, totalDiscounts, balance } =
                               ledgerFooterTotals;
                             const balanceClass =
                               balance < 0.01
@@ -2407,7 +2459,7 @@ export default function HistoryModal({
                                 : "underline underline-offset-2 decoration-red-500 dark:decoration-red-400 !text-red-500 dark:!text-red-400";
                             
                             const isFiltered = filteredData.length < data.length;
-                            const openingBalance = balance - totalCharges + totalPayments;
+                            const openingBalance = balance - totalCharges + totalPayments + totalDiscounts;
 
                             return (
                               <>
@@ -2418,6 +2470,9 @@ export default function HistoryModal({
                                       Хугацааны эхний үлдэгдэл:
                                     </td>
                                     <td colSpan={2} className="sticky bottom-[37px] z-10 bg-white dark:bg-slate-800/90 border-t border-r border-slate-400 dark:border-slate-600"></td>
+                                    <td className="sticky bottom-[37px] z-10 bg-white dark:bg-slate-800/90 py-1 px-2 text-[12px] text-slate-900 dark:text-slate-100 text-right border-t border-r border-slate-400 dark:border-slate-600">
+                                      {totalDiscounts > 0 ? `${formatCurrency(totalDiscounts)} ₮` : ""}
+                                    </td>
                                     <td className="sticky bottom-[37px] z-10 bg-white dark:bg-slate-800/90 py-1 px-2 text-[12px] font-bold text-slate-900 dark:text-slate-100 text-right border-t border-r border-slate-400 dark:border-slate-600">
                                       {formatCurrency(openingBalance)} ₮
                                     </td>
@@ -2437,6 +2492,9 @@ export default function HistoryModal({
                                 </td>
                                 <td className="sticky bottom-0 z-10 bg-white dark:bg-slate-800 py-1 px-2 text-[13px] font-bold text-black dark:text-slate-50 text-right whitespace-nowrap border-t-2 border-r border-slate-400 dark:border-slate-600">
                                   {formatCurrency(totalPayments)} ₮
+                                </td>
+                                <td className="sticky bottom-0 z-10 bg-white dark:bg-slate-800 py-1 px-2 text-[13px] font-bold text-black dark:text-slate-50 text-right whitespace-nowrap border-t-2 border-r border-slate-400 dark:border-slate-600">
+                                  {formatCurrency(totalDiscounts)} ₮
                                 </td>
                                 <td
                                   role="button"

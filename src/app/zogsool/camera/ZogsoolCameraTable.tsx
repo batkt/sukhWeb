@@ -237,7 +237,7 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
         render: (_: any, record: ParkingTransaction) => {
           const mur = record.tuukh?.[0];
           return (
-            <span className="text-slate-600 dark:text-slate-400 text-sm">
+            <span className="text-slate-600 dark:text-slate-400 text-[11px]">
               {record.turul || mur?.turul || "Үйлчлүүлэгч"}
             </span>
           );
@@ -247,12 +247,13 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
         title: "Хөнгөлөлт",
         key: "discount",
         width: 110,
-        align: "center",
+        align: "right",
         render: (_: any, record: ParkingTransaction) => {
           const mur = record.tuukh?.[0];
+          const disc = Number(mur?.khungulult || 0);
           return (
-            <span className="text-slate-600 dark:text-slate-400 text-sm">
-              {mur?.khungulult || "0"}
+            <span className="text-slate-600 dark:text-slate-400 font-mono text-[11px]">
+              {formatNumber(disc, 2)}
             </span>
           );
         },
@@ -263,8 +264,8 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
         width: 110,
         align: "right",
         render: (_: any, record: ParkingTransaction) => (
-          <span className="text-slate-700 dark:text-slate-300 font-mono text-sm">
-            {formatNumber(record.niitDun || 0)}
+          <span className="text-slate-700 dark:text-slate-300 font-mono text-[11px]">
+            {formatNumber(record.niitDun || 0, 2)}
           </span>
         ),
       },
@@ -286,18 +287,6 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
             payHistory = [rawTulbur];
           }
 
-          const labels: Record<string, string> = {
-            belen: "Бэлэн",
-            cash: "Бэлэн",
-            khaan: "Карт",
-            qpay: "QPay",
-            khariltsakh: "Дансаар",
-            transfer: "Дансаар",
-            khungulult: "Хөнгөлөлт",
-            discount: "Хөнгөлөлт",
-            free: "Үнэгүй",
-          };
-
           if (payHistory.length > 0) {
             const totalPaid = payHistory.reduce(
               (s: number, p: any) => s + (p.dun || 0),
@@ -305,8 +294,8 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
             );
             return (
               <div className="group/pay relative inline-block cursor-pointer">
-                <span className="text-sm text-slate-700 dark:text-slate-300 hover:text-blue-600 transition-colors border-b border-dashed border-slate-300 dark:border-slate-600 pb-0.5 font-mono">
-                  {formatNumber(totalPaid)}
+                <span className="text-[11px] text-slate-700 dark:text-slate-300 hover:text-blue-600 transition-colors border-b border-dashed border-slate-300 dark:border-slate-600 pb-0.5 font-mono">
+                  {formatNumber(totalPaid, 2)}
                   {payHistory.length > 1 && (
                     <span className="ml-1 text-[10px] text-slate-400">
                       ({payHistory.length})
@@ -317,16 +306,9 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
             );
           }
 
-          if (tulsunDun > 0) {
-            return (
-              <span className="text-sm text-slate-700 dark:text-slate-300 font-mono">
-                {formatNumber(tulsunDun)}
-              </span>
-            );
-          }
           return (
-            <span className="font-mono text-slate-700 dark:text-slate-300 text-sm">
-              -
+            <span className="font-mono text-slate-700 dark:text-slate-300 text-[11px]">
+              {formatNumber(tulsunDun || 0, 2)}
             </span>
           );
         },
@@ -339,8 +321,8 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
         render: (_: any, record: ParkingTransaction) => {
           const mur = record.tuukh?.[0];
           return (
-            <span className="text-slate-600 dark:text-slate-400 font-mono text-sm">
-              {mur?.ebarimtId || ""}
+            <span className="text-slate-600 dark:text-slate-400 font-mono text-[11px]">
+              {mur?.ebarimtId || "-"}
             </span>
           );
         },

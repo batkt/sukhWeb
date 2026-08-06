@@ -1717,7 +1717,7 @@ export default function InvoicingZardluud() {
                 format="YYYY-MM-DD"
                 classNames={{
                   input:
-                    "text-theme neu-panel placeholder:text-theme !h-[40px] !py-2 !w-[380px]",
+                    "text-slate-800 dark:text-slate-100 neu-panel placeholder:text-slate-400 dark:placeholder:text-slate-500 !h-[40px] !py-2 !w-[380px]",
                 }}
               />
               <div className="flex items-center gap-2">
