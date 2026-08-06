@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 export interface ButtonProps extends Omit<AntButtonProps, "size" | "variant" | "type"> {
   variant?: "primary" | "secondary" | "back" | "text" | "ghost" | "danger" | "success" | "warning";
-  size?: "sm" | "md" | "lg" | "small" | "middle" | "large";
+  size?: "sm" | "md" | "lg" | "small" | "middle" | "large" | "xs";
   isLoading?: boolean;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
@@ -37,9 +37,9 @@ const Button = React.forwardRef<HTMLElement, ButtonProps>(
   ) => {
     // Determine if type is a native HTML type
     const isHtmlType = type === "button" || type === "submit" || type === "reset";
-    
+
     // Determine Ant Design button type
-    const antType = isHtmlType 
+    const antType = isHtmlType
       ? (variant === "primary" ? "primary" : "default")
       : (type || (variant === "primary" ? "primary" : "default"));
 
@@ -88,11 +88,11 @@ const Button = React.forwardRef<HTMLElement, ButtonProps>(
           fullWidth && "w-full",
           className
         )}
-        style={{ 
-          display: 'inline-flex', 
-          alignItems: 'center', 
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
           justifyContent: 'center',
-          ...props.style 
+          ...props.style
         }}
         {...props}
       >

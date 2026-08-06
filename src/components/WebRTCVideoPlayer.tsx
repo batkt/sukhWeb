@@ -12,6 +12,14 @@ interface WebRTCVideoPlayerProps {
 
 type Status = "connecting" | "connected" | "failed" | "retrying";
 
+// How long to let a transient "disconnected" state try to recover on its own
+// before we tear the connection down and rebuild it. THIS is the fix for the
+// random reconnects: "disconnected" is not fatal and usually self-heals.
+const DISCONNECT_GRACE_MS = 6000;
+
+// Flip to false in production once you've confirmed the pattern in the console.
+const DEBUG = true;
+
 export default function WebRTCVideoPlayer({
   rtspUrl,
   barilgiinId,
@@ -22,34 +30,76 @@ export default function WebRTCVideoPlayer({
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
-  
+
   const [status, setStatus] = useState<Status>("connecting");
   const [errorMsg, setErrorMsg] = useState<string>("");
   const [isVisible, setIsVisible] = useState<boolean>(false);
   const [isTabVisible, setIsTabVisible] = useState<boolean>(true);
 
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const disconnectGraceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const disconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const retryCountRef = useRef(0);
   const mountedRef = useRef(true);
 
-  const stop = useCallback(() => {
+  // Keep the latest token / rtsp WITHOUT letting a change to them recreate
+  // `connect` and force the lifecycle effect to tear down a live stream.
+  // The token only matters for the signaling POST; the media stream does not
+  // depend on it once established.
+  const tokenRef = useRef(token);
+  const rtspRef = useRef(rtspUrl);
+  useEffect(() => { tokenRef.current = token; }, [token]);
+  useEffect(() => { rtspRef.current = rtspUrl; }, [rtspUrl]);
+
+  const log = useCallback(
+    (...args: any[]) => {
+      if (DEBUG) {
+        // eslint-disable-next-line no-console
+        console.log(`[webrtc ${barilgiinId}]`, new Date().toISOString(), ...args);
+      }
+    },
+    [barilgiinId]
+  );
+
+  const clearTimers = useCallback(() => {
     if (retryTimeoutRef.current) {
       clearTimeout(retryTimeoutRef.current);
       retryTimeoutRef.current = null;
     }
-    if (disconnectGraceRef.current) {
-      clearTimeout(disconnectGraceRef.current);
-      disconnectGraceRef.current = null;
+    if (disconnectTimerRef.current) {
+      clearTimeout(disconnectTimerRef.current);
+      disconnectTimerRef.current = null;
     }
+  }, []);
+
+  const stop = useCallback(() => {
+    clearTimers();
     if (pcRef.current) {
+      // Detach handlers first so close() doesn't fire a spurious retry.
+      pcRef.current.onconnectionstatechange = null;
+      pcRef.current.oniceconnectionstatechange = null;
+      pcRef.current.ontrack = null;
       pcRef.current.close();
       pcRef.current = null;
     }
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
-  }, []);
+  }, [clearTimers]);
+
+  // Lets scheduleRetry call the latest connect without a circular dependency.
+  const connectRef = useRef<() => void>(() => { });
+
+  const scheduleRetry = useCallback(() => {
+    if (!mountedRef.current) return;
+    clearTimers();
+    retryCountRef.current += 1;
+    const delay = Math.min(3000 * retryCountRef.current, 15000);
+    setStatus("retrying");
+    log("scheduling retry in", delay, "ms (attempt", retryCountRef.current, ")");
+    retryTimeoutRef.current = setTimeout(() => {
+      if (mountedRef.current) connectRef.current();
+    }, delay);
+  }, [clearTimers, log]);
 
   const connect = useCallback(async () => {
     if (!mountedRef.current) return;
@@ -58,10 +108,21 @@ export default function WebRTCVideoPlayer({
 
     setStatus("connecting");
     setErrorMsg("");
+    log("connecting…");
 
     try {
       const pc = new RTCPeerConnection({
-        iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+        iceServers: [
+          { urls: "stun:stun.l.google.com:19302" },
+          // If your cameras sit behind strict/symmetric NAT, add a TURN server.
+          // Without a relay, a dropped direct path == a hard failure with no
+          // fallback, which shows up as random "failed" reconnects.
+          // {
+          //   urls: "turn:YOUR_TURN_HOST:3478",
+          //   username: "user",
+          //   credential: "pass",
+          // },
+        ],
         iceCandidatePoolSize: 10,
       });
       pcRef.current = pc;
@@ -75,37 +136,45 @@ export default function WebRTCVideoPlayer({
           videoRef.current.srcObject = e.streams[0];
           setStatus("connected");
           retryCountRef.current = 0;
+          log("track received → connected");
         }
+      };
+
+      pc.oniceconnectionstatechange = () => {
+        log("iceConnectionState =", pc.iceConnectionState);
       };
 
       pc.onconnectionstatechange = () => {
         if (!mountedRef.current) return;
         const state = pc.connectionState;
+        log("connectionState =", state);
+
         if (state === "connected") {
-          // ICE self-healed after a transient blip - cancel any pending retry
-          if (disconnectGraceRef.current) {
-            clearTimeout(disconnectGraceRef.current);
-            disconnectGraceRef.current = null;
-          }
-          if (retryTimeoutRef.current) {
-            clearTimeout(retryTimeoutRef.current);
-            retryTimeoutRef.current = null;
+          // Recovered from a transient blip — cancel any pending teardown.
+          if (disconnectTimerRef.current) {
+            clearTimeout(disconnectTimerRef.current);
+            disconnectTimerRef.current = null;
+            log("recovered from disconnected — no reconnect needed");
           }
           setStatus("connected");
-          retryCountRef.current = 0;
-        } else if (state === "failed" || state === "closed") {
-          scheduleRetry();
         } else if (state === "disconnected") {
-          // "disconnected" is often a momentary ICE hiccup that recovers on its own -
-          // give it a grace period instead of tearing the connection down immediately
-          if (disconnectGraceRef.current) return;
-          disconnectGraceRef.current = setTimeout(() => {
-            disconnectGraceRef.current = null;
-            if (!mountedRef.current || pcRef.current !== pc) return;
-            if (pc.connectionState !== "connected") {
-              scheduleRetry();
-            }
-          }, 4000);
+          // NOT fatal. Give it a grace window to self-heal before rebuilding.
+          if (!disconnectTimerRef.current) {
+            log("disconnected — waiting", DISCONNECT_GRACE_MS, "ms before deciding");
+            disconnectTimerRef.current = setTimeout(() => {
+              disconnectTimerRef.current = null;
+              if (
+                mountedRef.current &&
+                pcRef.current?.connectionState !== "connected"
+              ) {
+                log("still not recovered → reconnecting");
+                scheduleRetry();
+              }
+            }, DISCONNECT_GRACE_MS);
+          }
+        } else if (state === "failed") {
+          // Truly dead — reconnect.
+          scheduleRetry();
         }
       };
 
@@ -115,9 +184,12 @@ export default function WebRTCVideoPlayer({
 
       // Wait for ICE gathering (max 1 s)
       await new Promise<void>((resolve) => {
-        if (pc.iceGatheringState === "complete") { resolve(); return; }
+        if (pc.iceGatheringState === "complete") {
+          resolve();
+          return;
+        }
         const check = () => {
-          if (pc.iceGatheringState === "complete") { resolve(); }
+          if (pc.iceGatheringState === "complete") resolve();
         };
         pc.addEventListener("icegatheringstatechange", check);
         setTimeout(resolve, 1000);
@@ -130,12 +202,14 @@ export default function WebRTCVideoPlayer({
       const signalingUrl = `${apiBase}/camera/stream/${barilgiinId}/stream`;
 
       const headers: HeadersInit = { "Content-Type": "application/json" };
-      if (token) headers["Authorization"] = `Bearer ${token}`;
+      const tk = tokenRef.current; // read latest token at request time
+      if (tk) (headers as Record<string, string>)["Authorization"] = `Bearer ${tk}`;
 
+      const currentRtsp = rtspRef.current;
       const res = await fetch(signalingUrl, {
         method: "POST",
         headers,
-        body: JSON.stringify({ sdp64, rtsp: rtspUrl, url: rtspUrl }),
+        body: JSON.stringify({ sdp64, rtsp: currentRtsp, url: currentRtsp }),
       });
 
       if (!mountedRef.current) return;
@@ -156,27 +230,23 @@ export default function WebRTCVideoPlayer({
 
       if (!answerSdp) throw new Error("No SDP in response");
 
-      await pc.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp: answerSdp }));
+      await pc.setRemoteDescription(
+        new RTCSessionDescription({ type: "answer", sdp: answerSdp })
+      );
+      log("remote description set — negotiation complete");
     } catch (err: any) {
       if (!mountedRef.current) return;
       const msg = err?.message ?? String(err);
+      log("connect error:", msg);
       setErrorMsg(msg);
       setStatus("failed");
       scheduleRetry();
     }
-  }, [rtspUrl, barilgiinId, token, stop]);
+  }, [barilgiinId, stop, scheduleRetry, log]);
 
-  const scheduleRetry = useCallback(() => {
-    if (!mountedRef.current) return;
-    retryCountRef.current += 1;
-    const delay = Math.min(3000 * retryCountRef.current, 15000);
-    setStatus("retrying");
-    retryTimeoutRef.current = setTimeout(() => {
-      retryTimeoutRef.current = null;
-      if (!mountedRef.current) return;
-      if (pcRef.current && pcRef.current.connectionState === "connected") return;
-      connect();
-    }, delay);
+  // Keep connectRef pointing at the latest connect for the retry scheduler.
+  useEffect(() => {
+    connectRef.current = connect;
   }, [connect]);
 
   // Viewport Intersection Observer (Lazy Loading)
@@ -184,30 +254,17 @@ export default function WebRTCVideoPlayer({
     const el = containerRef.current;
     if (!el) return;
 
-    let leaveTimer: ReturnType<typeof setTimeout> | null = null;
-
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
-          if (leaveTimer) {
-            clearTimeout(leaveTimer);
-            leaveTimer = null;
-          }
-          setIsVisible(true);
-        } else if (!leaveTimer) {
-          // debounce leaving the viewport so a brief layout shift doesn't tear the stream down
-          leaveTimer = setTimeout(() => {
-            leaveTimer = null;
-            setIsVisible(false);
-          }, 1000);
-        }
+        setIsVisible(entry.isIntersecting);
       },
-      { threshold: 0.05 } // triggers when even 5% of player is visible
+      // rootMargin keeps the player from flapping visible/hidden when it sits
+      // right at the viewport edge (which would otherwise cause reconnects).
+      { threshold: 0.01, rootMargin: "100px" }
     );
     observer.observe(el);
 
     return () => {
-      if (leaveTimer) clearTimeout(leaveTimer);
       observer.unobserve(el);
     };
   }, []);
@@ -224,7 +281,9 @@ export default function WebRTCVideoPlayer({
     };
   }, []);
 
-  // Manage Stream Lifecycle based on visibility & active states
+  // Manage Stream Lifecycle based on visibility & active states.
+  // NOTE: `token` is deliberately NOT a trigger here — it's read via tokenRef,
+  // so a token refresh no longer tears down a live stream.
   useEffect(() => {
     mountedRef.current = true;
     const shouldStream = isVisible && isTabVisible;
@@ -240,48 +299,6 @@ export default function WebRTCVideoPlayer({
       stop();
     };
   }, [rtspUrl, barilgiinId, isVisible, isTabVisible, connect, stop]);
-
-  // Freeze watchdog: pc.connectionState can stay "connected" while the actual
-  // media has stalled upstream (e.g. the RTSP source hiccups on the gate
-  // worker) - WebRTC gives us no event for that, so we watch for rendered
-  // frames directly and force a reconnect if none arrive for too long.
-  useEffect(() => {
-    if (status !== "connected") return;
-    const video = videoRef.current;
-    if (!video) return;
-
-    let lastProgressAt = Date.now();
-    const markProgress = () => {
-      lastProgressAt = Date.now();
-    };
-
-    const hasRvfc = typeof (video as any).requestVideoFrameCallback === "function";
-    let rafActive = true;
-    if (hasRvfc) {
-      const onFrame = () => {
-        if (!rafActive) return;
-        markProgress();
-        (video as any).requestVideoFrameCallback(onFrame);
-      };
-      (video as any).requestVideoFrameCallback(onFrame);
-    } else {
-      video.addEventListener("timeupdate", markProgress);
-    }
-
-    const STALL_MS = 8000;
-    const watchdog = setInterval(() => {
-      if (Date.now() - lastProgressAt > STALL_MS) {
-        console.warn("[WebRTCVideoPlayer] No frames for", STALL_MS, "ms while connected - forcing reconnect");
-        scheduleRetry();
-      }
-    }, 3000);
-
-    return () => {
-      rafActive = false;
-      clearInterval(watchdog);
-      if (!hasRvfc) video.removeEventListener("timeupdate", markProgress);
-    };
-  }, [status, scheduleRetry]);
 
   return (
     <div ref={containerRef} className={`relative w-full h-full bg-black ${className ?? ""}`} style={style}>
