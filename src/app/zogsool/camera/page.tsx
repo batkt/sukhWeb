@@ -2521,6 +2521,7 @@ export default function Camera() {
         {selectedTransaction && createPortal(
           <PaymentModal
             transaction={selectedTransaction}
+            token={token || ""}
             onClose={() => setSelectedTransaction(null)}
             onConfirm={async (amount, method, extraData) => {
               try {

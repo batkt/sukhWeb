@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useSearchParams } from "next/navigation";
 import { notification, Select } from "antd";
 import { mutate } from "swr";
@@ -103,6 +104,7 @@ export default function SanalKhuselt() {
   const [replyInput, setReplyInput] = useState("");
   const [replySending, setReplySending] = useState(false);
   const [replyImage, setReplyImage] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [replyVoiceBlob, setReplyVoiceBlob] = useState<Blob | null>(null);
   const [recording, setRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -986,6 +988,7 @@ export default function SanalKhuselt() {
   });
 
   return (
+    <>
     <div className="h-[calc(100vh-64px)] p-4 md:p-6 flex flex-col gap-6 overflow-hidden relative">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -1500,19 +1503,18 @@ export default function SanalKhuselt() {
                                       {paths.map((path, i) => {
                                         const url = `${base}/medegdel/${path}`;
                                         return (
-                                          <a
+                                          <button
                                             key={i}
-                                            href={url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="block rounded-xl overflow-hidden max-w-[140px]"
+                                            type="button"
+                                            onClick={() => setImagePreviewUrl(url)}
+                                            className="block rounded-xl overflow-hidden max-w-[140px] cursor-zoom-in hover:opacity-90 transition-opacity"
                                           >
                                             <img
                                               src={url}
                                               alt=""
                                               className="w-full h-auto object-cover"
                                             />
-                                          </a>
+                                          </button>
                                         );
                                       })}
                                     </div>
@@ -1679,5 +1681,33 @@ export default function SanalKhuselt() {
         </motion.div>
       </div>
     </div>
+
+    {imagePreviewUrl && createPortal(
+      <div
+        className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm"
+        onClick={() => setImagePreviewUrl(null)}
+      >
+        <div
+          className="relative max-w-[90vw] max-h-[90vh] flex items-center justify-center"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <img
+            src={imagePreviewUrl}
+            alt="Зураг"
+            className="max-w-full max-h-[85vh] rounded-2xl shadow-2xl object-contain"
+          />
+          <button
+            type="button"
+            onClick={() => setImagePreviewUrl(null)}
+            className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full w-8 h-8 flex items-center justify-center transition-colors"
+            aria-label="Хаах"
+          >
+            ✕
+          </button>
+        </div>
+      </div>,
+      document.body
+    )}
+    </>
   );
 }

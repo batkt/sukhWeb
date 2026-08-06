@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { type Uilchluulegch } from "@/lib/useParkingSocket";
 import formatNumber from "../../../../tools/function/formatNumber";
-import { socket } from "@/lib/uilchilgee";
+import uilchilgee, { socket, getErrorMessage } from "@/lib/uilchilgee";
 import { toast } from "react-hot-toast";
 import moment from "moment";
 
@@ -32,6 +32,7 @@ interface TulburEntry {
 
 interface PaymentModalProps {
   transaction: Uilchluulegch;
+  token?: string;
   onClose: () => void;
   onConfirm?: (amount: number, method: string, extraData?: any) => void;
 }
@@ -134,6 +135,7 @@ function accentClasses(accent: string, isActive: boolean) {
 
 export default function PaymentModal({
   transaction,
+  token,
   onClose,
   onConfirm,
 }: PaymentModalProps) {
@@ -163,6 +165,10 @@ export default function PaymentModal({
   const [processingTurul, setProcessingTurul] = useState<string | null>(null);
   const [ebarimtType, setEbarimtType] = useState<"1" | "3">("1");
   const [register, setRegister] = useState("");
+  const [resolvedTin, setResolvedTin] = useState<string | null>(null);
+  const [resolvedOrgName, setResolvedOrgName] = useState<string | null>(null);
+  const [tinResolving, setTinResolving] = useState(false);
+  const [tinError, setTinError] = useState<string | null>(null);
   const [discountReason, setDiscountReason] = useState("");
   const [activeMethod, setActiveMethod] = useState<string>("belen");
   const [qpayData, setQpayData] = useState<any>(null);
@@ -297,6 +303,65 @@ export default function PaymentModal({
     [effectiveNiitDun],
   );
 
+  /* ─── Org TIN resolution (register number -> real TIN via ebarimt.mn) ─── */
+
+  useEffect(() => {
+    setResolvedTin(null);
+    setResolvedOrgName(null);
+    setTinError(null);
+
+    if (ebarimtType !== "3") return;
+
+    const cleaned = register.trim();
+    if (!/^\d{7}$/.test(cleaned)) return;
+
+    let cancelled = false;
+    setTinResolving(true);
+    const timer = setTimeout(async () => {
+      try {
+        const resp = await uilchilgee(token || "").get(
+          `/tatvaraasBaiguullagaAvya/${cleaned}`,
+        );
+        if (cancelled) return;
+        const data = resp.data || {};
+        if (!data.tin) throw new Error("Татварын дугаар олдсонгүй");
+        setResolvedTin(data.tin.toString());
+        setResolvedOrgName(data.name || data.orgName || data.aimagOrRegNer || null);
+      } catch (err) {
+        if (cancelled) return;
+        setTinError(getErrorMessage(err));
+      } finally {
+        if (!cancelled) setTinResolving(false);
+      }
+    }, 500);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [register, ebarimtType, token]);
+
+  const ensureTinResolved = useCallback(() => {
+    if (ebarimtType !== "3") return true;
+    if (tinResolving) {
+      toast.error("Татварын дугаар шалгаж байна, түр хүлээнэ үү");
+      return false;
+    }
+    if (!resolvedTin) {
+      toast.error("Байгууллагын регистрийг зөв оруулж, татварын дугаарыг баталгаажуулна уу");
+      return false;
+    }
+    return true;
+  }, [ebarimtType, tinResolving, resolvedTin]);
+
+  const buildEbarimtPayload = useCallback(
+    () => ({
+      type: ebarimtType,
+      register: ebarimtType === "3" ? resolvedTin ?? undefined : undefined,
+    }),
+    [ebarimtType, resolvedTin],
+  );
+
   /* ─── Save ─── */
 
   const guilgeeniiTuukhKhadgalya = useCallback(() => {
@@ -321,22 +386,23 @@ export default function PaymentModal({
       return;
     }
 
+    if (!ensureTinResolved()) return;
+
     if (onConfirm) {
       const totalPaid = validTulbur.reduce((s, t) => s + t.dun, 0);
       onConfirm(totalPaid, validTulbur[0]?.turul || "belen", {
         tulbur: validTulbur,
-        ebarimt: {
-          type: ebarimtType,
-          register: ebarimtType === "3" ? register : undefined,
-        },
+        ebarimt: buildEbarimtPayload(),
       });
     }
-  }, [tulbur, effectiveNiitDun, onConfirm, ebarimtType, register]);
+  }, [tulbur, effectiveNiitDun, onConfirm, ensureTinResolved, buildEbarimtPayload]);
 
   /* ─── F4 quick-pay ─── */
 
   const f4Darsan = useCallback(() => {
     if (tulbur.length === 0) {
+      if (!ensureTinResolved()) return;
+
       if (activeMethod === "khungulult") {
         if (!discountReason) {
           toast.error("Хөнгөлөлтийн тайлбар оруулна уу");
@@ -353,7 +419,7 @@ export default function PaymentModal({
         if (onConfirm) {
           onConfirm(effectiveNiitDun, "khungulult", {
             tulbur: [entry],
-            ebarimt: { type: ebarimtType, register: ebarimtType === "3" ? register : undefined },
+            ebarimt: buildEbarimtPayload(),
           });
         }
         return;
@@ -368,7 +434,7 @@ export default function PaymentModal({
       if (onConfirm) {
         onConfirm(effectiveNiitDun, activeMethod, {
           tulbur: [entry],
-          ebarimt: { type: ebarimtType, register: ebarimtType === "3" ? register : undefined },
+          ebarimt: buildEbarimtPayload(),
         });
       }
     } else {
@@ -380,8 +446,8 @@ export default function PaymentModal({
     activeMethod,
     discountReason,
     onConfirm,
-    ebarimtType,
-    register,
+    ensureTinResolved,
+    buildEbarimtPayload,
     guilgeeniiTuukhKhadgalya,
   ]);
 
@@ -425,15 +491,13 @@ export default function PaymentModal({
       }
       if (e.key === "F7") {
         e.preventDefault();
+        if (!ensureTinResolved()) return;
         if (onConfirm)
           onConfirm(0, "belen", {
             tulbur: [
               { turul: "belen", dun: 0, ognoo: new Date().toISOString() },
             ],
-            ebarimt: {
-              type: ebarimtType,
-              register: ebarimtType === "3" ? register : undefined,
-            },
+            ebarimt: buildEbarimtPayload(),
           });
         return;
       }
@@ -448,7 +512,7 @@ export default function PaymentModal({
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isProcessing, f4Darsan, ebarimtType, register, onConfirm, onClose]);
+  }, [isProcessing, f4Darsan, ensureTinResolved, buildEbarimtPayload, onConfirm, onClose]);
 
   /* ─── QPay Socket ─── */
 
@@ -759,13 +823,33 @@ export default function PaymentModal({
                   </div>
                 </div>
                 {ebarimtType === "3" && (
-                  <input
-                    type="text"
-                    placeholder="Байгууллагын регистер"
-                    value={register}
-                    onChange={(e) => setRegister(e.target.value)}
-                    className="w-full h-10 px-4 rounded-xl border border-slate-200 dark:border-white/[0.1] bg-white dark:bg-white/[0.04] text-[13px]  text-slate-800 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 outline-none transition-all"
-                  />
+                  <div className="space-y-1.5">
+                    <input
+                      type="text"
+                      placeholder="Байгууллагын регистер (7 оронтой)"
+                      value={register}
+                      onChange={(e) => setRegister(e.target.value)}
+                      maxLength={7}
+                      className="w-full h-10 px-4 rounded-xl border border-slate-200 dark:border-white/[0.1] bg-white dark:bg-white/[0.04] text-[13px]  text-slate-800 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 outline-none transition-all"
+                    />
+                    {tinResolving && (
+                      <p className="flex items-center gap-1.5 text-[11px] text-slate-400 dark:text-slate-500 px-1">
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        Татварын дугаар шалгаж байна...
+                      </p>
+                    )}
+                    {!tinResolving && resolvedTin && (
+                      <p className="flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400 px-1">
+                        <Check className="w-3 h-3" />
+                        {resolvedOrgName ? `${resolvedOrgName} — ` : ""}ТТД: {resolvedTin}
+                      </p>
+                    )}
+                    {!tinResolving && tinError && (
+                      <p className="text-[11px] text-rose-500 dark:text-rose-400 px-1">
+                        {tinError}
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
 
@@ -886,6 +970,7 @@ export default function PaymentModal({
               <div className="grid grid-cols-2 gap-2.5">
                 <button
                   onClick={() => {
+                    if (!ensureTinResolved()) return;
                     if (onConfirm)
                       onConfirm(0, "belen", {
                         tulbur: [
@@ -895,10 +980,7 @@ export default function PaymentModal({
                             ognoo: new Date().toISOString(),
                           },
                         ],
-                        ebarimt: {
-                          type: ebarimtType,
-                          register: ebarimtType === "3" ? register : undefined,
-                        },
+                        ebarimt: buildEbarimtPayload(),
                       });
                   }}
                   disabled={isProcessing}
