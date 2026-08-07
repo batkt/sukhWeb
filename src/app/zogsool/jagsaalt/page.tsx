@@ -214,6 +214,15 @@ export default function Jagsaalt() {
 
       if (status === "active") {
         query["tuukh.garsanKhaalga"] = { $exists: false };
+      } else if (status === "cancelled") {
+        query.$or = [
+          { "tuukh.tuluv": -2 },
+          { "tuukh.tuluv": -1 },
+          { "tuukh.0.tuluv": -2 },
+          { "tuukh.0.tuluv": -1 },
+          { gereeniiTuluv: "Цуцлагдсан" },
+          { "geree.gereeniiTuluv": "Цуцлагдсан" }
+        ];
       } else if (status === "paid") {
         query["tuukh.tuluv"] = { $in: [1, 2] };
       } else if (status === "unpaid") {
@@ -394,7 +403,7 @@ export default function Jagsaalt() {
       1: "Төлсөн", 2: "Төлсөн", 0: "Идэвхтэй", [-2]: "Идэвхтэй", [-4]: "Төлбөртэй",
     };
 
-    const rows = vehicles.map((t, i) => {
+    const rows: any[] = vehicles.map((t, i) => {
       const mur = t.tuukh?.[0];
       const tsag = mur?.tsagiinTuukh?.[0];
       const orsonTsag = tsag?.orsonTsag;
@@ -434,15 +443,28 @@ export default function Jagsaalt() {
           ? STATUS_LABEL[tuluv] ?? "Гарсан"
           : niitDun > 0 ? "Төлбөртэй" : "Гарсан";
 
+      const gereeTuluv = (() => {
+        if ((t as any).tsutsalsanOgnoo || (t as any).geree?.tsutsalsanOgnoo || (t as any).gereeniiTuluv === "Цуцалсан" || (t as any).geree?.tuluv === "Цуцалсан") {
+          return "Цуцалсан";
+        }
+        const raw = (t as any).gereeTuluv || (t as any).gereeniiTuluv || (t as any).geree?.gereeniiTuluv || (t as any).geree?.tuluv || (t as any).geree?.status;
+        if (!raw) return t.turul || "Идэвхтэй";
+        const s = String(raw).toLowerCase();
+        if (s.includes("цуц") || s.includes("cancel")) return "Цуцалсан";
+        if (s.includes("идэвх") || s.includes("active")) return "Идэвхтэй";
+        return String(raw);
+      })();
+
       return {
         "№": i + 1,
         "Улсын дугаар": t.mashiniiDugaar || "",
+        "Гэрээний төлөв": gereeTuluv,
         "Орсон": orsonTsag ? moment(orsonTsag).format("YYYY-MM-DD HH:mm:ss") : "",
         "Гарсан": garsanTsag ? moment(garsanTsag).format("YYYY-MM-DD HH:mm:ss") : "",
         "Хугацаа": khugatsaa,
-        "Бодогдсон дүн": niitDun || "",
-        "Төлбөр": paymentAmount || "",
-        "Хөнгөлөлт": discountAmount || "",
+        "Бодогдсон дүн": Number((niitDun || 0).toFixed(2)),
+        "Төлбөр": Number((paymentAmount || 0).toFixed(2)),
+        "Хөнгөлөлт": Number((discountAmount || 0).toFixed(2)),
         "Төлөв": status,
         "Шалтгаан": t.zurchil || "",
         "Бүртгэсэн": mur?.burtgesenAjiltaniiNer || "",
@@ -450,19 +472,67 @@ export default function Jagsaalt() {
       };
     });
 
+    // Calculate totals across all vehicles
+    const totalNiitDun = vehicles.reduce((sum, t) => sum + (Number(t.niitDun) || 0), 0);
+    const totalPaymentAmount = vehicles.reduce((sum, t) => {
+      const tulburArray = t.tuukh?.[0]?.tulbur || [];
+      const totalPaid = Array.isArray(tulburArray)
+        ? tulburArray.reduce((s: number, p: any) => {
+            const turul = p.turul || "";
+            const dun = p.dun || 0;
+            if (turul === "discount" || turul === "khungulult" || turul === "Хөнгөлөлт" || dun < 0) return s;
+            return s + dun;
+          }, 0)
+        : 0;
+      return sum + totalPaid;
+    }, 0);
+    const totalDiscountAmount = vehicles.reduce((sum, t) => {
+      const tulburArray = t.tuukh?.[0]?.tulbur || [];
+      const totalDiscount = Array.isArray(tulburArray)
+        ? tulburArray.reduce((s: number, p: any) => {
+            const turul = p.turul || "";
+            const dun = p.dun || 0;
+            if (turul === "discount" || turul === "khungulult" || turul === "Хөнгөлөлт" || dun < 0) {
+              return s + Math.abs(dun);
+            }
+            return s;
+          }, 0)
+        : 0;
+      return sum + totalDiscount;
+    }, 0);
+
+    // Append Total Summary Row
+    rows.push({
+      "№": "НИЙТ",
+      "Улсын дугаар": "",
+      "Гэрээний төлөв": "",
+      "Орсон": "",
+      "Гарсан": "",
+      "Хугацаа": "",
+      "Бодогдсон дүн": Number(totalNiitDun.toFixed(2)),
+      "Төлбөр": Number(totalPaymentAmount.toFixed(2)),
+      "Хөнгөлөлт": Number(totalDiscountAmount.toFixed(2)),
+      "Төлөв": "",
+      "Шалтгаан": "",
+      "Бүртгэсэн": "",
+      "И-Баримт": "",
+    });
+
     const ws = XLSX.utils.json_to_sheet(rows);
     ws["!cols"] = [
-      { wch: 5 }, { wch: 14 }, { wch: 14 }, { wch: 20 }, { wch: 20 },
-      { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 12 },
-      { wch: 20 }, { wch: 16 }, { wch: 14 },
+      { wch: 8 }, { wch: 14 }, { wch: 16 }, { wch: 20 }, { wch: 20 }, { wch: 12 },
+      { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 14 }, { wch: 20 },
+      { wch: 16 }, { wch: 14 },
     ];
 
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Жагсаалт");
+    XLSX.utils.book_append_sheet(wb, ws, "Зогсоолын жагсаалт");
 
-    const fileName = `zogsool_${rangeStart || "all"}_${rangeEnd || "all"}.xlsx`;
+    const startDateStr = rangeStart || "бүгд";
+    const endDateStr = rangeEnd || "бүгд";
+    const fileName = `Зогсоолын_жагсаалт_${startDateStr}_${endDateStr}.xlsx`;
     XLSX.writeFile(wb, fileName);
-    toast.success(`${rows.length} мөр татагдлаа`);
+    toast.success(`${vehicles.length} мөр мэдээлэл (Нийт дүнтэй) татагдлаа`);
   };
 
   return (

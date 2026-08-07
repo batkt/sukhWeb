@@ -2292,6 +2292,25 @@ export default function DansniiKhuulga() {
         const ekhniiAmt =
           item?.ekhniiUldegdel ?? item?._ekhniiUldegdelAmount ?? 0;
 
+        const discountAmount =
+          Number(item?.khungulult || item?.discount || item?._khungulultAmount || 0) ||
+          (Array.isArray(item?.medeelel?.khungulultuud)
+            ? item.medeelel.khungulultuud.reduce((s: number, k: any) => s + Number(k.dun || k.khungulultiinDun || 0), 0)
+            : 0);
+
+        const gereeTuluv = (() => {
+          const contractObj = item?.gereeniiDugaar ? (contractsByNumber as any)[String(item.gereeniiDugaar)] : null;
+          if (item?.tsutsalsanOgnoo || contractObj?.tsutsalsanOgnoo || item?.tuluv === "Цуцалсан" || contractObj?.tuluv === "Цуцалсан") {
+            return "Цуцалсан";
+          }
+          const raw = item?.gereeniiTuluv || item?.gereeTuluv || contractObj?.gereeniiTuluv || contractObj?.tuluv || item?.status;
+          if (!raw) return "Идэвхтэй";
+          const s = String(raw).toLowerCase();
+          if (s.includes("цуц") || s.includes("cancel")) return "Цуцалсан";
+          if (s.includes("идэвх") || s.includes("active")) return "Идэвхтэй";
+          return String(raw);
+        })();
+
         return {
           dugaar: index + 1,
           ner: item?.ner || "",
@@ -2302,9 +2321,11 @@ export default function DansniiKhuulga() {
           orts: item?.orts || "",
           davkhar: item?.davkhar || "",
           gereeniiDugaar: item?.gereeniiDugaar || "",
-          ekhniiUldegdel: parseFloat(String(ekhniiAmt)).toFixed(2),
-          uldegdel: parseFloat(String(currentBalance)).toFixed(2),
-          guitsetgel: parseFloat(String(paidAmount)).toFixed(2),
+          turul: item?.turul || "Үндсэн",
+          gereeniiTuluv: gereeTuluv,
+          uldegdel: Number(parseFloat(String(currentBalance)).toFixed(2)),
+          guitsetgel: Number(parseFloat(String(paidAmount)).toFixed(2)),
+          khungulult: Number(parseFloat(String(discountAmount)).toFixed(2)),
           tuluv: odooTuluv,
         };
       });
@@ -2319,9 +2340,11 @@ export default function DansniiKhuulga() {
           { key: "orts", label: "Орц" },
           { key: "davkhar", label: "Давхар" },
           { key: "gereeniiDugaar", label: "Гэрээний дугаар" },
-          { key: "ekhniiUldegdel", label: "Эхний үлдэгдэл" },
+          { key: "turul", label: "Төрөл" },
+          { key: "gereeniiTuluv", label: "Гэрээний төлөв" },
           { key: "uldegdel", label: "Үлдэгдэл" },
           { key: "guitsetgel", label: "Гүйцэтгэл" },
+          { key: "khungulult", label: "Хөнгөлөлт" },
           { key: "tuluv", label: "Төлөв" },
         ],
         fileName: `tolborder_jagsaalt_${new Date().toISOString().split("T")[0]}`,

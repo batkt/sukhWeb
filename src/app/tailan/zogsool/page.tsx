@@ -235,7 +235,17 @@ export default function ZogsoolTailanPage() {
         row.tulsunDun,
         row.uldegdelTulbur,
       ]);
-      fileName = "resident_parking_summary";
+      // Append summary total row
+      dataToExport.push([
+        "НИЙТ",
+        '""',
+        niit.urisanMachinToo,
+        niit.niitTulbur,
+        niit.khungulultMinut,
+        niit.tulsunDun,
+        niit.uldegdelTulbur,
+      ]);
+      fileName = "Зогсоолын_оршин_суугчдын_нэгтгэл";
     } else if (activeTab === "guestDetail") {
       headers = [
         "№",
@@ -245,7 +255,12 @@ export default function ZogsoolTailanPage() {
         "Төлбөр",
         "Төлөв",
       ];
-      dataToExport = (displayDetail || []).map((row, idx) => [
+      const detailList = displayDetail || [];
+      const totalZogsson = detailList.reduce((s, r) => s + (r.zogssonMinut || 0), 0);
+      const totalKhungulsun = detailList.reduce((s, r) => s + (r.khungulsunMinut || 0), 0);
+      const totalTulbur = detailList.reduce((s, r) => s + (r.tulbur || 0), 0);
+
+      dataToExport = detailList.map((row, idx) => [
         idx + 1,
         `"${row.mashiniiDugaar || ""}"`,
         row.zogssonMinut,
@@ -253,7 +268,16 @@ export default function ZogsoolTailanPage() {
         row.tulbur,
         `"${row.tuluv || ""}"`,
       ]);
-      fileName = "guest_parking_detail";
+      // Append summary total row
+      dataToExport.push([
+        "НИЙТ",
+        '""',
+        totalZogsson,
+        totalKhungulsun,
+        totalTulbur,
+        '""',
+      ]);
+      fileName = "Зогсоолын_зочдын_дэлгэрэнгүй";
     } else {
       headers = [
         "№",
@@ -269,7 +293,7 @@ export default function ZogsoolTailanPage() {
         `"${row.davkhar || ""}"`,
         `"${row.utas || ""}"`,
       ]);
-      fileName = "guest_car_list";
+      fileName = "Зогсоолын_зочдын_жагсаалт";
     }
 
     const csvContent = [
