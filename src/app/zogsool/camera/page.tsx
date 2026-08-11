@@ -983,7 +983,7 @@ export default function Camera() {
     });
 
     exitCameras.forEach((cam) => {
-      const e1 = `zogsoolGarakh${bId}${cam.cameraIP}`;
+      const e1 = `zogsoolGarah${bId}${cam.cameraIP}`;
       const e2 = `zogsoolGarahTulsun${bId}${cam.cameraIP}`;
 
       s.on(e1, handleGarah);

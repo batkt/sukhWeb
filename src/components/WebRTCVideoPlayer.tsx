@@ -20,6 +20,45 @@ const DISCONNECT_GRACE_MS = 6000;
 // Flip to false in production once you've confirmed the pattern in the console.
 const DEBUG = true;
 
+// ICE configuration.
+//
+// STUN alone is not enough here: viewers on mobile carriers sit behind
+// symmetric CGNAT (the mapped port changes on every attempt), and the camera
+// side is behind a port-translating NAT too. Symmetric-to-symmetric hole
+// punching does not work, so the only direct path that ever succeeds is IPv6 —
+// and when IPv6 is unavailable there is nothing to fall back to, which is what
+// made the stream appear randomly broken.
+//
+// TURN fixes that: both peers connect *outbound* to the relay (which always
+// works through NAT) and media flows via the relay whenever a direct path
+// can't be established.
+//
+// Credentials are client-visible by nature, so they live in NEXT_PUBLIC_* env
+// vars rather than in git. If TURN_URL is unset the player still works over
+// STUN/IPv6 exactly as before — it just loses the fallback.
+const TURN_URL = process.env.NEXT_PUBLIC_TURN_URL;
+const TURN_USER = process.env.NEXT_PUBLIC_TURN_USER;
+const TURN_PASS = process.env.NEXT_PUBLIC_TURN_PASS;
+
+const ICE_SERVERS: RTCIceServer[] = [
+  { urls: "stun:stun.l.google.com:19302" },
+  ...(TURN_URL && TURN_USER && TURN_PASS
+    ? [
+        {
+          // UDP first (lowest latency), then TCP/TLS for networks that block
+          // UDP outright.
+          urls: [
+            `turn:${TURN_URL}:3478?transport=udp`,
+            `turn:${TURN_URL}:3478?transport=tcp`,
+            `turns:${TURN_URL}:5349?transport=tcp`,
+          ],
+          username: TURN_USER,
+          credential: TURN_PASS,
+        },
+      ]
+    : []),
+];
+
 export default function WebRTCVideoPlayer({
   rtspUrl,
   barilgiinId,
@@ -38,6 +77,7 @@ export default function WebRTCVideoPlayer({
 
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const disconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const visibilityDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const retryCountRef = useRef(0);
   const mountedRef = useRef(true);
 
@@ -68,6 +108,10 @@ export default function WebRTCVideoPlayer({
     if (disconnectTimerRef.current) {
       clearTimeout(disconnectTimerRef.current);
       disconnectTimerRef.current = null;
+    }
+    if (visibilityDebounceRef.current) {
+      clearTimeout(visibilityDebounceRef.current);
+      visibilityDebounceRef.current = null;
     }
   }, []);
 
@@ -112,17 +156,7 @@ export default function WebRTCVideoPlayer({
 
     try {
       const pc = new RTCPeerConnection({
-        iceServers: [
-          { urls: "stun:stun.l.google.com:19302" },
-          // If your cameras sit behind strict/symmetric NAT, add a TURN server.
-          // Without a relay, a dropped direct path == a hard failure with no
-          // fallback, which shows up as random "failed" reconnects.
-          // {
-          //   urls: "turn:YOUR_TURN_HOST:3478",
-          //   username: "user",
-          //   credential: "pass",
-          // },
-        ],
+        iceServers: ICE_SERVERS,
         iceCandidatePoolSize: 10,
       });
       pcRef.current = pc;
@@ -134,6 +168,11 @@ export default function WebRTCVideoPlayer({
         if (!mountedRef.current) return;
         if (e.track.kind === "video" && e.streams[0] && videoRef.current) {
           videoRef.current.srcObject = e.streams[0];
+          // Explicitly call play() — autoPlay on a display:none element is
+          // unreliable across browsers. This is the authoritative play trigger.
+          videoRef.current.play().catch((err) =>
+            log("play() error (usually safe to ignore):", err)
+          );
           setStatus("connected");
           retryCountRef.current = 0;
           log("track received → connected");
@@ -157,6 +196,12 @@ export default function WebRTCVideoPlayer({
             log("recovered from disconnected — no reconnect needed");
           }
           setStatus("connected");
+          // Re-trigger play() in case the stream stalled during the blip.
+          if (videoRef.current && videoRef.current.srcObject) {
+            videoRef.current.play().catch((err) =>
+              log("re-play() error:", err)
+            );
+          }
         } else if (state === "disconnected") {
           // NOT fatal. Give it a grace window to self-heal before rebuilding.
           if (!disconnectTimerRef.current) {
@@ -250,22 +295,35 @@ export default function WebRTCVideoPlayer({
   }, [connect]);
 
   // Viewport Intersection Observer (Lazy Loading)
+  // Uses a debounce to avoid rapid isVisible flapping from layout shifts,
+  // which was causing spurious stop()+connect() cycles every ~5-6 seconds.
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        setIsVisible(entry.isIntersecting);
+        const nowVisible = entry.isIntersecting;
+        if (visibilityDebounceRef.current) {
+          clearTimeout(visibilityDebounceRef.current);
+        }
+        // Delay visibility-false a bit so a quick scroll-off/back-on
+        // does not tear down a perfectly good stream.
+        const delay = nowVisible ? 0 : 800;
+        visibilityDebounceRef.current = setTimeout(() => {
+          visibilityDebounceRef.current = null;
+          setIsVisible(nowVisible);
+        }, delay);
       },
-      // rootMargin keeps the player from flapping visible/hidden when it sits
-      // right at the viewport edge (which would otherwise cause reconnects).
-      { threshold: 0.01, rootMargin: "100px" }
+      { threshold: 0.01, rootMargin: "120px" }
     );
     observer.observe(el);
 
     return () => {
       observer.unobserve(el);
+      if (visibilityDebounceRef.current) {
+        clearTimeout(visibilityDebounceRef.current);
+      }
     };
   }, []);
 
@@ -284,12 +342,21 @@ export default function WebRTCVideoPlayer({
   // Manage Stream Lifecycle based on visibility & active states.
   // NOTE: `token` is deliberately NOT a trigger here — it's read via tokenRef,
   // so a token refresh no longer tears down a live stream.
+  // NOTE: `isVisible` changes that go false→true will call connect() only if the
+  // PC is not already live, avoiding unnecessary reconnects from layout shifts.
   useEffect(() => {
     mountedRef.current = true;
     const shouldStream = isVisible && isTabVisible;
 
     if (shouldStream) {
-      connect();
+      // Only reconnect if there is no active peer connection already running.
+      const alreadyConnected =
+        pcRef.current !== null &&
+        (pcRef.current.connectionState === "connected" ||
+          pcRef.current.connectionState === "connecting");
+      if (!alreadyConnected) {
+        connect();
+      }
     } else {
       stop();
     }
@@ -298,6 +365,8 @@ export default function WebRTCVideoPlayer({
       mountedRef.current = false;
       stop();
     };
+    // rtspUrl / barilgiinId changes are intentional full-reconnect triggers.
+    // isVisible / isTabVisible changes use the guard above to avoid spurious reconnects.
   }, [rtspUrl, barilgiinId, isVisible, isTabVisible, connect, stop]);
 
   return (
@@ -308,7 +377,15 @@ export default function WebRTCVideoPlayer({
         muted
         playsInline
         className="w-full h-full object-contain"
-        style={{ display: status === "connected" ? "block" : "none" }}
+        style={{
+          // Use opacity/visibility instead of display:none.
+          // display:none removes the element from layout, which causes browsers
+          // to silently reject autoPlay on the stream when the element reappears.
+          // opacity+visibility keeps the element in the render tree so play() works.
+          opacity: status === "connected" ? 1 : 0,
+          visibility: status === "connected" ? "visible" : "hidden",
+          position: status === "connected" ? "relative" : "absolute",
+        }}
       />
 
       {status !== "connected" && (
