@@ -17,6 +17,10 @@ type Status = "connecting" | "connected" | "failed" | "retrying";
 // random reconnects: "disconnected" is not fatal and usually self-heals.
 const DISCONNECT_GRACE_MS = 6000;
 
+// Upper bound on ICE gathering before the offer is sent anyway. Must comfortably
+// exceed a TURN Allocate round trip (see the gathering block below for why).
+const ICE_GATHER_TIMEOUT_MS = 5000;
+
 // Flip to false in production once you've confirmed the pattern in the console.
 const DEBUG = true;
 
@@ -115,7 +119,14 @@ export default function WebRTCVideoPlayer({
     }
   }, []);
 
+  // Bumped on every teardown. connect() is async, so a connect that started
+  // before a prop change can still be mid-await when we tear its peer
+  // connection down; comparing against this lets that stale run bail out
+  // instead of reporting its (irrelevant) failure over a newer, working one.
+  const connectEpochRef = useRef(0);
+
   const stop = useCallback(() => {
+    connectEpochRef.current += 1;
     clearTimers();
     if (pcRef.current) {
       // Detach handlers first so close() doesn't fire a spurious retry.
@@ -148,7 +159,19 @@ export default function WebRTCVideoPlayer({
   const connect = useCallback(async () => {
     if (!mountedRef.current) return;
     stop();
-    if (!barilgiinId) return;
+
+    // Claim this run. stop() above bumped the epoch, so any earlier in-flight
+    // connect() is now stale and will silently abandon itself.
+    const epoch = connectEpochRef.current;
+    const isStale = () => !mountedRef.current || connectEpochRef.current !== epoch;
+
+    // Props arrive empty on first paint (both call sites pass `barilgiinId ?? ""`
+    // while the building config loads). Bail quietly — the lifecycle effect
+    // re-runs and calls us again once the real value lands.
+    if (!barilgiinId) {
+      log("no barilgiinId yet — waiting for config");
+      return;
+    }
 
     setStatus("connecting");
     setErrorMsg("");
@@ -227,17 +250,46 @@ export default function WebRTCVideoPlayer({
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 
-      // Wait for ICE gathering (max 1 s)
+      // Wait for ICE gathering.
+      //
+      // This flow is NON-trickle: the offer is POSTed once and the answer comes
+      // back once, with no channel for late candidates. So every candidate must
+      // be gathered BEFORE we send — anything gathered after this point is lost.
+      //
+      // A TURN relay candidate needs an Allocate round trip plus the 401/nonce
+      // retry, which routinely takes longer than a second on mobile. The old 1 s
+      // cap therefore captured host/srflx but silently dropped relay, leaving
+      // exactly the fallback we added TURN to provide. Relay is gathered last,
+      // so once we have one there is nothing slower left to wait for.
       await new Promise<void>((resolve) => {
         if (pc.iceGatheringState === "complete") {
           resolve();
           return;
         }
-        const check = () => {
-          if (pc.iceGatheringState === "complete") resolve();
+        let settled = false;
+        const finish = () => {
+          if (settled) return;
+          settled = true;
+          pc.removeEventListener("icegatheringstatechange", onState);
+          pc.removeEventListener("icecandidate", onCandidate);
+          clearTimeout(timer);
+          resolve();
         };
-        pc.addEventListener("icegatheringstatechange", check);
-        setTimeout(resolve, 1000);
+        const onState = () => {
+          if (pc.iceGatheringState === "complete") finish();
+        };
+        const onCandidate = (e: RTCPeerConnectionIceEvent) => {
+          if (e.candidate?.candidate.includes(" typ relay")) {
+            log("relay candidate gathered");
+            finish();
+          }
+        };
+        pc.addEventListener("icegatheringstatechange", onState);
+        pc.addEventListener("icecandidate", onCandidate);
+        const timer = setTimeout(() => {
+          log("ICE gathering timed out — sending offer with what we have");
+          finish();
+        }, ICE_GATHER_TIMEOUT_MS);
       });
 
       const finalOffer = pc.localDescription!;
@@ -257,7 +309,7 @@ export default function WebRTCVideoPlayer({
         body: JSON.stringify({ sdp64, rtsp: currentRtsp, url: currentRtsp }),
       });
 
-      if (!mountedRef.current) return;
+      if (isStale()) return;
 
       if (!res.ok) {
         const txt = await res.text().catch(() => res.statusText);
@@ -275,12 +327,20 @@ export default function WebRTCVideoPlayer({
 
       if (!answerSdp) throw new Error("No SDP in response");
 
+      if (isStale()) return;
+
       await pc.setRemoteDescription(
         new RTCSessionDescription({ type: "answer", sdp: answerSdp })
       );
       log("remote description set — negotiation complete");
     } catch (err: any) {
-      if (!mountedRef.current) return;
+      // A stale run's failure is meaningless — reporting it would overwrite the
+      // status of the newer connect that superseded it (which is what left the
+      // video hidden behind a "failed" state on first load until a refresh).
+      if (isStale()) {
+        log("stale connect attempt aborted:", err?.message ?? String(err));
+        return;
+      }
       const msg = err?.message ?? String(err);
       log("connect error:", msg);
       setErrorMsg(msg);
