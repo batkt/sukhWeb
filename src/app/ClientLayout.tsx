@@ -214,7 +214,13 @@ function LayoutContent({ children }: { children: ReactNode }) {
       const cookies = parseCookies();
       const token = cookies.tureestoken;
 
-      if (pathname === "/login" || (pathname && pathname.startsWith("/pay/"))) {
+      // `/nevtrekh` дээр token нь тухайн хуудсан дээрээ үүсдэг тул энд
+      // шалгах юм алга — эс тэгвээс код солигдохоос өмнө /login руу шидэнэ.
+      if (
+        pathname === "/login" ||
+        pathname === "/nevtrekh" ||
+        (pathname && pathname.startsWith("/pay/"))
+      ) {
         // Always show login page or payment page
         setAuthChecked(true);
         return;
