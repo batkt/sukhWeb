@@ -53,6 +53,9 @@ interface AuthContextType {
     nuutsUg: string;
     namaigsana?: boolean;
   }) => Promise<boolean>;
+  zevtabsaaraaNevtrey: (
+    code: string
+  ) => Promise<{ success: boolean; error?: string }>;
   garya: () => void;
   isLoading: boolean;
 }
@@ -189,6 +192,88 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     mutateAjiltan(newAjiltan, false);
   };
 
+  // Нэвтрэлт амжилттай болсны дараах нийтлэг үргэлжлэл — эрхийн шалгалт,
+  // token/ажилтан хадгалах, лицензтэй барилга сонгох. Ердийн нэвтрэлт
+  // (`newterya`) болон ZevTabs-ийн кодоор нэвтрэх (`zevtabsaaraaNevtrey`)
+  // хоёулаа үүнийг дуудна.
+  const nevtreltiigUrgeljluulye = (khariu: LoginResponse): boolean => {
+    const { token: newToken, result } = khariu;
+
+    if (
+      result.erkh !== "Admin" &&
+      (!result.tsonkhniiErkhuud || result.tsonkhniiErkhuud.length < 1)
+    ) {
+      toast.error("Хэрэглэгчийн эрхийн тохиргоо хийгдээгүй байна");
+      return false;
+    }
+
+    // Set token in both state and cookie
+    setToken(newToken);
+
+    // Set ajiltan in both state and localStorage
+    ajiltanMutate(result);
+
+    // Call systemiinMedeelelAvya when first logging in
+    uilchilgee(newToken)
+      .get("/systemiinMedeelelAvya")
+      .then((systemRes) => {
+        console.log("System memory information response:", systemRes.data);
+      })
+      .catch((sysErr) => {
+        console.error("Failed to fetch system information:", sysErr);
+      });
+
+    if (
+      (result?.barilguud && result.barilguud.length > 0) ||
+      result.erkh === "Admin"
+    ) {
+      let solikhBarilgaOldsonEsekh = false;
+
+      if (Array.isArray(result?.salbaruud)) {
+        for (const salbar of result.salbaruud) {
+          if (result.erkh !== "Admin") {
+            for (const barilga of result.barilguud || []) {
+              if (salbar?.salbariinId === barilga) {
+                const duusakhOgnoo = new Date(salbar.duusakhOgnoo);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                duusakhOgnoo.setHours(0, 0, 0, 0);
+
+                if (duusakhOgnoo > today) {
+                  solikhBarilgaOldsonEsekh = true;
+                  barilgaSoliyo(salbar.salbariinId, result);
+                  break;
+                }
+              }
+            }
+          } else {
+            const duusakhOgnoo = new Date(salbar.duusakhOgnoo);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            duusakhOgnoo.setHours(0, 0, 0, 0);
+
+            if (duusakhOgnoo > today) {
+              solikhBarilgaOldsonEsekh = true;
+              barilgaSoliyo(salbar.salbariinId, result);
+              break;
+            }
+          }
+          if (solikhBarilgaOldsonEsekh) break;
+        }
+
+        if (!solikhBarilgaOldsonEsekh) {
+          toast.error("Лицензийн хугацаа дууссан байна!");
+          return false;
+        }
+      } else {
+        toast.error("Лицензийн хугацаа дууссан байна!");
+        return false;
+      }
+    }
+
+    return true;
+  };
+
   const auth = useMemo<AuthContextType>(
     () => ({
       newterya: async (khereglech: {
@@ -214,81 +299,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           );
 
           if (response.status === 200 && response.data) {
-            const { token: newToken, result } = response.data;
-
-            if (
-              result.erkh !== "Admin" &&
-              (!result.tsonkhniiErkhuud || result.tsonkhniiErkhuud.length < 1)
-            ) {
-              toast.error("Хэрэглэгчийн эрхийн тохиргоо хийгдээгүй байна");
-              return false;
-            }
-
-            // Set token in both state and cookie
-            setToken(newToken);
-
-            // Set ajiltan in both state and localStorage
-            ajiltanMutate(result);
-
-            // Call systemiinMedeelelAvya when first logging in
-            uilchilgee(newToken)
-              .get("/systemiinMedeelelAvya")
-              .then((systemRes) => {
-                console.log("System memory information response:", systemRes.data);
-              })
-              .catch((sysErr) => {
-                console.error("Failed to fetch system information:", sysErr);
-              });
-
-            if (
-              (result?.barilguud && result.barilguud.length > 0) ||
-              result.erkh === "Admin"
-            ) {
-              let solikhBarilgaOldsonEsekh = false;
-
-              if (Array.isArray(result?.salbaruud)) {
-                for (const salbar of result.salbaruud) {
-                  if (result.erkh !== "Admin") {
-                    for (const barilga of result.barilguud || []) {
-                      if (salbar?.salbariinId === barilga) {
-                        const duusakhOgnoo = new Date(salbar.duusakhOgnoo);
-                        const today = new Date();
-                        today.setHours(0, 0, 0, 0);
-                        duusakhOgnoo.setHours(0, 0, 0, 0);
-
-                        if (duusakhOgnoo > today) {
-                          solikhBarilgaOldsonEsekh = true;
-                          barilgaSoliyo(salbar.salbariinId, result);
-                          break;
-                        }
-                      }
-                    }
-                  } else {
-                    const duusakhOgnoo = new Date(salbar.duusakhOgnoo);
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    duusakhOgnoo.setHours(0, 0, 0, 0);
-
-                    if (duusakhOgnoo > today) {
-                      solikhBarilgaOldsonEsekh = true;
-                      barilgaSoliyo(salbar.salbariinId, result);
-                      break;
-                    }
-                  }
-                  if (solikhBarilgaOldsonEsekh) break;
-                }
-
-                if (!solikhBarilgaOldsonEsekh) {
-                  toast.error("Лицензийн хугацаа дууссан байна!");
-                  return false;
-                }
-              } else {
-                toast.error("Лицензийн хугацаа дууссан байна!");
-                return false;
-              }
-            }
-
-            return true;
+            return nevtreltiigUrgeljluulye(response.data);
           } else {
             toast.error("Хэрэглэгчийн мэдээлэл буруу байна");
             return false;
@@ -308,6 +319,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           }
 
           return false;
+        }
+      },
+      // ZevTabs удирдлагын системээс ирсэн нэг удаагийн кодыг жинхэнэ
+      // нэвтрэлт болгож солино. Хариу нь `/ajiltanNevtrey`-тэй ижил бүтэцтэй
+      // тул цаашдын урсгал ердийн нэвтрэлтээс ялгаагүй.
+      zevtabsaaraaNevtrey: async (
+        code: string
+      ): Promise<{ success: boolean; error?: string }> => {
+        try {
+          const response = await uilchilgee().post<LoginResponse>(
+            "/zevtabsNevtreltSolikh",
+            { code }
+          );
+
+          if (response.status !== 200 || !response.data?.token)
+            throw new Error(
+              "Нэвтрэх код хүчингүй эсвэл хугацаа нь дууссан байна"
+            );
+
+          if (!nevtreltiigUrgeljluulye(response.data))
+            return { success: false, error: "Нэвтрэх боломжгүй байна" };
+
+          return { success: true };
+        } catch (error: any) {
+          const axiosError = error as AxiosError<{ aldaa?: string }>;
+          const msg =
+            axiosError.response?.data?.aldaa ||
+            error?.message ||
+            "Нэвтрэх боломжгүй байна";
+          toast.error(msg);
+          return { success: false, error: msg };
         }
       },
       garya: () => {

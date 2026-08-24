@@ -6,6 +6,10 @@ const PUBLIC_PATHS = new Set<string>([
   "/login",
   "/signup",
   "/app/account-delete",
+  // ZevTabs-ийн нэг удаагийн кодыг token болгож солих хуудас. Энд ирэхэд
+  // token хараахан байхгүй тул нээлттэй байх ёстой — эс тэгвээс дээрх
+  // redirect нь `?code=` параметрийг таслаад алдана.
+  "/nevtrekh",
 ]);
 
 function isPublicPath(pathname: string): boolean {
