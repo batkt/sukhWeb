@@ -18,6 +18,8 @@ import AddUnitModal from "./modals/AddUnitModal";
 import PermissionsModal from "./modals/PermissionsModal";
 import CredentialsModal from "./modals/CredentialsModal"; // Import missing modal
 import HistoryModal from "./modals/HistoryModal";
+import MassKwtModal from "./modals/MassKwtModal";
+import { useBuilding } from "@/context/BuildingContext";
 import uilchilgee from "@/lib/uilchilgee";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
@@ -25,6 +27,7 @@ import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 export default function GereeModals() {
   const router = useRouter();
   const { token, baiguullaga } = useAuth();
+  const { selectedBuildingId } = useBuilding();
   const { state, data, actions, ajiltan, permissionsData, reloadPermissions } =
     useGereeContext();
 
@@ -424,6 +427,19 @@ export default function GereeModals() {
           (baiguullaga?.dotoodNer && String(baiguullaga.dotoodNer).trim()) ||
           null
         }
+      />
+
+      {/* Mass kWt Update Modal */}
+      <MassKwtModal
+        show={state.showMassKwtModal}
+        onClose={() => state.setShowMassKwtModal(false)}
+        token={token || ""}
+        baiguullagiinId={ajiltan?.baiguullagiinId || baiguullaga?._id}
+        barilgiinId={selectedBuildingId || data.selectedBarilga?._id}
+        onSuccess={() => {
+          data.orshinSuugchJagsaaltMutate?.();
+          data.gereeJagsaaltMutate?.();
+        }}
       />
     </>
   );

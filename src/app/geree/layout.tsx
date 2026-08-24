@@ -131,6 +131,7 @@ function GereeLayoutWrapper({ children }: { children: React.ReactNode }) {
           actions.handleSendInvoices(state.selectedContracts)
         }
         onShowResidentModal={handleOpenResidentModal}
+        onShowMassKwtModal={() => state.setShowMassKwtModal(true)}
         onShowClientModal={actions.handleShowClientModal}
         onExportResidentsExcel={actions.handleExportResidentsExcel}
         onDownloadResidentsTemplate={actions.handleDownloadResidentsTemplate}

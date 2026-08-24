@@ -190,7 +190,7 @@ export default function Ebarimt() {
     token,
   ]);
 
-  const { data, isLoading } = useSWR(
+  const { data, isLoading, mutate } = useSWR(
     swrKey,
     async (args: any[]) => {
       const mode = args?.[0];
@@ -238,6 +238,62 @@ export default function Ebarimt() {
       return resp.data;
     },
     { revalidateOnFocus: false },
+  );
+
+  // Одоо буцаагдаж байгаа баримтын _id — тэр мөрд эргэлдэх зураг харуулна
+  const [butsaakhId, setButsaakhId] = useState<string | null>(null);
+
+  /**
+   * И-баримтыг буцаах (устгах).
+   *
+   * Backend нь ЭХЛЭЭД татварын систем рүү залгаж, тэндээс амжилттай болсныг
+   * батлаад л устгасан гэж тэмдэглэдэг. Тиймээс алдаа гарвал баримт хүчинтэй
+   * хэвээр байна — хэрэглэгчид алдааг үзүүлж, жагсаалтыг хөндөхгүй.
+   */
+  const ebarimtButsaaya = useCallback(
+    async (row: TableItem) => {
+      const barimtiinId = row?._id;
+      if (!token) return;
+      if (!barimtiinId) {
+        toast.error("Баримтын _id олдсонгүй — буцаах боломжгүй");
+        return;
+      }
+
+      setButsaakhId(String(barimtiinId));
+      try {
+        const { data: khariu } = await uilchilgee(token).post(
+          "/ebarimtButsaaya",
+          {
+            _id: barimtiinId,
+            baiguullagiinId: ajiltan?.baiguullagiinId,
+            // Баримт өөр барилгад хамаарч мэдэх тул мөрийн барилгыг эрхэмлэнэ
+            barilgiinId: row?.barilgiinId || barilgiinId,
+          },
+          { baseURL: getApiUrl() },
+        );
+
+        if (khariu?.success) {
+          const dugaar = row?.ddtd || row?.receiptId || row?.id || "";
+          toast.success(
+            dugaar
+              ? `${dugaar} дугаартай баримт буцаагдлаа`
+              : "Баримт буцаагдлаа",
+          );
+          await mutate();
+        } else {
+          toast.error(khariu?.message || "Баримт буцаахад алдаа гарлаа");
+        }
+      } catch (err: any) {
+        toast.error(
+          err?.response?.data?.message ||
+            err?.message ||
+            "Баримт буцаахад алдаа гарлаа",
+        );
+      } finally {
+        setButsaakhId(null);
+      }
+    },
+    [token, ajiltan?.baiguullagiinId, barilgiinId, mutate],
   );
 
   const tableData: TableItem[] = useMemo(() => {
@@ -585,6 +641,12 @@ export default function Ebarimt() {
                 data={displayedData}
                 loading={isLoading}
                 maxHeight="calc(100vh - 550px)"
+                onButsaakh={
+                  hasPermission(ajiltan, "/tulbur/ebarimt")
+                    ? ebarimtButsaaya
+                    : undefined
+                }
+                butsaajBaigaaId={butsaakhId}
               />
             </div>
             <div id="ebarimt-pagination">

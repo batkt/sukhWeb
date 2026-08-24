@@ -1,12 +1,15 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Table } from "antd";
+import { Table, Popconfirm, Tag, Tooltip } from "antd";
 import type { ColumnsType } from "antd/es/table";
+import { Trash2, Loader2 } from "lucide-react";
 import formatNumber from "../../../../tools/function/formatNumber";
 
 export interface EbarimtItem {
   id?: string | number;
+  /** Mongo-ийн _id — буцаах хүсэлтэд ЭНЭ хэрэглэгдэнэ (id нь ДДТД) */
+  _id?: string;
   receiptId?: string;
   ddtd?: string;
   date?: string;
@@ -20,6 +23,8 @@ export interface EbarimtItem {
   payStatus?: string;
   payCode?: string;
   service?: string;
+  /** Татварын системээс буцаагдсан огноо — байвал баримт хүчингүй */
+  ustgasanOgnoo?: string | Date | null;
   [key: string]: any;
 }
 
@@ -27,12 +32,23 @@ interface EbarimtTableProps {
   data: EbarimtItem[];
   loading?: boolean;
   maxHeight?: string | number;
+  /** Баримт буцаах (устгах) — заагаагүй бол үйлдлийн багана харагдахгүй */
+  onButsaakh?: (row: EbarimtItem) => void;
+  /** Одоо буцаагдаж байгаа баримтын _id — тэр мөрд эргэлдэх зураг харуулна */
+  butsaajBaigaaId?: string | null;
+}
+
+/** Баримт татварын системээс буцаагдсан эсэх */
+function butsaasanEsekh(row: EbarimtItem): boolean {
+  return !!row?.ustgasanOgnoo;
 }
 
 export const EbarimtTable: React.FC<EbarimtTableProps> = ({
   data,
   loading = false,
   maxHeight = "calc(100vh - 500px)",
+  onButsaakh,
+  butsaajBaigaaId = null,
 }) => {
   const columns: ColumnsType<EbarimtItem> = useMemo(
     () => [
@@ -143,14 +159,117 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
           </span>
         ),
       },
+      {
+        title: <span className="text-inherit">Төлөв</span>,
+        key: "tuluv",
+        align: "center",
+        width: 110,
+        className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
+        render: (_: any, row: EbarimtItem) =>
+          butsaasanEsekh(row) ? (
+            <Tooltip
+              title={`Буцаасан: ${new Date(
+                row.ustgasanOgnoo as string,
+              ).toLocaleString("mn-MN")}`}
+            >
+              <Tag color="red" className="!m-0 cursor-help">
+                Буцаасан
+              </Tag>
+            </Tooltip>
+          ) : (
+            <Tag color="green" className="!m-0">
+              Хүчинтэй
+            </Tag>
+          ),
+      },
+      ...(onButsaakh
+        ? ([
+            {
+              title: <span className="text-inherit">Үйлдэл</span>,
+              key: "uildel",
+              align: "center",
+              width: 80,
+              fixed: "right",
+              className:
+                "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
+              render: (_: any, row: EbarimtItem) => {
+                // Буцаасан баримтыг дахин буцаах боломжгүй — товч харагдахгүй
+                if (butsaasanEsekh(row))
+                  return (
+                    <span className="text-gray-400 dark:text-gray-500">-</span>
+                  );
+
+                const butsaajBaigaa =
+                  !!butsaajBaigaaId && butsaajBaigaaId === String(row._id);
+
+                if (butsaajBaigaa)
+                  return (
+                    <Loader2
+                      className="mx-auto h-4 w-4 animate-spin text-red-500"
+                      aria-label="Буцааж байна"
+                    />
+                  );
+
+                // _id байхгүй бол буцаах боломжгүй (хүсэлт _id-гээр явдаг)
+                if (!row._id)
+                  return (
+                    <Tooltip title="Баримтын _id байхгүй тул буцаах боломжгүй">
+                      <span className="text-gray-400 dark:text-gray-500">-</span>
+                    </Tooltip>
+                  );
+
+                return (
+                  <Popconfirm
+                    title="И-баримт буцаах уу?"
+                    description={
+                      <span className="text-xs">
+                        Татварын системээс мөн буцаагдана.
+                        <br />
+                        Үйлдлийг эргүүлэх боломжгүй.
+                      </span>
+                    }
+                    okText="Тийм"
+                    cancelText="Үгүй"
+                    okButtonProps={{ danger: true }}
+                    onConfirm={() => onButsaakh(row)}
+                  >
+                    <button
+                      type="button"
+                      aria-label="И-баримт буцаах"
+                      className="mx-auto flex h-7 w-7 items-center justify-center rounded-full text-red-500 transition-colors hover:bg-red-50 hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 dark:hover:bg-red-950/40"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </Popconfirm>
+                );
+              },
+            },
+          ] as ColumnsType<EbarimtItem>)
+        : []),
     ],
-    [],
+    [onButsaakh, butsaajBaigaaId],
   );
 
-  const totalAmount = useMemo(
-    () => data.reduce((sum, item) => sum + (item.total || 0), 0),
-    [data],
-  );
+  // Буцаасан баримт нь хүчингүй тул нийт дүнд ОРОХГҮЙ. Буцаасан дүнг тусад
+  // нь харуулна - тайлан тулгахад хоёулаа хэрэгтэй.
+  const { khuchinteiDun, butsaasanDun, butsaasanToo } = useMemo(() => {
+    let khuchintei = 0;
+    let butsaasan = 0;
+    let too = 0;
+    for (const item of data) {
+      if (butsaasanEsekh(item)) {
+        butsaasan += item.total || 0;
+        too += 1;
+      } else {
+        khuchintei += item.total || 0;
+      }
+    }
+    return {
+      khuchinteiDun: khuchintei,
+      butsaasanDun: butsaasan,
+      butsaasanToo: too,
+    };
+  }, [data]);
 
   return (
     <div className="w-full overflow-hidden">
@@ -167,13 +286,14 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
           size="small"
           bordered
           loading={loading}
-          className="guilgee-table min-w-[1000px] dark:bg-gray-900 dark:text-gray-100"
+          className="guilgee-table min-w-[1180px] dark:bg-gray-900 dark:text-gray-100"
           scroll={{ x: "max-content", y: maxHeight }}
           rowClassName={(record, index) => `
             ${index % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-700/50"}
             text-gray-900 dark:text-white
             hover:bg-gray-100 dark:hover:bg-gray-600
             transition-colors duration-200
+            ${butsaasanEsekh(record) ? "opacity-55 line-through decoration-red-400/70" : ""}
           `}
           locale={{
             emptyText: (
@@ -190,16 +310,30 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
                 <Table.Summary.Row className="bg-gray-50 dark:bg-gray-800">
                   <Table.Summary.Cell index={0} colSpan={6} align="center">
                     <span className="font-bold text-gray-900 dark:!text-white">
-                      Нийт:
+                      {butsaasanToo > 0 ? "Нийт (хүчинтэй):" : "Нийт:"}
                     </span>
                   </Table.Summary.Cell>
                   <Table.Summary.Cell index={1} align="right" className="bg-gray-50 dark:bg-gray-800">
                     <span className="font-bold text-gray-900 dark:!text-white">
-                      {formatNumber(totalAmount)}₮
+                      {formatNumber(khuchinteiDun)}₮
                     </span>
                   </Table.Summary.Cell>
                   <Table.Summary.Cell index={2} align="center">
                     <span className="text-gray-500 dark:text-gray-400">-</span>
+                  </Table.Summary.Cell>
+                  {/* Төлөв + (байвал) Үйлдэл багана */}
+                  <Table.Summary.Cell
+                    index={3}
+                    colSpan={onButsaakh ? 2 : 1}
+                    align="center"
+                  >
+                    {butsaasanToo > 0 ? (
+                      <span className="whitespace-nowrap text-xs text-red-500">
+                        Буцаасан {butsaasanToo}: {formatNumber(butsaasanDun)}₮
+                      </span>
+                    ) : (
+                      <span className="text-gray-500 dark:text-gray-400">-</span>
+                    )}
                   </Table.Summary.Cell>
                 </Table.Summary.Row>
               </Table.Summary>

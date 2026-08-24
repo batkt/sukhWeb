@@ -11,6 +11,7 @@ import {
   UserPlus,
   Settings2,
   ChevronDown,
+  Zap,
 } from "lucide-react";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import TusgaiZagvar from "../../../components/selectZagvar/tusgaiZagvar";
@@ -23,6 +24,7 @@ interface GereeHeaderProps {
   setActiveTab: (
     tab: "contracts" | "residents" | "employees" | "units" | "clients",
   ) => void;
+  onShowMassKwtModal?: () => void;
   ortsOptions: string[];
   selectedOrts: string;
   setSelectedOrts: (val: string) => void;
@@ -87,6 +89,7 @@ export default function GereeHeader({
   onShowList2Modal,
   onSendInvoices,
   onShowResidentModal,
+  onShowMassKwtModal,
   onShowClientModal,
   onExportResidentsExcel,
   onDownloadResidentsTemplate,
@@ -289,6 +292,18 @@ export default function GereeHeader({
                       Оршин суугч
                     </span>
                   </button>
+                  {onShowMassKwtModal && (
+                    <button
+                      onClick={onShowMassKwtModal}
+                      className="btn-minimal inline-flex items-center gap-2 text-amber-500 hover:text-amber-600"
+                      id="resident-mass-kwt-btn-top"
+                      aria-label="кВт заалт"
+                      title="кВт заалт олноор шинэчлэх"
+                    >
+                      <Zap className="w-5 h-5" />
+                      <span className="hidden sm:inline text-xs">кВт заалт</span>
+                    </button>
+                  )}
                   <div ref={desktopExcelRef} className="relative">
                     <button
                       onClick={() => setIsDesktopExcelOpen(!isDesktopExcelOpen)}
