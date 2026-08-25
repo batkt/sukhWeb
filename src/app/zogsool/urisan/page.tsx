@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
-import { Search, X, User, BarChart2, Users, Key, Monitor, Filter } from "lucide-react";
+import { Search, X, User, BarChart2, Users, Key, Monitor, Filter, ParkingCircle } from "lucide-react";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import moment from "moment";
 import useSWR from "swr";
@@ -22,10 +22,125 @@ interface GateOpenLog {
   utas: string;
   mashiniiDugaar: string;
   turul?: "нээсэн" | "урьсан";
+  /** "parkease" бол мөр нь Түрээсийн зогсоолоос ирсэн */
+  ekhSurvalj?: string;
+  parkease?: ParkEaseTuukh;
   ezenNer?: string;
   ezenToot?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+/**
+ * ParkEase (Түрээсийн зогсоол) дээрх зочны хөдөлгөөн.
+ * Webhook-оор ирж ZochinZogsooliinTuukh дээр хадгалагдана.
+ */
+interface ParkEaseTuukh {
+  _id?: string;
+  urilgiinId?: string;
+  mashiniiDugaar?: string;
+  orsonTsag?: string;
+  garsanTsag?: string;
+  orsonKhaalga?: string;
+  garsanKhaalga?: string;
+  niitKhugatsaa?: number;
+  uneguiMinutAshiglasan?: number;
+  uneguiMinutUldsen?: number;
+  tulburiinTurul?: "zochin" | "ezen";
+  tulukhDun?: number;
+  niitDun?: number;
+  nekhemjlekhId?: string;
+  toot?: string;
+  tuluv?: number;
+}
+
+const mongoloorKhugatsaa = (minut?: number) => {
+  const m = Number(minut) || 0;
+  if (m <= 0) return "-";
+  const tsag = Math.floor(m / 60);
+  const uldsen = m % 60;
+  if (tsag > 0) return `${tsag} цаг ${uldsen} мин`;
+  return `${uldsen} мин`;
+};
+
+const dunFormat = (dun?: number) =>
+  `${(Number(dun) || 0).toLocaleString("mn-MN")}₮`;
+
+/**
+ * Хүснэгтийн ParkEase багана - нэг мөрөнд багтах хураангуй.
+ * Бүртгэл байхгүй бол зочин зогсоол дээр ирээгүй/интеграц асаагүй гэсэн үг.
+ */
+function ParkEaseMur({
+  garchig,
+  utga,
+  nemelt,
+}: {
+  garchig: string;
+  utga: string;
+  nemelt?: string;
+}) {
+  return (
+    <div className="flex flex-col">
+      <span className="text-[9px] uppercase tracking-wider text-slate-400 dark:text-slate-500">
+        {garchig}
+      </span>
+      <span className="text-slate-700 dark:text-slate-200 font-medium font-[family-name:var(--font-mono)]">
+        {utga}
+      </span>
+      {nemelt ? (
+        <span className="text-[9px] text-slate-400 dark:text-slate-500 font-[family-name:var(--font-mono)]">
+          {nemelt}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+function ParkEaseNudu({ tuukh }: { tuukh?: ParkEaseTuukh }) {
+  if (!tuukh)
+    return <span className="text-slate-300 dark:text-slate-600 italic text-[11px]">-</span>;
+
+  const dotor = !tuukh.garsanTsag;
+  const ezenTulsun = tuukh.tulburiinTurul === "ezen";
+  const dun = Number(tuukh.tulukhDun) || 0;
+
+  return (
+    <div className="flex flex-col items-center gap-1">
+      {dotor ? (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+          Зогсоол дээр
+        </span>
+      ) : (
+        <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 font-[family-name:var(--font-mono)]">
+          {mongoloorKhugatsaa(tuukh.niitKhugatsaa)}
+        </span>
+      )}
+
+      <div className="flex items-center gap-1.5">
+        {(tuukh.uneguiMinutUldsen ?? 0) > 0 ? (
+          <span className="text-[9px] text-slate-400 dark:text-slate-500">
+            Үнэгүй {tuukh.uneguiMinutUldsen} мин үлдсэн
+          </span>
+        ) : (tuukh.uneguiMinutAshiglasan ?? 0) > 0 ? (
+          <span className="text-[9px] text-slate-400 dark:text-slate-500">
+            Үнэгүй {tuukh.uneguiMinutAshiglasan} мин дууссан
+          </span>
+        ) : null}
+
+        {dun > 0 &&
+          (ezenTulsun ? (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-400 text-black dark:bg-amber-600 dark:text-white text-[9px] font-bold">
+              {dunFormat(dun)} · Amarhome
+            </span>
+          ) : (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 dark:bg-white/[0.06] border border-slate-200 dark:border-white/[0.06] text-[9px] font-semibold text-slate-600 dark:text-slate-300">
+              {dunFormat(dun)} · Зочин
+            </span>
+          ))}
+      </div>
+    </div>
+  );
 }
 
 interface UserHistoryModalProps {
@@ -67,6 +182,30 @@ function UserHistoryModal({
     [historyData]
   );
 
+  // Тухайн машины ParkEase зогсоолын БҮХ хөдөлгөөн - оршин суугчид
+  // "хэзээ орж гарсан, хэдэн төгрөг, хэн төлсөн" гэдгийг бүрэн харуулна.
+  const { data: parkEaseData } = useSWR(
+    token && baiguullagiinId && log.mashiniiDugaar
+      ? ["/zochin/zogsool/tuukh/modal", token, baiguullagiinId, log.mashiniiDugaar]
+      : null,
+    async ([, tkn, bId, dugaar]): Promise<any> => {
+      const resp = await uilchilgee(tkn).get("/zochin/zogsool/tuukh", {
+        params: {
+          baiguullagiinId: bId,
+          mashiniiDugaar: dugaar,
+          khuudasniiKhemjee: 20,
+        },
+      });
+      return resp.data;
+    },
+    { revalidateOnFocus: false }
+  );
+
+  const parkEaseTuukh: ParkEaseTuukh[] = useMemo(
+    () => parkEaseData?.jagsaalt || [],
+    [parkEaseData]
+  );
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
@@ -104,6 +243,103 @@ function UserHistoryModal({
 
         {/* History Logs List */}
         <div className="flex-1 overflow-y-auto p-6">
+          {/* ── ParkEase зогсоолын дэлгэрэнгүй ─────────────────────────── */}
+          {parkEaseTuukh.length > 0 && (
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-3">
+                <ParkingCircle className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+                <h3 className="text-[12px] font-semibold text-slate-700 dark:text-slate-200">
+                  ParkEase зогсоол
+                </h3>
+                <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                  {log.mashiniiDugaar}
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                {parkEaseTuukh.map((mur) => {
+                  const dotor = !mur.garsanTsag;
+                  const ezenTulsun = mur.tulburiinTurul === "ezen";
+                  const dun = Number(mur.tulukhDun) || 0;
+                  return (
+                    <div
+                      key={mur._id}
+                      className="rounded-2xl border border-slate-100 dark:border-white/[0.05] bg-slate-50/50 dark:bg-white/[0.02] p-4"
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        {dotor ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                            Зогсоол дээр байна
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-white/[0.06] border border-slate-200 dark:border-white/[0.06] text-[10px] font-semibold text-slate-600 dark:text-slate-300">
+                            Гарсан
+                          </span>
+                        )}
+                        {dun > 0 &&
+                          (ezenTulsun ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-amber-400 text-black dark:bg-amber-600 dark:text-white text-[10px] font-bold">
+                              {dunFormat(dun)} · Amarhome нэхэмжлэх
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-slate-200 dark:bg-white/[0.08] text-[10px] font-semibold text-slate-700 dark:text-slate-200">
+                              {dunFormat(dun)} · Зочин төлсөн
+                            </span>
+                          ))}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[11px]">
+                        <ParkEaseMur
+                          garchig="Орсон"
+                          utga={
+                            mur.orsonTsag
+                              ? moment(mur.orsonTsag).format("MM-DD HH:mm")
+                              : "-"
+                          }
+                          nemelt={mur.orsonKhaalga}
+                        />
+                        <ParkEaseMur
+                          garchig="Гарсан"
+                          utga={
+                            mur.garsanTsag
+                              ? moment(mur.garsanTsag).format("MM-DD HH:mm")
+                              : "-"
+                          }
+                          nemelt={mur.garsanKhaalga}
+                        />
+                        <ParkEaseMur
+                          garchig="Зогссон хугацаа"
+                          utga={mongoloorKhugatsaa(mur.niitKhugatsaa)}
+                        />
+                        <ParkEaseMur
+                          garchig="Үнэгүй минут"
+                          utga={`${mur.uneguiMinutAshiglasan ?? 0} ашигласан / ${
+                            mur.uneguiMinutUldsen ?? 0
+                          } үлдсэн`}
+                        />
+                        <ParkEaseMur
+                          garchig="Төлбөрийг"
+                          utga={
+                            ezenTulsun
+                              ? "Оршин суугч даасан"
+                              : "Зочин өөрөө төлсөн"
+                          }
+                        />
+                        <ParkEaseMur
+                          garchig="Нэхэмжлэх"
+                          utga={mur.nekhemjlekhId ? "Бичигдсэн" : "-"}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="mt-5 mb-1 h-px bg-slate-100 dark:bg-white/[0.05]" />
+            </div>
+          )}
+
           {isValidating && historyLogs.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-slate-400 dark:text-slate-500 text-sm">
               <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500 mb-2" />
@@ -292,6 +528,84 @@ export default function UrisanTuukh() {
     [statsData]
   );
 
+  // ── ParkEase (Түрээсийн зогсоол) ──────────────────────────────────────
+  // Хуудсан дээр харагдаж буй дугааруудаар л татна - бүх түүхийг татаад
+  // клиент дээр шүүхээс хамаагүй хямд, мөн хуудаслалттай ч зөрөхгүй.
+  const khuudasniiDugaaruud = useMemo(() => {
+    const olonlog = new Set(
+      logs
+        .map((l) => (l.mashiniiDugaar || "").trim().toUpperCase())
+        .filter(Boolean)
+    );
+    return Array.from(olonlog).sort().join(",");
+  }, [logs]);
+
+  const { data: parkEaseData } = useSWR(
+    shouldFetch && khuudasniiDugaaruud
+      ? [
+          "/zochin/zogsool/tuukh",
+          token,
+          ajiltan?.baiguullagiinId,
+          effectiveBarilgiinId,
+          khuudasniiDugaaruud,
+        ]
+      : null,
+    async ([url, tkn, bId, barId, dugaaruud]): Promise<any> => {
+      const resp = await uilchilgee(tkn).get(url, {
+        params: {
+          baiguullagiinId: bId,
+          barilgiinId: barId || undefined,
+          mashiniiDugaaruud: dugaaruud,
+          khuudasniiKhemjee: 200,
+        },
+      });
+      return resp.data;
+    },
+    { revalidateOnFocus: false }
+  );
+
+  /** Машины дугаар -> хамгийн сүүлийн зогсоолын хөдөлгөөн */
+  const parkEaseMap = useMemo(() => {
+    const map = new Map<string, ParkEaseTuukh>();
+    const jagsaalt: ParkEaseTuukh[] = parkEaseData?.jagsaalt || [];
+    // Сервер createdAt буурахаар эрэмбэлдэг тул эхний тохиолдол = сүүлийнх
+    for (const mur of jagsaalt) {
+      const dugaar = (mur.mashiniiDugaar || "").trim().toUpperCase();
+      if (!dugaar || map.has(dugaar)) continue;
+      map.set(dugaar, mur);
+    }
+    return map;
+  }, [parkEaseData]);
+
+  /** Сонгосон хугацаанд ParkEase дээр бүртгэгдсэн нийт хөдөлгөөн */
+  const { data: parkEaseStats } = useSWR(
+    shouldFetch
+      ? [
+          "/zochin/zogsool/tuukh/stats",
+          token,
+          ajiltan?.baiguullagiinId,
+          effectiveBarilgiinId,
+          rangeStart,
+          rangeEnd,
+        ]
+      : null,
+    async ([, tkn, bId, barId, start, end]): Promise<any> => {
+      const resp = await uilchilgee(tkn).get("/zochin/zogsool/tuukh", {
+        params: {
+          baiguullagiinId: bId,
+          barilgiinId: barId || undefined,
+          start: start || undefined,
+          end: end || undefined,
+          khuudasniiKhemjee: 1,
+        },
+      });
+      return resp.data;
+    },
+    { revalidateOnFocus: false }
+  );
+
+  const parkEaseNiit = parkEaseStats?.niitMur || 0;
+
   const { baiguullaga } = useAuth();
   const getBuildingName = (bId: string) => {
     if (!bId) return "-";
@@ -319,6 +633,7 @@ export default function UrisanTuukh() {
     { id: "toot", label: "Тоот" },
     { id: "utas", label: "Утас" },
     { id: "dugaar", label: "Улсын дугаар" },
+    { id: "parkease", label: "ParkEase зогсоол" },
     { id: "barilga", label: "Барилга" },
   ];
 
@@ -383,7 +698,7 @@ export default function UrisanTuukh() {
         </div>
 
         {/* Dashboard Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           <div className="relative overflow-hidden p-6 rounded-[28px] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-500 dark:text-indigo-400">
@@ -428,6 +743,23 @@ export default function UrisanTuukh() {
               <div>
                 <p className="text-[11px] text-slate-400 dark:text-slate-500 uppercase font-black tracking-wider">Идэвхтэй камер</p>
                 <p className="text-2xl font-black text-slate-800 dark:text-white mt-0.5">{topGates.length}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* ParkEase дээр бодитоор зогссон зочид */}
+          <div className="relative overflow-hidden p-6 rounded-[28px] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-500 dark:text-emerald-400">
+                <ParkingCircle className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 uppercase font-black tracking-wider">
+                  ParkEase зогсоол
+                </p>
+                <p className="text-2xl font-black text-slate-800 dark:text-white mt-0.5">
+                  {parkEaseNiit}
+                </p>
               </div>
             </div>
           </div>
@@ -497,7 +829,7 @@ export default function UrisanTuukh() {
                 {logs.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={9}
+                      colSpan={10}
                       className="py-12 text-center text-slate-400 dark:text-slate-500 text-sm"
                     >
                       Бүртгэл олдсонгүй.
@@ -521,7 +853,12 @@ export default function UrisanTuukh() {
                         {moment(log.createdAt).format("YYYY-MM-DD HH:mm:ss")}
                       </td>
                       <td className="py-3 px-4 text-center">
-                        {log.turul === "урьсан" ? (
+                        {log.ekhSurvalj === "parkease" ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">
+                            <ParkingCircle className="w-3 h-3 shrink-0" />
+                            ParkEase
+                          </span>
+                        ) : log.turul === "урьсан" ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 text-[10px] font-semibold text-amber-700 dark:text-amber-300">
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
                             Урьсан
@@ -555,6 +892,16 @@ export default function UrisanTuukh() {
                         ) : (
                           <span className="text-slate-400 italic text-[11px]">-</span>
                         )}
+                      </td>
+                      <td className="py-3 px-4 text-center text-xs">
+                        <ParkEaseNudu
+                          tuukh={
+                            log.parkease ||
+                            parkEaseMap.get(
+                              (log.mashiniiDugaar || "").trim().toUpperCase()
+                            )
+                          }
+                        />
                       </td>
                       <td className="py-3 px-4 text-center text-xs text-slate-500 dark:text-slate-400">
                         {getBuildingName(log.barilgiinId)}

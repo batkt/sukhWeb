@@ -45,9 +45,10 @@ export default function NemeltTokhirgoo() {
   const [guestNotes, setGuestNotes] = useState<any[]>([]);
   const [guestLimit, setGuestLimit] = useState<number | string>("");
   const [guestFreeMinutes, setGuestFreeMinutes] = useState<number | string>("");
-  const [guestTotalFreeMinutes, setGuestTotalFreeMinutes] = useState<
-    number | string
-  >("");
+  // Зочны зогсоолын төлбөрийг оршин суугчийн нэхэмжлэхэд бичих боломжтой
+  // эсэх. Унтраалттай бол апп дээр "Би даана" сонголт харагдахгүй.
+  const [guestInvoiceEnabled, setGuestInvoiceEnabled] =
+    useState<boolean>(false);
   const [guestNote, setGuestNote] = useState<string>("");
   const [guestFrequencyType, setGuestFrequencyType] =
     useState<string>("saraar");
@@ -370,7 +371,7 @@ export default function NemeltTokhirgoo() {
     setGuestConfigEnabled(isEnabled);
     setGuestLimit(find("zochinErkhiinToo", ""));
     setGuestFreeMinutes(find("zochinTusBurUneguiMinut", ""));
-    setGuestTotalFreeMinutes(find("zochinNiitUneguiMinut", ""));
+    setGuestInvoiceEnabled(find("zochinNekhemjlekhEsekh", false) === true);
     setGuestNote(find("zochinTailbar", ""));
     setGuestFrequencyType(find("davtamjiinTurul", "saraar"));
     setGuestFrequencyValue(find("davtamjUtga", ""));
@@ -426,7 +427,7 @@ export default function NemeltTokhirgoo() {
         zochinTurul: "Оршин суугч",
         zochinErkhiinToo: Number(guestLimit) || 0,
         zochinTusBurUneguiMinut: Number(guestFreeMinutes) || 0,
-        zochinNiitUneguiMinut: Number(guestTotalFreeMinutes) || 0,
+        zochinNekhemjlekhEsekh: !!guestInvoiceEnabled,
         zochinTailbar: guestNote || "",
         davtamjiinTurul: guestFrequencyType,
         davtamjUtga: Number(guestFrequencyValue) || null,
@@ -1069,7 +1070,7 @@ export default function NemeltTokhirgoo() {
                     )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-sm  text-theme">Эрхийн тоо</label>
                     <MNumberInput
@@ -1098,24 +1099,31 @@ export default function NemeltTokhirgoo() {
                       className="w-full"
                     />
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-sm  text-theme">
-                      Нийт үнэгүй минут
-                    </label>
-                    <MNumberInput
-                      value={
-                        guestTotalFreeMinutes === ""
-                          ? undefined
-                          : Number(guestTotalFreeMinutes)
-                      }
-                      onChange={(val) =>
-                        setGuestTotalFreeMinutes(val !== "" ? val : "")
-                      }
-                      placeholder="0"
-                      min={0}
-                      className="w-full"
-                    />
+                </div>
+
+                {/* Төлбөрийг эзэн даах боломжтой эсэх */}
+                <div className="flex items-center justify-between gap-4 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="text-sm text-theme">
+                      Нэхэмжлэх дээр нэмэх эсэх
+                    </p>
+                    <p className="text-xs text-[color:var(--muted-text)] mt-0.5">
+                      {guestInvoiceEnabled
+                        ? 'Оршин суугч зочин урихдаа "Би даана" сонгож, зогсоолын төлбөрийг өөрийн нэхэмжлэхэд бичүүлж болно.'
+                        : 'Унтраалттай — зочин зогсоолын төлбөрөө өөрөө төлнө. Апп дээр "Би даана" сонголт харагдахгүй.'}
+                    </p>
                   </div>
+                  <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                    <input
+                      type="checkbox"
+                      checked={guestInvoiceEnabled}
+                      onChange={(e) =>
+                        setGuestInvoiceEnabled(e.currentTarget.checked)
+                      }
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 dark:peer-checked:bg-blue-600 peer-checked:bg-blue-600"></div>
+                  </label>
                 </div>
 
                 <div className="space-y-1">
