@@ -124,50 +124,11 @@ function LayoutContent({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { loading: spinnerLoading } = useSpinner();
   const [authChecked, setAuthChecked] = useState(false);
-  const [isNavigating, setIsNavigating] = useState(false);
 
-  // Track navigation state for loading indicator
-  useEffect(() => {
-    // Small delay before hiding the loader to prevent page-mount flickering
-    const timer = setTimeout(() => {
-      setIsNavigating(false);
-    }, 150);
-    return () => clearTimeout(timer);
-  }, [pathname]);
-
-  // Listen for navigation events to show loader
-  useEffect(() => {
-    const handleStart = () => setIsNavigating(true);
-    const handleComplete = () => setIsNavigating(false);
-
-    // Intercept link clicks
-    const handleClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      const link = target.closest("a");
-      if (
-        link &&
-        link.href &&
-        !link.target &&
-        !link.hasAttribute("download") &&
-        !e.ctrlKey &&
-        !e.metaKey
-      ) {
-        const url = new URL(link.href);
-        if (
-          url.origin === window.location.origin &&
-          url.pathname !== pathname
-        ) {
-          setIsNavigating(true);
-        }
-      }
-    };
-
-    document.addEventListener("click", handleClick);
-
-    return () => {
-      document.removeEventListener("click", handleClick);
-    };
-  }, [pathname]);
+  // Navigation feedback is handled by the shell's RouteProgress bar. The old
+  // implementation blocked the entire viewport behind a blurred overlay on
+  // every link click and only released it 150ms after the route had already
+  // settled, which added that delay to every single navigation.
 
   useEffect(() => {
     // Proactively unregister any existing service workers from older builds
@@ -343,8 +304,8 @@ function LayoutContent({ children }: { children: ReactNode }) {
           <SuccessOverlayHost />
           <ErrorOverlayHost />
 
-          {/* Global loading overlay */}
-          {(spinnerLoading || isNavigating) && (
+          {/* Explicit, app-driven loading overlay (not navigation) */}
+          {spinnerLoading && (
             <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/15 backdrop-blur-[2px] pointer-events-none transition-all duration-300">
               <div className="flex flex-col items-center justify-center p-6 rounded-3xl bg-slate-900/80 border border-white/10 pointer-events-auto gap-3 shadow-2xl">
                 <div className="relative w-12 h-12">

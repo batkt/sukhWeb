@@ -23,7 +23,7 @@ export default function ThemedLogo({
   className,
   alt = "Logo",
   IconComponent,
-  lightSrc = "/logoSukh.png",
+  lightSrc = "/logo.png",
   darkSrc,
   withBg = true,
   radius = 12,
@@ -38,9 +38,6 @@ export default function ThemedLogo({
     justifyContent: "center",
     borderRadius: withBg ? radius : undefined,
     padding: withBg ? padding : 0,
-    background: withBg ? "#000" : undefined,
-    border: withBg ? "1px solid rgba(255,255,255,0.06)" : undefined,
-    boxShadow: withBg ? "0 8px 20px var(--glass-shadow)" : undefined,
     ...style,
   };
 
@@ -63,7 +60,6 @@ export default function ThemedLogo({
         <Image src={lightSrc} alt={alt} width={dim} height={dim} priority />
       )}
 
-      {/* Logo background is always black, not theme-dependent */}
     </span>
   );
 }

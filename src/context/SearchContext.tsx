@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useMemo, useState } from "react";
 
 type SearchContextType = {
   searchTerm: string;
@@ -15,12 +15,15 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [filterType, setFilterType] = useState<string>("Бүгд");
 
+  // Memoised: an inline object literal handed every consumer a new value on
+  // each keystroke, re-rendering the whole shell as you typed.
+  const value = useMemo(
+    () => ({ searchTerm, setSearchTerm, filterType, setFilterType }),
+    [searchTerm, filterType],
+  );
+
   return (
-    <SearchContext.Provider
-      value={{ searchTerm, setSearchTerm, filterType, setFilterType }}
-    >
-      {children}
-    </SearchContext.Provider>
+    <SearchContext.Provider value={value}>{children}</SearchContext.Provider>
   );
 }
 

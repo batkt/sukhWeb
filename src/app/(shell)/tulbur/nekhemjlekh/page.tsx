@@ -1,0 +1,2141 @@
+"use client";
+import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
+import { Table } from "antd";
+import TusgaiZagvar from "../../../../../components/selectZagvar/tusgaiZagvar";
+import {
+  Calendar,
+  Eye,
+  Search,
+  History,
+  ChevronLeft,
+  ChevronRight,
+  Printer,
+  Download,
+  MessageSquare,
+} from "lucide-react";
+import { toast } from "sonner";
+import IconTextButton from "@/components/ui/IconTextButton";
+import {
+  getPaymentStatusLabel,
+  isPaidLike,
+  isUnpaidLike,
+  isOverdueLike,
+} from "@/lib/utils";
+import { useModalHotkeys } from "@/lib/useModalHotkeys";
+import LordIcon from "@/components/ui/LordIcon";
+import matchesSearch from "../../../../tools/function/matchesSearch";
+import { useAuth } from "@/lib/useAuth";
+import useBaiguullaga from "@/lib/useBaiguullaga";
+import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
+import { useBuilding } from "@/context/BuildingContext";
+import formatNumber, {
+  formatCurrency,
+} from "../../../../../tools/function/formatNumber";
+
+import { url as API_URL } from "@/lib/uilchilgee";
+import uilchilgee from "@/lib/uilchilgee";
+import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
+import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
+import { getErrorMessage } from "@/lib/uilchilgee";
+import { useRouter } from "next/navigation";
+import { useGereeActions } from "@/lib/useGereeActions";
+import { useSearch } from "@/context/SearchContext";
+
+const formatDate = (dateString: string | undefined) => {
+  if (!dateString) return "-";
+  const date = new Date(dateString);
+  return date.toLocaleDateString("mn-MN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+};
+
+const PrintStyles = () => (
+  <style jsx global>{`
+    @media print {
+      @page {
+        size: A4;
+        margin: 0;
+      }
+
+      /* Hide everything */
+      body * {
+        visibility: hidden !important;
+      }
+
+      /* Show modal and sub-elements */
+      .invoice-modal,
+      .invoice-modal * {
+        visibility: visible !important;
+      }
+
+      /* Reset modal container for print */
+      .invoice-modal {
+        position: fixed !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 210mm !important; /* Force A4 width */
+        height: auto !important;
+        min-height: 297mm !important;
+        margin: 0 !important;
+        padding: 15mm !important;
+        background: white !important;
+        transform: none !important;
+        border: none !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        display: block !important;
+        z-index: 9999999 !important;
+      }
+
+      /* Ensure parent containers don't clip */
+      div[data-radix-portal],
+      div[role="dialog"],
+      .ModalPortal {
+        position: static !important;
+        transform: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+
+      table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        table-layout: fixed !important; /* Fixed layout helps with width control */
+      }
+
+      th,
+      td {
+        border: 1px solid #000 !important;
+        padding: 6px !important;
+        font-size: 10pt !important;
+        word-wrap: break-word !important;
+      }
+
+      .invoice-modal h2 {
+        font-size: 20pt !important;
+        margin: 0 0 15px 0 !important;
+      }
+      .invoice-modal h3 {
+        font-size: 16pt !important;
+        margin: 0 0 10px 0 !important;
+      }
+
+      .custom-scrollbar {
+        overflow: visible !important;
+      }
+
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color: black !important;
+      }
+    }
+  `}</style>
+);
+
+const LocalStyles = () => (
+  <style jsx global>{`
+    /* Scope all overrides so they don't affect other pages */
+    .no-theme-scope {
+      /* Force light/neutral tokens within this scope */
+      --panel-text: #0f172a;
+      --btn-text: #0f172a;
+      --btn-bg: #ffffff;
+      --btn-bg-hover: #f8fafc;
+      --btn-bg-active: #f1f5f9;
+      --btn-border: rgba(15, 23, 42, 0.12);
+      --surface-bg: #ffffff;
+      --surface-border: rgba(15, 23, 42, 0.12);
+      --glass-tint: #ffffff;
+      --glass-tint-2: #ffffff;
+      --glass-border: rgba(15, 23, 42, 0.12);
+      color: #0f172a !important;
+      background: #ffffff !important;
+    }
+    .no-theme-scope *,
+    .no-theme-scope :where(th, td, p, span, div, button, input, select, label) {
+      color: #0f172a !important;
+    }
+    /* Table readability on white */
+    .no-theme-scope .table-ui thead {
+      background: #ffffff !important;
+    }
+    .no-theme-scope .table-ui th,
+    .no-theme-scope .table-ui td {
+      color: #0f172a !important;
+      border-bottom-color: #e5e7eb !important; /* gray-200 */
+    }
+    .no-theme-scope .table-ui tbody tr:hover {
+      background: #f8fafc !important;
+    }
+    /* Inputs: neutral borders */
+    .no-theme-scope input,
+    .no-theme-scope select,
+    .no-theme-scope textarea {
+      background: #ffffff !important;
+      color: #0f172a !important;
+      border-color: #e5e7eb !important;
+    }
+    /* Buttons: minimal/neu visible on white */
+    .no-theme-scope .btn-minimal,
+    .no-theme-scope .btn-minimal-ghost,
+    .no-theme-scope .btn-neu {
+      background: #ffffff !important;
+      color: #0f172a !important;
+      border-color: #e5e7eb !important;
+      box-shadow: none !important;
+    }
+    .no-theme-scope .btn-minimal:hover,
+    .no-theme-scope .btn-minimal-ghost:hover,
+    .no-theme-scope .btn-neu:hover {
+      background: #f8fafc !important;
+    }
+  `}</style>
+);
+
+interface InvoiceModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  resident: any;
+  baiguullagiinId: string;
+  token: string;
+  liftFloors: string[];
+  barilgiinId?: string | null;
+}
+
+interface Zardal {
+  _id: string;
+  ner: string;
+  tariff: number | null | undefined;
+  dun: number | null | undefined;
+  turul?: string;
+  zardliinTurul?: string;
+}
+
+const ModalPortal = ({ children }: { children: React.ReactNode }) => {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+  return mounted
+    ? createPortal(children as React.ReactNode, document.body)
+    : null;
+};
+
+const InvoiceModal = ({
+  isOpen,
+  onClose,
+  resident,
+  baiguullagiinId,
+  token,
+  liftFloors,
+  barilgiinId,
+}: InvoiceModalProps) => {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  useModalHotkeys({
+    isOpen,
+    onClose,
+    container: containerRef.current,
+  });
+  const { selectedBuildingId } = useBuilding();
+  const { baiguullaga } = useBaiguullaga(token, baiguullagiinId);
+  const { zardluud: ashiglaltiinZardluud } = useAshiglaltiinZardluud({
+    token,
+    baiguullagiinId,
+    barilgiinId: selectedBuildingId || barilgiinId || null,
+  });
+
+  const invoiceNumber = `INV-${Math.random().toString(36).substr(2, 9)}`;
+  const currentDate = new Date().toLocaleDateString("mn-MN");
+  const isLiftExempt = liftFloors?.includes(String(resident?.davkhar));
+
+  // Prefer backend-provided rows and total when available to avoid double-discounting
+  const isLiftItem = (z: Zardal) =>
+    z.zardliinTurul === "Лифт" ||
+    z.ner?.trim().toLowerCase() === "лифт" ||
+    z.turul?.trim().toLowerCase() === "лифт";
+
+  const baseZardluud = (ashiglaltiinZardluud as Zardal[]) || [];
+
+  // Latest invoice rows and total for accurate amounts
+  const [expenseRows, setExpenseRows] = React.useState<any[]>([]);
+  const [paymentRows, setPaymentRows] = React.useState<any[]>([]);
+  const [invTotal, setInvTotal] = React.useState<number | null>(null);
+  const [latestInvoice, setLatestInvoice] = React.useState<any>(null);
+  const [nekhemjlekhData, setNekhemjlekhData] = React.useState<any>(null);
+  const [paymentStatusLabel, setPaymentStatusLabel] = React.useState<
+    "Төлсөн" | "Төлөөгүй" | "Хугацаа хэтэрсэн" | "Тодорхойгүй"
+  >("Тодорхойгүй");
+  const [cronData, setCronData] = React.useState<any>(null);
+  const [totalPaidFromApi, setTotalPaidFromApi] = React.useState<number | null>(
+    null,
+  );
+  const invValid = React.useMemo(() => {
+    if (!Array.isArray(expenseRows) || expenseRows.length === 0) return false;
+    const invSum = expenseRows.reduce(
+      (s: number, r: any) => s + (Number(r?.tariff) > 0 ? Number(r.tariff) : 0),
+      0,
+    );
+    return invSum > 0;
+  }, [expenseRows]);
+  React.useEffect(() => {
+    const run = async () => {
+      try {
+        if (!isOpen || !token || !baiguullagiinId || !resident?._id) return;
+
+        const resp = await uilchilgee(token).get(`/nekhemjlekhiinTuukh`, {
+          params: {
+            baiguullagiinId,
+            barilgiinId: selectedBuildingId || barilgiinId || null,
+            khuudasniiDugaar: 1,
+            khuudasniiKhemjee: 100,
+          },
+        });
+        const data = resp.data;
+        const list = Array.isArray(data?.jagsaalt)
+          ? data.jagsaalt
+          : Array.isArray(data)
+            ? data
+            : [];
+        // Filter by resident to get the correct invoice
+        const residentInvoices = list.filter((item: any) => {
+          const ovogMatch =
+            !resident?.ovog ||
+            !item?.ovog ||
+            String(item.ovog).trim() === String(resident.ovog).trim();
+          const nerMatch =
+            !resident?.ner ||
+            !item?.ner ||
+            String(item.ner).trim() === String(resident.ner).trim();
+          const utasMatch =
+            !resident?.utas?.[0] ||
+            !item?.utas?.[0] ||
+            String(item.utas?.[0] || "").trim() ===
+              String(resident.utas?.[0] || "").trim();
+          return ovogMatch && nerMatch && utasMatch;
+        });
+        const latest = [
+          ...(residentInvoices.length > 0 ? residentInvoices : list),
+        ].sort((a: any, b: any) => {
+          const aOgnoo = a?.ognoo ? new Date(a.ognoo).getTime() : 0;
+          const bOgnoo = b?.ognoo ? new Date(b.ognoo).getTime() : 0;
+          if (aOgnoo !== bOgnoo) {
+            return bOgnoo - aOgnoo;
+          }
+          const aCreated = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const bCreated = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return bCreated - aCreated;
+        })[0];
+
+        setLatestInvoice(latest || null);
+        setNekhemjlekhData(latest || null);
+
+        const zardluudRows = Array.isArray(latest?.medeelel?.zardluud)
+          ? latest.medeelel.zardluud
+          : Array.isArray(latest?.zardluud)
+            ? latest.zardluud
+            : [];
+        const guilgeenuudRows = Array.isArray(latest?.medeelel?.guilgeenuud)
+          ? latest.medeelel.guilgeenuud
+          : Array.isArray(latest?.guilgeenuud)
+            ? latest.guilgeenuud
+            : [];
+
+        // Deduplicate Expenses (Zardluud)
+        const expenseMap = new Map<string, any>();
+        const pickAmount = (obj: any) => {
+          const n = (v: any) => {
+            const num = Number(v);
+            return Number.isFinite(num) ? num : null;
+          };
+          const dun = n(obj?.dun);
+          if (dun !== null && dun > 0) return dun;
+          const td = n(obj?.tulukhDun);
+          if (td !== null && td > 0) return td;
+          const tar = n(obj?.tariff);
+          return tar ?? 0;
+        };
+
+        const addToExpenseMap = (list: any[]) => {
+          list.forEach((z: any) => {
+            const isEkhnii =
+              z.isEkhniiUldegdel === true ||
+              String(z.ner || "").startsWith("Эхний үлдэгдэл") ||
+              String(z.zardliinNer || "").startsWith("Эхний үлдэгдэл");
+            const amt = pickAmount(z);
+            if (isEkhnii && amt <= 0) return; // Skip zero or negative initial balance
+
+            const ner = isEkhnii
+              ? "Эхний үлдэгдэл"
+              : String(z.ner || z.name || "").trim();
+            const key = ner || z._id || `z-${Math.random()}`;
+            const existing = expenseMap.get(key);
+            if (!existing || amt > pickAmount(existing)) {
+              expenseMap.set(key, { ...z, ner, dun: amt });
+            }
+          });
+        };
+
+        addToExpenseMap(zardluudRows);
+
+        // Add Цахилгаан if missing
+        const hasTsahilgaan = Array.from(expenseMap.values()).some(
+          (z) => String(z.ner).trim() === "Цахилгаан",
+        );
+        if (!hasTsahilgaan && latest) {
+          const tsahAmt = Number(latest?.tsahilgaanNekhemjlekh ?? 0);
+          if (tsahAmt > 0) {
+            expenseMap.set("Цахилгаан", {
+              ner: "Цахилгаан",
+              tariff: tsahAmt,
+              dun: tsahAmt,
+            });
+          }
+        }
+
+        // Add manual receivables from guilgeenuud to expenses
+        const manualReceivables = guilgeenuudRows.filter((g: any) => {
+          const t = String(g.turul || "").toLowerCase();
+          return (
+            t === "avlaga" ||
+            t === "авлага" ||
+            t === "garage" ||
+            t === "aguulakh" ||
+            t === "зогсоол" ||
+            t === "агуулах"
+          );
+        });
+        addToExpenseMap(manualReceivables);
+
+        const norm = (z: any, idx: number) => ({
+          _id: z._id || `exp-${idx}`,
+          ner: z.ner || z.name || "",
+          tariff: Number(z?.tariff) || 0,
+          dun: pickAmount(z),
+          turul: z.turul,
+          tailbar:
+            z.tailbar || latest?.medeelel?.tailbar || latest?.tailbar || "",
+        });
+
+        setExpenseRows(Array.from(expenseMap.values()).map(norm));
+
+        // Process Payments (Guilgeenuud)
+        const payments = guilgeenuudRows
+          .filter((g: any) => {
+            const t = String(g.turul || "").toLowerCase();
+            const isTulsun = Number(g.tulsunDun) > 0 || Number(g.dun) > 0;
+            return t !== "avlaga" && t !== "авлага" && isTulsun;
+          })
+          .map((g: any, idx: number) => ({
+            _id: g._id || `pay-${idx}`,
+            ognoo: g.ognoo || g.tulsunOgnoo,
+            tailbar: g.tailbar || g.medeelel?.tailbar || "Төлөлт",
+            dun: Number(g.tulsunDun || g.dun || 0),
+            turul: g.turul || "Төлбөр",
+            ajiltan: g.ajiltanNer || "Систем",
+          }));
+        setPaymentRows(payments);
+
+        setPaymentStatusLabel(getPaymentStatusLabel(latest));
+
+        const t = Number(
+          latest?.niitTulburOriginal ??
+            latest?.niitTulbur ??
+            latest?.niitDun ??
+            latest?.total ??
+            0,
+        );
+        setInvTotal(Number.isFinite(t) ? t : null);
+
+        // Fetch cron and paid summary
+        const gereeId = latest?.gereeniiId || latest?.gereeId;
+        if (gereeId) {
+          uilchilgee(token)
+            .post("/tulsunSummary", { baiguullagiinId, gereeniiId: gereeId })
+            .then((r) =>
+              setTotalPaidFromApi(
+                Number(
+                  r.data?.totalTulsunDun ?? r.data?.totalInvoicePayment ?? 0,
+                ),
+              ),
+            )
+            .catch(() => setTotalPaidFromApi(null));
+        }
+      } catch (e) {
+        setExpenseRows([]);
+        setPaymentRows([]);
+        setInvTotal(null);
+        setTotalPaidFromApi(null);
+      }
+    };
+    run();
+  }, [
+    isOpen,
+    token,
+    baiguullagiinId,
+    resident?._id,
+    selectedBuildingId,
+    barilgiinId,
+  ]);
+
+  const contractData = latestInvoice || nekhemjlekhData;
+  const totalSum = React.useMemo(() => {
+    // Prioritize niitTulburOriginal from invoice data if available
+    if (contractData?.niitTulburOriginal != null) {
+      return Number(contractData.niitTulburOriginal);
+    }
+    // Fallback to niitTulbur
+    if (contractData?.niitTulbur != null) {
+      return Number(contractData.niitTulbur);
+    }
+    // Fallback to invTotal if set
+    if (invTotal != null) {
+      return invTotal;
+    }
+    // Last resort: calculate from expense rows
+    return expenseRows.reduce((s, r) => s + (Number(r?.dun) || 0), 0);
+  }, [expenseRows, contractData, invTotal]);
+
+  const uldegdelDun = React.useMemo(() => {
+    const total = totalSum;
+    if (totalPaidFromApi !== null) {
+      return total - totalPaidFromApi;
+    }
+    const inv = latestInvoice || nekhemjlekhData;
+    if (inv?.uldegdel != null) return Number(inv.uldegdel);
+    const paid = Number(inv?.tulsunDun ?? 0) || 0;
+    return total - paid;
+  }, [totalSum, totalPaidFromApi, latestInvoice, nekhemjlekhData]);
+
+  if (!isOpen) return null;
+
+  return (
+    <ModalPortal>
+      <PrintStyles />
+      <div
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999]"
+        onClick={onClose}
+      />
+      <div
+        className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-[1800px] h-[95vh] max-h-[95vh] modal-surface modal-responsive rounded-3xl shadow-2xl overflow-hidden z-[9999] pointer-events-auto"
+        onClick={(e) => e.stopPropagation()}
+        ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+      >
+        <div className="invoice-modal h-full flex flex-col">
+          <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 print-break no-print rounded-t-3xl">
+            <div className="flex items-center gap-4">
+              <div>
+                <h2 className="text-xl  text-slate-800">
+                  Үйлчилгээний нэхэмжлэх
+                </h2>
+                <p className="text-sm text-slate-500">
+                  Нэхэмжлэхийн дугаар:{" "}
+                  {latestInvoice?.nekhemjlekhiinDugaar ||
+                    nekhemjlekhData?.nekhemjlekhiinDugaar ||
+                    latestInvoice?.nekhemjlekhiinDugaar ||
+                    "-"}
+                </p>
+                <p className="text-sm text-slate-500">
+                  Огноо:{" "}
+                  {formatDate(
+                    latestInvoice?.ognoo ||
+                      nekhemjlekhData?.ognoo ||
+                      latestInvoice?.ognoo ||
+                      "",
+                  ) || "-"}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => onClose()}
+              className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
+              aria-label="Хаах"
+              title="Хаах"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6 text-slate-700"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+
+          <div className="p-6 space-y-6 flex-1 overflow-y-auto overflow-x-auto overscroll-contain custom-scrollbar">
+            <div className="grid grid-cols-2 gap-6 print-break">
+              <div>
+                <h3 className="text-xl  text-slate-800 mb-3">
+                  {baiguullaga?.ner}
+                </h3>
+                <div className="space-y-2 text-sm text-slate-600">
+                  <p className="flex items-center gap-2">
+                    <span className="">Имэйл:</span>{" "}
+                    {(() => {
+                      const mailFromTokhirgoo = Array.isArray(
+                        (baiguullaga as any)?.tokhirgoo?.mail,
+                      )
+                        ? (baiguullaga as any).tokhirgoo.mail[0]
+                        : undefined;
+                      const mailFromOrg = Array.isArray(
+                        (baiguullaga as any)?.mail,
+                      )
+                        ? (baiguullaga as any).mail[0]
+                        : undefined;
+                      const mailLegacy = (baiguullaga as any)?.email;
+                      return (
+                        mailFromTokhirgoo || mailFromOrg || mailLegacy || "-"
+                      );
+                    })()}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <span className="">Утас:</span>{" "}
+                    {(() => {
+                      const utasFromTokhirgoo = Array.isArray(
+                        (baiguullaga as any)?.tokhirgoo?.utas,
+                      )
+                        ? (baiguullaga as any).tokhirgoo.utas[0]
+                        : undefined;
+                      const utasFromOrg = Array.isArray(
+                        (baiguullaga as any)?.utas,
+                      )
+                        ? (baiguullaga as any).utas[0]
+                        : undefined;
+                      const utasLegacy = (baiguullaga as any)?.utas;
+                      return (
+                        utasFromTokhirgoo || utasFromOrg || utasLegacy || "-"
+                      );
+                    })()}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <span className="">Хаяг:</span> {baiguullaga?.khayag || "-"}
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="inline-block text-left bg-transparent p-3 rounded-xl">
+                  <p className="text-sm text-slate-600">
+                    <span className="">Огноо:</span>{" "}
+                    {formatDate(
+                      latestInvoice?.ognoo ||
+                        nekhemjlekhData?.ognoo ||
+                        latestInvoice?.ognoo ||
+                        currentDate,
+                    )}
+                  </p>
+
+                  {/* {cronData && (
+                    <>
+                      <p className="text-sm text-slate-600">
+                        <span className="">
+                          Нэхэмжлэх үүсгэх өдөр:
+                        </span>{" "}
+                        {cronData.nekhemjlekhUusgekhOgnoo || "-"}
+                      </p>
+                    </>
+                  )} */}
+                </div>
+              </div>
+            </div>
+
+            <div className="border border-blue-400 rounded-xl p-4 print-break">
+              <div className="flex items-center gap-3 mb-3">
+                <div>
+                  <h3 className=" text-slate-800">
+                    {resident?.ovog} {resident?.ner}
+                  </h3>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="space-y-1">
+                  <p>
+                    <span className="text-slate-500">Тоот:</span>{" "}
+                    {resident?.toot}
+                  </p>
+                  <p>
+                    <span className="text-slate-500">Гэрээ №:</span>{" "}
+                    {latestInvoice?.gereeniiDugaar || "-"}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p>
+                    <span className="text-slate-500">Утас:</span>{" "}
+                    {resident?.utas}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Expenses Table */}
+            <div>
+              <h4 className="font-bold mb-2 text-slate-700">
+                Зардлын жагсаалт
+              </h4>
+              <div className="border border-gray-100 rounded-xl overflow-hidden shadow-sm">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="py-2 px-3 text-left text-slate-600">
+                        Зардал
+                      </th>
+                      <th className="py-2 px-3 text-right text-slate-600">
+                        Дүн
+                      </th>
+                      <th className="py-2 px-3 text-right text-slate-600">
+                        Тайлбар
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {expenseRows.map((row: any) => (
+                      <tr
+                        key={row._id}
+                        className="hover:bg-gray-50/50 transition-colors"
+                      >
+                        <td className="py-2 px-3 text-slate-700">{row.ner}</td>
+                        <td className="py-2 px-3 text-right text-slate-900 font-medium">
+                          {formatCurrency(Number(row.dun))}
+                        </td>
+                        <td className="py-2 px-3 text-right text-slate-500">
+                          {row.tailbar}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="bg-gray-50 border-t border-gray-100">
+                    <tr>
+                      <td
+                        colSpan={2}
+                        className="py-2 px-3 text-slate-700 force-bold"
+                      >
+                        Нийт дүн:
+                      </td>
+                      <td className="py-2 px-3 text-right text-slate-900 force-bold">
+                        {formatCurrency(totalSum)}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+
+            {/* Payments Table */}
+            {paymentRows.length > 0 && (
+              <div>
+                <h4 className="font-bold mb-2 text-slate-700">
+                  Төлөлтийн мэдээлэл
+                </h4>
+                <div className="border border-gray-100 rounded-xl overflow-hidden shadow-sm">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="py-2 px-3 text-left text-slate-600">
+                          Огноо
+                        </th>
+                        <th className="py-2 px-3 text-left text-slate-600">
+                          Тайлбар
+                        </th>
+                        <th className="py-2 px-3 text-right text-slate-600">
+                          Дүн
+                        </th>
+                        <th className="py-2 px-3 text-right text-slate-600">
+                          Төрөл
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {paymentRows.map((row: any) => (
+                        <tr
+                          key={row._id}
+                          className="hover:bg-gray-50/50 transition-colors"
+                        >
+                          <td className="py-2 px-3 text-slate-600 whitespace-nowrap">
+                            {formatDate(row.ognoo)}
+                          </td>
+                          <td className="py-2 px-3 text-slate-700">
+                            {row.tailbar}
+                          </td>
+                          <td className="py-2 px-3 text-right text-green-700 font-bold">
+                            -{formatNumber(row.dun)}{" "}
+                          </td>
+                          <td className="py-2 px-3 text-right text-slate-500">
+                            {row.turul}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot className="bg-gray-50 border-t font-bold text-green-700">
+                      <tr>
+                        <td colSpan={2} className="py-2 px-3">
+                          Төлсөн дүн (энэ удаа):
+                        </td>
+                        <td className="py-2 px-3 text-right">
+                          {formatCurrency(
+                            paymentRows.reduce(
+                              (s, r) => s + (Number(r.dun) || 0),
+                              0,
+                            ),
+                          )}
+                        </td>
+                        <td></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            <div className="border-t border-gray-100 pt-6 mt-4">
+              <div className="flex flex-col items-end gap-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-slate-500 font-medium whitespace-nowrap">
+                    Төлбөрийн төлөв:
+                  </span>
+                  <span
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold shadow-sm ${
+                      paymentStatusLabel === "Төлсөн"
+                        ? "bg-green-100 text-green-700 border border-green-200"
+                        : "bg-red-100 text-red-700 border border-red-200"
+                    }`}
+                  >
+                    {paymentStatusLabel}
+                  </span>
+                </div>
+
+                <div className="w-full max-w-[300px] space-y-2 text-right">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-slate-500">Нийт нэхэмжилсэн:</span>
+                    <span className="text-slate-900 font-medium">
+                      {formatCurrency(totalSum)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-slate-500">Нийт төлсөн:</span>
+                    <span className="text-green-700 font-medium">
+                      -{formatCurrency(totalPaidFromApi || 0)}
+                    </span>
+                  </div>
+                  <div className="pt-2 border-t border-gray-200 flex justify-between items-center">
+                    <span className="text-base font-bold text-slate-800">
+                      Үлдэгдэл дүн:
+                    </span>
+                    <span
+                      className={`text-lg font-bold ${uldegdelDun > 0 ? "text-red-600" : "text-slate-900"}`}
+                    >
+                      {formatCurrency(uldegdelDun)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-100 bg-gray-50 p-4 no-print rounded-b-3xl">
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={onClose}
+                className="btn-minimal btn-cancel"
+                data-modal-primary
+              >
+                Хаах
+              </button>
+              <button
+                onClick={() => window.print()}
+                className="btn-minimal btn-print"
+                data-prevent-enter
+              >
+                Хэвлэх
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ModalPortal>
+  );
+};
+
+export default function InvoicingZardluud() {
+  const router = useRouter();
+  const { token, ajiltan, barilgiinId } = useAuth();
+  const { selectedBuildingId } = useBuilding();
+  const [sendingSmsId, setSendingSmsId] = useState<string | null>(null);
+
+  const handleSendReminderSms = async (record: any) => {
+    if (!token) return;
+    setSendingSmsId(record._id);
+    try {
+      const res = await uilchilgee(token).post(`/nekhemjlekh/${record._id}/send-reminder-sms`);
+      if (res.data?.success) {
+        toast.success(res.data.message || "Төлбөр сануулах SMS амжилттай илгээгдлээ.");
+      } else {
+        toast.error(res.data?.message || "SMS илгээхэд алдаа гарлаа.");
+      }
+    } catch (e: any) {
+      toast.error(getErrorMessage(e) || "SMS илгээхэд алдаа гарлаа.");
+    } finally {
+      setSendingSmsId(null);
+    }
+  };
+  const [tuluvByResidentId, setTuluvByResidentId] = useState<
+    Record<string, "Төлсөн" | "Төлөөгүй" | "Хугацаа хэтэрсэн" | "">
+  >({});
+  const [dateByResidentId, setDateByResidentId] = useState<
+    Record<string, string>
+  >({});
+  const [selectedSukh, setSelectedSukh] = useState("");
+  const [selectedDavkhar, setSelectedDavkhar] = useState("");
+  // Default to the currently selected building ID from context
+  const [selectedBarilga, setSelectedBarilga] = useState<string>(() =>
+    String(selectedBuildingId || barilgiinId || ""),
+  );
+  const [selectedTurul, setSelectedTurul] = useState("");
+  const [selectedTuluv, setSelectedTuluv] = useState("");
+  const [selectedExpenses, setSelectedExpenses] = useState<string[]>([]);
+  // Align DatePickerInput value/onChange with string-based dates used across the app
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const { searchTerm } = useSearch();
+  const [expenses, setExpenses] = useState<any[]>([]);
+  const [isLoadingExpenses, setIsLoadingExpenses] = useState(false);
+  const [davkharList, setDavkharList] = useState<string[]>([]);
+  const [barilgaList, setBarilgaList] = useState<
+    Array<{ _id: string; ner: string }>
+  >([]);
+  const [turulList, setTurulList] = useState<string[]>([]);
+  const [selectedResident, setSelectedResident] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [liftFloors, setLiftFloors] = useState<string[]>([]);
+
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const historyRef = useRef<HTMLDivElement | null>(null);
+  const [historyResident, setHistoryResident] = useState<any>(null);
+  const [historyItems, setHistoryItems] = useState<any[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyIndex, setHistoryIndex] = useState(0);
+
+  // Pagination state for table
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 10;
+
+  const { zardluud: ashiglaltiinZardluud } = useAshiglaltiinZardluud();
+  const baiguullagiinId = ajiltan?.baiguullagiinId || null;
+  const { baiguullaga, baiguullagaMutate } = useBaiguullaga(
+    token,
+    baiguullagiinId,
+  );
+
+  useEffect(() => {
+    if (baiguullaga && baiguullaga.barilguud) {
+      const effectiveBuildingId = (selectedBuildingId ||
+        barilgiinId ||
+        undefined) as string | undefined;
+      const building = baiguullaga.barilguud.find(
+        (b: any) => b._id === effectiveBuildingId,
+      );
+      if (
+        building &&
+        building.tokhirgoo &&
+        Array.isArray(building.tokhirgoo.davkhar)
+      ) {
+        setDavkharList(building.tokhirgoo.davkhar);
+      } else {
+        setDavkharList([]);
+      }
+    }
+  }, [baiguullaga, selectedBuildingId, barilgiinId]);
+
+  const filterQuery = useMemo(() => {
+    const query: any = {};
+    if (selectedDavkhar) query.davkhar = selectedDavkhar;
+    // Note: selectedBarilga is now a building ID, not a name
+    // The backend filter might still use barilga name, but we filter by barilgiinId on client
+    if (selectedBarilga) query.barilgiinId = selectedBarilga;
+    if (selectedTurul) query.turul = selectedTurul;
+
+    return query;
+  }, [selectedDavkhar, selectedBarilga, selectedTurul]);
+
+  // Use selectedBarilga if set (and not empty), otherwise fall back to global building selection
+  // Empty string means "all buildings" (null), so we don't fall back in that case
+  const effectiveBarilgiinId = useMemo(() => {
+    if (selectedBarilga && selectedBarilga.trim() !== "") {
+      return selectedBarilga;
+    }
+    return selectedBuildingId || barilgiinId || null;
+  }, [selectedBarilga, selectedBuildingId, barilgiinId]);
+
+  const { handleSendInvoices: sendInvoicesApi, handleAddGarageCharges } =
+    useGereeActions(
+      token,
+      ajiltan,
+      barilgiinId || undefined,
+      selectedBuildingId || undefined,
+      baiguullaga,
+      baiguullagaMutate,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      effectiveBarilgiinId || undefined,
+    );
+
+  const [isSendingInvoices, setIsSendingInvoices] = useState(false);
+  const [isAddingGarageCharges, setIsAddingGarageCharges] = useState(false);
+
+  const handleSendInvoices = async () => {
+    if (selectedExpenses.length === 0) {
+      openErrorOverlay("Нэхэмжлэх илгээх гэрээ сонгоно уу");
+      return;
+    }
+
+    // Map selected invoice IDs (which are residents in this context) to their underlying gereeIds
+    const selectedGereeIds = displayResidents
+      .filter((r) => selectedExpenses.includes(r._id))
+      .map((r) => String(r.gereeniiId || r.gereeId || "").trim())
+      .filter(Boolean);
+
+    if (selectedGereeIds.length === 0) {
+      openErrorOverlay("Сонгосон оршин суугчдад холбогдох гэрээ олдсонгүй");
+      return;
+    }
+
+    setIsSendingInvoices(true);
+    try {
+      await sendInvoicesApi(selectedGereeIds);
+      setSelectedExpenses([]);
+    } catch (e) {
+      // Error handled in hook
+    } finally {
+      setIsSendingInvoices(false);
+    }
+  };
+
+  const handleAddGarageChargesClick = async () => {
+    if (displayResidents.length === 0) {
+      openErrorOverlay("Оршин суугч олдсонгүй");
+      return;
+    }
+    setIsAddingGarageCharges(true);
+    try {
+      await handleAddGarageCharges(displayResidents);
+    } catch (e) {
+      // Error handled in hook
+    } finally {
+      setIsAddingGarageCharges(false);
+    }
+  };
+
+  // State for nekhemjlekhiinTuukh data (invoices/residents)
+  const [nekhemjlekhList, setNekhemjlekhList] = useState<any[]>([]);
+  const [isLoadingResidents, setIsLoadingResidents] = useState(false);
+
+  useEffect(() => {
+    const fetchExpenses = async () => {
+      if (!token || !ajiltan?.baiguullagiinId) return;
+
+      setIsLoadingExpenses(true);
+      try {
+        const response = await uilchilgee(token).get("/ashiglaltiinZardluud", {
+          params: {
+            baiguullagiinId: ajiltan.baiguullagiinId,
+            barilgiinId: effectiveBarilgiinId,
+            khuudasniiDugaar: 1,
+            khuudasniiKhemjee: 100,
+          },
+        });
+        setExpenses(response.data?.jagsaalt || []);
+      } catch (error) {
+        openErrorOverlay(getErrorMessage(error));
+      } finally {
+        setIsLoadingExpenses(false);
+      }
+    };
+
+    fetchExpenses();
+  }, [token, ajiltan?.baiguullagiinId, effectiveBarilgiinId]);
+
+  // Fetch nekhemjlekhiinTuukh data instead of orshinSuugch
+  useEffect(() => {
+    const fetchNekhemjlekh = async () => {
+      if (!token || !ajiltan?.baiguullagiinId) return;
+      setIsLoadingResidents(true);
+      try {
+        const resp = await uilchilgee(token).get(`/nekhemjlekhiinTuukh`, {
+          params: {
+            baiguullagiinId: ajiltan.baiguullagiinId,
+            barilgiinId: effectiveBarilgiinId,
+            khuudasniiDugaar: 1,
+            khuudasniiKhemjee: 1000,
+          },
+        });
+        const list = Array.isArray(resp.data?.jagsaalt)
+          ? resp.data.jagsaalt
+          : Array.isArray(resp.data)
+            ? resp.data
+            : [];
+        setNekhemjlekhList(list);
+      } catch (error) {
+        openErrorOverlay(getErrorMessage(error));
+        setNekhemjlekhList([]);
+      } finally {
+        setIsLoadingResidents(false);
+      }
+    };
+    fetchNekhemjlekh();
+  }, [token, ajiltan?.baiguullagiinId, effectiveBarilgiinId]);
+
+  // Transform nekhemjlekhiinTuukh data into resident-like structure for table display
+  // Group by unique resident (ovog + ner + utas) and get the latest invoice per resident
+  const residents = useMemo(() => {
+    const residentMap = new Map<string, any>();
+
+    nekhemjlekhList.forEach((invoice: any) => {
+      // Create a unique key for each resident
+      const key = `${invoice.ovog || ""}_${invoice.ner || ""}_${
+        invoice.utas?.[0] || ""
+      }`;
+
+      // Get existing or create new resident entry
+      const existing = residentMap.get(key);
+      const invoiceDate = new Date(
+        invoice?.createdAt || invoice?.ognoo || 0,
+      ).getTime();
+
+      if (
+        !existing ||
+        invoiceDate >
+          new Date(existing?.createdAt || existing?.ognoo || 0).getTime()
+      ) {
+        // Use the latest invoice data for this resident
+        residentMap.set(key, {
+          _id: invoice._id || key, // Use invoice ID or key as ID
+          ovog: invoice.ovog || "",
+          ner: invoice.ner || "",
+          utas: invoice.utas || [],
+          toot: invoice.medeelel?.toot || invoice.toot || "",
+          davkhar: invoice.davkhar || "",
+          khayag: invoice.khayag || "",
+          barilgiinId: invoice.barilgiinId || "",
+          baiguullagiinId: invoice.baiguullagiinId || "",
+          turul: invoice.turul || "",
+          gereeniiId: invoice.gereeniiId || "",
+          gereeniiDugaar: invoice.gereeniiDugaar || "",
+          tuluv: invoice.tuluv || "",
+          niitTulbur: invoice.niitTulbur || invoice.niitDun || 0,
+          uldegdel:
+            invoice.uldegdel ??
+            (invoice.niitTulbur
+              ? invoice.niitTulbur - (invoice.tulsunDun || 0)
+              : 0),
+          tulsunDun: invoice.tulsunDun || 0,
+          createdAt: invoice.createdAt || invoice.ognoo || "",
+          // Keep reference to the invoice for payment status
+          _invoice: invoice,
+        });
+      }
+    });
+
+    return Array.from(residentMap.values());
+  }, [nekhemjlekhList]);
+
+  // Extract payment status and dates from nekhemjlekhiinTuukh data (already fetched)
+  useEffect(() => {
+    const byResident: Record<
+      string,
+      { label: string; ts: number; date: string }
+    > = {};
+
+    nekhemjlekhList.forEach((invoice: any) => {
+      const key = `${invoice.ovog || ""}_${invoice.ner || ""}_${
+        invoice.utas?.[0] || ""
+      }`;
+      const label = getPaymentStatusLabel(invoice);
+      const ts = new Date(
+        invoice?.tulsunOgnoo || invoice?.ognoo || invoice?.createdAt || 0,
+      ).getTime();
+      const dateStr = new Date(
+        invoice?.tulsunOgnoo || invoice?.ognoo || invoice?.createdAt || 0,
+      )
+        .toISOString()
+        .split("T")[0];
+
+      const cur = byResident[key];
+      if (!cur || ts >= cur.ts) {
+        byResident[key] = { label, ts, date: dateStr };
+      }
+    });
+
+    // Map to resident IDs
+    const tuluvMap: Record<
+      string,
+      "Төлсөн" | "Төлөөгүй" | "Хугацаа хэтэрсэн" | ""
+    > = {};
+    const dateMap: Record<string, string> = {};
+
+    residents.forEach((r: any) => {
+      const key = `${r.ovog || ""}_${r.ner || ""}_${r.utas?.[0] || ""}`;
+      const status = byResident[key];
+      if (status) {
+        const label = status.label as any;
+        tuluvMap[r._id] =
+          label === "Төлсөн" ||
+          label === "Төлөөгүй" ||
+          label === "Хугацаа хэтэрсэн"
+            ? label
+            : "";
+        dateMap[r._id] = status.date;
+      }
+    });
+
+    setTuluvByResidentId(tuluvMap);
+    setDateByResidentId(dateMap);
+  }, [nekhemjlekhList, residents]);
+
+  const displayResidents = useMemo(() => {
+    let items = [...residents];
+
+    // Final guard: enforce org/branch scoping on client in case backend over-returns
+    const orgItems = items.filter(
+      (r: any) =>
+        String(r?.baiguullagiinId || "") ===
+        String(ajiltan?.baiguullagiinId || ""),
+    );
+    let branchItems = orgItems;
+    if (effectiveBarilgiinId) {
+      branchItems = orgItems.filter(
+        (r: any) =>
+          r?.barilgiinId == null ||
+          String(r.barilgiinId) === String(effectiveBarilgiinId),
+      );
+      // If branch filter yields nothing, fall back to org-only
+      if (branchItems.length === 0) {
+        branchItems = orgItems;
+      }
+    }
+    items = branchItems;
+
+    // Use deep-search helper for broader, nested matching
+    if (searchTerm && String(searchTerm).trim() !== "") {
+      items = items.filter((r: any) => matchesSearch(r, searchTerm));
+    }
+
+    if (selectedTuluv) {
+      items = items.filter((r: any) => {
+        const id = String(r?._id || "");
+        const label =
+          id && tuluvByResidentId[id]
+            ? (tuluvByResidentId[id] as any)
+            : getPaymentStatusLabel(r);
+        return label === selectedTuluv;
+      });
+    }
+
+    if (selectedDavkhar)
+      items = items.filter((r: any) => r.davkhar === selectedDavkhar);
+    if (selectedBarilga)
+      items = items.filter(
+        (r: any) => String(r.barilgiinId || "") === String(selectedBarilga),
+      );
+    if (selectedTurul)
+      items = items.filter((r: any) => r.turul === selectedTurul);
+
+    if (selectedDate) {
+      items = items.filter((r: any) => {
+        const id = String(r?._id || "");
+        const invoiceDate = dateByResidentId[id];
+        return invoiceDate === selectedDate;
+      });
+    }
+
+    return items;
+  }, [
+    residents,
+    searchTerm,
+    selectedTuluv,
+    selectedDavkhar,
+    selectedBarilga,
+    selectedTurul,
+    selectedDate,
+    dateByResidentId,
+    tuluvByResidentId,
+    effectiveBarilgiinId,
+    ajiltan?.baiguullagiinId,
+  ]);
+
+  const totalRecords = displayResidents.length;
+
+  // Update selectedBarilga when the global building selection changes
+  // Only sync if selectedBarilga is empty (user hasn't made a selection yet)
+  useEffect(() => {
+    const effectiveBuildingId = selectedBuildingId || barilgiinId || "";
+    // Only update if local selection is empty and we have a global selection
+    // This allows user to manually change the filter without it being reset
+    if (
+      effectiveBuildingId &&
+      (!selectedBarilga || selectedBarilga.trim() === "")
+    ) {
+      setSelectedBarilga(String(effectiveBuildingId));
+    }
+  }, [selectedBuildingId, barilgiinId]);
+
+  useEffect(() => {
+    // Populate building list from baiguullaga.barilguud, not from residents
+    if (baiguullaga?.barilguud && Array.isArray(baiguullaga.barilguud)) {
+      const buildings = baiguullaga.barilguud
+        .filter((b: any) => b && b._id && b.ner)
+        .map((b: any) => ({ _id: b._id, ner: b.ner }));
+      setBarilgaList(buildings);
+
+      // If no building is selected but we have a default building ID, set it
+      if (!selectedBarilga && (selectedBuildingId || barilgiinId)) {
+        const defaultId = selectedBuildingId || barilgiinId;
+        if (defaultId) {
+          const buildingExists = buildings.some(
+            (b) => b._id === String(defaultId),
+          );
+          if (buildingExists) {
+            setSelectedBarilga(String(defaultId));
+          }
+        }
+      }
+    } else {
+      setBarilgaList([]);
+    }
+
+    // Populate turul list from residents
+    if (displayResidents.length > 0) {
+      const uniqueTurul = [
+        ...new Set(displayResidents.map((r: any) => r.turul).filter(Boolean)),
+      ];
+      setTurulList(uniqueTurul as string[]);
+    } else {
+      setTurulList([]);
+    }
+  }, [
+    baiguullaga?.barilguud,
+    displayResidents,
+    selectedBuildingId,
+    barilgiinId,
+    selectedBarilga,
+  ]);
+
+  const handleSelectAll = () => {
+    if (selectedExpenses.length === displayResidents.length) {
+      setSelectedExpenses([]);
+    } else {
+      setSelectedExpenses(displayResidents.map((res: any) => res._id));
+    }
+  };
+
+  const handleSelectExpense = (id: string) => {
+    setSelectedExpenses((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
+    );
+  };
+
+  const handleViewInvoice = (resident: any) => {
+    setSelectedResident(resident);
+    setIsModalOpen(true);
+  };
+
+  const handleOpenHistory = async (resident: any) => {
+    if (!token || !ajiltan?.baiguullagiinId) return;
+    setHistoryResident(resident);
+    setIsHistoryOpen(true);
+    setHistoryLoading(true);
+    setHistoryIndex(0);
+    // Clear previous items to avoid stale display while loading
+    setHistoryItems([]);
+    try {
+      const gid = resident.gereeniiId || resident.gereeId || "";
+      if (!gid) {
+        setHistoryItems([]);
+        return;
+      }
+      const resp = await uilchilgee(token).get(`/guilgeeAvlaguud`, {
+        params: {
+          baiguullagiinId: ajiltan.baiguullagiinId,
+          query: JSON.stringify({ gereeniiId: gid }),
+          sort: JSON.stringify({ ognoo: 1, createdAt: 1 }),
+          khuudasniiDugaar: 1,
+          khuudasniiKhemjee: 5000,
+        },
+      });
+      const data = resp.data;
+      setHistoryItems(data.jagsaalt || []);
+    } catch (e) {
+      openErrorOverlay(getErrorMessage(e));
+      setHistoryItems([]);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const fetchLiftFloors = async () => {
+      if (!token || !ajiltan?.baiguullagiinId) return;
+      try {
+        const resp = await uilchilgee(token).get("/liftShalgaya", {
+          params: {
+            baiguullagiinId: ajiltan.baiguullagiinId,
+            barilgiinId: selectedBuildingId || barilgiinId || null,
+            khuudasniiDugaar: 1,
+            khuudasniiKhemjee: 100,
+          },
+        });
+        const data = resp.data;
+        const list = Array.isArray(data?.jagsaalt) ? data.jagsaalt : [];
+        // Prefer branch-specific entries, fallback to org defaults (no barilgiinId)
+        const toStr = (v: any) => (v == null ? "" : String(v));
+        const branchMatches = barilgiinId
+          ? list.filter(
+              (x: any) => toStr(x?.barilgiinId) === toStr(barilgiinId),
+            )
+          : [];
+        const pickLatest = (arr: any[]) =>
+          [...arr].sort(
+            (a, b) =>
+              new Date(b?.updatedAt || b?.createdAt || 0).getTime() -
+              new Date(a?.updatedAt || a?.createdAt || 0).getTime(),
+          )[0];
+        let chosen =
+          branchMatches.length > 0 ? pickLatest(branchMatches) : null;
+        if (!chosen) {
+          const orgDefaults = list.filter(
+            (x: any) => x?.barilgiinId == null || toStr(x.barilgiinId) === "",
+          );
+          chosen =
+            orgDefaults.length > 0 ? pickLatest(orgDefaults) : pickLatest(list);
+        }
+        const floors: string[] = Array.isArray(chosen?.choloolugdokhDavkhar)
+          ? chosen.choloolugdokhDavkhar.map((f: any) => String(f))
+          : [];
+        setLiftFloors(floors);
+      } catch {}
+    };
+    fetchLiftFloors();
+  }, [token, ajiltan?.baiguullagiinId, barilgiinId, selectedBuildingId]);
+
+  const isLoading = isLoadingExpenses || isLoadingResidents;
+
+  useEffect(() => {
+    document.body.style.overflow = isModalOpen || isHistoryOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isModalOpen, isHistoryOpen]);
+
+  // Modal keyboard shortcuts for history modal as well
+  useModalHotkeys({
+    isOpen: isHistoryOpen,
+    onClose: () => setIsHistoryOpen(false),
+    container: historyRef.current,
+  });
+
+  // Define columns for Ant Design Table
+  const nekhemjlekhColumns = useMemo(
+    () => [
+      {
+        title: <span className="text-gray-900 dark:text-white">№</span>,
+        dataIndex: "index",
+        key: "index",
+        width: 50,
+        align: "center" as const,
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        render: (_: any, __: any, index: number) => index + 1,
+      },
+      {
+        title: (
+          <span className="text-gray-900 dark:text-white">Оршин суугч</span>
+        ),
+        dataIndex: "ner",
+        key: "ner",
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        render: (text: string, record: any) => (
+          <div className="flex items-center gap-3">
+            <div className="min-w-0">
+              <div className="text-gray-900 dark:text-white truncate">
+                {text}
+              </div>
+            </div>
+          </div>
+        ),
+      },
+      {
+        title: <span className="text-gray-900 dark:text-white">Тоот</span>,
+        dataIndex: "toot",
+        key: "toot",
+        align: "center" as const,
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        render: (text: string) => (
+          <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-400 text-sm">
+            {text || "-"}
+          </span>
+        ),
+      },
+      {
+        title: <span className="text-gray-900 dark:text-white">Хаяг</span>,
+        dataIndex: "khayag",
+        key: "khayag",
+        align: "center" as const,
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        render: (_: any, record: any) => {
+          const address =
+            record.duureg && record.horoo && record.davkhar
+              ? `${record.duureg}, ${record.horoo}, ${record.davkhar}`
+              : record.khayag || "Хаяг тодорхойгүй";
+          return (
+            <span className="text-gray-700 dark:text-gray-300">{address}</span>
+          );
+        },
+      },
+      {
+        title: <span className="text-gray-900 dark:text-white">Утас</span>,
+        dataIndex: "utas",
+        key: "utas",
+        align: "center" as const,
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        render: (text: string) => (
+          <span className="text-gray-700 dark:text-gray-300 font-mono">
+            {text || "-"}
+          </span>
+        ),
+      },
+      {
+        title: <span className="text-gray-900 dark:text-white">Төлөв</span>,
+        dataIndex: "tuluv",
+        key: "tuluv",
+        align: "center" as const,
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        render: (_: any, record: any) => {
+          const id = String(record?._id || "");
+          const label =
+            id && tuluvByResidentId[id]
+              ? (tuluvByResidentId[id] as any)
+              : getPaymentStatusLabel(record);
+          const cls =
+            label === "Төлсөн"
+              ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400"
+              : label === "Төлөөгүй" || label === "Хугацаа хэтэрсэн"
+                ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-400"
+                : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400";
+          return (
+            <span className={`px-3 py-1 rounded-full text-xs ${cls}`}>
+              {label}
+            </span>
+          );
+        },
+      },
+      {
+        title: <span className="text-gray-900 dark:text-white">Үйлдэл</span>,
+        key: "action",
+        align: "center" as const,
+        width: 120,
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        render: (_: any, record: any) => (
+          <div
+            className="flex justify-center items-center gap-2"
+            style={{ minWidth: 100 }}
+          >
+            <motion.button
+              onClick={() => handleSendReminderSms(record)}
+              className="px-3 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white transition-colors text-sm flex items-center justify-center gap-1 disabled:opacity-50"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              disabled={sendingSmsId === record._id}
+              title="Төлбөр сануулах SMS илгээх"
+            >
+              {sendingSmsId === record._id ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              ) : (
+                <MessageSquare className="w-4 h-4" />
+              )}
+            </motion.button>
+            <motion.button
+              onClick={() => {
+                const params = new URLSearchParams();
+                if (record.turul) params.set("turul", record.turul);
+                if (record.davkhar) params.set("davkhar", record.davkhar);
+                router.push(`/tulbur?${params.toString()}`);
+              }}
+              className="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-500 text-white transition-colors text-sm"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              title="Төлбөр хуудас руу шилжих"
+            >
+              →
+            </motion.button>
+          </div>
+        ),
+      },
+    ],
+    [tuluvByResidentId, router, sendingSmsId, handleSendReminderSms],
+  );
+
+  if (!ajiltan || !ajiltan.baiguullagiinId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <p className="mt-4 text-slate-600">Мэдээлэл ачааллаж байна...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
+      <LocalStyles />
+      {/* Hidden title for modal context */}
+      <motion.h1
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-3xl  mb-6 text-theme bg-clip-text text-transparent drop-shadow-sm hidden"
+      >
+        Зардлын нэхэмжлэл
+      </motion.h1>
+
+      <div className="space-y-8">
+        {/* Enhanced Dashboard with Borders */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {(() => {
+            const totalResidents = displayResidents.length;
+            const paidCount = displayResidents.filter((r: any) => {
+              const id = String(r?._id || "");
+              const label =
+                id && tuluvByResidentId[id]
+                  ? (tuluvByResidentId[id] as any)
+                  : getPaymentStatusLabel(r);
+              return label === "Төлсөн";
+            }).length;
+            const unpaidCount = displayResidents.filter((r: any) => {
+              const id = String(r?._id || "");
+              const label =
+                id && tuluvByResidentId[id]
+                  ? (tuluvByResidentId[id] as any)
+                  : getPaymentStatusLabel(r);
+              return label === "Төлөөгүй";
+            }).length;
+            const totalAmount = displayResidents.reduce(
+              (sum: number, r: any) => {
+                // This would need actual invoice data, for now using placeholder
+                return sum + (r?.totalAmount || 0);
+              },
+              0,
+            );
+
+            const stats = [
+              { title: "Нийт оршин суугч", value: totalResidents },
+              { title: "Төлсөн", value: paidCount },
+              { title: "Төлөөгүй", value: unpaidCount },
+              {
+                title: "Нийт дүн",
+                value: formatCurrency(totalAmount),
+              },
+            ];
+            return stats;
+          })().map((stat, idx) => (
+            <motion.div
+              key={idx}
+              className="relative group rounded-3xl border border-white/30 shadow-lg overflow-hidden"
+              whileHover={{ scale: 1.08, rotateY: 5 }}
+              transition={{ duration: 0.4, type: "spring", stiffness: 300 }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-3xl opacity-0 group-hover:opacity-40 blur-xl transition-all duration-500" />
+              <div className="neu-panel relative rounded-3xl p-6 backdrop-blur-xl bg-white/80 hover:shadow-2xl transition-all duration-500 overflow-hidden border border-white/20">
+                <motion.div
+                  className="absolute inset-0 pointer-events-none bg-gradient-to-r from-white/30 via-white/10 to-white/30 opacity-0"
+                  initial={{ opacity: 0, x: -100 }}
+                  whileHover={{ opacity: 1, x: 100 }}
+                  transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
+                />
+
+                <div
+                  className={`text-4xl mb-2 text-theme ${stat.title === "Нийт дүн" ? "force-bold" : ""}`}
+                >
+                  {stat.title === "Нийт дүн"
+                    ? stat.value
+                    : typeof stat.value === "number"
+                      ? stat.value
+                      : String(stat.value)}
+                </div>
+                <div className="text-sm text-gray-600  leading-tight">
+                  {stat.title}
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        <motion.div
+          className="rounded-3xl p-8 bg-white/90 backdrop-blur-xl shadow-xl border border-white/30"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
+            <div className="flex flex-col lg:flex-row gap-4 w-full xl:w-auto">
+              <StandardDatePicker
+                value={selectedDate}
+                onChange={(v: string | null) => setSelectedDate(v)}
+                placeholder="Огноо сонгох"
+                className="!w-[360px]"
+                allowClear
+                format="YYYY-MM-DD"
+                classNames={{
+                  input:
+                    "text-slate-800 dark:text-slate-100 neu-panel placeholder:text-slate-400 dark:placeholder:text-slate-500 !h-[40px] !py-2 !w-[380px]",
+                }}
+              />
+              <div className="flex items-center gap-2">
+                <TusgaiZagvar
+                  value={selectedTurul}
+                  onChange={setSelectedTurul}
+                  options={[
+                    { value: "", label: "Гэрээний төрөл" },
+                    ...turulList.map((t) => ({ value: t, label: t })),
+                  ]}
+                  placeholder="Гэрээний төрөл"
+                  className="h-[40px] w-[180px]"
+                  tone="theme"
+                />
+                <motion.button
+                  onClick={() => {
+                    const params = new URLSearchParams();
+                    if (selectedTurul) params.set("turul", selectedTurul);
+                    router.push(`/tulbur?${params.toString()}`);
+                  }}
+                  className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors text-sm  disabled:opacity-50 disabled:cursor-not-allowed"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  disabled={!selectedTurul}
+                  title="Төлбөр хуудас руу шилжих"
+                >
+                  →
+                </motion.button>
+              </div>
+              <TusgaiZagvar
+                value={selectedTuluv}
+                onChange={setSelectedTuluv}
+                options={[
+                  { value: "", label: "Бүх төлөв" },
+                  { value: "Төлсөн", label: "Төлсөн" },
+                  { value: "Хугацаа хэтэрсэн", label: "Хугацаа хэтэрсэн" },
+                  { value: "Төлөөгүй", label: "Төлөөгүй" },
+                ]}
+                placeholder="Бүх төлөв"
+                className="h-[40px] w-[140px]"
+                tone="theme"
+              />
+              <div className="flex items-center gap-2">
+                <TusgaiZagvar
+                  value={selectedDavkhar}
+                  onChange={setSelectedDavkhar}
+                  options={[
+                    ...davkharList.map((d) => ({ value: d, label: d })),
+                  ]}
+                  placeholder="Давхар"
+                  className="h-[40px] w-[120px]"
+                  tone="theme"
+                />
+                <motion.button
+                  onClick={() => {
+                    const params = new URLSearchParams();
+                    if (selectedDavkhar) params.set("davkhar", selectedDavkhar);
+                    router.push(`/tulbur?${params.toString()}`);
+                  }}
+                  className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors text-sm  disabled:opacity-50 disabled:cursor-not-allowed"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  disabled={!selectedDavkhar}
+                  title="Төлбөр хуудас руу шилжих"
+                >
+                  →
+                </motion.button>
+              </div>
+              <TusgaiZagvar
+                value={selectedBarilga}
+                onChange={(v: string) => {
+                  // Allow clearing the selection to show all buildings
+                  setSelectedBarilga(v || "");
+                }}
+                options={[
+                  ...barilgaList.map((b) => ({ value: b._id, label: b.ner })),
+                ]}
+                placeholder={
+                  selectedBarilga
+                    ? barilgaList.find((b) => b._id === selectedBarilga)?.ner
+                    : "Бүх барилга"
+                }
+                className="h-[40px] w-[250px]"
+                tone="theme"
+              />
+            </div>
+
+            <div className="flex flex-row gap-4 w-full lg:w-auto justify-end">
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+              >
+                <IconTextButton
+                  onClick={handleAddGarageChargesClick}
+                  icon={
+                    isAddingGarageCharges ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    ) : null
+                  }
+                  label={
+                    isAddingGarageCharges
+                      ? "Нэмж байна..."
+                      : "Грашийн төлбөр нэмэх"
+                  }
+                  disabled={isAddingGarageCharges}
+                  className="bg-indigo-500 text-white hover:bg-indigo-600 disabled:opacity-50 px-6 py-3 rounded-xl h-[40px] flex items-center shadow-lg"
+                />
+              </motion.div>
+
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+              >
+                <IconTextButton
+                  onClick={handleSendInvoices}
+                  icon={
+                    isSendingInvoices ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    ) : null
+                  }
+                  label={
+                    isSendingInvoices ? "Илгээж байна..." : "Нэхэмжлэх илгээх"
+                  }
+                  disabled={isSendingInvoices || selectedExpenses.length === 0}
+                  className="bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50 px-6 py-3 rounded-xl h-[40px] flex items-center shadow-lg"
+                />
+              </motion.div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Enhanced Table */}
+        <motion.div
+          className="rounded-3xl overflow-hidden shadow-2xl bg-white/95 backdrop-blur-xl border border-white/30"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <div className="p-1">
+            <div className="max-h-[50vh] overflow-y-auto overflow-x-auto custom-scrollbar w-full rounded-2xl border border-gray-100">
+              <div className="table-surface rounded-2xl mt-0 w-full">
+                <div className="rounded-3xl p-1 mb-4 neu-table allow-overflow">
+                  <Table
+                    dataSource={displayResidents}
+                    columns={nekhemjlekhColumns}
+                    rowKey="_id"
+                    rowSelection={{
+                      type: "checkbox",
+                      selectedRowKeys: selectedExpenses,
+                      onChange: (keys) => setSelectedExpenses(keys as string[]),
+                    }}
+                    pagination={{
+                      pageSize: rowsPerPage,
+                      total: totalRecords,
+                      current: currentPage,
+                      position: ["bottomCenter"],
+                      onChange: (page) => setCurrentPage(page),
+                    }}
+                    size="small"
+                    bordered
+                    className="guilgee-table"
+                    scroll={{ x: "max-content", y: 400 }}
+                    loading={isLoading}
+                    locale={{ emptyText: "Мэдээлэл алга байна" }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+
+      <InvoiceModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        resident={selectedResident}
+        baiguullagiinId={ajiltan?.baiguullagiinId}
+        token={token || ""}
+        liftFloors={liftFloors}
+        barilgiinId={selectedBuildingId || barilgiinId || null}
+      />
+
+      {isHistoryOpen && (
+        <ModalPortal>
+          <AnimatePresence>
+            <>
+              <motion.div
+                key="hist-backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[12000]"
+                onClick={() => setIsHistoryOpen(false)}
+              />
+              <motion.div
+                key="hist-modal"
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[900px] max-h-[90vh] modal-surface modal-responsive rounded-3xl shadow-2xl overflow-hidden pointer-events-auto"
+                onClick={(e) => e.stopPropagation()}
+                ref={historyRef}
+                role="dialog"
+                aria-modal="true"
+              >
+                <div className="p-5 border-b border-gray-100 flex items-center justify-between rounded-t-3xl">
+                  <div>
+                    <h3 className="text-xl ">Түүх</h3>
+                    {historyResident && (
+                      <p className="text-sm">
+                        {historyResident.ovog} {historyResident.ner} —{" "}
+                        {historyItems.length} Нийт
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setIsHistoryOpen(false)}
+                    className="p-2 rounded-2xl hover:menu-surface/80"
+                    data-modal-primary
+                  ></button>
+                </div>
+
+                <div className="relative p-6 overflow-y-auto overflow-x-auto max-h-[calc(90vh-64px)] overscroll-contain custom-scrollbar">
+                  {historyLoading ? (
+                    <div className="py-16 text-center">Ачааллаж байна…</div>
+                  ) : historyItems.length === 0 ? (
+                    <div className="py-16 text-center">
+                      Түүхийн мэдээлэл олдсонгүй
+                    </div>
+                  ) : (
+                    <>
+                      <div className="relative h-[360px]">
+                        {historyItems
+                          .slice(historyIndex, historyIndex + 4)
+                          .map((item, i) => {
+                            const depth = i;
+                            const translate = depth * 16;
+                            const scale = 1 - depth * 0.05;
+                            const z = 50 - depth;
+
+                            const dateStr =
+                              item.ognoo ||
+                              item.nekhemjlekhiinOgnoo ||
+                              item.createdAt;
+                            const numberStr =
+                              item.dugaalaltDugaar ??
+                              item.gereeniiDugaar ??
+                              item.invoiceNo ??
+                              "-";
+                            const zardluudRows = Array.isArray(
+                              item.medeelel?.zardluud,
+                            )
+                              ? item.medeelel.zardluud
+                              : Array.isArray(item.zardluud)
+                                ? item.zardluud
+                                : [];
+                            const guilgeenuudRows = Array.isArray(
+                              item.medeelel?.guilgeenuud,
+                            )
+                              ? item.medeelel.guilgeenuud
+                              : Array.isArray(item.guilgeenuud)
+                                ? item.guilgeenuud
+                                : [];
+                            const rows = [...zardluudRows, ...guilgeenuudRows];
+
+                            const total = Number(item.tulukhDun ?? 0);
+                            const tulsun = Number(item.tulsunDun ?? 0);
+                            const uldegdel = Number(item.uldegdel ?? 0);
+
+                            return (
+                              <div
+                                key={item._id || `${item.sar}-${i}`}
+                                className="absolute inset-x-0 mx-auto w-[92%] menu-surface border rounded-2xl shadow-lg p-5 transition-transform"
+                                style={{
+                                  transform: `translateY(${translate}px) scale(${scale})`,
+                                  zIndex: z,
+                                }}
+                              >
+                                <div className="flex items-start justify-between gap-4">
+                                  <div>
+                                    <div className="text-sm">
+                                      Огноо:{" "}
+                                      <span className="">
+                                        {dateStr
+                                          ? new Date(
+                                              dateStr,
+                                            ).toLocaleDateString("mn-MN")
+                                          : "-"}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="text-xs force-bold">
+                                      Нийт дүн
+                                    </div>
+                                    <div className="text-xl ">
+                                      {formatCurrency(total)}
+                                    </div>
+                                    <div className="mt-1">
+                                      <span
+                                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs  ${
+                                          total === 0
+                                            ? "badge-paid"
+                                            : "badge-unpaid"
+                                        }`}
+                                      >
+                                        {uldegdel < 0.01
+                                          ? "Төлөгдсөн"
+                                          : "Төлөгдөөгүй"}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Always show initial balance (even when 0) */}
+                                <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                                  <div>
+                                    <span className="text-slate-500">
+                                      Эхний үлдэгдэл:
+                                    </span>{" "}
+                                    <span className="">
+                                      {formatCurrency(
+                                        Number(
+                                          item?.medeelel?.ekhniiUldegdel ??
+                                            item?.ekhniiUldegdel ??
+                                            0,
+                                        ),
+                                      )}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <span className="text-slate-500">
+                                      Тайлбар:
+                                    </span>{" "}
+                                    <span className="">
+                                      {item?.medeelel?.ekhniiUldegdelUsgeer ||
+                                        item?.ekhniiUldegdelUsgeer ||
+                                        "-"}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {rows.length > 0 && (
+                                  <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
+                                    {rows.map((z: any, zi: number) => {
+                                      const amount = (() => {
+                                        const n = (v: any) => {
+                                          const num = Number(v);
+                                          return Number.isNaN(num) ? null : num;
+                                        };
+                                        const dun = n(z?.dun);
+                                        if (dun !== null && dun > 0) return dun;
+                                        const td = n(z?.tulukhDun);
+                                        if (td !== null && td > 0) return td;
+
+                                        const tariff = n(z?.tariff);
+                                        return tariff ?? 0;
+                                      })();
+
+                                      return (
+                                        <div
+                                          key={zi}
+                                          className="flex items-center justify-between"
+                                        >
+                                          <span className="truncate">
+                                            {z.ner || z.name}
+                                          </span>
+                                          <span className="">
+                                            {formatNumber(amount)}
+                                          </span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                      </div>
+
+                      <div className="mt-4 flex items-center justify-between">
+                        <IconTextButton
+                          variant="minimal"
+                          disabled={historyIndex <= 0}
+                          onClick={() =>
+                            setHistoryIndex((i) => Math.max(0, i - 1))
+                          }
+                          icon={<ChevronLeft className="w-4 h-4" />}
+                          label="Өмнөх"
+                          showLabelFrom="sm"
+                        />
+                        <div className="text-sm">
+                          {Math.min(historyIndex + 1, historyItems.length)} /{" "}
+                          {historyItems.length}
+                        </div>
+                        <IconTextButton
+                          variant="minimal"
+                          disabled={historyIndex >= historyItems.length - 1}
+                          onClick={() =>
+                            setHistoryIndex((i) =>
+                              Math.min(historyItems.length - 1, i + 1),
+                            )
+                          }
+                          icon={<ChevronRight className="w-4 h-4" />}
+                          label="Дараах"
+                          showLabelFrom="sm"
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+              </motion.div>
+            </>
+          </AnimatePresence>
+        </ModalPortal>
+      )}
+    </div>
+  );
+}

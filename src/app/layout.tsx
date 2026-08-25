@@ -27,7 +27,9 @@ export default function RootLayout({
         <meta name="theme-color" content="#0ea5e9" />
         <Script id="theme-init" strategy="beforeInteractive">
           {`(function(){try{var d=document.documentElement;var savedMode=localStorage.getItem('theme-mode');var mode=savedMode||(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');d.setAttribute('data-mode',mode);if(mode==='dark'){d.classList.add('dark');}else{d.classList.remove('dark');}
-var savedTheme=localStorage.getItem('app-theme')||'soft-sage';d.setAttribute('data-theme',savedTheme);if(!localStorage.getItem('app-theme')){localStorage.setItem('app-theme',savedTheme);} }catch(e){}})();`}
+var savedTheme=localStorage.getItem('app-theme')||'soft-sage';d.setAttribute('data-theme',savedTheme);if(!localStorage.getItem('app-theme')){localStorage.setItem('app-theme',savedTheme);}
+d.setAttribute('data-sidebar',localStorage.getItem('sidebar-collapsed')==='1'?'rail':'full');
+var fs=localStorage.getItem('fontSizeIndex');if(fs!==null){var sizes=['10px','11px','12px','13px','14px','15px','16px','17px','18px','19px','20px','21px','22px','24px','26px'];var px=sizes[parseInt(fs,10)];if(px){d.style.fontSize=px;}} }catch(e){}})();`}
         </Script>
       </head>
       <body

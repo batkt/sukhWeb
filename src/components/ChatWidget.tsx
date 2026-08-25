@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, JSX } from "react";
 import { io, Socket } from "socket.io-client";
 import axios from "axios";
 import { useAuth } from "@/lib/useAuth";
-import TuslamjTokhirgoo from "@/app/tokhirgoo/TuslamjTokhirgoo";
+import TuslamjTokhirgoo from "@/app/(shell)/tokhirgoo/TuslamjTokhirgoo";
 import { useTour } from "@/context/TourContext";
 
 const BASE_API = "https://admin.zevtabs.mn/api/v1/chat";

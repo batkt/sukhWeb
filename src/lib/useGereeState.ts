@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { ALL_COLUMNS } from "@/app/geree/columns";
+import { ALL_COLUMNS } from "@/app/(shell)/geree/columns";
 
 export function useGereeState(searchParams: any, didInitRef: any) {
   const DEFAULT_HIDDEN = ["aimag"];

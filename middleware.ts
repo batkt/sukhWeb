@@ -20,9 +20,16 @@ function isPublicPath(pathname: string): boolean {
     pathname.startsWith("/_next/") ||
     pathname.startsWith("/public/") ||
     pathname === "/favicon.ico" ||
+    pathname === "/icon.png" ||
+    pathname === "/apple-icon.png" ||
     pathname.startsWith("/images/") ||
     pathname.startsWith("/icons/")
   ) {
+    return true;
+  }
+  // Allow public static assets (logo, fonts, lottie гэх мэт) — эдгээр нь
+  // нэвтрээгүй хуудсууд (login, pay) дээр ч харагдах ёстой.
+  if (/\.(png|jpe?g|gif|svg|webp|ico|json|woff2?|ttf|txt|xml|webmanifest)$/i.test(pathname)) {
     return true;
   }
   return false;

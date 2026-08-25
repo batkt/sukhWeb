@@ -178,7 +178,7 @@ export default function PaymentLandingPage() {
         {/* Brand logo header */}
         <div className="flex flex-col items-center gap-2 mb-6">
           <div className="flex items-center gap-2">
-            <img src="/Main.png" alt="AMARHOME Logo" className="w-8 h-8 object-contain shrink-0" />
+            <img src="/logo.png" alt="AMARHOME Logo" className="w-8 h-8 object-contain shrink-0" />
             <span className="text-base text-slate-400 text-white">AMARHOME</span>
           </div>
         </div>
@@ -428,7 +428,7 @@ export default function PaymentLandingPage() {
                             />
                             {/* Overlay Amarhome logo in center */}
                             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-white border-2 border-white flex items-center justify-center shadow-lg p-0.5">
-                              <img src="/Main.png" alt="Amarhome Logo" className="w-full h-full object-contain" />
+                              <img src="/logo.png" alt="Amarhome Logo" className="w-full h-full object-contain" />
                             </div>
                           </div>
                         ) : (
@@ -443,7 +443,7 @@ export default function PaymentLandingPage() {
                             />
                             {/* Overlay Amarhome logo in center */}
                             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-white border-2 border-white flex items-center justify-center shadow-lg p-0.5">
-                              <img src="/Main.png" alt="Amarhome Logo" className="w-full h-full object-contain" />
+                              <img src="/logo.png" alt="Amarhome Logo" className="w-full h-full object-contain" />
                             </div>
                           </div>
                         )}

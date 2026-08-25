@@ -1,0 +1,3848 @@
+"use client";
+
+import React from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearch } from "@/context/SearchContext";
+import useSWR, { useSWRConfig } from "swr";
+import { createPortal } from "react-dom";
+import { motion } from "framer-motion";
+// import KhungulultPage from "../khungulult/page";
+import { useAuth } from "@/lib/useAuth";
+import { hasPermission } from "@/lib/permissionUtils";
+import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
+import { useGereeJagsaalt } from "@/lib/useGeree";
+import uilchilgee from "@/lib/uilchilgee";
+import toast from "react-hot-toast";
+import { Tooltip, Table } from "antd";
+import type { TableColumnsType } from "antd";
+import GuilgeeTable from "./GuilgeeTable";
+import TusgaiZagvar from "../../../../../components/selectZagvar/tusgaiZagvar";
+import { useModalHotkeys } from "@/lib/useModalHotkeys";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import { set } from "lodash";
+import IconTextButton from "@/components/ui/IconTextButton";
+import Button from "@/components/ui/Button";
+import {
+  Download,
+  Upload,
+  ChevronDown,
+  ChevronUp,
+  FileSpreadsheet,
+  Eye,
+  History,
+  Columns,
+  Banknote,
+  Send,
+  MessageSquare,
+  Mail,
+  X,
+} from "lucide-react";
+import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
+import { getErrorMessage } from "@/lib/uilchilgee";
+import formatNumber, {
+  formatCurrency,
+} from "../../../../../tools/function/formatNumber";
+import matchesSearch from "@/tools/function/matchesSearch";
+import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
+import {
+  getPaymentStatusLabel,
+  isPaidLike,
+  isUnpaidLike,
+  isOverdueLike,
+  getDefaultDateRange,
+} from "@/lib/utils";
+import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
+import { useSearchParams } from "next/navigation";
+import { useBuilding } from "@/context/BuildingContext";
+import { useSocket } from "@/context/SocketContext";
+import useBaiguullaga from "@/lib/useBaiguullaga";
+import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
+import { AnimatePresence } from "framer-motion";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import TransactionModal, {
+  type TransactionData,
+} from "../modals/TransactionModal";
+import HistoryModal from "../../geree/modals/HistoryModal";
+import InvoiceModal from "../../geree/modals/InvoiceModal";
+import InitialBalanceExcelModal from "../modals/InitialBalanceExcelModal";
+import { useGereeActions } from "@/lib/useGereeActions";
+import { StandardPagination } from "@/components/ui/StandardTable";
+import {
+  itemPrimaryDateMs,
+  computeLedgerRunningBalancesByGereeId,
+} from "./ledgerRunningBalances";
+import {
+  aggregateLedgerTulsunByGereeIdInRange,
+  aggregateLedgerKhungulultByGereeIdInRange,
+} from "./guilgeePaidDisplay";
+
+const formatDate = (d?: string) =>
+  d ? new Date(d).toLocaleDateString("mn-MN") : "-";
+
+const toMonthKey = (v?: string | null) => {
+  const s = String(v || "").trim();
+  if (!s) return "";
+  const m = s.match(/^(\d{4})-(\d{2})/);
+  return m ? `${m[1]}-${m[2]}` : "";
+};
+
+/** Сарын Dayjs → тухайн сарын [эхний өдөр, сүүлийн өдөр] + YYYY-MM түлхүүр */
+function monthPickToStartEnd(
+  d: {
+    isValid?: () => boolean;
+    format?: (f: string) => string;
+  } | null,
+): { start: string; end: string; ym: string } | null {
+  if (!d || typeof d.format !== "function") return null;
+  if (typeof d.isValid === "function" && !d.isValid()) return null;
+  const ym = d.format("YYYY-MM");
+  const [y, m] = ym.split("-").map((x) => Number(x));
+  if (!Number.isFinite(y) || !Number.isFinite(m) || m < 1 || m > 12)
+    return null;
+  const start = `${y}-${String(m).padStart(2, "0")}-01`;
+  const lastDay = new Date(y, m, 0).getDate();
+  const end = `${y}-${String(m).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+  return { start, end, ym };
+}
+
+// Pure utility moved outside to prevent hoisting issues
+function getGereeIdPure(it: any, contractsByNumber: Record<string, any>) {
+  return (
+    (it?._gereeniiId && String(it._gereeniiId)) ||
+    (it?.gereeniiId && String(it.gereeniiId)) ||
+    (it?.gereeId && String(it.gereeId)) ||
+    (it?.gereeniiDugaar &&
+      String(contractsByNumber[String(it.gereeniiDugaar)]?._id || "")) ||
+    // Last resort: if this IS a contract row, its own _id is the geree ID
+    (it?._id && String(it._id)) ||
+    ""
+  );
+}
+
+type DateRangeValue = [string | null, string | null] | undefined;
+
+const ModalPortal = ({ children }: { children: React.ReactNode }) => {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+  return mounted ? createPortal(children as any, document.body) : null;
+};
+
+import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
+
+export default function DansniiKhuulga() {
+  const searchParams = useSearchParams();
+  const { mutate } = useSWRConfig();
+  const socket = useSocket();
+  const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(100);
+  const { searchTerm } = useSearch();
+  const { token, ajiltan, barilgiinId } = useAuth();
+  const canCreateTransaction =
+    ajiltan?.erkh?.toLowerCase?.() === "admin" ||
+    hasPermission(ajiltan, "/tulbur/guilgeeHiikh") ||
+    hasPermission(ajiltan, "tulbur.guilgeeHiikh");
+  const { selectedBuildingId } = useBuilding();
+  const effectiveBarilgiinId = selectedBuildingId || barilgiinId || undefined;
+  const { baiguullaga, baiguullagaMutate } = useBaiguullaga(
+    token,
+    (ajiltan?.baiguullagiinId || null) as string | null,
+  );
+  const { handleSendInvoices: sendInvoicesApi } = useGereeActions(
+    token,
+    ajiltan,
+    (barilgiinId || undefined) as string | undefined,
+    (selectedBuildingId || undefined) as string | undefined,
+    baiguullaga,
+    baiguullagaMutate,
+  );
+
+  // Memoize empty objects to prevent infinite SWR re-validation loops
+  const emptyQuery = useMemo(() => ({}), []);
+
+  const todayStr = new Date().toISOString().split("T")[0];
+  const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<DateRangeValue>([
+    null,
+    null,
+  ]);
+  const [tuluvFilter, setTuluvFilter] = useState<
+    "all" | "paid" | "unpaid" | "partiallyPaid" | "overdue"
+  >("all");
+
+  const effectiveDateFilter = useMemo(() => {
+    const rawStart = String(ekhlekhOgnoo?.[0] ?? "").trim();
+    const rawEnd = String(ekhlekhOgnoo?.[1] ?? "").trim();
+    const hasDateFilter = Boolean(rawStart || rawEnd);
+
+    const startKey = toMonthKey(rawStart);
+    const endKey = toMonthKey(rawEnd);
+    const now = new Date();
+    const currentMonthKey = `${now.getFullYear()}-${String(
+      now.getMonth() + 1,
+    ).padStart(2, "0")}`;
+
+    // Одоогийн календарын сар (эхлэл–төгсгөл нэг сард): бүх түүхийн өгөгдөл (API + жагсаалт).
+    // Өмнөх сарууд (жишээ нь 4-р сар сонгосон ч одоо 5-р сар болсон): зөвхөн тухайн сарын өгөгдөл.
+    const isLatestMonthView = Boolean(
+      hasDateFilter &&
+      rawStart &&
+      rawEnd &&
+      startKey &&
+      endKey &&
+      startKey === endKey &&
+      startKey === currentMonthKey,
+    );
+
+    const currentMonthRange = getDefaultDateRange();
+
+    return {
+      hasDateFilter,
+      isLatestMonthView,
+      start:
+        hasDateFilter && !isLatestMonthView ? rawStart || undefined : undefined,
+      end:
+        hasDateFilter && !isLatestMonthView ? rawEnd || undefined : undefined,
+      startMs: rawStart ? new Date(rawStart + "T00:00:00").getTime() : 0,
+      endMs: rawEnd
+        ? new Date(rawEnd + "T23:59:59").getTime()
+        : 8640000000000000,
+      paidRangeStartMs: hasDateFilter
+        ? rawStart
+          ? new Date(rawStart + "T00:00:00").getTime()
+          : 0
+        : 0,
+      paidRangeEndMs: hasDateFilter
+        ? rawEnd
+          ? new Date(rawEnd + "T23:59:59").getTime()
+          : 8640000000000000
+        : 8640000000000000,
+      monthKey: startKey || currentMonthKey,
+    };
+  }, [ekhlekhOgnoo]);
+
+  /** Өмнөх сар/огноогоор тасалсан үед л үнэн — одоогийн сар = бүх түүх тул false */
+  const historyScopedByDate = useMemo(
+    () =>
+      Boolean(
+        effectiveDateFilter.hasDateFilter &&
+        !effectiveDateFilter.isLatestMonthView,
+      ),
+    [effectiveDateFilter],
+  );
+
+  // ALWAYS fetch all data from API (no date params) — date filtering done client-side in allHistoryItems.
+  // This avoids SWR cache key switching (full vs bounded) that caused stale/mixed data on date change.
+
+  useEffect(() => {
+    const t = searchParams.get("tuluv");
+    if (
+      t === "unpaid" ||
+      t === "paid" ||
+      t === "partiallyPaid" ||
+      t === "overdue" ||
+      t === "all"
+    ) {
+      setTuluvFilter(t);
+    }
+  }, [searchParams]);
+
+  const [selectedOrtsFilter, setSelectedOrtsFilter] = useState<string>("");
+  const [selectedTootFilter, setSelectedTootFilter] = useState<string>("");
+  const [selectedDavkharFilter, setSelectedDavkharFilter] =
+    useState<string>("");
+  const [sortField, setSortField] = useState<string | null>(null);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [isKhungulultOpen, setIsKhungulultOpen] = useState(false);
+  const khungulultRef = useRef<HTMLDivElement | null>(null);
+  const [isZaaltDropdownOpen, setIsZaaltDropdownOpen] = useState(false);
+  const zaaltButtonRef = useRef<HTMLDivElement | null>(null);
+  const smsHistoryButtonRef = useRef<HTMLDivElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [isColumnModalOpen, setIsColumnModalOpen] = useState(false);
+  const columnDropdownRef = useRef<HTMLDivElement | null>(null);
+  const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
+  const [selectedTransactionResident, setSelectedTransactionResident] =
+    useState<any>(null);
+  const [isProcessingTransaction, setIsProcessingTransaction] = useState(false);
+  const [isInitialBalanceModalOpen, setIsInitialBalanceModalOpen] =
+    useState(false);
+  const [invoiceRefreshTrigger, setInvoiceRefreshTrigger] = useState(0);
+  // Map gereeId -> latest row uldegdel from history ledger
+  const [latestRowUldegdelByGereeId, setLatestRowUldegdelByGereeId] = useState<
+    Record<string, number | null>
+  >({});
+  const latestRowUldegdelRequestedRef = useRef<Set<string>>(new Set());
+
+  // Selection state for "Send Invoice"
+  const [selectedGereeIds, setSelectedGereeIds] = useState<string[]>([]);
+  const [isSendingInvoices, setIsSendingInvoices] = useState(false);
+
+  // SMS History modal state + date filter
+  const [smsDateRange, setSmsDateRange] = useState<[string | null, string | null]>([null, null]);
+  const [isSmsHistoryOpen, setIsSmsHistoryOpen] = useState(false);
+  const [smsHistoryList, setSmsHistoryList] = useState<any[]>([]);
+  const [isLoadingSmsHistory, setIsLoadingSmsHistory] = useState(false);
+  const [smsHistoryPage, setSmsHistoryPage] = useState(1);
+  const [smsHistoryTotal, setSmsHistoryTotal] = useState(0);
+  const smsHistoryLimit = 15;
+
+  const fetchSmsHistory = useCallback(async (pageNo: number) => {
+    if (!token || !ajiltan?.baiguullagiinId) return;
+    setIsLoadingSmsHistory(true);
+    try {
+      const resp = await uilchilgee(token).get("/msgTuukhAvya", {
+        params: {
+          baiguullagiinId: ajiltan.baiguullagiinId,
+          barilgiinId: selectedBuildingId || barilgiinId || null,
+          page: pageNo,
+          limit: smsHistoryLimit,
+        },
+      });
+      if (resp.data?.success) {
+        setSmsHistoryList(resp.data.list || []);
+        setSmsHistoryTotal(resp.data.total || 0);
+        setSmsHistoryPage(pageNo);
+      }
+    } catch (err) {
+      toast.error("SMS түүх авахад алдаа гарлаа");
+    } finally {
+      setIsLoadingSmsHistory(false);
+    }
+  }, [token, ajiltan?.baiguullagiinId, selectedBuildingId, barilgiinId]);
+
+  useEffect(() => {
+    if (isSmsHistoryOpen) {
+      fetchSmsHistory(1);
+    }
+  }, [isSmsHistoryOpen, fetchSmsHistory]);
+
+  const columnDefs = useMemo(
+    () => [
+      {
+        key: "checkbox",
+        label: "",
+        align: "center",
+        sticky: true,
+        width: 40,
+        minWidth: 40,
+      },
+      {
+        key: "index",
+        label: "№",
+        align: "center",
+        sticky: true,
+        width: 48,
+        minWidth: 48,
+      },
+      {
+        key: "ner",
+        label: "Нэр",
+        align: "start",
+        sticky: true,
+        width: 180,
+        minWidth: 180,
+      },
+      {
+        key: "toot",
+        label: "Тоот",
+        align: "start",
+        sticky: true,
+        width: 80,
+        minWidth: 80,
+      },
+      {
+        key: "utas",
+        label: "Утас",
+        align: "start",
+        sticky: true,
+        width: 100,
+        minWidth: 100,
+      },
+      { key: "orts", label: "Орц", align: "start", minWidth: 80 },
+      { key: "davkhar", label: "Давхар", align: "start", minWidth: 80 },
+      {
+        key: "gereeniiDugaar",
+        label: "Гэрээний дугаар",
+        align: "start",
+        minWidth: 120,
+      },
+      {
+        key: "ekhniiUldegdel",
+        label: "Эхний үлдэгдэл",
+        align: "end",
+        minWidth: 110,
+      },
+      { key: "uldegdel", label: "Үлдэгдэл", align: "end", minWidth: 110 },
+      {
+        key: "sariinTurees",
+        label: "Сарын төлбөр",
+        align: "end",
+        minWidth: 110,
+      },
+      { key: "paid", label: "Гүйцэтгэл", align: "end", minWidth: 110 },
+      { key: "khungulult", label: "Хөнгөлөлт", align: "end", minWidth: 110 },
+      { key: "tuluv", label: "Төлөв", align: "start", minWidth: 110 },
+      {
+        key: "lastLog",
+        label: "Огноо",
+        align: "start",
+        minWidth: 140,
+      },
+      { key: "action", label: "Үйлдэл", align: "center", minWidth: 80 },
+    ],
+    [],
+  );
+  const [columnVisibility, setColumnVisibility] = useState<
+    Record<string, boolean>
+  >(() => {
+    const hiddenByDefault = [
+      "davkhar",
+      "tulbur",
+      "ekhniiUldegdel",
+      "sariinTurees",
+      "tuluv",
+      "lastLog",
+    ];
+    return columnDefs.reduce(
+      (acc, col) => {
+        acc[col.key] = !hiddenByDefault.includes(col.key);
+        return acc;
+      },
+      {} as Record<string, boolean>,
+    );
+  });
+  const visibleColumns = useMemo(
+    () => columnDefs.filter((col) => columnVisibility[col.key] !== false),
+    [columnDefs, columnVisibility],
+  );
+
+  // Columns that appear in "Багана сонгох" modal (exclude structural checkbox, index, action)
+  const selectableColumnKeys = [
+    "ner",
+    "toot",
+    "utas",
+    "orts",
+    "davkhar",
+    "gereeniiDugaar",
+    "ekhniiUldegdel",
+    "uldegdel",
+    "sariinTurees",
+    "paid",
+    "khungulult",
+    "tuluv",
+    "lastLog",
+  ] as const;
+  const selectableColumnDefs = useMemo(
+    () =>
+      columnDefs.filter((col) =>
+        selectableColumnKeys.includes(
+          col.key as (typeof selectableColumnKeys)[number],
+        ),
+      ),
+    [columnDefs],
+  );
+  const stickyOffsets = useMemo(() => {
+    let left = 0;
+    const offsets: Record<string, number> = {};
+    visibleColumns.forEach((col) => {
+      if (!col.sticky) return;
+      offsets[col.key] = left;
+      left += col.width || 0;
+    });
+    return offsets;
+  }, [visibleColumns]);
+  const visibleColumnCount = visibleColumns.length;
+
+  // Invoice and History modal states
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [selectedResident, setSelectedResident] = useState<any>(null);
+  const [historyResident, setHistoryResident] = useState<any>(null);
+  const [historyItems, setHistoryItems] = useState<any[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyIndex, setHistoryIndex] = useState(0);
+  const [liftFloors, setLiftFloors] = useState<string[]>([]);
+  const historyRef = useRef<HTMLDivElement | null>(null);
+  const {
+    data: unifiedData,
+    isLoading: isLoadingHistory,
+    mutate: mutateUnified,
+  } = useSWR(
+    token && ajiltan?.baiguullagiinId
+      ? [
+          "/guilgeeAvlaguud",
+          token,
+          ajiltan.baiguullagiinId,
+          effectiveBarilgiinId || null,
+        ]
+      : null,
+    async ([url, tkn, orgId, branch]) => {
+      const resp = await uilchilgee(tkn).get(url, {
+        params: {
+          baiguullagiinId: orgId,
+          barilgiinId: branch || undefined,
+          khuudasniiDugaar: 1,
+          khuudasniiKhemjee: 20000,
+        },
+      });
+      return resp.data;
+    },
+    { revalidateOnFocus: false },
+  );
+
+  const { data: invoiceCronData, error: invoiceCronError } = useSWR(
+    token && ajiltan?.baiguullagiinId
+      ? [
+          `/nekhemjlekhCron/${ajiltan.baiguullagiinId}`,
+          token,
+          effectiveBarilgiinId,
+        ]
+      : null,
+    async ([url, tkn, bId]) => {
+      const resp = await uilchilgee(tkn).get(url, {
+        params: { barilgiinId: bId || undefined },
+      });
+      // Unwrap result/data array from common project API structures
+      const res = resp.data;
+      return res?.data || res?.result || res || [];
+    },
+    { revalidateOnFocus: false },
+  );
+
+  const invoiceDay = useMemo(() => {
+    // If we have data, try to find the most specific setting (building-level) or fallback to org-level
+    const list = Array.isArray(invoiceCronData) ? invoiceCronData : [];
+    if (list.length === 0) return 1;
+
+    // Filter for current building if specified, otherwise take latest
+    const buildingSpecific = list.filter(
+      (x: any) =>
+        x.barilgiinId &&
+        String(x.barilgiinId).trim() === String(effectiveBarilgiinId).trim(),
+    );
+    const target =
+      buildingSpecific.length > 0
+        ? buildingSpecific[buildingSpecific.length - 1]
+        : list[list.length - 1];
+
+    return target?.nekhemjlekhUusgekhOgnoo || 1;
+  }, [invoiceCronData, effectiveBarilgiinId]);
+
+  const isInvoiceDayLoading = !invoiceCronData && !invoiceCronError;
+
+  // Derive legacy data structures from unified data for backward compatibility in this page
+  const historyData = useMemo(() => {
+    if (!unifiedData?.jagsaalt) return { jagsaalt: [] };
+    return {
+      jagsaalt: unifiedData.jagsaalt.filter(
+        (r: any) =>
+          r.turul === "nekhemjlekh" || r.turul === "ашиглалт" || !r.turul,
+      ),
+    };
+  }, [unifiedData]);
+
+  const receivableData = useMemo(() => {
+    if (!unifiedData?.jagsaalt) return { jagsaalt: [] };
+    return {
+      jagsaalt: unifiedData.jagsaalt.filter(
+        (r: any) => Number(r.tulukhDun) > 0,
+      ),
+    };
+  }, [unifiedData]);
+
+  const paymentRecordsData = useMemo(() => {
+    if (!unifiedData?.jagsaalt) return { jagsaalt: [] };
+    return {
+      jagsaalt: unifiedData.jagsaalt.filter(
+        (r: any) => Number(r.tulsunDun) > 0,
+      ),
+    };
+  }, [unifiedData]);
+
+  const mutateHistory = mutateUnified;
+  const mutateReceivable = mutateUnified;
+  const mutatePaymentRecords = mutateUnified;
+  const mutateMonthlyMatrix = mutateUnified;
+
+  /** Жагсаалтын SWR түлхүүрүүдийг шууд revalidate — global mutate заримдаа бүрэн ажиллахгүй (тусгайлбал ашиглалт) */
+  /** Сарын хязгаар: эхний сарын 1-ний өдрөөс сүүлийн сарын сүүлийн өдөр хүртэл (YYYY-MM-DD). */
+  const handleEkhlekhSarRangeChange = useCallback((dates: unknown) => {
+    if (dates == null) {
+      setEkhlekhOgnoo([null, null]);
+      return;
+    }
+    if (!Array.isArray(dates)) {
+      setEkhlekhOgnoo([null, null]);
+      return;
+    }
+    const [raw0, raw1] = dates as [unknown, unknown];
+    if (raw0 == null && raw1 == null) {
+      setEkhlekhOgnoo([null, null]);
+      return;
+    }
+    if (raw0 != null && raw1 == null) {
+      const one = monthPickToStartEnd(raw0 as any);
+      if (one) setEkhlekhOgnoo([one.start, one.end]);
+      return;
+    }
+    if (raw0 == null || raw1 == null) return;
+    const a = monthPickToStartEnd(raw0 as any);
+    const b = monthPickToStartEnd(raw1 as any);
+    if (!a || !b) {
+      setEkhlekhOgnoo([null, null]);
+      return;
+    }
+    const [first, last] = a.ym <= b.ym ? [a, b] : [b, a];
+    setEkhlekhOgnoo([first.start, last.end]);
+  }, []);
+
+  const revalidateTulburCaches = useCallback(async () => {
+    await Promise.all([
+      mutateHistory?.(),
+      mutateReceivable?.(),
+      mutatePaymentRecords?.(),
+    ]);
+    await mutate(
+      (key: any) => {
+        if (!Array.isArray(key)) return false;
+        const prefix = String(key[0] || "");
+        return prefix === "/geree" || prefix === "/orshinSuugch";
+      },
+      undefined,
+      { revalidate: true },
+    );
+  }, [
+    mutate,
+    mutateHistory,
+    mutateReceivable,
+    mutatePaymentRecords,
+    mutateMonthlyMatrix,
+  ]);
+
+  // No transition effect needed — SWR keys are stable (no date params), date filtering is client-side.
+
+  useEffect(() => {
+    setLatestRowUldegdelByGereeId({});
+    latestRowUldegdelRequestedRef.current.clear();
+  }, [effectiveBarilgiinId]);
+
+  // Socket: revalidate data when payment, avlaga, ashiglalt, or delete happens (from any tab/source)
+  useEffect(() => {
+    const baiguullagiinId = ajiltan?.baiguullagiinId;
+    if (!socket || !baiguullagiinId) return;
+    const event = `tulburUpdated:${baiguullagiinId}`;
+    const handler = () => {
+      void revalidateTulburCaches();
+      setLatestRowUldegdelByGereeId({});
+      latestRowUldegdelRequestedRef.current.clear();
+      setInvoiceRefreshTrigger((t) => t + 1);
+    };
+    socket.on(event, handler);
+    return () => {
+      socket.off(event, handler);
+    };
+  }, [socket, ajiltan?.baiguullagiinId, revalidateTulburCaches]);
+
+  // Extract periods array from the API response (moved above)
+
+  const allHistoryItems = useMemo(() => {
+    const invoices = Array.isArray(historyData?.jagsaalt)
+      ? historyData.jagsaalt
+      : Array.isArray(historyData)
+        ? historyData
+        : [];
+
+    const receivables = Array.isArray(receivableData?.jagsaalt)
+      ? receivableData.jagsaalt
+      : Array.isArray(receivableData)
+        ? receivableData
+        : [];
+
+    const payments = Array.isArray(paymentRecordsData?.jagsaalt)
+      ? paymentRecordsData.jagsaalt
+      : Array.isArray(paymentRecordsData)
+        ? paymentRecordsData
+        : [];
+
+    // Combine and deduplicate by ID.
+    // If an ID exists in both (meaning it was merged into an invoice), the invoice version wins.
+    const combined = [...invoices];
+
+    // Collect all IDs that should be considered "already tracked by an invoice"
+    // This includes the invoice ID itself AND any merged transaction IDs inside the medeelel.guilgeenuud array
+    const trackingIds = new Set(invoices.map((it: any) => String(it._id)));
+    invoices.forEach((it: any) => {
+      const gList = Array.isArray(it?.medeelel?.guilgeenuud)
+        ? it.medeelel.guilgeenuud
+        : Array.isArray(it?.guilgeenuud)
+          ? it.guilgeenuud
+          : [];
+      gList.forEach((g: any) => {
+        if (g?._id) trackingIds.add(String(g._id));
+      });
+    });
+
+    receivables.forEach((r: any) => {
+      if (!trackingIds.has(String(r._id))) {
+        combined.push(r);
+      }
+    });
+
+    payments.forEach((p: any) => {
+      if (!trackingIds.has(String(p._id))) {
+        combined.push(p);
+      }
+    });
+
+    if (!ekhlekhOgnoo || (!ekhlekhOgnoo[0] && !ekhlekhOgnoo[1]))
+      return combined;
+
+    // Return everything. Date filtering for DISPLAY is handled in filteredItems.
+    // This ensures tableDisplayBalances always has the full history to calculate correct balances.
+    return combined.sort((a, b) => itemPrimaryDateMs(a) - itemPrimaryDateMs(b));
+  }, [
+    historyData,
+    receivableData,
+    paymentRecordsData,
+    ekhlekhOgnoo,
+    effectiveDateFilter.isLatestMonthView,
+    effectiveDateFilter.startMs,
+    effectiveDateFilter.endMs,
+  ]);
+
+  const { gereeGaralt } = useGereeJagsaalt(
+    emptyQuery,
+    token || undefined,
+    ajiltan?.baiguullagiinId,
+    effectiveBarilgiinId,
+  );
+  const { orshinSuugchGaralt } = useOrshinSuugchJagsaalt(
+    token || "",
+    ajiltan?.baiguullagiinId || "",
+    emptyQuery,
+    effectiveBarilgiinId,
+  );
+
+  const contractsById = useMemo(() => {
+    const list = (gereeGaralt?.jagsaalt || []) as any[];
+    const map: Record<string, any> = {};
+    list.forEach((g) => {
+      if (g?._id) map[String(g._id)] = g;
+    });
+    return map;
+  }, [gereeGaralt?.jagsaalt]);
+
+  const contractsByNumber = useMemo(() => {
+    const list = (gereeGaralt?.jagsaalt || []) as any[];
+    const map: Record<string, any> = {};
+    list.forEach((g) => {
+      if (g?.gereeniiDugaar) map[String(g.gereeniiDugaar)] = g;
+    });
+    return map;
+  }, [gereeGaralt?.jagsaalt]);
+
+  const residentsById = useMemo(() => {
+    const list = (orshinSuugchGaralt?.jagsaalt || []) as any[];
+    const map: Record<string, any> = {};
+    list.forEach((r) => {
+      if (r?._id) map[String(r._id)] = r;
+    });
+    return map;
+  }, [orshinSuugchGaralt?.jagsaalt]);
+
+  const buildingHistoryItems = useMemo(() => {
+    const bid = String(effectiveBarilgiinId || "");
+    if (!bid) return allHistoryItems;
+    const toStr = (v: any) => (v == null ? "" : String(v));
+    return allHistoryItems.filter((it: any) => {
+      const itemBid = toStr(
+        it?.barilgiinId ?? it?.barilga ?? it?.barilgaId ?? it?.branchId,
+      );
+      if (itemBid) return itemBid === bid;
+      const cId = toStr(
+        it?.gereeId ??
+          it?.gereeniiId ??
+          it?.contractId ??
+          it?.kholbosonGereeniiId,
+      );
+      const rId = toStr(it?.orshinSuugchId ?? it?.residentId);
+      const c = cId ? (contractsById as any)[cId] : undefined;
+      const r = rId ? (residentsById as any)[rId] : undefined;
+      const cbid = toStr(
+        c?.barilgiinId ?? c?.barilga ?? c?.barilgaId ?? c?.branchId,
+      );
+      const rbid = toStr(
+        r?.barilgiinId ?? r?.barilga ?? r?.barilgaId ?? r?.branchId,
+      );
+      if (cbid) return cbid === bid;
+      if (rbid) return rbid === bid;
+      return false;
+    });
+  }, [allHistoryItems, effectiveBarilgiinId, contractsById, residentsById]);
+
+  const tableDisplayBalances = useMemo(() => {
+    const out: Record<string, number> = {};
+
+    Object.values(contractsById).forEach((c: any) => {
+      if (c?._id != null && c.uldegdel != null) {
+        out[String(c._id)] = Number(c.uldegdel);
+      }
+    });
+
+    if (allHistoryItems.length > 0) {
+      const computed = computeLedgerRunningBalancesByGereeId(
+        allHistoryItems,
+        contractsByNumber,
+      );
+      Object.assign(out, computed);
+    }
+
+    // 3. Override with the most-recent single-row fetches (background, for contracts
+    //    not yet present in the bulk ledger payload).
+    Object.entries(latestRowUldegdelByGereeId).forEach(([gid, v]) => {
+      if (v != null && Number.isFinite(v)) out[gid] = v;
+    });
+
+    return out;
+  }, [
+    contractsById,
+    allHistoryItems,
+    contractsByNumber,
+    latestRowUldegdelByGereeId,
+  ]);
+
+  /** Гүйцэтгэл: зөвхөн `monthlyMatrixRange` сарын төлөлт (бүх түүхийн харагдац ч ижил) */
+  const monthPaidByGereeId = useMemo(() => {
+    return aggregateLedgerTulsunByGereeIdInRange(
+      buildingHistoryItems,
+      contractsByNumber,
+      effectiveDateFilter.paidRangeStartMs,
+      effectiveDateFilter.paidRangeEndMs,
+    );
+  }, [
+    buildingHistoryItems,
+    contractsByNumber,
+    effectiveDateFilter.paidRangeStartMs,
+    effectiveDateFilter.paidRangeEndMs,
+  ]);
+
+  /** Хөнгөлөлт: зөвхөн `monthlyMatrixRange` сарын хөнгөлөлт */
+  const monthKhungulultByGereeId = useMemo(() => {
+    return aggregateLedgerKhungulultByGereeIdInRange(
+      buildingHistoryItems,
+      contractsByNumber,
+      effectiveDateFilter.paidRangeStartMs,
+      effectiveDateFilter.paidRangeEndMs,
+    );
+  }, [
+    buildingHistoryItems,
+    contractsByNumber,
+    effectiveDateFilter.paidRangeStartMs,
+    effectiveDateFilter.paidRangeEndMs,
+  ]);
+
+  // Filter by paid/unpaid + Орц + Давхар
+  const filteredItems = useMemo(() => {
+    // Get cancelled geree IDs for filtering
+    const cancelledGereeIds = new Set<string>();
+    const cancelledGereeDugaars = new Set<string>();
+    const allGerees = (gereeGaralt?.jagsaalt || []) as any[];
+
+    const cancelledGerees = allGerees.filter((g: any) => {
+      const status = String(g?.tuluv || g?.status || "").trim();
+      return (
+        status === "Цуцалсан" ||
+        status.toLowerCase() === "цуцалсан" ||
+        status === "tsutlsasan" ||
+        status.toLowerCase() === "tsutlsasan"
+      );
+    });
+
+    cancelledGerees.forEach((g: any) => {
+      if (g?._id) cancelledGereeIds.add(String(g._id));
+      if (g?.gereeniiDugaar)
+        cancelledGereeDugaars.add(String(g.gereeniiDugaar));
+    });
+
+    return buildingHistoryItems.filter((it: any) => {
+      // 1. Static Profile Filters (Orts, Davkhar, Toot) - MUST BE FIRST
+      if (selectedOrtsFilter || selectedDavkharFilter || selectedTootFilter) {
+        const toStr = (v: any) => (v == null ? "" : String(v).trim());
+
+        const cId = toStr(
+          it?.gereeniiId ?? it?.gereeId ?? it?.kholbosonGereeniiId,
+        );
+        const rId = toStr(it?.orshinSuugchId ?? it?.residentId);
+        const c = cId ? (contractsById as any)[cId] : undefined;
+        const r = rId ? (residentsById as any)[rId] : undefined;
+
+        const orts = toStr(
+          c?.orts ??
+            c?.ortsDugaar ??
+            c?.ortsNer ??
+            r?.orts ??
+            r?.ortsDugaar ??
+            r?.ortsNer ??
+            r?.block ??
+            it?.orts ??
+            it?.ortsDugaar ??
+            it?.ortsNer,
+        );
+        const davkhar = toStr(c?.davkhar ?? r?.davkhar ?? it?.davkhar);
+        const currentToot = toStr(
+          c?.toot ?? r?.toot ?? it?.toot ?? it?.medeelel?.toot,
+        );
+
+        if (selectedOrtsFilter) {
+          const filterVal = toStr(selectedOrtsFilter).toLowerCase();
+          const targetOrts = orts.toLowerCase();
+          if (targetOrts !== filterVal && !targetOrts.includes(filterVal))
+            return false;
+        }
+        if (selectedDavkharFilter) {
+          const filterVal = toStr(selectedDavkharFilter).toLowerCase();
+          const targetDavkhar = davkhar.toLowerCase();
+          if (targetDavkhar !== filterVal && !targetDavkhar.includes(filterVal))
+            return false;
+        }
+        if (selectedTootFilter) {
+          // Robust case-insensitive partial matching for toot
+          const filterVal = toStr(selectedTootFilter).toLowerCase();
+          const targetToot = currentToot.toLowerCase();
+          if (targetToot !== filterVal && !targetToot.includes(filterVal))
+            return false;
+        }
+      }
+
+      // 2. Search Filter - MUST BE SECOND
+      if (searchTerm) {
+        const cId = String(it?.gereeniiId ?? it?.gereeId ?? "").trim();
+        const contract = cId ? (contractsById as any)[cId] : undefined;
+        const rId = String(
+          it?.orshinSuugchId ??
+            it?.residentId ??
+            contract?.orshinSuugchId ??
+            "",
+        ).trim();
+        const resident = rId ? (residentsById as any)[rId] : undefined;
+        const augmented = {
+          ...it,
+          _searchNer: resident?.ner ?? it?.ner ?? contract?.ner,
+          _searchOvog: resident?.ovog ?? it?.ovog ?? contract?.ovog,
+          _searchUtas: resident?.utas ?? it?.utas ?? contract?.utas,
+          _searchGereeDugaar: contract?.gereeniiDugaar ?? it?.gereeniiDugaar,
+        };
+        if (!matchesSearch(augmented, searchTerm)) return false;
+      }
+
+      // 3. Status Filters (tuluvFilter)
+      const gid =
+        String(it?.gereeniiId ?? it?.gereeId ?? "").trim() ||
+        (it?.gereeniiDugaar &&
+          String(
+            (contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || "",
+          )) ||
+        "";
+
+      const currentBalance =
+        tableDisplayBalances[gid] ?? Number(it?.uldegdel ?? 0);
+
+      const paidAmount = gid ? Number(monthPaidByGereeId[gid] ?? 0) : 0;
+
+      const isResidentPaid = currentBalance < 0.01;
+      const isPartiallyPaid = !isResidentPaid && paidAmount > 0.1;
+
+      if (tuluvFilter === "paid") {
+        return isResidentPaid;
+      }
+      if (tuluvFilter === "partiallyPaid") {
+        return isPartiallyPaid;
+      }
+      if (tuluvFilter === "unpaid") {
+        const itGereeId = String(it?.gereeniiId || it?.gereeId || "");
+        const itGereeDugaar = String(it?.gereeniiDugaar || "");
+        const isLinkedToCancelledGeree =
+          (itGereeId && cancelledGereeIds.has(itGereeId)) ||
+          (itGereeDugaar && cancelledGereeDugaars.has(itGereeDugaar));
+
+        return !isResidentPaid && !isPartiallyPaid && !isLinkedToCancelledGeree;
+      }
+      if (tuluvFilter === "overdue") {
+        const itGereeId = String(it?.gereeniiId || it?.gereeId || "");
+        const itGereeDugaar = String(it?.gereeniiDugaar || "");
+        const isLinkedToCancelledGeree =
+          (itGereeId && cancelledGereeIds.has(itGereeId)) ||
+          (itGereeDugaar && cancelledGereeDugaars.has(itGereeDugaar));
+
+        return !isResidentPaid && isLinkedToCancelledGeree;
+      }
+
+      const itGereeId = String(it?.gereeniiId || it?.gereeId || "");
+      const itGereeDugaar = String(it?.gereeniiDugaar || "");
+      const isLinkedToCancelledGeree =
+        (itGereeId && cancelledGereeIds.has(itGereeId)) ||
+        (itGereeDugaar && cancelledGereeDugaars.has(itGereeDugaar));
+
+      return !isLinkedToCancelledGeree;
+    });
+  }, [
+    buildingHistoryItems,
+    tuluvFilter,
+    searchTerm,
+    gereeGaralt?.jagsaalt,
+    contractsById,
+    contractsByNumber,
+    residentsById,
+    selectedOrtsFilter,
+    selectedDavkharFilter,
+    selectedTootFilter,
+    tableDisplayBalances,
+    monthPaidByGereeId,
+  ]);
+
+  // Same as filteredItems but WITHOUT tuluvFilter - for stats (dashboard numbers stay fixed)
+  const filteredItemsAll = useMemo(() => {
+    const cancelledGereeIds = new Set<string>();
+    const cancelledGereeDugaars = new Set<string>();
+    const allGerees = (gereeGaralt?.jagsaalt || []) as any[];
+
+    const cancelledGerees = allGerees.filter((g: any) => {
+      const status = String(g?.tuluv || g?.status || "").trim();
+      return (
+        status === "Цуцалсан" ||
+        status.toLowerCase() === "цуцалсан" ||
+        status === "tsutlsasan" ||
+        status.toLowerCase() === "tsutlsasan"
+      );
+    });
+
+    cancelledGerees.forEach((g: any) => {
+      if (g?._id) cancelledGereeIds.add(String(g._id));
+      if (g?.gereeniiDugaar)
+        cancelledGereeDugaars.add(String(g.gereeniiDugaar));
+    });
+
+    return buildingHistoryItems.filter((it: any) => {
+      // 1. Static Profile Filters (Orts, Davkhar, Toot)
+      if (selectedOrtsFilter || selectedDavkharFilter || selectedTootFilter) {
+        const toStr = (v: any) => (v == null ? "" : String(v).trim());
+        const cId = toStr(
+          it?.gereeniiId ?? it?.gereeId ?? it?.kholbosonGereeniiId,
+        );
+        const rId = toStr(it?.orshinSuugchId ?? it?.residentId);
+        const c = cId ? (contractsById as any)[cId] : undefined;
+        const r = rId ? (residentsById as any)[rId] : undefined;
+        const orts = toStr(
+          c?.orts ??
+            c?.ortsDugaar ??
+            c?.ortsNer ??
+            r?.orts ??
+            r?.ortsDugaar ??
+            r?.ortsNer ??
+            r?.block ??
+            it?.orts ??
+            it?.ortsDugaar ??
+            it?.ortsNer,
+        );
+        const davkhar = toStr(c?.davkhar ?? r?.davkhar ?? it?.davkhar);
+        const currentToot = toStr(
+          c?.toot ?? r?.toot ?? it?.toot ?? it?.medeelel?.toot,
+        );
+        if (selectedOrtsFilter && (!orts || orts !== toStr(selectedOrtsFilter)))
+          return false;
+        if (
+          selectedDavkharFilter &&
+          (!davkhar || davkhar !== toStr(selectedDavkharFilter))
+        )
+          return false;
+        if (selectedTootFilter) {
+          const filterVal = toStr(selectedTootFilter).toLowerCase();
+          const targetToot = currentToot.toLowerCase();
+          if (targetToot !== filterVal && !targetToot.includes(filterVal))
+            return false;
+        }
+      }
+
+      // 2. Search Filter
+      if (searchTerm) {
+        const cId = String(it?.gereeniiId ?? it?.gereeId ?? "").trim();
+        const contract = cId ? (contractsById as any)[cId] : undefined;
+        const rId = String(
+          it?.orshinSuugchId ??
+            it?.residentId ??
+            contract?.orshinSuugchId ??
+            "",
+        ).trim();
+        const resident = rId ? (residentsById as any)[rId] : undefined;
+        const augmented = {
+          ...it,
+          _searchNer: resident?.ner ?? it?.ner ?? contract?.ner,
+          _searchOvog: resident?.ovog ?? it?.ovog ?? contract?.ovog,
+          _searchUtas: resident?.utas ?? it?.utas ?? contract?.utas,
+          _searchGereeDugaar: contract?.gereeniiDugaar ?? it?.gereeniiDugaar,
+        };
+        if (!matchesSearch(augmented, searchTerm)) return false;
+      }
+
+      // 3. Date Filter (Table display logic: show only items in range)
+      if (effectiveDateFilter.hasDateFilter) {
+        const d = itemPrimaryDateMs(it);
+        if (d < effectiveDateFilter.startMs || d > effectiveDateFilter.endMs) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [
+    buildingHistoryItems,
+    searchTerm,
+    gereeGaralt?.jagsaalt,
+    contractsById,
+    residentsById,
+    selectedOrtsFilter,
+    selectedDavkharFilter,
+    selectedTootFilter,
+  ]);
+
+  const totalSum = useMemo(() => {
+    return filteredItems.reduce((s: number, it: any) => {
+      const v =
+        Number(
+          it?.niitTulbur ??
+            it?.niitDun ??
+            it?.total ??
+            it?.tulukhDun ??
+            it?.undsenDun ??
+            it?.dun ??
+            0,
+        ) || 0;
+      return s + v;
+    }, 0);
+  }, [filteredItems]);
+
+  // Deduplicate by resident (orshinSuugchId or ner+utas combination)
+  // CRITICAL: Use buildingHistoryItems for amount calculation so negative ekhniiUldegdel (e.g. -87.79)
+  // is always included even when filtered out. Filter which residents to show via filteredItems.
+  const deduplicatedResidents = useMemo(() => {
+    const map = new Map<string, any>();
+    // Always aggregate from buildingHistoryItems (API + client date range + building).
+    // filteredItems also applies төлөв — using it here double-applies filters and breaks
+    // per-period _totalTulbur/_totalTulsun (Үлдэгдэл / Гүйцэтгэл).
+    const ledgerForAggregation = buildingHistoryItems;
+
+    // Build set of resident keys that pass the static filters (orts, davkhar, search, toot)
+    const residentKeysFromProfile = new Set<string>();
+    const allGerees = (gereeGaralt?.jagsaalt || []) as any[];
+
+    allGerees.forEach((g: any) => {
+      const toStr = (v: any) => (v == null ? "" : String(v).trim());
+      const rId = toStr(g?.orshinSuugchId ?? g?.residentId);
+      const r = rId ? (residentsById as any)[rId] : undefined;
+
+      const orts = toStr(
+        g?.orts ??
+          g?.ortsDugaar ??
+          g?.ortsNer ??
+          r?.orts ??
+          r?.ortsDugaar ??
+          r?.ortsNer ??
+          r?.block,
+      );
+      const davkhar = toStr(g?.davkhar ?? r?.davkhar);
+      const currentToot = toStr(g?.toot ?? r?.toot);
+
+      // Apply static profile filters
+      if (selectedOrtsFilter) {
+        const filterVal = toStr(selectedOrtsFilter).toLowerCase();
+        const targetOrts = orts.toLowerCase();
+        if (targetOrts !== filterVal && !targetOrts.includes(filterVal)) return;
+      }
+      if (selectedDavkharFilter) {
+        const filterVal = toStr(selectedDavkharFilter).toLowerCase();
+        const targetDavkhar = davkhar.toLowerCase();
+        if (targetDavkhar !== filterVal && !targetDavkhar.includes(filterVal))
+          return;
+      }
+      if (selectedTootFilter) {
+        const filterVal = toStr(selectedTootFilter).toLowerCase();
+        const targetToot = currentToot.toLowerCase();
+        if (targetToot !== filterVal && !targetToot.includes(filterVal)) return;
+      }
+      if (searchTerm) {
+        const augmented = {
+          ...g,
+          _searchNer: r?.ner ?? g?.ner,
+          _searchOvog: r?.ovog ?? g?.ovog,
+          _searchUtas: r?.utas ?? g?.utas,
+          _searchGereeDugaar: g?.gereeniiDugaar,
+        };
+        if (!matchesSearch(augmented, searchTerm)) return;
+      }
+
+      const gereeId = String(
+        g?._id || g?.gereeniiId || g?.gereeId || "",
+      ).trim();
+      const gereeDugaar = String(g?.gereeniiDugaar || "").trim();
+      const key =
+        gereeId ||
+        gereeDugaar ||
+        String(g?.orshinSuugchId || g?.residentId || "").trim() ||
+        `${String((r?.ner ?? g?.ner) || "")
+          .trim()
+          .toLowerCase()}|${String((r?.utas ?? g?.utas) || "").trim()}|${String((r?.toot ?? g?.toot) || "").trim()}`;
+      if (key) residentKeysFromProfile.add(key);
+
+      // Pre-populate map with contract-sourced rows.
+      // CRITICAL: Explicitly set gereeniiId = g._id so getGereeId() can resolve
+      // the balance lookup (a contract's own ID lives at _id, not gereeniiId).
+      if (!map.has(key)) {
+        map.set(key, {
+          ...g,
+          gereeniiId: gereeId || g?._id, // ensure lookup key is present
+          gereeId: gereeId || g?._id,
+          _historyCount: 0,
+          _totalTulbur: 0,
+          _totalTulsun: 0,
+          _hasEkhniiUldegdel: false,
+          _ekhniiUldegdelAmount: 0,
+        });
+      }
+    });
+
+    // Also include any residents found in buildingHistoryItems that might not be in the current contract list
+    // (e.g. historical data for a resident whose contract was deleted/archived)
+    filteredItems.forEach((it: any) => {
+      const residentId = String(it?.orshinSuugchId || "").trim();
+      const gereeId = String(it?.gereeniiId || it?.gereeId || "").trim();
+      const gereeDugaar = String(it?.gereeniiDugaar || "").trim();
+      const ner = String(it?.ner || "")
+        .trim()
+        .toLowerCase();
+      const utas = (() => {
+        if (Array.isArray(it?.utas) && it.utas.length > 0) {
+          return String(it.utas[0] || "").trim();
+        }
+        return String(it?.utas || "").trim();
+      })();
+      const toot = String(it?.toot || it?.medeelel?.toot || "").trim();
+      const key =
+        gereeId || gereeDugaar || residentId || `${ner}|${utas}|${toot}`;
+      if (key && key !== "||") {
+        residentKeysFromProfile.add(key);
+        if (!map.has(key)) {
+          map.set(key, {
+            ...it,
+            _historyCount: 0,
+            _totalTulbur: 0,
+            _totalTulsun: 0,
+            _hasEkhniiUldegdel: false,
+            _ekhniiUldegdelAmount: 0,
+          });
+        }
+      }
+    });
+
+    // FIRST PASS: Identify contracts/residents that have INVOICES containing ekhniiUldegdel in their zardluud
+    const contractsWithEkhniiUldegdelInInvoice = new Set<string>();
+
+    ledgerForAggregation.forEach((it: any) => {
+      // Check if this is an invoice (has zardluud or medeelel.zardluud)
+      const zardluud = Array.isArray(it?.medeelel?.zardluud)
+        ? it.medeelel.zardluud
+        : Array.isArray(it?.zardluud)
+          ? it.zardluud
+          : [];
+      const guilgeenuud = Array.isArray(it?.medeelel?.guilgeenuud)
+        ? it.medeelel.guilgeenuud
+        : Array.isArray(it?.guilgeenuud)
+          ? it.guilgeenuud
+          : [];
+
+      // Check if invoice contains ekhniiUldegdel in its zardluud (include negative)
+      const hasEkhniiUldegdelInZardluud = zardluud.some((z: any) => {
+        const ner = String(z?.ner || "").toLowerCase();
+        const isEkhUld =
+          z?.isEkhniiUldegdel === true ||
+          ner.includes("эхний үлдэгдэл") ||
+          ner.includes("ekhniuldegdel") ||
+          ner.includes("ekhnii uldegdel");
+        const amt = Number(z?.dun ?? z?.tariff ?? 0);
+        return isEkhUld && amt !== 0;
+      });
+      // Also check guilgeenuud for ekhniiUldegdel (e.g. Excel-ээр оруулсан эхний үлдэгдэл)
+      const hasEkhniiUldegdelInGuilgee = guilgeenuud.some((g: any) => {
+        if (g?.ekhniiUldegdelEsekh !== true) return false;
+        const amt = Number(g?.tulukhDun ?? g?.undsenDun ?? 0);
+        return amt !== 0;
+      });
+
+      if (hasEkhniiUldegdelInZardluud || hasEkhniiUldegdelInGuilgee) {
+        const gereeId = String(it?.gereeniiId || it?.gereeId || "").trim();
+        const gereeDugaar = String(it?.gereeniiDugaar || "").trim();
+        if (gereeId) contractsWithEkhniiUldegdelInInvoice.add(gereeId);
+        if (gereeDugaar) contractsWithEkhniiUldegdelInInvoice.add(gereeDugaar);
+      }
+    });
+
+    // SECOND PASS: Build deduplicated residents from buildingHistoryItems (all data for correct totals)
+    // Only include residents that have at least one item in filteredItems
+    ledgerForAggregation.forEach((it: any) => {
+      // Create a unique key for each resident
+      const residentId = String(it?.orshinSuugchId || "").trim();
+      let gereeId = String(it?.gereeniiId || it?.gereeId || "").trim();
+      const gereeDugaar = String(it?.gereeniiDugaar || "").trim();
+      // For receivables, gereeId might be missing - resolve from gereeDugaar via contractsByNumber
+      if (
+        !gereeId &&
+        gereeDugaar &&
+        (contractsByNumber as any)[gereeDugaar]?._id
+      ) {
+        gereeId = String((contractsByNumber as any)[gereeDugaar]._id);
+      }
+      const ner = String(it?.ner || "")
+        .trim()
+        .toLowerCase();
+      const utas = (() => {
+        if (Array.isArray(it?.utas) && it.utas.length > 0) {
+          return String(it.utas[0] || "").trim();
+        }
+        return String(it?.utas || "").trim();
+      })();
+      const toot = String(it?.toot || it?.medeelel?.toot || "").trim();
+
+      // Priority grouping: GereeId > ResidentId > GereeDugaar > Name+Utas
+      const key =
+        gereeId || gereeDugaar || residentId || `${ner}|${utas}|${toot}`;
+
+      if (!key || key === "||") return; // Skip if no valid identifier
+      if (!residentKeysFromProfile.has(key)) return; // Only include residents that pass the profile filter
+
+      // Check if this is a standalone ekhniiUldegdel record from guilgeeAvlaguud
+      const isStandaloneEkhniiUldegdel = it?.ekhniiUldegdelEsekh === true;
+      const standaloneAmount =
+        Number(it?.undsenDun ?? it?.tulukhDun ?? it?.uldegdel ?? 0) || 0;
+
+      // SKIP this record if it's a standalone ekhniiUldegdel AND the contract already has ekhniiUldegdel in an invoice
+      // This prevents double-counting. BUT: never skip NEGATIVE standalone (e.g. Excel-ээр оруулсан эхний үлдэгдэл -87.79)
+      // because invoice's ekhniiUldegdel is typically positive - they are different entries.
+      if (isStandaloneEkhniiUldegdel) {
+        const contractHasEkhniiUldegdelInInvoice =
+          (gereeId && contractsWithEkhniiUldegdelInInvoice.has(gereeId)) ||
+          (gereeDugaar &&
+            contractsWithEkhniiUldegdelInInvoice.has(gereeDugaar));
+
+        if (contractHasEkhniiUldegdelInInvoice && standaloneAmount >= 0) {
+          return;
+        }
+      }
+
+      // Calculate base amounts for this specific record
+      const rawDun = Number(it?.dun ?? 0);
+
+      // If it's an invoice record (nekhemjlekh), it represents a collection of charges.
+      // However, our new ledger approach records individual charges with dun > 0.
+      // Payment records have dun < 0.
+
+      let chargeForRow = 0;
+      let paidForRow = 0;
+
+      if (rawDun > 0) {
+        // It's a charge (receivable)
+        chargeForRow = rawDun;
+        paidForRow = 0; // We will sum payments from payment records only to avoid double counting
+      } else if (rawDun < 0) {
+        // It's a payment or credit
+        chargeForRow = 0;
+        paidForRow = Math.abs(rawDun);
+      }
+
+      // Handle standalone opening balance as a special charge case
+      if (isStandaloneEkhniiUldegdel) {
+        chargeForRow = standaloneAmount;
+        paidForRow = 0;
+      }
+
+      // Monthly scoping
+      const itemMs = itemPrimaryDateMs(it);
+      const isWithinMonth =
+        effectiveDateFilter.hasDateFilter &&
+        itemMs >= effectiveDateFilter.startMs &&
+        itemMs <= effectiveDateFilter.endMs;
+
+      const chargeForMonth = isWithinMonth ? chargeForRow : 0;
+      const paidForMonth = isWithinMonth ? paidForRow : 0;
+
+      // Calculate ekhniiUldegdel delta for the "Opening Balance" column if needed
+      let ekhniiUldegdelDelta = 0;
+      if (isStandaloneEkhniiUldegdel) {
+        ekhniiUldegdelDelta = standaloneAmount;
+      } else {
+        const zardluud = Array.isArray(it?.medeelel?.zardluud)
+          ? it.medeelel.zardluud
+          : Array.isArray(it?.zardluud)
+            ? it.zardluud
+            : [];
+        ekhniiUldegdelDelta = zardluud.reduce((s: number, z: any) => {
+          const ner = String(z?.ner || "").toLowerCase();
+          const isEkh =
+            z?.isEkhniiUldegdel === true ||
+            ner.includes("эхний үлдэгдэл") ||
+            ner.includes("ekhniuldegdel") ||
+            ner.includes("ekhnii uldegdel");
+          if (!isEkh) return s;
+          const amt = Number(z?.dun ?? z?.tariff ?? 0);
+          return s + amt;
+        }, 0);
+      }
+
+      if (!map.has(key)) {
+        // First occurrence - store as base record
+        const resolvedGeree = String(
+          it?.gereeniiId || it?.gereeId || it?._gereeniiId || gereeId || "",
+        ).trim();
+        map.set(key, {
+          ...it,
+          gereeniiId: resolvedGeree || it?.gereeniiId,
+          gereeId: resolvedGeree || it?.gereeId,
+          _historyCount: 1,
+          _totalTulbur: chargeForRow,
+          _totalTulsun: paidForRow,
+          _totalTulburMonth: chargeForMonth,
+          _totalTulsunMonth: paidForMonth,
+          _hasEkhniiUldegdel:
+            isStandaloneEkhniiUldegdel || ekhniiUldegdelDelta !== 0,
+          _ekhniiUldegdelAmount: ekhniiUldegdelDelta,
+        });
+      } else {
+        // Aggregate values
+        const existing = map.get(key);
+        existing._historyCount += 1;
+        existing._totalTulbur += chargeForRow;
+        existing._totalTulsun += paidForRow;
+        existing._totalTulburMonth =
+          (existing._totalTulburMonth || 0) + chargeForMonth;
+        existing._totalTulsunMonth =
+          (existing._totalTulsunMonth || 0) + paidForMonth;
+        const rg = String(gereeId || "").trim();
+        if (
+          rg &&
+          !String(existing?.gereeniiId || existing?.gereeId || "").trim()
+        ) {
+          existing.gereeniiId = rg;
+          existing.gereeId = rg;
+        }
+        if (isStandaloneEkhniiUldegdel || ekhniiUldegdelDelta !== 0) {
+          existing._hasEkhniiUldegdel = true;
+          existing._ekhniiUldegdelAmount =
+            (existing._ekhniiUldegdelAmount || 0) + ekhniiUldegdelDelta;
+        }
+      }
+    });
+
+    const result = Array.from(map.values());
+
+    // FINAL PASS: Apply tuluvFilter at the resident level based on their aggregated performance/balance
+    if (!tuluvFilter || tuluvFilter === "all") return result;
+
+    const cancelledGereeIds = new Set<string>();
+    const cancelledGereeDugaars = new Set<string>();
+    allGerees.forEach((g: any) => {
+      const status = String(g?.tuluv || g?.status || "")
+        .trim()
+        .toLowerCase();
+      if (status === "цуцалсан" || status === "tsutlsasan") {
+        if (g?._id) cancelledGereeIds.add(String(g._id));
+        if (g?.gereeniiDugaar)
+          cancelledGereeDugaars.add(String(g.gereeniiDugaar));
+      }
+    });
+
+    return result.filter((r) => {
+      const gid =
+        String(r?._gereeniiId ?? r?.gereeniiId ?? r?.gereeId ?? "").trim() ||
+        (r?._id && String(r._id)) ||
+        (r?.gereeniiDugaar &&
+          String(
+            (contractsByNumber as any)[String(r.gereeniiDugaar)]?._id || "",
+          )) ||
+        "";
+
+      const scopedAgg =
+        Number(r?._totalTulbur || 0) - Number(r?._totalTulsun || 0);
+      const balance =
+        tableDisplayBalances[gid] ??
+        (historyScopedByDate ? scopedAgg : Number(r?.uldegdel ?? 0));
+      const paid = gid ? Number(monthPaidByGereeId[gid] ?? 0) : 0;
+
+      const isResidentPaid = balance < 0.01;
+      const isPartiallyPaid = !isResidentPaid && paid > 0.1;
+      const isLinkedToCancelledGeree =
+        (gid && cancelledGereeIds.has(gid)) ||
+        (r?.gereeniiDugaar &&
+          cancelledGereeDugaars.has(String(r.gereeniiDugaar)));
+
+      if (tuluvFilter === "paid") return isResidentPaid;
+      if (tuluvFilter === "unpaid")
+        return !isResidentPaid && !isPartiallyPaid && !isLinkedToCancelledGeree;
+      if (tuluvFilter === "partiallyPaid") return isPartiallyPaid;
+      if (tuluvFilter === "overdue")
+        return !isResidentPaid && isLinkedToCancelledGeree;
+
+      return true;
+    });
+  }, [
+    filteredItems,
+    buildingHistoryItems,
+    historyScopedByDate,
+    contractsByNumber,
+    gereeGaralt?.jagsaalt,
+    residentsById,
+    selectedOrtsFilter,
+    selectedDavkharFilter,
+    selectedTootFilter,
+    searchTerm,
+    tuluvFilter,
+    monthPaidByGereeId,
+    tableDisplayBalances,
+  ]);
+
+  // Full resident set (no tuluvFilter) - for stats so dashboard numbers stay fixed when clicking filters
+  const deduplicatedResidentsAll = useMemo(() => {
+    const map = new Map<string, any>();
+    // Build set of resident keys that pass the static filters (orts, davkhar, search, toot)
+    const residentKeysFromProfile = new Set<string>();
+    const allGerees = (gereeGaralt?.jagsaalt || []) as any[];
+
+    allGerees.forEach((g: any) => {
+      const toStr = (v: any) => (v == null ? "" : String(v).trim());
+      const rId = toStr(g?.orshinSuugchId ?? g?.residentId);
+      const r = rId ? (residentsById as any)[rId] : undefined;
+
+      const orts = toStr(
+        g?.orts ??
+          g?.ortsDugaar ??
+          g?.ortsNer ??
+          r?.orts ??
+          r?.ortsDugaar ??
+          r?.ortsNer ??
+          r?.block,
+      );
+      const davkhar = toStr(g?.davkhar ?? r?.davkhar);
+      const currentToot = toStr(g?.toot ?? r?.toot);
+
+      // Apply static profile filters (SAME AS deduplicatedResidents)
+      if (selectedOrtsFilter) {
+        const filterVal = toStr(selectedOrtsFilter).toLowerCase();
+        const targetOrts = orts.toLowerCase();
+        if (targetOrts !== filterVal && !targetOrts.includes(filterVal)) return;
+      }
+      if (selectedDavkharFilter) {
+        const filterVal = toStr(selectedDavkharFilter).toLowerCase();
+        const targetDavkhar = davkhar.toLowerCase();
+        if (targetDavkhar !== filterVal && !targetDavkhar.includes(filterVal))
+          return;
+      }
+      if (selectedTootFilter) {
+        const filterVal = toStr(selectedTootFilter).toLowerCase();
+        const targetToot = currentToot.toLowerCase();
+        if (targetToot !== filterVal && !targetToot.includes(filterVal)) return;
+      }
+      if (searchTerm) {
+        const augmented = {
+          ...g,
+          _searchNer: r?.ner ?? g?.ner,
+          _searchOvog: r?.ovog ?? g?.ovog,
+          _searchUtas: r?.utas ?? g?.utas,
+          _searchGereeDugaar: g?.gereeniiDugaar,
+        };
+        if (!matchesSearch(augmented, searchTerm)) return;
+      }
+
+      const gereeId = String(
+        g?._id || g?.gereeniiId || g?.gereeId || "",
+      ).trim();
+      const gereeDugaar = String(g?.gereeniiDugaar || "").trim();
+      const key = gereeId || gereeDugaar;
+      if (key) {
+        residentKeysFromProfile.add(key);
+        if (!map.has(key)) {
+          map.set(key, {
+            ...g,
+            _historyCount: 0,
+            _totalTulbur: 0,
+            _totalTulsun: 0,
+            _hasEkhniiUldegdel: false,
+            _ekhniiUldegdelAmount: 0,
+          });
+        }
+      }
+    });
+
+    // Also include any residents found in filteredItemsAll (ensures consistency with deduplicatedResidents)
+    filteredItemsAll.forEach((it: any) => {
+      const residentId = String(it?.orshinSuugchId || "").trim();
+      const gereeId = String(it?.gereeniiId || it?.gereeId || "").trim();
+      const gereeDugaar = String(it?.gereeniiDugaar || "").trim();
+      const ner = String(it?.ner || "")
+        .trim()
+        .toLowerCase();
+      const utas = (() => {
+        if (Array.isArray(it?.utas) && it.utas.length > 0) {
+          return String(it.utas[0] || "").trim();
+        }
+        return String(it?.utas || "").trim();
+      })();
+      const toot = String(it?.toot || it?.medeelel?.toot || "").trim();
+      const key =
+        gereeId || residentId || gereeDugaar || `${ner}|${utas}|${toot}`;
+      if (key && key !== "||") {
+        residentKeysFromProfile.add(key);
+        if (!map.has(key)) {
+          map.set(key, {
+            ...it,
+            _historyCount: 0,
+            _totalTulbur: 0,
+            _totalTulsun: 0,
+            _hasEkhniiUldegdel: false,
+            _ekhniiUldegdelAmount: 0,
+          });
+        }
+      }
+    });
+
+    // Also factor in buildingHistoryItems for the full aggregation (ensures deleted contracts with balance/history are counted correctly in stats)
+    buildingHistoryItems.forEach((it: any) => {
+      const residentId = String(it?.orshinSuugchId || "").trim();
+      let gereeId = String(it?.gereeniiId || it?.gereeId || "").trim();
+      const gereeDugaar = String(it?.gereeniiDugaar || "").trim();
+      if (
+        !gereeId &&
+        gereeDugaar &&
+        (contractsByNumber as any)[gereeDugaar]?._id
+      ) {
+        gereeId = String((contractsByNumber as any)[gereeDugaar]._id);
+      }
+      const ner = String(it?.ner || "")
+        .trim()
+        .toLowerCase();
+      const utas = (() => {
+        if (Array.isArray(it?.utas) && it.utas.length > 0) {
+          return String(it.utas[0] || "").trim();
+        }
+        return String(it?.utas || "").trim();
+      })();
+      const toot = String(it?.toot || it?.medeelel?.toot || "").trim();
+      const key =
+        gereeId || residentId || gereeDugaar || `${ner}|${utas}|${toot}`;
+
+      if (!key || key === "||") return;
+      if (!residentKeysFromProfile.has(key)) return;
+
+      const isStandaloneEkhniiUldegdel = it?.ekhniiUldegdelEsekh === true;
+      const standaloneAmount =
+        Number(it?.undsenDun ?? it?.tulukhDun ?? it?.uldegdel ?? 0) || 0;
+
+      // Handle standalone ekhniiUldegdel double-counting
+      if (isStandaloneEkhniiUldegdel) {
+        // Double-counting check logic
+      }
+
+      let itemAmount = isStandaloneEkhniiUldegdel
+        ? Number(it?.undsenDun ?? it?.tulukhDun ?? it?.uldegdel ?? 0) || 0
+        : Number(
+            it?.niitTulbur ??
+              it?.niitDun ??
+              it?.total ??
+              it?.tulukhDun ??
+              it?.undsenDun ??
+              it?.dun ??
+              0,
+          ) || 0;
+
+      // Determine if this item is a CHARGE (increases total) or a PAYMENT (increases paid)
+      const type = String(it?.turul || it?.type || "").toLowerCase();
+      const isPayment =
+        type === "tulult" ||
+        type === "төлбөр" ||
+        type === "төлөлт" ||
+        type === "khungulult" ||
+        type === "хөнгөлөлт" ||
+        (itemAmount < 0 && !isStandaloneEkhniiUldegdel);
+
+      let ekhniiUldegdelDelta = isStandaloneEkhniiUldegdel ? itemAmount : 0;
+      if (!isStandaloneEkhniiUldegdel) {
+        const guilgeenuud = Array.isArray(it?.medeelel?.guilgeenuud)
+          ? it.medeelel.guilgeenuud
+          : Array.isArray(it?.guilgeenuud)
+            ? it.guilgeenuud
+            : [];
+        const zardluud = Array.isArray(it?.medeelel?.zardluud)
+          ? it.medeelel.zardluud
+          : Array.isArray(it?.zardluud)
+            ? it.zardluud
+            : [];
+        const fromZardluud = zardluud.reduce((s: number, z: any) => {
+          const nerVal = String(z?.ner || "").toLowerCase();
+          const isEkh =
+            z?.isEkhniiUldegdel === true ||
+            nerVal.includes("эхний үлдэгдэл") ||
+            nerVal.includes("ekhniuldegdel") ||
+            nerVal.includes("ekhnii uldegdel");
+          if (!isEkh) return s;
+          const amt = Number(z?.dun ?? z?.tariff ?? 0);
+          return s + (amt !== 0 ? amt : 0);
+        }, 0);
+        const fromGuilgee = guilgeenuud.reduce((s: number, g: any) => {
+          if (g?.ekhniiUldegdelEsekh !== true) return s;
+          const amt = Number(g?.tulukhDun ?? g?.undsenDun ?? 0);
+          return s + (amt !== 0 ? amt : 0);
+        }, 0);
+        ekhniiUldegdelDelta = fromZardluud + fromGuilgee;
+      }
+
+      const chargeAmt = isPayment ? 0 : itemAmount;
+      const fromTulsunRow = Number(it?.tulsunDun ?? it?.tulsun ?? 0) || 0;
+      const paidAmt = isPayment
+        ? fromTulsunRow || Math.abs(itemAmount)
+        : fromTulsunRow;
+
+      if (!map.has(key)) {
+        const resolvedGeree = String(
+          it?.gereeniiId || it?.gereeId || it?._gereeniiId || gereeId || "",
+        ).trim();
+        map.set(key, {
+          ...it,
+          gereeniiId: resolvedGeree || it?.gereeniiId,
+          gereeId: resolvedGeree || it?.gereeId,
+          _historyCount: 1,
+          _totalTulbur: chargeAmt,
+          _totalTulsun: paidAmt,
+          _hasEkhniiUldegdel:
+            isStandaloneEkhniiUldegdel || ekhniiUldegdelDelta !== 0,
+          _ekhniiUldegdelAmount: ekhniiUldegdelDelta,
+        });
+      } else {
+        const existing = map.get(key);
+        existing._historyCount += 1;
+        existing._totalTulbur += chargeAmt;
+        existing._totalTulsun += paidAmt;
+        const rg = String(gereeId || "").trim();
+        if (
+          rg &&
+          !String(existing?.gereeniiId || existing?.gereeId || "").trim()
+        ) {
+          existing.gereeniiId = rg;
+          existing.gereeId = rg;
+        }
+        if (isStandaloneEkhniiUldegdel || ekhniiUldegdelDelta !== 0) {
+          existing._hasEkhniiUldegdel = true;
+          existing._ekhniiUldegdelAmount =
+            (existing._ekhniiUldegdelAmount || 0) + ekhniiUldegdelDelta;
+        }
+      }
+    });
+    return Array.from(map.values());
+  }, [
+    filteredItemsAll,
+    buildingHistoryItems,
+    contractsByNumber,
+    gereeGaralt?.jagsaalt,
+    residentsById,
+    searchTerm,
+    selectedOrtsFilter,
+    selectedDavkharFilter,
+    selectedTootFilter,
+  ]);
+
+  const sortedResidents = useMemo(() => {
+    const result = Array.from(deduplicatedResidents);
+    if (!sortField) return result;
+
+    result.sort((a, b) => {
+      let aVal: any, bVal: any;
+
+      const getGid = (it: any) =>
+        (it?._gereeniiId && String(it._gereeniiId)) ||
+        (it?.gereeniiId && String(it.gereeniiId)) ||
+        (it?.gereeId && String(it.gereeId)) ||
+        (it?.gereeniiDugaar &&
+          String(
+            (contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || "",
+          )) ||
+        "";
+
+      if (sortField === "uldegdel" || sortField === "paid") {
+        if (sortField === "paid") {
+          const gidA = getGid(a);
+          const gidB = getGid(b);
+          const paidVal = (_it: any, gid: string) =>
+            gid ? Number(monthPaidByGereeId[gid] ?? 0) : 0;
+          aVal = paidVal(a, gidA);
+          bVal = paidVal(b, gidB);
+        } else {
+          const gidA = getGid(a);
+          const gidB = getGid(b);
+          const aggA =
+            Number(a?._totalTulbur || 0) - Number(a?._totalTulsun || 0);
+          const aggB =
+            Number(b?._totalTulbur || 0) - Number(b?._totalTulsun || 0);
+          if (historyScopedByDate) {
+            aVal = tableDisplayBalances[gidA] ?? aggA;
+            bVal = tableDisplayBalances[gidB] ?? aggB;
+          } else {
+            aVal = tableDisplayBalances[gidA] ?? Number(a?.uldegdel ?? 0);
+            bVal = tableDisplayBalances[gidB] ?? Number(b?.uldegdel ?? 0);
+          }
+        }
+      } else if (sortField === "toot") {
+        const getTootVal = (it: any) => {
+          const rid = it.orshinSuugchId ? String(it.orshinSuugchId) : null;
+          const res = rid ? residentsById[rid] : null;
+          const resToot =
+            Array.isArray(res?.toots) && res.toots.length > 0
+              ? res.toots[0]?.toot
+              : res?.toot;
+          const cid = it.gereeniiId ? String(it.gereeniiId) : null;
+          const con = cid
+            ? contractsById[cid]
+            : it.gereeniiDugaar
+              ? contractsByNumber[it.gereeniiDugaar]
+              : null;
+          return String(
+            con?.toot || resToot || it.toot || it.medeelel?.toot || "",
+          );
+        };
+        aVal = getTootVal(a);
+        bVal = getTootVal(b);
+      } else {
+        aVal = a[sortField];
+        bVal = b[sortField];
+      }
+
+      if (aVal === bVal) return 0;
+      if (aVal == null) return 1;
+      if (bVal == null) return -1;
+
+      if (typeof aVal === "string" && typeof bVal === "string") {
+        return sortOrder === "asc"
+          ? aVal.localeCompare(bVal, undefined, {
+              numeric: true,
+              sensitivity: "base",
+            })
+          : bVal.localeCompare(aVal, undefined, {
+              numeric: true,
+              sensitivity: "base",
+            });
+      }
+
+      return sortOrder === "asc"
+        ? aVal < bVal
+          ? -1
+          : 1
+        : aVal > bVal
+          ? -1
+          : 1;
+    });
+
+    return result;
+  }, [
+    deduplicatedResidents,
+    sortField,
+    sortOrder,
+    monthPaidByGereeId,
+    tableDisplayBalances,
+    residentsById,
+    contractsById,
+    contractsByNumber,
+    historyScopedByDate,
+  ]);
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(sortedResidents.length / rowsPerPage),
+  );
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
+  const paginated = useMemo(() => {
+    return sortedResidents.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+  }, [sortedResidents, page, rowsPerPage]);
+
+  const getGereeId = (it: any) => getGereeIdPure(it, contractsByNumber);
+  const billingCycleRange = useMemo(() => {
+    const start = ekhlekhOgnoo?.[0];
+    const end = ekhlekhOgnoo?.[1];
+    if (!start || !end) return undefined;
+
+    // Return the selected natural month range (e.g., 2026-02-01 to 2026-02-28)
+    // without any custom billing cycle (invoiceDay) offsets.
+    return [start, end];
+  }, [ekhlekhOgnoo]);
+
+  // Fetch accurate server-computed balances via /uldegdelBodyo for all contracts.
+  // This replaces the old per-resident /guilgeeAvlaguud fetch which tried to read
+  // a non-existent `uldegdel` field from raw ledger rows.
+  // Stringify the range to ensure stable useEffect dependencies
+  const billingCycleRangeKey = JSON.stringify(billingCycleRange);
+
+  // Clear request tracking when building or cycle changes so we can refetch.
+  // We DON'T clear the actual state (latestRowUldegdelByGereeId) here to prevent
+  // the "disappearing data" flicker. New data will simply overwrite the old.
+  useEffect(() => {
+    latestRowUldegdelRequestedRef.current.clear();
+  }, [effectiveBarilgiinId, billingCycleRangeKey]);
+
+  useEffect(() => {
+    if (
+      !token ||
+      !ajiltan?.baiguullagiinId ||
+      deduplicatedResidentsAll.length === 0 ||
+      isInvoiceDayLoading
+    ) {
+      return;
+    }
+
+    const baiguullagiinId = ajiltan.baiguullagiinId;
+
+    // Collect all gids that need a balance
+    const gidsToFetch = deduplicatedResidentsAll
+      .map((it: any) => getGereeId(it))
+      .filter(Boolean) as string[];
+
+    if (gidsToFetch.length === 0) return;
+
+    // Call uldegdelBodyo for each contract in parallel (batched to avoid overload)
+    // We skip contracts already in latestRowUldegdelRequestedRef to avoid duplicate calls
+    const pending = gidsToFetch.filter(
+      (gid) => !latestRowUldegdelRequestedRef.current.has(gid),
+    );
+    if (pending.length === 0) return;
+
+    // Mark all as requested before firing
+    pending.forEach((gid) => latestRowUldegdelRequestedRef.current.add(gid));
+
+    // Batch into groups of 50 to avoid hitting rate limits
+    const BATCH = 50;
+    for (let i = 0; i < pending.length; i += BATCH) {
+      const batch = pending.slice(i, i + BATCH);
+      batch.forEach((gid) => {
+        uilchilgee(token)
+          .post(`/uldegdelBodyo`, {
+            baiguullagiinId,
+            barilgiinId: effectiveBarilgiinId || undefined,
+            gereeniiId: gid,
+            ognoo: billingCycleRange,
+          })
+          .then((resp) => {
+            const summary = resp.data?.summary;
+            const uldegdel =
+              summary?.uldegdel != null &&
+              Number.isFinite(Number(summary.uldegdel))
+                ? Number(summary.uldegdel)
+                : null;
+
+            setLatestRowUldegdelByGereeId((prev) => ({
+              ...prev,
+              [gid]: uldegdel,
+            }));
+          })
+          .catch(() => {
+            latestRowUldegdelRequestedRef.current.delete(gid);
+          });
+      });
+    }
+  }, [
+    token,
+    ajiltan?.baiguullagiinId,
+    deduplicatedResidentsAll,
+    effectiveBarilgiinId,
+    billingCycleRangeKey,
+  ]);
+
+  // Count cancelled gerees with unpaid invoices/zardal
+  const cancelledGereesWithUnpaid = useMemo(() => {
+    // To match the table exactly, we iterate over the same deduplicated residents set used for stats
+    // and apply the "overdue" (cancelled receivable) criteria.
+    const cancelledGereeIds = new Set<string>();
+
+    const cancelledGereeIdsFromGereeList = new Set<string>();
+    const cancelledGereeDugaarsFromGereeList = new Set<string>();
+    const allGerees = (gereeGaralt?.jagsaalt || []) as any[];
+
+    allGerees.forEach((g: any) => {
+      const status = String(g?.tuluv || g?.status || "")
+        .trim()
+        .toLowerCase();
+      if (status === "цуцалсан" || status === "tsutlsasan") {
+        if (g?._id) cancelledGereeIdsFromGereeList.add(String(g._id));
+        if (g?.gereeniiDugaar)
+          cancelledGereeDugaarsFromGereeList.add(String(g.gereeniiDugaar));
+      }
+    });
+
+    deduplicatedResidentsAll.forEach((r: any) => {
+      const gid =
+        String(r?.gereeniiId ?? r?.gereeId ?? "").trim() ||
+        (r?.gereeniiDugaar &&
+          String(
+            (contractsByNumber as any)[String(r.gereeniiDugaar)]?._id || "",
+          )) ||
+        "";
+
+      if (!gid) return;
+
+      const balance = tableDisplayBalances[gid] ?? Number(r?.uldegdel ?? 0);
+      const isLinkedToCancelledGeree =
+        cancelledGereeIdsFromGereeList.has(gid) ||
+        (r?.gereeniiDugaar &&
+          cancelledGereeDugaarsFromGereeList.has(String(r.gereeniiDugaar)));
+
+      if (balance >= 0.01 && isLinkedToCancelledGeree) {
+        cancelledGereeIds.add(gid);
+      }
+    });
+
+    return cancelledGereeIds.size;
+  }, [
+    deduplicatedResidentsAll,
+    tableDisplayBalances,
+    gereeGaralt?.jagsaalt,
+    contractsByNumber,
+  ]);
+
+  // Stats use deduplicatedResidentsAll so dashboard numbers stay fixed when clicking filters
+  const stats = useMemo(() => {
+    const residentCount = deduplicatedResidentsAll.length;
+
+    const cancelledGereeIdsFromGereeList = new Set<string>();
+    const cancelledGereeDugaarsFromGereeList = new Set<string>();
+    const allGerees = (gereeGaralt?.jagsaalt || []) as any[];
+
+    allGerees.forEach((g: any) => {
+      const status = String(g?.tuluv || g?.status || "")
+        .trim()
+        .toLowerCase();
+      if (status === "цуцалсан" || status === "tsutlsasan") {
+        if (g?._id) cancelledGereeIdsFromGereeList.add(String(g._id));
+        if (g?.gereeniiDugaar)
+          cancelledGereeDugaarsFromGereeList.add(String(g.gereeniiDugaar));
+      }
+    });
+
+    const counts = deduplicatedResidentsAll.reduce(
+      (acc, r) => {
+        const gid =
+          String(r?.gereeniiId ?? r?.gereeId ?? "").trim() ||
+          (r?.gereeniiDugaar &&
+            String(
+              (contractsByNumber as any)[String(r.gereeniiDugaar)]?._id || "",
+            )) ||
+          (r?._id && String(r._id)) ||
+          "";
+
+        const scopedAgg =
+          Number(r?._totalTulbur || 0) - Number(r?._totalTulsun || 0);
+        const balance =
+          tableDisplayBalances[gid] ??
+          (historyScopedByDate ? scopedAgg : Number(r?.uldegdel ?? 0));
+
+        const paidAmount = gid ? Number(monthPaidByGereeId[gid] ?? 0) : 0;
+        const isResidentPaid = balance < 0.01;
+        const isPartiallyPaid = !isResidentPaid && paidAmount > 0.1;
+
+        const isLinkedToCancelledGeree =
+          cancelledGereeIdsFromGereeList.has(gid) ||
+          (r?.gereeniiDugaar &&
+            cancelledGereeDugaarsFromGereeList.has(String(r.gereeniiDugaar)));
+
+        if (isResidentPaid) {
+          acc.paid++;
+        } else if (isLinkedToCancelledGeree) {
+          // «Цуцалсан гэрээний авлага» тусад нь — энд бүлэглэхгүй
+        } else if (!isPartiallyPaid) {
+          acc.unpaid++;
+        }
+        return acc;
+      },
+      { paid: 0, unpaid: 0 },
+    );
+
+    return [
+      { title: "Оршин суугч", value: residentCount },
+      { title: "Цуцалсан гэрээний авлага", value: cancelledGereesWithUnpaid },
+      { title: "Төлсөн", value: counts.paid },
+      { title: "Төлөөгүй", value: counts.unpaid },
+    ];
+  }, [
+    deduplicatedResidentsAll,
+    cancelledGereesWithUnpaid,
+    contractsByNumber,
+    residentsById,
+    tableDisplayBalances,
+    monthPaidByGereeId,
+    historyScopedByDate,
+  ]);
+
+  const zaaltTemplateTatak = async () => {
+    const loadingToastId = toast.loading("Заалтын загвар файл бэлдэж байна…");
+    const hide = () => toast.dismiss(loadingToastId);
+
+    try {
+      if (!token || !ajiltan?.baiguullagiinId) {
+        hide();
+        toast.error("Нэвтэрсэн эсэхээ шалгана уу");
+        return;
+      }
+
+      const response = await uilchilgee(token).post(
+        "/zaaltExcelTemplateAvya",
+        {
+          baiguullagiinId: ajiltan.baiguullagiinId,
+          barilgiinId: effectiveBarilgiinId,
+        },
+        {
+          responseType: "blob" as any,
+        },
+      );
+
+      hide();
+
+      const blob = new Blob([response.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+
+      const cd = (response.headers?.["content-disposition"] ||
+        response.headers?.["Content-Disposition"]) as string | undefined;
+      let filename = "Заалтын загвар.xlsx";
+      if (cd && /filename\*=UTF-8''([^;]+)/i.test(cd)) {
+        filename = decodeURIComponent(
+          cd.match(/filename\*=UTF-8''([^;]+)/i)![1],
+        );
+      } else if (cd && /filename="?([^";]+)"?/i.test(cd)) {
+        filename = cd.match(/filename="?([^";]+)"?/i)![1];
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+
+      toast.success("Заалтын загвар амжилттай татагдлаа");
+    } catch (err: any) {
+      hide();
+      openErrorOverlay(getErrorMessage(err));
+    }
+  };
+
+  const zaaltOruulakh = async () => {
+    const loadingToastId = toast.loading("Заалтын Excel файл бэлдэж байна…");
+    const hide = () => toast.dismiss(loadingToastId);
+
+    try {
+      if (!token || !ajiltan?.baiguullagiinId) {
+        hide();
+        toast.error("Нэвтэрсэн эсэхээ шалгана уу");
+        return;
+      }
+
+      const response = await uilchilgee(token).post(
+        "/zaaltExcelDataAvya",
+        {
+          baiguullagiinId: ajiltan.baiguullagiinId,
+          barilgiinId: effectiveBarilgiinId,
+        },
+        {
+          responseType: "blob" as any,
+        },
+      );
+
+      hide();
+
+      const blob = new Blob([response.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+
+      // Try to infer filename from headers or fallback
+      const cd = (response.headers?.["content-disposition"] ||
+        response.headers?.["Content-Disposition"]) as string | undefined;
+      let filename = "Заалтын жагсаалт.xlsx";
+      if (cd && /filename\*=UTF-8''([^;]+)/i.test(cd)) {
+        filename = decodeURIComponent(
+          cd.match(/filename\*=UTF-8''([^;]+)/i)![1],
+        );
+      } else if (cd && /filename="?([^";]+)"?/i.test(cd)) {
+        filename = cd.match(/filename="?([^";]+)"?/i)![1];
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+
+      toast.success("Заалтын мэдээлэл амжилттай татагдлаа");
+    } catch (err: any) {
+      hide();
+
+      // Handle blob error response - when responseType is 'blob', error response may be Blob or ArrayBuffer
+      let errorMsg = "Алдаа гарлаа";
+
+      try {
+        const responseData = err?.response?.data;
+
+        if (responseData instanceof Blob) {
+          const errorText = await responseData.text();
+          const errorJson = JSON.parse(errorText);
+          errorMsg =
+            errorJson.aldaa || errorJson.message || errorJson.error || errorMsg;
+        } else if (responseData instanceof ArrayBuffer) {
+          const decoder = new TextDecoder("utf-8");
+          const errorText = decoder.decode(responseData);
+          const errorJson = JSON.parse(errorText);
+          errorMsg =
+            errorJson.aldaa || errorJson.message || errorJson.error || errorMsg;
+        } else if (typeof responseData === "string") {
+          try {
+            const errorJson = JSON.parse(responseData);
+            errorMsg =
+              errorJson.aldaa ||
+              errorJson.message ||
+              errorJson.error ||
+              errorMsg;
+          } catch {
+            errorMsg = responseData || errorMsg;
+          }
+        } else if (responseData && typeof responseData === "object") {
+          errorMsg =
+            responseData.aldaa ||
+            responseData.message ||
+            responseData.error ||
+            errorMsg;
+        } else {
+          errorMsg = getErrorMessage(err);
+        }
+      } catch {
+        // If all parsing fails, try getErrorMessage as fallback
+        const fallback = getErrorMessage(err);
+        if (fallback && fallback !== "Алдаа гарлаа") {
+          errorMsg = fallback;
+        }
+      }
+
+      openErrorOverlay(errorMsg);
+    }
+  };
+
+  const exceleerTatya = async () => {
+    const loadingToastId = toast.loading("Excel файл бэлдэж байна…");
+    const hide = () => toast.dismiss(loadingToastId);
+
+    try {
+      if (!token || !ajiltan?.baiguullagiinId) {
+        hide();
+        toast.error("Нэвтэрсэн эсэхээ шалгана уу");
+        return;
+      }
+
+      // Fetch bulk uldegdelBodyo for Excel export
+      const bulkResp = await uilchilgee(token).post("/uldegdelBodyo", {
+        baiguullagiinId: ajiltan.baiguullagiinId,
+        barilgiinId: effectiveBarilgiinId || undefined,
+        ognoo: billingCycleRange,
+      });
+      const exportSummaries = new Map<string, any>();
+      if (bulkResp.data?.summaries) {
+        bulkResp.data.summaries.forEach((s: any) => {
+          if (s.gereeniiId) exportSummaries.set(String(s.gereeniiId), s);
+          if (s.gereeniiDugaar)
+            exportSummaries.set(String(s.gereeniiDugaar), s);
+        });
+      }
+
+      // Build exact data set from UI to perfectly match sequence, filtering, and missing resident issues.
+      const tableData = sortedResidents.map((item: any, index: number) => {
+        const gid =
+          String(item?.gereeniiId ?? item?.gereeId ?? "").trim() ||
+          (item?.gereeniiDugaar
+            ? String(
+                (contractsByNumber as any)[String(item.gereeniiDugaar)]?._id ||
+                  "",
+              )
+            : "");
+
+        const historyAgg =
+          Number(item?._totalTulbur || 0) - Number(item?._totalTulsun || 0);
+        const currentBalance =
+          tableDisplayBalances[gid] ??
+          (historyScopedByDate ? historyAgg : Number(item?.uldegdel ?? 0));
+        const paidAmount = gid ? Number(monthPaidByGereeId[gid] ?? 0) : 0;
+        const isResidentPaid = currentBalance < 0.01;
+        const odooTuluv = isResidentPaid ? "Төлсөн" : "Төлөөгүй";
+        const ekhniiAmt =
+          item?.ekhniiUldegdel ?? item?._ekhniiUldegdelAmount ?? 0;
+
+        const discountAmount =
+          Number(item?.khungulult || item?.discount || item?._khungulultAmount || 0) ||
+          (Array.isArray(item?.medeelel?.khungulultuud)
+            ? item.medeelel.khungulultuud.reduce((s: number, k: any) => s + Number(k.dun || k.khungulultiinDun || 0), 0)
+            : 0);
+
+        const gereeTuluv = (() => {
+          const contractObj = item?.gereeniiDugaar ? (contractsByNumber as any)[String(item.gereeniiDugaar)] : null;
+          if (item?.tsutsalsanOgnoo || contractObj?.tsutsalsanOgnoo || item?.tuluv === "Цуцалсан" || contractObj?.tuluv === "Цуцалсан") {
+            return "Цуцалсан";
+          }
+          const raw = item?.gereeniiTuluv || item?.gereeTuluv || contractObj?.gereeniiTuluv || contractObj?.tuluv || item?.status;
+          if (!raw) return "Идэвхтэй";
+          const s = String(raw).toLowerCase();
+          if (s.includes("цуц") || s.includes("cancel")) return "Цуцалсан";
+          if (s.includes("идэвх") || s.includes("active")) return "Идэвхтэй";
+          return String(raw);
+        })();
+
+        return {
+          dugaar: index + 1,
+          ner: item?.ner || "",
+          toot: item?.toot || item?.medeelel?.toot || "",
+          utas: Array.isArray(item?.utas)
+            ? item.utas.join(", ")
+            : item?.utas || "",
+          orts: item?.orts || "",
+          davkhar: item?.davkhar || "",
+          gereeniiDugaar: item?.gereeniiDugaar || "",
+          turul: item?.turul || "Үндсэн",
+          gereeniiTuluv: gereeTuluv,
+          uldegdel: Number(parseFloat(String(currentBalance)).toFixed(2)),
+          guitsetgel: Number(parseFloat(String(paidAmount)).toFixed(2)),
+          khungulult: Number(parseFloat(String(discountAmount)).toFixed(2)),
+          tuluv: odooTuluv,
+        };
+      });
+
+      const body: any = {
+        data: tableData,
+        headers: [
+          { key: "dugaar", label: "№" },
+          { key: "ner", label: "Нэр" },
+          { key: "toot", label: "Тоот" },
+          { key: "utas", label: "Утас" },
+          { key: "orts", label: "Орц" },
+          { key: "davkhar", label: "Давхар" },
+          { key: "gereeniiDugaar", label: "Гэрээний дугаар" },
+          { key: "turul", label: "Төрөл" },
+          { key: "gereeniiTuluv", label: "Гэрээний төлөв" },
+          { key: "uldegdel", label: "Үлдэгдэл" },
+          { key: "guitsetgel", label: "Гүйцэтгэл" },
+          { key: "khungulult", label: "Хөнгөлөлт" },
+          { key: "tuluv", label: "Төлөв" },
+        ],
+        fileName: `tolborder_jagsaalt_${new Date().toISOString().split("T")[0]}`,
+        sheetName: "Төлбөр тооцоо",
+      };
+
+      const path = "/nekhemjlekhiinTuukhExcelDownload";
+      let resp: any;
+      try {
+        resp = await uilchilgee(token).post(path, body, {
+          responseType: "blob" as any,
+        });
+      } catch (err: any) {
+        if (err?.response?.status === 404 && typeof window !== "undefined") {
+          resp = await uilchilgee(token).post(
+            `${window.location.origin}${path}`,
+            body,
+            { responseType: "blob" as any, baseURL: undefined as any },
+          );
+        } else {
+          throw err;
+        }
+      }
+      hide();
+
+      const blob = new Blob([resp.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      // Try to infer filename from headers or fallback
+      const cd = (resp.headers?.["content-disposition"] ||
+        resp.headers?.["Content-Disposition"]) as string | undefined;
+      let filename = `Нэхэмжлэлийн түүх тайлан_${new Date().toISOString().split("T")[0]}.xlsx`;
+      if (cd && /filename\*=UTF-8''([^;]+)/i.test(cd)) {
+        filename = decodeURIComponent(
+          cd.match(/filename\*=UTF-8''([^;]+)/i)![1],
+        );
+      } else if (cd && /filename="?([^";]+)"?/i.test(cd)) {
+        filename = cd.match(/filename="?([^";]+)"?/i)![1];
+      }
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success("Excel файл татагдлаа");
+    } catch (err: any) {
+      hide();
+      console.error(err);
+
+      // Handle blob error response - when responseType is 'blob', error response may be Blob or ArrayBuffer
+      let errorMsg = "Excel файл татахад алдаа гарлаа";
+
+      try {
+        const responseData = err?.response?.data;
+
+        if (responseData instanceof Blob) {
+          const errorText = await responseData.text();
+          const errorJson = JSON.parse(errorText);
+          errorMsg =
+            errorJson.aldaa || errorJson.message || errorJson.error || errorMsg;
+        } else if (responseData instanceof ArrayBuffer) {
+          const decoder = new TextDecoder("utf-8");
+          const errorText = decoder.decode(responseData);
+          const errorJson = JSON.parse(errorText);
+          errorMsg =
+            errorJson.aldaa || errorJson.message || errorJson.error || errorMsg;
+        } else if (typeof responseData === "string") {
+          try {
+            const errorJson = JSON.parse(responseData);
+            errorMsg =
+              errorJson.aldaa ||
+              errorJson.message ||
+              errorJson.error ||
+              errorMsg;
+          } catch {
+            errorMsg = responseData || errorMsg;
+          }
+        } else if (responseData && typeof responseData === "object") {
+          errorMsg =
+            responseData.aldaa ||
+            responseData.message ||
+            responseData.error ||
+            errorMsg;
+        } else {
+          const parsed = getErrorMessage(err);
+          if (parsed && parsed !== "Алдаа гарлаа") {
+            errorMsg = parsed;
+          }
+        }
+      } catch {
+        // If all parsing fails, try getErrorMessage as fallback
+        const fallback = getErrorMessage(err);
+        if (fallback && fallback !== "Алдаа гарлаа") {
+          errorMsg = fallback;
+        }
+      }
+
+      openErrorOverlay(errorMsg);
+    }
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        zaaltButtonRef.current &&
+        !zaaltButtonRef.current.contains(event.target as Node)
+      ) {
+        setIsZaaltDropdownOpen(false);
+      }
+    };
+
+    if (isZaaltDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }
+  }, [isZaaltDropdownOpen]);
+
+  // Handle column dropdown click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        columnDropdownRef.current &&
+        !columnDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsColumnModalOpen(false);
+      }
+    };
+
+    if (isColumnModalOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("touchstart", handleClickOutside as any);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+        document.removeEventListener("touchstart", handleClickOutside as any);
+      };
+    }
+  }, [isColumnModalOpen]);
+
+  // Excel Import handler
+  const handleTransactionSubmit = async (data: TransactionData) => {
+    try {
+      setIsProcessingTransaction(true);
+
+      if (!token || !ajiltan?.baiguullagiinId) {
+        openErrorOverlay("Нэвтэрсэн эсэхээ шалгана уу");
+        return;
+      }
+
+      const isTransactionHttpOk = (r: any) =>
+        r &&
+        typeof r.status === "number" &&
+        r.status >= 200 &&
+        r.status < 300 &&
+        r.data?.success !== false;
+
+      // Only mark as paid when transaction type is "tulult" (Төлөлт)
+      // For other types (avlaga, ashiglalt), create a transaction record without marking as paid
+      if (data.type === "tulult") {
+        // Payment: record directly in guilgeeAvlaguud with negative dun
+        const response = await uilchilgee(token).post("/guilgeeAvlaguud", {
+          baiguullagiinId: ajiltan.baiguullagiinId,
+          barilgiinId: effectiveBarilgiinId,
+          tukhainBaaziinKholbolt: ajiltan?.tukhainBaaziinKholbolt,
+          dun: -Math.abs(data.amount),
+          orshinSuugchId: data.residentId,
+          gereeniiId: data.gereeniiId,
+          tailbar:
+            data.tailbar ||
+            (data.ekhniiUldegdel
+              ? `Эхний үлдэгдэл - ${data.date}`
+              : `Төлөлт - ${data.date}`),
+          ognoo: data.date,
+          createdBy: ajiltan._id,
+          createdAt: new Date().toISOString(),
+          burtgesenAjiltaniiNer: ajiltan.ner,
+          guilgeeKhiisenAjiltniiNer: ajiltan.ner,
+          turul: "tulult",
+        });
+
+        if (isTransactionHttpOk(response)) {
+          toast.success("Төлөлт амжилттай бүртгэгдлээ");
+          setIsTransactionModalOpen(false);
+          setSelectedTransactionResident(null);
+
+          // Instant UI Update: Clear local caches for this contract so they refetch immediately
+          if (data.gereeniiId) {
+            const gid = data.gereeniiId;
+            latestRowUldegdelRequestedRef.current.delete(gid);
+            setLatestRowUldegdelByGereeId((prev) => {
+              const updated = { ...prev };
+              delete (updated as any)[gid];
+              return updated;
+            });
+          }
+
+          await revalidateTulburCaches();
+          setInvoiceRefreshTrigger((t) => t + 1);
+
+          // Refresh the resident object so invoice "Үлдэгдэл" updates instantly
+          if (data.residentId) {
+            try {
+              const res = await uilchilgee(token).get(
+                `/orshinSuugch/${data.residentId}`,
+                {
+                  params: { baiguullagiinId: ajiltan.baiguullagiinId },
+                },
+              );
+              const freshResident = res.data;
+              if (freshResident && freshResident._id) {
+                setSelectedResident((prev: any) =>
+                  prev && String(prev._id) === String(freshResident._id)
+                    ? { ...prev, ...freshResident }
+                    : prev,
+                );
+                setSelectedTransactionResident((prev: any) =>
+                  prev && String(prev._id) === String(freshResident._id)
+                    ? { ...prev, ...freshResident }
+                    : prev,
+                );
+              }
+            } catch {
+              // best-effort refresh; ignore errors
+            }
+          }
+        }
+      } else if (data.type === "khungulult") {
+        const response = await uilchilgee(token).post("/guilgeeAvlaguud", {
+          baiguullagiinId: ajiltan.baiguullagiinId,
+          barilgiinId: effectiveBarilgiinId,
+          tukhainBaaziinKholbolt: ajiltan?.tukhainBaaziinKholbolt,
+          turul: "Хөнгөлөлт",
+          zardliinTurul: "Хөнгөлөлт",
+          source: "gar",
+          tulsunDun: data.amount,
+          tulukhDun: 0,
+          dun: -Math.abs(data.amount),
+          orshinSuugchId: data.residentId,
+          gereeniiId: data.gereeniiId,
+          tailbar: data.tailbar || `Хөнгөлөлт - ${data.date}`,
+          ognoo: data.date,
+          guilgeeKhiisenAjiltniiId: ajiltan._id,
+          guilgeeKhiisenAjiltniiNer:
+            `${(ajiltan as any).ovog || ""} ${ajiltan.ner || ""}`.trim(),
+        });
+
+        if (isTransactionHttpOk(response)) {
+          toast.success("Хөнгөлөлт амжилттай бүртгэгдлээ");
+          setIsTransactionModalOpen(false);
+          setSelectedTransactionResident(null);
+
+          if (data.gereeniiId) {
+            const gid = data.gereeniiId;
+            latestRowUldegdelRequestedRef.current.delete(gid);
+            setLatestRowUldegdelByGereeId((prev) => {
+              const updated = { ...prev };
+              delete (updated as any)[gid];
+              return updated;
+            });
+          }
+
+          await revalidateTulburCaches();
+          setInvoiceRefreshTrigger((t) => t + 1);
+
+          if (data.residentId) {
+            try {
+              const res = await uilchilgee(token).get(
+                `/orshinSuugch/${data.residentId}`,
+                {
+                  params: { baiguullagiinId: ajiltan.baiguullagiinId },
+                },
+              );
+              const freshResident = res.data;
+              if (freshResident && freshResident._id) {
+                setSelectedResident((prev: any) =>
+                  prev && String(prev._id) === String(freshResident._id)
+                    ? { ...prev, ...freshResident }
+                    : prev,
+                );
+                setSelectedTransactionResident((prev: any) =>
+                  prev && String(prev._id) === String(freshResident._id)
+                    ? { ...prev, ...freshResident }
+                    : prev,
+                );
+              }
+            } catch {
+              // best-effort refresh
+            }
+          }
+        }
+      } else {
+        // Other transaction types (avlaga, ashiglalt, torguuli): create a transaction record as a charge
+        const isAshiglalt = data.type === "ashiglalt";
+        const isTorguuli = data.type === "torguuli";
+        const baseTailbar =
+          data.tailbar ||
+          (data.ekhniiUldegdel
+            ? `Эхний үлдэгдэл - ${data.date}`
+            : `${data.type === "avlaga" ? "Авлага" : data.type === "ashiglalt" ? "Цахилгаан" : data.type === "torguuli" ? "Торгууль" : data.type} - ${data.date}`);
+        const normalizedTailbar = isAshiglalt
+          ? String(baseTailbar).replace(/^(ашиглалт|ashiglalt)/i, "Цахилгаан")
+          : baseTailbar;
+        // All non-payment types (avlaga, ashiglalt, torguuli) are charges: positive dun, tulukhDun
+        const response = await uilchilgee(token).post("/guilgeeAvlaguud", {
+          baiguullagiinId: ajiltan.baiguullagiinId,
+          barilgiinId: effectiveBarilgiinId,
+          tukhainBaaziinKholbolt: ajiltan?.tukhainBaaziinKholbolt,
+          turul: "Авлага",
+          source: "gar",
+          zardliinTurul: isAshiglalt
+            ? "Ашиглалт"
+            : isTorguuli
+              ? "Торгууль"
+              : undefined,
+          tulukhDun: data.amount,
+          tulsunDun: 0,
+          dun: data.amount,
+          orshinSuugchId: data.residentId,
+          gereeniiId: data.gereeniiId,
+          tailbar: normalizedTailbar,
+          ognoo: data.date,
+          ...(data.ekhniiUldegdel && { ekhniiUldegdelEsekh: true }),
+          guilgeeKhiisenAjiltniiId: ajiltan._id,
+          guilgeeKhiisenAjiltniiNer:
+            `${(ajiltan as any).ovog || ""} ${ajiltan.ner || ""}`.trim(),
+        });
+
+        if (isTransactionHttpOk(response)) {
+          toast.success("Гүйлгээ амжилттай бүртгэгдлээ");
+          setIsTransactionModalOpen(false);
+          setSelectedTransactionResident(null);
+
+          // Instant UI Update: Clear local caches for this contract so they refetch immediately
+          if (data.gereeniiId) {
+            const gid = data.gereeniiId;
+            latestRowUldegdelRequestedRef.current.delete(gid);
+            setLatestRowUldegdelByGereeId((prev) => {
+              const updated = { ...prev };
+              delete (updated as any)[gid];
+              return updated;
+            });
+          }
+
+          await revalidateTulburCaches();
+          setInvoiceRefreshTrigger((t) => t + 1);
+
+          // Refresh the resident object so invoice "Үлдэгдэл" updates instantly
+          if (data.residentId) {
+            try {
+              const res = await uilchilgee(token).get(
+                `/orshinSuugch/${data.residentId}`,
+                {
+                  params: { baiguullagiinId: ajiltan.baiguullagiinId },
+                },
+              );
+              const freshResident = res.data;
+              if (freshResident && freshResident._id) {
+                setSelectedResident((prev: any) =>
+                  prev && String(prev._id) === String(freshResident._id)
+                    ? { ...prev, ...freshResident }
+                    : prev,
+                );
+                setSelectedTransactionResident((prev: any) =>
+                  prev && String(prev._id) === String(freshResident._id)
+                    ? { ...prev, ...freshResident }
+                    : prev,
+                );
+              }
+            } catch {
+              // best-effort refresh; ignore errors
+            }
+          }
+        }
+      }
+    } catch (error: any) {
+      openErrorOverlay(getErrorMessage(error));
+    } finally {
+      setIsProcessingTransaction(false);
+    }
+  };
+
+  const handleToggleSelectAll = (checked: boolean) => {
+    if (checked) {
+      // Select all visible items using gereeniiId (contract ID)
+      const allIds = paginated
+        .map((it: any) => {
+          const gid = String(it?.gereeniiId || it?.gereeId || "").trim();
+          return gid;
+        })
+        .filter((id) => id);
+
+      setSelectedGereeIds((prev) => Array.from(new Set([...prev, ...allIds])));
+    } else {
+      // Deselect all items on current page using gereeniiId
+      const pageIds = new Set(
+        paginated
+          .map((it: any) => String(it?.gereeniiId || it?.gereeId || "").trim())
+          .filter((id) => id),
+      );
+
+      setSelectedGereeIds((prev) => prev.filter((id) => !pageIds.has(id)));
+    }
+  };
+
+  const handleToggleRow = (gereeId: string, checked: boolean) => {
+    if (!gereeId) return;
+    setSelectedGereeIds((prev) => {
+      if (checked) {
+        return [...prev, gereeId];
+      }
+      return prev.filter((id) => id !== gereeId);
+    });
+  };
+
+  // Manual send invoice handler
+  const handleSendInvoices = async () => {
+    // selectedGereeIds now contains contract IDs (gereeniiId) directly
+    const uniqueGereeIds = Array.from(new Set(selectedGereeIds)).filter(
+      Boolean,
+    );
+
+    if (uniqueGereeIds.length === 0) {
+      toast.error("Сонгосон гүйлгээнүүдэд холбогдох гэрээ олдсонгүй!");
+      return;
+    }
+
+    setIsSendingInvoices(true);
+    try {
+      await sendInvoicesApi(uniqueGereeIds);
+      setSelectedGereeIds([]); // Clear selection on success
+
+      // Refresh data
+      mutate(
+        (key: any) =>
+          Array.isArray(key) &&
+          (key[0] === "/nekhemjlekhiinTuukh" ||
+            key[0] === "/geree" ||
+            key[0] === "/orshinSuugch" ||
+            key[0] === "/guilgeeAvlaguud"),
+        undefined,
+        { revalidate: true },
+      );
+      setInvoiceRefreshTrigger((t) => t + 1);
+    } catch (error: any) {
+      // Error is handled inside the hook (openErrorOverlay)
+    } finally {
+      setIsSendingInvoices(false);
+    }
+  };
+
+  const handleExcelImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = [
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/vnd.ms-excel",
+      ".xlsx",
+      ".xls",
+    ];
+    const isValidType =
+      validTypes.includes(file.type) ||
+      file.name.endsWith(".xlsx") ||
+      file.name.endsWith(".xls");
+
+    if (!isValidType) {
+      toast.error("Зөвхөн Excel файл (.xlsx, .xls) оруулна уу");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    let importToastId: string | undefined;
+    try {
+      if (!token || !ajiltan?.baiguullagiinId) {
+        toast.error("Нэвтэрсэн эсэхээ шалгана уу");
+        return;
+      }
+
+      const form = new FormData();
+      form.append("file", file); // Field name must be "file" as expected by backend
+      form.append("baiguullagiinId", ajiltan.baiguullagiinId);
+      if (effectiveBarilgiinId) {
+        form.append("barilgiinId", effectiveBarilgiinId);
+      }
+      // Add ognoo (date) field - using current date in YYYY-MM-DD format
+      const today = new Date();
+      const ognoo = today.toISOString().split("T")[0]; // YYYY-MM-DD format
+      form.append("ognoo", ognoo);
+
+      const endpoint = "/zaaltExcelTatya";
+
+      importToastId = toast.loading("Загвар оруулж байна…");
+
+      const resp: any = await uilchilgee(token).post(endpoint, form, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      if (importToastId) toast.dismiss(importToastId);
+
+      const data = resp?.data;
+      const failed = data?.result?.failed;
+      if (Array.isArray(failed) && failed.length > 0) {
+        const detailLines = failed.map(
+          (f: any) => `Мөр ${f.row || "?"}: ${f.error || f.message || "Алдаа"}`,
+        );
+        const details = detailLines.join("\n");
+        const topMsg =
+          data?.message || "Импортын явцад зарим мөр алдаатай байна";
+        openErrorOverlay(`${topMsg}\n${details}`);
+      } else {
+        toast.success("Загвар амжилттай орууллаа.");
+        // Refresh the page data without reloading
+        mutate(
+          (key: any) =>
+            Array.isArray(key) &&
+            [
+              "/nekhemjlekhiinTuukh",
+              "/geree",
+              "/guilgeeAvlaguud",
+              "/guilgeeAvlaguud",
+              "/orshinSuugch",
+            ].includes(key[0]),
+          undefined,
+          { revalidate: true },
+        );
+        // Clear ledger cache to force re-fetch
+        setLatestRowUldegdelByGereeId({});
+        latestRowUldegdelRequestedRef.current.clear();
+      }
+    } catch (err: any) {
+      toast.dismiss(importToastId);
+      const errorMsg = getErrorMessage(err);
+      openErrorOverlay(errorMsg);
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const t = (text: string) => text;
+
+  useEffect(() => {
+    const open = isKhungulultOpen;
+    document.body.style.overflow = open ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isKhungulultOpen]);
+
+  // Keyboard: Esc to close, Enter to trigger primary action within modal
+  useModalHotkeys({
+    isOpen: isKhungulultOpen,
+    onClose: () => setIsKhungulultOpen(false),
+    container: khungulultRef.current,
+  });
+
+  // Handle opening history modal
+  const handleOpenHistory = async (resident: any) => {
+    if (!token || !ajiltan?.baiguullagiinId) return;
+    setHistoryResident(resident);
+    setIsHistoryOpen(true);
+    setHistoryLoading(true);
+    setHistoryIndex(0);
+    setHistoryItems([]);
+    try {
+      const resp = await uilchilgee(token).get(`/nekhemjlekhiinTuukh`, {
+        params: {
+          baiguullagiinId: ajiltan.baiguullagiinId,
+          barilgiinId: selectedBuildingId || barilgiinId || null,
+          khuudasniiDugaar: 1,
+          khuudasniiKhemjee: 2000,
+        },
+      });
+      const data = resp.data;
+      let list = Array.isArray(data?.jagsaalt)
+        ? data.jagsaalt
+        : Array.isArray(data)
+          ? data
+          : [];
+
+      // Extract identifiers from the resident object
+      const residentId = String(
+        resident?._id || resident?.orshinSuugchId || "",
+      ).trim();
+      const residentGereeId = String(resident?.gereeniiId || "").trim();
+      const residentGereeDugaar = String(resident?.gereeniiDugaar || "").trim();
+      // Get toot from toots array first, then fallback to top-level
+      const residentToot = String(
+        (Array.isArray(resident?.toots) && resident.toots.length > 0
+          ? resident.toots[0]?.toot
+          : null) ??
+          resident?.toot ??
+          "",
+      ).trim();
+      const residentNer = String(resident?.ner || "")
+        .trim()
+        .toLowerCase();
+      const residentOvog = String(resident?.ovog || "")
+        .trim()
+        .toLowerCase();
+      const residentUtas = Array.isArray(resident?.utas)
+        ? String(resident.utas[0] || "").trim()
+        : String(resident?.utas || "").trim();
+
+      // Filter using multiple matching strategies
+      const residentInvoices = list.filter((item: any) => {
+        // Strategy 1: Match by orshinSuugchId
+        if (
+          residentId &&
+          String(item?.orshinSuugchId || "").trim() === residentId
+        ) {
+          return true;
+        }
+
+        // Strategy 2: Match by gereeniiId
+        if (
+          residentGereeId &&
+          String(item?.gereeniiId || "").trim() === residentGereeId
+        ) {
+          return true;
+        }
+
+        // Strategy 3: Match by gereeniiDugaar
+        if (
+          residentGereeDugaar &&
+          String(item?.gereeniiDugaar || "").trim() === residentGereeDugaar
+        ) {
+          return true;
+        }
+
+        // Strategy 4: Match by toot + ner (if both exist)
+        if (residentToot && residentNer) {
+          const itemToot = String(
+            item?.toot || item?.medeelel?.toot || "",
+          ).trim();
+          const itemNer = String(item?.ner || "")
+            .trim()
+            .toLowerCase();
+          if (itemToot === residentToot && itemNer === residentNer) {
+            return true;
+          }
+        }
+
+        // Strategy 5: Match by phone number
+        if (residentUtas && residentUtas.length >= 8) {
+          const itemUtas = Array.isArray(item?.utas)
+            ? String(item.utas[0] || "").trim()
+            : String(item?.utas || "").trim();
+          if (itemUtas === residentUtas) {
+            return true;
+          }
+        }
+
+        // Strategy 6: Match by ovog + ner combination
+        if (residentOvog && residentNer) {
+          const itemOvog = String(item?.ovog || "")
+            .trim()
+            .toLowerCase();
+          const itemNer = String(item?.ner || "")
+            .trim()
+            .toLowerCase();
+          if (itemOvog === residentOvog && itemNer === residentNer) {
+            return true;
+          }
+        }
+
+        return false;
+      });
+
+      console.log("📜 History filter result:", {
+        resident: {
+          id: residentId,
+          gereeId: residentGereeId,
+          gereeDugaar: residentGereeDugaar,
+          toot: residentToot,
+          ner: residentNer,
+        },
+        totalItems: list.length,
+        matchedItems: residentInvoices.length,
+      });
+
+      setHistoryItems(residentInvoices);
+    } catch (e) {
+      openErrorOverlay(getErrorMessage(e));
+      setHistoryItems([]);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  // Fetch lift floors
+  useEffect(() => {
+    const fetchLiftFloors = async () => {
+      if (!token || !ajiltan?.baiguullagiinId) return;
+      try {
+        const resp = await uilchilgee(token).get("/liftShalgaya", {
+          params: {
+            baiguullagiinId: ajiltan.baiguullagiinId,
+            barilgiinId: selectedBuildingId || barilgiinId || null,
+            khuudasniiDugaar: 1,
+            khuudasniiKhemjee: 100,
+          },
+        });
+        const data = resp.data;
+        const list = Array.isArray(data?.jagsaalt) ? data.jagsaalt : [];
+        const toStr = (v: any) => (v == null ? "" : String(v));
+        const branchMatches = barilgiinId
+          ? list.filter(
+              (x: any) => toStr(x?.barilgiinId) === toStr(barilgiinId),
+            )
+          : [];
+        const pickLatest = (arr: any[]) =>
+          [...arr].sort(
+            (a, b) =>
+              new Date(b?.updatedAt || b?.createdAt || 0).getTime() -
+              new Date(a?.updatedAt || a?.createdAt || 0).getTime(),
+          )[0];
+        let chosen =
+          branchMatches.length > 0 ? pickLatest(branchMatches) : null;
+        if (!chosen) {
+          const orgDefaults = list.filter(
+            (x: any) => x?.barilgiinId == null || toStr(x.barilgiinId) === "",
+          );
+          chosen =
+            orgDefaults.length > 0 ? pickLatest(orgDefaults) : pickLatest(list);
+        }
+        const floors: string[] = Array.isArray(chosen?.choloolugdokhDavkhar)
+          ? chosen.choloolugdokhDavkhar.map((f: any) => String(f))
+          : [];
+        setLiftFloors(floors);
+      } catch {}
+    };
+    fetchLiftFloors();
+  }, [token, ajiltan?.baiguullagiinId, barilgiinId, selectedBuildingId]);
+
+  // Handle modal body overflow
+  useEffect(() => {
+    document.body.style.overflow = isModalOpen || isHistoryOpen || isSmsHistoryOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isModalOpen, isHistoryOpen, isSmsHistoryOpen]);
+
+  // Modal keyboard shortcuts for history modal
+  useModalHotkeys({
+    isOpen: isHistoryOpen,
+    onClose: () => setIsHistoryOpen(false),
+    container: historyRef.current,
+  });
+
+  // Register guided tour for /tulbur/guilgeeTuukh
+  const tourSteps = useMemo<DriverStep[]>(
+    () => [
+      {
+        element: "#guilgee-date",
+        popover: {
+          title: "Огнооны шүүлтүүр",
+          description: "Хугацааны интервал сонгож жагсаалтыг шүүнэ.",
+          side: "bottom",
+        },
+      },
+      {
+        element: "#guilgee-status-filter",
+        popover: {
+          title: "Төлөвийн шүүлтүүр",
+          description:
+            "Төлсөн, Төлөөгүй эсвэл Хугацаа хэтэрсэн гэх мэт төлөвөөр ялгана.",
+          side: "bottom",
+        },
+      },
+      {
+        element: "#guilgee-nekhemjlekh-btn",
+        popover: {
+          title: "Нэхэмжлэх",
+          description: "Энд дарж нэхэмжлэхийн цонх нээнэ.",
+          side: "left",
+        },
+      },
+      {
+        element: "#guilgee-excel-btn",
+        popover: {
+          title: "Excel татах",
+          description: "Жагсаалтыг Excel файл хэлбэрээр татна.",
+          side: "left",
+        },
+      },
+      {
+        element: "#guilgee-table",
+        popover: {
+          title: "Жагсаалт",
+          description: "Гүйлгээний түүх энд харагдана.",
+          side: "top",
+        },
+      },
+      {
+        element: "#guilgee-pagination",
+        popover: {
+          title: "Хуудаслалт",
+          description: "Эндээс хуудсуудын хооронд шилжинэ.",
+          side: "top",
+        },
+      },
+    ],
+    [],
+  );
+  useRegisterTourSteps("/tulbur/guilgeeTuukh", tourSteps);
+
+  return (
+    <div className="flex flex-col pb-14">
+      {/* <div className="flex items-center gap-3 mb-4">
+        <motion.h1
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-3xl  text-theme bg-clip-text text-transparent drop-shadow-sm"
+        >
+          Гүйлгээний түүх
+        </motion.h1>
+        <div style={{ width: 44, height: 44 }} className="flex items-center">
+          <DotLottieReact
+            src="https://lottie.host/740ab27b-f4f0-49c5-a202-a23a70cd8e50/eNy8Ct6t4y.lottie"
+            loop
+            autoplay
+            style={{ width: 44, height: 44 }}
+          />
+        </div>
+      </div> */}
+
+      <div className="space-y-6">
+        <div
+          id="guilgee-status-filter"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+        >
+          {stats.map((stat, idx) => {
+            // Map stat titles to filter values
+            const getFilterValue = (
+              title: string,
+            ): "all" | "paid" | "unpaid" | "overdue" | null => {
+              if (title === "Оршин суугч" || title === "Нийт гүйлгээ")
+                return "all";
+              if (title === "Төлсөн") return "paid";
+              if (title === "Төлөөгүй") return "unpaid";
+              if (title === "Цуцалсан гэрээний авлага") return "overdue";
+              return null;
+            };
+
+            const filterValue = getFilterValue(stat.title);
+            const isActive = filterValue && tuluvFilter === filterValue;
+
+            return (
+              <div
+                key={idx}
+                onClick={() => {
+                  if (filterValue) {
+                    setTuluvFilter(filterValue);
+                  }
+                }}
+                className={`relative group rounded-2xl neu-panel transition-all cursor-pointer ${
+                  isActive
+                    ? "ring-2 ring-blue-500 shadow-lg"
+                    : "hover:bg-[color:var(--surface-hover)] hover:scale-105"
+                }`}
+              >
+                <div className="relative rounded-2xl p-5 overflow-hidden">
+                  <div className="text-3xl  mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme">
+                    {stat.value}
+                  </div>
+                  <div className="text-[13px] text-theme leading-tight">
+                    {stat.title}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="rounded-2xl">
+          <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
+            <div className="flex flex-col lg:flex-row gap-3 w-full xl:w-auto">
+              <div
+                id="guilgee-date"
+                className="btn-minimal h-[40px] w-[min(100%,320px)] sm:w-[320px] flex items-center px-3"
+              >
+                <StandardDatePicker
+                  isRange
+                  picker="month"
+                  format="YYYY-MM"
+                  value={ekhlekhOgnoo}
+                  onChange={handleEkhlekhSarRangeChange}
+                  size="small"
+                  allowClear
+                  placeholder={["Эхний сар", "Сүүлийн сар"]}
+                  classNames={{
+                    root: "!h-full !w-full",
+                    input:
+                      "text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
+                  }}
+                />
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {/* Орц filter */}
+                <div className="flex items-center gap-1.5">
+                  <label className="text-[13px] text-theme whitespace-nowrap  tracking-wider font-normal">
+                    Орц:
+                  </label>
+                  <div className="w-[100px]">
+                    <input
+                      type="text"
+                      value={selectedOrtsFilter}
+                      onChange={(e) => setSelectedOrtsFilter(e.target.value)}
+                      className="w-full h-[40px] px-3 rounded-2xl neu-panel text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 text-[13px] focus:outline-none transition-all"
+                      placeholder="Бүгд"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <label className="text-[11px] text-theme whitespace-nowrap text-[13px]  tracking-wider font-normal">
+                    Давхар:
+                  </label>
+                  <div className="w-[100px]">
+                    <input
+                      type="number"
+                      min={1}
+                      value={selectedDavkharFilter}
+                      onChange={(e) => setSelectedDavkharFilter(e.target.value)}
+                      className="w-full h-[40px] px-3 rounded-2xl neu-panel text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 text-[13px] focus:outline-none transition-all"
+                      placeholder="Бүгд"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <label className="text-[13px] text-theme whitespace-nowrap  tracking-wider font-normal">
+                    Тоот:
+                  </label>
+                  <div className="w-[100px]">
+                    <input
+                      type="text"
+                      value={selectedTootFilter}
+                      onChange={(e) => setSelectedTootFilter(e.target.value)}
+                      className="w-full h-[40px] px-3 rounded-2xl neu-panel text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 text-[13px] focus:outline-none transition-all"
+                      placeholder="Бүгд"
+                    />
+                  </div>
+                </div>
+
+                {/* Давхар filter */}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <div ref={smsHistoryButtonRef} className="relative">
+                <Tooltip title="SMS илгээсэн түүх">
+                  <motion.button
+                    whileHover={{ scale: 1.03 }}
+                    transition={{ duration: 0.3 }}
+                    onClick={() => setIsSmsHistoryOpen(true)}
+                    className="btn-minimal inline-flex items-center gap-1 h-[40px] px-2"
+                    id="sms-history-btn"
+                  >
+                    <Mail className="w-5 h-5" />
+                  </motion.button>
+                </Tooltip>
+              </div>
+              <div ref={zaaltButtonRef} className="relative">
+                <Tooltip title="Заалт">
+                  <motion.button
+                    whileHover={{ scale: 1.03 }}
+                    transition={{ duration: 0.3 }}
+                    onClick={() => setIsZaaltDropdownOpen(!isZaaltDropdownOpen)}
+                    className="btn-minimal inline-flex items-center gap-1 h-[40px] px-2"
+                    id="zaalt-btn"
+                  >
+                    <FileSpreadsheet className="w-5 h-5" />
+                    <span className="hidden">Заалт</span>
+                    <ChevronDown
+                      className={`w-4 h-4 transition-transform ${
+                        isZaaltDropdownOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </motion.button>
+                </Tooltip>
+
+                {isZaaltDropdownOpen && (
+                  <div className="absolute right-0 top-full mt-2 z-50 min-w-[250px] menu-surface rounded-xl shadow-lg overflow-hidden">
+                    <button
+                      onClick={() => {
+                        fileInputRef.current?.click();
+                        setIsZaaltDropdownOpen(false);
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-[13px] hover:bg-white/10 transition-colors flex items-center gap-2"
+                    >
+                      <Upload className="w-4 h-4" />
+                      <span>Загвар оруулах</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        zaaltTemplateTatak();
+                        setIsZaaltDropdownOpen(false);
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-[13px] hover:bg-white/10 transition-colors flex items-center gap-2 border-t border-white/10"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>Заалтын загвар татах</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        zaaltOruulakh();
+                        setIsZaaltDropdownOpen(false);
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-[13px] hover:bg-white/10 transition-colors flex items-center gap-2 border-t border-white/10"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>Заалтын жагсаалт татах</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+              <Tooltip title="Эхний үлдэгдэл">
+                <motion.div
+                  whileHover={{ scale: 1.03 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <IconTextButton
+                    onClick={() => setIsInitialBalanceModalOpen(true)}
+                    icon={<Upload className="w-5 h-5" />}
+                    label="Эхний үлдэгдэл"
+                    className="w-[40px] h-[40px] !p-0 justify-center [&>span]:hidden"
+                  />
+                </motion.div>
+              </Tooltip>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+                onChange={handleExcelImport}
+                className="hidden"
+              />
+              <Tooltip title={t("Excel татах")}>
+                <motion.div
+                  id="guilgee-excel-btn"
+                  whileHover={{ scale: 1.03 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <IconTextButton
+                    onClick={exceleerTatya}
+                    icon={<Download className="w-5 h-5" />}
+                    label={t("Excel татах")}
+                    className="w-[40px] h-[40px] !p-0 justify-center [&>span]:hidden"
+                  />
+                </motion.div>
+              </Tooltip>
+              <div
+                className="relative flex items-center gap-2"
+                ref={columnDropdownRef}
+              >
+                <Tooltip title="Багана">
+                  <motion.div
+                    id="guilgee-columns-btn"
+                    whileHover={{ scale: 1.03 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <IconTextButton
+                      onClick={() => setIsColumnModalOpen(!isColumnModalOpen)}
+                      icon={<Columns className="w-5 h-5" />}
+                      label="Багана"
+                      className="w-[40px] h-[40px] !p-0 justify-center [&>span]:hidden"
+                    />
+                  </motion.div>
+                </Tooltip>
+
+                {isColumnModalOpen && (
+                  <div className="absolute right-0 top-full mt-2 z-50 min-w-[200px] menu-surface rounded-xl shadow-lg overflow-hidden max-h-[60vh] overflow-y-auto">
+                    <div className="px-3 py-2 border-b border-white/10 text-sm font-medium text-theme">
+                      Багана сонгох
+                    </div>
+                    {selectableColumnDefs.map((col) => (
+                      <label
+                        key={col.key}
+                        className="flex items-center gap-2 px-3 py-2 hover:bg-white/5 cursor-pointer text-sm"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={columnVisibility[col.key] !== false}
+                          onChange={(e) => {
+                            setColumnVisibility((prev) => ({
+                              ...prev,
+                              [col.key]: e.target.checked,
+                            }));
+                          }}
+                        />
+                        <span className="text-theme">{col.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <Tooltip title="Нэхэмжлэх илгээх">
+                <motion.div
+                  id="guilgee-nekhemjlekh-btn"
+                  whileHover={{ scale: 1.03 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <IconTextButton
+                    onClick={handleSendInvoices}
+                    icon={
+                      isSendingInvoices ? (
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      ) : (
+                        <Send className="w-5 h-5" />
+                      )
+                    }
+                    label="Нэхэмжлэх илгээх"
+                    disabled={
+                      isSendingInvoices || selectedGereeIds.length === 0
+                    }
+                    className="w-[40px] h-[40px] !p-0 justify-center [&>span]:hidden bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
+                  />
+                </motion.div>
+              </Tooltip>
+            </div>
+          </div>
+        </div>
+
+        {/* Ant Design Table */}
+        <div className="table-surface rounded-2xl w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
+          <div className="p-1 allow-overflow no-scrollbar" id="guilgee-table">
+            <GuilgeeTable
+              data={paginated}
+              loading={isLoadingHistory}
+              visibleColumns={visibleColumns}
+              selectedGereeIds={selectedGereeIds}
+              onSelectionChange={setSelectedGereeIds}
+              contractsById={contractsById}
+              contractsByNumber={contractsByNumber}
+              residentsById={residentsById}
+              monthPaidByGereeId={monthPaidByGereeId}
+              bestKnownBalances={tableDisplayBalances}
+              khungulultMap={monthKhungulultByGereeId}
+              sortField={sortField}
+              sortOrder={sortOrder}
+              onSortChange={(field: string | null, order: "asc" | "desc") => {
+                setSortField(field);
+                setSortOrder(order);
+              }}
+              page={page}
+              rowsPerPage={rowsPerPage}
+              deduplicatedResidents={deduplicatedResidents}
+              getGereeId={getGereeId}
+              matrixMonthKey={effectiveDateFilter.monthKey}
+              historyScopedByDate={historyScopedByDate}
+              canCreateTransaction={canCreateTransaction}
+              maxHeight="calc(100vh - 550px)"
+              token={token}
+              ajiltan={ajiltan}
+              effectiveBarilgiinId={effectiveBarilgiinId}
+              ekhlekhOgnoo={ekhlekhOgnoo}
+              onViewInvoice={(residentData: any) => {
+                setSelectedResident(residentData);
+                setIsModalOpen(true);
+              }}
+              onViewHistory={(residentData: any) => {
+                setHistoryResident(residentData);
+                setIsHistoryOpen(true);
+              }}
+              onTransaction={(residentData: any, remainingValue: number) => {
+                setSelectedTransactionResident({
+                  ...residentData,
+                  gereeniiId:
+                    getGereeId(residentData) ||
+                    residentData?.gereeniiId ||
+                    residentData?.gereeId,
+                  uldegdel: remainingValue,
+                });
+                setIsTransactionModalOpen(true);
+              }}
+            />
+          </div>
+          <div id="guilgee-pagination">
+            <StandardPagination
+              current={page}
+              total={deduplicatedResidents.length}
+              pageSize={rowsPerPage}
+              onChange={setPage}
+              onPageSizeChange={setRowsPerPage}
+              pageSizeOptions={[50, 100, 500, 1000]}
+            />
+          </div>
+        </div>
+      </div>
+
+      {isKhungulultOpen && (
+        <ModalPortal>
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[12000]"
+              onClick={() => setIsKhungulultOpen(false)}
+            />
+            <motion.div
+              initial={{ scale: 0.98, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.98, opacity: 0 }}
+              className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[1100px] rounded-3xl overflow-hidden shadow-2xl modal-surface modal-responsive"
+              onClick={(e) => e.stopPropagation()}
+              ref={khungulultRef}
+            >
+              <div className="flex items-center justify-between p-3 border-b border-white/20 dark:border-slate-800">
+                <div className=""></div>
+                <Button
+                  onClick={() => setIsKhungulultOpen(false)}
+                  variant="secondary"
+                  className="px-6 py-2"
+                >
+                  Хаах
+                </Button>
+              </div>
+              {/* <div className="p-2 overflow-auto max-h-[calc(90vh-48px)] ">
+                <KhungulultPage />
+              </div> */}
+            </motion.div>
+          </>
+        </ModalPortal>
+      )}
+
+      {/* Invoice Modal */}
+      {isModalOpen && selectedResident && (
+        <InvoiceModal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setSelectedResident(null);
+          }}
+          resident={selectedResident}
+          baiguullagiinId={ajiltan?.baiguullagiinId || ""}
+          token={token || ""}
+          liftFloors={liftFloors}
+          barilgiinId={selectedBuildingId || barilgiinId || null}
+          refreshTrigger={invoiceRefreshTrigger}
+        />
+      )}
+
+      {/* History Modal - Using Premium HistoryModal Component */}
+      <HistoryModal
+        show={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+        contract={historyResident}
+        token={token}
+        baiguullagiinId={ajiltan?.baiguullagiinId ?? null}
+        barilgiinId={selectedBuildingId || barilgiinId || null}
+        printedByAjiltan={ajiltan ?? null}
+        baiguullagiinNer={
+          (baiguullaga?.ner && String(baiguullaga.ner).trim()) ||
+          (baiguullaga?.dotoodNer && String(baiguullaga.dotoodNer).trim()) ||
+          null
+        }
+        /* Хуулга modal нь жагсаалтын сонгосон сар/огнооны шүүлтийг үргэлж ашиглана.
+         * isLatestMonthView үед undefined өгөх нь modal-д шүүлт алга болгож бүх мөр харуулдаг байсан. */
+        pageDateRange={ekhlekhOgnoo}
+        onRefresh={() => {
+          // Clear cache and revalidate all relevant data
+          mutate(
+            (key: any) =>
+              Array.isArray(key) && key[0] === "/nekhemjlekhiinTuukh",
+            undefined,
+            { revalidate: true },
+          );
+          mutate(
+            (key: any) => Array.isArray(key) && key[0] === "/guilgeeAvlaguud",
+            undefined,
+            { revalidate: true },
+          );
+          mutate(
+            (key: any) => Array.isArray(key) && key[0] === "/guilgeeAvlaguud",
+            undefined,
+            { revalidate: true },
+          );
+          mutate(
+            (key: any) => Array.isArray(key) && key[0] === "/geree",
+            undefined,
+            { revalidate: true },
+          );
+
+          setLatestRowUldegdelByGereeId({});
+          latestRowUldegdelRequestedRef.current.clear();
+          setInvoiceRefreshTrigger((t) => t + 1);
+        }}
+      />
+
+      {/* Per-resident history modal removed */}
+
+      {/* Transaction Modal */}
+      <TransactionModal
+        show={isTransactionModalOpen}
+        onClose={() => {
+          setIsTransactionModalOpen(false);
+          setSelectedTransactionResident(null);
+        }}
+        resident={selectedTransactionResident}
+        onSubmit={handleTransactionSubmit}
+        isProcessing={isProcessingTransaction}
+        token={token ?? undefined}
+        baiguullagiinId={ajiltan?.baiguullagiinId}
+        barilgiinId={effectiveBarilgiinId ?? undefined}
+      />
+
+      {/* Initial Balance Excel Import Modal */}
+      <InitialBalanceExcelModal
+        show={isInitialBalanceModalOpen}
+        onClose={() => setIsInitialBalanceModalOpen(false)}
+        baiguullagiinId={ajiltan?.baiguullagiinId || ""}
+        barilgiinId={selectedBuildingId || barilgiinId || undefined}
+        onSuccess={() => {
+          mutate(
+            (key: any) =>
+              Array.isArray(key) && key[0] === "/nekhemjlekhiinTuukh",
+            undefined,
+            { revalidate: true },
+          );
+          mutate(
+            (key: any) => Array.isArray(key) && key[0] === "/geree",
+            undefined,
+            { revalidate: true },
+          );
+          mutate(
+            (key: any) => Array.isArray(key) && key[0] === "/guilgeeAvlaguud",
+            undefined,
+            { revalidate: true },
+          );
+          setLatestRowUldegdelByGereeId({});
+          latestRowUldegdelRequestedRef.current.clear();
+        }}
+      />
+
+      {/* SMS History Modal */}
+      {isSmsHistoryOpen && (
+        <ModalPortal>
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[12000]"
+              onClick={() => setIsSmsHistoryOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[900px] max-h-[85vh] rounded-2xl overflow-hidden shadow-2xl bg-white dark:bg-slate-900 ring-1 ring-slate-200 dark:ring-slate-800 font-sans flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') {
+                  setIsSmsHistoryOpen(false);
+                }
+              }}
+              tabIndex={-1}
+              autoFocus
+            >
+              {/* Gradient Header - Green Theme */}
+              <div className="relative bg-gradient-to-r from-emerald-600 to-green-600 px-6 py-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl backdrop-blur-sm flex items-center justify-center">
+                      <Mail className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-white">Илгээсэн SMS түүх</h3>
+                      <p className="text-sm text-emerald-100">Нийт {smsHistoryTotal} мессеж</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Content Area */}
+              <div className="flex flex-col flex-1 min-h-0 bg-slate-50 dark:bg-slate-950">
+                {isLoadingSmsHistory ? (
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="animate-spin rounded-full h-10 w-10 border-3 border-blue-500 border-t-transparent" />
+                      <span className="text-slate-500 dark:text-slate-400 text-sm">Ачаалж байна...</span>
+                    </div>
+                  </div>
+                ) : smsHistoryList.length === 0 ? (
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-4 text-center">
+                      <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                        <Mail className="w-8 h-8 text-slate-400" />
+                      </div>
+                      <div>
+                        <p className="text-slate-600 dark:text-slate-300 font-medium">Илгээсэн SMS олдсонгүй</p>
+                        <p className="text-slate-400 dark:text-slate-500 text-sm mt-1">Мессеж илгээсэн түүх хоосон байна</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {/* Date Filter & Stats Summary */}
+                    <div className="px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+                      <div className="flex items-center gap-3">
+                        <div className="w-[50px] sm:w-40 lg:w-[280px] h-11 z-[12002] [&_.ant-picker-dropdown]:!z-[12003] [&_.ant-picker-input]:!bg-transparent [&_input]:!bg-transparent [&_.ant-picker-input-active]:!bg-transparent dark:[&_.ant-picker-suffix]:!text-white dark:[&_.ant-picker-suffix_svg]:!fill-white dark:[&_.ant-picker:hover]:!bg-slate-700 dark:[&_.ant-picker-focused]:!bg-slate-700 [&_.ant-picker-range-separator]:!text-slate-400 dark:[&_.ant-picker-range-separator]:!text-slate-400">
+                          <StandardDatePicker
+                            isRange={true}
+                            value={smsDateRange}
+                            onChange={(_, dateString) => setSmsDateRange(dateString)}
+                            className="w-full"
+                            format="YYYY-MM-DD"
+                            popupClassName="!z-[12003]"
+                          />
+                        </div>
+                      
+                        <div className="flex items-center gap-2 text-sm ml-auto">
+                          <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                          <span className="text-slate-600 dark:text-slate-400">
+                            Амжилттай: <span className="font-semibold text-emerald-600 dark:text-emerald-400">{smsHistoryList.length}</span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Cards List */}
+                    <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                      {smsHistoryList.map((item, idx) => (
+                        <motion.div
+                          key={idx}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: idx * 0.05 }}
+                          className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow"
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                                  {Array.isArray(item.dugaar) ? item.dugaar.join(", ") : item.dugaar || "-"}
+                                </span>
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400">
+                                  Амжилттай
+                                </span>
+                              </div>
+                              <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed break-words">
+                                {item.msg || "-"}
+                              </p>
+                            </div>
+                            <div className="text-right whitespace-nowrap">
+                              <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-xs">
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                {item.createdAt ? new Date(item.createdAt).toLocaleString("mn-MN", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).replace(/\//g, ".") : "-"}
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+
+                    {/* Pagination */}
+                    {smsHistoryTotal > smsHistoryLimit && (
+                      <div className="px-4 py-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-slate-500 dark:text-slate-400">
+                            Нийт {smsHistoryTotal} бичлэг
+                          </span>
+                          <StandardPagination
+                            current={smsHistoryPage}
+                            total={smsHistoryTotal}
+                            pageSize={smsHistoryLimit}
+                            onChange={(p) => fetchSmsHistory(p)}
+                            pageSizeOptions={[smsHistoryLimit]}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Close Button */}
+                    <div className="px-4 py-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex justify-end">
+                      <button
+                        onClick={() => setIsSmsHistoryOpen(false)}
+                        className="py-2 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-2xl transition-colors"
+                      >
+                        Хаах
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          </>
+        </ModalPortal>
+      )}
+    </div>
+  );
+}

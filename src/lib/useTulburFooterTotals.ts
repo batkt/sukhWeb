@@ -6,8 +6,8 @@ import useGereeJagsaalt from "./useGeree";
 import { useOrshinSuugchJagsaalt } from "./useOrshinSuugch";
 import { useMemo, useEffect, useState, useRef } from "react";
 import { getDefaultDateRange } from "./utils";
-import { itemPrimaryDateMs } from "../app/tulbur/guilgeeTuukh/ledgerRunningBalances";
-import { aggregateLedgerTulsunByGereeIdInRange } from "../app/tulbur/guilgeeTuukh/guilgeePaidDisplay";
+import { itemPrimaryDateMs } from "../app/(shell)/tulbur/guilgeeTuukh/ledgerRunningBalances";
+import { aggregateLedgerTulsunByGereeIdInRange } from "../app/(shell)/tulbur/guilgeeTuukh/guilgeePaidDisplay";
 
 export function useTulburFooterTotals(
   token: string | null,

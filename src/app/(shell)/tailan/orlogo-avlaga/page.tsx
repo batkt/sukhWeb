@@ -1,0 +1,1002 @@
+"use client";
+
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { ChevronDown, ChevronRight } from "lucide-react";
+import { useBuilding } from "@/context/BuildingContext";
+import { useAuth } from "@/lib/useAuth";
+import useBaiguullaga from "@/lib/useBaiguullaga";
+import { useGereeJagsaalt } from "@/lib/useGeree";
+import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
+import uilchilgee from "@/lib/uilchilgee";
+import useSWR from "swr";
+import { useTulburFooterTotals } from "@/lib/useTulburFooterTotals";
+import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
+import { StandardPagination } from "@/components/ui/StandardTable";
+import { useSearch } from "@/context/SearchContext";
+import { getDefaultDateRange } from "@/lib/utils";
+import formatNumber from "../../../../../tools/function/formatNumber";
+import PageSongokh from "../../../../../components/selectZagvar/pageSongokh";
+import { FileSpreadsheet, Printer } from "lucide-react";
+import { OrlogoAvlagaTable, OrlogoAvlagaItem } from "./OrlogoAvlagaTable";
+import toast from "react-hot-toast";
+import { pickMonthSlice } from "../../tulbur/guilgeeTuukh/guilgeeMonthMatrix";
+import { aggregateLedgerTulsunByGereeId } from "../../tulbur/guilgeeTuukh/guilgeePaidDisplay";
+import {
+  itemPrimaryDateMs,
+  computeLedgerRunningBalancesByGereeId,
+} from "../../tulbur/guilgeeTuukh/ledgerRunningBalances";
+
+const PrintStyles = () => (
+  <style jsx global>{`
+    @media print {
+      /* Setup the page for A4 Landscape */
+      @page {
+        size: A4 landscape;
+        margin: 10mm;
+      }
+
+      /* 1. Hide everything by default but let the table flow */
+      body {
+        background: white !important;
+        color: black !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        height: auto !important;
+        min-height: auto !important;
+      }
+
+      /* 2. Standard hide UI elements */
+      .no-print,
+      nav,
+      header,
+      .sidebar,
+      .neu-nav,
+      .fixed,
+      .sticky,
+      button,
+      footer {
+        display: none !important;
+      }
+
+      /* 3. Force the report container to be visible and unconstrained */
+      .print-container {
+        display: block !important;
+        position: relative !important;
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
+      /* 4. CRITICAL: Force all parent layout containers to release their fixed heights/overflows */
+      /* This affects the containers in GolContent.tsx */
+      main,
+      div[class*="neu-panel"],
+      div[class*="overflow-y-auto"],
+      div[class*="md:h-"],
+      div[class*="max-h-"] {
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        position: static !important;
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+
+      /* 5. Header Styling */
+      .print-only {
+        display: block !important;
+        margin-bottom: 30px;
+        width: 100% !important;
+      }
+
+      /* 6. Table Layout */
+      table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        table-layout: auto !important;
+        font-size: 10pt !important;
+        color: black !important;
+      }
+
+      th,
+      td {
+        border: 1px solid #000 !important;
+        padding: 6px 4px !important;
+        background: transparent !important;
+        color: black !important;
+        text-align: center !important;
+        word-wrap: break-word !important;
+      }
+
+      th {
+        background-color: #f0f0f0 !important;
+        font-weight: normal !important;
+        -webkit-print-color-adjust: exact;
+      }
+
+      /* Ensure rows don't split awkwardly */
+      tr {
+        page-break-inside: avoid !important;
+      }
+      thead {
+        display: table-header-group !important;
+      }
+
+      /* Alignment Utility */
+      .text-left {
+        text-align: left !important;
+      }
+      .text-right {
+        text-align: right !important;
+      }
+    }
+
+    /* Web view hidden by default */
+    .print-only {
+      display: none;
+    }
+  `}</style>
+);
+
+import dayjs from "dayjs";
+
+type TabType = "avlaga" | "tulult" | "all";
+type DateRangeValue = [any, any] | undefined;
+
+const toMonthKey = (v?: any) => {
+  const s = v ? (typeof v === "string" ? v : dayjs(v).format("YYYY-MM")) : "";
+  if (!s) return "";
+  const m = s.match(/^(\d{4})-(\d{2})/);
+  return m ? `${m[1]}-${m[2]}` : "";
+};
+
+export default function OrlogoAvlagaPage() {
+  const { selectedBuildingId } = useBuilding();
+  const { token, ajiltan } = useAuth();
+  const { baiguullaga } = useBaiguullaga(
+    token || null,
+    ajiltan?.baiguullagiinId || null,
+  );
+  const effectiveBarilgiinId = selectedBuildingId || undefined;
+
+  const baiguullagiinId = ajiltan?.baiguullagiinId ?? null;
+
+  const [activeTab, setActiveTab] = useState<TabType>("tulult");
+  const [dateRange, setDateRange] = useState<DateRangeValue>(getDefaultDateRange);
+  const { searchTerm } = useSearch();
+  const [filters, setFilters] = useState({
+    orshinSuugch: "",
+    toot: "",
+    davkhar: "",
+    gereeniiDugaar: "",
+  });
+  const [debouncedFilters, setDebouncedFilters] = useState(filters);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(200);
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [expandedLedger, setExpandedLedger] = useState<any[]>([]);
+  const [expandedGlobalUldegdel, setExpandedGlobalUldegdel] = useState<number | null>(null);
+  const [expandedLoading, setExpandedLoading] = useState(false);
+  const [expandedError, setExpandedError] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState<any>(null);
+  const footerTotals = useTulburFooterTotals(
+    token,
+    ajiltan?.baiguullagiinId ?? null,
+    effectiveBarilgiinId,
+    dateRange?.[0] ? dayjs(dateRange[0]).format("YYYY-MM-DD") : null,
+    dateRange?.[1] ? dayjs(dateRange[1]).format("YYYY-MM-DD") : null
+  );
+
+  const effectiveDateFilter = useMemo(() => {
+    const rawStart = dateRange?.[0] ? dayjs(dateRange[0]).format("YYYY-MM-DD") : "";
+    const rawEnd = dateRange?.[1] ? dayjs(dateRange[1]).format("YYYY-MM-DD") : "";
+    const hasDateFilter = Boolean(rawStart || rawEnd);
+
+    const startKey = toMonthKey(rawStart);
+    const endKey = toMonthKey(rawEnd);
+    const now = new Date();
+    const currentMonthKey = `${now.getFullYear()}-${String(
+      now.getMonth() + 1,
+    ).padStart(2, "0")}`;
+
+    const isLatestMonthView = Boolean(
+      hasDateFilter &&
+        rawStart &&
+        rawEnd &&
+        startKey &&
+        endKey &&
+        startKey === endKey &&
+        startKey === currentMonthKey,
+    );
+
+    return {
+      hasDateFilter,
+      isLatestMonthView,
+      start: rawStart || undefined,
+      end: rawEnd || undefined,
+    };
+  }, [dateRange]);
+
+  const monthlyMatrixRange = useMemo(() => {
+    const [rawStart, rawEnd] = dateRange || [];
+    const startKey = toMonthKey(rawStart);
+    const endKey = toMonthKey(rawEnd);
+    const selectedMonthKey =
+      startKey && endKey && startKey === endKey
+        ? startKey
+        : startKey || endKey || "";
+
+    const now = new Date();
+    const fallbackMonthKey = `${now.getFullYear()}-${String(
+      now.getMonth() + 1,
+    ).padStart(2, "0")}`;
+    const monthKey = selectedMonthKey || fallbackMonthKey;
+
+    const [yy, mm] = monthKey.split("-").map((v) => parseInt(v, 10));
+    const monthIdx = Number.isFinite(mm) ? mm - 1 : now.getMonth();
+    const yearVal = Number.isFinite(yy) ? yy : now.getFullYear();
+
+    const start = new Date(yearVal, monthIdx, 1, 0, 0, 0, 0);
+    const end = new Date(yearVal, monthIdx + 1, 0, 23, 59, 59, 999);
+    return { start: start.toISOString(), end: end.toISOString(), monthKey };
+  }, [dateRange]);
+
+  const { data: monthlyMatrixData } = useSWR(
+    token && ajiltan?.baiguullagiinId
+      ? [
+          "/tailan/resident-monthly-matrix",
+          token,
+          ajiltan.baiguullagiinId,
+          effectiveBarilgiinId || null,
+          monthlyMatrixRange.start,
+          monthlyMatrixRange.end,
+        ]
+      : null,
+    async ([, tkn, orgId, branch, start, end]) => {
+      const resp = await uilchilgee(tkn).get("/tailan/resident-monthly-matrix", {
+        params: {
+          baiguullagiinId: orgId,
+          barilgiinId: branch || undefined,
+          ekhlekhOgnoo: start,
+          duusakhOgnoo: end,
+        },
+      });
+      return resp.data;
+    },
+    { revalidateOnFocus: false },
+  );
+
+  const paidRequestedRef = useRef<Set<string>>(new Set());
+  const uldegdelRequestedRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setDebouncedFilters(filters);
+      debounceRef.current = null;
+    }, 400);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [filters]);
+
+  const emptyQuery = useMemo(() => ({}), []);
+
+  const { data: unifiedData, isLoading: isUnifiedLoading } = useSWR(
+    token && baiguullagiinId
+      ? [
+          "/guilgeeAvlaguud-oa",
+          token,
+          baiguullagiinId,
+          selectedBuildingId || null,
+        ]
+      : null,
+    async ([, tkn, bId, barId]) => {
+      const resp = await uilchilgee(tkn).get("/guilgeeAvlaguud", {
+        params: {
+          baiguullagiinId: bId,
+          ...(barId ? { barilgiinId: barId } : {}),
+          khuudasniiDugaar: 1,
+          khuudasniiKhemjee: 20000,
+        },
+      });
+      return resp.data;
+    },
+    { revalidateOnFocus: false },
+  );
+
+  const historyData = useMemo(() => {
+    if (!unifiedData?.jagsaalt) return { jagsaalt: [] };
+    return {
+      jagsaalt: unifiedData.jagsaalt.filter(
+        (r: any) =>
+          r.turul === "nekhemjlekh" || r.turul === "ашиглалт" || !r.turul,
+      ),
+    };
+  }, [unifiedData]);
+
+  const receivableData = useMemo(() => {
+    if (!unifiedData?.jagsaalt) return { jagsaalt: [] };
+    return {
+      jagsaalt: unifiedData.jagsaalt.filter((r: any) => Number(r.tulukhDun) > 0),
+    };
+  }, [unifiedData]);
+
+  const paymentRecordsData = useMemo(() => {
+    if (!unifiedData?.jagsaalt) return { jagsaalt: [] };
+    return {
+      jagsaalt: unifiedData.jagsaalt.filter((r: any) => Number(r.tulsunDun) > 0),
+    };
+  }, [unifiedData]);
+
+  const isLoadingHistory = isUnifiedLoading;
+  const isLoadingReceivable = isUnifiedLoading;
+  const isLoadingPayment = isUnifiedLoading;
+
+  const { gereeGaralt } = useGereeJagsaalt(
+    emptyQuery,
+    token || undefined,
+    baiguullagiinId || undefined,
+    selectedBuildingId || undefined,
+  );
+  const { orshinSuugchGaralt } = useOrshinSuugchJagsaalt(
+    token || "",
+    baiguullagiinId || "",
+    emptyQuery,
+    selectedBuildingId || undefined,
+  );
+
+  const contractsById = useMemo(() => {
+    const map: Record<string, any> = {};
+    (gereeGaralt?.jagsaalt || []).forEach((g: any) => {
+      if (g?._id) map[String(g._id)] = g;
+    });
+    return map;
+  }, [gereeGaralt?.jagsaalt]);
+
+  const contractsByNumber = useMemo(() => {
+    const map: Record<string, any> = {};
+    (gereeGaralt?.jagsaalt || []).forEach((g: any) => {
+      if (g?.gereeniiDugaar) map[String(g.gereeniiDugaar)] = g;
+    });
+    return map;
+  }, [gereeGaralt?.jagsaalt]);
+
+  const residentsById = useMemo(() => {
+    const map: Record<string, any> = {};
+    (orshinSuugchGaralt?.jagsaalt || []).forEach((r: any) => {
+      if (r?._id) map[String(r._id)] = r;
+    });
+    return map;
+  }, [orshinSuugchGaralt?.jagsaalt]);
+
+
+
+  const allHistoryItems = useMemo(() => {
+    const invoices = Array.isArray(historyData?.jagsaalt)
+      ? historyData.jagsaalt
+      : Array.isArray(historyData)
+        ? historyData
+        : [];
+    const receivables = Array.isArray(receivableData?.jagsaalt)
+      ? receivableData.jagsaalt
+      : Array.isArray(receivableData)
+        ? receivableData
+        : [];
+    const payments = Array.isArray(paymentRecordsData?.jagsaalt)
+      ? paymentRecordsData.jagsaalt
+      : Array.isArray(paymentRecordsData)
+        ? paymentRecordsData
+        : [];
+
+    const combined = [...invoices];
+    const trackingIds = new Set(invoices.map((it: any) => String(it._id)));
+    invoices.forEach((it: any) => {
+      const gList = Array.isArray(it?.medeelel?.guilgeenuud)
+        ? it.medeelel.guilgeenuud
+        : Array.isArray(it?.guilgeenuud)
+          ? it.guilgeenuud
+          : [];
+      gList.forEach((g: any) => {
+        if (g?._id) trackingIds.add(String(g._id));
+      });
+    });
+
+    receivables.forEach((r: any) => {
+      if (!trackingIds.has(String(r._id))) combined.push(r);
+    });
+    payments.forEach((p: any) => {
+      if (!trackingIds.has(String(p._id))) combined.push(p);
+    });
+
+    // Date filtering (Client Side)
+    if (!effectiveDateFilter.hasDateFilter || effectiveDateFilter.isLatestMonthView) {
+      return [...combined].sort((a: any, b: any) => {
+        const d = itemPrimaryDateMs(a) - itemPrimaryDateMs(b);
+        if (d !== 0) return d;
+        return String(a?._id ?? "").localeCompare(String(b?._id ?? ""));
+      });
+    }
+
+    const { start, end } = effectiveDateFilter;
+    const startMs = start ? dayjs(start).startOf("day").valueOf() : Number.NEGATIVE_INFINITY;
+    const endMs = end ? dayjs(end).endOf("day").valueOf() : Number.POSITIVE_INFINITY;
+
+    const filtered = combined.filter((it: any) => {
+      const d = itemPrimaryDateMs(it);
+      return d >= startMs && d <= endMs;
+    });
+
+    return filtered.sort((a: any, b: any) => {
+      const d = itemPrimaryDateMs(a) - itemPrimaryDateMs(b);
+      if (d !== 0) return d;
+      return String(a?._id ?? "").localeCompare(String(b?._id ?? ""));
+    });
+  }, [historyData, receivableData, paymentRecordsData, effectiveDateFilter]);
+
+  const buildingHistoryItems = allHistoryItems;
+
+  // Use authoritative per-contract data from useTulburFooterTotals
+  // This ensures identical numbers with the tulbur/guilgeeTuukh page
+  const ledgerBalances = footerTotals.uldegdelByGereeId;
+  const ledgerPaidTable = footerTotals.paidByGereeId;
+  const ledgerBilledTable = footerTotals.billedByGereeId;
+
+
+
+  const deduplicatedResidents = useMemo(() => {
+    const map = new Map<string, any>();
+
+    // 1. First, populate with all residents from the building
+    (orshinSuugchGaralt?.jagsaalt || []).forEach((r: any) => {
+      const rid = String(r?._id || "").trim();
+      if (!rid) return;
+
+      // Use a synthetic key: rid + primary toot to handle cases without contracts yet
+      const key = `res-${rid}`;
+      map.set(key, {
+        _id: rid,
+        _residentId: rid,
+        _ner: r.ner || "",
+        _ovog: r.ovog || "",
+        _utas: r.utas || "",
+        _toot: r.toot || "",
+        _davkhar: r.davkhar || "",
+        _ekhniiUldegdel: 0,
+        _periodPaid: 0,
+        _periodTulbur: 0,
+        _finalUldegdel: 0,
+        isResidentOnly: true
+      });
+    });
+
+    // 2. Then, process contracts to get accurate financial data and handle multiple units
+    (gereeGaralt?.jagsaalt || []).forEach((ct: any) => {
+      const gid = String(ct?._id || "").trim();
+      if (!gid) return;
+
+      const residentId = String(ct?.orshinSuugchId || "").trim();
+      const r = residentId ? residentsById[residentId] : undefined;
+
+      const periodBilled = Number(ledgerBilledTable[gid] ?? 0);
+      const periodPaid = Number(ledgerPaidTable[gid] ?? 0);
+      const finalBal =
+        ledgerBalances[gid] != null
+          ? Number(ledgerBalances[gid])
+          : Number(ct.globalUldegdel ?? ct.uldegdel ?? 0);
+
+      const ekhBal = 
+        footerTotals.ekhniiUldegdelByGereeId[gid] != null
+          ? Number(footerTotals.ekhniiUldegdelByGereeId[gid])
+          : !effectiveDateFilter.hasDateFilter
+            ? Number(ct.ekhniiUldegdel ?? 0)
+            : finalBal - periodBilled + periodPaid;
+
+      const row = {
+        ...ct,
+        _gereeId: gid,
+        _gereeDugaar: ct?.gereeniiDugaar || "",
+        _residentId: residentId,
+        _ner: r?.ner ?? ct?.ner ?? "",
+        _ovog: r?.ovog ?? ct?.ovog ?? "",
+        _utas: r?.utas ?? ct?.utas ?? "",
+        _toot: ct?.toot ?? r?.toot ?? "",
+        _davkhar: ct?.davkhar ?? r?.davkhar ?? "",
+        _ekhniiUldegdel: Math.round(ekhBal * 100) / 100,
+        _periodPaid: Math.round(periodPaid * 100) / 100,
+        _periodTulbur: Math.round(periodBilled * 100) / 100,
+        _finalUldegdel: Math.round(finalBal * 100) / 100,
+      };
+
+      // If this resident was already added (from step 1), and this is their first contract,
+      // we can either replace the resident-only row or add as a new row.
+      // To show ALL UNITS, we should add a row for each contract.
+      if (residentId && map.has(`res-${residentId}`)) {
+        const resOnly = map.get(`res-${residentId}`);
+        if (resOnly.isResidentOnly) {
+           // Replace the "placeholder" with the first real contract
+           map.delete(`res-${residentId}`);
+        }
+      }
+      
+      map.set(gid, row);
+    });
+
+    return Array.from(map.values());
+  }, [
+    orshinSuugchGaralt,
+    gereeGaralt,
+    residentsById,
+    ledgerBalances,
+    ledgerPaidTable,
+    ledgerBilledTable,
+    footerTotals,
+    effectiveDateFilter
+  ]);
+
+
+  const getGereeId = (it: any) =>
+    String(it?._gereeId || it?.gereeniiId || it?.gereeId || "").trim();
+
+  const getPaid = (it: any): number => {
+    return Number(it?._periodPaid ?? 0);
+  };
+
+  const getUldegdel = (it: any): number => {
+    return Number(it?._finalUldegdel ?? it?.uldegdel ?? 0);
+  };
+
+  const matchesFilters = (it: any): boolean => {
+    const f = debouncedFilters;
+    if (f.toot) {
+      const toot = String(
+        it?._toot || it?.toot || it?.medeelel?.toot || "",
+      ).toLowerCase();
+      if (!toot.includes(f.toot.toLowerCase())) return false;
+    }
+    if (f.davkhar) {
+      const dv = String(it?._davkhar || it?.davkhar || "").toLowerCase();
+      if (!dv.includes(f.davkhar.toLowerCase())) return false;
+    }
+    if (f.gereeniiDugaar) {
+      const gd = String(
+        it?._gereeDugaar || it?.gereeniiDugaar || "",
+      ).toLowerCase();
+      if (!gd.includes(f.gereeniiDugaar.toLowerCase())) return false;
+    }
+    if (f.orshinSuugch) {
+      const name = `${it?._ovog || ""} ${it?._ner || ""}`.toLowerCase();
+      if (!name.includes(f.orshinSuugch.toLowerCase())) return false;
+    }
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      const name = `${it?._ovog || ""} ${it?._ner || ""}`.toLowerCase();
+      const gd = String(
+        it?._gereeDugaar || it?.gereeniiDugaar || "",
+      ).toLowerCase();
+      const utas = Array.isArray(it?._utas || it?.utas)
+        ? String((it?._utas || it?.utas)[0] || "").toLowerCase()
+        : String(it?._utas || it?.utas || "").toLowerCase();
+      if (!name.includes(term) && !gd.includes(term) && !utas.includes(term))
+        return false;
+    }
+    return true;
+  };
+  const paidList = useMemo(
+    () =>
+      deduplicatedResidents.filter(
+        (it) => matchesFilters(it) && getPaid(it) > 0,
+      ),
+    [deduplicatedResidents, debouncedFilters, searchTerm],
+  );
+  const avlagaList = useMemo(
+    () =>
+      deduplicatedResidents.filter(
+        (it) => matchesFilters(it) && getUldegdel(it) > 0,
+      ),
+    [deduplicatedResidents, debouncedFilters, searchTerm],
+  );
+
+  const allList = useMemo(
+    () => deduplicatedResidents.filter(matchesFilters),
+    [deduplicatedResidents, debouncedFilters, searchTerm],
+  );
+
+  const displayList = useMemo(() => {
+    if (activeTab === "tulult") return paidList;
+    if (activeTab === "avlaga") return avlagaList;
+    return allList;
+  }, [activeTab, paidList, avlagaList, allList]);
+
+  // Use authoritative grand totals from useTulburFooterTotals (same as tulbur page)
+  const totalOrlogo = footerTotals.totalPaid;
+  const totalUldegdel = footerTotals.totalUldegdel;
+  const totalTulbur = footerTotals.totalBilled;
+
+  // Per-row derived totals for display
+  const localTotals = useMemo(() => {
+    let billedSum = 0;
+    let paidSum = 0;
+    let finalBalSum = 0;
+    let ekhniiUldegdelSum = 0;
+
+    displayList.forEach((record) => {
+      billedSum += record._periodTulbur ?? 0;
+      paidSum += Number(record._periodPaid ?? getPaid(record));
+      finalBalSum += record._finalUldegdel ?? getUldegdel(record);
+      ekhniiUldegdelSum += Number(record._ekhniiUldegdel ?? 0);
+    });
+
+    const billed = Math.round(billedSum * 100) / 100;
+    const paid = Math.round(paidSum * 100) / 100;
+    const finalBalance = Math.round(finalBalSum * 100) / 100;
+    const ekhniiUldegdel = Math.round(ekhniiUldegdelSum * 100) / 100;
+
+    return { ekhniiUldegdel, billed, paid, finalBalance };
+  }, [displayList, getPaid, getUldegdel]);
+
+  const handleRowClick = async (it: any) => {
+    setSelectedRecord(it);
+    setModalOpen(true);
+    setExpandedLedger([]);
+    setExpandedError(null);
+    const gid = getGereeId(it);
+    if (!gid || !baiguullagiinId) return;
+    setExpandedLoading(true);
+    
+    try {
+      // Build ledger locally from already-fetched unifiedData instead of making an API call
+      // to the deprecated history-ledger endpoint
+      const allItems = unifiedData?.jagsaalt || [];
+      const contractTransactions = allItems.filter(
+        (row: any) => String(row.gereeniiId) === String(gid) || String(row._gereeId) === String(gid)
+      );
+      
+      // Sort chronologically
+      contractTransactions.sort((a: any, b: any) => {
+        const d1 = new Date(a.ognoo || a.createdAt || 0).getTime();
+        const d2 = new Date(b.ognoo || b.createdAt || 0).getTime();
+        if (d1 !== d2) return d1 - d2;
+        return String(a._id || "").localeCompare(String(b._id || ""));
+      });
+      
+      // Get the contract to find ekhniiUldegdel
+      const contract = contractsById[gid];
+      let running = Number(contract?.ekhniiUldegdel || 0);
+      
+      const ledger: any[] = [];
+      
+      if (running !== 0) {
+        ledger.push({
+          _id: "ekhnii-uldegdel",
+          ognoo: contract?.createdAt || null,
+          tailbar: "Эхний үлдэгдэл",
+          tulukhDun: running > 0 ? running : 0,
+          tulsunDun: running < 0 ? Math.abs(running) : 0,
+          uldegdel: running
+        });
+      }
+      
+      contractTransactions.forEach((row: any) => {
+        const amt = Number(row.dun || 0);
+        // dun > 0 is a charge (tulukh)
+        // dun < 0 is a payment (tulsun)
+        const tulukh = amt > 0 ? amt : 0;
+        const tulsun = amt < 0 ? Math.abs(amt) : 0;
+        running += amt;
+        
+        ledger.push({
+          _id: row._id,
+          ognoo: row.ognoo || row.createdAt,
+          tailbar: row.tailbar || (amt > 0 ? "Авлага" : "Төлбөр"),
+          tulukhDun: tulukh,
+          tulsunDun: tulsun,
+          uldegdel: Math.round(running * 100) / 100,
+          turul: row.turul
+        });
+      });
+      
+      setExpandedLedger(ledger);
+      setExpandedGlobalUldegdel(Math.round(running * 100) / 100);
+    } catch (e: any) {
+      setExpandedError(e.message || "Алдаа гарлаа");
+    } finally {
+      setExpandedLoading(false);
+    }
+  };
+
+  const handleModalClose = () => {
+    setModalOpen(false);
+    setSelectedRecord(null);
+    setExpandedLedger([]);
+    setExpandedGlobalUldegdel(null);
+    setExpandedError(null);
+  };
+
+  const exportToExcel = async () => {
+    if (!token || !baiguullagiinId) {
+      toast.error("Хэрэглэгчийн мэдээлэл олдсонгүй");
+      return;
+    }
+
+    const toastId = toast.loading("Excel файл бэлтгэж байна...");
+
+    try {
+      // Create data similar to what's displayed in the table
+      const tableData = displayList.map((it, idx) => {
+        const fullName = [it._ovog, it._ner].filter(Boolean).join(" ") || "-";
+        
+        const row: any = {
+          index: idx + 1,
+          ner: fullName,
+          gereeniiDugaar: it._gereeDugaar || it.gereeniiDugaar || "-",
+          davkhar: it._davkhar || "-",
+          toot: it._toot || "-",
+        };
+
+        if (activeTab !== "tulult") {
+          row.ekhniiUldegdel = parseFloat(String(it._ekhniiUldegdel ?? 0)).toFixed(2);
+          row.periodTulbur = parseFloat(String(it._periodTulbur ?? 0)).toFixed(2);
+          row.paid = parseFloat(String(getPaid(it))).toFixed(2);
+          row.uldegdel = parseFloat(String(it._finalUldegdel ?? getUldegdel(it))).toFixed(2);
+        } else {
+          row.paid = parseFloat(String(getPaid(it))).toFixed(2);
+        }
+
+        return row;
+      });
+
+      const headers = [
+        { key: "index", label: "№" },
+        { key: "ner", label: "Харилцагчийн нэр" },
+        { key: "gereeniiDugaar", label: "Гэрээний дугаар" },
+        { key: "davkhar", label: "Давхар" },
+        { key: "toot", label: "Тоот" },
+      ];
+
+      if (activeTab !== "tulult") {
+        headers.push(
+          { key: "ekhniiUldegdel", label: "Эхний үлдэгдэл" },
+          { key: "periodTulbur", label: "Төлөх дүн" },
+          { key: "paid", label: "Төлсөн" },
+          { key: "uldegdel", label: "Эцсийн үлдэгдэл" },
+        );
+      } else {
+        headers.push({ key: "paid", label: "Төлсөн" });
+      }
+
+      const body = {
+        data: tableData,
+        headers,
+        fileName: `Төлбөр_тооцооны_тайлан_${activeTab === "tulult" ? "орлого" : "авлага"}_${new Date().toISOString().split("T")[0]}`,
+        sheetName: "Орлого авлагын тайлан",
+      };
+
+      const resp = await uilchilgee(token).post("/nekhemjlekhiinTuukhExcelDownload", body, {
+        responseType: "blob" as any,
+      });
+
+      const blob = new Blob([resp.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const filename = `${body.fileName}.xlsx`;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+
+      toast.success("Excel файл амжилттай татагдлаа", { id: toastId });
+    } catch (err) {
+      console.error("Export failed:", err);
+      toast.error("Excel татахад алдаа гарлаа", { id: toastId });
+    }
+  };
+
+  const isLoading = isLoadingHistory || isLoadingReceivable || isLoadingPayment;
+  const paginatedList = displayList.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  );
+
+  const fmtDate = (d?: string) =>
+    d ? new Date(d).toLocaleDateString("mn-MN") : "-";
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-lg">Уншиж байна...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6 print-container bg-white dark:bg-gray-900 min-h-full h-auto w-full">
+      <PrintStyles />
+
+      {/* Print-only Header */}
+      <div className="print-only mb-6">
+        <div className="flex justify-between items-start border-b-2 border-gray-800 pb-4">
+          <div>
+            <h1 className="text-2xl font-bold uppercase">
+              {activeTab === "tulult"
+                ? "Орлогын товчоо тайлан"
+                : activeTab === "avlaga"
+                  ? "Авлагын товчоо тайлан"
+                  : "Орлого авлагын тайлан"}
+            </h1>
+            <p className="text-sm mt-1">
+              {baiguullaga?.ner || "Байгууллагын нэр"}
+            </p>
+          </div>
+          <div className="text-right text-sm">
+            <p>
+              Огноо:{" "}
+              {dateRange?.[0] && dateRange?.[1]
+                ? `${new Date(dateRange[0]).toLocaleDateString("mn-MN")} - ${new Date(dateRange[1]).toLocaleDateString("mn-MN")}`
+                : "Бүх хугацаа"}
+            </p>
+            <p>Хэвлэсэн: {new Date().toLocaleString("mn-MN")}</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-8 mt-6">
+          <div className="border p-3 rounded">
+            <p className="text-xs text-gray-500 uppercase font-semibold">
+              Нийт орлого
+            </p>
+            <p className="text-xl font-bold text-green-700">
+              {formatNumber(totalOrlogo, 2)} ₮
+            </p>
+          </div>
+          <div className="border p-3 rounded">
+            <p className="text-xs text-gray-500 uppercase font-semibold">
+              Нийт үлдэгдэл
+            </p>
+            <p className="text-xl font-bold text-red-700">
+              {formatNumber(totalUldegdel, 2)} ₮
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex justify-between items-center  mb-6 no-print">
+        <div className="flex items-center gap-6">
+          <h1 className="text-2xl font-bold">Авлагын товчоо</h1>
+          <div className="flex gap-2">
+            {(
+              [
+                ["tulult", "Орлого"],
+                ["avlaga", "Авлага"],
+              ] as [TabType, string][]
+            ).map(([tab, label]) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => {
+                  setActiveTab(tab);
+                  setExpandedRow(null);
+                  setExpandedLedger([]);
+                  setCurrentPage(1);
+                }}
+                className={`px-4 py-2 rounded-xl transition-all duration-200 ${activeTab === tab ? "bg-theme/15 text-theme font-medium shadow-sm" : "text-theme hover:bg-theme/10 hover:text-theme"}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex gap-3">
+          <button
+            onClick={exportToExcel}
+            className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" /> Excel татах
+          </button>
+        </div>
+      </div>
+
+      {/* Dashboard Totals removed as requested */}
+
+      <div className="flex flex-wrap gap-4 items-center no-print mb-4">
+        <div
+          id="orlogo-avlaga-date"
+          className="btn-minimal h-[40px] w-full sm:w-[320px] flex items-center px-3"
+        >
+          <StandardDatePicker
+            isRange={true}
+            value={dateRange}
+            onChange={setDateRange}
+            allowClear
+            placeholder="Огноо сонгох"
+            classNames={{
+              root: "!h-full !w-full",
+              input:
+                "text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
+            }}
+          />
+        </div>
+        {[
+          {
+            key: "orshinSuugch",
+            label: "Оршин суугч",
+            placeholder: "Овог, нэрээр хайх",
+          },
+          { key: "toot", label: "Тоот", placeholder: "Тоот" },
+          { key: "davkhar", label: "Давхар", placeholder: "Давхар" },
+        ].map(({ key, label, placeholder }) => (
+          <div
+            key={key}
+            className="rounded-xl h-[40px] w-full sm:w-[280px] flex items-center"
+          >
+            <div className="flex items-center gap-2 w-full min-w-0">
+              <label className="text-sm text-theme shrink-0 whitespace-nowrap w-[90px] text-right pr-2">
+                {label}
+              </label>
+              <input
+                type="text"
+                value={(filters as any)[key]}
+                onChange={(e) =>
+                  setFilters((p) => ({ ...p, [key]: e.target.value }))
+                }
+                className="flex-1 px-3 rounded-lg neu-panel text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 !h-[40px]"
+                placeholder={placeholder}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Table ───────────────────────────────────────────────── */}
+      <div className="w-full no-print">
+          <OrlogoAvlagaTable
+            data={paginatedList as OrlogoAvlagaItem[]}
+            loading={isLoading}
+            page={currentPage}
+            pageSize={pageSize}
+            activeTab={activeTab}
+            expandedLedger={expandedLedger}
+            expandedGlobalUldegdel={expandedGlobalUldegdel}
+            expandedLoading={expandedLoading}
+            expandedError={expandedError}
+            getPaid={getPaid}
+            getUldegdel={getUldegdel}
+            onRowClick={handleRowClick}
+            getGereeId={getGereeId}
+            modalOpen={modalOpen}
+            onModalClose={handleModalClose}
+            selectedRecord={selectedRecord}
+            grandTotalPaid={localTotals.paid}
+            grandTotalUldegdel={localTotals.finalBalance}
+            grandTotalEkhniiUldegdel={localTotals.ekhniiUldegdel}
+            grandTotalTulbur={localTotals.billed}
+            dateRange={dateRange}
+          />
+      </div>
+
+      <div className="flex items-center justify-between no-print mt-3">
+        <StandardPagination
+          current={currentPage}
+          total={displayList.length}
+          pageSize={pageSize}
+          onChange={setCurrentPage}
+          onPageSizeChange={(v) => {
+            setPageSize(v);
+            setCurrentPage(1);
+          }}
+          pageSizeOptions={[50, 100, 200, 500]}
+        />
+      </div>
+    </div>
+  );
+}

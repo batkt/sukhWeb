@@ -543,7 +543,10 @@
   --surface-bg: #ffffff;
   --surface-border: rgba(15, 23, 42, 0.08);
   --surface-hover: rgba(15, 23, 42, 0.04);
-  --theme: #0ea5e9;
+  /* Brand accent. The old top navbar hardcoded emerald for its active states
+     while this token stayed sky blue, so anything driven by --theme came out
+     the wrong colour. One green, defined once. */
+  --theme: #059669;
   --panel-text: #0f172a;
   --table-hover-bg: color-mix(in oklch, #027725, transparent 90%);
 }
@@ -1395,8 +1398,8 @@ html[data-mode="dark"]:not([data-theme]),
   );
 
   /* Premium blur, saturation and brightness for iOS 26 feel */
-  -webkit-backdrop-filter: blur(48px) saturate(180%) brightness(1.12);
-  backdrop-filter: blur(48px) saturate(180%) brightness(1.12);
+  -webkit-backdrop-filter: blur(20px) saturate(150%) brightness(1.08);
+  backdrop-filter: blur(20px) saturate(150%) brightness(1.08);
 
   /* Luminous adaptive border */
   border: 1.5px solid color-mix(in oklch, var(--glass-border), transparent 30%);
@@ -1432,8 +1435,8 @@ html[data-mode="dark"]:not([data-theme]),
   );
 
   /* Premium blur, saturation and brightness for iOS 26 feel */
-  -webkit-backdrop-filter: blur(48px) saturate(180%) brightness(1.12);
-  backdrop-filter: blur(48px) saturate(180%) brightness(1.12);
+  -webkit-backdrop-filter: blur(20px) saturate(150%) brightness(1.08);
+  backdrop-filter: blur(20px) saturate(150%) brightness(1.08);
 
   /* Luminous adaptive border */
   border: 1.5px solid color-mix(in oklch, var(--glass-border), transparent 30%);
@@ -1522,8 +1525,8 @@ html[data-mode="dark"]:not([data-theme]),
   );
 
   /* Stronger blur for that premium iOS 26 frosted glass */
-  -webkit-backdrop-filter: blur(40px) saturate(180%) brightness(1.05);
-  backdrop-filter: blur(40px) saturate(180%) brightness(1.05);
+  -webkit-backdrop-filter: blur(18px) saturate(150%) brightness(1.04);
+  backdrop-filter: blur(18px) saturate(150%) brightness(1.04);
 
   /* Ultra-thin iOS 26 hairline separator */
   border: none;
@@ -1540,9 +1543,6 @@ html[data-mode="dark"]:not([data-theme]),
   color: var(--panel-text);
   background-clip: padding-box;
 
-  /* Subtle transform for that floating feel */
-  transform: translateZ(0);
-  will-change: transform;
 }
 /* Professional menu font for top navigation/menu items */
 .menu-pro-font {
@@ -3030,7 +3030,7 @@ textarea,
   --neu-text: #0f172a; /* slate-900 */
   --neu-light: rgba(255, 255, 255, 0.85); /* softer top-left highlight */
   --neu-dark: rgba(13, 42, 66, 0.16); /* cooler bottom-right shadow */
-  --focus-ring: rgba(59, 130, 246, 0.32); /* blue focus ring */
+  --focus-ring: color-mix(in oklch, var(--theme), transparent 68%);
 }
 
 /* Buttons now pop with stronger blue gradient and clearer shadow */
@@ -3186,7 +3186,7 @@ textarea,
   --btn-bg-active: rgba(255, 255, 255, 0.12);
   --btn-text: var(--panel-text);
   --btn-border: color-mix(in oklch, var(--glass-border), transparent 40%);
-  --focus-ring: rgba(96, 165, 250, 0.32);
+  --focus-ring: color-mix(in oklch, var(--theme), transparent 66%);
 }
 /* Logo surface tokens: add weak/default/strong tints for light themes */
 :root {
@@ -5321,4 +5321,783 @@ body .premium-driver-popover .driver-stop-tour-btn:hover {
 
 .dark body .premium-driver-popover .driver-stop-tour-btn:hover {
   color: #a5b4fc !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   APP SHELL — sidebar navigation + top bar
+   Sidebar width lives in a custom property so the pre-paint script in
+   layout.tsx can restore the collapsed state before React hydrates. No flash,
+   no layout jump.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --shell-nav-w: 268px;
+  --shell-rail-w: 76px;
+  --shell-topbar-h: 56px;
+  --shell-line: color-mix(in oklch, var(--panel-text), transparent 90%);
+  --shell-hover: color-mix(in oklch, var(--panel-text), transparent 94%);
+  /* One soft, theme-tinted fill shared by the sidebar and the top bar so the
+     two chrome surfaces read as a single frame instead of two whites. The
+     field tints step up from it, which keeps the search box legible on that
+     fill in light and dark alike — no per-mode hardcoding. */
+  --shell-surface: color-mix(in oklch, var(--surface-bg) 93%, var(--theme) 7%);
+  --shell-field: color-mix(in oklch, var(--surface-bg) 86%, var(--theme) 14%);
+  --shell-field-focus: color-mix(
+    in oklch,
+    var(--surface-bg) 78%,
+    var(--theme) 22%
+  );
+  --shell-field-border: color-mix(in oklch, var(--theme), transparent 70%);
+  --shell-z-sidebar: 1000;
+  --shell-z-topbar: 990;
+  --shell-z-flyout: 1150;
+  --shell-z-panel: 1190;
+  --shell-z-dialog: 1300;
+  --shell-z-progress: 1400;
+}
+
+html[data-sidebar="rail"] {
+  --shell-nav-w: var(--shell-rail-w);
+}
+
+/* Same hue, lifted for dark surfaces where the mid emerald reads muted. */
+html[data-mode="dark"],
+.dark {
+  --theme: #10b981;
+}
+
+.shell-root {
+  min-height: 100dvh;
+}
+
+/* ── Sidebar ─────────────────────────────────────────────────────────────── */
+
+.shell-sidebar {
+  position: fixed;
+  inset-block: 0;
+  left: 0;
+  z-index: var(--shell-z-sidebar);
+  display: flex;
+  flex-direction: column;
+  width: var(--shell-nav-w);
+  background: var(--shell-surface);
+  color: var(--panel-text);
+  /* Width is the only animated property, and only on the sidebar itself —
+     the old shell animated blur-backed surfaces on every interaction. */
+  transition: width 200ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.shell-sidebar-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  overflow: hidden;
+  padding: 1rem 0.875rem 0.5rem;
+}
+
+.shell-sidebar-tools {
+  display: flex;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  padding: 0.25rem 0.75rem 0.75rem;
+}
+
+.shell-sidebar-foot {
+  flex-shrink: 0;
+  padding: 0.5rem 0.75rem 0.75rem;
+  border-top: 1px solid var(--shell-line);
+}
+
+/* ── Licence / storage readout ───────────────────────────────────────────── */
+
+.shell-status {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.125rem 0.25rem 0.5rem;
+}
+
+.shell-status-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.shell-status-icon {
+  width: 0.875rem;
+  height: 0.875rem;
+  flex-shrink: 0;
+  color: color-mix(in oklch, var(--panel-text), transparent 62%);
+}
+
+.shell-status-label {
+  font-size: 0.6875rem;
+  color: color-mix(in oklch, var(--panel-text), transparent 52%);
+}
+
+.shell-status-value {
+  margin-left: auto;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: color-mix(in oklch, var(--panel-text), transparent 22%);
+}
+
+.shell-status-value.is-neutral {
+  color: color-mix(in oklch, var(--panel-text), transparent 22%);
+}
+
+/* Licence tones, carried over from the old shell: green while there is room,
+   red and pulsing once it drops to ten days. */
+.shell-status-value.is-ok {
+  color: var(--theme);
+}
+
+.shell-status-value.is-critical {
+  color: #ef4444;
+  animation: shell-status-pulse 2s ease-in-out infinite;
+}
+
+@keyframes shell-status-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.shell-status-unit {
+  font-weight: 500;
+  color: color-mix(in oklch, currentColor, transparent 35%);
+}
+
+/* In the rail there is no room for labels — stack icon over value. */
+@media (min-width: 1024px) {
+  html[data-sidebar="rail"] .shell-status {
+    gap: 0.5rem;
+    padding-inline: 0;
+  }
+
+  html[data-sidebar="rail"] .shell-status-row {
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  html[data-sidebar="rail"] .shell-status-value {
+    margin-left: 0;
+    font-size: 0.6875rem;
+  }
+}
+
+.shell-collapse-btn {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  border-radius: 0.5rem;
+  color: color-mix(in oklch, var(--panel-text), transparent 45%);
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+.shell-collapse-btn:hover {
+  background: var(--shell-hover);
+  color: var(--panel-text);
+}
+
+.shell-collapse-btn svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+html[data-sidebar="rail"] .shell-collapse-btn {
+  justify-content: center;
+}
+
+/* ── Navigation items ────────────────────────────────────────────────────── */
+
+.shell-nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.6rem 0.7rem;
+  border-radius: 0.625rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  text-align: left;
+  white-space: nowrap;
+  color: color-mix(in oklch, var(--panel-text), transparent 32%);
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+.shell-nav-item:hover {
+  background: var(--shell-hover);
+  color: var(--panel-text);
+}
+
+.shell-nav-item[data-active] {
+  background: color-mix(in oklch, var(--theme), transparent 88%);
+  color: var(--theme);
+  font-weight: 600;
+}
+
+/* Left accent bar marks the current section at a glance. */
+.shell-nav-item[data-active]::before {
+  content: "";
+  position: absolute;
+  left: -0.75rem;
+  top: 50%;
+  translate: 0 -50%;
+  width: 3px;
+  height: 1.25rem;
+  border-radius: 0 3px 3px 0;
+  background: var(--theme);
+}
+
+.shell-nav-icon {
+  width: 1.125rem;
+  height: 1.125rem;
+  flex-shrink: 0;
+}
+
+.shell-nav-chevron {
+  width: 0.875rem;
+  height: 0.875rem;
+  flex-shrink: 0;
+  opacity: 0.5;
+  transition: transform 180ms ease;
+}
+
+.shell-sublist {
+  position: relative;
+  margin: 0.125rem 0 0.25rem 1.4rem;
+  padding-left: 0.7rem;
+  border-left: 1px solid var(--shell-line);
+}
+
+.shell-subitem {
+  display: block;
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  white-space: nowrap;
+  color: color-mix(in oklch, var(--panel-text), transparent 40%);
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+.shell-subitem:hover {
+  background: var(--shell-hover);
+  color: var(--panel-text);
+}
+
+.shell-subitem[data-active] {
+  color: var(--theme);
+  font-weight: 600;
+  background: color-mix(in oklch, var(--theme), transparent 92%);
+}
+
+/* ── Rail mode (desktop only) ────────────────────────────────────────────── */
+
+@media (min-width: 1024px) {
+  html[data-sidebar="rail"] .shell-label,
+  html[data-sidebar="rail"] .shell-label-block {
+    display: none;
+  }
+
+  html[data-sidebar="rail"] .shell-sidebar-head {
+    justify-content: center;
+    padding-inline: 0.5rem;
+  }
+
+  html[data-sidebar="rail"] .shell-nav-item {
+    justify-content: center;
+    padding-inline: 0;
+  }
+}
+
+.shell-flyout {
+  position: fixed;
+  left: calc(var(--shell-nav-w) + 0.4rem);
+  z-index: var(--shell-z-flyout);
+  min-width: 12.5rem;
+  padding: 0.375rem;
+  border-radius: 0.75rem;
+  background: var(--surface-bg);
+  border: 1px solid var(--shell-line);
+  box-shadow: 0 16px 40px -12px color-mix(in oklch, #000, transparent 60%);
+}
+
+.shell-flyout-title {
+  padding: 0.3rem 0.6rem 0.45rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: color-mix(in oklch, var(--panel-text), transparent 55%);
+}
+
+/* ── Top bar ─────────────────────────────────────────────────────────────── */
+
+.shell-topbar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: var(--shell-nav-w);
+  z-index: var(--shell-z-topbar);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  height: var(--shell-topbar-h);
+  padding: 0 1rem;
+  background: var(--shell-surface);
+  color: var(--panel-text);
+  transition: left 200ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.shell-title {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--panel-text);
+}
+
+.shell-topbar-actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* The wrapper — a plain div — carries the field's fill, height and radius.
+   The input inside stays transparent, so none of the global
+   `[data-mode="dark"] input { background: … !important }` rules can repaint
+   the box, and the icon is a normal flex child rather than an absolutely
+   positioned overlay that can drop onto its own line. */
+.shell-topsearch {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-sizing: border-box;
+  width: clamp(12rem, 22vw, 20rem);
+  height: 2.25rem;
+  padding: 0 0.75rem;
+  margin-right: 0.25rem;
+  border: 1px solid transparent;
+  border-radius: 0.75rem;
+  background: var(--shell-field);
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease;
+}
+
+.shell-topsearch:focus-within {
+  background: var(--shell-field-focus);
+  border-color: var(--shell-field-border);
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--theme), transparent 78%);
+}
+
+.shell-badge {
+  position: absolute;
+  top: -0.125rem;
+  right: -0.125rem;
+  display: grid;
+  place-items: center;
+  min-width: 1rem;
+  height: 1rem;
+  padding-inline: 0.25rem;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.shell-mobile-search {
+  position: absolute;
+  inset-inline: 0.5rem;
+  top: calc(100% + 0.375rem);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.75rem;
+  background: var(--shell-surface);
+  border: 1px solid var(--shell-line);
+  box-shadow: 0 16px 40px -12px color-mix(in oklch, #000, transparent 60%);
+}
+
+/* Same story as the desktop field: the panel is the box, the input is text
+   only. Its Tailwind `bg-transparent` sits in @layer utilities and so loses to
+   the unlayered `[data-mode="dark"] input { background: … !important }`; this
+   selector outranks that one. */
+.shell-topbar .shell-mobile-search input {
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--panel-text) !important;
+  box-shadow: none !important;
+}
+
+.shell-topbar .shell-mobile-search input::placeholder {
+  color: color-mix(in oklch, var(--panel-text), transparent 58%) !important;
+}
+
+/* Tailwind's radius scale is declared in @theme inline as calc()s over
+   --radius, which this project never sets — so rounded-sm/md/lg/xl all compute
+   to 0px. Declared here for shell surfaces; dialogs and panels portal to
+   <body>, hence the explicit list. */
+.shell-root,
+.shell-sidebar,
+.shell-topbar,
+.shell-flyout,
+.shell-usermenu,
+.shell-slideover,
+.shell-dialog {
+  --radius: 0.5rem;
+}
+
+/* The input is only text — the wrapper draws the box. Written here rather
+   than as utilities for two reasons:
+     1. globals.css carries an UNLAYERED `input { color: var(--panel-text) }`,
+        and unlayered rules beat anything in @layer utilities regardless of
+        specificity, so Tailwind text colours never land on inputs.
+     2. `[data-mode="dark"] input` forces background/color/border with
+        !important at specificity (0,1,1), so a bare `.shell-topsearch-input`
+        loses even with !important. The wrapper selector below outranks it,
+        which is why one rule now covers both modes instead of four. */
+.shell-topbar .shell-topsearch .shell-topsearch-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0 !important;
+  border-radius: 0;
+  background: transparent !important;
+  color: var(--panel-text) !important;
+  font-size: 0.875rem;
+  line-height: 1;
+  outline: none;
+  box-shadow: none !important;
+}
+
+.shell-topbar .shell-topsearch .shell-topsearch-input::placeholder {
+  color: color-mix(in oklch, var(--panel-text), transparent 58%) !important;
+}
+
+.shell-topsearch-icon {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  pointer-events: none;
+  color: color-mix(in oklch, var(--panel-text), transparent 50%);
+}
+
+/* The wrapper draws the focus ring via :focus-within (see above), so the
+   generic `.shell-topbar input:focus-visible` outline would double up on it. */
+.shell-topbar .shell-topsearch .shell-topsearch-input:focus-visible {
+  outline: none;
+}
+
+/* ── Buttons, avatar, user menu ──────────────────────────────────────────── */
+
+.shell-icon-btn {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2.125rem;
+  height: 2.125rem;
+  border-radius: 0.625rem;
+  color: color-mix(in oklch, var(--panel-text), transparent 25%);
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
+}
+
+.shell-icon-btn svg {
+  width: 1.0625rem;
+  height: 1.0625rem;
+}
+
+.shell-icon-btn:hover {
+  background: var(--shell-hover);
+  color: var(--panel-text);
+}
+
+.shell-icon-btn:active {
+  transform: scale(0.94);
+}
+
+/* Squircle rather than the default circle avatar. */
+.shell-avatar-btn {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2.125rem;
+  height: 2.125rem;
+  margin-left: 0.25rem;
+  border-radius: 0.625rem;
+  background: color-mix(in oklch, var(--theme), transparent 82%);
+  color: var(--theme);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1;
+  transition: transform 180ms ease;
+}
+
+.shell-avatar-btn:active {
+  transform: scale(0.94);
+}
+
+.shell-usermenu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: var(--shell-z-flyout);
+  min-width: 12rem;
+  padding: 0.3rem;
+  border-radius: 0.75rem;
+  background: var(--surface-bg);
+  border: 1px solid var(--shell-line);
+  box-shadow: 0 16px 40px -12px color-mix(in oklch, #000, transparent 60%);
+}
+
+.shell-usermenu-head {
+  padding: 0.5rem 0.625rem 0.625rem;
+  margin-bottom: 0.25rem;
+  border-bottom: 1px solid var(--shell-line);
+}
+
+.shell-usermenu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+  padding: 0.5rem 0.625rem;
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+  color: color-mix(in oklch, var(--panel-text), transparent 20%);
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+.shell-usermenu-item:hover {
+  background: var(--shell-hover);
+  color: var(--panel-text);
+}
+
+/* UnguSongokh anchors its palette to the right and drops down; in the top bar
+   that is already correct, it only needs to clear the bar itself. */
+.shell-popup-down > div > div {
+  top: calc(100% + 0.5rem);
+  right: 0;
+}
+
+/* ── Main region ─────────────────────────────────────────────────────────── */
+
+.shell-main {
+  position: relative;
+  margin-left: var(--shell-nav-w);
+  min-height: 100dvh;
+  padding: calc(var(--shell-topbar-h) + 1rem) 1.25rem 1.5rem;
+  transition: margin-left 200ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.shell-surface {
+  max-width: 1800px;
+  margin-inline: auto;
+  min-height: calc(100dvh - var(--shell-topbar-h) - 2.5rem);
+  padding: 0.5rem;
+  border-radius: 1.25rem;
+  background: color-mix(in oklch, var(--surface-bg), transparent 25%);
+  border: 1px solid var(--shell-line);
+}
+
+/* ── Mobile: full-width bar + off-canvas drawer ──────────────────────────── */
+
+.shell-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: var(--shell-z-sidebar);
+}
+
+.shell-drawer-scrim {
+  position: absolute;
+  inset: 0;
+  cursor: default;
+  background: color-mix(in oklch, #000, transparent 45%);
+  animation: shell-fade 180ms ease both;
+}
+
+.shell-drawer .shell-sidebar {
+  width: min(19rem, 86vw);
+  box-shadow: 0 0 60px -12px color-mix(in oklch, #000, transparent 50%);
+  animation: shell-slide-in 220ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+@media (max-width: 1023.98px) {
+  :root {
+    --shell-nav-w: 0px;
+  }
+
+  .shell-topbar {
+    left: 0;
+    padding-inline: 0.625rem;
+  }
+
+  .shell-main {
+    margin-left: 0;
+    padding: calc(var(--shell-topbar-h) + 0.625rem) 0.625rem 1rem;
+  }
+
+  .shell-surface {
+    min-height: auto;
+    border-radius: 1rem;
+  }
+
+  .shell-topsearch {
+    display: none;
+  }
+}
+
+/* ── Slide-over + dialog entrances ───────────────────────────────────────── */
+
+.shell-slideover {
+  animation: shell-slide-from-right 220ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.shell-dialog {
+  animation: shell-rise 200ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+@keyframes shell-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes shell-slide-in {
+  from {
+    opacity: 0;
+    transform: translate3d(-1rem, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes shell-slide-from-right {
+  from {
+    opacity: 0;
+    transform: translate3d(1rem, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes shell-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 0.75rem, 0) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+/* ── Route progress bar ──────────────────────────────────────────────────── */
+
+.shell-progress {
+  position: fixed;
+  inset-inline: 0;
+  top: 0;
+  height: 2px;
+  z-index: var(--shell-z-progress);
+  pointer-events: none;
+  background: var(--theme);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  opacity: 0;
+}
+
+.shell-progress.is-active {
+  opacity: 1;
+  animation: shell-progress-run 8s cubic-bezier(0.1, 0.7, 0.3, 1) both;
+}
+
+@keyframes shell-progress-run {
+  0% {
+    transform: scaleX(0);
+  }
+  25% {
+    transform: scaleX(0.5);
+  }
+  65% {
+    transform: scaleX(0.82);
+  }
+  100% {
+    transform: scaleX(0.97);
+  }
+}
+
+/* ── Focus + reduced motion ──────────────────────────────────────────────── */
+
+.shell-sidebar :is(a, button, input):focus-visible,
+.shell-topbar :is(a, button, input):focus-visible,
+.shell-flyout a:focus-visible,
+.shell-slideover :is(a, button):focus-visible,
+.shell-dialog :is(a, button, input):focus-visible {
+  outline: 2px solid var(--theme);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shell-sidebar,
+  .shell-topbar,
+  .shell-main,
+  .shell-slideover,
+  .shell-dialog,
+  .shell-drawer .shell-sidebar,
+  .shell-drawer-scrim,
+  .shell-progress.is-active {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
+
+  .shell-status-value.is-critical {
+    animation: none;
+  }
 }
