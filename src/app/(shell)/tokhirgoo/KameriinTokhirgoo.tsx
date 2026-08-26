@@ -8,13 +8,12 @@ import {
   Plus,
   Trash2,
   Save,
-  RefreshCw,
-  ChevronDown,
-  Eye,
-  EyeOff,
   Sliders,
-  User,
+  Edit,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
+import { Loader } from "@mantine/core";
 import uilchilgee, { aldaaBarigch } from "@/lib/uilchilgee";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
@@ -49,142 +48,107 @@ const defaultCamera = (): CameraConfig => ({
 const INPUT_CLS =
   "w-full px-3 py-2 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] text-sm";
 
-function CameraRow({
+/**
+ * Нэг камерын засварын дэлгэц.
+ *
+ * Өмнө нь мөр бүр өөрөө задардаг (accordion) байсныг Зогсоолын тохиргоотой
+ * ижил болгож, жагсаалт → маягт гэсэн хоёр горимд хуваав. Ингэснээр жагсаалт
+ * нь зөвхөн харах зориулалттай нягт хүснэгт хэвээр үлдэнэ.
+ */
+function CameraForm({
   cam,
-  index,
   onChange,
-  onRemove,
 }: {
   cam: CameraConfig;
-  index: number;
   onChange: (cam: CameraConfig) => void;
-  onRemove: () => void;
 }) {
-  const [expanded, setExpanded] = useState(false);
-  const [showPass, setShowPass] = useState(false);
-
   return (
-    <div
-      className={`rounded-2xl border transition-all ${cam.enabled
-        ? "border-theme/20 bg-theme/5 dark:bg-theme/5"
-        : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] opacity-60"
-        }`}
-    >
-      {/* Header row */}
-      <div className="flex items-center gap-3 px-4 py-3">
-        {/* Enable toggle */}
-        <button
-          type="button"
-          onClick={() => onChange({ ...cam, enabled: !cam.enabled })}
-          className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ${cam.enabled ? "bg-theme" : "bg-gray-300 dark:bg-gray-600"
-            }`}
-        >
-          <span
-            className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${cam.enabled ? "translate-x-5" : "translate-x-0"
-              }`}
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-1">
+          <label className="block text-xs font-semibold text-[color:var(--muted-text)] uppercase tracking-wide">
+            Нэр
+          </label>
+          <input
+            type="text"
+            value={cam.name}
+            onChange={(e) => onChange({ ...cam, name: e.target.value })}
+            placeholder="Камер 1"
+            className={INPUT_CLS}
           />
-        </button>
+        </div>
 
-        <Video className="w-4 h-4 text-[color:var(--muted-text)] flex-shrink-0" />
+        <div className="space-y-1">
+          <label className="block text-xs font-semibold text-[color:var(--muted-text)] uppercase tracking-wide">
+            ID
+          </label>
+          <input
+            type="text"
+            value={cam.id}
+            onChange={(e) => onChange({ ...cam, id: e.target.value })}
+            placeholder="cam-1"
+            className={INPUT_CLS}
+          />
+        </div>
 
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-[color:var(--panel-text)] truncate">
-            {index + 1}. {cam.name || "Нэргүй камер"}
+        <div className="space-y-1 md:col-span-2">
+          <label className="block text-xs font-semibold text-[color:var(--muted-text)] uppercase tracking-wide">
+            RTSP зам (root)
+          </label>
+          <input
+            type="text"
+            value={cam.root}
+            onChange={(e) => onChange({ ...cam, root: e.target.value })}
+            placeholder="Streaming/Channels/102"
+            className={INPUT_CLS}
+          />
+          <p className="text-xs text-[color:var(--muted-text)]">
+            Sub-stream жишээ:{" "}
+            <span className="font-mono">Streaming/Channels/102</span>,{" "}
+            <span className="font-mono">Streaming/Channels/202</span> ...
           </p>
-          {cam.ip && (
-            <p className="text-xs text-[color:var(--muted-text)] font-mono truncate">
-              rtsp://{cam.ip}:{cam.port}/{cam.root}
-            </p>
-          )}
         </div>
-
-        {/* Resident visible toggle */}
-        <div className="flex flex-col items-center gap-0.5 flex-shrink-0">
-          <button
-            type="button"
-            title={cam.residentVisible ? "Оршин суугч харах боломжтой" : "Оршин суугч харах боломжгүй"}
-            onClick={() => onChange({ ...cam, residentVisible: !cam.residentVisible })}
-            className={`relative w-10 h-5 rounded-full transition-colors ${cam.residentVisible ? "bg-blue-500" : "bg-gray-300 dark:bg-gray-600"}`}
-          >
-            <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${cam.residentVisible ? "translate-x-5" : "translate-x-0"}`} />
-          </button>
-          <span className="text-[9px] text-[color:var(--muted-text)] leading-none">
-            <User className="w-2.5 h-2.5 inline-block" />
-          </span>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          className="p-1.5 rounded-full hover:bg-[color:var(--surface-hover)] transition-colors text-[color:var(--muted-text)]"
-        >
-          <ChevronDown
-            className={`w-4 h-4 transition-transform ${expanded ? "rotate-180" : ""}`}
-          />
-        </button>
-
-        <button
-          type="button"
-          onClick={onRemove}
-          className="p-1.5 rounded-full hover:bg-red-50 dark:hover:bg-red-950/30 text-red-400 hover:text-red-500 transition-colors"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
       </div>
 
-      {/* Expanded fields */}
-      {expanded && (
-        <div className="px-4 pb-4 space-y-3 border-t border-[color:var(--surface-border)]">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3">
-            {/* Name */}
-            <div className="space-y-1">
-              <label className="block text-xs font-semibold text-[color:var(--muted-text)] uppercase tracking-wide">
-                Нэр
-              </label>
-              <input
-                type="text"
-                value={cam.name}
-                onChange={(e) => onChange({ ...cam, name: e.target.value })}
-                placeholder="Камер 1"
-                className={INPUT_CLS}
-              />
-            </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <label
+          style={{ borderRadius: "10px" }}
+          className="flex items-center justify-between gap-3 px-4 py-3 border border-[color:var(--surface-border)] cursor-pointer"
+        >
+          <span className="text-sm text-[color:var(--panel-text)]">
+            Идэвхтэй
+            <span className="block text-xs text-[color:var(--muted-text)]">
+              Унтраасан камер хяналтад харагдахгүй
+            </span>
+          </span>
+          <input
+            type="checkbox"
+            checked={cam.enabled}
+            onChange={(e) => onChange({ ...cam, enabled: e.target.checked })}
+            className="w-4 h-4 accent-emerald-600 shrink-0"
+          />
+        </label>
 
-            {/* ID */}
-            <div className="space-y-1">
-              <label className="block text-xs font-semibold text-[color:var(--muted-text)] uppercase tracking-wide">
-                ID
-              </label>
-              <input
-                type="text"
-                value={cam.id}
-                onChange={(e) => onChange({ ...cam, id: e.target.value })}
-                placeholder="cam-1"
-                className={INPUT_CLS}
-              />
-            </div>
-
-            {/* Root / Stream path */}
-            <div className="space-y-1 md:col-span-2">
-              <label className="block text-xs font-semibold text-[color:var(--muted-text)] uppercase tracking-wide">
-                RTSP зам (root)
-              </label>
-              <input
-                type="text"
-                value={cam.root}
-                onChange={(e) => onChange({ ...cam, root: e.target.value })}
-                placeholder="Streaming/Channels/102"
-                className={INPUT_CLS}
-              />
-              <p className="text-xs text-[color:var(--muted-text)]">
-                Sub-stream жишээ:{" "}
-                <span className="font-mono">Streaming/Channels/102</span>,{" "}
-                <span className="font-mono">Streaming/Channels/202</span> ...
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+        <label
+          style={{ borderRadius: "10px" }}
+          className="flex items-center justify-between gap-3 px-4 py-3 border border-[color:var(--surface-border)] cursor-pointer"
+        >
+          <span className="text-sm text-[color:var(--panel-text)]">
+            Оршин суугч харна
+            <span className="block text-xs text-[color:var(--muted-text)]">
+              Оршин суугчийн апп дээр гарч ирнэ
+            </span>
+          </span>
+          <input
+            type="checkbox"
+            checked={cam.residentVisible}
+            onChange={(e) =>
+              onChange({ ...cam, residentVisible: e.target.checked })
+            }
+            className="w-4 h-4 accent-blue-600 shrink-0"
+          />
+        </label>
+      </div>
     </div>
   );
 }
@@ -205,6 +169,46 @@ export default function KameriinTokhirgoo() {
   const residentCameras = sohCameras.filter((c) => c.residentVisible);
   const activeCameras = activeTab === "soh" ? sohCameras : residentCameras;
   const setActiveCameras = setSohCameras;
+
+  // Зогсоолын тохиргоотой ижил: жагсаалт / маягт гэсэн хоёр горим.
+  const [view, setView] = useState<"list" | "form">("list");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
+
+  const editingCamera = sohCameras.find((c) => c.id === editingId) || null;
+
+  const TABS: ["soh" | "resident", number][] = [
+    ["soh", sohCameras.length],
+    ["resident", residentCameras.length],
+  ];
+
+  const totalPages = Math.ceil(activeCameras.length / pageSize);
+  const paginatedCameras = activeCameras.slice(
+    (page - 1) * pageSize,
+    page * pageSize,
+  );
+
+  // Таб солих буюу камер устгахад хуудас хүрээнээс гарч хоосон харагдахаас
+  // сэргийлж буцаана.
+  useEffect(() => {
+    if (page > 1 && page > totalPages) setPage(Math.max(1, totalPages));
+  }, [page, totalPages]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [activeTab, selectedBarilgiinId]);
+
+  // Хуудасны хэмжээний сонголтыг гадна дарахад хаана.
+  useEffect(() => {
+    const onDown = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest(".page-size-selector")) setIsPageSizeOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, []);
 
   // Mass add settings states
   const [isMassAddOpen, setIsMassAddOpen] = useState(false);
@@ -330,17 +334,30 @@ export default function KameriinTokhirgoo() {
 
   const handleAddCamera = () => {
     const next = defaultCamera();
-    next.id = `cam-${activeCameras.length + 1}`;
-    next.name = `Камер ${activeCameras.length + 1}`;
+    next.id = `cam-${sohCameras.length + 1}`;
+    next.name = `Камер ${sohCameras.length + 1}`;
     setActiveCameras((prev) => [...prev, next]);
+    setEditingId(next.id);
+    setView("form");
   };
 
-  const handleChange = (idx: number, updated: CameraConfig) => {
-    setActiveCameras((prev) => prev.map((c, i) => (i === idx ? updated : c)));
+  /**
+   * Индексээр биш `id`-гаар шинэчилнэ.
+   *
+   * "Оршин суугчдын харах камер" таб дээрх жагсаалт нь `sohCameras`-ыг
+   * шүүсэн массив тул түүний индекс эх массивын индекстэй таарахгүй. Өмнө нь
+   * индексээр засдаг байсан учир энэ таб дээр өөр камер засагдаж/устдаг байв.
+   */
+  const handleChange = (id: string, updated: CameraConfig) => {
+    setActiveCameras((prev) => prev.map((c) => (c.id === id ? updated : c)));
   };
 
-  const handleRemove = (idx: number) => {
-    setActiveCameras((prev) => prev.filter((_, i) => i !== idx));
+  const handleRemove = (id: string) => {
+    setActiveCameras((prev) => prev.filter((c) => c.id !== id));
+    if (editingId === id) {
+      setEditingId(null);
+      setView("list");
+    }
   };
 
 
@@ -420,212 +437,493 @@ export default function KameriinTokhirgoo() {
     (b: any) => b._id === selectedBarilgiinId
   );
 
-  return (
-    <div className="space-y-6 p-4">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="p-2.5 rounded-2xl bg-theme/10">
-          <Video className="w-5 h-5 text-[color:var(--theme)]" />
-        </div>
-        <div>
-          <h2 className="text-lg font-bold text-[color:var(--panel-text)]">
-            Камерийн тохиргоо
-          </h2>
-          <p className="text-sm text-[color:var(--muted-text)]">
-            Барилга тус бүрийн хяналтын камеруудыг тохируулна уу
+  // ── Маягтын горим — Зогсоолын тохиргоотой ижил бүтэц ────────────────────
+  if (view === "form" && editingCamera) {
+    return (
+      <div className="h-full overflow-y-auto custom-scrollbar">
+        <div className="bg-[color:var(--surface-bg)] rounded-2xl border border-[color:var(--surface-border)] p-4 sm:p-6 space-y-4">
+          <div className="flex items-center justify-between pb-4 border-b border-[color:var(--surface-border)]">
+            <div>
+              <h2 className="text-lg text-[color:var(--panel-text)] tracking-tight">
+                Камер засах
+              </h2>
+              <p className="text-xs text-[color:var(--muted-text)]">
+                ID: {editingCamera.id}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => handleRemove(editingCamera.id)}
+                variant="ghost"
+                size="sm"
+                style={{ borderRadius: "10px" }}
+                className="px-3 !text-rose-600 dark:!text-rose-400"
+              >
+                Устгах
+              </Button>
+              <Button
+                onClick={() => {
+                  setView("list");
+                  setEditingId(null);
+                }}
+                variant="primary"
+                size="sm"
+                style={{ borderRadius: "10px" }}
+                className="px-4"
+              >
+                Болсон
+              </Button>
+            </div>
+          </div>
+
+          <CameraForm
+            cam={editingCamera}
+            onChange={(updated) => handleChange(editingCamera.id, updated)}
+          />
+
+          <p className="text-xs text-[color:var(--muted-text)] pt-2 border-t border-[color:var(--surface-border)]">
+            Өөрчлөлт жагсаалтад шууд тусна. Эцэслэн хадгалахын тулд жагсаалт руу
+            буцаж{" "}
+            <span className="text-[color:var(--panel-text)]">Хадгалах</span>{" "}
+            товчийг дарна уу.
           </p>
         </div>
       </div>
+    );
+  }
 
-      {/* Building selector */}
-      {buildings.length > 1 && (
-        <div className="space-y-1.5">
-          <label className="block text-sm font-semibold text-[color:var(--panel-text)]">
-            Барилга сонгох
-          </label>
-          <select
-            value={selectedBarilgiinId}
-            onChange={(e) => setSelectedBarilgiinId(e.target.value)}
-            className={INPUT_CLS}
-          >
-            {buildings.map((b: any) => (
-              <option key={b._id} value={b._id}>
-                {b.ner || b._id}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
+  return (
+    <div className="h-full overflow-y-auto custom-scrollbar">
+      <div className="bg-[color:var(--surface-bg)] rounded-2xl border border-[color:var(--surface-border)] p-4 sm:p-5 space-y-4">
+        {/* ── Толгой мөр + хэмжигдэхүүнүүд ──────────────────────────────── */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-[color:var(--surface-border)]">
+          <div className="flex items-center gap-4 flex-wrap">
+            <div>
+              <h2 className="text-xl text-[color:var(--panel-text)] tracking-tight">
+                Камерийн тохиргоо
+              </h2>
+              <p className="text-xs text-[color:var(--muted-text)]">
+                Нийт{" "}
+                <span className="text-blue-600 dark:text-blue-400">
+                  {sohCameras.length}
+                </span>{" "}
+                камер тохируулагдсан
+              </p>
+            </div>
 
-      {buildings.length === 1 && selectedBuilding && (
-        <div className="px-4 py-2.5 rounded-xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)]">
-          <p className="text-sm text-[color:var(--panel-text)] font-semibold">
-            {selectedBuilding.ner}
-          </p>
-        </div>
-      )}
-
-      {loading ? (
-        <div className="flex items-center justify-center py-16">
-          <RefreshCw className="w-6 h-6 animate-spin text-theme" />
-        </div>
-      ) : !selectedBarilgiinId ? (
-        <div className="flex flex-col items-center justify-center py-16 text-[color:var(--muted-text)]">
-          <VideoOff className="w-12 h-12 mb-3 opacity-40" />
-          <p className="text-sm">Барилга олдсонгүй</p>
-        </div>
-      ) : (
-        <>
-          {/* Холболтын үндсэн мэдээлэл */}
-          <div className="p-4 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] space-y-4">
-            <h3 className="text-sm font-semibold text-[color:var(--panel-text)] flex items-center gap-2">
-              <Sliders className="w-4 h-4 text-[color:var(--theme)]" />
-              Холболтын үндсэн мэдээлэл (NVR)
-            </h3>
-            <p className="text-xs text-[color:var(--muted-text)]">
-              Камер бүрт тусад нь IP хаяг тохируулах шаардлагагүй бөгөөд тухайн барилгын үндсэн холболтын хаягийг энд оруулна.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="block text-xs font-semibold text-[color:var(--muted-text)] uppercase tracking-wide">
-                  IP хаяг
-                </label>
-                <input
-                  type="text"
-                  value={cameraIp}
-                  onChange={(e) => setCameraIp(e.target.value)}
-                  placeholder="192.168.1.228"
-                  className={INPUT_CLS}
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="block text-xs font-semibold text-[color:var(--muted-text)] uppercase tracking-wide">
-                  RTSP Порт
-                </label>
-                <input
-                  type="number"
-                  value={cameraPort}
-                  onChange={(e) => setCameraPort(Number(e.target.value) || 554)}
-                  placeholder="554"
-                  className={INPUT_CLS}
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="block text-xs font-semibold text-[color:var(--muted-text)] uppercase tracking-wide">
-                  Нэвтрэх нэр
-                </label>
-                <input
-                  type="text"
-                  value={cameraUsername}
-                  onChange={(e) => setCameraUsername(e.target.value)}
-                  placeholder="admin"
-                  className={INPUT_CLS}
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="block text-xs font-semibold text-[color:var(--muted-text)] uppercase tracking-wide">
-                  Нууц үг
-                </label>
-                <input
-                  type="password"
-                  value={cameraPassword}
-                  onChange={(e) => setCameraPassword(e.target.value)}
-                  placeholder="Admin123"
-                  className={INPUT_CLS}
-                />
-              </div>
+            <div className="flex items-center gap-2 text-xs flex-wrap">
+              <span
+                style={{ borderRadius: "10px" }}
+                className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 font-medium"
+              >
+                Нийт камер:{" "}
+                <span className="text-blue-700 dark:text-blue-400 font-semibold">
+                  {sohCameras.length}
+                </span>
+              </span>
+              <span
+                style={{ borderRadius: "10px" }}
+                className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/60 text-emerald-950 dark:text-emerald-100 border border-emerald-300 dark:border-emerald-700 font-medium"
+              >
+                Идэвхтэй:{" "}
+                <span className="text-emerald-800 dark:text-emerald-300 font-semibold">
+                  {sohCameras.filter((c) => c.enabled).length}
+                </span>
+              </span>
+              <span
+                style={{ borderRadius: "10px" }}
+                className="px-3 py-1 bg-blue-100 dark:bg-blue-900/60 text-blue-950 dark:text-blue-100 border border-blue-300 dark:border-blue-700 font-medium"
+              >
+                Оршин суугч харах:{" "}
+                <span className="text-blue-800 dark:text-blue-300 font-semibold">
+                  {residentCameras.length}
+                </span>
+              </span>
             </div>
           </div>
 
-          {/* Tab selector */}
-          <div className="flex border-b border-[color:var(--surface-border)]">
-            <button
-              type="button"
-              onClick={() => setActiveTab("soh")}
-              className={`flex-1 py-3 text-center text-sm font-semibold border-b-2 transition-all ${activeTab === "soh"
-                ? "border-theme text-[color:var(--theme)] font-bold"
-                : "border-transparent text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
-                }`}
-            >
-              СӨХ-ийн харах камер ({sohCameras.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("resident")}
-              className={`flex-1 py-3 text-center text-sm font-semibold border-b-2 transition-all ${activeTab === "resident"
-                ? "border-theme text-[color:var(--theme)] font-bold"
-                : "border-transparent text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
-                }`}
-            >
-              Оршин суугчдын харах камер ({residentCameras.length})
-            </button>
-          </div>
-
-          {/* Add camera buttons — top */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              type="button"
-              onClick={handleAddCamera}
-              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-full border-2 border-dashed border-theme/30 text-[color:var(--theme)] hover:bg-theme/5 transition-colors text-sm font-semibold shadow-sm"
-            >
-              <Plus className="w-4 h-4" />
-              Камер нэмэх
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsMassAddOpen(true)}
-              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-full border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] transition-colors text-sm font-semibold shadow-sm"
-            >
-              <Plus className="w-4 h-4 text-[color:var(--theme)]" />
-              Олноор нэмэх
-            </button>
-          </div>
-
-          {/* Camera list — scrollable container showing ~5 rows */}
-          <div className="rounded-2xl border border-[color:var(--surface-border)] overflow-hidden">
-            <div className="overflow-y-auto custom-scrollbar max-h-[340px] p-3 space-y-3">
-              {activeCameras.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 rounded-3xl border-2 border-dashed border-[color:var(--surface-border)] text-[color:var(--muted-text)]">
-                  <VideoOff className="w-10 h-10 mb-2 opacity-40" />
-                  <p className="text-sm font-medium">Камер нэмэгдээгүй байна</p>
-                  <p className="text-xs mt-1 opacity-70">Дээрх товчийг дарж камер нэмнэ үү</p>
-                </div>
-              ) : (
-                activeCameras.map((cam, idx) => (
-                  <CameraRow
-                    key={cam.id + idx}
-                    cam={cam}
-                    index={idx}
-                    onChange={(updated) => handleChange(idx, updated)}
-                    onRemove={() => handleRemove(idx)}
-                  />
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Action bar */}
-          <div className="flex items-center justify-between pt-2 border-t border-[color:var(--surface-border)]">
-            <p className="text-sm text-[color:var(--muted-text)]">
-              Нийт{" "}
-              <span className="font-semibold text-[color:var(--panel-text)]">
-                {activeCameras.length}
-              </span>{" "}
-              камер,{" "}
-              <span className="font-semibold text-[color:var(--panel-text)]">
-                {activeCameras.filter((c) => c.enabled).length}
-              </span>{" "}
-              идэвхтэй
-            </p>
+          <div className="flex items-center gap-2 shrink-0">
             <Button
-              variant="primary"
-              onClick={handleSave}
-              isLoading={saving}
-              leftIcon={<Save className="w-4 h-4" />}
+              onClick={() => setIsMassAddOpen(true)}
+              variant="ghost"
+              size="sm"
+              style={{ borderRadius: "10px" }}
+              className="px-3 border border-slate-200 dark:border-white/10"
             >
-              Хадгалах
+              Олноор нэмэх
+            </Button>
+            <Button
+              onClick={handleAddCamera}
+              variant="primary"
+              size="sm"
+              style={{ borderRadius: "10px" }}
+              className="px-4"
+            >
+              Шинэ камер нэмэх
             </Button>
           </div>
+        </div>
+
+        {/* ── Барилга ──────────────────────────────────────────────────── */}
+        {buildings.length > 1 ? (
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-[color:var(--muted-text)] uppercase tracking-wide">
+              Барилга
+            </label>
+            <select
+              value={selectedBarilgiinId}
+              onChange={(e) => setSelectedBarilgiinId(e.target.value)}
+              className={INPUT_CLS}
+            >
+              {buildings.map((b: any) => (
+                <option key={b._id} value={b._id}>
+                  {b.ner || b._id}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          selectedBuilding && (
+            <p className="text-xs text-[color:var(--muted-text)]">
+              Барилга:{" "}
+              <span className="text-[color:var(--panel-text)]">
+                {selectedBuilding.ner}
+              </span>
+            </p>
+          )
+        )}
+
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-12 gap-3">
+            <Loader size="md" />
+            <span className="text-xs text-[color:var(--muted-text)]">
+              Мэдээлэл уншиж байна...
+            </span>
+          </div>
+        ) : !selectedBarilgiinId ? (
+          <div className="flex flex-col items-center justify-center py-16 text-[color:var(--muted-text)]">
+            <VideoOff className="w-12 h-12 mb-3 opacity-40" />
+            <p className="text-sm">Барилга олдсонгүй</p>
+          </div>
+        ) : (
+          <>
+            {/* ── NVR холболт ──────────────────────────────────────────── */}
+            <div
+              style={{ borderRadius: "14px" }}
+              className="border border-[color:var(--surface-border)] p-4 space-y-3"
+            >
+              <div>
+                <h3 className="text-sm text-[color:var(--panel-text)] flex items-center gap-2">
+                  <Sliders className="w-4 h-4 text-[color:var(--theme)]" />
+                  Холболтын үндсэн мэдээлэл (NVR)
+                </h3>
+                <p className="text-xs text-[color:var(--muted-text)] mt-0.5">
+                  Камер бүрт тусад нь IP хаяг тохируулах шаардлагагүй бөгөөд
+                  тухайн барилгын үндсэн холболтын хаягийг энд оруулна.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-[color:var(--muted-text)] uppercase tracking-wide">
+                    IP хаяг
+                  </label>
+                  <input
+                    type="text"
+                    value={cameraIp}
+                    onChange={(e) => setCameraIp(e.target.value)}
+                    placeholder="192.168.1.228"
+                    className={INPUT_CLS}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-[color:var(--muted-text)] uppercase tracking-wide">
+                    RTSP порт
+                  </label>
+                  <input
+                    type="number"
+                    value={cameraPort}
+                    onChange={(e) => setCameraPort(Number(e.target.value) || 554)}
+                    placeholder="554"
+                    className={INPUT_CLS}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-[color:var(--muted-text)] uppercase tracking-wide">
+                    Нэвтрэх нэр
+                  </label>
+                  <input
+                    type="text"
+                    value={cameraUsername}
+                    onChange={(e) => setCameraUsername(e.target.value)}
+                    placeholder="admin"
+                    className={INPUT_CLS}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-[color:var(--muted-text)] uppercase tracking-wide">
+                    Нууц үг
+                  </label>
+                  <input
+                    type="password"
+                    value={cameraPassword}
+                    onChange={(e) => setCameraPassword(e.target.value)}
+                    placeholder="Admin123"
+                    className={INPUT_CLS}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* ── Таб ──────────────────────────────────────────────────── */}
+            <div className="flex items-center gap-2">
+              {TABS.map(([key, count]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setActiveTab(key)}
+                  style={{ borderRadius: "10px" }}
+                  className={`px-3 py-1.5 text-xs border transition-colors ${
+                    activeTab === key
+                      ? "bg-blue-100 dark:bg-blue-900/60 text-blue-950 dark:text-blue-100 border-blue-300 dark:border-blue-700 font-semibold"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-200/70 dark:hover:bg-slate-700/60"
+                  }`}
+                >
+                  {key === "soh" ? "СӨХ-ийн харах камер" : "Оршин суугчдын харах камер"} ({count})
+                </button>
+              ))}
+            </div>
+
+            {/* ── Хүснэгт ──────────────────────────────────────────────── */}
+            <div
+              style={{ borderRadius: "14px" }}
+              className="border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] overflow-hidden"
+            >
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-[13px]">
+                  <thead className="sticky top-0 z-10 bg-slate-100 dark:bg-slate-800 border-b border-[color:var(--surface-border)]">
+                    <tr>
+                      <th className="px-3 py-2.5 text-xs text-slate-700 dark:text-slate-300 text-center w-12">
+                        №
+                      </th>
+                      <th className="px-4 py-2.5 text-xs text-slate-700 dark:text-slate-300 text-left w-1/4">
+                        Камерын нэр
+                      </th>
+                      <th className="px-4 py-2.5 text-xs text-slate-700 dark:text-slate-300 text-left">
+                        RTSP зам
+                      </th>
+                      <th className="px-4 py-2.5 text-xs text-slate-700 dark:text-slate-300 text-center w-32">
+                        Оршин суугч
+                      </th>
+                      <th className="px-4 py-2.5 text-xs text-slate-700 dark:text-slate-300 text-center w-28">
+                        Төлөв
+                      </th>
+                      <th className="px-4 py-2.5 text-xs text-slate-700 dark:text-slate-300 text-center w-24">
+                        Үйлдэл
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[color:var(--surface-border)]">
+                    {paginatedCameras.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={6}
+                          className="px-4 py-16 text-center text-[color:var(--muted-text)]"
+                        >
+                          <div>
+                            <p className="text-slate-700 dark:text-slate-200">
+                              {activeTab === "soh"
+                                ? "Камер нэмэгдээгүй байна"
+                                : "Оршин суугчид харагдах камер алга"}
+                            </p>
+                            <p className="text-xs text-slate-400 mt-1">
+                              {activeTab === "soh"
+                                ? "Дээрх «Шинэ камер нэмэх» товчийг дарж камер тохируулна уу"
+                                : "Камер засах цонхноос «Оршин суугч харна» тохиргоог асаана уу"}
+                            </p>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      paginatedCameras.map((cam, index) => (
+                        <tr
+                          key={cam.id}
+                          className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
+                        >
+                          <td className="px-3 py-2.5 text-center text-slate-500 dark:text-slate-400 text-xs">
+                            {(page - 1) * pageSize + index + 1}
+                          </td>
+                          <td className="px-4 py-2.5">
+                            <span className="text-slate-800 dark:text-slate-100">
+                              {cam.name || "Нэргүй камер"}
+                            </span>
+                            <span className="block text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                              {cam.id}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2.5">
+                            <span
+                              style={{ borderRadius: "8px" }}
+                              className="inline-flex items-center px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white text-[11px] font-mono border border-slate-300 dark:border-slate-700 break-all"
+                            >
+                              rtsp://{cam.ip || cameraIp || "—"}:
+                              {cam.port || cameraPort}/{cam.root}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2.5 text-center">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleChange(cam.id, {
+                                  ...cam,
+                                  residentVisible: !cam.residentVisible,
+                                })
+                              }
+                              style={{ borderRadius: "8px" }}
+                              title="Оршин суугчид харуулах эсэхийг сольно"
+                              className={`inline-flex items-center px-3 py-1 text-xs border transition-colors ${
+                                cam.residentVisible
+                                  ? "bg-blue-100 dark:bg-blue-900/60 text-blue-950 dark:text-blue-100 border-blue-300 dark:border-blue-700"
+                                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700"
+                              }`}
+                            >
+                              {cam.residentVisible ? "Харна" : "Харахгүй"}
+                            </button>
+                          </td>
+                          <td className="px-4 py-2.5 text-center">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleChange(cam.id, {
+                                  ...cam,
+                                  enabled: !cam.enabled,
+                                })
+                              }
+                              style={{ borderRadius: "8px" }}
+                              title="Идэвхтэй эсэхийг сольно"
+                              className={`inline-flex items-center px-3 py-1 text-xs border transition-colors ${
+                                cam.enabled
+                                  ? "bg-emerald-100 dark:bg-emerald-900/60 text-emerald-950 dark:text-emerald-100 border-emerald-300 dark:border-emerald-700"
+                                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700"
+                              }`}
+                            >
+                              {cam.enabled ? "Идэвхтэй" : "Идэвхгүй"}
+                            </button>
+                          </td>
+                          <td className="px-4 py-2.5 text-center">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                onClick={() => {
+                                  setEditingId(cam.id);
+                                  setView("form");
+                                }}
+                                className="p-1.5 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors"
+                                title="Засах"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleRemove(cam.id)}
+                                className="p-1.5 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors"
+                                title="Устгах"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* ── Хуудаслалт ───────────────────────────────────────────── */}
+            {totalPages > 0 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-1 border-t border-[color:var(--surface-border)]">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-[color:var(--panel-text)]">
+                    Нийт <span>{activeCameras.length}</span> камер
+                  </span>
+
+                  <div className="relative page-size-selector">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsPageSizeOpen(!isPageSizeOpen)}
+                      className="!rounded-xl border border-slate-200 dark:border-white/10"
+                    >
+                      {pageSize} / хуудас
+                    </Button>
+                    {isPageSizeOpen && (
+                      <div className="absolute bottom-full mb-2 left-0 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-2xl shadow-xl z-20 min-w-[110px] overflow-hidden p-1">
+                        {[10, 20, 50, 100, 500].map((size) => (
+                          <button
+                            key={size}
+                            onClick={() => {
+                              setPageSize(size);
+                              setPage(1);
+                              setIsPageSizeOpen(false);
+                            }}
+                            className={`w-full px-3 py-1.5 rounded-xl text-left text-xs transition-colors ${
+                              pageSize === size
+                                ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                                : "text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"
+                            }`}
+                          >
+                            {size}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="!rounded-xl border border-slate-200 dark:border-white/10"
+                    leftIcon={<ChevronLeft className="w-4 h-4" />}
+                  >
+                    Өмнөх
+                  </Button>
+                  <span className="text-xs text-[color:var(--panel-text)] px-3">
+                    {page} / {totalPages || 1}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page >= totalPages}
+                    className="!rounded-xl border border-slate-200 dark:border-white/10"
+                    rightIcon={<ChevronRight className="w-4 h-4" />}
+                  >
+                    Дараах
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* ── Хадгалах ─────────────────────────────────────────────── */}
+            <div className="flex items-center justify-between gap-3 pt-3 border-t border-[color:var(--surface-border)]">
+              <p className="text-xs text-[color:var(--muted-text)]">
+                Өөрчлөлт зөвхөн Хадгалах товч дарсны дараа сервер рүү илгээгдэнэ.
+              </p>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleSave}
+                isLoading={saving}
+                style={{ borderRadius: "10px" }}
+                className="px-4"
+                leftIcon={<Save className="w-4 h-4" />}
+              >
+                Хадгалах
+              </Button>
+            </div>
 
           {/* Mass Add Modal */}
           {isMassAddOpen && createPortal(
@@ -774,6 +1072,7 @@ export default function KameriinTokhirgoo() {
           )}
         </>
       )}
+      </div>
     </div>
   );
 }

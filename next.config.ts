@@ -3,7 +3,17 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   experimental: {
-    optimizePackageImports: ['@mantine/core', 'antd', 'lucide-react', 'lodash']
+    // Barrel-heavy packages: without this, importing one icon pulls the whole
+    // module graph into the route chunk. @ant-design/icons in particular
+    // re-exports thousands of components.
+    optimizePackageImports: [
+      '@mantine/core',
+      'antd',
+      '@ant-design/icons',
+      'lucide-react',
+      'lodash',
+      'framer-motion',
+    ]
   }
 };
 

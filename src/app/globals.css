@@ -1078,14 +1078,15 @@ body {
   scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
 }
 
-/* Disable scrolling on desktop (screens wider than 768px) */
-@media (min-width: 768px) {
-  html,
-  body {
-    overflow-y: hidden;
-    height: 100vh;
-  }
-}
+/* Desktop used to be locked with `html, body { overflow-y: hidden; height:
+   100vh }`, on the assumption that each page scrolls inside its own container.
+   That assumption never held: the shell chain (.shell-root / .shell-main /
+   .shell-surface) is built from `min-height`, never `height`, so a page's
+   `h-full overflow-y-auto` box resolves to `height: auto` and never becomes a
+   scrollport. With the page itself locked too, anything taller than the
+   viewport was simply unreachable (e.g. /camera). The sidebar and topbar are
+   `position: fixed`, so letting the page scroll leaves the chrome in place —
+   this is already how the app behaves below 768px. */
 
 /* WebKit scrollbars for the page (only visible on mobile) */
 html::-webkit-scrollbar,
@@ -5341,11 +5342,16 @@ body .premium-driver-popover .driver-stop-tour-btn:hover {
      field tints step up from it, which keeps the search box legible on that
      fill in light and dark alike — no per-mode hardcoding. */
   --shell-surface: color-mix(in oklch, var(--surface-bg) 93%, var(--theme) 7%);
-  --shell-field: color-mix(in oklch, var(--surface-bg) 86%, var(--theme) 14%);
+  /* The field steps off the chrome toward --panel-text rather than toward
+     --theme: a theme mix only adds saturation, which left the box ~0.03 apart
+     in lightness and all but invisible on the fill. Mixing toward the text
+     colour steps DOWN in light mode and UP in dark from the same declaration,
+     so the field is legible in both without per-mode values. */
+  --shell-field: color-mix(in oklch, var(--shell-surface) 91%, var(--panel-text) 9%);
   --shell-field-focus: color-mix(
     in oklch,
-    var(--surface-bg) 78%,
-    var(--theme) 22%
+    var(--shell-surface) 85%,
+    var(--panel-text) 15%
   );
   --shell-field-border: color-mix(in oklch, var(--theme), transparent 70%);
   --shell-z-sidebar: 1000;
@@ -5354,6 +5360,23 @@ body .premium-driver-popover .driver-stop-tour-btn:hover {
   --shell-z-panel: 1190;
   --shell-z-dialog: 1300;
   --shell-z-progress: 1400;
+}
+
+/* ── Sidebar palette ──────────────────────────────────────────────
+   The sidebar and the top bar are one continuous soft surface, so the sidebar
+   borrows the content palette (--panel-text / --surface-bg) exactly like the
+   rest of the shell rather than carrying its own light-on-dark contract. Every
+   value below derives from --surface-bg / --panel-text / --theme, each of which
+   is already pinned per theme and per mode — so no theme block needs to repeat
+   them, and the two chrome surfaces can never drift apart. */
+:root {
+  --sidebar-bg: var(--shell-surface);
+  --sidebar-text: var(--panel-text);
+  --sidebar-muted: color-mix(in oklch, var(--panel-text), transparent 32%);
+  --sidebar-active-bg: color-mix(in oklch, var(--theme), transparent 88%);
+  --sidebar-active-text: var(--theme);
+  --sidebar-border: var(--shell-line);
+  --sidebar-hover: var(--shell-hover);
 }
 
 html[data-sidebar="rail"] {
@@ -5380,11 +5403,35 @@ html[data-mode="dark"],
   display: flex;
   flex-direction: column;
   width: var(--shell-nav-w);
-  background: var(--shell-surface);
-  color: var(--panel-text);
+  background: var(--sidebar-bg);
+  color: var(--sidebar-text);
   /* Width is the only animated property, and only on the sidebar itself —
      the old shell animated blur-backed surfaces on every interaction. */
   transition: width 200ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* The sidebar's divider used to be a plain `border-right`, which ran the full
+   height of the viewport — including the top strip, where the sidebar and the
+   topbar share one fill (`--shell-surface`). There it read as a seam splitting
+   a single continuous surface rather than as a divider. Drawn as a pseudo
+   element instead so it can start below the topbar; the sidebar sits above the
+   topbar (z 1000 vs 990), so this cannot be covered from the topbar's side.
+   Occupies the same last 1px of the box that the border did. */
+.shell-sidebar::after {
+  content: "";
+  position: absolute;
+  top: var(--shell-topbar-h);
+  right: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--sidebar-border);
+  pointer-events: none;
+}
+
+/* In the mobile drawer there is no topbar alongside the sidebar, so the
+   divider runs edge to edge again. */
+.shell-drawer .shell-sidebar::after {
+  top: 0;
 }
 
 .shell-sidebar-head {
@@ -5407,7 +5454,7 @@ html[data-mode="dark"],
 .shell-sidebar-foot {
   flex-shrink: 0;
   padding: 0.5rem 0.75rem 0.75rem;
-  border-top: 1px solid var(--shell-line);
+  border-top: 1px solid var(--sidebar-border);
 }
 
 /* ── Licence / storage readout ───────────────────────────────────────────── */
@@ -5666,6 +5713,10 @@ html[data-sidebar="rail"] .shell-collapse-btn {
   height: var(--shell-topbar-h);
   padding: 0 1rem;
   background: var(--shell-surface);
+  /* The sidebar and the top bar now share one fill, so the only thing setting
+     the chrome apart from the content beneath is this hairline — it closes the
+     L-frame that the sidebar border-right starts. */
+  border-bottom: 1px solid var(--shell-line);
   color: var(--panel-text);
   transition: left 200ms cubic-bezier(0.32, 0.72, 0, 1);
 }
@@ -5703,7 +5754,9 @@ html[data-sidebar="rail"] .shell-collapse-btn {
   height: 2.25rem;
   padding: 0 0.75rem;
   margin-right: 0.25rem;
-  border: 1px solid transparent;
+  /* A resting hairline, not transparent — the fill step alone does not read as
+     an input on a soft chrome. Focus swaps it for the themed border below. */
+  border: 1px solid color-mix(in oklch, var(--panel-text), transparent 86%);
   border-radius: 0.75rem;
   background: var(--shell-field);
   transition:

@@ -299,7 +299,8 @@ function LayoutContent({ children }: { children: ReactNode }) {
         <BuildingProvider>
           <RequestScopeSync />
           {children}
-          <ChatWidget />
+          {/* Нэвтрэх хуудсан дээр чат товчийг харуулахгүй. */}
+          {pathname !== "/login" && <ChatWidget />}
           <Toaster position="top-right" richColors closeButton />
           <SuccessOverlayHost />
           <ErrorOverlayHost />

@@ -6,6 +6,12 @@ import axios from "axios";
 import { useAuth } from "@/lib/useAuth";
 import TuslamjTokhirgoo from "@/app/(shell)/tokhirgoo/TuslamjTokhirgoo";
 import { useTour } from "@/context/TourContext";
+import {
+  clampPos,
+  LAUNCHER_SIZE,
+  useChatLauncher,
+  type LauncherPos,
+} from "@/lib/useChatLauncher";
 
 const BASE_API = "https://admin.zevtabs.mn/api/v1/chat";
 const SOCKET_URL = "https://admin.zevtabs.mn";
@@ -61,6 +67,94 @@ export default function ChatWidget({ inline = false }: ChatWidgetProps): JSX.Ele
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const socketRef = useRef<Socket | null>(null);
   const prevMsgCountRef = useRef<number>(0);
+
+  // ── Хөвөгч товчны байрлал / нуулт ───────────────────────────────────────
+  const { hydrated, hidden, pos, setHidden, setPos } = useChatLauncher();
+  const [dragPos, setDragPos] = useState<LauncherPos | null>(null);
+  const [dragging, setDragging] = useState<boolean>(false);
+  const [hoverBtn, setHoverBtn] = useState<boolean>(false);
+  // Хүрэлтийн төхөөрөмж дээр hover гэж байхгүй тул "×"-ийг байнга харуулна.
+  const [coarsePointer, setCoarsePointer] = useState<boolean>(false);
+  // Чирсэн эсэхийг onPointerUp дээр шалгаж, чирсэн бол чатыг нээхгүй.
+  const dragStateRef = useRef<{ dx: number; dy: number; moved: boolean } | null>(null);
+
+  const effectivePos: LauncherPos | null = dragPos ?? pos;
+
+  useEffect(() => {
+    const mq = window.matchMedia?.("(hover: none)");
+    if (!mq) return;
+    const apply = () => setCoarsePointer(mq.matches);
+    apply();
+    mq.addEventListener?.("change", apply);
+    return () => mq.removeEventListener?.("change", apply);
+  }, []);
+
+  // Resize сонсогч нэг л удаа бүртгэгдэхийн тулд байрлалыг ref-ээр уншина.
+  const readPosRef = useRef<LauncherPos | null>(null);
+  readPosRef.current = pos;
+
+  // Цонхны хэмжээ өөрчлөгдвөл товч гадагшаа гарахаас сэргийлнэ.
+  useEffect(() => {
+    if (inline) return;
+    const onResize = () => {
+      const current = readPosRef.current;
+      if (!current) return;
+      const next = clampPos(current);
+      if (next.x !== current.x || next.y !== current.y) setPos(next);
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [inline, setPos]);
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (e.button !== 0) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    dragStateRef.current = {
+      dx: e.clientX - rect.left,
+      dy: e.clientY - rect.top,
+      moved: false,
+    };
+    setDragPos({ x: rect.left, y: rect.top });
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
+    const st = dragStateRef.current;
+    if (!st) return;
+    const next = clampPos({ x: e.clientX - st.dx, y: e.clientY - st.dy });
+    // Богино хугацааны чичрэлтийг дарах босго — үүнгүй бол энгийн даралт
+    // чирэлт болж, чат нээгдэхээ болино.
+    if (!st.moved) {
+      const start = dragPos;
+      if (
+        start &&
+        Math.abs(next.x - start.x) < 4 &&
+        Math.abs(next.y - start.y) < 4
+      ) {
+        return;
+      }
+      st.moved = true;
+      setDragging(true);
+    }
+    setDragPos(next);
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLButtonElement>) => {
+    const st = dragStateRef.current;
+    dragStateRef.current = null;
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      /* аль хэдийн суларсан */
+    }
+    if (st?.moved && dragPos) {
+      setPos(dragPos);
+    } else if (st) {
+      setIsOpen(true);
+    }
+    setDragging(false);
+    setDragPos(null);
+  };
 
   const t = (key: string): string => {
     const translations: Record<"mn" | "en", Record<string, string>> = {
@@ -299,42 +393,93 @@ export default function ChatWidget({ inline = false }: ChatWidgetProps): JSX.Ele
 
   return (
     <>
-      {/* Floating Button with High Premium Styling */}
-      {!inline && (
-        <button
-          onClick={() => setIsOpen(true)}
+      {/* Хөвөгч товч — чирж зөөнө, hover үед гарах "×"-ээр нуугдана.
+          `hydrated` болтол зурахгүй: localStorage дээрх нуултыг мэдэхээс өмнө
+          зурвал нуусан товч агшин зуур анивчина. */}
+      {!inline && hydrated && !hidden && (
+        <div
           style={{
             position: "fixed",
-            bottom: "24px",
-            right: "24px",
+            left: effectivePos ? `${effectivePos.x}px` : undefined,
+            top: effectivePos ? `${effectivePos.y}px` : undefined,
+            right: effectivePos ? undefined : "24px",
+            bottom: effectivePos ? undefined : "24px",
             zIndex: 9999,
-            display: isOpen ? "none" : "flex",
-            height: "56px",
-            width: "56px",
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: "50%",
-            backgroundColor: "#059669",
-            color: "#ffffff",
-            boxShadow: "0 8px 24px rgba(5, 150, 105, 0.4)",
-            border: "none",
-            cursor: "pointer",
-            transition: "transform 0.2s ease, background-color 0.2s ease",
-            outline: "none"
+            display: isOpen ? "none" : "block",
+            height: `${LAUNCHER_SIZE}px`,
+            width: `${LAUNCHER_SIZE}px`,
+            touchAction: "none"
           }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = "scale(1.05)";
-            e.currentTarget.style.backgroundColor = "#34d399";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "scale(1)";
-            e.currentTarget.style.backgroundColor = "#059669";
-          }}
+          onMouseEnter={() => setHoverBtn(true)}
+          onMouseLeave={() => setHoverBtn(false)}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-          </svg>
-        </button>
+          <button
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+            aria-label="Чат нээх (чирж зөөж болно)"
+            title="Чат — чирж зөөнө"
+            style={{
+              height: "100%",
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: "50%",
+              backgroundColor: dragging ? "#34d399" : "#059669",
+              color: "#ffffff",
+              boxShadow: dragging
+                ? "0 12px 32px rgba(5, 150, 105, 0.55)"
+                : "0 8px 24px rgba(5, 150, 105, 0.4)",
+              border: "none",
+              cursor: dragging ? "grabbing" : "grab",
+              transform: dragging ? "scale(1.08)" : "scale(1)",
+              // Чирэх үед transform-ыг шилжүүлбэл товч хулганаас хоцорно.
+              transition: dragging
+                ? "background-color 0.2s ease"
+                : "transform 0.2s ease, background-color 0.2s ease",
+              outline: "none",
+              touchAction: "none"
+            }}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+          </button>
+
+          {/* Устгах товч — профайл цэснээс буцааж асаана. */}
+          {(hoverBtn || coarsePointer) && !dragging && (
+            <button
+              type="button"
+              onClick={() => setHidden(true)}
+              aria-label="Чат товчийг нуух"
+              title="Нуух — профайл цэснээс буцааж гаргана"
+              style={{
+                position: "absolute",
+                top: "-4px",
+                right: "-4px",
+                height: "20px",
+                width: "20px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: "50%",
+                backgroundColor: "#0f172a",
+                color: "#ffffff",
+                border: "1px solid rgba(255,255,255,0.25)",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.35)",
+                cursor: "pointer",
+                padding: 0,
+                lineHeight: 1
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
       )}
 
       {/* Chat Window with Glassmorphic Premium UI */}

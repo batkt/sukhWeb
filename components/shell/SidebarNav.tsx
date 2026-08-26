@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import {
   ICON_STROKE,
@@ -25,7 +25,6 @@ interface FlyoutState {
 
 export default function SidebarNav({ items, onNavigate }: Props) {
   const pathname = usePathname();
-  const router = useRouter();
   const { collapsed, isDesktop } = useSidebar();
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [flyout, setFlyout] = useState<FlyoutState | null>(null);
@@ -47,19 +46,6 @@ export default function SidebarNav({ items, onNavigate }: Props) {
   useEffect(() => {
     setFlyout(null);
   }, [pathname, railMode]);
-
-  // Warm the route on intent so the chunk is already downloading by the time
-  // the click lands. These pages are large; this is where the wait was.
-  const warm = useCallback(
-    (href: string) => {
-      try {
-        router.prefetch(href);
-      } catch {
-        /* prefetch is best-effort */
-      }
-    },
-    [router],
-  );
 
   const cancelClose = () => {
     if (closeTimer.current) {
@@ -143,8 +129,6 @@ export default function SidebarNav({ items, onNavigate }: Props) {
                   href={href}
                   aria-current={isActive ? "page" : undefined}
                   data-active={isActive || undefined}
-                  onMouseEnter={() => warm(href)}
-                  onFocus={() => warm(href)}
                   onClick={onNavigate}
                   className="shell-nav-item"
                 >
@@ -171,8 +155,6 @@ export default function SidebarNav({ items, onNavigate }: Props) {
                           href={subHref}
                           aria-current={subActive ? "page" : undefined}
                           data-active={subActive || undefined}
-                          onMouseEnter={() => warm(subHref)}
-                          onFocus={() => warm(subHref)}
                           onClick={onNavigate}
                           className="shell-subitem"
                         >
@@ -203,8 +185,6 @@ export default function SidebarNav({ items, onNavigate }: Props) {
                             href={subHref}
                             aria-current={subActive ? "page" : undefined}
                             data-active={subActive || undefined}
-                            onMouseEnter={() => warm(subHref)}
-                            onFocus={() => warm(subHref)}
                             onClick={() => {
                               setFlyout(null);
                               onNavigate?.();

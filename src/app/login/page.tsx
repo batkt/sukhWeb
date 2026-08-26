@@ -180,7 +180,7 @@ export default function LoginPage() {
           className="text-[15px] font-semibold tracking-[-0.01em]"
           style={{ color: "var(--panel-text)" }}
         >
-          Амар СӨХ
+          Amarhome
         </span>
       </div>
 
@@ -193,9 +193,9 @@ export default function LoginPage() {
         {/* ── Зүүн тал: солигдох танилцуулга ─────────────────────── */}
         <section className="hidden flex-col items-center lg:flex">
           {isDesktop && (
-            <div className="pointer-events-none h-52 w-52 opacity-95 xl:h-64 xl:w-64">
+            <div className="pointer-events-none h-72 w-72 opacity-95 xl:h-80 xl:w-80">
               <DotLottieReact
-                src="https://lottie.host/d17186d3-f164-4808-a9a1-4dd3d95d1f49/0L9eXuFSaO.lottie"
+                src="/dark-blue-house.json"
                 loop
                 autoplay
                 style={{ width: "100%", height: "100%" }}

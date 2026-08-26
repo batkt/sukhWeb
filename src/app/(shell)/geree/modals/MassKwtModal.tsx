@@ -7,7 +7,6 @@ import { Zap, Loader2, X, Search, Save, RefreshCw, FileSpreadsheet, Download, Up
 import useModalHotkeys from "@/lib/useModalHotkeys";
 import uilchilgee from "@/lib/uilchilgee";
 import { toast } from "sonner";
-import * as XLSX from "xlsx";
 
 interface ResidentUnitRow {
   _id: string;
@@ -128,11 +127,15 @@ export default function MassKwtModal({
   };
 
   // Export Resident list with current kWt to Excel sheet
-  const handleExportToExcel = () => {
+  const handleExportToExcel = async () => {
     if (residents.length === 0) {
       toast.error("Татах оршин суугчийн мэдээлэл байхгүй байна.");
       return;
     }
+
+    // Loaded here rather than imported: xlsx is ~400 kB and only needed when
+    // the user actually exports or imports a sheet.
+    const XLSX = await import("xlsx");
 
     const exportRows = residents.map((r) => ({
       "Давхар": r.davkhar || "",
@@ -157,8 +160,9 @@ export default function MassKwtModal({
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (evt) => {
+    reader.onload = async (evt) => {
       try {
+        const XLSX = await import("xlsx");
         const bstr = evt.target?.result;
         const wb = XLSX.read(bstr, { type: "binary" });
         const wsname = wb.SheetNames[0];

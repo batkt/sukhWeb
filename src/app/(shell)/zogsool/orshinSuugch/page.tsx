@@ -16,6 +16,7 @@ import {
   Plus,
   Edit2,
   Trash2,
+  FileSpreadsheet,
 } from "lucide-react";
 import { useSearch } from "@/context/SearchContext";
 import {
@@ -30,6 +31,7 @@ import uilchilgee from "@/lib/uilchilgee";
 import moment from "moment";
 import { toast } from "react-hot-toast";
 import ResidentRegistrationModal from "./ResidentRegistrationModal";
+import ExcelImportModal from "./ExcelImportModal";
 import deleteMethod from "../../../../../tools/function/deleteMethod";
 import { getResidentToot } from "@/lib/residentDataHelper";
 import Button from "@/components/ui/Button";
@@ -98,6 +100,7 @@ export default function OrshinSuugch() {
   useRegisterTourSteps("/zogsool/orshinSuugch", tourSteps);
   const [page, setPage] = useState(1);
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
+  const [showExcelImport, setShowExcelImport] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<ResidentParking | null>(null);
   const [editingResident, setEditingResident] =
@@ -337,6 +340,14 @@ export default function OrshinSuugch() {
         {/* Table Actions */}
         <div className="flex items-center justify-end gap-3 px-1">
           <Button
+            onClick={() => setShowExcelImport(true)}
+            variant="ghost"
+            leftIcon={<FileSpreadsheet className="w-4 h-4" />}
+            className="h-11 px-6 rounded-xl uppercase text-[10px] border border-slate-200 dark:border-white/10 font-sans"
+          >
+            Excel оруулах
+          </Button>
+          <Button
             id="resident-new-btn"
             onClick={() => setShowRegistrationModal(true)}
             variant="primary"
@@ -392,6 +403,16 @@ export default function OrshinSuugch() {
               </div>
             </motion.div>
           </div>
+        )}
+
+        {showExcelImport && (
+          <ExcelImportModal
+            token={token || ""}
+            baiguullagiinId={ajiltan?.baiguullagiinId}
+            barilgiinId={effectiveBarilgiinId}
+            onClose={() => setShowExcelImport(false)}
+            onSuccess={() => mutate()}
+          />
         )}
 
         {showRegistrationModal && (

@@ -1925,36 +1925,78 @@ export default function DansniiKhuulga() {
     // Mark all as requested before firing
     pending.forEach((gid) => latestRowUldegdelRequestedRef.current.add(gid));
 
-    // Batch into groups of 50 to avoid hitting rate limits
-    const BATCH = 50;
-    for (let i = 0; i < pending.length; i += BATCH) {
-      const batch = pending.slice(i, i + BATCH);
-      batch.forEach((gid) => {
-        uilchilgee(token)
-          .post(`/uldegdelBodyo`, {
-            baiguullagiinId,
-            barilgiinId: effectiveBarilgiinId || undefined,
-            gereeniiId: gid,
-            ognoo: billingCycleRange,
-          })
-          .then((resp) => {
-            const summary = resp.data?.summary;
-            const uldegdel =
-              summary?.uldegdel != null &&
-              Number.isFinite(Number(summary.uldegdel))
-                ? Number(summary.uldegdel)
-                : null;
+    // One request per contract, so a 100-row page meant 100 POSTs — each with
+    // its own CORS preflight — and 100 separate state updates. The previous
+    // "batch" loop never awaited, so every request still fired at once.
+    //
+    // Now: a real concurrency window, and results flushed to state in groups
+    // rather than one setState per response.
+    const CONCURRENCY = 6;
+    const FLUSH_MS = 120;
 
-            setLatestRowUldegdelByGereeId((prev) => ({
-              ...prev,
-              [gid]: uldegdel,
-            }));
-          })
-          .catch(() => {
-            latestRowUldegdelRequestedRef.current.delete(gid);
-          });
-      });
-    }
+    let cancelled = false;
+    let buffer: Record<string, number | null> = {};
+    let flushTimer: number | null = null;
+
+    const flush = () => {
+      flushTimer = null;
+      if (cancelled) return;
+      const batch = buffer;
+      buffer = {};
+      if (Object.keys(batch).length === 0) return;
+      setLatestRowUldegdelByGereeId((prev) => ({ ...prev, ...batch }));
+    };
+
+    const queueResult = (gid: string, value: number | null) => {
+      buffer[gid] = value;
+      if (flushTimer == null) {
+        flushTimer = window.setTimeout(flush, FLUSH_MS);
+      }
+    };
+
+    const fetchOne = async (gid: string) => {
+      try {
+        const resp = await uilchilgee(token).post(`/uldegdelBodyo`, {
+          baiguullagiinId,
+          barilgiinId: effectiveBarilgiinId || undefined,
+          gereeniiId: gid,
+          ognoo: billingCycleRange,
+          // Энд зөвхөн summary.uldegdel хэрэгтэй. Үүнгүйгээр хариу бүр
+          // тухайн гэрээний бүх гүйлгээг (12-50 kB) авчирдаг.
+          summaryOnly: true,
+        });
+        const summary = resp.data?.summary;
+        const uldegdel =
+          summary?.uldegdel != null && Number.isFinite(Number(summary.uldegdel))
+            ? Number(summary.uldegdel)
+            : null;
+        queueResult(gid, uldegdel);
+      } catch {
+        latestRowUldegdelRequestedRef.current.delete(gid);
+      }
+    };
+
+    let cursor = 0;
+    const worker = async () => {
+      while (!cancelled && cursor < pending.length) {
+        await fetchOne(pending[cursor++]);
+      }
+    };
+
+    void Promise.all(
+      Array.from({ length: Math.min(CONCURRENCY, pending.length) }, worker),
+    ).then(() => {
+      if (flushTimer != null) {
+        window.clearTimeout(flushTimer);
+        flushTimer = null;
+      }
+      flush();
+    });
+
+    return () => {
+      cancelled = true;
+      if (flushTimer != null) window.clearTimeout(flushTimer);
+    };
   }, [
     token,
     ajiltan?.baiguullagiinId,
@@ -2255,11 +2297,16 @@ export default function DansniiKhuulga() {
         return;
       }
 
-      // Fetch bulk uldegdelBodyo for Excel export
+      // ЗАСВАР ХЭРЭГТЭЙ: энэ хүсэлт `data.summaries`-г уншдаг ч backend
+      // тийм талбар буцаадаггүй (зөвхөн `summary`), тул `exportSummaries`
+      // үргэлж хоосон байдаг. gereeniiId дамжуулаагүй тул query нь бүх
+      // барилгын гүйлгээг татдаг. Хариуг ашигладаггүй тул summaryOnly-оор
+      // ачааллыг зогсоов — гэхдээ логикийг өөрчлөөгүй.
       const bulkResp = await uilchilgee(token).post("/uldegdelBodyo", {
         baiguullagiinId: ajiltan.baiguullagiinId,
         barilgiinId: effectiveBarilgiinId || undefined,
         ognoo: billingCycleRange,
+        summaryOnly: true,
       });
       const exportSummaries = new Map<string, any>();
       if (bulkResp.data?.summaries) {

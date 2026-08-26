@@ -41,7 +41,6 @@ import formatNumber from "../../../../../tools/function/formatNumber";
 import { toast } from "react-hot-toast";
 import { LiquidGlassCard } from "@/components/ui/liquid-glass";
 import { StandardPagination } from "@/components/ui/StandardTable";
-import * as XLSX from "xlsx";
 import { PaymentPopup } from "../camera/PaymentPopup";
 
 const RealTimeDuration = ({
@@ -393,11 +392,14 @@ export default function Jagsaalt() {
     return { items, totalAmount };
   }, [revenueListData]);
 
-  const downloadExcel = () => {
+  const downloadExcel = async () => {
     if (!vehicles.length) {
       toast.error("Татаж авах мэдээлэл байхгүй");
       return;
     }
+    // Loaded here rather than imported: xlsx is ~400 kB and is only needed on
+    // an actual export, so it stays out of the route's entry chunk.
+    const XLSX = await import("xlsx");
 
     const STATUS_LABEL: Record<number, string> = {
       1: "Төлсөн", 2: "Төлсөн", 0: "Идэвхтэй", [-2]: "Идэвхтэй", [-4]: "Төлбөртэй",

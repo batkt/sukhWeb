@@ -1211,7 +1211,19 @@ export default function Khynalt() {
               <StandardDatePicker
                 isRange={true}
                 value={dateRange}
-                onChange={(v: any) => setDateRange(v)}
+                // AntD-ийн RangePicker onChange(dates, dateStrings) гэж
+                // дууддаг: 1-р аргумент нь Dayjs объектын массив, 2-рх нь
+                // `format`-оор бэлдсэн мөрүүд. Өмнө нь 1-рхийг хадгалдаг
+                // байсан тул `dateRange` доторх утга Dayjs болж, доорх
+                // `paymentHistory`-гийн "YYYY-MM-DD" мөр харьцуулалт NaN болж
+                // бүх мэдэгдлийг шүүж хаядаг байв.
+                // Цэвэрлэхэд AntD `["", ""]` буцаадаг; түүнийг шууд хадгалбал
+                // доорх useMemo-гийн "хоосон бол анхны мужаар" гэсэн салаа
+                // ажиллахгүй тул `undefined` болгож жиглэв.
+                onChange={(_dates: any, dateStrings: any) => {
+                  const [s, e] = (dateStrings ?? []) as [string?, string?];
+                  setDateRange(s || e ? [s || null, e || null] : undefined);
+                }}
                 format="YYYY-MM-DD"
                 allowClear
                 placeholder="Огноо сонгох"

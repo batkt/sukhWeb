@@ -20,7 +20,7 @@ const HelpModal = lazy(() => import("./HelpModal"));
 
 function ShellBody({ children }: { children: React.ReactNode }) {
   const { ajiltan, baiguullaga } = useAuth();
-  const { mobileOpen, setMobileOpen, isDesktop } = useSidebar();
+  const { mobileOpen, setMobileOpen, isDesktop, collapsed, collapse } = useSidebar();
   const { selectedBuildingId, setSelectedBuildingId } = useBuilding();
 
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -81,6 +81,39 @@ function ShellBody({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isDesktop) setMobileOpen(false);
   }, [isDesktop, setMobileOpen]);
+
+  /**
+   * Дэлгэсэн цэсний гадна дарахад автоматаар хумина.
+   *
+   * Зөвхөн desktop дээр — доод breakpoint дээр off-canvas drawer нь өөрийн
+   * scrim-тэй. `pointerdown` сонсдог нь `click`-ээс өмнө ажиллаж, цэс хумигдах
+   * үед доор нь орших элемент рүү даралт "унахаас" сэргийлнэ.
+   *
+   * Цэсэнд харьяалагдах зарим гадаргуу нь `document.body` руу portal хийгддэг
+   * (барилга сонгох listbox, tour popover). Эдгээр нь DOM-ийн хувьд цэсний
+   * гадна ч, хэрэглэгчийн хувьд цэсний нэг хэсэг тул хумихгүй.
+   */
+  useEffect(() => {
+    if (!isDesktop || collapsed) return;
+
+    const KEEP_OPEN = [
+      ".shell-sidebar",
+      '[role="listbox"]',
+      '[role="dialog"]',
+      '[role="menu"]',
+      ".driver-popover",
+    ].join(",");
+
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest(KEEP_OPEN)) return;
+      collapse();
+    };
+
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [isDesktop, collapsed, collapse]);
 
   useEffect(() => {
     if (!mobileOpen) return;

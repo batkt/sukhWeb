@@ -6,6 +6,8 @@ import {
   Bell,
   LifeBuoy,
   LogOut,
+  MessageCircle,
+  MessageCircleOff,
   Menu,
   Search as SearchIcon,
   Settings,
@@ -17,6 +19,7 @@ import { useSearch } from "@/context/SearchContext";
 import { hasPermission } from "@/lib/permissionUtils";
 import UnguSongokh from "../ungu/unguSongokh";
 import { useSidebar } from "./SidebarContext";
+import { useChatLauncher } from "@/lib/useChatLauncher";
 import { ICON_STROKE, type NavItem, titleForPath } from "./navConfig";
 
 interface Props {
@@ -41,6 +44,8 @@ export default function Topbar({
   const { ajiltan, token, garya } = useAuth();
   const { searchTerm, setSearchTerm } = useSearch();
   const { isDesktop, setMobileOpen } = useSidebar();
+  // Хөвөгч чат товчийг нуусан үед эндээс буцааж гаргана.
+  const { hidden: chatHidden, toggleHidden: toggleChat } = useChatLauncher();
 
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
@@ -225,6 +230,22 @@ export default function Topbar({
                 >
                   <Type className="h-4 w-4" strokeWidth={ICON_STROKE} />
                   Үсгийн хэмжээ
+                </button>
+                <button
+                  role="menuitem"
+                  type="button"
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    toggleChat();
+                  }}
+                  className="shell-usermenu-item"
+                >
+                  {chatHidden ? (
+                    <MessageCircle className="h-4 w-4" strokeWidth={ICON_STROKE} />
+                  ) : (
+                    <MessageCircleOff className="h-4 w-4" strokeWidth={ICON_STROKE} />
+                  )}
+                  {chatHidden ? "Чат товч гаргах" : "Чат товч нуух"}
                 </button>
                 <button
                   role="menuitem"

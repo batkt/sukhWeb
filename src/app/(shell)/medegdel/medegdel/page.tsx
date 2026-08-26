@@ -18,6 +18,7 @@ import BlogManagement from "./BlogManagement";
 import { useTourSteps } from "@/lib/useTourSteps";
 import { useRegisterTourSteps } from "@/context/TourContext";
 import { useSocket } from "@/context/SocketContext";
+import { ognooTsagBogino, ognooTsagButen } from "@/lib/ognoo";
 interface Geree {
   _id: string;
   ner: string;
@@ -1099,12 +1100,7 @@ function MedegdelContent() {
                         <div className="flex items-center justify-between w-full">
 
                           <span className="text-[10px] text-slate-500">
-                            {new Date(item.createdAt || item.ognoo).toLocaleDateString("mn-MN", {
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit"
-                            })}
+                            {ognooTsagBogino(item.createdAt || item.ognoo)}
                           </span>
                           {isUnread ? (
                             <span className="px-1.5 py-0.5 rounded text-[9px] bg-orange-500/20 text-orange-700 dark:text-orange-300 border border-orange-400/50 shrink-0">
@@ -1139,7 +1135,7 @@ function MedegdelContent() {
                         {selectedTulult.title || "QPay төлөлт"}
                       </h2>
                       <span className="text-xs text-slate-500">
-                        {new Date(selectedTulult.createdAt || selectedTulult.ognoo).toLocaleString("mn-MN")}
+                        {ognooTsagButen(selectedTulult.createdAt || selectedTulult.ognoo)}
                       </span>
                     </div>
 

@@ -16,6 +16,8 @@ interface SidebarContextValue {
   /** Rail mode on desktop. Visual state lives on <html data-sidebar>, this mirrors it for JS. */
   collapsed: boolean;
   toggleCollapsed: () => void;
+  /** Force rail mode — used by the click-outside handler in AppShell. */
+  collapse: () => void;
   /** Off-canvas drawer below the desktop breakpoint. */
   mobileOpen: boolean;
   setMobileOpen: (open: boolean) => void;
@@ -64,9 +66,17 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const collapse = useCallback(() => {
+    setCollapsed((prev) => {
+      if (prev) return prev;
+      applyCollapsed(true);
+      return true;
+    });
+  }, []);
+
   const value = useMemo(
-    () => ({ collapsed, toggleCollapsed, mobileOpen, setMobileOpen, isDesktop }),
-    [collapsed, toggleCollapsed, mobileOpen, isDesktop],
+    () => ({ collapsed, toggleCollapsed, collapse, mobileOpen, setMobileOpen, isDesktop }),
+    [collapsed, toggleCollapsed, collapse, mobileOpen, isDesktop],
   );
 
   return (
