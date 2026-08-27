@@ -155,6 +155,106 @@ export const ALL_PERMISSIONS: PermissionItem[] = [
       },
     ],
   },
+  // Тохиргооны эрхийг тусад нь жагсаалт болгон барихаа болиод модулиудын
+  // нэг хэсэг болголоо - хоёр өөр газар тэтгэх шаардлагагүй, UI дээр ч
+  // ганц мод болж харагдана.
+  {
+    id: "tokhirgoo",
+    label: "Тохиргоо",
+    description: "Тохиргооны хэсгүүдэд хандах эрх",
+    children: [
+      {
+        id: "tokhirgoo.barilga",
+        label: "Барилгын тохиргоо",
+        description: "Барилгын тохиргоо харах, засах эрх",
+      },
+      {
+        id: "tokhirgoo.ashiglaltiinZardal",
+        label: "Ашиглалтын зардал",
+        description: "Ашиглалтын зардал харах, засах эрх",
+      },
+      {
+        id: "tokhirgoo.ajiltan",
+        label: "Ажилтны тохиргоо",
+        description: "Ажилтны тохиргоо харах, засах эрх",
+      },
+      {
+        id: "tokhirgoo.baaz",
+        label: "Бааз",
+        description: "Бааз харах, засах эрх",
+      },
+      {
+        id: "tokhirgoo.dans",
+        label: "Данс",
+        description: "Данс харах, засах эрх",
+      },
+      {
+        id: "tokhirgoo.kamer",
+        label: "Камерийн тохиргоо",
+        description: "Камерийн тохиргоо харах, засах эрх",
+      },
+      {
+        id: "tokhirgoo.ebarimt",
+        label: "И-баримт",
+        description: "И-баримт харах, засах эрх",
+      },
+      {
+        id: "tokhirgoo.email",
+        label: "И-мэйл",
+        description: "И-мэйл харах, засах эрх",
+      },
+      {
+        id: "tokhirgoo.medegdel",
+        label: "Мэдэгдэл",
+        description: "Мэдэгдэл харах, засах эрх",
+      },
+      {
+        id: "tokhirgoo.nemelt",
+        label: "Нэмэлт",
+        description: "Нэмэлт харах, засах эрх",
+      },
+      {
+        id: "tokhirgoo.tuslamj",
+        label: "Ерөнхий тусламж",
+        description: "Ерөнхий тусламж харах, засах эрх",
+      },
+      {
+        id: "tokhirgoo.utas",
+        label: "Утас",
+        description: "Утас харах, засах эрх",
+      },
+      {
+        id: "tokhirgoo.zogsool",
+        label: "Зогсоол",
+        description: "Зогсоол харах, засах эрх",
+      },
+      {
+        id: "tokhirgoo.zogsoolBurtgekh",
+        label: "Зогсоол бүртгэх",
+        description: "Зогсоол бүртгэх харах, засах эрх",
+      },
+      {
+        id: "tokhirgoo.app",
+        label: "Апп",
+        description: "Апп харах, засах эрх",
+      },
+      {
+        id: "tokhirgoo.nevtreltiinTuukh",
+        label: "Нэвтрэлтийн түүх",
+        description: "Нэвтрэлтийн түүх харах, засах эрх",
+      },
+      {
+        id: "tokhirgoo.zassanTuukh",
+        label: "Зассан түүх",
+        description: "Зассан түүх харах, засах эрх",
+      },
+      {
+        id: "tokhirgoo.ustsanTuukh",
+        label: "Устсан түүх",
+        description: "Устсан түүх харах, засах эрх",
+      },
+    ],
+  },
 ];
 
 // Helper function to get all permission IDs (flat list)
@@ -205,6 +305,31 @@ export function getParentPermissionId(permissionId: string): string | null {
   return null;
 }
 
+/**
+ * Тухайн эрхийн ӨВӨГ эрхүүдийг (эцэг, өвөө...) модны бүтцээр олно.
+ *
+ * ID-г цэгээр таслаж болохгүй: `geree.ajiltan.zasah` нь модон дээр шууд
+ * `geree`-ийн хүүхэд бөгөөд `geree.ajiltan` гэсэн ЭЦЭГ зангилаа байхгүй.
+ */
+export function getAncestorPermissionIds(permissionId: string): string[] {
+  const zam: string[] = [];
+
+  function khaiya(items: PermissionItem[], deesh: string[]): boolean {
+    for (const item of items) {
+      if (item.id === permissionId) {
+        zam.push(...deesh);
+        return true;
+      }
+      if (item.children && khaiya(item.children, [...deesh, item.id])) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  khaiya(ALL_PERMISSIONS, []);
+  return zam;
+}
 export function getChildPermissionIds(permissionId: string): string[] {
   const ids: string[] = [];
 

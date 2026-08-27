@@ -1,22 +1,22 @@
 "use client";
 
-import React from "react";
-import { useRouter } from "next/navigation";
+import React, { useState } from "react";
 import { Users } from "lucide-react";
 import EmployeesSection from "../geree/EmployeesSection";
+import EmployeePermissionsModal from "../geree/EmployeePermissionsModal";
 import { GereeProvider, useGereeContext } from "../geree/GereeContext";
 
 /**
  * Тохиргоо → Ажилтны тохиргоо.
  *
- * Ажилтны жагсаалтыг харуулж, тухайн ажилтны эрх/барилгын хуваарилалтыг
- * тохируулах хуудас руу шилжүүлнэ. Гэрээ хэсгийн жагсаалттай ижил өгөгдөл
+ * Ажилтны жагсаалтыг харуулж, эрх/барилгын хуваарилалтыг Гэрээ → Ажилтан
+ * хэсэгтэй ЯГ ИЖИЛ модалаар тохируулна. Гэрээ хэсгийн жагсаалттай ижил өгөгдөл
  * ашиглах тул `GereeProvider`-оор боож өгөв — /tokhirgoo нь geree layout-ын
  * гадна байрладаг.
  */
 function AjiltniiTokhirgooTsonkh() {
-  const router = useRouter();
   const { state, data } = useGereeContext();
+  const [erkhAjiltan, setErkhAjiltan] = useState<any | null>(null);
 
   return (
     <div className="w-full space-y-4">
@@ -46,12 +46,15 @@ function AjiltniiTokhirgooTsonkh() {
         canManagePermissions={true}
         onEdit={() => {}}
         onDelete={() => {}}
-        onManagePermissions={(employee: any) => {
-          // `from` нь тухайн хуудасны "Буцах"/"Хадгалах" дараа энэ таб руугаа
-          // эргэж ирэхэд хэрэгтэй
-          router.push(`/ajiltan/tokhirgoo/${employee._id}?from=tokhirgoo`);
-        }}
+        onManagePermissions={(employee: any) => setErkhAjiltan(employee)}
         onCredentialsUpdate={() => {}}
+      />
+
+      <EmployeePermissionsModal
+        employee={erkhAjiltan}
+        open={!!erkhAjiltan}
+        onClose={() => setErkhAjiltan(null)}
+        onSaved={() => data.ajiltniiJagsaaltMutate?.()}
       />
     </div>
   );

@@ -12,6 +12,16 @@ import { FileSpreadsheet, Printer } from "lucide-react";
 import { getDefaultDateRange } from "@/lib/utils";
 import { useSearch } from "@/context/SearchContext";
 
+/** Серверээс ирсэн ISO огноог хүснэгтэд харуулах хэлбэрт оруулна. */
+function ognooKharuul(utga: any, tsagtaiEsekh = true): string {
+  if (!utga) return "-";
+  const d = new Date(utga);
+  if (Number.isNaN(d.getTime())) return "-";
+  const p = (n: number) => String(n).padStart(2, "0");
+  const ognoo = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  return tsagtaiEsekh ? `${ognoo} ${p(d.getHours())}:${p(d.getMinutes())}` : ognoo;
+}
+
 const PrintStyles = () => (
   <style jsx global>{`
     @media print {
@@ -69,6 +79,8 @@ interface ResidentSummaryRow {
 
 interface GuestDetailRow {
   mashiniiDugaar: string;
+  ognoo?: string | null;
+  garsanOgnoo?: string | null;
   zogssonMinut: number;
   khungulsunMinut: number;
   tulbur: number;
@@ -80,6 +92,8 @@ interface GuestCarRow {
   orshinSuugchiinNer: string;
   davkhar: string;
   utas: string;
+  suuliinIrsenOgnoo?: string | null;
+  irsenToo?: number;
 }
 
 export default function ZogsoolTailanPage() {
@@ -249,6 +263,7 @@ export default function ZogsoolTailanPage() {
     } else if (activeTab === "guestDetail") {
       headers = [
         "№",
+        "Огноо",
         "Машины дугаар",
         "Зогссон минут",
         "Хөнгөлсөн минут",
@@ -262,6 +277,7 @@ export default function ZogsoolTailanPage() {
 
       dataToExport = detailList.map((row, idx) => [
         idx + 1,
+        `"${ognooKharuul(row.ognoo)}"`,
         `"${row.mashiniiDugaar || ""}"`,
         row.zogssonMinut,
         row.khungulsunMinut,
@@ -271,6 +287,7 @@ export default function ZogsoolTailanPage() {
       // Append summary total row
       dataToExport.push([
         "НИЙТ",
+        '""',
         '""',
         totalZogsson,
         totalKhungulsun,
@@ -285,6 +302,8 @@ export default function ZogsoolTailanPage() {
         "Оршин суугчийн нэр",
         "Давхар",
         "Утасны дугаар",
+        "Ирсэн тоо",
+        "Сүүлд ирсэн",
       ];
       dataToExport = guestCarList.map((row, idx) => [
         idx + 1,
@@ -292,6 +311,8 @@ export default function ZogsoolTailanPage() {
         `"${row.orshinSuugchiinNer || ""}"`,
         `"${row.davkhar || ""}"`,
         `"${row.utas || ""}"`,
+        row.irsenToo ?? "",
+        `"${ognooKharuul(row.suuliinIrsenOgnoo)}"`,
       ]);
       fileName = "Зогсоолын_зочдын_жагсаалт";
     }
@@ -410,6 +431,17 @@ export default function ZogsoolTailanPage() {
         render: (_: any, __: any, index: number) => index + 1,
       },
       {
+        title: "Огноо",
+        dataIndex: "ognoo",
+        key: "ognoo",
+        align: "center" as const,
+        render: (val: any) => (
+          <span className="text-theme whitespace-nowrap text-[13px]">
+            {ognooKharuul(val)}
+          </span>
+        ),
+      },
+      {
         title: "Машины дугаар",
         dataIndex: "mashiniiDugaar",
         key: "mashiniiDugaar",
@@ -507,6 +539,28 @@ export default function ZogsoolTailanPage() {
         render: (text: string) => (
           <span className="text-theme whitespace-nowrap text-[13px]">
             {text || "-"}
+          </span>
+        ),
+      },
+      {
+        title: "Ирсэн тоо",
+        dataIndex: "irsenToo",
+        key: "irsenToo",
+        align: "center" as const,
+        render: (val: number) => (
+          <span className="text-theme whitespace-nowrap text-[13px]">
+            {val || "-"}
+          </span>
+        ),
+      },
+      {
+        title: "Сүүлд ирсэн",
+        dataIndex: "suuliinIrsenOgnoo",
+        key: "suuliinIrsenOgnoo",
+        align: "center" as const,
+        render: (val: any) => (
+          <span className="text-theme whitespace-nowrap text-[13px]">
+            {ognooKharuul(val)}
           </span>
         ),
       },
@@ -715,7 +769,7 @@ export default function ZogsoolTailanPage() {
                   <Table.Summary.Row className="bg-theme/5">
                     <Table.Summary.Cell
                       index={0}
-                      colSpan={2}
+                      colSpan={3}
                       align="center"
                       className="text-[13px] font-bold dark:!text-white force-bold text-theme"
                     >

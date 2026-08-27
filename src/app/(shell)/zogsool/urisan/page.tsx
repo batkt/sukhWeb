@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
-import { Search, X, User, BarChart2, Users, Key, Monitor, Filter, ParkingCircle, Car } from "lucide-react";
+import { Search, X, User, BarChart2, Users, Key, Monitor, Filter, ParkingCircle, Car, Wallet } from "lucide-react";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import moment from "moment";
 import useSWR from "swr";
@@ -136,7 +136,7 @@ function ParkEaseNudu({ tuukh }: { tuukh?: ParkEaseTuukh }) {
   return (
     <div className="flex flex-col items-center gap-1">
       {dotor ? (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
           Зогсоол дээр
         </span>
@@ -159,11 +159,11 @@ function ParkEaseNudu({ tuukh }: { tuukh?: ParkEaseTuukh }) {
 
         {dun > 0 &&
           (ezenTulsun ? (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-400 text-black dark:bg-amber-600 dark:text-white text-[11px] font-bold">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-400 text-black dark:bg-amber-600 dark:text-white text-[11px]">
               {dunFormat(dun)} · Amarhome
             </span>
           ) : (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 dark:bg-white/[0.06] border border-slate-200 dark:border-white/[0.06] text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 dark:bg-white/[0.06] border border-slate-200 dark:border-white/[0.06] text-[11px] font-medium text-slate-600 dark:text-slate-300">
               {dunFormat(dun)} · Зочин
             </span>
           ))}
@@ -277,7 +277,7 @@ function UserHistoryModal({
                 <User className="w-5 h-5 text-blue-500 dark:text-blue-400" />
               </div>
               <div>
-                <h2 className="text-[15px] font-semibold text-slate-800 dark:text-white tracking-tight">
+                <h2 className="text-[15px] font-medium text-slate-800 dark:text-white tracking-tight">
                   {log.orshinSuugchiinNer || "Хэрэглэгч"}-ийн түүх
                 </h2>
                 <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
@@ -301,7 +301,7 @@ function UserHistoryModal({
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-3">
                 <Car className="w-4 h-4 text-blue-500 dark:text-blue-400" />
-                <h3 className="text-[13px] font-semibold text-slate-700 dark:text-slate-200">
+                <h3 className="text-[13px] font-medium text-slate-700 dark:text-slate-200">
                   Уригдсан машин
                 </h3>
                 <span className="text-[11px] text-slate-400 dark:text-slate-500">
@@ -311,7 +311,7 @@ function UserHistoryModal({
 
               <div className="border border-slate-100 dark:border-white/[0.05] rounded-2xl overflow-hidden bg-slate-50/50 dark:bg-white/[0.02]">
                 <table className="w-full border-collapse">
-                  <thead className="bg-slate-100 dark:bg-white/[0.04] text-[11px] uppercase font-semibold text-slate-500 dark:text-slate-400">
+                  <thead className="bg-slate-100 dark:bg-white/[0.04] text-[11px] uppercase font-medium text-slate-500 dark:text-slate-400">
                     <tr>
                       <th className="py-2.5 px-4 text-left">Урьсан огноо</th>
                       <th className="py-2.5 px-4 text-center">Улсын дугаар</th>
@@ -336,7 +336,7 @@ function UserHistoryModal({
                           </td>
                           <td className="py-2.5 px-4 text-center">
                             {mashin.urisanMashiniiDugaar ? (
-                              <span className="px-2.5 py-0.5 rounded-full bg-blue-600 text-[12px] font-bold !text-white tracking-widest font-[family-name:var(--font-mono)]">
+                              <span className="px-2.5 py-0.5 rounded-full bg-blue-600 text-[12px] !text-white tracking-widest font-[family-name:var(--font-mono)]">
                                 {mashin.urisanMashiniiDugaar}
                               </span>
                             ) : (
@@ -345,7 +345,7 @@ function UserHistoryModal({
                           </td>
                           <td className="py-2.5 px-4 text-center">
                             <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded-full border text-[11px] font-semibold ${tuluv.angi}`}
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full border text-[11px] font-medium ${tuluv.angi}`}
                             >
                               {tuluv.ner}
                             </span>
@@ -372,7 +372,7 @@ function UserHistoryModal({
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-3">
                 <ParkingCircle className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
-                <h3 className="text-[13px] font-semibold text-slate-700 dark:text-slate-200">
+                <h3 className="text-[13px] font-medium text-slate-700 dark:text-slate-200">
                   ParkEase зогсоол
                 </h3>
                 <span className="text-[11px] text-slate-400 dark:text-slate-500">
@@ -392,22 +392,22 @@ function UserHistoryModal({
                     >
                       <div className="flex items-center justify-between mb-3">
                         {dotor ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
                             Зогсоол дээр байна
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-white/[0.06] border border-slate-200 dark:border-white/[0.06] text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-white/[0.06] border border-slate-200 dark:border-white/[0.06] text-[11px] font-medium text-slate-600 dark:text-slate-300">
                             Гарсан
                           </span>
                         )}
                         {dun > 0 &&
                           (ezenTulsun ? (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-amber-400 text-black dark:bg-amber-600 dark:text-white text-[11px] font-bold">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-amber-400 text-black dark:bg-amber-600 dark:text-white text-[11px]">
                               {dunFormat(dun)} · Amarhome нэхэмжлэх
                             </span>
                           ) : (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-slate-200 dark:bg-white/[0.08] text-[11px] font-semibold text-slate-700 dark:text-slate-200">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-slate-200 dark:bg-white/[0.08] text-[11px] font-medium text-slate-700 dark:text-slate-200">
                               {dunFormat(dun)} · Зочин төлсөн
                             </span>
                           ))}
@@ -476,7 +476,7 @@ function UserHistoryModal({
           ) : (
             <div className="border border-slate-100 dark:border-white/[0.05] rounded-2xl overflow-hidden bg-slate-50/50 dark:bg-white/[0.02]">
               <table className="w-full border-collapse">
-                <thead className="bg-slate-100 dark:bg-white/[0.04] text-[11px] uppercase font-semibold text-slate-500 dark:text-slate-400">
+                <thead className="bg-slate-100 dark:bg-white/[0.04] text-[11px] uppercase font-medium text-slate-500 dark:text-slate-400">
                   <tr>
                     <th className="py-2.5 px-4 text-center">№</th>
                     <th className="py-2.5 px-4 text-left">Огноо</th>
@@ -499,18 +499,18 @@ function UserHistoryModal({
                         </td>
                         <td className="py-2.5 px-4 text-center">
                           {isUrisan ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 text-[11px] font-semibold text-amber-700 dark:text-amber-300">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 text-[11px] font-medium text-amber-700 dark:text-amber-300">
                               Урьсан
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 text-[11px] font-semibold text-blue-700 dark:text-blue-300">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 text-[11px] font-medium text-blue-700 dark:text-blue-300">
                               Нээсэн
                             </span>
                           )}
                         </td>
                         <td className="py-2.5 px-4 text-center">
                           {hLog.mashiniiDugaar ? (
-                            <span className="px-2.5 py-0.5 rounded-full bg-blue-600 text-[12px] font-bold !text-white tracking-widest font-[family-name:var(--font-mono)]">
+                            <span className="px-2.5 py-0.5 rounded-full bg-blue-600 text-[12px] !text-white tracking-widest font-[family-name:var(--font-mono)]">
                               {hLog.mashiniiDugaar}
                             </span>
                           ) : (
@@ -701,6 +701,40 @@ export default function UrisanTuukh() {
     return map;
   }, [parkEaseData]);
 
+  /**
+   * Машины дугаар -> ХУРИМТЛАГДСАН төлөгдөөгүй зогсоолын төлбөр.
+   *
+   * parkEaseMap нь зөвхөн СҮҮЛИЙН хөдөлгөөнийг хадгалдаг тул авлагыг
+   * тэндээс авах боломжгүй - нэг машин олон удаа орж гарсан бол өмнөх
+   * төлөгдөөгүй төлбөрүүд нь алга болно. Иймд бүх хөдөлгөөнийг нэмнэ.
+   *
+   * `tulukhDun` нь гарах үед бодогдсон, хараахан хаагдаагүй дүн. Төлөгдсөн
+   * бол сервер тал үүнийг 0 болгодог тул > 0 байгаа нь л авлага.
+   */
+  const avlagaMap = useMemo(() => {
+    const map = new Map<string, { dun: number; too: number }>();
+    const jagsaalt: ParkEaseTuukh[] = parkEaseData?.jagsaalt || [];
+    for (const mur of jagsaalt) {
+      const dugaar = (mur.mashiniiDugaar || "").trim().toUpperCase();
+      const dun = Number(mur.tulukhDun) || 0;
+      if (!dugaar || dun <= 0) continue;
+      const umnukh = map.get(dugaar) || { dun: 0, too: 0 };
+      map.set(dugaar, { dun: umnukh.dun + dun, too: umnukh.too + 1 });
+    }
+    return map;
+  }, [parkEaseData]);
+
+  /** Хуудсанд харагдаж буй бүх машины нийлбэр авлага */
+  const avlagaNiit = useMemo(() => {
+    let dun = 0;
+    let too = 0;
+    avlagaMap.forEach((v) => {
+      dun += v.dun;
+      too += 1;
+    });
+    return { dun, too };
+  }, [avlagaMap]);
+
   /** Сонгосон хугацаанд ParkEase дээр бүртгэгдсэн нийт хөдөлгөөн */
   const { data: parkEaseStats } = useSWR(
     shouldFetch
@@ -758,6 +792,7 @@ export default function UrisanTuukh() {
     { id: "utas", label: "Утас" },
     { id: "dugaar", label: "Улсын дугаар" },
     { id: "parkease", label: "ParkEase зогсоол" },
+    { id: "avlaga", label: "Хуримтлагдсан авлага" },
     { id: "barilga", label: "Барилга" },
   ];
 
@@ -822,15 +857,15 @@ export default function UrisanTuukh() {
         </div>
 
         {/* Dashboard Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           <div className="relative overflow-hidden p-6 rounded-[28px] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-500 dark:text-indigo-400">
                 <BarChart2 className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-[11px] text-slate-400 dark:text-slate-500 uppercase font-black tracking-wider">Нийт хандалт</p>
-                <p className="text-2xl font-black text-slate-800 dark:text-white mt-0.5">{counts.total}</p>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">Нийт хандалт</p>
+                <p className="text-2xl font-medium text-slate-800 dark:text-white mt-0.5">{counts.total}</p>
               </div>
             </div>
           </div>
@@ -841,8 +876,8 @@ export default function UrisanTuukh() {
                 <Users className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-[11px] text-slate-400 dark:text-slate-500 uppercase font-black tracking-wider">Урьсан</p>
-                <p className="text-2xl font-black text-slate-800 dark:text-white mt-0.5">{counts.urisan}</p>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">Урьсан</p>
+                <p className="text-2xl font-medium text-slate-800 dark:text-white mt-0.5">{counts.urisan}</p>
               </div>
             </div>
           </div>
@@ -853,8 +888,8 @@ export default function UrisanTuukh() {
                 <Key className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-[11px] text-slate-400 dark:text-slate-500 uppercase font-black tracking-wider">Нээсэн</p>
-                <p className="text-2xl font-black text-slate-800 dark:text-white mt-0.5">{counts.neesen}</p>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">Нээсэн</p>
+                <p className="text-2xl font-medium text-slate-800 dark:text-white mt-0.5">{counts.neesen}</p>
               </div>
             </div>
           </div>
@@ -865,23 +900,43 @@ export default function UrisanTuukh() {
                 <Monitor className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-[11px] text-slate-400 dark:text-slate-500 uppercase font-black tracking-wider">Идэвхтэй камер</p>
-                <p className="text-2xl font-black text-slate-800 dark:text-white mt-0.5">{topGates.length}</p>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">Идэвхтэй камер</p>
+                <p className="text-2xl font-medium text-slate-800 dark:text-white mt-0.5">{topGates.length}</p>
               </div>
             </div>
           </div>
 
-          {/* ParkEase дээр бодитоор зогссон зочид */}
+            {/* Төлөгдөөгүй хуримтлагдсан зогсоолын төлбөр */}
+          <div className="relative overflow-hidden p-6 rounded-[28px] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center text-amber-500 dark:text-amber-400">
+                <Wallet className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                  Хуримтлагдсан авлага
+                </p>
+                <p className="text-2xl font-medium text-amber-600 dark:text-amber-400 mt-0.5">
+                  {avlagaNiit.dun.toLocaleString("mn-MN")}₮
+                </p>
+                <p className="text-[10px] text-slate-400 mt-0.5">
+                  {avlagaNiit.too} машин
+                </p>
+              </div>
+            </div>
+          </div>
+
+        {/* ParkEase дээр бодитоор зогссон зочид */}
           <div className="relative overflow-hidden p-6 rounded-[28px] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-500 dark:text-emerald-400">
                 <ParkingCircle className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-[11px] text-slate-400 dark:text-slate-500 uppercase font-black tracking-wider">
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                   ParkEase зогсоол
                 </p>
-                <p className="text-2xl font-black text-slate-800 dark:text-white mt-0.5">
+                <p className="text-2xl font-medium text-slate-800 dark:text-white mt-0.5">
                   {parkEaseNiit}
                 </p>
               </div>
@@ -900,7 +955,7 @@ export default function UrisanTuukh() {
                   {HEADERS.map((h) => (
                     <th
                       key={h.id}
-                      className={`group relative py-3.5 px-4 text-center text-[11px] font-semibold uppercase tracking-wider whitespace-nowrap ${h.width || ""}`}
+                      className={`group relative py-3.5 px-4 text-center text-[11px] font-medium uppercase tracking-wider whitespace-nowrap ${h.width || ""}`}
                     >
                       <div
                         className="flex items-center justify-center gap-2 cursor-pointer hover:text-white transition-colors"
@@ -923,7 +978,7 @@ export default function UrisanTuukh() {
                           className={`absolute top-full left-1/2 -translate-x-1/2 mt-3 w-48 bg-slate-900/98 backdrop-blur-2xl text-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-2 transition-all duration-300 z-[100] border border-white/5 overflow-hidden ring-1 ring-white/10 ${openFilter === h.id ? "opacity-100 visible translate-y-0" : "opacity-0 invisible translate-y-3 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0"}`}
                         >
                           <div className="relative flex flex-col gap-1 z-10">
-                            <div className="px-3 py-1.5 mb-1 text-[11px] text-slate-500 uppercase tracking-widest border-b border-white/5 normal-case font-semibold">
+                            <div className="px-3 py-1.5 mb-1 text-[11px] text-slate-500 uppercase tracking-widest border-b border-white/5 normal-case font-medium">
                               Сонгох
                             </div>
                             {h.options.map((opt, idx) => (
@@ -978,17 +1033,17 @@ export default function UrisanTuukh() {
                       </td>
                       <td className="py-3 px-4 text-center">
                         {log.ekhSurvalj === "parkease" ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
                             <ParkingCircle className="w-3 h-3 shrink-0" />
                             ParkEase
                           </span>
                         ) : log.turul === "урьсан" ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 text-[11px] font-semibold text-amber-700 dark:text-amber-300">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 text-[11px] font-medium text-amber-700 dark:text-amber-300">
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
                             Урьсан
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 text-[11px] font-semibold text-blue-700 dark:text-blue-300">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 text-[11px] font-medium text-blue-700 dark:text-blue-300">
                             <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
                             Нээсэн
                           </span>
@@ -997,7 +1052,7 @@ export default function UrisanTuukh() {
                       <td className="py-3 px-4 text-center text-[13px] font-mono text-slate-500 dark:text-slate-400">
                         {log.ip || "-"}
                       </td>
-                      <td className="py-3 px-4 text-center text-[13px] font-semibold text-slate-700 dark:text-slate-200">
+                      <td className="py-3 px-4 text-center text-[13px] font-medium text-slate-700 dark:text-slate-200">
                         {log.orshinSuugchiinNer
                           ? log.orshinSuugchiinNer.trim().split(/\s+/).pop()
                           : "-"}
@@ -1010,7 +1065,7 @@ export default function UrisanTuukh() {
                       </td>
                       <td className="py-3 px-4 text-center text-[13px]">
                         {log.mashiniiDugaar ? (
-                          <span className="px-2.5 py-0.5 rounded-full bg-blue-600 text-[12px] font-bold !text-white tracking-widest font-[family-name:var(--font-mono)]">
+                          <span className="px-2.5 py-0.5 rounded-full bg-blue-600 text-[12px] !text-white tracking-widest font-[family-name:var(--font-mono)]">
                             {log.mashiniiDugaar}
                           </span>
                         ) : (
@@ -1026,6 +1081,29 @@ export default function UrisanTuukh() {
                             )
                           }
                         />
+                      </td>
+                      <td className="py-3 px-4 text-center text-[13px]">
+                        {(() => {
+                          const avl = avlagaMap.get(
+                            (log.mashiniiDugaar || "").trim().toUpperCase(),
+                          );
+                          if (!avl || avl.dun <= 0)
+                            return (
+                              <span className="text-slate-300 dark:text-slate-600">
+                                -
+                              </span>
+                            );
+                          return (
+                            <span className="inline-flex flex-col items-center">
+                              <span className="font-medium text-amber-600 dark:text-amber-400">
+                                {avl.dun.toLocaleString("mn-MN")}₮
+                              </span>
+                              <span className="text-[10px] text-slate-400">
+                                {avl.too} удаа
+                              </span>
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td className="py-3 px-4 text-center text-[13px] text-slate-500 dark:text-slate-400">
                         {getBuildingName(log.barilgiinId)}

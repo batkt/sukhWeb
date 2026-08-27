@@ -206,10 +206,30 @@ export default function Khynalt() {
       1,
       Math.ceil((e.getTime() - s.getTime()) / 86400000),
     );
-    const groupBy: "day" | "month" = dayDiff > 45 ? "month" : "day";
+    // Хугацааны уртаас хамааруулж бүлэглэлээ сонгоно. Өмнө нь 45 хоногоос
+    // урт бүхэн САР болдог байсан тул 2 сарын сонголт ердөө 2 цэг үүсгэж,
+    // график шулуун зураас болж хувирдаг байв. Долоо хоногийн түвшин нэмснээр
+    // дунд урттай хугацаанд ч утга учиртай олон цэг гарна.
+    const groupBy: "day" | "week" | "month" =
+      dayDiff <= 62 ? "day" : dayDiff <= 400 ? "week" : "month";
+
+    /** Тухайн өдрийг агуулах долоо хоногийн ДАВАА гарагийг буцаана */
+    const dolooKhonogiinEkhlel = (d: Date) => {
+      const kh = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      // getDay(): 0 = Ням. Даваа гарагийг эхлэл болгоно.
+      kh.setDate(kh.getDate() - ((kh.getDay() + 6) % 7));
+      return kh;
+    };
+
+    /** Цагийн бүсээс хамаарахгүй YYYY-MM-DD */
+    const udriinTulkhuur = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+        d.getDate(),
+      ).padStart(2, "0")}`;
 
     const bl = (d: Date) => {
-      if (groupBy === "day") return d.toISOString().slice(0, 10);
+      if (groupBy === "day") return udriinTulkhuur(d);
+      if (groupBy === "week") return udriinTulkhuur(dolooKhonogiinEkhlel(d));
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     };
     const labels: string[] = [];
@@ -218,6 +238,12 @@ export default function Khynalt() {
       while (it <= e) {
         labels.push(bl(it));
         it.setDate(it.getDate() + 1);
+      }
+    } else if (groupBy === "week") {
+      const it = dolooKhonogiinEkhlel(s);
+      while (it <= e) {
+        labels.push(udriinTulkhuur(it));
+        it.setDate(it.getDate() + 7);
       }
     } else {
       const it = new Date(s.getFullYear(), s.getMonth(), 1);
@@ -1004,6 +1030,10 @@ export default function Khynalt() {
   }, [cancelledData, contracts, tulukhAvlagaData]);
 
   const incomeLineData: Dataset = useMemo(() => {
+    // Цэгийн тоо ихсэхэд том дугуйнууд бие биенээ дарах тул багасгана
+    const tsegiinToo = incomeSeries.labels.length;
+    const tsegiinRadius = tsegiinToo <= 20 ? 4 : tsegiinToo <= 60 ? 2 : 0;
+
     const pretty = incomeSeries.labels.map((lb) => {
       if (lb.length === 7) {
         const [y, m] = lb.split("-");
@@ -1025,8 +1055,9 @@ export default function Khynalt() {
           backgroundColor: "rgba(34,197,94,0.15)",
           fill: true,
           tension: 0.4,
-          pointRadius: 4,
+          pointRadius: tsegiinRadius,
           pointHoverRadius: 6,
+          pointHitRadius: 12,
           pointBackgroundColor: "#22c55e",
         },
         {
@@ -1036,8 +1067,9 @@ export default function Khynalt() {
           backgroundColor: "rgba(239,68,68,0.15)",
           fill: true,
           tension: 0.4,
-          pointRadius: 4,
+          pointRadius: tsegiinRadius,
           pointHoverRadius: 6,
+          pointHitRadius: 12,
           pointBackgroundColor: "#ef4444",
         },
       ],
@@ -1463,7 +1495,15 @@ export default function Khynalt() {
                       },
                       scales: {
                         x: {
-                          ticks: { color: chartColors.text },
+                          ticks: {
+                            color: chartColors.text,
+                            // Өдрөөр бүлэглэхэд шошго олон болдог тул
+                            // автоматаар алгасаж, уншигдахуйц тоогоор
+                            // хязгаарлана
+                            autoSkip: true,
+                            maxTicksLimit: 12,
+                            maxRotation: 0,
+                          },
                           grid: { display: false },
                         },
                         y: {

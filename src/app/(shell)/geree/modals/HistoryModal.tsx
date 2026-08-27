@@ -310,12 +310,20 @@ type LedgerMonthBreakdownRow = {
   balanceEnd: number;
 };
 
-/** Эхний мөрийн өмнөх үлдэгдэл: row.uldegdel = өмнөх + tulukhDun - tulsunDun */
+/**
+ * Эхний мөрийн өмнөх үлдэгдэл.
+ * row.uldegdel = өмнөх + tulukhDun - tulsunDun - khungulultDun
+ * (recomputeLedgerRunningBalances-тэй ижил томьёо — хөнгөлөлтийг мартвал
+ * эхний үлдэгдэл хөнгөлөлтийн дүнгээр зөрнө.)
+ */
 function ledgerOpeningBeforeFirstEntry(first: LedgerEntry): number {
   const u = Number(first.uldegdel);
   if (!Number.isFinite(u)) return 0;
   return roundLedgerRunningStep(
-    u - Number(first.tulukhDun || 0) + Number(first.tulsunDun || 0),
+    u -
+      Number(first.tulukhDun || 0) +
+      Number(first.tulsunDun || 0) +
+      Number(first.khungulultDun || 0),
   );
 }
 
@@ -375,12 +383,18 @@ function buildLedgerMonthBreakdown(
     for (const row of rows) {
       const tTul = Number(row.tulukhDun || 0);
       const tTsu = Number(row.tulsunDun || 0);
+      // Хөнгөлөлт нь төлбөр биш ч үлдэгдлийг бууруулна. Үүнийг хасахгүй
+      // байсан тул сарын эцсийн үлдэгдэл мөрийн running үлдэгдлээс
+      // хөнгөлөлтийн дүнгээр их гарч байв.
+      const tKhu = Number(row.khungulultDun || 0);
       tulukh += tTul;
       tulsun += tTsu;
-      running = roundLedgerRunningStep(running + tTul - tTsu);
+      running = roundLedgerRunningStep(running + tTul - tTsu - tKhu);
     }
     const balanceEnd = running;
     const tulsunRounded = roundLedgerRunningStep(tulsun);
+    // Хүснэгтэд хөнгөлөлтийн багана байхгүй тул «Төлөх»-ийг хөнгөлөлт хассан
+    // цэвэр дүнгээр гаргана — ингэснээр Өмнөх + Төлөх − Төлсөн = Эцсийн болно.
     const tulukhDisplay = roundLedgerRunningStep(
       balanceEnd - balanceStart + tulsunRounded,
     );
@@ -2091,10 +2105,19 @@ export default function HistoryModal({
         balance: roundLedgerRunningStep(fallback),
       };
     }
+    // «Нийт» мөрийн үлдэгдэл нь ХАМГИЙН СҮҮЛИЙН гүйлгээний running
+    // үлдэгдэл байх ёстой — жагсаалт шинэ нь дээрээ эрэмбэлэгддэг тул энэ нь
+    // хүснэгтийн хамгийн дээд мөрийн үлдэгдэл. Урьд нь сарын задралын эцсийн
+    // үлдэгдлийг авдаг байсан бөгөөд дээд мөр 0 харагдаж байхад «Нийт» нь
+    // өөр дүн үзүүлэх боломжтой байв.
+    const suulchiinMur =
+      chronologicalFilteredEntries[chronologicalFilteredEntries.length - 1];
+    const suulchiinUldegdel = Number(suulchiinMur?.uldegdel);
     const lastMonth =
       monthlyBreakdownFiltered[monthlyBreakdownFiltered.length - 1];
-    const balance =
-      lastMonth != null
+    const balance = Number.isFinite(suulchiinUldegdel)
+      ? roundLedgerRunningStep(suulchiinUldegdel)
+      : lastMonth != null
         ? lastMonth.balanceEnd
         : roundLedgerRunningStep(
             ledgerOpeningBeforeFirstEntry(chronologicalFilteredEntries[0]) +

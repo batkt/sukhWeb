@@ -113,7 +113,9 @@ export default function EbarimtKhevlekhModal({
   const b: any = barimt || {};
   const baraanuud = barimtiinBaraanuud(b);
 
-  const ddtd = String(b.receiptId || b.id || b.ddtd || "").trim();
+  // Хүснэгтийн «ДДТД» баганатай ижил дараалал — хоёр газар өөр дугаар
+  // харагдвал ажилтан аль нь зөв бэ гэж эргэлзэнэ.
+  const ddtd = String(b.ddtd || b.receiptId || b.id || "").trim();
   const lottery = String(b.lottery || "").trim();
   const qrData = String(b.qrData || "").trim();
   const butsaasan = !!b.ustgasanOgnoo;
@@ -172,13 +174,6 @@ export default function EbarimtKhevlekhModal({
                   {baiguullagiinNer || "-"}
                 </p>
                 {b.merchantTin ? <p>ТТД: {b.merchantTin}</p> : null}
-                {b.branchNo || b.posNo ? (
-                  <p>
-                    {b.branchNo ? `Салбар: ${b.branchNo}` : ""}
-                    {b.branchNo && b.posNo ? " · " : ""}
-                    {b.posNo ? `ПОС: ${b.posNo}` : ""}
-                  </p>
-                ) : null}
               </div>
 
               <div className="my-2 border-t border-dashed border-black" />
@@ -222,21 +217,18 @@ export default function EbarimtKhevlekhModal({
 
               <div className="my-2 border-t border-dashed border-black" />
 
-              {/* Бараа, үйлчилгээ — нэр нь дээрээ, тоо × үнэ / дүн нь доороо */}
+              {/* Бараа, үйлчилгээ — нэр нь зүүнд, дүн нь баруунд */}
               {baraanuud.length > 0 ? (
                 baraanuud.map((it: any, i: number) => {
                   const too = tooBolgo(it?.qty) || 1;
                   const negjUne = tooBolgo(it?.unitPrice);
                   const murDun = tooBolgo(it?.totalAmount) || too * negjUne;
                   return (
-                    <div key={i} className="mb-1">
-                      <p className="break-words">{it?.name || "-"}</p>
-                      <div className="flex justify-between">
-                        <span>
-                          {too} x {formatNumber(negjUne, 2)}
-                        </span>
-                        <span>{formatNumber(murDun, 2)}</span>
-                      </div>
+                    <div key={i} className="flex justify-between gap-2">
+                      <span className="break-words">{it?.name || "-"}</span>
+                      <span className="whitespace-nowrap">
+                        {formatNumber(murDun, 2)}
+                      </span>
                     </div>
                   );
                 })

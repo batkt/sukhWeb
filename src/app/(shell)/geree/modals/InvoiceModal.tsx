@@ -1367,30 +1367,99 @@ export default function InvoiceModal({
         const zaikhDun = roundInvoiceMoney(albanNiit - odooTotal);
 
         if (zaikhDun > 0.005) {
-          const geree = await fetchGereeMedeelel();
-          const gereeZardluud = Array.isArray(geree?.zardluud)
-            ? geree.zardluud
+          // 1-рт: ЭНЭ нэхэмжлэхэд хамаарах авлагын бичилтүүд (guilgeeAvlaguud).
+          // Эдгээр нь тухайн нэхэмжлэхийн ЖИНХЭНЭ задаргаа — `zardliinNer`,
+          // `zardliinTurul`, `source` талбартай тул ангилал нь баттай.
+          // Хуулга аль хэдийн татагдсан байдаг тул нэмэлт хүсэлт хэрэггүй.
+          const invId = String(selectedInvoice?._id || "").trim();
+
+          /** Өгөгдсөн хуулгын мөрүүдийг ангилал тус бүрээр нийлбэрлэнэ. */
+          const angilalaarNiitle = (muruud: any[]) => {
+            const dungeer = new Map<InvoiceAngilal, number>();
+            for (const r of muruud) {
+              const dun = Number(r?.undsenDun ?? r?.tulukhDun ?? r?.dun ?? 0);
+              if (!(dun > 0)) continue;
+              const angilal = nekhemjlekhiinAngilal(r, "avlaga");
+              // Эхний үлдэгдэл аль хэдийн мөр болсон бол давхардуулахгүй
+              if (angilal === "ekhnii" && expenseMap.has("ekhnii")) continue;
+              dungeer.set(angilal, (dungeer.get(angilal) || 0) + dun);
+            }
+            return dungeer;
+          };
+
+          const bukhMuruud = ledgerRawRows || [];
+
+          // (а) Тухайн нэхэмжлэхэд ШУУД холбогдсон мөрүүд.
+          const kholbogdsonMuruud = invId
+            ? bukhMuruud.filter(
+                (r: any) => String(r?.nekhemjlekhId || "").trim() === invId,
+              )
             : [];
 
-          const ashiglaltNiit = roundInvoiceMoney(
-            gereeZardluud.reduce(
-              (acc: number, z: any) => acc + ashiglaltiinZardliinDun(z),
-              0,
-            ),
+          // (б) Холбоос байхгүй бол нэхэмжлэхийн тухайн САРЫН мөрүүдээр
+          // задална. Хуучин өгөгдөл дээр `nekhemjlekhId` тавигдаагүй, эсвэл
+          // дараагийн нэхэмжлэх өөр дээрээ авчихсан байх тохиолдол цөөнгүй
+          // (services/invoiceService.js дахь updateMany нь холбоосгүй бүх
+          // эерэг авлагыг сүүлийн нэхэмжлэх рүү зөөдөг).
+          const invYm = (() => {
+            const ymd = ymdKeyFromString(pickInvoiceOgnoo(selectedInvoice));
+            return ymd
+              ? invoiceBillingYmFromYmdKey(ymd, nekhemjlekhiinCycleStartDay)
+              : null;
+          })();
+
+          const sariinMuruud =
+            kholbogdsonMuruud.length > 0 || !invYm
+              ? []
+              : bukhMuruud.filter(
+                  (r: any) =>
+                    ledgerRowBillingYmFromRow(r, nekhemjlekhiinCycleStartDay) ===
+                    invYm,
+                );
+
+          const angilalDun = angilalaarNiitle(
+            kholbogdsonMuruud.length > 0 ? kholbogdsonMuruud : sariinMuruud,
           );
 
-          // Нэхэмжлэх дээр эхний үлдэгдэл байхгүй ч гэрээнд байвал нэмнэ.
-          const gereeEkhnii = expenseMap.has("ekhnii")
-            ? 0
-            : Math.max(0, roundInvoiceMoney(Number(geree?.ekhniiUldegdel ?? 0)));
+          let ledgerNiit = 0;
+          angilalDun.forEach((v) => {
+            ledgerNiit += v;
+          });
+          ledgerNiit = roundInvoiceMoney(ledgerNiit);
 
-          // Задаргаа нийт дүнгээс хэтэрвэл нэхэмжлэх буруу болох тул нөхөхгүй.
-          if (
-            ashiglaltNiit + gereeEkhnii > 0.005 &&
-            ashiglaltNiit + gereeEkhnii <= zaikhDun + 0.02
-          ) {
-            angilalNemey("ekhnii", gereeEkhnii);
-            angilalNemey("ashiglalt", ashiglaltNiit);
+          if (angilalDun.has("ashiglalt") && ledgerNiit <= zaikhDun + 0.02) {
+            angilalDun.forEach((dun, angilal) => angilalNemey(angilal, dun));
+          } else {
+            // 2-рт: хуулгаас олдохгүй бол гэрээнд хавсаргасан ашиглалтын
+            // зардлуудын нийлбэрээр нөхнө.
+            const geree = await fetchGereeMedeelel();
+            const gereeZardluud = Array.isArray(geree?.zardluud)
+              ? geree.zardluud
+              : [];
+
+            const ashiglaltNiit = roundInvoiceMoney(
+              gereeZardluud.reduce(
+                (acc: number, z: any) => acc + ashiglaltiinZardliinDun(z),
+                0,
+              ),
+            );
+
+            // Нэхэмжлэх дээр эхний үлдэгдэл байхгүй ч гэрээнд байвал нэмнэ.
+            const gereeEkhnii = expenseMap.has("ekhnii")
+              ? 0
+              : Math.max(
+                  0,
+                  roundInvoiceMoney(Number(geree?.ekhniiUldegdel ?? 0)),
+                );
+
+            // Задаргаа нийт дүнгээс хэтэрвэл нэхэмжлэх буруу болох тул нөхөхгүй.
+            if (
+              ashiglaltNiit + gereeEkhnii > 0.005 &&
+              ashiglaltNiit + gereeEkhnii <= zaikhDun + 0.02
+            ) {
+              angilalNemey("ekhnii", gereeEkhnii);
+              angilalNemey("ashiglalt", ashiglaltNiit);
+            }
           }
         }
       }
@@ -1529,6 +1598,8 @@ export default function InvoiceModal({
     selectedBuildingId,
     gereeIdForLedgerFetch,
     resident?.zardluud,
+    ledgerRawRows,
+    nekhemjlekhiinCycleStartDay,
   ]);
 
   const filteredInvoices = useMemo(() => {

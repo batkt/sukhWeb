@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import EmployeesSection from "../EmployeesSection";
+import EmployeePermissionsModal from "../EmployeePermissionsModal";
 import { useGereeContext } from "../GereeContext";
 import { hasPermission } from "@/lib/permissionUtils";
 import { useTourSteps } from "@/lib/useTourSteps";
@@ -16,6 +17,10 @@ export default function AjiltanPage() {
   const tourSteps = useTourSteps("employees");
   useRegisterTourSteps("/geree/ajiltan", tourSteps);
 
+  // Эрхийн тохиргоо тусдаа хуудас байхаа болиод энэ жагсаалт руу модал
+  // болж буцаж ирэв.
+  const [erkhAjiltan, setErkhAjiltan] = useState<any | null>(null);
+
   const hasGereeBase =
     hasPermission(ajiltan, "/geree") || hasPermission(ajiltan, "geree");
   const canViewEmployees =
@@ -28,6 +33,11 @@ export default function AjiltanPage() {
     hasGereeBase ||
     hasPermission(ajiltan, "/geree/ajiltan/zasah") ||
     hasPermission(ajiltan, "geree.ajiltan.zasah");
+  const canManagePermissions =
+    hasGereeBase ||
+    hasPermission(ajiltan, "/geree/ajiltan/erkhTokhirgoo") ||
+    hasPermission(ajiltan, "geree.ajiltan.erkhTokhirgoo") ||
+    hasPermission(ajiltan, "tokhirgoo.ajiltan");
   const canDeleteEmployees =
     hasGereeBase ||
     hasPermission(ajiltan, "/geree/ajiltan/ustgah") ||
@@ -42,7 +52,8 @@ export default function AjiltanPage() {
   }, [ajiltan, canViewEmployees, router]);
 
   return (
-    <EmployeesSection
+    <>
+      <EmployeesSection
       isValidatingAjiltan={data.isValidatingAjiltan}
       currentEmployees={data.currentEmployees}
       filteredEmployees={data.filteredEmployees}
@@ -53,21 +64,27 @@ export default function AjiltanPage() {
       setEmpPageSize={state.setEmpPageSize}
       canEdit={canEditEmployees}
       canDelete={canDeleteEmployees}
-      // Эрхийн тохиргоо энэ хэсгээс хасагдаж, Тохиргоо → Ажилтны тохиргоо
-      // хэсэг рүү бүрэн шилжсэн.
-      canManagePermissions={false}
+      canManagePermissions={canManagePermissions}
       onEdit={actions.handleEditEmployee}
       onDelete={(e) => {
         state.setEmployeeToDelete(e);
         state.setShowDeleteEmployeeModal(true);
       }}
-      onManagePermissions={() => {}}
+      onManagePermissions={(employee) => setErkhAjiltan(employee)}
       onCredentialsUpdate={(employee) => {
         console.log("🔐 Lock button clicked for employee:", employee);
         if (typeof window !== 'undefined' && (window as any).__openCredentialsModal) {
           (window as any).__openCredentialsModal(employee);
         }
       }}
-    />
+      />
+
+      <EmployeePermissionsModal
+        employee={erkhAjiltan}
+        open={!!erkhAjiltan}
+        onClose={() => setErkhAjiltan(null)}
+        onSaved={() => data.ajiltniiJagsaaltMutate?.()}
+      />
+    </>
   );
 }

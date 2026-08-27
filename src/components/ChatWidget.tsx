@@ -5,6 +5,7 @@ import { io, Socket } from "socket.io-client";
 import axios from "axios";
 import { useAuth } from "@/lib/useAuth";
 import TuslamjTokhirgoo from "@/app/(shell)/tokhirgoo/TuslamjTokhirgoo";
+import ResidentChatPanel from "@/components/ResidentChatPanel";
 import { useTour } from "@/context/TourContext";
 import {
   clampPos,
@@ -54,7 +55,11 @@ export default function ChatWidget({ inline = false }: ChatWidgetProps): JSX.Ele
   const { baiguullaga, ajiltan } = useAuth();
   const { start, disable, enable, disabled } = useTour();
   const [isOpen, setIsOpen] = useState<boolean>(inline);
-  const [activeTab, setActiveTab] = useState<"chat" | "help">("chat");
+  // "chat" = систем хариуцсан ажилтан, "resident" = СӨХ ↔ оршин суугч,
+  // "help" = ерөнхий тусламж
+  const [activeTab, setActiveTab] = useState<"chat" | "resident" | "help">(
+    "chat",
+  );
   const [guestId, setGuestId] = useState<string>("");
   const [conversation, setConversation] = useState<ConversationType | null>(null);
   const [messages, setMessages] = useState<MessageType[]>([]);
@@ -240,10 +245,11 @@ export default function ChatWidget({ inline = false }: ChatWidgetProps): JSX.Ele
   }, []);
 
   const handleChoiceClick = async (choice: ChoiceType): Promise<void> => {
-    if (!conversation) return;
+    const idevkhtei = await kharilstaaBelenBolgoyo();
+    if (!idevkhtei) return;
     try {
       const text = choice.label;
-      const res = await axios.post(`${BASE_API}/conversations/${conversation.id}/messages`, {
+      const res = await axios.post(`${BASE_API}/conversations/${idevkhtei.id}/messages`, {
         text,
         guestId,
         project: "sukh",
@@ -278,10 +284,11 @@ export default function ChatWidget({ inline = false }: ChatWidgetProps): JSX.Ele
   };
 
   const handleConnectOperator = async (): Promise<void> => {
-    if (!conversation) return;
+    const idevkhtei = await kharilstaaBelenBolgoyo();
+    if (!idevkhtei) return;
     try {
       setOperatorLoading(true);
-      const res = await axios.post(`${BASE_API}/conversations/${conversation.id}/operator`, {
+      const res = await axios.post(`${BASE_API}/conversations/${idevkhtei.id}/operator`, {
         guestId
       });
       setConversation(res.data.data.conversation);
@@ -298,8 +305,16 @@ export default function ChatWidget({ inline = false }: ChatWidgetProps): JSX.Ele
     }
   };
 
-  const initChat = async (): Promise<void> => {
-    if (!guestId) return;
+  /**
+   * Системийн дэмжлэгийн харилцаа ҮҮСГЭНЭ.
+   *
+   * ЗӨВХӨН ажилтан үнэхээр мессеж илгээх (эсвэл оператор дуудах) үед л
+   * дуудагдана. Өмнө нь виджет нээгдмэгц дуудагддаг байсан тул "Оршин суугч"
+   * табыг нээхэд ч хоосон харилцаа үүсгээд, дэмжлэгийн талд хоосон чат
+   * хуримтлуулдаг байв.
+   */
+  const initChat = async (): Promise<ConversationType | null> => {
+    if (!guestId) return null;
     try {
       setLoading(true);
       try {
@@ -317,22 +332,26 @@ export default function ChatWidget({ inline = false }: ChatWidgetProps): JSX.Ele
         ajiltniiNer: ajiltan?.ner,
         displayName: ajiltan?.ner || "Зочин"
       });
-      setConversation(res.data.data);
+      const shine: ConversationType = res.data.data;
+      setConversation(shine);
 
-      const msgRes = await axios.get(`${BASE_API}/conversations/${res.data.data.id}/messages?guestId=${guestId}`);
+      const msgRes = await axios.get(`${BASE_API}/conversations/${shine.id}/messages?guestId=${guestId}`);
       setMessages(msgRes.data.data);
+      return shine;
     } catch (err) {
       console.error("Failed to init chat", err);
+      return null;
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (isOpen && !conversation) {
-      initChat();
-    }
-  }, [isOpen, guestId]);
+  /** Харилцаа байхгүй бол энэ мөчид үүсгэнэ (lazy) */
+  const kharilstaaBelenBolgoyo =
+    async (): Promise<ConversationType | null> => {
+      if (conversation) return conversation;
+      return await initChat();
+    };
 
   useEffect(() => {
     if (!conversation) return;
@@ -359,7 +378,9 @@ export default function ChatWidget({ inline = false }: ChatWidgetProps): JSX.Ele
 
   const sendMessage = async (): Promise<void> => {
     if (!input.trim()) return;
-    if (!conversation) {
+    // Харилцааг ЭНД үүсгэнэ - виджет нээгдэх төдийд биш
+    const idevkhtei = await kharilstaaBelenBolgoyo();
+    if (!idevkhtei) {
       alert(t("noConnection"));
       return;
     }
@@ -368,7 +389,7 @@ export default function ChatWidget({ inline = false }: ChatWidgetProps): JSX.Ele
       const text = input.trim();
       setInput("");
 
-      const res = await axios.post(`${BASE_API}/conversations/${conversation.id}/messages`, {
+      const res = await axios.post(`${BASE_API}/conversations/${idevkhtei.id}/messages`, {
         text,
         guestId,
         project: "sukh",
@@ -499,8 +520,12 @@ export default function ChatWidget({ inline = false }: ChatWidgetProps): JSX.Ele
             right: "24px",
             zIndex: 9999,
             display: "flex",
-            height: "520px",
-            width: "360px",
+            // Оршин суугчийн чат жагсаалт + мессеж агуулдаг тул илүү өргөн,
+            // харин жижиг дэлгэц дээр хэтрэхгүйн тулд max-аар хязгаарлана.
+            height: "min(640px, calc(100dvh - 48px))",
+            width: activeTab === "resident" ? "460px" : "380px",
+            maxWidth: "calc(100vw - 32px)",
+            transition: "width 0.2s ease",
             flexDirection: "column",
             overflow: "hidden",
             borderRadius: "18px",
@@ -602,7 +627,29 @@ export default function ChatWidget({ inline = false }: ChatWidgetProps): JSX.Ele
                   transition: "all 0.2s ease"
                 }}
               >
-                💬 Шууд чат
+                💬 Систем
+              </button>
+              <button
+                onClick={() => setActiveTab("resident")}
+                style={{
+                  flex: 1,
+                  padding: "8px 12px",
+                  fontSize: "12px",
+                  fontWeight: "600",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  backgroundColor:
+                    activeTab === "resident" ? "#ffffff" : "transparent",
+                  color: activeTab === "resident" ? "#059669" : "#64748b",
+                  boxShadow:
+                    activeTab === "resident"
+                      ? "0 2px 8px rgba(0,0,0,0.06)"
+                      : "none",
+                  transition: "all 0.2s ease",
+                }}
+              >
+                🏢 Оршин суугч
               </button>
               <button
                 onClick={() => setActiveTab("help")}
@@ -620,12 +667,16 @@ export default function ChatWidget({ inline = false }: ChatWidgetProps): JSX.Ele
                   transition: "all 0.2s ease"
                 }}
               >
-                📘 Ерөнхий тусламж
+                📘 Тусламж
               </button>
             </div>
           )}
 
-          {!inline && activeTab === "help" ? (
+          {!inline && activeTab === "resident" ? (
+            <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+              <ResidentChatPanel />
+            </div>
+          ) : !inline && activeTab === "help" ? (
             <div style={{ flex: 1, overflowY: "auto", backgroundColor: "#ffffff", padding: "20px", display: "flex", flexDirection: "column", gap: "16px" }}>
               {/* Header */}
               <div style={{ textAlign: "center", borderBottom: "1px solid rgba(0, 0, 0, 0.06)", paddingBottom: "16px", marginBottom: "8px" }}>
