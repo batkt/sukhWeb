@@ -44,6 +44,7 @@ export const NAV_ITEMS: NavItem[] = [
     path: "tailan",
     icon: ChartNoAxesCombined,
     submenu: [
+      { label: "BI Тайлан", path: "bi" },
       { label: "Авлагын товчоо", path: "orlogo-avlaga" },
       { label: "Нэгтгэл тайлан", path: "negtgel" },
       { label: "Авлагийн насжилт", path: "avlagiin-nasjilt" },

@@ -1346,7 +1346,7 @@ export function useGereeActions(
   );
 
   const handleAddGarageCharges = useCallback(
-    async (residents: any[], chargeType?: "Зогсоол" | "Агуулах") => {
+    async (residents: any[], chargeType?: "Зогсоол" | "Агуулах", overrideContractId?: string) => {
       if (!token || !baiguullaga?._id) {
         openErrorOverlay("Нэвтэрч орсон хэрэглэгч олдсонгүй");
         return;
@@ -1510,8 +1510,26 @@ export function useGereeActions(
           let gereeniiId = resident.gereeniiId || resident.gereeId || resident.geree?._id;
           let gereeniiDugaar = resident.gereeniiDugaar || resident.geree?.gereeniiDugaar || resident.gereeDugaar;
 
-          if (!gereeniiId && Array.isArray(contracts)) {
-            // Find contract matching this resident in our contracts list
+          // Priority 0: check if the parking/storage toot entry itself carries a gereeniiId
+          // (set during assignment when a resident has multiple apartment contracts)
+          if (!gereeniiId) {
+            const parkingTurul = chargeType === "Зогсоол" ? ["Гараж", "Зогсоол"] : ["Агуулах"];
+            const linkedToot = units.find((u: any) => parkingTurul.includes(String(u.turul || "").trim()) && u.gereeniiId);
+            if (linkedToot?.gereeniiId) {
+              gereeniiId = String(linkedToot.gereeniiId);
+              const oc = Array.isArray(contracts) ? contracts.find((c: any) => String(c._id) === gereeniiId) : null;
+              if (oc) gereeniiDugaar = oc.gereeniiDugaar;
+            }
+          }
+
+          if (!gereeniiId && overrideContractId) {
+            // Option B: caller already resolved the exact contract from the table row
+            gereeniiId = overrideContractId;
+            const oc = Array.isArray(contracts) ? contracts.find((c: any) => String(c._id) === overrideContractId) : null;
+            if (oc) gereeniiDugaar = oc.gereeniiDugaar;
+          } else if (!gereeniiId && Array.isArray(contracts)) {
+            // Fallback: search by resident ID, but filter by chargeType to avoid
+            // picking up the apartment contract when a separate parking contract exists
             const matchedContract = contracts.find((c: any) => {
               const status = String(c?.tuluv || c?.status || "Идэвхтэй").trim();
               const isCancelled =
@@ -1521,14 +1539,14 @@ export function useGereeActions(
                 status.toLowerCase() === "tsutlsasan" ||
                 status === "Идэвхгүй" ||
                 status.toLowerCase() === "идэвхгүй";
-
               if (isCancelled) return false;
-
               const cResId = c.orshinSuugchId || c.khariltsagchId;
-              return cResId && String(cResId) === String(resident._id);
-            }) || contracts.find((c: any) => {
-              const cResId = c.orshinSuugchId || c.khariltsagchId;
-              return cResId && String(cResId) === String(resident._id);
+              if (!cResId || String(cResId) !== String(resident._id)) return false;
+              // Filter by contract type to avoid picking up apartment contract
+              const cTurul = String(c.turul || "").trim();
+              if (chargeType === "Зогсоол") return cTurul === "Зогсоол" || cTurul === "Гараж";
+              if (chargeType === "Агуулах") return cTurul === "Агуулах";
+              return true;
             });
 
             if (matchedContract) {
@@ -2031,6 +2049,71 @@ export function useGereeActions(
     [token, mutate],
   );
 
+  const handleUnlinkFromUnit = useCallback(
+    async (
+      resident: any,
+      unit: string,
+      propertyTab: "Тоот" | "Зогсоол" | "Агуулах",
+    ) => {
+      if (!token || !baiguullaga?._id) {
+        openErrorOverlay("Нэвтрэх шаардлагтай");
+        return false;
+      }
+      if (!resident) {
+        openErrorOverlay("Оршин суугч олдсонгүй");
+        return false;
+      }
+
+      const turulToRemove = propertyTab === "Зогсоол"
+        ? ["Гараж", "Зогсоол"]
+        : propertyTab === "Агуулах"
+          ? ["Агуулах"]
+          : ["Орон сууц", "Тоот"];
+
+      const existingToots: any[] = Array.isArray(resident.toots) ? resident.toots : [];
+      const updatedToots = existingToots.filter((t: any) => {
+        const tToot = String(t.toot || "").trim();
+        const tTurul = String(t.turul || "Орон сууц").trim();
+        // Remove the entry that matches this unit number AND the tab type
+        if (tToot === String(unit).trim() && turulToRemove.includes(tTurul)) return false;
+        return true;
+      });
+
+      if (updatedToots.length === existingToots.length) {
+        openErrorOverlay("Таарсан тоотын бүртгэл олдсонгүй");
+        return false;
+      }
+
+      try {
+        // updateMethod expects model name without leading slash e.g. "orshinSuugch"
+        // Use erkh field to determine type — more reliable than checking for register field
+        const modelName = (resident.erkh === "OrshinSuugch" || resident.erkh === "orshinSuugch")
+          ? "orshinSuugch"
+          : "khariltsagch";
+        await updateMethod(modelName, token, {
+          ...resident,
+          _id: resident._id,
+          toots: updatedToots,
+          units: updatedToots,
+        });
+        openSuccessOverlay("Тоот амжилттай хасагдлаа");
+        mutate(
+          (key: any) =>
+            Array.isArray(key) &&
+            (key[0] === "/orshinSuugch" || key[0] === "/khariltsagch" || key[0] === "/geree") &&
+            key[2] === baiguullaga._id,
+          undefined,
+          { revalidate: true }
+        );
+        return true;
+      } catch (error: any) {
+        openErrorOverlay(`Тоот хасахад алдаа гарлаа: ${error.message}`);
+        return false;
+      }
+    },
+    [token, baiguullaga, mutate],
+  );
+
   const handleAssignToUnit = useCallback(
     async (
       personId: string,
@@ -2039,6 +2122,7 @@ export function useGereeActions(
       floor: string,
       unit: string,
       propertyTab: "Тоот" | "Зогсоол" | "Агуулах",
+      gereeniiId?: string,
     ) => {
       if (!token) {
         openErrorOverlay("Нэвтрэх шаардлагатай");
@@ -2100,6 +2184,8 @@ export function useGereeActions(
             sohNer: selectedBarilga?.tokhirgoo?.sohNer || "",
             duureg: selectedBarilga?.duureg || "",
             horoo: selectedBarilga?.horoo || "",
+            // Store the owning contract ID when provided (e.g. from Step 3 picker)
+            ...(gereeniiId ? { gereeniiId } : {}),
           };
 
           const updatedToots = [...existingToots, newUnitEntry];
@@ -2126,9 +2212,10 @@ export function useGereeActions(
           mutate(
             (key: any) =>
               Array.isArray(key) &&
-              (key[0] === "/orshinSuugch" || key[0] === "/geree"),
+              (key[0] === "/orshinSuugch" || key[0] === "/geree") &&
+              key[2] === baiguullaga._id,
             undefined,
-            { revalidate: true },
+            { revalidate: true }
           );
           return true;
         } else {
@@ -2200,9 +2287,10 @@ export function useGereeActions(
           mutate(
             (key: any) =>
               Array.isArray(key) &&
-              (key[0] === "/khariltsagch" || key[0] === "/geree"),
+              (key[0] === "/khariltsagch" || key[0] === "/geree") &&
+              key[2] === baiguullaga._id,
             undefined,
-            { revalidate: true },
+            { revalidate: true }
           );
           return true;
         }
@@ -2495,5 +2583,6 @@ export function useGereeActions(
     deleteFloor,
     addUnit,
     handleAssignToUnit,
+    handleUnlinkFromUnit,
   };
 }

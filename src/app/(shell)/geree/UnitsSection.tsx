@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState, useEffect } from "react";
-import { Plus, Trash2, Info, User, Phone, X, Send } from "lucide-react";
+import { Plus, Trash2, Info, User, Phone, X, Send, UserX } from "lucide-react";
 import { Tooltip } from "antd";
 import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
 import { UnitsTable, FloorItem } from "./UnitsTable";
@@ -52,6 +52,7 @@ interface UnitsSectionProps {
     floor: string,
     unit: string,
     propertyTab: "Тоот" | "Зогсоол" | "Агуулах",
+    gereeniiId?: string,
   ) => Promise<boolean>;
 }
 
@@ -92,6 +93,7 @@ export default function UnitsSection({
   const [activeUnitDetails, setActiveUnitDetails] = useState<{ unit: string; floor: string; resident: any } | null>(null);
   const [checkedUnits, setCheckedUnits] = useState<string[]>([]);
   const [selectionMode, setSelectionMode] = useState(false);
+  const [zogsoolSearch, setZogsoolSearch] = useState("");
 
   useEffect(() => {
     setCheckedUnits([]);
@@ -765,9 +767,13 @@ export default function UnitsSection({
           : `Тоот ${unit}-ийн ${typeLabel} гэрээнд нэхэмжлэх илгээх үү?`,
         onConfirm: async () => {
           if (propertyTab === "Зогсоол" || propertyTab === "Агуулах") {
+            // Option B: pass the already-resolved contractId directly to skip
+            // the ambiguous "find first contract by residentId" lookup inside the action
+            const contractId = activeContract?._id ? String(activeContract._id) : undefined;
             await actions.handleAddGarageCharges(
               [resident],
-              propertyTab === "Зогсоол" ? "Зогсоол" : "Агуулах"
+              propertyTab === "Зогсоол" ? "Зогсоол" : "Агуулах",
+              contractId
             );
           } else {
             const dedicated = isNestedGarage ? [] : [String(activeContract._id)];
@@ -784,6 +790,120 @@ export default function UnitsSection({
       alert("Энэ тоотод холбоотой идэвхтэй гэрээ олдсонгүй.");
     }
   };
+
+  const zogsoolTableRows = useMemo(() => {
+    if (!selectedFloorData) return [];
+    const rows = selectedFloorData.filteredUnits.map((unitStr, idx) => {
+      const isOccupied = selectedFloorData.activeToots.has(unitStr);
+      const resident = selectedFloorData.unitToResident[unitStr];
+
+      let activeContract: any = null;
+      if (contracts) {
+        const status = (c: any) => {
+          const s = String(c?.tuluv || c?.status || "Идэвхтэй").trim();
+          return s !== "Цуцалсан" && s !== "Идэвхгүй";
+        };
+
+        // Priority 1: dedicated contract whose toot + turul matches this unit
+        activeContract = contracts.find((c) => {
+          if (!status(c)) return false;
+          const cToot = String(c?.toot || "").trim();
+          const cTurul = String(c?.turul || "").trim();
+          if (cToot !== unitStr) return false;
+          if (propertyTab === "Зогсоол") return cTurul === "Зогсоол" || cTurul === "Гараж";
+          if (propertyTab === "Агуулах") return cTurul === "Агуулах";
+          return cTurul !== "Зогсоол" && cTurul !== "Гараж" && cTurul !== "Агуулах";
+        });
+
+        // Priority 2: fallback — any active contract linked to this resident
+        if (!activeContract && resident) {
+          activeContract = contracts.find((c) => {
+            if (!status(c)) return false;
+            const cOrshinId = c?.orshinSuugchId || c?.khariltsagchId;
+            return String(cOrshinId) === String(resident._id);
+          });
+        }
+      }
+
+      const fullName = resident
+        ? [resident.ovog, resident.ner].filter(Boolean).join(" ") || resident.ner || activeContract?.khariutsagchNer || "Нэргүй"
+        : "Сул байна";
+
+      let tootStr = "-";
+      if (resident) {
+        if (Array.isArray(resident.toots) && resident.toots.length > 0) {
+          const aptItem = resident.toots.find(
+            (t: any) => String(t.turul || "").trim() === "Орон сууц" || String(t.turul || "").trim() === "Тоот"
+          );
+          if (aptItem && aptItem.toot) tootStr = String(aptItem.toot).trim();
+        }
+        if (tootStr === "-" && resident.toot) tootStr = String(resident.toot).trim();
+      }
+      if (tootStr === "-" && activeContract?.toot) tootStr = String(activeContract.toot).trim();
+
+      const phone = resident?.utas || activeContract?.utas || activeContract?.phone || "-";
+
+      const amount =
+        Number(
+          activeContract?.sariinTurees ||
+            activeContract?.sariinTulbur ||
+            activeContract?.tulburiinDun ||
+            activeContract?.dun ||
+            resident?.zogsoolTulbur ||
+            50000
+        ) || 0;
+
+      const isPaid = Boolean(
+        activeContract?.tulbarTulogdson ||
+          activeContract?.tulburTulogdson ||
+          activeContract?.tuluv === "Төлөгдсөн"
+      );
+
+      let dateStr = "-";
+      const rawDate =
+        activeContract?.ekhlekhOgnoo || activeContract?.createdAt || resident?.createdAt;
+      if (rawDate) {
+        try {
+          const d = new Date(rawDate);
+          if (!isNaN(d.getTime())) {
+            dateStr = `${String(d.getMonth() + 1).padStart(2, "0")}/${String(
+              d.getDate()
+            ).padStart(2, "0")}/${d.getFullYear()}`;
+          }
+        } catch (e) {}
+      }
+
+      return {
+        key: unitStr,
+        id: unitStr,
+        index: idx + 1,
+        ognoo: dateStr,
+        ner: fullName,
+        toot: tootStr,
+        dugaar: phone,
+        zogsoolDugaar: unitStr,
+        tulbur: amount,
+        tolsenEsekh: isPaid,
+        isOccupied,
+        resident,
+        activeContract,
+      };
+    });
+
+    if (!zogsoolSearch.trim()) return rows;
+    const q = zogsoolSearch.toLowerCase();
+    return rows.filter(
+      (r) =>
+        r.zogsoolDugaar.toLowerCase().includes(q) ||
+        r.ner.toLowerCase().includes(q) ||
+        r.toot.toLowerCase().includes(q) ||
+        r.dugaar.toLowerCase().includes(q)
+    );
+  }, [selectedFloorData, contracts, zogsoolSearch]);
+
+  const totalZogsoolAmount = useMemo(() => {
+    return zogsoolTableRows.reduce((sum, r) => sum + (r.tulbur || 0), 0);
+  }, [zogsoolTableRows]);
 
   if (davkharOptions.length === 0) {
     return (
@@ -850,456 +970,238 @@ export default function UnitsSection({
               </div>
             )}
 
-            {/* Visual Floor Units Map — only for garage and storage */}
+            {/* Table layout for garage and storage */}
             {selectedFloorData && propertyTab !== "Тоот" && (
-              <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-4">
                 {/* Stats Cards */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   <button
                     onClick={() => setUnitStatusFilter?.("all")}
-                    className={`text-center select-none outline-none focus:outline-none transition-all duration-200 cursor-pointer rounded-2xl p-4 shadow-sm border ${unitStatusFilter === "all"
-                      ? "bg-blue-50 dark:bg-blue-950/30 border-blue-300 dark:border-blue-700 ring-2 ring-blue-500/50 shadow-md scale-[1.02]"
-                      : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 hover:border-slate-300 dark:hover:border-slate-600 opacity-60 hover:opacity-100 hover:scale-[1.01]"
-                      }`}
+                    className={`text-center select-none cursor-pointer rounded-2xl p-4 shadow-xs border transition-all ${
+                      unitStatusFilter === "all"
+                        ? "bg-blue-50 dark:bg-blue-950/30 border-blue-300 dark:border-blue-700 ring-2 ring-blue-500/50 shadow-md"
+                        : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 opacity-70 hover:opacity-100"
+                    }`}
                   >
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">
-                      Нийт тоот
-                    </p>
-                    <p className="text-2xl font-bold text-slate-800 dark:text-slate-100">
-                      {stats.total}
-                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Нийт тоот</p>
+                    <p className="text-2xl font-bold text-slate-800 dark:text-slate-100">{stats.total}</p>
                   </button>
 
                   <button
                     onClick={() => setUnitStatusFilter?.("free")}
-                    className={`text-center select-none outline-none focus:outline-none transition-all duration-200 cursor-pointer rounded-2xl p-4 shadow-sm border ${unitStatusFilter === "free"
-                      ? "bg-orange-100 dark:bg-orange-950/40 border-orange-300 dark:border-orange-800 ring-2 ring-orange-500/50 shadow-md scale-[1.02]"
-                      : "bg-orange-50/40 dark:bg-orange-950/10 border-orange-100/60 dark:border-orange-900/10 hover:border-orange-200 dark:hover:border-orange-900/30 opacity-60 hover:opacity-100 hover:scale-[1.01]"
-                      }`}
+                    className={`text-center select-none cursor-pointer rounded-2xl p-4 shadow-xs border transition-all ${
+                      unitStatusFilter === "free"
+                        ? "bg-orange-100 dark:bg-orange-950/40 border-orange-300 dark:border-orange-800 ring-2 ring-orange-500/50 shadow-md"
+                        : "bg-orange-50/40 dark:bg-orange-950/10 border-orange-100/60 dark:border-orange-900/10 opacity-70 hover:opacity-100"
+                    }`}
                   >
-                    <p className={`text-xs mb-1 font-semibold ${unitStatusFilter === "free" ? "text-orange-700 dark:text-orange-300" : "text-orange-600 dark:text-orange-400"
-                      }`}>
-                      Чөлөөтэй
-                    </p>
-                    <p className={`text-2xl font-bold ${unitStatusFilter === "free" ? "text-orange-700 dark:text-orange-300" : "text-orange-600 dark:text-orange-400"
-                      }`}>
-                      {stats.free}
-                    </p>
+                    <p className="text-xs mb-1 font-semibold text-orange-600 dark:text-orange-400">Чөлөөтэй</p>
+                    <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{stats.free}</p>
                   </button>
 
                   <button
                     onClick={() => setUnitStatusFilter?.("occupied")}
-                    className={`text-center select-none outline-none focus:outline-none transition-all duration-200 cursor-pointer rounded-2xl p-4 shadow-sm border ${unitStatusFilter === "occupied"
-                      ? "bg-emerald-100 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800 ring-2 ring-emerald-500/50 shadow-md scale-[1.02]"
-                      : "bg-emerald-50/40 dark:bg-emerald-950/10 border-emerald-100/60 dark:border-emerald-900/10 hover:border-emerald-200 dark:hover:border-emerald-900/30 opacity-60 hover:opacity-100 hover:scale-[1.01]"
-                      }`}
+                    className={`text-center select-none cursor-pointer rounded-2xl p-4 shadow-xs border transition-all ${
+                      unitStatusFilter === "occupied"
+                        ? "bg-emerald-100 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800 ring-2 ring-emerald-500/50 shadow-md"
+                        : "bg-emerald-50/40 dark:bg-emerald-950/10 border-emerald-100/60 dark:border-emerald-900/10 opacity-70 hover:opacity-100"
+                    }`}
                   >
-                    <p className={`text-xs mb-1 font-semibold ${unitStatusFilter === "occupied" ? "text-emerald-700 dark:text-emerald-300" : "text-emerald-600 dark:text-emerald-400"
-                      }`}>
-                      Бүртгэлтэй
-                    </p>
-                    <p className={`text-2xl font-bold ${unitStatusFilter === "occupied" ? "text-emerald-700 dark:text-emerald-300" : "text-emerald-600 dark:text-emerald-400"
-                      }`}>
-                      {stats.occupied}
-                    </p>
+                    <p className="text-xs mb-1 font-semibold text-emerald-600 dark:text-emerald-400">Бүртгэлтэй</p>
+                    <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{stats.occupied}</p>
                   </button>
 
-                  <div className="bg-amber-50 dark:bg-amber-950/20 rounded-2xl border border-amber-100 dark:border-amber-900/30 p-4 shadow-sm text-center">
-                    <p className="text-xs text-amber-600 dark:text-amber-400 mb-1">
-                      Тухайн давхрын тоотууд
-                    </p>
-                    <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">
-                      {selectedFloorData.filteredUnits.length}
-                    </p>
+                  <div className="bg-amber-50 dark:bg-amber-950/20 rounded-2xl border border-amber-100 dark:border-amber-900/30 p-4 shadow-xs text-center">
+                    <p className="text-xs text-amber-600 dark:text-amber-400 mb-1">Тухайн давхрын тоотууд</p>
+                    <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{selectedFloorData.filteredUnits.length}</p>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-                  {/* Left: Floor Map */}
-                  <div className="lg:col-span-2 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-5">
-                    <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-100 dark:border-gray-800 gap-4 flex-wrap">
-                      <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                        <span>{propertyTab} давхрын тоотууд</span>
+                {/* Table Component Box */}
+                <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xs p-5 space-y-4">
+                  {/* Header Bar */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-gray-100 dark:border-gray-800">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">
+                        {propertyTab === "Зогсоол" ? "Зогсоол давхрын тоотууд" : "Агуулах давхрын тоотууд"}
+                      </h3>
+                      {selectedFloor && (
                         <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400">
                           {selectedFloor}-р давхар
                         </span>
-                      </h3>
-                      {selectedFloor && selectedFloorData && selectedFloorData.filteredUnits.length > 0 && (
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {selectionMode ? (
-                            <>
-                              {checkedUnits.length > 0 && (
-                                <Button
-                                  onClick={() => { handleSendCheckedInvoices(); setSelectionMode(false); setCheckedUnits([]); }}
-                                  variant="primary"
-                                  size="sm"
-                                  leftIcon={<Send className="w-3.5 h-3.5" />}
-                                  className="rounded-2xl transition-all duration-200 shadow-md !bg-gradient-to-r !from-orange-500 !to-amber-500 !border-none !text-white hover:scale-[1.01] font-semibold"
-                                >
-                                  {propertyTab === "Зогсоол"
-                                    ? `Илгээх (${checkedUnits.length} зогсоол)`
-                                    : propertyTab === "Агуулах"
-                                      ? `Илгээх (${checkedUnits.length} агуулах)`
-                                      : `Илгээх (${checkedUnits.length} тоот)`}
-                                </Button>
-                              )}
-                              <Button
-                                onClick={() => { setSelectionMode(false); setCheckedUnits([]); }}
-                                variant="secondary"
-                                size="sm"
-                                leftIcon={<X className="w-3.5 h-3.5" />}
-                                className="rounded-2xl font-semibold"
-                              >
-                                Болих
-                              </Button>
-                            </>
-                          ) : (
-                            <>
-                              <Button
-                                onClick={() => setSelectionMode(true)}
-                                variant="secondary"
-                                size="sm"
-                                leftIcon={<Send className="w-3.5 h-3.5 text-slate-500" />}
-                                className="rounded-2xl transition-all duration-200 shadow-sm border border-slate-200 dark:border-slate-800 hover:border-slate-300 hover:scale-[1.01] font-semibold"
-                              >
-                                Сонголтоор илгээх
-                              </Button>
-                              <Button
-                                onClick={handleSendFloorInvoices}
-                                variant="secondary"
-                                size="sm"
-                                leftIcon={<Send className="w-3.5 h-3.5 text-slate-500" />}
-                                className="rounded-2xl transition-all duration-200 shadow-sm border border-slate-200 dark:border-slate-800 hover:border-slate-300 hover:scale-[1.01] font-semibold"
-                              >
-                                {propertyTab === "Зогсоол" ? "Давхрын зогсоолуудад илгээх" : propertyTab === "Агуулах" ? "Давхрын агуулахуудад илгээх" : "Давхрын тоотуудад илгээх"}
-                              </Button>
-                              <Button
-                                onClick={handleSendAllFloorsInvoices}
-                                variant="primary"
-                                size="sm"
-                                leftIcon={<Send className="w-3.5 h-3.5" />}
-                                className="rounded-2xl transition-all duration-200 shadow-md shadow-orange-500/10 hover:shadow-orange-500/20 hover:scale-[1.01] font-semibold"
-                              >
-                                {propertyTab === "Зогсоол" ? "Бүх давхрын зогсоолуудад илгээх" : propertyTab === "Агуулах" ? "Бүх давхрын агуулахуудад илгээх" : "Бүх давхрын тоотуудад илгээх"}
-                              </Button>
-                            </>
-                          )}
-                        </div>
                       )}
                     </div>
 
-                    {selectedFloorData.filteredUnits.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50/50 dark:bg-slate-900/20">
-                        <span className="italic text-slate-400 dark:text-slate-500 text-sm mb-3">
-                          Энэ давхарт одоогоор бүртгэлтэй тоот байхгүй байна.
-                        </span>
-                        <Button
-                          onClick={() => onAddUnit(selectedFloor || "")}
-                          variant="secondary"
-                          size="sm"
-                          leftIcon={<Plus className="w-3.5 h-3.5" />}
-                        >
-                          Анхны тоот үүсгэх
-                        </Button>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="flex items-center gap-2 mb-3">
-                          <span className="text-sm font-semibold text-slate-600 dark:text-slate-300 w-16 shrink-0">
-                            {selectedFloor}
-                          </span>
-                          <div className="flex flex-wrap gap-2">
-                            {selectedFloorData.filteredUnits.map((unit) => {
-                              const unitStr = String(unit).trim();
-                              const isOccupied =
-                                selectedFloorData.activeToots.has(unitStr);
-                              const isSelected = selectedUnit === unitStr;
-                              const resident = selectedFloorData.unitToResident[unitStr];
-                              const fullName = resident
-                                ? ([resident.ovog, resident.ner].filter(Boolean).join(" ") || resident.ner || "Нэргүй")
-                                : "";
-                              const utas = resident?.utas || "";
-                              const tooltipTitle = isOccupied
-                                ? (utas ? `${fullName} (${utas})` : fullName)
-                                : "Бүртгүүлэх";
-
-                              const isChecked = checkedUnits.includes(unitStr);
-
-                              return (
-                                <div key={unitStr} className="relative flex items-center justify-center">
-                                  {isOccupied && selectionMode && (
-                                    <input
-                                      type="checkbox"
-                                      checked={isChecked}
-                                      onChange={(e) => {
-                                        e.stopPropagation();
-                                        if (e.target.checked) {
-                                          setCheckedUnits((prev) => [...prev, unitStr]);
-                                        } else {
-                                          setCheckedUnits((prev) => prev.filter((x) => x !== unitStr));
-                                        }
-                                      }}
-                                      className="absolute -top-1.5 -left-1.5 z-10 w-4 h-4 rounded-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-orange-500 focus:ring-orange-500 cursor-pointer shadow-sm transition-transform hover:scale-110"
-                                    />
-                                  )}
-                                  <Tooltip title={tooltipTitle} color="#1e293b" placement="top">
-                                    <button
-                                      onClick={() => {
-                                        setSelectedUnit(unitStr);
-                                        if (isOccupied) {
-                                          setActiveUnitDetails({
-                                            unit: unitStr,
-                                            floor: selectedFloor || "",
-                                            resident,
-                                          });
-                                        } else {
-                                          setQuickRegister({
-                                            unit: unitStr,
-                                            floor: selectedFloor || "",
-                                          });
-                                        }
-                                      }}
-                                      className={`w-14 h-10 rounded-2xl flex items-center justify-center font-bold text-xs border transition-all duration-200 cursor-pointer ${isOccupied
-                                        ? "bg-emerald-500 hover:bg-emerald-600 border-emerald-600 dark:border-emerald-500 text-white shadow-sm shadow-emerald-500/20"
-                                        : "bg-orange-500 hover:bg-orange-600 border-orange-600 dark:border-orange-500 text-white shadow-sm shadow-orange-500/20"
-                                        } ${isSelected
-                                          ? "ring-2 ring-offset-2 ring-blue-500 dark:ring-offset-slate-900"
-                                          : ""
-                                        }`}
-                                    >
-                                      {unitStr}
-                                    </button>
-                                  </Tooltip>
-                                </div>
-                              );
-                            })}
-                            <button
-                              onClick={() => onAddUnit(selectedFloor || "")}
-                              className="flex items-center justify-center w-14 h-10 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-600 text-slate-400 hover:border-orange-400 hover:text-orange-500 transition-all"
-                              title="Шинэ тоот нэмэх"
-                            >
-                              <Plus className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Legend */}
-                        <div className="flex items-center gap-5 mt-5 pt-4 border-t border-gray-100 dark:border-gray-800">
-                          <div className="flex items-center gap-2">
-                            <span className="w-4 h-4 rounded-2xl bg-emerald-400 inline-block" />
-                            <span className="text-xs text-slate-600 dark:text-slate-400">
-                              Бүртгэлтэй
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="w-4 h-4 rounded-2xl bg-orange-400 inline-block" />
-                            <span className="text-xs text-slate-600 dark:text-slate-400">
-                              Чөлөөтэй
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="w-4 h-4 rounded-2xl border-2 border-dashed border-slate-300 inline-block" />
-                            <span className="text-xs text-slate-600 dark:text-slate-400">
-                              Нэмэх
-                            </span>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Right: Actions Panel */}
-                  <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-5">
-                    <h4 className="text-base font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
-                      <Info className="w-4 h-4 text-slate-500" />
-                      {propertyTab} мэдээлэл
-                    </h4>
-
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
-                        <span className="text-sm text-slate-500 dark:text-slate-400 shrink-0">
-                          Давхар
-                        </span>
-                        <div className="w-32">
-                          <TusgaiZagvar
-                            value={selectedFloor || ""}
-                            onChange={(val) => setSelectedFloor(val)}
-                            options={uniqueSortedFloorOptions}
-                            placeholder="Давхар сонгох"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
-                        <span className="text-sm text-slate-500 dark:text-slate-400">
-                          Нийт тоот
-                        </span>
-                        <span className="text-sm font-bold text-slate-800 dark:text-slate-100">
-                          {selectedFloorData.units.length}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center p-3 bg-orange-50 dark:bg-orange-950/20 rounded-2xl">
-                        <span className="text-sm text-orange-600 dark:text-orange-400">
-                          Чөлөөтэй
-                        </span>
-                        <span className="text-sm font-bold text-orange-600 dark:text-orange-400">
-                          {selectedFloorData.units.length -
-                            selectedFloorData.activeToots.size}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center p-3 bg-emerald-50 dark:bg-emerald-950/20 rounded-2xl">
-                        <span className="text-sm text-emerald-600 dark:text-emerald-400">
-                          Бүртгэлтэй
-                        </span>
-                        <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                          {selectedFloorData.activeToots.size}
-                        </span>
+                    <div className="flex items-center gap-2.5 w-full sm:w-auto">
+                      {/* Search Input: Хайх /зогсоолын дугаар/ */}
+                      <div className="relative flex-1 sm:w-64">
+                        <input
+                          type="text"
+                          value={zogsoolSearch}
+                          onChange={(e) => setZogsoolSearch(e.target.value)}
+                          placeholder={propertyTab === "Зогсоол" ? "Хайх /зогсоолын дугаар/" : "Хайх /агуулахын дугаар/"}
+                          className="h-9 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none transition shadow-2xs"
+                        />
                       </div>
 
-                      {selectedUnit && (
-                        <div className="mt-3 p-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm animate-in fade-in zoom-in-95 duration-200">
-                          <div className="flex items-center justify-between mb-3">
-                            <div>
-                              <p className="text-xs text-slate-400 dark:text-slate-500 mb-0.5">
-                                Сонгосон тоот
-                              </p>
-                              <p className="text-xl font-bold text-slate-800 dark:text-slate-100">
-                                {selectedUnit}
-                              </p>
-                            </div>
-                            <span
-                              className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${selectedFloorData.activeToots.has(selectedUnit)
-                                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400"
-                                : "bg-orange-100 text-orange-700 dark:bg-orange-950/30 dark:text-orange-400"
-                                }`}
-                            >
-                              {selectedFloorData.activeToots.has(selectedUnit)
-                                ? "Бүртгэлтэй"
-                                : "Сул байна"}
-                            </span>
-                          </div>
-
-                          {(() => {
-                            const resident =
-                              selectedFloorData.unitToResident[selectedUnit];
-                            if (!resident) return null;
-                            const fullName =
-                              [resident.ovog, resident.ner]
-                                .filter(Boolean)
-                                .join(" ") ||
-                              resident.ner ||
-                              "Нэргүй";
-                            const btnLabel =
-                              propertyTab === "Зогсоол"
-                                ? "Зогсоолын төлбөр нэмэх"
-                                : "Агуулахын төлбөр нэмэх";
-                            return (
-                              <div className="space-y-3 mb-3">
-                                <div className="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800/60 space-y-2.5">
-                                  <div className="flex items-center gap-2">
-                                    <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">
-                                      {fullName}
-                                    </span>
-                                  </div>
-                                  {resident.utas && (
-                                    <div className="flex items-center gap-2">
-                                      <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                                      <span className="text-sm text-slate-500 dark:text-slate-400">
-                                        {resident.utas}
-                                      </span>
-                                    </div>
-                                  )}
-                                  {resident.toot && (
-                                    <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-lg w-fit border border-slate-200 dark:border-slate-700/80 font-medium">
-                                      <span className="text-xs">🏠</span>
-                                      <span>
-                                        {[
-                                          resident.orts ? `${resident.orts}-р орц` : "",
-                                          resident.davkhar ? `${resident.davkhar}-р давхар` : "",
-                                          resident.toot ? `${resident.toot} тоот` : ""
-                                        ].filter(Boolean).join(", ")}
-                                      </span>
-                                    </div>
-                                  )}
-                                </div>
-                                <Button
-                                  onClick={async () => {
-                                    await handleSendSingleUnitInvoice(resident, selectedUnit || "");
-                                  }}
-                                  variant="secondary"
-                                  fullWidth
-                                  className="!bg-orange-500 hover:!bg-orange-600 !text-white rounded-2xl shadow-sm border-none font-semibold hover:scale-[1.01] transition-all"
-                                >
-                                  {propertyTab === "Зогсоол"
-                                    ? "Зогсоолын нэхэмжлэх илгээх"
-                                    : "Агуулахын нэхэмжлэх илгээх"}
-                                </Button>
-                                <Button
-                                  onClick={async () => {
-                                    const isClient = clientsList.some((c) => String(c._id) === String(resident._id));
-                                    const bId = resident.baiguullagiinId || selectedBarilga?.baiguullagiinId || "";
-                                    const barId = resident.barilgiinId || selectedBarilga?._id || selectedBarilga?.id || "";
-
-                                    if (isClient) {
-                                      if (actions.handleRemoveClientToot) {
-                                        await actions.handleRemoveClientToot(resident._id, bId, barId, selectedUnit, propertyTab);
-                                      }
-                                    } else {
-                                      if (actions.handleRemoveResidentToot) {
-                                        await actions.handleRemoveResidentToot(resident._id, bId, barId, selectedUnit, propertyTab);
-                                      }
-                                    }
-                                    setSelectedUnit(null);
-                                    setActiveUnitDetails(null);
-                                  }}
-                                  variant="ghost"
-                                  fullWidth
-                                  className="border border-red-200 bg-red-50/50 hover:bg-red-100/80 dark:border-red-900/40 dark:bg-red-950/20 dark:hover:bg-red-950/30 !text-red-600 dark:!text-red-400 rounded-2xl"
-                                >
-                                  Холбоос салгах
-                                </Button>
-                              </div>
-                            );
-                          })()}
-
-                          <Button
-                            onClick={() => {
-                              onDeleteUnit(selectedFloor || "", selectedUnit);
-                              setSelectedUnit(null);
-                            }}
-                            variant="ghost"
-                            fullWidth
-                            leftIcon={<Trash2 className="w-4 h-4" />}
-                            className="border border-red-200 bg-red-50/50 hover:bg-red-100/80 dark:border-red-900/40 dark:bg-red-950/20 dark:hover:bg-red-950/30 !text-red-600 dark:!text-red-400 rounded-2xl"
-                          >
-                            Тоот устгах
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="mt-5 space-y-2">
                       <Button
                         onClick={() => onAddUnit(selectedFloor || "")}
-                        variant="primary"
-                        className="w-full"
-                        leftIcon={<Plus className="w-4 h-4" />}
+                        variant="secondary"
+                        size="sm"
+                        leftIcon={<Plus className="w-3.5 h-3.5" />}
+                        className="rounded-xl font-semibold cursor-pointer shrink-0"
                       >
-                        Шинэ тоот нэмэх
+                        Бүртгэх
                       </Button>
+
                       <Button
-                        disabled={selectedFloorData.units.length === 0}
-                        onClick={() => {
-                          onDeleteFloor(selectedFloor || "");
-                          setSelectedUnit(null);
-                        }}
-                        variant="ghost"
-                        className="w-full border border-red-200 bg-red-50 hover:bg-red-100 dark:border-red-900/50 dark:bg-red-950/20 dark:hover:bg-red-950/30 !text-red-600 dark:!text-red-400"
-                        leftIcon={<Trash2 className="w-4 h-4" />}
+                        onClick={handleSendCheckedInvoices}
+                        variant="primary"
+                        size="sm"
+                        leftIcon={<Send className="w-3.5 h-3.5" />}
+                        className="rounded-xl font-semibold !bg-emerald-600 hover:!bg-emerald-700 cursor-pointer shrink-0"
                       >
-                        Давхараар нь устгах
+                        Илгээх ({checkedUnits.length})
                       </Button>
                     </div>
+                  </div>
+
+                  {/* Table */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 uppercase font-semibold">
+                          <th className="p-3 text-center w-10">
+                            <input
+                              type="checkbox"
+                              checked={zogsoolTableRows.length > 0 && checkedUnits.length === zogsoolTableRows.length}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setCheckedUnits(zogsoolTableRows.map((r) => r.id));
+                                } else {
+                                  setCheckedUnits([]);
+                                }
+                              }}
+                              className="rounded text-emerald-600 cursor-pointer"
+                            />
+                          </th>
+                          <th className="p-3 text-center w-12">№</th>
+                          <th className="p-3">Огноо</th>
+                          <th className="p-3">Нэр</th>
+                          <th className="p-3 text-center">Тоот</th>
+                          <th className="p-3">Дугаар</th>
+                          <th className="p-3 text-center">{propertyTab === "Зогсоол" ? "Зогсоол" : "Агуулах"}</th>
+                          <th className="p-3 text-right">Төлбөр</th>
+                          <th className="p-3 text-center">Төлсөн эсэх</th>
+                          <th className="p-3 text-center">Үйлдэл</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                        {zogsoolTableRows.length === 0 ? (
+                          <tr>
+                            <td colSpan={10} className="py-8 text-center text-slate-400 italic">
+                              Бүртгэгдсэн зогсоол байхгүй байна
+                            </td>
+                          </tr>
+                        ) : (
+                          zogsoolTableRows.map((row) => {
+                            const isChecked = checkedUnits.includes(row.id);
+                            return (
+                              <tr
+                                key={row.id}
+                                className={`hover:bg-slate-50 dark:hover:bg-slate-800/40 transition ${
+                                  isChecked ? "bg-emerald-50/40 dark:bg-emerald-950/20" : ""
+                                }`}
+                              >
+                                <td className="p-3 text-center">
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    onChange={(e) => {
+                                      if (e.target.checked) {
+                                        setCheckedUnits((prev) => [...prev, row.id]);
+                                      } else {
+                                        setCheckedUnits((prev) => prev.filter((x) => x !== row.id));
+                                      }
+                                    }}
+                                    className="rounded text-emerald-600 cursor-pointer"
+                                  />
+                                </td>
+                                <td className="p-3 text-center font-medium text-slate-500">{row.index}</td>
+                                <td className="p-3 text-slate-600 dark:text-slate-300">{row.ognoo}</td>
+                                <td className="p-3 font-semibold text-slate-800 dark:text-slate-100">{row.ner}</td>
+                                <td className="p-3 text-center font-semibold text-slate-700 dark:text-slate-300">{row.toot}</td>
+                                <td className="p-3 text-slate-600 dark:text-slate-300">{row.dugaar}</td>
+                                <td className="p-3 text-center font-bold text-emerald-600 dark:text-emerald-400">{row.zogsoolDugaar}</td>
+                                <td className="p-3 text-right font-bold text-slate-900 dark:text-white">
+                                  {row.tulbur.toLocaleString("mn-MN", { minimumFractionDigits: 2 })}₮
+                                </td>
+                                <td className="p-3 text-center">
+                                  <span
+                                    className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                                      row.tolsenEsekh
+                                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                                        : "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
+                                    }`}
+                                  >
+                                    {row.tolsenEsekh ? "Төлсөн" : "Төлөөгүй"}
+                                  </span>
+                                </td>
+                                <td className="p-3 text-center">
+                                  <div className="flex items-center justify-center gap-1.5">
+                                    {row.isOccupied ? (
+                                      <>
+                                        <button
+                                          onClick={() => handleSendSingleUnitInvoice(row.resident, row.id)}
+                                          className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition cursor-pointer"
+                                          title="Нэхэмжлэх/авлага илгээх"
+                                        >
+                                          <Send className="w-3.5 h-3.5" />
+                                        </button>
+                                        <button
+                                          onClick={async () => {
+                                            if (!row.resident) return;
+                                            if (!confirm(`Тоот ${row.zogsoolDugaar}-аас ${row.ner}-г хасах уу?`)) return;
+                                            await actions.handleUnlinkFromUnit(row.resident, row.id, propertyTab);
+                                          }}
+                                          className="p-1.5 rounded-lg text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-950/30 transition cursor-pointer"
+                                          title="Холбоос хасах"
+                                        >
+                                          <UserX className="w-3.5 h-3.5" />
+                                        </button>
+                                      </>
+                                    ) : (
+                                      <button
+                                        onClick={() => setQuickRegister({ unit: row.id, floor: selectedFloor || "" })}
+                                        className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition cursor-pointer"
+                                        title="Бүртгэх"
+                                      >
+                                        <Plus className="w-3.5 h-3.5" />
+                                      </button>
+                                    )}
+                                    <button
+                                      onClick={() => onDeleteUnit(selectedFloor || "", row.id)}
+                                      className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition cursor-pointer"
+                                      title="Устгах"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Summary Footer Row */}
+                  <div className="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-700 font-bold text-sm text-slate-900 dark:text-white">
+                    <span>Нийт дүн:</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 text-base font-extrabold">
+                      {totalZogsoolAmount.toLocaleString("mn-MN", { minimumFractionDigits: 2 })}₮
+                    </span>
                   </div>
                 </div>
               </div>
@@ -1318,10 +1220,11 @@ export default function UnitsSection({
         propertyTab={propertyTab}
         residentsList={residentsList}
         clientsList={clientsList}
-        onAssign={async (personId, type) => {
+        contracts={contracts}
+        onAssign={async (personId, type, gereeniiId) => {
           if (!quickRegister) return false;
           const { unit, floor } = quickRegister;
-          return await onAssignToUnit(personId, type, selectedOrts, floor, unit, propertyTab);
+          return await onAssignToUnit(personId, type, selectedOrts, floor, unit, propertyTab, gereeniiId);
         }}
         onRegisterNewOrshinSuugch={() => {
           if (!quickRegister) return;

@@ -125,16 +125,19 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
       },
     ];
 
-    if (propertyTab === "Тоот") {
-      cols.push({
-        title: (
-          <span className="text-slate-900 dark:text-slate-200 text-center block">
-            Тоотууд
-          </span>
-        ),
-        dataIndex: "filteredUnits",
-        key: "filteredUnits",
-        align: "center",
+    cols.push({
+      title: (
+        <span className="text-slate-900 dark:text-slate-200 text-center block font-semibold">
+          {propertyTab === "Зогсоол"
+            ? "Зогсоолын дугаарууд"
+            : propertyTab === "Агуулах"
+              ? "Агуулахын дугаарууд"
+              : "Тоотууд"}
+        </span>
+      ),
+      dataIndex: "filteredUnits",
+      key: "filteredUnits",
+      align: "center",
         className: "text-slate-900 dark:text-slate-200",
         render: (filteredUnits: string[], record: FloorItem) => {
           if (!filteredUnits || filteredUnits.length === 0) {
@@ -193,7 +196,6 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
           );
         },
       });
-    }
 
     cols.push({
       title: <span className="text-slate-900 dark:text-slate-200">Үйлдэл</span>,

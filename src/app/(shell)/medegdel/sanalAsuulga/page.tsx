@@ -32,6 +32,7 @@ import {
   Clock,
   ArrowRight,
   Check,
+  Search,
 } from "lucide-react";
 import uilchilgee from "@/lib/uilchilgee";
 import { useAuth } from "@/lib/useAuth";
@@ -106,28 +107,41 @@ const TURLIIN_NER: Record<AsuultiinTurul, string> = {
   tekst: "Бусад (текст хариулт)",
 };
 
-const ognooFormat = (iso?: string) =>
-  iso ? new Date(iso).toLocaleDateString("mn-MN") : "-";
+const ognooFormat = (iso?: string) => {
+  if (!iso) return "-";
+  const str = String(iso).trim();
+  const datePart = str.includes("T") ? str.split("T")[0] : str.split(" ")[0];
+  if (datePart.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    return datePart.replace(/-/g, ".");
+  }
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return str;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}`;
+};
 
 const ognooTsagFormat = (iso?: string) => {
   if (!iso) return "-";
+  const str = String(iso).trim();
   const d = new Date(iso);
+  if (isNaN(d.getTime())) {
+    const datePart = str.includes("T") ? str.split("T")[0] : str.split(" ")[0];
+    return datePart.replace(/-/g, ".");
+  }
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${pad(
-    d.getHours()
-  )}:${pad(d.getMinutes())}`;
+  return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}`;
 };
 
-const shineAsuult = (index: number = 1): Asuult => ({
-  asuult:
-    index === 1
-      ? "Amaphome-н үйлчилгээнд та хэр сэтгэл хангалуун байна вэ?"
-      : "",
+/**
+ * Шинэ асуулт үргэлж хоосон эхэлнэ. Урьд нь эхний асуулт нь жишээ текст,
+ * 5 бэлэн хариулттай үүсдэг байсан тул ажилтан бүрийг нь устгаж эхлэх
+ * шаардлагатай, санамсаргүй хадгалбал жишээ асуулга нь оршин суугчид руу
+ * очих эрсдэлтэй байв.
+ */
+const shineAsuult = (): Asuult => ({
+  asuult: "",
   turul: "songolt",
-  songoltuud:
-    index === 1
-      ? ["Маш сайн", "Сайн", "Дунд зэрэг", "Муу", "Маш муу"]
-      : ["", ""],
+  songoltuud: ["", ""],
   zaavalEsekh: true,
   busadTekst: false,
 });
@@ -139,21 +153,18 @@ export default function SanalAsuulgaPage() {
   const [gorim, setGorim] = useState<"jagsaalt" | "uusgekh" | "dun">(
     "jagsaalt"
   );
+  const [hailtUg, setHailtUg] = useState("");
   const [jagsaalt, setJagsaalt] = useState<Asuulga[]>([]);
   const [achaalj, setAchaalj] = useState(false);
   const [khadgalj, setKhadgalj] = useState(false);
 
   // Үүсгэх формын төлөв
-  const [garchig, setGarchig] = useState(
-    "Оршин суугчдын сэтгэл ханамж 2024 оны эхний хагас жил"
-  );
-  const [tailbar, setTailbar] = useState(
-    "Таны үнэлгээ, санал хүсэлт нь бидний үйлчилгээ, орчныг сайжруулахад чухал нөлөөтэй."
-  );
+  const [garchig, setGarchig] = useState("");
+  const [tailbar, setTailbar] = useState("");
   const [songogdsonBarilga, setSongogdsonBarilga] = useState<string[]>([]);
-  const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState("2024-05-20T09:00");
-  const [duusakhOgnoo, setDuusakhOgnoo] = useState("2024-05-31T23:59");
-  const [asuultuud, setAsuultuud] = useState<Asuult[]>([shineAsuult(1)]);
+  const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState("");
+  const [duusakhOgnoo, setDuusakhOgnoo] = useState("");
+  const [asuultuud, setAsuultuud] = useState<Asuult[]>([shineAsuult()]);
 
   // Live Interactive Preview State & Smooth Scroll Tracking
   const [previewDevice, setPreviewDevice] = useState<"mobile" | "desktop">(
@@ -161,7 +172,7 @@ export default function SanalAsuulgaPage() {
   );
   const [previewQuestionIndex, setPreviewQuestionIndex] = useState(0);
   const [previewAnswers, setPreviewAnswers] = useState<Record<number, string>>(
-    { 0: "Сайн" }
+    {}
   );
 
   // Drag & Drop reordering state for questions
@@ -250,7 +261,7 @@ export default function SanalAsuulgaPage() {
     if (barilguud.length > 0 && songogdsonBarilga.length === 0) {
       const activeId =
         selectedBuildingId &&
-        barilguud.some((b: any) => String(b._id) === String(selectedBuildingId))
+          barilguud.some((b: any) => String(b._id) === String(selectedBuildingId))
           ? String(selectedBuildingId)
           : String(barilguud[0]._id);
       if (activeId) {
@@ -285,15 +296,15 @@ export default function SanalAsuulgaPage() {
     setTailbar("");
     const defaultBuildingId =
       selectedBuildingId &&
-      barilguud.some((b: any) => String(b._id) === String(selectedBuildingId))
+        barilguud.some((b: any) => String(b._id) === String(selectedBuildingId))
         ? String(selectedBuildingId)
         : barilguud[0]?._id
-        ? String(barilguud[0]._id)
-        : "";
+          ? String(barilguud[0]._id)
+          : "";
     setSongogdsonBarilga(defaultBuildingId ? [defaultBuildingId] : []);
     setEkhlekhOgnoo("");
     setDuusakhOgnoo("");
-    setAsuultuud([shineAsuult(1)]);
+    setAsuultuud([shineAsuult()]);
     setPreviewQuestionIndex(0);
     setPreviewAnswers({});
   };
@@ -420,24 +431,32 @@ export default function SanalAsuulgaPage() {
 
   /* ── Жагсаалт ─────────────────────────────────────────────────────── */
 
-  if (gorim === "jagsaalt")
+  if (gorim === "jagsaalt") {
+    const shuugdsanJagsaalt = jagsaalt.filter(
+      (a) =>
+        !hailtUg.trim() ||
+        a.garchig.toLowerCase().includes(hailtUg.toLowerCase()) ||
+        (a.tailbar && a.tailbar.toLowerCase().includes(hailtUg.toLowerCase()))
+    );
+
     return (
       <div className="mx-auto w-full max-w-[1400px] space-y-5 p-4 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 dark:border-slate-800 pb-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
               Санал асуулга
             </h1>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
               Оршин суугчид руу асуумж явуулж, үр дүнг хянах самбар
             </p>
           </div>
+
           <button
             onClick={() => {
               formTseverleye();
               setGorim("uusgekh");
             }}
-            className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-semibold text-white transition duration-200 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 active:scale-95 cursor-pointer"
+            className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-semibold text-white transition duration-200 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 active:scale-95 cursor-pointer shrink-0"
           >
             <Plus className="h-4 w-4" />
             <span>Шинэ асуулга үүсгэх</span>
@@ -448,11 +467,11 @@ export default function SanalAsuulgaPage() {
           <div className="flex justify-center py-24">
             <Loader2 className="h-7 w-7 animate-spin text-emerald-500" />
           </div>
-        ) : jagsaalt.length === 0 ? (
+        ) : shuugdsanJagsaalt.length === 0 ? (
           <div className="flex flex-col items-center gap-3 rounded-3xl bg-white py-20 border border-slate-200/80 shadow-xs dark:bg-slate-900 dark:border-slate-800">
             <ClipboardList className="h-12 w-12 text-slate-300 dark:text-slate-600" />
             <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-              Одоогоор санал асуулга бүртгэгдээгүй байна
+              {hailtUg ? "Хайлтад тохирох асуулга олдсонгүй" : "Одоогоор санал асуулга бүртгэгдээгүй байна"}
             </p>
             <button
               onClick={() => {
@@ -466,7 +485,7 @@ export default function SanalAsuulgaPage() {
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {jagsaalt.map((a) => (
+            {shuugdsanJagsaalt.map((a) => (
               <div
                 key={a._id}
                 className="flex flex-col gap-3 rounded-2xl bg-white p-5 border border-slate-200/80 shadow-xs transition duration-200 hover:shadow-md dark:bg-slate-900 dark:border-slate-800"
@@ -537,29 +556,61 @@ export default function SanalAsuulgaPage() {
         )}
       </div>
     );
+  }
 
   /* ── Үүсгэх (Шинэ дизайн: Split 2-Column with Live Interactive Device Preview) ── */
 
   if (gorim === "uusgekh") {
     const activeQuestion =
-      asuultuud[previewQuestionIndex] || asuultuud[0] || shineAsuult(1);
+      asuultuud[previewQuestionIndex] || asuultuud[0] || shineAsuult();
 
     return (
       <div className="w-full space-y-6 text-[color:var(--panel-text)]">
+        {/* Top Header Bar for Create Mode */}
+        <div className="flex items-center justify-between gap-4 border-b border-slate-200/80 dark:border-slate-800 pb-4">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setGorim("jagsaalt")}
+              className="flex items-center justify-center h-9 w-9 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              title="Буцах"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+            <h1 className="text-lg font-semibold text-slate-900 dark:text-white">
+              Шинэ санал асуулга үүсгэх
+            </h1>
+          </div>
+        </div>
+
         {/* ── Main Split Content Grid ── */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* ── Left Column: Form Controls (8 Cols) ── */}
           <div ref={leftColRef} className="lg:col-span-8 space-y-6">
             {/* Card 1: Санал асуулгын мэдээлэл */}
             <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xs space-y-5">
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3">
-                Санал асуулгын мэдээлэл
-              </h2>
+              <div className="flex flex-wrap items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 gap-3">
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 shrink-0">
+                  Санал асуулгын мэдээлэл
+                </h2>
+                <div className="w-72 shrink-0">
+                  <StandardDatePicker
+                    isRange
+                    value={[ekhlekhOgnoo, duusakhOgnoo]}
+                    onChange={(_dates, dateStrings) => {
+                      setEkhlekhOgnoo(dateStrings[0] || "");
+                      setDuusakhOgnoo(dateStrings[1] || "");
+                    }}
+                    placeholder={["Эхлэх огноо", "Дуусах огноо"]}
+                    className="w-full !h-9 !rounded-xl"
+                  />
+                </div>
+              </div>
 
               {/* Title Input with character counter */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  <label className="text-xs font-medium text-slate-600 dark:text-slate-400">
                     Гарчиг <span className="text-red-500">*</span>
                   </label>
                   <span className="text-[11px] font-medium text-slate-400">
@@ -571,14 +622,14 @@ export default function SanalAsuulgaPage() {
                   maxLength={100}
                   onChange={(e) => setGarchig(e.target.value)}
                   placeholder="Оршин суугчдын сэтгэл ханамж 2024 оны эхний хагас жил"
-                  className="h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/40 px-3.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition"
+                  className="h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none transition shadow-2xs"
                 />
               </div>
 
               {/* Description Input with character counter */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  <label className="text-xs font-medium text-slate-600 dark:text-slate-400">
                     Товч тайлбар
                   </label>
                   <span className="text-[11px] font-medium text-slate-400">
@@ -591,40 +642,14 @@ export default function SanalAsuulgaPage() {
                   onChange={(e) => setTailbar(e.target.value)}
                   rows={3}
                   placeholder="Таны үнэлгээ, санал хүсэлт нь бидний үйлчилгээ, орчныг сайжруулахад чухал нөлөөтэй."
-                  className="w-full resize-none rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/40 p-3 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition"
+                  className="w-full resize-none rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none transition shadow-2xs"
                 />
-              </div>
-
-              {/* Start & End Date Pickers using Custom StandardDatePicker */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                    Эхлэх огноо
-                  </label>
-                  <StandardDatePicker
-                    value={ekhlekhOgnoo}
-                    onChange={(_date, dateString) => setEkhlekhOgnoo(dateString)}
-                    placeholder="Эхлэх огноо"
-                    className="w-full !h-10 !rounded-xl"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                    Дуусах огноо
-                  </label>
-                  <StandardDatePicker
-                    value={duusakhOgnoo}
-                    onChange={(_date, dateString) => setDuusakhOgnoo(dateString)}
-                    placeholder="Дуусах огноо"
-                    className="w-full !h-10 !rounded-xl"
-                  />
-                </div>
               </div>
 
               {/* Building selector filter */}
               {barilguud.length > 0 && (
                 <div>
-                  <label className="mb-2 block text-xs font-bold text-slate-700 dark:text-slate-300">
+                  <label className="mb-2 block text-xs font-medium text-slate-600 dark:text-slate-400">
                     Хамаарах барилга{" "}
                     <span className="font-normal text-slate-400">
                       (Сонгохгүй бол бүх оршин суугчдад харагдана)
@@ -660,7 +685,7 @@ export default function SanalAsuulgaPage() {
 
             {/* Card 2: Асуулт & хариултууд */}
             <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xs space-y-5">
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 border-b border-slate-100 dark:border-slate-800 pb-3">
                 Асуулт & хариултууд
               </h2>
 
@@ -673,11 +698,10 @@ export default function SanalAsuulgaPage() {
                     onDragOver={handleQuestionDragOver}
                     onDrop={(e) => handleQuestionDrop(e, i)}
                     onDragEnd={() => setDraggedQuestionIndex(null)}
-                    className={`p-5 rounded-2xl border transition-all ${
-                      draggedQuestionIndex === i
-                        ? "opacity-30 border-emerald-500 bg-emerald-50/20 scale-[0.99]"
-                        : "border-slate-200/80 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-800/30"
-                    } space-y-4 relative group`}
+                    className={`p-5 rounded-2xl border transition-all ${draggedQuestionIndex === i
+                      ? "opacity-30 border-emerald-500 bg-emerald-50/20 scale-[0.99]"
+                      : "border-slate-200/80 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-800/30"
+                      } space-y-4 relative group`}
                   >
                     {/* Question Header Row */}
                     <div className="flex items-center gap-2">
@@ -819,34 +843,33 @@ export default function SanalAsuulgaPage() {
                     )}
                   </div>
                 ))}
-
-                {/* Add Question Button */}
-                <button
-                  type="button"
-                  onClick={() =>
-                    setAsuultuud((prev) => [
-                      ...prev,
-                      shineAsuult(prev.length + 1),
-                    ])
-                  }
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-500 hover:text-emerald-600 hover:border-emerald-500/50 hover:bg-emerald-500/5 transition cursor-pointer"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>Асуулт нэмэх</span>
-                </button>
               </div>
             </div>
 
-            {/* Bottom Action Button */}
-            <div className="flex justify-end pt-2">
+            {/* Bottom 80/20 Action Bar: Add Question (80%) & Save & Publish (20%) */}
+            <div className="grid grid-cols-10 gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() =>
+                  setAsuultuud((prev) => [
+                    ...prev,
+                    shineAsuult(),
+                  ])
+                }
+                className="col-span-8 flex items-center justify-center gap-2 py-3.5 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-600 bg-slate-50/60 dark:bg-slate-800/40 text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-500 hover:bg-emerald-500/10 transition cursor-pointer shadow-2xs"
+              >
+                <Plus className="h-4 w-4 shrink-0" />
+                <span>Асуулт нэмэх</span>
+              </button>
+
               <button
                 type="button"
                 onClick={() => khadgalya(true)}
                 disabled={khadgalj}
-                className="flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 px-6 py-2.5 text-xs font-bold text-white transition duration-150 shadow-lg shadow-emerald-600/25 disabled:opacity-50 cursor-pointer"
+                className="col-span-2 flex items-center justify-center gap-1.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 px-3 py-3.5 text-xs font-bold text-white transition duration-150 shadow-lg shadow-emerald-600/25 disabled:opacity-50 cursor-pointer text-center whitespace-nowrap"
               >
-                <span>Хадгалах & Нийтлэх</span>
-                <ChevronRight className="h-4 w-4" />
+                <span>Хадгалах</span>
+                <ChevronRight className="h-4 w-4 shrink-0" />
               </button>
             </div>
           </div>
@@ -860,23 +883,18 @@ export default function SanalAsuulgaPage() {
             className="lg:col-span-4 space-y-3 transition-transform duration-75 ease-out z-20"
           >
 
-            {/* Authentic Phone Device Container with Reduced Width */}
-            <div className="relative mx-auto w-full max-w-[290px]">
-              {/* Physical Frame Hardware Side Buttons */}
-              <div className="absolute -left-[9px] top-16 w-[3px] h-6 bg-slate-700 dark:bg-slate-600 rounded-l-md z-0" />
-              <div className="absolute -left-[9px] top-26 w-[3px] h-6 bg-slate-700 dark:bg-slate-600 rounded-l-md z-0" />
-              <div className="absolute -right-[9px] top-20 w-[3px] h-9 bg-slate-700 dark:bg-slate-600 rounded-r-md z-0" />
-
-              {/* Main Phone Body */}
-              <div className="relative z-10 w-full rounded-[40px] border-[6px] border-slate-900 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 pt-6 pb-3 shadow-xl space-y-3 overflow-hidden box-border">
-                {/* Top Dynamic Island / Notch */}
-                <div className="absolute top-2 left-1/2 -translate-x-1/2 w-20 h-3.5 bg-slate-900 rounded-full flex items-center justify-between px-1.5 z-30">
-                  <div className="h-1 w-1 rounded-full bg-slate-800" />
-                  <div className="h-1 w-1 rounded-full bg-blue-900/60" />
+            {/* Authentic iPhone 16 / 17 Device Container */}
+            <div className="relative mx-auto w-full max-w-[320px]">
+              {/* Main Phone Body with realistic 640px iPhone height */}
+              <div className="relative z-10 w-full h-[640px] rounded-[44px] border-[8px] border-slate-900 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 pt-7 pb-3 shadow-2xl flex flex-col justify-between overflow-hidden box-border">
+                {/* Top Dynamic Island / Pill Cutout */}
+                <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-24 h-4 bg-slate-900 rounded-full flex items-center justify-between px-2 z-30 shadow-xs">
+                  <div className="h-1.5 w-1.5 rounded-full bg-slate-800" />
+                  <div className="h-1.5 w-1.5 rounded-full bg-blue-900/80" />
                 </div>
 
                 {/* Phone Status Bar */}
-                <div className="flex items-center justify-between px-1 text-[9px] font-semibold text-slate-400 pt-0.5">
+                <div className="flex items-center justify-between px-1 text-[9px] font-semibold text-slate-400 pt-0.5 shrink-0">
                   <span>09:41</span>
                   <div className="flex items-center gap-1">
                     <span>5G</span>
@@ -886,194 +904,197 @@ export default function SanalAsuulgaPage() {
                   </div>
                 </div>
 
-                {/* Status Badges Row */}
-                <div className="flex items-center justify-between gap-1.5">
-                  <span className="px-2 py-0.5 text-[9px] font-bold rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
-                    Идэвхтэй
-                  </span>
-                  <span className="text-[9px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                    <Clock className="h-2.5 w-2.5" />
-                    Дуусахад 5 хоног үлдлээ
-                  </span>
-                </div>
-
-                {/* Live Title & Description */}
-                <div className="space-y-1">
-                  <h4 className="text-xs font-extrabold text-slate-900 dark:text-white leading-snug">
-                    {garchig || "Оршин суугчдын сэтгэл ханамж 2024"}
-                  </h4>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                    {tailbar ||
-                      "Таны үнэлгээ, санал хүсэлт нь бидний үйлчилгээ, орчныг сайжруулахад чухал нөлөөтэй."}
-                  </p>
-                </div>
-
-                {/* Metadata Grid Cards */}
-                <div className="grid grid-cols-2 gap-1.5 p-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 text-[10px]">
-                  <div>
-                    <span className="block text-[8px] font-semibold text-slate-400 uppercase">
-                      Эхлэх огноо
+                {/* Scrollable Screen Body Area */}
+                <div className="flex-1 overflow-y-auto pr-0.5 space-y-3 scrollbar-none">
+                  {/* Status Badges Row */}
+                  <div className="flex items-center justify-between gap-1.5">
+                    <span className="px-2 py-0.5 text-[9px] font-bold rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
+                      Идэвхтэй
                     </span>
-                    <span className="font-bold text-slate-700 dark:text-slate-200">
-                      {ognooTsagFormat(ekhlekhOgnoo)}
+                    <span className="text-[9px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                      <Clock className="h-2.5 w-2.5" />
+                      Дуусахад 5 хоног үлдлээ
                     </span>
                   </div>
-                  <div>
-                    <span className="block text-[8px] font-semibold text-slate-400 uppercase">
-                      Дуусах огноо
-                    </span>
-                    <span className="font-bold text-slate-700 dark:text-slate-200">
-                      {ognooTsagFormat(duusakhOgnoo)}
-                    </span>
+
+                  {/* Live Title & Description */}
+                  <div className="space-y-1">
+                    <h4 className="text-xs font-extrabold text-slate-900 dark:text-white leading-snug">
+                      {garchig || "Оршин суугчдын сэтгэл ханамж 2024"}
+                    </h4>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                      {tailbar ||
+                        "Таны үнэлгээ, санал хүсэлт нь бидний үйлчилгээ, орчныг сайжруулахад чухал нөлөөтэй."}
+                    </p>
                   </div>
-                  <div className="col-span-2 pt-1 border-t border-slate-200/50 dark:border-slate-700/50 flex items-center justify-between">
-                    <span className="text-[9px] font-semibold text-slate-500">
-                      👥 Оролцогч:
-                    </span>
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                      {songogdsonBarilga.length > 0
-                        ? `${songogdsonBarilga.length} барилга`
-                        : "2,468 эрх (Бүгд)"}
-                    </span>
+
+                  {/* Metadata Grid Cards */}
+                  <div className="grid grid-cols-2 gap-1.5 p-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 text-[10px]">
+                    <div>
+                      <span className="block text-[8px] font-semibold text-slate-400 uppercase">
+                        Эхлэх огноо
+                      </span>
+                      <span className="font-bold text-slate-700 dark:text-slate-200">
+                        {ognooTsagFormat(ekhlekhOgnoo)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="block text-[8px] font-semibold text-slate-400 uppercase">
+                        Дуусах огноо
+                      </span>
+                      <span className="font-bold text-slate-700 dark:text-slate-200">
+                        {ognooTsagFormat(duusakhOgnoo)}
+                      </span>
+                    </div>
+                    <div className="col-span-2 pt-1 border-t border-slate-200/50 dark:border-slate-700/50 flex items-center justify-between">
+                      <span className="text-[9px] font-semibold text-slate-500">
+                        👥 Оролцогч:
+                      </span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                        {songogdsonBarilga.length > 0
+                          ? `${songogdsonBarilga.length} барилга`
+                          : "2,468 эрх (Бүгд)"}
+                      </span>
+                    </div>
                   </div>
-                </div>
 
-                {/* Divider Line */}
-                <div className="border-b border-slate-100 dark:border-slate-800" />
+                  {/* Divider Line */}
+                  <div className="border-b border-slate-100 dark:border-slate-800" />
 
-                {/* Live Interactive Question Render */}
-                <div className="space-y-2.5">
-                  <h5 className="text-[11px] font-bold text-slate-900 dark:text-white">
-                    {previewQuestionIndex + 1}.{" "}
-                    {activeQuestion.asuult || "Асуултын текст..."}
-                  </h5>
+                  {/* Live Interactive Question Render */}
+                  <div className="space-y-2.5">
+                    <h5 className="text-[11px] font-bold text-slate-900 dark:text-white">
+                      {previewQuestionIndex + 1}.{" "}
+                      {activeQuestion.asuult || "Асуултын текст..."}
+                    </h5>
 
-                  {activeQuestion.turul !== "tekst" ? (
-                    <div className="space-y-1.5">
-                      {activeQuestion.songoltuud.map((opt, optIdx) => {
-                        const isSelected =
-                          previewAnswers[previewQuestionIndex] === opt;
-                        return (
+                    {activeQuestion.turul !== "tekst" ? (
+                      <div className="space-y-1.5">
+                        {activeQuestion.songoltuud.map((opt, optIdx) => {
+                          const isSelected =
+                            previewAnswers[previewQuestionIndex] === opt;
+                          return (
+                            <div
+                              key={optIdx}
+                              onClick={() =>
+                                setPreviewAnswers((prev) => ({
+                                  ...prev,
+                                  [previewQuestionIndex]: opt,
+                                }))
+                              }
+                              className={`flex items-center gap-2 p-2 rounded-xl border text-[11px] font-medium cursor-pointer transition ${isSelected
+                                ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 font-bold"
+                                : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:border-slate-300"
+                                }`}
+                            >
+                              <div
+                                className={`h-3.5 w-3.5 rounded-full border flex items-center justify-center shrink-0 ${isSelected
+                                  ? "border-emerald-600 bg-emerald-600 text-white"
+                                  : "border-slate-300 dark:border-slate-600"
+                                  }`}
+                              >
+                                {isSelected && (
+                                  <Check className="h-2 w-2 stroke-[3]" />
+                                )}
+                              </div>
+                              <span className="truncate">
+                                {opt || `Хувилбар ${optIdx + 1}`}
+                              </span>
+                            </div>
+                          );
+                        })}
+
+                        {/* Custom Writing Option Item in Phone Preview when busadTekst is enabled */}
+                        {activeQuestion.busadTekst && (
                           <div
-                            key={optIdx}
                             onClick={() =>
                               setPreviewAnswers((prev) => ({
                                 ...prev,
-                                [previewQuestionIndex]: opt,
+                                [previewQuestionIndex]: "Бусад",
                               }))
                             }
-                            className={`flex items-center gap-2 p-2 rounded-xl border text-[11px] font-medium cursor-pointer transition ${isSelected
-                              ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 font-bold"
-                              : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:border-slate-300"
-                              }`}
+                            className={`flex flex-col gap-1.5 p-2 rounded-xl border text-[11px] font-medium cursor-pointer transition ${
+                              previewAnswers[previewQuestionIndex]?.startsWith("Бусад")
+                                ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 font-bold"
+                                : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:border-slate-300"
+                            }`}
                           >
-                            <div
-                              className={`h-3.5 w-3.5 rounded-full border flex items-center justify-center shrink-0 ${isSelected
-                                ? "border-emerald-600 bg-emerald-600 text-white"
-                                : "border-slate-300 dark:border-slate-600"
+                            <div className="flex items-center gap-2">
+                              <div
+                                className={`h-3.5 w-3.5 rounded-full border flex items-center justify-center shrink-0 ${
+                                  previewAnswers[previewQuestionIndex]?.startsWith("Бусад")
+                                    ? "border-emerald-600 bg-emerald-600 text-white"
+                                    : "border-slate-300 dark:border-slate-600"
                                 }`}
-                            >
-                              {isSelected && (
-                                <Check className="h-2 w-2 stroke-[3]" />
-                              )}
+                              >
+                                {previewAnswers[previewQuestionIndex]?.startsWith("Бусад") && (
+                                  <Check className="h-2 w-2 stroke-[3]" />
+                                )}
+                              </div>
+                              <span>Бусад (бусад утга бичих)</span>
                             </div>
-                            <span className="truncate">
-                              {opt || `Хувилбар ${optIdx + 1}`}
-                            </span>
+                            {previewAnswers[previewQuestionIndex]?.startsWith("Бусад") && (
+                              <input
+                                type="text"
+                                placeholder="Хариултаа бичнэ үү..."
+                                onClick={(e) => e.stopPropagation()}
+                                className="w-full h-7 px-2 text-[10px] rounded-lg border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none"
+                              />
+                            )}
                           </div>
-                        );
-                      })}
+                        )}
+                      </div>
+                    ) : (
+                      <textarea
+                        rows={2}
+                        placeholder="Хариултаа энд бичнэ үү..."
+                        className="w-full rounded-xl border border-slate-200 dark:border-slate-800 p-2 text-[11px] bg-slate-50 dark:bg-slate-800/40 text-slate-900 dark:text-white"
+                      />
+                    )}
 
-                      {/* Custom Writing Option Item in Phone Preview when busadTekst is enabled */}
-                      {activeQuestion.busadTekst && (
-                        <div
-                          onClick={() =>
-                            setPreviewAnswers((prev) => ({
-                              ...prev,
-                              [previewQuestionIndex]: "Бусад",
-                            }))
-                          }
-                          className={`flex flex-col gap-1.5 p-2 rounded-xl border text-[11px] font-medium cursor-pointer transition ${
-                            previewAnswers[previewQuestionIndex]?.startsWith("Бусад")
-                              ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 font-bold"
-                              : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:border-slate-300"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <div
-                              className={`h-3.5 w-3.5 rounded-full border flex items-center justify-center shrink-0 ${
-                                previewAnswers[previewQuestionIndex]?.startsWith("Бусад")
-                                  ? "border-emerald-600 bg-emerald-600 text-white"
-                                  : "border-slate-300 dark:border-slate-600"
-                              }`}
-                            >
-                              {previewAnswers[previewQuestionIndex]?.startsWith("Бусад") && (
-                                <Check className="h-2 w-2 stroke-[3]" />
-                              )}
-                            </div>
-                            <span>Бусад (бусад утга бичих)</span>
-                          </div>
-                          {previewAnswers[previewQuestionIndex]?.startsWith("Бусад") && (
-                            <input
-                              type="text"
-                              placeholder="Хариултаа бичнэ үү..."
-                              onClick={(e) => e.stopPropagation()}
-                              className="w-full h-7 px-2 text-[10px] rounded-lg border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none"
-                            />
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <textarea
-                      rows={2}
-                      placeholder="Хариултаа энд бичнэ үү..."
-                      className="w-full rounded-xl border border-slate-200 dark:border-slate-800 p-2 text-[11px] bg-slate-50 dark:bg-slate-800/40 text-slate-900 dark:text-white"
-                    />
-                  )}
-
-                  {/* Mock Submit Button */}
-                  <button
-                    type="button"
-                    className="w-full py-2 rounded-xl bg-emerald-600 text-white font-bold text-[11px] shadow-sm shadow-emerald-600/20 active:scale-95 transition cursor-pointer"
-                  >
-                    Илгээх
-                  </button>
-                </div>
-
-                {/* Pagination Switcher for Preview Questions */}
-                {asuultuud.length > 1 && (
-                  <div className="flex items-center justify-center gap-2 pt-1.5 border-t border-slate-100 dark:border-slate-800 text-[10px] font-semibold text-slate-500">
+                    {/* Mock Submit Button */}
                     <button
                       type="button"
-                      disabled={previewQuestionIndex === 0}
-                      onClick={() =>
-                        setPreviewQuestionIndex((prev) => Math.max(0, prev - 1))
-                      }
-                      className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 cursor-pointer"
+                      className="w-full py-2 rounded-xl bg-emerald-600 text-white font-bold text-[11px] shadow-sm shadow-emerald-600/20 active:scale-95 transition cursor-pointer"
                     >
-                      <ChevronLeft className="h-4 w-4" />
-                    </button>
-                    <span>
-                      {previewQuestionIndex + 1} / {asuultuud.length}
-                    </span>
-                    <button
-                      type="button"
-                      disabled={previewQuestionIndex === asuultuud.length - 1}
-                      onClick={() =>
-                        setPreviewQuestionIndex((prev) =>
-                          Math.min(asuultuud.length - 1, prev + 1)
-                        )
-                      }
-                      className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 cursor-pointer"
-                    >
-                      <ChevronRight className="h-4 w-4" />
+                      Илгээх
                     </button>
                   </div>
-                )}
 
-                {/* Bottom Home Indicator Bar */}
-                <div className="w-28 h-1 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mt-2" />
+                  {/* Pagination Switcher for Preview Questions */}
+                  {asuultuud.length > 1 && (
+                    <div className="flex items-center justify-center gap-2 pt-1.5 border-t border-slate-100 dark:border-slate-800 text-[10px] font-semibold text-slate-500">
+                      <button
+                        type="button"
+                        disabled={previewQuestionIndex === 0}
+                        onClick={() =>
+                          setPreviewQuestionIndex((prev) => Math.max(0, prev - 1))
+                        }
+                        className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 cursor-pointer"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </button>
+                      <span>
+                        {previewQuestionIndex + 1} / {asuultuud.length}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={previewQuestionIndex === asuultuud.length - 1}
+                        onClick={() =>
+                          setPreviewQuestionIndex((prev) =>
+                            Math.min(asuultuud.length - 1, prev + 1)
+                          )
+                        }
+                        className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 cursor-pointer"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Bottom iOS Home Indicator Pill */}
+                <div className="w-28 h-1 bg-slate-900 dark:bg-slate-100 rounded-full mx-auto shrink-0 mt-1" />
               </div>
             </div>
           </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { X, UserCheck, Building2, ArrowLeft, Search, Plus } from "lucide-react";
+import { X, UserCheck, Building2, ArrowLeft, Search, Plus, FileText } from "lucide-react";
 import { ModalPortal } from "../../../../../components/shell/ModalPortal";
 import { useRouter } from "next/navigation";
 import useModalHotkeys from "@/lib/useModalHotkeys";
@@ -15,7 +15,8 @@ interface QuickRegisterModalProps {
   propertyTab: "Тоот" | "Зогсоол" | "Агуулах";
   residentsList: any[];
   clientsList: any[];
-  onAssign: (personId: string, personType: "orshinSuugch" | "khariltsagch") => Promise<boolean>;
+  contracts?: any[];
+  onAssign: (personId: string, personType: "orshinSuugch" | "khariltsagch", gereeniiId?: string) => Promise<boolean>;
   onRegisterNewOrshinSuugch?: () => void;
   onRegisterNewKhariltsagch?: () => void;
 }
@@ -29,14 +30,16 @@ export default function QuickRegisterModal({
   propertyTab,
   residentsList,
   clientsList,
+  contracts = [],
   onAssign,
   onRegisterNewOrshinSuugch,
   onRegisterNewKhariltsagch,
 }: QuickRegisterModalProps) {
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [selectedType, setSelectedType] = useState<"orshinSuugch" | "khariltsagch" | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingPerson, setPendingPerson] = useState<any>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
@@ -47,6 +50,7 @@ export default function QuickRegisterModal({
       setSelectedType(null);
       setSearchQuery("");
       setIsSubmitting(false);
+      setPendingPerson(null);
     }
   }, [show]);
 
@@ -90,25 +94,70 @@ export default function QuickRegisterModal({
     });
   }, [listToSearch, searchQuery]);
 
+  // Find apartment contracts for a selected person (step 3 use case)
+  const getApartmentContracts = (personId: string) => {
+    if (!contracts || contracts.length === 0) return [];
+    return contracts.filter((c: any) => {
+      const status = String(c?.tuluv || c?.status || "Идэвхтэй").trim();
+      if (status === "Цуцалсан" || status === "Идэвхгүй") return false;
+      const cResId = c.orshinSuugchId || c.khariltsagchId;
+      if (String(cResId) !== String(personId)) return false;
+      // Only apartment-type contracts
+      const cTurul = String(c.turul || "").trim();
+      return cTurul !== "Зогсоол" && cTurul !== "Гараж" && cTurul !== "Агуулах";
+    });
+  };
+
   const handleSelectType = (type: "orshinSuugch" | "khariltsagch") => {
     setSelectedType(type);
     setStep(2);
   };
 
   const handleBack = () => {
-    setStep(1);
-    setSelectedType(null);
-    setSearchQuery("");
+    if (step === 3) {
+      setStep(2);
+      setPendingPerson(null);
+    } else {
+      setStep(1);
+      setSelectedType(null);
+      setSearchQuery("");
+    }
   };
 
   const handleAssignPerson = async (personId: string) => {
     if (!selectedType || isSubmitting) return;
+
+    // For parking/storage tabs: check if person has multiple apartment contracts
+    if ((propertyTab === "Зогсоол" || propertyTab === "Агуулах") && selectedType === "orshinSuugch") {
+      const aptContracts = getApartmentContracts(personId);
+      if (aptContracts.length > 1) {
+        // Ambiguous — show step 3 to pick which contract owns this parking slot
+        const person = listToSearch.find((p: any) => String(p._id) === String(personId));
+        setPendingPerson({ id: personId, type: selectedType, person, aptContracts });
+        setStep(3);
+        return;
+      }
+      // Only 1 apartment contract — use it directly
+      const gereeniiId = aptContracts.length === 1 ? String(aptContracts[0]._id) : undefined;
+      setIsSubmitting(true);
+      const success = await onAssign(personId, selectedType, gereeniiId);
+      setIsSubmitting(false);
+      if (success) onClose();
+      return;
+    }
+
     setIsSubmitting(true);
     const success = await onAssign(personId, selectedType);
     setIsSubmitting(false);
-    if (success) {
-      onClose();
-    }
+    if (success) onClose();
+  };
+
+  const handleSelectContract = async (gereeniiId: string) => {
+    if (!pendingPerson || isSubmitting) return;
+    setIsSubmitting(true);
+    const success = await onAssign(pendingPerson.id, pendingPerson.type, gereeniiId);
+    setIsSubmitting(false);
+    if (success) onClose();
   };
 
   // ESC closes, Enter submits if there's exactly one result in the list
@@ -137,7 +186,7 @@ export default function QuickRegisterModal({
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100 dark:border-gray-800">
           <div className="flex items-center gap-3">
-            {step === 2 && (
+            {step > 1 && (
               <button
                 onClick={handleBack}
                 className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
@@ -148,7 +197,7 @@ export default function QuickRegisterModal({
             )}
             <div>
               <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">
-                {unitTypeLabel} холбох
+                {step === 3 ? "Гэрээ сонгох" : `${unitTypeLabel} холбох`}
               </p>
               <h2 className="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
                 <span className="px-2 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-sm font-bold">
@@ -297,6 +346,50 @@ export default function QuickRegisterModal({
                   );
                 })
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Step 3: Pick which apartment contract owns this parking slot */}
+        {step === 3 && pendingPerson && (
+          <div className="px-6 py-5">
+            <div className="mb-4 p-3 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/40">
+              <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 leading-snug">
+                <span className="font-bold">{[pendingPerson.person?.ovog, pendingPerson.person?.ner].filter(Boolean).join(" ")}</span>
+                {" "}нь хэд хэдэн гэрээтэй байна. Энэ зогсоолын төлбөр аль гэрээнд бичигдэх вэ?
+              </p>
+            </div>
+            <div className="space-y-2">
+              {pendingPerson.aptContracts.map((c: any) => {
+                const tootStr = c.toot ? `Тоот ${c.toot}` : "";
+                const dugaarStr = c.gereeniiDugaar || "Гэрээ";
+                const turulStr = c.turul || "Орон сууц";
+                return (
+                  <button
+                    key={c._id}
+                    disabled={isSubmitting}
+                    onClick={() => handleSelectContract(String(c._id))}
+                    className="w-full text-left p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-800/20 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-200 dark:hover:border-blue-800 transition-all flex items-center justify-between group disabled:opacity-50"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                        <FileText className="w-4 h-4 text-blue-500 dark:text-blue-400" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                          {dugaarStr}
+                        </p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                          {[turulStr, tootStr].filter(Boolean).join(" · ")}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+                      Сонгох
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}

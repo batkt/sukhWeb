@@ -95,6 +95,11 @@ export const ALL_PERMISSIONS: PermissionItem[] = [
     description: "Тайлангийн мэдээлэл харах эрх",
     children: [
       {
+        id: "tailan.bi",
+        label: "BI Тайлан",
+        description: "Нэгтгэсэн BI аналитик тайлан",
+      },
+      {
         id: "tailan.orlogoAvlaga",
         label: "Авлагын товчоо",
         description: "Авлагын товчооны тайлан",
