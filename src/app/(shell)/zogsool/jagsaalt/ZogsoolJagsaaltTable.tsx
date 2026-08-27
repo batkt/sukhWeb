@@ -238,6 +238,7 @@ export const ZogsoolJagsaaltTable: React.FC<ZogsoolJagsaaltTableProps> = ({
             cash: "Бэлэн",
             khaan: "Хаан",
             qpay: "QPay",
+            QPay: "QPay",
             transfer: "Дансаар",
             discount: "Хөнгөлөлт",
             GadaaQR: "Гадаа QR",
