@@ -317,8 +317,17 @@ type LedgerMonthBreakdownRow = {
  * эхний үлдэгдэл хөнгөлөлтийн дүнгээр зөрнө.)
  */
 function ledgerOpeningBeforeFirstEntry(first: LedgerEntry): number {
+  if (!first) return 0;
+  // If the first entry is the initial balance record ("Эхний үлдэгдэл"), opening balance BEFORE it is 0!
+  if (
+    first.isSystem ||
+    first.ner === "Эхний үлдэгдэл" ||
+    (first.ner && first.ner.includes("Эхний үлдэгдэл"))
+  ) {
+    return 0;
+  }
   const u = Number(first.uldegdel);
-  if (!Number.isFinite(u)) return 0;
+  if (!Number.isFinite(u) || u === 0) return 0;
   return roundLedgerRunningStep(
     u -
       Number(first.tulukhDun || 0) +
@@ -1563,8 +1572,12 @@ export default function HistoryModal({
           return;
         }
 
-        // Skip orphans (has nekhemjlekhId but parent invoice is gone)
-        if (rec.nekhemjlekhId && !invoiceIds.has(rec.nekhemjlekhId.toString()))
+        // Skip orphans (has nekhemjlekhId but parent invoice is gone), EXCEPT for ekhniiUldegdel
+        if (
+          rec.nekhemjlekhId &&
+          !invoiceIds.has(rec.nekhemjlekhId.toString()) &&
+          !rec.ekhniiUldegdelEsekh
+        )
           return;
 
         // Skip ekhniiUldegdel records if they're already included in the invoice zardluud
@@ -1580,7 +1593,7 @@ export default function HistoryModal({
         // For ekhniiUldegdel, use undsenDun (original amount) for the charge - payments are tracked separately
         const amt =
           rec.ekhniiUldegdelEsekh === true
-            ? Number(rec.undsenDun ?? rec.tulukhDun ?? rec.uldegdel ?? rec.dun ?? 0)
+            ? (Number(rec.undsenDun) || Number(rec.tulukhDun) || Number(rec.dun) || Number(rec.uldegdel) || 0)
             : Number(rec.tulukhDun || rec.undsenDun || rec.dun || rec.niitDun || 0);
 
         // Include ekhniiUldegdel even when negative (credit); other receivables need amt > 0
@@ -1768,7 +1781,10 @@ export default function HistoryModal({
 
             // Use backend ledger and recompute uldegdel on frontend
             const mapped = sortedBackend.map((r: any) => {
-              let tulukhDun = Number(r.tulukhDun ?? 0) || 0;
+              const isEkhniiUldegdel = r.ekhniiUldegdelEsekh === true || String(r.zardliinNer || r.ner || "").includes("Эхний үлдэгдэл");
+              let tulukhDun = isEkhniiUldegdel
+                ? (Number(r.undsenDun) || Number(r.tulukhDun) || Number(r.dun) || 0)
+                : (Number(r.tulukhDun) || Number(r.undsenDun) || (Number(r.dun) > 0 ? Number(r.dun) : 0) || 0);
               let tulsunDun = Number(r.tulsunDun ?? r.tulsun ?? 0) || 0;
               let khungulultDun = 0;
               const rowTurul = String(r.turul || "").toLowerCase();
@@ -1785,18 +1801,18 @@ export default function HistoryModal({
                 khungulultDun = Math.abs(Number(r.dun ?? r.tulsunDun ?? r.tulukhDun ?? 0));
                 tulsunDun = 0;
                 tulukhDun = 0;
-              } else if (tulsunDun === 0 && Number(r.dun || 0) < 0) {
+              } else if (tulsunDun === 0 && Number(r.dun || 0) < 0 && !isEkhniiUldegdel) {
                 tulsunDun = Math.abs(Number(r.dun));
               }
 
               const entry: LedgerEntry = {
                 ognoo: normalizeLedgerOgnooStorage(r.ognoo || ""),
-                ner: isDiscount ? "Хөнгөлөлт" : (r.ner || (tulsunDun > 0 ? "Төлөлт" : "Авлага")),
+                ner: isDiscount ? "Хөнгөлөлт" : isEkhniiUldegdel ? "Эхний үлдэгдэл" : (r.ner || r.zardliinNer || (tulsunDun > 0 ? "Төлөлт" : "Авлага")),
                 tulukhDun,
                 tulsunDun,
                 khungulultDun,
                 uldegdel: Number(r.uldegdel ?? 0), // Preserve original balance for recompute starting point
-                isSystem: !!r.ekhniiUldegdelEsekh,
+                isSystem: isEkhniiUldegdel,
                 ajiltan: r.guilgeeKhiisenAjiltniiNer || "",
                 khelber: isDiscount ? "Хөнгөлөлт" : (r.khelber || r.turul || (tulsunDun > 0 ? "Төлбөр" : "Авлага")),
                 tailbar: r.tailbar || (isDiscount ? "Хөнгөлөлт" : ""),

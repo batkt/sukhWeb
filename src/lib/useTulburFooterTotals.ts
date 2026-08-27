@@ -202,7 +202,7 @@ export function useTulburFooterTotals(
       if (ms < startMs || ms > endMs) return;
       const gid = String(it?.gereeniiId ?? it?.gereeId ?? "").trim();
       if (!gid) return;
-      const amount = Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? it?.tulukhDun ?? it?.undsenDun ?? it?.dun ?? 0);
+      const amount = Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? it?.tulukhDun ?? (Number(it?.undsenDun) || Number(it?.dun) || 0));
       const fromTulsun = Number(it?.tulsunDun ?? 0);
       const type = String(it?.turul || it?.type || "").toLowerCase();
       const ner = String(it?.ner || "").toLowerCase();
@@ -258,7 +258,7 @@ export function useTulburFooterTotals(
     buildingHistoryItems.forEach((it: any) => {
       const gid = String(it?.gereeniiId ?? it?.gereeId ?? "").trim();
       if (!gid) return;
-      const amount = Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? it?.tulukhDun ?? it?.undsenDun ?? it?.dun ?? 0);
+      const amount = Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? it?.tulukhDun ?? (Number(it?.undsenDun) || Number(it?.dun) || 0));
       const isStandaloneEkh = it?.ekhniiUldegdelEsekh === true;
       const ner = String(it?.ner || "").toLowerCase();
       const tailbar = String(it?.tailbar || it?.medeelel?.tailbar || "").toLowerCase();

@@ -1323,7 +1323,7 @@ export default function DansniiKhuulga() {
       // Check if this is a standalone ekhniiUldegdel record from guilgeeAvlaguud
       const isStandaloneEkhniiUldegdel = it?.ekhniiUldegdelEsekh === true;
       const standaloneAmount =
-        Number(it?.undsenDun ?? it?.tulukhDun ?? it?.uldegdel ?? 0) || 0;
+        (Number(it?.undsenDun) || Number(it?.tulukhDun) || Number(it?.dun) || Number(it?.uldegdel) || 0);
 
       // SKIP this record if it's a standalone ekhniiUldegdel AND the contract already has ekhniiUldegdel in an invoice
       // This prevents double-counting. BUT: never skip NEGATIVE standalone (e.g. Excel-ээр оруулсан эхний үлдэгдэл -87.79)
@@ -1643,7 +1643,7 @@ export default function DansniiKhuulga() {
 
       const isStandaloneEkhniiUldegdel = it?.ekhniiUldegdelEsekh === true;
       const standaloneAmount =
-        Number(it?.undsenDun ?? it?.tulukhDun ?? it?.uldegdel ?? 0) || 0;
+        (Number(it?.undsenDun) || Number(it?.tulukhDun) || Number(it?.dun) || Number(it?.uldegdel) || 0);
 
       // Handle standalone ekhniiUldegdel double-counting
       if (isStandaloneEkhniiUldegdel) {
@@ -1651,7 +1651,7 @@ export default function DansniiKhuulga() {
       }
 
       let itemAmount = isStandaloneEkhniiUldegdel
-        ? Number(it?.undsenDun ?? it?.tulukhDun ?? it?.uldegdel ?? 0) || 0
+        ? (Number(it?.undsenDun) || Number(it?.tulukhDun) || Number(it?.dun) || Number(it?.uldegdel) || 0)
         : Number(
             it?.niitTulbur ??
               it?.niitDun ??

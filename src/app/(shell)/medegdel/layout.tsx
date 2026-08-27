@@ -4,7 +4,7 @@ import PermissionGuard from "@/components/PermissionGuard";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <PermissionGuard paths={["medegdel", "/medegdel", "medegdel.medegdel", "medegdel.sanalKhuselt"]}>
+    <PermissionGuard paths={["medegdel", "/medegdel", "medegdel.medegdel", "medegdel.sanalKhuselt", "medegdel.sanalAsuulga"]}>
       {children}
     </PermissionGuard>
   );

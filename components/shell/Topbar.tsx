@@ -4,7 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Bell,
-  LifeBuoy,
+  CalendarClock,
+  Database,
+  HelpCircle,
   LogOut,
   MessageCircle,
   MessageCircleOff,
@@ -21,11 +23,14 @@ import UnguSongokh from "../ungu/unguSongokh";
 import { useSidebar } from "./SidebarContext";
 import { useChatLauncher } from "@/lib/useChatLauncher";
 import { ICON_STROKE, type NavItem, titleForPath } from "./navConfig";
+import SanalAsuulgaTracker from "./SanalAsuulgaTracker";
 
 interface Props {
   items: NavItem[];
   bellBadgeCount: number;
   canSeeSanalKhuselt: boolean;
+  remainingDays?: number | null;
+  storageLabel?: string | null;
   onOpenNotifications: () => void;
   onOpenHelp: () => void;
   onOpenSettings: (tab: "general" | "font-size") => void;
@@ -35,6 +40,8 @@ export default function Topbar({
   items,
   bellBadgeCount,
   canSeeSanalKhuselt,
+  remainingDays,
+  storageLabel,
   onOpenNotifications,
   onOpenHelp,
   onOpenSettings,
@@ -120,6 +127,47 @@ export default function Topbar({
 
       <h1 className="shell-title">{title}</h1>
 
+      {/* ── License & Storage Status Badges (Between Title and Search Bar) ── */}
+      {isLoggedIn &&
+        (remainingDays !== null && remainingDays !== undefined ||
+          storageLabel !== null && storageLabel !== undefined) && (
+          <div className="hidden lg:flex items-center gap-2 mx-3 shrink-0">
+            {remainingDays !== null && remainingDays !== undefined && (
+              <div
+                title={`Лицензийн үлдсэн хугацаа: ${remainingDays} хоног`}
+                className={`h-9 flex items-center gap-1.5 px-3.5 rounded-xl text-xs border backdrop-blur-md transition shadow-2xs select-none ${
+                  remainingDays <= 15
+                    ? "bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400"
+                    : "bg-emerald-500/10 border-emerald-500/25 text-emerald-700 dark:text-emerald-300"
+                }`}
+              >
+                <CalendarClock className="h-4 w-4 text-emerald-500 shrink-0" />
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 leading-none">
+                  Лиценз:
+                </span>
+                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 leading-none">
+                  {remainingDays} хоног
+                </span>
+              </div>
+            )}
+
+            {storageLabel !== null && storageLabel !== undefined && (
+              <div
+                title={`Ашигласан дата: ${storageLabel}`}
+                className="h-9 flex items-center gap-1.5 px-3.5 rounded-xl text-xs border border-sky-500/25 bg-sky-500/10 backdrop-blur-md transition shadow-2xs select-none"
+              >
+                <Database className="h-4 w-4 text-sky-500 shrink-0" />
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 leading-none">
+                  Дата:
+                </span>
+                <span className="text-xs font-bold text-sky-600 dark:text-sky-400 leading-none">
+                  {storageLabel}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
       <div className="shell-topbar-actions">
         {isDesktop ? (
           <div className="shell-topsearch">
@@ -159,8 +207,10 @@ export default function Topbar({
           title="Ерөнхий тусламж"
           className="shell-icon-btn"
         >
-          <LifeBuoy strokeWidth={ICON_STROKE} />
+          <HelpCircle strokeWidth={ICON_STROKE} />
         </button>
+
+        {isLoggedIn && <SanalAsuulgaTracker />}
 
         {isLoggedIn && canSeeSanalKhuselt && (
           <button

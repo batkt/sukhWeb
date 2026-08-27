@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, lazy, useEffect, useState } from "react";
-import { LifeBuoy, MessageSquare, X } from "lucide-react";
+import { HelpCircle, MessageSquare, X } from "lucide-react";
 import { ModalPortal } from "./ModalPortal";
 import { ICON_STROKE } from "./navConfig";
 
@@ -44,7 +44,7 @@ export default function HelpModal({
     {
       key: "instructions" as const,
       label: "Системийн заавар",
-      icon: LifeBuoy,
+      icon: HelpCircle,
     },
     { key: "chat" as const, label: "Шууд чат", icon: MessageSquare },
   ];
@@ -66,7 +66,7 @@ export default function HelpModal({
         >
           <header className="flex shrink-0 items-center justify-between border-b border-[color:var(--panel-text)]/10 px-6 py-4">
             <h2 className="flex items-center gap-2 text-lg font-semibold tracking-[-0.015em] text-[color:var(--panel-text)]">
-              <LifeBuoy
+              <HelpCircle
                 className="h-5 w-5 text-[color:var(--theme)]"
                 strokeWidth={ICON_STROKE}
               />

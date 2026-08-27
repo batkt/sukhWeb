@@ -126,6 +126,11 @@ export const ALL_PERMISSIONS: PermissionItem[] = [
         label: "Санал хүсэлт",
         description: "Санал хүсэлт харах",
       },
+      {
+        id: "medegdel.sanalAsuulga",
+        label: "Санал асуулга",
+        description: "Оршин суугчид руу санал асуулга явуулах эрх",
+      },
     ],
   },
   {

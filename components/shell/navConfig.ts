@@ -57,6 +57,7 @@ export const NAV_ITEMS: NavItem[] = [
     submenu: [
       { label: "Мэдэгдэл", path: "medegdel" },
       { label: "Санал хүсэлт", path: "sanalKhuselt" },
+      { label: "Санал асуулга", path: "sanalAsuulga" },
     ],
   },
   {

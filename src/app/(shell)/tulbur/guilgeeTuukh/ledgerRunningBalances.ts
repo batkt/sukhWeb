@@ -195,15 +195,13 @@ export function computeLedgerRunningBalancesByGereeId(
     // Нэг мөр болсон гүйлгээ (төлөлт, ганцаарчилсан авлага, нэхэмжлэхийн дүүргэлтгүй)
     const isStandaloneEkhnii = it?.ekhniiUldegdelEsekh === true;
     const itemAmount = isStandaloneEkhnii
-      ? Number(it?.undsenDun ?? it?.tulukhDun ?? it?.uldegdel ?? 0) || 0
+      ? (Number(it?.undsenDun) || Number(it?.tulukhDun) || Number(it?.dun) || Number(it?.uldegdel) || 0)
       : Number(
           it?.niitTulbur ??
             it?.niitDun ??
             it?.total ??
             it?.tulukhDun ??
-            it?.undsenDun ??
-            it?.dun ??
-            0,
+            (Number(it?.undsenDun) || Number(it?.dun) || 0),
         ) || 0;
 
     const type = String(it?.turul || it?.type || "").toLowerCase();
@@ -226,7 +224,6 @@ export function computeLedgerRunningBalancesByGereeId(
       khelber === "төлөлт" ||
       khelber === "tulult" ||
       isDiscount ||
-      source === "guilgeeavlaguud" ||
       (itemAmount < 0 && !isStandaloneEkhnii);
     const fromTulsun = Number(it?.tulsunDun ?? it?.tulsun ?? 0) || 0;
 

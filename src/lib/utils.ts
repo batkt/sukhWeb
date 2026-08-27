@@ -32,12 +32,10 @@ export function getPaymentStatusLabel(
     item.niitDun ??
     item.total ??
     item.tulukhDun ??
-    item.undsenDun ??
-    item.dun ??
-    0
+    (Number(item.undsenDun) || Number(item.dun) || 0)
   );
 
-  const billedAmt = Number(item.niitTulbur ?? item.niitDun ?? item.total ?? item.tulukhDun ?? item.undsenDun ?? item.dun ?? 0);
+  const billedAmt = Number(item.niitTulbur ?? item.niitDun ?? item.total ?? item.tulukhDun ?? (Number(item.undsenDun) || Number(item.dun) || 0));
   const paidAmt = Number(item.tulsunDun ?? item.tulsun ?? 0);
   const isPaidOff = (billedAmt > 0 && paidAmt >= billedAmt) || (uldegdel !== null && uldegdel <= 0);
 

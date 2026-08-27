@@ -197,6 +197,8 @@ function ShellBody({ children }: { children: React.ReactNode }) {
         items={navItems}
         bellBadgeCount={shell.bellBadgeCount}
         canSeeSanalKhuselt={shell.canSeeSanalKhuselt}
+        remainingDays={shell.remainingDays}
+        storageLabel={shell.storageLabel}
         onOpenNotifications={() => setNotificationsOpen(true)}
         onOpenHelp={() => setHelpOpen(true)}
         onOpenSettings={openSettings}

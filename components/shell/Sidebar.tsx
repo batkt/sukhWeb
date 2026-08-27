@@ -139,30 +139,8 @@ export default function Sidebar({
         />
       </div>
 
-      {/* ── Licence / storage + collapse ──────────────────────── */}
+      {/* ── Collapse button ────────────────────────────────────────── */}
       <div className="shell-sidebar-foot">
-        {hasStatus && (
-          <div className="shell-status">
-            {remainingDays !== null && (
-              <StatusRow
-                icon={CalendarClock}
-                label="Лиценз"
-                value={String(remainingDays)}
-                unit="хоног"
-                tone={
-                  remainingDays <= LICENCE_CRITICAL_DAYS ? "critical" : "ok"
-                }
-              />
-            )}
-            {storageLabel !== null && (
-              <StatusRow
-                icon={Database}
-                label="Дата"
-                value={storageLabel}
-              />
-            )}
-          </div>
-        )}
 
         {isDesktop && (
           <button
