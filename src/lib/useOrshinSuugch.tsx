@@ -209,6 +209,13 @@ export function useOrshinSuugchJagsaalt(
     fetcherJagsaalt,
     {
       revalidateOnFocus: false,
+      // Кэш ашиглахгүй - хуудас нээх бүрд серверээс ШИНЭЭР татна.
+      // Ингэснээр incognito ба энгийн цонхонд ижил дүн харагдана.
+      revalidateOnMount: true,
+      revalidateIfStale: true,
+      revalidateOnReconnect: true,
+      dedupingInterval: 0,
+      keepPreviousData: false,
       onError: (err: any) => { },
       onSuccess: (data: any) => { },
     }

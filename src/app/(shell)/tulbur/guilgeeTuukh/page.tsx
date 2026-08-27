@@ -489,7 +489,16 @@ export default function DansniiKhuulga() {
       });
       return resp.data;
     },
-    { revalidateOnFocus: false },
+    {
+      revalidateOnFocus: false,
+      // Кэш ашиглахгүй - хуудас нээх бүрд серверээс ШИНЭЭР татна.
+      // Ингэснээр incognito ба энгийн цонхонд ижил дүн харагдана.
+      revalidateOnMount: true,
+      revalidateIfStale: true,
+      revalidateOnReconnect: true,
+      dedupingInterval: 0,
+      keepPreviousData: false,
+    },
   );
 
   const { data: invoiceCronData, error: invoiceCronError } = useSWR(
@@ -508,7 +517,16 @@ export default function DansniiKhuulga() {
       const res = resp.data;
       return res?.data || res?.result || res || [];
     },
-    { revalidateOnFocus: false },
+    {
+      revalidateOnFocus: false,
+      // Кэш ашиглахгүй - хуудас нээх бүрд серверээс ШИНЭЭР татна.
+      // Ингэснээр incognito ба энгийн цонхонд ижил дүн харагдана.
+      revalidateOnMount: true,
+      revalidateIfStale: true,
+      revalidateOnReconnect: true,
+      dedupingInterval: 0,
+      keepPreviousData: false,
+    },
   );
 
   const invoiceDay = useMemo(() => {
@@ -1925,6 +1943,15 @@ export default function DansniiKhuulga() {
     // Mark all as requested before firing
     pending.forEach((gid) => latestRowUldegdelRequestedRef.current.add(gid));
 
+    // Хараахан дуусаагүй гэрээнүүд. Effect дахин ажиллахад цэвэрлэгч нь
+    // ажиллаж буй ажилчдыг таслах ба эдгээр gid "хүсэлт явуулсан" гэж
+    // тэмдэглэгдсэн хэвээр үлдвэл ДАХИН ХЭЗЭЭ Ч татагдахгүй болно.
+    // (Гэрээний жагсаалт SWR-ээр хэсэгчлэн ирэх тул effect эхний
+    // ачаалалтад хэд хэдэн удаа дахин ажилладаг — тиймээс эхлээд
+    // хүснэгт зөв дүн харуулаад, дараа нь зөвхөн сүүлийн багц л
+    // серверийн утгаар солигдож, буруу харагддаг байсан.)
+    const duusaagui = new Set(pending);
+
     // One request per contract, so a 100-row page meant 100 POSTs — each with
     // its own CORS preflight — and 100 separate state updates. The previous
     // "batch" loop never awaited, so every request still fired at once.
@@ -1971,7 +1998,9 @@ export default function DansniiKhuulga() {
             ? Number(summary.uldegdel)
             : null;
         queueResult(gid, uldegdel);
+        duusaagui.delete(gid);
       } catch {
+        duusaagui.delete(gid);
         latestRowUldegdelRequestedRef.current.delete(gid);
       }
     };
@@ -1996,6 +2025,11 @@ export default function DansniiKhuulga() {
     return () => {
       cancelled = true;
       if (flushTimer != null) window.clearTimeout(flushTimer);
+      // Таслагдсан гэрээнүүдийг дараагийн ажиллагаанд дахин татах боломжтой
+      // болгож тэмдэглэгээг нь буцааж авна.
+      duusaagui.forEach((gid) =>
+        latestRowUldegdelRequestedRef.current.delete(gid),
+      );
     };
   }, [
     token,
@@ -2003,6 +2037,12 @@ export default function DansniiKhuulga() {
     deduplicatedResidentsAll,
     effectiveBarilgiinId,
     billingCycleRangeKey,
+    // ЧУХАЛ: дээр хамгаалалт болгон уншдаг тул ЗААВАЛ энд байх ёстой.
+    // Үгүй бол nekhemjlekhCron ачаалж дуусаагүй байхад effect нэг л удаа
+    // ажиллаад таслагдаж, дахин ажиллахгүй үлддэг - uldegdelBodyo огт эсвэл
+    // дутуу дуудагдаж, хүснэгт клиентийн тооцоололд унана. SWR кэш халуун
+    // эсэхээс шалтгаалж (incognito эсэх) өөр өөр дүн гарах шалтгаан нь энэ.
+    isInvoiceDayLoading,
   ]);
 
   // Count cancelled gerees with unpaid invoices/zardal
