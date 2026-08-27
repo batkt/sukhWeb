@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import { Table, Popconfirm, Tag, Tooltip } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { Trash2, Loader2 } from "lucide-react";
+import { Trash2, Loader2, Printer } from "lucide-react";
 import formatNumber from "../../../../../tools/function/formatNumber";
 
 export interface EbarimtItem {
@@ -36,6 +36,8 @@ interface EbarimtTableProps {
   onButsaakh?: (row: EbarimtItem) => void;
   /** Одоо буцаагдаж байгаа баримтын _id — тэр мөрд эргэлдэх зураг харуулна */
   butsaajBaigaaId?: string | null;
+  /** Баримтыг дахин хэвлэх — заагаагүй бол хэвлэх товч харагдахгүй */
+  onKhevlekh?: (row: EbarimtItem) => void;
 }
 
 /** Баримт татварын системээс буцаагдсан эсэх */
@@ -49,6 +51,7 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
   maxHeight = "calc(100vh - 500px)",
   onButsaakh,
   butsaajBaigaaId = null,
+  onKhevlekh,
 }) => {
   const columns: ColumnsType<EbarimtItem> = useMemo(
     () => [
@@ -182,72 +185,98 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
             </Tag>
           ),
       },
-      ...(onButsaakh
+      ...(onButsaakh || onKhevlekh
         ? ([
             {
               title: <span className="text-inherit">Үйлдэл</span>,
               key: "uildel",
               align: "center",
-              width: 80,
+              width: onButsaakh && onKhevlekh ? 110 : 80,
               fixed: "right",
               className:
                 "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
               render: (_: any, row: EbarimtItem) => {
-                // Буцаасан баримтыг дахин буцаах боломжгүй — товч харагдахгүй
-                if (butsaasanEsekh(row))
+                const butsaajBaigaa =
+                  !!butsaajBaigaaId && butsaajBaigaaId === String(row._id);
+
+                // Буцаасан баримтыг ДАХИН БУЦААХ боломжгүй ч хуулбарыг нь
+                // хэвлэж болно — тиймээс хэвлэх товчийг тусад нь гаргана.
+                const khevlekhTovch = onKhevlekh ? (
+                  <Tooltip title="Баримтыг дахин хэвлэх">
+                    <button
+                      type="button"
+                      aria-label="И-баримт дахин хэвлэх"
+                      onClick={() => onKhevlekh(row)}
+                      className="flex h-7 w-7 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"
+                    >
+                      <Printer className="h-4 w-4" />
+                    </button>
+                  </Tooltip>
+                ) : null;
+
+                const butsaakhTovch = (() => {
+                  if (!onButsaakh) return null;
+                  // Буцаасан баримтыг дахин буцаах боломжгүй
+                  if (butsaasanEsekh(row)) return null;
+                  if (butsaajBaigaa)
+                    return (
+                      <Loader2
+                        className="h-4 w-4 animate-spin text-red-500"
+                        aria-label="Буцааж байна"
+                      />
+                    );
+                  // _id байхгүй бол буцаах боломжгүй (хүсэлт _id-гээр явдаг)
+                  if (!row._id)
+                    return (
+                      <Tooltip title="Баримтын _id байхгүй тул буцаах боломжгүй">
+                        <span className="text-gray-400 dark:text-gray-500">
+                          -
+                        </span>
+                      </Tooltip>
+                    );
+                  return (
+                    <Popconfirm
+                      title="И-баримт буцаах уу?"
+                      description={
+                        <span className="text-xs">
+                          Татварын системээс мөн буцаагдана.
+                          <br />
+                          Үйлдлийг эргүүлэх боломжгүй.
+                        </span>
+                      }
+                      okText="Тийм"
+                      cancelText="Үгүй"
+                      okButtonProps={{ danger: true }}
+                      onConfirm={() => onButsaakh(row)}
+                    >
+                      <button
+                        type="button"
+                        aria-label="И-баримт буцаах"
+                        className="flex h-7 w-7 items-center justify-center rounded-full text-red-500 transition-colors hover:bg-red-50 hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 dark:hover:bg-red-950/40"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </Popconfirm>
+                  );
+                })();
+
+                if (!khevlekhTovch && !butsaakhTovch)
                   return (
                     <span className="text-gray-400 dark:text-gray-500">-</span>
                   );
 
-                const butsaajBaigaa =
-                  !!butsaajBaigaaId && butsaajBaigaaId === String(row._id);
-
-                if (butsaajBaigaa)
-                  return (
-                    <Loader2
-                      className="mx-auto h-4 w-4 animate-spin text-red-500"
-                      aria-label="Буцааж байна"
-                    />
-                  );
-
-                // _id байхгүй бол буцаах боломжгүй (хүсэлт _id-гээр явдаг)
-                if (!row._id)
-                  return (
-                    <Tooltip title="Баримтын _id байхгүй тул буцаах боломжгүй">
-                      <span className="text-gray-400 dark:text-gray-500">-</span>
-                    </Tooltip>
-                  );
-
                 return (
-                  <Popconfirm
-                    title="И-баримт буцаах уу?"
-                    description={
-                      <span className="text-xs">
-                        Татварын системээс мөн буцаагдана.
-                        <br />
-                        Үйлдлийг эргүүлэх боломжгүй.
-                      </span>
-                    }
-                    okText="Тийм"
-                    cancelText="Үгүй"
-                    okButtonProps={{ danger: true }}
-                    onConfirm={() => onButsaakh(row)}
-                  >
-                    <button
-                      type="button"
-                      aria-label="И-баримт буцаах"
-                      className="mx-auto flex h-7 w-7 items-center justify-center rounded-full text-red-500 transition-colors hover:bg-red-50 hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 dark:hover:bg-red-950/40"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </Popconfirm>
+                  <div className="flex items-center justify-center gap-1">
+                    {khevlekhTovch}
+                    {butsaakhTovch}
+                  </div>
                 );
               },
             },
           ] as ColumnsType<EbarimtItem>)
         : []),
     ],
-    [onButsaakh, butsaajBaigaaId],
+    [onButsaakh, onKhevlekh, butsaajBaigaaId],
   );
 
   // Буцаасан баримт нь хүчингүй тул нийт дүнд ОРОХГҮЙ. Буцаасан дүнг тусад

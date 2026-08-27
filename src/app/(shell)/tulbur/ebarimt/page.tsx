@@ -8,6 +8,7 @@ import Button from "@/components/ui/Button";
 import { getDefaultDateRange } from "@/lib/utils";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { EbarimtTable, EbarimtItem } from "./EbarimtTable";
+import EbarimtKhevlekhModal from "./EbarimtKhevlekhModal";
 import moment from "moment";
 import { useAuth } from "@/lib/useAuth";
 import { useRouter } from "next/navigation";
@@ -242,6 +243,10 @@ export default function Ebarimt() {
 
   // Одоо буцаагдаж байгаа баримтын _id — тэр мөрд эргэлдэх зураг харуулна
   const [butsaakhId, setButsaakhId] = useState<string | null>(null);
+  /** Дахин хэвлэхээр сонгосон баримт */
+  const [khevlekhBarimt, setKhevlekhBarimt] = useState<EbarimtItem | null>(
+    null,
+  );
 
   /**
    * И-баримтыг буцаах (устгах).
@@ -635,6 +640,14 @@ export default function Ebarimt() {
             </div>
           </div>
 
+          {khevlekhBarimt && (
+            <EbarimtKhevlekhModal
+              barimt={khevlekhBarimt}
+              baiguullagiinNer={(baiguullaga as any)?.ner}
+              onClose={() => setKhevlekhBarimt(null)}
+            />
+          )}
+
           <div className="table-surface rounded-2xl w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
             <div className="p-1 allow-overflow no-scrollbar" id="ebarimt-table">
               <EbarimtTable
@@ -647,6 +660,7 @@ export default function Ebarimt() {
                     : undefined
                 }
                 butsaajBaigaaId={butsaakhId}
+                onKhevlekh={setKhevlekhBarimt}
               />
             </div>
             <div id="ebarimt-pagination">
