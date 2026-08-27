@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import { Table, Tooltip } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { FileText, Eye, CalendarX2, Edit } from "lucide-react";
+import { FileText, Eye, CalendarX2, Edit, Trash2 } from "lucide-react";
 import { ALL_COLUMNS } from "./columns";
 import { StandardPagination } from "@/components/ui/StandardTable";
 
@@ -27,6 +27,8 @@ interface ContractsTableProps {
   renderCellValue: (contract: any, columnKey: string) => React.ReactNode;
   handleEdit: (contract: any) => void;
   handlePreviewContractTemplate: (contract: any) => void;
+  /** Админ эрхтэй үед цуцлагдсан гэрээний мөрөнд устгах товч гарна. */
+  handleAdminDelete?: (contract: any) => void;
 
   currentPage: number;
   rowsPerPage: number;
@@ -52,6 +54,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
   renderCellValue,
   handleEdit,
   handlePreviewContractTemplate,
+  handleAdminDelete,
 
   currentPage,
   rowsPerPage,
@@ -59,6 +62,11 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
   setRowsPerPage,
   maxHeight = "calc(100vh - 460px)",
 }) => {
+  // Устгах товч зөвхөн админд. `hasPermission` нь erkh === "admin"-д бүх эрх
+  // өгдөг тул шууд түүгээр шалгав.
+  const isAdmin = String(ajiltan?.erkh || "").toLowerCase() === "admin"
+    || String(ajiltan?.erkh || "") === "SuperAdmin";
+
   const columns: ColumnsType<any> = useMemo(() => {
     const baseColumns: ColumnsType<any> = [
       {
@@ -301,6 +309,19 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
               >
                 <Edit className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               </button>
+              {isCancelled && isAdmin && handleAdminDelete && (
+                <button
+                  onClick={() => handleAdminDelete(record)}
+                  className="p-2 rounded-2xl hover-surface transition-colors hover:bg-rose-100 dark:hover:bg-rose-900/30"
+                  title={
+                    cancelDate
+                      ? `${cancelDate}-нд цуцлагдсан · Гэрээг авлагатай нь устгах`
+                      : "Цуцлагдсан гэрээг авлагатай нь устгах"
+                  }
+                >
+                  <Trash2 className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+                </button>
+              )}
             </div>
           );
         },
@@ -316,6 +337,8 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
     renderCellValue,
 
     handlePreviewContractTemplate,
+    handleAdminDelete,
+    isAdmin,
     startIndex,
   ]);
 

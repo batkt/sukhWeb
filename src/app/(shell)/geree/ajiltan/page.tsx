@@ -32,10 +32,6 @@ export default function AjiltanPage() {
     hasGereeBase ||
     hasPermission(ajiltan, "/geree/ajiltan/ustgah") ||
     hasPermission(ajiltan, "geree.ajiltan.ustgah");
-  const canManageEmployeePermissions =
-    hasGereeBase ||
-    hasPermission(ajiltan, "/geree/ajiltan/erkhTokhirgoo") ||
-    hasPermission(ajiltan, "geree.ajiltan.erkhTokhirgoo");
 
   useEffect(() => {
     if (ajiltan) {
@@ -57,15 +53,15 @@ export default function AjiltanPage() {
       setEmpPageSize={state.setEmpPageSize}
       canEdit={canEditEmployees}
       canDelete={canDeleteEmployees}
-      canManagePermissions={canManageEmployeePermissions}
+      // Эрхийн тохиргоо энэ хэсгээс хасагдаж, Тохиргоо → Ажилтны тохиргоо
+      // хэсэг рүү бүрэн шилжсэн.
+      canManagePermissions={false}
       onEdit={actions.handleEditEmployee}
       onDelete={(e) => {
         state.setEmployeeToDelete(e);
         state.setShowDeleteEmployeeModal(true);
       }}
-      onManagePermissions={(employee) => {
-        router.push(`/ajiltan/tokhirgoo/${employee._id}`);
-      }}
+      onManagePermissions={() => {}}
       onCredentialsUpdate={(employee) => {
         console.log("🔐 Lock button clicked for employee:", employee);
         if (typeof window !== 'undefined' && (window as any).__openCredentialsModal) {

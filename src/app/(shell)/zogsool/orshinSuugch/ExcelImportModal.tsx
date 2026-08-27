@@ -10,6 +10,8 @@ import {
   X,
   CheckCircle2,
   AlertTriangle,
+  Trash2,
+  RotateCcw,
 } from "lucide-react";
 import uilchilgee from "@/lib/uilchilgee";
 import Button from "@/components/ui/Button";
@@ -56,12 +58,26 @@ interface Props {
   onSuccess: () => void;
 }
 
+/** Улсын дугаар: эхний 4 нь тоо, сүүлийн 3 нь монгол кирилл үсэг (ж: 1234УБА) */
+const PLATE_REGEX = /^\d{4}[А-ЯӨҮЁ]{3}$/;
+
+/** Латин гараар бичсэн ч кирилл рүү хөрвүүлнэ — бүртгэлийн маягттай ижил. */
+const LATIN_TO_CYRILLIC: Record<string, string> = {
+  A: "А", B: "В", C: "С", D: "Д", E: "Е", G: "Г", H: "Н", I: "И",
+  J: "Ж", K: "К", L: "Л", M: "М", N: "Н", O: "О", P: "Р", Q: "Ө",
+  R: "Р", S: "С", T: "Т", U: "У", V: "В", W: "В", X: "Х", Y: "Ү",
+  Z: "З",
+};
+
 /** Улсын дугаарыг маягт дээрхтэй ижил дүрмээр цэгцэлнэ. */
 function normalizePlate(raw: string): string {
-  return String(raw ?? "")
-    .toUpperCase()
-    .replace(/\s/g, "")
-    .slice(0, 7);
+  const value = String(raw ?? "").toUpperCase().replace(/\s/g, "").slice(0, 7);
+  const digits = value.slice(0, 4).replace(/\D/g, "");
+  const letters = Array.from(value.slice(4))
+    .map((ch) => LATIN_TO_CYRILLIC[ch] || ch)
+    .filter((ch) => /^[А-ЯӨҮЁ]$/.test(ch))
+    .join("");
+  return digits + letters;
 }
 
 /** Excel тоон нүднээс утас "99112233" биш 99112233 болж ирдгийг барина. */
@@ -70,17 +86,39 @@ function cellText(value: unknown): string {
   return String(value).trim();
 }
 
-function validateRow(row: Omit<ParsedRow, "errors">): string[] {
+/**
+ * Мөрийг шалгана. `uzegdsen` нь өмнөх мөрүүдэд тааралдсан дугаар/утсыг
+ * хадгална — нэг файлд ижил машиныг хоёр удаа бүртгэхээс сэргийлнэ.
+ */
+function validateRow(
+  row: Omit<ParsedRow, "errors">,
+  uzegdsen: { plate: Set<string>; utas: Set<string> },
+): string[] {
   const errors: string[] = [];
+
   if (!row.ner) errors.push("Нэр хоосон");
+
   if (!row.utas) {
     errors.push("Утас хоосон");
   } else if (!/^\d{8}$/.test(row.utas)) {
     errors.push("Утас 8 оронтой байх ёстой");
+  } else if (uzegdsen.utas.has(row.utas)) {
+    errors.push("Утас файлд давхардсан");
   }
+
+  // Дугаар хоосон байж болно — тэр тохиолдолд БҮРТГЭЛГҮЙ гэж орно.
+  if (row.plate) {
+    if (!PLATE_REGEX.test(row.plate)) {
+      errors.push("Улсын дугаар 4 тоо + 3 монгол кирилл үсэг байх ёстой");
+    } else if (uzegdsen.plate.has(row.plate)) {
+      errors.push("Улсын дугаар файлд давхардсан");
+    }
+  }
+
   if (row.turul && !TURUL_OPTIONS.includes(row.turul)) {
     errors.push(`Төрөл буруу (${TURUL_OPTIONS.join(", ")})`);
   }
+
   return errors;
 }
 
@@ -98,9 +136,25 @@ export default function ExcelImportModal({
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [failed, setFailed] = useState<{ row: ParsedRow; reason: string }[]>([]);
+  /** Хэрэглэгч шалгаад хасахаар сонгосон Excel мөрүүд */
+  const [orkhigduulsan, setOrkhigduulsan] = useState<Set<number>>(new Set());
 
-  const validRows = useMemo(() => rows.filter((r) => r.errors.length === 0), [rows]);
-  const invalidCount = rows.length - validRows.length;
+  const validRows = useMemo(
+    () =>
+      rows.filter(
+        (r) => r.errors.length === 0 && !orkhigduulsan.has(r.excelRow),
+      ),
+    [rows, orkhigduulsan],
+  );
+  const invalidCount = rows.filter((r) => r.errors.length > 0).length;
+
+  const murTogloy = (excelRow: number) =>
+    setOrkhigduulsan((umnukh) => {
+      const shine = new Set(umnukh);
+      if (shine.has(excelRow)) shine.delete(excelRow);
+      else shine.add(excelRow);
+      return shine;
+    });
 
   /** Хоосон загвар татах — хэрэглэгч ямар багана хэрэгтэйг эндээс мэдэнэ. */
   const handleDownloadTemplate = async () => {
@@ -131,6 +185,7 @@ export default function ExcelImportModal({
 
     setParsing(true);
     setFailed([]);
+    setOrkhigduulsan(new Set());
     setFileName(file.name);
 
     const reader = new FileReader();
@@ -147,6 +202,7 @@ export default function ExcelImportModal({
           return;
         }
 
+        const uzegdsen = { plate: new Set<string>(), utas: new Set<string>() };
         const parsed: ParsedRow[] = raw.map((r, i) => {
           const base = {
             excelRow: i + 2,
@@ -158,7 +214,10 @@ export default function ExcelImportModal({
             turul: cellText(r["Төрөл"]) || "Оршин суугч",
             tailbar: cellText(r["Тайлбар"]),
           };
-          return { ...base, errors: validateRow(base) };
+          const errors = validateRow(base, uzegdsen);
+          if (base.plate) uzegdsen.plate.add(base.plate);
+          if (base.utas) uzegdsen.utas.add(base.utas);
+          return { ...base, errors };
         });
 
         setRows(parsed);
@@ -167,7 +226,9 @@ export default function ExcelImportModal({
         if (bad > 0) {
           toast.error(`${parsed.length} мөрөөс ${bad} мөрөнд алдаа байна.`);
         } else {
-          toast.success(`${parsed.length} мөр уншигдлаа.`);
+          toast.success(
+            `${parsed.length} мөр уншигдлаа — шалгаад импортлоно уу.`,
+          );
         }
       } catch {
         toast.error("Excel файл уншихад алдаа гарлаа.");
@@ -306,39 +367,46 @@ export default function ExcelImportModal({
 
         {/* Биет */}
         <div className="flex-1 overflow-y-auto custom-scrollbar px-6 py-5 space-y-4">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Button
-              onClick={handleDownloadTemplate}
-              variant="ghost"
-              className="flex-1 h-11 rounded-xl border border-slate-200 dark:border-white/10"
-              leftIcon={<Download className="w-4 h-4" />}
-            >
-              Загвар татах
-            </Button>
-            <Button
-              onClick={() => fileRef.current?.click()}
-              variant="primary"
-              isLoading={parsing}
-              disabled={importing}
-              className="flex-1 h-11 rounded-xl"
-              leftIcon={<Upload className="w-4 h-4" />}
-            >
-              Excel файл сонгох
-            </Button>
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".xlsx, .xls"
-              onChange={handleFile}
-              className="hidden"
-            />
-          </div>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".xlsx, .xls"
+            onChange={handleFile}
+            className="hidden"
+          />
 
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Багана: {COLUMNS.join(" · ")}. Улсын дугаар хоосон бол{" "}
-            <span className="font-mono">БҮРТГЭЛГҮЙ</span> гэж бүртгэгдэнэ. Төрөл
-            хоосон бол «Оршин суугч» болно.
-          </p>
+          {/* Файл сонгох алхам — уншсаны дараа баталгаажуулах хэсэг рүү шилжинэ */}
+          {rows.length === 0 && (
+            <>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button
+                  onClick={handleDownloadTemplate}
+                  variant="ghost"
+                  className="flex-1 h-11 rounded-xl border border-slate-200 dark:border-white/10"
+                  leftIcon={<Download className="w-4 h-4" />}
+                >
+                  Загвар татах
+                </Button>
+                <Button
+                  onClick={() => fileRef.current?.click()}
+                  variant="primary"
+                  isLoading={parsing}
+                  disabled={importing}
+                  className="flex-1 h-11 rounded-xl"
+                  leftIcon={<Upload className="w-4 h-4" />}
+                >
+                  Excel файл сонгох
+                </Button>
+              </div>
+
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Багана: {COLUMNS.join(" · ")}. Улсын дугаар хоосон бол{" "}
+                <span className="font-mono">БҮРТГЭЛГҮЙ</span> гэж бүртгэгдэнэ.
+                Улсын дугаар бөглөсөн бол 4 тоо + 3 монгол кирилл үсэг байх
+                ёстой. Төрөл хоосон бол «Оршин суугч» болно.
+              </p>
+            </>
+          )}
 
           {fileName && (
             <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
@@ -354,6 +422,19 @@ export default function ExcelImportModal({
                       Алдаатай: {invalidCount}
                     </span>
                   )}
+                  {orkhigduulsan.size > 0 && (
+                    <span className="px-2 py-0.5 rounded-lg bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-200">
+                      Хасагдсан: {orkhigduulsan.size}
+                    </span>
+                  )}
+                  <button
+                    onClick={() => fileRef.current?.click()}
+                    disabled={importing || parsing}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors disabled:opacity-40"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    Өөр файл
+                  </button>
                 </span>
               )}
             </div>
@@ -387,17 +468,21 @@ export default function ExcelImportModal({
                       <th className="px-3 py-2 text-xs text-slate-700 dark:text-slate-300">
                         Төлөв
                       </th>
+                      <th className="px-3 py-2 w-12" />
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200 dark:divide-white/5">
                     {rows.map((r) => (
                       <tr
                         key={r.excelRow}
-                        className={
+                        className={[
                           r.errors.length > 0
                             ? "bg-rose-50/60 dark:bg-rose-950/20"
-                            : ""
-                        }
+                            : "",
+                          orkhigduulsan.has(r.excelRow) ? "opacity-40" : "",
+                        ]
+                          .filter(Boolean)
+                          .join(" ")}
                       >
                         <td className="px-3 py-2 text-center text-xs text-slate-500">
                           {r.excelRow}
@@ -418,16 +503,40 @@ export default function ExcelImportModal({
                           {r.turul}
                         </td>
                         <td className="px-3 py-2">
-                          {r.errors.length === 0 ? (
-                            <span className="inline-flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-300">
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                              Бэлэн
-                            </span>
-                          ) : (
+                          {r.errors.length > 0 ? (
                             <span className="inline-flex items-start gap-1 text-xs text-rose-700 dark:text-rose-300">
                               <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
                               {r.errors.join(", ")}
                             </span>
+                          ) : orkhigduulsan.has(r.excelRow) ? (
+                            <span className="inline-flex items-center gap-1 text-xs text-slate-500">
+                              Хасагдсан
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-300">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              Бэлэн
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          {r.errors.length === 0 && (
+                            <button
+                              onClick={() => murTogloy(r.excelRow)}
+                              disabled={importing}
+                              title={
+                                orkhigduulsan.has(r.excelRow)
+                                  ? "Буцааж оруулах"
+                                  : "Энэ мөрийг импортлохгүй"
+                              }
+                              className="w-7 h-7 rounded-lg inline-flex items-center justify-center text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:text-rose-500 transition-colors disabled:opacity-40"
+                            >
+                              {orkhigduulsan.has(r.excelRow) ? (
+                                <RotateCcw className="w-3.5 h-3.5" />
+                              ) : (
+                                <Trash2 className="w-3.5 h-3.5" />
+                              )}
+                            </button>
                           )}
                         </td>
                       </tr>
@@ -462,8 +571,10 @@ export default function ExcelImportModal({
             {importing
               ? `Илгээж байна... ${progress} / ${validRows.length}`
               : validRows.length > 0
-                ? `${validRows.length} бүртгэл импортлоход бэлэн`
-                : "Файл сонгоно уу"}
+                ? `${validRows.length} бүртгэлийг шалгаад импортлоно уу`
+                : rows.length > 0
+                  ? "Импортлох боломжтой мөр алга — алдаануудыг засна уу"
+                  : "Файл сонгоно уу"}
           </p>
           <div className="flex items-center gap-2">
             <Button

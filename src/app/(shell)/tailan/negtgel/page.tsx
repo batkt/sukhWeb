@@ -12,7 +12,6 @@ import { getDefaultDateRange } from "@/lib/utils";
 import dayjs from "dayjs";
 import useSWR from "swr";
 import uilchilgee from "@/lib/uilchilgee";
-import { useTulburFooterTotals } from "@/lib/useTulburFooterTotals";
 import { useSearch } from "@/context/SearchContext";
 import {
   NegtgelTailanTable,
@@ -35,15 +34,6 @@ export default function NegtgelTailanPage() {
   const { searchTerm } = useSearch();
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(1000);
-
-  // Authoritative totals from the same source as the tulbur page
-  const footerTotals = useTulburFooterTotals(
-    token,
-    baiguullagiinId,
-    selectedBuildingId || undefined,
-    dateRange?.[0] ? dayjs(dateRange[0]).format("YYYY-MM-DD") : null,
-    dateRange?.[1] ? dayjs(dateRange[1]).format("YYYY-MM-DD") : null
-  );
 
   // ── Data fetching ────────────────────────────────────────────────────────
   const swrKey = useMemo(() => {
@@ -74,6 +64,7 @@ export default function NegtgelTailanPage() {
   const { data: rawData, isLoading } = useSWR<{
     data: NegtgelTailanItem[];
     niitToo: number;
+    niitDun: { niitTulukhDun: number; niitTulsunDun: number; niitUldegdel: number };
   }>(
     swrKey,
     async ([
@@ -103,6 +94,13 @@ export default function NegtgelTailanPage() {
       return {
         data: Array.isArray(resp.data?.data) ? resp.data.data : [],
         niitToo: Number(resp.data?.niitToo ?? 0),
+        // Хайлт/огнооны шүүлтийн дараах БҮХ бичлэгийн дүн (зөвхөн энэ
+        // хуудсынх биш) — хөлд харуулна
+        niitDun: {
+          niitTulukhDun: Number(resp.data?.niitDun?.niitTulukhDun ?? 0),
+          niitTulsunDun: Number(resp.data?.niitDun?.niitTulsunDun ?? 0),
+          niitUldegdel: Number(resp.data?.niitDun?.niitUldegdel ?? 0),
+        },
       };
     },
     { revalidateOnFocus: false },
@@ -112,14 +110,12 @@ export default function NegtgelTailanPage() {
   const totalCount = rawData?.niitToo ?? 0;
 
   // Search and pagination are server-side — tailanGaralt is already the paged result
-  const filteredData = tailanGaralt;
   const pagedData = tailanGaralt;
 
-  // ── Summary totals (current page) ────────────────────────────────────
-  const grandTotal = tailanGaralt.reduce(
-    (s, row) => s + (Number(row.niitTulukhDun) || 0),
-    0,
-  );
+  // Хөлийн дүн серверээс ирнэ. Өмнө нь useTulburFooterTotals-ийн БҮХ гэрээг
+  // хамарсан дүнг харуулдаг байсан тул хайлт/хуудаслалттай үед хүснэгтийн
+  // мөрүүдтэй огт таарахгүй байв.
+  const niitUldegdel = rawData?.niitDun?.niitUldegdel ?? 0;
 
   // ── Excel export ────────────────────────────────────────────────────────
   const exportToExcel = async () => {
@@ -191,7 +187,11 @@ export default function NegtgelTailanPage() {
 
       {/* ── Table ───────────────────────────────────────────────── */}
       <div className="w-full no-print">
-        <NegtgelTailanTable data={pagedData} loading={isLoading} authoritativeTotalUldegdel={footerTotals.totalUldegdel || 0} />
+        <NegtgelTailanTable
+          data={pagedData}
+          loading={isLoading}
+          niitUldegdel={niitUldegdel}
+        />
       </div>
 
       {/* ── Pagination ──────────────────────────────────────────── */}

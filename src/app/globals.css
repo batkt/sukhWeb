@@ -6154,3 +6154,21 @@ html[data-sidebar="rail"] .shell-collapse-btn {
     animation: none;
   }
 }
+
+/* ── Тайлангийн стандарт нягт (compact) хүснэгт ─────────────────────────────
+   Бүх тайлангийн хүснэгт (Авлагын насжилт, Нэгтгэл г.м) ижил өндөр/фонттой
+   байхын тулд энд нэг удаа тодорхойлов. Ашиглах: <StandardTable className="compact-table" ... /> */
+.compact-table .ant-table-cell {
+  padding: 4px 8px !important;
+  font-size: 11px !important;
+  line-height: 1 !important;
+}
+.compact-table .ant-table-thead > tr > th {
+  padding: 6px 8px !important;
+  font-size: 11px !important;
+  background: #f8fafc !important;
+  font-weight: 500 !important;
+}
+.dark .compact-table .ant-table-thead > tr > th {
+  background: #1e293b !important;
+}

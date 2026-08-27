@@ -15,6 +15,7 @@ export interface AvlagiinNasjiltItem {
   undsenDun: number;
   tulsunDun: number;
   uldegdel: number;
+  avlagiinKhonog: number;
   p0_30: number;
   p31_60: number;
   p61_90: number;
@@ -34,20 +35,12 @@ interface AvlagiinNasjiltTableProps {
     undsenDun: number;
     tulsunDun: number;
     uldegdel: number;
+    avlagiinKhonog?: number;
     p0_30: number;
     p31_60: number;
     p61_90: number;
     p91_120: number;
     p120plus: number;
-  };
-  authoritativeTotals?: {
-    totalPaid: number;
-    totalUldegdel: number;
-    totalBilled: number;
-    totalEkhniiUldegdel: number;
-    paidByGereeId: Record<string, number>;
-    billedByGereeId: Record<string, number>;
-    uldegdelByGereeId: Record<string, number>;
   };
 }
 
@@ -69,7 +62,6 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
   totalCount = 0,
   onPageChange,
   totals,
-  authoritativeTotals,
 }) => {
   const columns = useMemo(() => [
     {
@@ -132,6 +124,17 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
       ),
     },
     {
+      key: "avlagiinKhonog",
+      label: "Авлагын хоног",
+      width: 85,
+      align: "center" as const,
+      render: (v: number) => (
+        <span className="text-[11px] text-black dark:text-white">
+          {Number(v) > 0 ? Number(v) : ""}
+        </span>
+      ),
+    },
+    {
       key: "p0_30",
       label: "0-30",
       width: 85,
@@ -170,19 +173,10 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
 
   const footer = useMemo(() => {
     if (!totals || data.length === 0) return null;
-    const finalTotals = authoritativeTotals ? {
-      undsenDun: authoritativeTotals.totalBilled + authoritativeTotals.totalEkhniiUldegdel,
-      tulsunDun: authoritativeTotals.totalPaid,
-      uldegdel: authoritativeTotals.totalUldegdel,
-      p0_30: totals.p0_30,
-      p31_60: totals.p31_60,
-      p61_90: totals.p61_90,
-      p91_120: totals.p91_120,
-      p120plus: totals.p120plus,
-    } : totals;
+    const finalTotals = totals;
 
     return (
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800 font-sans">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-9 gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800 font-sans">
         <div className="flex flex-col">
           <span className="text-[10px] text-slate-500 uppercase tracking-wider">Нийт Төлөх</span>
           <span className="text-[13px] text-slate-900 dark:text-white">{formatNumber(finalTotals.undsenDun, 2)}₮</span>
@@ -194,6 +188,10 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
         <div className="flex flex-col">
           <span className="text-[10px] text-slate-500 uppercase tracking-wider">Нийт Үлдэгдэл</span>
           <span className="text-[13px] text-slate-900 dark:text-white">{formatNumber(finalTotals.uldegdel, 2)}₮</span>
+        </div>
+        <div className="flex flex-col">
+          <span className="text-[10px] text-slate-500 uppercase tracking-wider">Хамгийн их хоног</span>
+          <span className="text-[13px] text-slate-900 dark:text-white">{finalTotals.avlagiinKhonog ?? 0}</span>
         </div>
         <div className="flex flex-col">
           <span className="text-[10px] text-slate-500 uppercase tracking-wider">0-30</span>
@@ -217,25 +215,10 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
         </div>
       </div>
     );
-  }, [totals, data.length, authoritativeTotals]);
+  }, [totals, data.length]);
 
   return (
     <>
-      <style jsx global>{`
-        .compact-table .ant-table-cell {
-          padding: 4px 8px !important;
-          font-size: 11px !important;
-          line-height: 1 !important;
-        }
-        .compact-table .ant-table-thead > tr > th {
-          padding: 6px 8px !important;
-          background: #f8fafc !important;
-          font-weight: 500 !important;
-        }
-        .dark .compact-table .ant-table-thead > tr > th {
-          background: #1e293b !important;
-        }
-      `}</style>
       <StandardTable
       className="compact-table"
       columns={columns}

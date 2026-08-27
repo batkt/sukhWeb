@@ -7,6 +7,11 @@ import useGereeJagsaalt from "@/lib/useGeree";
 import { useAjiltniiJagsaalt } from "@/lib/useAjiltan";
 import uilchilgee from "@/lib/uilchilgee";
 import { isPaidLike, getDefaultDateRange } from "@/lib/utils";
+import {
+  medegdelDun,
+  ognooKharitsangui,
+  ognooTsagButen,
+} from "@/lib/ognoo";
 import { hasPermission } from "@/lib/permissionUtils";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -23,6 +28,7 @@ import {
   RefreshCw,
   Users,
   UserCheck,
+  Search,
 } from "lucide-react";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { useBuilding } from "@/context/BuildingContext";
@@ -513,6 +519,66 @@ export default function Khynalt() {
       return new Date(b.createdAt || b.ognoo).getTime() - new Date(a.createdAt || a.ognoo).getTime();
     });
   }, [medegdelData, rangeStart, rangeEnd]);
+
+  const [paymentQuery, setPaymentQuery] = useState("");
+
+  const filteredPaymentHistory = useMemo(() => {
+    const q = paymentQuery.trim().toLowerCase();
+    if (!q) return paymentHistory;
+    return paymentHistory.filter((item: any) =>
+      [item.title, item.message, item.orshinSuugchNer, item.orshinSuugchUtas]
+        .filter(Boolean)
+        .some((v: any) => String(v).toLowerCase().includes(q)),
+    );
+  }, [paymentHistory, paymentQuery]);
+
+  /**
+   * Нийт дүнг зөвхөн БҮХ мөрийн дүн танигдсан үед л харуулна.
+   *
+   * Мэдэгдэлд дүнгийн тусдаа талбар байхгүй тул текстээс уншдаг. Хэсэг мөр нь
+   * танигдаагүй байхад нийлбэр гаргавал бодит дүнгээс бага тоо гарч, буруу
+   * ойлголт төрүүлнэ — тэр тохиолдолд огт харуулахгүй нь дээр.
+   */
+  const paymentTotal = useMemo(() => {
+    if (filteredPaymentHistory.length === 0) return null;
+    let sum = 0;
+    for (const item of filteredPaymentHistory) {
+      const dun = medegdelDun(item.message);
+      if (dun === null) return null;
+      sum += dun;
+    }
+    return sum;
+  }, [filteredPaymentHistory]);
+
+  /** Өдрөөр бүлэглэнэ — жагсаалт урт болоход уншихад хялбар болгоно. */
+  const groupedPaymentHistory = useMemo(() => {
+    const groups: { key: string; label: string; items: any[] }[] = [];
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+
+    const dayKey = (d: Date) =>
+      `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+    const todayKey = dayKey(today);
+    const yesterdayKey = dayKey(yesterday);
+
+    for (const item of filteredPaymentHistory) {
+      const d = new Date(item.createdAt || item.ognoo);
+      if (isNaN(d.getTime())) continue;
+      const key = dayKey(d);
+      const label =
+        key === todayKey
+          ? "Өнөөдөр"
+          : key === yesterdayKey
+            ? "Өчигдөр"
+            : `${d.getFullYear() === today.getFullYear() ? "" : d.getFullYear() + " оны "}${d.getMonth() + 1}-р сарын ${d.getDate()}`;
+
+      const last = groups[groups.length - 1];
+      if (last && last.key === key) last.items.push(item);
+      else groups.push({ key, label, items: [item] });
+    }
+    return groups;
+  }, [filteredPaymentHistory]);
 
   const { data: tulukhAvlagaData } = useSWR(
     token && ajiltan?.baiguullagiinId && rangeStart && rangeEnd
@@ -1571,61 +1637,149 @@ export default function Khynalt() {
             }}
           >
             <div className="flex flex-col flex-1 min-h-0">
-              <div className="mb-4 flex flex-row items-center justify-between flex-wrap gap-3">
-                <div className="flex items-center gap-2">
-                  <Wallet className="w-5 h-5 text-emerald-500" />
-                  <h3 className="text-lg font-medium leading-snug text-[color:var(--panel-text)]">
-                    Төлөлтийн түүх (Мэдэгдлээр)
-                  </h3>
+              {/* Толгой */}
+              <div className="mb-3 flex flex-row items-start justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-2xl bg-emerald-500/10 flex items-center justify-center shrink-0">
+                    <Wallet className="w-[18px] h-[18px] text-emerald-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-medium leading-snug text-[color:var(--panel-text)]">
+                      Төлөлтийн түүх
+                    </h3>
+                    <p className="text-[11px] text-[color:var(--muted-text)] leading-tight">
+                      Мэдэгдлээр · {rangeStart} — {rangeEnd}
+                    </p>
+                  </div>
                 </div>
-                <span className="text-xs bg-slate-100 dark:bg-white/10 px-2 py-0.5 rounded-2xl text-slate-600 dark:text-slate-300">
-                  Сонгосон хугацаанд: {paymentHistory.length}
-                </span>
+
+                <div className="flex items-center gap-2">
+                  {paymentTotal !== null && (
+                    <span className="text-xs px-2.5 py-1 rounded-2xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 font-semibold whitespace-nowrap">
+                      {paymentTotal.toLocaleString()}₮
+                    </span>
+                  )}
+                  <span className="text-xs bg-slate-100 dark:bg-white/10 px-2.5 py-1 rounded-2xl text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                    {paymentHistory.length} төлөлт
+                  </span>
+                </div>
               </div>
 
-              {/* History List */}
-              <div className="overflow-y-auto max-h-[350px] pr-1 custom-scrollbar space-y-2">
+              {/* Хайлт — жагсаалт урт болоход тоот/нэрээр шүүнэ */}
+              {paymentHistory.length > 0 && (
+                <div className="relative mb-3">
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--muted-text)]" />
+                  <input
+                    value={paymentQuery}
+                    onChange={(e) => setPaymentQuery(e.target.value)}
+                    placeholder="Тоот, нэр, утсаар хайх..."
+                    className="w-full h-9 pl-9 pr-3 text-xs rounded-xl bg-[color:var(--surface-hover)]/40 border border-[color:var(--panel-text)]/10 text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] focus:outline-none focus:border-emerald-500/50 transition-colors"
+                  />
+                </div>
+              )}
+
+              {/* Жагсаалт */}
+              <div className="overflow-y-auto max-h-[350px] pr-1 custom-scrollbar">
                 {medegdelLoading ? (
-                  <div className="text-center py-8 text-slate-500 text-sm">Уншиж байна...</div>
-                ) : paymentHistory.length === 0 ? (
-                  <div className="text-center py-8 text-slate-500 text-sm">
-                    Сонгосон хугацаанд төлөлтийн түүх олдсонгүй
+                  <div className="space-y-2">
+                    {[0, 1, 2].map((i) => (
+                      <div
+                        key={i}
+                        className="h-[62px] rounded-2xl bg-[color:var(--surface-hover)]/40 animate-pulse"
+                      />
+                    ))}
+                  </div>
+                ) : filteredPaymentHistory.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-10 text-center">
+                    <div className="w-11 h-11 rounded-2xl bg-[color:var(--surface-hover)]/50 flex items-center justify-center mb-2.5">
+                      <Wallet className="w-5 h-5 text-[color:var(--muted-text)]" />
+                    </div>
+                    <p className="text-sm text-[color:var(--panel-text)]">
+                      {paymentQuery
+                        ? "Хайлтад тохирох төлөлт алга"
+                        : "Сонгосон хугацаанд төлөлт бүртгэгдээгүй"}
+                    </p>
+                    <p className="text-xs text-[color:var(--muted-text)] mt-0.5">
+                      {paymentQuery
+                        ? "Өөр түлхүүр үгээр хайж үзнэ үү"
+                        : "Огнооны мужаа өөрчилж үзнэ үү"}
+                    </p>
                   </div>
                 ) : (
-                  paymentHistory.map((item: any) => {
-                    const ognoo = new Date(item.createdAt || item.ognoo);
-                    return (
-                      <div
-                        key={item._id}
-                        className="p-3 rounded-2xl border border-[color:var(--panel-text)]/10 hover:bg-[color:var(--surface-hover)]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm transition-all"
-                      >
-                        <div className="flex flex-col gap-1 min-w-0">
-                          <h4 className="font-semibold text-slate-800 dark:text-white truncate">
-                            {item.title || "QPay төлөлт"}
-                          </h4>
-                          <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed break-words">
-                            {item.message}
-                          </p>
+                  <div className="space-y-4">
+                    {groupedPaymentHistory.map((group) => (
+                      <div key={group.key}>
+                        {/* Өдрийн тусгаарлагч */}
+                        <div className="sticky top-0 z-10 flex items-center gap-2 py-1 bg-[color:var(--surface-bg)]/85 backdrop-blur-sm">
+                          <span className="text-[11px] font-semibold text-[color:var(--panel-text)]">
+                            {group.label}
+                          </span>
+                          <span className="h-px flex-1 bg-[color:var(--panel-text)]/10" />
+                          <span className="text-[10px] text-[color:var(--muted-text)]">
+                            {group.items.length}
+                          </span>
                         </div>
-                        <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-center">
-                          <span className="text-[11px] text-slate-500 bg-white/10 px-2 py-0.5 rounded-full whitespace-nowrap">
-                            {ognoo.toLocaleDateString("mn-MN", {
-                              month: "short",
-                              day: "numeric",
-                            })}{" "}
-                            {ognoo.toLocaleTimeString("mn-MN", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              second: "2-digit"
-                            })}
-                          </span>
-                          <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-400/50 whitespace-nowrap">
-                            Амжилттай
-                          </span>
+
+                        <div className="space-y-1.5 pt-1.5">
+                          {group.items.map((item: any) => {
+                            const dun = medegdelDun(item.message);
+                            const ner =
+                              item.orshinSuugchNer || item.title || "QPay төлөлт";
+                            return (
+                              <div
+                                key={item._id}
+                                className="group relative p-3 rounded-2xl border border-[color:var(--panel-text)]/10 hover:border-emerald-500/30 hover:bg-emerald-500/[0.04] transition-colors"
+                              >
+                                <div className="flex items-start gap-3">
+                                  <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 text-xs font-semibold">
+                                    {String(ner).charAt(0).toUpperCase()}
+                                  </div>
+
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <p className="text-sm text-[color:var(--panel-text)] truncate">
+                                        {item.title || "QPay төлөлт"}
+                                      </p>
+                                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                                    </div>
+                                    <p className="text-xs text-[color:var(--muted-text)] leading-relaxed line-clamp-2">
+                                      {item.message}
+                                    </p>
+                                    {item.orshinSuugchUtas && (
+                                      <p className="text-[11px] text-[color:var(--muted-text)] mt-0.5">
+                                        {item.orshinSuugchNer
+                                          ? `${item.orshinSuugchNer} · `
+                                          : ""}
+                                        {item.orshinSuugchUtas}
+                                      </p>
+                                    )}
+                                  </div>
+
+                                  <div className="flex flex-col items-end gap-1 shrink-0">
+                                    {dun !== null && (
+                                      <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                                        +{dun.toLocaleString()}₮
+                                      </span>
+                                    )}
+                                    <span
+                                      className="text-[11px] text-[color:var(--muted-text)] whitespace-nowrap"
+                                      title={ognooTsagButen(
+                                        item.createdAt || item.ognoo,
+                                      )}
+                                    >
+                                      {ognooKharitsangui(
+                                        item.createdAt || item.ognoo,
+                                      )}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
-                    );
-                  })
+                    ))}
+                  </div>
                 )}
               </div>
             </div>

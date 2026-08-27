@@ -493,6 +493,19 @@ function numberToMongolianWords(n: number): string {
     "наян",
     "ерэн",
   ];
+  /**
+   * Зуутын байрлалд 1 нь "нэг" (нэгэн БИШ).
+   *
+   * Монголоор нэгж нь дараа нь орох ЗУУН / МЯНГА гэх зэрэг зэрэглэлийн үгийг
+   * тодотгож байвал "нэг" хэлбэртэй байна: "нэг зуун", "нэг мянга", "нэг сая".
+   * Харин бүлгийн төгсгөлд ганцаараа зогсох 1 нь "нэгэн": "арван нэгэн",
+   * "нэг зуун нэгэн". Өмнө нь хоёуланд нь `nUnits` ашигладаг байсан тул
+   * "Нэгэн зуун ..." гэж буруу гардаг байв. Сервер талын `mon_num` сан ч мөн
+   * ийм ялгаатай ажилладаг.
+   */
+  const nHundreds = [...nUnits];
+  nHundreds[1] = "нэг";
+
   const scales = ["", "мянга", "сая", "тэрбум", "их наяд"];
   const nScales = ["", "мянган", "сая", "тэрбум", "их наяд"]; // Note: million+ often stay the same in casual/formal mix
 
@@ -500,6 +513,8 @@ function numberToMongolianWords(n: number): string {
     num: number,
     isLast: boolean,
     isMainCurrency: boolean,
+    /** Энэ бүлгийн ард "мянга/сая/тэрбум" гэх зэрэглэлийн үг орох эсэх. */
+    hasScale: boolean,
   ): string => {
     let res = "";
     const h = Math.floor(num / 100);
@@ -508,11 +523,7 @@ function numberToMongolianWords(n: number): string {
     const u = remainder % 10;
 
     if (h > 0) {
-      if (t === 0 && u === 0 && !isLast) {
-        res += nUnits[h] + " зуун ";
-      } else {
-        res += nUnits[h] + " зуун ";
-      }
+      res += nHundreds[h] + " зуун ";
     }
 
     if (t > 0) {
@@ -524,7 +535,11 @@ function numberToMongolianWords(n: number): string {
     }
 
     if (u > 0) {
-      if (isLast) {
+      if (hasScale && h === 0 && t === 0) {
+        // Бүлэг нь цэвэр нэгж бөгөөд ард нь зэрэглэлийн үг орж байвал
+        // тодотгосон хэлбэр: "нэг мянга", "нэг сая" (нэгэн БИШ).
+        res += nHundreds[u] + " ";
+      } else if (isLast) {
         res += (isMainCurrency ? nUnits[u] : units[u]) + " ";
       } else {
         res += nUnits[u] + " ";
@@ -535,6 +550,9 @@ function numberToMongolianWords(n: number): string {
 
   const decodeInteger = (num: number): string => {
     if (num === 0) return "";
+    // Бүхэл тоо яг 1 бол "нэг төгрөг" — энэ ганц тохиолдолд "нэгэн" болдоггүй.
+    if (num === 1) return nHundreds[1];
+
     let res = "";
     let temp = num;
     let groupIdx = 0;
@@ -542,13 +560,17 @@ function numberToMongolianWords(n: number): string {
     while (temp > 0) {
       const group = temp % 1000;
       if (group > 0) {
-        const groupStr = formatGroup(group, groupIdx === 0, true);
-        const scaleStr =
-          groupIdx > 0
-            ? temp >= 1000
-              ? nScales[groupIdx]
-              : scales[groupIdx]
-            : "";
+        const hasScale = groupIdx > 0;
+        const groupStr = formatGroup(group, groupIdx === 0, true, hasScale);
+        // "мянган" нь өгүүлбэрийн төгсгөлд ("нэг мянган"), харин доор нь өөр
+        // бүлэг үргэлжилбэл "мянга" ("нэг мянга нэг зуун"). `res` хоосон
+        // байгаа нь энэ бүлгээс доош юу ч гараагүйг илтгэнэ — бүлгүүдийг
+        // баруунаас зүүн тийш угсардаг.
+        const scaleStr = hasScale
+          ? res === ""
+            ? nScales[groupIdx]
+            : scales[groupIdx]
+          : "";
         res = groupStr + (scaleStr ? scaleStr + " " : "") + res;
       }
       temp = Math.floor(temp / 1000);
@@ -750,6 +772,99 @@ function nekhemjlekhiinTuukhSidebarSearchHaystack(
 /** Same 2dp rounding as HistoryModal ledger (`roundLedgerRunningStep`). */
 function roundInvoiceMoney(n: number): number {
   return Math.round(n * 100) / 100;
+}
+
+/** Нэхэмжлэх дээр харагдах мөрийн ангиллууд — харагдах дараалалдаа. */
+const INVOICE_ANGILAL_DARAALAL = [
+  "ekhnii",
+  "ashiglalt",
+  "zogsool",
+  "avlaga",
+  "khungulult",
+] as const;
+
+type InvoiceAngilal = (typeof INVOICE_ANGILAL_DARAALAL)[number];
+
+const INVOICE_ANGILAL_NER: Record<InvoiceAngilal, string> = {
+  ekhnii: "Эхний үлдэгдэл",
+  ashiglalt: "Ашиглалтын зардлууд",
+  zogsool: "Зогсоолын төлбөр",
+  avlaga: "Авлага",
+  khungulult: "Хөнгөлөлт",
+};
+
+/** Мөр төлөлт мөн үү — төлөлтийг нэхэмжлэхийн мөрөнд хольж болохгүй. */
+function guilgeeTulultEsekh(g: any): boolean {
+  const t = String(g?.turul || "").toLowerCase();
+  return (
+    t.includes("төлөлт") ||
+    t === "tulbur" ||
+    t.includes("tulbur") ||
+    t === "tulult" ||
+    t.includes("tulult") ||
+    t.includes("invoice_payment") ||
+    t === "prepayment" ||
+    t.includes("prepayment")
+  );
+}
+
+/**
+ * Гүйлгээ/зардлын мөрийг нэхэмжлэхийн ангилалд хуваарилна.
+ * Зогсоол, хөнгөлөлтийг төлөлтийн шалгуураас ӨМНӨ шалгана — «Зогсоолын төлбөр»
+ * гэсэн нэр дотор «төлбөр» орсон тул эс тэгвэл төлөлт гэж андуурагдана.
+ */
+function nekhemjlekhiinAngilal(
+  mur: any,
+  anhdagch: InvoiceAngilal,
+): InvoiceAngilal {
+  const source = String(mur?.source || "").toLowerCase();
+  const turul = String(mur?.turul || "").toLowerCase();
+  const ner = String(
+    mur?.ner || mur?.zardliinNer || mur?.tailbar || mur?.medeelel?.tailbar || "",
+  ).toLowerCase();
+
+  if (mur?.ekhniiUldegdelEsekh === true || ner.includes("эхний үлдэгдэл")) {
+    return "ekhnii";
+  }
+  if (
+    turul.includes("хөнгөлөлт") ||
+    turul.includes("khungulult") ||
+    turul.includes("discount") ||
+    ner.includes("хөнгөлөлт")
+  ) {
+    return "khungulult";
+  }
+  if (
+    source === "zogsool" ||
+    turul.includes("зогсоол") ||
+    turul.includes("zogsool") ||
+    ner.includes("зогсоол")
+  ) {
+    return "zogsool";
+  }
+  if (
+    source === "zardal" ||
+    turul.includes("ашиглалт") ||
+    turul.includes("ashiglalt") ||
+    mur?.zardliinId ||
+    mur?.zardliinNer ||
+    mur?.zardliinTurul
+  ) {
+    return "ashiglalt";
+  }
+  return anhdagch;
+}
+
+/**
+ * Гэрээний ашиглалтын зардлын мөрөөс нэхэмжлэх дээр харагдах дүнг сонгоно.
+ * Тогтмол зардал `dun`-д, менежментийнх `tulukhDun`-д, бусад нь `tariff`-д хадгалагдана.
+ */
+function ashiglaltiinZardliinDun(z: any): number {
+  for (const utga of [z?.dun, z?.tulukhDun, z?.tariff]) {
+    const n = Number(utga ?? 0);
+    if (Number.isFinite(n) && n > 0) return n;
+  }
+  return 0;
 }
 
 function pickInvoiceStoredTulsun(inv: any): number | null {
@@ -1104,6 +1219,27 @@ export default function InvoiceModal({
       return;
     }
 
+    /** Гэрээний бичлэг — эхлээд байгаа өгөгдлөөс, эс бөгөөс серверээс. */
+    const fetchGereeMedeelel = async (): Promise<any> => {
+      if (Array.isArray(resident?.zardluud) && resident.zardluud.length > 0) {
+        return resident;
+      }
+      const gid = String(gereeIdForLedgerFetch || "").trim();
+      if (!gid || !token) return null;
+      try {
+        const resp = await uilchilgee(token).get("/geree", {
+          params: {
+            query: JSON.stringify({ _id: gid }),
+            khuudasniiKhemjee: 1,
+          },
+        });
+        return resp.data?.jagsaalt?.[0] ?? null;
+      } catch (err) {
+        console.error("Гэрээний ашиглалтын зардал татахад алдаа:", err);
+        return null;
+      }
+    };
+
     const run = async () => {
       // Use the data specifically saved within this invoice record to show accurate month-by-month details
       const zRows = Array.isArray(selectedInvoice?.medeelel?.zardluud)
@@ -1118,51 +1254,53 @@ export default function InvoiceModal({
           ? selectedInvoice.guilgeenuud
           : [];
 
-      const expenseMap = new Map<string, any>();
-      zRows.forEach((z: any) => {
-        const ner = String(z.ner || z.zardliinNer || "").trim();
-        if (ner) {
-          const amount = Number(z.dun || z.tulukhDun || z.tariff || 0);
-          const existing = expenseMap.get(ner);
-          if (existing) {
-            existing.dun += amount;
-          } else {
-            expenseMap.set(ner, { ...z, ner, dun: amount });
-          }
+      // ── Мөрүүдийг цөөн ангилалд нэгтгэнэ ──────────────────────────────
+      // Ашиглалтын зардал бүрийг тусад нь жагсаахын оронд ганц мөр болгож,
+      // гараар үүсгэсэн авлага / зогсоол / хөнгөлөлт / эхний үлдэгдлийг тус
+      // тусад нь харуулна.
+      const expenseMap = new Map<InvoiceAngilal, any>();
+      const angilalNemey = (
+        angilal: InvoiceAngilal,
+        dun: number,
+        ekh?: any,
+      ) => {
+        const utga = Number(dun || 0);
+        if (!Number.isFinite(utga) || utga === 0) return;
+        const bui = expenseMap.get(angilal);
+        if (bui) {
+          bui.dun = roundInvoiceMoney(Number(bui.dun || 0) + utga);
+          return;
         }
+        expenseMap.set(angilal, {
+          _id: `angilal-${angilal}`,
+          ner: INVOICE_ANGILAL_NER[angilal],
+          dun: roundInvoiceMoney(utga),
+          umnukh: ekh?.umnukh ?? ekh?.umnukhZaalt,
+          suuliin: ekh?.suuliin ?? ekh?.suuliinZaalt,
+        });
+      };
+
+      zRows.forEach((z: any) => {
+        const dun = Number(z.dun ?? z.tulukhDun ?? z.tariff ?? 0);
+        angilalNemey(nekhemjlekhiinAngilal(z, "ashiglalt"), dun, z);
       });
 
-      // Also include receivable transactions (Авлага) as rows in the expense table.
-      // IMPORTANT: Payments must NOT be mixed into invoice charges; we show them separately
-      // and compute a unified paid/remaining that matches "Нийт дүн".
+      // Гүйлгээнүүд: төлөлтийг мөрөнд хольж болохгүй — тэдгээр нь тусдаа
+      // «Төлсөн дүн» баганад харагдана.
       gRows.forEach((g: any) => {
-        const t = String(g.turul || "").toLowerCase();
+        const angilal = nekhemjlekhiinAngilal(g, "avlaga");
+        if (angilal !== "zogsool" && angilal !== "khungulult") {
+          if (guilgeeTulultEsekh(g)) return;
+          if (String(g?.turul || "").toLowerCase().includes("төлбөр")) return;
+        }
+        // Ашиглалтын зардлыг zRows аль хэдийн эзэлсэн бол давхардуулахгүй.
+        if (angilal === "ashiglalt" && zRows.length > 0) return;
 
-        // Treat anything non-payment in guilgeenuud as an Avlaga/Charge if it has a positive amount
-        if (
-          t.includes("төлөлт") ||
-          t.includes("төлбөр") ||
-          t.includes("invoice_payment") ||
-          t === "tulbur" ||
-          t.includes("tulbur") ||
-          t === "tulult" ||
-          t.includes("tulult") ||
-          t === "prepayment" ||
-          t.includes("prepayment")
-        )
-          return;
-        if (t === "ashiglalt" || t.includes("ашиглалт")) return;
-        const ner = String(
-          g.tailbar || g.medeelel?.tailbar || "Нэмэлт төлбөр",
-        ).trim();
-        const amount = Number(g.undsenDun || g.tulukhDun || g.dun || 0);
-        if (amount > 0) {
-          const existing = expenseMap.get(ner);
-          if (existing) {
-            existing.dun += amount;
-          } else {
-            expenseMap.set(ner, { ...g, ner, dun: amount });
-          }
+        const dun = Number(g.undsenDun ?? g.tulukhDun ?? g.dun ?? 0);
+        if (angilal === "khungulult") {
+          angilalNemey("khungulult", -Math.abs(dun));
+        } else if (dun > 0) {
+          angilalNemey(angilal, dun);
         }
       });
 
@@ -1212,12 +1350,49 @@ export default function InvoiceModal({
           selectedInvoice?.medeelel?.ekhniiUldegdel ??
           0,
       );
-      if (ekhniiVal !== 0 && !expenseMap.has("Эхний үлдэгдэл")) {
-        expenseMap.set("Эхний үлдэгдэл", {
-          ner: "Эхний үлдэгдэл",
-          dun: ekhniiVal,
-          _id: "extra-ekhnii",
+      if (ekhniiVal !== 0 && !expenseMap.has("ekhnii")) {
+        angilalNemey("ekhnii", ekhniiVal);
+      }
+
+      // ── Нэхэмжлэх дээрээ задаргаагүй бол гэрээнээс нөхнө ──────────────
+      // Ийм үед урьд нь бүх дүн «Авлага» гэсэн ганц мөр болж харагддаг байсан.
+      if (!expenseMap.has("ashiglalt")) {
+        const albanNiit = Number(
+          selectedInvoice?.niitTulbur ?? selectedInvoice?.niitDun ?? 0,
+        );
+        let odooTotal = 0;
+        expenseMap.forEach((v) => {
+          odooTotal += Number(v.dun || 0);
         });
+        const zaikhDun = roundInvoiceMoney(albanNiit - odooTotal);
+
+        if (zaikhDun > 0.005) {
+          const geree = await fetchGereeMedeelel();
+          const gereeZardluud = Array.isArray(geree?.zardluud)
+            ? geree.zardluud
+            : [];
+
+          const ashiglaltNiit = roundInvoiceMoney(
+            gereeZardluud.reduce(
+              (acc: number, z: any) => acc + ashiglaltiinZardliinDun(z),
+              0,
+            ),
+          );
+
+          // Нэхэмжлэх дээр эхний үлдэгдэл байхгүй ч гэрээнд байвал нэмнэ.
+          const gereeEkhnii = expenseMap.has("ekhnii")
+            ? 0
+            : Math.max(0, roundInvoiceMoney(Number(geree?.ekhniiUldegdel ?? 0)));
+
+          // Задаргаа нийт дүнгээс хэтэрвэл нэхэмжлэх буруу болох тул нөхөхгүй.
+          if (
+            ashiglaltNiit + gereeEkhnii > 0.005 &&
+            ashiglaltNiit + gereeEkhnii <= zaikhDun + 0.02
+          ) {
+            angilalNemey("ekhnii", gereeEkhnii);
+            angilalNemey("ashiglalt", ashiglaltNiit);
+          }
+        }
       }
 
       // Fallback alignment: if the rows do not sum up exactly to niitTulbur, there are missing charges.
@@ -1229,13 +1404,10 @@ export default function InvoiceModal({
       const officialNiitTulbur = Number(
         selectedInvoice?.niitTulbur ?? selectedInvoice?.niitDun ?? 0,
       );
-      const diff = officialNiitTulbur - mapTotal;
-      if (officialNiitTulbur !== 0 && diff > 0) {
-        expenseMap.set("Бусад төлбөр (Авлага)", {
-          ner: "Авлага",
-          dun: diff,
-          _id: "discrepancy-fill",
-        });
+      // Үлдсэн зөрүү нь гараар үүсгэсэн авлага — «Авлага» мөрөнд нэмнэ.
+      const diff = roundInvoiceMoney(officialNiitTulbur - mapTotal);
+      if (officialNiitTulbur !== 0 && diff > 0.005) {
+        angilalNemey("avlaga", diff);
       }
 
       let chargesAfterFill = 0;
@@ -1260,19 +1432,6 @@ export default function InvoiceModal({
             ? roundInvoiceMoney(refInvoiceTotal * 1.18 + 300)
             : Number.POSITIVE_INFINITY;
         phRows = sumPh <= generousCeiling + 0.005 || sumPh < 0.005 ? phRaw : [];
-      }
-
-      const suulchiinVal = Number(
-        selectedInvoice?.suulchiinUldegdel ??
-          selectedInvoice?.medeelel?.suulchiinUldegdel ??
-          0,
-      );
-      if (
-        suulchiinVal !== 0 &&
-        !expenseMap.has("Эхний үлдэгдэл") &&
-        !expenseMap.has("Сүүлчийн үлдэгдэл")
-      ) {
-        // Some invoices might store final balance instead
       }
 
       // Fetch historical readings for the specific month of the invoice
@@ -1302,38 +1461,20 @@ export default function InvoiceModal({
           const readings = readingResp.data.data;
           const match = readings[0]; // Take the most relevant reading for this month
 
-          if (match) {
-            const keys = Array.from(expenseMap.keys());
-            let tsahKey = keys.find((k) => k.trim() === "Цахилгаан");
-            if (!tsahKey) {
-              tsahKey = keys.find(
-                (k) =>
-                  k.toLowerCase().includes("цахилгаан") &&
-                  !k.toLowerCase().includes("дундын"),
-              );
-            }
-
-            if (tsahKey) {
-              const existing = expenseMap.get(tsahKey);
-              expenseMap.set(tsahKey, {
-                ...existing,
-                umnukh: match.umnukhZaalt ?? existing.umnukh,
-                suuliin: match.suuliinZaalt ?? existing.suuliin,
-              });
-            }
+          // Ашиглалтын зардлууд нэг мөрөнд нэгдсэн тул заалтыг тэр мөрөнд тавина.
+          const ashiglaltMur = match ? expenseMap.get("ashiglalt") : null;
+          if (ashiglaltMur) {
+            ashiglaltMur.umnukh = match.umnukhZaalt ?? ashiglaltMur.umnukh;
+            ashiglaltMur.suuliin = match.suuliinZaalt ?? ashiglaltMur.suuliin;
           }
         }
       } catch (err) {
         console.error("Historical reading fetch error:", err);
       }
 
-      const expenseList = Array.from(expenseMap.values()).filter((r: any) => {
-        const dun = Number(r.dun || 0);
-        const ner = String(r.ner || "").trim();
-        if (ner === "Авлага" && dun < 0) return false;
-        if (r._id === "discrepancy-fill" && dun < 0) return false;
-        return true;
-      });
+      const expenseList = INVOICE_ANGILAL_DARAALAL.map((a) =>
+        expenseMap.get(a),
+      ).filter((r: any) => r && Math.abs(Number(r.dun || 0)) > 0.005);
       setExpenseRows(expenseList);
 
       const pRowsFromGuilgee = gRows
@@ -1386,6 +1527,8 @@ export default function InvoiceModal({
     baiguullagiinId,
     barilgiinId,
     selectedBuildingId,
+    gereeIdForLedgerFetch,
+    resident?.zardluud,
   ]);
 
   const filteredInvoices = useMemo(() => {
@@ -1495,6 +1638,9 @@ export default function InvoiceModal({
       }, 0),
     );
 
+    /** Тухайн сард төлөх үлдсэн дүн = тухайн сарын нэхэмжилсэн − төлсөн. */
+    const monthUldegdel = roundInvoiceMoney(monthTulukh - monthTulsun);
+
     let balEndMonth: number | null = null;
     if (invoiceYm && sortedAsc.length) {
       const endKey =
@@ -1529,6 +1675,7 @@ export default function InvoiceModal({
       monthRows,
       monthTulukh,
       monthTulsun,
+      monthUldegdel,
       balEndMonth,
       sortedAsc,
     };
@@ -1955,7 +2102,7 @@ export default function InvoiceModal({
                                       </td>
                                       <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right font-semibold text-theme dark:text-white">
                                         {formatNumber(
-                                          invoiceLedgerBreakdown.monthTulukh,
+                                          invoiceLedgerBreakdown.monthUldegdel,
                                           2,
                                         )}
                                       </td>

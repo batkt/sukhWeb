@@ -14,7 +14,6 @@ import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import toast from "react-hot-toast";
 import PageSongokh from "components/selectZagvar/pageSongokh";
 import formatNumber from "tools/function/formatNumber";
-import { useTulburFooterTotals } from "@/lib/useTulburFooterTotals";
 import {
   AvlagiinNasjiltTable,
   AvlagiinNasjiltItem,
@@ -203,14 +202,6 @@ export default function AvlagiinNasjiltPage() {
   const [pageSize, setPageSize] = useState(200);
   const [isDark, setIsDark] = useState(false);
 
-  const footerTotals = useTulburFooterTotals(
-    token,
-    ajiltan?.baiguullagiinId ?? null,
-    selectedBuildingId || undefined,
-    dateRange?.[0] ? dayjs(dateRange[0]).format("YYYY-MM-DD") : null,
-    dateRange?.[1] ? dayjs(dateRange[1]).format("YYYY-MM-DD") : null
-  );
-
 
   useEffect(() => {
     const checkTheme = () =>
@@ -312,6 +303,10 @@ export default function AvlagiinNasjiltPage() {
       "undsenDun", "khungulult", "tulsunDun", "uldegdel",
       "p0_30", "p31_60", "p61_90", "p91_120", "p120plus",
     ];
+    const maxKhonog = filteredData.reduce(
+      (acc, curr: any) => Math.max(acc, Number(curr.avlagiinKhonog) || 0),
+      0,
+    );
     const results: any = {};
     fields.forEach((f) => {
       results[f] = filteredData.reduce(
@@ -320,6 +315,7 @@ export default function AvlagiinNasjiltPage() {
         0,
       );
     });
+    results.avlagiinKhonog = maxKhonog;
     return results;
   }, [filteredData, summary?.totals]);
 
@@ -401,7 +397,6 @@ export default function AvlagiinNasjiltPage() {
             page={currentPage}
             pageSize={pageSize}
             totals={totals}
-            authoritativeTotals={footerTotals}
           />
         </div>
 

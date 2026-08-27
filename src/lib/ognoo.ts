@@ -49,3 +49,41 @@ export function ognooTsagButen(
   if (!d) return "";
   return `${d.getFullYear()} оны ${d.getMonth() + 1}-р сарын ${d.getDate()}, ${tsag(d)}`;
 }
+
+/**
+ * "Дөнгөж сая" / "12 мин өмнө" / "3 цагийн өмнө" — сүүлийн 24 цагийн дотор.
+ * Түүнээс хуучин бол богино огноо руу шилжинэ.
+ */
+export function ognooKharitsangui(
+  value: string | number | Date | null | undefined,
+): string {
+  const d = parse(value);
+  if (!d) return "";
+  const diff = Date.now() - d.getTime();
+  if (diff < 0) return ognooTsagBogino(d);
+
+  const minut = Math.floor(diff / 60000);
+  if (minut < 1) return "Дөнгөж сая";
+  if (minut < 60) return `${minut} мин өмнө`;
+
+  const tsagiin = Math.floor(minut / 60);
+  if (tsagiin < 24) return `${tsagiin} цагийн өмнө`;
+
+  return ognooTsagBogino(d);
+}
+
+/**
+ * Мэдэгдлийн текстээс төлсөн дүнг таана — жишээ нь "... 100₮ төллөө."
+ *
+ * Мэдэгдэлд дүнгийн тусдаа талбар байдаггүй тул текстээс уншихаас өөр аргагүй.
+ * Таниагүй тохиолдолд `null` буцаана; дуудаж буй тал үүнийг заавал шалгаж,
+ * таамаглаж бөглөх ёсгүй.
+ */
+export function medegdelDun(message: unknown): number | null {
+  if (typeof message !== "string") return null;
+  // 1,200₮ / 100 ₮ / 100төг гэсэн бичлэгүүдийг бүгдийг барина.
+  const m = message.match(/([\d][\d\s,]*)\s*(?:₮|төг)/i);
+  if (!m) return null;
+  const num = Number(m[1].replace(/[\s,]/g, ""));
+  return Number.isFinite(num) ? num : null;
+}

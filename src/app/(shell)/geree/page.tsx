@@ -7,11 +7,15 @@ import ContractsTable from "./ContractsTable";
 import { useGereeContext } from "./GereeContext";
 import { useTourSteps } from "@/lib/useTourSteps";
 import { useRegisterTourSteps } from "@/context/TourContext";
+import AdminGereeUstgakhModal from "./modals/AdminGereeUstgakhModal";
 
 export default function GereePage() {
   const router = useRouter();
   const { token } = useAuth();
   const { state, data, actions, ajiltan } = useGereeContext();
+
+  // Админаар цуцлагдсан гэрээтэй харилцагчийг устгах цонх.
+  const [adminUstgakhGeree, setAdminUstgakhGeree] = useState<any | null>(null);
 
   // Tour steps
   const gereeTourSteps = useTourSteps("contracts");
@@ -42,6 +46,7 @@ export default function GereePage() {
   }, [actions]);
 
   return (
+    <>
     <ContractsTable
       ajiltan={ajiltan}
       selectedContracts={state.selectedContracts}
@@ -63,6 +68,17 @@ export default function GereePage() {
       rowsPerPage={state.rowsPerPage}
       setCurrentPage={state.setCurrentPage}
       setRowsPerPage={state.setRowsPerPage}
+      handleAdminDelete={setAdminUstgakhGeree}
     />
+
+    {adminUstgakhGeree && (
+      <AdminGereeUstgakhModal
+        contract={adminUstgakhGeree}
+        token={token || ""}
+        onClose={() => setAdminUstgakhGeree(null)}
+        onDeleted={() => data.gereeJagsaaltMutate?.()}
+      />
+    )}
+    </>
   );
 }

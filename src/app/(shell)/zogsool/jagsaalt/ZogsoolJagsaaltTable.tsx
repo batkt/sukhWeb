@@ -240,6 +240,8 @@ export const ZogsoolJagsaaltTable: React.FC<ZogsoolJagsaaltTableProps> = ({
             qpay: "QPay",
             transfer: "Дансаар",
             discount: "Хөнгөлөлт",
+            GadaaQR: "Гадаа QR",
+            DotorQR: "Дотор QR",
           };
           if (tulsunDun > 0) {
             return (

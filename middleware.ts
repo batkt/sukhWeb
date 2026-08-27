@@ -15,6 +15,9 @@ const PUBLIC_PATHS = new Set<string>([
 function isPublicPath(pathname: string): boolean {
   if (PUBLIC_PATHS.has(pathname)) return true;
   if (pathname.startsWith("/pay/")) return true;
+  // Гадаа наалтын QR-аар зогсоолын төлбөр төлөх нийтийн хуудас — QR уншуулсан
+  // хүн нэвтрэх боломжгүй тул нээлттэй байх ёстой.
+  if (pathname.startsWith("/zogsool-qr/")) return true;
   // Allow static files
   if (
     pathname.startsWith("/_next/") ||

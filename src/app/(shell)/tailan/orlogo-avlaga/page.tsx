@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useBuilding } from "@/context/BuildingContext";
 import { useAuth } from "@/lib/useAuth";
@@ -9,7 +9,6 @@ import { useGereeJagsaalt } from "@/lib/useGeree";
 import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
 import uilchilgee from "@/lib/uilchilgee";
 import useSWR from "swr";
-import { useTulburFooterTotals } from "@/lib/useTulburFooterTotals";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { StandardPagination } from "@/components/ui/StandardTable";
 import { useSearch } from "@/context/SearchContext";
@@ -19,12 +18,6 @@ import PageSongokh from "../../../../../components/selectZagvar/pageSongokh";
 import { FileSpreadsheet, Printer } from "lucide-react";
 import { OrlogoAvlagaTable, OrlogoAvlagaItem } from "./OrlogoAvlagaTable";
 import toast from "react-hot-toast";
-import { pickMonthSlice } from "../../tulbur/guilgeeTuukh/guilgeeMonthMatrix";
-import { aggregateLedgerTulsunByGereeId } from "../../tulbur/guilgeeTuukh/guilgeePaidDisplay";
-import {
-  itemPrimaryDateMs,
-  computeLedgerRunningBalancesByGereeId,
-} from "../../tulbur/guilgeeTuukh/ledgerRunningBalances";
 
 const PrintStyles = () => (
   <style jsx global>{`
@@ -185,13 +178,6 @@ export default function OrlogoAvlagaPage() {
   const [expandedError, setExpandedError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
-  const footerTotals = useTulburFooterTotals(
-    token,
-    ajiltan?.baiguullagiinId ?? null,
-    effectiveBarilgiinId,
-    dateRange?.[0] ? dayjs(dateRange[0]).format("YYYY-MM-DD") : null,
-    dateRange?.[1] ? dayjs(dateRange[1]).format("YYYY-MM-DD") : null
-  );
 
   const effectiveDateFilter = useMemo(() => {
     const rawStart = dateRange?.[0] ? dayjs(dateRange[0]).format("YYYY-MM-DD") : "";
@@ -378,75 +364,128 @@ export default function OrlogoAvlagaPage() {
 
 
 
-  const allHistoryItems = useMemo(() => {
-    const invoices = Array.isArray(historyData?.jagsaalt)
-      ? historyData.jagsaalt
-      : Array.isArray(historyData)
-        ? historyData
-        : [];
-    const receivables = Array.isArray(receivableData?.jagsaalt)
-      ? receivableData.jagsaalt
-      : Array.isArray(receivableData)
-        ? receivableData
-        : [];
-    const payments = Array.isArray(paymentRecordsData?.jagsaalt)
-      ? paymentRecordsData.jagsaalt
-      : Array.isArray(paymentRecordsData)
-        ? paymentRecordsData
-        : [];
 
-    const combined = [...invoices];
-    const trackingIds = new Set(invoices.map((it: any) => String(it._id)));
-    invoices.forEach((it: any) => {
-      const gList = Array.isArray(it?.medeelel?.guilgeenuud)
-        ? it.medeelel.guilgeenuud
-        : Array.isArray(it?.guilgeenuud)
-          ? it.guilgeenuud
-          : [];
-      gList.forEach((g: any) => {
-        if (g?._id) trackingIds.add(String(g._id));
-      });
+  // ── Эхний үлдэгдэл ────────────────────────────────────────────────
+  // Эхний үлдэгдэл системд ХОЁР газар байдаг:
+  //   1. geree.ekhniiUldegdel талбар
+  //   2. guilgeeAvlaguud дээрх ekhniiUldegdelEsekh: true гүйлгээ
+  //      (services/invoiceService.js → ensureEkhniiUldegdel)
+  // Хоёуланг нь нэмбэл дүн давхарлана. Иймд гүйлгээний дэвтэрт бичлэг
+  // байвал ЗӨВХӨН түүнийг, байхгүй бол (хуучин өгөгдөл) гэрээн дээрх
+  // талбарыг ашиглана.
+  const OPENING_ROW_RE = /эхний\s*үлдэгдэл|ekhnii\s*uldegdel|opening/i;
+
+  const isOpeningLedgerRow = useCallback((row: any) => {
+    if (row?.ekhniiUldegdelEsekh === true) return true;
+    // Флаг нэмэгдэхээс өмнөх бичлэгүүдийг нэрээр нь таньна
+    const ner = String(row?.zardliinNer ?? row?.ner ?? "");
+    const tailbar = String(row?.tailbar ?? "");
+    return OPENING_ROW_RE.test(ner) || OPENING_ROW_RE.test(tailbar);
+  }, []);
+
+  /** Хөнгөлөлтийн мөр үү? Гүйцэтгэлд (бодит мөнгө) тооцохгүй. */
+  const isKhungulultRow = useCallback((row: any) => {
+    const turul = String(row?.turul ?? "").toLowerCase();
+    const khelber = String(row?.khelber ?? "").toLowerCase();
+    const zardliinTurul = String(row?.zardliinTurul ?? "").toLowerCase();
+    return (
+      turul === "khungulult" ||
+      turul === "хөнгөлөлт" ||
+      turul === "discount" ||
+      khelber === "хөнгөлөлт" ||
+      khelber === "khungulult" ||
+      zardliinTurul === "хөнгөлөлт"
+    );
+  }, []);
+
+  /**
+   * Гэрээ тус бүрийн дүнг ЭНЭ ХУУДАСНЫ өөрийн гүйлгээний дэвтрээс бодно.
+   *
+   * Яагаад дахин бодож байна вэ (useTulburFooterTotals-ийг ашиглахгүй):
+   *   - Тэр hook нь /guilgeeAvlaguud-ыг 5000 мөрөөр татдаг бол энэ хуудас
+   *     20000-аар татдаг — том байгууллагад төлбөр нам гүм тасарч
+   *     "Гүйцэтгэл" дутуу гардаг байв.
+   *   - Сервер `ognoo`-гоор шүүдэг мөртөө hook нь төлбөрийн мөрийг
+   *     `tulsunOgnoo`-гоор дахин шүүдэг тул хоёр талаас нь мөнгө алдагддаг.
+   *   - Сөрөг эхний үлдэгдлийг төлбөр гэж тоолдог байсан.
+   *   - Хөнгөлөлт нь төлбөрт ч, нэхэмжилсэн дүнд ч ордоггүй мөртөө эцсийн
+   *     үлдэгдэлд ордог тул мөр нь тэнцдэггүй байв.
+   *
+   * Дүрэм (бүгд нэг эх сурвалж — `dun` талбар):
+   *   Эхний үлдэгдэл = хугацаа эхлэхээс өмнөх бүх хөдөлгөөн
+   *                    + хугацаанд багтсан эхний үлдэгдлийн мөр
+   *   Төлөх дүн      = хугацаан дахь dun > 0 (эхний үлдэгдлээс бусад)
+   *   Төлсөн         = хугацаан дахь dun < 0 (эхний үлдэгдэл, хөнгөлөлтөөс бусад)
+   *   Хөнгөлөлт      = хугацаан дахь хөнгөлөлтийн мөрүүд
+   *   Эцсийн үлдэгдэл = Эхний + Төлөх − Төлсөн − Хөнгөлөлт   ← үргэлж тэнцэнэ
+   *
+   * Огноо шүүлтгүй үед Эцсийн = бүх `dun`-ий нийлбэр буюу гэрээний үлдэгдэл.
+   */
+  const ledgerByGereeId = useMemo(() => {
+    const rows: any[] = unifiedData?.jagsaalt || [];
+
+    const startMs = effectiveDateFilter.start
+      ? new Date(effectiveDateFilter.start).setHours(0, 0, 0, 0)
+      : null;
+    const endMs = effectiveDateFilter.end
+      ? new Date(effectiveDateFilter.end).setHours(23, 59, 59, 999)
+      : null;
+
+    type Dun = {
+      opening: number;
+      billed: number;
+      paid: number;
+      khungulult: number;
+    };
+    const acc: Record<string, Dun> = {};
+
+    rows.forEach((row) => {
+      const gid = String(row?.gereeniiId ?? row?.gereeId ?? "").trim();
+      if (!gid) return;
+
+      if (!acc[gid]) {
+        acc[gid] = { opening: 0, billed: 0, paid: 0, khungulult: 0 };
+      }
+      const b = acc[gid];
+
+      const dun = Number(row?.dun ?? 0);
+      if (!Number.isFinite(dun) || dun === 0) return;
+
+      const isOpening = isOpeningLedgerRow(row);
+      const ms = new Date(row?.ognoo ?? row?.createdAt ?? 0).getTime();
+      const ognootei = Number.isFinite(ms) && ms > 0;
+
+      // Хугацаанаас өмнөх бүх хөдөлгөөн шилжин ирсэн үлдэгдэл болно
+      if (startMs != null && ognootei && ms < startMs) {
+        b.opening += dun;
+        return;
+      }
+      // Хугацаанаас хойшхыг огт тооцохгүй
+      if (endMs != null && ognootei && ms > endMs) return;
+
+      // Эхний үлдэгдлийн мөр хугацаанд багтсан ч төлбөр/нэхэмжлэл биш
+      if (isOpening) {
+        b.opening += dun;
+        return;
+      }
+
+      if (isKhungulultRow(row)) {
+        b.khungulult += Math.abs(dun);
+        return;
+      }
+
+      if (dun > 0) b.billed += dun;
+      else b.paid += Math.abs(dun);
     });
 
-    receivables.forEach((r: any) => {
-      if (!trackingIds.has(String(r._id))) combined.push(r);
-    });
-    payments.forEach((p: any) => {
-      if (!trackingIds.has(String(p._id))) combined.push(p);
-    });
-
-    // Date filtering (Client Side)
-    if (!effectiveDateFilter.hasDateFilter || effectiveDateFilter.isLatestMonthView) {
-      return [...combined].sort((a: any, b: any) => {
-        const d = itemPrimaryDateMs(a) - itemPrimaryDateMs(b);
-        if (d !== 0) return d;
-        return String(a?._id ?? "").localeCompare(String(b?._id ?? ""));
-      });
-    }
-
-    const { start, end } = effectiveDateFilter;
-    const startMs = start ? dayjs(start).startOf("day").valueOf() : Number.NEGATIVE_INFINITY;
-    const endMs = end ? dayjs(end).endOf("day").valueOf() : Number.POSITIVE_INFINITY;
-
-    const filtered = combined.filter((it: any) => {
-      const d = itemPrimaryDateMs(it);
-      return d >= startMs && d <= endMs;
-    });
-
-    return filtered.sort((a: any, b: any) => {
-      const d = itemPrimaryDateMs(a) - itemPrimaryDateMs(b);
-      if (d !== 0) return d;
-      return String(a?._id ?? "").localeCompare(String(b?._id ?? ""));
-    });
-  }, [historyData, receivableData, paymentRecordsData, effectiveDateFilter]);
-
-  const buildingHistoryItems = allHistoryItems;
-
-  // Use authoritative per-contract data from useTulburFooterTotals
-  // This ensures identical numbers with the tulbur/guilgeeTuukh page
-  const ledgerBalances = footerTotals.uldegdelByGereeId;
-  const ledgerPaidTable = footerTotals.paidByGereeId;
-  const ledgerBilledTable = footerTotals.billedByGereeId;
+    return acc;
+  }, [
+    unifiedData,
+    effectiveDateFilter.start,
+    effectiveDateFilter.end,
+    isOpeningLedgerRow,
+    isKhungulultRow,
+  ]);
 
 
 
@@ -481,22 +520,26 @@ export default function OrlogoAvlagaPage() {
       const gid = String(ct?._id || "").trim();
       if (!gid) return;
 
+      // Цуцалсан гэрээг алгасана — идэвхгүй гэрээ авлагын тайланд орохгүй.
+      if (String(ct?.tuluv || "").trim() === "Цуцалсан") return;
+
       const residentId = String(ct?.orshinSuugchId || "").trim();
       const r = residentId ? residentsById[residentId] : undefined;
 
-      const periodBilled = Number(ledgerBilledTable[gid] ?? 0);
-      const periodPaid = Number(ledgerPaidTable[gid] ?? 0);
-      const finalBal =
-        ledgerBalances[gid] != null
-          ? Number(ledgerBalances[gid])
-          : Number(ct.globalUldegdel ?? ct.uldegdel ?? 0);
+      // Дөрвөн багана нэг эх сурвалжаас — ингэснээр
+      // Эхний + Төлөх − Төлсөн − Хөнгөлөлт = Эцсийн тэнцэнэ.
+      const dev = ledgerByGereeId[gid];
 
-      const ekhBal = 
-        footerTotals.ekhniiUldegdelByGereeId[gid] != null
-          ? Number(footerTotals.ekhniiUldegdelByGereeId[gid])
-          : !effectiveDateFilter.hasDateFilter
-            ? Number(ct.ekhniiUldegdel ?? 0)
-            : finalBal - periodBilled + periodPaid;
+      // Дэвтэрт бичлэгтэй бол түүнээс, эс бөгөөс гэрээн дээрх талбараас.
+      // Хоёуланг НЭГЭН ЗЭРЭГ нэмэхгүй — тэр нь давхардлын шалтгаан байсан.
+      const ekhBal = dev ? dev.opening : Number(ct.ekhniiUldegdel ?? 0);
+      const periodBilled = dev ? dev.billed : 0;
+      const periodPaid = dev ? dev.paid : 0;
+      const periodKhungulult = dev ? dev.khungulult : 0;
+
+      const finalBal = dev
+        ? ekhBal + periodBilled - periodPaid - periodKhungulult
+        : Number(ct.globalUldegdel ?? ct.uldegdel ?? 0);
 
       const row = {
         ...ct,
@@ -511,6 +554,7 @@ export default function OrlogoAvlagaPage() {
         _ekhniiUldegdel: Math.round(ekhBal * 100) / 100,
         _periodPaid: Math.round(periodPaid * 100) / 100,
         _periodTulbur: Math.round(periodBilled * 100) / 100,
+        _periodKhungulult: Math.round(periodKhungulult * 100) / 100,
         _finalUldegdel: Math.round(finalBal * 100) / 100,
       };
 
@@ -533,11 +577,7 @@ export default function OrlogoAvlagaPage() {
     orshinSuugchGaralt,
     gereeGaralt,
     residentsById,
-    ledgerBalances,
-    ledgerPaidTable,
-    ledgerBilledTable,
-    footerTotals,
-    effectiveDateFilter
+    ledgerByGereeId
   ]);
 
 
@@ -614,31 +654,29 @@ export default function OrlogoAvlagaPage() {
     return allList;
   }, [activeTab, paidList, avlagaList, allList]);
 
-  // Use authoritative grand totals from useTulburFooterTotals (same as tulbur page)
-  const totalOrlogo = footerTotals.totalPaid;
-  const totalUldegdel = footerTotals.totalUldegdel;
-  const totalTulbur = footerTotals.totalBilled;
-
   // Per-row derived totals for display
   const localTotals = useMemo(() => {
     let billedSum = 0;
     let paidSum = 0;
     let finalBalSum = 0;
     let ekhniiUldegdelSum = 0;
+    let khungulultSum = 0;
 
     displayList.forEach((record) => {
       billedSum += record._periodTulbur ?? 0;
       paidSum += Number(record._periodPaid ?? getPaid(record));
       finalBalSum += record._finalUldegdel ?? getUldegdel(record);
       ekhniiUldegdelSum += Number(record._ekhniiUldegdel ?? 0);
+      khungulultSum += Number(record._periodKhungulult ?? 0);
     });
 
     const billed = Math.round(billedSum * 100) / 100;
     const paid = Math.round(paidSum * 100) / 100;
     const finalBalance = Math.round(finalBalSum * 100) / 100;
     const ekhniiUldegdel = Math.round(ekhniiUldegdelSum * 100) / 100;
+    const khungulult = Math.round(khungulultSum * 100) / 100;
 
-    return { ekhniiUldegdel, billed, paid, finalBalance };
+    return { ekhniiUldegdel, billed, paid, khungulult, finalBalance };
   }, [displayList, getPaid, getUldegdel]);
 
   const handleRowClick = async (it: any) => {
@@ -658,31 +696,43 @@ export default function OrlogoAvlagaPage() {
         (row: any) => String(row.gereeniiId) === String(gid) || String(row._gereeId) === String(gid)
       );
       
-      // Sort chronologically
+      // Эхний үлдэгдлийн бичлэгийг үргэлж эхэнд, дараа нь огноогоор
       contractTransactions.sort((a: any, b: any) => {
+        const openA = isOpeningLedgerRow(a) ? 0 : 1;
+        const openB = isOpeningLedgerRow(b) ? 0 : 1;
+        if (openA !== openB) return openA - openB;
         const d1 = new Date(a.ognoo || a.createdAt || 0).getTime();
         const d2 = new Date(b.ognoo || b.createdAt || 0).getTime();
         if (d1 !== d2) return d1 - d2;
         return String(a._id || "").localeCompare(String(b._id || ""));
       });
-      
-      // Get the contract to find ekhniiUldegdel
+
       const contract = contractsById[gid];
-      let running = Number(contract?.ekhniiUldegdel || 0);
-      
+
+      // Эхний үлдэгдэл дэвтэрт бичлэг болж байгаа эсэх. Байвал доорх
+      // давталт түүнийг нэгэнт нэмнэ — иймд энд ДАХИЖ нэмэхгүй.
+      // (Өмнө нь хоёуланг нь нэмдэг байсан тул "Эхний үлдэгдэл" 2 мөр
+      //  болж, түүнээс хойших бүх үлдэгдэл хөөрөгдөж харагддаг байсан.)
+      const hasOpeningRow = contractTransactions.some(isOpeningLedgerRow);
+
+      let running = 0;
       const ledger: any[] = [];
-      
-      if (running !== 0) {
-        ledger.push({
-          _id: "ekhnii-uldegdel",
-          ognoo: contract?.createdAt || null,
-          tailbar: "Эхний үлдэгдэл",
-          tulukhDun: running > 0 ? running : 0,
-          tulsunDun: running < 0 ? Math.abs(running) : 0,
-          uldegdel: running
-        });
+
+      if (!hasOpeningRow) {
+        const seed = Number(contract?.ekhniiUldegdel || 0);
+        if (seed !== 0) {
+          running = seed;
+          ledger.push({
+            _id: "ekhnii-uldegdel",
+            ognoo: contract?.gereeniiOgnoo || contract?.createdAt || null,
+            tailbar: "Эхний үлдэгдэл",
+            tulukhDun: seed > 0 ? seed : 0,
+            tulsunDun: seed < 0 ? Math.abs(seed) : 0,
+            uldegdel: seed,
+          });
+        }
       }
-      
+
       contractTransactions.forEach((row: any) => {
         const amt = Number(row.dun || 0);
         // dun > 0 is a charge (tulukh)
@@ -694,7 +744,11 @@ export default function OrlogoAvlagaPage() {
         ledger.push({
           _id: row._id,
           ognoo: row.ognoo || row.createdAt,
-          tailbar: row.tailbar || (amt > 0 ? "Авлага" : "Төлбөр"),
+          // "Системээс үүсгэсэн эхний үлдэгдэл" гэх мэт хувилбаруудыг нэг
+          // нэршилд оруулж, мөр юу болохыг ойлгомжтой болгоно
+          tailbar: isOpeningLedgerRow(row)
+            ? "Эхний үлдэгдэл"
+            : row.tailbar || (amt > 0 ? "Авлага" : "Төлбөр"),
           tulukhDun: tulukh,
           tulsunDun: tulsun,
           uldegdel: Math.round(running * 100) / 100,
@@ -744,6 +798,7 @@ export default function OrlogoAvlagaPage() {
           row.ekhniiUldegdel = parseFloat(String(it._ekhniiUldegdel ?? 0)).toFixed(2);
           row.periodTulbur = parseFloat(String(it._periodTulbur ?? 0)).toFixed(2);
           row.paid = parseFloat(String(getPaid(it))).toFixed(2);
+          row.khungulult = parseFloat(String(it._periodKhungulult ?? 0)).toFixed(2);
           row.uldegdel = parseFloat(String(it._finalUldegdel ?? getUldegdel(it))).toFixed(2);
         } else {
           row.paid = parseFloat(String(getPaid(it))).toFixed(2);
@@ -765,6 +820,7 @@ export default function OrlogoAvlagaPage() {
           { key: "ekhniiUldegdel", label: "Эхний үлдэгдэл" },
           { key: "periodTulbur", label: "Төлөх дүн" },
           { key: "paid", label: "Төлсөн" },
+          { key: "khungulult", label: "Хөнгөлөлт" },
           { key: "uldegdel", label: "Эцсийн үлдэгдэл" },
         );
       } else {
@@ -855,8 +911,10 @@ export default function OrlogoAvlagaPage() {
             <p className="text-xs text-gray-500 uppercase font-semibold">
               Нийт орлого
             </p>
+            {/* Хүснэгтийн хөлтэй ижил эх сурвалж — хайлт/шүүлт хийсэн үед
+                дээд, доод дүн зөрөхгүй байх ёстой */}
             <p className="text-xl font-bold text-green-700">
-              {formatNumber(totalOrlogo, 2)} ₮
+              {formatNumber(localTotals.paid, 2)} ₮
             </p>
           </div>
           <div className="border p-3 rounded">
@@ -864,7 +922,7 @@ export default function OrlogoAvlagaPage() {
               Нийт үлдэгдэл
             </p>
             <p className="text-xl font-bold text-red-700">
-              {formatNumber(totalUldegdel, 2)} ₮
+              {formatNumber(localTotals.finalBalance, 2)} ₮
             </p>
           </div>
         </div>
@@ -977,6 +1035,7 @@ export default function OrlogoAvlagaPage() {
             onModalClose={handleModalClose}
             selectedRecord={selectedRecord}
             grandTotalPaid={localTotals.paid}
+            grandTotalKhungulult={localTotals.khungulult}
             grandTotalUldegdel={localTotals.finalBalance}
             grandTotalEkhniiUldegdel={localTotals.ekhniiUldegdel}
             grandTotalTulbur={localTotals.billed}

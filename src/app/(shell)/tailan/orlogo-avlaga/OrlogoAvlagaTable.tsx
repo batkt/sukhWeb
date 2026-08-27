@@ -19,6 +19,7 @@ export interface OrlogoAvlagaItem {
   _toot?: string;
   _davkhar?: string;
   _ekhniiUldegdel?: number;
+  _periodKhungulult?: number;
   _periodTulbur?: number;
   _periodPaid?: number;
   [key: string]: any;
@@ -43,6 +44,7 @@ interface OrlogoAvlagaTableProps {
   onModalClose: () => void;
   selectedRecord: OrlogoAvlagaItem | null;
   grandTotalPaid?: number;
+  grandTotalKhungulult?: number;
   grandTotalUldegdel?: number;
   grandTotalEkhniiUldegdel?: number;
   grandTotalTulbur?: number;
@@ -67,6 +69,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
   onModalClose,
   selectedRecord,
   grandTotalPaid,
+  grandTotalKhungulult,
   grandTotalUldegdel,
   grandTotalEkhniiUldegdel,
   grandTotalTulbur,
@@ -101,6 +104,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
       { key: "ekhniiUldegdel", label: "Эхний үлдэгдэл", width: "140px", align: "right" as const },
       { key: "tulbur", label: "Төлөх дүн", width: "140px", align: "right" as const },
       { key: "paid", label: "Төлсөн", width: "150px", align: "right" as const },
+      { key: "khungulult", label: "Хөнгөлөлт", width: "130px", align: "right" as const },
       { key: "finalBalance", label: "Эцсийн үлдэгдэл", width: "140px", align: "right" as const },
     ];
   }, [activeTab]);
@@ -124,6 +128,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
       case "ekhniiUldegdel": return formatNumber(record._ekhniiUldegdel ?? 0, 2);
       case "tulbur": return formatNumber(record._periodTulbur ?? 0, 2);
       case "paid": return formatNumber(Number(record._periodPaid ?? getPaid(record)), 2);
+      case "khungulult": return formatNumber(Number(record._periodKhungulult ?? 0), 2);
       case "finalBalance": return formatNumber(record._finalUldegdel ?? getUldegdel(record), 2);
       default: return "-";
     }
@@ -140,6 +145,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
       case "ekhniiUldegdel": return formatNumber(grandTotalEkhniiUldegdel ?? 0, 2);
       case "tulbur": return formatNumber(grandTotalTulbur ?? 0, 2);
       case "paid": return formatNumber(grandTotalPaid ?? 0, 2);
+      case "khungulult": return formatNumber(grandTotalKhungulult ?? 0, 2);
       case "finalBalance": return formatNumber(grandTotalUldegdel ?? 0, 2);
       default: return null;
     }

@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, {
+  useState,
+  useMemo,
+  useEffect,
+  useCallback,
+  useRef,
+} from "react";
 import { createPortal } from "react-dom";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
@@ -30,6 +36,13 @@ import {
   Wallet,
   ArrowRight,
   TrendingUp,
+  Ban,
+  ShieldCheck,
+  Loader2,
+  FileSpreadsheet,
+  Upload,
+  CheckCircle2,
+  AlertTriangle,
 } from "lucide-react";
 import { ConfigProvider } from "antd";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
@@ -42,6 +55,43 @@ import { toast } from "react-hot-toast";
 import { LiquidGlassCard } from "@/components/ui/liquid-glass";
 import { StandardPagination } from "@/components/ui/StandardTable";
 import { PaymentPopup } from "../camera/PaymentPopup";
+
+/** Улсын дугаар: эхний 4 нь тоо, сүүлийн 3 нь монгол кирилл үсэг (ж: 1234УБА) */
+const MASHINII_DUGAARIIN_ZAGVAR = /^\d{4}[А-ЯӨҮЁ]{3}$/;
+
+/** Латин гараас бичсэн ч монгол кирилл рүү хөрвүүлнэ (бусад цонхтой ижил дүрэм) */
+const LATIN_KIRILL: Record<string, string> = {
+  A: "А", B: "В", C: "С", D: "Д", E: "Е", G: "Г", H: "Н", I: "И",
+  J: "Ж", K: "К", L: "Л", M: "М", N: "Н", O: "О", P: "Р", Q: "Ө",
+  R: "Р", S: "С", T: "Т", U: "У", V: "В", W: "В", X: "Х", Y: "Ү",
+  Z: "З",
+};
+
+/**
+ * Оруулсан текстийг улсын дугаарын хэлбэрт цэвэрлэнэ: том үсэг болгож,
+ * зай авч, эхний 4 байрлалд зөвхөн тоо, сүүлийн 3-д зөвхөн кирилл үсэг үлдээнэ.
+ */
+function mashiniiDugaarTseverle(orolt: string): string {
+  const utga = orolt.toUpperCase().replace(/\s/g, "").slice(0, 7);
+  const toonuud = utga.slice(0, 4).replace(/\D/g, "");
+  const useguud = Array.from(utga.slice(4))
+    .map((useg) => LATIN_KIRILL[useg] || useg)
+    .filter((useg) => /^[А-ЯӨҮЁ]$/.test(useg))
+    .join("");
+  return toonuud + useguud;
+}
+
+/** Excel-ээр олноор блоклоход шаардагдах баганууд */
+const BLOCK_EXCEL_BAGANA = ["Улсын дугаар", "Шалтгаан"] as const;
+
+/** Excel-ээс уншсан нэг мөр — хадгалахын өмнө хэрэглэгчид харуулна */
+interface BlockExcelMur {
+  /** Excel дэх мөрийн дугаар (гарчиг 1-р мөр тул +2) */
+  excelMur: number;
+  dugaar: string;
+  tailbar: string;
+  aldaanuud: string[];
+}
 
 const RealTimeDuration = ({
   orsonTsag,
@@ -149,6 +199,22 @@ export default function Jagsaalt() {
     navigator.clipboard.writeText(text);
     toast.success("Хуулагдлаа");
   };
+
+  // ── Машин блоклох ─────────────────────────────────────────────────────────
+  const [blockModal, setBlockModal] = useState<{
+    dugaar: string;
+    tailbar: string;
+  } | null>(null);
+  const [blockSaving, setBlockSaving] = useState(false);
+  const [blockSearch, setBlockSearch] = useState("");
+
+  // Excel-ээр олноор блоклох — уншсан мөрүүдийг эхлээд урьдчилан харуулна
+  const excelFileRef = useRef<HTMLInputElement | null>(null);
+  const [excelMuruud, setExcelMuruud] = useState<BlockExcelMur[]>([]);
+  const [excelFileNer, setExcelFileNer] = useState("");
+  const [excelUnshij, setExcelUnshij] = useState(false);
+  const [excelKhadgalj, setExcelKhadgalj] = useState(false);
+  const [excelYavts, setExcelYavts] = useState(0);
 
   // null = explicitly cleared (no date filter), undefined = not yet init
   const [dateRange, setDateRange] = useState<
@@ -313,6 +379,274 @@ export default function Jagsaalt() {
 
   const totalPages = Math.ceil((vehiclesData?.niitMur || 0) / pageSize);
 
+  // ── Блоклосон машины жагсаалт ─────────────────────────────────────────────
+  // Хаалганы SDK нь blockMashin цуглуулгаас { dugaar, barilgiinId }-аар
+  // шалгаж машиныг оруулахгүй тул энд яг тэр цуглуулга руу бичнэ.
+  const { data: blockData, mutate: blockMutate } = useSWR(
+    shouldFetch
+      ? ["/blockMashin", token, ajiltan?.baiguullagiinId, effectiveBarilgiinId]
+      : null,
+    async ([url, tkn, bId, barId]): Promise<any> => {
+      const resp = await uilchilgee(tkn).get(url, {
+        params: {
+          khuudasniiDugaar: 1,
+          khuudasniiKhemjee: 10000,
+          query: JSON.stringify({
+            baiguullagiinId: bId,
+            ...(barId ? { barilgiinId: barId } : {}),
+          }),
+        },
+      });
+      return resp.data;
+    },
+    { revalidateOnFocus: false },
+  );
+
+  const blockedMap = useMemo(() => {
+    const map = new Map<string, any>();
+    (blockData?.jagsaalt || []).forEach((b: any) => {
+      const key = String(b?.dugaar || "").trim().toUpperCase();
+      if (key) map.set(key, b);
+    });
+    return map;
+  }, [blockData]);
+
+  const blockolsonEsekh = useCallback(
+    (dugaar?: string) =>
+      blockedMap.get(String(dugaar || "").trim().toUpperCase()) || null,
+    [blockedMap],
+  );
+
+  const blockList = useMemo(() => {
+    const list = [...(blockData?.jagsaalt || [])];
+    list.sort((a: any, b: any) =>
+      String(b?.createdAt || "").localeCompare(String(a?.createdAt || "")),
+    );
+    const q = blockSearch.trim().toUpperCase();
+    if (!q) return list;
+    return list.filter((b: any) =>
+      `${b?.dugaar || ""} ${b?.tailbar || ""}`.toUpperCase().includes(q),
+    );
+  }, [blockData, blockSearch]);
+
+  const blokloyo = useCallback(async () => {
+    if (!blockModal || !token) return;
+    const dugaar = blockModal.dugaar.trim().toUpperCase();
+    if (!dugaar) {
+      toast.error("Улсын дугаар оруулна уу");
+      return;
+    }
+    if (!MASHINII_DUGAARIIN_ZAGVAR.test(dugaar)) {
+      toast.error("Улсын дугаар 4 тоо + 3 монгол кирилл үсэг байх ёстой");
+      return;
+    }
+    const tailbar = blockModal.tailbar.trim();
+    if (!tailbar) {
+      toast.error("Блоклох шалтгааныг заавал бөглөнө үү");
+      return;
+    }
+    if (blockedMap.has(dugaar)) {
+      toast.error(`${dugaar} аль хэдийн блоклогдсон байна`);
+      return;
+    }
+    // Хаалганы SDK нь { dugaar, barilgiinId }-аар шалгадаг тул барилгагүй
+    // хадгалсан блок хаалган дээр хүчин төгөлдөр болохгүй.
+    if (!effectiveBarilgiinId) {
+      toast.error("Эхлээд барилга сонгоно уу");
+      return;
+    }
+    setBlockSaving(true);
+    try {
+      await uilchilgee(token).post("/blockMashin", {
+        baiguullagiinId: ajiltan?.baiguullagiinId,
+        ...(effectiveBarilgiinId ? { barilgiinId: effectiveBarilgiinId } : {}),
+        dugaar,
+        tailbar,
+        burtgesenAjiltaniiId: ajiltan?._id,
+        burtgesenAjiltaniiNer: ajiltan?.ner,
+      });
+      toast.success(`${dugaar} дугаартай машиныг блоклолоо`);
+      setBlockModal({ dugaar: "", tailbar: "" });
+      blockMutate();
+    } catch (e) {
+      console.error(e);
+      toast.error("Блоклоход алдаа гарлаа");
+    } finally {
+      setBlockSaving(false);
+    }
+  }, [blockModal, blockedMap, token, ajiltan, effectiveBarilgiinId, blockMutate]);
+
+  const blockGargaya = useCallback(
+    async (blockRecord: any) => {
+      if (!token || !blockRecord?._id) return;
+      try {
+        await uilchilgee(token).delete(`/blockMashin/${blockRecord._id}`);
+        toast.success(`${blockRecord.dugaar} блокоос гаргалаа`);
+        blockMutate();
+      } catch (e) {
+        console.error(e);
+        toast.error("Блокоос гаргахад алдаа гарлаа");
+      }
+    },
+    [token, blockMutate],
+  );
+
+  const excelZuvMuruud = useMemo(
+    () => excelMuruud.filter((mur) => mur.aldaanuud.length === 0),
+    [excelMuruud],
+  );
+
+  const excelTsutslaya = useCallback(() => {
+    setExcelMuruud([]);
+    setExcelFileNer("");
+    setExcelYavts(0);
+  }, []);
+
+  /** Хоосон загвар татах — хэрэглэгч ямар багана хэрэгтэйг эндээс мэднэ */
+  const excelZagvarTatya = useCallback(async () => {
+    // xlsx хүнд тул зөвхөн хэрэгтэй үед нь ачаална
+    const XLSX = await import("xlsx");
+    const jishee = [
+      { "Улсын дугаар": "1234УБА", Шалтгаан: "Төлбөрөө төлөөгүй" },
+    ];
+    const ws = XLSX.utils.json_to_sheet(jishee, {
+      header: BLOCK_EXCEL_BAGANA as unknown as string[],
+    });
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Блоклох машин");
+    XLSX.writeFile(wb, "Блоклох_машин_загвар.xlsx");
+  }, []);
+
+  /** Файлыг уншиж шалгаад урьдчилан харах хүснэгт рүү тавина (хадгалахгүй) */
+  const excelFileSongoyo = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      // Ижил файлыг дахин сонгоход onChange асахын тулд утгыг тэглэнэ
+      e.target.value = "";
+      if (!file) return;
+
+      setExcelUnshij(true);
+      setExcelFileNer(file.name);
+
+      const reader = new FileReader();
+      reader.onload = async (evt) => {
+        try {
+          const XLSX = await import("xlsx");
+          const wb = XLSX.read(evt.target?.result, { type: "binary" });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          const tuukhii: any[] = XLSX.utils.sheet_to_json(ws, { defval: "" });
+
+          if (tuukhii.length === 0) {
+            toast.error("Excel файл хоосон байна");
+            setExcelMuruud([]);
+            return;
+          }
+
+          const uzegdsen = new Set<string>();
+          const muruud: BlockExcelMur[] = tuukhii.map((mur, i) => {
+            const dugaar = mashiniiDugaarTseverle(
+              String(mur["Улсын дугаар"] ?? "").trim(),
+            );
+            const tailbar = String(mur["Шалтгаан"] ?? "").trim();
+            const aldaanuud: string[] = [];
+
+            if (!dugaar) {
+              aldaanuud.push("Улсын дугаар хоосон");
+            } else if (!MASHINII_DUGAARIIN_ZAGVAR.test(dugaar)) {
+              aldaanuud.push("4 тоо + 3 монгол кирилл үсэг байх ёстой");
+            } else if (blockedMap.has(dugaar)) {
+              aldaanuud.push("Аль хэдийн блоклогдсон");
+            } else if (uzegdsen.has(dugaar)) {
+              aldaanuud.push("Файлд давхардсан");
+            }
+
+            if (!tailbar) aldaanuud.push("Шалтгаан хоосон");
+            if (dugaar) uzegdsen.add(dugaar);
+
+            return { excelMur: i + 2, dugaar, tailbar, aldaanuud };
+          });
+
+          setExcelMuruud(muruud);
+
+          const buruu = muruud.length - muruud.filter((m) => m.aldaanuud.length === 0).length;
+          if (buruu > 0) {
+            toast.error(`${muruud.length} мөрөөс ${buruu} мөрөнд алдаа байна`);
+          } else {
+            toast.success(`${muruud.length} мөр уншигдлаа — шалгаад хадгална уу`);
+          }
+        } catch {
+          toast.error("Excel файл уншихад алдаа гарлаа");
+          setExcelMuruud([]);
+        } finally {
+          setExcelUnshij(false);
+        }
+      };
+      reader.onerror = () => {
+        toast.error("Файл уншихад алдаа гарлаа");
+        setExcelUnshij(false);
+      };
+      reader.readAsBinaryString(file);
+    },
+    [blockedMap],
+  );
+
+  /**
+   * Хэрэглэгч урьдчилан харснаа баталгаажуулсны дараа л хадгална.
+   * Сервер тал багц endpoint-гүй тул мөр тутамд /blockMashin руу дараалуулж
+   * илгээнэ — зэрэг илгээвэл давхардсан бичлэг үүсэх эрсдэлтэй.
+   */
+  const excelBlokloyo = useCallback(async () => {
+    if (!token) return;
+    if (excelZuvMuruud.length === 0) {
+      toast.error("Блоклох боломжтой мөр алга");
+      return;
+    }
+    if (!effectiveBarilgiinId) {
+      toast.error("Эхлээд барилга сонгоно уу");
+      return;
+    }
+
+    setExcelKhadgalj(true);
+    setExcelYavts(0);
+    let amjiltgui = 0;
+
+    for (let i = 0; i < excelZuvMuruud.length; i++) {
+      const mur = excelZuvMuruud[i];
+      try {
+        await uilchilgee(token).post("/blockMashin", {
+          baiguullagiinId: ajiltan?.baiguullagiinId,
+          barilgiinId: effectiveBarilgiinId,
+          dugaar: mur.dugaar,
+          tailbar: mur.tailbar,
+          burtgesenAjiltaniiId: ajiltan?._id,
+          burtgesenAjiltaniiNer: ajiltan?.ner,
+        });
+      } catch (err) {
+        console.error(err);
+        amjiltgui += 1;
+      }
+      setExcelYavts(i + 1);
+    }
+
+    setExcelKhadgalj(false);
+    blockMutate();
+
+    const amjilttai = excelZuvMuruud.length - amjiltgui;
+    if (amjilttai > 0) toast.success(`${amjilttai} машиныг блоклолоо`);
+    if (amjiltgui > 0) {
+      toast.error(`${amjiltgui} мөр амжилтгүй боллоо`);
+    } else {
+      excelTsutslaya();
+    }
+  }, [
+    token,
+    excelZuvMuruud,
+    effectiveBarilgiinId,
+    ajiltan,
+    blockMutate,
+    excelTsutslaya,
+  ]);
+
   const fetchRevenueData = useCallback(async (start: string, end: string) => {
     if (!token || !start || !end) return;
     setRevenueLoading(true);
@@ -348,6 +682,23 @@ export default function Jagsaalt() {
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [revenueModalOpen]);
+
+  useEffect(() => {
+    if (blockModal) return;
+    setExcelMuruud([]);
+    setExcelFileNer("");
+    setExcelYavts(0);
+  }, [blockModal]);
+
+  useEffect(() => {
+    if (!blockModal) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !blockSaving && !excelKhadgalj)
+        setBlockModal(null);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [blockModal, blockSaving, excelKhadgalj]);
 
   const revenueModalBreakdown = useMemo(() => {
     const allList = revenueListData?.jagsaalt || [];
@@ -538,9 +889,9 @@ export default function Jagsaalt() {
   };
 
   return (
-    <div className="fixed inset-0 flex flex-col">
-      <div className="flex-1 flex flex-col gap-4 px-4 py-4 max-w-[1700px] mx-auto w-full h-full overflow-hidden">
-        <div className="relative z-10 px-6 py-4 rounded-[32px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm shadow-slate-200/50">
+    <div className="flex flex-col h-[calc(100dvh-var(--shell-topbar-h)-3.5rem-2px)] min-h-[420px] overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col gap-4 max-w-[1700px] mx-auto w-full overflow-hidden">
+        <div className="relative z-10 flex-shrink-0 px-1">
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
             {/* Left: Date picker + Search */}
             <div className="flex items-center gap-4 shrink-0">
@@ -566,6 +917,18 @@ export default function Jagsaalt() {
             {/* Right: Export + Revenue Report */}
             <div className="flex items-center gap-3 flex-1 justify-end">
               <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setBlockModal({ dugaar: "", tailbar: "" })}
+                  className="flex items-center gap-2 h-11 px-5 rounded-[30px] bg-red-500 hover:bg-red-400 active:bg-red-600 text-white text-[11px] font-semibold shadow-sm transition-all whitespace-nowrap flex-shrink-0"
+                >
+                  <Ban className="w-3.5 h-3.5" />
+                  Блок
+                  {blockedMap.size > 0 && (
+                    <span className="ml-0.5 min-w-[18px] h-[18px] px-1.5 rounded-full bg-white/25 flex items-center justify-center text-[10px] font-bold">
+                      {blockedMap.size}
+                    </span>
+                  )}
+                </button>
                 <button
                   onClick={() => setRevenueModalOpen(true)}
                   className="flex items-center gap-2 h-11 px-5 rounded-[30px] bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white text-[11px] font-semibold shadow-sm transition-all whitespace-nowrap flex-shrink-0"
@@ -642,13 +1005,14 @@ export default function Jagsaalt() {
                     },
                     { id: "reason", label: "Шалтгаан" },
                     { id: "staff", label: "Бүртгэсэн" },
+                    { id: "block", label: "Блок", width: "w-[84px]" },
                   ].map((h) => (
                     <th
                       key={h.id}
                       className={`group relative py-4 px-4 text-slate-400 uppercase tracking-tighter text-[10px] font-black text-center ${h.width || ""}`}
                     >
                       <div
-                        className={`flex items-center justify-center gap-2 cursor-pointer hover:text-white transition-colors ${h.width ? "" : "w-full"}`}
+                        className="flex items-center justify-center gap-2 w-full cursor-pointer hover:text-white transition-colors"
                         onClick={() => {
                           if (!h.filter) return;
                           setOpenFilter(openFilter === h.id ? null : h.id);
@@ -726,6 +1090,7 @@ export default function Jagsaalt() {
                     const positivePaid = tulburArr.reduce((s: number, p: any) => s + (p?.dun > 0 ? p.dun : 0), 0);
                     const isDebt = !isFreeExit && (tuluv === -4 || (tuluv === 0 && niitDun > 0 && !isCurrentlyIn));
                     const hasRemainingBalance = tuluv === 1 && effectiveOwed > 0 && !isCurrentlyIn && positivePaid < effectiveOwed;
+                    const blockRecord = blockolsonEsekh(transaction.mashiniiDugaar);
                     const getStatusColor = () => {
                       if (tuluv === -2 || tuluv === -1) return "bg-red-500 border-red-600";
                       if (hasRemainingBalance) return "bg-amber-500 border-amber-600";
@@ -768,7 +1133,14 @@ export default function Jagsaalt() {
                         </td>
                         <td className="py-4 px-3 text-center">
                           <div className="flex items-center justify-center gap-2 group/copy">
-                            <span className="px-2.5 py-0.5 rounded-full bg-blue-600 text-[11px] font-bold !text-white tracking-widest font-[family-name:var(--font-mono)]">
+                            <span
+                              title={
+                                blockRecord
+                                  ? `Блоклсон${blockRecord.tailbar ? ": " + blockRecord.tailbar : ""}`
+                                  : undefined
+                              }
+                              className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold !text-white tracking-widest font-[family-name:var(--font-mono)] ${blockRecord ? "bg-red-600" : "bg-blue-600"}`}
+                            >
                               {transaction.mashiniiDugaar || ""}
                             </span>
                             <Copy
@@ -881,6 +1253,37 @@ export default function Jagsaalt() {
                             </span>
                           </div>
                         </td>
+                        <td className="py-4 px-4 text-center w-[84px]">
+                          {blockRecord ? (
+                            <button
+                              onClick={() => blockGargaya(blockRecord)}
+                              title={
+                                blockRecord.tailbar
+                                  ? `Блокоос гаргах — ${blockRecord.tailbar}`
+                                  : "Блокоос гаргах"
+                              }
+                              className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-500 hover:bg-red-400 active:bg-red-600 text-white shadow-sm transition-all"
+                            >
+                              <ShieldCheck className="w-3.5 h-3.5" />
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() =>
+                                setBlockModal({
+                                  dugaar: mashiniiDugaarTseverle(
+                                    transaction.mashiniiDugaar || "",
+                                  ),
+                                  tailbar: "",
+                                })
+                              }
+                              disabled={!transaction.mashiniiDugaar}
+                              title="Машиныг блоклох"
+                              className="inline-flex items-center justify-center w-8 h-8 rounded-full text-slate-300 dark:text-slate-600 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-500 disabled:opacity-30 disabled:cursor-not-allowed transition-all opacity-40 group-hover:opacity-100 focus:opacity-100"
+                            >
+                              <Ban className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </td>
                       </tr>
                     );
                   })
@@ -889,7 +1292,7 @@ export default function Jagsaalt() {
               <tfoot className="bg-slate-50 dark:bg-slate-900 border-t-2 border-slate-200 dark:border-white/10 text-slate-800 dark:text-white sticky bottom-0 z-10">
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={5}
                     className="py-3 px-3 text-right text-[11px] font-black uppercase tracking-wider border-r border-slate-200 dark:border-white/5"
                   >
                     Нийт Дүн:
@@ -940,7 +1343,7 @@ export default function Jagsaalt() {
                       ), 2)}
                   </td>
                   <td
-                    colSpan={4}
+                    colSpan={5}
                     className="border-r border-slate-200 dark:border-white/5"
                   />
                 </tr>
@@ -955,6 +1358,336 @@ export default function Jagsaalt() {
           pageSize={pageSize}
           onChange={setPage}
         />
+        {blockModal && createPortal(
+          <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+            style={{
+              background: "rgba(0,0,0,0.45)",
+              backdropFilter: "blur(12px)",
+            }}
+            onClick={() =>
+              !blockSaving && !excelKhadgalj && setBlockModal(null)
+            }
+          >
+            <div
+              className={`relative ${excelMuruud.length > 0 ? "w-[780px]" : "w-[580px]"} max-w-full max-h-[85vh] flex flex-col rounded-[28px] overflow-hidden shadow-2xl border bg-white dark:bg-[#18181b] border-slate-200/40 dark:border-white/[0.06] transition-[width] duration-200`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Толгой */}
+              <div className="relative px-7 pt-6 pb-5 border-b border-slate-100 dark:border-white/[0.06] flex-shrink-0">
+                <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-red-500 via-rose-500 to-orange-500 opacity-80" />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-2xl bg-red-500/10 flex items-center justify-center">
+                      <Ban className="w-5 h-5 text-red-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-[15px] font-semibold text-slate-900 dark:text-white">
+                        Машин блоклох
+                      </h3>
+                      <p className="text-[11px] text-slate-400">
+                        Блоклосон машиныг хаалга оруулахгүй
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setBlockModal(null)}
+                    disabled={blockSaving}
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all disabled:opacity-40"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Шинэ дугаар бүртгэх */}
+              <div className="px-7 py-5 border-b border-slate-100 dark:border-white/[0.06] flex-shrink-0">
+                <div className="flex items-end gap-3">
+                  <div className="w-[150px] flex-shrink-0 space-y-1.5">
+                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                      Улсын дугаар <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      autoFocus
+                      value={blockModal.dugaar}
+                      onChange={(e) =>
+                        setBlockModal((st) =>
+                          st
+                            ? {
+                                ...st,
+                                dugaar: mashiniiDugaarTseverle(e.target.value),
+                              }
+                            : st,
+                        )
+                      }
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") blokloyo();
+                      }}
+                      placeholder="1234УБА"
+                      maxLength={7}
+                      className="w-full h-10 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-4 text-[13px] font-bold tracking-widest text-center font-[family-name:var(--font-mono)] text-slate-800 dark:text-slate-100 placeholder:text-slate-300 dark:placeholder:text-slate-600 placeholder:font-normal placeholder:tracking-normal outline-none focus:border-red-400 transition-colors"
+                    />
+                  </div>
+                  <div className="flex-1 space-y-1.5">
+                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                      Шалтгаан <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      value={blockModal.tailbar}
+                      onChange={(e) =>
+                        setBlockModal((st) =>
+                          st ? { ...st, tailbar: e.target.value } : st,
+                        )
+                      }
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") blokloyo();
+                      }}
+                      placeholder="Төлбөрөө төлөөгүй"
+                      className="w-full h-10 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-4 text-[12px] text-slate-800 dark:text-slate-100 placeholder:text-slate-400 outline-none focus:border-red-400 transition-colors"
+                    />
+                  </div>
+                  <button
+                    onClick={blokloyo}
+                    disabled={
+                      blockSaving ||
+                      !MASHINII_DUGAARIIN_ZAGVAR.test(blockModal.dugaar) ||
+                      !blockModal.tailbar.trim()
+                    }
+                    className="h-10 px-5 rounded-[30px] bg-red-500 hover:bg-red-400 active:bg-red-600 text-white text-[11px] font-semibold shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-2 flex-shrink-0"
+                  >
+                    {blockSaving ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Plus className="w-3.5 h-3.5" />
+                    )}
+                    Нэмэх
+                  </button>
+                </div>
+              </div>
+
+              {/* Excel-ээр олноор бүртгэх */}
+              <div className="px-7 py-3.5 border-b border-slate-100 dark:border-white/[0.06] flex-shrink-0 flex items-center gap-3">
+                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">
+                  Excel-ээр машин бүртгэх
+                </span>
+                <div className="flex-1 h-px bg-slate-100 dark:bg-white/[0.06]" />
+                <button
+                  onClick={excelZagvarTatya}
+                  disabled={excelKhadgalj}
+                  className="h-8 px-3 rounded-2xl border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-300 hover:text-slate-700 dark:hover:text-slate-200 text-[11px] font-semibold transition-all inline-flex items-center gap-1.5 disabled:opacity-40"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Загвар
+                </button>
+                <button
+                  onClick={() => excelFileRef.current?.click()}
+                  disabled={excelUnshij || excelKhadgalj}
+                  className="h-8 px-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white text-[11px] font-semibold shadow-sm transition-all inline-flex items-center gap-1.5 disabled:opacity-40"
+                >
+                  {excelUnshij ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Upload className="w-3.5 h-3.5" />
+                  )}
+                  Файл сонгох
+                </button>
+                <input
+                  ref={excelFileRef}
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={excelFileSongoyo}
+                  className="hidden"
+                />
+              </div>
+
+              {excelMuruud.length > 0 ? (
+                <>
+                  {/* Урьдчилан харах — хэрэглэгч шалгасны дараа л хадгална */}
+                  <div className="px-7 py-4 flex items-center justify-between gap-3 flex-shrink-0">
+                    <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">
+                      Урьдчилан харах
+                    </span>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="flex items-center gap-1.5 text-[11px] text-slate-400 min-w-0">
+                        <FileSpreadsheet className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate">{excelFileNer}</span>
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[11px] font-semibold whitespace-nowrap">
+                        Зөв: {excelZuvMuruud.length}
+                      </span>
+                      {excelMuruud.length - excelZuvMuruud.length > 0 && (
+                        <span className="px-2 py-0.5 rounded-full bg-red-50 dark:bg-red-500/10 text-red-500 text-[11px] font-semibold whitespace-nowrap">
+                          Алдаатай: {excelMuruud.length - excelZuvMuruud.length}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="px-7 overflow-y-auto flex-1 min-h-0">
+                    <div className="rounded-2xl border border-slate-100 dark:border-white/[0.06] overflow-hidden">
+                      <table className="w-full border-collapse">
+                        <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900">
+                          <tr className="text-[11px] uppercase font-semibold text-slate-400">
+                            <th className="py-2.5 px-3 w-14 text-center">Мөр</th>
+                            <th className="py-2.5 px-3 text-center w-[130px]">
+                              Улсын дугаар
+                            </th>
+                            <th className="py-2.5 px-3 text-left">Шалтгаан</th>
+                            <th className="py-2.5 px-3 text-left w-[250px]">
+                              Төлөв
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="text-[13px] divide-y divide-slate-100 dark:divide-white/[0.05]">
+                          {excelMuruud.map((mur) => (
+                            <tr
+                              key={mur.excelMur}
+                              className={
+                                mur.aldaanuud.length > 0
+                                  ? "bg-red-50/60 dark:bg-red-950/20"
+                                  : ""
+                              }
+                            >
+                              <td className="py-2.5 px-3 text-center text-[11px] text-slate-400">
+                                {mur.excelMur}
+                              </td>
+                              <td className="py-2.5 px-3 text-center">
+                                {mur.dugaar ? (
+                                  <span className="px-3 py-0.5 rounded-full bg-red-600 text-[11px] font-bold !text-white tracking-wider whitespace-nowrap font-[family-name:var(--font-mono)]">
+                                    {mur.dugaar}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-300 dark:text-slate-600 italic">
+                                    —
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-2.5 px-3 text-left text-slate-600 dark:text-slate-300">
+                                {mur.tailbar || "—"}
+                              </td>
+                              <td className="py-2.5 px-3 text-left">
+                                {mur.aldaanuud.length === 0 ? (
+                                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                                    Бэлэн
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-start gap-1 text-[11px] font-semibold text-red-500">
+                                    <AlertTriangle className="w-3.5 h-3.5 mt-px shrink-0" />
+                                    {mur.aldaanuud.join(", ")}
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <div className="px-7 py-4 mt-4 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between gap-3 flex-shrink-0">
+                    <p className="text-[11px] text-slate-400">
+                      {excelKhadgalj
+                        ? `Илгээж байна... ${excelYavts} / ${excelZuvMuruud.length}`
+                        : `${excelZuvMuruud.length} машин блоклоход бэлэн`}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={excelTsutslaya}
+                        disabled={excelKhadgalj}
+                        className="h-10 px-5 rounded-[30px] border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-[11px] font-semibold hover:bg-slate-50 dark:hover:bg-white/5 transition-all disabled:opacity-40"
+                      >
+                        Болих
+                      </button>
+                      <button
+                        onClick={excelBlokloyo}
+                        disabled={excelKhadgalj || excelZuvMuruud.length === 0}
+                        className="h-10 px-5 rounded-[30px] bg-red-500 hover:bg-red-400 active:bg-red-600 text-white text-[11px] font-semibold shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-2"
+                      >
+                        {excelKhadgalj ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Ban className="w-3.5 h-3.5" />
+                        )}
+                        Блоклох ({excelZuvMuruud.length})
+                      </button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                {/* Блоклсон машинууд */}
+                <div className="px-7 py-4 flex items-center justify-between gap-3 flex-shrink-0">
+                  <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">
+                    Блоклсон <span className="text-red-500">{blockedMap.size}</span>{" "}
+                    машин
+                  </span>
+                  {blockedMap.size > 5 && (
+                    <div className="relative flex-1 max-w-[200px]">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                      <input
+                        value={blockSearch}
+                        onChange={(e) => setBlockSearch(e.target.value)}
+                        placeholder="Хайх..."
+                        className="w-full h-9 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 pl-9 pr-3 text-[11px] text-slate-800 dark:text-slate-100 placeholder:text-slate-400 outline-none focus:border-red-400 transition-colors"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="px-7 pb-6 overflow-y-auto flex-1 min-h-0">
+                  {blockList.length === 0 ? (
+                    <div className="py-10 flex flex-col items-center gap-2 text-slate-300 dark:text-slate-600">
+                      <ShieldCheck className="w-10 h-10" />
+                      <p className="text-[11px]">
+                        {blockSearch
+                          ? "Хайлтад тохирох машин олдсонгүй"
+                          : "Блоклсон машин алга"}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {blockList.map((b: any) => (
+                        <div
+                          key={b._id}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-white/[0.04]"
+                        >
+                          <span className="px-3 py-0.5 rounded-full bg-red-600 text-[11px] font-bold !text-white tracking-wider whitespace-nowrap font-[family-name:var(--font-mono)] flex-shrink-0">
+                            {b.dugaar}
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[11px] text-slate-600 dark:text-slate-300 truncate">
+                              {b.tailbar || "—"}
+                            </p>
+                            <p className="text-[10px] text-slate-400 truncate">
+                              {[
+                                b.burtgesenAjiltaniiNer,
+                                b.createdAt
+                                  ? moment(b.createdAt).format("YYYY-MM-DD HH:mm")
+                                  : "",
+                              ]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => blockGargaya(b)}
+                            title="Блокоос гаргах"
+                            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-500 transition-all flex-shrink-0"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                </>
+              )}
+            </div>
+          </div>,
+          document.body,
+        )}
         {revenueModalOpen && createPortal(
           <div
             className="fixed inset-0 z-[9999] flex items-center justify-center p-4"

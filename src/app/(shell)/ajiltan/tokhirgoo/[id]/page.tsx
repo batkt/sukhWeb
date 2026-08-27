@@ -1,8 +1,9 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/lib/useAuth";
+import { hasPermission } from "@/lib/permissionUtils";
 import {
   Shield,
   Building2,
@@ -27,8 +28,15 @@ export default function EmployeeSettingsPage() {
   const params = useParams();
   const router = useRouter();
   const { ajiltan, baiguullaga, token } = useAuth();
+  const searchParams = useSearchParams();
   const employeeId = params.id as string;
   const { data } = useGereeContext();
+
+  // Тохиргоо → Ажилтны тохиргоо табаас орж ирсэн үү?
+  // Тийм бол ЗӨВХӨН "Тохиргооны эрх" баганыг харуулна — барилга, модулийн
+  // хуваарилалт нь Гэрээ → Ажилтан хэсэгт хэвээр үлдэнэ.
+  const fromTokhirgoo = searchParams.get("from") === "tokhirgoo";
+  const backHref = fromTokhirgoo ? "/tokhirgoo" : "/geree/ajiltan";
 
   const [selectedBuildings, setSelectedBuildings] = useState<string[]>([]);
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
@@ -39,8 +47,10 @@ export default function EmployeeSettingsPage() {
   const SETTINGS_PERMISSIONS = [
     { id: "tokhirgoo.barilga", label: "Барилгын тохиргоо" },
     { id: "tokhirgoo.ashiglaltiinZardal", label: "Ашиглалтын зардал" },
+    { id: "tokhirgoo.ajiltan", label: "Ажилтны тохиргоо" },
     { id: "tokhirgoo.baaz", label: "Бааз" },
     { id: "tokhirgoo.dans", label: "Данс" },
+    { id: "tokhirgoo.kamer", label: "Камерийн тохиргоо" },
     { id: "tokhirgoo.ebarimt", label: "И-баримт" },
     { id: "tokhirgoo.email", label: "И-мэйл" },
     { id: "tokhirgoo.medegdel", label: "Мэдэгдэл" },
@@ -55,17 +65,38 @@ export default function EmployeeSettingsPage() {
     { id: "tokhirgoo.ustsanTuukh", label: "Устсан түүх" },
   ];
 
-  // Check if user is admin
+  // Админ, эсвэл "Ажилтны тохиргоо" / "Ажилтны эрх тохируулах" эрхтэй ажилтан
+  // л энэ хуудсанд нэвтэрнэ (hasPermission нь админд үргэлж true буцаана).
+  // Тохиргоо → Ажилтны тохиргоо табаас ирсэн хүн буцаагдахгүй байх нь чухал.
+  const canManageEmployeePermissions =
+    hasPermission(ajiltan, "tokhirgoo.ajiltan") ||
+    hasPermission(ajiltan, "geree.ajiltan.erkhTokhirgoo");
+
   useEffect(() => {
-    if (ajiltan && ajiltan.erkh !== "Admin" && ajiltan.erkh !== "admin") {
+    if (ajiltan && !canManageEmployeePermissions) {
       router.push("/geree");
     }
-  }, [ajiltan, router]);
+  }, [ajiltan, canManageEmployeePermissions, router]);
 
   // Find employee from context
   const employee = useMemo(() => {
     return data.employeesList?.find((emp: any) => emp._id === employeeId);
   }, [data.employeesList, employeeId]);
+
+  // `ner` нь зарим бичлэг дээр { ner, kod } объект хэлбэртэй байдаг
+  const employeeNer = useMemo(() => {
+    const raw = employee?.ner;
+    if (!raw) return "";
+    if (typeof raw === "object") {
+      return `${raw.ner || ""} ${raw.kod || ""}`.trim();
+    }
+    return String(raw).trim();
+  }, [employee]);
+
+  const employeeUge = useMemo(() => {
+    const ekh = employeeNer.trim().charAt(0);
+    return ekh ? ekh.toUpperCase() : "?";
+  }, [employeeNer]);
 
   // Get buildings list from baiguullaga (useAuth)
   const buildings = useMemo(() => {
@@ -89,12 +120,16 @@ export default function EmployeeSettingsPage() {
   const allSettingsSelectedState =
     allSettingsPermissionIds.length > 0 &&
     allSettingsPermissionIds.every((id) => selectedSettings.includes(id));
-  const isEverythingSelected =
-    allBuildingsSelected && allModsSelected && allSettingsSelectedState;
-  const hasAnySelection =
-    selectedBuildings.length > 0 ||
-    selectedPermissions.length > 0 ||
-    selectedSettings.length > 0;
+  // Тохиргооны горимд зөвхөн тохиргооны эрх харагдаж байгаа тул "Бүгдийг
+  // сонгох" нь ч гэсэн зөвхөн түүнд хамаарна.
+  const isEverythingSelected = fromTokhirgoo
+    ? allSettingsSelectedState
+    : allBuildingsSelected && allModsSelected && allSettingsSelectedState;
+  const hasAnySelection = fromTokhirgoo
+    ? selectedSettings.length > 0
+    : selectedBuildings.length > 0 ||
+      selectedPermissions.length > 0 ||
+      selectedSettings.length > 0;
   const globalSelectIndeterminate = hasAnySelection && !isEverythingSelected;
 
   const buildingsColumnAllSelected =
@@ -112,6 +147,15 @@ export default function EmployeeSettingsPage() {
     selectedSettings.length > 0 && !allSettingsSelectedState;
 
   const toggleSelectAllGlobal = () => {
+    if (fromTokhirgoo) {
+      // Барилга/модулийн сонголтод хүрэхгүй — хадгалахад тэдгээр нь хэвээр
+      // үлдэх ёстой.
+      setSelectedSettings(
+        isEverythingSelected ? [] : [...allSettingsPermissionIds]
+      );
+      return;
+    }
+
     if (isEverythingSelected) {
       setSelectedBuildings([]);
       setSelectedPermissions([]);
@@ -197,7 +241,7 @@ export default function EmployeeSettingsPage() {
       });
 
       openSuccessOverlay("Ажилтны тохиргоо амжилттай хадгалагдлаа");
-      router.push("/geree/ajiltan");
+      router.push(backHref);
     } catch (error) {
       console.error("Error saving:", error);
       openErrorOverlay(getErrorMessage(error));
@@ -228,13 +272,16 @@ export default function EmployeeSettingsPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => router.push("/geree/ajiltan")}
+              onClick={() => router.push(backHref)}
               className="p-2 hover:bg-[color:var(--surface-hover)] rounded-xl transition-colors"
             >
               <ArrowLeft className="w-5 h-5 text-theme" />
             </button>
             <div>
               <h1 className="text-2xl  text-theme">Ажилтны тохиргоо</h1>
+              <p className="text-xs text-subtle mt-0.5">
+                Хэний эрхийг тохируулж байгааг доор шалгана уу
+              </p>
             </div>
           </div>
           <button
@@ -247,7 +294,33 @@ export default function EmployeeSettingsPage() {
           </button>
         </div>
 
-        {/* Global select all (барилга + модулиуд + тохиргооны эрх) */}
+        {/* Аль ажилтны эрхийг тохируулж байгаа нь эндээс тодорхой харагдана */}
+        <div className="neu-panel rounded-2xl p-4 border border-[color:var(--surface-border)]">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 text-base font-semibold">
+              {employeeUge}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-theme font-medium">
+                {employeeNer || "Нэргүй ажилтан"}
+              </p>
+              <p className="truncate text-xs text-subtle mt-0.5">
+                {[
+                  employee.albanTushaal,
+                  employee.utas,
+                  employee.nevtrekhNer,
+                ]
+                  .filter(Boolean)
+                  .join(" · ") || "Нэмэлт мэдээлэл байхгүй"}
+              </p>
+            </div>
+            <span className="shrink-0 rounded-full bg-[color:var(--surface-hover)] px-3 py-1 text-xs text-subtle">
+              {fromTokhirgoo ? "Тохиргооны эрх" : "Эрхийн тохиргоо"}
+            </span>
+          </div>
+        </div>
+
+        {/* Global select all */}
         <div className="neu-panel rounded-2xl p-4 border border-[color:var(--surface-border)]">
           <button
             type="button"
@@ -273,13 +346,20 @@ export default function EmployeeSettingsPage() {
             <div className="min-w-0 flex-1">
               <span className=" text-theme font-medium">Бүгдийг сонгох</span>
               <p className="text-xs text-subtle mt-0.5">
-                Барилга, модулиуд, тохиргооны эрх
+                {fromTokhirgoo
+                  ? "Тохиргооны бүх эрх"
+                  : "Барилга, модулиуд, тохиргооны эрх"}
               </p>
             </div>
           </button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 pb-2 flex-1 min-h-0">
+        <div className={`grid grid-cols-1 gap-4 pb-2 flex-1 min-h-0 ${fromTokhirgoo ? "" : "lg:grid-cols-3"}`}>
+          {/* Тохиргооны табаас орж ирсэн үед барилга, модулийн хуваарилалт
+              харагдахгүй — гэхдээ state нь ачаалагдсан хэвээр тул хадгалахад
+              тэдгээр эрх алдагдахгүй. */}
+          {!fromTokhirgoo && (
+            <>
           {/* Section 1: Building Assignment */}
           <div className="neu-panel rounded-2xl p-4 flex flex-col min-h-0 overflow-hidden">
             <div className="flex items-center justify-between mb-3">
@@ -480,6 +560,8 @@ export default function EmployeeSettingsPage() {
               })}
             </div>
           </div>
+          </>
+        )}
 
           {/* Section 3: Settings Permissions */}
           <div className="neu-panel rounded-2xl p-4 flex flex-col min-h-0 overflow-hidden">
@@ -530,7 +612,11 @@ export default function EmployeeSettingsPage() {
               </div>
             </div>
             <div
-              className="space-y-2 flex-1 min-h-0 max-h-[280px] lg:max-h-[calc(100vh-320px)] overflow-y-auto custom-scrollbar"
+              className={`flex-1 min-h-0 max-h-[280px] lg:max-h-[calc(100vh-320px)] overflow-y-auto custom-scrollbar ${
+                fromTokhirgoo
+                  ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2 content-start"
+                  : "space-y-2"
+              }`}
               tabIndex={0}
             >
               {SETTINGS_PERMISSIONS.map((setting) => {

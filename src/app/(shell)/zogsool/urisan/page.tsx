@@ -110,14 +110,14 @@ function ParkEaseMur({
 }) {
   return (
     <div className="flex flex-col">
-      <span className="text-[9px] uppercase tracking-wider text-slate-400 dark:text-slate-500">
+      <span className="text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500">
         {garchig}
       </span>
-      <span className="text-slate-700 dark:text-slate-200 font-medium font-[family-name:var(--font-mono)]">
+      <span className="text-[13px] text-slate-700 dark:text-slate-200 font-medium font-[family-name:var(--font-mono)]">
         {utga}
       </span>
       {nemelt ? (
-        <span className="text-[9px] text-slate-400 dark:text-slate-500 font-[family-name:var(--font-mono)]">
+        <span className="text-[11px] text-slate-400 dark:text-slate-500 font-[family-name:var(--font-mono)]">
           {nemelt}
         </span>
       ) : null}
@@ -127,7 +127,7 @@ function ParkEaseMur({
 
 function ParkEaseNudu({ tuukh }: { tuukh?: ParkEaseTuukh }) {
   if (!tuukh)
-    return <span className="text-slate-300 dark:text-slate-600 italic text-[11px]">-</span>;
+    return <span className="text-slate-300 dark:text-slate-600 italic text-[13px]">-</span>;
 
   const dotor = !tuukh.garsanTsag;
   const ezenTulsun = tuukh.tulburiinTurul === "ezen";
@@ -136,34 +136,34 @@ function ParkEaseNudu({ tuukh }: { tuukh?: ParkEaseTuukh }) {
   return (
     <div className="flex flex-col items-center gap-1">
       {dotor ? (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
           Зогсоол дээр
         </span>
       ) : (
-        <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 font-[family-name:var(--font-mono)]">
+        <span className="text-[13px] font-medium text-slate-500 dark:text-slate-400 font-[family-name:var(--font-mono)]">
           {mongoloorKhugatsaa(tuukh.niitKhugatsaa)}
         </span>
       )}
 
       <div className="flex items-center gap-1.5">
         {(tuukh.uneguiMinutUldsen ?? 0) > 0 ? (
-          <span className="text-[9px] text-slate-400 dark:text-slate-500">
+          <span className="text-[11px] text-slate-400 dark:text-slate-500">
             Үнэгүй {tuukh.uneguiMinutUldsen} мин үлдсэн
           </span>
         ) : (tuukh.uneguiMinutAshiglasan ?? 0) > 0 ? (
-          <span className="text-[9px] text-slate-400 dark:text-slate-500">
+          <span className="text-[11px] text-slate-400 dark:text-slate-500">
             Үнэгүй {tuukh.uneguiMinutAshiglasan} мин дууссан
           </span>
         ) : null}
 
         {dun > 0 &&
           (ezenTulsun ? (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-400 text-black dark:bg-amber-600 dark:text-white text-[9px] font-bold">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-400 text-black dark:bg-amber-600 dark:text-white text-[11px] font-bold">
               {dunFormat(dun)} · Amarhome
             </span>
           ) : (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 dark:bg-white/[0.06] border border-slate-200 dark:border-white/[0.06] text-[9px] font-semibold text-slate-600 dark:text-slate-300">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 dark:bg-white/[0.06] border border-slate-200 dark:border-white/[0.06] text-[11px] font-semibold text-slate-600 dark:text-slate-300">
               {dunFormat(dun)} · Зочин
             </span>
           ))}
@@ -301,17 +301,17 @@ function UserHistoryModal({
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-3">
                 <Car className="w-4 h-4 text-blue-500 dark:text-blue-400" />
-                <h3 className="text-[12px] font-semibold text-slate-700 dark:text-slate-200">
+                <h3 className="text-[13px] font-semibold text-slate-700 dark:text-slate-200">
                   Уригдсан машин
                 </h3>
-                <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                <span className="text-[11px] text-slate-400 dark:text-slate-500">
                   {urisanMashinuud.length}
                 </span>
               </div>
 
               <div className="border border-slate-100 dark:border-white/[0.05] rounded-2xl overflow-hidden bg-slate-50/50 dark:bg-white/[0.02]">
                 <table className="w-full border-collapse">
-                  <thead className="bg-slate-100 dark:bg-white/[0.04] text-[10px] uppercase font-semibold text-slate-500 dark:text-slate-400">
+                  <thead className="bg-slate-100 dark:bg-white/[0.04] text-[11px] uppercase font-semibold text-slate-500 dark:text-slate-400">
                     <tr>
                       <th className="py-2.5 px-4 text-left">Урьсан огноо</th>
                       <th className="py-2.5 px-4 text-center">Улсын дугаар</th>
@@ -319,7 +319,7 @@ function UserHistoryModal({
                       <th className="py-2.5 px-4 text-center">Үнэгүй минут</th>
                     </tr>
                   </thead>
-                  <tbody className="text-xs text-slate-600 dark:text-slate-300 divide-y divide-slate-100 dark:divide-white/[0.05]">
+                  <tbody className="text-[13px] text-slate-600 dark:text-slate-300 divide-y divide-slate-100 dark:divide-white/[0.05]">
                     {urisanMashinuud.map((mashin) => {
                       const tuluv =
                         URILGIIN_TULUV[Number(mashin.tuluv) || 0] ||
@@ -329,14 +329,14 @@ function UserHistoryModal({
                           key={mashin._id}
                           className="hover:bg-slate-100/50 dark:hover:bg-white/[0.02]"
                         >
-                          <td className="py-2.5 px-4 font-mono text-[11px]">
+                          <td className="py-2.5 px-4 font-mono text-[13px]">
                             {mashin.createdAt
                               ? moment(mashin.createdAt).format("YYYY-MM-DD HH:mm")
                               : "-"}
                           </td>
                           <td className="py-2.5 px-4 text-center">
                             {mashin.urisanMashiniiDugaar ? (
-                              <span className="px-2.5 py-0.5 rounded-full bg-blue-600 text-[11px] font-bold !text-white tracking-widest font-[family-name:var(--font-mono)]">
+                              <span className="px-2.5 py-0.5 rounded-full bg-blue-600 text-[12px] font-bold !text-white tracking-widest font-[family-name:var(--font-mono)]">
                                 {mashin.urisanMashiniiDugaar}
                               </span>
                             ) : (
@@ -345,12 +345,12 @@ function UserHistoryModal({
                           </td>
                           <td className="py-2.5 px-4 text-center">
                             <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded-full border text-[9px] font-semibold ${tuluv.angi}`}
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full border text-[11px] font-semibold ${tuluv.angi}`}
                             >
                               {tuluv.ner}
                             </span>
                           </td>
-                          <td className="py-2.5 px-4 text-center text-[10px] text-slate-500 dark:text-slate-400">
+                          <td className="py-2.5 px-4 text-center text-[11px] text-slate-500 dark:text-slate-400">
                             {mashin.tusBurUneguiMinut ?? 0} үлдсэн
                             {(mashin.tusBurAshiglasanUneguiMinut ?? 0) > 0
                               ? ` / ${mashin.tusBurAshiglasanUneguiMinut} ашигласан`
@@ -372,10 +372,10 @@ function UserHistoryModal({
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-3">
                 <ParkingCircle className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
-                <h3 className="text-[12px] font-semibold text-slate-700 dark:text-slate-200">
+                <h3 className="text-[13px] font-semibold text-slate-700 dark:text-slate-200">
                   ParkEase зогсоол
                 </h3>
-                <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                <span className="text-[11px] text-slate-400 dark:text-slate-500">
                   {log.mashiniiDugaar}
                 </span>
               </div>
@@ -392,28 +392,28 @@ function UserHistoryModal({
                     >
                       <div className="flex items-center justify-between mb-3">
                         {dotor ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
                             Зогсоол дээр байна
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-white/[0.06] border border-slate-200 dark:border-white/[0.06] text-[10px] font-semibold text-slate-600 dark:text-slate-300">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-white/[0.06] border border-slate-200 dark:border-white/[0.06] text-[11px] font-semibold text-slate-600 dark:text-slate-300">
                             Гарсан
                           </span>
                         )}
                         {dun > 0 &&
                           (ezenTulsun ? (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-amber-400 text-black dark:bg-amber-600 dark:text-white text-[10px] font-bold">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-amber-400 text-black dark:bg-amber-600 dark:text-white text-[11px] font-bold">
                               {dunFormat(dun)} · Amarhome нэхэмжлэх
                             </span>
                           ) : (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-slate-200 dark:bg-white/[0.08] text-[10px] font-semibold text-slate-700 dark:text-slate-200">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-slate-200 dark:bg-white/[0.08] text-[11px] font-semibold text-slate-700 dark:text-slate-200">
                               {dunFormat(dun)} · Зочин төлсөн
                             </span>
                           ))}
                       </div>
 
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[11px]">
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[13px]">
                         <ParkEaseMur
                           garchig="Орсон"
                           utga={
@@ -465,18 +465,18 @@ function UserHistoryModal({
           )}
 
           {isValidating && historyLogs.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-slate-400 dark:text-slate-500 text-sm">
+            <div className="flex flex-col items-center justify-center py-12 text-slate-400 dark:text-slate-500 text-[13px]">
               <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500 mb-2" />
               Түүхийг уншиж байна...
             </div>
           ) : historyLogs.length === 0 ? (
-            <div className="text-center py-12 text-slate-400 dark:text-slate-500 text-sm">
+            <div className="text-center py-12 text-slate-400 dark:text-slate-500 text-[13px]">
               Хэрэглэгчийн түүх олдсонгүй.
             </div>
           ) : (
             <div className="border border-slate-100 dark:border-white/[0.05] rounded-2xl overflow-hidden bg-slate-50/50 dark:bg-white/[0.02]">
               <table className="w-full border-collapse">
-                <thead className="bg-slate-100 dark:bg-white/[0.04] text-[10px] uppercase font-semibold text-slate-500 dark:text-slate-400">
+                <thead className="bg-slate-100 dark:bg-white/[0.04] text-[11px] uppercase font-semibold text-slate-500 dark:text-slate-400">
                   <tr>
                     <th className="py-2.5 px-4 text-center">№</th>
                     <th className="py-2.5 px-4 text-left">Огноо</th>
@@ -486,7 +486,7 @@ function UserHistoryModal({
                     <th className="py-2.5 px-4 text-left">Барилга</th>
                   </tr>
                 </thead>
-                <tbody className="text-xs text-slate-600 dark:text-slate-300 divide-y divide-slate-100 dark:divide-white/[0.05]">
+                <tbody className="text-[13px] text-slate-600 dark:text-slate-300 divide-y divide-slate-100 dark:divide-white/[0.05]">
                   {historyLogs.map((hLog, idx) => {
                     const isUrisan = hLog.turul === "урьсан";
                     return (
@@ -499,28 +499,28 @@ function UserHistoryModal({
                         </td>
                         <td className="py-2.5 px-4 text-center">
                           {isUrisan ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 text-[9px] font-semibold text-amber-700 dark:text-amber-300">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 text-[11px] font-semibold text-amber-700 dark:text-amber-300">
                               Урьсан
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 text-[9px] font-semibold text-blue-700 dark:text-blue-300">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 text-[11px] font-semibold text-blue-700 dark:text-blue-300">
                               Нээсэн
                             </span>
                           )}
                         </td>
                         <td className="py-2.5 px-4 text-center">
                           {hLog.mashiniiDugaar ? (
-                            <span className="px-2.5 py-0.5 rounded-full bg-blue-600 text-[11px] font-bold !text-white tracking-widest font-[family-name:var(--font-mono)]">
+                            <span className="px-2.5 py-0.5 rounded-full bg-blue-600 text-[12px] font-bold !text-white tracking-widest font-[family-name:var(--font-mono)]">
                               {hLog.mashiniiDugaar}
                             </span>
                           ) : (
                             <span className="text-slate-400">-</span>
                           )}
                         </td>
-                        <td className="py-2.5 px-4 text-center text-slate-400 font-mono text-[10px]">
+                        <td className="py-2.5 px-4 text-center text-slate-400 font-mono text-[11px]">
                           {hLog.ip || "-"}
                         </td>
-                        <td className="py-2.5 px-4 text-left text-slate-500 dark:text-slate-400 text-[11px]">
+                        <td className="py-2.5 px-4 text-left text-slate-500 dark:text-slate-400 text-[13px]">
                           {getBuildingName(hLog.barilgiinId)}
                         </td>
                       </tr>
@@ -779,7 +779,7 @@ export default function UrisanTuukh() {
                   format="YYYY-MM-DD"
                   className="w-full !bg-white dark:!bg-slate-700 hover:!bg-white dark:hover:!bg-slate-700 !border-slate-200 dark:!border-slate-500 hover:!border-slate-300 dark:hover:!border-slate-500 shadow-sm"
                   classNames={{
-                    input: "!bg-transparent !border-0 !shadow-none text-[11px] !text-slate-700 dark:!text-slate-100 px-2",
+                    input: "!bg-transparent !border-0 !shadow-none text-[12px] !text-slate-700 dark:!text-slate-100 px-2",
                   }}
                   allowClear
                 />
@@ -798,15 +798,15 @@ export default function UrisanTuukh() {
                   setSearchTerm(e.target.value);
                   setPage(1);
                 }}
-                className="w-full pl-11 pr-4 h-11 rounded-[30px] bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-[11px] text-slate-700 dark:text-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all shadow-inner"
+                className="w-full pl-11 pr-4 h-11 rounded-[30px] bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-[12px] text-slate-700 dark:text-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all shadow-inner"
               />
             </div>
           </div>
 
           {statusFilter !== "all" && (
             <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-slate-200 dark:border-slate-700/50">
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">Шүүлт:</span>
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 text-[10px] rounded-full border border-violet-200 dark:border-violet-500/20">
+              <span className="text-[11px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">Шүүлт:</span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 text-[11px] rounded-full border border-violet-200 dark:border-violet-500/20">
                 Төлөв: {
                   { urisan: "Урьсан", neesen: "Нээсэн" }[statusFilter] || statusFilter
                 }
@@ -900,7 +900,7 @@ export default function UrisanTuukh() {
                   {HEADERS.map((h) => (
                     <th
                       key={h.id}
-                      className={`group relative py-3.5 px-4 text-center text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap ${h.width || ""}`}
+                      className={`group relative py-3.5 px-4 text-center text-[11px] font-semibold uppercase tracking-wider whitespace-nowrap ${h.width || ""}`}
                     >
                       <div
                         className="flex items-center justify-center gap-2 cursor-pointer hover:text-white transition-colors"
@@ -923,7 +923,7 @@ export default function UrisanTuukh() {
                           className={`absolute top-full left-1/2 -translate-x-1/2 mt-3 w-48 bg-slate-900/98 backdrop-blur-2xl text-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-2 transition-all duration-300 z-[100] border border-white/5 overflow-hidden ring-1 ring-white/10 ${openFilter === h.id ? "opacity-100 visible translate-y-0" : "opacity-0 invisible translate-y-3 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0"}`}
                         >
                           <div className="relative flex flex-col gap-1 z-10">
-                            <div className="px-3 py-1.5 mb-1 text-[9px] text-slate-500 uppercase tracking-widest border-b border-white/5 normal-case font-semibold">
+                            <div className="px-3 py-1.5 mb-1 text-[11px] text-slate-500 uppercase tracking-widest border-b border-white/5 normal-case font-semibold">
                               Сонгох
                             </div>
                             {h.options.map((opt, idx) => (
@@ -934,7 +934,7 @@ export default function UrisanTuukh() {
                                   setPage(1);
                                   setOpenFilter(null);
                                 }}
-                                className={`px-4 py-2.5 rounded-xl text-[10px] text-left flex items-center justify-between cursor-pointer transition-all duration-200 normal-case font-normal ${h.current === opt.value
+                                className={`px-4 py-2.5 rounded-xl text-[11px] text-left flex items-center justify-between cursor-pointer transition-all duration-200 normal-case font-normal ${h.current === opt.value
                                   ? "bg-blue-500 text-white shadow-lg shadow-blue-500/40"
                                   : "hover:bg-white/10 text-slate-300 hover:text-white"
                                   }`}
@@ -954,7 +954,7 @@ export default function UrisanTuukh() {
                   <tr>
                     <td
                       colSpan={10}
-                      className="py-12 text-center text-slate-400 dark:text-slate-500 text-sm"
+                      className="py-12 text-center text-slate-400 dark:text-slate-500 text-[13px]"
                     >
                       Бүртгэл олдсонгүй.
                     </td>
@@ -970,54 +970,54 @@ export default function UrisanTuukh() {
                           : "bg-white dark:bg-transparent"
                       }`}
                     >
-                      <td className="py-3 px-4 text-center text-xs text-slate-400">
+                      <td className="py-3 px-4 text-center text-[13px] text-slate-400">
                         {(page - 1) * pageSize + idx + 1}
                       </td>
-                      <td className="py-3 px-4 text-center text-xs font-medium font-[family-name:var(--font-mono)]">
+                      <td className="py-3 px-4 text-center text-[13px] font-medium font-[family-name:var(--font-mono)]">
                         {moment(log.createdAt).format("YYYY-MM-DD HH:mm:ss")}
                       </td>
                       <td className="py-3 px-4 text-center">
                         {log.ekhSurvalj === "parkease" ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
                             <ParkingCircle className="w-3 h-3 shrink-0" />
                             ParkEase
                           </span>
                         ) : log.turul === "урьсан" ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 text-[10px] font-semibold text-amber-700 dark:text-amber-300">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 text-[11px] font-semibold text-amber-700 dark:text-amber-300">
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
                             Урьсан
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 text-[10px] font-semibold text-blue-700 dark:text-blue-300">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 text-[11px] font-semibold text-blue-700 dark:text-blue-300">
                             <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
                             Нээсэн
                           </span>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-center text-xs font-mono text-slate-500 dark:text-slate-400">
+                      <td className="py-3 px-4 text-center text-[13px] font-mono text-slate-500 dark:text-slate-400">
                         {log.ip || "-"}
                       </td>
-                      <td className="py-3 px-4 text-center text-xs font-semibold text-slate-700 dark:text-slate-200">
+                      <td className="py-3 px-4 text-center text-[13px] font-semibold text-slate-700 dark:text-slate-200">
                         {log.orshinSuugchiinNer
                           ? log.orshinSuugchiinNer.trim().split(/\s+/).pop()
                           : "-"}
                       </td>
-                      <td className="py-3 px-4 text-center text-xs">
+                      <td className="py-3 px-4 text-center text-[13px]">
                         {log.toot || "-"}
                       </td>
-                      <td className="py-3 px-4 text-center text-xs font-mono text-slate-500 dark:text-slate-400">
+                      <td className="py-3 px-4 text-center text-[13px] font-mono text-slate-500 dark:text-slate-400">
                         {log.utas || "-"}
                       </td>
-                      <td className="py-3 px-4 text-center text-xs">
+                      <td className="py-3 px-4 text-center text-[13px]">
                         {log.mashiniiDugaar ? (
-                          <span className="px-2.5 py-0.5 rounded-full bg-blue-600 text-[11px] font-bold !text-white tracking-widest font-[family-name:var(--font-mono)]">
+                          <span className="px-2.5 py-0.5 rounded-full bg-blue-600 text-[12px] font-bold !text-white tracking-widest font-[family-name:var(--font-mono)]">
                             {log.mashiniiDugaar}
                           </span>
                         ) : (
-                          <span className="text-slate-400 italic text-[11px]">-</span>
+                          <span className="text-slate-400 italic text-[13px]">-</span>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-center text-xs">
+                      <td className="py-3 px-4 text-center text-[13px]">
                         <ParkEaseNudu
                           tuukh={
                             log.parkease ||
@@ -1027,7 +1027,7 @@ export default function UrisanTuukh() {
                           }
                         />
                       </td>
-                      <td className="py-3 px-4 text-center text-xs text-slate-500 dark:text-slate-400">
+                      <td className="py-3 px-4 text-center text-[13px] text-slate-500 dark:text-slate-400">
                         {getBuildingName(log.barilgiinId)}
                       </td>
                     </tr>

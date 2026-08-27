@@ -39,9 +39,13 @@ export interface NegtgelTailanItem {
 interface NegtgelTailanTableProps {
   data: NegtgelTailanItem[];
   loading: boolean;
-  authoritativeTotalUldegdel?: number;
+  /**
+   * Серверээс ирсэн, хайлт/огнооны шүүлтийн дараах БҮХ бичлэгийн нийт дүн.
+   * Өгөөгүй тохиолдолд зөвхөн харагдаж буй хуудсаар нийлбэрлэнэ.
+   */
+  niitUldegdel?: number;
 }
-export function NegtgelTailanTable({ data, loading, authoritativeTotalUldegdel }: NegtgelTailanTableProps) {
+export function NegtgelTailanTable({ data, loading, niitUldegdel }: NegtgelTailanTableProps) {
   const { months, avlagaTypes } = useMemo(() => {
     const monthSet = new Set<string>();
     const avlagaMap = new Map<
@@ -102,55 +106,82 @@ export function NegtgelTailanTable({ data, loading, authoritativeTotalUldegdel }
     return { months, avlagaTypes };
   }, [data]);
 
-  // Use authoritative total from parent if available; fallback to local calculation
+  // Хүснэгтийн "Нийт → Үлдэгдэл" баганатай ЯГ ижил талбараас нийлбэрлэнэ,
+  // ингэснээр хөл нь мөрүүдтэйгээ таарна.
   const localTotalUldegdel = useMemo(() => {
     return (Array.isArray(data) ? data : []).reduce(
       (s, record) => s + Number(record.niitUldegdel ?? record.globalUldegdel ?? record.niitTulukhDun ?? 0), 0
     );
   }, [data]);
 
-  const totalUldegdel = authoritativeTotalUldegdel ?? localTotalUldegdel;
+  // Сервер бүх хуудсыг хамарсан дүн өгсөн бол түүнийг, эс бөгөөс энэ хуудсыг
+  const totalUldegdel =
+    typeof niitUldegdel === "number" && Number.isFinite(niitUldegdel)
+      ? niitUldegdel
+      : localTotalUldegdel;
+
+  // Хуудаслалттай үед хөл нь юуг хамарч байгааг тодорхой хэлнэ
+  const khuudasKhesegKhen =
+    typeof niitUldegdel === "number" &&
+    Math.abs(niitUldegdel - localTotalUldegdel) >= 0.01;
 
   const columns = useMemo(() => {
     const cols: any[] = [
       {
         key: "index",
         label: "№",
-        width: 60,
+        width: 40,
         align: "center",
         fixed: "left",
-        render: (_: any, __: any, index: number) => index + 1,
+        render: (_: any, __: any, index: number) => (
+          <span className="text-[11px] text-black dark:text-white">{index + 1}</span>
+        ),
       },
       {
         key: "ner",
         label: "Нэр",
-        width: 180,
+        width: 130,
         align: "left",
         fixed: "left",
         render: (_: any, record: NegtgelTailanItem) => {
           const ovog = String(record._id?.ovog || record.ovog || "").trim();
           const ner = String(record._id?.ner || record.ner || "").trim();
           const abbreviated = ovog ? `${ovog.charAt(0)}.` : "";
-          return [abbreviated, ner].filter(Boolean).join(" ") || "-";
+          const buten = [abbreviated, ner].filter(Boolean).join(" ") || "-";
+          return (
+            <Tooltip title={buten}>
+              <div className="text-left text-[11px] text-black dark:text-white truncate">
+                {buten}
+              </div>
+            </Tooltip>
+          );
         },
       },
       {
         key: "toot",
         label: "Тоот",
-        width: 60,
+        width: 50,
         align: "center",
         fixed: "left",
-        render: (_: any, record: NegtgelTailanItem) => record._id?.toot || record.toot || "-",
+        render: (_: any, record: NegtgelTailanItem) => (
+          <span className="text-[11px] text-black dark:text-white">
+            {record._id?.toot || record.toot || "-"}
+          </span>
+        ),
       },
       {
         key: "utas",
         label: "Утас",
-        width: 120,
+        width: 90,
         align: "center",
         fixed: "left",
         render: (_: any, record: NegtgelTailanItem) => {
           const u = record._id?.utas || record.utas;
-          return Array.isArray(u) ? u[0] || "-" : u || "-";
+          return (
+            <span className="text-[11px] text-black dark:text-white">
+              {Array.isArray(u) ? u[0] || "-" : u || "-"}
+            </span>
+          );
         },
       },
     ];
@@ -169,13 +200,13 @@ export function NegtgelTailanTable({ data, loading, authoritativeTotalUldegdel }
             label: (
               <div className="flex justify-center w-full">
                 <Tooltip title={assessment.tailbar}>
-                  <span className="block truncate max-w-[120px] text-center">
+                  <span className="block truncate max-w-[85px] text-center">
                     {assessment.tailbar}
                   </span>
                 </Tooltip>
               </div>
             ),
-            width: 140,
+            width: 95,
             align: "right",
             onCell: () => ({
               className: subIdx === typesInMonth.length - 1 ? "!border-r-2 !border-r-slate-300 dark:!border-r-slate-800" : ""
@@ -208,7 +239,11 @@ export function NegtgelTailanTable({ data, loading, authoritativeTotalUldegdel }
             });
 
             if (total <= 0) return "";
-            return formatNumber(total, 2);
+            return (
+              <span className="text-[11px] text-black dark:text-white">
+                {formatNumber(total, 2)}
+              </span>
+            );
           },
         })),
       });
@@ -224,13 +259,13 @@ export function NegtgelTailanTable({ data, loading, authoritativeTotalUldegdel }
         {
           key: "niitUldegdel",
           label: "Үлдэгдэл",
-          width: 140,
+          width: 100,
           align: "right",
           fixed: "right",
           render: (_: any, record: NegtgelTailanItem) => {
             const bal = Number(record.niitUldegdel ?? record.globalUldegdel ?? record.niitTulukhDun ?? 0);
             return (
-              <span className="text-gray-900 dark:text-white">
+              <span className="text-[11px] text-gray-900 dark:text-white">
                 {formatNumber(bal, 2)}
               </span>
             );
@@ -244,6 +279,7 @@ export function NegtgelTailanTable({ data, loading, authoritativeTotalUldegdel }
 
   return (
     <StandardTable
+      className="compact-table"
       columns={columns}
       data={data || []}
       loading={loading}
@@ -251,9 +287,14 @@ export function NegtgelTailanTable({ data, loading, authoritativeTotalUldegdel }
       bordered
       containerClassName="rounded-2xl"
       footer={
-        <div className="flex justify-end items-center gap-4 py-2 border-t border-gray-100 dark:border-gray-800">
-          <span className="text-sm text-gray-500 dark:text-gray-400">Нийт үлдэгдэл:</span>
-          <span className="text-sm text-emerald-500">{formatNumber(totalUldegdel, 2)} ₮</span>
+        <div className="flex justify-end items-center gap-3 py-1.5 border-t border-gray-100 dark:border-gray-800">
+          {khuudasKhesegKhen && (
+            <span className="text-[11px] text-gray-400 dark:text-gray-500">
+              Энэ хуудас: {formatNumber(localTotalUldegdel, 2)} ₮
+            </span>
+          )}
+          <span className="text-[13px] text-gray-500 dark:text-gray-400">Нийт үлдэгдэл:</span>
+          <span className="text-[13px] text-emerald-500">{formatNumber(totalUldegdel, 2)} ₮</span>
         </div>
       }
     />
