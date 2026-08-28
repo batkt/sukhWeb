@@ -195,19 +195,20 @@ export default function GuilgeeTable({
                 (record?.orshinSuugch && typeof record.orshinSuugch === "object"
                   ? record.orshinSuugch
                   : undefined);
-              const residentToot =
-                Array.isArray(resident?.toots) && resident.toots.length > 0
-                  ? resident.toots[0]?.toot
-                  : resident?.toot;
               const ct =
                 (record?.gereeniiId &&
                   contractsById[String(record.gereeniiId)]) ||
                 (record?.gereeniiDugaar &&
                   contractsByNumber[String(record.gereeniiDugaar)]) ||
                 undefined;
+              const residentToot =
+                Array.isArray(resident?.toots) && resident.toots.length > 0
+                  ? resident.toots[0]?.toot
+                  : resident?.toot;
+              const displayToot = ct?.toot || record?.toot || residentToot || "-";
               return (
                 <span className="text-center block text-gray-900 dark:text-white text-[9px] leading-tight">
-                  {residentToot}
+                  {displayToot}
                 </span>
               );
             },
@@ -639,16 +640,18 @@ export default function GuilgeeTable({
                 : (bestKnownBalances[gid] ??
                   (historyAggregate || Number(record?.uldegdel ?? 0)));
 
+              const contractToot = ct?.toot || record?.toot;
               const residentData = resident
                 ? {
                   ...resident,
+                  toot: contractToot || residentToot || resident.toot,
                   gereeniiDugaar: dugaar,
                   gereeniiId: gid || record?.gereeniiId || ct?._id,
                 }
                 : {
                   _id: record?.orshinSuugchId,
                   ner: ner,
-                  toot: toot,
+                  toot: contractToot || toot,
                   utas: utas,
                   gereeniiDugaar: dugaar,
                   gereeniiId: gid || record?.gereeniiId || ct?._id,

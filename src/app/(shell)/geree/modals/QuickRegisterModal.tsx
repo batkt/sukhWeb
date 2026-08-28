@@ -16,7 +16,7 @@ interface QuickRegisterModalProps {
   residentsList: any[];
   clientsList: any[];
   contracts?: any[];
-  onAssign: (personId: string, personType: "orshinSuugch" | "khariltsagch", gereeniiId?: string) => Promise<boolean>;
+  onAssign: (personId: string, personType: "orshinSuugch" | "khariltsagch", gereeniiId?: string, linkedAptToot?: string) => Promise<boolean>;
   onRegisterNewOrshinSuugch?: () => void;
   onRegisterNewKhariltsagch?: () => void;
 }
@@ -96,16 +96,62 @@ export default function QuickRegisterModal({
 
   // Find apartment contracts for a selected person (step 3 use case)
   const getApartmentContracts = (personId: string) => {
-    if (!contracts || contracts.length === 0) return [];
-    return contracts.filter((c: any) => {
+    const person = listToSearch.find((p: any) => String(p._id) === String(personId));
+    if (!person) return [];
+
+    const personPhones = [
+      person.utas,
+      ...(Array.isArray(person.utas) ? person.utas : []),
+      person.nevtrekhNer,
+    ].map(v => String(v || "").trim()).filter(Boolean);
+
+    const personToots = (Array.isArray(person.toots) ? person.toots : [])
+      .filter((t: any) => String(t.turul || "").trim() === "Орон сууц" || String(t.turul || "").trim() === "Тоот")
+      .map((t: any) => String(t.toot || "").trim())
+      .filter(Boolean);
+
+    if (!contracts || contracts.length === 0) {
+      if (personToots.length > 1) {
+        return personToots.map((toot: string) => ({
+          _id: `synthesized_${toot}`,
+          gereeniiDugaar: `Тоот ${toot}`,
+          toot: toot,
+          turul: "Орон сууц",
+        }));
+      }
+      return [];
+    }
+
+    const matchedContracts = contracts.filter((c: any) => {
       const status = String(c?.tuluv || c?.status || "Идэвхтэй").trim();
       if (status === "Цуцалсан" || status === "Идэвхгүй") return false;
-      const cResId = c.orshinSuugchId || c.khariltsagchId;
-      if (String(cResId) !== String(personId)) return false;
-      // Only apartment-type contracts
+
       const cTurul = String(c.turul || "").trim();
-      return cTurul !== "Зогсоол" && cTurul !== "Гараж" && cTurul !== "Агуулах";
+      if (cTurul === "Зогсоол" || cTurul === "Гараж" || cTurul === "Агуулах") return false;
+
+      const cResId = String(c.orshinSuugchId || c.khariltsagchId || "").trim();
+      const cPhone = String(c.phone || c.utas || "").trim();
+      const cToot = String(c.toot || "").trim();
+
+      const matchesId = cResId && cResId === String(personId);
+      const matchesPhone = cPhone && personPhones.includes(cPhone);
+      const matchesToot = cToot && personToots.includes(cToot);
+
+      return matchesId || matchesPhone || matchesToot;
     });
+
+    if (matchedContracts.length > 0) return matchedContracts;
+
+    if (personToots.length > 1) {
+      return personToots.map((toot: string) => ({
+        _id: `synthesized_${toot}`,
+        gereeniiDugaar: `Тоот ${toot}`,
+        toot: toot,
+        turul: "Орон сууц",
+      }));
+    }
+
+    return [];
   };
 
   const handleSelectType = (type: "orshinSuugch" | "khariltsagch") => {
@@ -139,8 +185,9 @@ export default function QuickRegisterModal({
       }
       // Only 1 apartment contract — use it directly
       const gereeniiId = aptContracts.length === 1 ? String(aptContracts[0]._id) : undefined;
+      const linkedAptToot = aptContracts.length === 1 ? String(aptContracts[0].toot || "") : undefined;
       setIsSubmitting(true);
-      const success = await onAssign(personId, selectedType, gereeniiId);
+      const success = await onAssign(personId, selectedType, gereeniiId, linkedAptToot);
       setIsSubmitting(false);
       if (success) onClose();
       return;
@@ -152,10 +199,12 @@ export default function QuickRegisterModal({
     if (success) onClose();
   };
 
-  const handleSelectContract = async (gereeniiId: string) => {
+  const handleSelectContract = async (contract: any) => {
     if (!pendingPerson || isSubmitting) return;
     setIsSubmitting(true);
-    const success = await onAssign(pendingPerson.id, pendingPerson.type, gereeniiId);
+    const gereeniiId = String(contract._id || "");
+    const linkedAptToot = String(contract.toot || "");
+    const success = await onAssign(pendingPerson.id, pendingPerson.type, gereeniiId, linkedAptToot);
     setIsSubmitting(false);
     if (success) onClose();
   };
@@ -368,7 +417,7 @@ export default function QuickRegisterModal({
                   <button
                     key={c._id}
                     disabled={isSubmitting}
-                    onClick={() => handleSelectContract(String(c._id))}
+                    onClick={() => handleSelectContract(c)}
                     className="w-full text-left p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-800/20 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-200 dark:hover:border-blue-800 transition-all flex items-center justify-between group disabled:opacity-50"
                   >
                     <div className="flex items-center gap-3">

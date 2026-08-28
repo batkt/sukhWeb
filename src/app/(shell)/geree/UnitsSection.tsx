@@ -53,6 +53,7 @@ interface UnitsSectionProps {
     unit: string,
     propertyTab: "Тоот" | "Зогсоол" | "Агуулах",
     gereeniiId?: string,
+    linkedAptToot?: string,
   ) => Promise<boolean>;
 }
 
@@ -773,7 +774,8 @@ export default function UnitsSection({
             await actions.handleAddGarageCharges(
               [resident],
               propertyTab === "Зогсоол" ? "Зогсоол" : "Агуулах",
-              contractId
+              contractId,
+              unit
             );
           } else {
             const dedicated = isNestedGarage ? [] : [String(activeContract._id)];
@@ -830,7 +832,33 @@ export default function UnitsSection({
         : "Сул байна";
 
       let tootStr = "-";
-      if (resident) {
+      // Priority 1: Check if this parking/storage slot entry has a gereeniiId or linkedAptToot stored (from Step 3 assignment)
+      if (resident && Array.isArray(resident.toots)) {
+        const parkingEntry = resident.toots.find(
+          (t: any) => String(t.toot).trim() === unitStr && (t.turul === "Гараж" || t.turul === "Зогсоол" || t.turul === "Агуулах")
+        );
+        if (parkingEntry?.linkedAptToot) {
+          tootStr = String(parkingEntry.linkedAptToot).trim();
+        } else if (parkingEntry?.gereeniiId && contracts) {
+          const targetGId = String(parkingEntry.gereeniiId);
+          const linkedContract = contracts.find(
+            (c: any) =>
+              String(c._id || c.id) === targetGId ||
+              String(c.gereeniiDugaar) === targetGId
+          );
+          if (linkedContract?.toot) {
+            tootStr = String(linkedContract.toot).trim();
+          }
+        }
+      }
+
+      // Priority 2: Check activeContract toot if it is an apartment contract
+      if (tootStr === "-" && activeContract?.toot && activeContract.turul !== "Гараж" && activeContract.turul !== "Зогсоол" && activeContract.turul !== "Агуулах") {
+        tootStr = String(activeContract.toot).trim();
+      }
+
+      // Priority 3: Fallback to resident's apartment toots
+      if (tootStr === "-" && resident) {
         if (Array.isArray(resident.toots) && resident.toots.length > 0) {
           const aptItem = resident.toots.find(
             (t: any) => String(t.turul || "").trim() === "Орон сууц" || String(t.turul || "").trim() === "Тоот"
@@ -839,19 +867,19 @@ export default function UnitsSection({
         }
         if (tootStr === "-" && resident.toot) tootStr = String(resident.toot).trim();
       }
-      if (tootStr === "-" && activeContract?.toot) tootStr = String(activeContract.toot).trim();
 
       const phone = resident?.utas || activeContract?.utas || activeContract?.phone || "-";
 
-      const amount =
-        Number(
-          activeContract?.sariinTurees ||
-            activeContract?.sariinTulbur ||
-            activeContract?.tulburiinDun ||
-            activeContract?.dun ||
-            resident?.zogsoolTulbur ||
-            50000
-        ) || 0;
+      const amount = isOccupied
+        ? (Number(
+            activeContract?.sariinTurees ||
+              activeContract?.sariinTulbur ||
+              activeContract?.tulburiinDun ||
+              activeContract?.dun ||
+              resident?.zogsoolTulbur ||
+              50000
+          ) || 0)
+        : 0;
 
       const isPaid = Boolean(
         activeContract?.tulbarTulogdson ||
@@ -1139,12 +1167,14 @@ export default function UnitsSection({
                                 <td className="p-3 text-center">
                                   <span
                                     className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                                      row.tolsenEsekh
-                                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
-                                        : "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
+                                       !row.isOccupied
+                                         ? "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500"
+                                         : row.tolsenEsekh
+                                           ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                                           : "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
                                     }`}
                                   >
-                                    {row.tolsenEsekh ? "Төлсөн" : "Төлөөгүй"}
+                                    {row.isOccupied ? (row.tolsenEsekh ? "Төлсөн" : "Төлөөгүй") : "-"}
                                   </span>
                                 </td>
                                 <td className="p-3 text-center">
@@ -1221,10 +1251,10 @@ export default function UnitsSection({
         residentsList={residentsList}
         clientsList={clientsList}
         contracts={contracts}
-        onAssign={async (personId, type, gereeniiId) => {
+        onAssign={async (personId, type, gereeniiId, linkedAptToot) => {
           if (!quickRegister) return false;
           const { unit, floor } = quickRegister;
-          return await onAssignToUnit(personId, type, selectedOrts, floor, unit, propertyTab, gereeniiId);
+          return await onAssignToUnit(personId, type, selectedOrts, floor, unit, propertyTab, gereeniiId, linkedAptToot);
         }}
         onRegisterNewOrshinSuugch={() => {
           if (!quickRegister) return;

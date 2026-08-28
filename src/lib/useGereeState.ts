@@ -79,7 +79,7 @@ export function useGereeState(searchParams: any, didInitRef: any) {
   >("all");
   const [unitStatusFilter, setUnitStatusFilter] = useState<
     "all" | "occupied" | "free"
-  >("all");
+  >("occupied");
   const [isSavingUnits, setIsSavingUnits] = useState(false);
   const [isUploadingResidents, setIsUploadingResidents] = useState(false);
   const [isUploadingUnits, setIsUploadingUnits] = useState(false);

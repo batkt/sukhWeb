@@ -1830,7 +1830,7 @@ export default function DansniiKhuulga() {
               ? contractsByNumber[it.gereeniiDugaar]
               : null;
           return String(
-            con?.toot || resToot || it.toot || it.medeelel?.toot || "",
+            con?.toot || it.toot || it.medeelel?.toot || resToot || "",
           );
         };
         aVal = getTootVal(a);

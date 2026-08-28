@@ -1345,152 +1345,189 @@ export function useGereeActions(
     [token, baiguullaga],
   );
 
-  const handleAddGarageCharges = useCallback(
-    async (residents: any[], chargeType?: "Зогсоол" | "Агуулах", overrideContractId?: string) => {
-      if (!token || !baiguullaga?._id) {
-        openErrorOverlay("Нэвтэрч орсон хэрэглэгч олдсонгүй");
-        return;
+  const getGarageKeysForBuilding = (bgu: any, bid?: string) => {
+    const garageKeys = new Set<string>();
+    const barilga = bgu?.barilguud?.find(
+      (b: any) => String(b._id || b.id) === String(bid),
+    );
+    const tok = barilga?.tokhirgoo || {};
+    const parseMap = (map: any) => {
+      const out: Record<string, string[]> = {};
+      if (map && typeof map === "object" && !Array.isArray(map)) {
+        Object.entries(map).forEach(([key, val]: [string, any]) => {
+          let units: string[] = [];
+          if (Array.isArray(val)) {
+            units = val.flatMap((v: any) => String(v).split(/[\s,;|]+/).filter(Boolean));
+          } else if (typeof val === "string") {
+            units = val.split(/[\s,;|]+/).filter(Boolean);
+          }
+          out[key] = units;
+        });
       }
-      const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
-      if (!effectiveBarilgiinId) {
-        openErrorOverlay("Барилга сонгоогүй байна");
+      return out;
+    };
+    const zogsoolMap = parseMap(tok.davkhariinZogsoolnuud);
+    Object.entries(zogsoolMap).forEach(([key, units]) => {
+      const parts = key.split("::");
+      const orts = parts.length > 1 ? parts[0] : "1";
+      const davkhar = parts.length > 1 ? parts[1] : key;
+      units.forEach((toot) => {
+        const o = String(orts || "1").trim();
+        const f = String(davkhar || "").trim();
+        const t = String(toot || "").trim();
+        garageKeys.add(`${o}::${f}::${t}`);
+        if (o && o !== "1") garageKeys.add(`1::${f}::${t}`);
+      });
+    });
+    return garageKeys;
+  };
+
+  const getAguulakhKeysForBuilding = (bgu: any, bid?: string) => {
+    const aguulakhKeys = new Set<string>();
+    const barilga = bgu?.barilguud?.find(
+      (b: any) => String(b._id || b.id) === String(bid),
+    );
+    const tok = barilga?.tokhirgoo || {};
+    const parseMap = (map: any) => {
+      const out: Record<string, string[]> = {};
+      if (map && typeof map === "object" && !Array.isArray(map)) {
+        Object.entries(map).forEach(([key, val]: [string, any]) => {
+          let units: string[] = [];
+          if (Array.isArray(val)) {
+            units = val.flatMap((v: any) => String(v).split(/[\s,;|]+/).filter(Boolean));
+          } else if (typeof val === "string") {
+            units = val.split(/[\s,;|]+/).filter(Boolean);
+          }
+          out[key] = units;
+        });
+      }
+      return out;
+    };
+    const aguulakhMap = parseMap(tok.davkhariinAguulakhnuud);
+    Object.entries(aguulakhMap).forEach(([key, units]) => {
+      const parts = key.split("::");
+      const orts = parts.length > 1 ? parts[0] : "1";
+      const davkhar = parts.length > 1 ? parts[1] : key;
+      units.forEach((toot) => {
+        const o = String(orts || "1").trim();
+        const f = String(davkhar || "").trim();
+        const t = String(toot || "").trim();
+        aguulakhKeys.add(`${o}::${f}::${t}`);
+        if (o && o !== "1") aguulakhKeys.add(`1::${f}::${t}`);
+      });
+    });
+    return aguulakhKeys;
+  };
+
+  const getBillingCycleRange = (refDateStr?: string) => {
+    const now = refDateStr ? new Date(refDateStr) : new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    return { start, end };
+  };
+
+  const handleAddGarageCharges = useCallback(
+    async (
+      residentsInput?: any[],
+      chargeType: "Зогсоол" | "Агуулах" = "Зогсоол",
+      overrideContractId?: string,
+      targetUnitNumber?: string,
+    ) => {
+      if (!token || !baiguullaga?._id) {
+        openErrorOverlay("Нэвтрэх шаардлагатай");
         return;
       }
 
+      const effectiveBid = selectedBuildingIdForActions || barilgiinId;
+
       try {
-        // 1. Get building config
+        const isGarageCharge = chargeType === "Зогсоол";
         const barilga = baiguullaga.barilguud?.find(
-          (b: any) => String(b._id || b.id) === String(effectiveBarilgiinId),
+          (b: any) => String(b._id || b.id) === String(effectiveBid),
         );
         const tok = barilga?.tokhirgoo || {};
 
-        // Garage config
-        const garageEnabled = (chargeType === undefined || chargeType === "Зогсоол") && !!tok.garsiinTolborEnabled;
-        const garageMethod = tok.garsiinTolborArga || "Тогтмол";
-        const garageValue = Number(tok.garsiinTolborUtga) || 0;
+        const garageEnabled = tok.garsiinTolborEnabled !== false;
+        const storageEnabled = tok.aguulakhTolborEnabled !== false;
 
-        // Storage config
-        const storageEnabled = (chargeType === undefined || chargeType === "Агуулах") && !!tok.aguulakhTolborEnabled;
-        const storageMethod = tok.aguulakhTolborArga || "Тогтмол";
-        const storageValue = Number(tok.aguulakhTolborUtga) || 0;
+        const garageMethod = String(tok.garsiinTolborArga || baiguullaga.zogsooliinTulburBodokhArga || "Тогтмол");
+        const storageMethod = String(tok.aguulakhTolborArga || baiguullaga.aguulakhTulburBodokhArga || "Тогтмол");
 
-        if (!garageEnabled && !storageEnabled) {
-          openErrorOverlay("Сонгосон төрлийн төлбөрийн тохиргоо идэвхгүй байна");
+        const garageValue = Number(tok.garsiinTolborUtga) || Number(baiguullaga.zogsoolUusgekhTulbur) || 50000;
+        const storageValue = Number(tok.aguulakhTolborUtga) || Number(baiguullaga.aguulakhUusgekhTulbur) || 50000;
+
+        if (isGarageCharge && (!garageEnabled || garageValue <= 0)) {
+          openErrorOverlay("Зогсоолын төлбөрийн тохиргоо идэвхгүй эсвэл дүн 0 байна.");
           return;
         }
 
-        // 2. Build set of garage/storage unit keys (orts::davkhar::toot)
-        const garageKeys = new Set<string>();
-        const aguulakhKeys = new Set<string>();
-
-        const addKey = (
-          set: Set<string>,
-          orts: string,
-          davkhar: string,
-          toot: string,
-        ) => {
-          const o = String(orts || "1").trim();
-          const f = String(davkhar || "").trim();
-          const t = String(toot || "").trim();
-          // Store both orts::davkhar::toot and davkhar::toot for flexible matching
-          set.add(`${o}::${f}::${t}`);
-          if (o && o !== "1") set.add(`1::${f}::${t}`);
-        };
-
-        const parseMap = (map: any) => {
-          const out: Record<string, string[]> = {};
-          if (map && typeof map === "object" && !Array.isArray(map)) {
-            Object.entries(map).forEach(([key, val]: [string, any]) => {
-              let units: string[] = [];
-              if (Array.isArray(val)) {
-                units = val.flatMap((v: any) =>
-                  String(v)
-                    .split(/[\s,;|]+/)
-                    .filter(Boolean),
-                );
-              } else if (typeof val === "string") {
-                units = val.split(/[\s,;|]+/).filter(Boolean);
-              }
-              out[key] = units;
-            });
-          }
-          return out;
-        };
-
-        const zogsoolMap = parseMap(tok.davkhariinZogsoolnuud);
-        const aguulakhMap = parseMap(tok.davkhariinAguulakhnuud);
-
-        Object.entries(zogsoolMap).forEach(([key, units]) => {
-          const parts = key.split("::");
-          const orts = parts.length > 1 ? parts[0] : "";
-          const davkhar = parts.length > 1 ? parts[1] : key;
-          units.forEach((toot) => addKey(garageKeys, orts, davkhar, toot));
-        });
-        Object.entries(aguulakhMap).forEach(([key, units]) => {
-          const parts = key.split("::");
-          const orts = parts.length > 1 ? parts[0] : "";
-          const davkhar = parts.length > 1 ? parts[1] : key;
-          units.forEach((toot) => addKey(aguulakhKeys, orts, davkhar, toot));
-        });
-
-        // Add basement/parking floor units from davkhar array
-        const davkharArr = Array.isArray(tok.davkhar) ? tok.davkhar : [];
-        davkharArr.forEach((it: any) => {
-          const floor = String(it?.davkhar ?? it).trim();
-          const list = Array.isArray(it?.toonuud) ? it.toonuud : [];
-          if (/^B\d+$/i.test(floor) && list.length > 0) {
-            const orts = String(it?.orts || "1").trim();
-            list.forEach((toot: any) => addKey(garageKeys, orts, floor, toot));
-          }
-        });
-
-        // 3. Fetch cron schedule to determine billing cycle bounds
-        let cronDay = 1;
-        try {
-          const cronRes = await uilchilgee(token).get(`/nekhemjlekhCron/${baiguullaga._id}`, {
-            params: effectiveBarilgiinId ? { barilgiinId: effectiveBarilgiinId } : {}
-          });
-          const schedules = cronRes.data?.data || cronRes.data || [];
-          const schedule = Array.isArray(schedules) ? schedules[schedules.length - 1] : schedules;
-          if (schedule?.nekhemjlekhUusgekhOgnoo) cronDay = Number(schedule.nekhemjlekhUusgekhOgnoo);
-        } catch { }
-
-        const now = new Date();
-        let cycleStartYear = now.getFullYear();
-        let cycleStartMonth = now.getMonth(); // 0-indexed
-        if (now.getDate() < cronDay) {
-          cycleStartMonth--;
-          if (cycleStartMonth < 0) { cycleStartMonth = 11; cycleStartYear--; }
+        if (!isGarageCharge && (!storageEnabled || storageValue <= 0)) {
+          openErrorOverlay("Агуулахын төлбөрийн тохиргоо идэвхгүй эсвэл дүн 0 байна.");
+          return;
         }
-        const cycleStart = new Date(cycleStartYear, cycleStartMonth, cronDay);
-        const cycleEndMonth = cycleStartMonth === 11 ? 0 : cycleStartMonth + 1;
-        const cycleEndYear = cycleStartMonth === 11 ? cycleStartYear + 1 : cycleStartYear;
-        // Day before next billing day (cronDay=1 → last day of current month via day 0)
-        const cycleEnd = new Date(cycleEndYear, cycleEndMonth, cronDay - 1 || 0);
-        const cycleStartStr = cycleStart.toISOString().split("T")[0];
-        const cycleEndStr = cycleEnd.toISOString().split("T")[0];
 
-        // 4. For each resident, check if they have garage/storage units
+        const today = new Date().toISOString();
+        const cycle = getBillingCycleRange(today);
+        const cycleStartStr = cycle.start.toISOString().slice(0, 10);
+        const cycleEndStr = cycle.end.toISOString().slice(0, 10);
+
+        let residents: any[] = [];
+        if (Array.isArray(residentsInput) && residentsInput.length > 0) {
+          residents = residentsInput;
+        } else {
+          const resPath = "/orshinSuugch";
+          const resResp = await uilchilgee(token).get(resPath, {
+            params: {
+              baiguullagiinId: baiguullaga._id,
+              barilgiinId: effectiveBid || undefined,
+              khuudasniiDugaar: 1,
+              khuudasniiKhemjee: 5000,
+            },
+          });
+          const fetchedResList = resResp.data?.jagsaalt || resResp.data || [];
+          const clientPath = "/khariltsagch";
+          let fetchedClientList: any[] = [];
+          try {
+            const clientResp = await uilchilgee(token).get(clientPath, {
+              params: {
+                baiguullagiinId: baiguullaga._id,
+                barilgiinId: effectiveBid || undefined,
+                khuudasniiDugaar: 1,
+                khuudasniiKhemjee: 5000,
+              },
+            });
+            fetchedClientList = clientResp.data?.jagsaalt || clientResp.data || [];
+          } catch { }
+          residents = [...fetchedResList, ...fetchedClientList];
+        }
+
         let added = 0;
         let skipped = 0;
-        const today = new Date().toISOString().split("T")[0];
+
+        const garageKeys = getGarageKeysForBuilding(baiguullaga, effectiveBid);
+        const aguulakhKeys = getAguulakhKeysForBuilding(baiguullaga, effectiveBid);
 
         const residentHasGarage = (u: any) => {
+          const t = String(u.turul || "").trim();
+          if (t === "Гараж" || t === "Зогсоол") return true;
           const o = String(u.orts || "1").trim();
           const f = String(u.davkhar || "").trim();
-          const t = String(u.toot || "").trim();
+          const unit = String(u.toot || "").trim();
           return (
-            garageKeys.has(`${o}::${f}::${t}`) ||
-            garageKeys.has(`1::${f}::${t}`)
+            garageKeys.has(`${o}::${f}::${unit}`) ||
+            garageKeys.has(`1::${f}::${unit}`)
           );
         };
+
         const residentHasAguulakh = (u: any) => {
+          const t = String(u.turul || "").trim();
+          if (t === "Агуулах") return true;
           const o = String(u.orts || "1").trim();
           const f = String(u.davkhar || "").trim();
-          const t = String(u.toot || "").trim();
+          const unit = String(u.toot || "").trim();
           return (
-            aguulakhKeys.has(`${o}::${f}::${t}`) ||
-            aguulakhKeys.has(`1::${f}::${t}`)
+            aguulakhKeys.has(`${o}::${f}::${unit}`) ||
+            aguulakhKeys.has(`1::${f}::${unit}`)
           );
         };
 
@@ -1506,43 +1543,16 @@ export function useGereeActions(
 
           if (!hasGarage && !hasAguulakh) continue;
 
-          // Resolve contract (gereeniiId) and contract number (gereeniiDugaar)
-          let gereeniiId = resident.gereeniiId || resident.gereeId || resident.geree?._id;
-          let gereeniiDugaar = resident.gereeniiDugaar || resident.geree?.gereeniiDugaar || resident.gereeDugaar;
+          // Default fallback contract
+          let defaultContractId = overrideContractId || resident.gereeniiId || resident.gereeId || resident.geree?._id;
+          let defaultContractDugaar = resident.gereeniiDugaar || resident.geree?.gereeniiDugaar || resident.gereeDugaar;
 
-          // Priority 0: check if the parking/storage toot entry itself carries a gereeniiId
-          // (set during assignment when a resident has multiple apartment contracts)
-          if (!gereeniiId) {
-            const parkingTurul = chargeType === "Зогсоол" ? ["Гараж", "Зогсоол"] : ["Агуулах"];
-            const linkedToot = units.find((u: any) => parkingTurul.includes(String(u.turul || "").trim()) && u.gereeniiId);
-            if (linkedToot?.gereeniiId) {
-              gereeniiId = String(linkedToot.gereeniiId);
-              const oc = Array.isArray(contracts) ? contracts.find((c: any) => String(c._id) === gereeniiId) : null;
-              if (oc) gereeniiDugaar = oc.gereeniiDugaar;
-            }
-          }
-
-          if (!gereeniiId && overrideContractId) {
-            // Option B: caller already resolved the exact contract from the table row
-            gereeniiId = overrideContractId;
-            const oc = Array.isArray(contracts) ? contracts.find((c: any) => String(c._id) === overrideContractId) : null;
-            if (oc) gereeniiDugaar = oc.gereeniiDugaar;
-          } else if (!gereeniiId && Array.isArray(contracts)) {
-            // Fallback: search by resident ID, but filter by chargeType to avoid
-            // picking up the apartment contract when a separate parking contract exists
+          if (!defaultContractId && Array.isArray(contracts)) {
             const matchedContract = contracts.find((c: any) => {
               const status = String(c?.tuluv || c?.status || "Идэвхтэй").trim();
-              const isCancelled =
-                status === "Цуцалсан" ||
-                status.toLowerCase() === "цуцалсан" ||
-                status === "tsutlsasan" ||
-                status.toLowerCase() === "tsutlsasan" ||
-                status === "Идэвхгүй" ||
-                status.toLowerCase() === "идэвхгүй";
-              if (isCancelled) return false;
+              if (status === "Цуцалсан" || status === "Идэвхгүй") return false;
               const cResId = c.orshinSuugchId || c.khariltsagchId;
               if (!cResId || String(cResId) !== String(resident._id)) return false;
-              // Filter by contract type to avoid picking up apartment contract
               const cTurul = String(c.turul || "").trim();
               if (chargeType === "Зогсоол") return cTurul === "Зогсоол" || cTurul === "Гараж";
               if (chargeType === "Агуулах") return cTurul === "Агуулах";
@@ -1550,45 +1560,53 @@ export function useGereeActions(
             });
 
             if (matchedContract) {
-              gereeniiId = matchedContract._id || matchedContract.id;
-              gereeniiDugaar = matchedContract.gereeniiDugaar;
+              defaultContractId = matchedContract._id || matchedContract.id;
+              defaultContractDugaar = matchedContract.gereeniiDugaar;
             }
           }
 
-          if (!gereeniiId) {
-            openErrorOverlay(
-              `"${resident.ovog || ""} ${resident.ner || ""}"-д холбогдох идэвхтэй гэрээ олдсонгүй тул төлбөр нэмэх боломжгүй байна. Гэрээ байгуулагдсан эсэхийг шалгана уу.`
-            );
-            continue; // Skip this resident to avoid validation failure
-          }
-
-          // Fetch all avlaga for this contract once, then check both types client-side
-          // (avoids MongoDB date-type mismatch when filtering by ognoo range)
-          let contractAvlaga: any[] = [];
-          try {
-            const checkRes = await uilchilgee(token).get("/guilgeeAvlaguud", {
-              params: {
-                baiguullagiinId: baiguullaga._id,
-                query: JSON.stringify({ gereeniiId: String(gereeniiId) }),
-                khuudasniiDugaar: 1,
-                khuudasniiKhemjee: 200,
-              },
-            });
-            contractAvlaga = checkRes.data?.data || checkRes.data || [];
-            if (!Array.isArray(contractAvlaga)) contractAvlaga = [];
-          } catch { }
-
-          const inCycle = (r: any) => {
-            const raw = r.ognoo || r.createdAt || "";
-            const str = typeof raw === "string" ? raw.slice(0, 10) : new Date(raw).toISOString().slice(0, 10);
-            return str >= cycleStartStr && str <= cycleEndStr;
-          };
-
           if (garageEnabled && hasGarage && garageMethod === "Тогтмол" && garageValue > 0) {
             for (const gu of garageUnits) {
-              const toot = String(gu.toot || "");
+              const toot = String(gu.toot || "").trim();
+              if (targetUnitNumber && toot !== String(targetUnitNumber).trim()) {
+                continue; // Skip units that are not the target unit
+              }
+
+              let targetContractId = gu.gereeniiId ? String(gu.gereeniiId) : defaultContractId;
+              let targetContractDugaar = defaultContractDugaar;
+              if (gu.gereeniiId && Array.isArray(contracts)) {
+                const oc = contracts.find((c: any) => String(c._id) === String(gu.gereeniiId));
+                if (oc) targetContractDugaar = oc.gereeniiDugaar;
+              } else if (overrideContractId && Array.isArray(contracts)) {
+                const oc = contracts.find((c: any) => String(c._id) === overrideContractId);
+                if (oc) targetContractDugaar = oc.gereeniiDugaar;
+              }
+
+              if (!targetContractId) continue;
+
+              // Fetch avlaga for targetContractId once
+              let contractAvlaga: any[] = [];
+              try {
+                const checkRes = await uilchilgee(token).get("/guilgeeAvlaguud", {
+                  params: {
+                    baiguullagiinId: baiguullaga._id,
+                    query: JSON.stringify({ gereeniiId: String(targetContractId) }),
+                    khuudasniiDugaar: 1,
+                    khuudasniiKhemjee: 200,
+                  },
+                });
+                contractAvlaga = checkRes.data?.data || checkRes.data || [];
+                if (!Array.isArray(contractAvlaga)) contractAvlaga = [];
+              } catch { }
+
+              const inCycle = (r: any) => {
+                const raw = r.ognoo || r.createdAt || "";
+                const str = typeof raw === "string" ? raw.slice(0, 10) : new Date(raw).toISOString().slice(0, 10);
+                return str >= cycleStartStr && str <= cycleEndStr;
+              };
+
               const alreadyBilled = contractAvlaga.some(
-                (r: any) => /зогсоол/i.test(r.tailbar || "") && String(r.toot || "") === toot && inCycle(r)
+                (r: any) => /зогсоол/i.test(r.tailbar || "") && String(r.toot || "").trim() === toot && inCycle(r)
               );
               if (alreadyBilled) {
                 skipped++;
@@ -1596,10 +1614,10 @@ export function useGereeActions(
                 try {
                   await uilchilgee(token).post("/guilgeeAvlaguud", {
                     baiguullagiinId: baiguullaga._id,
-                    barilgiinId: effectiveBarilgiinId,
+                    barilgiinId: effectiveBid,
                     orshinSuugchId: resident._id,
-                    gereeniiId: gereeniiId,
-                    gereeniiDugaar: gereeniiDugaar || "",
+                    gereeniiId: targetContractId,
+                    gereeniiDugaar: targetContractDugaar || "",
                     toot,
                     turul: "avlaga",
                     tulukhDun: garageValue,
@@ -1619,9 +1637,45 @@ export function useGereeActions(
           }
           if (storageEnabled && hasAguulakh && storageMethod === "Тогтмол" && storageValue > 0) {
             for (const su of aguulakhUnits) {
-              const toot = String(su.toot || "");
+              const toot = String(su.toot || "").trim();
+              if (targetUnitNumber && toot !== String(targetUnitNumber).trim()) {
+                continue; // Skip units that are not the target unit
+              }
+
+              let targetContractId = su.gereeniiId ? String(su.gereeniiId) : defaultContractId;
+              let targetContractDugaar = defaultContractDugaar;
+              if (su.gereeniiId && Array.isArray(contracts)) {
+                const oc = contracts.find((c: any) => String(c._id) === String(su.gereeniiId));
+                if (oc) targetContractDugaar = oc.gereeniiDugaar;
+              } else if (overrideContractId && Array.isArray(contracts)) {
+                const oc = contracts.find((c: any) => String(c._id) === overrideContractId);
+                if (oc) targetContractDugaar = oc.gereeniiDugaar;
+              }
+
+              if (!targetContractId) continue;
+
+              let contractAvlaga: any[] = [];
+              try {
+                const checkRes = await uilchilgee(token).get("/guilgeeAvlaguud", {
+                  params: {
+                    baiguullagiinId: baiguullaga._id,
+                    query: JSON.stringify({ gereeniiId: String(targetContractId) }),
+                    khuudasniiDugaar: 1,
+                    khuudasniiKhemjee: 200,
+                  },
+                });
+                contractAvlaga = checkRes.data?.data || checkRes.data || [];
+                if (!Array.isArray(contractAvlaga)) contractAvlaga = [];
+              } catch { }
+
+              const inCycle = (r: any) => {
+                const raw = r.ognoo || r.createdAt || "";
+                const str = typeof raw === "string" ? raw.slice(0, 10) : new Date(raw).toISOString().slice(0, 10);
+                return str >= cycleStartStr && str <= cycleEndStr;
+              };
+
               const alreadyBilled = contractAvlaga.some(
-                (r: any) => /агуулах/i.test(r.tailbar || "") && String(r.toot || "") === toot && inCycle(r)
+                (r: any) => /агуулах/i.test(r.tailbar || "") && String(r.toot || "").trim() === toot && inCycle(r)
               );
               if (alreadyBilled) {
                 skipped++;
@@ -1629,10 +1683,10 @@ export function useGereeActions(
                 try {
                   await uilchilgee(token).post("/guilgeeAvlaguud", {
                     baiguullagiinId: baiguullaga._id,
-                    barilgiinId: effectiveBarilgiinId,
+                    barilgiinId: effectiveBid,
                     orshinSuugchId: resident._id,
-                    gereeniiId: gereeniiId,
-                    gereeniiDugaar: gereeniiDugaar || "",
+                    gereeniiId: targetContractId,
+                    gereeniiDugaar: targetContractDugaar || "",
                     toot,
                     turul: "avlaga",
                     tulukhDun: storageValue,
@@ -2123,6 +2177,7 @@ export function useGereeActions(
       unit: string,
       propertyTab: "Тоот" | "Зогсоол" | "Агуулах",
       gereeniiId?: string,
+      explicitLinkedAptToot?: string,
     ) => {
       if (!token) {
         openErrorOverlay("Нэвтрэх шаардлагатай");
@@ -2170,6 +2225,10 @@ export function useGereeActions(
             (b: any) => String(b._id || b.id) === String(effectiveBid),
           );
 
+          const isSynthesized = Boolean(gereeniiId && gereeniiId.startsWith("synthesized_"));
+          const linkedAptToot = explicitLinkedAptToot || (isSynthesized && gereeniiId ? gereeniiId.replace("synthesized_", "") : undefined);
+          const realGereeniiId = isSynthesized ? undefined : gereeniiId;
+
           const newUnitEntry = {
             orts: orts || "1",
             davkhar: floor || "",
@@ -2184,8 +2243,9 @@ export function useGereeActions(
             sohNer: selectedBarilga?.tokhirgoo?.sohNer || "",
             duureg: selectedBarilga?.duureg || "",
             horoo: selectedBarilga?.horoo || "",
-            // Store the owning contract ID when provided (e.g. from Step 3 picker)
-            ...(gereeniiId ? { gereeniiId } : {}),
+            // Store the owning contract ID or linked apartment toot when provided
+            ...(realGereeniiId ? { gereeniiId: realGereeniiId } : {}),
+            ...(linkedAptToot ? { linkedAptToot } : {}),
           };
 
           const updatedToots = [...existingToots, newUnitEntry];
