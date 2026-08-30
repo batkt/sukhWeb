@@ -2,7 +2,17 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, ChevronRight, Inbox, MessageSquare, X } from "lucide-react";
+import {
+  Bell,
+  CheckCheck,
+  ChevronRight,
+  Inbox,
+  MessageSquare,
+  Sparkles,
+  AlertCircle,
+  Clock,
+  X,
+} from "lucide-react";
 import { ICON_STROKE } from "./navConfig";
 import type { MedegdelItem } from "./useShellNotifications";
 
@@ -16,44 +26,60 @@ interface Props {
   onOpenMedegdel: (item: MedegdelItem) => void;
 }
 
-const dateFmt = (value?: string) =>
-  value
-    ? new Date(value).toLocaleDateString("mn-MN", {
-        day: "numeric",
-        month: "short",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : null;
+const formatRelativeTime = (value?: string | Date) => {
+  if (!value) return null;
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return null;
+
+  const now = new Date();
+  const diffSec = Math.floor((now.getTime() - d.getTime()) / 1000);
+
+  if (diffSec < 60) return "Дөнгөж сая";
+  if (diffSec < 3600) return `${Math.floor(diffSec / 60)} мин өмнө`;
+  if (diffSec < 86400) return `${Math.floor(diffSec / 3600)} цагийн өмнө`;
+  if (diffSec < 172800) return "Өчигдөр";
+
+  return d.toLocaleDateString("mn-MN", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
 
 const isSanalType = (t?: string) => {
   const x = (t ?? "").toLowerCase().trim();
   return x === "sanal" || x === "санал";
 };
 
-function EmptyState({ label }: { label: string }) {
+const isGomdolType = (t?: string) => {
+  const x = (t ?? "").toLowerCase().trim();
+  return x === "gomdol" || x === "гомдол";
+};
+
+function EmptyState({ label, type }: { label: string; type: "sanal" | "medegdel" }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
-      <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[color:var(--panel-text)]/6">
-        <Inbox
-          className="h-5 w-5 opacity-45"
-          strokeWidth={ICON_STROKE}
-          aria-hidden
-        />
+    <div className="flex flex-col items-center justify-center gap-3 px-6 py-20 text-center animate-in fade-in duration-300">
+      <div className="relative grid h-16 w-16 place-items-center rounded-3xl bg-gradient-to-tr from-emerald-500/10 via-[color:var(--surface-hover)] to-blue-500/10 border border-[color:var(--panel-text)]/10 shadow-inner">
+        {type === "sanal" ? (
+          <MessageSquare className="h-7 w-7 text-emerald-500/80" strokeWidth={1.5} />
+        ) : (
+          <Bell className="h-7 w-7 text-blue-500/80" strokeWidth={1.5} />
+        )}
+        <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500/20 border-2 border-[color:var(--surface-bg)] flex items-center justify-center">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+        </div>
       </div>
-      <p className="text-sm text-[color:var(--panel-text)]/70">{label}</p>
-      <p className="max-w-[24ch] text-xs leading-relaxed text-[color:var(--panel-text)]/45">
-        Шинэ мэдэгдэл ирмэгц энд шууд харагдана.
-      </p>
+      <div className="space-y-1 mt-1">
+        <p className="text-sm font-semibold text-[color:var(--panel-text)]">{label}</p>
+        <p className="max-w-[26ch] text-xs leading-relaxed text-[color:var(--muted-text)]">
+          Шинэ мэдэгдэл, хүсэлт ирмэгц энд шууд харагдах болно.
+        </p>
+      </div>
     </div>
   );
 }
 
-/**
- * Slide-over panel docked to the right edge, under the bell that opens it.
- * Replaces the old 400px dropdown that was duplicated in full for desktop and
- * mobile.
- */
 export default function NotificationsPanel({
   open,
   onClose,
@@ -65,14 +91,11 @@ export default function NotificationsPanel({
 }: Props) {
   const router = useRouter();
   const [tab, setTab] = useState<"sanal" | "medegdel">("sanal");
-
-  /**
-   * Гарах анимац. Компонент нь нээгдэхдээ л анимацтай байсан бөгөөд
-   * хаагдахдаа шууд unmount болж, гэнэт алга болдог байв. Иймд эхлээд
-   * гарах анимацыг тоглуулж, дараа нь жинхэнэ onClose-ыг дуудна.
-   */
   const [khaaj, setKhaaj] = useState(false);
   const khaakhTimerRef = useRef<number | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  const totalUnread = unreadSanalCount + unreadMedegdelCount;
 
   const khaaya = useCallback(() => {
     if (khaakhTimerRef.current != null) return;
@@ -81,10 +104,9 @@ export default function NotificationsPanel({
       khaakhTimerRef.current = null;
       setKhaaj(false);
       onClose();
-    }, 180);
+    }, 200);
   }, [onClose]);
 
-  // Дахин нээгдэхэд өмнөх хаалтын төлөв үлдэхээс сэргийлнэ
   useEffect(() => {
     if (!open) return;
     if (khaakhTimerRef.current != null) {
@@ -93,15 +115,6 @@ export default function NotificationsPanel({
     }
     setKhaaj(false);
   }, [open]);
-
-  useEffect(
-    () => () => {
-      if (khaakhTimerRef.current != null)
-        window.clearTimeout(khaakhTimerRef.current);
-    },
-    [],
-  );
-  const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -118,170 +131,220 @@ export default function NotificationsPanel({
 
   return (
     <>
+      {/* Dim Backdrop with blur */}
       <button
         type="button"
         aria-label="Хаах"
         onClick={khaaya}
-        className={`shell-backdrop fixed inset-0 z-[1180] cursor-default bg-black/25 ${
-          khaaj ? "shell-backdrop-out" : ""
+        className={`fixed inset-0 z-[1290] cursor-default bg-black/40 backdrop-blur-[2px] transition-opacity duration-300 ${
+          khaaj ? "opacity-0" : "opacity-100"
         }`}
       />
+
+      {/* Slide-over panel - FULL HEIGHT from top 0 to bottom 0 */}
       <aside
         ref={panelRef}
         role="dialog"
-        aria-label="Мэдэгдэл"
-        className={`shell-slideover fixed bottom-0 right-0 z-[1190] flex w-[min(380px,100vw)] flex-col border-l border-[color:var(--panel-text)]/10 bg-[color:var(--surface-bg)] shadow-[0_24px_64px_-24px_rgba(0,0,0,0.45)] ${
-          khaaj ? "shell-slideover-out" : ""
+        aria-label="Мэдэгдлийн төв"
+        className={`fixed inset-y-0 right-0 top-0 bottom-0 z-[1300] flex w-[min(420px,100vw)] h-full flex-col border-l border-[color:var(--panel-text)]/10 bg-[color:var(--surface-bg)] shadow-[-16px_0_48px_-12px_rgba(0,0,0,0.35)] transition-transform duration-300 ease-out ${
+          khaaj ? "translate-x-full" : "translate-x-0"
         }`}
-        style={{ top: "var(--shell-topbar-h)" }}
       >
-        <header className="flex shrink-0 items-center justify-between border-b border-[color:var(--panel-text)]/10 px-5 py-4">
-          <h2 className="text-base font-semibold tracking-[-0.01em] text-[color:var(--panel-text)]">
-            Мэдэгдэл
-          </h2>
+        {/* Header */}
+        <header className="flex shrink-0 items-center justify-between px-5 py-4 border-b border-[color:var(--panel-text)]/10 bg-[color:var(--surface-bg)]">
+          <div className="flex items-center gap-2.5">
+            <div className="relative flex items-center justify-center w-9 h-9 rounded-2xl bg-gradient-to-tr from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 shadow-sm">
+              <Bell className="w-4.5 h-4.5" strokeWidth={ICON_STROKE} />
+              {totalUnread > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white shadow-sm ring-2 ring-[color:var(--surface-bg)] animate-pulse">
+                  {totalUnread}
+                </span>
+              )}
+            </div>
+            <div>
+              <h2 className="text-base font-bold tracking-tight text-[color:var(--panel-text)]">
+                Мэдэгдэл
+              </h2>
+              <p className="text-[11px] text-[color:var(--muted-text)]">
+                {totalUnread > 0 ? `${totalUnread} уншаагүй мэдэгдэл байна` : ""}
+              </p>
+            </div>
+          </div>
+
           <button
             type="button"
             onClick={khaaya}
             aria-label="Хаах"
-            className="grid h-8 w-8 place-items-center rounded-lg text-[color:var(--panel-text)]/60 transition-colors duration-200 hover:bg-[color:var(--panel-text)]/8 hover:text-[color:var(--panel-text)]"
+            className="grid h-8 w-8 place-items-center rounded-xl text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] hover:text-[color:var(--panel-text)] transition-colors"
           >
-            <X className="h-4 w-4" strokeWidth={ICON_STROKE} />
+            <X className="h-4 w-4" strokeWidth={2} />
           </button>
         </header>
 
-        <div
-          role="tablist"
-          className="flex shrink-0 gap-1 border-b border-[color:var(--panel-text)]/10 px-3 py-2"
-        >
-          {(
-            [
-              {
-                key: "sanal" as const,
-                label: "Санал хүсэлт",
-                icon: MessageSquare,
-                count: unreadSanalCount,
-              },
-              {
-                key: "medegdel" as const,
-                label: "Мэдэгдэл",
-                icon: Bell,
-                count: unreadMedegdelCount,
-              },
-            ]
-          ).map(({ key, label, icon: Icon, count }) => {
-            const active = tab === key;
-            return (
-              <button
-                key={key}
-                role="tab"
-                aria-selected={active}
-                type="button"
-                onClick={() => setTab(key)}
-                className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-colors duration-200 ${
-                  active
-                    ? "bg-[color:var(--panel-text)]/8 text-[color:var(--panel-text)]"
-                    : "text-[color:var(--panel-text)]/55 hover:bg-[color:var(--panel-text)]/5 hover:text-[color:var(--panel-text)]/85"
-                }`}
-              >
-                <Icon className="h-3.5 w-3.5" strokeWidth={ICON_STROKE} />
-                {label}
-                {count > 0 && (
-                  <span className="ml-0.5 rounded bg-[color:var(--theme)]/15 px-1.5 py-px text-[10px] font-bold tabular-nums text-[color:var(--theme)]">
-                    {count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
+        {/* Tab Switcher Pills */}
+        <div className="p-3 border-b border-[color:var(--panel-text)]/10 bg-[color:var(--surface-hover)]/20">
+          <div
+            role="tablist"
+            className="grid grid-cols-2 gap-1.5 p-1 rounded-2xl bg-[color:var(--surface-hover)]/60 border border-[color:var(--panel-text)]/10"
+          >
+            <button
+              role="tab"
+              aria-selected={tab === "sanal"}
+              type="button"
+              onClick={() => setTab("sanal")}
+              className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
+                tab === "sanal"
+                  ? "bg-white dark:bg-slate-800 text-[color:var(--panel-text)] shadow-sm font-bold scale-[1.01]"
+                  : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+              }`}
+            >
+              <MessageSquare className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+              <span>Санал хүсэлт</span>
+              {unreadSanalCount > 0 && (
+                <span className="ml-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.2 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                  {unreadSanalCount}
+                </span>
+              )}
+            </button>
+
+            <button
+              role="tab"
+              aria-selected={tab === "medegdel"}
+              type="button"
+              onClick={() => setTab("medegdel")}
+              className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
+                tab === "medegdel"
+                  ? "bg-white dark:bg-slate-800 text-[color:var(--panel-text)] shadow-sm font-bold scale-[1.01]"
+                  : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+              }`}
+            >
+              <Bell className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+              <span>Мэдэгдэл</span>
+              {unreadMedegdelCount > 0 && (
+                <span className="ml-1 rounded-full bg-blue-500/15 border border-blue-500/30 px-1.5 py-0.2 text-[10px] font-bold text-blue-600 dark:text-blue-400 tabular-nums">
+                  {unreadMedegdelCount}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
 
-        <div className="scrollable min-h-0 flex-1 overflow-y-auto px-2 py-2">
+        {/* Notification Items List */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
           {items.length === 0 ? (
             <EmptyState
+              type={tab}
               label={
                 tab === "sanal"
-                  ? "Уншаагүй санал хүсэлт алга"
-                  : "Уншаагүй мэдэгдэл алга"
+                  ? "Танд ирсэн санал хүсэлт алга"
+                  : "Шинэ мэдэгдэл бүртгэгдээгүй байна"
               }
             />
           ) : (
-            <ul className="space-y-0.5">
+            <ul className="space-y-2">
               {items.map((item) => {
                 const unread =
                   tab === "sanal"
                     ? item.status === "pending" && !item.kharsanEsekh
                     : !item.kharsanEsekh;
                 const sanalItem = isSanalType(item.turul);
+                const gomdolItem = isGomdolType(item.turul);
+
                 const typeLabel =
                   tab === "medegdel"
                     ? "Мэдэгдэл"
-                    : sanalItem
-                      ? "Санал"
-                      : "Гомдол";
-                const stamp = dateFmt(item.createdAt);
+                    : gomdolItem
+                    ? "Гомдол"
+                    : "Санал";
+
+                const stamp = formatRelativeTime(item.createdAt);
 
                 return (
                   <li key={item._id}>
                     <button
                       type="button"
                       onClick={() => {
+                        khaaya();
                         if (tab === "sanal") {
-                          khaaya();
                           router.push(`/medegdel/sanalKhuselt?id=${item._id}`);
                         } else {
-                          khaaya();
                           onOpenMedegdel(item);
                         }
                       }}
-                      className={`group flex w-full items-start gap-3 rounded-xl border-l-2 px-3 py-3 text-left transition-colors duration-200 ${
+                      className={`group relative flex w-full items-start gap-3.5 p-3.5 rounded-2xl border text-left transition-all duration-200 ${
                         unread
-                          ? "border-[color:var(--theme)] bg-[color:var(--theme)]/6 hover:bg-[color:var(--theme)]/12"
-                          : "border-transparent hover:bg-[color:var(--panel-text)]/5"
-                      }`}
+                          ? "border-emerald-500/30 bg-emerald-500/[0.04] hover:bg-emerald-500/[0.08] shadow-sm"
+                          : "border-[color:var(--panel-text)]/8 bg-[color:var(--surface-hover)]/20 hover:bg-[color:var(--surface-hover)]/60 hover:border-[color:var(--panel-text)]/15"
+                      } hover:translate-x-0.5`}
                     >
-                      <span
-                        className={`mt-0.5 shrink-0 ${unread ? "text-[color:var(--theme)]" : "text-[color:var(--panel-text)]/40"}`}
+                      {/* Left Icon Badge */}
+                      <div
+                        className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${
+                          gomdolItem
+                            ? "bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-400"
+                            : sanalItem
+                            ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                            : "bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400"
+                        }`}
                       >
-                        {tab === "sanal" ? (
-                          <MessageSquare
-                            className="h-4 w-4"
-                            strokeWidth={ICON_STROKE}
-                          />
+                        {gomdolItem ? (
+                          <AlertCircle className="h-4.5 w-4.5" strokeWidth={ICON_STROKE} />
+                        ) : tab === "sanal" ? (
+                          <MessageSquare className="h-4.5 w-4.5" strokeWidth={ICON_STROKE} />
                         ) : (
-                          <Bell className="h-4 w-4" strokeWidth={ICON_STROKE} />
+                          <Bell className="h-4.5 w-4.5" strokeWidth={ICON_STROKE} />
                         )}
-                      </span>
+                      </div>
 
-                      <span className="min-w-0 flex-1">
-                        <span className="mb-1 flex flex-wrap items-center gap-1.5">
-                          <span className="rounded bg-[color:var(--panel-text)]/8 px-1.5 py-px text-[10px] font-medium uppercase tracking-wide text-[color:var(--panel-text)]/60">
-                            {typeLabel}
-                          </span>
-                          {unread && (
-                            <span className="rounded bg-[color:var(--theme)]/15 px-1.5 py-px text-[10px] font-semibold text-[color:var(--theme)]">
-                              Шинэ
+                      {/* Content */}
+                      <div className="min-w-0 flex-1 space-y-1">
+                        {/* Meta Tags & Time */}
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                                gomdolItem
+                                  ? "bg-rose-500/15 text-rose-700 dark:text-rose-300"
+                                  : sanalItem
+                                  ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+                                  : "bg-blue-500/15 text-blue-700 dark:text-blue-300"
+                              }`}
+                            >
+                              {typeLabel}
                             </span>
-                          )}
+                            {unread && (
+                              <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                Шинэ
+                              </span>
+                            )}
+                          </div>
+
                           {stamp && (
-                            <span className="text-[10px] tabular-nums text-[color:var(--panel-text)]/40">
+                            <span className="flex items-center gap-1 text-[10px] text-[color:var(--muted-text)] shrink-0">
+                              <Clock className="w-3 h-3 opacity-60" />
                               {stamp}
                             </span>
                           )}
-                        </span>
+                        </div>
 
-                        <span className="block truncate text-[13px] font-semibold text-[color:var(--panel-text)]">
-                          {item.title || "Мэдэгдэл"}
-                        </span>
+                        {/* Title */}
+                        <h4 className="text-[13px] font-semibold text-[color:var(--panel-text)] leading-snug truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                          {item.title || (tab === "sanal" ? "Санал хүсэлт" : "Мэдэгдэл")}
+                        </h4>
+
+                        {/* Message Preview */}
                         {item.message && (
-                          <span className="mt-0.5 block truncate text-xs text-[color:var(--panel-text)]/60">
+                          <p className="text-xs text-[color:var(--muted-text)] leading-relaxed line-clamp-2">
                             {item.message}
-                          </span>
+                          </p>
                         )}
-                      </span>
+                      </div>
 
+                      {/* Chevron Arrow */}
                       <ChevronRight
-                        className="mt-0.5 h-4 w-4 shrink-0 text-[color:var(--panel-text)]/25 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-[color:var(--panel-text)]/50"
-                        strokeWidth={ICON_STROKE}
+                        className="mt-1 h-4 w-4 shrink-0 text-[color:var(--muted-text)] transition-transform duration-200 group-hover:translate-x-1 group-hover:text-emerald-500"
+                        strokeWidth={2}
                       />
                     </button>
                   </li>
@@ -291,7 +354,8 @@ export default function NotificationsPanel({
           )}
         </div>
 
-        <footer className="shrink-0 border-t border-[color:var(--panel-text)]/10 px-3 py-2.5">
+        {/* Footer Link */}
+        <footer className="shrink-0 p-3 border-t border-[color:var(--panel-text)]/10 bg-[color:var(--surface-bg)]/80 backdrop-blur-md">
           <button
             type="button"
             onClick={() => {
@@ -302,10 +366,10 @@ export default function NotificationsPanel({
                   : "/medegdel/medegdel?tab=tulult",
               );
             }}
-            className="flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-medium text-[color:var(--theme)] transition-colors duration-200 hover:bg-[color:var(--theme)]/8"
+            className="flex w-full items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm transition-all hover:scale-[1.01]"
           >
-            Бүгдийг харах
-            <ChevronRight className="h-4 w-4" strokeWidth={ICON_STROKE} />
+            <span>{tab === "sanal" ? "Бүх санал хүсэлт рүү шилжих" : "Бүх мэдэгдэл рүү шилжих"}</span>
+            <ChevronRight className="h-3.5 w-3.5" strokeWidth={2.5} />
           </button>
         </footer>
       </aside>

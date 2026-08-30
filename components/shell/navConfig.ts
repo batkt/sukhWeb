@@ -1,11 +1,29 @@
 import {
   Banknote,
+  Bell,
+  Building2,
+  Car,
   Cctv,
   ChartNoAxesCombined,
+  Clock,
+  Contact,
+  FileSpreadsheet,
+  FileText,
   Gauge,
+  History,
+  Landmark,
+  LineChart,
+  ListOrdered,
   Megaphone,
+  MessageSquare,
+  Receipt,
   ScrollText,
   SquareParking,
+  Ticket,
+  TrendingUp,
+  UserCheck,
+  Users,
+  Vote,
   type LucideIcon,
 } from "lucide-react";
 import { hasPermission } from "@/lib/permissionUtils";
@@ -13,6 +31,7 @@ import { hasPermission } from "@/lib/permissionUtils";
 export interface SubNavItem {
   label: string;
   path: string;
+  icon?: LucideIcon;
 }
 
 export interface NavItem {
@@ -35,20 +54,35 @@ export const NAV_ITEMS: NavItem[] = [
     label: "Бүртгэл",
     path: "geree",
     icon: ScrollText,
-    href: "/geree/orshinSuugch",
+    submenu: [
+      { label: "Оршин суугч", path: "orshinSuugch", icon: Users },
+      { label: "Гэрээ", path: "geree", icon: FileText },
+      { label: "Өмч бүртгэл", path: "tootBurtgel", icon: Building2 },
+      { label: "Ажилтан", path: "ajiltan", icon: UserCheck },
+      { label: "Харилцагч", path: "khariltsagch", icon: Contact },
+    ],
   },
-  { label: "Төлбөр", path: "tulbur", icon: Banknote },
+  {
+    label: "Төлбөр",
+    path: "tulbur",
+    icon: Banknote,
+    submenu: [
+      { label: "Гүйлгээний түүх", path: "guilgeeTuukh", icon: History },
+      { label: "Дансны хуулга", path: "dansKhuulga", icon: Landmark },
+      { label: "И-баримт", path: "ebarimt", icon: Receipt },
+    ],
+  },
   { label: "Камер", path: "camera", icon: Cctv },
   {
     label: "Тайлан",
     path: "tailan",
     icon: ChartNoAxesCombined,
     submenu: [
-      { label: "BI Тайлан", path: "bi" },
-      { label: "Авлагын товчоо", path: "orlogo-avlaga" },
-      { label: "Нэгтгэл тайлан", path: "negtgel" },
-      { label: "Авлагийн насжилт", path: "avlagiin-nasjilt" },
-      { label: "Зогсоол", path: "zogsool" },
+      { label: "BI Тайлан", path: "bi", icon: LineChart },
+      { label: "Авлагын товчоо", path: "orlogo-avlaga", icon: TrendingUp },
+      { label: "Нэгтгэл тайлан", path: "negtgel", icon: FileSpreadsheet },
+      { label: "Авлагийн насжилт", path: "avlagiin-nasjilt", icon: Clock },
+      { label: "Зогсоол", path: "zogsool", icon: SquareParking },
     ],
   },
   {
@@ -56,9 +90,9 @@ export const NAV_ITEMS: NavItem[] = [
     path: "medegdel",
     icon: Megaphone,
     submenu: [
-      { label: "Мэдэгдэл", path: "medegdel" },
-      { label: "Санал хүсэлт", path: "sanalKhuselt" },
-      { label: "Санал асуулга", path: "sanalAsuulga" },
+      { label: "Мэдэгдэл", path: "medegdel", icon: Bell },
+      { label: "Санал хүсэлт", path: "sanalKhuselt", icon: MessageSquare },
+      { label: "Санал асуулга", path: "sanalAsuulga", icon: Vote },
     ],
   },
   {
@@ -66,10 +100,10 @@ export const NAV_ITEMS: NavItem[] = [
     path: "zogsool",
     icon: SquareParking,
     submenu: [
-      { label: "Жагсаалт", path: "jagsaalt" },
-      { label: "Камер касс", path: "camera" },
-      { label: "Машин бүртгэл", path: "orshinSuugch" },
-      { label: "Урьсан түүх", path: "urisan" },
+      { label: "Жагсаалт", path: "jagsaalt", icon: ListOrdered },
+      { label: "Камер касс", path: "camera", icon: Cctv },
+      { label: "Машин бүртгэл", path: "orshinSuugch", icon: Car },
+      { label: "Урьсан түүх", path: "urisan", icon: Ticket },
     ],
   },
 ];

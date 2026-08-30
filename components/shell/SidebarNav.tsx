@@ -26,20 +26,25 @@ interface FlyoutState {
 export default function SidebarNav({ items, onNavigate }: Props) {
   const pathname = usePathname();
   const { railMode } = useSidebar();
-  const [openKey, setOpenKey] = useState<string | null>(null);
+  const [openKeys, setOpenKeys] = useState<Set<string>>(() => new Set());
   const [flyout, setFlyout] = useState<FlyoutState | null>(null);
   const closeTimer = useRef<number | null>(null);
-
 
   const activeKey = useMemo(
     () => items.find((i) => pathname.startsWith(`/${i.path}`))?.path ?? null,
     [items, pathname],
   );
 
-  // Keep the section containing the current route open, but never fight a
-  // section the user opened themselves.
+  // Keep the section containing the current route open
   useEffect(() => {
-    if (activeKey) setOpenKey(activeKey);
+    if (activeKey) {
+      setOpenKeys((prev) => {
+        if (prev.has(activeKey)) return prev;
+        const next = new Set(prev);
+        next.add(activeKey);
+        return next;
+      });
+    }
   }, [activeKey]);
 
   useEffect(() => {
@@ -66,6 +71,18 @@ export default function SidebarNav({ items, onNavigate }: Props) {
     setFlyout({ key, top: rect.top });
   };
 
+  const toggleOpen = (key: string) => {
+    setOpenKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
+
   return (
     <nav aria-label="Үндсэн цэс" className="shell-nav">
       <ul className="space-y-0.5">
@@ -74,7 +91,7 @@ export default function SidebarNav({ items, onNavigate }: Props) {
           const href = hrefFor(item);
           const isActive = pathname.startsWith(`/${item.path}`);
           const hasSub = !!item.submenu?.length;
-          const isOpen = openKey === item.path;
+          const isOpen = openKeys.has(item.path);
           const showFlyout = railMode && hasSub && flyout?.key === item.path;
 
           return (
@@ -105,7 +122,7 @@ export default function SidebarNav({ items, onNavigate }: Props) {
                       openFlyout(item.path, e.currentTarget);
                       return;
                     }
-                    setOpenKey(isOpen ? null : item.path);
+                    toggleOpen(item.path);
                   }}
                   className="shell-nav-item"
                 >
@@ -146,6 +163,7 @@ export default function SidebarNav({ items, onNavigate }: Props) {
               {hasSub && !railMode && isOpen && (
                 <ul className="shell-sublist">
                   {item.submenu!.map((sub) => {
+                    const SubIcon = sub.icon;
                     const subHref = subHrefFor(item, sub);
                     const subActive = pathname.startsWith(subHref);
                     return (
@@ -157,7 +175,14 @@ export default function SidebarNav({ items, onNavigate }: Props) {
                           onClick={onNavigate}
                           className="shell-subitem"
                         >
-                          {sub.label}
+                          {SubIcon && (
+                            <SubIcon
+                              className="shell-sub-icon"
+                              strokeWidth={ICON_STROKE}
+                              aria-hidden
+                            />
+                          )}
+                          <span className="truncate">{sub.label}</span>
                         </Link>
                       </li>
                     );
@@ -176,6 +201,7 @@ export default function SidebarNav({ items, onNavigate }: Props) {
                   <p className="shell-flyout-title">{item.label}</p>
                   <ul>
                     {item.submenu!.map((sub) => {
+                      const SubIcon = sub.icon;
                       const subHref = subHrefFor(item, sub);
                       const subActive = pathname.startsWith(subHref);
                       return (
@@ -190,7 +216,14 @@ export default function SidebarNav({ items, onNavigate }: Props) {
                             }}
                             className="shell-subitem"
                           >
-                            {sub.label}
+                            {SubIcon && (
+                              <SubIcon
+                                className="shell-sub-icon"
+                                strokeWidth={ICON_STROKE}
+                                aria-hidden
+                              />
+                            )}
+                            <span className="truncate">{sub.label}</span>
                           </Link>
                         </li>
                       );

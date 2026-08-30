@@ -20,7 +20,6 @@ import useBaiguullaga from "@/lib/useBaiguullaga";
 import formatNumber from "../../../../../tools/function/formatNumber";
 import { Download } from "lucide-react";
 import IconTextButton from "@/components/ui/IconTextButton";
-import TulburLayout from "../TulburLayout";
 import { StandardPagination } from "@/components/ui/StandardTable";
 import { useSearch } from "@/context/SearchContext";
 
@@ -567,8 +566,7 @@ export default function Ebarimt() {
   }, [displayedData]);
 
   return (
-    <TulburLayout activeTab="ebarimt">
-      <div className="flex flex-col pb-14">
+    <div className="flex flex-col pb-14">
         <div className="space-y-6">
           {/* Stats Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -674,6 +672,5 @@ export default function Ebarimt() {
           </div>
         </div>
       </div>
-    </TulburLayout>
   );
 }

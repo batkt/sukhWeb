@@ -73,14 +73,6 @@ export function useTourSteps(activeTab: string): DriverStep[] {
     } else if (activeTab === "residents") {
       return [
         {
-          element: "#tab-residents",
-          popover: {
-            title: "Оршин суугчдын хэсэг",
-            description: "Эндээс оршин суугчид болон тэдний тээврийн хэрэгслийн мэдээллийг нэгдсэн байдлаар харах болон удирдана.",
-            side: "bottom",
-          },
-        },
-        {
           element: "#resident-new-btn-top, #resident-new-btn",
           popover: {
             title: "Оршин суугч бүртгэх",

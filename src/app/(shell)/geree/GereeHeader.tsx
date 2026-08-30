@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useGereeContext } from "./GereeContext";
 import { motion } from "framer-motion";
 import {
@@ -182,6 +182,23 @@ export default function GereeHeader({
     }
   }, [isMobileExcelOpen]);
 
+  const tabTitle = useMemo(() => {
+    switch (activeTab) {
+      case "residents":
+        return "Оршин суугч";
+      case "contracts":
+        return "Гэрээ";
+      case "units":
+        return "Өмч бүртгэл";
+      case "employees":
+        return "Ажилтан";
+      case "clients":
+        return "Харилцагч";
+      default:
+        return "Бүртгэл";
+    }
+  }, [activeTab]);
+
   return (
     <div className="w-full">
       <div className="flex items-start justify-between p-4 gap-4 mb-4 w-full">
@@ -189,12 +206,13 @@ export default function GereeHeader({
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <motion.h1
+                key={activeTab}
                 initial={{ opacity: 0, y: -16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, ease: "easeOut" }}
                 className="text-3xl  text-theme"
               >
-                Гэрээ
+                {tabTitle}
               </motion.h1>
               <div
                 style={{ width: 64, height: 64 }}
@@ -427,79 +445,9 @@ export default function GereeHeader({
             Гэрээ, Оршин суугч, Ажилтны жагсаалтуудыг удирдах
           </p>
 
-          {/* Tabs & Filters - Desktop Row */}
-          <div className="mt-3 w-full flex flex-col md:flex-row md:items-center gap-4 md:gap-12">
-            <div className="grid grid-cols-2 md:flex md:flex-row gap-2 md:gap-4 tabbar flex-shrink-0">
-              {showResidents && (
-                <Link
-                  id="tab-residents"
-                  href="/geree/orshinSuugch"
-                  className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 hover:translate-y-0 ${
-                    activeTab === "residents"
-                      ? "bg-theme/15 text-theme font-medium shadow-sm ring-1 ring-theme/30"
-                      : "text-theme hover:bg-theme/10 hover:text-theme"
-                  }`}
-                >
-                  Оршин суугч
-                </Link>
-              )}
-              {showContracts && (
-                <Link
-                  id="tab-contracts"
-                  href="/geree"
-                  className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 hover:translate-y-0 ${
-                    activeTab === "contracts"
-                      ? "bg-theme/15 text-theme font-medium shadow-sm ring-1 ring-theme/30"
-                      : "text-theme hover:bg-theme/10 hover:text-theme"
-                  }`}
-                >
-                  Гэрээ
-                </Link>
-              )}
-              {showUnits && (
-                <Link
-                  id="tab-units"
-                  href="/geree/tootBurtgel"
-                  className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 hover:translate-y-0 ${
-                    activeTab === "units"
-                      ? "bg-theme/15 text-theme font-medium shadow-sm ring-1 ring-theme/30"
-                      : "text-theme hover:bg-theme/10 hover:text-theme"
-                  }`}
-                >
-                  Өмч бүртгэл
-                </Link>
-              )}
-              {showEmployees && (
-                <Link
-                  id="tab-employees"
-                  href="/geree/ajiltan"
-                  className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 hover:translate-y-0 ${
-                    activeTab === "employees"
-                      ? "bg-theme/15 text-theme font-medium shadow-sm ring-1 ring-theme/30"
-                      : "text-theme hover:bg-theme/10 hover:text-theme"
-                  }`}
-                >
-                  Ажилтан
-                </Link>
-              )}
-              {showClients && (
-                <Link
-                  id="tab-clients"
-                  href="/geree/khariltsagch"
-                  className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 hover:translate-y-0 ${
-                    activeTab === "clients"
-                      ? "bg-theme/15 text-theme font-medium shadow-sm ring-1 ring-theme/30"
-                      : "text-theme hover:bg-theme/10 hover:text-theme"
-                  }`}
-                >
-                  Харилцагч
-                </Link>
-              )}
-            </div>
-
-            {/* Filters - Moved next to tabs on desktop */}
-            {(activeTab === "contracts" || activeTab === "units") && (
-              <div className="hidden md:flex items-center gap-8 flex-wrap md:ml-auto py-1">
+          {/* Filters - Desktop Row */}
+          {(activeTab === "contracts" || activeTab === "units") && (
+            <div className="mt-2 w-full hidden md:flex items-center gap-8 flex-wrap py-1">
                 {activeTab === "contracts" && (
                   <>
                     {ortsOptions.length > 0 && (
@@ -764,7 +712,6 @@ export default function GereeHeader({
             )}
           </div>
         )}
-      </div>
 
       {/* Mobile / small screens: keep actions below as before */}
       <div className="flex gap-2 flex-wrap px-4 md:hidden">

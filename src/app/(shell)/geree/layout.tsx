@@ -26,7 +26,7 @@ function GereeLayoutWrapper({ children }: { children: React.ReactNode }) {
     if (pathname.includes("/khariltsagch")) return "clients";
     if (pathname.includes("/ajiltan")) return "employees";
     if (pathname.includes("/tootBurtgel")) return "units";
-    if (pathname === "/geree" || pathname === "/geree/") return "contracts";
+    if (pathname.includes("/geree")) return "contracts";
     return "contracts";
   }, [pathname]);
 

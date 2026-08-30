@@ -26,6 +26,11 @@ export const ALL_PERMISSIONS: PermissionItem[] = [
         description: "Оршин суугч харах эрх",
       },
       {
+        id: "geree.geree",
+        label: "Гэрээ",
+        description: "Гэрээ харах эрх",
+      },
+      {
         id: "geree.khariltsagch",
         label: "Харилцагч",
         description: "Харилцагч харах эрх",
@@ -76,6 +81,11 @@ export const ALL_PERMISSIONS: PermissionItem[] = [
         id: "tulbur.guilgeeTuukh",
         label: "Гүйлгээний түүх",
         description: "Гүйлгээний түүх харах",
+      },
+      {
+        id: "tulbur.dansKhuulga",
+        label: "Дансны хуулга",
+        description: "Дансны хуулга харах",
       },
       {
         id: "tulbur.guilgeeHiikh",

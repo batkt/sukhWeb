@@ -21,7 +21,6 @@ import formatNumber from "../../../../../tools/function/formatNumber";
 import { useBuilding } from "@/context/BuildingContext";
 import matchesSearch from "@/tools/function/matchesSearch";
 import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
-import TulburLayout from "../TulburLayout";
 import { DansKhuulgaTable } from "./DansKhuulgaTable";
 import { StandardPagination } from "@/components/ui/StandardTable";
 
@@ -539,7 +538,7 @@ export default function DansniiKhuulga() {
   );
 
   return (
-    <TulburLayout activeTab="dansKhuulga">
+    <>
       <div className="flex flex-col pb-14">
         <div className="flex items-center gap-3 mb-4">
           {/* <motion.h1
@@ -827,6 +826,6 @@ export default function DansniiKhuulga() {
           </div>
         )}
       </Modal>
-    </TulburLayout>
+    </>
   );
 }

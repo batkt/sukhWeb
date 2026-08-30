@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/lib/useAuth";
 import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
 import useGereeJagsaalt from "@/lib/useGeree";
@@ -29,6 +29,16 @@ import {
   Users,
   UserCheck,
   Search,
+  BarChart3,
+  Check,
+  ChevronDown,
+  Filter,
+  Layers,
+  CheckSquare,
+  Square,
+  X,
+  ArrowUpDown,
+  SlidersHorizontal,
 } from "lucide-react";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { useBuilding } from "@/context/BuildingContext";
@@ -79,10 +89,52 @@ type Dataset = {
 
 export default function Khynalt() {
   const { token, ajiltan, barilgiinId, baiguullaga } = useAuth();
-  const { selectedBuildingId, isInitialized } = useBuilding();
-  const effectiveBarilgiinId = selectedBuildingId || barilgiinId || undefined;
+  const { selectedBuildingId, setSelectedBuildingId, isInitialized } = useBuilding();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+
+  // Organization buildings
+  const allBuildings = useMemo(() => {
+    const list = baiguullaga?.barilguud || [];
+    return (list as any[]).filter((b) => b && b._id && b.ner);
+  }, [baiguullaga]);
+
+  // Comparison & Filter Mode: "single" | "all" | "compare"
+  const [buildingFilterMode, setBuildingFilterMode] = useState<"single" | "all" | "compare">("single");
+  const [compareBuildingIds, setCompareBuildingIds] = useState<string[]>([]);
+  const [buildingDropdownOpen, setBuildingDropdownOpen] = useState(false);
+  const [buildingSearch, setBuildingSearch] = useState("");
+  const buildingDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Effective building ID for single-building queries
+  const effectiveBarilgiinId =
+    buildingFilterMode === "all" || buildingFilterMode === "compare"
+      ? undefined
+      : selectedBuildingId || barilgiinId || undefined;
+
+  // Initialize comparison building list with all buildings
+  useEffect(() => {
+    if (allBuildings.length > 0 && compareBuildingIds.length === 0) {
+      setCompareBuildingIds(allBuildings.map((b) => String(b._id)));
+    }
+  }, [allBuildings, compareBuildingIds.length]);
+
+  // Close building dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        buildingDropdownRef.current &&
+        !buildingDropdownRef.current.contains(e.target as Node)
+      ) {
+        setBuildingDropdownOpen(false);
+      }
+    };
+    if (buildingDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [buildingDropdownOpen]);
+
   const [dateRange, setDateRange] = useState<
     [string | null, string | null] | undefined
   >(() => {
@@ -357,6 +409,128 @@ export default function Khynalt() {
   const monthlyPaidFromLedger = Number(tulburDugnelt?.monthly?.paidSum ?? 0);
   const monthlyBilledFromLedger = Number(tulburDugnelt?.monthly?.billedSum ?? 0);
 
+  // Building-by-building comparison dataset for comparison mode / multi-building view
+  const { data: buildingComparisonData, isValidating: isComparingLoading } = useSWR(
+    token &&
+      ajiltan?.baiguullagiinId &&
+      allBuildings.length > 0 &&
+      rangeStart &&
+      rangeEnd
+      ? [
+          "/tailan/building-comparison-data",
+          token,
+          ajiltan.baiguullagiinId,
+          rangeStart,
+          rangeEnd,
+          buildingFilterMode === "compare"
+            ? compareBuildingIds.join(",")
+            : allBuildings.map((b) => String(b._id)).join(","),
+        ]
+      : null,
+    async () => {
+      const targetBIds =
+        buildingFilterMode === "compare" && compareBuildingIds.length > 0
+          ? compareBuildingIds
+          : allBuildings.map((b) => String(b._id));
+
+      const results = await Promise.all(
+        targetBIds.map(async (bId) => {
+          const bObj = allBuildings.find((b) => String(b._id) === String(bId));
+          try {
+            const [dugneltResp, overdueResp] = await Promise.all([
+              uilchilgee(token || undefined).post("/tailan/tulbur-dugnelt", {
+                baiguullagiinId: ajiltan?.baiguullagiinId,
+                barilgiinId: bId,
+                ekhlekhOgnoo: rangeStart,
+                duusakhOgnoo: rangeEnd,
+              }),
+              uilchilgee(token || undefined).get("/tailan/udsan-avlaga", {
+                params: {
+                  baiguullagiinId: ajiltan?.baiguullagiinId,
+                  barilgiinId: bId,
+                },
+              }),
+            ]);
+
+            const dData = dugneltResp.data;
+            const oData = overdueResp.data;
+            const monthlyBilled = Number(dData?.monthly?.billedSum ?? 0);
+            const monthlyPaid = Number(dData?.monthly?.paidSum ?? 0);
+            const allTimePaid = Number(dData?.allTime?.paidSum ?? 0);
+            const overdueTotal = Number(oData?.total ?? 0);
+            const monthlyUnpaid = Math.max(0, monthlyBilled - monthlyPaid);
+            const rate =
+              monthlyBilled > 0
+                ? Math.min(100, Math.round((monthlyPaid / monthlyBilled) * 100))
+                : monthlyPaid > 0
+                ? 100
+                : 0;
+
+            return {
+              id: bId,
+              name: bObj?.ner || `Барилга ${String(bId).slice(-4)}`,
+              tootToo: bObj?.tootToo || 0,
+              monthlyBilled,
+              monthlyPaid,
+              monthlyUnpaid,
+              allTimePaid,
+              overdueTotal,
+              rate,
+            };
+          } catch (e) {
+            return {
+              id: bId,
+              name: bObj?.ner || `Барилга ${String(bId).slice(-4)}`,
+              tootToo: bObj?.tootToo || 0,
+              monthlyBilled: 0,
+              monthlyPaid: 0,
+              monthlyUnpaid: 0,
+              allTimePaid: 0,
+              overdueTotal: 0,
+              rate: 0,
+            };
+          }
+        }),
+      );
+
+      return results;
+    },
+    { revalidateOnFocus: false },
+  );
+
+  const buildingComparisonChartData = useMemo(() => {
+    if (!buildingComparisonData || buildingComparisonData.length === 0) return null;
+
+    return {
+      labels: buildingComparisonData.map((b) => b.name),
+      datasets: [
+        {
+          label: "Нийт нэхэмжилсэн",
+          data: buildingComparisonData.map((b) => b.monthlyBilled),
+          backgroundColor: "rgba(59, 130, 246, 0.65)",
+          borderColor: "rgb(59, 130, 246)",
+          borderWidth: 1,
+          borderRadius: 6,
+        },
+        {
+          label: "Цуглуулсан орлого",
+          data: buildingComparisonData.map((b) => b.monthlyPaid),
+          backgroundColor: "rgba(34, 197, 94, 0.65)",
+          borderColor: "rgb(34, 197, 94)",
+          borderWidth: 1,
+          borderRadius: 6,
+        },
+        {
+          label: "Үлдэгдэл авлага",
+          data: buildingComparisonData.map((b) => b.monthlyUnpaid),
+          backgroundColor: "rgba(239, 68, 68, 0.65)",
+          borderColor: "rgb(239, 68, 68)",
+          borderWidth: 1,
+          borderRadius: 6,
+        },
+      ],
+    };
+  }, [buildingComparisonData]);
 
   const { data: overdueData } = useSWR(
     token && ajiltan?.baiguullagiinId
@@ -1296,28 +1470,16 @@ export default function Khynalt() {
   return (
     <div className="h-full flex flex-col overflow-y-auto custom-scrollbar">
       <div className="flex flex-col flex-1 min-h-full pl-4 pt-4 pb-8 pr-0">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6 transition-all duration-700 pr-4 flex-shrink-0">
-          <div
-            className={`transition-all duration-700 ${
-              mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-            }`}
-          >
+        <div className="flex flex-row items-center justify-between gap-4 mb-6 pr-4 flex-shrink-0 relative z-30">
+          <div className="flex flex-row items-center gap-3 shrink-0">
+            {/* Огноо сонгох */}
             <div
               id="khynalt-date"
-              className="btn-minimal h-[40px] w-[320px] flex items-center px-3"
+              className="btn-minimal h-[40px] w-[280px] sm:w-[300px] shrink-0 flex items-center px-3"
             >
               <StandardDatePicker
                 isRange={true}
                 value={dateRange}
-                // AntD-ийн RangePicker onChange(dates, dateStrings) гэж
-                // дууддаг: 1-р аргумент нь Dayjs объектын массив, 2-рх нь
-                // `format`-оор бэлдсэн мөрүүд. Өмнө нь 1-рхийг хадгалдаг
-                // байсан тул `dateRange` доторх утга Dayjs болж, доорх
-                // `paymentHistory`-гийн "YYYY-MM-DD" мөр харьцуулалт NaN болж
-                // бүх мэдэгдлийг шүүж хаядаг байв.
-                // Цэвэрлэхэд AntD `["", ""]` буцаадаг; түүнийг шууд хадгалбал
-                // доорх useMemo-гийн "хоосон бол анхны мужаар" гэсэн салаа
-                // ажиллахгүй тул `undefined` болгож жиглэв.
                 onChange={(_dates: any, dateStrings: any) => {
                   const [s, e] = (dateStrings ?? []) as [string?, string?];
                   setDateRange(s || e ? [s || null, e || null] : undefined);
@@ -1332,9 +1494,226 @@ export default function Khynalt() {
                 }}
               />
             </div>
+
+            {/* Барилгаар харьцуулах / сонгох Input */}
+            {allBuildings.length > 0 && (
+              <div className="relative shrink-0" ref={buildingDropdownRef}>
+                <button
+                  type="button"
+                  id="khynalt-building-compare"
+                  onClick={() => setBuildingDropdownOpen((v) => !v)}
+                  className={`btn-minimal h-[40px] px-3.5 flex items-center gap-2 text-xs font-medium rounded-2xl transition-all border shrink-0 ${
+                    buildingFilterMode === "compare"
+                      ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-sm"
+                      : "border-[color:var(--panel-text)]/15 text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]/60"
+                  }`}
+                  title="Барилгаар шүүх болон харьцуулах"
+                >
+                  <Building2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span className="max-w-[180px] sm:max-w-[220px] truncate">
+                    {buildingFilterMode === "compare"
+                      ? `Харьцуулалт (${compareBuildingIds.length} барилга)`
+                      : buildingFilterMode === "all"
+                      ? "Бүх барилга (Нэгтгэл)"
+                      : allBuildings.find((b) => String(b._id) === String(selectedBuildingId))?.ner || "Барилга сонгох"}
+                  </span>
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 opacity-60 transition-transform duration-200 ${
+                      buildingDropdownOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+
+                {/* Барилгын харьцуулах Dropdown Popover */}
+                {buildingDropdownOpen && (
+                  <div className="absolute left-0 top-full mt-2 w-[320px] sm:w-[360px] p-3.5 rounded-2xl shadow-2xl z-[9999] border border-[color:var(--panel-text)]/20 backdrop-blur-2xl bg-[color:var(--surface-bg)]/98 animate-in fade-in zoom-in-95 duration-150">
+                    <div className="flex items-center justify-between pb-2 mb-2 border-b border-[color:var(--panel-text)]/10">
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-[color:var(--panel-text)]">
+                        <SlidersHorizontal className="w-3.5 h-3.5 text-emerald-500" />
+                        <span>Барилгын шүүлт & Харьцуулалт</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setBuildingDropdownOpen(false)}
+                        className="p-1 rounded-lg hover:bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    {/* Горим сонгогч Tabs */}
+                    <div className="grid grid-cols-3 gap-1 p-1 mb-3 rounded-xl bg-[color:var(--surface-hover)]/40 border border-[color:var(--panel-text)]/10 text-[11px] font-medium">
+                      <button
+                        type="button"
+                        onClick={() => setBuildingFilterMode("single")}
+                        className={`py-1 px-1.5 rounded-lg transition-all text-center truncate ${
+                          buildingFilterMode === "single"
+                            ? "bg-white dark:bg-slate-800 text-[color:var(--panel-text)] font-semibold shadow-sm"
+                            : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+                        }`}
+                      >
+                        Нэг барилга
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setBuildingFilterMode("compare");
+                          if (compareBuildingIds.length === 0) {
+                            setCompareBuildingIds(allBuildings.map((b) => String(b._id)));
+                          }
+                        }}
+                        className={`py-1 px-1.5 rounded-lg transition-all text-center truncate flex items-center justify-center gap-1 ${
+                          buildingFilterMode === "compare"
+                            ? "bg-emerald-500 text-white font-semibold shadow-sm"
+                            : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+                        }`}
+                      >
+                        <BarChart3 className="w-3 h-3" />
+                        Харьцуулах
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBuildingFilterMode("all")}
+                        className={`py-1 px-1.5 rounded-lg transition-all text-center truncate ${
+                          buildingFilterMode === "all"
+                            ? "bg-white dark:bg-slate-800 text-[color:var(--panel-text)] font-semibold shadow-sm"
+                            : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+                        }`}
+                      >
+                        Бүгд
+                      </button>
+                    </div>
+
+                    {/* Барилгын хайлт */}
+                    <div className="relative mb-2">
+                      <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[color:var(--muted-text)]" />
+                      <input
+                        type="text"
+                        value={buildingSearch}
+                        onChange={(e) => setBuildingSearch(e.target.value)}
+                        placeholder="Барилга хайх..."
+                        className="w-full h-8 pl-8 pr-2 text-xs rounded-xl bg-[color:var(--surface-hover)]/30 border border-[color:var(--panel-text)]/10 text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] focus:outline-none focus:border-emerald-500/50"
+                      />
+                    </div>
+
+                    {/* Харьцуулах горимд бүгдийг сонгох товчнууд */}
+                    {buildingFilterMode === "compare" && (
+                      <div className="flex items-center justify-between px-1 py-1 mb-1.5 text-[11px] text-[color:var(--muted-text)]">
+                        <span>{compareBuildingIds.length} / {allBuildings.length} сонгосон</span>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setCompareBuildingIds(allBuildings.map((b) => String(b._id)))}
+                            className="text-emerald-500 hover:underline font-medium"
+                          >
+                            Бүгдийг
+                          </button>
+                          <span>·</span>
+                          <button
+                            type="button"
+                            onClick={() => setCompareBuildingIds([])}
+                            className="text-red-400 hover:underline"
+                          >
+                            Цэвэрлэх
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Барилгуудын жагсаалт */}
+                    <div className="overflow-y-auto max-h-[220px] space-y-1 pr-1 custom-scrollbar">
+                      {allBuildings
+                        .filter((b) =>
+                          !buildingSearch ||
+                          b.ner?.toLowerCase().includes(buildingSearch.toLowerCase())
+                        )
+                        .map((b) => {
+                          const bId = String(b._id);
+                          const isSingleSelected =
+                            buildingFilterMode === "single" && String(selectedBuildingId) === bId;
+                          const isCompareSelected =
+                            compareBuildingIds.includes(bId);
+
+                          if (buildingFilterMode === "compare") {
+                            return (
+                              <button
+                                key={bId}
+                                type="button"
+                                onClick={() => {
+                                  setCompareBuildingIds((prev) =>
+                                    prev.includes(bId)
+                                      ? prev.filter((id) => id !== bId)
+                                      : [...prev, bId]
+                                  );
+                                }}
+                                className={`w-full flex items-center justify-between p-2 rounded-xl text-xs transition-colors text-left ${
+                                  isCompareSelected
+                                    ? "bg-emerald-500/10 border border-emerald-500/30 text-[color:var(--panel-text)] font-medium"
+                                    : "hover:bg-[color:var(--surface-hover)]/60 text-[color:var(--panel-text)] opacity-80"
+                                }`}
+                              >
+                                <div className="flex items-center gap-2 min-w-0">
+                                  {isCompareSelected ? (
+                                    <CheckSquare className="w-4 h-4 text-emerald-500 shrink-0" />
+                                  ) : (
+                                    <Square className="w-4 h-4 text-[color:var(--muted-text)] shrink-0" />
+                                  )}
+                                  <span className="truncate">{b.ner}</span>
+                                </div>
+                                {b.tootToo != null && (
+                                  <span className="text-[10px] text-[color:var(--muted-text)] shrink-0 ml-2">
+                                    {b.tootToo} тоот
+                                  </span>
+                                )}
+                              </button>
+                            );
+                          }
+
+                          return (
+                            <button
+                              key={bId}
+                              type="button"
+                              onClick={() => {
+                                setSelectedBuildingId(bId);
+                                setBuildingFilterMode("single");
+                                setBuildingDropdownOpen(false);
+                              }}
+                              className={`w-full flex items-center justify-between p-2 rounded-xl text-xs transition-colors text-left ${
+                                isSingleSelected
+                                  ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-semibold"
+                                  : "hover:bg-[color:var(--surface-hover)]/60 text-[color:var(--panel-text)]"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <Building2 className="w-3.5 h-3.5 opacity-60 shrink-0" />
+                                <span className="truncate">{b.ner}</span>
+                              </div>
+                              {isSingleSelected && (
+                                <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                              )}
+                            </button>
+                          );
+                        })}
+                    </div>
+
+                    {buildingFilterMode === "compare" && (
+                      <div className="pt-2 mt-2 border-t border-[color:var(--panel-text)]/10">
+                        <button
+                          type="button"
+                          onClick={() => setBuildingDropdownOpen(false)}
+                          className="w-full py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-medium text-xs shadow-sm transition-colors text-center"
+                        >
+                          Харьцуулалт харах ({compareBuildingIds.length})
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
-          <h1 className="text-2xl  text-[color:var(--panel-text)] leading-tight">
+          <h1 className="text-2xl font-bold text-[color:var(--panel-text)] leading-tight">
             Сайн байна уу{ajiltan?.ner ? `, ${ajiltan.ner}` : ""}
           </h1>
         </div>
@@ -1424,6 +1803,139 @@ export default function Khynalt() {
             );
           })}
         </div>
+
+        {/* 🏢 Барилгуудын харьцуулалт & Гүйцэтгэлийн секц */}
+        {buildingFilterMode === "compare" && buildingComparisonData && buildingComparisonData.length > 0 && (
+          <div
+            id="khynalt-building-comparison-section"
+            className="neu-panel allow-overflow rounded-3xl p-5 mb-6 pr-4 mr-4 transition-all duration-500 flex flex-col space-y-4"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[color:var(--panel-text)]/10">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-2xl bg-emerald-500/10 flex items-center justify-center shrink-0">
+                  <BarChart3 className="w-5 h-5 text-emerald-500" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-[color:var(--panel-text)] leading-snug">
+                    Барилгуудын гүйцэтгэлийн харьцуулалт
+                  </h3>
+                  <p className="text-xs text-[color:var(--muted-text)]">
+                    {buildingComparisonData.length} барилгын нэхэмжилсэн, цуглуулсан болон авлагын харьцуулсан үзүүлэлт ({rangeStart} — {rangeEnd})
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 text-xs text-[color:var(--muted-text)] flex-wrap">
+                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-md bg-blue-500/70 inline-block" /> Нэхэмжилсэн</span>
+                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-md bg-emerald-500/70 inline-block" /> Цуглуулсан</span>
+                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-md bg-red-500/70 inline-block" /> Үлдэгдэл</span>
+              </div>
+            </div>
+
+            {/* Харьцуулсан Баганан График */}
+            {buildingComparisonChartData && (
+              <div className="h-[280px] w-full relative">
+                <Bar
+                  data={buildingComparisonChartData as any}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: "index", intersect: false },
+                    plugins: {
+                      legend: { display: false },
+                      tooltip: {
+                        backgroundColor: "rgba(15, 23, 42, 0.9)",
+                        titleColor: "#fff",
+                        bodyColor: "#e2e8f0",
+                        padding: 12,
+                        cornerRadius: 8,
+                        callbacks: {
+                          label: (ctx) => `${ctx.dataset.label}: ${Number(ctx.raw || 0).toLocaleString()} ₮`,
+                        },
+                      },
+                    },
+                    scales: {
+                      x: { ticks: { color: chartColors.text }, grid: { display: false } },
+                      y: {
+                        ticks: { color: chartColors.text },
+                        grid: { color: chartColors.grid, tickBorderDash: [5, 5] },
+                        beginAtZero: true,
+                      },
+                    },
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Барилга тус бүрийн картууд & Гүйцэтгэлийн хувь */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pt-2">
+              {buildingComparisonData.map((b) => (
+                <div
+                  key={b.id}
+                  className="p-4 rounded-2xl border border-[color:var(--panel-text)]/10 bg-[color:var(--surface-hover)]/20 hover:bg-[color:var(--surface-hover)]/40 transition-all flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <span className="font-semibold text-sm text-[color:var(--panel-text)] truncate">{b.name}</span>
+                      <span
+                        className={`text-[11px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${
+                          b.rate >= 80
+                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                            : b.rate >= 50
+                            ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                            : "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20"
+                        }`}
+                      >
+                        {b.rate}% гүйцэтгэл
+                      </span>
+                    </div>
+
+                    {/* Прогресс бар */}
+                    <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden mb-3">
+                      <div
+                        className={`h-full rounded-full transition-all duration-700 ${
+                          b.rate >= 80 ? "bg-emerald-500" : b.rate >= 50 ? "bg-amber-500" : "bg-red-500"
+                        }`}
+                        style={{ width: `${Math.min(100, Math.max(0, b.rate))}%` }}
+                      />
+                    </div>
+
+                    <div className="space-y-1 text-xs">
+                      <div className="flex justify-between text-[color:var(--muted-text)]">
+                        <span>Нэхэмжилсэн:</span>
+                        <span className="font-medium text-[color:var(--panel-text)]">{formatCurrency(b.monthlyBilled)}</span>
+                      </div>
+                      <div className="flex justify-between text-[color:var(--muted-text)]">
+                        <span>Цуглуулсан:</span>
+                        <span className="font-medium text-emerald-600 dark:text-emerald-400">{formatCurrency(b.monthlyPaid)}</span>
+                      </div>
+                      <div className="flex justify-between text-[color:var(--muted-text)]">
+                        <span>Үлдэгдэл:</span>
+                        <span className="font-medium text-red-500">{formatCurrency(b.monthlyUnpaid)}</span>
+                      </div>
+                      {b.overdueTotal > 0 && (
+                        <div className="flex justify-between text-[11px] text-amber-600 dark:text-amber-400 pt-1 border-t border-[color:var(--panel-text)]/5">
+                          <span>2+ сар төлөөгүй:</span>
+                          <span className="font-semibold">{formatNumber(b.overdueTotal, 0)}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedBuildingId(b.id);
+                      setBuildingFilterMode("single");
+                    }}
+                    className="mt-3 w-full py-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 rounded-xl border border-emerald-500/20 transition-colors text-center"
+                  >
+                    Энэ барилгыг дэлгэрүүлж харах →
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="w-full min-w-0 pr-4 py-2 space-y-5">
           <div className="flex flex-row flex-nowrap items-center justify-center gap-8 sm:gap-12 py-1 text-sm text-[color:var(--panel-text)]">
