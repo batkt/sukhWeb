@@ -912,7 +912,7 @@ const TulburTootsoo: React.FC = () => {
                         columns={columns}
                         rowKey="_id"
                         pagination={{
-                          pageSize: 10,
+                          pageSize: 500,
                           total: khungulultTuukh.niitMur,
                           current: khungulultTuukh.khuudasniiDugaar,
                           position: ["bottomCenter"],

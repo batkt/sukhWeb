@@ -206,7 +206,7 @@ export function StandardPagination({
   pageSize,
   onChange,
   onPageSizeChange,
-  pageSizeOptions = [50, 100, 200, 300, 400, 500],
+  pageSizeOptions = [50, 100, 200, 300, 500, 1000],
 }: {
   current: number;
   total: number;

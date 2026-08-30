@@ -66,7 +66,7 @@ export default function BlogNiitlelPage() {
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(100);
+  const [pageSize, setPageSize] = useState(500);
 
   const { data: blogData, mutate: revalidateBlogs, isValidating } = useSWR(
     token && baiguullagiinId

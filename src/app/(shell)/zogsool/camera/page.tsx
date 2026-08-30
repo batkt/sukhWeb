@@ -219,7 +219,7 @@ export default function Camera() {
   const [customFreeExitReason, setCustomFreeExitReason] = useState<string>("");
   const [isExiting, setIsExiting] = useState(false);
   const [isRegModalOpen, setIsRegModalOpen] = useState(false);
-  const [pageSize, setPageSize] = useState(50);
+  const [pageSize, setPageSize] = useState(500);
   const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
   const pageSizeRef = useRef<HTMLDivElement>(null);
   const [durationFilter, setDurationFilter] = useState("latest_out");

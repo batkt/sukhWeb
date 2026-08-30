@@ -137,7 +137,7 @@ export default function DansniiKhuulga() {
   const { mutate } = useSWRConfig();
   const socket = useSocket();
   const [page, setPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(100);
+  const [rowsPerPage, setRowsPerPage] = useState(500);
   const { searchTerm } = useSearch();
   const { token, ajiltan, barilgiinId } = useAuth();
   const canCreateTransaction =

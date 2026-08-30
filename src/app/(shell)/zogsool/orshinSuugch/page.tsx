@@ -105,7 +105,7 @@ export default function OrshinSuugch() {
   const [itemToDelete, setItemToDelete] = useState<ResidentParking | null>(null);
   const [editingResident, setEditingResident] =
     useState<ResidentParking | null>(null);
-  const [pageSize, setPageSize] = useState(100);
+  const [pageSize, setPageSize] = useState(500);
   
   // Filters
   const [turulFilter, setTurulFilter] = useState("Бүгд");

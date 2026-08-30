@@ -70,8 +70,37 @@ export default function ChatWidget({ inline = false }: ChatWidgetProps): JSX.Ele
   const [currentChoices, setCurrentChoices] = useState<ChoiceType[]>([]);
   const [operatorLoading, setOperatorLoading] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const socketRef = useRef<Socket | null>(null);
   const prevMsgCountRef = useRef<number>(0);
+
+  const scrollToBottom = React.useCallback((smooth = true) => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({
+        behavior: smooth ? "smooth" : "auto",
+        block: "end",
+      });
+    }
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior: smooth ? "smooth" : "auto",
+      });
+    }
+  }, []);
+
+  // Auto-scroll when messages, choices, loading state or tab changes
+  useEffect(() => {
+    if (messages.length > 0) {
+      scrollToBottom(true);
+      const t1 = setTimeout(() => scrollToBottom(true), 60);
+      const t2 = setTimeout(() => scrollToBottom(true), 180);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
+    }
+  }, [messages, currentChoices, loading, activeTab, isOpen, scrollToBottom]);
 
   // ── Хөвөгч товчны байрлал / нуулт ───────────────────────────────────────
   const { hydrated, hidden, pos, setHidden, setPos } = useChatLauncher();
@@ -265,6 +294,7 @@ export default function ChatWidget({ inline = false }: ChatWidgetProps): JSX.Ele
         if (botMsg && !next.some(m => m.id === botMsg.id)) next.push(botMsg);
         return next;
       });
+      scrollToBottom(true);
 
       // Update choices level
       if (choice.choices && choice.choices.length > 0) {
@@ -272,6 +302,7 @@ export default function ChatWidget({ inline = false }: ChatWidgetProps): JSX.Ele
       } else {
         if (chatConfig) setCurrentChoices(chatConfig.rootChoices || []);
       }
+      setTimeout(() => scrollToBottom(true), 50);
     } catch (err) {
       console.error(err);
     }
@@ -406,6 +437,8 @@ export default function ChatWidget({ inline = false }: ChatWidgetProps): JSX.Ele
         if (botMsg && !next.some(m => m.id === botMsg.id)) next.push(botMsg);
         return next;
       });
+      scrollToBottom(true);
+      setTimeout(() => scrollToBottom(true), 50);
 
     } catch (err) {
       console.error(err);
@@ -816,6 +849,7 @@ export default function ChatWidget({ inline = false }: ChatWidgetProps): JSX.Ele
             <>
               {/* Messages Area */}
               <div
+                ref={messagesContainerRef}
                 style={{
                   flex: 1,
                   overflowY: "auto",

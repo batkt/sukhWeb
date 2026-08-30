@@ -552,7 +552,7 @@ export default function UrisanTuukh() {
   const effectiveBarilgiinId = selectedBuildingId || barilgiinId || undefined;
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
-  const pageSize = 50;
+  const pageSize = 500;
   const [selectedLog, setSelectedLog] = useState<GateOpenLog | null>(null);
   const [statusFilter, setStatusFilter] = useState("all");
   const [openFilter, setOpenFilter] = useState<string | null>(null);

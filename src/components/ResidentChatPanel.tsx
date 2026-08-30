@@ -189,6 +189,17 @@ export default function ResidentChatPanel() {
     }
   }, [songogdsonId, threadAvya, token, baiguullagiinId]);
 
+  // ── Auto scroll to bottom on new messages ────────────────────────────
+  useEffect(() => {
+    if (messejuud.length > 0) {
+      dooshRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+      const t = setTimeout(() => {
+        dooshRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+      }, 80);
+      return () => clearTimeout(t);
+    }
+  }, [messejuud]);
+
   // ── Шууд шинэчлэлт ───────────────────────────────────────────────────
   useEffect(() => {
     if (!socket || !baiguullagiinId) return;

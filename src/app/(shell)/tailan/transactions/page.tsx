@@ -78,7 +78,7 @@ export default function TransactionsPage() {
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState<number>(1);
-  const [pageSize, setPageSize] = useState<number>(20);
+  const [pageSize, setPageSize] = useState<number>(500);
   const [total, setTotal] = useState<number>(0);
 
   useEffect(() => {

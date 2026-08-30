@@ -936,7 +936,7 @@ export default function InvoicingZardluud() {
 
   // Pagination state for table
   const [currentPage, setCurrentPage] = useState(1);
-  const rowsPerPage = 10;
+  const rowsPerPage = 500;
 
   const { zardluud: ashiglaltiinZardluud } = useAshiglaltiinZardluud();
   const baiguullagiinId = ajiltan?.baiguullagiinId || null;

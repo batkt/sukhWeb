@@ -113,7 +113,7 @@ export default function NekhemjlekhiinTuukhPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(50);
+  const [pageSize, setPageSize] = useState(500);
 
   const [formData, setFormData] = useState({
     ekhlekhOgnoo: "",

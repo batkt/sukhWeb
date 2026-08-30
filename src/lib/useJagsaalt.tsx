@@ -78,14 +78,14 @@ function useJagsaalt<T = any>(
   select?: any,
   searchKeys: string[] = [],
   supToken?: string,
-  khuudasniiKhemjee: number = 100
+  khuudasniiKhemjee: number = 500
 ): UseJagsaaltReturn<T> {
   const { token: contextToken } = useAuth();
   const token = supToken || contextToken;
 
   const [khuudaslalt, setKhuudaslalt] = useState<KhuudaslaltState<T>>({
     khuudasniiDugaar: 1,
-    khuudasniiKhemjee: khuudasniiKhemjee > 0 ? khuudasniiKhemjee : 100,
+    khuudasniiKhemjee: khuudasniiKhemjee > 0 ? khuudasniiKhemjee : 500,
     search: "",
     jagsaalt: [],
   });

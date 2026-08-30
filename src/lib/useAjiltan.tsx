@@ -168,7 +168,7 @@ export function useAjiltniiJagsaalt(
 ) {
   const [khuudaslalt, setAjiltniiKhuudaslalt] = useState<Khuudaslalt>({
     khuudasniiDugaar: 1,
-    khuudasniiKhemjee: 100,
+    khuudasniiKhemjee: 500,
     search: "",
   });
 

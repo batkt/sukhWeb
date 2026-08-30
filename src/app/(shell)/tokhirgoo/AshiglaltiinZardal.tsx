@@ -140,7 +140,7 @@ export default function AshiglaltiinZardluud() {
     "Дурын",
   ]);
 
-  const [pageSize] = useState(100);
+  const [pageSize] = useState(500);
   const [filterText, setFilterText] = useState<string>("");
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<ZardalItem | null>(null);
