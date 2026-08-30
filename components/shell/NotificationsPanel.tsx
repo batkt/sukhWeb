@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Bell, ChevronRight, Inbox, MessageSquare, X } from "lucide-react";
 import { ICON_STROKE } from "./navConfig";
@@ -65,16 +65,52 @@ export default function NotificationsPanel({
 }: Props) {
   const router = useRouter();
   const [tab, setTab] = useState<"sanal" | "medegdel">("sanal");
+
+  /**
+   * Гарах анимац. Компонент нь нээгдэхдээ л анимацтай байсан бөгөөд
+   * хаагдахдаа шууд unmount болж, гэнэт алга болдог байв. Иймд эхлээд
+   * гарах анимацыг тоглуулж, дараа нь жинхэнэ onClose-ыг дуудна.
+   */
+  const [khaaj, setKhaaj] = useState(false);
+  const khaakhTimerRef = useRef<number | null>(null);
+
+  const khaaya = useCallback(() => {
+    if (khaakhTimerRef.current != null) return;
+    setKhaaj(true);
+    khaakhTimerRef.current = window.setTimeout(() => {
+      khaakhTimerRef.current = null;
+      setKhaaj(false);
+      onClose();
+    }, 180);
+  }, [onClose]);
+
+  // Дахин нээгдэхэд өмнөх хаалтын төлөв үлдэхээс сэргийлнэ
+  useEffect(() => {
+    if (!open) return;
+    if (khaakhTimerRef.current != null) {
+      window.clearTimeout(khaakhTimerRef.current);
+      khaakhTimerRef.current = null;
+    }
+    setKhaaj(false);
+  }, [open]);
+
+  useEffect(
+    () => () => {
+      if (khaakhTimerRef.current != null)
+        window.clearTimeout(khaakhTimerRef.current);
+    },
+    [],
+  );
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") khaaya();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  }, [open, khaaya]);
 
   if (!open) return null;
 
@@ -85,14 +121,18 @@ export default function NotificationsPanel({
       <button
         type="button"
         aria-label="Хаах"
-        onClick={onClose}
-        className="fixed inset-0 z-[1180] cursor-default bg-black/25"
+        onClick={khaaya}
+        className={`shell-backdrop fixed inset-0 z-[1180] cursor-default bg-black/25 ${
+          khaaj ? "shell-backdrop-out" : ""
+        }`}
       />
       <aside
         ref={panelRef}
         role="dialog"
         aria-label="Мэдэгдэл"
-        className="shell-slideover fixed bottom-0 right-0 z-[1190] flex w-[min(380px,100vw)] flex-col border-l border-[color:var(--panel-text)]/10 bg-[color:var(--surface-bg)] shadow-[0_24px_64px_-24px_rgba(0,0,0,0.45)]"
+        className={`shell-slideover fixed bottom-0 right-0 z-[1190] flex w-[min(380px,100vw)] flex-col border-l border-[color:var(--panel-text)]/10 bg-[color:var(--surface-bg)] shadow-[0_24px_64px_-24px_rgba(0,0,0,0.45)] ${
+          khaaj ? "shell-slideover-out" : ""
+        }`}
         style={{ top: "var(--shell-topbar-h)" }}
       >
         <header className="flex shrink-0 items-center justify-between border-b border-[color:var(--panel-text)]/10 px-5 py-4">
@@ -101,7 +141,7 @@ export default function NotificationsPanel({
           </h2>
           <button
             type="button"
-            onClick={onClose}
+            onClick={khaaya}
             aria-label="Хаах"
             className="grid h-8 w-8 place-items-center rounded-lg text-[color:var(--panel-text)]/60 transition-colors duration-200 hover:bg-[color:var(--panel-text)]/8 hover:text-[color:var(--panel-text)]"
           >
@@ -186,10 +226,10 @@ export default function NotificationsPanel({
                       type="button"
                       onClick={() => {
                         if (tab === "sanal") {
-                          onClose();
+                          khaaya();
                           router.push(`/medegdel/sanalKhuselt?id=${item._id}`);
                         } else {
-                          onClose();
+                          khaaya();
                           onOpenMedegdel(item);
                         }
                       }}
@@ -255,7 +295,7 @@ export default function NotificationsPanel({
           <button
             type="button"
             onClick={() => {
-              onClose();
+              khaaya();
               router.push(
                 tab === "sanal"
                   ? "/medegdel/sanalKhuselt"

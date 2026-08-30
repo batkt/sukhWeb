@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import {
   Building2,
   CalendarClock,
@@ -73,9 +73,48 @@ export default function Sidebar({
   storageLabel,
 }: Props) {
   const { selectedBuildingId, setSelectedBuildingId } = useBuilding();
-  const { collapsed, toggleCollapsed, isDesktop, setMobileOpen } = useSidebar();
+  const {
+    collapsed,
+    toggleCollapsed,
+    isDesktop,
+    setMobileOpen,
+    railMode,
+    setPeeking,
+  } = useSidebar();
 
-  const railMode = collapsed && isDesktop;
+  /**
+   * Хулгана орох/гарахад автоматаар дэлгэж, хумина.
+   *
+   * Саатал аль болох богино: нээхэд 50мс нь хурдан өнгөрөх хулганыг
+   * шүүхэд хангалттай атлаа мэдрэгдэхээргүй богино. Хаахад 140мс - цэс
+   * рүү очих замдаа хилээс түр гарахад шууд хумигдахгүй.
+   *
+   * Түр дэлгэсэн үед цэс агуулгыг түлхэхгүй, дээгүүр нь тэлдэг тул
+   * санамсаргүй дэлгэгдлээ ч хуудас байрлалаа алдахгүй.
+   */
+  const peekTimerRef = useRef<number | null>(null);
+
+  const peekTsutslaya = useCallback(() => {
+    if (peekTimerRef.current != null) {
+      window.clearTimeout(peekTimerRef.current);
+      peekTimerRef.current = null;
+    }
+  }, []);
+
+  const khulganaOrlaa = useCallback(() => {
+    if (!collapsed || !isDesktop) return;
+    peekTsutslaya();
+    peekTimerRef.current = window.setTimeout(() => setPeeking(true), 50);
+  }, [collapsed, isDesktop, peekTsutslaya, setPeeking]);
+
+  const khulganaGarlaa = useCallback(() => {
+    if (!isDesktop) return;
+    peekTsutslaya();
+    peekTimerRef.current = window.setTimeout(() => setPeeking(false), 140);
+  }, [isDesktop, peekTsutslaya, setPeeking]);
+
+  // Компонент устахад азнаж буй timer үлдээхгүй
+  useEffect(() => peekTsutslaya, [peekTsutslaya]);
   const closeDrawer = useCallback(() => setMobileOpen(false), [setMobileOpen]);
 
   const handleBuildingChange = useCallback(
@@ -88,11 +127,32 @@ export default function Sidebar({
 
   const hasStatus = remainingDays !== null || storageLabel !== null;
 
+
   return (
-    <aside className="shell-sidebar" aria-label="Хажуугийн цэс">
+    <aside
+      className="shell-sidebar"
+      aria-label="Хажуугийн цэс"
+      onMouseEnter={khulganaOrlaa}
+      onMouseLeave={khulganaGarlaa}
+    >
       {/* ── Brand ─────────────────────────────────────────────── */}
       <div className="shell-sidebar-head">
         <ThemedLogo size={railMode ? 34 : 44} radius={10} padding={4} />
+        {/* Салбар сонгох нь логоны хажууд байрлана. Rail горимд зай
+            байхгүй тул доорх икон болж хумигдаж, идэвхтэй салбарын нэр
+            топ баарын үндсэн гарчиг болж гарна. */}
+        {!railMode && (
+          <div id="barilga-songoh" className="shell-brand-salbar">
+            <TusgaiZagvar
+              value={selectedBuildingId ?? ""}
+              onChange={handleBuildingChange}
+              options={buildings}
+              placeholder={
+                buildings.length ? "Барилга сонгох" : "Барилга нэмнэ үү"
+              }
+            />
+          </div>
+        )}
         {!isDesktop && (
           <button
             type="button"
@@ -105,9 +165,9 @@ export default function Sidebar({
         )}
       </div>
 
-      {/* ── Building selector ─────────────────────────────────── */}
-      <div className="shell-sidebar-tools">
-        {railMode ? (
+      {/* ── Rail горимд салбар сонгох товч ────────────────────── */}
+      {railMode && (
+        <div className="shell-sidebar-tools">
           <button
             type="button"
             onClick={toggleCollapsed}
@@ -117,19 +177,8 @@ export default function Sidebar({
           >
             <Building2 strokeWidth={ICON_STROKE} />
           </button>
-        ) : (
-          <div id="barilga-songoh" className="shell-label-block w-full">
-            <TusgaiZagvar
-              value={selectedBuildingId ?? ""}
-              onChange={handleBuildingChange}
-              options={buildings}
-              placeholder={
-                buildings.length ? "Барилга сонгох" : "Барилга нэмнэ үү"
-              }
-            />
-          </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* ── Navigation ────────────────────────────────────────── */}
       <div className="scrollable min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-3 py-2">

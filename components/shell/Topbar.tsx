@@ -21,6 +21,7 @@ import { useSearch } from "@/context/SearchContext";
 import { hasPermission } from "@/lib/permissionUtils";
 import UnguSongokh from "../ungu/unguSongokh";
 import { useSidebar } from "./SidebarContext";
+import { useBuilding } from "@/context/BuildingContext";
 import { useChatLauncher } from "@/lib/useChatLauncher";
 import { ICON_STROKE, type NavItem, titleForPath } from "./navConfig";
 import SanalAsuulgaTracker from "./SanalAsuulgaTracker";
@@ -48,9 +49,10 @@ export default function Topbar({
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
-  const { ajiltan, token, garya } = useAuth();
+  const { ajiltan, token, garya, baiguullaga } = useAuth();
   const { searchTerm, setSearchTerm } = useSearch();
-  const { isDesktop, setMobileOpen } = useSidebar();
+  const { isDesktop, setMobileOpen, collapsed } = useSidebar();
+  const { selectedBuildingId } = useBuilding();
   // Хөвөгч чат товчийг нуусан үед эндээс буцааж гаргана.
   const { hidden: chatHidden, toggleHidden: toggleChat } = useChatLauncher();
 
@@ -71,6 +73,20 @@ export default function Topbar({
   const isLoggedIn = !!token;
   const userName = ajiltan?.ner || ajiltan?.nevtrekhNer || "Хэрэглэгч";
   const title = useMemo(() => titleForPath(pathname, items), [pathname, items]);
+
+  /**
+   * Хажуугийн цэс хумигдсан үед салбарын нэр ҮНДСЭН гарчиг болно -
+   * rail горимд логоны хажууд харуулах зай байхгүй тул хаана байгаагаа
+   * алдахгүйн тулд топ баар руу гарна. Хуудасны нэр дэд гарчиг болно.
+   */
+  const tsesKhuriigdsen = collapsed && isDesktop;
+  const salbarNer = useMemo(() => {
+    const jagsaalt = baiguullaga?.barilguud ?? [];
+    const olson = jagsaalt.find(
+      (b: any) => String(b?._id) === String(selectedBuildingId),
+    );
+    return olson?.ner ?? null;
+  }, [baiguullaga, selectedBuildingId]);
 
   const canSeeTokhirgoo = useMemo(
     () =>
@@ -125,7 +141,18 @@ export default function Topbar({
         </button>
       )}
 
-      <h1 className="shell-title">{title}</h1>
+      {tsesKhuriigdsen && salbarNer ? (
+        <div className="shell-title-bulge">
+          <h1 className="shell-title" title={salbarNer}>
+            {salbarNer}
+          </h1>
+          <span className="shell-title-ded" title={title}>
+            {title}
+          </span>
+        </div>
+      ) : (
+        <h1 className="shell-title">{title}</h1>
+      )}
 
       {/* ── License & Storage Status Badges (Between Title and Search Bar) ── */}
       {isLoggedIn &&

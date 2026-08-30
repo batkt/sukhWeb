@@ -5407,7 +5407,7 @@ html[data-mode="dark"],
   color: var(--sidebar-text);
   /* Width is the only animated property, and only on the sidebar itself —
      the old shell animated blur-backed surfaces on every interaction. */
-  transition: width 200ms cubic-bezier(0.32, 0.72, 0, 1);
+  transition: width 240ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* The sidebar's divider used to be a plain `border-right`, which ran the full
@@ -5662,9 +5662,24 @@ html[data-sidebar="rail"] .shell-collapse-btn {
 /* ── Rail mode (desktop only) ────────────────────────────────────────────── */
 
 @media (min-width: 1024px) {
+  /* Хумигдах чиглэлд шошго нь ШУУД алга болдог байв: цэс 240мс-д нарийсч
+     байхад агуулга нь эхний кадрт алга болох тул хөдөлгөөн тасарсан мэт
+     мэдрэгддэг. display-ийг шилжилтэд оруулснаар шошго цэстэйгээ хамт
+     бүдгэрч дуусна.
+
+     allow-discrete дэмждэггүй хөтөч дээр хуучин зан хэвээрээ үлдэх тул
+     нэмэлт эрсдэлгүй. */
   html[data-sidebar="rail"] .shell-label,
   html[data-sidebar="rail"] .shell-label-block {
     display: none;
+    opacity: 0;
+  }
+
+  .shell-label,
+  .shell-label-block {
+    transition:
+      opacity 140ms ease,
+      display 140ms allow-discrete;
   }
 
   html[data-sidebar="rail"] .shell-sidebar-head {
@@ -5675,6 +5690,46 @@ html[data-sidebar="rail"] .shell-collapse-btn {
   html[data-sidebar="rail"] .shell-nav-item {
     justify-content: center;
     padding-inline: 0;
+  }
+
+  /* ── Хулганаар түр дэлгэх (peek) ────────────────────────────────
+
+     Түр дэлгэхэд цэс нь агуулгыг ТҮЛХЭХГҮЙ, дээгүүр нь тэлнэ.
+
+     Яагаад: .shell-main-ий margin-left анимацлагдвал хулгана ороод
+     гарах бүрд бүх документ дахин байрлал боддог. Хүснэгттэй хуудсанд
+     энэ нь кадр алдагдуулж, цэс аажим бөгөөс гацсан мэт мэдрэгддэг.
+     Зөвхөн цэс өөрөө өргөсөхөд байрлал бодох хүрээ маш жижиг болно.
+
+     Хэрэглэгч товчоор дэлгэсэн үед энэ дүрэм ХАМААРАХГҮЙ - тэр үед
+     агуулга хэвийнээр хажуу тийш зөрнө. */
+  html[data-sidebar-peek="1"] .shell-main {
+    margin-left: var(--shell-rail-w);
+  }
+
+  /* Дээгүүр нь тэлж байгааг сүүдрээр илэрхийлнэ */
+  html[data-sidebar-peek="1"] .shell-sidebar {
+    box-shadow: 8px 0 28px -12px rgb(0 0 0 / 0.28);
+  }
+
+  /* Дэлгэгдэх үед агуулга нь зөөлөн гарч ирнэ.
+
+     display: none -> block шилжилтийг transition хийж чаддаггүй тул шошго,
+     салбар сонгогч хоёр гэнэт үсэрч гардаг байв. Өргөн тэлж эхэлсний дараа
+     (delay) бүдгээс тод болгож, хөдөлгөөнийг өргөнтэй нь уялдуулна. */
+  html[data-sidebar="full"] .shell-label,
+  html[data-sidebar="full"] .shell-label-block,
+  html[data-sidebar="full"] .shell-brand-salbar {
+    animation: shell-fade 170ms ease both;
+    animation-delay: 70ms;
+  }
+}
+
+@media (min-width: 1024px) and (prefers-reduced-motion: reduce) {
+  html[data-sidebar="full"] .shell-label,
+  html[data-sidebar="full"] .shell-label-block,
+  html[data-sidebar="full"] .shell-brand-salbar {
+    animation: none;
   }
 }
 
@@ -5719,6 +5774,39 @@ html[data-sidebar="rail"] .shell-collapse-btn {
   border-bottom: 1px solid var(--shell-line);
   color: var(--panel-text);
   transition: left 200ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Логоны хажуугийн салбар сонгогч. Логог шахахгүйгээр үлдсэн зайг эзэлнэ. */
+.shell-brand-salbar {
+  min-width: 0;
+  flex: 1;
+}
+
+/* Цэс хумигдсан үеийн топ баарын гарчгийн багц: салбар + хуудас */
+.shell-title-bulge {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.0625rem;
+  overflow: hidden;
+}
+
+.shell-title-bulge .shell-title {
+  flex: none;
+  line-height: 1.15;
+}
+
+.shell-title-ded {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1.1;
+  color: var(--panel-text);
+  opacity: 0.65;
 }
 
 .shell-title {
@@ -5984,7 +6072,7 @@ html[data-sidebar="rail"] .shell-collapse-btn {
   margin-left: var(--shell-nav-w);
   min-height: 100dvh;
   padding: calc(var(--shell-topbar-h) + 1rem) 1.25rem 1.5rem;
-  transition: margin-left 200ms cubic-bezier(0.32, 0.72, 0, 1);
+  transition: margin-left 240ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .shell-surface {
@@ -6048,6 +6136,42 @@ html[data-sidebar="rail"] .shell-collapse-btn {
 
 .shell-slideover {
   animation: shell-slide-from-right 220ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+/* Гарах анимац. Өмнө нь панел нээгдэхдээ л анимацтай, хаагдахдаа гэнэт
+   алга болдог байсан. */
+.shell-slideover-out {
+  animation: shell-slide-to-right 180ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+@keyframes shell-slide-to-right {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(1rem, 0, 0);
+  }
+}
+
+/* Панелийн бараан дэвсгэр. Хоёр талдаа зөөлөн бүдгэрнэ. */
+.shell-backdrop {
+  animation: shell-fade 180ms ease both;
+}
+
+.shell-backdrop-out {
+  animation: shell-fade 160ms ease both reverse;
+}
+
+/* Хулганы мэдрэмжгүй/хөдөлгөөн багасгах тохиргоотой хэрэглэгчид анимацгүй */
+@media (prefers-reduced-motion: reduce) {
+  .shell-slideover,
+  .shell-slideover-out,
+  .shell-backdrop,
+  .shell-backdrop-out {
+    animation-duration: 1ms;
+  }
 }
 
 .shell-dialog {

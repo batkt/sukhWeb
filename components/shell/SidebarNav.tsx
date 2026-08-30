@@ -25,12 +25,11 @@ interface FlyoutState {
 
 export default function SidebarNav({ items, onNavigate }: Props) {
   const pathname = usePathname();
-  const { collapsed, isDesktop } = useSidebar();
+  const { railMode } = useSidebar();
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [flyout, setFlyout] = useState<FlyoutState | null>(null);
   const closeTimer = useRef<number | null>(null);
 
-  const railMode = collapsed && isDesktop;
 
   const activeKey = useMemo(
     () => items.find((i) => pathname.startsWith(`/${i.path}`))?.path ?? null,
