@@ -1794,12 +1794,46 @@ export default function HistoryModal({
                 rowTurul === "discount" ||
                 String(r.zardliinTurul || "").toLowerCase() === "хөнгөлөлт";
 
+              // Төлөлтийн мөрийн бүх бичигдэж байсан хувилбарууд. Систем дээр
+              // хэд хэдэн эх сурвалж (өөр өөр backend) төлөлт бичдэг тул
+              // латин/кирилл бичиглэл хоёулаа тохиолддог —
+              // scripts/compare_per_resident.js дээр ч мөн ижил жагсаалт бий.
+              const isPayment =
+                rowTurul === "tulult" ||
+                rowTurul === "төлөлт" ||
+                rowTurul === "төлбөр" ||
+                rowTurul === "invoice_payment";
+
               if (rowTurul === "ashiglalt" && tulukhDun > 0 && tulsunDun === 0) {
                 tulsunDun = tulukhDun;
                 tulukhDun = 0;
               } else if (isDiscount) {
                 khungulultDun = Math.abs(Number(r.dun ?? r.tulsunDun ?? r.tulukhDun ?? 0));
                 tulsunDun = 0;
+                tulukhDun = 0;
+              } else if (isPayment && tulukhDun > 0 && tulsunDun > 0) {
+                // ДАВХАР ТООЦООЛОЛ ЗАСВАР.
+                //
+                // Төлөлтийн мөр нь "төлөх ёстой дүн" биш — мөнгө нь аль хэдийн
+                // орсон. Гэвч зарим эх сурвалж төлөлтийг `tulukhDun = tulsunDun`
+                // гэж бичсэн байдаг тул тухайн мөр НЭГ ЗЭРЭГ төлбөр ба төлөлт
+                // хоёулаа болж тоологдож, "Нийт төлөх дүн" хөөрөгддөг байсан.
+                //
+                // Жишээ (нэг оршин суугч):
+                //   Төлөх дүн нийт   1,617,632.38  <- 431,468.54 нь төлөлтийн мөр
+                //   Жинхэнэ төлбөр   1,186,163.84
+                //   Төлсөн            688,781.54
+                //   Зөв үлдэгдэл       497,382.30  (backend-ийн globalUldegdel-тэй тэнцүү)
+                //   Буруу үлдэгдэл     928,850.84  (зөрүү = 431,468.54)
+                //
+                // `guilgeeService.js` нь зөв бичдэг (`tulukhDun: 0`) тул шинэ
+                // мөрүүд энэ нөхцөлд огт таарахгүй — зөвхөн хуучин/өөр
+                // сервисээс бичигдсэн гэмтэлтэй мөрүүд засагдана.
+                //
+                // `tulsunDun > 0` нөхцөл нь чухал: мөнгө бодитоор ОРСОН мөрийг
+                // л зөв гэж үзнэ. Ингэснээр `төлбөр` гэх хоёрдмол утгатай
+                // turul-тай ЖИНХЭНЭ төлбөрийн (нэхэмжлэх) мөрийг андуурч
+                // тэглэхээс сэргийлнэ.
                 tulukhDun = 0;
               } else if (tulsunDun === 0 && Number(r.dun || 0) < 0 && !isEkhniiUldegdel) {
                 tulsunDun = Math.abs(Number(r.dun));

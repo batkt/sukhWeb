@@ -15,6 +15,11 @@ import {
 } from "lucide-react";
 import { Loader } from "@mantine/core";
 import uilchilgee, { aldaaBarigch } from "@/lib/uilchilgee";
+
+/// Values the camera schema used to default to. They are placeholders, not
+/// credentials, so a row still carrying them counts as "not configured".
+const LEGACY_PLACEHOLDER_USERNAME = "admin";
+const LEGACY_PLACEHOLDER_PASSWORD = "Admin123";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
@@ -39,7 +44,7 @@ const defaultCamera = (): CameraConfig => ({
   ip: "",
   port: 554,
   username: "admin",
-  password: "Admin123",
+  password: "",
   root: "Streaming/Channels/102",
   enabled: true,
   residentVisible: false,
@@ -270,7 +275,7 @@ export default function KameriinTokhirgoo() {
       ip: cameraIp || "",
       port: Number(cameraPort) || 554,
       username: cameraUsername || "admin",
-      password: cameraPassword || "Admin123",
+      password: cameraPassword || "",
       root: p.root,
       enabled: true,
       residentVisible: false,
@@ -285,7 +290,7 @@ export default function KameriinTokhirgoo() {
   const [cameraIp, setCameraIp] = useState("");
   const [cameraPort, setCameraPort] = useState(554);
   const [cameraUsername, setCameraUsername] = useState("admin");
-  const [cameraPassword, setCameraPassword] = useState("Admin123");
+  const [cameraPassword, setCameraPassword] = useState("");
 
   // Load all buildings once
   const loadBuildings = useCallback(async () => {
@@ -329,7 +334,11 @@ export default function KameriinTokhirgoo() {
     setCameraIp(b?.cameraIp ?? "");
     setCameraPort(b?.cameraPort ?? 554);
     setCameraUsername(b?.cameraUsername ?? "admin");
-    setCameraPassword(b?.cameraPassword ?? "Admin123");
+    setCameraPassword(
+      b?.cameraPassword && b.cameraPassword !== LEGACY_PLACEHOLDER_PASSWORD
+        ? b.cameraPassword
+        : "",
+    );
   }, [selectedBarilgiinId, buildings]);
 
   const handleAddCamera = () => {
@@ -380,7 +389,7 @@ export default function KameriinTokhirgoo() {
       const oldIp = b?.cameraIp ?? "";
       const oldPort = b?.cameraPort ?? 554;
       const oldUsername = b?.cameraUsername ?? "admin";
-      const oldPassword = b?.cameraPassword ?? "Admin123";
+      const oldPassword = b?.cameraPassword ?? "";
 
       const nextSohCameras = sohCameras.map(cam => {
         const updated = { ...cam };
@@ -390,10 +399,24 @@ export default function KameriinTokhirgoo() {
         if (!updated.port || updated.port === oldPort) {
           updated.port = Number(cameraPort) || 554;
         }
-        if (!updated.username || updated.username === oldUsername) {
+        // Also treat the legacy schema placeholder as unset. The old
+        // condition compared only against the building's *saved* value, so
+        // once that value changed, a row still holding "Admin123" matched
+        // neither branch and could never be updated again - the building
+        // password appeared to save while the row silently kept sending the
+        // placeholder to the NVR.
+        if (
+          !updated.username ||
+          updated.username === oldUsername ||
+          updated.username === LEGACY_PLACEHOLDER_USERNAME
+        ) {
           updated.username = cameraUsername;
         }
-        if (!updated.password || updated.password === oldPassword) {
+        if (
+          !updated.password ||
+          updated.password === oldPassword ||
+          updated.password === LEGACY_PLACEHOLDER_PASSWORD
+        ) {
           updated.password = cameraPassword;
         }
         return updated;

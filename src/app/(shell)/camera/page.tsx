@@ -33,6 +33,11 @@ interface CustomCamera {
   enabled: boolean;
 }
 
+/// The password the camera schema used to default to. It is a placeholder, not
+/// a credential, so any row still carrying it is treated as having no password
+/// set at all.
+const LEGACY_PLACEHOLDER_PASSWORD = "Admin123";
+
 // Helper component for Real-Time Clock
 const RealTimeClock = () => {
   const [time, setTime] = useState("");
@@ -108,7 +113,31 @@ export default function CameraVideoWall() {
           ? (barilguud.find((x: any) => String(x._id) === String(effectiveBarilgiinId)) || barilguud[0])
           : barilguud[0];
 
-        const fetchedCams = (b?.sohCameruud ?? []) as CustomCamera[];
+        // Each camera row carries its own copy of ip/port/username/password,
+        // but the settings UI only exposes the BUILDING-level fields - so a row
+        // whose credentials were never filled in was unreachable and silently
+        // used the schema default. Resolve the two here: the row wins when it
+        // has a real value, otherwise the building-level value applies.
+        //
+        // LEGACY_PLACEHOLDER_PASSWORD is treated as unset. Existing rows were
+        // written with it by the old schema default, and it is never a real
+        // password - without this, those rows stay stranded on a credential
+        // that only ever produces a 401.
+        const fetchedCams = ((b?.sohCameruud ?? []) as CustomCamera[]).map(
+          (cam) => {
+            const rowPassword =
+              cam.password && cam.password !== LEGACY_PLACEHOLDER_PASSWORD
+                ? cam.password
+                : "";
+            return {
+              ...cam,
+              ip: cam.ip || b?.cameraIp || "",
+              port: cam.port || b?.cameraPort || 554,
+              username: cam.username || b?.cameraUsername || "",
+              password: rowPassword || b?.cameraPassword || "",
+            };
+          },
+        );
         setCameras(fetchedCams);
       } catch (e) {
         console.error("Failed to load SOH cameras:", e);
@@ -633,7 +662,15 @@ const CameraStream = React.memo(
         }
       >
         <WebRTCVideoPlayer
-          rtspUrl={`rtsp://${encodeURIComponent(username ?? "")}:${encodeURIComponent(password ?? "")}@${ip}:${port}/${root}`}
+          // Only send credentials when BOTH are present. Building the URL
+          // unconditionally produced "rtsp://:@host/..." for a camera with no
+          // login, and an NVR that happily serves anonymous RTSP rejects that
+          // empty pair with a 401.
+          rtspUrl={
+            username && password
+              ? `rtsp://${encodeURIComponent(username)}:${encodeURIComponent(password)}@${ip}:${port}/${root}`
+              : `rtsp://${ip}:${port}/${root}`
+          }
           barilgiinId={barilgiinId ?? ""}
           token={token}
           style={{ width: "100%", height: "100%" }}
