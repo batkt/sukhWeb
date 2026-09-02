@@ -167,7 +167,7 @@ export function useGereeData(
     const parseMap = (map: any) => {
       const out: Record<string, string[]> = {};
       if (map && typeof map === "object" && !Array.isArray(map)) {
-        Object.entries(map).forEach(([floor, val]) => {
+        Object.entries(map).forEach(([key, val]) => {
           let units: string[] = [];
           if (Array.isArray(val)) {
             units = val.flatMap((v) =>
@@ -178,7 +178,16 @@ export function useGereeData(
           } else if (typeof val === "string") {
             units = val.split(/[\s,;|]+/).filter(Boolean);
           }
-          out[String(floor)] = units;
+          const kStr = String(key);
+          out[kStr] = units;
+
+          if (kStr.includes("::")) {
+            const parts = kStr.split("::");
+            const floorOnly = parts[parts.length - 1];
+            if (floorOnly && (!out[floorOnly] || out[floorOnly].length === 0)) {
+              out[floorOnly] = units;
+            }
+          }
         });
       }
       return out;
@@ -1007,6 +1016,17 @@ export function useGereeData(
       });
       list = Array.from(floorsSet);
     }
+
+    list.sort((a, b) => {
+      const aIsB = /^b/i.test(a);
+      const bIsB = /^b/i.test(b);
+      if (aIsB && !bIsB) return 1;
+      if (!aIsB && bIsB) return -1;
+      const aNum = parseInt(aIsB ? a.slice(1) : a, 10);
+      const bNum = parseInt(bIsB ? b.slice(1) : b, 10);
+      if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
+      return a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
+    });
 
     const sel = String(selectedDawkhar || "").trim();
     if (sel) {

@@ -58,7 +58,7 @@ export function useGereeState(searchParams: any, didInitRef: any) {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(20);
   const [sortKey, setSortKey] = useState<"createdAt" | "toot" | "orts" | "davkhar">("createdAt");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [showColumnSelector, setShowColumnSelector] = useState(false);
 
   const [resPage, setResPage] = useState(1);
@@ -79,7 +79,7 @@ export function useGereeState(searchParams: any, didInitRef: any) {
   >("all");
   const [unitStatusFilter, setUnitStatusFilter] = useState<
     "all" | "occupied" | "free"
-  >("occupied");
+  >("all");
   const [isSavingUnits, setIsSavingUnits] = useState(false);
   const [isUploadingResidents, setIsUploadingResidents] = useState(false);
   const [isUploadingUnits, setIsUploadingUnits] = useState(false);
