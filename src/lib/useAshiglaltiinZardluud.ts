@@ -42,6 +42,7 @@ interface UseAshiglaltiinZardluudReturn {
   addZardal: (data: Partial<ZardalItem>) => Promise<void>;
   updateZardal: (id: string, data: Partial<ZardalItem>) => Promise<void>;
   deleteZardal: (id: string) => Promise<void>;
+  syncZardluud: () => Promise<void>;
 }
 
 export function useAshiglaltiinZardluud(overrides?: {
