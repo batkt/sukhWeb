@@ -30,6 +30,7 @@ import {
   CreditCard,
   ChevronRight,
   Settings,
+  RefreshCw,
 } from "lucide-react";
 import uilchilgee from "@/lib/uilchilgee";
 import deleteMethod from "../../../../tools/function/deleteMethod";
@@ -95,6 +96,7 @@ export default function AshiglaltiinZardluud() {
     addZardal,
     updateZardal,
     deleteZardal,
+    syncZardluud,
     mutate: refreshZardluud,
   } = useAshiglaltiinZardluud({
     barilgiinId: selectedBuildingId || barilgiinId,
@@ -578,6 +580,23 @@ export default function AshiglaltiinZardluud() {
               Ашиглалтын зардал
             </h2>
           </div>
+          <button
+            onClick={async () => {
+              showSpinner("Хуучин зардлуудыг цэвэрлэж байна...");
+              try {
+                await syncZardluud();
+                openSuccessOverlay("Гэрээнүүдээс хуучин зардлуудыг амжилттай цэвэрлэлээ");
+              } catch (e) {
+                openErrorOverlay("Цэвэрлэхэд алдаа гарлаа");
+              } finally {
+                hideSpinner();
+              }
+            }}
+            className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all flex items-center gap-2"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            Гэрээнээс хуучин зардал цэвэрлэх
+          </button>
         </div>
 
         <div className="grid grid-cols-1 gap-6">

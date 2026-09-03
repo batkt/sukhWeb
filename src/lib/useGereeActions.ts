@@ -111,9 +111,13 @@ export function useGereeActions(
             return [];
           };
 
+          const hasEntranceKeys = Object.keys(davkhariinToonuud).some((k) =>
+            k.includes("::"),
+          );
+
           const validUnits = [
             ...getUnitsAsArray(davkhariinToonuud[key]),
-            ...getUnitsAsArray(davkhariinToonuud[f]),
+            ...((!o || !hasEntranceKeys) ? getUnitsAsArray(davkhariinToonuud[f]) : []),
           ];
 
           if (validUnits.length > 0) {

@@ -138,9 +138,21 @@ export function useAshiglaltiinZardluud(overrides?: {
     mutate();
   };
 
+  const syncZardluud = async () => {
+    if (!token || !currentOrg) return;
+    try {
+      await uilchilgee(token).post("/zardalTseverlekhiya", {
+        baiguullagiinId: currentOrg,
+        barilgiinId: currentBarilga,
+      });
+    } catch (_) {}
+    mutate();
+  };
+
   const deleteZardal = async (id: string) => {
     if (!token || !currentOrg || !currentBarilga) return;
     await uilchilgee(token).delete(`/ashiglaltiinZardluud/${id}`);
+    await syncZardluud();
     mutate();
   };
 
@@ -152,5 +164,6 @@ export function useAshiglaltiinZardluud(overrides?: {
     addZardal,
     updateZardal,
     deleteZardal,
+    syncZardluud,
   };
 }

@@ -184,8 +184,9 @@ export function useGereeData(
           if (kStr.includes("::")) {
             const parts = kStr.split("::");
             const floorOnly = parts[parts.length - 1];
-            if (floorOnly && (!out[floorOnly] || out[floorOnly].length === 0)) {
-              out[floorOnly] = units;
+            if (floorOnly) {
+              if (!out[floorOnly]) out[floorOnly] = [];
+              out[floorOnly] = Array.from(new Set([...out[floorOnly], ...units]));
             }
           }
         });
@@ -239,6 +240,10 @@ export function useGereeData(
         if (turul === "Зогсоол") activeMap = maps.outZogsool;
         else if (turul === "Агуулах") activeMap = maps.outAguulakh;
 
+        const hasEntranceKeys = Object.keys(activeMap).some((k) =>
+          k.includes("::"),
+        );
+
         let candidates: string[] = [];
         if (
           activeMap[key] &&
@@ -247,6 +252,7 @@ export function useGereeData(
         ) {
           candidates = activeMap[key].slice();
         } else if (
+          (!o || !hasEntranceKeys) &&
           f &&
           activeMap[f] &&
           Array.isArray(activeMap[f]) &&
