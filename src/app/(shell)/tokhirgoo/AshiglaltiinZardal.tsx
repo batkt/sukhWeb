@@ -453,8 +453,8 @@ export default function AshiglaltiinZardluud() {
 
             {/* Variable electricity (Цахилгаан only, NOT Дундын өмчлөл) - show Суурь хураамж */}
             {formData.ner.toLowerCase().includes("цахилгаан") &&
-            !formData.ner.toLowerCase().includes("дундын") &&
-            !formData.ner.toLowerCase().includes("өмчлөл") ? (
+              !formData.ner.toLowerCase().includes("дундын") &&
+              !formData.ner.toLowerCase().includes("өмчлөл") ? (
               <div className="space-y-1.5">
                 <label className="block text-[9px] font-black text-[color:var(--muted-text)] uppercase tracking-widest ml-1">
                   Суурь хураамж ()
@@ -582,7 +582,7 @@ export default function AshiglaltiinZardluud() {
           </div>
           <button
             onClick={async () => {
-              showSpinner("Хуучин зардлуудыг цэвэрлэж байна...");
+              showSpinner();
               try {
                 await syncZardluud();
                 openSuccessOverlay("Гэрээнүүдээс хуучин зардлуудыг амжилттай цэвэрлэлээ");
@@ -633,7 +633,7 @@ export default function AshiglaltiinZardluud() {
                   <Loader />
                 </div>
               ) : ashiglaltiinZardluud.filter((x) => x.turul === "Тогтмол")
-                  .length === 0 ? (
+                .length === 0 ? (
                 <div className="p-12 text-center">
                   <p className="text-theme ">Тогтмол зардал байхгүй байна</p>
                   <p className="text-xs text-[color:var(--muted-text)] mt-1">
@@ -666,8 +666,8 @@ export default function AshiglaltiinZardluud() {
                             filterText.trim() === ""
                               ? true
                               : String(x.ner || "")
-                                  .toLowerCase()
-                                  .includes(filterText.toLowerCase()),
+                                .toLowerCase()
+                                .includes(filterText.toLowerCase()),
                           )
                           .map((mur) => {
                             const displayValue = mur.tariff;
@@ -759,8 +759,8 @@ export default function AshiglaltiinZardluud() {
                                     filterText.trim() === ""
                                       ? true
                                       : String(x.ner || "")
-                                          .toLowerCase()
-                                          .includes(filterText.toLowerCase()),
+                                        .toLowerCase()
+                                        .includes(filterText.toLowerCase()),
                                   )
                                   .reduce((sum, item) => {
                                     const displayValue = item.tariff;
@@ -819,7 +819,7 @@ export default function AshiglaltiinZardluud() {
                   <Loader />
                 </div>
               ) : ashiglaltiinZardluud.filter((x) => x.turul === "Дурын")
-                  .length === 0 ? (
+                .length === 0 ? (
                 <div className="p-12 text-center">
                   <p className="text-theme ">Хувьсах зардал байхгүй байна</p>
                   <p className="text-xs text-[color:var(--muted-text)] mt-1">
@@ -852,8 +852,8 @@ export default function AshiglaltiinZardluud() {
                             filterText.trim() === ""
                               ? true
                               : String(x.ner || "")
-                                  .toLowerCase()
-                                  .includes(filterText.toLowerCase()),
+                                .toLowerCase()
+                                .includes(filterText.toLowerCase()),
                           )
                           .map((mur) => {
                             const nameLower = (mur.ner || "").toLowerCase();
@@ -952,8 +952,8 @@ export default function AshiglaltiinZardluud() {
                                     filterText.trim() === ""
                                       ? true
                                       : String(x.ner || "")
-                                          .toLowerCase()
-                                          .includes(filterText.toLowerCase()),
+                                        .toLowerCase()
+                                        .includes(filterText.toLowerCase()),
                                   )
                                   .reduce((sum, item) => {
                                     const nameLower = (

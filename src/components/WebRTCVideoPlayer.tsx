@@ -97,7 +97,6 @@ export default function WebRTCVideoPlayer({
   const log = useCallback(
     (...args: any[]) => {
       if (DEBUG) {
-        // eslint-disable-next-line no-console
         console.log(`[webrtc ${barilgiinId}]`, new Date().toISOString(), ...args);
       }
     },
