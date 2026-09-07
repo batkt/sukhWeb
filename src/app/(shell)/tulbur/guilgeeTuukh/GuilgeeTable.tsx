@@ -511,10 +511,12 @@ export default function GuilgeeTable({
                 _paidFromSummary: paidForTuluv,
               };
               let tuluvLabel: string = getPaymentStatusLabel(itForTuluv);
-              if (
-                record?.tuluv === "Цуцалсан" ||
-                record?.status === "Цуцалсан"
-              ) {
+              const cObj =
+                (gid && contractsById[gid]) ||
+                (record?.gereeniiDugaar ? contractsByNumber[String(record.gereeniiDugaar)] : null);
+              const cStatus = String(cObj?.tuluv || cObj?.status || "").trim().toLowerCase();
+              const isContractCancelled = cStatus === "цуцалсан" || cStatus === "tsutlsasan";
+              if (isContractCancelled) {
                 tuluvLabel = "Цуцалсан";
               }
               if (remainingValue < 0.01) {
@@ -918,7 +920,12 @@ export default function GuilgeeTable({
               _paidFromSummary: gid ? Number(monthPaidByGereeId[gid] ?? 0) : 0,
             };
             let tuluvLabel: string = getPaymentStatusLabel(itForTuluv);
-            if (record?.tuluv === "Цуцалсан" || record?.status === "Цуцалсан") {
+            const cObj =
+              (gid && contractsById[gid]) ||
+              (record?.gereeniiDugaar ? contractsByNumber[String(record.gereeniiDugaar)] : null);
+            const cStatus = String(cObj?.tuluv || cObj?.status || "").trim().toLowerCase();
+            const isContractCancelled = cStatus === "цуцалсан" || cStatus === "tsutlsasan";
+            if (isContractCancelled) {
               tuluvLabel = "Цуцалсан";
             }
             if (remainingValue < 0.01) {

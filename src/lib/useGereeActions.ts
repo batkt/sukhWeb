@@ -699,6 +699,166 @@ export function useGereeActions(
     ],
   );
 
+  const deleteUnits = useCallback(
+    async (
+      floor: string,
+      units: string[],
+      turul: "Тоот" | "Зогсоол" | "Агуулах" = "Тоот",
+    ) => {
+      if (!units || units.length === 0) return false;
+      const propName =
+        turul === "Зогсоол"
+          ? "davkhariinZogsoolnuud"
+          : turul === "Агуулах"
+            ? "davkhariinAguulakhnuud"
+            : "davkhariinToonuud";
+      if (!token || !baiguullaga?._id) {
+        openErrorOverlay("Мэдээлэл дутуу байна");
+        return false;
+      }
+
+      const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
+      if (!effectiveBarilgiinId) {
+        openErrorOverlay("Барилга сонгоогүй байна");
+        return false;
+      }
+
+      setIsSavingUnits?.(true);
+      try {
+        const orgResp = await uilchilgee(token).get(
+          `/baiguullaga/${baiguullaga._id}`,
+          {
+            headers: { "X-Org-Only": "1" },
+          },
+        );
+        const org = orgResp.data;
+        const barilga = org.barilguud?.find(
+          (b: any) => String(b._id || b.id) === String(effectiveBarilgiinId),
+        );
+        if (!barilga) {
+          openErrorOverlay("Барилга олдсонгүй");
+          return false;
+        }
+
+        const getUnitsAsArray = (val: any): string[] => {
+          if (Array.isArray(val)) {
+            return val.flatMap((v) =>
+              String(v)
+                .split(/[\s,;|]+/)
+                .filter(Boolean),
+            );
+          }
+          if (typeof val === "string")
+            return val.split(/[\s,;|]+/).filter(Boolean);
+          return [];
+        };
+
+        const key = composeKeyFn(selectedOrts || "", floor);
+        const existing = (barilga.tokhirgoo?.[propName] || {}) as Record<
+          string,
+          any
+        >;
+        const currentUnits = getUnitsAsArray(existing[key]);
+        const targetUnitsSet = new Set(units.map((u) => String(u).trim()));
+
+        // Check active contracts among target units
+        const occupiedUnits = new Set<string>();
+        if (contracts && Array.isArray(contracts)) {
+          contracts.forEach((c: any) => {
+            const isCancelled =
+              String(c.tuluv || c.status || "")
+                .toLowerCase()
+                .includes("цуцалсан") ||
+              String(c.tuluv || c.status || "")
+                .toLowerCase()
+                .includes("идэвхгүй") ||
+              String(c.tuluv || c.status || "").toLowerCase() === "tsutlsasan";
+            if (isCancelled) return;
+
+            const cFloor = String(c.davkhar || "").trim();
+            const cToot = String(c.toot || "").trim();
+            const cOrts = String(c.orts || "").trim();
+            const selOrts = String(selectedOrts || "").trim();
+
+            const floorMatch = cFloor === String(floor).trim();
+            const ortsMatch = !selOrts || cOrts === "" || cOrts === selOrts;
+
+            if (floorMatch && ortsMatch && targetUnitsSet.has(cToot)) {
+              occupiedUnits.add(cToot);
+            }
+
+            if (Array.isArray(c.nemeltTootnuud)) {
+              c.nemeltTootnuud.forEach((n: any) => {
+                const nToot = String(n.toot || "").trim();
+                const nFloor = String(n.davkhar || cFloor).trim();
+                if (nFloor === String(floor).trim() && targetUnitsSet.has(nToot)) {
+                  occupiedUnits.add(nToot);
+                }
+              });
+            }
+          });
+        }
+
+        if (occupiedUnits.size > 0) {
+          openErrorOverlay(
+            `Дараах тоотууд дээр идэвхтэй гэрээ байгаа тул устгах боломжгүй: ${Array.from(occupiedUnits).join(", ")}`,
+          );
+          return false;
+        }
+
+        const updatedUnits = currentUnits.filter(
+          (u: string) => !targetUnitsSet.has(String(u).trim()),
+        );
+
+        if (currentUnits.length === updatedUnits.length) {
+          openErrorOverlay(`Устгах ${turul} олдсонгүй`);
+          return false;
+        }
+
+        const updatedBarilguud = org.barilguud.map((b: any) => {
+          if (String(b._id || b.id) !== String(effectiveBarilgiinId)) return b;
+          return {
+            ...b,
+            tokhirgoo: {
+              ...(b.tokhirgoo || {}),
+              [propName]: {
+                ...existing,
+                [key]: updatedUnits,
+              },
+            },
+          };
+        });
+
+        const payload = {
+          ...org,
+          barilguud: updatedBarilguud,
+        };
+
+        await updateMethod("baiguullaga", token, payload);
+        await baiguullagaMutate?.();
+        const deletedCount = currentUnits.length - updatedUnits.length;
+        openSuccessOverlay(`${deletedCount} ${turul} устгагдлаа`);
+        return true;
+      } catch (err) {
+        openErrorOverlay(getErrorMessage(err));
+        return false;
+      } finally {
+        setIsSavingUnits?.(false);
+      }
+    },
+    [
+      token,
+      baiguullaga,
+      selectedBuildingId,
+      barilgiinId,
+      baiguullagaMutate,
+      setIsSavingUnits,
+      selectedOrts,
+      composeKeyFn,
+      contracts,
+    ],
+  );
+
   const deleteFloor = useCallback(
     async (floor: string, turul: "Тоот" | "Зогсоол" | "Агуулах" = "Тоот") => {
       const propName =
@@ -2644,6 +2804,7 @@ export function useGereeActions(
     handleAddGarageChargesForContracts,
     handlePreviewInvoice,
     deleteUnit,
+    deleteUnits,
     deleteFloor,
     addUnit,
     handleAssignToUnit,

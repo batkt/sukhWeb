@@ -9,6 +9,7 @@ import { StandardPagination } from "@/components/ui/StandardTable";
 import Button from "@/components/ui/Button";
 import QuickRegisterModal from "./modals/QuickRegisterModal";
 import SendInvoiceConfirmModal from "./modals/SendInvoiceConfirmModal";
+import DeleteConfirmModal from "./modals/DeleteModal";
 import { ModalPortal } from "../../../../components/shell/ModalPortal";
 import useModalHotkeys from "@/lib/useModalHotkeys";
 
@@ -100,6 +101,18 @@ export default function UnitsSection({
     setCheckedUnits([]);
     setSelectionMode(false);
   }, [selectedFloor, selectedOrts, propertyTab]);
+  const [deleteUnitsConfirm, setDeleteUnitsConfirm] = useState<{
+    show: boolean;
+    units: string[];
+    title: string;
+    message: string;
+  }>({
+    show: false,
+    units: [],
+    title: "",
+    message: "",
+  });
+
   const [confirmModal, setConfirmModal] = useState<{
     show: boolean;
     title: string;
@@ -506,6 +519,67 @@ export default function UnitsSection({
         setCheckedUnits([]);
       }
     });
+  };
+
+  const handleOpenMassDeleteModal = () => {
+    if (!selectedFloor || checkedUnits.length === 0) return;
+
+    const occupiedList = checkedUnits.filter((u) =>
+      selectedFloorData?.activeToots.has(u),
+    );
+    const freeList = checkedUnits.filter(
+      (u) => !selectedFloorData?.activeToots.has(u),
+    );
+
+    if (freeList.length === 0) {
+      alert(
+        `Сонгосон бүх (${occupiedList.length}) тоот дээр идэвхтэй гэрээ/эзэмшигч холбогдсон тул устгах боломжгүй. Эхлээд холбоосоо салгана уу.`,
+      );
+      return;
+    }
+
+    const typeLabel =
+      propertyTab === "Зогсоол"
+        ? "зогсоолын дугаарыг"
+        : propertyTab === "Агуулах"
+          ? "агуулахын дугаарыг"
+          : "тоотыг";
+
+    let title = "";
+    let message = "";
+
+    if (occupiedList.length > 0) {
+      title = `Сонгосон ${freeList.length} ${typeLabel} устгах уу?`;
+      message = `Сонгосон ${checkedUnits.length} тоотын ${occupiedList.length} нь идэвхтэй гэрээтэй тул зөвхөн чөлөөтэй ${freeList.length} тоотыг устгах боломжтой. Энэ үйлдэл буцаах боломжгүй.`;
+    } else {
+      title = `Сонгосон ${freeList.length} ${typeLabel} устгах уу?`;
+      message = `Та сонгосон ${freeList.length} ${typeLabel} устгах гэж байна. Энэ үйлдэл буцаах боломжгүй.`;
+    }
+
+    setDeleteUnitsConfirm({
+      show: true,
+      units: freeList,
+      title,
+      message,
+    });
+  };
+
+  const handleConfirmMassDelete = async () => {
+    if (!selectedFloor || deleteUnitsConfirm.units.length === 0) return;
+    try {
+      if (actions?.deleteUnits) {
+        const ok = await actions.deleteUnits(
+          selectedFloor,
+          deleteUnitsConfirm.units,
+          propertyTab,
+        );
+        if (ok) {
+          setCheckedUnits([]);
+        }
+      }
+    } finally {
+      setDeleteUnitsConfirm({ show: false, units: [], title: "", message: "" });
+    }
   };
 
   const handleSendFloorInvoices = async () => {
@@ -1054,9 +1128,19 @@ export default function UnitsSection({
                         {propertyTab === "Зогсоол" ? "Зогсоол давхрын тоотууд" : "Агуулах давхрын тоотууд"}
                       </h3>
                       {selectedFloor && (
-                        <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400">
-                          {selectedFloor}-р давхар
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400">
+                            {selectedFloor}-р давхар
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => onDeleteFloor?.(selectedFloor)}
+                            title={`${selectedFloor}-р давхрын бүх тоотуудыг устгах`}
+                            className="p-1 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       )}
                     </div>
 
@@ -1091,6 +1175,18 @@ export default function UnitsSection({
                       >
                         Илгээх ({checkedUnits.length})
                       </Button>
+
+                      {checkedUnits.length > 0 && (
+                        <Button
+                          onClick={handleOpenMassDeleteModal}
+                          variant="danger"
+                          size="sm"
+                          leftIcon={<Trash2 className="w-3.5 h-3.5" />}
+                          className="rounded-xl font-semibold !bg-red-600 hover:!bg-red-700 !text-white cursor-pointer shrink-0"
+                        >
+                          Устгах ({checkedUnits.length})
+                        </Button>
+                      )}
                     </div>
                   </div>
 
@@ -1426,6 +1522,20 @@ export default function UnitsSection({
         title={confirmModal.title}
         message={confirmModal.message}
         onConfirm={confirmModal.onConfirm}
+      />
+      <DeleteConfirmModal
+        show={deleteUnitsConfirm.show}
+        onClose={() =>
+          setDeleteUnitsConfirm({
+            show: false,
+            units: [],
+            title: "",
+            message: "",
+          })
+        }
+        title={deleteUnitsConfirm.title}
+        message={deleteUnitsConfirm.message}
+        onConfirm={handleConfirmMassDelete}
       />
     </div>
   );

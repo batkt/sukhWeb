@@ -186,6 +186,15 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
           // Only show main housing units
           toots = toots.filter((t: any) => t.turul !== "Гараж" && t.turul !== "Агуулах");
 
+          // Deduplicate toots array
+          const seenToots = new Set<string>();
+          toots = toots.filter((t: any) => {
+            const key = `${t.toot}_${t.barilgiinId || ""}_${t.turul || "Орон сууц"}`;
+            if (seenToots.has(key)) return false;
+            seenToots.add(key);
+            return true;
+          });
+
           if (toots.length === 0) return "-";
 
           const tooltipContent = (

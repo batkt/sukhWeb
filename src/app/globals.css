@@ -5601,6 +5601,11 @@ html[data-sidebar="rail"] .shell-collapse-btn {
   font-weight: 600;
 }
 
+.shell-nav-item a {
+  color: inherit;
+  text-decoration: none;
+}
+
 /* Left accent bar marks the current section at a glance. */
 .shell-nav-item[data-active]::before {
   content: "";
@@ -5722,6 +5727,11 @@ html[data-sidebar="rail"] .shell-collapse-btn {
   html[data-sidebar="rail"] .shell-nav-item {
     justify-content: center;
     padding-inline: 0;
+  }
+
+  html[data-sidebar="rail"] .shell-nav-item a {
+    justify-content: center;
+    flex: none;
   }
 
   /* ── Хулганаар түр дэлгэх (peek) ────────────────────────────────

@@ -110,6 +110,9 @@ export const NAV_ITEMS: NavItem[] = [
 
 /** Where a top-level item navigates to when clicked. */
 export function hrefFor(item: NavItem): string {
+  if (item.submenu && item.submenu.length > 0) {
+    return subHrefFor(item, item.submenu[0]);
+  }
   return item.href ?? `/${item.path}`;
 }
 

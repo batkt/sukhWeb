@@ -797,12 +797,17 @@ export default function Jagsaalt() {
           : niitDun > 0 ? "Төлбөртэй" : "Гарсан";
 
       const gereeTuluv = (() => {
-        if ((t as any).tsutsalsanOgnoo || (t as any).geree?.tsutsalsanOgnoo || (t as any).gereeniiTuluv === "Цуцалсан" || (t as any).geree?.tuluv === "Цуцалсан") {
-          return "Цуцалсан";
-        }
-        const raw = (t as any).gereeTuluv || (t as any).gereeniiTuluv || (t as any).geree?.gereeniiTuluv || (t as any).geree?.tuluv || (t as any).geree?.status;
+        const raw =
+          (t as any).geree?.tuluv ||
+          (t as any).geree?.status ||
+          (t as any).gereeTuluv ||
+          (t as any).gereeniiTuluv ||
+          (t as any).geree?.gereeniiTuluv;
         if (!raw) return t.turul || "Идэвхтэй";
-        const s = String(raw).toLowerCase();
+        const s = String(raw).trim().toLowerCase();
+        if (s === "цуцалсан" || s === "tsutlsasan" || s === "cancel" || s === "cancelled") return "Цуцалсан";
+        if (s === "идэвхгүй" || s === "inactive") return "Идэвхгүй";
+        if (s === "идэвхтэй" || s === "active") return "Идэвхтэй";
         if (s.includes("цуц") || s.includes("cancel")) return "Цуцалсан";
         if (s.includes("идэвх") || s.includes("active")) return "Идэвхтэй";
         return String(raw);

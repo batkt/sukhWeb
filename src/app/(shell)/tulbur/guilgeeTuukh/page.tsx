@@ -756,7 +756,14 @@ export default function DansniiKhuulga() {
     const list = (gereeGaralt?.jagsaalt || []) as any[];
     const map: Record<string, any> = {};
     list.forEach((g) => {
-      if (g?.gereeniiDugaar) map[String(g.gereeniiDugaar)] = g;
+      if (g?.gereeniiDugaar) {
+        const num = String(g.gereeniiDugaar);
+        const st = String(g?.tuluv || g?.status || "").trim().toLowerCase();
+        const isCurrentActive = st !== "цуцалсан" && st !== "tsutlsasan" && st !== "идэвхгүй";
+        if (!map[num] || isCurrentActive) {
+          map[num] = g;
+        }
+      }
     });
     return map;
   }, [gereeGaralt?.jagsaalt]);
@@ -2386,16 +2393,34 @@ export default function DansniiKhuulga() {
             : 0);
 
         const gereeTuluv = (() => {
-          const contractObj = item?.gereeniiDugaar ? (contractsByNumber as any)[String(item.gereeniiDugaar)] : null;
-          if (item?.tsutsalsanOgnoo || contractObj?.tsutsalsanOgnoo || item?.tuluv === "Цуцалсан" || contractObj?.tuluv === "Цуцалсан") {
+          const gid = String(item?.gereeniiId ?? item?.gereeId ?? item?._id ?? "").trim();
+          const contractObj =
+            (gid && (contractsById as any)[gid]) ||
+            (item?.gereeniiDugaar ? (contractsByNumber as any)[String(item.gereeniiDugaar)] : null);
+
+          // Get contract status primarily from the official contract object if available
+          const target = contractObj || item;
+          const status = String(target?.tuluv || target?.status || "").trim().toLowerCase();
+
+          if (status === "цуцалсан" || status === "tsutlsasan" || status === "cancel" || status === "cancelled") {
             return "Цуцалсан";
           }
-          const raw = item?.gereeniiTuluv || item?.gereeTuluv || contractObj?.gereeniiTuluv || contractObj?.tuluv || item?.status;
-          if (!raw) return "Идэвхтэй";
-          const s = String(raw).toLowerCase();
-          if (s.includes("цуц") || s.includes("cancel")) return "Цуцалсан";
-          if (s.includes("идэвх") || s.includes("active")) return "Идэвхтэй";
-          return String(raw);
+          if (status === "идэвхгүй" || status === "inactive") {
+            return "Идэвхгүй";
+          }
+          if (status === "идэвхтэй" || status === "active") {
+            return "Идэвхтэй";
+          }
+
+          const raw = target?.gereeniiTuluv || target?.gereeTuluv;
+          if (raw) {
+            const s = String(raw).toLowerCase();
+            if (s.includes("цуц") || s.includes("cancel")) return "Цуцалсан";
+            if (s.includes("идэвх") || s.includes("active")) return "Идэвхтэй";
+            return String(raw);
+          }
+
+          return "Идэвхтэй";
         })();
 
         return {

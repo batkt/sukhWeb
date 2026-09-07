@@ -93,6 +93,7 @@ export default function SidebarNav({ items, onNavigate }: Props) {
           const hasSub = !!item.submenu?.length;
           const isOpen = openKeys.has(item.path);
           const showFlyout = railMode && hasSub && flyout?.key === item.path;
+          const firstSubHref = hasSub ? subHrefFor(item, item.submenu![0]) : href;
 
           return (
             <li
@@ -106,40 +107,73 @@ export default function SidebarNav({ items, onNavigate }: Props) {
               onMouseLeave={railMode && hasSub ? scheduleClose : undefined}
             >
               {hasSub ? (
-                <button
-                  type="button"
-                  aria-expanded={railMode ? showFlyout : isOpen}
-                  aria-current={isActive ? "page" : undefined}
+                <div
+                  className="shell-nav-item group"
                   data-active={isActive || undefined}
-                  onFocus={
-                    railMode
-                      ? (e) => openFlyout(item.path, e.currentTarget)
-                      : undefined
-                  }
-                  onClick={(e) => {
-                    if (item.comingSoon) return;
-                    if (railMode) {
-                      openFlyout(item.path, e.currentTarget);
-                      return;
-                    }
-                    toggleOpen(item.path);
-                  }}
-                  className="shell-nav-item"
+                  aria-current={isActive ? "page" : undefined}
                 >
-                  <Icon
-                    className="shell-nav-icon"
-                    strokeWidth={ICON_STROKE}
-                    aria-hidden
-                  />
-                  <span className="shell-label flex-1 text-left">
-                    {item.label}
-                  </span>
-                  <ChevronDown
-                    className={`shell-label shell-nav-chevron ${isOpen ? "rotate-180" : ""}`}
-                    strokeWidth={ICON_STROKE}
-                    aria-hidden
-                  />
-                </button>
+                  <Link
+                    href={firstSubHref}
+                    aria-current={isActive ? "page" : undefined}
+                    onFocus={
+                      railMode
+                        ? (e) =>
+                            openFlyout(
+                              item.path,
+                              e.currentTarget.closest("li") || e.currentTarget,
+                            )
+                        : undefined
+                    }
+                    onClick={() => {
+                      if (item.comingSoon) return;
+                      if (railMode) {
+                        setFlyout(null);
+                        onNavigate?.();
+                        return;
+                      }
+                      setOpenKeys((prev) => {
+                        const next = new Set(prev);
+                        next.add(item.path);
+                        return next;
+                      });
+                      onNavigate?.();
+                    }}
+                    className="flex items-center gap-3 flex-1 min-w-0 text-inherit no-underline -my-2.5 py-2.5 [html[data-sidebar='rail']_&]:justify-center [html[data-sidebar='rail']_&]:flex-initial"
+                  >
+                    <Icon
+                      className="shell-nav-icon"
+                      strokeWidth={ICON_STROKE}
+                      aria-hidden
+                    />
+                    <span className="shell-label flex-1 text-left truncate">
+                      {item.label}
+                    </span>
+                  </Link>
+
+                  <button
+                    type="button"
+                    aria-label={`${item.label} дэд цэс ${isOpen ? "хаах" : "нээх"}`}
+                    aria-expanded={railMode ? showFlyout : isOpen}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (railMode) {
+                        const li = (e.currentTarget as HTMLElement).closest("li");
+                        if (li) openFlyout(item.path, li);
+                        return;
+                      }
+                      toggleOpen(item.path);
+                    }}
+                    className="shell-label p-1 -mr-1 rounded-md hover:bg-black/10 dark:hover:bg-white/15 transition-colors cursor-pointer flex items-center justify-center shrink-0"
+                    title={isOpen ? "Дэд цэс хумих" : "Дэд цэс дэлгэх"}
+                  >
+                    <ChevronDown
+                      className={`shell-nav-chevron ${isOpen ? "rotate-180" : ""}`}
+                      strokeWidth={ICON_STROKE}
+                      aria-hidden
+                    />
+                  </button>
+                </div>
               ) : (
                 <Link
                   href={href}

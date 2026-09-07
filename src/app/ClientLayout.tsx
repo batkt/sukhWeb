@@ -175,20 +175,21 @@ function LayoutContent({ children }: { children: ReactNode }) {
       const cookies = parseCookies();
       const token = cookies.tureestoken;
 
-      // `/nevtrekh` дээр token нь тухайн хуудсан дээрээ үүсдэг тул энд
-      // шалгах юм алга — эс тэгвээс код солигдохоос өмнө /login руу шидэнэ.
-      if (
+      const isPublicPath =
         pathname === "/login" ||
+        pathname === "/signup" ||
         pathname === "/nevtrekh" ||
-        (pathname && pathname.startsWith("/pay/"))
-      ) {
-        // Always show login page or payment page
+        pathname === "/app/account-delete" ||
+        Boolean(pathname && pathname.startsWith("/pay/")) ||
+        Boolean(pathname && pathname.startsWith("/zogsool-qr/"));
+
+      if (isPublicPath) {
+        // Always show public pages without requiring authentication
         setAuthChecked(true);
         return;
       }
 
       if (!token || !isTokenValid(token)) {
-
         if (token) {
           destroyCookie(null, "tureestoken", { path: "/" });
         }
@@ -299,8 +300,12 @@ function LayoutContent({ children }: { children: ReactNode }) {
         <BuildingProvider>
           <RequestScopeSync />
           {children}
-          {/* Нэвтрэх хуудсан дээр чат товчийг харуулахгүй. */}
-          {pathname !== "/login" && <ChatWidget />}
+          {/* Нэвтрэх болон нийтийн хуудсууд дээр чат товчийг харуулахгүй */}
+          {pathname !== "/login" &&
+            pathname !== "/signup" &&
+            pathname !== "/nevtrekh" &&
+            !pathname?.startsWith("/pay/") &&
+            !pathname?.startsWith("/zogsool-qr/") && <ChatWidget />}
           <Toaster position="top-right" richColors closeButton />
           <SuccessOverlayHost />
           <ErrorOverlayHost />
