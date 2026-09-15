@@ -3,9 +3,21 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import { ModalPortal } from "../../../../../components/shell/ModalPortal";
-import { Zap, Loader2, X, Search, Save, RefreshCw, FileSpreadsheet, Download, Upload } from "lucide-react";
+import {
+  Zap,
+  Loader2,
+  X,
+  Search,
+  Save,
+  RefreshCw,
+  FileSpreadsheet,
+  Download,
+  Upload,
+  ChevronDown,
+} from "lucide-react";
 import useModalHotkeys from "@/lib/useModalHotkeys";
 import uilchilgee from "@/lib/uilchilgee";
+import { getResidentField } from "@/lib/residentDataHelper";
 import { toast } from "sonner";
 
 interface ResidentUnitRow {
@@ -40,14 +52,30 @@ export default function MassKwtModal({
   const constraintsRef = React.useRef<HTMLDivElement | null>(null);
   const dragControls = useDragControls();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const excelMenuRef = useRef<HTMLDivElement | null>(null);
 
   const [fetching, setFetching] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [residents, setResidents] = useState<ResidentUnitRow[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [bulkInputValue, setBulkInputValue] = useState<string>("");
+  const [excelMenuOpen, setExcelMenuOpen] = useState<boolean>(false);
 
   useModalHotkeys({ isOpen: show, onClose });
+
+  // Close Excel menu on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (excelMenuRef.current && !excelMenuRef.current.contains(e.target as Node)) {
+        setExcelMenuOpen(false);
+      }
+    };
+    if (excelMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [excelMenuOpen]);
 
   // Fetch residents when modal opens
   useEffect(() => {
@@ -56,7 +84,7 @@ export default function MassKwtModal({
     } else {
       setResidents([]);
       setSearchTerm("");
-      setBulkInputValue("");
+      setExcelMenuOpen(false);
     }
   }, [show, token, baiguullagiinId, barilgiinId]);
 
@@ -81,11 +109,15 @@ export default function MassKwtModal({
 
       const parsedRows: ResidentUnitRow[] = rawList.map((item: any) => {
         const cur = parseFloat(item.tsahilgaaniiZaalt) || 0;
+        const tootVal = getResidentField(item, "toot") ?? item.toot;
+        const davkharVal = getResidentField(item, "davkhar") ?? item.davkhar;
+        const ortsVal = getResidentField(item, "orts") ?? item.orts;
+
         return {
           _id: String(item._id),
-          toot: item.toot ? String(item.toot).trim() : "-",
-          davkhar: item.davkhar ? String(item.davkhar) : "",
-          orts: item.orts ? String(item.orts) : "",
+          toot: tootVal ? String(tootVal).trim() : "-",
+          davkhar: davkharVal ? String(davkharVal).trim() : "",
+          orts: ortsVal ? String(ortsVal).trim() : "",
           ner: item.ner || "Нэргүй",
           ovog: item.ovog || "",
           utas: item.utas || "",
@@ -113,17 +145,27 @@ export default function MassKwtModal({
     );
   };
 
-  const handleApplyBulkValue = () => {
-    if (!bulkInputValue.trim()) return;
-    const num = parseFloat(bulkInputValue);
-    if (isNaN(num) || num < 0) {
-      toast.error("Ижил оруулах кВт утгаа зөв оруулна уу.");
-      return;
+  // Keyboard navigation between inputs
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
+    if (e.key === "Enter" || e.key === "ArrowDown") {
+      e.preventDefault();
+      const nextInput = document.querySelector<HTMLInputElement>(
+        `input[data-kwt-index="${index + 1}"]`
+      );
+      if (nextInput) {
+        nextInput.focus();
+        nextInput.select();
+      }
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      const prevInput = document.querySelector<HTMLInputElement>(
+        `input[data-kwt-index="${index - 1}"]`
+      );
+      if (prevInput) {
+        prevInput.focus();
+        prevInput.select();
+      }
     }
-    setResidents((prev) =>
-      prev.map((r) => ({ ...r, newKwt: String(num) }))
-    );
-    toast.success(`Бүх оршин суугчдад ${num} кВт утга тохирууллаа.`);
   };
 
   // Export Resident list with current kWt to Excel sheet
@@ -133,18 +175,16 @@ export default function MassKwtModal({
       return;
     }
 
-    // Loaded here rather than imported: xlsx is ~400 kB and only needed when
-    // the user actually exports or imports a sheet.
     const XLSX = await import("xlsx");
 
-    const exportRows = residents.map((r) => ({
-      "Давхар": r.davkhar || "",
+    const exportRows = residents.map((r, index) => ({
+      "№": index + 1,
       "Тоот": r.toot || "",
-      "Орц": r.orts || "1",
-      "Овог": r.ovog || "",
+      "Давхар": r.davkhar || "",
       "Нэр": r.ner || "",
-      "Утас": r.utas || "",
-      "Цахилгаан кВт": parseFloat(r.newKwt) || r.currentKwt || 0,
+      "Дугаар": r.utas || "",
+      "Одоогийн кВт": r.currentKwt || 0,
+      "Шинэ кВт заалт": r.newKwt !== "" ? parseFloat(r.newKwt) : r.currentKwt || 0,
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(exportRows);
@@ -184,9 +224,12 @@ export default function MassKwtModal({
             );
             if (matchedRow) {
               const val = parseFloat(
-                matchedRow["Цахилгаан кВт"] ??
+                matchedRow["Шинэ кВт заалт"] ??
+                  matchedRow["Цахилгаан кВт"] ??
                   matchedRow["Цахилгаан кВт (тариф ₮/кВт)"] ??
-                  matchedRow["кВт"]
+                  matchedRow["кВт"] ??
+                  matchedRow["Заалт"] ??
+                  matchedRow["Шинэ заалт"]
               );
               if (!isNaN(val) && val >= 0) {
                 updatedCount++;
@@ -198,7 +241,7 @@ export default function MassKwtModal({
         );
 
         toast.success(
-          `Excel файлаас ${updatedCount} тоотын кВт заалт амжилттай уншигдлаа. "Бүгдийг хадгалах" товчийг дарж баталгаажуулна уу.`
+          `Excel файлаас ${updatedCount} тоотын кВт заалт амжилттай уншигдлаа. "Хадгалах" товчийг дарж баталгаажуулна уу.`
         );
       } catch (err) {
         toast.error("Excel файл уншихад алдаа гарлаа.");
@@ -214,6 +257,7 @@ export default function MassKwtModal({
     return residents.filter(
       (r) =>
         r.toot.toLowerCase().includes(term) ||
+        (r.davkhar && r.davkhar.toLowerCase().includes(term)) ||
         r.ner.toLowerCase().includes(term) ||
         (r.ovog && r.ovog.toLowerCase().includes(term)) ||
         (r.utas && r.utas.includes(term))
@@ -292,7 +336,7 @@ export default function MassKwtModal({
             dragConstraints={constraintsRef}
             dragMomentum={false}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-3xl max-h-[85vh] flex flex-col modal-surface rounded-2xl shadow-2xl p-6 text-sm relative"
+            className="w-full max-w-4xl max-h-[88vh] flex flex-col modal-surface rounded-2xl shadow-2xl p-6 text-sm relative"
           >
             {/* Header */}
             <div
@@ -308,7 +352,7 @@ export default function MassKwtModal({
                     Цахилгааны (кВт) заалт шинэчлэх
                   </h3>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Оршин суугч бүрийн заалтыг гараар оруулах эсвэл Excel баганаас шууд уншуулах
+                    Оршин суугч бүрийн заалтыг гараар оруулах эсвэл Excel-ээр уншуулах
                   </p>
                 </div>
               </div>
@@ -316,7 +360,7 @@ export default function MassKwtModal({
                 type="button"
                 onClick={onClose}
                 disabled={loading}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -324,28 +368,64 @@ export default function MassKwtModal({
 
             {/* Quick Excel & Search Action Bar */}
             <div className="py-3 flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 dark:border-gray-700">
-              <div className="relative flex-1 min-w-[180px]">
+              <div className="relative flex-1 min-w-[200px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Тоот эсвэл нэрээр хайх..."
+                  placeholder="Тоот, давхар эсвэл нэрээр хайх..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                 />
               </div>
 
-              {/* Excel Action Buttons */}
+              {/* Action Buttons */}
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleExportToExcel}
-                  className="px-3 py-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-xl transition-colors flex items-center gap-1.5"
-                  title="Одоогийн жагсаалтыг Excel загвар болгон татах"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Excel татах</span>
-                </button>
+                {/* Unified Single Excel Dropdown Button */}
+                <div ref={excelMenuRef} className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setExcelMenuOpen((prev) => !prev)}
+                    className="px-3 py-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-xl transition-colors flex items-center gap-1.5 border border-emerald-500/20 shadow-xs"
+                    title="Excel үйлдлүүд"
+                  >
+                    <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <span>Excel</span>
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                        excelMenuOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+
+                  {excelMenuOpen && (
+                    <div className="absolute right-0 top-full mt-1.5 z-50 min-w-[170px] bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 py-1 overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setExcelMenuOpen(false);
+                          handleExportToExcel();
+                        }}
+                        className="w-full px-3.5 py-2 text-left text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/60 flex items-center gap-2 transition-colors"
+                      >
+                        <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                        <span>Excel татах</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setExcelMenuOpen(false);
+                          fileInputRef.current?.click();
+                        }}
+                        className="w-full px-3.5 py-2 text-left text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/60 flex items-center gap-2 transition-colors border-t border-gray-100 dark:border-gray-700/50"
+                      >
+                        <Upload className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                        <span>Excel оруулах</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
 
                 <input
                   ref={fileInputRef}
@@ -354,43 +434,12 @@ export default function MassKwtModal({
                   className="hidden"
                   onChange={handleExcelImport}
                 />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="px-3 py-1.5 text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 rounded-xl transition-colors flex items-center gap-1.5"
-                  title="Бөглөсөн Excel файлаа оруулах"
-                >
-                  <Upload className="w-3.5 h-3.5" />
-                  <span>Excel оруулах</span>
-                </button>
-
-                <div className="h-4 w-px bg-gray-300 dark:bg-gray-700 mx-1" />
-
-                <div className="relative w-32">
-                  <input
-                    type="number"
-                    step="any"
-                    min="0"
-                    placeholder="Ижил кВт"
-                    value={bulkInputValue}
-                    onChange={(e) => setBulkInputValue(e.target.value)}
-                    className="w-full px-2.5 py-1.5 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={handleApplyBulkValue}
-                  className="px-2.5 py-1.5 text-xs font-medium text-amber-700 dark:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 rounded-xl transition-colors"
-                  title="Бүх оршин суугчид ижил утга оруулах"
-                >
-                  <span>Бүгдэд</span>
-                </button>
 
                 <button
                   type="button"
                   onClick={loadResidents}
                   disabled={fetching}
-                  className="p-1.5 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 rounded-xl transition-colors"
+                  className="p-1.5 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                   title="Дахин ачаалах"
                 >
                   <RefreshCw className={`w-4 h-4 ${fetching ? "animate-spin" : ""}`} />
@@ -398,11 +447,11 @@ export default function MassKwtModal({
               </div>
             </div>
 
-            {/* Resident List Table */}
-            <div className="flex-1 overflow-y-auto min-h-[250px] max-h-[420px] py-2 no-scrollbar">
+            {/* Resident List Table with Sticky Header and solid background */}
+            <div className="flex-1 overflow-y-auto min-h-[250px] max-h-[48vh] border border-gray-200 dark:border-gray-700 rounded-xl relative my-2">
               {fetching ? (
                 <div className="flex items-center justify-center h-48 text-gray-500 gap-2">
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <Loader2 className="w-5 h-5 animate-spin text-amber-500" />
                   <span>Уншиж байна...</span>
                 </div>
               ) : filteredResidents.length === 0 ? (
@@ -411,46 +460,72 @@ export default function MassKwtModal({
                 </div>
               ) : (
                 <table className="w-full text-left text-xs border-collapse">
-                  <thead className="sticky top-0 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-semibold z-10">
-                    <tr>
-                      <th className="p-2.5 rounded-l-xl w-20">Тоот</th>
-                      <th className="p-2.5">Нэр / Овог</th>
-                      <th className="p-2.5 w-24">Утас</th>
-                      <th className="p-2.5 text-right w-28">Одоогийн кВт</th>
-                      <th className="p-2.5 text-right rounded-r-xl w-36">Шинэ кВт заалт</th>
+                  <thead className="sticky top-0 z-20 shadow-xs">
+                    <tr className="border-b border-gray-200 dark:border-gray-700">
+                      <th className="py-2.5 px-3 sticky top-0 z-20 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold text-center w-12 border-b border-gray-200 dark:border-gray-700">
+                        №
+                      </th>
+                      <th className="py-2.5 px-3 sticky top-0 z-20 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold w-24 border-b border-gray-200 dark:border-gray-700">
+                        Тоот
+                      </th>
+                      <th className="py-2.5 px-3 sticky top-0 z-20 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold text-center w-20 border-b border-gray-200 dark:border-gray-700">
+                        Давхар
+                      </th>
+                      <th className="py-2.5 px-3 sticky top-0 z-20 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold border-b border-gray-200 dark:border-gray-700">
+                        Нэр / Овог
+                      </th>
+                      <th className="py-2.5 px-3 sticky top-0 z-20 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold w-28 border-b border-gray-200 dark:border-gray-700">
+                        Дугаар
+                      </th>
+                      <th className="py-2.5 px-3 sticky top-0 z-20 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold text-right w-28 border-b border-gray-200 dark:border-gray-700">
+                        Одоогийн кВт
+                      </th>
+                      <th className="py-2.5 px-3 sticky top-0 z-20 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold text-right w-36 border-b border-gray-200 dark:border-gray-700">
+                        Шинэ кВт заалт
+                      </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                    {filteredResidents.map((r) => (
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-gray-900/50">
+                    {filteredResidents.map((r, index) => (
                       <tr
                         key={r._id}
-                        className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                        className="hover:bg-amber-500/5 dark:hover:bg-amber-500/10 transition-colors"
                       >
-                        <td className="p-2.5 font-semibold text-gray-900 dark:text-white">
+                        <td className="py-2.5 px-3 text-center text-gray-400 dark:text-gray-500 font-mono text-[11px]">
+                          {index + 1}
+                        </td>
+                        <td className="py-2.5 px-3 font-semibold text-gray-900 dark:text-white">
                           {r.toot}
                         </td>
-                        <td className="p-2.5">
+                        <td className="py-2.5 px-3 text-center text-gray-600 dark:text-gray-300">
+                          {r.davkhar || "-"}
+                        </td>
+                        <td className="py-2.5 px-3">
                           <span className="font-medium text-gray-900 dark:text-white">
                             {r.ner}
                           </span>
                           {r.ovog && (
-                            <span className="text-gray-400 ml-1">({r.ovog})</span>
+                            <span className="text-gray-400 ml-1 text-[11px]">
+                              ({r.ovog})
+                            </span>
                           )}
                         </td>
-                        <td className="p-2.5 text-gray-500 dark:text-gray-400">
+                        <td className="py-2.5 px-3 text-gray-600 dark:text-gray-300 font-mono">
                           {r.utas || "-"}
                         </td>
-                        <td className="p-2.5 text-right text-gray-500 dark:text-gray-400 font-mono">
+                        <td className="py-2.5 px-3 text-right text-gray-500 dark:text-gray-400 font-mono">
                           {r.currentKwt} кВт
                         </td>
-                        <td className="p-2.5 text-right">
+                        <td className="py-2.5 px-3 text-right">
                           <div className="relative inline-block w-28">
                             <input
+                              data-kwt-index={index}
                               type="number"
                               step="any"
                               min="0"
                               value={r.newKwt}
                               onChange={(e) => handleKwtChange(r._id, e.target.value)}
+                              onKeyDown={(e) => handleKeyDown(e, index)}
                               placeholder="0"
                               className="w-full px-2.5 py-1 text-right text-xs font-semibold rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                             />
@@ -482,14 +557,14 @@ export default function MassKwtModal({
                   type="button"
                   onClick={handleSubmit}
                   disabled={loading || fetching}
-                  className="px-5 py-2 text-xs font-medium text-white bg-amber-500 hover:bg-amber-600 active:bg-amber-700 rounded-xl transition-colors flex items-center gap-2 shadow-md disabled:opacity-50"
+                  className="px-5 py-2 text-xs font-medium text-white bg-amber-500 hover:bg-amber-600 active:bg-amber-700 rounded-xl transition-colors flex items-center gap-2 shadow-md disabled:opacity-50 cursor-pointer"
                 >
                   {loading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
                     <Save className="w-4 h-4" />
                   )}
-                  <span>Бүгдийг хадгалах</span>
+                  <span>Хадгалах</span>
                 </button>
               </div>
             </div>

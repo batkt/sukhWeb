@@ -7,6 +7,8 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Database,
+  HelpCircle,
+  MessageCircle,
   X,
 } from "lucide-react";
 import ThemedLogo from "@/components/ui/ThemedLogo";
@@ -26,6 +28,10 @@ interface Props {
   buildings: BuildingOption[];
   remainingDays: number | null;
   storageLabel: string | null;
+  /** «Ерөнхий тусламж» — зааврын таб дээр нээнэ. */
+  onOpenHelp: () => void;
+  /** «Шууд чат» — чатботын таб дээр нээнэ. */
+  onOpenChat: () => void;
 }
 
 /** One line of the licence / storage readout at the foot of the sidebar. */
@@ -71,6 +77,8 @@ export default function Sidebar({
   buildings,
   remainingDays,
   storageLabel,
+  onOpenHelp,
+  onOpenChat,
 }: Props) {
   const { selectedBuildingId, setSelectedBuildingId } = useBuilding();
   const {
@@ -137,7 +145,7 @@ export default function Sidebar({
     >
       {/* ── Brand ─────────────────────────────────────────────── */}
       <div className="shell-sidebar-head">
-        <ThemedLogo size={railMode ? 34 : 44} radius={10} padding={4} />
+        <ThemedLogo size={railMode ? 32 : 44} radius={10} padding={4} />
         {/* Салбар сонгох нь логоны хажууд байрлана. Rail горимд зай
             байхгүй тул доорх икон болж хумигдаж, идэвхтэй салбарын нэр
             топ баарын үндсэн гарчиг болж гарна. */}
@@ -188,8 +196,48 @@ export default function Sidebar({
         />
       </div>
 
-      {/* ── Collapse button ────────────────────────────────────────── */}
+      {/* ── Тусламж, чат ба хумих товч ───────────────────────────── */}
       <div className="shell-sidebar-foot">
+        {/* Чатбот ба ерөнхий тусламж нь урьд нь топ баарын икон болон
+            хөвөгч товч хэлбэрээр тархсан байв. Хоёулаа нэг модалын хоёр
+            таб тул цэсний доод хэсэгт зэрэгцүүлж, үндсэн цэстэй ижил
+            мөрийн загвараар (`shell-nav-item`) харуулав — ингэснээр rail
+            горимд ч бусад иконтойгоо нэг тэнхлэгт, нэг хэмжээтэй эгнэнэ. */}
+        <button
+          type="button"
+          onClick={() => {
+            onOpenChat();
+            if (!isDesktop) closeDrawer();
+          }}
+          aria-label="Шууд чат"
+          title="Шууд чат"
+          className="shell-nav-item"
+        >
+          <MessageCircle
+            className="shell-nav-icon"
+            strokeWidth={ICON_STROKE}
+            aria-hidden
+          />
+          <span className="shell-label flex-1 text-left">Шууд чат</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            onOpenHelp();
+            if (!isDesktop) closeDrawer();
+          }}
+          aria-label="Ерөнхий тусламж"
+          title="Ерөнхий тусламж"
+          className="shell-nav-item"
+        >
+          <HelpCircle
+            className="shell-nav-icon"
+            strokeWidth={ICON_STROKE}
+            aria-hidden
+          />
+          <span className="shell-label flex-1 text-left">Ерөнхий тусламж</span>
+        </button>
 
         {isDesktop && (
           <button

@@ -5452,6 +5452,9 @@ html[data-mode="dark"],
 }
 
 .shell-sidebar-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
   flex-shrink: 0;
   padding: 0.5rem 0.75rem 0.75rem;
   border-top: 1px solid var(--sidebar-border);
@@ -5575,6 +5578,7 @@ html[data-sidebar="rail"] .shell-collapse-btn {
   position: relative;
   display: flex;
   align-items: center;
+  cursor: pointer;
   gap: 0.75rem;
   width: 100%;
   padding: 0.6rem 0.7rem;
@@ -5732,6 +5736,68 @@ html[data-sidebar="rail"] .shell-collapse-btn {
   html[data-sidebar="rail"] .shell-nav-item a {
     justify-content: center;
     flex: none;
+  }
+
+  /* ── Rail горимын икон жигдлэл ──────────────────────────────────
+
+     Хумигдсан цэсэнд гурван өөр төрлийн товч зэрэгцэн харагддаг:
+     цэсний мөрүүд (.shell-nav-item), барилга сонгох товч
+     (.shell-icon-btn) ба хумих товч (.shell-collapse-btn). Тус бүр
+     нь өөр өөр глифийн хэмжээ (18px / 17px / 18px) БОЛОН өөр өөр
+     хэлбэрийн товшилтын талбайтай байв — цэсний мөр бүтэн өргөнөөр,
+     барилгын товч 34px квадрат, хумих товч бүтэн өргөнөөр. Улмаар
+     hover дэвсгэрүүд гурван өөр хэлбэрээр гарч, иконууд нэг тэнхлэгт
+     эгнэхгүй байв.
+
+     Энд гурвууланг НЭГ квадрат хэмжээст оруулж, глифийн хэмжээг ч
+     нэг хувьсагчаар барина. Дүрмүүд нь зөвхөн `.shell-sidebar` дотор
+     хамаарна — `.shell-icon-btn` нь топ баарт ч хэрэглэгддэг тул
+     түүнийг хамт татах боломжгүй. */
+  html[data-sidebar="rail"] .shell-sidebar {
+    --shell-rail-glyph: 1.125rem;
+    --shell-rail-btn: 2.5rem;
+  }
+
+  html[data-sidebar="rail"] .shell-sidebar .shell-nav-item,
+  html[data-sidebar="rail"] .shell-sidebar .shell-icon-btn,
+  html[data-sidebar="rail"] .shell-sidebar .shell-collapse-btn {
+    width: var(--shell-rail-btn);
+    min-width: var(--shell-rail-btn);
+    height: var(--shell-rail-btn);
+    margin-inline: auto;
+    padding: 0;
+    border-radius: 0.75rem;
+    justify-content: center;
+    gap: 0;
+  }
+
+  html[data-sidebar="rail"] .shell-sidebar .shell-nav-icon,
+  html[data-sidebar="rail"] .shell-sidebar .shell-nav-chevron,
+  html[data-sidebar="rail"] .shell-sidebar .shell-icon-btn svg,
+  html[data-sidebar="rail"] .shell-sidebar .shell-collapse-btn svg {
+    width: var(--shell-rail-glyph);
+    height: var(--shell-rail-glyph);
+  }
+
+  /* Дэд цэстэй мөрийн дотоод <a> нь эцгийнхээ бүтэн квадратыг эзэлнэ.
+     Эс тэгвээс товшилтын талбай нь глифийн хэмжээнд хумигдаж, зэргэлдээ
+     дэд цэсгүй мөрүүдээс өөр зан гаргана. (Tailwind-ийн `-my-2.5 py-2.5`
+     нь @layer utilities дотор тул давхарлаагүй эдгээр дүрэм нь дийлнэ.) */
+  html[data-sidebar="rail"] .shell-sidebar .shell-nav-item a {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    gap: 0;
+  }
+
+  /* Идэвхтэй хэсгийн зураас цэсний зүүн ирмэг дээр үлдэнэ: мөр нь одоо
+     дундаа байрлах квадрат болсон тул жагсаалтын padding-т тааруулсан
+     `-0.75rem` хүрэлцэхээ болино. */
+  html[data-sidebar="rail"]
+    .shell-sidebar
+    .shell-nav-item[data-active]::before {
+    left: calc((var(--shell-rail-btn) - var(--shell-rail-w)) / 2);
   }
 
   /* ── Хулганаар түр дэлгэх (peek) ────────────────────────────────

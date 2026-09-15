@@ -25,11 +25,19 @@ function BodyFallback() {
 export default function HelpModal({
   open,
   onClose,
+  initialTab = "instructions",
 }: {
   open: boolean;
   onClose: () => void;
+  /**
+   * Аль табаар нээгдэх. Хажуугийн цэсэнд «Шууд чат» ба «Ерөнхий тусламж»
+   * тус тусдаа мөр болсон тул дуудсан тал аль хуудсыг хүсэж байгаагаа
+   * шийднэ. Модал хаагдахдаа бүрэн unmount болдог тул дараагийн нээлт
+   * үргэлж шинэ `initialTab`-аас эхэлнэ.
+   */
+  initialTab?: "instructions" | "chat";
 }) {
-  const [tab, setTab] = useState<"instructions" | "chat">("instructions");
+  const [tab, setTab] = useState<"instructions" | "chat">(initialTab);
 
   useEffect(() => {
     if (!open) return;
