@@ -6,7 +6,6 @@ import {
   Bell,
   CalendarClock,
   Database,
-  HelpCircle,
   LogOut,
   MessageCircle,
   MessageCircleOff,
@@ -33,7 +32,6 @@ interface Props {
   remainingDays?: number | null;
   storageLabel?: string | null;
   onOpenNotifications: () => void;
-  onOpenHelp: () => void;
   onOpenSettings: (tab: "general" | "font-size") => void;
 }
 
@@ -44,7 +42,6 @@ export default function Topbar({
   remainingDays,
   storageLabel,
   onOpenNotifications,
-  onOpenHelp,
   onOpenSettings,
 }: Props) {
   const router = useRouter();
@@ -226,16 +223,6 @@ export default function Topbar({
           <UnguSongokh buttonClassName="shell-icon-btn" />
         </span>
         <ThemeModeToggler buttonClassName="shell-icon-btn" />
-
-        <button
-          type="button"
-          onClick={onOpenHelp}
-          aria-label="Ерөнхий тусламж"
-          title="Ерөнхий тусламж"
-          className="shell-icon-btn"
-        >
-          <HelpCircle strokeWidth={ICON_STROKE} />
-        </button>
 
         {isLoggedIn && <SanalAsuulgaTracker />}
 

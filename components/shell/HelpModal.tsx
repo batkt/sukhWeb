@@ -48,6 +48,9 @@ export default function HelpModal({
 
   if (!open) return null;
 
+  const garchig = tab === "chat" ? "Шууд чат" : "Ерөнхий тусламж";
+  const GarchigIcon = tab === "chat" ? MessageSquare : HelpCircle;
+
   const tabs = [
     {
       key: "instructions" as const,
@@ -69,16 +72,16 @@ export default function HelpModal({
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Ерөнхий тусламж"
+          aria-label={garchig}
           className="shell-dialog relative flex max-h-[88vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-[color:var(--panel-text)]/12 bg-[color:var(--surface-bg)] shadow-[0_32px_80px_-24px_rgba(0,0,0,0.5)]"
         >
           <header className="flex shrink-0 items-center justify-between border-b border-[color:var(--panel-text)]/10 px-6 py-4">
             <h2 className="flex items-center gap-2 text-lg font-semibold tracking-[-0.015em] text-[color:var(--panel-text)]">
-              <HelpCircle
+              <GarchigIcon
                 className="h-5 w-5 text-[color:var(--theme)]"
                 strokeWidth={ICON_STROKE}
               />
-              Ерөнхий тусламж
+              {garchig}
             </h2>
             <button
               type="button"

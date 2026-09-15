@@ -24,11 +24,21 @@ export interface LauncherPos {
   y: number;
 }
 
+/**
+ * Чат нь одоо хажуугийн цэсний байнгын мөр болсон тул хөвөгч товч нь
+ * АНХДАГЧААР нуугдана — эс тэгвээс нэг функц хоёр газраас зэрэг харагдаж,
+ * товч нь агуулгын дээгүүр хөвж хаяа хүснэгтийн үйлдлийг халхалдаг.
+ *
+ * Тэмдэглэл: `!== "0"` гэж уншсан нь санаатай. "1" (нуусан) ба утга
+ * байхгүй (хэзээ ч хөндөөгүй) хоёрыг НУУСАН гэж авна; профайл цэснээс
+ * "Чат товч гаргах" дарсан хэрэглэгч л "0" бичдэг тул тэдний сонголт
+ * хэвээр хүчинтэй үлдэнэ.
+ */
 function readHidden(): boolean {
   try {
-    return localStorage.getItem(HIDDEN_KEY) === "1";
+    return localStorage.getItem(HIDDEN_KEY) !== "0";
   } catch {
-    return false;
+    return true;
   }
 }
 
@@ -96,12 +106,13 @@ export function setLauncherPos(pos: LauncherPos) {
 }
 
 /**
- * SSR үед үргэлж `false`-ээр эхэлж, mount болсны дараа localStorage-оос уншина.
- * Ингэснээр сервер болон клиентийн эхний render зөрөхгүй (hydration алдаагүй).
+ * SSR үед үргэлж АНХДАГЧ утгаар (нуугдсан) эхэлж, mount болсны дараа
+ * localStorage-оос уншина. Ингэснээр сервер болон клиентийн эхний render
+ * зөрөхгүй (hydration алдаагүй), мөн товч гарч ирээд буцаж алга болохгүй.
  */
 export function useChatLauncher() {
   const [hydrated, setHydrated] = useState(false);
-  const [hidden, setHiddenState] = useState(false);
+  const [hidden, setHiddenState] = useState(true);
   const [pos, setPosState] = useState<LauncherPos | null>(null);
 
   useEffect(() => {

@@ -24,7 +24,12 @@ function ShellBody({ children }: { children: React.ReactNode }) {
   const { selectedBuildingId, setSelectedBuildingId } = useBuilding();
 
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [helpOpen, setHelpOpen] = useState(false);
+  // Тусламжийн модал нь хоёр таб (заавар / чат) агуулдаг бөгөөд хажуугийн
+  // цэсэнд тус тусдаа мөр болсон тул зөвхөн нээх/хаах биш, АЛЬ табаар
+  // нээхийг ч хадгална. `null` = хаалттай.
+  const [helpTab, setHelpTab] = useState<"instructions" | "chat" | null>(
+    null,
+  );
   const [settingsTab, setSettingsTab] = useState<"general" | "font-size" | null>(
     null,
   );
@@ -171,6 +176,8 @@ function ShellBody({ children }: { children: React.ReactNode }) {
       buildings={buildings}
       remainingDays={shell.remainingDays}
       storageLabel={shell.storageLabel}
+      onOpenHelp={() => setHelpTab("instructions")}
+      onOpenChat={() => setHelpTab("chat")}
     />
   );
 
@@ -200,7 +207,6 @@ function ShellBody({ children }: { children: React.ReactNode }) {
         remainingDays={shell.remainingDays}
         storageLabel={shell.storageLabel}
         onOpenNotifications={() => setNotificationsOpen(true)}
-        onOpenHelp={() => setHelpOpen(true)}
         onOpenSettings={openSettings}
       />
 
@@ -231,7 +237,13 @@ function ShellBody({ children }: { children: React.ReactNode }) {
             organisationName={baiguullaga?.ner ?? ""}
           />
         )}
-        {helpOpen && <HelpModal open onClose={() => setHelpOpen(false)} />}
+        {helpTab && (
+          <HelpModal
+            open
+            initialTab={helpTab}
+            onClose={() => setHelpTab(null)}
+          />
+        )}
       </Suspense>
 
       <div id="modal-root" />
