@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { io, type Socket } from "socket.io-client";
-import uilchilgee from "@/lib/uilchilgee";
+import uilchilgee, { getApiUrl } from "@/lib/uilchilgee";
 
 interface TuukhEntry {
   tsagiinTuukh?: Array<{
@@ -140,9 +140,12 @@ export function useParkingSocket({
       return;
     }
 
-    // Socket.IO server URL - use the parking server
-    // User requested to connect to IP directly
-    const socketUrl = "https://amarhome.mn/api";
+    // Socket.IO server URL - dynamic from environment
+    const apiUrl = getApiUrl();
+    const socketBase = apiUrl.endsWith("/api/") ? apiUrl.slice(0, -5) : apiUrl;
+    const socketUrl =
+      process.env.NEXT_PUBLIC_SOCKET_URL ||
+      (socketBase.startsWith("http") ? socketBase : "https://amarhome.mn");
 
     // Create socket instance
     const socketInstance = io(socketUrl, {

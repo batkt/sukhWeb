@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { type Uilchluulegch } from "@/lib/useParkingSocket";
 import formatNumber from "../../../../../tools/function/formatNumber";
-import uilchilgee, { socket, getErrorMessage } from "@/lib/uilchilgee";
+import uilchilgee, { socket, getErrorMessage, getApiUrl } from "@/lib/uilchilgee";
 import { toast } from "react-hot-toast";
 import moment from "moment";
 
@@ -544,7 +544,7 @@ export default function PaymentModal({
       (async () => {
         try {
           const r = await fetch(
-            `https://amarhome.mn/api/payment/qpay?id=${transaction._id}&amount=${qe.dun}`,
+            `${getApiUrl()}payment/qpay?id=${transaction._id}&amount=${qe.dun}`,
           );
           const d = await r.json();
           if (d.qr_image || d.qrData) setQpayData(d);

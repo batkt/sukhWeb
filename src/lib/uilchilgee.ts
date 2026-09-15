@@ -7,7 +7,34 @@ import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 // In production with nginx proxy, use /api (relative path)
 // In local development, use full URL
 // Priority: env variable > detect production (HTTPS + /api) > default local dev URL
+export function formatApiUrl(input?: string): string | null {
+  if (!input || !input.trim()) return null;
+  let val = input.trim();
+  if (!val.startsWith("http://") && !val.startsWith("https://") && !val.startsWith("/")) {
+    val = `https://${val}`;
+  }
+  if (!val.endsWith("/")) {
+    val = `${val}/`;
+  }
+  if (!val.endsWith("/api/")) {
+    val = val.replace(/\/+$/, "") + "/api/";
+  }
+  return val;
+}
+
 export function getApiUrl(): string {
+  // Use explicit environment variable if set (supports NEXT_PUBLIC_API_URL, API_URL, UNDSEN_SERVER)
+  const envVal =
+    process.env.NEXT_PUBLIC_API_URL ||
+    process.env.NEXT_PUBLIC_UNDSEN_SERVER ||
+    process.env.API_URL ||
+    process.env.UNDSEN_SERVER;
+
+  const formatted = formatApiUrl(envVal);
+  if (formatted) {
+    return formatted;
+  }
+
   // Always use dev API URL on dev branch
   if (
     process.env.NEXT_PUBLIC_BRANCH === "dev" ||
@@ -17,11 +44,6 @@ export function getApiUrl(): string {
     process.env.BRANCH === "dev"
   ) {
     return "https://amarhome.mn/api/";
-  }
-
-  // Otherwise, use env variable if set
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL;
   }
 
   if (typeof window !== "undefined" && window.location.protocol === "https:") {

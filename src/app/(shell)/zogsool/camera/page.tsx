@@ -51,6 +51,7 @@ import uilchilgee, {
   socket as getSocket,
   aldaaBarigch,
   url as apiUrl,
+  getApiUrl,
 } from "@/lib/uilchilgee";
 import formatNumber from "../../../../../tools/function/formatNumber";
 import WebRTCVideoPlayer from "@/components/WebRTCVideoPlayer";
@@ -685,7 +686,7 @@ export default function Camera() {
         };
 
         const resp = await axios.post(
-          "https://amarhome.mn/api/zogsoolSdkService",
+          `${getApiUrl()}zogsoolSdkService`,
           payload,
           {
             headers: {

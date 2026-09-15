@@ -9,6 +9,7 @@ import { toast } from "react-hot-toast";
 import Button from "@/components/ui/Button";
 import useModalHotkeys from "@/lib/useModalHotkeys";
 import dayjs from "dayjs";
+import { getApiUrl } from "@/lib/uilchilgee";
 
 interface VehicleRegistrationModalProps {
   onClose: () => void;
@@ -122,7 +123,7 @@ export default function VehicleRegistrationModal({
       };
 
       const resp = await axios.post(
-        "https://amarhome.mn/api/zogsoolSdkService",
+        `${getApiUrl()}zogsoolSdkService`,
         payload,
         {
           headers: {
