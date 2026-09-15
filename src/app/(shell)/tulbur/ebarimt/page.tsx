@@ -580,9 +580,9 @@ export default function Ebarimt() {
 
   return (
     <div className="flex flex-col pb-14">
-        <div className="space-y-6">
+        <div className="space-y-3">
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="stat-cards-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             {stats.map((stat, idx) => (
               <div
                 key={idx}
@@ -595,11 +595,11 @@ export default function Ebarimt() {
                     : "hover:bg-[color:var(--surface-hover)] hover:scale-105"
                 }`}
               >
-                <div className="relative rounded-2xl p-5 overflow-hidden">
-                  <div className="text-3xl mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme">
+                <div className="stat-card">
+                  <div className="stat-card-value">
                     {stat.value}
                   </div>
-                  <div className="text-[13px] text-theme leading-tight">
+                  <div className="stat-card-title">
                     {stat.title}
                   </div>
                 </div>

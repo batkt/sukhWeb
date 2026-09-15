@@ -6360,3 +6360,53 @@ html[data-sidebar="rail"] .shell-collapse-btn {
   animation: sanal-glow 2.5s infinite ease-in-out;
 }
 
+
+/* ────────────────────────────────────────────────────────────────────────
+   DASHBOARD-ИЙН ТОО БҮХИЙ КАРТ (stat card)
+   ────────────────────────────────────────────────────────────────────────
+   Энэ карт нь 12 цонх дээр ЯГ ижил Tailwind ангиудаар гараар давтагдаж
+   бичигдсэн байсан (`relative rounded-2xl p-5 overflow-hidden` + `text-3xl`
+   + `text-[13px]`). Улмаар нэг цонх дээр засвар хийхэд бусад нь хоцорч,
+   хэмжээ нь цонх бүр дээр өөр өөр болох эрсдэлтэй байв.
+
+   Одоо хэмжээг ЭНД нэг л удаа тодорхойлно:
+     • өндрийг `min-height`-ээр тогтоосон тул тоо нь 1 эсвэл 7 оронтой байсан
+       ч бүх карт ижил өндөртэй эгнэнэ;
+     • өмнөхөөс ~25% намхан (p-5 → p-3.5, 30px → 22px тоо) — толгойн хэсэг
+       богиносож хүснэгт дээшээ ойртоно.
+   ──────────────────────────────────────────────────────────────────────── */
+
+.stat-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1rem;
+  padding: 0.875rem 1rem;
+  /* Бүх карт ижил өндөртэй байх баталгаа. */
+  min-height: 4.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.stat-card-value {
+  font-size: 1.375rem;
+  line-height: 1.15;
+  font-weight: 600;
+  color: var(--panel-text);
+  /* Тоонууд босоо эгнээнд таарч зогсоно. */
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.stat-card-title {
+  margin-top: 0.125rem;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  color: var(--muted-text, var(--panel-text));
+}
+
+/* Толгойн хэсгийг шахах — хүснэгт дээшээ ойртоно. */
+.stat-cards-grid {
+  gap: 0.625rem;
+  margin-bottom: 0.75rem;
+}

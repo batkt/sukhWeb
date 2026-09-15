@@ -153,7 +153,7 @@ export default function NegtgelTailanPage() {
   return (
     <div className="p-6 bg-[color:var(--surface-bg)] min-h-full h-auto w-full custom-scrollbar">
       {/* ── Header ─────────────────────────────────────────────── */}
-      <div className="flex justify-between items-center mb-6 no-print">
+      <div className="flex justify-between items-center mb-3 no-print">
         <h1 className="text-2xl">Нэгтгэл тайлан</h1>
       </div>
 

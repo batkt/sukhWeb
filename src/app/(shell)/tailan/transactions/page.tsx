@@ -150,7 +150,7 @@ export default function TransactionsPage() {
   return (
     <div className="min-h-screen p-6 print-container h-full flex flex-col">
       <PrintStyles />
-      <div className="flex justify-between items-center mb-6 no-print">
+      <div className="flex justify-between items-center mb-3 no-print">
         <h1 className="text-2xl font-bold">Гүйлгээний түүх</h1>
         <div className="flex gap-3">
           <IconTextButton

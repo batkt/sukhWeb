@@ -928,7 +928,7 @@ export default function OrlogoAvlagaPage() {
         </div>
       </div>
 
-      <div className="flex justify-between items-center  mb-6 no-print">
+      <div className="flex justify-between items-center mb-3 no-print">
         <div className="flex items-center gap-6">
           <h1 className="text-2xl font-bold">Авлагын товчоо</h1>
           <div className="flex gap-2">

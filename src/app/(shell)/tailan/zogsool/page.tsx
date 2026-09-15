@@ -587,7 +587,7 @@ export default function ZogsoolTailanPage() {
   return (
     <div className="p-6 print-container h-full flex flex-col">
       <PrintStyles />
-      <div className="flex justify-between items-center mb-6 no-print">
+      <div className="flex justify-between items-center mb-3 no-print">
         <h1 className="text-2xl font-bold">Зогсоолын тайлан</h1>
       </div>
 

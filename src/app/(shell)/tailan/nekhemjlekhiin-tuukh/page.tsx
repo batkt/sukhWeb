@@ -316,7 +316,7 @@ export default function NekhemjlekhiinTuukhPage() {
           <p className="text-2xl font-bold text-blue-700">{formatNumber(totalTulbur)} </p>
         </div>
       </div>
-      <div className="flex justify-between items-center mb-6 no-print">
+      <div className="flex justify-between items-center mb-3 no-print">
         <h1 className="text-2xl font-bold">Нэхэмжлэхийн түүх</h1>
         <div className="flex gap-3">
           <button

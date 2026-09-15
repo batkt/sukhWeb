@@ -701,8 +701,8 @@ export default function DansniiKhuulga() {
         </div> */}
         </div>
 
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="space-y-3">
+          <div className="stat-cards-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             {stats.map((stat, idx) => (
               <div
                 key={idx}
@@ -713,11 +713,11 @@ export default function DansniiKhuulga() {
                     : "hover:bg-[color:var(--surface-hover)] hover:scale-105"
                 }`}
               >
-                <div className="relative rounded-2xl p-5 overflow-hidden">
-                  <div className="text-3xl mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme">
+                <div className="stat-card">
+                  <div className="stat-card-value">
                     {stat.value}
                   </div>
-                  <div className="text-[13px] text-theme leading-tight">
+                  <div className="stat-card-title">
                     {stat.title}
                   </div>
                 </div>
@@ -725,7 +725,7 @@ export default function DansniiKhuulga() {
             ))}
           </div>
 
-          <div className="relative z-10 px-6 py-4 rounded-[32px] neu-panel shadow-sm">
+          <div className="relative z-10 px-6 py-3 rounded-[32px] neu-panel shadow-sm">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto flex-wrap">
                 <div id="dans-date" className="h-10 w-full sm:w-[320px]">
