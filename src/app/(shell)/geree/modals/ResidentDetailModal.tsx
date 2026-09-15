@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { X, ShieldAlert, Loader2 } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 import uilchilgee from "@/lib/uilchilgee";
 import formatNumber from "../../../../../tools/function/formatNumber";
 import { ModalPortal } from "../../../../../components/shell/ModalPortal";
@@ -10,8 +10,12 @@ import { ModalPortal } from "../../../../../components/shell/ModalPortal";
  * Оршин суугчийн БҮХ мэдээллийг нэг дэлгэцээс харуулах (зөвхөн харах) модал.
  *
  * Өгөгдлийг `GET /orshinSuugch/:id?delgerengui=true` нэг дуудалтаар авна —
- * backend тэнд гэрээ, гэр бүлийн гишүүд, зогсоолын машин, сүүлийн гүйлгээ,
- * эрсдлийн үнэлгээг нэгтгэж буцаадаг (routes/orshinSuugchRoute.js).
+ * backend тэнд гэрээ, гэр бүлийн гишүүд, зогсоолын машин, сүүлийн гүйлгээг
+ * нэгтгэж буцаадаг (routes/orshinSuugchRoute.js).
+ *
+ * Мөн `erslediinUnelgee` (эрсдлийн үнэлгээ) талбар хариунд ирдэг боловч
+ * түүний ЖИН батлагдаагүй тул дэлгэцэнд ХАРУУЛААГҮЙ. Батлагдсаны дараа
+ * энэ файлд нэг хэсэг нэмэхэд л харагдана.
  */
 
 type Props = {
@@ -33,13 +37,6 @@ const tekst = (utga: unknown) => {
   if (utga === null || utga === undefined || utga === "") return "—";
   if (typeof utga === "object") return "—";
   return String(utga);
-};
-
-const TUVSHNII_UNGU: Record<string, string> = {
-  Бага: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30",
-  Дунд: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30",
-  Өндөр:
-    "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/30",
 };
 
 const Buleg: React.FC<{ garchig: string; children: React.ReactNode }> = ({
@@ -113,7 +110,6 @@ export const ResidentDetailModal: React.FC<Props> = ({
     return () => document.removeEventListener("keydown", tovch);
   }, [show, onClose]);
 
-  const erseld = medeelel?.erslediinUnelgee;
   const toots: any[] = useMemo(
     () => (Array.isArray(medeelel?.toots) ? medeelel.toots : []),
     [medeelel],
@@ -142,17 +138,6 @@ export const ResidentDetailModal: React.FC<Props> = ({
               </p>
             </div>
             <div className="flex items-center gap-3">
-              {erseld && (
-                <span
-                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[12px] font-bold ${
-                    TUVSHNII_UNGU[erseld.tuvshin] || TUVSHNII_UNGU["Бага"]
-                  }`}
-                  title="Эрсдлийн үнэлгээ"
-                >
-                  <ShieldAlert className="h-3.5 w-3.5" />
-                  {erseld.tuvshin} · {erseld.onoo}
-                </span>
-              )}
               <button
                 type="button"
                 onClick={onClose}
@@ -178,42 +163,6 @@ export const ResidentDetailModal: React.FC<Props> = ({
 
             {!unshij && !aldaa && medeelel && (
               <>
-                {/* Эрсдлийн үнэлгээ */}
-                {erseld && (
-                  <Buleg garchig="Эрсдлийн үнэлгээ">
-                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                      <Talbar
-                        ner="Оноо"
-                        utga={
-                          <b>
-                            {erseld.onoo} / 100 · {erseld.tuvshin}
-                          </b>
-                        }
-                      />
-                      <Talbar
-                        ner="Үлдэгдэл"
-                        utga={`${formatNumber(erseld.uldegdel)}₮`}
-                      />
-                      <Talbar
-                        ner="Өрийн нас"
-                        utga={`${erseld.uriinNas} хоног`}
-                      />
-                      <Talbar
-                        ner={`Сүүлийн ${erseld.kharsanSar} сарын төлөлт`}
-                        utga={`${erseld.tulultteiSar} / ${erseld.kharsanSar}`}
-                      />
-                    </div>
-                    {Array.isArray(erseld.shaltgaanuud) &&
-                      erseld.shaltgaanuud.length > 0 && (
-                        <ul className="mt-3 list-inside list-disc space-y-0.5 text-[12px] text-gray-600 dark:text-gray-300">
-                          {erseld.shaltgaanuud.map((s: string, i: number) => (
-                            <li key={i}>{s}</li>
-                          ))}
-                        </ul>
-                      )}
-                  </Buleg>
-                )}
-
                 {/* Хувийн мэдээлэл */}
                 <Buleg garchig="Хувийн мэдээлэл">
                   <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
