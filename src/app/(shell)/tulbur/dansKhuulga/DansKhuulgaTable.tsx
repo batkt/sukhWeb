@@ -328,9 +328,9 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
                   <Table.Summary.Cell
                     index={2}
                     align="right"
-                    className="dark:border-gray-700"
+                    className="dark:border-gray-700 !font-normal"
                   >
-                    <span className="font-medium text-gray-900 dark:!text-white text-xs">
+                    <span className="!font-normal !text-xs text-gray-700 dark:!text-gray-300 whitespace-nowrap">
                       {formatNumber(totalSum, 2)}₮
                     </span>
                   </Table.Summary.Cell>

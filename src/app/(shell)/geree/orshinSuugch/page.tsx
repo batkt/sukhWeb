@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ResidentsSection from "../ResidentsSection";
+import ResidentDetailModal from "../modals/ResidentDetailModal";
 import { useGereeContext } from "../GereeContext";
+import { useAuth } from "@/lib/useAuth";
 import { hasPermission } from "@/lib/permissionUtils";
 import { useTourSteps } from "@/lib/useTourSteps";
 import { useRegisterTourSteps } from "@/context/TourContext";
@@ -11,6 +13,11 @@ import { useRegisterTourSteps } from "@/context/TourContext";
 export default function OrshinSuugchPage() {
   const router = useRouter();
   const { state, data, actions, ajiltan } = useGereeContext();
+  const { token } = useAuth();
+
+  // "Үйлдэл" багана дахь нүдний товч — оршин суугчийн бүх мэдээллийг нэг
+  // модалаас харуулна (гэрээ, тоот, гэр бүл, зогсоол, гүйлгээ, эрсдэл).
+  const [kharakhId, setKharakhId] = useState<string | null>(null);
 
   const tourSteps = useTourSteps("residents");
   useRegisterTourSteps("/geree/orshinSuugch", tourSteps);
@@ -30,6 +37,7 @@ export default function OrshinSuugchPage() {
   }, [ajiltan, router]);
 
   return (
+    <>
     <ResidentsSection
       isValidatingSuugch={data.isValidatingSuugch}
       currentResidents={data.currentResidents}
@@ -56,6 +64,15 @@ export default function OrshinSuugchPage() {
       currentBaiguullagiinId={ajiltan?.baiguullagiinId}
       setResPageSize={state.setResPageSize}
       setResPage={state.setResPage}
+      onViewResident={(resident) => setKharakhId(resident?._id || null)}
     />
+    <ResidentDetailModal
+      show={!!kharakhId}
+      onClose={() => setKharakhId(null)}
+      residentId={kharakhId}
+      token={token}
+      baiguullagiinId={ajiltan?.baiguullagiinId}
+    />
+    </>
   );
 }

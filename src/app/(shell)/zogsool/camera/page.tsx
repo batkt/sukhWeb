@@ -37,11 +37,7 @@ import {
   Tag,
   ChevronLeft,
   ChevronRight,
-  Banknote,
-  CreditCard,
-  Landmark,
-  ArrowRight,
-  Wallet,
+
   Receipt,
   AlertTriangle,
 } from "lucide-react";
@@ -64,6 +60,7 @@ import VehicleRegistrationModal from "./VehicleRegistrationModal";
 import { PaymentPopup } from "./PaymentPopup";
 import { toast } from "react-hot-toast";
 import Button from "@/components/ui/Button";
+import { tulburiinZadargaaBodyo } from "@/lib/tulburiinZadargaa";
 
 const RealTimeDuration = ({
   orsonTsag,
@@ -1207,73 +1204,6 @@ export default function Camera() {
     return { total, paid, unpaid, count, paidCount };
   }, [transactions]);
 
-  const revenueBreakdown = useMemo(() => {
-    const allList = listData?.jagsaalt || [];
-    const methodMap: Record<string, { amount: number; count: number }> = {};
-    const methodLabels: Record<string, string> = {
-      belen: "Бэлэн",
-      cash: "Бэлэн",
-      khaan: "Карт",
-      khariltsakh: "Дансаар",
-      transfer: "Дансаар",
-      qpay: "QPay",
-      khungulult: "Хөнгөлөлт",
-      discount: "Хөнгөлөлт",
-    };
-    const methodIcons: Record<string, React.ReactNode> = {
-      belen: <Banknote className="w-4 h-4" />,
-      cash: <Banknote className="w-4 h-4" />,
-      khaan: <CreditCard className="w-4 h-4" />,
-      khariltsakh: <ArrowRight className="w-4 h-4" />,
-      transfer: <ArrowRight className="w-4 h-4" />,
-      qpay: <Landmark className="w-4 h-4" />,
-      khungulult: <Tag className="w-4 h-4" />,
-      discount: <Tag className="w-4 h-4" />,
-    };
-    const methodColors: Record<string, string> = {
-      belen: "bg-emerald-500",
-      cash: "bg-emerald-500",
-      khaan: "bg-sky-500",
-      khariltsakh: "bg-violet-500",
-      transfer: "bg-violet-500",
-      qpay: "bg-amber-500",
-      khungulult: "bg-rose-500",
-      discount: "bg-rose-500",
-    };
-
-    allList.forEach((t: any) => {
-      const tulburArr = t.tuukh?.[0]?.tulbur || [];
-      tulburArr.forEach((p: any) => {
-        const rawTurul = p.turul || "unknown";
-        const m = (rawTurul === "discount" || rawTurul === "Хөнгөлөлт") ? "khungulult" : rawTurul;
-        if (!methodMap[m]) methodMap[m] = { amount: 0, count: 0 };
-        methodMap[m].amount += Math.abs(p.dun || 0);
-        methodMap[m].count += 1;
-      });
-    });
-
-    const totalAmount = Object.values(methodMap).reduce(
-      (s, v) => s + v.amount,
-      0,
-    );
-
-    const items = Object.entries(methodMap)
-      .map(([key, val]) => ({
-        key,
-        name: methodLabels[key] || key,
-        icon: methodIcons[key] || <Wallet className="w-4 h-4" />,
-        color: methodColors[key] || "bg-slate-500",
-        amount: val.amount,
-        count: val.count,
-        pct:
-          totalAmount > 0
-            ? ((val.amount / totalAmount) * 100).toFixed(2)
-            : "0.00",
-      }))
-      .sort((a, b) => b.amount - a.amount);
-
-    return { items, totalAmount };
-  }, [listData]);
 
   const fetchRevenueData = useCallback(async (start: string, end: string) => {
     if (!token || !start || !end) return;
@@ -1304,48 +1234,11 @@ export default function Camera() {
     if (start && end) fetchRevenueData(start, end);
   }, [revenueModalOpen, revenueDateRange, fetchRevenueData]);
 
-  const revenueModalBreakdown = useMemo(() => {
-    const allList = revenueListData?.jagsaalt || [];
-    const methodLabels: Record<string, string> = {
-      belen: "Бэлэн", cash: "Бэлэн", khaan: "Карт",
-      khariltsakh: "Дансаар", transfer: "Дансаар", qpay: "QPay",
-      khungulult: "Хөнгөлөлт", discount: "Хөнгөлөлт",
-    };
-    const methodIcons: Record<string, React.ReactNode> = {
-      belen: <Banknote className="w-4 h-4" />, cash: <Banknote className="w-4 h-4" />,
-      khaan: <CreditCard className="w-4 h-4" />, khariltsakh: <ArrowRight className="w-4 h-4" />,
-      transfer: <ArrowRight className="w-4 h-4" />, qpay: <Landmark className="w-4 h-4" />,
-      khungulult: <Tag className="w-4 h-4" />, discount: <Tag className="w-4 h-4" />,
-    };
-    const methodColors: Record<string, string> = {
-      belen: "bg-emerald-500", cash: "bg-emerald-500", khaan: "bg-sky-500",
-      khariltsakh: "bg-violet-500", transfer: "bg-violet-500", qpay: "bg-amber-500",
-      khungulult: "bg-rose-500", discount: "bg-rose-500",
-    };
-    const methodMap: Record<string, { amount: number; count: number }> = {};
-    allList.forEach((t: any) => {
-      (t.tuukh?.[0]?.tulbur || []).forEach((p: any) => {
-        const rawTurul = p.turul || "unknown";
-        const m = (rawTurul === "discount" || rawTurul === "Хөнгөлөлт") ? "khungulult" : rawTurul;
-        if (!methodMap[m]) methodMap[m] = { amount: 0, count: 0 };
-        methodMap[m].amount += Math.abs(p.dun || 0);
-        methodMap[m].count += 1;
-      });
-    });
-    const totalAmount = Object.values(methodMap).reduce((s, v) => s + v.amount, 0);
-    const items = Object.entries(methodMap)
-      .map(([key, val]) => ({
-        key,
-        name: methodLabels[key] || key,
-        icon: methodIcons[key] || <Wallet className="w-4 h-4" />,
-        color: methodColors[key] || "bg-slate-500",
-        amount: val.amount,
-        count: val.count,
-        pct: totalAmount > 0 ? ((val.amount / totalAmount) * 100).toFixed(2) : "0.00",
-      }))
-      .sort((a, b) => b.amount - a.amount);
-    return { items, totalAmount };
-  }, [revenueListData]);
+  const revenueModalBreakdown = useMemo(
+    () => tulburiinZadargaaBodyo(revenueListData?.jagsaalt || []),
+    [revenueListData],
+  );
+
 
   const totalPages = Math.ceil(total / pageSize);
 

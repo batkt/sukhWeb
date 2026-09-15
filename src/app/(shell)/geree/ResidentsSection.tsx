@@ -17,6 +17,7 @@ interface ResidentsSectionProps {
   sortOrder: "asc" | "desc";
   toggleSortFor?: (key: string, order?: any) => void;
   onEditResident: (resident: any) => void;
+  onViewResident?: (resident: any) => void;
   onRequestDeleteResident: (resident: any) => void;
   onRemoveToot?: (residentId: string, baiguullagiinId: string, barilgiinId: string, toot: string) => void;
   currentBaiguullagiinId?: string;
@@ -35,6 +36,7 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
   sortOrder,
   toggleSortFor,
   onEditResident,
+  onViewResident,
   onRequestDeleteResident,
   onRemoveToot,
   currentBaiguullagiinId,
@@ -60,6 +62,7 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
               currentBaiguullagiinId={currentBaiguullagiinId}
               maxHeight="calc(100vh - 460px)"
               onEdit={onEditResident}
+              onView={onViewResident}
               onDelete={onRequestDeleteResident}
               onRemoveToot={onRemoveToot}
               onSort={(key, order) => toggleSortFor?.(key, order)}

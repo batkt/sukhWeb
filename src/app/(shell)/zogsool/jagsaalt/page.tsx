@@ -29,12 +29,7 @@ import {
   X,
   Download,
   Receipt,
-  Banknote,
-  CreditCard,
-  Landmark,
-  Tag,
-  Wallet,
-  ArrowRight,
+
   TrendingUp,
   Ban,
   ShieldCheck,
@@ -55,6 +50,8 @@ import { toast } from "react-hot-toast";
 import { LiquidGlassCard } from "@/components/ui/liquid-glass";
 import { StandardPagination } from "@/components/ui/StandardTable";
 import { PaymentPopup } from "../camera/PaymentPopup";
+import { TULBURIIN_BULEG_UTGUUD } from "@/lib/tulburiinTurul";
+import { tulburiinZadargaaBodyo } from "@/lib/tulburiinZadargaa";
 
 /** Улсын дугаар: эхний 4 нь тоо, сүүлийн 3 нь монгол кирилл үсэг (ж: 1234УБА) */
 const MASHINII_DUGAARIIN_ZAGVAR = /^\d{4}[А-ЯӨҮЁ]{3}$/;
@@ -310,15 +307,19 @@ export default function Jagsaalt() {
       }
 
       if (payMethod && payMethod !== "all") {
-        if (payMethod === "qpay") {
-          query["tuukh.0.tulbur.turul"] = { $in: ["qpay", "QPay", "Qpay", "qPay", "GadaaQR", "DotorQR", "bankQR", "toki", "киоск", "tseneglelt"] };
-        } else if (payMethod === "card") {
-          query["tuukh.0.tulbur.turul"] = { $in: ["khaan", "card", "Card", "Khaan", "Карт", "карт", "golomt", "tdb", "has", "Golomt", "TDB", "Has", "pos", "POS"] };
-        } else if (payMethod === "cash") {
-          query["tuukh.0.tulbur.turul"] = { $in: ["belen", "cash", "Cash", "Belen", "Бэлэн", "бэлэн"] };
-        } else if (payMethod === "transfer") {
-          query["tuukh.0.tulbur.turul"] = { $in: ["khariltsakh", "transfer", "Transfer", "Khariltsakh", "Dans", "dans", "Dansaar", "Дансаар", "дансаар"] };
-        }
+        // Шүүлт ба доорх "Төлбөрийн хэлбэр" задаргаа ХОЁУЛАА нэг эх сурвалжаас
+        // (lib/tulburiinTurul) уншина — өмнө нь тус тусдаа жагсаалттай байсан
+        // тул шүүлт нь QPay-г зөв бүлэглээд, задаргаа нь "QPay", "toki",
+        // "GadaaQR" гэж салангид мөр болгодог, хоорондоо таарахгүй байв.
+        const bulegUtguud: Record<string, string[]> = {
+          qpay: TULBURIIN_BULEG_UTGUUD.qpay,
+          card: TULBURIIN_BULEG_UTGUUD.kart,
+          cash: TULBURIIN_BULEG_UTGUUD.belen,
+          transfer: TULBURIIN_BULEG_UTGUUD.dans,
+        };
+        const songogdson = bulegUtguud[payMethod];
+        if (songogdson)
+          query["tuukh.0.tulbur.turul"] = { $in: songogdson };
       }
 
       const sortObj =
@@ -700,48 +701,10 @@ export default function Jagsaalt() {
     return () => document.removeEventListener("keydown", onKey);
   }, [blockModal, blockSaving, excelKhadgalj]);
 
-  const revenueModalBreakdown = useMemo(() => {
-    const allList = revenueListData?.jagsaalt || [];
-    const methodLabels: Record<string, string> = {
-      belen: "Бэлэн", cash: "Бэлэн", khaan: "Карт",
-      khariltsakh: "Дансаар", transfer: "Дансаар", qpay: "QPay",
-      khungulult: "Хөнгөлөлт", discount: "Хөнгөлөлт",
-    };
-    const methodIcons: Record<string, React.ReactNode> = {
-      belen: <Banknote className="w-4 h-4" />, cash: <Banknote className="w-4 h-4" />,
-      khaan: <CreditCard className="w-4 h-4" />, khariltsakh: <ArrowRight className="w-4 h-4" />,
-      transfer: <ArrowRight className="w-4 h-4" />, qpay: <Landmark className="w-4 h-4" />,
-      khungulult: <Tag className="w-4 h-4" />, discount: <Tag className="w-4 h-4" />,
-    };
-    const methodColors: Record<string, string> = {
-      belen: "bg-emerald-500", cash: "bg-emerald-500", khaan: "bg-sky-500",
-      khariltsakh: "bg-violet-500", transfer: "bg-violet-500", qpay: "bg-amber-500",
-      khungulult: "bg-rose-500", discount: "bg-rose-500",
-    };
-    const methodMap: Record<string, { amount: number; count: number }> = {};
-    allList.forEach((t: any) => {
-      (t.tuukh?.[0]?.tulbur || []).forEach((p: any) => {
-        const rawTurul = p.turul || "unknown";
-        const m = (rawTurul === "discount" || rawTurul === "Хөнгөлөлт") ? "khungulult" : rawTurul;
-        if (!methodMap[m]) methodMap[m] = { amount: 0, count: 0 };
-        methodMap[m].amount += Math.abs(p.dun || 0);
-        methodMap[m].count += 1;
-      });
-    });
-    const totalAmount = Object.values(methodMap).reduce((s, v) => s + v.amount, 0);
-    const items = Object.entries(methodMap)
-      .map(([key, val]) => ({
-        key,
-        name: methodLabels[key] || key,
-        icon: methodIcons[key] || <Wallet className="w-4 h-4" />,
-        color: methodColors[key] || "bg-slate-500",
-        amount: val.amount,
-        count: val.count,
-        pct: totalAmount > 0 ? ((val.amount / totalAmount) * 100).toFixed(2) : "0.00",
-      }))
-      .sort((a, b) => b.amount - a.amount);
-    return { items, totalAmount };
-  }, [revenueListData]);
+  const revenueModalBreakdown = useMemo(
+    () => tulburiinZadargaaBodyo(revenueListData?.jagsaalt || []),
+    [revenueListData],
+  );
 
   const downloadExcel = async () => {
     if (!vehicles.length) {

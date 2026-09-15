@@ -20,6 +20,9 @@ interface CustomSelectProps {
   data?: string;
   required?: boolean;
   className?: string;
+  buttonClassName?: string;
+  optionClassName?: string;
+  dropdownClassName?: string;
 
   disabled?: boolean;
   // When used on white surfaces, don't inherit themed text colors
@@ -37,6 +40,9 @@ export default function TusgaiZagvar({
   placeholder = "Сонгох",
   required = false,
   className = "",
+  buttonClassName = "",
+  optionClassName = "",
+  dropdownClassName = "",
   disabled = false,
   tone = "theme",
   allowCustomInput = false,
@@ -236,10 +242,12 @@ export default function TusgaiZagvar({
           disabled={disabled}
           className={`btn-minimal w-full justify-between cursor-pointer flex items-center h-full ${
             tone === "neutral" ? "!text-slate-900" : ""
-          } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+          } ${disabled ? "opacity-50 cursor-not-allowed" : ""} ${buttonClassName}`}
         >
           <span
             className={`block truncate text-left flex-1 min-w-0 ${
+              buttonClassName.includes("font-normal") ? "!font-normal" : ""
+            } ${
               tone === "neutral" ? "!text-slate-900" : ""
             }`}
           >
@@ -273,7 +281,7 @@ export default function TusgaiZagvar({
                 tone === "neutral"
                   ? "!bg-white !text-slate-900 !border !border-gray-200"
                   : ""
-              }`}
+              } ${dropdownClassName}`}
             >
               <ul className="py-2 overflow-y-auto max-h-60 custom-scrollbar">
                 {typedCustomEntry && (
@@ -321,7 +329,7 @@ export default function TusgaiZagvar({
                           : opt.value === value
                           ? " text-theme"
                           : "text-theme hover:bg-black/8"
-                      }`}
+                      } ${optionClassName}`}
                     >
                       {opt.label}
                     </button>

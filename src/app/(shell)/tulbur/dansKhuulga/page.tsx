@@ -609,6 +609,8 @@ export default function DansniiKhuulga() {
                     options={dansOptions}
                     placeholder={t("Данс")}
                     className="h-full w-full rounded-2xl !border-slate-200 dark:!border-slate-800 !bg-white/50 dark:!bg-slate-900/50 hover:!border-slate-300 dark:hover:!border-slate-700 transition-all font-inter"
+                    buttonClassName="!font-normal text-[13px] !px-3 hover:!translate-y-0 hover:!shadow-none hover:!scale-100 !border-0 !bg-transparent"
+                    optionClassName="!px-3 !py-1.5 text-[13px] !font-normal"
                   />
                 </div>
                 {selectedDansId && (

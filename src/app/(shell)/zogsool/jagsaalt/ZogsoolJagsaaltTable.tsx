@@ -7,6 +7,10 @@ import { Copy } from "lucide-react";
 import moment from "moment";
 import formatNumber from "../../../../../tools/function/formatNumber";
 import { toast } from "react-hot-toast";
+import {
+  TULBURIIN_BULEGIIN_NER,
+  tulburiinBulegAvya,
+} from "@/lib/tulburiinTurul";
 
 interface Vehicle {
   _id?: string;
@@ -234,16 +238,6 @@ export const ZogsoolJagsaaltTable: React.FC<ZogsoolJagsaaltTableProps> = ({
           const tulsunDun = mur?.tulsunDun || 0;
           const payHistory = mur?.tulbur?.[0];
           const method = payHistory?.turul;
-          const labels: any = {
-            cash: "Бэлэн",
-            khaan: "Хаан",
-            qpay: "QPay",
-            QPay: "QPay",
-            transfer: "Дансаар",
-            discount: "Хөнгөлөлт",
-            GadaaQR: "Гадаа QR",
-            DotorQR: "Дотор QR",
-          };
           if (tulsunDun > 0) {
             return (
               <div className="flex flex-col items-center gap-0.5">
@@ -251,7 +245,13 @@ export const ZogsoolJagsaaltTable: React.FC<ZogsoolJagsaaltTableProps> = ({
                   {formatNumber(tulsunDun)}
                 </span>
                 <span className="text-[9px] text-slate-400 uppercase tracking-widest">
-                  {(method && labels[method]) || "Төлсөн"}
+                  {/* Мөрийн шошгыг ч задаргаа/шүүлттэй НЭГ эх сурвалжаас
+                      уншина — өмнө нь энд өөр (дутуу) зураглал байсан тул
+                      жишээ нь "toki", "bankQR", "golomt" гэсэн төлбөр
+                      "Төлсөн" гэж л харагдаж, задаргаатайгаа таарахгүй байв. */}
+                  {method
+                    ? TULBURIIN_BULEGIIN_NER[tulburiinBulegAvya(method)]
+                    : "Төлсөн"}
                 </span>
               </div>
             );

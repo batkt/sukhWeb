@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import { Table, Tooltip } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { Edit, Trash2, ChevronUp, ChevronDown, X } from "lucide-react";
+import { Edit, Eye, Trash2, ChevronUp, ChevronDown, X } from "lucide-react";
 import { getPaymentStatusLabel } from "@/lib/utils";
 import {
   getResidentToot,
@@ -36,6 +36,8 @@ interface ResidentsTableProps {
   sortOrder?: SortOrder;
   currentBaiguullagiinId?: string;
   onEdit?: (resident: ResidentItem) => void;
+  /** Оршин суугчийн БҮХ мэдээллийг нэг модалаас харах. */
+  onView?: (resident: ResidentItem) => void;
   onDelete?: (resident: ResidentItem) => void;
   onRemoveToot?: (residentId: string, baiguullagiinId: string, barilgiinId: string, toot: string) => void;
   onSort?: (key: SortKey, order?: "ascend" | "descend" | null) => void;
@@ -52,6 +54,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
   sortOrder = "desc",
   currentBaiguullagiinId,
   onEdit,
+  onView,
   onDelete,
   onRemoveToot,
   onSort,
@@ -374,10 +377,19 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
         title: <span className="text-gray-900 dark:text-white">Үйлдэл</span>,
         key: "action",
         align: "center",
-        width: 100,
+        width: 140,
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: ResidentItem, index: number) => (
           <div className="flex gap-2 justify-center">
+            <button
+              type="button"
+              onClick={() => onView?.(record)}
+              className="p-2 rounded-2xl hover-surface transition-colors hover:bg-emerald-100 dark:hover:bg-emerald-900/30"
+              id={index === 0 ? "resident-view-btn" : undefined}
+              title="Бүх мэдээлэл харах"
+            >
+              <Eye className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            </button>
             <button
               type="button"
               onClick={() => onEdit?.(record)}
@@ -406,6 +418,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
       sortKey,
       sortOrder,
       onEdit,
+      onView,
       onDelete,
       onRemoveToot,
       onSort,
