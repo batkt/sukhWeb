@@ -760,7 +760,12 @@ export default function DansniiKhuulga() {
                     {isLoadingUldegdel ? (
                       <span className="opacity-60">Үлдэгдэл...</span>
                     ) : effectiveUldegdel !== null ? (
-                      <span>Үлдэгдэл: <strong className="font-semibold text-blue-600 dark:text-blue-400">{formatNumber(effectiveUldegdel, 2)}₮</strong></span>
+                      <span>
+                        Үлдэгдэл:{" "}
+                        <strong className="font-semibold text-gray-900 dark:text-white">
+                          {formatNumber(effectiveUldegdel, 2)}₮
+                        </strong>
+                      </span>
                     ) : (
                       <span className="opacity-60">Үлдэгдэл тодорхойгүй</span>
                     )}
