@@ -65,6 +65,13 @@ export default function DansniiKhuulga() {
   const [activeStatFilter, setActiveStatFilter] = useState<number | null>(null);
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(500);
+  // Эрэмбэ. Хүснэгт рүү ЗӨВХӨН тухайн хуудсын мөр очдог тул эрэмбийг энд,
+  // зүсэхээс өмнө хийх ёстой — эс тэгвээс зөвхөн харагдаж буй хуудас
+  // эрэмбэлэгдэж, бүх өгөгдлийн дараалал буруу гарна.
+  const [sortKey, setSortKey] = useState<string | null>(null);
+  const [sortOrder, setSortOrder] = useState<
+    "ascend" | "descend" | null
+  >(null);
   const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<DateRangeValue>(() => {
     const now = new Date();
     const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
@@ -528,11 +535,51 @@ export default function DansniiKhuulga() {
     return filteredData;
   }, [filteredData, activeStatFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(statFiltered.length / rowsPerPage));
+  /** "2026-07-25 13:01:53" гэх мэт зайтай бичлэгийг ч зөв уншина. */
+  const tsagRuu = (utga: unknown): number => {
+    if (!utga) return Number.NEGATIVE_INFINITY;
+    const t = new Date(String(utga).replace(" ", "T")).getTime();
+    return Number.isNaN(t) ? Number.NEGATIVE_INFINITY : t;
+  };
+
+  const erembelsen = useMemo(() => {
+    if (!sortKey || !sortOrder) return statFiltered;
+    const chig = sortOrder === "ascend" ? 1 : -1;
+    const utgaAvya = (m: TableItem): string | number => {
+      switch (sortKey) {
+        case "date":
+          return tsagRuu(m.date);
+        case "total":
+          return Number(m.total) || 0;
+        case "action":
+          return String(m.action || m.raw?.uilchilgeeniiUtga || "");
+        case "account":
+          return String(m.account || m.raw?.bairlal || "");
+        case "linkedDate":
+          // Холбогдоогүй мөрөнд огноо байхгүй тул үргэлж хамгийн сүүлд.
+          return (m.contractIds?.length || 0) > 0
+            ? tsagRuu(m.raw?.updatedAt)
+            : Number.NEGATIVE_INFINITY;
+        case "status":
+          return (m.contractIds?.length || 0) > 0 ? 1 : 0;
+        default:
+          return 0;
+      }
+    };
+    return [...statFiltered].sort((a, b) => {
+      const av = utgaAvya(a);
+      const bv = utgaAvya(b);
+      if (typeof av === "string" || typeof bv === "string")
+        return String(av).localeCompare(String(bv), "mn") * chig;
+      return (av - bv) * chig;
+    });
+  }, [statFiltered, sortKey, sortOrder]);
+
+  const totalPages = Math.max(1, Math.ceil(erembelsen.length / rowsPerPage));
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
   }, [page, totalPages]);
-  const paginated = statFiltered.slice(
+  const paginated = erembelsen.slice(
     (page - 1) * rowsPerPage,
     page * rowsPerPage,
   );
@@ -638,6 +685,14 @@ export default function DansniiKhuulga() {
                 maxHeight="calc(100vh - 550px)"
                 onLink={handleOpenLinkModal}
                 onUnlink={handleUnlinkTransaction}
+                sortKey={sortKey}
+                sortOrder={sortOrder}
+                onSort={(key, order) => {
+                  setSortKey(key);
+                  setSortOrder(order);
+                  // Шинэ эрэмбээр эхний хуудас руу буцна.
+                  setPage(1);
+                }}
               />
             </div>
             <div id="dans-pagination">

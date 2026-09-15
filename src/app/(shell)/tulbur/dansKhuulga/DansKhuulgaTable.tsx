@@ -31,6 +31,8 @@ export interface DansKhuulgaItem {
   [key: string]: any;
 }
 
+export type DansKhuulgaSortOrder = "ascend" | "descend" | null;
+
 interface DansKhuulgaTableProps {
   data: DansKhuulgaItem[];
   loading?: boolean;
@@ -39,6 +41,15 @@ interface DansKhuulgaTableProps {
   maxHeight?: string | number;
   onLink?: (item: DansKhuulgaItem) => void;
   onUnlink?: (item: DansKhuulgaItem) => void;
+  /**
+   * Эрэмбийг ЭЦЭГ компонент эзэмшинэ. Энэ хүснэгтэд зөвхөн тухайн хуудсын
+   * мөрүүд ирдэг тул antd-ын дотоод эрэмбэ хэрэглэвэл ЗӨВХӨН харагдаж
+   * байгаа хуудас эрэмбэлэгдэж, бүх өгөгдлийн хувьд буруу дараалал
+   * үүснэ. Тиймээс эрэмбийг дээш гаргаж, зүсэхээс ӨМНӨ хийнэ.
+   */
+  sortKey?: string | null;
+  sortOrder?: DansKhuulgaSortOrder;
+  onSort?: (key: string | null, order: DansKhuulgaSortOrder) => void;
 }
 
 export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
@@ -49,6 +60,9 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
   maxHeight = "calc(100vh - 500px)",
   onLink,
   onUnlink,
+  sortKey = null,
+  sortOrder = null,
+  onSort,
 }) => {
   const columns: ColumnsType<DansKhuulgaItem> = useMemo(
     () => [
@@ -67,6 +81,9 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
         key: "date",
         align: "center",
         width: 150,
+        sorter: true,
+        sortDirections: ["ascend", "descend"] as const,
+        sortOrder: sortKey === "date" ? sortOrder : null,
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (val: string) => (
           <span className="text-gray-900 dark:text-white whitespace-nowrap">
@@ -83,7 +100,9 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
         dataIndex: "action",
         align: "left",
         key: "action",
-        width: 350,
+        sorter: true,
+        sortDirections: ["ascend", "descend"] as const,
+        sortOrder: sortKey === "action" ? sortOrder : null,
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (val: string, item: DansKhuulgaItem) => (
           <span className="text-gray-900 dark:text-white" title={val}>
@@ -101,6 +120,9 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
         key: "total",
         align: "right",
         width: 140,
+        sorter: true,
+        sortDirections: ["ascend", "descend"] as const,
+        sortOrder: sortKey === "total" ? sortOrder : null,
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (val: number) => (
           <span className="text-gray-900 dark:text-white whitespace-nowrap font-medium">
@@ -116,6 +138,9 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
         key: "account",
         align: "center",
         width: 180,
+        sorter: true,
+        sortDirections: ["ascend", "descend"] as const,
+        sortOrder: sortKey === "account" ? sortOrder : null,
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (val: string, item: DansKhuulgaItem) => (
           <span className="text-gray-900 dark:text-white whitespace-nowrap font-mono text-xs">
@@ -131,6 +156,9 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
         key: "linkedDate",
         align: "center",
         width: 150,
+        sorter: true,
+        sortDirections: ["ascend", "descend"] as const,
+        sortOrder: sortKey === "linkedDate" ? sortOrder : null,
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, item: DansKhuulgaItem) => {
           const isLinked = (item.contractIds?.length || 0) > 0;
@@ -147,6 +175,9 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
         key: "status",
         align: "center",
         width: 100,
+        sorter: true,
+        sortDirections: ["ascend", "descend"] as const,
+        sortOrder: sortKey === "status" ? sortOrder : null,
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, item: DansKhuulgaItem) => {
           const isLinked = (item.contractIds?.length || 0) > 0;
@@ -174,7 +205,7 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
         },
       },
     ],
-    [page, rowsPerPage, onLink, onUnlink],
+    [page, rowsPerPage, onLink, onUnlink, sortKey, sortOrder],
   );
 
   const totalSum = useMemo(
@@ -193,8 +224,18 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
           size="small"
           bordered
           loading={loading}
-          className="guilgee-table min-w-[1000px] dark:bg-gray-900 dark:text-gray-100"
-          scroll={{ x: "max-content", y: maxHeight }}
+          className="guilgee-table dark:bg-gray-900 dark:text-gray-100"
+          // `x: "max-content"` + `min-w-[1000px]` хоёр зэрэг ажиллаж байсан тул
+          // баганууд өөрсдийн өргөнөөрөө хумигдаад баруун талд ЭЗЭНГҮЙ зурвас
+          // үлддэг байв. Одоо тодорхой доод өргөн (багануудын нийлбэр) өгч,
+          // "Гүйлгээний утга" баганыг өргөнгүй үлдээснээр тэр багана үлдсэн
+          // зайг шингээж, хоосон багана арилна.
+          scroll={{ x: 1020, y: maxHeight }}
+          onChange={(_pagination, _filters, sorter: any) => {
+            const s = Array.isArray(sorter) ? sorter[0] : sorter;
+            const order = s?.order ?? null;
+            onSort?.(order ? String(s?.columnKey ?? s?.field ?? "") : null, order);
+          }}
           expandable={{
             expandIconColumnIndex: columns.length,
             expandRowByClick: false,
@@ -308,7 +349,10 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
           }}
           summary={() =>
             data.length > 0 ? (
-              <Table.Summary>
+              // `fixed` — хөл мөрийг доод талд ЗҮҮЖ хөлдөөнө. Өмнө нь энгийн
+              // мөр байсан тул урт жагсаалт дээр доош гүйлгэхэд алга болж,
+              // сүүлийн мөртэй давхцаж харагддаг байв.
+              <Table.Summary fixed>
                 <Table.Summary.Row className="bg-gray-50 dark:bg-gray-800">
                   <Table.Summary.Cell
                     index={0}
@@ -341,6 +385,19 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
                   >
                     <span className="text-gray-500 dark:text-gray-400">-</span>
                   </Table.Summary.Cell>
+                  {/* Холбосон огноо / Төлөв / дэлгэрэнгүйн багана */}
+                  <Table.Summary.Cell
+                    index={4}
+                    className="dark:border-gray-700"
+                  />
+                  <Table.Summary.Cell
+                    index={5}
+                    className="dark:border-gray-700"
+                  />
+                  <Table.Summary.Cell
+                    index={6}
+                    className="dark:border-gray-700"
+                  />
                 </Table.Summary.Row>
               </Table.Summary>
             ) : null
