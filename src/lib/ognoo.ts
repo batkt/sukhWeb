@@ -87,3 +87,16 @@ export function medegdelDun(message: unknown): number | null {
   const num = Number(m[1].replace(/[\s,]/g, ""));
   return Number.isFinite(num) ? num : null;
 }
+
+/**
+ * Мэдэгдлийн текстээс ТООТ-ыг уншина ("54 тоот, Ганбаатар QPay-ээр ...").
+ *
+ * ХУУЧИН бичлэгт зориулсан нөөц арга. Шинэ мэдэгдэл дээр `toot` талбар
+ * шууд бичигддэг (models/medegdel.js) тул эхлээд түүнийг, олдохгүй үед л
+ * үүнийг ашиглана.
+ */
+export function medegdelToot(message: unknown): string | null {
+  if (typeof message !== "string") return null;
+  const m = message.match(/([^\s,]+)\s*тоот/i);
+  return m ? m[1].trim() : null;
+}

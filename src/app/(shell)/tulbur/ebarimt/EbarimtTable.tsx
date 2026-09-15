@@ -146,7 +146,7 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
         onCell: () => ({ className: "!text-right" }),
         render: (val: number) => (
           <span className="text-inherit whitespace-nowrap font-medium">
-            {formatNumber(val || 0)}
+            {formatNumber(val || 0)}₮
           </span>
         ),
       },
@@ -337,17 +337,30 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
             data.length > 0 ? (
               <Table.Summary fixed="bottom">
                 <Table.Summary.Row className="bg-gray-50 dark:bg-gray-800">
-                  <Table.Summary.Cell index={0} colSpan={6} align="center">
+                  <Table.Summary.Cell
+                    index={0}
+                    colSpan={6}
+                    align="right"
+                    className="bg-gray-50 dark:bg-gray-800 pr-3"
+                  >
                     <span className="font-bold text-gray-900 dark:!text-white">
                       {butsaasanToo > 0 ? "Нийт (хүчинтэй):" : "Нийт:"}
                     </span>
                   </Table.Summary.Cell>
-                  <Table.Summary.Cell index={1} align="right" className="bg-gray-50 dark:bg-gray-800">
-                    <span className="font-bold text-gray-900 dark:!text-white">
+                  <Table.Summary.Cell
+                    index={1}
+                    align="right"
+                    className="bg-gray-50 dark:bg-gray-800"
+                  >
+                    <span className="font-bold text-gray-900 dark:!text-white whitespace-nowrap">
                       {formatNumber(khuchinteiDun)}₮
                     </span>
                   </Table.Summary.Cell>
-                  <Table.Summary.Cell index={2} align="center">
+                  <Table.Summary.Cell
+                    index={2}
+                    align="center"
+                    className="bg-gray-50 dark:bg-gray-800"
+                  >
                     <span className="text-gray-500 dark:text-gray-400">-</span>
                   </Table.Summary.Cell>
                   {/* Төлөв + (байвал) Үйлдэл багана */}
@@ -355,9 +368,10 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
                     index={3}
                     colSpan={onButsaakh ? 2 : 1}
                     align="center"
+                    className="bg-gray-50 dark:bg-gray-800"
                   >
                     {butsaasanToo > 0 ? (
-                      <span className="whitespace-nowrap text-xs text-red-500">
+                      <span className="whitespace-nowrap text-xs text-red-500 font-medium">
                         Буцаасан {butsaasanToo}: {formatNumber(butsaasanDun)}₮
                       </span>
                     ) : (

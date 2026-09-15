@@ -552,18 +552,31 @@ export default function Ebarimt() {
   };
   const t = (text: string) => text;
 
+  const [activeStatFilter, setActiveStatFilter] = useState<number | null>(null);
+
   // Calculate stats
   const stats = useMemo(() => {
-    const total = displayedData.reduce((s, r) => s + (r.total || 0), 0);
+    const validData = displayedData.filter((r) => !r.ustgasanOgnoo);
+    const total = validData.reduce((s, r) => s + (r.total || 0), 0);
     const b2c = displayedData.filter((r) => r.type === "B2C_RECEIPT").length;
     const b2b = displayedData.filter((r) => r.type === "B2B_RECEIPT").length;
     return [
       { title: "Нийт баримт", value: displayedData.length },
-      { title: "Нийт дүн", value: formatNumber(total) + "₮" },
+      { title: "Нийт дүн", value: `${formatNumber(total)}₮` },
       { title: "Байгууллага", value: b2b },
       { title: "Иргэн", value: b2c },
     ];
   }, [displayedData]);
+
+  const statFilteredData = useMemo(() => {
+    if (activeStatFilter === null || activeStatFilter === 0 || activeStatFilter === 1)
+      return displayedData;
+    if (activeStatFilter === 2)
+      return displayedData.filter((r) => r.type === "B2B_RECEIPT");
+    if (activeStatFilter === 3)
+      return displayedData.filter((r) => r.type === "B2C_RECEIPT");
+    return displayedData;
+  }, [displayedData, activeStatFilter]);
 
   return (
     <div className="flex flex-col pb-14">
@@ -573,18 +586,21 @@ export default function Ebarimt() {
             {stats.map((stat, idx) => (
               <div
                 key={idx}
-                className="relative group rounded-2xl neu-panel hover:bg-[color:var(--surface-hover)] transition-colors"
+                onClick={() => {
+                  setActiveStatFilter(activeStatFilter === idx ? null : idx);
+                }}
+                className={`relative group rounded-2xl neu-panel transition-all cursor-pointer select-none ${
+                  activeStatFilter === idx
+                    ? "ring-2 ring-blue-500 shadow-lg"
+                    : "hover:bg-[color:var(--surface-hover)] hover:scale-105"
+                }`}
               >
                 <div className="relative rounded-2xl p-5 overflow-hidden">
-                  <div className="flex flex-col items-center justify-center text-center">
-                    <div
-                      className={`text-3xl mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme dark:!text-white ${stat.title === "Нийт дүн"}`}
-                    >
-                      {stat.value}
-                    </div>
-                    <div className="text-xs text-theme dark:!text-white/70 leading-tight font-medium">
-                      {stat.title}
-                    </div>
+                  <div className="text-3xl mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme">
+                    {stat.value}
+                  </div>
+                  <div className="text-[13px] text-theme leading-tight">
+                    {stat.title}
                   </div>
                 </div>
               </div>
@@ -649,7 +665,7 @@ export default function Ebarimt() {
           <div className="table-surface rounded-2xl w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
             <div className="p-1 allow-overflow no-scrollbar" id="ebarimt-table">
               <EbarimtTable
-                data={displayedData}
+                data={statFilteredData}
                 loading={isLoading}
                 maxHeight="calc(100vh - 550px)"
                 onButsaakh={
@@ -664,8 +680,8 @@ export default function Ebarimt() {
             <div id="ebarimt-pagination">
               <StandardPagination
                 current={1}
-                total={displayedData.length}
-                pageSize={displayedData.length || 50}
+                total={statFilteredData.length}
+                pageSize={statFilteredData.length || 50}
                 onChange={() => {}}
               />
             </div>

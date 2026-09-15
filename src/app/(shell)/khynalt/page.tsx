@@ -1,6 +1,14 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { StandardPagination } from "@/components/ui/StandardTable";
+import ResidentDetailModal from "../geree/modals/ResidentDetailModal";
 import { useAuth } from "@/lib/useAuth";
 import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
 import useGereeJagsaalt from "@/lib/useGeree";
@@ -9,8 +17,8 @@ import uilchilgee from "@/lib/uilchilgee";
 import { isPaidLike, getDefaultDateRange } from "@/lib/utils";
 import {
   medegdelDun,
-  ognooKharitsangui,
   ognooTsagButen,
+  medegdelToot,
 } from "@/lib/ognoo";
 import { hasPermission } from "@/lib/permissionUtils";
 import { useRouter } from "next/navigation";
@@ -39,6 +47,8 @@ import {
   X,
   ArrowUpDown,
   SlidersHorizontal,
+  Eye,
+  Copy,
 } from "lucide-react";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { useBuilding } from "@/context/BuildingContext";
@@ -721,6 +731,13 @@ export default function Khynalt() {
   }, [medegdelData, rangeStart, rangeEnd]);
 
   const [paymentQuery, setPaymentQuery] = useState("");
+  // Төлөлтийн түүхийн хуудаслалт ба үйлдлүүд.
+  const [paymentPage, setPaymentPage] = useState(1);
+  const [paymentPageSize, setPaymentPageSize] = useState(10);
+  const [kharakhOrshinSuugchId, setKharakhOrshinSuugchId] = useState<
+    string | null
+  >(null);
+  const [khuulsanDugaar, setKhuulsanDugaar] = useState<string | null>(null);
 
   const filteredPaymentHistory = useMemo(() => {
     const q = paymentQuery.trim().toLowerCase();
@@ -750,35 +767,27 @@ export default function Khynalt() {
     return sum;
   }, [filteredPaymentHistory]);
 
-  /** Өдрөөр бүлэглэнэ — жагсаалт урт болоход уншихад хялбар болгоно. */
-  const groupedPaymentHistory = useMemo(() => {
-    const groups: { key: string; label: string; items: any[] }[] = [];
-    const today = new Date();
-    const yesterday = new Date();
-    yesterday.setDate(today.getDate() - 1);
+  // Хайлт/огноо солигдоход эхний хуудас руу буцаана — эс тэгвээс хоосон
+  // хуудсан дээр үлдэж "мэдээлэл алга" мэт харагдана.
+  useEffect(() => {
+    setPaymentPage(1);
+  }, [paymentQuery, rangeStart, rangeEnd]);
 
-    const dayKey = (d: Date) =>
-      `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
-    const todayKey = dayKey(today);
-    const yesterdayKey = dayKey(yesterday);
+  const pagedPaymentHistory = useMemo(() => {
+    const ekhlel = (paymentPage - 1) * paymentPageSize;
+    return filteredPaymentHistory.slice(ekhlel, ekhlel + paymentPageSize);
+  }, [filteredPaymentHistory, paymentPage, paymentPageSize]);
 
-    for (const item of filteredPaymentHistory) {
-      const d = new Date(item.createdAt || item.ognoo);
-      if (isNaN(d.getTime())) continue;
-      const key = dayKey(d);
-      const label =
-        key === todayKey
-          ? "Өнөөдөр"
-          : key === yesterdayKey
-            ? "Өчигдөр"
-            : `${d.getFullYear() === today.getFullYear() ? "" : d.getFullYear() + " оны "}${d.getMonth() + 1}-р сарын ${d.getDate()}`;
-
-      const last = groups[groups.length - 1];
-      if (last && last.key === key) last.items.push(item);
-      else groups.push({ key, label, items: [item] });
+  const dugaariigKhuulya = useCallback(async (dugaar: string) => {
+    try {
+      await navigator.clipboard.writeText(dugaar);
+      setKhuulsanDugaar(dugaar);
+      setTimeout(() => setKhuulsanDugaar(null), 1500);
+    } catch {
+      // Clipboard эрх хаалттай байж болно — чимээгүй өнгөрөөнө.
     }
-    return groups;
-  }, [filteredPaymentHistory]);
+  }, []);
+
 
   const { data: tulukhAvlagaData } = useSWR(
     token && ajiltan?.baiguullagiinId && rangeStart && rangeEnd
@@ -1468,6 +1477,7 @@ export default function Khynalt() {
   const kpiCards = kpiCardsRaw.filter((c) => c.show !== false);
 
   return (
+    <>
     <div className="h-full flex flex-col overflow-y-auto custom-scrollbar">
       <div className="flex flex-col flex-1 min-h-full pl-4 pt-4 pb-8 pr-0">
         <div className="flex flex-row items-center justify-between gap-4 mb-6 pr-4 flex-shrink-0 relative z-30">
@@ -2230,14 +2240,18 @@ export default function Khynalt() {
                 </div>
               )}
 
-              {/* Жагсаалт */}
-              <div className="overflow-y-auto max-h-[350px] pr-1 custom-scrollbar">
+              {/* Жагсаалт — хүснэгт хэлбэрээр.
+                  Өмнө нь өдрөөр бүлэглэсэн карт жагсаалт байсан нь мөр бүрийн
+                  тоот/дүнг чөлөөт бичвэрээс уншиж харуулдаг, эрэмбэлэх,
+                  харьцуулах боломжгүй байв. Одоо багана тус бүр өөрийн
+                  талбартай (шинэ бичлэг дээр `toot`, `dun` шууд ирнэ). */}
+              <div className="overflow-x-auto pr-1 custom-scrollbar">
                 {medegdelLoading ? (
                   <div className="space-y-2">
                     {[0, 1, 2].map((i) => (
                       <div
                         key={i}
-                        className="h-[62px] rounded-2xl bg-[color:var(--surface-hover)]/40 animate-pulse"
+                        className="h-[52px] rounded-2xl bg-[color:var(--surface-hover)]/40 animate-pulse"
                       />
                     ))}
                   </div>
@@ -2258,86 +2272,138 @@ export default function Khynalt() {
                     </p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {groupedPaymentHistory.map((group) => (
-                      <div key={group.key}>
-                        {/* Өдрийн тусгаарлагч */}
-                        <div className="sticky top-0 z-10 flex items-center gap-2 py-1 bg-[color:var(--surface-bg)]/85 backdrop-blur-sm">
-                          <span className="text-[11px] font-semibold text-[color:var(--panel-text)]">
-                            {group.label}
-                          </span>
-                          <span className="h-px flex-1 bg-[color:var(--panel-text)]/10" />
-                          <span className="text-[10px] text-[color:var(--muted-text)]">
-                            {group.items.length}
-                          </span>
-                        </div>
-
-                        <div className="space-y-1.5 pt-1.5">
-                          {group.items.map((item: any) => {
-                            const dun = medegdelDun(item.message);
-                            const ner =
-                              item.orshinSuugchNer || item.title || "QPay төлөлт";
-                            return (
-                              <div
-                                key={item._id}
-                                className="group relative p-3 rounded-2xl border border-[color:var(--panel-text)]/10 hover:border-emerald-500/30 hover:bg-emerald-500/[0.04] transition-colors"
+                  <table className="w-full min-w-[720px] text-left">
+                    <thead>
+                      <tr className="text-[11px] uppercase tracking-wider text-[color:var(--muted-text)]">
+                        <th className="py-2 pr-3 font-medium">Оршин суугч</th>
+                        <th className="py-2 pr-3 font-medium">
+                          Гэрээний дугаар
+                        </th>
+                        <th className="py-2 pr-3 font-medium">Тоот</th>
+                        <th className="py-2 pr-3 font-medium">Дүн</th>
+                        <th className="py-2 pr-3 font-medium">Огноо, цаг</th>
+                        <th className="py-2 font-medium text-center">Үйлдэл</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pagedPaymentHistory.map((item: any) => {
+                        // Шинэ бичлэг дээр талбар нь шууд ирнэ; хуучин дээр
+                        // мэдэгдлийн текстээс уншина.
+                        const dun =
+                          typeof item.dun === "number"
+                            ? item.dun
+                            : medegdelDun(item.message);
+                        const toot = item.toot || medegdelToot(item.message);
+                        const gereeniiDugaar =
+                          item.gereeniiDugaar ||
+                          item.orshinSuugchGereeniiDugaar ||
+                          "";
+                        return (
+                          <tr
+                            key={item._id}
+                            className="border-t border-[color:var(--panel-text)]/10 hover:bg-emerald-500/[0.04] transition-colors"
+                          >
+                            <td className="py-2.5 pr-3">
+                              <span
+                                className="text-[13px] text-[color:var(--panel-text)]"
+                                title={item.orshinSuugchUtas || undefined}
                               >
-                                <div className="flex items-start gap-3">
-                                  <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 text-xs font-semibold">
-                                    {String(ner).charAt(0).toUpperCase()}
-                                  </div>
-
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2">
-                                      <p className="text-sm text-[color:var(--panel-text)] truncate">
-                                        {item.title || "QPay төлөлт"}
-                                      </p>
-                                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                                    </div>
-                                    <p className="text-xs text-[color:var(--muted-text)] leading-relaxed line-clamp-2">
-                                      {item.message}
-                                    </p>
-                                    {item.orshinSuugchUtas && (
-                                      <p className="text-[11px] text-[color:var(--muted-text)] mt-0.5">
-                                        {item.orshinSuugchNer
-                                          ? `${item.orshinSuugchNer} · `
-                                          : ""}
-                                        {item.orshinSuugchUtas}
-                                      </p>
+                                {item.orshinSuugchNer || "—"}
+                              </span>
+                            </td>
+                            <td className="py-2.5 pr-3">
+                              {gereeniiDugaar ? (
+                                <span className="inline-flex items-center gap-1.5">
+                                  <span className="text-[13px] text-[color:var(--panel-text)]">
+                                    {gereeniiDugaar}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    title="Хуулах"
+                                    onClick={() =>
+                                      dugaariigKhuulya(gereeniiDugaar)
+                                    }
+                                    className="text-[color:var(--muted-text)] hover:text-emerald-500 transition-colors"
+                                  >
+                                    {khuulsanDugaar === gereeniiDugaar ? (
+                                      <Check className="w-3.5 h-3.5 text-emerald-500" />
+                                    ) : (
+                                      <Copy className="w-3.5 h-3.5" />
                                     )}
-                                  </div>
-
-                                  <div className="flex flex-col items-end gap-1 shrink-0">
-                                    {dun !== null && (
-                                      <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                                        +{dun.toLocaleString()}₮
-                                      </span>
-                                    )}
-                                    <span
-                                      className="text-[11px] text-[color:var(--muted-text)] whitespace-nowrap"
-                                      title={ognooTsagButen(
-                                        item.createdAt || item.ognoo,
-                                      )}
-                                    >
-                                      {ognooKharitsangui(
-                                        item.createdAt || item.ognoo,
-                                      )}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                                  </button>
+                                </span>
+                              ) : (
+                                <span className="text-[13px] text-[color:var(--muted-text)]">
+                                  —
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-2.5 pr-3 text-[13px] text-[color:var(--panel-text)]">
+                              {toot || "—"}
+                            </td>
+                            <td className="py-2.5 pr-3 text-[13px] font-semibold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                              {dun !== null && dun !== undefined
+                                ? `${dun.toLocaleString()}₮`
+                                : "—"}
+                            </td>
+                            <td className="py-2.5 pr-3 text-[12px] text-[color:var(--muted-text)] whitespace-nowrap">
+                              {ognooTsagButen(item.createdAt || item.ognoo)}
+                            </td>
+                            <td className="py-2.5 text-center">
+                              <button
+                                type="button"
+                                title={
+                                  item.orshinSuugchId
+                                    ? "Оршин суугчийн бүх мэдээлэл"
+                                    : "Оршин суугч холбогдоогүй"
+                                }
+                                disabled={!item.orshinSuugchId}
+                                onClick={() =>
+                                  setKharakhOrshinSuugchId(
+                                    item.orshinSuugchId || null,
+                                  )
+                                }
+                                className="p-1.5 rounded-xl text-[color:var(--muted-text)] hover:text-emerald-600 hover:bg-emerald-500/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 )}
               </div>
+
+              {/* Хуудаслалт — өмнө нь бүх мөрийг нэг дор гүйлгэдэг байсан */}
+              {!medegdelLoading && filteredPaymentHistory.length > 0 && (
+                <StandardPagination
+                  current={paymentPage}
+                  total={filteredPaymentHistory.length}
+                  pageSize={paymentPageSize}
+                  pageSizeOptions={[10, 20, 50, 100]}
+                  onChange={(page) => setPaymentPage(page)}
+                  onPageSizeChange={(size) => {
+                    setPaymentPageSize(size);
+                    setPaymentPage(1);
+                  }}
+                />
+              )}
             </div>
           </div>
         </div>
       </div>
     </div>
+    {/* Хүснэгтийн "нүд" товч — тухайн төлөлт хийсэн оршин суугчийн БҮХ
+        мэдээллийг нэг модалаас харуулна (гэрээ, тоот, гишүүд, гүйлгээ). */}
+    <ResidentDetailModal
+      show={!!kharakhOrshinSuugchId}
+      onClose={() => setKharakhOrshinSuugchId(null)}
+      residentId={kharakhOrshinSuugchId}
+      token={token}
+      baiguullagiinId={ajiltan?.baiguullagiinId}
+    />
+    </>
   );
 }
