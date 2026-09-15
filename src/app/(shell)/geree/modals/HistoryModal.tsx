@@ -2134,7 +2134,12 @@ export default function HistoryModal({
       filteredData.reduce((sum, row) => sum + Number(row.tulukhDun || 0), 0),
     );
     const totalPayments = roundLedgerRunningStep(
-      filteredData.reduce((sum, row) => sum + Number(row.tulsunDun || 0), 0),
+      filteredData.reduce(
+        (sum, row) =>
+          sum +
+          (row.khelber === "Хөнгөлөлт" ? 0 : Number(row.tulsunDun || 0)),
+        0,
+      ),
     );
     const totalDiscounts = roundLedgerRunningStep(
       filteredData.reduce(
@@ -2155,26 +2160,24 @@ export default function HistoryModal({
         balance: roundLedgerRunningStep(fallback),
       };
     }
-    // «Нийт» мөрийн үлдэгдэл нь ХАМГИЙН СҮҮЛИЙН гүйлгээний running
-    // үлдэгдэл байх ёстой — жагсаалт шинэ нь дээрээ эрэмбэлэгддэг тул энэ нь
-    // хүснэгтийн хамгийн дээд мөрийн үлдэгдэл. Урьд нь сарын задралын эцсийн
-    // үлдэгдлийг авдаг байсан бөгөөд дээд мөр 0 харагдаж байхад «Нийт» нь
-    // өөр дүн үзүүлэх боломжтой байв.
-    const suulchiinMur =
-      chronologicalFilteredEntries[chronologicalFilteredEntries.length - 1];
-    const suulchiinUldegdel = Number(suulchiinMur?.uldegdel);
-    const lastMonth =
-      monthlyBreakdownFiltered[monthlyBreakdownFiltered.length - 1];
-    const balance = Number.isFinite(suulchiinUldegdel)
-      ? roundLedgerRunningStep(suulchiinUldegdel)
-      : lastMonth != null
-        ? lastMonth.balanceEnd
-        : roundLedgerRunningStep(
-            ledgerOpeningBeforeFirstEntry(chronologicalFilteredEntries[0]) +
-              totalCharges -
-              totalPayments -
-              totalDiscounts,
-          );
+    // «Нийт» мөрийн үлдэгдлийг ИЛ ТОМЬЁОГООР бодно:
+    //
+    //   эхний үлдэгдэл + Нийт төлөх − Нийт төлсөн − Нийт хөнгөлөлт
+    //
+    // Өмнө нь энэ нь хамгийн сүүлийн мөрийн `uldegdel` талбарыг шууд авдаг
+    // байсан. Тэр талбар нь бусад эх сурвалжаас (backend-ийн уншсан
+    // үлдэгдэл, эсвэл хуучин тооцоолол) ирж болох бөгөөд ХӨНГӨЛӨЛТИЙГ
+    // тооцоогүй байх тохиолдол гардаг — улмаар мөр мөрийн үлдэгдэл зөв
+    // байхад хөл дүн нь хөнгөлөлтийн нийлбэрийн хэмжээгээр зөрдөг байв.
+    //
+    // Ил томьёо нь хажуудаа харагдаж буй гурван нийлбэртэйгээ (төлөх,
+    // төлсөн, хөнгөлөлт) үргэлж нийцнэ.
+    const ekhniiUldegdel = roundLedgerRunningStep(
+      ledgerOpeningBeforeFirstEntry(chronologicalFilteredEntries[0]),
+    );
+    const balance = roundLedgerRunningStep(
+      ekhniiUldegdel + totalCharges - totalPayments - totalDiscounts,
+    );
     return { totalCharges, totalPayments, totalDiscounts, balance };
   }, [
     filteredData,

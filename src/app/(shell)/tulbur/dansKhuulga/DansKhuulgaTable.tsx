@@ -19,13 +19,33 @@ const bankLabelMap: Record<string, string> = {
   qpay: "QPay",
 };
 
+/** Гэрээнээс оршин суугчийн харагдах нэрийг гаргана. */
+const gereeniiEzenNer = (geree: any): string => {
+  if (!geree) return "";
+  const buten = `${geree.ovog || ""} ${geree.ner || ""}`.trim();
+  return buten || String(geree.ner || "");
+};
+
+/** "12 тоот · Батбаяр" маягийн нэг мөр тайлбар. */
+const gereeniiTailbar = (geree: any): string => {
+  const kheseg: string[] = [];
+  if (geree?.toot) kheseg.push(`${geree.toot} тоот`);
+  const ner = gereeniiEzenNer(geree);
+  if (ner) kheseg.push(ner);
+  if (geree?.gereeniiDugaar) kheseg.push(String(geree.gereeniiDugaar));
+  return kheseg.join(" · ");
+};
+
 export interface DansKhuulgaItem {
   id: string | number;
   date: string;
   month: string;
   total: number;
+  balance?: number | null;
   action: string;
   contractIds?: string[];
+  /** Эцэг хуудас `_id`-аар нь татаж өгсөн бүтэн гэрээнүүд. */
+  contracts?: any[];
   account?: string;
   raw?: any;
   [key: string]: any;
@@ -126,9 +146,40 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (val: number) => (
           <span className="text-gray-900 dark:text-white whitespace-nowrap font-medium">
-            {formatNumber(val || 0, 2)}₮
+            {formatNumber(val || 0, 2)}
           </span>
         ),
+      },
+      {
+        title: (
+          <span className="text-gray-900 dark:text-white text-center block w-full">
+            Үлдэгдэл
+          </span>
+        ),
+        dataIndex: "balance",
+        key: "balance",
+        align: "right",
+        width: 140,
+        sorter: true,
+        sortDirections: ["ascend", "descend"] as const,
+        sortOrder: sortKey === "balance" ? sortOrder : null,
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        render: (val: number | undefined, item: DansKhuulgaItem) => {
+          const bal =
+            val ??
+            item.balance ??
+            item.raw?.balance ??
+            item.raw?.closingBalance ??
+            item.raw?.bal ??
+            item.raw?.accountBalance;
+          if (bal === null || bal === undefined || bal === "") return "-";
+          const num = Number(bal);
+          return (
+            <span className="text-gray-900 dark:text-white whitespace-nowrap font-medium">
+              {!isNaN(num) ? formatNumber(num, 2) : "-"}
+            </span>
+          );
+        },
       },
       {
         title: (
@@ -143,10 +194,51 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
         sortOrder: sortKey === "account" ? sortOrder : null,
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (val: string, item: DansKhuulgaItem) => (
-          <span className="text-gray-900 dark:text-white whitespace-nowrap font-mono text-xs">
+          <span className="text-gray-900 dark:text-white whitespace-nowrap">
             {item.account || item.raw?.bairlal || "-"}
           </span>
         ),
+      },
+      {
+        // Холбогдсон гүйлгээний ЭЗЭН хэн болохыг хүснэгтээс шууд харуулна
+        // — өмнө нь зөвхөн "холбогдсон" гэдэг нь л мэдэгддэг байв.
+        title: (
+          <span className="text-gray-900 dark:text-white">Оршин суугч</span>
+        ),
+        key: "resident",
+        align: "left",
+        width: 200,
+        sorter: true,
+        sortDirections: ["ascend", "descend"] as const,
+        sortOrder: sortKey === "resident" ? sortOrder : null,
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        render: (_: any, item: DansKhuulgaItem) => {
+          const geree = item.contracts?.[0];
+          if (!geree) {
+            // Холбоогүй мөр, эсвэл гэрээ нь татагдаж амжаагүй.
+            return (
+              <span className="text-gray-400 dark:text-gray-500">-</span>
+            );
+          }
+          const ner = gereeniiEzenNer(geree);
+          const nemelt = (item.contracts?.length || 0) - 1;
+          return (
+            <span
+              className="text-gray-900 dark:text-white"
+              title={item.contracts?.map(gereeniiTailbar).join("\n")}
+            >
+              {ner || "-"}
+              {geree.toot ? (
+                <span className="text-gray-500 dark:text-gray-400">
+                  {" "}· {geree.toot} тоот
+                </span>
+              ) : null}
+              {nemelt > 0 ? (
+                <span className="text-gray-400"> +{nemelt}</span>
+              ) : null}
+            </span>
+          );
+        },
       },
       {
         title: (
@@ -230,7 +322,7 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
           // үлддэг байв. Одоо тодорхой доод өргөн (багануудын нийлбэр) өгч,
           // "Гүйлгээний утга" баганыг өргөнгүй үлдээснээр тэр багана үлдсэн
           // зайг шингээж, хоосон багана арилна.
-          scroll={{ x: 1020, y: maxHeight }}
+          scroll={{ x: 1220, y: maxHeight }}
           onChange={(_pagination, _filters, sorter: any) => {
             const s = Array.isArray(sorter) ? sorter[0] : sorter;
             const order = s?.order ?? null;
@@ -266,10 +358,16 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
                 raw.requestId ||
                 "-";
               const bankLabel = bankLabelMap[raw.bank] || raw.bank || "-";
+              // Өмнө нь энд гэрээний түүхий `_id`
+              // ("6a4def37f9c8db0cec503fd8") бичигддэг байсан нь
+              // хэрэглэгчид ямар ч утгагүй. Одоо гэрээний дугаар, тоот,
+              // эзэмшигчийг харуулна; гэрээ нь татагдаагүй бол л id үлдэнэ.
               const contractLabel =
-                record.contractIds && record.contractIds.length > 0
-                  ? record.contractIds.join(", ")
-                  : "-";
+                record.contracts && record.contracts.length > 0
+                  ? record.contracts.map(gereeniiTailbar).join(" | ")
+                  : record.contractIds && record.contractIds.length > 0
+                    ? record.contractIds.join(", ")
+                    : "-";
               return (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-3 p-4 bg-gray-50 dark:bg-gray-800/60 rounded-lg text-xs">
                   <div>
@@ -363,18 +461,18 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
                   <Table.Summary.Cell
                     index={1}
                     align="right"
-                    className="dark:border-gray-700"
+                    className="dark:border-gray-700 pr-2"
                   >
-                    <span className="text-sm font-bold text-gray-900 dark:!text-white">
+                    <span className="font-medium text-gray-900 dark:!text-white whitespace-nowrap">
                       Нийт дүн:
                     </span>
                   </Table.Summary.Cell>
                   <Table.Summary.Cell
                     index={2}
                     align="right"
-                    className="dark:border-gray-700 !font-normal"
+                    className="dark:border-gray-700"
                   >
-                    <span className="!font-normal !text-xs text-gray-700 dark:!text-gray-300 whitespace-nowrap">
+                    <span className="font-medium text-gray-900 dark:!text-white whitespace-nowrap">
                       {formatNumber(totalSum, 2)}₮
                     </span>
                   </Table.Summary.Cell>
@@ -385,17 +483,32 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
                   >
                     <span className="text-gray-500 dark:text-gray-400">-</span>
                   </Table.Summary.Cell>
-                  {/* Холбосон огноо / Төлөв / дэлгэрэнгүйн багана */}
+                  {/* Шилжүүлсэн данс */}
                   <Table.Summary.Cell
                     index={4}
+                    align="center"
                     className="dark:border-gray-700"
-                  />
+                  >
+                    <span className="text-gray-500 dark:text-gray-400">-</span>
+                  </Table.Summary.Cell>
+                  {/* Оршин суугч */}
                   <Table.Summary.Cell
                     index={5}
                     className="dark:border-gray-700"
                   />
+                  {/* Холбосон огноо */}
                   <Table.Summary.Cell
                     index={6}
+                    className="dark:border-gray-700"
+                  />
+                  {/* Төлөв */}
+                  <Table.Summary.Cell
+                    index={7}
+                    className="dark:border-gray-700"
+                  />
+                  {/* Дэлгэрэнгүй */}
+                  <Table.Summary.Cell
+                    index={8}
                     className="dark:border-gray-700"
                   />
                 </Table.Summary.Row>

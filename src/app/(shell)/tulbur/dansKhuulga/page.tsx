@@ -30,12 +30,20 @@ type TableItem = {
   month: string;
   // numerical value in minor units (assumed) or main units depending on backend
   total: number;
+  balance?: number | null;
   // human readable description / purpose of transaction
   action: string;
   // linked contract ids (array or single)
   contractIds?: string[];
   // transferred account / destination account number
   account?: string;
+  /**
+   * Холбогдсон гэрээний БҮТЭН бичлэг (дугаар, тоот, оршин суугч).
+   * Банкны гүйлгээ дээр зөвхөн гэрээний `_id` хадгалагддаг тул хүснэгт
+   * болон дэлгэрэнгүй дээр түүхий ObjectId ("6a4def37f9c8db0cec503fd8")
+   * гарч, оршин суугч хэн болох нь огт харагддаггүй байв.
+   */
+  contracts?: any[];
   raw?: any;
 };
 
@@ -144,6 +152,8 @@ export default function DansniiKhuulga() {
   const t = (text: string) => text;
 
   const [bankRows, setBankRows] = useState<any[]>([]);
+  /** gereeniiId -> гэрээ. Холбогдсон гүйлгээний эзэн/дугаарыг харуулахад. */
+  const [gereeMap, setGereeMap] = useState<Record<string, any>>({});
   const [isLoadingBankRows, setIsLoadingBankRows] = useState(false);
 
   // Register guided tour for /tulbur/dansKhuulga
@@ -282,6 +292,56 @@ export default function DansniiKhuulga() {
   }, [token, ajiltan?.baiguullagiinId, selectedBuildingId, barilgiinId, selectedDugaar, selectedDans?.bank]);
 
   useEffect(() => { fetchBankTransfers(); }, [fetchBankTransfers]);
+
+  // Холбогдсон гэрээнүүдийг НЭГ удаагийн дуудалтаар татаж, id-аар нь
+  // индексжүүлнэ. Мөр тус бүрд тусад нь татвал хэдэн зуун хүсэлт үүснэ.
+  useEffect(() => {
+    if (!token || !ajiltan?.baiguullagiinId) return;
+    const iduud = Array.from(
+      new Set(
+        (bankRows || [])
+          .flatMap((r: any) =>
+            Array.isArray(r.kholbosonGereeniiId)
+              ? r.kholbosonGereeniiId
+              : r.kholbosonGereeniiId
+                ? [r.kholbosonGereeniiId]
+                : [],
+          )
+          .map((id: any) => String(id))
+          .filter(Boolean),
+      ),
+    ).filter((id) => !gereeMap[id]);
+    if (iduud.length === 0) return;
+
+    let tsutslagdsan = false;
+    (async () => {
+      try {
+        const resp = await uilchilgee(token).get("/geree", {
+          params: {
+            baiguullagiinId: ajiltan.baiguullagiinId,
+            khuudasniiDugaar: 1,
+            khuudasniiKhemjee: iduud.length,
+            query: JSON.stringify({ _id: { $in: iduud } }),
+          },
+        });
+        const list = resp.data?.jagsaalt || resp.data?.list || resp.data || [];
+        if (tsutslagdsan || !Array.isArray(list)) return;
+        setGereeMap((umnukh) => {
+          const shine = { ...umnukh };
+          list.forEach((g: any) => {
+            if (g?._id) shine[String(g._id)] = g;
+          });
+          return shine;
+        });
+      } catch {
+        // Гэрээ татаж чадаагүй ч хүснэгт ажиллана — зөвхөн эзний нэр
+        // харагдахгүй байна гэсэн үг тул алдааг дэлгэцэд гаргахгүй.
+      }
+    })();
+    return () => {
+      tsutslagdsan = true;
+    };
+  }, [bankRows, token, ajiltan?.baiguullagiinId, gereeMap]);
 
   // Real-time: refetch when backend emits bankniiGuilgeeShine for this org
   useEffect(() => {
@@ -427,8 +487,17 @@ export default function DansniiKhuulga() {
         date: dateValFormatted,
         month: d ? d.toLocaleDateString("mn-MN", { year: "numeric", month: "2-digit" }) : r.sar || "",
         total: Number(r.amount ?? r.Amt ?? r.tranAmount ?? r.income ?? r.kholbosonDun ?? 0) || 0,
+        balance: r.balance !== undefined && r.balance !== null && r.balance !== "" && !isNaN(Number(r.balance)) ? Number(r.balance) : (r.closingBalance ?? r.bal ?? null),
         action: r.description || r.TxAddInf || r.tranDesc || r.txnDesc || r.ner || "Банкны гүйлгээ",
         contractIds: Array.isArray(r.kholbosonGereeniiId) ? r.kholbosonGereeniiId : r.kholbosonGereeniiId ? [String(r.kholbosonGereeniiId)] : [],
+        contracts: (Array.isArray(r.kholbosonGereeniiId)
+          ? r.kholbosonGereeniiId
+          : r.kholbosonGereeniiId
+            ? [r.kholbosonGereeniiId]
+            : []
+        )
+          .map((id: any) => gereeMap[String(id)])
+          .filter(Boolean),
         account: String(r.relatedAccount || r.accNum || r.accVal || r.CtAcct || r.CtAcntOrg || r.dansniiDugaar || ""),
         raw: r,
       } as TableItem;
@@ -495,7 +564,26 @@ export default function DansniiKhuulga() {
       return true;
     });
     setFilteredData(filtered);
-  }, [bankRows, selectedDugaar, ekhlekhOgnoo, searchTerm]);
+  }, [bankRows, selectedDugaar, ekhlekhOgnoo, searchTerm, gereeMap]);
+
+  // Fallback balance from transactions if bank live balance API is null
+  const latestRowBalance = useMemo(() => {
+    for (const r of filteredData || []) {
+      const b = r.balance ?? r.raw?.balance ?? r.raw?.closingBalance ?? r.raw?.bal ?? r.raw?.accountBalance;
+      if (b !== undefined && b !== null && b !== "" && !isNaN(Number(b))) {
+        return Number(b);
+      }
+    }
+    for (const r of bankRows || []) {
+      const b = r.balance ?? r.closingBalance ?? r.bal ?? r.accountBalance;
+      if (b !== undefined && b !== null && b !== "" && !isNaN(Number(b))) {
+        return Number(b);
+      }
+    }
+    return null;
+  }, [filteredData, bankRows]);
+
+  const effectiveUldegdel = uldegdel !== null ? uldegdel : latestRowBalance;
 
   // Dashboard statistics derived from filteredData for admin
   const stats = useMemo(() => {
@@ -551,6 +639,8 @@ export default function DansniiKhuulga() {
           return tsagRuu(m.date);
         case "total":
           return Number(m.total) || 0;
+        case "balance":
+          return Number(m.balance ?? m.raw?.balance ?? m.raw?.closingBalance ?? m.raw?.bal) || 0;
         case "action":
           return String(m.action || m.raw?.uilchilgeeniiUtga || "");
         case "account":
@@ -560,6 +650,11 @@ export default function DansniiKhuulga() {
           return (m.contractIds?.length || 0) > 0
             ? tsagRuu(m.raw?.updatedAt)
             : Number.NEGATIVE_INFINITY;
+        case "resident": {
+          const g = m.contracts?.[0];
+          if (!g) return "";
+          return `${g.ovog || ""} ${g.ner || ""}`.trim() || String(g.ner || "");
+        }
         case "status":
           return (m.contractIds?.length || 0) > 0 ? 1 : 0;
         default:
@@ -664,10 +759,10 @@ export default function DansniiKhuulga() {
                   <div className="flex items-center h-10 px-4 rounded-2xl neu-panel text-sm text-theme whitespace-nowrap">
                     {isLoadingUldegdel ? (
                       <span className="opacity-60">Үлдэгдэл...</span>
-                    ) : uldegdel !== null ? (
-                      <span>Үлдэгдэл: <strong>{formatNumber(uldegdel, 2)}₮</strong></span>
+                    ) : effectiveUldegdel !== null ? (
+                      <span>Үлдэгдэл: <strong className="font-semibold text-blue-600 dark:text-blue-400">{formatNumber(effectiveUldegdel, 2)}₮</strong></span>
                     ) : (
-                      <span className="opacity-60">Үлдэгдэл авах боломжгүй</span>
+                      <span className="opacity-60">Үлдэгдэл тодорхойгүй</span>
                     )}
                   </div>
                 )}

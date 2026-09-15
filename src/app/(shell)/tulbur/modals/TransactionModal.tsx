@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import { X, Calendar, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
@@ -197,6 +197,69 @@ export interface TransactionData {
   discountValue?: number;
   reason?: string;
 }
+
+/** 1234567.5 -> "1,234,567.50" */
+const mungunDunFormat = (n: number) =>
+  (Number(n) || 0).toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+/**
+ * Бичиж байх үед мянгатын таслал тавина ("100000" -> "100,000").
+ *
+ * Бутархайг 2 орноор хязгаарлах ба "1234." гэж бичиж байхад цэгийг нь
+ * устгахгүй — эс тэгвээс бутархай оруулах боломжгүй болно. Хадгалах үед
+ * `handleSubmit` таслалыг аль хэдийн цэвэрлэдэг тул state-д форматтай
+ * тэмдэгт мөр хадгалах нь аюулгүй.
+ */
+const dunFormatlay = (raw: string): string => {
+  const tsever = String(raw).replace(/[^\d.]/g, "");
+  const kheseguud = tsever.split(".");
+  const butenToo = (kheseguud[0] || "").replace(/^0+(?=\d)/, "");
+  const butarkhai = kheseguud.length > 1 ? kheseguud[1].slice(0, 2) : null;
+  const tasalsan = butenToo ? Number(butenToo).toLocaleString("en-US") : "";
+  if (butarkhai === null) return tasalsan;
+  return `${tasalsan || "0"}.${butarkhai}`;
+};
+
+/** Хувь — таслалгүй, 0-100 хооронд, 2 орны бутархайтай. */
+const khuviFormatlay = (raw: string): string => {
+  const tsever = String(raw).replace(/[^\d.]/g, "");
+  const kheseguud = tsever.split(".");
+  let buten = (kheseguud[0] || "").replace(/^0+(?=\d)/, "");
+  if (buten && Number(buten) > 100) buten = "100";
+  const butarkhai =
+    kheseguud.length > 1 ? kheseguud.slice(1).join("").slice(0, 2) : null;
+  if (butarkhai === null) return buten;
+  return `${buten || "0"}.${butarkhai}`;
+};
+
+/** Хөнгөлөлтийн доод мөрийн нэг нүд. */
+const KhungulultiinMur = ({
+  ner,
+  utga,
+  onts,
+}: {
+  ner: string;
+  utga: string;
+  onts?: boolean;
+}) => (
+  <div className="flex flex-col">
+    <span className="text-[10px] uppercase tracking-wider text-emerald-700/70 dark:text-emerald-400/70">
+      {ner}
+    </span>
+    <span
+      className={
+        onts
+          ? "text-[13px] font-bold tabular-nums text-emerald-900 dark:text-emerald-100"
+          : "text-[13px] font-semibold tabular-nums text-emerald-800 dark:text-emerald-300"
+      }
+    >
+      {utga}₮
+    </span>
+  </div>
+);
 
 export default function TransactionModal({
   show,
@@ -560,6 +623,26 @@ export default function TransactionModal({
     useLegacyAshiglaltCalculator,
   ]);
 
+  /**
+   * Хөнгөлөлтийн бодолт. Оролт нь форматтай (таслал/цэг) байж болох тул
+   * цэвэрлээд тооцно — дэлгэц ба хадгалалт хоёр ижил тоо ашиглана.
+   */
+  const khungulultiinDun = useMemo(() => {
+    const val =
+      parseFloat(String(discountValue).replace(/%/g, "").replace(/,/g, "")) ||
+      0;
+    if (val <= 0) return 0;
+    if (discountType === "percent")
+      return Math.round((residentBalance || 0) * (val / 100) * 100) / 100;
+    return val;
+  }, [discountValue, discountType, residentBalance]);
+
+  const uldekhDun = useMemo(
+    () =>
+      Math.round(((residentBalance || 0) - khungulultiinDun) * 100) / 100,
+    [residentBalance, khungulultiinDun],
+  );
+
   const handleSubmit = async () => {
     if (transactionType === "khungulult") {
       const rawVal = discountValue.replace(/%/g, "").replace(/,/g, "");
@@ -584,7 +667,18 @@ export default function TransactionModal({
 
       const dateTag = discountMonth ? `(${discountMonth})` : "";
       const percentTag = discountType === "percent" ? ` ${valNum}%` : "";
-      const finalTailbar = `Хөнгөлөлт${percentTag} ${dateTag}`.trim();
+      // Хэрэглэгчийн бичсэн тайлбарыг ХАЯДАГ байсан: доорх "Тайлбар" талбар
+      // нь зөвхөн бусад төрөлд ашиглагддаг байсан тул хөнгөлөлт дээр бичсэн
+      // тэмдэглэл хаашаа ч хадгалагддаггүй байв. Одоо системийн шошгоны
+      // ард залгана — хуулга дээр "Хөнгөлөлт 20% (2026-08) · <тэмдэглэл>"
+      // гэж харагдана.
+      const nemeltTailbar = tailbar.trim();
+      const finalTailbar = [
+        `Хөнгөлөлт${percentTag} ${dateTag}`.trim(),
+        nemeltTailbar,
+      ]
+        .filter(Boolean)
+        .join(" · ");
 
       const data: TransactionData = {
         type: "khungulult",
@@ -828,58 +922,59 @@ export default function TransactionModal({
                       </div>
                     </div>
 
-                    <div className="space-y-1.5">
-                      <div className="flex justify-between items-center">
-                        <label className="block text-xs font-semibold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
-                          ХӨНГӨЛӨХ ДҮН / ХӨНГӨЛӨХ ХУВЬ
-                        </label>
-                        {residentBalance !== null && (
-                          <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-medium">
-                            Сүүлчийн үлдэгдэл: {residentBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}₮
-                          </span>
-                        )}
-                      </div>
+                    <div className="space-y-2">
+                      {/* Гарчиг нь сонгосон хэлбэрээс хамаарч хувьсана —
+                          өмнө нь "ХӨНГӨЛӨХ ДҮН / ХӨНГӨЛӨХ ХУВЬ" гэж хоёуланг
+                          нь зэрэг бичдэг тул аль нь хүчинтэй нь ойлгомжгүй
+                          байв. */}
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+                        {discountType === "percent"
+                          ? "ХӨНГӨЛӨХ ХУВЬ"
+                          : "ХӨНГӨЛӨХ ДҮН"}
+                      </label>
 
                       <div className="relative">
                         <input
                           type="text"
+                          inputMode="decimal"
                           value={discountValue}
-                          onChange={(e) => setDiscountValue(e.target.value)}
-                          placeholder={discountType === "percent" ? "50%" : "0.00"}
+                          onChange={(e) =>
+                            setDiscountValue(
+                              discountType === "percent"
+                                ? khuviFormatlay(e.target.value)
+                                : dunFormatlay(e.target.value),
+                            )
+                          }
+                          placeholder={discountType === "percent" ? "0" : "0.00"}
                           disabled={isProcessing}
-                          className="w-full px-3 py-2.5 border border-emerald-300 bg-white text-emerald-950 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all text-sm font-semibold tracking-wide dark:bg-slate-900 dark:border-emerald-800 dark:text-emerald-100"
+                          className="w-full rounded-2xl border border-emerald-300 bg-white py-3 pl-4 pr-12 text-right text-lg font-semibold tabular-nums tracking-wide text-emerald-950 transition-all focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 disabled:opacity-60 dark:border-emerald-800 dark:bg-slate-900 dark:text-emerald-100"
                         />
+                        <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-base font-semibold text-emerald-600/70 dark:text-emerald-400/70">
+                          {discountType === "percent" ? "%" : "₮"}
+                        </span>
                       </div>
 
-                      {discountValue && residentBalance !== null && (
-                        <div className="flex items-center justify-between text-xs text-emerald-700 dark:text-emerald-400 font-medium pt-1">
-                          <span>
-                            {discountType === "percent" ? (
-                              (() => {
-                                const p = parseFloat(discountValue.replace(/%/g, "")) || 0;
-                                const calculated = Math.round((residentBalance || 0) * (p / 100) * 100) / 100;
-                                return `Хөнгөлөх дүн: ${calculated.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}₮ (${p}% хөнгөлөлт)`;
-                              })()
-                            ) : (
-                              (() => {
-                                const amt = parseFloat(discountValue.replace(/,/g, "")) || 0;
-                                return `Хөнгөлөх дүн: ${amt.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}₮`;
-                              })()
-                            )}
-                          </span>
-                          <span>
-                            {(() => {
-                              let calculated = 0;
-                              if (discountType === "percent") {
-                                const p = parseFloat(discountValue.replace(/%/g, "")) || 0;
-                                calculated = Math.round((residentBalance || 0) * (p / 100) * 100) / 100;
-                              } else {
-                                calculated = parseFloat(discountValue.replace(/,/g, "")) || 0;
-                              }
-                              const remaining = Math.round(((residentBalance || 0) - calculated) * 100) / 100;
-                              return `Үлдэгдэл дүн: ${remaining.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}₮`;
-                            })()}
-                          </span>
+                      {residentBalance !== null && (
+                        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 rounded-xl bg-white/70 px-3 py-2.5 dark:bg-slate-900/40">
+                          {/* Сүүлчийн үлдэгдэл нь гарчгийн хажуугаас ЭНД
+                              шилжив: оролтод аль хэдийн форматтай дүн
+                              харагдаж байгаа тул хуучин "Хөнгөлөх дүн: ..."
+                              давхардал болж байсан. */}
+                          <KhungulultiinMur
+                            ner="Сүүлчийн үлдэгдэл"
+                            utga={mungunDunFormat(residentBalance)}
+                          />
+                          {discountType === "percent" && (
+                            <KhungulultiinMur
+                              ner="Хөнгөлөх дүн"
+                              utga={mungunDunFormat(khungulultiinDun)}
+                            />
+                          )}
+                          <KhungulultiinMur
+                            ner="Үлдэгдэл дүн"
+                            utga={mungunDunFormat(uldekhDun)}
+                            onts
+                          />
                         </div>
                       )}
                     </div>
