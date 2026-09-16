@@ -21,6 +21,8 @@ import { toast } from "sonner";
 import {
   getResidentField,
   getResidentToots,
+  getResidentOrtsuud,
+  getResidentDavkhauraud,
 } from "@/lib/residentDataHelper";
 
 /* ─── Types ─────────────────────────────────────────────────────────────── */
@@ -244,23 +246,94 @@ export default function HongololtTool({
             ? res.data
             : [];
 
-      const rows: ResidentRow[] = raw.map((item: any) => ({
-        _id: String(item._id),
-        ner: item.ner || "Нэргүй",
-        ovog: item.ovog || "",
-        utas: item.utas || item.utas1 || "",
-        toot:
-          String(getResidentToots(item) || getResidentField(item, "toot") || item.toot || "-"),
-        orts: String(
-          getResidentField(item, "orts") ?? item.orts ?? "",
-        ),
-        davkhar: String(
-          getResidentField(item, "davkhar") ?? item.davkhar ?? "",
-        ),
-        gereeniiId: item.gereeniiId || "",
-        uldegdel: Number(item.uldegdel) || 0,
-        turesiinOrlogo: Number(item.turesiinOrlogo || item.sariniiTureeSan) || 0,
-      }));
+      const rows: ResidentRow[] = [];
+
+      raw.forEach((item: any) => {
+        const ner = item.ner || "Нэргүй";
+        const ovog = item.ovog || "";
+        const utas = item.utas || item.utas1 || "";
+        const resId = String(item._id);
+
+        const tootsList =
+          Array.isArray(item.toots) && item.toots.length > 0
+            ? item.toots.filter((t: any) => {
+                if (!t || !t.toot) return false;
+                if (
+                  barilgiinId &&
+                  t.barilgiinId &&
+                  String(t.barilgiinId) !== String(barilgiinId)
+                ) {
+                  return false;
+                }
+                return true;
+              })
+            : [];
+
+        if (tootsList.length > 0) {
+          tootsList.forEach((t: any, idx: number) => {
+            const tootStr = String(t.toot || "-");
+            const gid = String(
+              t.gereeniiId || t.gereeId || item.gereeniiId || "",
+            );
+            const rowId = gid
+              ? `${resId}_${gid}`
+              : `${resId}_${tootStr}_${idx}`;
+
+            rows.push({
+              _id: rowId,
+              ner,
+              ovog,
+              utas,
+              toot: tootStr,
+              orts: String(
+                t.orts ?? getResidentField(item, "orts") ?? item.orts ?? "",
+              ),
+              davkhar: String(
+                t.davkhar ??
+                  getResidentField(item, "davkhar") ??
+                  item.davkhar ??
+                  "",
+              ),
+              gereeniiId: gid,
+              uldegdel:
+                Number(
+                  t.uldegdel !== undefined
+                    ? t.uldegdel
+                    : t.ekhniiUldegdel !== undefined
+                      ? t.ekhniiUldegdel
+                      : item.uldegdel,
+                ) || 0,
+              turesiinOrlogo:
+                Number(
+                  t.turesiinOrlogo ||
+                    t.sariniiTureeSan ||
+                    item.turesiinOrlogo ||
+                    item.sariniiTureeSan,
+                ) || 0,
+            });
+          });
+        } else {
+          const tootStr = String(
+            item.toot || getResidentField(item, "toot") || "-",
+          );
+          const gid = String(item.gereeniiId || "");
+          rows.push({
+            _id: gid ? `${resId}_${gid}` : resId,
+            ner,
+            ovog,
+            utas,
+            toot: tootStr,
+            orts: String(getResidentField(item, "orts") ?? item.orts ?? ""),
+            davkhar: String(
+              getResidentField(item, "davkhar") ?? item.davkhar ?? "",
+            ),
+            gereeniiId: gid,
+            uldegdel: Number(item.uldegdel) || 0,
+            turesiinOrlogo:
+              Number(item.turesiinOrlogo || item.sariniiTureeSan) || 0,
+          });
+        }
+      });
 
       rows.sort((a, b) =>
         a.toot.localeCompare(b.toot, undefined, { numeric: true, sensitivity: "base" })
@@ -505,11 +578,11 @@ export default function HongololtTool({
       if (alggasan.length > 0) {
         toast.error(
           `${alggasan.length} гэрээнд хөнгөлөлт суугаагүй: ` +
-            alggasan
-              .slice(0, 3)
-              .map((x: any) => x.toot || x.gereeniiDugaar)
-              .join(", ") +
-            (alggasan.length > 3 ? " …" : ""),
+          alggasan
+            .slice(0, 3)
+            .map((x: any) => x.toot || x.gereeniiDugaar)
+            .join(", ") +
+          (alggasan.length > 3 ? " …" : ""),
         );
       }
       if (aldaatai.length > 0) {
@@ -536,7 +609,7 @@ export default function HongololtTool({
   const aguulga = (
     <>
       {/* ── Tabs ── */}
-      <div className="flex gap-1 px-6 pt-3 shrink-0">
+      <div className="flex gap-1 px-2 pt-1 pb-1 shrink-0">
         {(
           [
             { id: "oruulakh", label: "Хөнгөлөлт оруулах", icon: Tag },
@@ -560,9 +633,9 @@ export default function HongololtTool({
 
       {/* ══ TAB 1 — ОРУУЛАХ ══ */}
       {activeTab === "oruulakh" && (
-        <div className="flex flex-1 min-h-0 overflow-hidden">
+        <div className="flex flex-1 min-h-0 overflow-hidden gap-4 lg:gap-6 pt-3 px-2">
           {/* Left panel */}
-          <div className="w-80 lg:w-[350px] xl:w-[380px] shrink-0 flex flex-col gap-4 p-5 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
+          <div className="w-80 lg:w-[350px] xl:w-[380px] shrink-0 flex flex-col gap-4 p-5 rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/30 overflow-y-auto">
             {/* Scope selector */}
             <div>
               <label className="block text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
@@ -591,14 +664,14 @@ export default function HongololtTool({
             </div>
 
             {/* Орц — барилгын тохиргооноос */}
-            <div>
-              <label className="block text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
-                Орц
+            <div className="flex items-center gap-2">
+              <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide shrink-0 w-16">
+                Орц :
               </label>
               <select
                 value={orts}
                 onChange={(e) => setOrts(e.target.value)}
-                className="w-full px-3 py-2 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="flex-1 px-3 py-1.5 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
                 <option value="">Бүх орц</option>
                 {ortsSongoltuud.map((o: string) => (
@@ -609,52 +682,23 @@ export default function HongololtTool({
               </select>
             </div>
 
-            {/* Зардал сонгох — хоосон бол нийт төлбөрөөс хөнгөлнө */}
-            <div>
-              <label className="block text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
-                Зардал сонгох
+            {/* Давхар */}
+            <div className="flex items-center gap-2">
+              <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide shrink-0 w-16">
+                Давхар :
               </label>
               <select
-                value={zardliinId}
-                onChange={(e) => setZardliinId(e.target.value)}
-                className="w-full px-3 py-2 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                value={davkhar}
+                onChange={(e) => setDavkhar(e.target.value)}
+                className="flex-1 px-3 py-1.5 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
-                <option value="">Нийт төлбөрөөс</option>
-                {zardluud.map((z) => (
-                  <option key={z._id} value={z._id}>
-                    {z.ner}
+                <option value="">Бүх давхар</option>
+                {davkharSongoltuud.map((d: string) => (
+                  <option key={d} value={d}>
+                    {d}
                   </option>
                 ))}
               </select>
-            </div>
-
-            {/* Хоногийн хөнгөлөлт */}
-            <div>
-              <label className="flex items-center gap-2 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
-                <input
-                  type="checkbox"
-                  checked={khonogTootsokh}
-                  onChange={(e) => setKhonogTootsokh(e.target.checked)}
-                  className="rounded border-gray-300 text-emerald-500 focus:ring-emerald-500"
-                />
-                Хоногийн хөнгөлөлт эсэх
-              </label>
-              {khonogTootsokh && (
-                <>
-                  <input
-                    type="number"
-                    min="0"
-                    step="1"
-                    placeholder="Хөнгөлөх хоног"
-                    value={khungulultKhonog}
-                    onChange={(e) => setKhungulultKhonog(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                  <p className="mt-1 text-[10px] text-gray-500 dark:text-gray-400">
-                    Сарын дүнг 30 хоногт хувааж, сонгосон хоногоор бодно
-                  </p>
-                </>
-              )}
             </div>
 
             {/* Хөнгөлөх сар — муж. Апп даяар хэрэглэдэг сонгогч. */}
@@ -679,24 +723,7 @@ export default function HongololtTool({
 
             </div>
 
-            {/* Давхар */}
-            <div>
-              <label className="block text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
-                Давхар
-              </label>
-              <select
-                value={davkhar}
-                onChange={(e) => setDavkhar(e.target.value)}
-                className="w-full px-3 py-2 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              >
-                <option value="">Бүх давхар</option>
-                {davkharSongoltuud.map((d: string) => (
-                  <option key={d} value={d}>
-                    {d}
-                  </option>
-                ))}
-              </select>
-            </div>
+
 
             {/* Discount type */}
             <div>
@@ -760,22 +787,17 @@ export default function HongololtTool({
                 Шалтгаан
               </label>
               <textarea
-                rows={3}
+                rows={1}
                 placeholder="Шалтгаан"
                 value={shaltgaan}
                 onChange={(e) => setShaltgaan(e.target.value)}
-                className="w-full px-3 py-2 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+                className="w-full px-3 py-1.5 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
               />
             </div>
 
             {/* Summary */}
             <div className="mt-auto pt-3 border-t border-gray-200 dark:border-gray-700 space-y-2">
-              <div className="flex justify-between text-xs">
-                <span className="text-gray-500 dark:text-gray-400">Нийт тоот тоо :</span>
-                <span className="font-medium text-gray-800 dark:text-gray-200">
-                  {summaryRows.length}
-                </span>
-              </div>
+
               <div className="flex justify-between text-xs">
                 <span className="text-gray-500 dark:text-gray-400">Нийт хөнгөлөгдсөн дүн :</span>
                 <span className="font-medium text-emerald-600 dark:text-emerald-400">
@@ -792,7 +814,7 @@ export default function HongololtTool({
                 disabled={loading}
                 className="flex-1 py-2 text-xs font-medium rounded-xl border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               >
-                Цуцрэлах
+                Цуцлах
               </button>
               <button
                 type="button"
@@ -809,7 +831,7 @@ export default function HongololtTool({
           </div>
 
           {/* Right panel: resident table */}
-          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/20">
             {/* Toolbar */}
             <div className="flex items-center gap-3 px-5 py-3 border-b border-gray-200 dark:border-gray-700 shrink-0">
               <div className="relative flex-1">
@@ -852,10 +874,10 @@ export default function HongololtTool({
                   Оршин суугч олдсонгүй
                 </div>
               ) : (
-                <table className="w-full text-xs">
+                <table className="w-full text-xs border-collapse">
                   <thead>
-                    <tr className="bg-gray-50 dark:bg-gray-800/60 sticky top-0 z-10">
-                      <th className="w-10 px-3 py-2.5 text-center">
+                    <tr className="bg-gray-50 dark:bg-gray-800/60 sticky top-0 z-10 border-b border-gray-200 dark:border-gray-700">
+                      <th className="w-10 px-3 py-2.5 text-center border-r border-gray-200 dark:border-gray-700">
                         <button
                           type="button"
                           onClick={toggleAll}
@@ -868,13 +890,22 @@ export default function HongololtTool({
                           )}
                         </button>
                       </th>
-                      <th className="px-3 py-2.5 text-left font-medium text-gray-500 dark:text-gray-400">
-                        Оршин суугч
+                      <th className="px-3 py-2.5 text-left font-medium text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">
+                        Нэр
                       </th>
-                      <th className="px-3 py-2.5 text-center font-medium text-gray-500 dark:text-gray-400">
-                        Гараа
+                      <th className="px-3 py-2.5 text-center font-medium text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">
+                        Дугаар
                       </th>
-                      <th className="px-3 py-2.5 text-right font-medium text-gray-500 dark:text-gray-400">
+                      <th className="px-3 py-2.5 text-center font-medium text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">
+                        Орц
+                      </th>
+                      <th className="px-3 py-2.5 text-center font-medium text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">
+                        Давхар
+                      </th>
+                      <th className="px-3 py-2.5 text-center font-medium text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">
+                        Тоот
+                      </th>
+                      <th className="px-3 py-2.5 text-right font-medium text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">
                         Үлдэгдэл
                       </th>
                       <th className="px-3 py-2.5 text-right font-medium text-gray-500 dark:text-gray-400">
@@ -891,35 +922,39 @@ export default function HongololtTool({
                         <tr
                           key={r._id}
                           onClick={() => toggleOne(r._id)}
-                          className={`border-b border-gray-100 dark:border-gray-800 cursor-pointer transition-colors ${isSelected
-                            ? "bg-emerald-50 dark:bg-emerald-500/10"
-                            : idx % 2 === 0
-                              ? "bg-white dark:bg-transparent"
-                              : "bg-gray-50/50 dark:bg-gray-800/20"
+                          className={`border-b border-gray-200 dark:border-gray-700 cursor-pointer transition-colors ${isSelected
+                              ? "bg-emerald-50 dark:bg-emerald-500/10"
+                              : idx % 2 === 0
+                                ? "bg-white dark:bg-transparent"
+                                : "bg-gray-50/50 dark:bg-gray-800/20"
                             } hover:bg-emerald-50 dark:hover:bg-emerald-500/5`}
                         >
-                          <td className="w-10 px-3 py-2 text-center">
+                          <td className="w-10 px-3 py-2 text-center border-r border-gray-200 dark:border-gray-700">
                             {isSelected ? (
                               <CheckSquare className="w-4 h-4 text-emerald-500 inline" />
                             ) : (
                               <Square className="w-4 h-4 text-gray-300 dark:text-gray-600 inline" />
                             )}
                           </td>
-                          <td className="px-3 py-2">
-                            <div className="font-medium text-gray-800 dark:text-gray-200">
+                          <td className="px-3 py-2 border-r border-gray-200 dark:border-gray-700">
+                            <div className="font-medium text-gray-800 dark:text-gray-200 whitespace-nowrap">
                               {r.ovog ? `${r.ovog} ` : ""}
                               {r.ner}
                             </div>
-                            {r.utas && (
-                              <div className="text-gray-400 text-[11px]">
-                                {r.utas}
-                              </div>
-                            )}
                           </td>
-                          <td className="px-3 py-2 text-center text-gray-700 dark:text-gray-300">
-                            {r.toot}
+                          <td className="px-3 py-2 text-center text-gray-600 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
+                            {r.utas || "—"}
                           </td>
-                          <td className="px-3 py-2 text-right tabular-nums">
+                          <td className="px-3 py-2 text-center text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
+                            {r.orts || "—"}
+                          </td>
+                          <td className="px-3 py-2 text-center text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
+                            {r.davkhar || "—"}
+                          </td>
+                          <td className="px-3 py-2 text-center text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap font-medium">
+                            {r.toot || "—"}
+                          </td>
+                          <td className="px-3 py-2 text-right tabular-nums border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
                             <span
                               className={
                                 (r.uldegdel || 0) > 0
@@ -930,7 +965,7 @@ export default function HongololtTool({
                               {fmt(r.uldegdel || 0)}₮
                             </span>
                           </td>
-                          <td className="px-3 py-2 text-right tabular-nums">
+                          <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">
                             {isTarget && discountDun > 0 ? (
                               <span className="text-emerald-600 dark:text-emerald-400 font-medium">
                                 -{fmt(discountDun)}₮
@@ -954,100 +989,103 @@ export default function HongololtTool({
 
       {/* ══ TAB 2 — ТҮҮХ ══ */}
       {activeTab === "tuukh" && (
-        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-          {/* Toolbar */}
-          <div className="flex items-center gap-3 px-5 py-3 border-b border-gray-200 dark:border-gray-700 shrink-0">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Тоот, нэр эсвэл тайлбараар хайх..."
-                value={histSearch}
-                onChange={(e) => setHistSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden pt-3 px-2">
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/20">
+            {/* Toolbar */}
+            <div className="flex items-center gap-3 px-5 py-3 border-b border-gray-200 dark:border-gray-700 shrink-0">
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Тоот, нэр эсвэл тайлбараар хайх..."
+                  value={histSearch}
+                  onChange={(e) => setHistSearch(e.target.value)}
+                  className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={loadHistory}
+                disabled={histFetching}
+                className="p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition-colors"
+                title="Дахин ачааллах"
+              >
+                <RefreshCw
+                  className={`w-4 h-4 ${histFetching ? "animate-spin" : ""}`}
+                />
+              </button>
+              <span className="ml-auto text-xs text-gray-400">
+                Нийт: {filteredHistory.length}
+              </span>
             </div>
-            <button
-              type="button"
-              onClick={loadHistory}
-              disabled={histFetching}
-              className="p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition-colors"
-            >
-              <RefreshCw
-                className={`w-4 h-4 ${histFetching ? "animate-spin" : ""}`}
-              />
-            </button>
-            <span className="ml-auto text-xs text-gray-400">
-              Нийт: {filteredHistory.length}
-            </span>
-          </div>
 
-          {/* History table */}
-          <div className="flex-1 overflow-y-auto">
-            {histFetching ? (
-              <div className="flex items-center justify-center h-40 text-gray-400 text-xs gap-2">
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                Уншиж байна...
-              </div>
-            ) : filteredHistory.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-40 text-gray-400 text-xs gap-2">
-                <Clock className="w-8 h-8 text-gray-300 dark:text-gray-600" />
-                Хөнгөлөлтийн түүх байхгүй
-              </div>
-            ) : (
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="bg-gray-50 dark:bg-gray-800/60 sticky top-0 z-10">
-                    <th className="px-4 py-2.5 text-left font-medium text-gray-500 dark:text-gray-400">
-                      №
-                    </th>
-                    <th className="px-4 py-2.5 text-left font-medium text-gray-500 dark:text-gray-400">
-                      Огноо
-                    </th>
-                    <th className="px-4 py-2.5 text-left font-medium text-gray-500 dark:text-gray-400">
-                      Тоот
-                    </th>
-                    <th className="px-4 py-2.5 text-left font-medium text-gray-500 dark:text-gray-400">
-                      Оршин суугч
-                    </th>
-                    <th className="px-4 py-2.5 text-left font-medium text-gray-500 dark:text-gray-400">
-                      Тайлбар
-                    </th>
-                    <th className="px-4 py-2.5 text-right font-medium text-gray-500 dark:text-gray-400">
-                      Дүн
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredHistory.map((h, idx) => (
-                    <tr
-                      key={h._id}
-                      className={`border-b border-gray-100 dark:border-gray-800 ${idx % 2 === 0
-                        ? "bg-white dark:bg-transparent"
-                        : "bg-gray-50/50 dark:bg-gray-800/20"
-                        }`}
-                    >
-                      <td className="px-4 py-2 text-gray-400">{idx + 1}</td>
-                      <td className="px-4 py-2 text-gray-600 dark:text-gray-400">
-                        {fmtDate(h.ognoo || h.createdAt || "")}
-                      </td>
-                      <td className="px-4 py-2 text-gray-700 dark:text-gray-300 font-medium">
-                        {h.toot || "—"}
-                      </td>
-                      <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                        {h.ner || "—"}
-                      </td>
-                      <td className="px-4 py-2 text-gray-500 dark:text-gray-400 max-w-xs truncate">
-                        {h.tailbar || "—"}
-                      </td>
-                      <td className="px-4 py-2 text-right tabular-nums font-medium text-emerald-600 dark:text-emerald-400">
-                        -{fmt(Math.abs(h.dun))}₮
-                      </td>
+            {/* History table */}
+            <div className="flex-1 overflow-y-auto">
+              {histFetching ? (
+                <div className="flex items-center justify-center h-40 text-gray-400 text-xs gap-2">
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  Уншиж байна...
+                </div>
+              ) : filteredHistory.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-40 text-gray-400 text-xs gap-2">
+                  <Clock className="w-8 h-8 text-gray-300 dark:text-gray-600" />
+                  Хөнгөлөлтийн түүх байхгүй
+                </div>
+              ) : (
+                <table className="w-full text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50 dark:bg-gray-800/60 sticky top-0 z-10 border-b border-gray-200 dark:border-gray-700">
+                      <th className="px-4 py-2.5 text-left font-medium text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">
+                        №
+                      </th>
+                      <th className="px-4 py-2.5 text-left font-medium text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">
+                        Огноо
+                      </th>
+                      <th className="px-4 py-2.5 text-left font-medium text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">
+                        Тоот
+                      </th>
+                      <th className="px-4 py-2.5 text-left font-medium text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">
+                        Оршин суугч
+                      </th>
+                      <th className="px-4 py-2.5 text-left font-medium text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">
+                        Тайлбар
+                      </th>
+                      <th className="px-4 py-2.5 text-right font-medium text-gray-500 dark:text-gray-400">
+                        Дүн
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+                  </thead>
+                  <tbody>
+                    {filteredHistory.map((h, idx) => (
+                      <tr
+                        key={h._id}
+                        className={`border-b border-gray-200 dark:border-gray-700 ${idx % 2 === 0
+                            ? "bg-white dark:bg-transparent"
+                            : "bg-gray-50/50 dark:bg-gray-800/20"
+                          }`}
+                      >
+                        <td className="px-4 py-2 text-gray-400 border-r border-gray-200 dark:border-gray-700">{idx + 1}</td>
+                        <td className="px-4 py-2 text-gray-600 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">
+                          {fmtDate(h.ognoo || h.createdAt || "")}
+                        </td>
+                        <td className="px-4 py-2 text-gray-700 dark:text-gray-300 font-medium border-r border-gray-200 dark:border-gray-700">
+                          {h.toot || "—"}
+                        </td>
+                        <td className="px-4 py-2 text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700">
+                          {h.ner || "—"}
+                        </td>
+                        <td className="px-4 py-2 text-gray-500 dark:text-gray-400 max-w-xs truncate border-r border-gray-200 dark:border-gray-700">
+                          {h.tailbar || "—"}
+                        </td>
+                        <td className="px-4 py-2 text-right tabular-nums font-medium text-emerald-600 dark:text-emerald-400">
+                          -{fmt(Math.abs(h.dun))}₮
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
           </div>
         </div>
       )}

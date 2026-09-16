@@ -16,7 +16,6 @@ import {
   User,
   Building2,
   Trash2,
-  Check,
 } from "lucide-react";
 import uilchilgee from "@/lib/uilchilgee";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
@@ -62,9 +61,12 @@ export const ResidentDetailModal: React.FC<Props> = ({
   const [shineMashiniiDugaar, setShineMashiniiDugaar] = useState("");
   const [shineMashinToot, setShineMashinToot] = useState("");
   const [mashinJagsaalt, setMashinJagsaalt] = useState<any[]>([]);
+  /** Машины жагсаалт сүүлд татсанаасаа хойш өөрчлөгдсөн эсэх. */
+  const [mashinOorchlogdson, setMashinOorchlogdson] = useState(false);
 
   /* Хувийн мэдээлэл засах */
   const [zasajBuiKhuvi, setZasajBuiKhuvi] = useState(false);
+  const [bugdKhadgaljBaina, setBugdKhadgaljBaina] = useState(false);
   const [khuviinMedeelel, setKhuviinMedeelel] = useState({
     ovog: "",
     ner: "",
@@ -72,7 +74,6 @@ export const ResidentDetailModal: React.FC<Props> = ({
     mail: "",
     tailbar: "",
   });
-  const [khuviKhadgaljBaina, setKhuviKhadgaljBaina] = useState(false);
 
   /* Гэр бүлийн гишүүн нэмэх форм */
   const [gishuunNemejBaina, setGishuunNemejBaina] = useState(false);
@@ -83,11 +84,9 @@ export const ResidentDetailModal: React.FC<Props> = ({
     kholboo: "Бусад",
     erkh: "Харах + Төлөх",
   });
-  const [gishuunKhadgaljBaina, setGishuunKhadgaljBaina] = useState(false);
 
   const [zasajBuiToot, setZasajBuiToot] = useState(false);
   const [tootJagsaalt, setTootJagsaalt] = useState<any[]>([]);
-  const [tootKhadgaljBaina, setTootKhadgaljBaina] = useState(false);
 
   const tataya = useCallback(async () => {
     if (!token || !residentId) return;
@@ -100,6 +99,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
       const data = resp.data;
       setMedeelel(data);
       setMashinJagsaalt(Array.isArray(data?.mashinuud) ? data.mashinuud : []);
+      setMashinOorchlogdson(false);
       setTootJagsaalt(Array.isArray(data?.toots) ? data.toots : []);
     } catch {
       setAldaa("Мэдээлэл татахад алдаа гарлаа");
@@ -117,6 +117,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
     } else {
       setMedeelel(null);
       setMashinJagsaalt([]);
+      setMashinOorchlogdson(false);
       setTootJagsaalt([]);
     }
   }, [show, tataya]);
@@ -137,15 +138,14 @@ export const ResidentDetailModal: React.FC<Props> = ({
    * токеноос олдог тул админ талаас ажиллахгүй. Эндээс `undsenId`-г
    * шууд заадаг `/gerBuliinGishuunNemekh` рүү хандана.
    */
-  const gishuunNemye = async () => {
+  const gishuunNemye = async (): Promise<boolean> => {
     const utas = shineGishuun.utas.replace(/\D/g, "");
     if (utas.length < 8) {
       openErrorOverlay("Утасны дугаараа зөв оруулна уу");
-      return;
+      return false;
     }
-    if (!token || !residentId) return;
+    if (!token || !residentId) return false;
 
-    setGishuunKhadgaljBaina(true);
     try {
       await uilchilgee(token).post("/gerBuliinGishuunNemekh", {
         undsenId: residentId,
@@ -155,7 +155,6 @@ export const ResidentDetailModal: React.FC<Props> = ({
         kholboo: shineGishuun.kholboo,
         erkh: shineGishuun.erkh,
       });
-      openSuccessOverlay("Гэр бүлийн гишүүн нэмэгдлээ");
       setShineGishuun({
         ovog: "",
         ner: "",
@@ -165,14 +164,14 @@ export const ResidentDetailModal: React.FC<Props> = ({
       });
       setGishuunNemejBaina(false);
       await tataya();
+      return true;
     } catch (err: any) {
       openErrorOverlay(
         err?.response?.data?.aldaa ||
           err?.response?.data?.message ||
           "Гишүүн нэмэхэд алдаа гарлаа",
       );
-    } finally {
-      setGishuunKhadgaljBaina(false);
+      return false;
     }
   };
 
@@ -193,6 +192,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
       ezenToot: shineMashinToot || tootJagsaalt[0]?.toot || "",
     };
     setMashinJagsaalt((prev) => [...prev, newCar]);
+    setMashinOorchlogdson(true);
     setMedeelel((prev: any) => ({
       ...prev,
       mashinuud: [...(prev?.mashinuud || []), newCar],
@@ -202,6 +202,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
 
   const mashinUstgakh = (index: number) => {
     setMashinJagsaalt((prev) => prev.filter((_, i) => i !== index));
+    setMashinOorchlogdson(true);
     setMedeelel((prev: any) => ({
       ...prev,
       mashinuud: (prev?.mashinuud || []).filter((_: any, i: number) => i !== index),
@@ -251,15 +252,14 @@ export const ResidentDetailModal: React.FC<Props> = ({
    * эдгээр нь системээс тодорхойлогддог (нэвтрэх нэр нь утаснаас, эрх нь
    * бүртгэлийн төрлөөс). Эндээс гараар өөрчилвөл нэвтрэлт эвдэрч болно.
    */
-  const khuviiKhadgalya = async () => {
-    if (!token || !residentId) return;
+  const khuviiKhadgalya = async (): Promise<boolean> => {
+    if (!token || !residentId) return false;
     const utas = khuviinMedeelel.utas.replace(/[^0-9]/g, "");
     if (utas && utas.length < 8) {
       openErrorOverlay("Утасны дугаараа зөв оруулна уу");
-      return;
+      return false;
     }
 
-    setKhuviKhadgaljBaina(true);
     try {
       const shinechlelt = {
         ovog: khuviinMedeelel.ovog.trim(),
@@ -274,19 +274,17 @@ export const ResidentDetailModal: React.FC<Props> = ({
       });
       setMedeelel((prev: any) => ({ ...prev, ...shinechlelt }));
       setZasajBuiKhuvi(false);
-      openSuccessOverlay("Хувийн мэдээлэл хадгалагдлаа");
+      return true;
     } catch (err: any) {
       openErrorOverlay(
         err?.response?.data?.aldaa || "Хувийн мэдээлэл хадгалахад алдаа гарлаа",
       );
-    } finally {
-      setKhuviKhadgaljBaina(false);
+      return false;
     }
   };
 
-  const tootKhadgalya = async () => {
-    if (!token || !residentId) return;
-    setTootKhadgaljBaina(true);
+  const tootKhadgalya = async (): Promise<boolean> => {
+    if (!token || !residentId) return false;
     try {
       await uilchilgee(token).put(`/orshinSuugch/${residentId}`, {
         toots: tootJagsaalt,
@@ -297,10 +295,123 @@ export const ResidentDetailModal: React.FC<Props> = ({
         toots: tootJagsaalt,
       }));
       setZasajBuiToot(false);
+      return true;
     } catch (err: any) {
-      alert(err?.response?.data?.aldaa || "Тоот хадгалахад алдаа гарлаа");
+      openErrorOverlay(
+        err?.response?.data?.aldaa || "Тоот хадгалахад алдаа гарлаа",
+      );
+      return false;
+    }
+  };
+
+  /**
+   * Машины жагсаалтыг серверт хадгална.
+   *
+   * Машин нь `orshinSuugch` бичлэг дээр биш, тусдаа цуглуулгад байдаг тул
+   * `PUT /orshinSuugch/:id` ажиллахгүй — жагсаалтыг бүхэлд нь тавьдаг
+   * тусгай зам руу явуулна.
+   *
+   * Талбарт бичсэн хэрнээ «Нэмэх» дараагүй дугаарыг ч оруулж өгнө —
+   * хэрэглэгч бичээд шууд Хадгалах дарвал алдагдах ёсгүй.
+   */
+  const mashinKhadgalya = async (): Promise<boolean> => {
+    if (!token || !residentId) return false;
+    const nemelt = shineMashiniiDugaar.trim().toUpperCase();
+    const jagsaalt = nemelt
+      ? [
+          ...mashinJagsaalt,
+          {
+            mashiniiDugaar: nemelt,
+            ezenToot: shineMashinToot || tootJagsaalt[0]?.toot || "",
+          },
+        ]
+      : mashinJagsaalt;
+
+    try {
+      const resp = await uilchilgee(token).post(
+        "/orshinSuugchiinMashinKhadgalya",
+        {
+          orshinSuugchiinId: residentId,
+          baiguullagiinId,
+          mashinuud: jagsaalt.map((m: any) => ({
+            mashiniiDugaar: m.mashiniiDugaar,
+            ezenToot: m.ezenToot,
+          })),
+        },
+      );
+      const shineJagsaalt = Array.isArray(resp.data?.mashinuud)
+        ? resp.data.mashinuud
+        : jagsaalt;
+      setMashinJagsaalt(shineJagsaalt);
+      setMedeelel((prev: any) => ({ ...prev, mashinuud: shineJagsaalt }));
+      setShineMashiniiDugaar("");
+      setMashinOorchlogdson(false);
+      return true;
+    } catch (err: any) {
+      openErrorOverlay(
+        err?.response?.data?.aldaa ||
+          err?.response?.data?.message ||
+          "Машин хадгалахад алдаа гарлаа",
+      );
+      return false;
+    }
+  };
+
+  /** Машины хэсэгт хадгалагдаагүй өөрчлөлт байгаа эсэх. */
+  const mashinKhadgalakhShaardlagatai =
+    mashinOorchlogdson || Boolean(shineMashiniiDugaar.trim());
+
+  /**
+   * Хадгалах зүйл нээлттэй байгаа эсэх.
+   *
+   * Гишүүний маягт нээлттэй бол хоосон ч гэсэн энд тооцно — эс тэгвэл
+   * хэрэглэгч талбараа бөглөөд Хадгалах дарахад товч идэвхгүй хэвээр
+   * байж «яагаад хадгалагдахгүй байгаа юм бэ» гэсэн асуулт төрүүлнэ.
+   * Бөглөлтийн шалгалтыг `gishuunNemye` өөрөө хийж мэдэгдэнэ.
+   */
+  const khadgalakhShaardlagatai =
+    zasajBuiKhuvi ||
+    zasajBuiToot ||
+    gishuunNemejBaina ||
+    mashinKhadgalakhShaardlagatai;
+
+  /**
+   * Бүх нээлттэй засварыг нэг товчоор хадгална.
+   *
+   * Хэсэг бүр өөрийн жижиг Хадгалах товчтой байсныг болиулав — модал дотор
+   * гурав, дөрвөн хадгалах товч зэрэг харагдах нь ойлгомжгүй, шинэ хэсэг
+   * нэмэх бүрт бас нэгийг нэмэх шаардлагатай болдог байлаа. Одоо ганц цэг.
+   *
+   * Аль нэг нь амжилтгүй болбол тэндээ зогсоно — тухайн хэсгийн алдааны
+   * мэдэгдэл аль хэдийн гарсан байх тул дээр нь давхар мэдэгдэл харуулахгүй.
+   */
+  const bugdiigKhadgalya = async () => {
+    if (!khadgalakhShaardlagatai) {
+      openErrorOverlay("Хадгалах засвар алга байна");
+      return;
+    }
+    setBugdKhadgaljBaina(true);
+    try {
+      let amjilt = 0;
+      if (zasajBuiKhuvi) {
+        if (!(await khuviiKhadgalya())) return;
+        amjilt += 1;
+      }
+      if (zasajBuiToot) {
+        if (!(await tootKhadgalya())) return;
+        amjilt += 1;
+      }
+      if (mashinKhadgalakhShaardlagatai) {
+        if (!(await mashinKhadgalya())) return;
+        amjilt += 1;
+      }
+      if (gishuunNemejBaina) {
+        if (!(await gishuunNemye())) return;
+        amjilt += 1;
+      }
+      if (amjilt) openSuccessOverlay("Мэдээлэл хадгалагдлаа");
     } finally {
-      setTootKhadgaljBaina(false);
+      setBugdKhadgaljBaina(false);
     }
   };
 
@@ -329,7 +440,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
 
             {/* Left: Avatar & Resident details */}
             <div className="flex items-center gap-4 min-w-0 pr-12">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-500 dark:bg-blue-950/50 dark:text-blue-400">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-theme/10 text-theme dark:bg-theme/25 dark:text-theme">
                 <User className="h-7 w-7" />
               </div>
               <div className="min-w-0">
@@ -373,7 +484,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
           <div className="max-h-[76vh] overflow-y-auto p-5 sm:p-6 bg-slate-50/40 dark:bg-slate-950">
             {unshij && (
               <div className="flex flex-col items-center justify-center gap-2 py-24 text-xs text-slate-400">
-                <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+                <Loader2 className="h-6 w-6 animate-spin text-theme" />
                 <span>Мэдээлэл уншиж байна...</span>
               </div>
             )}
@@ -391,7 +502,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                   <div>
                     <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-slate-800/80">
                       <div className="flex items-center gap-2">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-theme/10 text-theme dark:bg-theme/25 dark:text-theme">
                           <User className="h-4 w-4" />
                         </div>
                         <h3 className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white">
@@ -403,7 +514,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                         onClick={() =>
                           zasajBuiKhuvi ? setZasajBuiKhuvi(false) : khuviiZasya()
                         }
-                        className="rounded-lg px-2 py-1 text-[11px] font-medium text-blue-600 transition hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/30"
+                        className="rounded-lg px-2 py-1 text-[11px] font-medium text-theme transition hover:bg-theme/10 dark:text-theme dark:hover:bg-theme/20"
                       >
                         {zasajBuiKhuvi ? "Болих" : "Засах"}
                       </button>
@@ -424,7 +535,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                   ovog: e.target.value,
                                 }))
                               }
-                              className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 outline-none focus:border-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                              className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                             />
                           </div>
                           <div>
@@ -437,7 +548,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                   ner: e.target.value,
                                 }))
                               }
-                              className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 outline-none focus:border-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                              className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                             />
                           </div>
                           <div>
@@ -451,7 +562,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                   utas: e.target.value,
                                 }))
                               }
-                              className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 outline-none focus:border-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                              className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                             />
                           </div>
                           <div>
@@ -465,7 +576,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                   mail: e.target.value,
                                 }))
                               }
-                              className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 outline-none focus:border-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                              className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                             />
                           </div>
                           <div className="col-span-2">
@@ -480,7 +591,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                   tailbar: e.target.value,
                                 }))
                               }
-                              className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 outline-none focus:border-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                              className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                             />
                           </div>
                         </div>
@@ -488,27 +599,6 @@ export const ResidentDetailModal: React.FC<Props> = ({
                           Нэвтрэх нэр, Төлөв, Эрх, Бүртгэгдсэн огноо нь системээс
                           тодорхойлогддог тул эндээс өөрчлөгдөхгүй.
                         </p>
-                        <div className="mt-2 flex items-center justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setZasajBuiKhuvi(false)}
-                            disabled={khuviKhadgaljBaina}
-                            className="px-3 py-1 text-xs rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
-                          >
-                            Цуцлах
-                          </button>
-                          <button
-                            type="button"
-                            onClick={khuviiKhadgalya}
-                            disabled={khuviKhadgaljBaina}
-                            className="flex items-center gap-1 px-3 py-1 text-xs rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 cursor-pointer shadow-xs"
-                          >
-                            <Check className="h-3.5 w-3.5" />
-                            <span>
-                              {khuviKhadgaljBaina ? "Хадгалж байна…" : "Хадгалах"}
-                            </span>
-                          </button>
-                        </div>
                       </div>
                     )}
 
@@ -621,7 +711,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                   <div>
                     <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-slate-800/80">
                       <div className="flex items-center gap-2">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-theme/10 text-theme dark:bg-theme/25 dark:text-theme">
                           <Car className="h-4 w-4" />
                         </div>
                         <h3 className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white">
@@ -646,14 +736,14 @@ export const ResidentDetailModal: React.FC<Props> = ({
                               }
                             }}
                             placeholder="Улсын дугаар (жишээ: 1234 УБА)..."
-                            className="w-full h-9 pl-9 pr-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-2xs"
+                            className="w-full h-9 pl-9 pr-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-theme transition shadow-2xs"
                           />
                         </div>
                         {tootJagsaalt.length > 1 && (
                           <select
                             value={shineMashinToot}
                             onChange={(e) => setShineMashinToot(e.target.value)}
-                            className="h-9 px-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-2xs"
+                            className="h-9 px-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-theme transition shadow-2xs"
                           >
                             {tootJagsaalt.map((t, i) => (
                               <option key={i} value={t.toot}>
@@ -666,7 +756,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                           type="button"
                           onClick={shuudMashinNemekh}
                           disabled={!shineMashiniiDugaar.trim()}
-                          className="flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white text-xs font-medium shadow-xs transition active:scale-95 cursor-pointer shrink-0"
+                          className="flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-theme hover:bg-theme/90 disabled:opacity-40 text-white text-xs font-medium shadow-xs transition active:scale-95 cursor-pointer shrink-0"
                         >
                           <Plus className="h-3.5 w-3.5" />
                           <span>Нэмэх</span>
@@ -687,7 +777,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                             className="flex items-center justify-between rounded-xl border border-slate-100/90 bg-slate-50/70 px-3.5 py-2.5 dark:border-slate-800/60 dark:bg-slate-800/40"
                           >
                             <div className="flex items-center gap-3 min-w-0">
-                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-100/70 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400">
+                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-theme/15 text-theme dark:bg-theme/25 dark:text-theme">
                                 <Car className="h-4 w-4" />
                               </div>
                               <div className="min-w-0">
@@ -722,7 +812,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                   <div>
                     <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-slate-800/80">
                       <div className="flex items-center gap-2">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-theme/10 text-theme dark:bg-theme/25 dark:text-theme">
                           <Warehouse className="h-4 w-4" />
                         </div>
                         <h3 className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white">
@@ -743,7 +833,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                           }}
                           className={`flex items-center gap-1 rounded-xl border px-2.5 py-1 text-[11px] font-normal transition cursor-pointer ${
                             zasajBuiToot
-                              ? "border-blue-500 bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
+                              ? "border-theme bg-theme/10 text-theme dark:bg-theme/20 dark:text-theme"
                               : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
                           }`}
                         >
@@ -843,33 +933,15 @@ export const ResidentDetailModal: React.FC<Props> = ({
                           </div>
                         ))}
 
-                        <div className="flex items-center justify-between pt-2">
+                        <div className="flex items-center pt-2">
                           <button
                             type="button"
                             onClick={tootNemekh}
-                            className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium cursor-pointer"
+                            className="flex items-center gap-1 text-xs text-theme hover:text-theme font-medium cursor-pointer"
                           >
                             <Plus className="h-3.5 w-3.5" />
                             <span>Хаяг нэмэх</span>
                           </button>
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setZasajBuiToot(false)}
-                              className="px-3 py-1 text-xs rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 hover:bg-slate-50 cursor-pointer"
-                            >
-                              Цуцлах
-                            </button>
-                            <button
-                              type="button"
-                              onClick={tootKhadgalya}
-                              disabled={tootKhadgaljBaina}
-                              className="flex items-center gap-1 px-3 py-1 text-xs rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 cursor-pointer shadow-xs"
-                            >
-                              <Check className="h-3.5 w-3.5" />
-                              <span>Хадгалах</span>
-                            </button>
-                          </div>
                         </div>
                       </div>
                     ) : (
@@ -882,7 +954,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                             <button
                               type="button"
                               onClick={() => (onEdit ? onEdit(medeelel) : setZasajBuiToot(true))}
-                              className="mt-2 text-blue-600 hover:underline cursor-pointer"
+                              className="mt-2 text-theme hover:underline cursor-pointer"
                             >
                               + Хаяг бүртгэх
                             </button>
@@ -902,7 +974,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                 >
                                   <div className="flex items-start justify-between">
                                     <div className="flex items-center gap-3">
-                                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 font-bold text-xs">
+                                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-theme/10 text-theme dark:bg-theme/30 dark:text-theme font-bold text-xs">
                                         {isB1 && t.turul === "B1" ? (
                                           <span className="text-[11px] font-semibold">B1</span>
                                         ) : (
@@ -967,7 +1039,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                   <div>
                     <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-slate-800/80">
                       <div className="flex items-center gap-2">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-theme/10 text-theme dark:bg-theme/25 dark:text-theme">
                           <Home className="h-4 w-4" />
                         </div>
                         <h3 className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white">
@@ -977,7 +1049,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                       <button
                         type="button"
                         onClick={() => setGishuunNemejBaina((n) => !n)}
-                        className="rounded-lg px-2 py-1 text-[11px] font-medium text-blue-600 transition hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/30"
+                        className="rounded-lg px-2 py-1 text-[11px] font-medium text-theme transition hover:bg-theme/10 dark:text-theme dark:hover:bg-theme/20"
                       >
                         {gishuunNemejBaina ? "Болих" : "+ Гишүүн нэмэх"}
                       </button>
@@ -985,7 +1057,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
 
                     {/* Шууд нэмэх форм — баталгаажуулалтгүй */}
                     {gishuunNemejBaina && (
-                      <div className="mt-3 rounded-xl border border-blue-200 bg-blue-50/40 p-3 dark:border-blue-900/50 dark:bg-blue-900/10">
+                      <div className="mt-3 rounded-xl border border-theme/30 bg-theme/5 p-3 dark:border-theme/25 dark:bg-theme/10">
                         <div className="grid grid-cols-2 gap-2">
                           <input
                             placeholder="Овог"
@@ -996,7 +1068,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                 ovog: e.target.value,
                               }))
                             }
-                            className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] text-slate-800 outline-none focus:border-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                           />
                           <input
                             placeholder="Нэр"
@@ -1007,7 +1079,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                 ner: e.target.value,
                               }))
                             }
-                            className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] text-slate-800 outline-none focus:border-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                           />
                           <input
                             placeholder="Утас *"
@@ -1019,7 +1091,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                 utas: e.target.value,
                               }))
                             }
-                            className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] text-slate-800 outline-none focus:border-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                           />
                           <select
                             value={shineGishuun.kholboo}
@@ -1029,7 +1101,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                 kholboo: e.target.value,
                               }))
                             }
-                            className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] text-slate-800 outline-none focus:border-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                           >
                             <option value="Эхнэр/Нөхөр">Эхнэр/Нөхөр</option>
                             <option value="Үр хүүхэд">Үр хүүхэд</option>
@@ -1046,7 +1118,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                 erkh: e.target.value,
                               }))
                             }
-                            className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] text-slate-800 outline-none focus:border-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 col-span-2"
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 col-span-2"
                           >
                             <option value="Харах + Төлөх">Харах + Төлөх</option>
                             <option value="Харах">Зөвхөн харах</option>
@@ -1056,29 +1128,6 @@ export const ResidentDetailModal: React.FC<Props> = ({
                           Гишүүн нэвтрэх нэр нь утасны дугаар болно.
                           Баталгаажуулалт шаардахгүй шууд идэвхжинэ.
                         </p>
-                        <div className="mt-2 flex items-center justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setGishuunNemejBaina(false)}
-                            disabled={gishuunKhadgaljBaina}
-                            className="px-3 py-1 text-xs rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
-                          >
-                            Цуцлах
-                          </button>
-                          <button
-                            type="button"
-                            onClick={gishuunNemye}
-                            disabled={gishuunKhadgaljBaina}
-                            className="flex items-center gap-1 px-3 py-1 text-xs rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 cursor-pointer shadow-xs"
-                          >
-                            <Check className="h-3.5 w-3.5" />
-                            <span>
-                              {gishuunKhadgaljBaina
-                                ? "Хадгалж байна…"
-                                : "Хадгалах"}
-                            </span>
-                          </button>
-                        </div>
                       </div>
                     )}
 
@@ -1151,13 +1200,24 @@ export const ResidentDetailModal: React.FC<Props> = ({
           </div>
 
           {/* ── Modal Footer ── */}
-          <div className="flex items-center justify-end px-6 py-3.5 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950">
+          <div className="flex items-center justify-end gap-2 px-6 py-3.5 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950">
             <button
               type="button"
               onClick={onClose}
               className="rounded-xl border border-slate-200/90 bg-white px-6 py-1.5 text-xs font-normal text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 transition shadow-2xs active:scale-95 cursor-pointer"
             >
               Хаах
+            </button>
+            {/* Модал даяарх ганц Хадгалах — нээлттэй байгаа бүх засварыг
+                нэг дор хадгална. Юу ч засаагүй бол идэвхгүй. */}
+            <button
+              type="button"
+              onClick={bugdiigKhadgalya}
+              disabled={bugdKhadgaljBaina}
+              title="Нээлттэй засваруудыг хадгална"
+              className="rounded-xl bg-theme px-6 py-1.5 text-xs font-normal text-white hover:bg-theme/90 disabled:opacity-40 disabled:hover:bg-theme transition shadow-2xs active:scale-95 cursor-pointer disabled:cursor-not-allowed"
+            >
+              {bugdKhadgaljBaina ? "Хадгалж байна…" : "Хадгалах"}
             </button>
           </div>
         </div>
