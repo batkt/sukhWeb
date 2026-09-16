@@ -49,7 +49,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
   data,
   loading = false,
   page = 1,
-  pageSize = 10,
+  pageSize = 500,
   sortKey = "createdAt",
   sortOrder = "desc",
   currentBaiguullagiinId,

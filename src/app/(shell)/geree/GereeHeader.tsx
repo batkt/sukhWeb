@@ -2,7 +2,6 @@
 
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useGereeContext } from "./GereeContext";
-import { motion } from "framer-motion";
 import {
   Download,
   FileDown,
@@ -13,7 +12,6 @@ import {
   ChevronDown,
   Zap,
 } from "lucide-react";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
 import { hasPermission } from "@/lib/permissionUtils";
 import { ALL_COLUMNS } from "./columns";
@@ -182,59 +180,151 @@ export default function GereeHeader({
     }
   }, [isMobileExcelOpen]);
 
-  const tabTitle = useMemo(() => {
-    switch (activeTab) {
-      case "residents":
-        return "Оршин суугч";
-      case "contracts":
-        return "Гэрээ";
-      case "units":
-        return "Өмч бүртгэл";
-      case "employees":
-        return "Ажилтан";
-      case "clients":
-        return "Харилцагч";
-      default:
-        return "Бүртгэл";
-    }
-  }, [activeTab]);
 
   return (
     <div className="w-full">
-      <div className="flex items-start justify-between p-4 gap-4 mb-4 w-full">
+      <div className="flex items-start justify-between px-4 pt-3 pb-1 gap-4 mb-1 w-full">
         <div className="flex-1 min-w-0 w-full">
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <motion.h1
-                key={activeTab}
-                initial={{ opacity: 0, y: -16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, ease: "easeOut" }}
-                className="text-3xl  text-theme"
-              >
-                {tabTitle}
-              </motion.h1>
-              <div
-                style={{ width: 64, height: 64 }}
-                className="flex items-center"
-              >
-                <DotLottieReact
-                  src="https://lottie.host/97f6cb84-58da-46ef-811a-44e3203445c1/rQ76j6FHd8.lottie"
-                  loop
-                  autoplay
-                  style={{ width: "100%", height: "100%" }}
-                />
-              </div>
-            </div>
+            {/* Шүүлтүүрүүд — гарчиг авагдсан тул үйлдлийн товчтой нэг мөрөнд */}
+            {(activeTab === "contracts" || activeTab === "units") && (
+              <div className="hidden md:flex items-center gap-6 flex-wrap min-w-0">
+                  {activeTab === "contracts" && (
+                    <>
+                      {ortsOptions.length > 0 && (
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-28">
+                            <TusgaiZagvar
+                              value={selectedOrtsForContracts}
+                              onChange={(val) => setSelectedOrtsForContracts(val)}
+                              options={[
+                                { value: "", label: "Орц" },
+                                ...ortsOptions.map((o) => ({
+                                  value: o,
+                                  label: o,
+                                })),
+                              ]}
+                              className="w-full z-50 text-sm"
+                              placeholder="Сонгох..."
+                              buttonClassName="!h-10 !py-0 px-3 !text-xs"
+                            />
+                          </div>
+                        </div>
+                      )}
+                      {davkharOptions.length > 0 && (
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-28">
+                            <TusgaiZagvar
+                              value={selectedDawkhar}
+                              onChange={(val) => setSelectedDawkhar(val)}
+                              options={[
+                                { value: "", label: "Давхар" },
+                                ...davkharOptions.map((d) => ({
+                                  value: d,
+                                  label: d,
+                                })),
+                              ]}
+                              className="w-full z-50 text-sm"
+                              placeholder="Сонгох..."
+                              buttonClassName="!h-10 !py-0 px-3 !text-xs"
+                            />
+                          </div>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-32">
+                          <TusgaiZagvar
+                            value={statusFilter}
+                            onChange={(val) =>
+                              setStatusFilter(
+                                val as "all" | "active" | "cancelled",
+                              )
+                            }
+                            options={[
+                              { value: "all", label: "Төлөв" },
+                              { value: "active", label: "Идэвхтэй" },
+                              { value: "cancelled", label: "Цуцлагдсан" },
+                            ]}
+                            className="w-full z-50 text-sm"
+                            placeholder="Сонгох..."
+                            buttonClassName="!h-10 !py-0 px-3 !text-xs"
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {activeTab === "units" && (
+                    <>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-28">
+                          <TusgaiZagvar
+                            value={selectedOrts}
+                            onChange={(val) => setSelectedOrts(val)}
+                            options={[
+                              { value: "", label: "Орц" },
+                              ...ortsOptions.map((o) => ({
+                                value: o,
+                                label: o,
+                              })),
+                            ]}
+                            className="w-full z-50 text-sm rounded-2xl"
+                            placeholder="Сонгох..."
+                            buttonClassName="!h-10 !py-0 px-3 !text-xs"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-28">
+                          <TusgaiZagvar
+                            value={selectedDawkhar}
+                            onChange={(val) => setSelectedDawkhar(val)}
+                            options={[
+                              { value: "", label: "Давхар" },
+                              ...davkharOptions.map((d) => ({
+                                value: String(d),
+                                label: String(d),
+                              })),
+                            ]}
+                            className="w-full z-50 text-sm rounded-2xl"
+                            placeholder="Сонгох..."
+                            buttonClassName="!h-10 !py-0 px-3 !text-xs"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-32">
+                          <TusgaiZagvar
+                            value={unitStatusFilter}
+                            onChange={(val) =>
+                              setUnitStatusFilter(
+                                (val as "all" | "occupied" | "free") || "all",
+                              )
+                            }
+                            options={[
+                              { value: "all", label: "Төлөв" },
+                              { value: "occupied", label: "Идэвхтэй" },
+                              { value: "free", label: "Идэвхгүй" },
+                            ]}
+                            className="w-full z-50 text-sm rounded-2xl"
+                            placeholder="Төлөв..."
+                            buttonClassName="!h-10 !py-0 px-3 !text-xs"
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
 
             {/* Desktop: top-right actions per tab */}
-            <div className="hidden md:flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-2 ml-auto">
               {activeTab === "contracts" && (
                 <>
                   <button
                     id="geree-templates-btn"
                     onClick={onShowList2Modal}
-                    className="btn-minimal"
+                    className="btn-minimal h-10"
                     aria-label="Гэрээний загварууд"
                     title="Гэрээний загварууд"
                   >
@@ -247,7 +337,7 @@ export default function GereeHeader({
                     <button
                       id="geree-columns-btn"
                       onClick={() => setShowColumnSelector((s) => !s)}
-                      className="btn-minimal flex items-center gap-2"
+                      className="btn-minimal h-10 flex items-center gap-2"
                       aria-label="Багана сонгох"
                       title="Багана сонгох"
                     >
@@ -300,7 +390,7 @@ export default function GereeHeader({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={onShowResidentModal}
-                    className="btn-minimal"
+                    className="btn-minimal h-10"
                     id="resident-new-btn-top"
                     aria-label="Оршин суугч"
                     title="Оршин суугч"
@@ -313,7 +403,7 @@ export default function GereeHeader({
                   {onShowMassKwtModal && (
                     <button
                       onClick={onShowMassKwtModal}
-                      className="btn-minimal inline-flex items-center gap-2 text-amber-500 hover:text-amber-600"
+                      className="btn-minimal h-10 inline-flex items-center gap-2 text-amber-500 hover:text-amber-600"
                       id="resident-mass-kwt-btn-top"
                       aria-label="кВт заалт"
                       title="кВт заалт олноор шинэчлэх"
@@ -325,7 +415,7 @@ export default function GereeHeader({
                   <div ref={desktopExcelRef} className="relative">
                     <button
                       onClick={() => setIsDesktopExcelOpen(!isDesktopExcelOpen)}
-                      className="btn-minimal inline-flex items-center gap-2"
+                      className="btn-minimal h-10 inline-flex items-center gap-2"
                       id="resident-excel-btn-top"
                       aria-label="Excel"
                       title="Excel үйлдлүүд"
@@ -383,7 +473,7 @@ export default function GereeHeader({
               {activeTab === "employees" && (
                 <button
                   onClick={onShowEmployeeModal}
-                  className="btn-minimal"
+                  className="btn-minimal h-10"
                   aria-label="Ажилтан нэмэх"
                   title="Ажилтан нэмэх"
                   id="employees-new-btn-top"
@@ -399,7 +489,7 @@ export default function GereeHeader({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={onDownloadUnitsTemplate}
-                    className="btn-minimal"
+                    className="btn-minimal h-10"
                     id="units-download-template-btn-top"
                     aria-label="Загвар татах"
                     title="Тоот бүртгэлийн Excel загвар татах"
@@ -411,7 +501,7 @@ export default function GereeHeader({
                   </button>
                   <button
                     onClick={onUnitsExcelImportClick}
-                    className="btn-minimal"
+                    className="btn-minimal h-10"
                     id="units-upload-template-btn-top"
                     disabled={isUploadingUnits}
                     aria-label="Excel-ээс импортлох"
@@ -428,7 +518,7 @@ export default function GereeHeader({
               {activeTab === "clients" && (
                 <button
                   onClick={onShowClientModal}
-                  className="btn-minimal"
+                  className="btn-minimal h-10"
                   aria-label="Харилцагч нэмэх"
                   title="Харилцагч нэмэх"
                   id="clients-new-btn-top"
@@ -441,152 +531,7 @@ export default function GereeHeader({
               )}
             </div>
           </div>
-          <p className="text-sm mt-1 text-subtle hidden md:block">
-            Гэрээ, Оршин суугч, Ажилтны жагсаалтуудыг удирдах
-          </p>
 
-          {/* Filters - Desktop Row */}
-          {(activeTab === "contracts" || activeTab === "units") && (
-            <div className="mt-2 w-full hidden md:flex items-center gap-8 flex-wrap py-1">
-                {activeTab === "contracts" && (
-                  <>
-                    {ortsOptions.length > 0 && (
-                      <div className="flex items-center gap-1.5">
-                        <label className="text-sm text-theme whitespace-nowrap tracking-wider font-normal">
-                          Орц:
-                        </label>
-                        <div className="w-26">
-                          <TusgaiZagvar
-                            value={selectedOrtsForContracts}
-                            onChange={(val) => setSelectedOrtsForContracts(val)}
-                            options={[
-                              { value: "", label: "Бүгд" },
-                              ...ortsOptions.map((o) => ({
-                                value: o,
-                                label: o,
-                              })),
-                            ]}
-                            className="w-full z-50 text-sm"
-                            placeholder="Сонгох..."
-                          />
-                        </div>
-                      </div>
-                    )}
-                    {davkharOptions.length > 0 && (
-                      <div className="flex items-center gap-1.5">
-                        <label className="text-sm text-theme whitespace-nowrap tracking-wider font-normal">
-                          Давхар:
-                        </label>
-                        <div className="w-26">
-                          <TusgaiZagvar
-                            value={selectedDawkhar}
-                            onChange={(val) => setSelectedDawkhar(val)}
-                            options={[
-                              { value: "", label: "Бүгд" },
-                              ...davkharOptions.map((d) => ({
-                                value: d,
-                                label: d,
-                              })),
-                            ]}
-                            className="w-full z-50 text-sm"
-                            placeholder="Сонгох..."
-                          />
-                        </div>
-                      </div>
-                    )}
-                    <div className="flex items-center gap-1.5">
-                      <label className="text-sm text-theme whitespace-nowrap tracking-wider font-normal">
-                        Төлөв:
-                      </label>
-                      <div className="w-38">
-                        <TusgaiZagvar
-                          value={statusFilter}
-                          onChange={(val) =>
-                            setStatusFilter(
-                              val as "all" | "active" | "cancelled",
-                            )
-                          }
-                          options={[
-                            { value: "all", label: "Бүгд" },
-                            { value: "active", label: "Идэвхтэй" },
-                            { value: "cancelled", label: "Цуцлагдсан" },
-                          ]}
-                          className="w-full z-50 text-sm"
-                          placeholder="Сонгох..."
-                        />
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {activeTab === "units" && (
-                  <>
-                    <div className="flex items-center gap-1.5">
-                      <label className="text-sm text-theme whitespace-nowrap tracking-wider font-normal">
-                        Орц:
-                      </label>
-                      <div className="w-26">
-                        <TusgaiZagvar
-                          value={selectedOrts}
-                          onChange={(val) => setSelectedOrts(val)}
-                          options={[
-                            { value: "", label: "Бүгд" },
-                            ...ortsOptions.map((o) => ({
-                              value: o,
-                              label: o,
-                            })),
-                          ]}
-                          className="w-full z-50 text-sm rounded-2xl"
-                          placeholder="Сонгох..."
-                        />
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <label className="text-sm text-theme whitespace-nowrap tracking-wider font-normal">
-                        Давхар:
-                      </label>
-                      <div className="w-26">
-                        <TusgaiZagvar
-                          value={selectedDawkhar}
-                          onChange={(val) => setSelectedDawkhar(val)}
-                          options={[
-                            { value: "", label: "Бүгд" },
-                            ...davkharOptions.map((d) => ({
-                              value: String(d),
-                              label: String(d),
-                            })),
-                          ]}
-                          className="w-full z-50 text-sm rounded-2xl"
-                          placeholder="Сонгох..."
-                        />
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <label className="text-sm text-theme whitespace-nowrap tracking-wider font-normal">
-                        Төлөв:
-                      </label>
-                      <div className="w-38">
-                        <TusgaiZagvar
-                          value={unitStatusFilter}
-                          onChange={(val) =>
-                            setUnitStatusFilter(
-                              (val as "all" | "occupied" | "free") || "all",
-                            )
-                          }
-                          options={[
-                            { value: "all", label: "Бүгд" },
-                            { value: "occupied", label: "Идэвхтэй" },
-                            { value: "free", label: "Идэвхгүй" },
-                          ]}
-                          className="w-full z-50 text-sm rounded-2xl"
-                          placeholder="Төлөв..."
-                        />
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
           </div>
         </div>
 
@@ -597,54 +542,48 @@ export default function GereeHeader({
               <>
                 {ortsOptions.length > 0 && (
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs text-theme font-normal">
-                      Орц:
-                    </label>
                     <TusgaiZagvar
                       value={selectedOrtsForContracts}
                       onChange={(val) => setSelectedOrtsForContracts(val)}
                       options={[
-                        { value: "", label: "Бүгд" },
+                        { value: "", label: "Орц" },
                         ...ortsOptions.map((o) => ({ value: o, label: o })),
                       ]}
                       className="w-full z-50 text-xs"
                       placeholder="Сонгох..."
+                      buttonClassName="!h-10 !py-0 px-3 !text-xs"
                     />
                   </div>
                 )}
                 {davkharOptions.length > 0 && (
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs text-theme font-normal">
-                      Давхар:
-                    </label>
                     <TusgaiZagvar
                       value={selectedDawkhar}
                       onChange={(val) => setSelectedDawkhar(val)}
                       options={[
-                        { value: "", label: "Бүгд" },
+                        { value: "", label: "Давхар" },
                         ...davkharOptions.map((d) => ({ value: d, label: d })),
                       ]}
                       className="w-full z-50 text-xs"
                       placeholder="Сонгох..."
+                      buttonClassName="!h-10 !py-0 px-3 !text-xs"
                     />
                   </div>
                 )}
                 <div className="flex flex-col gap-1 col-span-2">
-                  <label className="text-xs text-theme font-normal">
-                    Төлөв:
-                  </label>
                   <TusgaiZagvar
                     value={statusFilter}
                     onChange={(val) =>
                       setStatusFilter(val as "all" | "active" | "cancelled")
                     }
                     options={[
-                      { value: "all", label: "Бүгд" },
+                      { value: "all", label: "Төлөв" },
                       { value: "active", label: "Идэвхтэй" },
                       { value: "cancelled", label: "Цуцлагдсан" },
                     ]}
                     className="w-full z-50 text-xs"
                     placeholder="Сонгох..."
+                    buttonClassName="!h-10 !py-0 px-3 !text-xs"
                   />
                 </div>
               </>
@@ -653,14 +592,11 @@ export default function GereeHeader({
             {activeTab === "units" && (
               <>
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs text-theme font-normal">
-                    Орц:
-                  </label>
                   <TusgaiZagvar
                     value={selectedOrts}
                     onChange={(val) => setSelectedOrts(val)}
                     options={[
-                      { value: "", label: "Бүгд" },
+                      { value: "", label: "Орц" },
                       ...ortsOptions.map((o) => ({
                         value: o,
                         label: o,
@@ -668,17 +604,15 @@ export default function GereeHeader({
                     ]}
                     className="w-full z-50 text-xs"
                     placeholder="Сонгох..."
+                    buttonClassName="!h-10 !py-0 px-3 !text-xs"
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs text-theme font-normal">
-                    Давхар:
-                  </label>
                   <TusgaiZagvar
                     value={selectedDawkhar}
                     onChange={(val) => setSelectedDawkhar(val)}
                     options={[
-                      { value: "", label: "Бүгд" },
+                      { value: "", label: "Давхар" },
                       ...davkharOptions.map((o) => ({
                         value: String(o),
                         label: String(o),
@@ -686,12 +620,10 @@ export default function GereeHeader({
                     ]}
                     className="w-full z-50 text-xs"
                     placeholder="Сонгох..."
+                    buttonClassName="!h-10 !py-0 px-3 !text-xs"
                   />
                 </div>
                 <div className="flex flex-col gap-1 col-span-2">
-                  <label className="text-xs text-theme font-normal">
-                    Төлөв:
-                  </label>
                   <TusgaiZagvar
                     value={unitStatusFilter}
                     onChange={(val) =>
@@ -700,12 +632,13 @@ export default function GereeHeader({
                       )
                     }
                     options={[
-                      { value: "all", label: "Бүгд" },
+                      { value: "all", label: "Төлөв" },
                       { value: "occupied", label: "Идэвхтэй" },
                       { value: "free", label: "Идэвхгүй" },
                     ]}
                     className="w-full z-50 text-xs"
                     placeholder="Төлөв..."
+                    buttonClassName="!h-10 !py-0 px-3 !text-xs"
                   />
                 </div>
               </>
@@ -720,7 +653,7 @@ export default function GereeHeader({
             <div className="flex items-center gap-2">
               <button
                 onClick={onShowResidentModal}
-                className="btn-minimal"
+                className="btn-minimal h-10"
                 id="resident-new-btn"
                 aria-label="Оршин суугч"
                 title="Оршин суугч"
@@ -733,7 +666,7 @@ export default function GereeHeader({
               <div ref={mobileExcelRef} className="relative">
                 <button
                   onClick={() => setIsMobileExcelOpen(!isMobileExcelOpen)}
-                  className="btn-minimal inline-flex items-center gap-2"
+                  className="btn-minimal h-10 inline-flex items-center gap-2"
                   id="resident-excel-btn"
                   aria-label="Excel"
                   title="Excel үйлдлүүд"
@@ -791,7 +724,7 @@ export default function GereeHeader({
         {activeTab === "employees" && (
           <button
             onClick={onShowEmployeeModal}
-            className="btn-minimal"
+            className="btn-minimal h-10"
             aria-label="Ажилтан нэмэх"
             title="Ажилтан нэмэх"
             id="employees-new-btn"
@@ -804,7 +737,7 @@ export default function GereeHeader({
           <>
             <button
               onClick={onDownloadUnitsTemplate}
-              className="btn-minimal"
+              className="btn-minimal h-10"
               id="mobile-units-download-template-btn"
               aria-label="Загвар татах"
               title="Тоот бүртгэлийн Excel загвар татах"
@@ -816,7 +749,7 @@ export default function GereeHeader({
             </button>
             <button
               onClick={onUnitsExcelImportClick}
-              className="btn-minimal"
+              className="btn-minimal h-10"
               id="mobile-units-upload-template-btn"
               disabled={isUploadingUnits}
               aria-label="Excel-ээс импортлох"
@@ -832,7 +765,7 @@ export default function GereeHeader({
         {activeTab === "clients" && (
           <button
             onClick={onShowClientModal}
-            className="btn-minimal"
+            className="btn-minimal h-10"
             aria-label="Харилцагч нэмэх"
             title="Харилцагч нэмэх"
             id="clients-new-btn"

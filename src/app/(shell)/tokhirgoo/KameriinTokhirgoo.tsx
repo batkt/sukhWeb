@@ -179,7 +179,7 @@ export default function KameriinTokhirgoo() {
   const [view, setView] = useState<"list" | "form">("list");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(500);
   const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
 
   const editingCamera = sohCameras.find((c) => c.id === editingId) || null;

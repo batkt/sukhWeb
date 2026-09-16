@@ -2408,10 +2408,12 @@ export default function DansniiKhuulga() {
         const paidAmount = gid ? Number(monthPaidByGereeId[gid] ?? 0) : 0;
         const isResidentPaid = currentBalance < 0.01;
         const odooTuluv = isResidentPaid ? "Төлсөн" : "Төлөөгүй";
-        const ekhniiAmt =
-          item?.ekhniiUldegdel ?? item?._ekhniiUldegdelAmount ?? 0;
+        const ekhniiAmt = Number(
+          item?._ekhniiUldegdelAmount ?? item?.ekhniiUldegdel ?? 0,
+        );
 
         const discountAmount =
+          (gid ? Number(monthKhungulultByGereeId[gid] ?? 0) : 0) ||
           Number(item?.khungulult || item?.discount || item?._khungulultAmount || 0) ||
           (Array.isArray(item?.medeelel?.khungulultuud)
             ? item.medeelel.khungulultuud.reduce((s: number, k: any) => s + Number(k.dun || k.khungulultiinDun || 0), 0)
@@ -2460,6 +2462,7 @@ export default function DansniiKhuulga() {
           gereeniiDugaar: item?.gereeniiDugaar || "",
           turul: item?.turul || "Үндсэн",
           gereeniiTuluv: gereeTuluv,
+          ekhniiUldegdel: Number(parseFloat(String(ekhniiAmt)).toFixed(2)),
           uldegdel: Number(parseFloat(String(currentBalance)).toFixed(2)),
           guitsetgel: Number(parseFloat(String(paidAmount)).toFixed(2)),
           khungulult: Number(parseFloat(String(discountAmount)).toFixed(2)),
@@ -2479,6 +2482,7 @@ export default function DansniiKhuulga() {
           { key: "gereeniiDugaar", label: "Гэрээний дугаар" },
           { key: "turul", label: "Төрөл" },
           { key: "gereeniiTuluv", label: "Гэрээний төлөв" },
+          { key: "ekhniiUldegdel", label: "Эхний үлдэгдэл" },
           { key: "uldegdel", label: "Үлдэгдэл" },
           { key: "guitsetgel", label: "Гүйцэтгэл" },
           { key: "khungulult", label: "Хөнгөлөлт" },

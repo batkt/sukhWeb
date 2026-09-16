@@ -12,7 +12,7 @@ import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { fetchWithDomainFallback } from "@/lib/uilchilgee";
 import { useBuilding } from "@/context/BuildingContext";
 import { useSpinner } from "@/context/SpinnerContext";
-import { Trash2 } from "lucide-react";
+import { Trash2, Coins, CircleDollarSign } from "lucide-react";
 import uilchilgee from "@/lib/uilchilgee";
 import deleteMethod from "../../../../tools/function/deleteMethod";
 import createMethod from "../../../../tools/function/createMethod";
@@ -616,6 +616,71 @@ export default function NemeltTokhirgoo() {
     }
   };
 
+  const saveCombinedPaymentSettings = async (overrideEnabled?: boolean) => {
+    if (!token || !ajiltan?.baiguullagiinId) {
+      openErrorOverlay("Нэвтрэх шаардлагатай");
+      return;
+    }
+    showSpinner();
+    try {
+      const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
+      const resp = await uilchilgee(token).get(
+        `/baiguullaga/${ajiltan.baiguullagiinId}`,
+        {
+          headers: { "X-Org-Only": "1" },
+        },
+      );
+      const freshOrg = resp.data;
+      let payload: any = JSON.parse(JSON.stringify(freshOrg));
+
+      const isOverrideBool = typeof overrideEnabled === "boolean";
+      const isEnabled = isOverrideBool
+        ? overrideEnabled
+        : (garagePaymentEnabled || storagePaymentEnabled);
+
+      const combinedData = {
+        garsiinTolborEnabled: isEnabled,
+        garsiinTolborArga: "Тогтмол",
+        garsiinTolborUtga: Number(garagePaymentValue) || 0,
+        aguulakhTolborEnabled: isEnabled,
+        aguulakhTolborArga: "Тогтмол",
+        aguulakhTolborUtga: Number(storagePaymentValue) || 0,
+      };
+
+      if (effectiveBarilgiinId && payload.barilguud) {
+        payload.barilguud = payload.barilguud.map((b: any) => {
+          const bId = b._id || b.id;
+          if (String(bId).trim() === String(effectiveBarilgiinId).trim()) {
+            return {
+              ...b,
+              tokhirgoo: {
+                ...(b.tokhirgoo || {}),
+                ...combinedData,
+              },
+            };
+          }
+          return b;
+        });
+      } else {
+        payload.tokhirgoo = {
+          ...(payload.tokhirgoo || {}),
+          ...combinedData,
+        };
+      }
+
+      const result = await updateMethod("baiguullaga", token, payload);
+      if (result?.data) {
+        await baiguullagaMutate(result.data.result || result.data, false);
+        await baiguullagaMutate();
+        openSuccessOverlay("Агуулах, гражийн төлбөрийн тохиргоо хадгалагдлаа");
+      }
+    } catch (error: any) {
+      openErrorOverlay(error?.message || "Хадгалахад алдаа гарлаа");
+    } finally {
+      hideSpinner();
+    }
+  };
+
   const saveCalculationSettings = async (overrideEnabled?: boolean) => {
     if (!token || !ajiltan?.baiguullagiinId) {
       openErrorOverlay("Нэвтрэх шаардлагатай");
@@ -887,22 +952,22 @@ export default function NemeltTokhirgoo() {
       id="nemelt-panel"
       className="w-full"
     >
-      <div className="neu-panel allow-overflow p-4 md:p-6 pb-20 space-y-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-stretch gap-6">
+      <div className="neu-panel allow-overflow p-4 md:p-5 pb-8 space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-stretch">
           {/* Invoice box */}
-          <div id="nemelt-invoice-box" className="flex-1">
-            <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden">
-              <div className="p-5 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20">
-                <div className="flex items-center gap-3">
+          <div id="nemelt-invoice-box" className="h-full">
+            <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden h-full flex flex-col justify-between">
+              <div className="px-4 py-3 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20">
+                <div className="flex items-center gap-2.5">
                   <div>
-                    <h3 className="text-lg  text-theme">Нэхэмжлэх илгээх</h3>
+                    <h3 className="text-base text-theme">Нэхэмжлэх илгээх</h3>
                     <p className="text-xs text-[color:var(--muted-text)]">
                       Сар бүрийн илгээх тохиргоо
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm  text-theme">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-xs text-theme">
                     {invoiceActive ? "Идэвхтэй" : "Идэвхгүй"}
                   </span>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -917,42 +982,48 @@ export default function NemeltTokhirgoo() {
                       className="sr-only peer"
                       aria-label="Нэхэмжлэх идэвхжүүлэх"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 dark:peer-checked:bg-purple-600 peer-checked:bg-purple-600"></div>
+                    <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 dark:peer-checked:bg-purple-600 peer-checked:bg-purple-600"></div>
                   </label>
                 </div>
               </div>
-              {invoiceActive && (
+              {invoiceActive ? (
                 <div
                   id="nemelt-invoice-settings"
-                  className="p-5 bg-gradient-to-br from-purple-50/50 to-pink-50/50 dark:from-purple-950/10 dark:to-pink-950/10"
+                  className="p-3.5 px-4 bg-gradient-to-br from-purple-50/50 to-pink-50/50 dark:from-purple-950/10 dark:to-pink-950/10 flex-1 flex flex-col justify-between space-y-2.5"
                 >
-                  <div className="flex items-end gap-4">
-                    <div className="flex-1">
-                      <label className="text-sm  text-theme mb-2 block">
-                        Илгээх өдөр (сар бүр)
-                      </label>
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-theme block">
+                      Илгээх өдөр (сар бүр)
+                    </label>
+                    <div className="flex items-center gap-2">
                       <MNumberInput
                         min={1}
                         max={31}
                         placeholder="1-31"
                         value={invoiceDay ?? undefined}
                         onChange={(v) => setInvoiceDay((v as number) ?? null)}
-                        className="w-full"
-                        size="md"
+                        className="flex-1"
+                        size="sm"
                       />
+                      <Button
+                        id="nemelt-invoice-save"
+                        onClick={() => saveInvoiceSchedule()}
+                        variant="primary"
+                        size="sm"
+                        className="whitespace-nowrap !rounded-xl px-4 py-1.5 text-xs"
+                      >
+                        Хадгалах
+                      </Button>
                     </div>
-                    <Button
-                      id="nemelt-invoice-save"
-                      onClick={() => saveInvoiceSchedule()}
-                      variant="primary"
-                      size="sm"
-                      className="whitespace-nowrap"
-                    >
-                      Хадгалах
-                    </Button>
                   </div>
-                  <p className="text-xs text-[color:var(--muted-text)] mt-2">
+                  <p className="text-[11px] text-[color:var(--muted-text)]">
                     Сар бүрийн хэдний өдөр нэхэмжлэх илгээх
+                  </p>
+                </div>
+              ) : (
+                <div className="p-3.5 px-4 bg-gradient-to-br from-purple-50/50 to-pink-50/50 dark:from-purple-950/10 dark:to-pink-950/10 flex-1 flex items-center">
+                  <p className="text-xs text-[color:var(--muted-text)]">
+                    Нэхэмжлэх автоматаар илгээх тохиргоо идэвхгүй байна.
                   </p>
                 </div>
               )}
@@ -960,19 +1031,19 @@ export default function NemeltTokhirgoo() {
           </div>
 
           {/* Lift box */}
-          <div id="nemelt-lift-settings" className="flex-1">
-            <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden">
-              <div className="p-5 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20">
-                <div className="flex items-center gap-3">
+          <div id="nemelt-lift-settings" className="h-full">
+            <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden h-full flex flex-col justify-between">
+              <div className="px-4 py-3 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20">
+                <div className="flex items-center gap-2.5">
                   <div>
-                    <h3 className="text-lg  text-theme">Лифт хөнгөлөлт</h3>
+                    <h3 className="text-base text-theme">Лифт хөнгөлөлт</h3>
                     <p className="text-xs text-[color:var(--muted-text)]">
                       {liftFloors.length} давхар тохируулсан
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm  text-theme">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-xs text-theme">
                     {liftEnabled ? "Идэвхтэй" : "Идэвхгүй"}
                   </span>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -989,23 +1060,20 @@ export default function NemeltTokhirgoo() {
                       className="sr-only peer"
                       aria-label="Лифт идэвхжүүлэх"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-300 dark:peer-focus:ring-amber-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-amber-600 dark:peer-checked:bg-amber-600"></div>
+                    <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-amber-300 dark:peer-focus:ring-amber-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-amber-600 dark:peer-checked:bg-amber-600"></div>
                   </label>
                 </div>
               </div>
 
-              {liftEnabled && (
-                <div className="p-5 bg-gradient-to-br from-amber-50/50 to-orange-50/50 dark:from-amber-900/20 dark:to-orange-900/20 space-y-4">
-                  <div className="flex flex-col gap-2">
-                    <label className="text-sm  text-theme flex items-center gap-2">
-                      <span className="text-lg">🔢</span>
+              {liftEnabled ? (
+                <div className="p-3.5 px-4 bg-gradient-to-br from-amber-50/50 to-orange-50/50 dark:from-amber-900/20 dark:to-orange-900/20 space-y-2.5 flex-1 flex flex-col justify-between">
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-theme flex items-center gap-1.5">
+                      <span>🔢</span>
                       Давхар тохиргоо
                     </label>
-                    <p className="text-xs text-[color:var(--muted-text)]">
-                      Жишээ: 1 эсвэл 1-3 эсвэл 1,2,3
-                    </p>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <MTextInput
                         placeholder="1-3,5,7 эсвэл 1,2,3"
                         value={liftBulkInput}
@@ -1019,7 +1087,7 @@ export default function NemeltTokhirgoo() {
                         variant="primary"
                         size="sm"
                         onClick={handleSaveFloors}
-                        className="whitespace-nowrap"
+                        className="whitespace-nowrap !rounded-xl px-4 py-1.5 text-xs"
                       >
                         Хадгалах
                       </Button>
@@ -1029,54 +1097,39 @@ export default function NemeltTokhirgoo() {
                         onClick={handleDeleteAllFloors}
                         title="Бүгдийг устгах"
                       >
-                        <Trash2 className="w-5 h-5" />
+                        <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
-
-                  <div className="pt-2 border-t border-[color:var(--surface-border)]">
-                    <p className="text-sm  text-theme mb-3">
-                      Тохируулсан давхарууд:
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {liftFloors && liftFloors.length > 0 ? (
-                        liftFloors.map((f) => (
-                          <div
-                            key={f}
-                            className="inline-flex items-center px-4 py-2 rounded-xl border-2 border-amber-200 dark:border-amber-700 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/30 dark:to-orange-900/30 shadow-sm"
-                          >
-                            <span className="text-theme ">{f}</span>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="w-full text-center py-6">
-                          <p className="text-sm text-[color:var(--muted-text)]">
-                            Давхар тохируулаагүй байна
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  <p className="text-[11px] text-[color:var(--muted-text)]">
+                    Жишээ: 1-3, 5, 7 эсвэл 1, 2, 3
+                  </p>
+                </div>
+              ) : (
+                <div className="p-3.5 px-4 bg-gradient-to-br from-amber-50/50 to-orange-50/50 dark:from-amber-900/20 dark:to-orange-900/20 flex-1 flex items-center">
+                  <p className="text-xs text-[color:var(--muted-text)]">
+                    Лифт хөнгөлөлтийн тохиргоо идэвхгүй байна.
+                  </p>
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Visitor Configuration Box - Now Below */}
+        {/* Visitor Configuration Box */}
         <div id="nemelt-visitor-box">
           <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden">
-            <div className="p-5 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20">
-              <div className="flex items-center gap-3">
+            <div className="px-4 py-3 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20">
+              <div className="flex items-center gap-2.5">
                 <div>
-                  <h3 className="text-lg text-theme">Зочны тохиргоо</h3>
+                  <h3 className="text-base text-theme">Зочны тохиргоо</h3>
                   <p className="text-xs text-[color:var(--muted-text)]">
                     Шинэ оршин суугчдад автоматаар оноогдох тохиргоо
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="text-sm  text-theme">
+              <div className="flex items-center gap-2.5">
+                <span className="text-xs text-theme">
                   {guestConfigEnabled ? "Идэвхтэй" : "Идэвхгүй"}
                 </span>
                 <label className="relative inline-flex items-center cursor-pointer">
@@ -1090,69 +1143,97 @@ export default function NemeltTokhirgoo() {
                     }}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 dark:peer-checked:bg-blue-600 peer-checked:bg-blue-600"></div>
+                  <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 dark:peer-checked:bg-blue-600 peer-checked:bg-blue-600"></div>
                 </label>
               </div>
             </div>
 
             {guestConfigEnabled && (
-              <div className="p-5 bg-gradient-to-br from-blue-50/50 to-cyan-50/50 dark:from-blue-950/10 dark:to-cyan-950/10 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-3.5 px-4 bg-gradient-to-br from-blue-50/50 to-cyan-50/50 dark:from-blue-950/10 dark:to-cyan-950/10 space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
                   <div className="space-y-1">
-                    <label className="text-sm  text-theme">Давтамж</label>
-                    <select
-                      value={guestFrequencyType}
-                      onChange={(e) => setGuestFrequencyType(e.target.value)}
-                      className="w-full h-10 px-3 rounded-lg border border-gray-300 bg-white text-sm focus:outline-none focus:border-blue-500 dark:bg-gray-800 dark:border-gray-700"
-                    >
-                      <option value="udruur">Өдөр бүр</option>
-                      <option value="7khonogoor">Долоо хоног бүр</option>
-                      <option value="saraar">Сар бүр</option>
-                      <option value="jileer">Жил бүр</option>
-                    </select>
+                    <label className="text-xs text-theme">Давтамж</label>
+                    <div className="flex gap-2">
+                      <select
+                        value={guestFrequencyType}
+                        onChange={(e) => setGuestFrequencyType(e.target.value)}
+                        className="w-full h-9 px-2.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-blue-500 dark:bg-gray-800 dark:border-gray-700"
+                      >
+                        <option value="udruur">Өдөр бүр</option>
+                        <option value="7khonogoor">Долоо хоног бүр</option>
+                        <option value="saraar">Сар бүр</option>
+                        <option value="jileer">Жил бүр</option>
+                      </select>
+                      {(guestFrequencyType === "saraar" ||
+                        guestFrequencyType === "jileer") && (
+                          <MNumberInput
+                            value={
+                              guestFrequencyValue === ""
+                                ? undefined
+                                : Number(guestFrequencyValue)
+                            }
+                            onChange={(val) =>
+                              setGuestFrequencyValue(val !== "" ? val : "")
+                            }
+                            placeholder={
+                              guestFrequencyType === "saraar" ? "1-31 өдөр" : "1-12 сар"
+                            }
+                            min={1}
+                            max={guestFrequencyType === "saraar" ? 31 : 12}
+                            size="sm"
+                            className="w-28 shrink-0"
+                          />
+                        )}
+                    </div>
                   </div>
 
-                  {(guestFrequencyType === "saraar" ||
-                    guestFrequencyType === "jileer") && (
-                      <div className="space-y-1">
-                        <label className="text-sm  text-theme">
-                          {guestFrequencyType === "saraar"
-                            ? "Сар бүрийн хэдэн"
-                            : "Жил бүрийн хэддүгээр сар"}
-                        </label>
-                        <MNumberInput
-                          value={
-                            guestFrequencyValue === ""
-                              ? undefined
-                              : Number(guestFrequencyValue)
+                  {/* Төлбөрийг эзэн даах боломжтой эсэх */}
+                  <div className="space-y-1">
+                    <label className="text-xs text-theme">
+                      Нэхэмжлэх дээр нэмэх эсэх
+                    </label>
+                    <div
+                      className="h-9 px-3 flex items-center justify-between rounded-lg border border-gray-300 bg-white text-xs dark:bg-gray-800 dark:border-gray-700"
+                      title={
+                        guestInvoiceEnabled
+                          ? 'Оршин суугч зочин урихдаа "Би даана" сонгож, зогсоолын төлбөрийг өөрийн нэхэмжлэхэд бичүүлж болно.'
+                          : 'Унтраалттай — зочин зогсоолын төлбөрөө өөрөө төлнө. Апп дээр "Би даана" сонголт харагдахгүй.'
+                      }
+                    >
+                      <span className="text-xs text-[color:var(--muted-text)] truncate mr-2">
+                        {guestInvoiceEnabled
+                          ? 'Идэвхтэй ("Би даана")'
+                          : 'Зочин өөрөө төлнө'}
+                      </span>
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={guestInvoiceEnabled}
+                          onChange={(e) =>
+                            setGuestInvoiceEnabled(e.currentTarget.checked)
                           }
-                          onChange={(val) =>
-                            setGuestFrequencyValue(val !== "" ? val : "")
-                          }
-                          placeholder={
-                            guestFrequencyType === "saraar" ? "1-31" : "1-12"
-                          }
-                          min={1}
-                          max={guestFrequencyType === "saraar" ? 31 : 12}
-                          className="w-full"
+                          className="sr-only peer"
                         />
-                      </div>
-                    )}
+                        <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 dark:peer-checked:bg-blue-600 peer-checked:bg-blue-600"></div>
+                      </label>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-sm  text-theme">Эрхийн тоо</label>
+                    <label className="text-xs text-theme">Эрхийн тоо</label>
                     <MNumberInput
                       value={guestLimit === "" ? undefined : Number(guestLimit)}
                       onChange={(val) => setGuestLimit(val !== "" ? val : "")}
                       placeholder="0"
                       min={0}
+                      size="sm"
                       className="w-full"
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-sm  text-theme">
+                    <label className="text-xs text-theme">
                       Үнэгүй минут (тус бүр)
                     </label>
                     <MNumberInput
@@ -1166,52 +1247,18 @@ export default function NemeltTokhirgoo() {
                       }
                       placeholder="0"
                       min={0}
+                      size="sm"
                       className="w-full"
                     />
                   </div>
                 </div>
 
-                {/* Төлбөрийг эзэн даах боломжтой эсэх */}
-                <div className="flex items-center justify-between gap-4 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-4 py-3">
-                  <div className="min-w-0">
-                    <p className="text-sm text-theme">
-                      Нэхэмжлэх дээр нэмэх эсэх
-                    </p>
-                    <p className="text-xs text-[color:var(--muted-text)] mt-0.5">
-                      {guestInvoiceEnabled
-                        ? 'Оршин суугч зочин урихдаа "Би даана" сонгож, зогсоолын төлбөрийг өөрийн нэхэмжлэхэд бичүүлж болно.'
-                        : 'Унтраалттай — зочин зогсоолын төлбөрөө өөрөө төлнө. Апп дээр "Би даана" сонголт харагдахгүй.'}
-                    </p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                    <input
-                      type="checkbox"
-                      checked={guestInvoiceEnabled}
-                      onChange={(e) =>
-                        setGuestInvoiceEnabled(e.currentTarget.checked)
-                      }
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 dark:peer-checked:bg-blue-600 peer-checked:bg-blue-600"></div>
-                  </label>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-sm  text-theme">Тайлбар</label>
-                  <MTextInput
-                    value={guestNote}
-                    onChange={(e) => setGuestNote(e.currentTarget.value)}
-                    placeholder="Жишээ: Оршин суугчийн зочин"
-                    className="w-full"
-                  />
-                </div>
-
-                <div className="pt-2 flex justify-end">
+                <div className="pt-1 flex justify-end">
                   <Button
                     onClick={() => saveGuestSettings()}
                     variant="primary"
                     size="sm"
-                    className="!rounded-2xl"
+                    className="!rounded-xl px-4 py-1 text-xs"
                   >
                     Хадгалах
                   </Button>
@@ -1221,48 +1268,13 @@ export default function NemeltTokhirgoo() {
           </div>
         </div>
 
-        {/* Resident Gate Open Permission Box */}
-        <div id="nemelt-resident-gate-box">
-          <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden">
-            <div className="p-5 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-rose-50 to-red-50 dark:from-rose-900/20 dark:to-red-900/20">
-              <div className="flex items-center gap-3">
-                <div>
-                  <h3 className="text-lg text-theme">Оршин суугчийн хаалт нээх эрх</h3>
-                  <p className="text-xs text-[color:var(--muted-text)]">
-                    Оршин суугчийн аппликейшн дээр хаалт нээх товч харуулах эсэх
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-theme">
-                  {residentGateOpenEnabled ? "Идэвхтэй" : "Идэвхгүй"}
-                </span>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={residentGateOpenEnabled}
-                    onChange={(e) => {
-                      const val = e.currentTarget.checked;
-                      setResidentGateOpenEnabled(val);
-                      saveResidentGateOpenSettings(val);
-                    }}
-                    className="sr-only peer"
-                    aria-label="Хаалт нээх эрх идэвхжүүлэх"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 dark:peer-focus:ring-red-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 dark:peer-checked:bg-rose-600 peer-checked:bg-rose-600"></div>
-                </label>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Цахилгаан бодох горим */}
+        {/* Цахилгаан бодох горим - Урт тайлбартай тохиргоо бүтэн мөрөөр байршина */}
         <div id="nemelt-tsakhilgaan-box">
           <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden">
-            <div className="p-5 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-sky-50 to-cyan-50 dark:from-sky-900/20 dark:to-cyan-900/20">
-              <div className="flex items-center gap-3">
+            <div className="px-4 py-3 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-sky-50 to-cyan-50 dark:from-sky-900/20 dark:to-cyan-900/20">
+              <div className="flex items-center gap-2.5">
                 <div>
-                  <h3 className="text-lg text-theme">
+                  <h3 className="text-base text-theme">
                     Заалтаар цахилгаан бодох
                   </h3>
                   <p className="text-xs text-[color:var(--muted-text)]">
@@ -1271,8 +1283,8 @@ export default function NemeltTokhirgoo() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-theme">
+              <div className="flex items-center gap-2.5">
+                <span className="text-xs text-theme">
                   {zaaltaarBodokh ? "Идэвхтэй" : "Идэвхгүй"}
                 </span>
                 <label className="relative inline-flex items-center cursor-pointer">
@@ -1285,32 +1297,32 @@ export default function NemeltTokhirgoo() {
                     className="sr-only peer"
                     aria-label="Заалтаар цахилгаан бодох"
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-sky-300 dark:peer-focus:ring-sky-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 dark:peer-checked:bg-sky-600 peer-checked:bg-sky-600"></div>
+                  <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-sky-300 dark:peer-focus:ring-sky-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 dark:peer-checked:bg-sky-600 peer-checked:bg-sky-600"></div>
                 </label>
               </div>
             </div>
 
-            <div className="p-5 bg-gradient-to-br from-sky-50/50 to-cyan-50/50 dark:from-sky-950/10 dark:to-cyan-950/10 space-y-2">
+            <div className="p-3.5 px-4 bg-gradient-to-br from-sky-50/50 to-cyan-50/50 dark:from-sky-950/10 dark:to-cyan-950/10 space-y-1.5">
               {zaaltaarBodokh ? (
                 <>
-                  <p className="text-sm text-theme">
-                    Тоолуурын <b>Өдөр</b>, <b>Шөнө</b>, <b>Өмнөх</b> заалтыг
+                  <p className="text-xs text-theme leading-relaxed">
+                    Тоолуурын Өдөр, Шөнө, Өмнөх заалтыг
                     Excel-ээр оруулна. Зөрүүг кВт тарифаар үржүүлж систем өөрөө
                     бодно.
                   </p>
-                  <p className="text-xs text-[color:var(--muted-text)]">
+                  <p className="text-[11px] text-[color:var(--muted-text)]">
                     Гүйлгээний түүх хуудасны Заалт цэснээс «Заалт татах»,
                     «Заалтын жагсаалт татах» боломжтой.
                   </p>
                 </>
               ) : (
                 <>
-                  <p className="text-sm text-theme">
-                    Систем цахилгааныг <b>бодохгүй</b>. Та тоот тус бүрийн
+                  <p className="text-xs text-theme leading-relaxed">
+                    Систем цахилгааныг бодохгүй. Та тоот тус бүрийн
                     эцсийн дүнг Excel-д бичиж оруулах ба тэр дүн шууд{" "}
-                    <b>Цахилгаан</b> төлбөр болно.
+                    Цахилгаан төлбөр болно.
                   </p>
-                  <p className="text-xs text-[color:var(--muted-text)]">
+                  <p className="text-[11px] text-[color:var(--muted-text)]">
                     Гүйлгээний түүх хуудасны Цахилгаан цэснээс «Цахилгаан
                     татах»-аар загварыг аваад, дүнг бөглөж буцаан оруулна.
                   </p>
@@ -1320,188 +1332,221 @@ export default function NemeltTokhirgoo() {
           </div>
         </div>
 
-        {/* Calculation Method Box */}
-        <div id="nemelt-calculation-box">
-          <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden">
-            <div className="p-5 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20">
-              <div className="flex items-center gap-3">
-                <div>
-                  <h3 className="text-lg text-theme">Төлбөр тооцох арга</h3>
-                  <p className="text-xs text-[color:var(--muted-text)]">
-                    Сарын төлбөрийг хоногоор хувааж тооцох тохиргоо
-                  </p>
+        {/* 2x2 Grid: Хаалт нээх эрх, Төлбөр тооцох арга, Грашийн төлбөр, Агуулахын төлбөр */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Row 1, Col 1: Resident Gate Open Permission Box */}
+          <div id="nemelt-resident-gate-box" className="h-full">
+            <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden h-full flex flex-col justify-between">
+              <div className="px-4 py-3 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-rose-50 to-red-50 dark:from-rose-900/20 dark:to-red-900/20">
+                <div className="flex items-center gap-2.5">
+                  <div>
+                    <h3 className="text-base text-theme">
+                      Оршин суугчийн хаалт нээх эрх
+                    </h3>
+                    <p className="text-xs text-[color:var(--muted-text)]">
+                      Оршин суугчийн аппликейшн дээр хаалт нээх товч харуулах эсэх
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <span className="text-xs text-theme">
+                    {residentGateOpenEnabled ? "Идэвхтэй" : "Идэвхгүй"}
+                  </span>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={residentGateOpenEnabled}
+                      onChange={(e) => {
+                        const val = e.currentTarget.checked;
+                        setResidentGateOpenEnabled(val);
+                        saveResidentGateOpenSettings(val);
+                      }}
+                      className="sr-only peer"
+                      aria-label="Хаалт нээх эрх идэвхжүүлэх"
+                    />
+                    <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-red-300 dark:peer-focus:ring-red-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 dark:peer-checked:bg-rose-600 peer-checked:bg-rose-600"></div>
+                  </label>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-theme">
-                  {calculationEnabled ? "Идэвхтэй" : "Идэвхгүй"}
-                </span>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={calculationEnabled}
-                    onChange={(e) => {
-                      const val = e.currentTarget.checked;
-                      setCalculationEnabled(val);
-                      if (!val) saveCalculationSettings(false);
-                    }}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 dark:peer-focus:ring-green-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 dark:peer-checked:bg-green-600 peer-checked:bg-green-600"></div>
-                </label>
+              <div className="p-3.5 px-4 bg-gradient-to-br from-rose-50/50 to-red-50/50 dark:from-rose-950/10 dark:to-red-950/10 flex-1 flex items-center">
+                <p className="text-xs text-[color:var(--muted-text)]">
+                  {residentGateOpenEnabled
+                    ? "Оршин суугчийн гар утасны аппликейшн дээр хаалт нээх товч идэвхтэй харагдана."
+                    : "Оршин суугчийн гар утасны аппликейшн дээр хаалт нээх товч харагдахгүй."}
+                </p>
               </div>
             </div>
+          </div>
 
-            {calculationEnabled && (
-              <>
-                <div className="p-5 bg-gradient-to-br from-green-50/50 to-emerald-50/50 dark:from-green-950/10 dark:to-emerald-950/10 space-y-4 animate-in fade-in zoom-in-95 duration-300">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-3">
-                      <label className="text-sm font-medium text-theme">
+          {/* Row 1, Col 2: Calculation Method Box */}
+          <div id="nemelt-calculation-box" className="h-full">
+            <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden h-full flex flex-col justify-between">
+              <div className="px-4 py-3 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20">
+                <div className="flex items-center gap-2.5">
+                  <div>
+                    <h3 className="text-base text-theme">Төлбөр тооцох арга</h3>
+                    <p className="text-xs text-[color:var(--muted-text)]">
+                      Сарын төлбөрийг хоногоор хувааж тооцох тохиргоо
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <span className="text-xs text-theme">
+                    {calculationEnabled ? "Идэвхтэй" : "Идэвхгүй"}
+                  </span>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={calculationEnabled}
+                      onChange={(e) => {
+                        const val = e.currentTarget.checked;
+                        setCalculationEnabled(val);
+                        if (!val) saveCalculationSettings(false);
+                      }}
+                      className="sr-only peer"
+                    />
+                    <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-green-300 dark:peer-focus:ring-green-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 dark:peer-checked:bg-green-600 peer-checked:bg-green-600"></div>
+                  </label>
+                </div>
+              </div>
+
+              {calculationEnabled ? (
+                <div className="p-3.5 px-4 bg-gradient-to-br from-green-50/50 to-emerald-50/50 dark:from-green-950/10 dark:to-emerald-950/10 space-y-3 animate-in fade-in zoom-in-95 duration-300 flex-1 flex flex-col justify-between">
+                  <div className="grid grid-cols-1 gap-2.5">
+                    <div className="space-y-1.5">
+                      <label className="text-xs text-theme">
                         Тооцоолох төрөл
                       </label>
-                      <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-xl w-fit">
-                        <button
-                          onClick={() => setCalculationMethod("Хуанли")}
-                          className={`px-6 py-2 rounded-lg text-sm transition-all ${calculationMethod === "Хуанли"
-                              ? "bg-white dark:bg-gray-700 shadow-sm text-green-600 font-bold"
+                      <div className="flex items-center justify-between gap-3 flex-wrap">
+                        <div className="flex p-0.5 bg-gray-100 dark:bg-gray-800 rounded-lg w-fit shrink-0">
+                          <button
+                            onClick={() => setCalculationMethod("Хуанли")}
+                            className={`px-3.5 py-1 rounded-md text-xs transition-all ${calculationMethod === "Хуанли"
+                              ? "bg-white dark:bg-gray-700 shadow-xs text-green-600"
                               : "text-gray-500 hover:text-gray-700"
-                            }`}
-                        >
-                          Хуанли
-                        </button>
-                        <button
-                          onClick={() => setCalculationMethod("Тогтмол")}
-                          className={`px-6 py-2 rounded-lg text-sm transition-all ${calculationMethod === "Тогтмол"
-                              ? "bg-white dark:bg-gray-700 shadow-sm text-green-600 font-bold"
+                              }`}
+                          >
+                            Хуанли
+                          </button>
+                          <button
+                            onClick={() => setCalculationMethod("Тогтмол")}
+                            className={`px-3.5 py-1 rounded-md text-xs transition-all ${calculationMethod === "Тогтмол"
+                              ? "bg-white dark:bg-gray-700 shadow-xs text-green-600"
                               : "text-gray-500 hover:text-gray-700"
-                            }`}
-                        >
-                          Тогтмол
-                        </button>
+                              }`}
+                          >
+                            Тогтмол
+                          </button>
+                        </div>
+
+                        {calculationMethod === "Тогтмол" && (
+                          <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200">
+                            <span className="text-xs text-theme whitespace-nowrap">
+                              Сарын тогтмол хоног:
+                            </span>
+                            <MNumberInput
+                              value={
+                                fixedDayCount === ""
+                                  ? undefined
+                                  : Number(fixedDayCount)
+                              }
+                              onChange={(val) =>
+                                setFixedDayCount(val !== "" ? val : "")
+                              }
+                              placeholder="30"
+                              min={1}
+                              max={31}
+                              size="xs"
+                              className="w-28"
+                              styles={{
+                                input: {
+                                  height: 28,
+                                  minHeight: 28,
+                                  fontSize: "12px",
+                                },
+                              }}
+                            />
+                            <span className="text-xs text-[color:var(--muted-text)]">хоног</span>
+                          </div>
+                        )}
                       </div>
-                      <p className="text-xs text-[color:var(--muted-text)]">
+                      <p className="text-[11px] text-[color:var(--muted-text)]">
                         {calculationMethod === "Хуанли"
                           ? "Тухайн сарын нийт хоногт хувааж бодно (28, 30, 31)"
-                          : "Доорх заасан хоногт тогтмол хувааж бодно"}
+                          : "Заасан хоногт тогтмол хувааж бодно"}
                       </p>
                     </div>
-
-                    {calculationMethod === "Тогтмол" && (
-                      <div className="space-y-2 animate-in fade-in slide-in-from-left-4 duration-300">
-                        <label className="text-sm font-medium text-theme">
-                          Сарын тогтмол хоног
-                        </label>
-                        <MNumberInput
-                          value={
-                            fixedDayCount === ""
-                              ? undefined
-                              : Number(fixedDayCount)
-                          }
-                          onChange={(val) =>
-                            setFixedDayCount(val !== "" ? val : "")
-                          }
-                          placeholder="30"
-                          min={1}
-                          max={31}
-                          size="md"
-                          className="w-full md:w-48"
-                        />
-                      </div>
-                    )}
                   </div>
 
-                  <div className="pt-4 flex justify-end border-t border-[color:var(--surface-border)]/50">
+                  <div className="pt-2 flex justify-end border-t border-[color:var(--surface-border)]/50">
                     <Button
                       onClick={() => saveCalculationSettings()}
                       variant="primary"
                       size="sm"
-                      className="!rounded-2xl px-8"
+                      className="!rounded-xl px-5 py-1 text-xs"
                     >
                       Хадгалах
                     </Button>
                   </div>
                 </div>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Garage Payment Box */}
-        <div id="nemelt-garage-box">
-          <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden">
-            <div className="p-5 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20">
-              <div className="flex items-center gap-3">
-                <div>
-                  <h3 className="text-lg text-theme">
-                    Грашийн төлбөр тооцоо
-                  </h3>
+              ) : (
+                <div className="p-3.5 px-4 bg-gradient-to-br from-green-50/50 to-emerald-50/50 dark:from-green-950/10 dark:to-emerald-950/10 flex-1 flex items-center">
                   <p className="text-xs text-[color:var(--muted-text)]">
-                    Зогсоолын нэмэлт төлбөр тооцох
+                    Сарын төлбөрийг хоногоор хувааж тооцох тохиргоо идэвхгүй байна.
                   </p>
                 </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-theme">
-                  {garagePaymentEnabled ? "Идэвхтэй" : "Идэвхгүй"}
-                </span>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={garagePaymentEnabled}
-                    onChange={(e) => {
-                      const val = e.currentTarget.checked;
-                      setGaragePaymentEnabled(val);
-                      if (!val) saveGaragePaymentSettings(false);
-                    }}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 dark:peer-checked:bg-indigo-600 peer-checked:bg-indigo-600"></div>
-                </label>
-              </div>
+              )}
             </div>
+          </div>
 
-            {garagePaymentEnabled && (
-              <>
-                <div className="p-5 bg-gradient-to-br from-indigo-50/50 to-violet-50/50 dark:from-indigo-950/10 dark:to-violet-950/10 space-y-4 animate-in fade-in zoom-in-95 duration-300">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-3">
-                      <label className="text-sm font-medium text-theme">
-                        Тооцоолох төрөл
-                      </label>
-                      <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-xl w-fit">
-                        <button
-                          onClick={() => setGaragePaymentMethod("Тогтмол")}
-                          className={`px-6 py-2 rounded-lg text-sm transition-all ${garagePaymentMethod === "Тогтмол"
-                              ? "bg-white dark:bg-gray-700 shadow-sm text-indigo-600 font-bold"
-                              : "text-gray-500 hover:text-gray-700"
-                            }`}
-                        >
-                          Тогтмол
-                        </button>
-                        {/* Temporarily hidden:
-                        <button
-                          onClick={() => setGaragePaymentMethod("Хувьсах")}
-                          className={`px-6 py-2 rounded-lg text-sm transition-all ${garagePaymentMethod === "Хувьсах"
-                              ? "bg-white dark:bg-gray-700 shadow-sm text-indigo-600 font-bold"
-                              : "text-gray-500 hover:text-gray-700"
-                            }`}
-                        >
-                          Хувьсах
-                        </button>
-                        */}
-                      </div>
-                      <p className="text-xs text-[color:var(--muted-text)]">
-                        {garagePaymentMethod === "Тогтмол"
-                          ? "Тогтмол дүнгээр тооцно"
-                          : "Хувьсах дүнгээр тооцно"}
-                      </p>
-                    </div>
+          {/* Row 2: Unified Garage & Storage Payment Box */}
+          <div id="nemelt-garage-storage-box" className="sm:col-span-2">
+            <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden">
+              <div className="px-4 py-3 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+                <div className="flex items-center gap-3">
 
-                    {garagePaymentMethod === "Тогтмол" && (
-                      <div className="space-y-2 animate-in fade-in slide-in-from-left-4 duration-300">
-                        <label className="text-sm font-medium text-theme">
-                          Тогтмол дүн
+                  <div>
+                    <h3 className="text-base text-theme">
+                      Агуулах төлбөр бодох арга
+                    </h3>
+                    <p className="text-xs text-[color:var(--muted-text)]">
+                      Агуулах төлбөрийг граш болон агуулах нэгтгэсэн байдлаар тооцно.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <span className="text-xs text-theme">
+                    {garagePaymentEnabled || storagePaymentEnabled
+                      ? "Идэвхтэй"
+                      : "Идэвхгүй"}
+                  </span>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={garagePaymentEnabled || storagePaymentEnabled}
+                      onChange={(e) => {
+                        const val = e.currentTarget.checked;
+                        setGaragePaymentEnabled(val);
+                        setStoragePaymentEnabled(val);
+                        if (!val) saveCombinedPaymentSettings(false);
+                      }}
+                      className="sr-only peer"
+                      aria-label="Граж, агуулах төлбөр идэвхжүүлэх"
+                    />
+                    <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 dark:peer-checked:bg-blue-600 peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+              </div>
+
+              {garagePaymentEnabled || storagePaymentEnabled ? (
+                <div className="p-3.5 px-4 bg-gradient-to-br from-blue-50/40 to-indigo-50/40 dark:from-blue-950/10 dark:to-indigo-950/10 space-y-3 animate-in fade-in zoom-in-95 duration-300">
+                  <div className="p-3 md:p-3.5 rounded-xl border border-blue-100/80 dark:border-blue-900/30 bg-white/90 dark:bg-gray-800/90 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 md:gap-4 shadow-xs">
+                    {/* Left: Inputs with Plus */}
+                    <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                      {/* Граш төлбөр */}
+                      <div className="space-y-1 flex-1 min-w-[110px]">
+                        <label className="text-xs text-theme">
+                          Граш төлбөр
                         </label>
                         <MNumberInput
                           value={
@@ -1514,105 +1559,26 @@ export default function NemeltTokhirgoo() {
                           }
                           placeholder="0"
                           min={0}
-                          size="md"
-                          className="w-full md:w-48"
+                          size="sm"
                           thousandSeparator=","
+                          rightSection={
+                            <span className="text-xs text-gray-500 mr-1 select-none">
+                              ₮
+                            </span>
+                          }
+                          className="w-full"
                         />
                       </div>
-                    )}
-                  </div>
 
-                  <div className="pt-4 flex justify-end border-t border-[color:var(--surface-border)]/50">
-                    <Button
-                      onClick={() => saveGaragePaymentSettings()}
-                      variant="primary"
-                      size="sm"
-                      className="!rounded-2xl px-8"
-                    >
-                      Хадгалах
-                    </Button>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
+                      {/* + icon */}
+                      <div className="flex items-center justify-center pt-5 shrink-0">
 
-        {/* Storage Payment Box */}
-        <div id="nemelt-storage-box">
-          <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden">
-            <div className="p-5 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20">
-              <div className="flex items-center gap-3">
-                <div>
-                  <h3 className="text-lg text-theme">
-                    Агуулахын төлбөр тооцоо
-                  </h3>
-                  <p className="text-xs text-[color:var(--muted-text)]">
-                    Агуулахын нэмэлт төлбөр тооцох
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-theme">
-                  {storagePaymentEnabled ? "Идэвхтэй" : "Идэвхгүй"}
-                </span>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={storagePaymentEnabled}
-                    onChange={(e) => {
-                      const val = e.currentTarget.checked;
-                      setStoragePaymentEnabled(val);
-                      if (!val) saveStoragePaymentSettings(false);
-                    }}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-violet-300 dark:peer-focus:ring-violet-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 dark:peer-checked:bg-violet-600 peer-checked:bg-violet-600"></div>
-                </label>
-              </div>
-            </div>
-
-            {storagePaymentEnabled && (
-              <>
-                <div className="p-5 bg-gradient-to-br from-violet-50/50 to-purple-50/50 dark:from-violet-950/10 dark:to-purple-950/10 space-y-4 animate-in fade-in zoom-in-95 duration-300">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-3">
-                      <label className="text-sm font-medium text-theme">
-                        Тооцоолох төрөл
-                      </label>
-                      <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-xl w-fit">
-                        <button
-                          onClick={() => setStoragePaymentMethod("Тогтмол")}
-                          className={`px-6 py-2 rounded-lg text-sm transition-all ${storagePaymentMethod === "Тогтмол"
-                              ? "bg-white dark:bg-gray-700 shadow-sm text-violet-600 font-bold"
-                              : "text-gray-500 hover:text-gray-700"
-                            }`}
-                        >
-                          Тогтмол
-                        </button>
-                        {/* Temporarily hidden:
-                        <button
-                          onClick={() => setStoragePaymentMethod("Хувьсах")}
-                          className={`px-6 py-2 rounded-lg text-sm transition-all ${storagePaymentMethod === "Хувьсах"
-                              ? "bg-white dark:bg-gray-700 shadow-sm text-violet-600 font-bold"
-                              : "text-gray-500 hover:text-gray-700"
-                            }`}
-                        >
-                          Хувьсах
-                        </button>
-                        */}
                       </div>
-                      <p className="text-xs text-[color:var(--muted-text)]">
-                        {storagePaymentMethod === "Тогтмол"
-                          ? "Тогтмол дүнгээр тооцно"
-                          : "Хувьсах дүнгээр тооцно"}
-                      </p>
-                    </div>
 
-                    {storagePaymentMethod === "Тогтмол" && (
-                      <div className="space-y-2 animate-in fade-in slide-in-from-left-4 duration-300">
-                        <label className="text-sm font-medium text-theme">
-                          Тогтмол дүн
+                      {/* Агуулах төлбөр */}
+                      <div className="space-y-1 flex-1 min-w-[110px]">
+                        <label className="text-xs text-theme">
+                          Агуулах төлбөр
                         </label>
                         <MNumberInput
                           value={
@@ -1625,30 +1591,55 @@ export default function NemeltTokhirgoo() {
                           }
                           placeholder="0"
                           min={0}
-                          size="md"
-                          className="w-full md:w-48"
+                          size="sm"
                           thousandSeparator=","
+                          rightSection={
+                            <span className="text-xs text-gray-500 mr-1 select-none">
+                              ₮
+                            </span>
+                          }
+                          className="w-full"
                         />
                       </div>
-                    )}
+                    </div>
+
+                    {/* Right: Total display */}
+                    <div className="flex items-center justify-between gap-2.5 px-3.5 rounded-lg bg-blue-50/80 dark:bg-blue-950/50 border border-blue-200/70 dark:border-blue-800/40 shrink-0 self-center md:self-end md:mb-0.5 h-9 min-w-[180px]">
+                      <span className="text-xs text-[color:var(--muted-text)] whitespace-nowrap">
+                        Нийт төлбөр:
+                      </span>
+                      <span className="text-xs text-theme whitespace-nowrap">
+                        {(
+                          (Number(garagePaymentValue) || 0) +
+                          (Number(storagePaymentValue) || 0)
+                        ).toLocaleString()}{" "}
+                        ₮
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="pt-4 flex justify-end border-t border-[color:var(--surface-border)]/50">
+                  <div className="pt-1 flex justify-end">
                     <Button
-                      onClick={() => saveStoragePaymentSettings()}
+                      onClick={() => saveCombinedPaymentSettings()}
                       variant="primary"
                       size="sm"
-                      className="!rounded-2xl px-8"
+                      className="!rounded-xl px-5 py-1 text-xs"
                     >
                       Хадгалах
                     </Button>
                   </div>
                 </div>
-              </>
-            )}
+              ) : (
+                <div className="p-3.5 px-4 bg-gradient-to-br from-blue-50/40 to-indigo-50/40 dark:from-blue-950/10 dark:to-indigo-950/10 flex-1 flex items-center">
+                  <p className="text-xs text-[color:var(--muted-text)]">
+                    Граж болон агуулахын төлбөр тооцоо идэвхгүй байна.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 }

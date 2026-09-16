@@ -46,7 +46,7 @@ export default function Zogsool({
   const effectiveBaiguullagiinId = effectiveAjiltan?.baiguullagiinId;
 
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(500);
   const [editingItem, setEditingItem] = useState<ZogsoolItem | null>(null);
   const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
   const zogsoolRef = useRef<any>(null);

@@ -170,7 +170,7 @@ export default function OrlogoAvlagaPage() {
   const [debouncedFilters, setDebouncedFilters] = useState(filters);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(200);
+  const [pageSize, setPageSize] = useState(500);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [expandedLedger, setExpandedLedger] = useState<any[]>([]);
   const [expandedGlobalUldegdel, setExpandedGlobalUldegdel] = useState<number | null>(null);

@@ -58,7 +58,7 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
   data,
   loading = false,
   page = 1,
-  pageSize = 200,
+  pageSize = 500,
   totalCount = 0,
   onPageChange,
   totals,

@@ -201,6 +201,98 @@ export default function AshiglaltiinZardluud() {
     }, 0);
   const TAILBARIIN_DEED_URT = 300;
 
+  const formatWhileTyping = (val: string) => {
+    const clean = val.replace(/,/g, "").replace(/[^\d.]/g, "");
+    const dotIdx = clean.indexOf(".");
+    let intRaw: string;
+    let fracRaw: string;
+    const endsWithDot = clean.endsWith(".") && clean.split(".").length <= 2;
+
+    if (dotIdx === -1) {
+      intRaw = clean;
+      fracRaw = "";
+    } else {
+      intRaw = clean.slice(0, dotIdx);
+      fracRaw = clean.slice(dotIdx + 1).replace(/\./g, "");
+    }
+
+    const intDigits = intRaw.replace(/\D/g, "");
+    const intFormatted = intDigits
+      ? intDigits.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+      : "";
+
+    if (dotIdx !== -1 && fracRaw === "" && endsWithDot) {
+      return intFormatted + ".";
+    }
+
+    if (!intDigits && fracRaw !== "") {
+      return "." + fracRaw.replace(/\D/g, "").slice(0, 10);
+    }
+
+    if (fracRaw !== "") {
+      const fd = fracRaw.replace(/\D/g, "").slice(0, 10);
+      return intFormatted + "." + fd;
+    }
+
+    return intFormatted;
+  };
+
+  const getCursorPosByNonCommaCount = (val: string, nonCommaCount: number) => {
+    if (nonCommaCount <= 0) return 0;
+    let seen = 0;
+    for (let i = 0; i < val.length; i++) {
+      if (val[i] !== ",") seen++;
+      if (seen >= nonCommaCount) return i + 1;
+    }
+    return val.length;
+  };
+
+  const handleTariffChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.currentTarget.value;
+    const inputEl = e.currentTarget;
+    const cursor = inputEl.selectionStart ?? raw.length;
+    const nonCommaBeforeCursor = raw.slice(0, cursor).replace(/,/g, "").length;
+
+    const clean = raw.replace(/,/g, "").replace(/[^\d.]/g, "");
+    const n = Number(clean);
+    const formatted = formatWhileTyping(raw);
+
+    setTariffInputValue(formatted);
+    setFormData((prev) => ({
+      ...prev,
+      tariff: Number.isFinite(n) ? n : 0,
+    }));
+
+    requestAnimationFrame(() => {
+      if (!inputEl || document.activeElement !== inputEl) return;
+      const nextPos = getCursorPosByNonCommaCount(formatted, nonCommaBeforeCursor);
+      inputEl.setSelectionRange(nextPos, nextPos);
+    });
+  };
+
+  const handleSuuriKhuraamjChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.currentTarget.value;
+    const inputEl = e.currentTarget;
+    const cursor = inputEl.selectionStart ?? raw.length;
+    const nonCommaBeforeCursor = raw.slice(0, cursor).replace(/,/g, "").length;
+
+    const clean = raw.replace(/,/g, "").replace(/[^\d.]/g, "");
+    const n = Number(clean);
+    const formatted = formatWhileTyping(raw);
+
+    setSuuriKhuraamjInput(formatted);
+    setFormData((prev) => ({
+      ...prev,
+      suuriKhuraamj: Number.isFinite(n) ? n : 0,
+    }));
+
+    requestAnimationFrame(() => {
+      if (!inputEl || document.activeElement !== inputEl) return;
+      const nextPos = getCursorPosByNonCommaCount(formatted, nonCommaBeforeCursor);
+      inputEl.setSelectionRange(nextPos, nextPos);
+    });
+  };
+
   const zardalExcelInputRef = useRef<HTMLInputElement | null>(null);
 
   /**
@@ -375,9 +467,13 @@ export default function AshiglaltiinZardluud() {
       tariff150to300kv: item.tariff150to300kv || 0,
       tariff300pluskv: item.tariff300pluskv || 0,
     });
-    setTariffInputValue(formatNumber(item.tariff, 2));
+    setTariffInputValue(
+      item.tariff ? formatNumber(item.tariff, 2) : "",
+    );
     setSuuriKhuraamjInput(
-      item.suuriKhuraamj ? formatNumber(item.suuriKhuraamj, 2) : "",
+      item.suuriKhuraamj
+        ? formatNumber(item.suuriKhuraamj, 2)
+        : "",
     );
     setZaaltTariffInput(
       item.zaaltTariff ? formatNumber(item.zaaltTariff, 2) : "",
@@ -671,7 +767,7 @@ export default function AshiglaltiinZardluud() {
                                 <td className="py-2 px-2">
                                   <div className="flex flex-col items-center gap-0.5">
                                     <div className="text-theme text-sm sm:text-sm whitespace-nowrap">
-                                      {formatNumber(currentValue, 2)}
+                                      {formatNumber(currentValue, 2)} ₮
                                     </div>
                                     {changed && (
                                       <span className="text-[9px] text-amber-600  uppercase tracking-tighter whitespace-nowrap">
@@ -752,7 +848,7 @@ export default function AshiglaltiinZardluud() {
                           </td>
                           <td className="py-2 px-2 sm:px-4 text-center">
                             <div className="text-sm sm:text-lg force-bold text-blue-600 dark:text-blue-400 whitespace-nowrap pl-4">
-                              {formatNumber(niitDungBodyo(togtmolZardluud), 2)}
+                              {formatNumber(niitDungBodyo(togtmolZardluud), 2)} ₮
                             </div>
                           </td>
                           <td className="hidden md:table-cell"></td>
@@ -852,7 +948,8 @@ export default function AshiglaltiinZardluud() {
                                 <td className="py-2 px-2 sm:px-4">
                                   <div className="flex flex-col items-center gap-0.5">
                                     <div className="text-theme text-sm sm:text-sm whitespace-nowrap">
-                                      {formatNumber(currentValue, 0)}
+                                      {formatNumber(currentValue, 2)}{" "}
+                                      {mur.tariffUsgeer || "₮"}
                                     </div>
                                     {changed && (
                                       <span className="text-[9px] text-amber-600  uppercase tracking-tighter whitespace-nowrap">
@@ -936,7 +1033,8 @@ export default function AshiglaltiinZardluud() {
                               {formatNumber(
                                 niitDungBodyo(khuvisakhZardluud, true),
                                 2,
-                              )}
+                              )}{" "}
+                              ₮
                             </div>
                           </td>
                           <td className="hidden md:table-cell"></td>
@@ -1066,16 +1164,7 @@ export default function AshiglaltiinZardluud() {
                   <div>
                     <MTextInput
                       value={suuriKhuraamjInput}
-                      onChange={(e) => {
-                        const raw = e.currentTarget.value;
-                        const cleanValue = raw.replace(/[^0-9.]/g, "");
-                        const n = Number(cleanValue);
-                        setSuuriKhuraamjInput(cleanValue);
-                        setFormData({
-                          ...formData,
-                          suuriKhuraamj: Number.isFinite(n) ? n : 0,
-                        });
-                      }}
+                      onChange={handleSuuriKhuraamjChange}
                       onBlur={() => {
                         if (formData.suuriKhuraamj)
                           setSuuriKhuraamjInput(
@@ -1083,18 +1172,15 @@ export default function AshiglaltiinZardluud() {
                           );
                         else setSuuriKhuraamjInput("");
                       }}
-                      onFocus={() => {
-                        if (formData.suuriKhuraamj)
-                          setSuuriKhuraamjInput(
-                            formData.suuriKhuraamj.toString(),
-                          );
+                      onFocus={(e) => {
+                        e.currentTarget.select();
                       }}
-                      placeholder="0"
+                      placeholder="0.00"
                       classNames={{
                         input: "rounded-xl h-11 text-theme text-base shadow-sm",
                       }}
                       leftSection={
-                        <span className="text-emerald-600 dark:text-emerald-400">
+                        <span className="text-emerald-600 dark:text-emerald-400 font-bold">
                           ₮
                         </span>
                       }
@@ -1111,31 +1197,23 @@ export default function AshiglaltiinZardluud() {
                   </label>
                   <MTextInput
                     value={tariffInputValue}
-                    onChange={(e) => {
-                      const raw = e.currentTarget.value;
-                      const cleanValue = raw.replace(/[^0-9.]/g, "");
-                      const n = Number(cleanValue);
-                      setTariffInputValue(cleanValue);
-                      setFormData({
-                        ...formData,
-                        tariff: Number.isFinite(n) ? n : 0,
-                      });
-                    }}
+                    onChange={handleTariffChange}
                     onBlur={() => {
                       if (formData.tariff)
-                        setTariffInputValue(formatNumber(formData.tariff, 2));
+                        setTariffInputValue(
+                          formatNumber(formData.tariff, 2),
+                        );
                       else setTariffInputValue("");
                     }}
-                    onFocus={() => {
-                      if (formData.tariff)
-                        setTariffInputValue(formData.tariff.toString());
+                    onFocus={(e) => {
+                      e.currentTarget.select();
                     }}
-                    placeholder="0"
+                    placeholder="0.00"
                     classNames={{
                       input: "rounded-xl h-11 text-theme text-base shadow-sm",
                     }}
                     leftSection={
-                      <span className="text-emerald-600 dark:text-emerald-400">
+                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">
                         ₮
                       </span>
                     }

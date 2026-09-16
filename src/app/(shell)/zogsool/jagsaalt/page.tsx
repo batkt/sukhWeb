@@ -177,7 +177,7 @@ export default function Jagsaalt() {
   const effectiveBarilgiinId = selectedBuildingId || barilgiinId || undefined;
   const { searchTerm, setSearchTerm } = useSearch();
   const [page, setPage] = useState(1);
-  const pageSize = 1000;
+  const pageSize = 500;
 
   const [durationFilter, setDurationFilter] = useState("latest_out");
   const [statusFilter, setStatusFilter] = useState("all");

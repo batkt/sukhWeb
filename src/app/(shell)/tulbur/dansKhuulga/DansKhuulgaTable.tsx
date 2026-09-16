@@ -76,7 +76,7 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
   data,
   loading = false,
   page = 1,
-  rowsPerPage = 100,
+  rowsPerPage = 500,
   maxHeight = "calc(100vh - 500px)",
   onLink,
   onUnlink,

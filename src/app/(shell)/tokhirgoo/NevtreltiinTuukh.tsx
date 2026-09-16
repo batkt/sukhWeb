@@ -50,7 +50,7 @@ export default function NevtreltiinTuukh({
     dayjs().endOf("month").format("YYYY-MM-DD"),
   ]);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(500);
   const [searchTerm, setSearchTerm] = useState("");
 
   // Fetch login history — page/pageSize NOT in key (client-side pagination)

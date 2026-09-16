@@ -96,7 +96,7 @@ const AdminLayout = ({
     </header>
 
     <main className="flex-1 min-h-0 overflow-visible px-4 flex flex-col">
-      <div className="flex-1 min-h-0 flex flex-col lg:grid lg:grid-cols-12 gap-6">
+      <div className="flex-1 min-h-0 flex flex-col lg:grid lg:grid-cols-12 gap-6 items-start">
         {children}
       </div>
     </main>
@@ -186,9 +186,9 @@ function Tokhirgoo() {
   return (
     <AdminLayout title="Тохиргоо">
       {tokhirgoo.length > 0 && (
-        <div className="w-full lg:col-span-3 lg:sticky lg:top-4 h-fit self-start overflow-hidden">
-          <div className="bg-transparent rounded-2xl shadow-lg overflow-hidden flex-1 min-h-0 flex flex-col">
-            <div className="p-5 space-y-2 bg-transparent overflow-y-auto custom-scrollbar flex-1 min-h-0">
+        <aside className="w-full lg:col-span-3 lg:sticky lg:top-[calc(var(--shell-topbar-h,56px)+1rem)] h-fit self-start z-10">
+          <div className="bg-transparent rounded-2xl shadow-lg overflow-hidden flex flex-col">
+            <div className="p-3 space-y-1.5 bg-transparent overflow-y-auto max-h-[calc(100dvh-var(--shell-topbar-h,56px)-2.5rem)] custom-scrollbar">
               {tokhirgoo.map((item: any, i) => {
                 const isActive = i === selectedIndexInternal;
                 const isSoon = Boolean(item?.comingSoon);
@@ -201,16 +201,16 @@ function Tokhirgoo() {
                     }}
                     aria-disabled={isSoon}
                     className={`relative btn-minimal flex items-center w-full justify-start gap-3 text-left transition-all duration-200 ${isActive
-                      ? "bg-[var(--btn-bg-hover)] border border-[var(--btn-border)] text-theme "
-                      : "text-theme opacity-80 hover:opacity-100"
-                      } ${isSoon ? "cursor-not-allowed pr-24" : ""} px-4 py-2.5 rounded-2xl`}
+                      ? "bg-[var(--btn-bg-hover)] border border-[var(--btn-border)] text-theme font-medium shadow-xs"
+                      : "text-theme opacity-80 hover:opacity-100 hover:bg-[var(--btn-bg-hover)]/50"
+                      } ${isSoon ? "cursor-not-allowed pr-24" : ""} px-3.5 py-2 rounded-xl text-sm`}
                   >
                     {item.icon}
-                    <span className="flex-1 min-w-0 overflow-hidden whitespace-nowrap text-left">
+                    <span className="flex-1 min-w-0 overflow-hidden whitespace-nowrap text-left text-sm">
                       {item.text}
                     </span>
                     {isSoon && (
-                      <span className="text-xs  text-green-500 whitespace-nowrap flex-shrink-0 overflow-hidden text-ellipsis max-w-20">
+                      <span className="text-xs text-green-500 whitespace-nowrap flex-shrink-0 overflow-hidden text-ellipsis max-w-20">
                         Тун удахгүй
                       </span>
                     )}
@@ -219,44 +219,42 @@ function Tokhirgoo() {
               })}
             </div>
           </div>
-        </div>
+        </aside>
       )}
 
-      <div className={`w-full text-theme min-h-0 flex flex-col overflow-hidden ${tokhirgoo.length > 0 ? "lg:col-span-9" : "lg:col-span-12"}`}>
-        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
-          {tokhirgoo.length === 0 && ajiltan && (
-            <div className="flex flex-col items-center justify-center p-12 text-theme">
-              <Settings className="w-16 h-16 mb-4 opacity-50" />
-              <p className="text-lg ">Тохиргооны эрх олдсонгүй</p>
-              <p className="text-sm mt-2">Админ тань тохиргооны эрх олгоно уу.</p>
-            </div>
-          )}
-          {Tsonkh &&
-            ajiltan &&
-            (() => {
-              const AnyWindow = Tsonkh as unknown as React.ComponentType<any>;
-              return (
-                <ChunkErrorBoundary>
-                  <Suspense
-                    fallback={
-                      <div className="flex items-center justify-center p-8">
-                        <div className="text-theme opacity-60">
-                          Ачааллаж байна...
-                        </div>
+      <div className={`w-full text-theme min-h-0 ${tokhirgoo.length > 0 ? "lg:col-span-9" : "lg:col-span-12"}`}>
+        {tokhirgoo.length === 0 && ajiltan && (
+          <div className="flex flex-col items-center justify-center p-12 text-theme">
+            <Settings className="w-16 h-16 mb-4 opacity-50" />
+            <p className="text-lg ">Тохиргооны эрх олдсонгүй</p>
+            <p className="text-sm mt-2">Админ тань тохиргооны эрх олгоно уу.</p>
+          </div>
+        )}
+        {Tsonkh &&
+          ajiltan &&
+          (() => {
+            const AnyWindow = Tsonkh as unknown as React.ComponentType<any>;
+            return (
+              <ChunkErrorBoundary>
+                <Suspense
+                  fallback={
+                    <div className="flex items-center justify-center p-8">
+                      <div className="text-theme opacity-60">
+                        Ачааллаж байна...
                       </div>
-                    }
-                  >
-                    <AnyWindow
-                      ajiltan={ajiltan}
-                      baiguullaga={baiguullaga}
-                      token={token || ""}
-                      setSongogdsonTsonkhniiIndex={setSelectedIndex}
-                    />
-                  </Suspense>
-                </ChunkErrorBoundary>
-              );
-            })()}
-        </div>
+                    </div>
+                  }
+                >
+                  <AnyWindow
+                    ajiltan={ajiltan}
+                    baiguullaga={baiguullaga}
+                    token={token || ""}
+                    setSongogdsonTsonkhniiIndex={setSelectedIndex}
+                  />
+                </Suspense>
+              </ChunkErrorBoundary>
+            );
+          })()}
       </div>
     </AdminLayout>
   );

@@ -33,7 +33,7 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
   data,
   loading = false,
   page = 1,
-  pageSize = 10,
+  pageSize = 500,
   canEdit = true,
   canDelete = true,
   canManagePermissions = true,

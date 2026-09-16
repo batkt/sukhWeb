@@ -5443,14 +5443,6 @@ html[data-mode="dark"],
   padding: 1rem 0.875rem 0.5rem;
 }
 
-.shell-sidebar-tools {
-  display: flex;
-  justify-content: center;
-  flex-shrink: 0;
-  overflow: hidden;
-  padding: 0.25rem 0.75rem 0.75rem;
-}
-
 .shell-sidebar-foot {
   display: flex;
   flex-direction: column;

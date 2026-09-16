@@ -392,7 +392,7 @@ export default function UstsanTuukh({ token, baiguullaga, ajiltan }: Props) {
   const { t } = useTranslation();
 
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(500);
   const [selectedModel, setSelectedModel] = useState<string>("");
   const [dateRange, setDateRange] = useState<[string | null, string | null]>([
     dayjs().startOf("month").format("YYYY-MM-DD"),

@@ -37,7 +37,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
   actions,
   loading = false,
   page = 1,
-  pageSize = 10,
+  pageSize = 500,
   onAddUnit,
   onDeleteUnit,
   onDeleteFloor,

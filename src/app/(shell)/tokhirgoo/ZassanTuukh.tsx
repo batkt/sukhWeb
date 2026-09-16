@@ -332,7 +332,7 @@ export default function ZassanTuukh({ token, baiguullaga }: Props) {
   const { t } = useTranslation();
 
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(pageSizeOptions[0]);
+  const [pageSize, setPageSize] = useState(500);
   const [selectedModel, setSelectedModel] = useState<string>("");
   const [selectedEmployee, setSelectedEmployee] = useState<string>("");
   const [dateRange, setDateRange] = useState<[string | null, string | null]>([

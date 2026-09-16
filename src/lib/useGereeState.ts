@@ -56,17 +56,17 @@ export function useGereeState(searchParams: any, didInitRef: any) {
   const [floorToDelete, setFloorToDelete] = useState<string | null>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(20);
+  const [rowsPerPage, setRowsPerPage] = useState(500);
   const [sortKey, setSortKey] = useState<"createdAt" | "toot" | "orts" | "davkhar">("createdAt");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [showColumnSelector, setShowColumnSelector] = useState(false);
 
   const [resPage, setResPage] = useState(1);
-  const [resPageSize, setResPageSize] = useState(50);
+  const [resPageSize, setResPageSize] = useState(500);
   const [empPage, setEmpPage] = useState(1);
-  const [empPageSize, setEmpPageSize] = useState(10);
+  const [empPageSize, setEmpPageSize] = useState(500);
   const [unitPage, setUnitPage] = useState(1);
-  const [unitPageSize, setUnitPageSize] = useState(50);
+  const [unitPageSize, setUnitPageSize] = useState(500);
 
   // Default Орц for units tab is "1" (no "Бүгд" option in select)
   const [selectedOrts, setSelectedOrts] = useState<string>("1");

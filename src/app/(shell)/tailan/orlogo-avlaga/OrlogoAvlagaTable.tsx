@@ -55,7 +55,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
   data,
   loading = false,
   page = 1,
-  pageSize = 200,
+  pageSize = 500,
   activeTab,
   expandedLedger,
   expandedGlobalUldegdel,

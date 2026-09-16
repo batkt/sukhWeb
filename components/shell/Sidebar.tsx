@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import {
-  Building2,
   CalendarClock,
   ChevronsLeft,
   ChevronsRight,
@@ -172,21 +171,6 @@ export default function Sidebar({
           </button>
         )}
       </div>
-
-      {/* ── Rail горимд салбар сонгох товч ────────────────────── */}
-      {railMode && (
-        <div className="shell-sidebar-tools">
-          <button
-            type="button"
-            onClick={toggleCollapsed}
-            aria-label="Барилга сонгох"
-            title="Барилга сонгох"
-            className="shell-icon-btn"
-          >
-            <Building2 strokeWidth={ICON_STROKE} />
-          </button>
-        </div>
-      )}
 
       {/* ── Navigation ────────────────────────────────────────── */}
       <div className="scrollable min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-3 py-2">

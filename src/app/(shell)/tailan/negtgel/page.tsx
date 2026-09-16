@@ -33,7 +33,7 @@ export default function NegtgelTailanPage() {
   const [searchText, setSearchText] = useState("");
   const { searchTerm } = useSearch();
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(1000);
+  const [pageSize, setPageSize] = useState(500);
 
   // ── Data fetching ────────────────────────────────────────────────────────
   const swrKey = useMemo(() => {

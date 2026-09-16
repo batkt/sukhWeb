@@ -66,7 +66,7 @@ export default function BlogManagement() {
 
   // Pagination
   const [page, setPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(16);
+  const [rowsPerPage, setRowsPerPage] = useState(500);
 
   // Form states
   const [title, setTitle] = useState("");
@@ -376,7 +376,7 @@ export default function BlogManagement() {
                 pageSize={rowsPerPage}
                 onChange={setPage}
                 onPageSizeChange={setRowsPerPage}
-                pageSizeOptions={[6, 9, 12, 24]}
+                pageSizeOptions={[6, 9, 12, 24, 500]}
               />
             </div>
           </div>

@@ -321,13 +321,13 @@ export default function Khynalt() {
   const { data: incomeData } = useSWR(
     token && ajiltan?.baiguullagiinId && rangeStart && rangeEnd
       ? [
-          "/nekhemjlekhiinTuukh",
-          token,
-          ajiltan.baiguullagiinId,
-          effectiveBarilgiinId,
-          rangeStart,
-          rangeEnd,
-        ]
+        "/nekhemjlekhiinTuukh",
+        token,
+        ajiltan.baiguullagiinId,
+        effectiveBarilgiinId,
+        rangeStart,
+        rangeEnd,
+      ]
       : null,
     async ([url, tkn, bId, barId, start, end]): Promise<any> => {
       const startIso = `${start}T00:00:00.000Z`;
@@ -354,13 +354,13 @@ export default function Khynalt() {
   const { data: paymentData } = useSWR(
     token && ajiltan?.baiguullagiinId && rangeStart && rangeEnd
       ? [
-          "/guilgeeAvlaguud",
-          token,
-          ajiltan.baiguullagiinId,
-          effectiveBarilgiinId,
-          rangeStart,
-          rangeEnd,
-        ]
+        "/guilgeeAvlaguud",
+        token,
+        ajiltan.baiguullagiinId,
+        effectiveBarilgiinId,
+        rangeStart,
+        rangeEnd,
+      ]
       : null,
     async ([url, tkn, bId, barId, start, end]): Promise<any> => {
       const resp = await uilchilgee(tkn).get(url, {
@@ -427,15 +427,15 @@ export default function Khynalt() {
       rangeStart &&
       rangeEnd
       ? [
-          "/tailan/building-comparison-data",
-          token,
-          ajiltan.baiguullagiinId,
-          rangeStart,
-          rangeEnd,
-          buildingFilterMode === "compare"
-            ? compareBuildingIds.join(",")
-            : allBuildings.map((b) => String(b._id)).join(","),
-        ]
+        "/tailan/building-comparison-data",
+        token,
+        ajiltan.baiguullagiinId,
+        rangeStart,
+        rangeEnd,
+        buildingFilterMode === "compare"
+          ? compareBuildingIds.join(",")
+          : allBuildings.map((b) => String(b._id)).join(","),
+      ]
       : null,
     async () => {
       const targetBIds =
@@ -473,8 +473,8 @@ export default function Khynalt() {
               monthlyBilled > 0
                 ? Math.min(100, Math.round((monthlyPaid / monthlyBilled) * 100))
                 : monthlyPaid > 0
-                ? 100
-                : 0;
+                  ? 100
+                  : 0;
 
             return {
               id: bId,
@@ -545,11 +545,11 @@ export default function Khynalt() {
   const { data: overdueData } = useSWR(
     token && ajiltan?.baiguullagiinId
       ? [
-          `/tailan/udsan-avlaga`,
-          token,
-          effectiveBarilgiinId,
-          ajiltan.baiguullagiinId,
-        ]
+        `/tailan/udsan-avlaga`,
+        token,
+        effectiveBarilgiinId,
+        ajiltan.baiguullagiinId,
+      ]
       : null,
     async ([url, tkn, barId, bId]): Promise<any> => {
       const resp = await uilchilgee(tkn).get(url, {
@@ -566,11 +566,11 @@ export default function Khynalt() {
   const { data: cancelledData } = useSWR(
     token && ajiltan?.baiguullagiinId
       ? [
-          `/tailan/tsutslasan-gereenii-avlaga`,
-          token,
-          effectiveBarilgiinId,
-          ajiltan.baiguullagiinId,
-        ]
+        `/tailan/tsutslasan-gereenii-avlaga`,
+        token,
+        effectiveBarilgiinId,
+        ajiltan.baiguullagiinId,
+      ]
       : null,
     async ([url, tkn, barId, bId]): Promise<any> => {
       const resp = await uilchilgee(tkn).get(url, {
@@ -594,13 +594,13 @@ export default function Khynalt() {
       rangeStart &&
       rangeEnd
       ? [
-          "/tailan/orlogo-avlaga",
-          token,
-          ajiltan.baiguullagiinId,
-          effectiveBarilgiinId,
-          rangeStart,
-          rangeEnd,
-        ]
+        "/tailan/orlogo-avlaga",
+        token,
+        ajiltan.baiguullagiinId,
+        effectiveBarilgiinId,
+        rangeStart,
+        rangeEnd,
+      ]
       : null,
     async ([, tkn, bId, barId, start, end]): Promise<any> => {
       const resp = await uilchilgee(tkn).post("/tailan/orlogo-avlaga", {
@@ -633,13 +633,13 @@ export default function Khynalt() {
   const { data: monthlyMatrixData } = useSWR(
     token && ajiltan?.baiguullagiinId && rangeStart && rangeEnd
       ? [
-          "/tailan/resident-monthly-matrix",
-          token,
-          ajiltan.baiguullagiinId,
-          effectiveBarilgiinId,
-          rangeStart,
-          rangeEnd,
-        ]
+        "/tailan/resident-monthly-matrix",
+        token,
+        ajiltan.baiguullagiinId,
+        effectiveBarilgiinId,
+        rangeStart,
+        rangeEnd,
+      ]
       : null,
     async ([url, tkn, bId, barId, start, end]): Promise<any> => {
       const resp = await uilchilgee(tkn).post(url, {
@@ -716,7 +716,7 @@ export default function Khynalt() {
       const month = String(d.getMonth() + 1).padStart(2, "0");
       const day = String(d.getDate()).padStart(2, "0");
       const itemLocalDateStr = `${year}-${month}-${day}`;
-      
+
       let inRange = true;
       if (rangeStart) {
         inRange = inRange && itemLocalDateStr >= rangeStart;
@@ -733,7 +733,7 @@ export default function Khynalt() {
   const [paymentQuery, setPaymentQuery] = useState("");
   // Төлөлтийн түүхийн хуудаслалт ба үйлдлүүд.
   const [paymentPage, setPaymentPage] = useState(1);
-  const [paymentPageSize, setPaymentPageSize] = useState(10);
+  const [paymentPageSize, setPaymentPageSize] = useState(500);
   const [kharakhOrshinSuugchId, setKharakhOrshinSuugchId] = useState<
     string | null
   >(null);
@@ -792,13 +792,13 @@ export default function Khynalt() {
   const { data: tulukhAvlagaData } = useSWR(
     token && ajiltan?.baiguullagiinId && rangeStart && rangeEnd
       ? [
-          "/guilgeeAvlaguud",
-          token,
-          ajiltan.baiguullagiinId,
-          effectiveBarilgiinId,
-          rangeStart,
-          rangeEnd,
-        ]
+        "/guilgeeAvlaguud",
+        token,
+        ajiltan.baiguullagiinId,
+        effectiveBarilgiinId,
+        rangeStart,
+        rangeEnd,
+      ]
       : null,
     async ([url, tkn, bId, barId, start, end]): Promise<any> => {
       const resp = await uilchilgee(tkn).get(url, {
@@ -879,7 +879,7 @@ export default function Khynalt() {
     paymentList.forEach((p) => {
       const rawDun = Number(p?.dun ?? 0);
       const isInitialBalance = p?.ekhniiUldegdelEsekh === true;
-      
+
       // Skip explicit initial balances so they don't spike the daily graphs
       if (isInitialBalance) return;
 
@@ -903,7 +903,7 @@ export default function Khynalt() {
 
     // Орлого/Гүйцэтгэл: all-time income directly from ledger (dun < 0), no date filter
     const finalPaid = allTimePaidFromLedger;
-    
+
     // Үлдэгдэл/Авлага: all-time outstanding balance across all contracts
     // We strictly use the authoritative ledger: (All time Billed - All time Paid)
     // This perfectly bypasses any date-filter issues or empty period fallbacks.
@@ -1009,16 +1009,16 @@ export default function Khynalt() {
       const amt =
         Number(
           p?.tulsunDun ??
-            p?.tulsun ??
-            p?.niitTulbur ??
-            p?.niitDun ??
-            p?.total ??
-            p?.tulur ??
-            p?.tulukhDun ??
-            p?.undsenDun ??
-            p?.dun ??
-            p?.sariinTurees ??
-            0,
+          p?.tulsun ??
+          p?.niitTulbur ??
+          p?.niitDun ??
+          p?.total ??
+          p?.tulur ??
+          p?.tulukhDun ??
+          p?.undsenDun ??
+          p?.dun ??
+          p?.sariinTurees ??
+          0,
         ) || 0;
       if (amt <= 0) return;
 
@@ -1125,9 +1125,9 @@ export default function Khynalt() {
           Number(it?.uldegdel ?? it?.niitTulbur ?? it?.tulbur ?? 0) || 0;
         const tVal = Array.isArray(it?.toots)
           ? it.toots
-              .map((t: any) => String(t.toot ?? "").trim())
-              .filter(Boolean)
-              .join(",")
+            .map((t: any) => String(t.toot ?? "").trim())
+            .filter(Boolean)
+            .join(",")
           : String(it?.toot ?? "").trim();
         const name = [it?.ovog, it?.ner, tVal].filter(Boolean).join(" ");
         return {
@@ -1270,9 +1270,9 @@ export default function Khynalt() {
     const rawKeyForItem = (it: any) => {
       const tVal = Array.isArray(it?.toots)
         ? it.toots
-            .map((t: any) => String(t.toot ?? "").trim())
-            .filter(Boolean)
-            .join(",")
+          .map((t: any) => String(t.toot ?? "").trim())
+          .filter(Boolean)
+          .join(",")
         : String(it?.toot ?? "").trim();
       const toot = stripTootLabelPrefix(tVal);
 
@@ -1478,932 +1478,896 @@ export default function Khynalt() {
 
   return (
     <>
-    <div className="h-full flex flex-col overflow-y-auto custom-scrollbar">
-      <div className="flex flex-col flex-1 min-h-full pl-4 pt-4 pb-8 pr-0">
-        <div className="flex flex-row items-center justify-between gap-4 mb-6 pr-4 flex-shrink-0 relative z-30">
-          <div className="flex flex-row items-center gap-3 shrink-0">
-            {/* Огноо сонгох */}
-            <div
-              id="khynalt-date"
-              className="btn-minimal h-[40px] w-[280px] sm:w-[300px] shrink-0 flex items-center px-3"
-            >
-              <StandardDatePicker
-                isRange={true}
-                value={dateRange}
-                onChange={(_dates: any, dateStrings: any) => {
-                  const [s, e] = (dateStrings ?? []) as [string?, string?];
-                  setDateRange(s || e ? [s || null, e || null] : undefined);
-                }}
-                format="YYYY-MM-DD"
-                allowClear
-                placeholder="Огноо сонгох"
-                classNames={{
-                  root: "!h-full !w-full",
-                  input:
-                    "text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
-                }}
-              />
-            </div>
+      <div className="h-full flex flex-col overflow-y-auto custom-scrollbar">
+        <div className="flex flex-col flex-1 min-h-full pl-4 pt-4 pb-8 pr-0">
+          <div className="flex flex-row items-center justify-between gap-4 mb-6 pr-4 flex-shrink-0 relative z-30">
+            <div className="flex flex-row items-center gap-3 shrink-0">
+              {/* Огноо сонгох */}
+              <div
+                id="khynalt-date"
+                className="btn-minimal h-[40px] w-[280px] sm:w-[300px] shrink-0 flex items-center px-3"
+              >
+                <StandardDatePicker
+                  isRange={true}
+                  value={dateRange}
+                  onChange={(_dates: any, dateStrings: any) => {
+                    const [s, e] = (dateStrings ?? []) as [string?, string?];
+                    setDateRange(s || e ? [s || null, e || null] : undefined);
+                  }}
+                  format="YYYY-MM-DD"
+                  allowClear
+                  placeholder="Огноо сонгох"
+                  classNames={{
+                    root: "!h-full !w-full",
+                    input:
+                      "text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
+                  }}
+                />
+              </div>
 
-            {/* Барилгаар харьцуулах / сонгох Input */}
-            {allBuildings.length > 0 && (
-              <div className="relative shrink-0" ref={buildingDropdownRef}>
-                <button
-                  type="button"
-                  id="khynalt-building-compare"
-                  onClick={() => setBuildingDropdownOpen((v) => !v)}
-                  className={`btn-minimal h-[40px] px-3.5 flex items-center gap-2 text-xs font-medium rounded-2xl transition-all border shrink-0 ${
-                    buildingFilterMode === "compare"
-                      ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-sm"
-                      : "border-[color:var(--panel-text)]/15 text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]/60"
-                  }`}
-                  title="Барилгаар шүүх болон харьцуулах"
-                >
-                  <Building2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                  <span className="max-w-[180px] sm:max-w-[220px] truncate">
-                    {buildingFilterMode === "compare"
-                      ? `Харьцуулалт (${compareBuildingIds.length} барилга)`
-                      : buildingFilterMode === "all"
-                      ? "Бүх барилга (Нэгтгэл)"
-                      : allBuildings.find((b) => String(b._id) === String(selectedBuildingId))?.ner || "Барилга сонгох"}
-                  </span>
-                  <ChevronDown
-                    className={`w-3.5 h-3.5 opacity-60 transition-transform duration-200 ${
-                      buildingDropdownOpen ? "rotate-180" : ""
-                    }`}
-                  />
-                </button>
-
-                {/* Барилгын харьцуулах Dropdown Popover */}
-                {buildingDropdownOpen && (
-                  <div className="absolute left-0 top-full mt-2 w-[320px] sm:w-[360px] p-3.5 rounded-2xl shadow-2xl z-[9999] border border-[color:var(--panel-text)]/20 backdrop-blur-2xl bg-[color:var(--surface-bg)]/98 animate-in fade-in zoom-in-95 duration-150">
-                    <div className="flex items-center justify-between pb-2 mb-2 border-b border-[color:var(--panel-text)]/10">
-                      <div className="flex items-center gap-1.5 text-xs font-semibold text-[color:var(--panel-text)]">
-                        <SlidersHorizontal className="w-3.5 h-3.5 text-emerald-500" />
-                        <span>Барилгын шүүлт & Харьцуулалт</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setBuildingDropdownOpen(false)}
-                        className="p-1 rounded-lg hover:bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-
-                    {/* Горим сонгогч Tabs */}
-                    <div className="grid grid-cols-3 gap-1 p-1 mb-3 rounded-xl bg-[color:var(--surface-hover)]/40 border border-[color:var(--panel-text)]/10 text-[11px] font-medium">
-                      <button
-                        type="button"
-                        onClick={() => setBuildingFilterMode("single")}
-                        className={`py-1 px-1.5 rounded-lg transition-all text-center truncate ${
-                          buildingFilterMode === "single"
-                            ? "bg-white dark:bg-slate-800 text-[color:var(--panel-text)] font-semibold shadow-sm"
-                            : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+              {/* Барилгаар харьцуулах / сонгох Input */}
+              {allBuildings.length > 0 && (
+                <div className="relative shrink-0" ref={buildingDropdownRef}>
+                  <button
+                    type="button"
+                    id="khynalt-building-compare"
+                    onClick={() => setBuildingDropdownOpen((v) => !v)}
+                    className={`btn-minimal h-[40px] px-3.5 flex items-center gap-2 text-xs font-medium rounded-2xl transition-all border shrink-0 ${buildingFilterMode === "compare"
+                        ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-sm"
+                        : "border-[color:var(--panel-text)]/15 text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]/60"
+                      }`}
+                    title="Барилгаар шүүх болон харьцуулах"
+                  >
+                    <Building2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                    <span className="max-w-[180px] sm:max-w-[220px] truncate">
+                      {buildingFilterMode === "compare"
+                        ? `Харьцуулалт (${compareBuildingIds.length} барилга)`
+                        : buildingFilterMode === "all"
+                          ? "Бүх барилга (Нэгтгэл)"
+                          : allBuildings.find((b) => String(b._id) === String(selectedBuildingId))?.ner || "Барилга сонгох"}
+                    </span>
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 opacity-60 transition-transform duration-200 ${buildingDropdownOpen ? "rotate-180" : ""
                         }`}
-                      >
-                        Нэг барилга
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setBuildingFilterMode("compare");
-                          if (compareBuildingIds.length === 0) {
-                            setCompareBuildingIds(allBuildings.map((b) => String(b._id)));
-                          }
-                        }}
-                        className={`py-1 px-1.5 rounded-lg transition-all text-center truncate flex items-center justify-center gap-1 ${
-                          buildingFilterMode === "compare"
-                            ? "bg-emerald-500 text-white font-semibold shadow-sm"
-                            : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
-                        }`}
-                      >
-                        <BarChart3 className="w-3 h-3" />
-                        Харьцуулах
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setBuildingFilterMode("all")}
-                        className={`py-1 px-1.5 rounded-lg transition-all text-center truncate ${
-                          buildingFilterMode === "all"
-                            ? "bg-white dark:bg-slate-800 text-[color:var(--panel-text)] font-semibold shadow-sm"
-                            : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
-                        }`}
-                      >
-                        Бүгд
-                      </button>
-                    </div>
+                    />
+                  </button>
 
-                    {/* Барилгын хайлт */}
-                    <div className="relative mb-2">
-                      <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[color:var(--muted-text)]" />
-                      <input
-                        type="text"
-                        value={buildingSearch}
-                        onChange={(e) => setBuildingSearch(e.target.value)}
-                        placeholder="Барилга хайх..."
-                        className="w-full h-8 pl-8 pr-2 text-xs rounded-xl bg-[color:var(--surface-hover)]/30 border border-[color:var(--panel-text)]/10 text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] focus:outline-none focus:border-emerald-500/50"
-                      />
-                    </div>
-
-                    {/* Харьцуулах горимд бүгдийг сонгох товчнууд */}
-                    {buildingFilterMode === "compare" && (
-                      <div className="flex items-center justify-between px-1 py-1 mb-1.5 text-[11px] text-[color:var(--muted-text)]">
-                        <span>{compareBuildingIds.length} / {allBuildings.length} сонгосон</span>
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setCompareBuildingIds(allBuildings.map((b) => String(b._id)))}
-                            className="text-emerald-500 hover:underline font-medium"
-                          >
-                            Бүгдийг
-                          </button>
-                          <span>·</span>
-                          <button
-                            type="button"
-                            onClick={() => setCompareBuildingIds([])}
-                            className="text-red-400 hover:underline"
-                          >
-                            Цэвэрлэх
-                          </button>
+                  {/* Барилгын харьцуулах Dropdown Popover */}
+                  {buildingDropdownOpen && (
+                    <div className="absolute left-0 top-full mt-2 w-[320px] sm:w-[360px] p-3.5 rounded-2xl shadow-2xl z-[9999] border border-[color:var(--panel-text)]/20 backdrop-blur-2xl bg-[color:var(--surface-bg)]/98 animate-in fade-in zoom-in-95 duration-150">
+                      <div className="flex items-center justify-between pb-2 mb-2 border-b border-[color:var(--panel-text)]/10">
+                        <div className="flex items-center gap-1.5 text-xs font-semibold text-[color:var(--panel-text)]">
+                          <SlidersHorizontal className="w-3.5 h-3.5 text-emerald-500" />
+                          <span>Барилгын шүүлт & Харьцуулалт</span>
                         </div>
+                        <button
+                          type="button"
+                          onClick={() => setBuildingDropdownOpen(false)}
+                          className="p-1 rounded-lg hover:bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
                       </div>
-                    )}
 
-                    {/* Барилгуудын жагсаалт */}
-                    <div className="overflow-y-auto max-h-[220px] space-y-1 pr-1 custom-scrollbar">
-                      {allBuildings
-                        .filter((b) =>
-                          !buildingSearch ||
-                          b.ner?.toLowerCase().includes(buildingSearch.toLowerCase())
-                        )
-                        .map((b) => {
-                          const bId = String(b._id);
-                          const isSingleSelected =
-                            buildingFilterMode === "single" && String(selectedBuildingId) === bId;
-                          const isCompareSelected =
-                            compareBuildingIds.includes(bId);
+                      {/* Горим сонгогч Tabs */}
+                      <div className="grid grid-cols-3 gap-1 p-1 mb-3 rounded-xl bg-[color:var(--surface-hover)]/40 border border-[color:var(--panel-text)]/10 text-[11px] font-medium">
+                        <button
+                          type="button"
+                          onClick={() => setBuildingFilterMode("single")}
+                          className={`py-1 px-1.5 rounded-lg transition-all text-center truncate ${buildingFilterMode === "single"
+                              ? "bg-white dark:bg-slate-800 text-[color:var(--panel-text)] font-semibold shadow-sm"
+                              : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+                            }`}
+                        >
+                          Нэг барилга
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setBuildingFilterMode("compare");
+                            if (compareBuildingIds.length === 0) {
+                              setCompareBuildingIds(allBuildings.map((b) => String(b._id)));
+                            }
+                          }}
+                          className={`py-1 px-1.5 rounded-lg transition-all text-center truncate flex items-center justify-center gap-1 ${buildingFilterMode === "compare"
+                              ? "bg-emerald-500 text-white font-semibold shadow-sm"
+                              : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+                            }`}
+                        >
+                          <BarChart3 className="w-3 h-3" />
+                          Харьцуулах
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setBuildingFilterMode("all")}
+                          className={`py-1 px-1.5 rounded-lg transition-all text-center truncate ${buildingFilterMode === "all"
+                              ? "bg-white dark:bg-slate-800 text-[color:var(--panel-text)] font-semibold shadow-sm"
+                              : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+                            }`}
+                        >
+                          Бүгд
+                        </button>
+                      </div>
 
-                          if (buildingFilterMode === "compare") {
+                      {/* Барилгын хайлт */}
+                      <div className="relative mb-2">
+                        <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[color:var(--muted-text)]" />
+                        <input
+                          type="text"
+                          value={buildingSearch}
+                          onChange={(e) => setBuildingSearch(e.target.value)}
+                          placeholder="Барилга хайх..."
+                          className="w-full h-8 pl-8 pr-2 text-xs rounded-xl bg-[color:var(--surface-hover)]/30 border border-[color:var(--panel-text)]/10 text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] focus:outline-none focus:border-emerald-500/50"
+                        />
+                      </div>
+
+                      {/* Харьцуулах горимд бүгдийг сонгох товчнууд */}
+                      {buildingFilterMode === "compare" && (
+                        <div className="flex items-center justify-between px-1 py-1 mb-1.5 text-[11px] text-[color:var(--muted-text)]">
+                          <span>{compareBuildingIds.length} / {allBuildings.length} сонгосон</span>
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setCompareBuildingIds(allBuildings.map((b) => String(b._id)))}
+                              className="text-emerald-500 hover:underline font-medium"
+                            >
+                              Бүгдийг
+                            </button>
+                            <span>·</span>
+                            <button
+                              type="button"
+                              onClick={() => setCompareBuildingIds([])}
+                              className="text-red-400 hover:underline"
+                            >
+                              Цэвэрлэх
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Барилгуудын жагсаалт */}
+                      <div className="overflow-y-auto max-h-[220px] space-y-1 pr-1 custom-scrollbar">
+                        {allBuildings
+                          .filter((b) =>
+                            !buildingSearch ||
+                            b.ner?.toLowerCase().includes(buildingSearch.toLowerCase())
+                          )
+                          .map((b) => {
+                            const bId = String(b._id);
+                            const isSingleSelected =
+                              buildingFilterMode === "single" && String(selectedBuildingId) === bId;
+                            const isCompareSelected =
+                              compareBuildingIds.includes(bId);
+
+                            if (buildingFilterMode === "compare") {
+                              return (
+                                <button
+                                  key={bId}
+                                  type="button"
+                                  onClick={() => {
+                                    setCompareBuildingIds((prev) =>
+                                      prev.includes(bId)
+                                        ? prev.filter((id) => id !== bId)
+                                        : [...prev, bId]
+                                    );
+                                  }}
+                                  className={`w-full flex items-center justify-between p-2 rounded-xl text-xs transition-colors text-left ${isCompareSelected
+                                      ? "bg-emerald-500/10 border border-emerald-500/30 text-[color:var(--panel-text)] font-medium"
+                                      : "hover:bg-[color:var(--surface-hover)]/60 text-[color:var(--panel-text)] opacity-80"
+                                    }`}
+                                >
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    {isCompareSelected ? (
+                                      <CheckSquare className="w-4 h-4 text-emerald-500 shrink-0" />
+                                    ) : (
+                                      <Square className="w-4 h-4 text-[color:var(--muted-text)] shrink-0" />
+                                    )}
+                                    <span className="truncate">{b.ner}</span>
+                                  </div>
+                                  {b.tootToo != null && (
+                                    <span className="text-[10px] text-[color:var(--muted-text)] shrink-0 ml-2">
+                                      {b.tootToo} тоот
+                                    </span>
+                                  )}
+                                </button>
+                              );
+                            }
+
                             return (
                               <button
                                 key={bId}
                                 type="button"
                                 onClick={() => {
-                                  setCompareBuildingIds((prev) =>
-                                    prev.includes(bId)
-                                      ? prev.filter((id) => id !== bId)
-                                      : [...prev, bId]
-                                  );
+                                  setSelectedBuildingId(bId);
+                                  setBuildingFilterMode("single");
+                                  setBuildingDropdownOpen(false);
                                 }}
-                                className={`w-full flex items-center justify-between p-2 rounded-xl text-xs transition-colors text-left ${
-                                  isCompareSelected
-                                    ? "bg-emerald-500/10 border border-emerald-500/30 text-[color:var(--panel-text)] font-medium"
-                                    : "hover:bg-[color:var(--surface-hover)]/60 text-[color:var(--panel-text)] opacity-80"
-                                }`}
+                                className={`w-full flex items-center justify-between p-2 rounded-xl text-xs transition-colors text-left ${isSingleSelected
+                                    ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-semibold"
+                                    : "hover:bg-[color:var(--surface-hover)]/60 text-[color:var(--panel-text)]"
+                                  }`}
                               >
                                 <div className="flex items-center gap-2 min-w-0">
-                                  {isCompareSelected ? (
-                                    <CheckSquare className="w-4 h-4 text-emerald-500 shrink-0" />
-                                  ) : (
-                                    <Square className="w-4 h-4 text-[color:var(--muted-text)] shrink-0" />
-                                  )}
+                                  <Building2 className="w-3.5 h-3.5 opacity-60 shrink-0" />
                                   <span className="truncate">{b.ner}</span>
                                 </div>
-                                {b.tootToo != null && (
-                                  <span className="text-[10px] text-[color:var(--muted-text)] shrink-0 ml-2">
-                                    {b.tootToo} тоот
-                                  </span>
+                                {isSingleSelected && (
+                                  <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                                 )}
                               </button>
                             );
-                          }
-
-                          return (
-                            <button
-                              key={bId}
-                              type="button"
-                              onClick={() => {
-                                setSelectedBuildingId(bId);
-                                setBuildingFilterMode("single");
-                                setBuildingDropdownOpen(false);
-                              }}
-                              className={`w-full flex items-center justify-between p-2 rounded-xl text-xs transition-colors text-left ${
-                                isSingleSelected
-                                  ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-semibold"
-                                  : "hover:bg-[color:var(--surface-hover)]/60 text-[color:var(--panel-text)]"
-                              }`}
-                            >
-                              <div className="flex items-center gap-2 min-w-0">
-                                <Building2 className="w-3.5 h-3.5 opacity-60 shrink-0" />
-                                <span className="truncate">{b.ner}</span>
-                              </div>
-                              {isSingleSelected && (
-                                <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                              )}
-                            </button>
-                          );
-                        })}
-                    </div>
-
-                    {buildingFilterMode === "compare" && (
-                      <div className="pt-2 mt-2 border-t border-[color:var(--panel-text)]/10">
-                        <button
-                          type="button"
-                          onClick={() => setBuildingDropdownOpen(false)}
-                          className="w-full py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-medium text-xs shadow-sm transition-colors text-center"
-                        >
-                          Харьцуулалт харах ({compareBuildingIds.length})
-                        </button>
+                          })}
                       </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
 
-          <h1 className="text-2xl font-bold text-[color:var(--panel-text)] leading-tight">
-            Сайн байна уу{ajiltan?.ner ? `, ${ajiltan.ner}` : ""}
-          </h1>
-        </div>
-        <div
-          id="khynalt-stats"
-          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-8 pr-4 w-full flex-shrink-0"
-        >
-          {kpiCards.map((card, index) => {
-            const Icon = (card as any).icon;
-            const CardContent = (
-              <div className="h-full min-h-[110px] flex flex-col transition-shadow duration-200">
-                <div className="flex items-start justify-between mb-2 flex-shrink-0">
-                  <h3 className="text-sm font-medium text-[color:var(--panel-text)] opacity-80 truncate pr-2">
-                    {card.title}
-                  </h3>
-                  {Icon &&
-                    (() => {
-                      const stops = kpiIconGradientStops[
-                        (card as { color: string }).color
-                      ] ?? ["#64748b", "#64748b"];
-                      const gradId = `kpi-icon-grad-${index}`;
-                      return (
-                        <div className="relative flex-shrink-0 w-5 h-5 flex items-center justify-center">
-                          <svg
-                            width="0"
-                            height="0"
-                            className="absolute"
-                            aria-hidden
+                      {buildingFilterMode === "compare" && (
+                        <div className="pt-2 mt-2 border-t border-[color:var(--panel-text)]/10">
+                          <button
+                            type="button"
+                            onClick={() => setBuildingDropdownOpen(false)}
+                            className="w-full py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-medium text-xs shadow-sm transition-colors text-center"
                           >
-                            <defs>
-                              <linearGradient
-                                id={gradId}
-                                x1="0%"
-                                y1="0%"
-                                x2="100%"
-                                y2="100%"
-                              >
-                                <stop offset="0%" stopColor={stops[0]} />
-                                <stop offset="100%" stopColor={stops[1]} />
-                              </linearGradient>
-                            </defs>
-                          </svg>
-                          <Icon
-                            className="w-5 h-5"
-                            stroke={`url(#${gradId})`}
-                          />
-                        </div>
-                      );
-                    })()}
-                </div>
-                <div className="flex-1 flex flex-col justify-end min-h-0">
-                  <p className="text-[1.35rem] font-bold text-[color:var(--panel-text)] leading-none tracking-tight tabular-nums whitespace-nowrap overflow-hidden text-ellipsis">
-                    {card.value}
-                  </p>
-                  <p className="text-xs text-[color:var(--muted-text)] mt-1 min-h-[1.25rem] leading-tight">
-                    {(card as { subtitle?: string }).subtitle ?? "\u00a0"}
-                  </p>
-                </div>
-              </div>
-            );
-
-            const className = `neu-panel allow-overflow rounded-2xl p-4 transition-all duration-300 cursor-pointer flex-shrink-0 hover:scale-[1.02] hover:shadow-lg h-full min-h-[110px] ${
-              mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-            }`;
-            const style = {
-              transitionDelay: `${card.delay}ms`,
-              willChange: "opacity, transform",
-            };
-
-            if (card.href) {
-              return (
-                <Link
-                  key={index}
-                  href={card.href}
-                  className={className}
-                  style={style}
-                >
-                  {CardContent}
-                </Link>
-              );
-            }
-
-            return (
-              <div key={index} className={className} style={style}>
-                {CardContent}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* 🏢 Барилгуудын харьцуулалт & Гүйцэтгэлийн секц */}
-        {buildingFilterMode === "compare" && buildingComparisonData && buildingComparisonData.length > 0 && (
-          <div
-            id="khynalt-building-comparison-section"
-            className="neu-panel allow-overflow rounded-3xl p-5 mb-6 pr-4 mr-4 transition-all duration-500 flex flex-col space-y-4"
-          >
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[color:var(--panel-text)]/10">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-2xl bg-emerald-500/10 flex items-center justify-center shrink-0">
-                  <BarChart3 className="w-5 h-5 text-emerald-500" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-[color:var(--panel-text)] leading-snug">
-                    Барилгуудын гүйцэтгэлийн харьцуулалт
-                  </h3>
-                  <p className="text-xs text-[color:var(--muted-text)]">
-                    {buildingComparisonData.length} барилгын нэхэмжилсэн, цуглуулсан болон авлагын харьцуулсан үзүүлэлт ({rangeStart} — {rangeEnd})
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 text-xs text-[color:var(--muted-text)] flex-wrap">
-                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-md bg-blue-500/70 inline-block" /> Нэхэмжилсэн</span>
-                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-md bg-emerald-500/70 inline-block" /> Цуглуулсан</span>
-                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-md bg-red-500/70 inline-block" /> Үлдэгдэл</span>
-              </div>
-            </div>
-
-            {/* Харьцуулсан Баганан График */}
-            {buildingComparisonChartData && (
-              <div className="h-[280px] w-full relative">
-                <Bar
-                  data={buildingComparisonChartData as any}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: { mode: "index", intersect: false },
-                    plugins: {
-                      legend: { display: false },
-                      tooltip: {
-                        backgroundColor: "rgba(15, 23, 42, 0.9)",
-                        titleColor: "#fff",
-                        bodyColor: "#e2e8f0",
-                        padding: 12,
-                        cornerRadius: 8,
-                        callbacks: {
-                          label: (ctx) => `${ctx.dataset.label}: ${Number(ctx.raw || 0).toLocaleString()} ₮`,
-                        },
-                      },
-                    },
-                    scales: {
-                      x: { ticks: { color: chartColors.text }, grid: { display: false } },
-                      y: {
-                        ticks: { color: chartColors.text },
-                        grid: { color: chartColors.grid, tickBorderDash: [5, 5] },
-                        beginAtZero: true,
-                      },
-                    },
-                  }}
-                />
-              </div>
-            )}
-
-            {/* Барилга тус бүрийн картууд & Гүйцэтгэлийн хувь */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pt-2">
-              {buildingComparisonData.map((b) => (
-                <div
-                  key={b.id}
-                  className="p-4 rounded-2xl border border-[color:var(--panel-text)]/10 bg-[color:var(--surface-hover)]/20 hover:bg-[color:var(--surface-hover)]/40 transition-all flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <span className="font-semibold text-sm text-[color:var(--panel-text)] truncate">{b.name}</span>
-                      <span
-                        className={`text-[11px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${
-                          b.rate >= 80
-                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
-                            : b.rate >= 50
-                            ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
-                            : "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20"
-                        }`}
-                      >
-                        {b.rate}% гүйцэтгэл
-                      </span>
-                    </div>
-
-                    {/* Прогресс бар */}
-                    <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden mb-3">
-                      <div
-                        className={`h-full rounded-full transition-all duration-700 ${
-                          b.rate >= 80 ? "bg-emerald-500" : b.rate >= 50 ? "bg-amber-500" : "bg-red-500"
-                        }`}
-                        style={{ width: `${Math.min(100, Math.max(0, b.rate))}%` }}
-                      />
-                    </div>
-
-                    <div className="space-y-1 text-xs">
-                      <div className="flex justify-between text-[color:var(--muted-text)]">
-                        <span>Нэхэмжилсэн:</span>
-                        <span className="font-medium text-[color:var(--panel-text)]">{formatCurrency(b.monthlyBilled)}</span>
-                      </div>
-                      <div className="flex justify-between text-[color:var(--muted-text)]">
-                        <span>Цуглуулсан:</span>
-                        <span className="font-medium text-emerald-600 dark:text-emerald-400">{formatCurrency(b.monthlyPaid)}</span>
-                      </div>
-                      <div className="flex justify-between text-[color:var(--muted-text)]">
-                        <span>Үлдэгдэл:</span>
-                        <span className="font-medium text-red-500">{formatCurrency(b.monthlyUnpaid)}</span>
-                      </div>
-                      {b.overdueTotal > 0 && (
-                        <div className="flex justify-between text-[11px] text-amber-600 dark:text-amber-400 pt-1 border-t border-[color:var(--panel-text)]/5">
-                          <span>2+ сар төлөөгүй:</span>
-                          <span className="font-semibold">{formatNumber(b.overdueTotal, 0)}</span>
+                            Харьцуулалт харах ({compareBuildingIds.length})
+                          </button>
                         </div>
                       )}
                     </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedBuildingId(b.id);
-                      setBuildingFilterMode("single");
-                    }}
-                    className="mt-3 w-full py-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 rounded-xl border border-emerald-500/20 transition-colors text-center"
-                  >
-                    Энэ барилгыг дэлгэрүүлж харах →
-                  </button>
+                  )}
                 </div>
-              ))}
+              )}
             </div>
+
+            <h1 className="text-2xl font-bold text-[color:var(--panel-text)] leading-tight">
+              Сайн байна уу{ajiltan?.ner ? `, ${ajiltan.ner}` : ""}
+            </h1>
           </div>
-        )}
-
-        <div className="w-full min-w-0 pr-4 py-2 space-y-5">
-          <div className="flex flex-row flex-nowrap items-center justify-center gap-8 sm:gap-12 py-1 text-sm text-[color:var(--panel-text)]">
-            <span className="inline-flex items-center gap-2 whitespace-nowrap">
-              <span
-                className="h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-500"
-                aria-hidden
-              />
-              Гүйцэтгэл
-            </span>
-            <span className="inline-flex items-center gap-2 whitespace-nowrap">
-              <span
-                className="h-2.5 w-2.5 shrink-0 rounded-full bg-red-500"
-                aria-hidden
-              />
-              Төлөөгүй
-            </span>
-            <span className="inline-flex items-center gap-2 whitespace-nowrap">
-              <span
-                className="h-2.5 w-2.5 shrink-0 rounded-full bg-slate-400"
-                aria-hidden
-              />
-              Дүн
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 w-full min-w-0 items-stretch">
-            <div
-              id="khynalt-income-chart"
-              className={`neu-panel allow-overflow rounded-3xl p-5 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col h-[300px] ${
-                mounted
-                  ? "opacity-100 translate-y-0"
-                  : "opacity-0 translate-y-4"
-              }`}
-              style={{
-                transitionDelay: "600ms",
-                willChange: "opacity, box-shadow",
-              }}
-            >
-              <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200">
-                <div className="mb-2 flex shrink-0 flex-row flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                  <h3 className="text-lg font-medium leading-snug text-[color:var(--panel-text)] shrink-0">
-                    Орлого
-                  </h3>
-                </div>
-                <div className="relative min-h-0 flex-1 w-full">
-                  <Line
-                    data={incomeLineData as any}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      interaction: {
-                        mode: "index",
-                        intersect: false,
-                      },
-                      plugins: {
-                        legend: { display: false },
-                        title: { display: false },
-                        tooltip: {
-                          backgroundColor: "rgba(15, 23, 42, 0.9)",
-                          titleColor: "#fff",
-                          bodyColor: "#e2e8f0",
-                          borderColor: "rgba(255,255,255,0.1)",
-                          borderWidth: 1,
-                          padding: 12,
-                          cornerRadius: 8,
-                          usePointStyle: true,
-                        },
-                      },
-                      scales: {
-                        x: {
-                          ticks: {
-                            color: chartColors.text,
-                            // Өдрөөр бүлэглэхэд шошго олон болдог тул
-                            // автоматаар алгасаж, уншигдахуйц тоогоор
-                            // хязгаарлана
-                            autoSkip: true,
-                            maxTicksLimit: 12,
-                            maxRotation: 0,
-                          },
-                          grid: { display: false },
-                        },
-                        y: {
-                          ticks: { color: chartColors.text },
-                          grid: {
-                            color: chartColors.grid,
-                            tickBorderDash: [5, 5],
-                          },
-                          beginAtZero: true,
-                        },
-                      },
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div
-              id="khynalt-receivable-chart"
-              className={`neu-panel allow-overflow rounded-3xl p-5 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col h-[300px] ${
-                mounted
-                  ? "opacity-100 translate-y-0"
-                  : "opacity-0 translate-y-4"
-              }`}
-              style={{
-                transitionDelay: "700ms",
-                willChange: "opacity, box-shadow",
-              }}
-            >
-              <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200">
-                <div className="mb-2 flex shrink-0 flex-row flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                  <h3 className="text-lg font-medium leading-snug text-[color:var(--panel-text)] shrink-0">
-                    Авлага
-                  </h3>
-                  <p className="min-w-0 max-w-full text-right text-sm leading-snug text-[color:var(--muted-text)] tabular-nums sm:max-w-[70%] sm:whitespace-nowrap">
-                    {huurimtlagdsanAvlaga.count} Оршин суугч /{" "}
-                    {formatCurrency(huurimtlagdsanAvlaga.total)}
-                  </p>
-                </div>
-                <div className="relative min-h-0 flex-1 w-full">
-                  <Line
-                    data={huurimtlagdsanAvlagaLineChart.chartData as any}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      interaction: {
-                        mode: "index",
-                        intersect: false,
-                      },
-                      plugins: {
-                        legend: { display: false },
-                        title: { display: false },
-                        tooltip: {
-                          backgroundColor: "rgba(15, 23, 42, 0.9)",
-                          titleColor: "#fff",
-                          bodyColor: "#e2e8f0",
-                          borderColor: "rgba(255,255,255,0.1)",
-                          borderWidth: 1,
-                          padding: 12,
-                          cornerRadius: 8,
-                          usePointStyle: true,
-                          callbacks: {
-                            title: (items) => {
-                              const idx = items[0]?.dataIndex;
-                              if (idx == null) return "";
-                              return huurimtlagdsanAvlagaLineChart.tooltipTitleAt(
-                                idx,
-                              );
-                            },
-                          },
-                        },
-                      },
-                      scales: {
-                        x: {
-                          ticks: { color: chartColors.text, maxRotation: 45 },
-                          grid: { display: false },
-                        },
-                        y: {
-                          ticks: { color: chartColors.text },
-                          grid: {
-                            color: chartColors.grid,
-                            tickBorderDash: [5, 5],
-                          },
-                          beginAtZero: true,
-                        },
-                      },
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Payment Summary Bar Chart */}
-            <div
-              id="khynalt-summary-chart"
-              className={`neu-panel allow-overflow rounded-3xl p-5 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col h-[300px] ${
-                mounted
-                  ? "opacity-100 translate-y-0"
-                  : "opacity-0 translate-y-4"
-              }`}
-              style={{
-                transitionDelay: "800ms",
-                willChange: "opacity, box-shadow",
-              }}
-            >
-              <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200">
-                <div className="mb-2 flex shrink-0 flex-row flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                  <h3 className="text-lg font-medium leading-snug text-[color:var(--panel-text)] shrink-0">
-                    Төлбөрийн хураангуй
-                  </h3>
-                  <p className="min-w-0 max-w-full text-right text-sm leading-snug text-[color:var(--muted-text)] tabular-nums sm:max-w-[70%] sm:whitespace-nowrap">
-                    Нийт гүйцэтгэл: {formatCurrency(incomeTotals.paid)}
-                  </p>
-                </div>
-                <div className="relative min-h-0 flex-1 w-full">
-                  <Bar
-                    data={tulburSummaryChartData as any}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      interaction: {
-                        mode: "index",
-                        intersect: false,
-                      },
-                      plugins: {
-                        legend: { display: false },
-                        title: { display: false },
-                        tooltip: {
-                          backgroundColor: "rgba(15, 23, 42, 0.9)",
-                          titleColor: "#fff",
-                          bodyColor: "#e2e8f0",
-                          borderColor: "rgba(255,255,255,0.1)",
-                          borderWidth: 1,
-                          padding: 12,
-                          cornerRadius: 8,
-                          usePointStyle: true,
-                        },
-                      },
-                      scales: {
-                        x: {
-                          ticks: { color: chartColors.text },
-                          grid: { display: false },
-                        },
-                        y: {
-                          ticks: { color: chartColors.text },
-                          grid: {
-                            color: chartColors.grid,
-                            tickBorderDash: [5, 5],
-                          },
-                          beginAtZero: true,
-                        },
-                      },
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Төлөлтийн түүх */}
           <div
-            id="khynalt-payment-history"
-            className={`neu-panel allow-overflow rounded-3xl p-5 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col ${
-              mounted
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-4"
-            }`}
-            style={{
-              transitionDelay: "900ms",
-              willChange: "opacity, box-shadow",
-            }}
+            id="khynalt-stats"
+            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-4 pr-4 w-full flex-shrink-0"
           >
-            <div className="flex flex-col flex-1 min-h-0">
-              {/* Толгой */}
-              <div className="mb-3 flex flex-row items-start justify-between flex-wrap gap-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-2xl bg-emerald-500/10 flex items-center justify-center shrink-0">
-                    <Wallet className="w-[18px] h-[18px] text-emerald-500" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-medium leading-snug text-[color:var(--panel-text)]">
-                      Төлөлтийн түүх
+            {kpiCards.map((card, index) => {
+              const Icon = (card as any).icon;
+              const CardContent = (
+                <div className="h-full flex flex-col transition-shadow duration-200">
+                  <div className="flex items-start justify-between mb-1 flex-shrink-0">
+                    <h3 className="text-xs text-[color:var(--panel-text)] opacity-80 truncate pr-2">
+                      {card.title}
                     </h3>
-                    <p className="text-[11px] text-[color:var(--muted-text)] leading-tight">
-                      Мэдэгдлээр · {rangeStart} — {rangeEnd}
+                    {Icon &&
+                      (() => {
+                        const stops = kpiIconGradientStops[
+                          (card as { color: string }).color
+                        ] ?? ["#64748b", "#64748b"];
+                        const gradId = `kpi-icon-grad-${index}`;
+                        return (
+                          <div className="relative flex-shrink-0 w-4 h-4 flex items-center justify-center">
+                            <svg
+                              width="0"
+                              height="0"
+                              className="absolute"
+                              aria-hidden
+                            >
+                              <defs>
+                                <linearGradient
+                                  id={gradId}
+                                  x1="0%"
+                                  y1="0%"
+                                  x2="100%"
+                                  y2="100%"
+                                >
+                                  <stop offset="0%" stopColor={stops[0]} />
+                                  <stop offset="100%" stopColor={stops[1]} />
+                                </linearGradient>
+                              </defs>
+                            </svg>
+                            <Icon
+                              className="w-4 h-4"
+                              stroke={`url(#${gradId})`}
+                            />
+                          </div>
+                        );
+                      })()}
+                  </div>
+                  <div className="flex-1 flex flex-col justify-end min-h-0">
+                    <p className="text-base font-medium text-[color:var(--panel-text)] leading-none tracking-tight tabular-nums whitespace-nowrap overflow-hidden text-ellipsis">
+                      {card.value}
+                    </p>
+                    <p className="text-[11px] text-[color:var(--muted-text)] mt-0.5 leading-tight">
+                      {(card as { subtitle?: string }).subtitle ?? "\u00a0"}
                     </p>
                   </div>
                 </div>
+              );
 
-                <div className="flex items-center gap-2">
-                  {paymentTotal !== null && (
-                    <span className="text-xs px-2.5 py-1 rounded-2xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 font-semibold whitespace-nowrap">
-                      {paymentTotal.toLocaleString()}₮
-                    </span>
-                  )}
-                  <span className="text-xs bg-slate-100 dark:bg-white/10 px-2.5 py-1 rounded-2xl text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                    {paymentHistory.length} төлөлт
-                  </span>
+              const className = `neu-panel allow-overflow rounded-2xl p-3 transition-all duration-300 cursor-pointer flex-shrink-0 hover:scale-[1.02] hover:shadow-lg h-full ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+                }`;
+              const style = {
+                transitionDelay: `${card.delay}ms`,
+                willChange: "opacity, transform",
+              };
+
+              if (card.href) {
+                return (
+                  <Link
+                    key={index}
+                    href={card.href}
+                    className={className}
+                    style={style}
+                  >
+                    {CardContent}
+                  </Link>
+                );
+              }
+
+              return (
+                <div key={index} className={className} style={style}>
+                  {CardContent}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* 🏢 Барилгуудын харьцуулалт & Гүйцэтгэлийн секц */}
+          {buildingFilterMode === "compare" && buildingComparisonData && buildingComparisonData.length > 0 && (
+            <div
+              id="khynalt-building-comparison-section"
+              className="neu-panel allow-overflow rounded-3xl p-5 mb-6 pr-4 mr-4 transition-all duration-500 flex flex-col space-y-4"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[color:var(--panel-text)]/10">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-2xl bg-emerald-500/10 flex items-center justify-center shrink-0">
+                    <BarChart3 className="w-5 h-5 text-emerald-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-[color:var(--panel-text)] leading-snug">
+                      Барилгуудын гүйцэтгэлийн харьцуулалт
+                    </h3>
+                    <p className="text-xs text-[color:var(--muted-text)]">
+                      {buildingComparisonData.length} барилгын нэхэмжилсэн, цуглуулсан болон авлагын харьцуулсан үзүүлэлт ({rangeStart} — {rangeEnd})
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 text-xs text-[color:var(--muted-text)] flex-wrap">
+                  <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-md bg-blue-500/70 inline-block" /> Нэхэмжилсэн</span>
+                  <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-md bg-emerald-500/70 inline-block" /> Цуглуулсан</span>
+                  <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-md bg-red-500/70 inline-block" /> Үлдэгдэл</span>
                 </div>
               </div>
 
-              {/* Хайлт — жагсаалт урт болоход тоот/нэрээр шүүнэ */}
-              {paymentHistory.length > 0 && (
-                <div className="relative mb-3">
-                  <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--muted-text)]" />
-                  <input
-                    value={paymentQuery}
-                    onChange={(e) => setPaymentQuery(e.target.value)}
-                    placeholder="Тоот, нэр, утсаар хайх..."
-                    className="w-full h-9 pl-9 pr-3 text-xs rounded-xl bg-[color:var(--surface-hover)]/40 border border-[color:var(--panel-text)]/10 text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] focus:outline-none focus:border-emerald-500/50 transition-colors"
+              {/* Харьцуулсан Баганан График */}
+              {buildingComparisonChartData && (
+                <div className="h-[280px] w-full relative">
+                  <Bar
+                    data={buildingComparisonChartData as any}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      interaction: { mode: "index", intersect: false },
+                      plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                          backgroundColor: "rgba(15, 23, 42, 0.9)",
+                          titleColor: "#fff",
+                          bodyColor: "#e2e8f0",
+                          padding: 12,
+                          cornerRadius: 8,
+                          callbacks: {
+                            label: (ctx) => `${ctx.dataset.label}: ${Number(ctx.raw || 0).toLocaleString()} ₮`,
+                          },
+                        },
+                      },
+                      scales: {
+                        x: { ticks: { color: chartColors.text }, grid: { display: false } },
+                        y: {
+                          ticks: { color: chartColors.text },
+                          grid: { color: chartColors.grid, tickBorderDash: [5, 5] },
+                          beginAtZero: true,
+                        },
+                      },
+                    }}
                   />
                 </div>
               )}
 
-              {/* Жагсаалт — хүснэгт хэлбэрээр.
+              {/* Барилга тус бүрийн картууд & Гүйцэтгэлийн хувь */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pt-2">
+                {buildingComparisonData.map((b) => (
+                  <div
+                    key={b.id}
+                    className="p-4 rounded-2xl border border-[color:var(--panel-text)]/10 bg-[color:var(--surface-hover)]/20 hover:bg-[color:var(--surface-hover)]/40 transition-all flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span className="font-semibold text-sm text-[color:var(--panel-text)] truncate">{b.name}</span>
+                        <span
+                          className={`text-[11px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${b.rate >= 80
+                              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                              : b.rate >= 50
+                                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                                : "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20"
+                            }`}
+                        >
+                          {b.rate}% гүйцэтгэл
+                        </span>
+                      </div>
+
+                      {/* Прогресс бар */}
+                      <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden mb-3">
+                        <div
+                          className={`h-full rounded-full transition-all duration-700 ${b.rate >= 80 ? "bg-emerald-500" : b.rate >= 50 ? "bg-amber-500" : "bg-red-500"
+                            }`}
+                          style={{ width: `${Math.min(100, Math.max(0, b.rate))}%` }}
+                        />
+                      </div>
+
+                      <div className="space-y-1 text-xs">
+                        <div className="flex justify-between text-[color:var(--muted-text)]">
+                          <span>Нэхэмжилсэн:</span>
+                          <span className="font-medium text-[color:var(--panel-text)]">{formatCurrency(b.monthlyBilled)}</span>
+                        </div>
+                        <div className="flex justify-between text-[color:var(--muted-text)]">
+                          <span>Цуглуулсан:</span>
+                          <span className="font-medium text-emerald-600 dark:text-emerald-400">{formatCurrency(b.monthlyPaid)}</span>
+                        </div>
+                        <div className="flex justify-between text-[color:var(--muted-text)]">
+                          <span>Үлдэгдэл:</span>
+                          <span className="font-medium text-red-500">{formatCurrency(b.monthlyUnpaid)}</span>
+                        </div>
+                        {b.overdueTotal > 0 && (
+                          <div className="flex justify-between text-[11px] text-amber-600 dark:text-amber-400 pt-1 border-t border-[color:var(--panel-text)]/5">
+                            <span>2+ сар төлөөгүй:</span>
+                            <span className="font-semibold">{formatNumber(b.overdueTotal, 0)}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedBuildingId(b.id);
+                        setBuildingFilterMode("single");
+                      }}
+                      className="mt-3 w-full py-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 rounded-xl border border-emerald-500/20 transition-colors text-center"
+                    >
+                      Энэ барилгыг дэлгэрүүлж харах →
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="w-full min-w-0 pr-4 py-2 space-y-5">
+
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 w-full min-w-0 items-stretch">
+              <div
+                id="khynalt-income-chart"
+                className={`neu-panel allow-overflow rounded-3xl p-5 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col h-[300px] ${mounted
+                    ? "opacity-100 translate-y-0"
+                    : "opacity-0 translate-y-4"
+                  }`}
+                style={{
+                  transitionDelay: "600ms",
+                  willChange: "opacity, box-shadow",
+                }}
+              >
+                <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200">
+                  <div className="mb-2 flex shrink-0 flex-row flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                    <h3 className="text-lg font-medium leading-snug text-[color:var(--panel-text)] shrink-0">
+                      Орлого
+                    </h3>
+                  </div>
+                  <div className="relative min-h-0 flex-1 w-full">
+                    <Line
+                      data={incomeLineData as any}
+                      options={{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                          mode: "index",
+                          intersect: false,
+                        },
+                        plugins: {
+                          legend: { display: false },
+                          title: { display: false },
+                          tooltip: {
+                            backgroundColor: "rgba(15, 23, 42, 0.9)",
+                            titleColor: "#fff",
+                            bodyColor: "#e2e8f0",
+                            borderColor: "rgba(255,255,255,0.1)",
+                            borderWidth: 1,
+                            padding: 12,
+                            cornerRadius: 8,
+                            usePointStyle: true,
+                          },
+                        },
+                        scales: {
+                          x: {
+                            ticks: {
+                              color: chartColors.text,
+                              // Өдрөөр бүлэглэхэд шошго олон болдог тул
+                              // автоматаар алгасаж, уншигдахуйц тоогоор
+                              // хязгаарлана
+                              autoSkip: true,
+                              maxTicksLimit: 12,
+                              maxRotation: 0,
+                            },
+                            grid: { display: false },
+                          },
+                          y: {
+                            ticks: { color: chartColors.text },
+                            grid: {
+                              color: chartColors.grid,
+                              tickBorderDash: [5, 5],
+                            },
+                            beginAtZero: true,
+                          },
+                        },
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div
+                id="khynalt-receivable-chart"
+                className={`neu-panel allow-overflow rounded-3xl p-5 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col h-[300px] ${mounted
+                    ? "opacity-100 translate-y-0"
+                    : "opacity-0 translate-y-4"
+                  }`}
+                style={{
+                  transitionDelay: "700ms",
+                  willChange: "opacity, box-shadow",
+                }}
+              >
+                <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200">
+                  <div className="mb-2 flex shrink-0 flex-row flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                    <h3 className="text-lg font-medium leading-snug text-[color:var(--panel-text)] shrink-0">
+                      Авлага
+                    </h3>
+                    <p className="min-w-0 max-w-full text-right text-sm leading-snug text-[color:var(--muted-text)] tabular-nums sm:max-w-[70%] sm:whitespace-nowrap">
+                      {huurimtlagdsanAvlaga.count} Оршин суугч /{" "}
+                      {formatCurrency(huurimtlagdsanAvlaga.total)}
+                    </p>
+                  </div>
+                  <div className="relative min-h-0 flex-1 w-full">
+                    <Line
+                      data={huurimtlagdsanAvlagaLineChart.chartData as any}
+                      options={{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                          mode: "index",
+                          intersect: false,
+                        },
+                        plugins: {
+                          legend: { display: false },
+                          title: { display: false },
+                          tooltip: {
+                            backgroundColor: "rgba(15, 23, 42, 0.9)",
+                            titleColor: "#fff",
+                            bodyColor: "#e2e8f0",
+                            borderColor: "rgba(255,255,255,0.1)",
+                            borderWidth: 1,
+                            padding: 12,
+                            cornerRadius: 8,
+                            usePointStyle: true,
+                            callbacks: {
+                              title: (items) => {
+                                const idx = items[0]?.dataIndex;
+                                if (idx == null) return "";
+                                return huurimtlagdsanAvlagaLineChart.tooltipTitleAt(
+                                  idx,
+                                );
+                              },
+                            },
+                          },
+                        },
+                        scales: {
+                          x: {
+                            ticks: { color: chartColors.text, maxRotation: 45 },
+                            grid: { display: false },
+                          },
+                          y: {
+                            ticks: { color: chartColors.text },
+                            grid: {
+                              color: chartColors.grid,
+                              tickBorderDash: [5, 5],
+                            },
+                            beginAtZero: true,
+                          },
+                        },
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Payment Summary Bar Chart */}
+              <div
+                id="khynalt-summary-chart"
+                className={`neu-panel allow-overflow rounded-3xl p-5 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col h-[300px] ${mounted
+                    ? "opacity-100 translate-y-0"
+                    : "opacity-0 translate-y-4"
+                  }`}
+                style={{
+                  transitionDelay: "800ms",
+                  willChange: "opacity, box-shadow",
+                }}
+              >
+                <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200">
+                  <div className="mb-2 flex shrink-0 flex-row flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                    <h3 className="text-lg font-medium leading-snug text-[color:var(--panel-text)] shrink-0">
+                      Төлбөрийн хураангуй
+                    </h3>
+                    <p className="min-w-0 max-w-full text-right text-sm leading-snug text-[color:var(--muted-text)] tabular-nums sm:max-w-[70%] sm:whitespace-nowrap">
+                      Нийт гүйцэтгэл: {formatCurrency(incomeTotals.paid)}
+                    </p>
+                  </div>
+                  <div className="relative min-h-0 flex-1 w-full">
+                    <Bar
+                      data={tulburSummaryChartData as any}
+                      options={{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                          mode: "index",
+                          intersect: false,
+                        },
+                        plugins: {
+                          legend: { display: false },
+                          title: { display: false },
+                          tooltip: {
+                            backgroundColor: "rgba(15, 23, 42, 0.9)",
+                            titleColor: "#fff",
+                            bodyColor: "#e2e8f0",
+                            borderColor: "rgba(255,255,255,0.1)",
+                            borderWidth: 1,
+                            padding: 12,
+                            cornerRadius: 8,
+                            usePointStyle: true,
+                          },
+                        },
+                        scales: {
+                          x: {
+                            ticks: { color: chartColors.text },
+                            grid: { display: false },
+                          },
+                          y: {
+                            ticks: { color: chartColors.text },
+                            grid: {
+                              color: chartColors.grid,
+                              tickBorderDash: [5, 5],
+                            },
+                            beginAtZero: true,
+                          },
+                        },
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Төлөлтийн түүх */}
+            <div
+              id="khynalt-payment-history"
+              className={`neu-panel allow-overflow rounded-3xl p-5 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col ${mounted
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-4"
+                }`}
+              style={{
+                transitionDelay: "900ms",
+                willChange: "opacity, box-shadow",
+              }}
+            >
+              <div className="flex flex-col flex-1 min-h-0">
+                {/* Толгой */}
+                <div className="mb-3 flex flex-row items-start justify-between flex-wrap gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-2xl bg-emerald-500/10 flex items-center justify-center shrink-0">
+                      <Wallet className="w-[18px] h-[18px] text-emerald-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-medium leading-snug text-[color:var(--panel-text)]">
+                        Төлөлтийн түүх
+                      </h3>
+                      <p className="text-[11px] text-[color:var(--muted-text)] leading-tight">
+                        Мэдэгдлээр · {rangeStart} — {rangeEnd}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {paymentTotal !== null && (
+                      <span className="text-xs px-2.5 py-1 rounded-2xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 font-semibold whitespace-nowrap">
+                        {paymentTotal.toLocaleString()}₮
+                      </span>
+                    )}
+                    <span className="text-xs bg-slate-100 dark:bg-white/10 px-2.5 py-1 rounded-2xl text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                      {paymentHistory.length} төлөлт
+                    </span>
+                  </div>
+                </div>
+
+                {/* Хайлт — жагсаалт урт болоход тоот/нэрээр шүүнэ */}
+                {paymentHistory.length > 0 && (
+                  <div className="relative mb-3">
+                    <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--muted-text)]" />
+                    <input
+                      value={paymentQuery}
+                      onChange={(e) => setPaymentQuery(e.target.value)}
+                      placeholder="Тоот, нэр, утсаар хайх..."
+                      className="w-full h-9 pl-9 pr-3 text-xs rounded-xl bg-[color:var(--surface-hover)]/40 border border-[color:var(--panel-text)]/10 text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] focus:outline-none focus:border-emerald-500/50 transition-colors"
+                    />
+                  </div>
+                )}
+
+                {/* Жагсаалт — хүснэгт хэлбэрээр.
                   Өмнө нь өдрөөр бүлэглэсэн карт жагсаалт байсан нь мөр бүрийн
                   тоот/дүнг чөлөөт бичвэрээс уншиж харуулдаг, эрэмбэлэх,
                   харьцуулах боломжгүй байв. Одоо багана тус бүр өөрийн
                   талбартай (шинэ бичлэг дээр `toot`, `dun` шууд ирнэ). */}
-              <div className="overflow-x-auto pr-1 custom-scrollbar">
-                {medegdelLoading ? (
-                  <div className="space-y-2">
-                    {[0, 1, 2].map((i) => (
-                      <div
-                        key={i}
-                        className="h-[52px] rounded-2xl bg-[color:var(--surface-hover)]/40 animate-pulse"
-                      />
-                    ))}
-                  </div>
-                ) : filteredPaymentHistory.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-10 text-center">
-                    <div className="w-11 h-11 rounded-2xl bg-[color:var(--surface-hover)]/50 flex items-center justify-center mb-2.5">
-                      <Wallet className="w-5 h-5 text-[color:var(--muted-text)]" />
+                <div className="overflow-x-auto pr-1 custom-scrollbar">
+                  {medegdelLoading ? (
+                    <div className="space-y-2">
+                      {[0, 1, 2].map((i) => (
+                        <div
+                          key={i}
+                          className="h-[52px] rounded-2xl bg-[color:var(--surface-hover)]/40 animate-pulse"
+                        />
+                      ))}
                     </div>
-                    <p className="text-sm text-[color:var(--panel-text)]">
-                      {paymentQuery
-                        ? "Хайлтад тохирох төлөлт алга"
-                        : "Сонгосон хугацаанд төлөлт бүртгэгдээгүй"}
-                    </p>
-                    <p className="text-xs text-[color:var(--muted-text)] mt-0.5">
-                      {paymentQuery
-                        ? "Өөр түлхүүр үгээр хайж үзнэ үү"
-                        : "Огнооны мужаа өөрчилж үзнэ үү"}
-                    </p>
-                  </div>
-                ) : (
-                  <table className="w-full min-w-[720px] text-left">
-                    <thead>
-                      <tr className="text-[11px] uppercase tracking-wider text-[color:var(--muted-text)]">
-                        <th className="py-2 pr-3 font-medium">Оршин суугч</th>
-                        <th className="py-2 pr-3 font-medium">
-                          Гэрээний дугаар
-                        </th>
-                        <th className="py-2 pr-3 font-medium">Тоот</th>
-                        <th className="py-2 pr-3 font-medium">Дүн</th>
-                        <th className="py-2 pr-3 font-medium">Огноо, цаг</th>
-                        <th className="py-2 font-medium text-center">Үйлдэл</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {pagedPaymentHistory.map((item: any) => {
-                        // Шинэ бичлэг дээр талбар нь шууд ирнэ; хуучин дээр
-                        // мэдэгдлийн текстээс уншина.
-                        const dun =
-                          typeof item.dun === "number"
-                            ? item.dun
-                            : medegdelDun(item.message);
-                        const toot = item.toot || medegdelToot(item.message);
-                        const gereeniiDugaar =
-                          item.gereeniiDugaar ||
-                          item.orshinSuugchGereeniiDugaar ||
-                          "";
-                        return (
-                          <tr
-                            key={item._id}
-                            className="border-t border-[color:var(--panel-text)]/10 hover:bg-emerald-500/[0.04] transition-colors"
-                          >
-                            <td className="py-2.5 pr-3">
-                              <span
-                                className="text-[13px] text-[color:var(--panel-text)]"
-                                title={item.orshinSuugchUtas || undefined}
-                              >
-                                {item.orshinSuugchNer || "—"}
-                              </span>
-                            </td>
-                            <td className="py-2.5 pr-3">
-                              {gereeniiDugaar ? (
-                                <span className="inline-flex items-center gap-1.5">
-                                  <span className="text-[13px] text-[color:var(--panel-text)]">
-                                    {gereeniiDugaar}
+                  ) : filteredPaymentHistory.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-10 text-center">
+                      <div className="w-11 h-11 rounded-2xl bg-[color:var(--surface-hover)]/50 flex items-center justify-center mb-2.5">
+                        <Wallet className="w-5 h-5 text-[color:var(--muted-text)]" />
+                      </div>
+                      <p className="text-sm text-[color:var(--panel-text)]">
+                        {paymentQuery
+                          ? "Хайлтад тохирох төлөлт алга"
+                          : "Сонгосон хугацаанд төлөлт бүртгэгдээгүй"}
+                      </p>
+                      <p className="text-xs text-[color:var(--muted-text)] mt-0.5">
+                        {paymentQuery
+                          ? "Өөр түлхүүр үгээр хайж үзнэ үү"
+                          : "Огнооны мужаа өөрчилж үзнэ үү"}
+                      </p>
+                    </div>
+                  ) : (
+                    <table className="w-full min-w-[720px] text-left">
+                      <thead>
+                        <tr className="text-[11px] uppercase tracking-wider text-[color:var(--muted-text)]">
+                          <th className="py-2 pr-3 font-medium">Оршин суугч</th>
+                          <th className="py-2 pr-3 font-medium">
+                            Гэрээний дугаар
+                          </th>
+                          <th className="py-2 pr-3 font-medium">Тоот</th>
+                          <th className="py-2 pr-3 font-medium">Дүн</th>
+                          <th className="py-2 pr-3 font-medium">Огноо, цаг</th>
+                          <th className="py-2 font-medium text-center">Үйлдэл</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pagedPaymentHistory.map((item: any) => {
+                          // Шинэ бичлэг дээр талбар нь шууд ирнэ; хуучин дээр
+                          // мэдэгдлийн текстээс уншина.
+                          const dun =
+                            typeof item.dun === "number"
+                              ? item.dun
+                              : medegdelDun(item.message);
+                          const toot = item.toot || medegdelToot(item.message);
+                          const gereeniiDugaar =
+                            item.gereeniiDugaar ||
+                            item.orshinSuugchGereeniiDugaar ||
+                            "";
+                          return (
+                            <tr
+                              key={item._id}
+                              className="border-t border-[color:var(--panel-text)]/10 hover:bg-emerald-500/[0.04] transition-colors"
+                            >
+                              <td className="py-2.5 pr-3">
+                                <span
+                                  className="text-[13px] text-[color:var(--panel-text)]"
+                                  title={item.orshinSuugchUtas || undefined}
+                                >
+                                  {item.orshinSuugchNer || "—"}
+                                </span>
+                              </td>
+                              <td className="py-2.5 pr-3">
+                                {gereeniiDugaar ? (
+                                  <span className="inline-flex items-center gap-1.5">
+                                    <span className="text-[13px] text-[color:var(--panel-text)]">
+                                      {gereeniiDugaar}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      title="Хуулах"
+                                      onClick={() =>
+                                        dugaariigKhuulya(gereeniiDugaar)
+                                      }
+                                      className="text-[color:var(--muted-text)] hover:text-emerald-500 transition-colors"
+                                    >
+                                      {khuulsanDugaar === gereeniiDugaar ? (
+                                        <Check className="w-3.5 h-3.5 text-emerald-500" />
+                                      ) : (
+                                        <Copy className="w-3.5 h-3.5" />
+                                      )}
+                                    </button>
                                   </span>
-                                  <button
-                                    type="button"
-                                    title="Хуулах"
-                                    onClick={() =>
-                                      dugaariigKhuulya(gereeniiDugaar)
-                                    }
-                                    className="text-[color:var(--muted-text)] hover:text-emerald-500 transition-colors"
-                                  >
-                                    {khuulsanDugaar === gereeniiDugaar ? (
-                                      <Check className="w-3.5 h-3.5 text-emerald-500" />
-                                    ) : (
-                                      <Copy className="w-3.5 h-3.5" />
-                                    )}
-                                  </button>
-                                </span>
-                              ) : (
-                                <span className="text-[13px] text-[color:var(--muted-text)]">
-                                  —
-                                </span>
-                              )}
-                            </td>
-                            <td className="py-2.5 pr-3 text-[13px] text-[color:var(--panel-text)]">
-                              {toot || "—"}
-                            </td>
-                            <td className="py-2.5 pr-3 text-[13px] font-semibold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                              {dun !== null && dun !== undefined
-                                ? `${dun.toLocaleString()}₮`
-                                : "—"}
-                            </td>
-                            <td className="py-2.5 pr-3 text-[12px] text-[color:var(--muted-text)] whitespace-nowrap">
-                              {ognooTsagButen(item.createdAt || item.ognoo)}
-                            </td>
-                            <td className="py-2.5 text-center">
-                              <button
-                                type="button"
-                                title={
-                                  item.orshinSuugchId
-                                    ? "Оршин суугчийн бүх мэдээлэл"
-                                    : "Оршин суугч холбогдоогүй"
-                                }
-                                disabled={!item.orshinSuugchId}
-                                onClick={() =>
-                                  setKharakhOrshinSuugchId(
-                                    item.orshinSuugchId || null,
-                                  )
-                                }
-                                className="p-1.5 rounded-xl text-[color:var(--muted-text)] hover:text-emerald-600 hover:bg-emerald-500/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                                ) : (
+                                  <span className="text-[13px] text-[color:var(--muted-text)]">
+                                    —
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-2.5 pr-3 text-[13px] text-[color:var(--panel-text)]">
+                                {toot || "—"}
+                              </td>
+                              <td className="py-2.5 pr-3 text-[13px] font-semibold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                                {dun !== null && dun !== undefined
+                                  ? `${dun.toLocaleString()}₮`
+                                  : "—"}
+                              </td>
+                              <td className="py-2.5 pr-3 text-[12px] text-[color:var(--muted-text)] whitespace-nowrap">
+                                {ognooTsagButen(item.createdAt || item.ognoo)}
+                              </td>
+                              <td className="py-2.5 text-center">
+                                <button
+                                  type="button"
+                                  title={
+                                    item.orshinSuugchId
+                                      ? "Оршин суугчийн бүх мэдээлэл"
+                                      : "Оршин суугч холбогдоогүй"
+                                  }
+                                  disabled={!item.orshinSuugchId}
+                                  onClick={() =>
+                                    setKharakhOrshinSuugchId(
+                                      item.orshinSuugchId || null,
+                                    )
+                                  }
+                                  className="p-1.5 rounded-xl text-[color:var(--muted-text)] hover:text-emerald-600 hover:bg-emerald-500/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+
+                {/* Хуудаслалт — өмнө нь бүх мөрийг нэг дор гүйлгэдэг байсан */}
+                {!medegdelLoading && filteredPaymentHistory.length > 0 && (
+                  <StandardPagination
+                    current={paymentPage}
+                    total={filteredPaymentHistory.length}
+                    pageSize={paymentPageSize}
+                    pageSizeOptions={[10, 20, 50, 100, 500]}
+                    onChange={(page) => setPaymentPage(page)}
+                    onPageSizeChange={(size) => {
+                      setPaymentPageSize(size);
+                      setPaymentPage(1);
+                    }}
+                  />
                 )}
               </div>
-
-              {/* Хуудаслалт — өмнө нь бүх мөрийг нэг дор гүйлгэдэг байсан */}
-              {!medegdelLoading && filteredPaymentHistory.length > 0 && (
-                <StandardPagination
-                  current={paymentPage}
-                  total={filteredPaymentHistory.length}
-                  pageSize={paymentPageSize}
-                  pageSizeOptions={[10, 20, 50, 100]}
-                  onChange={(page) => setPaymentPage(page)}
-                  onPageSizeChange={(size) => {
-                    setPaymentPageSize(size);
-                    setPaymentPage(1);
-                  }}
-                />
-              )}
             </div>
           </div>
         </div>
       </div>
-    </div>
-    {/* Хүснэгтийн "нүд" товч — тухайн төлөлт хийсэн оршин суугчийн БҮХ
+      {/* Хүснэгтийн "нүд" товч — тухайн төлөлт хийсэн оршин суугчийн БҮХ
         мэдээллийг нэг модалаас харуулна (гэрээ, тоот, гишүүд, гүйлгээ). */}
-    <ResidentDetailModal
-      show={!!kharakhOrshinSuugchId}
-      onClose={() => setKharakhOrshinSuugchId(null)}
-      residentId={kharakhOrshinSuugchId}
-      token={token}
-      baiguullagiinId={ajiltan?.baiguullagiinId}
-    />
+      <ResidentDetailModal
+        show={!!kharakhOrshinSuugchId}
+        onClose={() => setKharakhOrshinSuugchId(null)}
+        residentId={kharakhOrshinSuugchId}
+        token={token}
+        baiguullagiinId={ajiltan?.baiguullagiinId}
+      />
     </>
   );
 }

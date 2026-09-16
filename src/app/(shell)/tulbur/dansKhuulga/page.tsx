@@ -682,25 +682,6 @@ export default function DansniiKhuulga() {
   return (
     <>
       <div className="flex flex-col pb-14">
-        <div className="flex items-center gap-3 mb-4">
-          {/* <motion.h1
-          initial={{ opacity: 0, y: -16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: "easeOut" }}
-          className="text-3xl  text-theme"
-        >
-          Дансны хуулга
-        </motion.h1> */}
-          {/* <div style={{ width: 100, height: 100 }} className="flex items-center">
-          <DotLottieReact
-            src="https://lottie.host/2fd97978-2462-4da6-ae45-e16cff8aa0e2/WS8rp6nk36.lottie"
-            loop
-            autoplay
-            style={{ width: "%", height: "100%" }}
-          />
-        </div> */}
-        </div>
-
         <div className="space-y-3">
           <div className="stat-cards-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             {stats.map((stat, idx) => (
