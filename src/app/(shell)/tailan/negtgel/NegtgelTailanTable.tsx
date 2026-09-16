@@ -7,12 +7,58 @@ export interface ZardalItem {
   ner?: string;
   turul?: string;
   dun: number;
+  tailbar?: string;
+  toot?: string;
+}
+
+export function isParkingCharge(name?: string, turul?: string): boolean {
+  const n = (name || "").trim().toLowerCase();
+  const t = (turul || "").trim().toLowerCase();
+  if (t === "зогсоол" || t === "гараж") return true;
+  if (!n) return false;
+  if (n.includes("зочны")) return false;
+  return n.includes("зогсоол") || n.includes("гараж");
+}
+
+export function extractParkingToot(z: { ner?: string; tailbar?: string; toot?: string }, fallbackToot?: string): string {
+  if (z.toot && String(z.toot).trim()) {
+    return String(z.toot).replace(/^тоот\s*[:#-]?\s*/i, "").trim();
+  }
+  const text = `${z.ner || ""} ${z.tailbar || ""}`.trim();
+  if (!text) return fallbackToot ? String(fallbackToot).trim() : "";
+
+  // 1. Matches "тоот: 101", "тоот 101", "тоот-101", "тоот #101", "(тоот 101)"
+  const m1 = text.match(/тоот\s*[:#-]?\s*([a-zA-Z0-9_\u0400-\u04FF-]+)/i);
+  if (m1 && m1[1]) {
+    return m1[1].replace(/[()]/g, "").trim();
+  }
+
+  // 2. Matches "(B1-02)" or "(12)" right after zogsool/garaj
+  const m2 = text.match(/(?:зогсоол|гараж)[^\d(]*\(([a-zA-Z0-9_\u0400-\u04FF-]+)\)/i);
+  if (m2 && m2[1]) {
+    const candidate = m2[1].trim();
+    if (!/^(нэхэмжлэх|авлага|бусад|төлбөр)/i.test(candidate)) {
+      return candidate.replace(/^тоот\s*[:#-]?\s*/i, "").trim();
+    }
+  }
+
+  // 3. Matches "зогсоол 12" or "гараж 12"
+  const m3 = text.match(/(?:зогсоол|гараж)\s+([a-zA-Z0-9_\u0400-\u04FF-]+)/i);
+  if (m3 && m3[1]) {
+    const candidate = m3[1].trim();
+    if (!/^(төлбөр|хураамж|авлага|сарын)/i.test(candidate)) {
+      return candidate.replace(/^тоот\s*[:#-]?\s*/i, "").trim();
+    }
+  }
+
+  return fallbackToot ? String(fallbackToot).trim() : "";
 }
 
 export interface AvlagaItem {
   ognoo: string;
   tailbar: string;
   tulukhDun: number;
+  toot?: string;
   zardluud?: ZardalItem[];
 }
 
@@ -79,6 +125,11 @@ export function NegtgelTailanTable({ data, loading, niitUldegdel }: NegtgelTaila
                         zName.length > 50; // Stricter length limit for headers
           
           if (isJunk) return; // Skip these completely as requested
+
+          // ЗОГСООЛ-ын төлбөрийг тоот бүрээр багана үүсгэхгүй, нэг "Зогсоол" баганад нэгтгэнэ
+          if (isParkingCharge(zName, z.turul)) {
+            zName = "Зогсоол";
+          }
 
           const key = `${ym}|${zName}`;
           if (!avlagaMap.has(key)) {
@@ -195,7 +246,9 @@ export function NegtgelTailanTable({ data, loading, niitUldegdel }: NegtgelTaila
         key: `group-${ym}`,
         label: ym,
         align: "center",
-          children: typesInMonth.map((assessment, subIdx) => ({
+        children: typesInMonth.map((assessment, subIdx) => {
+          const isParkingCol = assessment.tailbar === "Зогсоол";
+          return {
             key: `${ym}|${assessment.tailbar}`,
             label: (
               <div className="flex justify-center w-full">
@@ -206,7 +259,7 @@ export function NegtgelTailanTable({ data, loading, niitUldegdel }: NegtgelTaila
                 </Tooltip>
               </div>
             ),
-            width: 95,
+            width: isParkingCol ? 120 : 95,
             align: "right",
             onCell: () => ({
               className: subIdx === typesInMonth.length - 1 ? "!border-r-2 !border-r-slate-300 dark:!border-r-slate-800" : ""
@@ -215,37 +268,101 @@ export function NegtgelTailanTable({ data, loading, niitUldegdel }: NegtgelTaila
               className: subIdx === typesInMonth.length - 1 ? "!border-r-2 !border-r-slate-300 dark:!border-r-slate-800" : ""
             }),
             render: (_: any, record: NegtgelTailanItem) => {
-            let total = 0;
-            (record.avlaga || []).forEach((b) => {
-              if (b.ognoo?.slice(0, 7) === ym) {
-                const zardluud = Array.isArray(b.zardluud) && b.zardluud.length > 0
-                  ? b.zardluud
-                  : [{ ner: b.tailbar, dun: b.tulukhDun }];
+              if (isParkingCol) {
+                const tootMap = new Map<string, number>();
 
-                zardluud.forEach((z) => {
-                  if (z.dun <= 0) return;
-                  let zName = (z.ner || "").trim();
-                  const isJunk = !zName || 
-                                zName === "Нэхэмжлэх" || 
-                                zName === "Авлага" || 
-                                zName === "Авлага (Нэхэмжлэхгүй)" ||
-                                zName.length > 100;
-                  
-                  if (isJunk) zName = "Бусад";
-                  
-                  if (zName === assessment.tailbar) total += z.dun;
+                (record.avlaga || []).forEach((b) => {
+                  if (b.ognoo?.slice(0, 7) === ym) {
+                    const zardluud = Array.isArray(b.zardluud) && b.zardluud.length > 0
+                      ? b.zardluud
+                      : [{ ner: b.tailbar, dun: b.tulukhDun, toot: b.toot }];
+
+                    zardluud.forEach((z) => {
+                      if (z.dun <= 0) return;
+                      const zName = (z.ner || "").trim();
+                      if (isParkingCharge(zName, z.turul)) {
+                        const pToot = extractParkingToot(z, b.toot);
+                        tootMap.set(pToot, (tootMap.get(pToot) || 0) + z.dun);
+                      }
+                    });
+                  }
                 });
-              }
-            });
 
-            if (total <= 0) return "";
-            return (
-              <span className="text-[11px] text-black dark:text-white">
-                {formatNumber(total, 2)}
-              </span>
-            );
-          },
-        })),
+                if (tootMap.size === 0) return "";
+
+                const entries = Array.from(tootMap.entries());
+                const totalParkingDun = entries.reduce((s, [, d]) => s + d, 0);
+
+                const tooltipContent = (
+                  <div className="text-xs space-y-0.5">
+                    {entries.map(([pToot, pDun], idx) => (
+                      <div key={idx}>
+                        {pToot ? `${pToot} тоот: ` : "Зогсоол: "}{formatNumber(pDun, 2)}₮
+                      </div>
+                    ))}
+                    {entries.length > 1 && (
+                      <div className="font-semibold border-t border-gray-600 mt-1 pt-1">
+                        Нийт: {formatNumber(totalParkingDun, 2)}₮
+                      </div>
+                    )}
+                  </div>
+                );
+
+                return (
+                  <Tooltip title={tooltipContent}>
+                    <div className="flex flex-col items-end gap-0.5 w-full">
+                      {entries.map(([pToot, pDun], idx) => (
+                        <div key={idx} className="text-right whitespace-nowrap text-[11px] leading-tight">
+                          {pToot ? (
+                            <span className="text-[10px] text-slate-500 dark:text-slate-400 mr-1 font-normal">
+                              {pToot} тоот:
+                            </span>
+                          ) : null}
+                          <span className="text-black dark:text-white font-medium">
+                            {formatNumber(pDun, 2)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </Tooltip>
+                );
+              }
+
+              let total = 0;
+              (record.avlaga || []).forEach((b) => {
+                if (b.ognoo?.slice(0, 7) === ym) {
+                  const zardluud = Array.isArray(b.zardluud) && b.zardluud.length > 0
+                    ? b.zardluud
+                    : [{ ner: b.tailbar, dun: b.tulukhDun }];
+
+                  zardluud.forEach((z) => {
+                    if (z.dun <= 0) return;
+                    let zName = (z.ner || "").trim();
+                    const isJunk = !zName || 
+                                  zName === "Нэхэмжлэх" || 
+                                  zName === "Авлага" || 
+                                  zName === "Авлага (Нэхэмжлэхгүй)" ||
+                                  zName.length > 100;
+                    
+                    if (isJunk) zName = "Бусад";
+                    
+                    // Do not accumulate parking charges into regular columns
+                    if (isParkingCharge(zName, z.turul)) return;
+
+                    if (zName === assessment.tailbar) total += z.dun;
+                  });
+                }
+              });
+
+              if (total <= 0) return "";
+              return (
+                <span className="text-[11px] text-black dark:text-white">
+                  {formatNumber(total, 2)}
+                </span>
+              );
+            },
+          };
+        }),
       });
     });
 

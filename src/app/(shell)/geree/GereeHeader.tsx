@@ -11,7 +11,6 @@ import {
   Settings2,
   ChevronDown,
   Zap,
-  Tag,
 } from "lucide-react";
 import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
 import { hasPermission } from "@/lib/permissionUtils";
@@ -24,7 +23,6 @@ interface GereeHeaderProps {
     tab: "contracts" | "residents" | "employees" | "units" | "clients",
   ) => void;
   onShowMassKwtModal?: () => void;
-  onShowHongololtModal?: () => void;
   ortsOptions: string[];
   selectedOrts: string;
   setSelectedOrts: (val: string) => void;
@@ -90,7 +88,6 @@ export default function GereeHeader({
   onSendInvoices,
   onShowResidentModal,
   onShowMassKwtModal,
-  onShowHongololtModal,
   onShowClientModal,
   onExportResidentsExcel,
   onDownloadResidentsTemplate,
@@ -413,18 +410,6 @@ export default function GereeHeader({
                     >
                       <Zap className="w-5 h-5" />
                       <span className="hidden sm:inline text-xs">кВт заалт</span>
-                    </button>
-                  )}
-                  {onShowHongololtModal && (
-                    <button
-                      onClick={onShowHongololtModal}
-                      className="btn-minimal h-10 inline-flex items-center gap-2 text-amber-500 hover:text-amber-600"
-                      id="resident-hongololt-btn-top"
-                      aria-label="Хөнгөлөлт"
-                      title="Хөнгөлөлт оруулах"
-                    >
-                      <Tag className="w-5 h-5" />
-                      <span className="hidden sm:inline text-xs">Хөнгөлөлт</span>
                     </button>
                   )}
                   <div ref={desktopExcelRef} className="relative">

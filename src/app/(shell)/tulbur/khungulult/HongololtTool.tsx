@@ -45,13 +45,19 @@ interface DiscountHistoryRow {
   createdAt?: string;
 }
 
-interface HongololtModalProps {
-  show: boolean;
-  onClose: () => void;
+interface HongololtToolProps {
+  /** Модал горимд заавал. `inline` үед үл хэрэгсэнэ. */
+  show?: boolean;
+  onClose?: () => void;
   token: string;
   baiguullagiinId?: string;
   barilgiinId?: string;
   onSuccess?: () => void;
+  /**
+   * Хуудсан дээр байрлаж буй эсэх. Үнэн бол модалын бүрхүүлгүйгээр
+   * зөвхөн таб ба агуулгыг дүрсэлнэ.
+   */
+  inline?: boolean;
 }
 
 /* ─── Helpers ────────────────────────────────────────────────────────────── */
@@ -74,14 +80,15 @@ type HongololtTurul = "percent" | "amount";
 
 /* ─── Component ─────────────────────────────────────────────────────────── */
 
-export default function HongololtModal({
-  show,
+export default function HongololtTool({
+  show = false,
   onClose,
   token,
   baiguullagiinId,
   barilgiinId,
   onSuccess,
-}: HongololtModalProps) {
+  inline = false,
+}: HongololtToolProps) {
   const constraintsRef = React.useRef<HTMLDivElement | null>(null);
   const dragControls = useDragControls();
 
@@ -90,9 +97,16 @@ export default function HongololtModal({
 
   /* Left-panel form */
   const now = new Date();
-  const [selectedMonth, setSelectedMonth] = useState<string>(
-    `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
-  );
+  const ekhniiSar = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  /**
+   * Хөнгөлөх сар — turees шиг МУЖ. Нэг сар хөнгөлөхөд эхлэх/дуусахыг
+   * ижил үлдээнэ. Олон сар сонгосон тохиолдолд дүн нь сарын тоогоор
+   * үржинэ (`sariinToo`), turees-ийн `durationMultiplier`-тэй ижил.
+   */
+  const [selectedMonth, setSelectedMonth] = useState<string>(ekhniiSar);
+  const [duusakhSar, setDuusakhSar] = useState<string>(ekhniiSar);
+  /** Хөнгөлөлт ямар нөхцөлд үйлчлэхийг тэмдэглэнэ (тайлбарт бичигдэнэ). */
+  const [nukhtsul, setNukhtsul] = useState<string>("Түр");
   const [davkhar, setDavkhar] = useState("");
   const [hongololtTurul, setHongololtTurul] = useState<HongololtTurul>("percent");
   const [hongololtUtga, setHongololtUtga] = useState("");
@@ -113,7 +127,7 @@ export default function HongololtModal({
   /* Submitting */
   const [loading, setLoading] = useState(false);
 
-  useModalHotkeys({ isOpen: show, onClose });
+  useModalHotkeys({ isOpen: !inline && show, onClose: onClose ?? (() => {}) });
 
   /* ── Load residents ── */
   const loadResidents = useCallback(async () => {
@@ -181,7 +195,7 @@ export default function HongololtModal({
   }, [token, baiguullagiinId]);
 
   useEffect(() => {
-    if (show) {
+    if (inline || show) {
       loadResidents();
     } else {
       setResidents([]);
@@ -197,7 +211,7 @@ export default function HongololtModal({
   }, [show]);
 
   useEffect(() => {
-    if (show && activeTab === "tuukh") {
+    if ((inline || show) && activeTab === "tuukh") {
       loadHistory();
     }
   }, [show, activeTab]);
@@ -249,13 +263,25 @@ export default function HongololtModal({
   };
 
   /* ── Compute discount amount per resident ── */
+  /**
+   * Сонгосон мужид хэдэн сар багтаж байгаа. turees дээрх
+   * `durationMultiplier` — 8-р сараас 10-р сар = 3.
+   */
+  const sariinToo = React.useMemo(() => {
+    const [ey, em] = (selectedMonth || "").split("-").map(Number);
+    const [dy, dm] = (duusakhSar || "").split("-").map(Number);
+    if (!ey || !em || !dy || !dm) return 1;
+    const zuruu = (dy - ey) * 12 + (dm - em);
+    return zuruu >= 0 ? zuruu + 1 : 1;
+  }, [selectedMonth, duusakhSar]);
+
   const computeDiscount = (r: ResidentRow): number => {
     const val = parseFloat(hongololtUtga) || 0;
     if (hongololtTurul === "percent") {
       const base = r.turesiinOrlogo || 0;
-      return Math.round((base * val) / 100);
+      return Math.round((base * val) / 100) * sariinToo;
     }
-    return Math.round(val);
+    return Math.round(val) * sariinToo;
   };
 
   /* ── Summary ── */
@@ -327,7 +353,7 @@ export default function HongololtModal({
         `${successCount} оршин суугчид хөнгөлөлт амжилттай бүртгэгдлээ`
       );
       onSuccess?.();
-      if (errorCount === 0) onClose();
+      if (errorCount === 0) onClose?.();
     }
     if (errorCount > 0) {
       toast.error(
@@ -336,60 +362,14 @@ export default function HongololtModal({
     }
   };
 
-  if (!show) return null;
+  if (!inline && !show) return null;
 
-  /* ─── JSX ─────────────────────────────────────────────────────────────── */
-  return (
-    <AnimatePresence>
-      <ModalPortal>
-        <motion.div
-          ref={constraintsRef}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[12000] bg-black/40 backdrop-blur-xs flex items-center justify-center p-4"
-        >
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
-            drag
-            dragListener={false}
-            dragControls={dragControls}
-            dragConstraints={constraintsRef}
-            dragMomentum={false}
-            onClick={(e) => e.stopPropagation()}
-            className="w-full flex flex-col modal-surface rounded-2xl shadow-2xl text-sm relative overflow-hidden"
-            style={{ maxWidth: "1200px", maxHeight: "92vh" }}
-          >
-            {/* ── Header ── */}
-            <div
-              className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-200 dark:border-gray-700 cursor-move select-none shrink-0"
-              onPointerDown={(e) => dragControls.start(e)}
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-amber-500/15 flex items-center justify-center shrink-0">
-                  <Tag className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-base text-gray-900 dark:text-white leading-tight">
-                    Хөнгөлөлт
-                  </h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Оршин суугчдад хөнгөлөлт бүртгэх
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={loading}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
+  /**
+   * Таб ба агуулга — модал ба хуудас хоёулаа үүнийг хуваалцана.
+   * Ингэснээр нэг эх сурвалжтай үлдэж, зан төлөв зөрөхгүй.
+   */
+  const aguulga = (
+    <>
             {/* ── Tabs ── */}
             <div className="flex gap-1 px-6 pt-3 shrink-0">
               {(
@@ -558,7 +538,7 @@ export default function HongololtModal({
                   <div className="flex gap-2 shrink-0">
                     <button
                       type="button"
-                      onClick={onClose}
+                      onClick={() => onClose?.()}
                       disabled={loading}
                       className="flex-1 py-2 text-xs font-medium rounded-xl border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                     >
@@ -823,6 +803,68 @@ export default function HongololtModal({
                 </div>
               </div>
             )}
+    </>
+  );
+
+  // Хуудсан дээр байрлах үед модалын бүрхүүл (portal, дэвсгэр,
+  // чирэх толгой, хаах товч) шаардлагагүй.
+  if (inline) {
+    return <div className="flex flex-col">{aguulga}</div>;
+  }
+
+  /* ─── JSX ─────────────────────────────────────────────────────────────── */
+  return (
+    <AnimatePresence>
+      <ModalPortal>
+        <motion.div
+          ref={constraintsRef}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[12000] bg-black/40 backdrop-blur-xs flex items-center justify-center p-4"
+        >
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            drag
+            dragListener={false}
+            dragControls={dragControls}
+            dragConstraints={constraintsRef}
+            dragMomentum={false}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full flex flex-col modal-surface rounded-2xl shadow-2xl text-sm relative overflow-hidden"
+            style={{ maxWidth: "1200px", maxHeight: "92vh" }}
+          >
+            {/* ── Header ── */}
+            <div
+              className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-200 dark:border-gray-700 cursor-move select-none shrink-0"
+              onPointerDown={(e) => dragControls.start(e)}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/15 flex items-center justify-center shrink-0">
+                  <Tag className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-base text-gray-900 dark:text-white leading-tight">
+                    Хөнгөлөлт
+                  </h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Оршин суугчдад хөнгөлөлт бүртгэх
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={loading}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {aguulga}
           </motion.div>
         </motion.div>
       </ModalPortal>

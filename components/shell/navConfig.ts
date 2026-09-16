@@ -17,6 +17,7 @@ import {
   Megaphone,
   MessageSquare,
   Receipt,
+  Tag,
   ScrollText,
   SquareParking,
   Ticket,
@@ -69,6 +70,7 @@ export const NAV_ITEMS: NavItem[] = [
     submenu: [
       { label: "Гүйлгээний түүх", path: "guilgeeTuukh", icon: History },
       { label: "Дансны хуулга", path: "dansKhuulga", icon: Landmark },
+      { label: "Хөнгөлөлт", path: "khungulult", icon: Tag },
       { label: "И-баримт", path: "ebarimt", icon: Receipt },
     ],
   },
