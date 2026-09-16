@@ -73,6 +73,7 @@ export default function ChatWidget({ inline = false }: ChatWidgetProps): JSX.Ele
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const socketRef = useRef<Socket | null>(null);
   const prevMsgCountRef = useRef<number>(0);
+  const isInitializingRef = useRef<boolean>(false);
 
   const scrollToBottom = React.useCallback((smooth = true) => {
     if (messagesEndRef.current) {
@@ -232,6 +233,7 @@ export default function ChatWidget({ inline = false }: ChatWidgetProps): JSX.Ele
     setGuestId(gid || "");
     setConversation(null);
     setMessages([]);
+    isInitializingRef.current = false;
   }, [ajiltan?._id]);
 
   useEffect(() => {
@@ -337,15 +339,12 @@ export default function ChatWidget({ inline = false }: ChatWidgetProps): JSX.Ele
   };
 
   /**
-   * Системийн дэмжлэгийн харилцаа ҮҮСГЭНЭ.
-   *
-   * ЗӨВХӨН ажилтан үнэхээр мессеж илгээх (эсвэл оператор дуудах) үед л
-   * дуудагдана. Өмнө нь виджет нээгдмэгц дуудагддаг байсан тул "Оршин суугч"
-   * табыг нээхэд ч хоосон харилцаа үүсгээд, дэмжлэгийн талд хоосон чат
-   * хуримтлуулдаг байв.
+   * Системийн дэмжлэгийн харилцааг дуудах / үүсгэх.
+   * Хэрэв өмнөх харилцаа, мессеж байвал шууд татаж харуулна.
    */
   const initChat = async (): Promise<ConversationType | null> => {
-    if (!guestId) return null;
+    if (!guestId || isInitializingRef.current) return null;
+    isInitializingRef.current = true;
     try {
       setLoading(true);
       try {
@@ -367,22 +366,31 @@ export default function ChatWidget({ inline = false }: ChatWidgetProps): JSX.Ele
       setConversation(shine);
 
       const msgRes = await axios.get(`${BASE_API}/conversations/${shine.id}/messages?guestId=${guestId}`);
-      setMessages(msgRes.data.data);
+      setMessages(msgRes.data.data || []);
       return shine;
     } catch (err) {
       console.error("Failed to init chat", err);
       return null;
     } finally {
       setLoading(false);
+      isInitializingRef.current = false;
     }
   };
 
-  /** Харилцаа байхгүй бол энэ мөчид үүсгэнэ (lazy) */
+  /** Харилцаа байхгүй бол энэ мөчид үүсгэнэ (lazy fallback) */
   const kharilstaaBelenBolgoyo =
     async (): Promise<ConversationType | null> => {
       if (conversation) return conversation;
       return await initChat();
     };
+
+  // Чат цонх нээгдэх үед (модалын "Шууд чат" таб эсвэл виджет дээр)
+  // хэрэглэгч мессеж бичихийг хүлээлгүйгээр хуучин чатын түүх болон эхлэлийн цэсийг шууд дуудна.
+  useEffect(() => {
+    if ((isOpen || inline) && activeTab === "chat" && guestId && !conversation && !loading) {
+      initChat();
+    }
+  }, [isOpen, inline, activeTab, guestId, conversation, loading]);
 
   useEffect(() => {
     if (!conversation) return;
@@ -866,10 +874,21 @@ export default function ChatWidget({ inline = false }: ChatWidgetProps): JSX.Ele
                   </div>
                 )}
 
-                {messages.map((m) => {
+                {!loading && messages.length === 0 && (
+                  <div style={{ textAlign: "center", fontSize: "13px", color: "#64748b", marginTop: "40px", padding: "0 20px" }}>
+                    <p style={{ margin: "0 0 6px 0", fontWeight: "600", color: "#334155" }}>
+                      Сайн байна уу! 👋
+                    </p>
+                    <p style={{ margin: 0, fontSize: "12px", color: "#94a3b8" }}>
+                      Бидэнд асуух зүйл байвал мессеж илгээнэ үү эсвэл доорх цэснээс сонгоно уу.
+                    </p>
+                  </div>
+                )}
+
+                {messages.map((m, idx) => {
                   const isUser = m.role === "user";
                   return (
-                    <div key={m.id} style={{ display: "flex", justifyContent: isUser ? "flex-end" : "flex-start", alignItems: "flex-end", gap: "8px" }}>
+                    <div key={m.id || m._id || idx} style={{ display: "flex", justifyContent: isUser ? "flex-end" : "flex-start", alignItems: "flex-end", gap: "8px" }}>
                       {!isUser && (
                         <div
                           style={{

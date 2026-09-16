@@ -63,6 +63,7 @@ export default function MassKwtModal({
   const [residents, setResidents] = useState<ResidentUnitRow[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [excelMenuOpen, setExcelMenuOpen] = useState<boolean>(false);
+  const [bulkInputValue, setBulkInputValue] = useState<string>("");
 
   useModalHotkeys({ isOpen: show, onClose });
 
@@ -184,6 +185,20 @@ export default function MassKwtModal({
         prevInput.select();
       }
     }
+  };
+
+  // Apply same kWt to all residents
+  const handleApplyBulkValue = () => {
+    if (!bulkInputValue.trim()) return;
+    const num = parseFloat(bulkInputValue);
+    if (isNaN(num) || num < 0) {
+      toast.error("Ижил оруулах кВт утгаа зөв оруулна уу.");
+      return;
+    }
+    setResidents((prev) =>
+      prev.map((r) => ({ ...r, newKwt: String(num) }))
+    );
+    toast.success(`Бүх оршин суугчдад ${num} кВт утга тохирууллаа.`);
   };
 
   // Export Resident list with current kWt to Excel sheet
@@ -462,7 +477,35 @@ export default function MassKwtModal({
                   onChange={handleExcelImport}
                 />
 
+                <div className="h-4 w-px bg-gray-300 dark:bg-gray-700 mx-0.5" />
 
+                <div className="flex items-center gap-1.5">
+                  <div className="relative w-28 md:w-32">
+                    <input
+                      type="number"
+                      step="any"
+                      min="0"
+                      placeholder="Ижил кВт"
+                      value={bulkInputValue}
+                      onChange={(e) => setBulkInputValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleApplyBulkValue();
+                        }
+                      }}
+                      className="w-full px-2.5 py-1.5 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleApplyBulkValue}
+                    className="px-3 py-1.5 text-xs font-medium text-amber-800 dark:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 rounded-xl border border-amber-500/20 transition-colors cursor-pointer"
+                    title="Бүх оршин суугчид ижил утга оруулах"
+                  >
+                    <span>Бүгдэд</span>
+                  </button>
+                </div>
               </div>
             </div>
 

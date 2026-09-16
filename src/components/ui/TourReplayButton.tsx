@@ -1,7 +1,7 @@
 "use client";
 
 import { HelpCircle, X, EyeOff, RotateCcw, ChevronRight } from "lucide-react";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { useTour } from "@/context/TourContext";
 import useModalHotkeys from "@/lib/useModalHotkeys";
@@ -62,7 +62,20 @@ export default function TourReplayButton() {
     return found?.t ?? null;
   }, [pathname, tsonkhList]);
 
+  const menuRef = useRef<HTMLDivElement>(null);
+
   useModalHotkeys({ isOpen: open, onClose: () => setOpen(false) });
+
+  useEffect(() => {
+    if (!open) return;
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, [open]);
 
   useEffect(() => {
     const interacted = localStorage.getItem("tour-button-interacted");
@@ -93,82 +106,72 @@ export default function TourReplayButton() {
   return (
     <div className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-[1200] pointer-events-auto">
       <div className="relative flex flex-col items-end gap-3">
-        {/* Main Floating Button */}
-        <div 
-          className="relative flex items-center group"
-          onMouseEnter={() => !open && setShowLabel(true)}
-          onMouseLeave={() => !open && setShowLabel(false)}
-        >
-          <AnimatePresence>
-            {showLabel && !open && (
-              <motion.div
-                initial={{ opacity: 0, x: 20, scale: 0.8 }}
-                animate={{ opacity: 1, x: 0, scale: 1 }}
-                exit={{ opacity: 0, x: 20, scale: 0.8 }}
-                className="absolute right-full mr-3 px-4 py-2 rounded-2xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-white/20 shadow-2xl pointer-events-none whitespace-nowrap hidden md:block"
-              >
-                <span className="text-sm font-medium text-slate-900 dark:text-white flex items-center gap-2">
-                  {currentTsonkh?.ner ? `${currentTsonkh.ner} тусламж хэрэгтэй юу?` : "Ерөнхий тусламж хэрэгтэй юу?"} <span className="text-blue-500">👋</span>
-                </span>
-                <div className="absolute top-1/2 -right-1 -translate-y-1/2 w-2 h-2 rotate-45 bg-white/90 dark:bg-slate-900/90 border-r border-t border-white/20" />
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleClick}
-            className={`relative flex items-center justify-center h-14 w-14 md:h-12 md:w-12 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/20 transition-all overflow-hidden ${
-              open 
-                ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900" 
-                : "bg-white/80 dark:bg-slate-800/80 backdrop-blur-md text-slate-700 dark:text-slate-200"
-            }`}
+        {/* Main Floating Button - only shown when closed */}
+        {!open && (
+          <div 
+            className="relative flex items-center group"
+            onMouseEnter={() => setShowLabel(true)}
+            onMouseLeave={() => setShowLabel(false)}
           >
-            <AnimatePresence mode="wait">
-              {open ? (
+            <AnimatePresence>
+              {showLabel && (
                 <motion.div
-                  key="close"
-                  initial={{ rotate: -90, opacity: 0 }}
-                  animate={{ rotate: 0, opacity: 1 }}
-                  exit={{ rotate: 90, opacity: 0 }}
+                  initial={{ opacity: 0, x: 20, scale: 0.8 }}
+                  animate={{ opacity: 1, x: 0, scale: 1 }}
+                  exit={{ opacity: 0, x: 20, scale: 0.8 }}
+                  className="absolute right-full mr-3 px-4 py-2 rounded-2xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-white/20 shadow-2xl pointer-events-none whitespace-nowrap hidden md:block"
                 >
-                  <X className="w-6 h-6 md:w-5 md:h-5" />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="help"
-                  initial={{ rotate: 90, opacity: 0 }}
-                  animate={{ rotate: 0, opacity: 1 }}
-                  exit={{ rotate: -90, opacity: 0 }}
-                  className="relative"
-                >
-                  <HelpCircle className="w-6 h-6 md:w-5 md:h-5" />
-                  {!hasInteracted && (
-                    <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
-                    </span>
-                  )}
+                  <span className="text-sm font-medium text-slate-900 dark:text-white flex items-center gap-2">
+                    {currentTsonkh?.ner ? `${currentTsonkh.ner} тусламж хэрэгтэй юу?` : "Ерөнхий тусламж хэрэгтэй юу?"} <span className="text-blue-500">👋</span>
+                  </span>
+                  <div className="absolute top-1/2 -right-1 -translate-y-1/2 w-2 h-2 rotate-45 bg-white/90 dark:bg-slate-900/90 border-r border-t border-white/20" />
                 </motion.div>
               )}
             </AnimatePresence>
-          </motion.button>
-        </div>
+
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleClick}
+              className="relative flex items-center justify-center h-14 w-14 md:h-12 md:w-12 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/20 transition-all overflow-hidden bg-white/80 dark:bg-slate-800/80 backdrop-blur-md text-slate-700 dark:text-slate-200"
+            >
+              <div className="relative">
+                <HelpCircle className="w-6 h-6 md:w-5 md:h-5" />
+                {!hasInteracted && (
+                  <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                  </span>
+                )}
+              </div>
+            </motion.button>
+          </div>
+        )}
 
         {/* Dropdown Menu */}
         <AnimatePresence>
           {open && (
             <motion.div
+              ref={menuRef}
               initial={{ opacity: 0, y: 20, scale: 0.95, transformOrigin: "bottom right" }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20, scale: 0.95 }}
               className="w-[280px] md:w-72 overflow-hidden rounded-3xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.2)]"
             >
               <div className="p-5 border-b border-slate-100 dark:border-white/5">
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                  {currentTsonkh?.ner || "Ерөнхий тусламж"}
-                </h3>
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                    {currentTsonkh?.ner || "Ерөнхий тусламж"}
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setOpen(false)}
+                    aria-label="Хаах"
+                    className="flex items-center justify-center h-7 w-7 rounded-full bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white shadow-sm transition-colors cursor-pointer shrink-0 border-none"
+                  >
+                    <X className="w-4 h-4 text-white" strokeWidth={2.5} />
+                  </button>
+                </div>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                   {currentTsonkh?.ner ? "Энэ хуудасны тухай дэлгэрэнгүй мэдээлэл" : "Системийн заавар болон тусламжийг эндээс аваарай"}
                 </p>
