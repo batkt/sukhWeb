@@ -2990,7 +2990,10 @@ export default function DansniiKhuulga() {
       if (importToastId) toast.dismiss(importToastId);
 
       const data = resp?.data;
-      const failed = data?.result?.failed;
+      // Backend нь `results` (олон тоо) гэж буцаадаг. Өмнө нь энд зөвхөн
+      // `result`-ыг хардаг байсан тул алдаатай мөрүүд ЧИМЭЭГҮЙ алгасагдаж,
+      // юу ч ороогүй атал "амжилттай" гэсэн мэдэгдэл гарч байв.
+      const failed = data?.results?.failed || data?.result?.failed;
       if (Array.isArray(failed) && failed.length > 0) {
         const detailLines = failed.map(
           (f: any) => `Мөр ${f.row || "?"}: ${f.error || f.message || "Алдаа"}`,
