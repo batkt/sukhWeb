@@ -356,10 +356,18 @@ export default function QuickRegisterModal({
                   const apartmentToots = Array.isArray(person.toots) && person.toots.length > 0
                     ? person.toots
                         .filter((t: any) => t.turul === "Орон сууц" || !t.turul)
-                        .map((t: any) => t.toot)
+                        .map((t: any) =>
+                          [t.orts ? `${t.orts}-р орц` : null, t.toot ? `${t.toot} тоот` : null]
+                            .filter(Boolean)
+                            .join(" ")
+                        )
                         .filter(Boolean)
                     : person.toot
-                      ? [person.toot]
+                      ? [
+                          [person.orts ? `${person.orts}-р орц` : null, `${person.toot} тоот`]
+                            .filter(Boolean)
+                            .join(" ")
+                        ]
                       : [];
                   const tootLabel = apartmentToots.length > 0 ? apartmentToots.join(", ") : null;
 
@@ -388,7 +396,7 @@ export default function QuickRegisterModal({
                       {/* Right indicator: resident's own apartment toot number(s) */}
                       {tootLabel && (
                         <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/30">
-                          {tootLabel} тоот
+                          {tootLabel}
                         </span>
                       )}
                     </button>
@@ -410,6 +418,7 @@ export default function QuickRegisterModal({
             </div>
             <div className="space-y-2">
               {pendingPerson.aptContracts.map((c: any) => {
+                const ortsStr = c.orts ? `${c.orts}-р орц` : "";
                 const tootStr = c.toot ? `Тоот ${c.toot}` : "";
                 const dugaarStr = c.gereeniiDugaar || "Гэрээ";
                 const turulStr = c.turul || "Орон сууц";
@@ -429,7 +438,7 @@ export default function QuickRegisterModal({
                           {dugaarStr}
                         </p>
                         <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
-                          {[turulStr, tootStr].filter(Boolean).join(" · ")}
+                          {[turulStr, ortsStr, tootStr].filter(Boolean).join(" · ")}
                         </p>
                       </div>
                     </div>

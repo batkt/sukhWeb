@@ -906,6 +906,7 @@ export default function UnitsSection({
         : "Сул байна";
 
       let tootStr = "-";
+      let ortsStr = "-";
       // Priority 1: Check if this parking/storage slot entry has a gereeniiId or linkedAptToot stored (from Step 3 assignment)
       if (resident && Array.isArray(resident.toots)) {
         const parkingEntry = resident.toots.find(
@@ -923,12 +924,18 @@ export default function UnitsSection({
           if (linkedContract?.toot) {
             tootStr = String(linkedContract.toot).trim();
           }
+          if (linkedContract?.orts) {
+            ortsStr = String(linkedContract.orts).trim();
+          }
         }
       }
 
       // Priority 2: Check activeContract toot if it is an apartment contract
       if (tootStr === "-" && activeContract?.toot && activeContract.turul !== "Гараж" && activeContract.turul !== "Зогсоол" && activeContract.turul !== "Агуулах") {
         tootStr = String(activeContract.toot).trim();
+      }
+      if (ortsStr === "-" && activeContract?.orts && activeContract.turul !== "Гараж" && activeContract.turul !== "Зогсоол" && activeContract.turul !== "Агуулах") {
+        ortsStr = String(activeContract.orts).trim();
       }
 
       // Priority 3: Fallback to resident's apartment toots
@@ -937,9 +944,60 @@ export default function UnitsSection({
           const aptItem = resident.toots.find(
             (t: any) => String(t.turul || "").trim() === "Орон сууц" || String(t.turul || "").trim() === "Тоот"
           );
-          if (aptItem && aptItem.toot) tootStr = String(aptItem.toot).trim();
+          if (aptItem && aptItem.toot) {
+            tootStr = String(aptItem.toot).trim();
+            if (aptItem.orts) ortsStr = String(aptItem.orts).trim();
+          }
         }
         if (tootStr === "-" && resident.toot) tootStr = String(resident.toot).trim();
+      }
+
+      // If tootStr is known, find matching apartment in resident.toots for its entrance
+      if (ortsStr === "-" && tootStr !== "-" && resident && Array.isArray(resident.toots)) {
+        const matchedApt = resident.toots.find(
+          (t: any) => String(t.toot).trim() === tootStr && (t.turul === "Орон сууц" || t.turul === "Тоот" || !t.turul)
+        );
+        if (matchedApt?.orts) {
+          ortsStr = String(matchedApt.orts).trim();
+        }
+      }
+
+      // Priority 4: Fallback to any apartment toot with orts in resident.toots
+      if (ortsStr === "-" && resident) {
+        if (Array.isArray(resident.toots) && resident.toots.length > 0) {
+          const aptItem = resident.toots.find(
+            (t: any) => (String(t.turul || "").trim() === "Орон сууц" || String(t.turul || "").trim() === "Тоот") && t.orts
+          );
+          if (aptItem && aptItem.orts) ortsStr = String(aptItem.orts).trim();
+        }
+        if (ortsStr === "-" && resident.orts) ortsStr = String(resident.orts).trim();
+      }
+
+      // Priority 5: Look up contracts matching tootStr
+      if (ortsStr === "-" && tootStr !== "-" && contracts) {
+        const cMatch = contracts.find((c: any) => {
+          const status = String(c?.tuluv || c?.status || "Идэвхтэй").trim();
+          if (status === "Цуцалсан" || status === "Идэвхгүй") return false;
+          return String(c.toot || "").trim() === tootStr && c.orts;
+        });
+        if (cMatch?.orts) {
+          ortsStr = String(cMatch.orts).trim();
+        }
+      }
+
+      // Priority 6: Fallback to parking entry's own orts
+      if (ortsStr === "-" && resident && Array.isArray(resident.toots)) {
+        const parkingEntry = resident.toots.find(
+          (t: any) => String(t.toot).trim() === unitStr && (t.turul === "Гараж" || t.turul === "Зогсоол" || t.turul === "Агуулах")
+        );
+        if (parkingEntry?.orts) {
+          ortsStr = String(parkingEntry.orts).trim();
+        }
+      }
+
+      // Priority 7: Fallback to activeContract?.orts
+      if (ortsStr === "-" && activeContract?.orts) {
+        ortsStr = String(activeContract.orts).trim();
       }
 
       const phone = resident?.utas || activeContract?.utas || activeContract?.phone || "-";
@@ -981,6 +1039,7 @@ export default function UnitsSection({
         index: idx + 1,
         ognoo: dateStr,
         ner: fullName,
+        orts: ortsStr,
         toot: tootStr,
         dugaar: phone,
         zogsoolDugaar: unitStr,
@@ -999,6 +1058,7 @@ export default function UnitsSection({
         r.zogsoolDugaar.toLowerCase().includes(q) ||
         r.ner.toLowerCase().includes(q) ||
         r.toot.toLowerCase().includes(q) ||
+        (r.orts && r.orts.toLowerCase().includes(q)) ||
         r.dugaar.toLowerCase().includes(q)
     );
   }, [selectedFloorData, contracts, zogsoolSearch]);
@@ -1212,6 +1272,7 @@ export default function UnitsSection({
                           <th className="p-3 text-center w-12">№</th>
                           <th className="p-3">Огноо</th>
                           <th className="p-3">Нэр</th>
+                          <th className="p-3 text-center">Орц</th>
                           <th className="p-3 text-center">Тоот</th>
                           <th className="p-3">Дугаар</th>
                           <th className="p-3 text-center">{propertyTab === "Зогсоол" ? "Зогсоол" : "Агуулах"}</th>
@@ -1223,8 +1284,8 @@ export default function UnitsSection({
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                         {zogsoolTableRows.length === 0 ? (
                           <tr>
-                            <td colSpan={10} className="py-8 text-center text-slate-400 italic">
-                              Бүртгэгдсэн зогсоол байхгүй байна
+                            <td colSpan={11} className="py-8 text-center text-slate-400 italic">
+                              {propertyTab === "Зогсоол" ? "Бүртгэгдсэн зогсоол байхгүй байна" : "Бүртгэгдсэн агуулах байхгүй байна"}
                             </td>
                           </tr>
                         ) : (
@@ -1254,6 +1315,7 @@ export default function UnitsSection({
                                 <td className="p-3 text-center font-medium text-slate-500">{row.index}</td>
                                 <td className="p-3 text-slate-600 dark:text-slate-300">{row.ognoo}</td>
                                 <td className="p-3 font-semibold text-slate-800 dark:text-slate-100">{row.ner}</td>
+                                <td className="p-3 text-center font-semibold text-slate-700 dark:text-slate-300">{row.orts}</td>
                                 <td className="p-3 text-center font-semibold text-slate-700 dark:text-slate-300">{row.toot}</td>
                                 <td className="p-3 text-slate-600 dark:text-slate-300">{row.dugaar}</td>
                                 <td className="p-3 text-center font-bold text-emerald-600 dark:text-emerald-400">{row.zogsoolDugaar}</td>

@@ -2393,8 +2393,31 @@ export function useGereeActions(
           const linkedAptToot = explicitLinkedAptToot || (isSynthesized && gereeniiId ? gereeniiId.replace("synthesized_", "") : undefined);
           const realGereeniiId = isSynthesized ? undefined : gereeniiId;
 
+          let effectiveOrts = orts;
+          if (!effectiveOrts && linkedAptToot) {
+            const matchedApt = existingToots.find(
+              (t: any) => String(t.toot).trim() === String(linkedAptToot).trim() && t.orts
+            );
+            if (matchedApt?.orts) effectiveOrts = matchedApt.orts;
+          }
+          if (!effectiveOrts && realGereeniiId && contracts) {
+            const linkedContract = contracts.find(
+              (c: any) => String(c._id || c.id) === String(realGereeniiId)
+            );
+            if (linkedContract?.orts) effectiveOrts = linkedContract.orts;
+          }
+          if (!effectiveOrts) {
+            const anyApt = existingToots.find(
+              (t: any) => String(t.turul || "").trim() === "Орон сууц" && t.orts
+            );
+            if (anyApt?.orts) effectiveOrts = anyApt.orts;
+          }
+          if (!effectiveOrts && resident.orts) {
+            effectiveOrts = resident.orts;
+          }
+
           const newUnitEntry = {
-            orts: orts || "1",
+            orts: effectiveOrts || "1",
             davkhar: floor || "",
             toot: unit,
             turul: unitTurul,
