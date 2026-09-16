@@ -275,6 +275,27 @@ export function useGereeActions(
       try {
         await deleteMethod("orshinSuugch", token, residentId);
         openSuccessOverlay("Устгагдлаа");
+
+        try {
+          // Устгасны дараа жагсаалтаа шинэчилнэ. Өмнө нь зөвхөн сокетын
+          // `orshinSuugch.deleted` мэдэгдэлд найддаг байсан тул мэдэгдэл
+          // ирэхгүй бол устсан мөр хэвээр үлдэж, хэрэглэгч гараар refresh
+          // хийх шаардлагатай болдог байв.
+          //
+          // Оршин суугч устахад гэрээний жагсаалт ч хамт өөрчлөгддөг тул
+          // GereeContext дахь сокет боловсруулалттай ижлээр хоёуланг нь
+          // дахин ачаална.
+          mutate(
+            (key: any) =>
+              Array.isArray(key) &&
+              (key[0] === "/orshinSuugch" || key[0] === "/geree"),
+            undefined,
+            { revalidate: true },
+          );
+        } catch (_e) {
+          // Best-effort cache refresh
+        }
+
         return true;
       } catch (e) {
         openErrorOverlay("Устгахад алдаа гарлаа");
