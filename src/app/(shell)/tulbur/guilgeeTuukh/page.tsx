@@ -2793,11 +2793,15 @@ export default function DansniiKhuulga() {
         // Other transaction types (avlaga, ashiglalt, torguuli): create a transaction record as a charge
         const isAshiglalt = data.type === "ashiglalt";
         const isTorguuli = data.type === "torguuli";
+        const isBusad = data.type === "busad";
+        /** «Бусад»-ын дэд ангиллын харагдах нэр. */
+        const busadNer =
+          data.busadTurul === "barter" ? "Бартер" : data.busadTurul || "Бусад";
         const baseTailbar =
           data.tailbar ||
           (data.ekhniiUldegdel
             ? `Эхний үлдэгдэл - ${data.date}`
-            : `${data.type === "avlaga" ? "Авлага" : data.type === "ashiglalt" ? "Цахилгаан" : data.type === "torguuli" ? "Торгууль" : data.type} - ${data.date}`);
+            : `${data.type === "avlaga" ? "Авлага" : data.type === "ashiglalt" ? "Цахилгаан" : data.type === "torguuli" ? "Торгууль" : isBusad ? busadNer : data.type} - ${data.date}`);
         const normalizedTailbar = isAshiglalt
           ? String(baseTailbar).replace(/^(ашиглалт|ashiglalt)/i, "Цахилгаан")
           : baseTailbar;
@@ -2812,7 +2816,9 @@ export default function DansniiKhuulga() {
             ? "Ашиглалт"
             : isTorguuli
               ? "Торгууль"
-              : undefined,
+              : isBusad
+                ? busadNer
+                : undefined,
           tulukhDun: data.amount,
           tulsunDun: 0,
           dun: data.amount,

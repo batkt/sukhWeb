@@ -193,7 +193,17 @@ interface TransactionModalProps {
 }
 
 export interface TransactionData {
-  type: "voucher" | "avlaga" | "turul" | "ashiglalt" | "torguuli" | "tulult" | "khungulult";
+  type:
+    | "voucher"
+    | "avlaga"
+    | "turul"
+    | "ashiglalt"
+    | "torguuli"
+    | "tulult"
+    | "khungulult"
+    | "busad";
+  /** «Бусад» төрлийн дэд ангилал (одоогоор зөвхөн "barter"). */
+  busadTurul?: string;
   date: string;
   amount: number;
   residentId?: string;
@@ -286,6 +296,11 @@ export default function TransactionModal({
   const dragControls = useDragControls();
   const [transactionType, setTransactionType] =
     useState<TransactionData["type"]>("avlaga");
+  /**
+   * «Бусад» сонгоход гарах дэд ангилал. Одоогоор зөвхөн бартер боловч
+   * жагсаалт нь өсөх бодолтой тул эхнээсээ dropdown хэлбэрээр.
+   */
+  const [busadTurul, setBusadTurul] = useState("barter");
   const [transactionDate, setTransactionDate] = useState(
     new Date().toISOString().split("T")[0],
   );
@@ -742,6 +757,7 @@ export default function TransactionModal({
 
     const data: TransactionData = {
       type: transactionType,
+      ...(transactionType === "busad" ? { busadTurul } : {}),
       date: transactionDate,
       amount: parseFloat(amount.replace(/,/g, "")) || 0,
       residentId: resident?._id || resident?.orshinSuugchId,
@@ -830,6 +846,11 @@ export default function TransactionModal({
                     className={`grid ${
                       canAddDiscount ? "grid-cols-5" : "grid-cols-4"
                     } neu-panel gap-1 p-1 bg-[color:var(--surface-hover)] rounded-2xl`}
+                    style={{
+                      gridTemplateColumns: `repeat(${
+                        canAddDiscount ? 6 : 5
+                      }, minmax(0, 1fr))`,
+                    }}
                   >
                     {[
                       { value: "avlaga", label: "Авлага" },
@@ -839,6 +860,7 @@ export default function TransactionModal({
                       ...(canAddDiscount
                         ? [{ value: "khungulult", label: "Хөнгөлөлт" }]
                         : []),
+                      { value: "busad", label: "Бусад" },
                     ].map((option) => (
                       <button
                         key={option.value}
@@ -874,6 +896,24 @@ export default function TransactionModal({
                       </button>
                     ))}
                   </div>
+
+                  {/* «Бусад»-ын дэд ангилал. Одоогоор ганц утгатай ч
+                      жагсаалт нь өсөх учир эхнээсээ сонгогч хэлбэрээр. */}
+                  {transactionType === "busad" && (
+                    <div className="mt-2">
+                      <label className="block text-[11px] font-medium text-[color:var(--muted-text)] mb-1">
+                        Дэд төрөл
+                      </label>
+                      <select
+                        value={busadTurul}
+                        onChange={(e) => setBusadTurul(e.target.value)}
+                        disabled={isProcessing}
+                        className="w-full px-3 py-2 text-xs rounded-2xl neu-panel bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] focus:outline-none"
+                      >
+                        <option value="barter">Бартер</option>
+                      </select>
+                    </div>
+                  )}
                 </div>
 
                 {/* Initial Balance Checkbox - only for avlaga type */}

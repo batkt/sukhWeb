@@ -548,7 +548,7 @@ export default function HongololtTool({
             type="button"
             onClick={() => setActiveTab(id)}
             className={`flex items-center gap-1.5 px-4 py-1.5 text-xs font-medium rounded-xl transition-all ${activeTab === id
-              ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+              ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
               : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
               }`}
           >
@@ -562,7 +562,7 @@ export default function HongololtTool({
       {activeTab === "oruulakh" && (
         <div className="flex flex-1 min-h-0 overflow-hidden">
           {/* Left panel */}
-          <div className="w-64 shrink-0 flex flex-col gap-4 p-5 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
+          <div className="w-80 lg:w-[350px] xl:w-[380px] shrink-0 flex flex-col gap-4 p-5 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
             {/* Scope selector */}
             <div>
               <label className="block text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
@@ -580,7 +580,7 @@ export default function HongololtTool({
                     type="button"
                     onClick={() => setSelectMode(v)}
                     className={`flex-1 py-1.5 text-xs font-medium transition-all ${selectMode === v
-                      ? "bg-amber-500 text-white"
+                      ? "bg-emerald-500 text-white"
                       : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                       }`}
                   >
@@ -598,7 +598,7 @@ export default function HongololtTool({
               <select
                 value={orts}
                 onChange={(e) => setOrts(e.target.value)}
-                className="w-full px-3 py-2 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full px-3 py-2 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
                 <option value="">Бүх орц</option>
                 {ortsSongoltuud.map((o: string) => (
@@ -617,7 +617,7 @@ export default function HongololtTool({
               <select
                 value={zardliinId}
                 onChange={(e) => setZardliinId(e.target.value)}
-                className="w-full px-3 py-2 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full px-3 py-2 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
                 <option value="">Нийт төлбөрөөс</option>
                 {zardluud.map((z) => (
@@ -635,7 +635,7 @@ export default function HongololtTool({
                   type="checkbox"
                   checked={khonogTootsokh}
                   onChange={(e) => setKhonogTootsokh(e.target.checked)}
-                  className="rounded border-gray-300 text-amber-500 focus:ring-amber-500"
+                  className="rounded border-gray-300 text-emerald-500 focus:ring-emerald-500"
                 />
                 Хоногийн хөнгөлөлт эсэх
               </label>
@@ -648,7 +648,7 @@ export default function HongololtTool({
                     placeholder="Хөнгөлөх хоног"
                     value={khungulultKhonog}
                     onChange={(e) => setKhungulultKhonog(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                   <p className="mt-1 text-[10px] text-gray-500 dark:text-gray-400">
                     Сарын дүнг 30 хоногт хувааж, сонгосон хоногоор бодно
@@ -674,7 +674,7 @@ export default function HongololtTool({
                   // Ганц сар сонгоход дуусахыг эхлэлтэй нь ижил болгоно
                   setDuusakhSar(duusakh || ekhlekh || "");
                 }}
-                classNames={{ input: "w-full px-3 py-2 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500" }}
+                classNames={{ input: "w-full px-3 py-2 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500" }}
               />
 
             </div>
@@ -687,7 +687,7 @@ export default function HongololtTool({
               <select
                 value={davkhar}
                 onChange={(e) => setDavkhar(e.target.value)}
-                className="w-full px-3 py-2 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full px-3 py-2 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
                 <option value="">Бүх давхар</option>
                 {davkharSongoltuud.map((d: string) => (
@@ -715,7 +715,7 @@ export default function HongololtTool({
                     type="button"
                     onClick={() => setHongololtTurul(v)}
                     className={`flex-1 py-1.5 text-xs font-medium transition-all ${hongololtTurul === v
-                      ? "bg-amber-500 text-white"
+                      ? "bg-emerald-500 text-white"
                       : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                       }`}
                   >
@@ -741,7 +741,7 @@ export default function HongololtTool({
                   placeholder={hongololtTurul === "percent" ? "0 – 100" : "0"}
                   value={hongololtUtga}
                   onChange={(e) => setHongololtUtga(e.target.value)}
-                  className="w-full pl-3 pr-8 py-2 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full pl-3 pr-8 py-2 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">
                   {hongololtTurul === "percent" ? "%" : "₮"}
@@ -764,7 +764,7 @@ export default function HongololtTool({
                 placeholder="Шалтгаан"
                 value={shaltgaan}
                 onChange={(e) => setShaltgaan(e.target.value)}
-                className="w-full px-3 py-2 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none"
+                className="w-full px-3 py-2 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
               />
             </div>
 
@@ -778,7 +778,7 @@ export default function HongololtTool({
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-gray-500 dark:text-gray-400">Нийт хөнгөлөгдсөн дүн :</span>
-                <span className="font-medium text-amber-600 dark:text-amber-400">
+                <span className="font-medium text-emerald-600 dark:text-emerald-400">
                   {fmt(totalDun)}₮
                 </span>
               </div>
@@ -798,7 +798,7 @@ export default function HongololtTool({
                 type="button"
                 onClick={handleSubmit}
                 disabled={loading || fetching}
-                className="flex-1 py-2 text-xs font-medium rounded-xl bg-amber-500 hover:bg-amber-600 text-white transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
+                className="flex-1 py-2 text-xs font-medium rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
               >
                 {loading && (
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -819,7 +819,7 @@ export default function HongololtTool({
                   placeholder="Тоот, нэр эсвэл утасны дугаараар хайх..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
               <button
@@ -834,7 +834,7 @@ export default function HongololtTool({
                 />
               </button>
               {selectMode === "selected" && (
-                <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
                   {selectedIds.size} сонгосон
                 </span>
               )}
@@ -859,10 +859,10 @@ export default function HongololtTool({
                         <button
                           type="button"
                           onClick={toggleAll}
-                          className="text-gray-400 hover:text-amber-500 transition-colors"
+                          className="text-gray-400 hover:text-emerald-500 transition-colors"
                         >
                           {isAllSelected ? (
-                            <CheckSquare className="w-4 h-4 text-amber-500" />
+                            <CheckSquare className="w-4 h-4 text-emerald-500" />
                           ) : (
                             <Square className="w-4 h-4" />
                           )}
@@ -892,15 +892,15 @@ export default function HongololtTool({
                           key={r._id}
                           onClick={() => toggleOne(r._id)}
                           className={`border-b border-gray-100 dark:border-gray-800 cursor-pointer transition-colors ${isSelected
-                            ? "bg-amber-50 dark:bg-amber-500/10"
+                            ? "bg-emerald-50 dark:bg-emerald-500/10"
                             : idx % 2 === 0
                               ? "bg-white dark:bg-transparent"
                               : "bg-gray-50/50 dark:bg-gray-800/20"
-                            } hover:bg-amber-50 dark:hover:bg-amber-500/5`}
+                            } hover:bg-emerald-50 dark:hover:bg-emerald-500/5`}
                         >
                           <td className="w-10 px-3 py-2 text-center">
                             {isSelected ? (
-                              <CheckSquare className="w-4 h-4 text-amber-500 inline" />
+                              <CheckSquare className="w-4 h-4 text-emerald-500 inline" />
                             ) : (
                               <Square className="w-4 h-4 text-gray-300 dark:text-gray-600 inline" />
                             )}
@@ -932,7 +932,7 @@ export default function HongololtTool({
                           </td>
                           <td className="px-3 py-2 text-right tabular-nums">
                             {isTarget && discountDun > 0 ? (
-                              <span className="text-amber-600 dark:text-amber-400 font-medium">
+                              <span className="text-emerald-600 dark:text-emerald-400 font-medium">
                                 -{fmt(discountDun)}₮
                               </span>
                             ) : (
@@ -964,7 +964,7 @@ export default function HongololtTool({
                 placeholder="Тоот, нэр эсвэл тайлбараар хайх..."
                 value={histSearch}
                 onChange={(e) => setHistSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
             </div>
             <button
@@ -1040,7 +1040,7 @@ export default function HongololtTool({
                       <td className="px-4 py-2 text-gray-500 dark:text-gray-400 max-w-xs truncate">
                         {h.tailbar || "—"}
                       </td>
-                      <td className="px-4 py-2 text-right tabular-nums font-medium text-amber-600 dark:text-amber-400">
+                      <td className="px-4 py-2 text-right tabular-nums font-medium text-emerald-600 dark:text-emerald-400">
                         -{fmt(Math.abs(h.dun))}₮
                       </td>
                     </tr>
@@ -1090,8 +1090,8 @@ export default function HongololtTool({
               onPointerDown={(e) => dragControls.start(e)}
             >
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-amber-500/15 flex items-center justify-center shrink-0">
-                  <Tag className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                <div className="w-9 h-9 rounded-xl bg-emerald-500/15 flex items-center justify-center shrink-0">
+                  <Tag className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-base text-gray-900 dark:text-white leading-tight">
