@@ -70,6 +70,10 @@ const PrintStyles = () => (
 interface ResidentSummaryRow {
   orshinSuugchiinId: string;
   ner: string;
+  toot?: string;
+  davkhar?: string;
+  orts?: string;
+  utas?: string;
   urisanMachinToo: number;
   niitTulbur: number;
   khungulultMinut: number;
@@ -85,13 +89,20 @@ interface GuestDetailRow {
   khungulsunMinut: number;
   tulbur: number;
   tuluv: string;
+  ner?: string;
+  toot?: string;
+  davkhar?: string;
+  orts?: string;
+  utas?: string;
 }
 
 interface GuestCarRow {
   mashiniiDugaar: string;
   orshinSuugchiinNer: string;
-  davkhar: string;
-  utas: string;
+  toot?: string;
+  davkhar?: string;
+  orts?: string;
+  utas?: string;
   suuliinIrsenOgnoo?: string | null;
   irsenToo?: number;
 }
@@ -233,7 +244,11 @@ export default function ZogsoolTailanPage() {
     if (activeTab === "residentSummary") {
       headers = [
         "№",
-        "Нэр",
+        "Оршин суугч",
+        "Утасны дугаар",
+        "Орц",
+        "Давхар",
+        "Тоот",
         "Урьсан машин тоо",
         "Нийт төлөх",
         "Хөнгөлөлт Минут",
@@ -243,6 +258,10 @@ export default function ZogsoolTailanPage() {
       dataToExport = residentSummary.map((row, idx) => [
         idx + 1,
         `"${row.ner || ""}"`,
+        `"${row.utas || ""}"`,
+        `"${row.orts || ""}"`,
+        `"${row.davkhar || ""}"`,
+        `"${row.toot || ""}"`,
         row.urisanMachinToo,
         row.niitTulbur,
         row.khungulultMinut,
@@ -252,6 +271,10 @@ export default function ZogsoolTailanPage() {
       // Append summary total row
       dataToExport.push([
         "НИЙТ",
+        '""',
+        '""',
+        '""',
+        '""',
         '""',
         niit.urisanMachinToo,
         niit.niitTulbur,
@@ -300,8 +323,10 @@ export default function ZogsoolTailanPage() {
         "№",
         "Машины дугаар",
         "Оршин суугчийн нэр",
-        "Давхар",
         "Утасны дугаар",
+        "Орц",
+        "Давхар",
+        "Тоот",
         "Ирсэн тоо",
         "Сүүлд ирсэн",
       ];
@@ -309,8 +334,10 @@ export default function ZogsoolTailanPage() {
         idx + 1,
         `"${row.mashiniiDugaar || ""}"`,
         `"${row.orshinSuugchiinNer || ""}"`,
-        `"${row.davkhar || ""}"`,
         `"${row.utas || ""}"`,
+        `"${row.orts || ""}"`,
+        `"${row.davkhar || ""}"`,
+        `"${row.toot || ""}"`,
         row.irsenToo ?? "",
         `"${ognooKharuul(row.suuliinIrsenOgnoo)}"`,
       ]);
@@ -352,11 +379,58 @@ export default function ZogsoolTailanPage() {
         render: (_: any, __: any, index: number) => index + 1,
       },
       {
-        title: "Нэр",
+        title: "Оршин суугч",
         dataIndex: "ner",
         key: "ner",
         render: (text: string) => (
+          <span className="text-theme whitespace-nowrap text-[13px] font-medium">
+            {text || "-"}
+          </span>
+        ),
+      },
+      {
+        title: "Утас",
+        dataIndex: "utas",
+        key: "utas",
+        align: "center" as const,
+        render: (text: string) => (
           <span className="text-theme whitespace-nowrap text-[13px]">
+            {text || "-"}
+          </span>
+        ),
+      },
+      {
+        title: "Орц",
+        dataIndex: "orts",
+        key: "orts",
+        align: "center" as const,
+        width: 70,
+        render: (text: string) => (
+          <span className="text-theme whitespace-nowrap text-[13px]">
+            {text || "-"}
+          </span>
+        ),
+      },
+      {
+        title: "Давхар",
+        dataIndex: "davkhar",
+        key: "davkhar",
+        align: "center" as const,
+        width: 70,
+        render: (text: string) => (
+          <span className="text-theme whitespace-nowrap text-[13px]">
+            {text || "-"}
+          </span>
+        ),
+      },
+      {
+        title: "Тоот",
+        dataIndex: "toot",
+        key: "toot",
+        align: "center" as const,
+        width: 70,
+        render: (text: string) => (
+          <span className="text-theme whitespace-nowrap text-[13px] font-medium">
             {text || "-"}
           </span>
         ),
@@ -376,10 +450,10 @@ export default function ZogsoolTailanPage() {
         title: "Нийт төлөх",
         dataIndex: "niitTulbur",
         key: "niitTulbur",
-        align: "center" as const,
+        align: "right" as const,
         render: (val: number) => (
           <span className="text-theme whitespace-nowrap text-[13px]">
-            {formatNumber(val)}
+            {formatNumber(val)}₮
           </span>
         ),
       },
@@ -398,10 +472,10 @@ export default function ZogsoolTailanPage() {
         title: "Төлсөн дүн",
         dataIndex: "tulsunDun",
         key: "tulsunDun",
-        align: "center" as const,
+        align: "right" as const,
         render: (val: number) => (
           <span className="text-theme whitespace-nowrap text-[13px]">
-            {formatNumber(val)}
+            {formatNumber(val)}₮
           </span>
         ),
       },
@@ -409,10 +483,10 @@ export default function ZogsoolTailanPage() {
         title: "Үлдэгдэл төлбөр",
         dataIndex: "uldegdelTulbur",
         key: "uldegdelTulbur",
-        align: "center" as const,
+        align: "right" as const,
         render: (val: number) => (
           <span className="text-theme whitespace-nowrap">
-            {formatNumber(val)}
+            {formatNumber(val)}₮
           </span>
         ),
       },
@@ -526,7 +600,7 @@ export default function ZogsoolTailanPage() {
         dataIndex: "orshinSuugchiinNer",
         key: "orshinSuugchiinNer",
         render: (text: string) => (
-          <span className="text-theme whitespace-nowrap text-[13px]">
+          <span className="text-theme whitespace-nowrap text-[13px] font-medium">
             {text || "-"}
           </span>
         ),
@@ -538,6 +612,42 @@ export default function ZogsoolTailanPage() {
         align: "center" as const,
         render: (text: string) => (
           <span className="text-theme whitespace-nowrap text-[13px]">
+            {text || "-"}
+          </span>
+        ),
+      },
+      {
+        title: "Орц",
+        dataIndex: "orts",
+        key: "orts",
+        align: "center" as const,
+        width: 70,
+        render: (text: string) => (
+          <span className="text-theme whitespace-nowrap text-[13px]">
+            {text || "-"}
+          </span>
+        ),
+      },
+      {
+        title: "Давхар",
+        dataIndex: "davkhar",
+        key: "davkhar",
+        align: "center" as const,
+        width: 70,
+        render: (text: string) => (
+          <span className="text-theme whitespace-nowrap text-[13px]">
+            {text || "-"}
+          </span>
+        ),
+      },
+      {
+        title: "Тоот",
+        dataIndex: "toot",
+        key: "toot",
+        align: "center" as const,
+        width: 70,
+        render: (text: string) => (
+          <span className="text-theme whitespace-nowrap text-[13px] font-medium">
             {text || "-"}
           </span>
         ),
@@ -687,7 +797,7 @@ export default function ZogsoolTailanPage() {
                   <Table.Summary.Row className="bg-theme/5">
                     <Table.Summary.Cell
                       index={0}
-                      colSpan={2}
+                      colSpan={6}
                       align="center"
                       className="text-[13px] font-bold dark:!text-white force-bold text-theme"
                     >
@@ -702,10 +812,10 @@ export default function ZogsoolTailanPage() {
                     </Table.Summary.Cell>
                     <Table.Summary.Cell
                       index={2}
-                      align="center"
+                      align="right"
                       className="text-[13px] font-bold dark:!text-white force-bold text-theme"
                     >
-                      {formatNumber(niit.niitTulbur)}
+                      {formatNumber(niit.niitTulbur)}₮
                     </Table.Summary.Cell>
                     <Table.Summary.Cell
                       index={3}
@@ -716,17 +826,17 @@ export default function ZogsoolTailanPage() {
                     </Table.Summary.Cell>
                     <Table.Summary.Cell
                       index={4}
-                      align="center"
+                      align="right"
                       className="text-[13px] font-bold dark:!text-white force-bold text-theme"
                     >
-                      {formatNumber(niit.tulsunDun)}
+                      {formatNumber(niit.tulsunDun)}₮
                     </Table.Summary.Cell>
                     <Table.Summary.Cell
                       index={5}
-                      align="center"
+                      align="right"
                       className="text-[13px] font-bold dark:!text-white force-bold text-theme"
                     >
-                      {formatNumber(niit.uldegdelTulbur)}
+                      {formatNumber(niit.uldegdelTulbur)}₮
                     </Table.Summary.Cell>
                   </Table.Summary.Row>
                 ) : null
@@ -738,12 +848,26 @@ export default function ZogsoolTailanPage() {
 
       {activeTab === "guestDetail" && (
         <div className="overflow-hidden rounded-2xl neu-table allow-overflow">
-          <h3 className="p-4 text-theme border-b">
-            Зочдын дэлгэрэнгүй тайлан
+          <h3 className="p-4 text-theme border-b flex items-center justify-between flex-wrap gap-2">
+            <span className="font-semibold">Зочдын дэлгэрэнгүй тайлан</span>
             {selectedResident && (
-              <span className="ml-2 text-sm font-normal text-theme">
-                — Нэр: {selectedResident.ner}
-              </span>
+              <div className="flex items-center gap-3 text-xs text-theme/80 flex-wrap">
+                <span className="font-medium text-slate-800 dark:text-slate-100">
+                  {selectedResident.ner}
+                </span>
+                {selectedResident.utas && (
+                  <span>Утас: <strong>{selectedResident.utas}</strong></span>
+                )}
+                {selectedResident.orts && (
+                  <span>Орц: <strong>{selectedResident.orts}</strong></span>
+                )}
+                {selectedResident.davkhar && (
+                  <span>Давхар: <strong>{selectedResident.davkhar}</strong></span>
+                )}
+                {selectedResident.toot && (
+                  <span>Тоот: <strong>{selectedResident.toot}</strong></span>
+                )}
+              </div>
             )}
           </h3>
           <div className="max-h-[30vh] overflow-y-auto custom-scrollbar p-4">

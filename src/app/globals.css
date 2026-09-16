@@ -4503,13 +4503,15 @@ a:active {
 
 /* All cells - consistent font size */
 .guilgee-table .ant-table-cell {
-  padding: 1px 4px !important;
+  padding: 2px 4px 3px 4px !important;
   font-size: 11px !important;
+  line-height: 1.35 !important;
 }
 
 .guilgee-table .ant-table-thead > tr > th {
-  padding: 2px 4px !important;
+  padding: 4px 4px 5px 4px !important;
   font-size: 11px !important;
+  line-height: 1.35 !important;
 }
 
 /* Keep Гэрээ/Оршин суугч table body heights identical */
@@ -6414,15 +6416,24 @@ body,
    Бүх тайлангийн хүснэгт (Авлагын насжилт, Нэгтгэл г.м) ижил өндөр/фонттой
    байхын тулд энд нэг удаа тодорхойлов. Ашиглах: <StandardTable className="compact-table" ... /> */
 .compact-table .ant-table-cell {
-  padding: 4px 8px !important;
-  font-size: 11px !important;
-  line-height: 1 !important;
-}
-.compact-table .ant-table-thead > tr > th {
   padding: 6px 8px !important;
   font-size: 11px !important;
+  line-height: 1.5 !important;
+}
+.compact-table .ant-table-thead > tr > th {
+  padding: 7px 8px 8px 8px !important;
+  font-size: 11px !important;
+  line-height: 1.5 !important;
   background: #f8fafc !important;
   font-weight: 500 !important;
+}
+.compact-table .ant-table-thead > tr > th div,
+.compact-table .ant-table-thead > tr > th span {
+  line-height: 1.5 !important;
+}
+.compact-table .truncate {
+  padding-bottom: 2px;
+  line-height: 1.45;
 }
 .dark .compact-table .ant-table-thead > tr > th {
   background: #1e293b !important;

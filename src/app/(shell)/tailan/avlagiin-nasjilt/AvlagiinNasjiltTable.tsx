@@ -13,6 +13,7 @@ export interface AvlagiinNasjiltItem {
   davkhar: string;
   register: string;
   undsenDun: number;
+  khungulult?: number;
   tulsunDun: number;
   uldegdel: number;
   avlagiinKhonog: number;
@@ -33,6 +34,7 @@ interface AvlagiinNasjiltTableProps {
   onPageChange?: (page: number, pageSize?: number) => void;
   totals?: {
     undsenDun: number;
+    khungulult?: number;
     tulsunDun: number;
     uldegdel: number;
     avlagiinKhonog?: number;
@@ -65,26 +67,34 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
 }) => {
   const columns = useMemo(() => [
     {
-      label: "№",
+      label: (
+        <div className="flex justify-center w-full py-0.5">
+          <span className="leading-normal pb-0.5 font-medium">№</span>
+        </div>
+      ),
       key: "index",
       width: 40,
       align: "center" as const,
       fixed: "left" as const,
       render: (_: any, __: any, idx: number) => (
-        <span className="text-[11px] text-black dark:text-white px-0">
+        <span className="text-[11px] text-black dark:text-white px-0 leading-normal">
           {(page - 1) * pageSize + idx + 1}
         </span>
       ),
     },
     {
       key: "ner",
-      label: "Оршин суугч",
+      label: (
+        <div className="flex justify-start w-full py-0.5">
+          <span className="leading-normal pb-0.5 font-medium">Оршин суугч</span>
+        </div>
+      ),
       width: 130,
       align: "center" as const,
       fixed: "left" as const,
       render: (v: string) => (
         <Tooltip title={v}>
-          <div className="text-left text-[11px] text-black dark:text-white truncate">
+          <div className="text-left text-[11px] text-black dark:text-white truncate py-0.5 leading-normal">
             {formatNer(v)}
           </div>
         </Tooltip>
@@ -92,82 +102,137 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
     },
     {
       key: "toot",
-      label: "Тоот",
+      label: (
+        <div className="flex justify-center w-full py-0.5">
+          <span className="leading-normal pb-0.5 font-medium">Тоот</span>
+        </div>
+      ),
       width: 50,
       align: "center" as const,
       fixed: "left" as const,
-      render: (v: string) => <span className="text-[11px] text-black dark:text-white">{v}</span>,
+      render: (v: string) => <span className="text-[11px] text-black dark:text-white leading-normal">{v}</span>,
     },
     {
       key: "undsenDun",
-      label: "Төлөх",
+      label: (
+        <div className="flex justify-center w-full py-0.5">
+          <span className="leading-normal pb-0.5 font-medium">Төлөх</span>
+        </div>
+      ),
       width: 90,
       align: "center" as const,
-      render: (v: number) => <span className="text-[11px] text-black dark:text-white">{formatNumber(v, 2)}</span>,
+      render: (v: number) => <span className="text-[11px] text-black dark:text-white leading-normal">{formatNumber(v, 2)}</span>,
+    },
+    {
+      key: "khungulult",
+      label: (
+        <div className="flex justify-center w-full py-0.5">
+          <span className="leading-normal pb-0.5 font-medium text-emerald-600 dark:text-emerald-400">Хөнгөлөлт</span>
+        </div>
+      ),
+      width: 90,
+      align: "center" as const,
+      render: (v: number) => (
+        <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium leading-normal">
+          {Number(v) > 0 ? formatNumber(v, 2) : "-"}
+        </span>
+      ),
     },
     {
       key: "tulsunDun",
-      label: "Төлсөн",
+      label: (
+        <div className="flex justify-center w-full py-0.5">
+          <span className="leading-normal pb-0.5 font-medium">Төлсөн</span>
+        </div>
+      ),
       width: 90,
       align: "center" as const,
-      render: (v: number) => <span className="text-[11px] text-black dark:text-white">{formatNumber(v, 2)}</span>,
+      render: (v: number) => <span className="text-[11px] text-black dark:text-white leading-normal">{formatNumber(v, 2)}</span>,
     },
     {
       key: "uldegdel",
-      label: "Үлдэгдэл",
+      label: (
+        <div className="flex justify-center w-full py-0.5">
+          <span className="leading-normal pb-0.5 font-medium">Үлдэгдэл</span>
+        </div>
+      ),
       width: 95,
       align: "center" as const,
       render: (v: number) => (
-        <span className="text-[11px] text-black dark:text-white">
+        <span className="text-[11px] text-black dark:text-white leading-normal">
           {formatNumber(v, 2)}
         </span>
       ),
     },
     {
       key: "avlagiinKhonog",
-      label: "Авлагын хоног",
+      label: (
+        <div className="flex justify-center w-full py-0.5">
+          <span className="leading-normal pb-0.5 font-medium">Авлагын хоног</span>
+        </div>
+      ),
       width: 85,
       align: "center" as const,
       render: (v: number) => (
-        <span className="text-[11px] text-black dark:text-white">
+        <span className="text-[11px] text-black dark:text-white leading-normal">
           {Number(v) > 0 ? Number(v) : ""}
         </span>
       ),
     },
     {
       key: "p0_30",
-      label: "0-30",
+      label: (
+        <div className="flex justify-center w-full py-0.5">
+          <span className="leading-normal pb-0.5 font-medium">0-30</span>
+        </div>
+      ),
       width: 85,
       align: "center" as const,
-      render: (v: number) => <span className="text-[11px] text-black dark:text-white">{v !== 0 ? formatNumber(v, 2) : ""}</span>,
+      render: (v: number) => <span className="text-[11px] text-black dark:text-white leading-normal">{v !== 0 ? formatNumber(v, 2) : ""}</span>,
     },
     {
       key: "p31_60",
-      label: "31-60",
+      label: (
+        <div className="flex justify-center w-full py-0.5">
+          <span className="leading-normal pb-0.5 font-medium">31-60</span>
+        </div>
+      ),
       width: 85,
       align: "center" as const,
-      render: (v: number) => <span className="text-[11px] text-black dark:text-white">{v !== 0 ? formatNumber(v, 2) : ""}</span>,
+      render: (v: number) => <span className="text-[11px] text-black dark:text-white leading-normal">{v !== 0 ? formatNumber(v, 2) : ""}</span>,
     },
     {
       key: "p61_90",
-      label: "61-90",
+      label: (
+        <div className="flex justify-center w-full py-0.5">
+          <span className="leading-normal pb-0.5 font-medium">61-90</span>
+        </div>
+      ),
       width: 85,
       align: "center" as const,
-      render: (v: number) => <span className="text-[11px] text-black dark:text-white">{v !== 0 ? formatNumber(v, 2) : ""}</span>,
+      render: (v: number) => <span className="text-[11px] text-black dark:text-white leading-normal">{v !== 0 ? formatNumber(v, 2) : ""}</span>,
     },
     {
       key: "p91_120",
-      label: "91-120",
+      label: (
+        <div className="flex justify-center w-full py-0.5">
+          <span className="leading-normal pb-0.5 font-medium">91-120</span>
+        </div>
+      ),
       width: 85,
       align: "center" as const,
-      render: (v: number) => <span className="text-[11px] text-black dark:text-white">{v !== 0 ? formatNumber(v, 2) : ""}</span>,
+      render: (v: number) => <span className="text-[11px] text-black dark:text-white leading-normal">{v !== 0 ? formatNumber(v, 2) : ""}</span>,
     },
     {
       key: "p120plus",
-      label: "120+",
+      label: (
+        <div className="flex justify-center w-full py-0.5">
+          <span className="leading-normal pb-0.5 font-medium">120+</span>
+        </div>
+      ),
       width: 85,
       align: "center" as const,
-      render: (v: number) => <span className="text-[11px] text-black dark:text-white">{v !== 0 ? formatNumber(v, 2) : ""}</span>,
+      render: (v: number) => <span className="text-[11px] text-black dark:text-white leading-normal">{v !== 0 ? formatNumber(v, 2) : ""}</span>,
     },
   ], [page, pageSize]);
 
@@ -176,22 +241,26 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
     const finalTotals = totals;
 
     return (
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-9 gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800 font-sans">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-10 gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800 font-sans">
         <div className="flex flex-col">
           <span className="text-[10px] text-slate-500 uppercase tracking-wider">Нийт Төлөх</span>
-          <span className="text-[13px] text-slate-900 dark:text-white">{formatNumber(finalTotals.undsenDun, 2)}₮</span>
+          <span className="text-[13px] text-slate-900 dark:text-white font-medium">{formatNumber(finalTotals.undsenDun, 2)}₮</span>
+        </div>
+        <div className="flex flex-col">
+          <span className="text-[10px] text-slate-500 uppercase tracking-wider">Нийт Хөнгөлөлт</span>
+          <span className="text-[13px] text-emerald-600 dark:text-emerald-400 font-medium">{formatNumber(finalTotals.khungulult || 0, 2)}₮</span>
         </div>
         <div className="flex flex-col">
           <span className="text-[10px] text-slate-500 uppercase tracking-wider">Нийт Төлсөн</span>
-          <span className="text-[13px] text-slate-900 dark:text-white">{formatNumber(finalTotals.tulsunDun, 2)}₮</span>
+          <span className="text-[13px] text-slate-900 dark:text-white font-medium">{formatNumber(finalTotals.tulsunDun, 2)}₮</span>
         </div>
         <div className="flex flex-col">
           <span className="text-[10px] text-slate-500 uppercase tracking-wider">Нийт Үлдэгдэл</span>
-          <span className="text-[13px] text-slate-900 dark:text-white">{formatNumber(finalTotals.uldegdel, 2)}₮</span>
+          <span className="text-[13px] text-slate-900 dark:text-white font-medium">{formatNumber(finalTotals.uldegdel, 2)}₮</span>
         </div>
         <div className="flex flex-col">
           <span className="text-[10px] text-slate-500 uppercase tracking-wider">Хамгийн их хоног</span>
-          <span className="text-[13px] text-slate-900 dark:text-white">{finalTotals.avlagiinKhonog ?? 0}</span>
+          <span className="text-[13px] text-slate-900 dark:text-white font-medium">{finalTotals.avlagiinKhonog ?? 0}</span>
         </div>
         <div className="flex flex-col">
           <span className="text-[10px] text-slate-500 uppercase tracking-wider">0-30</span>

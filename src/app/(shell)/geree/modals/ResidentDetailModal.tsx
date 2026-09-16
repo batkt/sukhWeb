@@ -19,6 +19,8 @@ import {
   Check,
 } from "lucide-react";
 import uilchilgee from "@/lib/uilchilgee";
+import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
+import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import formatNumber from "../../../../../tools/function/formatNumber";
 import { ModalPortal } from "../../../../../components/shell/ModalPortal";
 
@@ -60,6 +62,28 @@ export const ResidentDetailModal: React.FC<Props> = ({
   const [shineMashiniiDugaar, setShineMashiniiDugaar] = useState("");
   const [shineMashinToot, setShineMashinToot] = useState("");
   const [mashinJagsaalt, setMashinJagsaalt] = useState<any[]>([]);
+
+  /* Хувийн мэдээлэл засах */
+  const [zasajBuiKhuvi, setZasajBuiKhuvi] = useState(false);
+  const [khuviinMedeelel, setKhuviinMedeelel] = useState({
+    ovog: "",
+    ner: "",
+    utas: "",
+    mail: "",
+    tailbar: "",
+  });
+  const [khuviKhadgaljBaina, setKhuviKhadgaljBaina] = useState(false);
+
+  /* Гэр бүлийн гишүүн нэмэх форм */
+  const [gishuunNemejBaina, setGishuunNemejBaina] = useState(false);
+  const [shineGishuun, setShineGishuun] = useState({
+    ovog: "",
+    ner: "",
+    utas: "",
+    kholboo: "Бусад",
+    erkh: "Харах + Төлөх",
+  });
+  const [gishuunKhadgaljBaina, setGishuunKhadgaljBaina] = useState(false);
 
   const [zasajBuiToot, setZasajBuiToot] = useState(false);
   const [tootJagsaalt, setTootJagsaalt] = useState<any[]>([]);
@@ -105,6 +129,52 @@ export const ResidentDetailModal: React.FC<Props> = ({
     document.addEventListener("keydown", tovch);
     return () => document.removeEventListener("keydown", tovch);
   }, [show, onClose]);
+
+  /**
+   * Гишүүнийг ШУУД нэмнэ (баталгаажуулалтгүй).
+   *
+   * Оршин суугчийн апп дахь `/gerBuliinGishuunUrikh` нь үндсэн эзэмшигчийг
+   * токеноос олдог тул админ талаас ажиллахгүй. Эндээс `undsenId`-г
+   * шууд заадаг `/gerBuliinGishuunNemekh` рүү хандана.
+   */
+  const gishuunNemye = async () => {
+    const utas = shineGishuun.utas.replace(/\D/g, "");
+    if (utas.length < 8) {
+      openErrorOverlay("Утасны дугаараа зөв оруулна уу");
+      return;
+    }
+    if (!token || !residentId) return;
+
+    setGishuunKhadgaljBaina(true);
+    try {
+      await uilchilgee(token).post("/gerBuliinGishuunNemekh", {
+        undsenId: residentId,
+        utas,
+        ovog: shineGishuun.ovog.trim(),
+        ner: shineGishuun.ner.trim(),
+        kholboo: shineGishuun.kholboo,
+        erkh: shineGishuun.erkh,
+      });
+      openSuccessOverlay("Гэр бүлийн гишүүн нэмэгдлээ");
+      setShineGishuun({
+        ovog: "",
+        ner: "",
+        utas: "",
+        kholboo: "Бусад",
+        erkh: "Харах + Төлөх",
+      });
+      setGishuunNemejBaina(false);
+      await tataya();
+    } catch (err: any) {
+      openErrorOverlay(
+        err?.response?.data?.aldaa ||
+          err?.response?.data?.message ||
+          "Гишүүн нэмэхэд алдаа гарлаа",
+      );
+    } finally {
+      setGishuunKhadgaljBaina(false);
+    }
+  };
 
   // Real family members only (no static data)
   const gerBuliinGishuud: any[] = useMemo(() => {
@@ -160,6 +230,58 @@ export const ResidentDetailModal: React.FC<Props> = ({
     setTootJagsaalt((prev) =>
       prev.map((item, i) => (i === index ? { ...item, [field]: val } : item)),
     );
+  };
+
+  /** Засах горимд шилжихэд талбаруудыг одоогийн утгаар дүүргэнэ. */
+  const khuviiZasya = () => {
+    setKhuviinMedeelel({
+      ovog: medeelel?.ovog || "",
+      ner: medeelel?.ner || "",
+      utas: medeelel?.utas || "",
+      mail: medeelel?.mail || "",
+      tailbar: medeelel?.tailbar || "",
+    });
+    setZasajBuiKhuvi(true);
+  };
+
+  /**
+   * Хувийн мэдээллийг хадгална.
+   *
+   * `Нэвтрэх нэр`, `Төлөв`, `Эрх`, `Бүртгэгдсэн` дөрвийг ЗОРИУД оруулаагүй —
+   * эдгээр нь системээс тодорхойлогддог (нэвтрэх нэр нь утаснаас, эрх нь
+   * бүртгэлийн төрлөөс). Эндээс гараар өөрчилвөл нэвтрэлт эвдэрч болно.
+   */
+  const khuviiKhadgalya = async () => {
+    if (!token || !residentId) return;
+    const utas = khuviinMedeelel.utas.replace(/[^0-9]/g, "");
+    if (utas && utas.length < 8) {
+      openErrorOverlay("Утасны дугаараа зөв оруулна уу");
+      return;
+    }
+
+    setKhuviKhadgaljBaina(true);
+    try {
+      const shinechlelt = {
+        ovog: khuviinMedeelel.ovog.trim(),
+        ner: khuviinMedeelel.ner.trim(),
+        utas: utas || khuviinMedeelel.utas.trim(),
+        mail: khuviinMedeelel.mail.trim(),
+        tailbar: khuviinMedeelel.tailbar.trim(),
+      };
+      await uilchilgee(token).put(`/orshinSuugch/${residentId}`, {
+        ...shinechlelt,
+        baiguullagiinId,
+      });
+      setMedeelel((prev: any) => ({ ...prev, ...shinechlelt }));
+      setZasajBuiKhuvi(false);
+      openSuccessOverlay("Хувийн мэдээлэл хадгалагдлаа");
+    } catch (err: any) {
+      openErrorOverlay(
+        err?.response?.data?.aldaa || "Хувийн мэдээлэл хадгалахад алдаа гарлаа",
+      );
+    } finally {
+      setKhuviKhadgaljBaina(false);
+    }
   };
 
   const tootKhadgalya = async () => {
@@ -276,9 +398,125 @@ export const ResidentDetailModal: React.FC<Props> = ({
                           Хувийн мэдээлэл
                         </h3>
                       </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          zasajBuiKhuvi ? setZasajBuiKhuvi(false) : khuviiZasya()
+                        }
+                        className="rounded-lg px-2 py-1 text-[11px] font-medium text-blue-600 transition hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/30"
+                      >
+                        {zasajBuiKhuvi ? "Болих" : "Засах"}
+                      </button>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-x-4 gap-y-4 pt-4">
+                    {/* Засах горим. Уншигдах хүснэгтийг нуугаад форм гаргана —
+                        ингэснээр байгаа бүтэц хэвээр үлдэнэ. */}
+                    {zasajBuiKhuvi && (
+                      <div className="pt-4">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <p className="text-[11px] text-slate-400 mb-1">Овог</p>
+                            <input
+                              value={khuviinMedeelel.ovog}
+                              onChange={(e) =>
+                                setKhuviinMedeelel((m) => ({
+                                  ...m,
+                                  ovog: e.target.value,
+                                }))
+                              }
+                              className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 outline-none focus:border-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                            />
+                          </div>
+                          <div>
+                            <p className="text-[11px] text-slate-400 mb-1">Нэр</p>
+                            <input
+                              value={khuviinMedeelel.ner}
+                              onChange={(e) =>
+                                setKhuviinMedeelel((m) => ({
+                                  ...m,
+                                  ner: e.target.value,
+                                }))
+                              }
+                              className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 outline-none focus:border-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                            />
+                          </div>
+                          <div>
+                            <p className="text-[11px] text-slate-400 mb-1">Утас</p>
+                            <input
+                              inputMode="numeric"
+                              value={khuviinMedeelel.utas}
+                              onChange={(e) =>
+                                setKhuviinMedeelel((m) => ({
+                                  ...m,
+                                  utas: e.target.value,
+                                }))
+                              }
+                              className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 outline-none focus:border-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                            />
+                          </div>
+                          <div>
+                            <p className="text-[11px] text-slate-400 mb-1">E-mail</p>
+                            <input
+                              type="email"
+                              value={khuviinMedeelel.mail}
+                              onChange={(e) =>
+                                setKhuviinMedeelel((m) => ({
+                                  ...m,
+                                  mail: e.target.value,
+                                }))
+                              }
+                              className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 outline-none focus:border-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                            />
+                          </div>
+                          <div className="col-span-2">
+                            <p className="text-[11px] text-slate-400 mb-1">
+                              Тайлбар
+                            </p>
+                            <input
+                              value={khuviinMedeelel.tailbar}
+                              onChange={(e) =>
+                                setKhuviinMedeelel((m) => ({
+                                  ...m,
+                                  tailbar: e.target.value,
+                                }))
+                              }
+                              className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 outline-none focus:border-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                            />
+                          </div>
+                        </div>
+                        <p className="mt-2 text-[10px] text-slate-500 dark:text-slate-400">
+                          Нэвтрэх нэр, Төлөв, Эрх, Бүртгэгдсэн огноо нь системээс
+                          тодорхойлогддог тул эндээс өөрчлөгдөхгүй.
+                        </p>
+                        <div className="mt-2 flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setZasajBuiKhuvi(false)}
+                            disabled={khuviKhadgaljBaina}
+                            className="px-3 py-1 text-xs rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
+                          >
+                            Цуцлах
+                          </button>
+                          <button
+                            type="button"
+                            onClick={khuviiKhadgalya}
+                            disabled={khuviKhadgaljBaina}
+                            className="flex items-center gap-1 px-3 py-1 text-xs rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 cursor-pointer shadow-xs"
+                          >
+                            <Check className="h-3.5 w-3.5" />
+                            <span>
+                              {khuviKhadgaljBaina ? "Хадгалж байна…" : "Хадгалах"}
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    <div
+                      className={`grid grid-cols-3 gap-x-4 gap-y-4 pt-4 ${
+                        zasajBuiKhuvi ? "hidden" : ""
+                      }`}
+                    >
                       {/* Col 1 */}
                       <div className="space-y-4">
                         <div>
@@ -736,8 +974,113 @@ export const ResidentDetailModal: React.FC<Props> = ({
                           Гэр бүлийн гишүүд / Нэмэлт хэрэглэгч ({gerBuliinGishuud.length})
                         </h3>
                       </div>
-                      {/* No edit button here */}
+                      <button
+                        type="button"
+                        onClick={() => setGishuunNemejBaina((n) => !n)}
+                        className="rounded-lg px-2 py-1 text-[11px] font-medium text-blue-600 transition hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/30"
+                      >
+                        {gishuunNemejBaina ? "Болих" : "+ Гишүүн нэмэх"}
+                      </button>
                     </div>
+
+                    {/* Шууд нэмэх форм — баталгаажуулалтгүй */}
+                    {gishuunNemejBaina && (
+                      <div className="mt-3 rounded-xl border border-blue-200 bg-blue-50/40 p-3 dark:border-blue-900/50 dark:bg-blue-900/10">
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            placeholder="Овог"
+                            value={shineGishuun.ovog}
+                            onChange={(e) =>
+                              setShineGishuun((g) => ({
+                                ...g,
+                                ovog: e.target.value,
+                              }))
+                            }
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] text-slate-800 outline-none focus:border-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                          />
+                          <input
+                            placeholder="Нэр"
+                            value={shineGishuun.ner}
+                            onChange={(e) =>
+                              setShineGishuun((g) => ({
+                                ...g,
+                                ner: e.target.value,
+                              }))
+                            }
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] text-slate-800 outline-none focus:border-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                          />
+                          <input
+                            placeholder="Утас *"
+                            inputMode="numeric"
+                            value={shineGishuun.utas}
+                            onChange={(e) =>
+                              setShineGishuun((g) => ({
+                                ...g,
+                                utas: e.target.value,
+                              }))
+                            }
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] text-slate-800 outline-none focus:border-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                          />
+                          <select
+                            value={shineGishuun.kholboo}
+                            onChange={(e) =>
+                              setShineGishuun((g) => ({
+                                ...g,
+                                kholboo: e.target.value,
+                              }))
+                            }
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] text-slate-800 outline-none focus:border-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                          >
+                            <option value="Эхнэр/Нөхөр">Эхнэр/Нөхөр</option>
+                            <option value="Үр хүүхэд">Үр хүүхэд</option>
+                            <option value="Эцэг/Эх">Эцэг/Эх</option>
+                            <option value="Ах/Эгч/Дүү">Ах/Эгч/Дүү</option>
+                            <option value="Түрээслэгч">Түрээслэгч</option>
+                            <option value="Бусад">Бусад</option>
+                          </select>
+                          <select
+                            value={shineGishuun.erkh}
+                            onChange={(e) =>
+                              setShineGishuun((g) => ({
+                                ...g,
+                                erkh: e.target.value,
+                              }))
+                            }
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] text-slate-800 outline-none focus:border-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 col-span-2"
+                          >
+                            <option value="Харах + Төлөх">Харах + Төлөх</option>
+                            <option value="Харах">Зөвхөн харах</option>
+                          </select>
+                        </div>
+                        <p className="mt-2 text-[10px] text-slate-500 dark:text-slate-400">
+                          Гишүүн нэвтрэх нэр нь утасны дугаар болно.
+                          Баталгаажуулалт шаардахгүй шууд идэвхжинэ.
+                        </p>
+                        <div className="mt-2 flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setGishuunNemejBaina(false)}
+                            disabled={gishuunKhadgaljBaina}
+                            className="px-3 py-1 text-xs rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
+                          >
+                            Цуцлах
+                          </button>
+                          <button
+                            type="button"
+                            onClick={gishuunNemye}
+                            disabled={gishuunKhadgaljBaina}
+                            className="flex items-center gap-1 px-3 py-1 text-xs rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 cursor-pointer shadow-xs"
+                          >
+                            <Check className="h-3.5 w-3.5" />
+                            <span>
+                              {gishuunKhadgaljBaina
+                                ? "Хадгалж байна…"
+                                : "Хадгалах"}
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
 
                     <div className="pt-4 overflow-x-auto">
                       {gerBuliinGishuud.length === 0 ? (

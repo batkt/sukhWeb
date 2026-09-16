@@ -2657,7 +2657,15 @@ export default function DansniiKhuulga() {
 
       // Only mark as paid when transaction type is "tulult" (Төлөлт)
       // For other types (avlaga, ashiglalt), create a transaction record without marking as paid
-      if (data.type === "tulult") {
+      /**
+       * Бартер нь бараа/үйлчилгээгээр хийгдэх ТӨЛӨЛТ — авлагыг адилхан
+       * хаана. Ялгаа нь зөвхөн бүртгэлийн хэлбэрт: гүйлгээ «Бартер» гэж
+       * тэмдэглэгдэж, түүх/тайлан дээр тусдаа харагдана.
+       */
+      const barterEsekh =
+        data.type === "busad" && data.busadTurul === "barter";
+
+      if (data.type === "tulult" || barterEsekh) {
         // Payment: record directly in guilgeeAvlaguud with negative dun
         const response = await uilchilgee(token).post("/guilgeeAvlaguud", {
           baiguullagiinId: ajiltan.baiguullagiinId,
@@ -2670,17 +2678,25 @@ export default function DansniiKhuulga() {
             data.tailbar ||
             (data.ekhniiUldegdel
               ? `Эхний үлдэгдэл - ${data.date}`
-              : `Төлөлт - ${data.date}`),
+              : `${barterEsekh ? "Бартер" : "Төлөлт"} - ${data.date}`),
           ognoo: data.date,
           createdBy: ajiltan._id,
           createdAt: new Date().toISOString(),
           burtgesenAjiltaniiNer: ajiltan.ner,
           guilgeeKhiisenAjiltniiNer: ajiltan.ner,
           turul: "tulult",
+          // Хэлбэрийг нь ялгаж үлдээнэ — хүснэгт, тайлан эндээс уншина.
+          ...(barterEsekh
+            ? { khelber: "Бартер", zardliinTurul: "Бартер" }
+            : {}),
         });
 
         if (isTransactionHttpOk(response)) {
-          toast.success("Төлөлт амжилттай бүртгэгдлээ");
+          toast.success(
+            barterEsekh
+              ? "Бартер амжилттай бүртгэгдлээ"
+              : "Төлөлт амжилттай бүртгэгдлээ",
+          );
           setIsTransactionModalOpen(false);
           setSelectedTransactionResident(null);
 

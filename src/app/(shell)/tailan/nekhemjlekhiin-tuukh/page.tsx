@@ -63,6 +63,7 @@ const TUROL_NER: Record<string, string> = {
   invoice: "Нэхэмжлэх",
   receivable: "Авлага",
   payment: "Төлөлт",
+  khungulult: "Хөнгөлөлт",
 };
 
 const TUROL_ANGI: Record<string, string> = {
@@ -72,6 +73,8 @@ const TUROL_ANGI: Record<string, string> = {
     "bg-amber-100 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 border-amber-300 dark:border-amber-700",
   payment:
     "bg-emerald-100 dark:bg-emerald-900/60 text-emerald-900 dark:text-emerald-200 border-emerald-300 dark:border-emerald-700",
+  khungulult:
+    "bg-purple-100 dark:bg-purple-900/60 text-purple-900 dark:text-purple-200 border-purple-300 dark:border-purple-700",
 };
 
 interface NekhemjlekhiinTuukhItem {
@@ -84,10 +87,11 @@ interface NekhemjlekhiinTuukhItem {
   ner: string;
   ognoo: string;
   tulbur: number;
+  khungulult?: number;
   tuluv: string;
   tuukh: string;
-  /** Сервер гурван төрлийн бичлэгийг нэг жагсаалтад нийлүүлж буцаадаг. */
-  type?: "invoice" | "receivable" | "payment";
+  /** Сервер дөрвөн төрлийн бичлэгийг нэг жагсаалтад нийлүүлж буцаадаг. */
+  type?: "invoice" | "receivable" | "payment" | "khungulult";
   uldegdel?: number;
 }
 
@@ -207,17 +211,29 @@ export default function NekhemjlekhiinTuukhPage() {
    * хоёрыг нийлүүлж 200₮ гаргадаг байв. Тиймээс төрлөөр нь салгав.
    */
   const dungiinKhuraangui = useMemo(() => {
-    const empty = { nekhemjilsen: 0, tulsun: 0, uldegdel: 0 };
+    const empty = { nekhemjilsen: 0, tulsun: 0, khungulult: 0, uldegdel: 0 };
     if (!Array.isArray(data)) return empty;
 
     let nekhemjilsen = 0;
     let tulsun = 0;
+    let khungulult = 0;
     for (const item of data) {
-      const dun = item.tulbur || 0;
-      if (item.type === "payment") tulsun += dun;
-      else nekhemjilsen += dun;
+      const dun = Number(item.tulbur || 0);
+      if (item.type === "payment") {
+        tulsun += dun;
+      } else if (item.type === "khungulult") {
+        khungulult += dun;
+      } else {
+        nekhemjilsen += dun;
+        if (item.khungulult) khungulult += Number(item.khungulult);
+      }
     }
-    return { nekhemjilsen, tulsun, uldegdel: nekhemjilsen - tulsun };
+    return {
+      nekhemjilsen,
+      tulsun,
+      khungulult,
+      uldegdel: nekhemjilsen - tulsun - khungulult,
+    };
   }, [data]);
 
   const totalTulbur = dungiinKhuraangui.nekhemjilsen;
@@ -239,13 +255,14 @@ export default function NekhemjlekhiinTuukhPage() {
       [`Тайлан татсан: ${new Date().toLocaleString("mn-MN")}`],
       [""],
       ["Нийт нэхэмжилсэн:", dungiinKhuraangui.nekhemjilsen, ""],
+      ["Хөнгөлөлт:", dungiinKhuraangui.khungulult, ""],
       ["Төлсөн дүн:", dungiinKhuraangui.tulsun, ""],
       ["Нийт үлдэгдэл:", dungiinKhuraangui.uldegdel, ""],
       [""]
     ];
 
     // 2. Headers
-    const headers = ["№", "Гэрээний дугаар", "Давхар", "Тоот", "Овог", "Нэр", "Огноо", "Төрөл", "Дүн", "Үлдэгдэл", "Төлөв", "Түүх"];
+    const headers = ["№", "Гэрээний дугаар", "Давхар", "Тоот", "Овог", "Нэр", "Огноо", "Төрөл", "Дүн", "Хөнгөлөлт", "Үлдэгдэл", "Төлөв", "Түүх"];
 
     // 3. Data Rows
     const rows = data.map((item, idx) => [
@@ -258,6 +275,7 @@ export default function NekhemjlekhiinTuukhPage() {
       item.ognoo?.split("T")[0] || "",
       TUROL_NER[item.type || "invoice"] || "",
       item.tulbur || 0,
+      item.khungulult || (item.type === "khungulult" ? item.tulbur : 0),
       item.uldegdel ?? "",
       item.tuluv || "",
       item.tuukh || "",
@@ -473,7 +491,7 @@ export default function NekhemjlekhiinTuukhPage() {
       {error && <div className="text-red-500 mb-4">Алдаа: {error}</div>}
 
       {/* Дүнгийн хураангуй */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
         {[
           {
             label: "Нийт нэхэмжилсэн",
@@ -482,15 +500,21 @@ export default function NekhemjlekhiinTuukhPage() {
             angi: "text-blue-600 dark:text-blue-400",
           },
           {
+            label: "Нийт хөнгөлөлт",
+            utga: dungiinKhuraangui.khungulult,
+            tailbar: "Бүртгэгдсэн хөнгөлөлт",
+            angi: "text-emerald-600 dark:text-emerald-400",
+          },
+          {
             label: "Төлсөн дүн",
             utga: dungiinKhuraangui.tulsun,
             tailbar: "Бүртгэгдсэн төлөлт",
-            angi: "text-emerald-600 dark:text-emerald-400",
+            angi: "text-teal-600 dark:text-teal-400",
           },
           {
             label: "Нийт үлдэгдэл",
             utga: dungiinKhuraangui.uldegdel,
-            tailbar: "Нэхэмжилсэн − төлсөн",
+            tailbar: "Нэхэмжилсэн − хөнгөлөлт − төлсөн",
             angi:
               dungiinKhuraangui.uldegdel > 0
                 ? "text-rose-600 dark:text-rose-400"
@@ -501,11 +525,11 @@ export default function NekhemjlekhiinTuukhPage() {
             key={k.label}
             className="neu-panel rounded-2xl p-4 flex flex-col gap-1"
           >
-            <span className="text-xs text-theme opacity-70">{k.label}</span>
-            <span className={`text-xl font-semibold ${k.angi}`}>
+            <span className="text-xs text-theme opacity-70 leading-normal">{k.label}</span>
+            <span className={`text-xl font-semibold ${k.angi} leading-normal`}>
               {formatNumber(k.utga)}₮
             </span>
-            <span className="text-[11px] text-theme opacity-50">
+            <span className="text-[11px] text-theme opacity-50 leading-normal">
               {k.tailbar}
             </span>
           </div>
@@ -519,43 +543,46 @@ export default function NekhemjlekhiinTuukhPage() {
             <table className="table-ui text-sm min-w-full">
               <thead>
                 <tr>
-                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap w-12">
+                  <th className="z-10 p-3 text-xs text-theme text-center whitespace-nowrap w-12">
                     №
                   </th>
-                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs text-theme text-center whitespace-nowrap">
                     Гэрээний дугаар
                   </th>
-                  {/* <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
+                  {/* <th className="z-10 p-3 text-xs text-theme text-center whitespace-nowrap">
                     Байрны нэр
                   </th> */}
-                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs text-theme text-center whitespace-nowrap">
                     Давхар
                   </th>
-                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs text-theme text-center whitespace-nowrap">
                     Тоот
                   </th>
-                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs text-theme text-center whitespace-nowrap">
                     Овог
                   </th>
-                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs text-theme text-center whitespace-nowrap">
                     Нэр
                   </th>
-                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs text-theme text-center whitespace-nowrap">
                     Огноо
                   </th>
-                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs text-theme text-center whitespace-nowrap">
                     Төрөл
                   </th>
-                  <th className="z-10 p-3 text-xs  text-theme text-right whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs text-theme text-right whitespace-nowrap">
                     Дүн
                   </th>
-                  <th className="z-10 p-3 text-xs  text-theme text-right whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs text-theme text-right whitespace-nowrap">
+                    Хөнгөлөлт
+                  </th>
+                  <th className="z-10 p-3 text-xs text-theme text-right whitespace-nowrap">
                     Үлдэгдэл
                   </th>
-                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs text-theme text-center whitespace-nowrap">
                     Төлөв
                   </th>
-                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs text-theme text-center whitespace-nowrap">
                     Түүх
                   </th>
                 </tr>
@@ -563,13 +590,13 @@ export default function NekhemjlekhiinTuukhPage() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={12} className="p-8 text-center text-theme">
+                    <td colSpan={13} className="p-8 text-center text-theme">
                       <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
                     </td>
                   </tr>
                 ) : data.length === 0 ? (
                   <tr>
-                    <td colSpan={12} className="p-8 text-center text-theme">
+                    <td colSpan={13} className="p-8 text-center text-theme">
                       Мэдээлэл алга байна
                     </td>
                   </tr>
@@ -620,12 +647,19 @@ export default function NekhemjlekhiinTuukhPage() {
                         <td
                           className={`p-3 text-right whitespace-nowrap ${
                             item.type === "payment"
-                              ? "text-emerald-600 dark:text-emerald-400"
+                              ? "text-teal-600 dark:text-teal-400 font-medium"
+                              : item.type === "khungulult"
+                              ? "text-emerald-600 dark:text-emerald-400 font-medium"
                               : "text-theme"
                           }`}
                         >
                           {item.type === "payment" ? "+" : ""}
                           {formatNumber(item.tulbur)}₮
+                        </td>
+                        <td className="p-3 text-right whitespace-nowrap text-emerald-600 dark:text-emerald-400 font-medium">
+                          {item.khungulult || item.type === "khungulult"
+                            ? `${formatNumber(item.khungulult || item.tulbur)}₮`
+                            : "—"}
                         </td>
                         <td className="p-3 text-right text-theme whitespace-nowrap">
                           {typeof item.uldegdel === "number"
@@ -634,7 +668,7 @@ export default function NekhemjlekhiinTuukhPage() {
                         </td>
                         <td className="p-3 text-center text-theme whitespace-nowrap">
                           <span
-                            className={`px-2 py-1 rounded-full text-xs  ${
+                            className={`px-2 py-1 rounded-full text-xs ${
                               item.tuluv === "Төлсөн"
                                 ? "badge-paid"
                                 : item.tuluv === "Төлөөгүй"
@@ -653,8 +687,7 @@ export default function NekhemjlekhiinTuukhPage() {
                 )}
               </tbody>
               {/* Доод нийлбэрийг ӨӨР <table>-д биш, мөн хүснэгтийн <tfoot>-д
-                  байрлуулав — өмнө нь тусдаа хүснэгт байсан тул баганын өргөн
-                  таарахгүй, тоо нь өөр багана дээр буудаг байв. */}
+                  байрлуулав */}
               {data.length > 0 && (
                 <tfoot className="border-t dark:border-gray-800 border-gray-100">
                   <tr>
@@ -666,6 +699,9 @@ export default function NekhemjlekhiinTuukhPage() {
                     </td>
                     <td className="p-3 text-right text-theme whitespace-nowrap font-semibold">
                       {formatNumber(dungiinKhuraangui.nekhemjilsen)}₮
+                    </td>
+                    <td className="p-3 text-right text-emerald-600 dark:text-emerald-400 whitespace-nowrap font-semibold">
+                      {formatNumber(dungiinKhuraangui.khungulult)}₮
                     </td>
                     <td className="p-3 text-right whitespace-nowrap font-semibold text-rose-600 dark:text-rose-400">
                       {formatNumber(dungiinKhuraangui.uldegdel)}₮

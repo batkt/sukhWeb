@@ -99,20 +99,20 @@ export function StandardTable<T extends object>({
       !bg-gray-50 dark:!bg-gray-900 
       text-gray-900 dark:text-white 
       border-b border-gray-200 dark:border-gray-800
-      font-normal py-1.5 px-2
+      font-normal py-2 px-2 leading-normal
       ${col.className || ""}
     `,
     children: col.children?.map((child, idx) => mapColumn(child, idx, col.children!.length)),
     onCell: () => ({
       className: `
         ${colIndex < totalCols - 1 ? "!border-r !border-slate-200 dark:!border-slate-800" : ""}
-        py-1.5 px-2
+        py-1.5 px-2 leading-normal
       `,
     }),
     onHeaderCell: () => ({
       className: `
         ${colIndex < totalCols - 1 ? "!border-r !border-slate-200 dark:!border-slate-800" : ""}
-        !bg-gray-50 dark:!bg-gray-900 py-1.5 px-2
+        !bg-gray-50 dark:!bg-gray-900 py-2 px-2 leading-normal
       `,
     }),
     render: col.children ? undefined : (value: any, record: T, index: number) => {
