@@ -12,11 +12,19 @@ import {
   CheckSquare,
   Square,
   Clock,
+  Download,
+  ChevronLeft,
+  ChevronRight,
+  Edit2,
+  Trash2,
+  ArrowUpDown,
 } from "lucide-react";
+import dayjs from "dayjs";
 import useModalHotkeys from "@/lib/useModalHotkeys";
 import uilchilgee from "@/lib/uilchilgee";
 import { useAuth } from "@/lib/useAuth";
 import { MonthPickerInput } from "@/components/ui/MonthPickerInput";
+import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import { toast } from "sonner";
 import {
   getResidentField,
@@ -42,13 +50,31 @@ interface ResidentRow {
 
 interface DiscountHistoryRow {
   _id: string;
-  ognoo: string;
+  ognoo?: string;
+  createdAt?: string;
+  updatedAt?: string;
   tailbar?: string;
   dun: number;
   toot?: string;
   ner?: string;
+  ovog?: string;
   gereeniiId?: string;
-  createdAt?: string;
+  gereeniiDugaar?: string;
+  ekhlekhOgnoo?: string;
+  duusakhOgnoo?: string;
+  davkhar?: string;
+  orts?: string;
+  khungulukhTurul?: string;
+  tulukhDun?: number;
+  tulsunDun?: number;
+  turul?: string;
+  khungulultKhuvi?: number;
+  khungulultKhonog?: number;
+  khonogTootsokhEsekh?: boolean;
+  zardliinNer?: string;
+  guilgeeKhiisenAjiltniiNer?: string;
+  zassan?: string;
+  bichlegiinToo?: number;
 }
 
 interface HongololtToolProps {
@@ -70,6 +96,18 @@ interface HongololtToolProps {
 
 const fmt = (n: number) =>
   n.toLocaleString("mn-MN", { minimumFractionDigits: 0 });
+
+const fmt2 = (n: number) =>
+  (Number(n) || 0).toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+const fmtDateTime = (d?: string | Date) => {
+  if (!d) return "—";
+  const dt = dayjs(d);
+  return dt.isValid() ? dt.format("YYYY-MM-DD HH:mm:ss") : String(d);
+};
 
 const fmtDate = (d: string) => {
   if (!d) return "—";
@@ -220,6 +258,13 @@ export default function HongololtTool({
   const [histFetching, setHistFetching] = useState(false);
   const [history, setHistory] = useState<DiscountHistoryRow[]>([]);
   const [histSearch, setHistSearch] = useState("");
+  const [histDavkhar, setHistDavkhar] = useState("");
+  const [histDateRange, setHistDateRange] = useState<[string | null, string | null]>([
+    dayjs().format("YYYY-MM-DD"),
+    dayjs().format("YYYY-MM-DD"),
+  ]);
+  const [histPage, setHistPage] = useState(1);
+  const [histPageSize, setHistPageSize] = useState(100);
 
   /* Submitting */
   const [loading, setLoading] = useState(false);
@@ -351,22 +396,99 @@ export default function HongololtTool({
     if (!token || !baiguullagiinId) return;
     try {
       setHistFetching(true);
-      const res = await uilchilgee(token).get("/guilgeeAvlaguud", {
-        params: {
-          baiguullagiinId,
-          query: JSON.stringify({ turul: "Хөнгөлөлт" }),
-          sort: JSON.stringify({ ognoo: -1, createdAt: -1 }),
-          khuudasniiKhemjee: 500,
-        },
+      const [guilgeeRes, gereeRes] = await Promise.all([
+        uilchilgee(token).get("/guilgeeAvlaguud", {
+          params: {
+            baiguullagiinId,
+            query: JSON.stringify({ turul: "Хөнгөлөлт" }),
+            sort: JSON.stringify({ ognoo: -1, createdAt: -1 }),
+            khuudasniiKhemjee: 1000,
+          },
+        }),
+        uilchilgee(token)
+          .get("/geree", {
+            params: {
+              baiguullagiinId,
+              barilgiinId: barilgiinId || undefined,
+              khuudasniiKhemjee: 1000,
+            },
+          })
+          .catch(() => ({ data: { jagsaalt: [] } })),
+      ]);
+
+      const rawGuilgee = Array.isArray(guilgeeRes.data?.jagsaalt)
+        ? guilgeeRes.data.jagsaalt
+        : [];
+      const gereeList = Array.isArray(gereeRes.data?.jagsaalt)
+        ? gereeRes.data.jagsaalt
+        : [];
+
+      const gereeMap = new Map<string, any>();
+      gereeList.forEach((g: any) => {
+        if (g._id) gereeMap.set(String(g._id), g);
+        if (g.gereeniiDugaar) gereeMap.set(String(g.gereeniiDugaar), g);
       });
-      const raw = Array.isArray(res.data?.jagsaalt) ? res.data.jagsaalt : [];
-      setHistory(raw);
+
+      const enriched: DiscountHistoryRow[] = rawGuilgee.map((h: any) => {
+        const g =
+          (h.gereeniiId && gereeMap.get(String(h.gereeniiId))) ||
+          (h.gereeniiDugaar && gereeMap.get(String(h.gereeniiDugaar)));
+
+        const gDugaar =
+          h.gereeniiDugaar ||
+          g?.gereeniiDugaar ||
+          (h.gereeniiId ? `ГД${String(h.gereeniiId).slice(-6)}` : "—");
+
+        const toot = h.toot || g?.toot || "—";
+        const ner = h.ner || g?.ner || g?.orshinSuugchNer || "—";
+        const davkhar = g?.davkhar || h.davkhar || "";
+        const orts = g?.orts || h.orts || "";
+        const ekhlekhOgnoo = g?.ekhlekhOgnoo
+          ? dayjs(g.ekhlekhOgnoo).format("YYYY-MM-DD")
+          : h.ognoo
+          ? dayjs(h.ognoo).format("YYYY-MM-DD")
+          : "—";
+        const duusakhOgnoo = g?.duusakhOgnoo
+          ? dayjs(g.duusakhOgnoo).format("YYYY-MM-DD")
+          : "—";
+        const tulukhDun =
+          g?.sariinTulbur || g?.suhTulbur || g?.ashiglaltiinZardal || 0;
+        const dun = Math.abs(Number(h.dun) || 0);
+        const tulsunDun = Number(h.tulsunDun) || 0;
+        const turul = h.khungulultKhuvi
+          ? `${h.khungulultKhuvi}%`
+          : h.khonogTootsokhEsekh
+          ? "Хоногоор"
+          : h.turul || "Шаталсан";
+        const ajiltan = h.guilgeeKhiisenAjiltniiNer || "CAdmin";
+
+        return {
+          ...h,
+          gereeniiDugaar: gDugaar,
+          toot,
+          ner,
+          davkhar,
+          orts,
+          ekhlekhOgnoo,
+          duusakhOgnoo,
+          tulukhDun,
+          dun,
+          tulsunDun,
+          khungulukhTurul: h.khungulukhTurul || "Гэрээнээс",
+          turul,
+          guilgeeKhiisenAjiltniiNer: ajiltan,
+          zassan: h.zassan || "-",
+          bichlegiinToo: h.khungulultKhonog ? Number(h.khungulultKhonog) : (h.bichlegiinToo || 3),
+        };
+      });
+
+      setHistory(enriched);
     } catch {
       toast.error("Хөнгөлөлтийн түүх татахад алдаа гарлаа");
     } finally {
       setHistFetching(false);
     }
-  }, [token, baiguullagiinId]);
+  }, [token, baiguullagiinId, barilgiinId]);
 
   useEffect(() => {
     if (inline || show) {
@@ -381,6 +503,8 @@ export default function HongololtTool({
       setActiveTab("oruulakh");
       setHistory([]);
       setHistSearch("");
+      setHistDavkhar("");
+      setHistPage(1);
     }
   }, [show]);
 
@@ -406,16 +530,122 @@ export default function HongololtTool({
     });
   }, [residents, searchTerm, orts, davkhar]);
 
-  const filteredHistory = useMemo(() => {
-    const q = histSearch.toLowerCase();
-    return history.filter(
-      (h) =>
-        !q ||
-        (h.ner || "").toLowerCase().includes(q) ||
-        (h.toot || "").includes(q) ||
-        (h.tailbar || "").toLowerCase().includes(q)
+  const davkharOptions = useMemo(() => {
+    const set = new Set<string>();
+    history.forEach((h) => {
+      if (h.davkhar) set.add(String(h.davkhar));
+    });
+    return Array.from(set).sort((a, b) =>
+      a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" })
     );
-  }, [history, histSearch]);
+  }, [history]);
+
+  const filteredHistory = useMemo(() => {
+    const q = histSearch.trim().toLowerCase();
+    return history.filter((h) => {
+      if (histDavkhar && String(h.davkhar || "") !== histDavkhar) return false;
+
+      const rowDate = h.ognoo || h.createdAt;
+      if (rowDate && histDateRange[0] && histDateRange[1]) {
+        const dStr = dayjs(rowDate).format("YYYY-MM-DD");
+        if (dStr < histDateRange[0] || dStr > histDateRange[1]) {
+          return false;
+        }
+      } else if (rowDate && histDateRange[0]) {
+        const dStr = dayjs(rowDate).format("YYYY-MM-DD");
+        if (dStr < histDateRange[0]) return false;
+      }
+
+      if (!q) return true;
+      return (
+        (h.ner || "").toLowerCase().includes(q) ||
+        (h.toot || "").toLowerCase().includes(q) ||
+        (h.gereeniiDugaar || "").toLowerCase().includes(q) ||
+        (h.tailbar || "").toLowerCase().includes(q) ||
+        (h.guilgeeKhiisenAjiltniiNer || "").toLowerCase().includes(q) ||
+        (h.turul || "").toLowerCase().includes(q)
+      );
+    });
+  }, [history, histSearch, histDavkhar, histDateRange]);
+
+  const { totalTulukhDun, totalKhungulukhDun, totalTulsunDun } = useMemo(() => {
+    let tTulukh = 0;
+    let tKhungulukh = 0;
+    let tTulsun = 0;
+    filteredHistory.forEach((h) => {
+      tTulukh += Number(h.tulukhDun) || 0;
+      tKhungulukh += Math.abs(Number(h.dun) || 0);
+      tTulsun += Number(h.tulsunDun) || 0;
+    });
+    return {
+      totalTulukhDun: tTulukh,
+      totalKhungulukhDun: tKhungulukh,
+      totalTulsunDun: tTulsun,
+    };
+  }, [filteredHistory]);
+
+  const totalPages = Math.ceil(filteredHistory.length / histPageSize) || 1;
+  const paginatedHistory = useMemo(() => {
+    const start = (histPage - 1) * histPageSize;
+    return filteredHistory.slice(start, start + histPageSize);
+  }, [filteredHistory, histPage, histPageSize]);
+
+  const handleExportExcel = async () => {
+    try {
+      const XLSX = await import("xlsx");
+      const data = filteredHistory.map((h, i) => ({
+        "№": i + 1,
+        "Огноо": fmtDateTime(h.createdAt || h.ognoo),
+        "Хөнгөлөлт": `Олон (${h.bichlegiinToo || 3})`,
+        "Гэрээнүүд": h.gereeniiDugaar || "",
+        "Талбай дугаар": h.toot || "",
+        "Түрээслэгчид": h.ner || "",
+        "Эхлэх хугацаа": h.ekhlekhOgnoo || "",
+        "Дуусах хугацаа": h.duusakhOgnoo || "",
+        "Хөнгөлөх төрөл": h.khungulukhTurul || "Гэрээнээс",
+        "Төлөх дүн": h.tulukhDun || 0,
+        "Хөнгөлөх дүн": Math.abs(h.dun || 0),
+        "Төлсөн дүн": h.tulsunDun || 0,
+        "Төрөл": h.turul || "Шаталсан",
+        "Шалтгаан": h.tailbar || "",
+        "Ажилтан": h.guilgeeKhiisenAjiltniiNer || "",
+        "Зассан": h.zassan || "-",
+      }));
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Хөнгөлөлт түүх");
+      XLSX.writeFile(
+        wb,
+        `khungulult_tuukh_${dayjs().format("YYYY-MM-DD")}.xlsx`
+      );
+      toast.success("Excel амжилттай татагдлаа");
+    } catch (e: any) {
+      toast.error("Excel татахад алдаа гарлаа: " + (e?.message || ""));
+    }
+  };
+
+  const handleDeleteDiscount = async (row: DiscountHistoryRow) => {
+    const tailbar = window.prompt("Хөнгөлөлт устгах шалтгаанаа бичнэ үү:");
+    if (!tailbar || !tailbar.trim()) return;
+    try {
+      const res = await uilchilgee(token).post("/khungulultUstgaya", {
+        baiguullagiinId,
+        id: row._id,
+        tailbar: tailbar.trim(),
+      });
+      if (res.data?.success !== false) {
+        toast.success("Хөнгөлөлт амжилттай устгагдлаа");
+        loadHistory();
+        if (onSuccess) onSuccess();
+      } else {
+        toast.error(res.data?.message || "Устгахад алдаа гарлаа");
+      }
+    } catch (err: any) {
+      toast.error(
+        err?.response?.data?.message || err.message || "Устгахад алдаа гарлаа"
+      );
+    }
+  };
 
   /* ── Selection helpers ── */
   const isAllSelected =
@@ -990,37 +1220,76 @@ export default function HongololtTool({
       {/* ══ TAB 2 — ТҮҮХ ══ */}
       {activeTab === "tuukh" && (
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden pt-3 px-2">
-          <div className="flex-1 flex flex-col min-h-0 overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/20">
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/20 shadow-xs">
             {/* Toolbar */}
-            <div className="flex items-center gap-3 px-5 py-3 border-b border-gray-200 dark:border-gray-700 shrink-0">
-              <div className="relative flex-1 max-w-sm">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Тоот, нэр эсвэл тайлбараар хайх..."
-                  value={histSearch}
-                  onChange={(e) => setHistSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
+            <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-gray-200 dark:border-gray-700 shrink-0 bg-white dark:bg-gray-900/20 flex-wrap">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <div className="w-64">
+                  <DatePickerInput
+                    mode="range"
+                    value={histDateRange}
+                    onChange={(val) => {
+                      setHistDateRange(val as [string | null, string | null]);
+                      setHistPage(1);
+                    }}
+                    placeholder="Огноо сонгох"
+                  />
+                </div>
+                <div className="w-36">
+                  <input
+                    type="text"
+                    placeholder="Бүгд"
+                    value={histSearch}
+                    onChange={(e) => {
+                      setHistSearch(e.target.value);
+                      setHistPage(1);
+                    }}
+                    className="w-full px-3 py-1.5 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+                <div className="w-28">
+                  <select
+                    value={histDavkhar}
+                    onChange={(e) => {
+                      setHistDavkhar(e.target.value);
+                      setHistPage(1);
+                    }}
+                    className="w-full px-2.5 py-1.5 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  >
+                    <option value="">Давхар</option>
+                    {davkharOptions.map((d) => (
+                      <option key={d} value={d}>
+                        {d} давхар
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <button
+                  type="button"
+                  onClick={loadHistory}
+                  disabled={histFetching}
+                  className="p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition-colors border border-gray-200 dark:border-gray-700"
+                  title="Дахин ачааллах"
+                >
+                  <RefreshCw
+                    className={`w-4 h-4 ${histFetching ? "animate-spin" : ""}`}
+                  />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={loadHistory}
-                disabled={histFetching}
-                className="p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition-colors"
-                title="Дахин ачааллах"
-              >
-                <RefreshCw
-                  className={`w-4 h-4 ${histFetching ? "animate-spin" : ""}`}
-                />
-              </button>
-              <span className="ml-auto text-xs text-gray-400">
-                Нийт: {filteredHistory.length}
-              </span>
+
+              <div>
+                <button
+                  type="button"
+                  onClick={handleExportExcel}
+                  className="px-4 py-1.5 text-xs font-medium rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-xs cursor-pointer"
+                >
+                  Excel
+                </button>
+              </div>
             </div>
 
             {/* History table */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-auto">
               {histFetching ? (
                 <div className="flex items-center justify-center h-40 text-gray-400 text-xs gap-2">
                   <RefreshCw className="w-4 h-4 animate-spin" />
@@ -1032,59 +1301,210 @@ export default function HongololtTool({
                   Хөнгөлөлтийн түүх байхгүй
                 </div>
               ) : (
-                <table className="w-full text-xs border-collapse">
+                <table className="w-full text-xs border-collapse min-w-[1300px]">
                   <thead>
-                    <tr className="bg-gray-50 dark:bg-gray-800/60 sticky top-0 z-10 border-b border-gray-200 dark:border-gray-700">
-                      <th className="px-4 py-2.5 text-left font-medium text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">
-                        №
-                      </th>
-                      <th className="px-4 py-2.5 text-left font-medium text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">
+                    <tr className="bg-gray-50/90 dark:bg-gray-800/80 sticky top-0 z-10 border-b border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300">
+                      <th className="px-3 py-2.5 text-center font-medium border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
                         Огноо
                       </th>
-                      <th className="px-4 py-2.5 text-left font-medium text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">
-                        Тоот
+                      <th className="px-3 py-2.5 text-center font-medium border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
+                        Хөнгөлөлт
                       </th>
-                      <th className="px-4 py-2.5 text-left font-medium text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">
-                        Оршин суугч
+                      <th className="px-3 py-2.5 text-center font-medium border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
+                        Гэрээнүүд
                       </th>
-                      <th className="px-4 py-2.5 text-left font-medium text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">
-                        Тайлбар
+                      <th className="px-3 py-2.5 text-center font-medium border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
+                        Талбай дугаар
                       </th>
-                      <th className="px-4 py-2.5 text-right font-medium text-gray-500 dark:text-gray-400">
-                        Дүн
+                      <th className="px-3 py-2.5 text-left font-medium border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
+                        Түрээслэгчид
+                      </th>
+                      <th className="px-3 py-2.5 text-center font-medium border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
+                        Эхлэх хугацаа
+                      </th>
+                      <th className="px-3 py-2.5 text-center font-medium border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
+                        Дуусах хугацаа
+                      </th>
+                      <th className="px-3 py-2.5 text-center font-medium border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
+                        Хөнгөлөх төрөл
+                      </th>
+                      <th className="px-3 py-2.5 text-right font-medium border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
+                        Төлөх дүн
+                      </th>
+                      <th className="px-3 py-2.5 text-right font-medium border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
+                        Хөнгөлөх дүн
+                      </th>
+                      <th className="px-3 py-2.5 text-right font-medium border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
+                        Төлсөн дүн
+                      </th>
+                      <th className="px-3 py-2.5 text-center font-medium border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
+                        Төрөл
+                      </th>
+                      <th className="px-3 py-2.5 text-left font-medium border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
+                        Шалтгаан
+                      </th>
+                      <th className="px-3 py-2.5 text-center font-medium border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
+                        <div className="inline-flex items-center gap-1 justify-center">
+                          <span>Ажилтан</span>
+                          <ArrowUpDown className="w-3 h-3 text-gray-400" />
+                        </div>
+                      </th>
+                      <th className="px-3 py-2.5 text-center font-medium border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
+                        Зассан
+                      </th>
+                      <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap w-16">
+                        Үйлдэл
                       </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredHistory.map((h, idx) => (
+                    {paginatedHistory.map((h, idx) => (
                       <tr
                         key={h._id}
-                        className={`border-b border-gray-200 dark:border-gray-700 ${idx % 2 === 0
+                        className={`border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-colors ${
+                          idx % 2 === 0
                             ? "bg-white dark:bg-transparent"
-                            : "bg-gray-50/50 dark:bg-gray-800/20"
-                          }`}
+                            : "bg-gray-50/40 dark:bg-gray-800/20"
+                        }`}
                       >
-                        <td className="px-4 py-2 text-gray-400 border-r border-gray-200 dark:border-gray-700">{idx + 1}</td>
-                        <td className="px-4 py-2 text-gray-600 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">
-                          {fmtDate(h.ognoo || h.createdAt || "")}
+                        {/* Огноо */}
+                        <td className="px-3 py-2 text-center text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
+                          {fmtDateTime(h.createdAt || h.ognoo)}
                         </td>
-                        <td className="px-4 py-2 text-gray-700 dark:text-gray-300 font-medium border-r border-gray-200 dark:border-gray-700">
+                        {/* Хөнгөлөлт */}
+                        <td className="px-3 py-2 text-center border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
+                          <span className="text-blue-600 dark:text-blue-400 font-normal hover:underline cursor-pointer">
+                            Олон ({h.bichlegiinToo || 3})
+                          </span>
+                        </td>
+                        {/* Гэрээнүүд */}
+                        <td className="px-3 py-2 text-center text-gray-800 dark:text-gray-200 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap font-normal">
+                          {h.gereeniiDugaar || "—"}
+                        </td>
+                        {/* Талбай дугаар */}
+                        <td className="px-3 py-2 text-center text-gray-800 dark:text-gray-200 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap font-normal">
                           {h.toot || "—"}
                         </td>
-                        <td className="px-4 py-2 text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700">
+                        {/* Түрээслэгчид */}
+                        <td className="px-3 py-2 text-left text-gray-800 dark:text-gray-200 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap font-normal">
                           {h.ner || "—"}
                         </td>
-                        <td className="px-4 py-2 text-gray-500 dark:text-gray-400 max-w-xs truncate border-r border-gray-200 dark:border-gray-700">
+                        {/* Эхлэх хугацаа */}
+                        <td className="px-3 py-2 text-center text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
+                          {h.ekhlekhOgnoo || "—"}
+                        </td>
+                        {/* Дуусах хугацаа */}
+                        <td className="px-3 py-2 text-center text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
+                          {h.duusakhOgnoo || "—"}
+                        </td>
+                        {/* Хөнгөлөх төрөл */}
+                        <td className="px-3 py-1.5 text-center border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
+                          <span className="inline-block px-3 py-1 rounded-md text-xs font-normal bg-blue-500 hover:bg-blue-600 text-white transition-colors shadow-2xs">
+                            {h.khungulukhTurul || "Гэрээнээс"}
+                          </span>
+                        </td>
+                        {/* Төлөх дүн */}
+                        <td className="px-3 py-2 text-right tabular-nums text-gray-800 dark:text-gray-200 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap font-normal">
+                          {fmt2(h.tulukhDun || 0)}
+                        </td>
+                        {/* Хөнгөлөх дүн */}
+                        <td className="px-3 py-2 text-right tabular-nums text-gray-800 dark:text-gray-200 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap font-normal">
+                          {fmt2(Math.abs(h.dun || 0))}
+                        </td>
+                        {/* Төлсөн дүн */}
+                        <td className="px-3 py-2 text-right tabular-nums text-gray-800 dark:text-gray-200 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap font-normal">
+                          {fmt2(h.tulsunDun || 0)}
+                        </td>
+                        {/* Төрөл */}
+                        <td className="px-3 py-2 text-center text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
+                          {h.turul || "Шаталсан"}
+                        </td>
+                        {/* Шалтгаан */}
+                        <td
+                          className="px-3 py-2 text-left text-gray-700 dark:text-gray-300 max-w-[120px] truncate border-r border-gray-200 dark:border-gray-700 whitespace-nowrap"
+                          title={h.tailbar || ""}
+                        >
                           {h.tailbar || "—"}
                         </td>
-                        <td className="px-4 py-2 text-right tabular-nums font-medium text-emerald-600 dark:text-emerald-400">
-                          -{fmt(Math.abs(h.dun))}₮
+                        {/* Ажилтан */}
+                        <td className="px-3 py-2 text-center text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
+                          {h.guilgeeKhiisenAjiltniiNer || "CAdmin"}
+                        </td>
+                        {/* Зассан */}
+                        <td className="px-3 py-2 text-center text-gray-400 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
+                          {h.zassan || "-"}
+                        </td>
+                        {/* Үйлдэл */}
+                        <td className="px-2 py-2 text-center whitespace-nowrap">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteDiscount(h)}
+                              className="p-1 text-gray-400 hover:text-red-500 rounded transition-colors"
+                              title="Устгах"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
                   </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 border-gray-200 dark:border-gray-700 font-bold bg-white dark:bg-gray-900/40">
+                      <td colSpan={8} className="px-3 py-2"></td>
+                      <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap text-gray-900 dark:text-white font-bold">
+                        {fmt2(totalTulukhDun)}
+                      </td>
+                      <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap text-gray-900 dark:text-white font-bold">
+                        {fmt2(totalKhungulukhDun)}
+                      </td>
+                      <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap text-gray-900 dark:text-white font-bold">
+                        {fmt2(totalTulsunDun)}
+                      </td>
+                      <td colSpan={5} className="px-3 py-2"></td>
+                    </tr>
+                  </tfoot>
                 </table>
               )}
+            </div>
+
+            {/* Pagination Footer */}
+            <div className="flex items-center justify-end gap-3 px-4 py-2 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/30 text-xs text-gray-600 dark:text-gray-400 shrink-0">
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setHistPage((p) => Math.max(1, p - 1))}
+                  disabled={histPage <= 1}
+                  className="p-1 rounded border border-gray-200 dark:border-gray-700 disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+                <span className="min-w-[28px] text-center px-2 py-0.5 rounded border border-emerald-500 text-emerald-600 dark:text-emerald-400 font-medium bg-emerald-50 dark:bg-emerald-950/30">
+                  {histPage}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setHistPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={histPage >= totalPages}
+                  className="p-1 rounded border border-gray-200 dark:border-gray-700 disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <select
+                value={histPageSize}
+                onChange={(e) => {
+                  setHistPageSize(Number(e.target.value));
+                  setHistPage(1);
+                }}
+                className="px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              >
+                <option value={20}>20 / хуудас</option>
+                <option value={50}>50 / хуудас</option>
+                <option value={100}>100 / хуудас</option>
+                <option value={200}>200 / хуудас</option>
+              </select>
             </div>
           </div>
         </div>
