@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState, useRef, Suspense } from "react";
+import { useEffect, useState, useRef, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Input, Modal, notification, Card, Popconfirm } from "antd";
+import { Input, Modal, notification, Card, Popconfirm, Tooltip } from "antd";
 import Button from "@/components/ui/Button";
 import Aos from "aos";
 import { motion, AnimatePresence } from "framer-motion";
-import { SearchIcon, Bell, Users, Mail, MessageSquare, Smartphone, FileText, Plus, ImagePlus, X, Home, Phone, User, Check, Search, CheckCheck } from "lucide-react";
+import { SearchIcon, Bell, Users, Mail, MessageSquare, Smartphone, FileText, Plus, ImagePlus, X, Home, Phone, User, Check, Search } from "lucide-react";
 import uilchilgee, { getApiUrl } from "@/lib/uilchilgee";
 import { useAuth } from "@/lib/useAuth";
 import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
@@ -117,6 +117,52 @@ function MedegdelContent() {
   const [turul, setTurul] = useState<"App" | "Мессеж" | "Mail">("App");
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [lastSendResult, setLastSendResult] = useState<{
+    sent: number;
+    failed: number;
+    total: number;
+    turul: string;
+    failedUsers: { ner: string; toot?: string; shaltgaan?: string }[];
+  } | null>(null);
+
+  const hasPhone = (u: Geree) => {
+    const phones = Array.isArray(u.utas) ? u.utas : [u.utas];
+    return phones.some((p) => p && String(p).trim() !== "");
+  };
+
+  const hasEmail = (u: Geree) => {
+    return Boolean(u.mail && String(u.mail).trim() !== "");
+  };
+
+  const hasApp = (u: Geree) => {
+    return Boolean(u.firebaseToken && String(u.firebaseToken).trim() !== "");
+  };
+
+  const selectedStats = useMemo(() => {
+    const total = songogdsonKhariltsagch.length;
+    let eligibleUsers: Geree[] = [];
+    let ineligibleUsers: Geree[] = [];
+
+    if (turul === "Мессеж") {
+      eligibleUsers = songogdsonKhariltsagch.filter(hasPhone);
+      ineligibleUsers = songogdsonKhariltsagch.filter((u) => !hasPhone(u));
+    } else if (turul === "Mail") {
+      eligibleUsers = songogdsonKhariltsagch.filter(hasEmail);
+      ineligibleUsers = songogdsonKhariltsagch.filter((u) => !hasEmail(u));
+    } else {
+      // App channel
+      eligibleUsers = songogdsonKhariltsagch.filter(hasApp);
+      ineligibleUsers = songogdsonKhariltsagch.filter((u) => !hasApp(u));
+    }
+
+    return {
+      total,
+      eligibleCount: eligibleUsers.length,
+      ineligibleCount: ineligibleUsers.length,
+      eligibleUsers,
+      ineligibleUsers,
+    };
+  }, [songogdsonKhariltsagch, turul]);
 
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
   const [templateName, setTemplateName] = useState("");
@@ -413,9 +459,22 @@ function MedegdelContent() {
 
     setLoading(true);
     try {
+      let sentCount = 0;
+      let failedCount = 0;
+      let failedList: { ner: string; toot?: string; shaltgaan?: string }[] = [];
+
       if (turul === "Мессеж") {
-        // Build msgnuud array for SMS service
-        const msgnuud = songogdsonKhariltsagch.flatMap((user) => {
+        const withPhone = songogdsonKhariltsagch.filter(hasPhone);
+        const withoutPhone = songogdsonKhariltsagch.filter((u) => !hasPhone(u));
+        sentCount = withPhone.length;
+        failedCount = withoutPhone.length;
+        failedList = withoutPhone.map((u) => ({
+          ner: u.ner || "Оршин суугч",
+          toot: u.toot || "",
+          shaltgaan: "Утасны дугааргүй",
+        }));
+
+        const msgnuud = withPhone.flatMap((user) => {
           const phoneNumbers = Array.isArray(user.utas)
             ? user.utas
             : [user.utas];
@@ -428,28 +487,41 @@ function MedegdelContent() {
             }));
         });
 
-        await uilchilgee(token).post("/msgIlgeeye", {
-          baiguullagiinId: baiguullagiinId,
-          barilgiinId: barilgiinId,
-          msgnuud: msgnuud,
-        });
+        if (msgnuud.length > 0) {
+          await uilchilgee(token).post("/msgIlgeeye", {
+            baiguullagiinId: baiguullagiinId,
+            barilgiinId: barilgiinId,
+            msgnuud: msgnuud,
+          });
+        }
       } else if (turul === "Mail") {
-        // Build mailuud array for email service
-        const mailuud = songogdsonKhariltsagch
-          .filter((user) => user.mail && user.mail.trim() !== "")
-          .map((user) => ({
-            mail: user.mail,
-            content: `<p>${msj}</p>`,
-          }));
+        const withMail = songogdsonKhariltsagch.filter(hasEmail);
+        const withoutMail = songogdsonKhariltsagch.filter((u) => !hasEmail(u));
+        sentCount = withMail.length;
+        failedCount = withoutMail.length;
+        failedList = withoutMail.map((u) => ({
+          ner: u.ner || "Оршин суугч",
+          toot: u.toot || "",
+          shaltgaan: "И-мэйл хаяггүй",
+        }));
 
-        await uilchilgee(token).post("/mailOlnoorIlgeeye", {
-          baiguullagiinId: baiguullagiinId,
-          barilgiinId: barilgiinId,
-          mailuud: mailuud,
-          subject: title,
-        });
+        const mailuud = withMail.map((user) => ({
+          mail: user.mail,
+          content: `<p>${msj}</p>`,
+        }));
+
+        if (mailuud.length > 0) {
+          await uilchilgee(token).post("/mailOlnoorIlgeeye", {
+            baiguullagiinId: baiguullagiinId,
+            barilgiinId: barilgiinId,
+            mailuud: mailuud,
+            subject: title,
+          });
+        }
       } else {
         // For App: use FormData when sending image so backend receives multipart zurag
+        const withApp = songogdsonKhariltsagch.filter(hasApp);
+        const withoutApp = songogdsonKhariltsagch.filter((u) => !hasApp(u));
         const orshinSuugchIdArray = songogdsonKhariltsagch.map(
           (user) => user._id
         );
@@ -463,6 +535,7 @@ function MedegdelContent() {
               ? [templateAsFile]
               : [];
 
+        let respData: any = null;
         if (allFiles.length > 0) {
           const formData = new FormData();
           formData.append(
@@ -490,24 +563,42 @@ function MedegdelContent() {
             const errText = await res.text();
             throw new Error(errText || `HTTP ${res.status}`);
           }
+          respData = await res.json().catch(() => null);
         } else {
-          await uilchilgee(token).post("/medegdelIlgeeye", {
+          const res = await uilchilgee(token).post("/medegdelIlgeeye", {
             medeelel: { title, body: msj },
             orshinSuugchId: orshinSuugchIdArray,
             baiguullagiinId: baiguullagiinId,
             barilgiinId: barilgiinId,
             turul: turul,
           });
+          respData = res.data;
+        }
+
+        sentCount = respData?.pushSentCount ?? withApp.length;
+        failedCount = respData?.pushFailedCount ?? withoutApp.length;
+        if (respData?.pushFailedList && Array.isArray(respData.pushFailedList)) {
+          failedList = respData.pushFailedList;
+        } else {
+          failedList = withoutApp.map((u) => ({
+            ner: u.ner || "Оршин суугч",
+            toot: u.toot || "",
+            shaltgaan: "Апп холбогдоогүй",
+          }));
         }
       }
 
-      // Show different success message based on service type
-      const successMessage =
-        turul === "Мессеж"
-          ? "Мессеж амжилттай илгээгдлээ"
-          : turul === "Mail"
-            ? "Имэйл амжилттай илгээгдлээ"
-            : "Мэдэгдэл амжилттай илгээгдлээ";
+      const totalCount = songogdsonKhariltsagch.length;
+      setLastSendResult({
+        sent: sentCount,
+        failed: failedCount,
+        total: totalCount,
+        turul: turul,
+        failedUsers: failedList,
+      });
+
+      // Show different success message with count details
+      const successMessage = `${turul} амжилттай илгээгдлээ: ${sentCount} илгээсэн${failedCount > 0 ? `, ${failedCount} илгээгээгүй` : ""}`;
 
       openSuccessOverlay(successMessage);
 
@@ -898,10 +989,33 @@ function MedegdelContent() {
                     transition={{ duration: 0.25 }}
                     className="flex flex-col gap-4 flex-1 min-h-0"
                   >
+                    {/* Мэдэгдэл илгээх тооцоолол - зөвхөн Илгээсэн, Илгээгээгүй */}
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <div>
+                        <label className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 mb-1 flex items-center gap-1.5">
+                          <Check className="w-3.5 h-3.5 text-emerald-500" />
+                          Илгээсэн
+                        </label>
+                        <Input
+                          readOnly
+                          value={selectedStats.eligibleCount}
+                          className="!rounded-xl font-bold text-center !h-9 text-sm bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 mb-1 flex items-center gap-1.5">
+                          <X className="w-3.5 h-3.5 text-rose-500" />
+                          Илгээгээгүй
+                        </label>
+                        <Input
+                          readOnly
+                          value={selectedStats.ineligibleCount}
+                          className="!rounded-xl font-bold text-center !h-9 text-sm bg-rose-50/70 dark:bg-rose-950/30 border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400"
+                        />
+                      </div>
+                    </div>
+
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm  text-slate-700 dark:text-slate-200">
-                        Сонгогдсон: {songogdsonKhariltsagch.length}
-                      </span>
                       <div className="flex flex-wrap gap-1.5 max-h-16 overflow-y-auto">
                         {songogdsonKhariltsagch.map((mur) => (
                           <span
@@ -1026,8 +1140,49 @@ function MedegdelContent() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="flex-1 flex flex-col items-center justify-center text-center py-12 px-4"
+                    className="flex-1 flex flex-col items-center justify-center text-center py-6 px-4"
                   >
+                    {lastSendResult && (
+                      <div className="w-full max-w-sm p-3.5 rounded-2xl neu-panel border border-slate-200 dark:border-white/10 mb-6 text-left animate-in fade-in duration-200">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                            Илгээсэн үр дүн
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setLastSendResult(null)}
+                            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2.5">
+                          <div>
+                            <label className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 mb-1 flex items-center gap-1.5">
+                              <Check className="w-3.5 h-3.5 text-emerald-500" />
+                              Илгээсэн
+                            </label>
+                            <Input
+                              readOnly
+                              value={lastSendResult.sent}
+                              className="!rounded-xl font-bold text-center !h-9 text-sm text-emerald-600 dark:text-emerald-400 bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 mb-1 flex items-center gap-1.5">
+                              <X className="w-3.5 h-3.5 text-rose-500" />
+                              Илгээгээгүй
+                            </label>
+                            <Input
+                              readOnly
+                              value={lastSendResult.failed}
+                              className="!rounded-xl font-bold text-center !h-9 text-sm text-rose-600 dark:text-rose-400 bg-rose-50/70 dark:bg-rose-950/40 border-rose-300 dark:border-rose-800"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="w-16 h-16 rounded-2xl neu-panel flex items-center justify-center mb-4">
                       <MessageSquare className="w-8 h-8 text-slate-400" />
                     </div>
