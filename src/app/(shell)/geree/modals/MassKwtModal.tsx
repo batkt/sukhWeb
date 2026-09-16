@@ -8,7 +8,6 @@ import {
   Loader2,
   X,
   Search,
-  Save,
   RefreshCw,
   FileSpreadsheet,
   Download,
@@ -17,7 +16,12 @@ import {
 } from "lucide-react";
 import useModalHotkeys from "@/lib/useModalHotkeys";
 import uilchilgee from "@/lib/uilchilgee";
-import { getResidentField } from "@/lib/residentDataHelper";
+import {
+  getResidentField,
+  getResidentToots,
+  getResidentDavkhauraud,
+  getResidentOrtsuud,
+} from "@/lib/residentDataHelper";
 import { toast } from "sonner";
 
 interface ResidentUnitRow {
@@ -102,25 +106,39 @@ export default function MassKwtModal({
       const rawList = Array.isArray(res.data?.jagsaalt)
         ? res.data.jagsaalt
         : Array.isArray(res.data?.list)
-        ? res.data.list
-        : Array.isArray(res.data)
-        ? res.data
-        : [];
+          ? res.data.list
+          : Array.isArray(res.data)
+            ? res.data
+            : [];
 
       const parsedRows: ResidentUnitRow[] = rawList.map((item: any) => {
         const cur = parseFloat(item.tsahilgaaniiZaalt) || 0;
-        const tootVal = getResidentField(item, "toot") ?? item.toot;
-        const davkharVal = getResidentField(item, "davkhar") ?? item.davkhar;
-        const ortsVal = getResidentField(item, "orts") ?? item.orts;
+        const tootVal =
+          getResidentToots(item) ||
+          getResidentField(item, "toot") ||
+          item.toot ||
+          "-";
+        const davkharVal =
+          getResidentDavkhauraud(item) ||
+          getResidentField(item, "davkhar") ||
+          item.davkhar ||
+          "";
+        const ortsVal =
+          getResidentOrtsuud(item) ||
+          getResidentField(item, "orts") ||
+          item.orts ||
+          "";
+        const phoneVal =
+          item.utas || item.utas1 || item.utas2 || item.utasnuud || "";
 
         return {
           _id: String(item._id),
-          toot: tootVal ? String(tootVal).trim() : "-",
+          toot: String(tootVal).trim(),
           davkhar: davkharVal ? String(davkharVal).trim() : "",
           orts: ortsVal ? String(ortsVal).trim() : "",
           ner: item.ner || "Нэргүй",
           ovog: item.ovog || "",
-          utas: item.utas || "",
+          utas: phoneVal ? String(phoneVal).trim() : "",
           currentKwt: cur,
           newKwt: cur > 0 ? String(cur) : "",
         };
@@ -179,9 +197,9 @@ export default function MassKwtModal({
 
     const exportRows = residents.map((r, index) => ({
       "№": index + 1,
+      "Нэр": r.ner || "",
       "Тоот": r.toot || "",
       "Давхар": r.davkhar || "",
-      "Нэр": r.ner || "",
       "Дугаар": r.utas || "",
       "Одоогийн кВт": r.currentKwt || 0,
       "Шинэ кВт заалт": r.newKwt !== "" ? parseFloat(r.newKwt) : r.currentKwt || 0,
@@ -225,11 +243,11 @@ export default function MassKwtModal({
             if (matchedRow) {
               const val = parseFloat(
                 matchedRow["Шинэ кВт заалт"] ??
-                  matchedRow["Цахилгаан кВт"] ??
-                  matchedRow["Цахилгаан кВт (тариф ₮/кВт)"] ??
-                  matchedRow["кВт"] ??
-                  matchedRow["Заалт"] ??
-                  matchedRow["Шинэ заалт"]
+                matchedRow["Цахилгаан кВт"] ??
+                matchedRow["Цахилгаан кВт (тариф ₮/кВт)"] ??
+                matchedRow["кВт"] ??
+                matchedRow["Заалт"] ??
+                matchedRow["Шинэ заалт"]
               );
               if (!isNaN(val) && val >= 0) {
                 updatedCount++;
@@ -297,7 +315,7 @@ export default function MassKwtModal({
       if (res.data?.success) {
         toast.success(
           res.data.message ||
-            `${res.data.updatedCount || unitsToUpdate.length} оршин суугчийн кВт заалт амжилттай шинэчлэгдлээ.`
+          `${res.data.updatedCount || unitsToUpdate.length} оршин суугчийн кВт заалт амжилттай шинэчлэгдлээ.`
         );
         onSuccess?.();
         onClose();
@@ -307,7 +325,7 @@ export default function MassKwtModal({
     } catch (err: any) {
       toast.error(
         "Алдаа гарлаа: " +
-          (err.response?.data?.aldaa || err.message || "Сүлжээний алдаа")
+        (err.response?.data?.aldaa || err.message || "Сүлжээний алдаа")
       );
     } finally {
       setLoading(false);
@@ -336,7 +354,8 @@ export default function MassKwtModal({
             dragConstraints={constraintsRef}
             dragMomentum={false}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-4xl max-h-[88vh] flex flex-col modal-surface rounded-2xl shadow-2xl p-6 text-sm relative"
+            className="w-full !max-w-[1260px] max-h-[100vh] flex flex-col modal-surface rounded-2xl shadow-2xl p-5 sm:p-6 text-sm relative"
+            style={{ maxWidth: "1260px", width: "100%" }}
           >
             {/* Header */}
             <div
@@ -344,9 +363,7 @@ export default function MassKwtModal({
               onPointerDown={(e) => dragControls.start(e)}
             >
               <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-500">
-                  <Zap className="w-6 h-6" />
-                </div>
+
                 <div>
                   <h3 className="font-semibold text-base text-gray-900 dark:text-white">
                     Цахилгааны (кВт) заалт шинэчлэх
@@ -386,29 +403,38 @@ export default function MassKwtModal({
                   <button
                     type="button"
                     onClick={() => setExcelMenuOpen((prev) => !prev)}
-                    className="px-3 py-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-xl transition-colors flex items-center gap-1.5 border border-emerald-500/20 shadow-xs"
+                    className="px-3 py-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 !rounded-xl transition-colors flex items-center gap-1.5 border border-emerald-500/30 shadow-xs cursor-pointer"
+                    style={{ borderRadius: "0.75rem" }}
                     title="Excel үйлдлүүд"
                   >
                     <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                     <span>Excel</span>
                     <ChevronDown
-                      className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                        excelMenuOpen ? "rotate-180" : ""
-                      }`}
+                      className={`w-3.5 h-3.5 transition-transform duration-200 ${excelMenuOpen ? "rotate-180" : ""
+                        }`}
                     />
                   </button>
 
                   {excelMenuOpen && (
-                    <div className="absolute right-0 top-full mt-1.5 z-50 min-w-[170px] bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 py-1 overflow-hidden">
+                    <div
+                      className="absolute right-0 top-full mt-2 z-50 min-w-[170px] dropdown-menu-surface !rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700/80 p-1.5 overflow-hidden"
+                      style={{
+                        backgroundColor: "var(--surface-bg, #ffffff)",
+                        borderRadius: "1rem",
+                        boxShadow:
+                          "0 10px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.15)",
+                      }}
+                    >
                       <button
                         type="button"
                         onClick={() => {
                           setExcelMenuOpen(false);
                           handleExportToExcel();
                         }}
-                        className="w-full px-3.5 py-2 text-left text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/60 flex items-center gap-2 transition-colors"
+                        className="w-full px-3 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-200 hover:!bg-emerald-500/10 hover:!text-emerald-700 dark:hover:!text-emerald-400 !rounded-xl flex items-center gap-2.5 transition-colors cursor-pointer"
+                        style={{ borderRadius: "0.75rem" }}
                       >
-                        <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                        <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                         <span>Excel татах</span>
                       </button>
 
@@ -418,9 +444,10 @@ export default function MassKwtModal({
                           setExcelMenuOpen(false);
                           fileInputRef.current?.click();
                         }}
-                        className="w-full px-3.5 py-2 text-left text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/60 flex items-center gap-2 transition-colors border-t border-gray-100 dark:border-gray-700/50"
+                        className="w-full px-3 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-200 hover:!bg-blue-500/10 hover:!text-blue-700 dark:hover:!text-blue-400 !rounded-xl flex items-center gap-2.5 transition-colors cursor-pointer mt-0.5"
+                        style={{ borderRadius: "0.75rem" }}
                       >
-                        <Upload className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                        <Upload className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
                         <span>Excel оруулах</span>
                       </button>
                     </div>
@@ -435,20 +462,12 @@ export default function MassKwtModal({
                   onChange={handleExcelImport}
                 />
 
-                <button
-                  type="button"
-                  onClick={loadResidents}
-                  disabled={fetching}
-                  className="p-1.5 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                  title="Дахин ачаалах"
-                >
-                  <RefreshCw className={`w-4 h-4 ${fetching ? "animate-spin" : ""}`} />
-                </button>
+
               </div>
             </div>
 
             {/* Resident List Table with Sticky Header and solid background */}
-            <div className="flex-1 overflow-y-auto min-h-[250px] max-h-[48vh] border border-gray-200 dark:border-gray-700 rounded-xl relative my-2">
+            <div className="flex-1 overflow-y-auto min-h-[260px] max-h-[50vh] border border-gray-200 dark:border-gray-700 rounded-xl relative my-2 bg-white dark:bg-gray-900/40">
               {fetching ? (
                 <div className="flex items-center justify-center h-48 text-gray-500 gap-2">
                   <Loader2 className="w-5 h-5 animate-spin text-amber-500" />
@@ -459,65 +478,81 @@ export default function MassKwtModal({
                   <p>Оршин суугч олдсонгүй.</p>
                 </div>
               ) : (
-                <table className="w-full text-left text-xs border-collapse">
+                <table className="w-full text-left text-xs border-separate border-spacing-0 table-fixed">
                   <thead className="sticky top-0 z-20 shadow-xs">
-                    <tr className="border-b border-gray-200 dark:border-gray-700">
-                      <th className="py-2.5 px-3 sticky top-0 z-20 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold text-center w-12 border-b border-gray-200 dark:border-gray-700">
+                    <tr>
+                      <th
+                        style={{ backgroundColor: "var(--surface-bg, #f1f5f9)" }}
+                        className="py-2.5 px-3 sticky top-0 z-20 text-gray-700 dark:text-gray-200 font-semibold text-center w-[6%] border-b border-gray-200 dark:border-gray-700 first:rounded-tl-xl"
+                      >
                         №
                       </th>
-                      <th className="py-2.5 px-3 sticky top-0 z-20 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold w-24 border-b border-gray-200 dark:border-gray-700">
+                      <th
+                        style={{ backgroundColor: "var(--surface-bg, #f1f5f9)" }}
+                        className="py-2.5 px-3 sticky top-0 z-20 text-gray-700 dark:text-gray-200 font-semibold text-left w-[24%] border-b border-gray-200 dark:border-gray-700"
+                      >
+                        Нэр
+                      </th>
+                      <th
+                        style={{ backgroundColor: "var(--surface-bg, #f1f5f9)" }}
+                        className="py-2.5 px-3 sticky top-0 z-20 text-gray-700 dark:text-gray-200 font-semibold text-center w-[12%] border-b border-gray-200 dark:border-gray-700"
+                      >
                         Тоот
                       </th>
-                      <th className="py-2.5 px-3 sticky top-0 z-20 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold text-center w-20 border-b border-gray-200 dark:border-gray-700">
+                      <th
+                        style={{ backgroundColor: "var(--surface-bg, #f1f5f9)" }}
+                        className="py-2.5 px-3 sticky top-0 z-20 text-gray-700 dark:text-gray-200 font-semibold text-center w-[10%] border-b border-gray-200 dark:border-gray-700"
+                      >
                         Давхар
                       </th>
-                      <th className="py-2.5 px-3 sticky top-0 z-20 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold border-b border-gray-200 dark:border-gray-700">
-                        Нэр / Овог
-                      </th>
-                      <th className="py-2.5 px-3 sticky top-0 z-20 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold w-28 border-b border-gray-200 dark:border-gray-700">
+                      <th
+                        style={{ backgroundColor: "var(--surface-bg, #f1f5f9)" }}
+                        className="py-2.5 px-3 sticky top-0 z-20 text-gray-700 dark:text-gray-200 font-semibold text-center w-[16%] border-b border-gray-200 dark:border-gray-700"
+                      >
                         Дугаар
                       </th>
-                      <th className="py-2.5 px-3 sticky top-0 z-20 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold text-right w-28 border-b border-gray-200 dark:border-gray-700">
+                      <th
+                        style={{ backgroundColor: "var(--surface-bg, #f1f5f9)" }}
+                        className="py-2.5 px-3 sticky top-0 z-20 text-gray-700 dark:text-gray-200 font-semibold text-right w-[16%] border-b border-gray-200 dark:border-gray-700"
+                      >
                         Одоогийн кВт
                       </th>
-                      <th className="py-2.5 px-3 sticky top-0 z-20 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold text-right w-36 border-b border-gray-200 dark:border-gray-700">
+                      <th
+                        style={{ backgroundColor: "var(--surface-bg, #f1f5f9)" }}
+                        className="py-2.5 px-3 sticky top-0 z-20 text-gray-700 dark:text-gray-200 font-semibold text-right w-[16%] border-b border-gray-200 dark:border-gray-700 last:rounded-tr-xl"
+                      >
                         Шинэ кВт заалт
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-gray-900/50">
+                  <tbody className="bg-white dark:bg-gray-900/50">
                     {filteredResidents.map((r, index) => (
                       <tr
                         key={r._id}
                         className="hover:bg-amber-500/5 dark:hover:bg-amber-500/10 transition-colors"
                       >
-                        <td className="py-2.5 px-3 text-center text-gray-400 dark:text-gray-500 font-mono text-[11px]">
+                        <td className="py-2 px-3 text-center text-gray-400 dark:text-gray-500 font-mono text-[11px] border-b border-gray-100 dark:border-gray-800">
                           {index + 1}
                         </td>
-                        <td className="py-2.5 px-3 font-semibold text-gray-900 dark:text-white">
-                          {r.toot}
-                        </td>
-                        <td className="py-2.5 px-3 text-center text-gray-600 dark:text-gray-300">
-                          {r.davkhar || "-"}
-                        </td>
-                        <td className="py-2.5 px-3">
+                        <td className="py-2 px-3 text-left border-b border-gray-100 dark:border-gray-800 truncate">
                           <span className="font-medium text-gray-900 dark:text-white">
                             {r.ner}
                           </span>
-                          {r.ovog && (
-                            <span className="text-gray-400 ml-1 text-[11px]">
-                              ({r.ovog})
-                            </span>
-                          )}
                         </td>
-                        <td className="py-2.5 px-3 text-gray-600 dark:text-gray-300 font-mono">
+                        <td className="py-2 px-3 text-center font-medium text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-800 truncate">
+                          {r.toot}
+                        </td>
+                        <td className="py-2 px-3 text-center text-gray-600 dark:text-gray-300 border-b border-gray-100 dark:border-gray-800 truncate">
+                          {r.davkhar || "-"}
+                        </td>
+                        <td className="py-2 px-3 text-center text-gray-600 dark:text-gray-300 font-mono text-xs border-b border-gray-100 dark:border-gray-800 whitespace-nowrap">
                           {r.utas || "-"}
                         </td>
-                        <td className="py-2.5 px-3 text-right text-gray-500 dark:text-gray-400 font-mono">
+                        <td className="py-2 px-3 text-right text-gray-500 dark:text-gray-400 font-mono border-b border-gray-100 dark:border-gray-800 whitespace-nowrap">
                           {r.currentKwt} кВт
                         </td>
-                        <td className="py-2.5 px-3 text-right">
-                          <div className="relative inline-block w-28">
+                        <td className="py-2 px-3 text-right border-b border-gray-100 dark:border-gray-800">
+                          <div className="relative inline-block w-full max-w-[120px]">
                             <input
                               data-kwt-index={index}
                               type="number"
@@ -527,7 +562,7 @@ export default function MassKwtModal({
                               onChange={(e) => handleKwtChange(r._id, e.target.value)}
                               onKeyDown={(e) => handleKeyDown(e, index)}
                               placeholder="0"
-                              className="w-full px-2.5 py-1 text-right text-xs font-semibold rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                              className="w-full px-2.5 py-1 text-right text-xs font-semibold rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                             />
                           </div>
                         </td>
@@ -549,7 +584,7 @@ export default function MassKwtModal({
                   type="button"
                   onClick={onClose}
                   disabled={loading}
-                  className="px-4 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"
+                  className="px-4 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors cursor-pointer"
                 >
                   Цуцлах
                 </button>
@@ -557,14 +592,13 @@ export default function MassKwtModal({
                   type="button"
                   onClick={handleSubmit}
                   disabled={loading || fetching}
-                  className="px-5 py-2 text-xs font-medium text-white bg-amber-500 hover:bg-amber-600 active:bg-amber-700 rounded-xl transition-colors flex items-center gap-2 shadow-md disabled:opacity-50 cursor-pointer"
+                  className="px-5 py-2 text-xs font-medium !text-white bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 !rounded-xl transition-colors flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:opacity-50 cursor-pointer"
+                  style={{ color: "#ffffff", borderRadius: "0.75rem" }}
                 >
-                  {loading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Save className="w-4 h-4" />
-                  )}
-                  <span>Хадгалах</span>
+                  {loading && <Loader2 className="w-4 h-4 animate-spin text-white" />}
+                  <span className="!text-white font-medium" style={{ color: "#ffffff" }}>
+                    Хадгалах
+                  </span>
                 </button>
               </div>
             </div>

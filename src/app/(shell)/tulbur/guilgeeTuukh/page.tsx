@@ -360,10 +360,18 @@ export default function DansniiKhuulga() {
       {
         key: "toot",
         label: "Тоот",
-        align: "start",
+        align: "center",
         sticky: true,
         width: 80,
         minWidth: 80,
+      },
+      {
+        key: "gereeniiDugaar",
+        label: "Гэрээний дугаар",
+        align: "start",
+        sticky: true,
+        width: 130,
+        minWidth: 130,
       },
       {
         key: "utas",
@@ -373,14 +381,8 @@ export default function DansniiKhuulga() {
         width: 100,
         minWidth: 100,
       },
-      { key: "orts", label: "Орц", align: "start", minWidth: 80 },
-      { key: "davkhar", label: "Давхар", align: "start", minWidth: 80 },
-      {
-        key: "gereeniiDugaar",
-        label: "Гэрээний дугаар",
-        align: "start",
-        minWidth: 120,
-      },
+      { key: "orts", label: "Орц", align: "center", minWidth: 80 },
+      { key: "davkhar", label: "Давхар", align: "center", minWidth: 80 },
       {
         key: "ekhniiUldegdel",
         label: "Эхний үлдэгдэл",
@@ -435,10 +437,10 @@ export default function DansniiKhuulga() {
   const selectableColumnKeys = [
     "ner",
     "toot",
+    "gereeniiDugaar",
     "utas",
     "orts",
     "davkhar",
-    "gereeniiDugaar",
     "ekhniiUldegdel",
     "uldegdel",
     "sariinTurees",

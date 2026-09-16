@@ -1799,6 +1799,14 @@ html[data-mode="dark"]:not([data-theme]),
   border-color: var(--surface-border) !important;
 }
 
+/* Ensure dropdown menus, popovers, and sticky table headers keep their solid background */
+.modal-surface .dropdown-menu-surface,
+.modal-surface [data-dropdown],
+.modal-surface [role="menu"],
+.modal-surface thead th {
+  background: var(--surface-bg) !important;
+}
+
 /* Some pages render decorative light gradients; inside modals, neutralize them */
 .modal-surface .bg-gradient-to-br,
 .modal-surface .bg-gradient-to-r,
@@ -4221,6 +4229,7 @@ body .mantine-Month-weekday {
 /* Default fallback */
 :root {
   font-size: 16px;
+  --radius: 0.5rem;
 }
 
 /* Smooth transitions for all interactive elements */
@@ -6014,6 +6023,10 @@ html[data-sidebar="rail"] .shell-collapse-btn {
    --radius, which this project never sets — so rounded-sm/md/lg/xl all compute
    to 0px. Declared here for shell surfaces; dialogs and panels portal to
    <body>, hence the explicit list. */
+:root,
+body,
+#portal-root,
+.modal-surface,
 .shell-root,
 .shell-sidebar,
 .shell-topbar,

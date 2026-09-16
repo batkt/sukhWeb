@@ -860,15 +860,14 @@ export default function GuilgeeTable({
 
   return (
     <div className="w-full overflow-hidden">
-      <div className="w-full overflow-x-auto hide-scrollbar">
+      <div className="w-full">
         <Table
-          className="guilgee-table min-w-[1000px]"
+          className="guilgee-table"
           dataSource={data}
           loading={loading}
           pagination={false}
           size="small"
           bordered
-          tableLayout="auto"
           rowKey={(record: any) => record._id || Math.random().toString()}
           rowSelection={
             isCheckboxVisible
