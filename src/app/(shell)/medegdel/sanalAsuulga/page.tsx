@@ -90,16 +90,43 @@ interface DunAsuult {
 }
 
 const TULUV_ANGI: Record<string, string> = {
-  noots: "bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300",
+  noots:
+    "bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
   idevkhtei:
-    "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300",
-  duussan: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300",
+    "bg-amber-50 text-amber-800 border border-amber-200/80 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30",
+  duussan:
+    "bg-emerald-50 text-emerald-800 border border-emerald-200/80 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30",
 };
 const TULUV_NER: Record<string, string> = {
   noots: "Ноорог",
   idevkhtei: "Явагдаж байна",
   duussan: "Дууссан",
 };
+
+function StatusBadge({ tuluv }: { tuluv: "noots" | "idevkhtei" | "duussan" | string }) {
+  if (tuluv === "idevkhtei") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-normal bg-amber-50 text-amber-800 border border-amber-200/80 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30 shrink-0 shadow-2xs">
+        <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
+        <span>Явагдаж байна</span>
+      </span>
+    );
+  }
+  if (tuluv === "duussan") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-normal bg-emerald-50 text-emerald-800 border border-emerald-200/80 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30 shrink-0 shadow-2xs">
+        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
+        <span>Дууссан</span>
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-normal bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 shrink-0">
+      <span className="h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+      <span>Ноорог</span>
+    </span>
+  );
+}
 
 const TURLIIN_NER: Record<AsuultiinTurul, string> = {
   songolt: "Сонголттой (нэг сонголт)",
@@ -154,9 +181,30 @@ export default function SanalAsuulgaPage() {
     "jagsaalt"
   );
   const [hailtUg, setHailtUg] = useState("");
+  const [filterTuluv, setFilterTuluv] = useState<
+    "bugd" | "idevkhtei" | "duussan" | "noots"
+  >("bugd");
   const [jagsaalt, setJagsaalt] = useState<Asuulga[]>([]);
   const [achaalj, setAchaalj] = useState(false);
   const [khadgalj, setKhadgalj] = useState(false);
+
+  const niitToo = jagsaalt.length;
+  const idevkhteiToo = useMemo(
+    () => jagsaalt.filter((a) => a.tuluv === "idevkhtei").length,
+    [jagsaalt]
+  );
+  const duussanToo = useMemo(
+    () => jagsaalt.filter((a) => a.tuluv === "duussan").length,
+    [jagsaalt]
+  );
+  const nootsToo = useMemo(
+    () => jagsaalt.filter((a) => a.tuluv === "noots").length,
+    [jagsaalt]
+  );
+  const niitKhariultToo = useMemo(
+    () => jagsaalt.reduce((acc, a) => acc + (a.khariultiinToo || 0), 0),
+    [jagsaalt]
+  );
 
   // Үүсгэх формын төлөв
   const [garchig, setGarchig] = useState("");
@@ -383,6 +431,9 @@ export default function SanalAsuulgaPage() {
         baiguullagiinId,
         tuluv,
       });
+      setSongogdsonAsuulga((prev) =>
+        prev && prev._id === a._id ? { ...prev, tuluv } : prev
+      );
       openSuccessOverlay(
         tuluv === "idevkhtei" ? "Илгээгдлээ" : "Асуулга хаагдлаа"
       );
@@ -394,10 +445,14 @@ export default function SanalAsuulgaPage() {
 
   const ustgaya = async (a: Asuulga) => {
     if (!token || !baiguullagiinId) return;
+    if (!window.confirm(`"${a.garchig}" санал асуулгыг устгахдаа итгэлтэй байна уу?`)) {
+      return;
+    }
     try {
       await uilchilgee(token).delete(`/sanalAsuulga/${a._id}`, {
         data: { baiguullagiinId },
       });
+      openSuccessOverlay("Санал асуулга амжилттай устгагдлаа");
       jagsaaltAvya();
     } catch (err) {
       openErrorOverlay(getErrorMessage(err));
@@ -432,23 +487,38 @@ export default function SanalAsuulgaPage() {
   /* ── Жагсаалт ─────────────────────────────────────────────────────── */
 
   if (gorim === "jagsaalt") {
-    const shuugdsanJagsaalt = jagsaalt.filter(
-      (a) =>
-        !hailtUg.trim() ||
-        a.garchig.toLowerCase().includes(hailtUg.toLowerCase()) ||
-        (a.tailbar && a.tailbar.toLowerCase().includes(hailtUg.toLowerCase()))
-    );
+    const shuugdsanJagsaalt = jagsaalt.filter((a) => {
+      if (filterTuluv !== "bugd" && a.tuluv !== filterTuluv) return false;
+      if (!hailtUg.trim()) return true;
+      const q = hailtUg.toLowerCase().trim();
+      return (
+        a.garchig?.toLowerCase().includes(q) ||
+        (a.tailbar && a.tailbar.toLowerCase().includes(q))
+      );
+    });
 
     return (
-      <div className="mx-auto w-full max-w-[1400px] space-y-5 p-4 sm:p-6">
+      <div className="w-full space-y-6 p-4 sm:p-6 lg:p-8 text-[color:var(--panel-text)]">
+        {/* Top Action Bar: Search Bar on left, "+ Шинэ асуулга үүсгэх" on right */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 dark:border-slate-800 pb-4">
-          <div>
-            <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-              Санал асуулга
-            </h1>
-            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-              Оршин суугчид руу асуумж явуулж, үр дүнг хянах самбар
-            </p>
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              value={hailtUg}
+              onChange={(e) => setHailtUg(e.target.value)}
+              placeholder="Санал асуулга хайх..."
+              className="w-full h-9.5 pl-9 pr-8 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition shadow-2xs"
+            />
+            {hailtUg && (
+              <button
+                type="button"
+                onClick={() => setHailtUg("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
 
           <button
@@ -456,96 +526,291 @@ export default function SanalAsuulgaPage() {
               formTseverleye();
               setGorim("uusgekh");
             }}
-            className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-semibold text-white transition duration-200 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 active:scale-95 cursor-pointer shrink-0"
+            className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-normal !text-white transition duration-200 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 active:scale-95 cursor-pointer shrink-0"
           >
             <Plus className="h-4 w-4" />
             <span>Шинэ асуулга үүсгэх</span>
           </button>
         </div>
 
+        {/* ── Summary Stat KPI Cards ── */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+          {/* Total Polls */}
+          <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-xs flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                Нийт асуулга
+              </p>
+              <p className="text-2xl font-medium text-slate-900 dark:text-white">
+                {niitToo}
+              </p>
+            </div>
+            <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+              <ClipboardList className="h-5 w-5" />
+            </div>
+          </div>
+
+          {/* In Progress (Amber / Yellow) */}
+          <div className="rounded-2xl border border-amber-200/80 dark:border-amber-500/20 bg-amber-50/40 dark:bg-amber-500/5 p-4 shadow-xs flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-[11px] font-medium text-amber-800 dark:text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+                Явагдаж байна
+              </p>
+              <p className="text-2xl font-medium text-amber-900 dark:text-amber-200">
+                {idevkhteiToo}
+              </p>
+            </div>
+            <div className="h-10 w-10 rounded-xl bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0">
+              <Clock className="h-5 w-5" />
+            </div>
+          </div>
+
+          {/* Completed (Emerald / Green) */}
+          <div className="rounded-2xl border border-emerald-200/80 dark:border-emerald-500/20 bg-emerald-50/40 dark:bg-emerald-500/5 p-4 shadow-xs flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-[11px] font-medium text-emerald-800 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+                Дууссан
+              </p>
+              <p className="text-2xl font-medium text-emerald-900 dark:text-emerald-200">
+                {duussanToo}
+              </p>
+            </div>
+            <div className="h-10 w-10 rounded-xl bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="h-5 w-5" />
+            </div>
+          </div>
+
+          {/* Total Responses */}
+          <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-xs flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                Нийт хариулт
+              </p>
+              <p className="text-2xl font-medium text-slate-900 dark:text-white">
+                {niitKhariultToo}
+              </p>
+            </div>
+            <div className="h-10 w-10 rounded-xl bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+              <Users className="h-5 w-5" />
+            </div>
+          </div>
+        </div>
+
+        {/* ── Filter Tabs ── */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 pt-1">
+          <button
+            type="button"
+            onClick={() => setFilterTuluv("bugd")}
+            className={`px-3 py-1.5 text-xs font-normal rounded-xl transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+              filterTuluv === "bugd"
+                ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs"
+                : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"
+            }`}
+          >
+            <span>Бүгд</span>
+            <span
+              className={`px-1.5 py-0.5 rounded-md text-[10px] ${
+                filterTuluv === "bugd"
+                  ? "bg-white/20 text-white dark:bg-slate-900/20 dark:text-slate-900"
+                  : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+              }`}
+            >
+              {niitToo}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFilterTuluv("idevkhtei")}
+            className={`px-3 py-1.5 text-xs font-normal rounded-xl transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+              filterTuluv === "idevkhtei"
+                ? "bg-amber-500 text-white shadow-xs"
+                : "bg-white dark:bg-slate-900 text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-500/30 hover:bg-amber-50 dark:hover:bg-amber-500/10"
+            }`}
+          >
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${
+                filterTuluv === "idevkhtei" ? "bg-white" : "bg-amber-500 animate-pulse"
+              }`}
+            />
+            <span>Явагдаж байна</span>
+            <span
+              className={`px-1.5 py-0.5 rounded-md text-[10px] ${
+                filterTuluv === "idevkhtei"
+                  ? "bg-white/20 text-white"
+                  : "bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300"
+              }`}
+            >
+              {idevkhteiToo}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFilterTuluv("duussan")}
+            className={`px-3 py-1.5 text-xs font-normal rounded-xl transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+              filterTuluv === "duussan"
+                ? "bg-emerald-600 text-white shadow-xs"
+                : "bg-white dark:bg-slate-900 text-emerald-800 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-500/30 hover:bg-emerald-50 dark:hover:bg-emerald-500/10"
+            }`}
+          >
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${
+                filterTuluv === "duussan" ? "bg-white" : "bg-emerald-500"
+              }`}
+            />
+            <span>Дууссан</span>
+            <span
+              className={`px-1.5 py-0.5 rounded-md text-[10px] ${
+                filterTuluv === "duussan"
+                  ? "bg-white/20 text-white"
+                  : "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300"
+              }`}
+            >
+              {duussanToo}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFilterTuluv("noots")}
+            className={`px-3 py-1.5 text-xs font-normal rounded-xl transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+              filterTuluv === "noots"
+                ? "bg-slate-600 text-white shadow-xs"
+                : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200/80 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"
+            }`}
+          >
+            <span>Ноорог</span>
+            <span
+              className={`px-1.5 py-0.5 rounded-md text-[10px] ${
+                filterTuluv === "noots"
+                  ? "bg-white/20 text-white"
+                  : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+              }`}
+            >
+              {nootsToo}
+            </span>
+          </button>
+        </div>
+
+        {/* ── Content Area: Loading / Empty / Grid Cards ── */}
         {achaalj ? (
-          <div className="flex justify-center py-24">
-            <Loader2 className="h-7 w-7 animate-spin text-emerald-500" />
+          <div className="flex flex-col items-center justify-center py-24 gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
+            <p className="text-xs text-slate-400">Ачаалж байна...</p>
           </div>
         ) : shuugdsanJagsaalt.length === 0 ? (
           <div className="flex flex-col items-center gap-3 rounded-3xl bg-white py-20 border border-slate-200/80 shadow-xs dark:bg-slate-900 dark:border-slate-800">
             <ClipboardList className="h-12 w-12 text-slate-300 dark:text-slate-600" />
-            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-              {hailtUg ? "Хайлтад тохирох асуулга олдсонгүй" : "Одоогоор санал асуулга бүртгэгдээгүй байна"}
+            <p className="text-sm font-normal text-slate-500 dark:text-slate-400">
+              {hailtUg
+                ? "Хайлтад тохирох асуулга олдсонгүй"
+                : filterTuluv !== "bugd"
+                ? `"${TULUV_NER[filterTuluv]}" төлөвтэй асуулга олдсонгүй`
+                : "Одоогоор санал асуулга бүртгэгдээгүй байна"}
             </p>
             <button
+              type="button"
               onClick={() => {
                 formTseverleye();
                 setGorim("uusgekh");
               }}
-              className="mt-2 text-xs font-semibold text-emerald-600 hover:underline"
+              className="mt-2 text-xs font-normal text-emerald-600 hover:underline cursor-pointer"
             >
-              + Энд дарж шинийг үүсгэнэ үү
+              + Шинэ санал асуулга үүсгэх
             </button>
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
             {shuugdsanJagsaalt.map((a) => (
               <div
                 key={a._id}
-                className="flex flex-col gap-3 rounded-2xl bg-white p-5 border border-slate-200/80 shadow-xs transition duration-200 hover:shadow-md dark:bg-slate-900 dark:border-slate-800"
+                className="flex flex-col rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md transition-all duration-200 overflow-hidden group"
               >
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="min-w-0 flex-1 text-sm font-bold text-slate-900 dark:text-white line-clamp-2">
-                    {a.garchig}
-                  </h3>
-                  <span
-                    className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${TULUV_ANGI[a.tuluv]
-                      }`}
-                  >
-                    {TULUV_NER[a.tuluv]}
-                  </span>
+                {/* Header */}
+                <div className="p-5 pb-3 space-y-2">
+                  <div className="flex items-start justify-between gap-2.5">
+                    <h3 className="min-w-0 flex-1 text-sm font-normal text-slate-900 dark:text-white line-clamp-2 leading-snug group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                      {a.garchig}
+                    </h3>
+                    <StatusBadge tuluv={a.tuluv} />
+                  </div>
+
+                  {a.tailbar && (
+                    <p className="line-clamp-2 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                      {a.tailbar}
+                    </p>
+                  )}
                 </div>
 
-                {a.tailbar && (
-                  <p className="line-clamp-2 text-xs text-slate-500 dark:text-slate-400">
-                    {a.tailbar}
-                  </p>
-                )}
+                {/* Metadata strip */}
+                <div className="px-5 py-2.5 bg-slate-50/70 dark:bg-slate-800/40 border-y border-slate-100 dark:border-slate-800/80 text-[11px] text-slate-500 dark:text-slate-400 flex flex-wrap items-center justify-between gap-2 mt-auto">
+                  <div className="flex items-center gap-1.5">
+                    <Calendar className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                    {a.ekhlekhOgnoo || a.duusakhOgnoo ? (
+                      <span>
+                        {ognooFormat(a.ekhlekhOgnoo)} — {ognooFormat(a.duusakhOgnoo)}
+                      </span>
+                    ) : (
+                      <span>{ognooFormat(a.createdAt)}</span>
+                    )}
+                  </div>
 
-                <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-400 border-t border-slate-100 dark:border-slate-800/80 pt-3 mt-1">
-                  <span>{a.asuultuud?.length || 0} асуулт</span>
-                  <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
-                    <Users className="h-3 w-3" />
-                    {a.khariultiinToo || 0} хариулт
-                  </span>
-                  <span>{ognooFormat(a.createdAt)}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="flex items-center gap-1">
+                      <ClipboardList className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                      {a.asuultuud?.length || 0} асуулт
+                    </span>
+                    <span className="inline-flex items-center gap-1 font-normal text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-md text-[10px]">
+                      <Users className="h-3 w-3 shrink-0" />
+                      {a.khariultiinToo || 0} хариулт
+                    </span>
+                  </div>
                 </div>
 
-                <div className="mt-auto flex flex-wrap items-center gap-2 pt-2">
+                {/* Actions */}
+                <div className="p-4 pt-3 flex items-center gap-2">
                   <button
+                    type="button"
                     onClick={() => dungAvya(a)}
-                    className="flex items-center gap-1.5 rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-200 dark:bg-white/10 dark:text-slate-200 dark:hover:bg-white/20 cursor-pointer"
+                    className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3 py-2 text-xs font-normal text-slate-700 dark:text-slate-200 transition cursor-pointer"
                   >
                     <BarChart3 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                    Үр дүн
+                    <span>Үр дүн</span>
                   </button>
+
                   {a.tuluv === "noots" && (
                     <button
+                      type="button"
                       onClick={() => tuluvSolyo(a, "idevkhtei")}
-                      className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 cursor-pointer"
+                      className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3.5 py-2 text-xs font-normal !text-white transition cursor-pointer shadow-xs"
+                      title="Санал асуулгыг оршин суугчдад нийтлэх"
                     >
                       <Send className="h-3.5 w-3.5" />
-                      Илгээх
+                      <span>Илгээх</span>
                     </button>
                   )}
+
                   {a.tuluv === "idevkhtei" && (
                     <button
+                      type="button"
                       onClick={() => tuluvSolyo(a, "duussan")}
-                      className="rounded-xl bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-100 dark:bg-amber-500/10 dark:text-amber-300 cursor-pointer"
+                      className="flex items-center gap-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-800 dark:text-amber-200 px-3.5 py-2 text-xs font-normal transition cursor-pointer"
+                      title="Санал асуулгыг хааж дуусгах"
                     >
-                      Хаах
+                      <CheckCircle2 className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                      <span>Хаах</span>
                     </button>
                   )}
+
                   <button
+                    type="button"
                     onClick={() => ustgaya(a)}
                     aria-label="Устгах"
-                    className="ml-auto rounded-xl p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/10 cursor-pointer"
+                    title="Устгах"
+                    className="rounded-xl p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 dark:hover:text-rose-400 transition cursor-pointer"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -577,7 +842,7 @@ export default function SanalAsuulgaPage() {
             >
               <ArrowLeft className="h-4 w-4" />
             </button>
-            <h1 className="text-lg font-semibold text-slate-900 dark:text-white">
+            <h1 className="text-lg font-normal text-slate-900 dark:text-white">
               Шинэ санал асуулга үүсгэх
             </h1>
           </div>
@@ -590,7 +855,7 @@ export default function SanalAsuulgaPage() {
             {/* Card 1: Санал асуулгын мэдээлэл */}
             <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xs space-y-5">
               <div className="flex flex-wrap items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 gap-3">
-                <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 shrink-0">
+                <h2 className="text-xs font-normal uppercase tracking-wider text-slate-700 dark:text-slate-300 shrink-0">
                   Санал асуулгын мэдээлэл
                 </h2>
                 <div className="w-72 shrink-0">
@@ -610,10 +875,10 @@ export default function SanalAsuulgaPage() {
               {/* Title Input with character counter */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                  <label className="text-xs font-normal text-slate-600 dark:text-slate-400">
                     Гарчиг <span className="text-red-500">*</span>
                   </label>
-                  <span className="text-[11px] font-medium text-slate-400">
+                  <span className="text-[11px] font-normal text-slate-400">
                     {garchig.length}/100
                   </span>
                 </div>
@@ -629,10 +894,10 @@ export default function SanalAsuulgaPage() {
               {/* Description Input with character counter */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                  <label className="text-xs font-normal text-slate-600 dark:text-slate-400">
                     Товч тайлбар
                   </label>
-                  <span className="text-[11px] font-medium text-slate-400">
+                  <span className="text-[11px] font-normal text-slate-400">
                     {tailbar.length}/200
                   </span>
                 </div>
@@ -649,7 +914,7 @@ export default function SanalAsuulgaPage() {
               {/* Building selector filter */}
               {barilguud.length > 0 && (
                 <div>
-                  <label className="mb-2 block text-xs font-medium text-slate-600 dark:text-slate-400">
+                  <label className="mb-2 block text-xs font-normal text-slate-600 dark:text-slate-400">
                     Хамаарах барилга{" "}
                     <span className="font-normal text-slate-400">
                       (Сонгохгүй бол бүх оршин суугчдад харагдана)
@@ -669,7 +934,7 @@ export default function SanalAsuulgaPage() {
                                 : [...prev, b._id]
                             )
                           }
-                          className={`rounded-xl px-3 py-1.5 text-xs font-medium transition cursor-pointer ${isSelected
+                          className={`rounded-xl px-3 py-1.5 text-xs font-normal transition cursor-pointer ${isSelected
                             ? "bg-emerald-600 text-white shadow-xs"
                             : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
                             }`}
@@ -685,7 +950,7 @@ export default function SanalAsuulgaPage() {
 
             {/* Card 2: Асуулт & хариултууд */}
             <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xs space-y-5">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 border-b border-slate-100 dark:border-slate-800 pb-3">
+              <h2 className="text-xs font-normal uppercase tracking-wider text-slate-700 dark:text-slate-300 border-b border-slate-100 dark:border-slate-800 pb-3">
                 Асуулт & хариултууд
               </h2>
 
@@ -711,7 +976,7 @@ export default function SanalAsuulgaPage() {
                       >
                         <GripVertical className="h-4 w-4 shrink-0" />
                       </div>
-                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200 shrink-0">
+                      <span className="text-xs font-normal text-slate-800 dark:text-slate-200 shrink-0">
                         {i + 1}.
                       </span>
                       <input
@@ -720,7 +985,7 @@ export default function SanalAsuulgaPage() {
                           asuultZasya(i, { asuult: e.target.value })
                         }
                         placeholder="Асуултын текстаа энд бичнэ үү..."
-                        className="h-10 flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 text-xs font-semibold text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none"
+                        className="h-10 flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 text-xs font-normal text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none"
                       />
                       {asuultuud.length > 1 && (
                         <button
@@ -747,7 +1012,7 @@ export default function SanalAsuulgaPage() {
                             turul: e.target.value as AsuultiinTurul,
                           })
                         }
-                        className="h-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 text-xs font-medium text-slate-700 dark:text-slate-300 focus:border-emerald-500 focus:outline-none cursor-pointer"
+                        className="h-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 text-xs font-normal text-slate-700 dark:text-slate-300 focus:border-emerald-500 focus:outline-none cursor-pointer"
                       >
                         <option value="songolt">
                           Сонголттой (нэг сонголт)
@@ -799,7 +1064,7 @@ export default function SanalAsuulgaPage() {
                           <div className="flex items-center gap-2.5 pt-0.5">
                             <Circle className="h-3.5 w-3.5 text-slate-300 shrink-0" />
                             <div className="h-9 flex-1 flex items-center gap-2 rounded-xl border border-dashed border-emerald-400/60 dark:border-emerald-600/50 bg-emerald-50/40 dark:bg-emerald-950/30 px-3 text-xs text-emerald-800 dark:text-emerald-300">
-                              <span className="font-bold shrink-0">Бусад:</span>
+                              <span className="font-normal shrink-0">Бусад:</span>
                               <input
                                 disabled
                                 readOnly
@@ -820,7 +1085,7 @@ export default function SanalAsuulgaPage() {
                                 songoltuud: [...a.songoltuud, ""],
                               })
                             }
-                            className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+                            className="text-xs font-normal text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
                           >
                             + Сонголт нэмэх
                           </button>
@@ -831,7 +1096,7 @@ export default function SanalAsuulgaPage() {
                               checked={!!a.busadTekst}
                               onChange={(e) =>
                                 asuultZasya(i, {
-                                  busadTekst: e.target.checked,
+                                    busadTekst: e.target.checked,
                                 })
                               }
                               className="h-3.5 w-3.5 accent-emerald-600 rounded"
@@ -856,7 +1121,7 @@ export default function SanalAsuulgaPage() {
                     shineAsuult(),
                   ])
                 }
-                className="col-span-8 flex items-center justify-center gap-2 py-3.5 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-600 bg-slate-50/60 dark:bg-slate-800/40 text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-500 hover:bg-emerald-500/10 transition cursor-pointer shadow-2xs"
+                className="col-span-8 flex items-center justify-center gap-2 py-3.5 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-600 bg-slate-50/60 dark:bg-slate-800/40 text-xs font-normal text-slate-700 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-500 hover:bg-emerald-500/10 transition cursor-pointer shadow-2xs"
               >
                 <Plus className="h-4 w-4 shrink-0" />
                 <span>Асуулт нэмэх</span>
@@ -866,7 +1131,7 @@ export default function SanalAsuulgaPage() {
                 type="button"
                 onClick={() => khadgalya(true)}
                 disabled={khadgalj}
-                className="col-span-2 flex items-center justify-center gap-1.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 px-3 py-3.5 text-xs font-bold text-white transition duration-150 shadow-lg shadow-emerald-600/25 disabled:opacity-50 cursor-pointer text-center whitespace-nowrap"
+                className="col-span-2 flex items-center justify-center gap-1.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 px-3 py-3.5 text-xs font-normal text-white transition duration-150 shadow-lg shadow-emerald-600/25 disabled:opacity-50 cursor-pointer text-center whitespace-nowrap"
               >
                 <span>Хадгалах</span>
                 <ChevronRight className="h-4 w-4 shrink-0" />
@@ -894,7 +1159,7 @@ export default function SanalAsuulgaPage() {
                 </div>
 
                 {/* Phone Status Bar */}
-                <div className="flex items-center justify-between px-1 text-[9px] font-semibold text-slate-400 pt-0.5 shrink-0">
+                <div className="flex items-center justify-between px-1 text-[9px] font-normal text-slate-400 pt-0.5 shrink-0">
                   <span>09:41</span>
                   <div className="flex items-center gap-1">
                     <span>5G</span>
@@ -908,10 +1173,10 @@ export default function SanalAsuulgaPage() {
                 <div className="flex-1 overflow-y-auto pr-0.5 space-y-3 scrollbar-none">
                   {/* Status Badges Row */}
                   <div className="flex items-center justify-between gap-1.5">
-                    <span className="px-2 py-0.5 text-[9px] font-bold rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
-                      Идэвхтэй
+                    <span className="px-2 py-0.5 text-[9px] font-normal rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300">
+                      Явагдаж байна
                     </span>
-                    <span className="text-[9px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                    <span className="text-[9px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
                       <Clock className="h-2.5 w-2.5" />
                       Дуусахад 5 хоног үлдлээ
                     </span>
@@ -919,7 +1184,7 @@ export default function SanalAsuulgaPage() {
 
                   {/* Live Title & Description */}
                   <div className="space-y-1">
-                    <h4 className="text-xs font-extrabold text-slate-900 dark:text-white leading-snug">
+                    <h4 className="text-xs font-normal text-slate-900 dark:text-white leading-snug">
                       {garchig || "Оршин суугчдын сэтгэл ханамж 2024"}
                     </h4>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
@@ -931,26 +1196,26 @@ export default function SanalAsuulgaPage() {
                   {/* Metadata Grid Cards */}
                   <div className="grid grid-cols-2 gap-1.5 p-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 text-[10px]">
                     <div>
-                      <span className="block text-[8px] font-semibold text-slate-400 uppercase">
+                      <span className="block text-[8px] font-normal text-slate-400 uppercase">
                         Эхлэх огноо
                       </span>
-                      <span className="font-bold text-slate-700 dark:text-slate-200">
+                      <span className="font-normal text-slate-700 dark:text-slate-200">
                         {ognooTsagFormat(ekhlekhOgnoo)}
                       </span>
                     </div>
                     <div>
-                      <span className="block text-[8px] font-semibold text-slate-400 uppercase">
+                      <span className="block text-[8px] font-normal text-slate-400 uppercase">
                         Дуусах огноо
                       </span>
-                      <span className="font-bold text-slate-700 dark:text-slate-200">
+                      <span className="font-normal text-slate-700 dark:text-slate-200">
                         {ognooTsagFormat(duusakhOgnoo)}
                       </span>
                     </div>
                     <div className="col-span-2 pt-1 border-t border-slate-200/50 dark:border-slate-700/50 flex items-center justify-between">
-                      <span className="text-[9px] font-semibold text-slate-500">
+                      <span className="text-[9px] font-normal text-slate-500">
                         👥 Оролцогч:
                       </span>
-                      <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                      <span className="font-normal text-emerald-600 dark:text-emerald-400">
                         {songogdsonBarilga.length > 0
                           ? `${songogdsonBarilga.length} барилга`
                           : "2,468 эрх (Бүгд)"}
@@ -963,7 +1228,7 @@ export default function SanalAsuulgaPage() {
 
                   {/* Live Interactive Question Render */}
                   <div className="space-y-2.5">
-                    <h5 className="text-[11px] font-bold text-slate-900 dark:text-white">
+                    <h5 className="text-[11px] font-normal text-slate-900 dark:text-white">
                       {previewQuestionIndex + 1}.{" "}
                       {activeQuestion.asuult || "Асуултын текст..."}
                     </h5>
@@ -982,8 +1247,8 @@ export default function SanalAsuulgaPage() {
                                   [previewQuestionIndex]: opt,
                                 }))
                               }
-                              className={`flex items-center gap-2 p-2 rounded-xl border text-[11px] font-medium cursor-pointer transition ${isSelected
-                                ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 font-bold"
+                              className={`flex items-center gap-2 p-2 rounded-xl border text-[11px] font-normal cursor-pointer transition ${isSelected
+                                ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 font-normal"
                                 : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:border-slate-300"
                                 }`}
                             >
@@ -1013,9 +1278,9 @@ export default function SanalAsuulgaPage() {
                                 [previewQuestionIndex]: "Бусад",
                               }))
                             }
-                            className={`flex flex-col gap-1.5 p-2 rounded-xl border text-[11px] font-medium cursor-pointer transition ${
+                            className={`flex flex-col gap-1.5 p-2 rounded-xl border text-[11px] font-normal cursor-pointer transition ${
                               previewAnswers[previewQuestionIndex]?.startsWith("Бусад")
-                                ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 font-bold"
+                                ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 font-normal"
                                 : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:border-slate-300"
                             }`}
                           >
@@ -1055,7 +1320,7 @@ export default function SanalAsuulgaPage() {
                     {/* Mock Submit Button */}
                     <button
                       type="button"
-                      className="w-full py-2 rounded-xl bg-emerald-600 text-white font-bold text-[11px] shadow-sm shadow-emerald-600/20 active:scale-95 transition cursor-pointer"
+                      className="w-full py-2 rounded-xl bg-emerald-600 text-white font-normal text-[11px] shadow-sm shadow-emerald-600/20 active:scale-95 transition cursor-pointer"
                     >
                       Илгээх
                     </button>
@@ -1063,7 +1328,7 @@ export default function SanalAsuulgaPage() {
 
                   {/* Pagination Switcher for Preview Questions */}
                   {asuultuud.length > 1 && (
-                    <div className="flex items-center justify-center gap-2 pt-1.5 border-t border-slate-100 dark:border-slate-800 text-[10px] font-semibold text-slate-500">
+                    <div className="flex items-center justify-center gap-2 pt-1.5 border-t border-slate-100 dark:border-slate-800 text-[10px] font-normal text-slate-500">
                       <button
                         type="button"
                         disabled={previewQuestionIndex === 0}
@@ -1107,23 +1372,41 @@ export default function SanalAsuulgaPage() {
 
   if (gorim === "dun") {
     return (
-      <div className="mx-auto w-full max-w-[1400px] space-y-6 p-4 sm:p-6 text-[color:var(--panel-text)]">
-        <div className="flex items-center gap-3 border-b border-slate-200/80 dark:border-slate-800 pb-4">
-          <button
-            onClick={() => setGorim("jagsaalt")}
-            aria-label="Буцах"
-            className="rounded-xl p-2 text-slate-500 transition hover:bg-slate-100 dark:hover:bg-white/10 cursor-pointer"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <div>
-            <h1 className="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-              {songogdsonAsuulga?.garchig} — Нэгтгэсэн үр дүн
-            </h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Нийт {dun?.niitKhariult || 0} оршин суугч хариулт өгсөн байна
-            </p>
+      <div className="w-full space-y-6 p-4 sm:p-6 lg:p-8 text-[color:var(--panel-text)]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 dark:border-slate-800 pb-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setGorim("jagsaalt")}
+              aria-label="Буцах"
+              className="rounded-xl p-2 text-slate-500 transition hover:bg-slate-100 dark:hover:bg-white/10 cursor-pointer"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+            <div>
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h1 className="text-xl font-normal tracking-tight text-slate-900 dark:text-white">
+                  {songogdsonAsuulga?.garchig}
+                </h1>
+                {songogdsonAsuulga && (
+                  <StatusBadge tuluv={songogdsonAsuulga.tuluv} />
+                )}
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Нийт {dun?.niitKhariult || 0} оршин суугч хариулт өгсөн байна
+              </p>
+            </div>
           </div>
+
+          {songogdsonAsuulga?.tuluv === "idevkhtei" && (
+            <button
+              type="button"
+              onClick={() => songogdsonAsuulga && tuluvSolyo(songogdsonAsuulga, "duussan")}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-emerald-300 dark:border-emerald-700/60 bg-emerald-50 dark:bg-emerald-950/40 text-xs font-normal text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition cursor-pointer self-start sm:self-auto shadow-2xs"
+            >
+              <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              <span>Санал асуулга дуусгах</span>
+            </button>
+          )}
         </div>
 
         {dunAchaalj ? (
@@ -1139,7 +1422,7 @@ export default function SanalAsuulgaPage() {
                   key={a.asuultiinId}
                   className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-4"
                 >
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                  <h3 className="text-sm font-normal text-slate-900 dark:text-white">
                     {i + 1}. {a.asuult}
                   </h3>
 
@@ -1153,7 +1436,7 @@ export default function SanalAsuulgaPage() {
 
                         return (
                           <div key={opt} className="space-y-1">
-                            <div className="flex items-center justify-between text-xs font-semibold">
+                            <div className="flex items-center justify-between text-xs font-normal">
                               <span className="text-slate-700 dark:text-slate-300">
                                 {opt}
                               </span>
@@ -1178,7 +1461,7 @@ export default function SanalAsuulgaPage() {
                           key={idx}
                           className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 text-xs border border-slate-100 dark:border-slate-800"
                         >
-                          <div className="flex items-center justify-between font-bold text-slate-700 dark:text-slate-300 mb-1">
+                          <div className="flex items-center justify-between font-normal text-slate-700 dark:text-slate-300 mb-1">
                             <span>{t.orshinSuugchNer}</span>
                             <span className="text-[10px] text-slate-400">
                               {t.toot} тоот
@@ -1197,14 +1480,14 @@ export default function SanalAsuulgaPage() {
 
             {/* Right: Resident Responses List */}
             <div className="lg:col-span-5 rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-4">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3">
+              <h3 className="text-sm font-normal text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3">
                 Хариулсан оршин суугчид ({khariultuud.length})
               </h3>
 
               <div className="max-h-[500px] overflow-y-auto space-y-3 pr-1 divide-y divide-slate-100 dark:divide-slate-800 custom-scrollbar">
                 {khariultuud.map((k) => (
                   <div key={k._id} className="pt-3 first:pt-0 space-y-1.5">
-                    <div className="flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white">
+                    <div className="flex items-center justify-between text-xs font-normal text-slate-900 dark:text-white">
                       <span>{k.orshinSuugchNer || "Оршин суугч"}</span>
                       {k.toot && (
                         <span className="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-[10px]">

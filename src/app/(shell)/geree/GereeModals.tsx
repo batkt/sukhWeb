@@ -19,6 +19,7 @@ import PermissionsModal from "./modals/PermissionsModal";
 import CredentialsModal from "./modals/CredentialsModal"; // Import missing modal
 import HistoryModal from "./modals/HistoryModal";
 import MassKwtModal from "./modals/MassKwtModal";
+import HongololtModal from "./modals/HongololtModal";
 import { useBuilding } from "@/context/BuildingContext";
 import uilchilgee from "@/lib/uilchilgee";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
@@ -433,6 +434,19 @@ export default function GereeModals() {
       <MassKwtModal
         show={state.showMassKwtModal}
         onClose={() => state.setShowMassKwtModal(false)}
+        token={token || ""}
+        baiguullagiinId={ajiltan?.baiguullagiinId || baiguullaga?._id}
+        barilgiinId={selectedBuildingId || data.selectedBarilga?._id}
+        onSuccess={() => {
+          data.orshinSuugchJagsaaltMutate?.();
+          data.gereeJagsaaltMutate?.();
+        }}
+      />
+
+      {/* Хөнгөлөлт Modal */}
+      <HongololtModal
+        show={state.showHongololtModal}
+        onClose={() => state.setShowHongololtModal(false)}
         token={token || ""}
         baiguullagiinId={ajiltan?.baiguullagiinId || baiguullaga?._id}
         barilgiinId={selectedBuildingId || data.selectedBarilga?._id}

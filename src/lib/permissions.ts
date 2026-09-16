@@ -93,6 +93,12 @@ export const ALL_PERMISSIONS: PermissionItem[] = [
         description: "Гүйлгээ үүсгэх/бүртгэх эрх",
       },
       {
+        id: "tulbur.khungulultOruulakh",
+        label: "Хөнгөлөлт оруулах",
+        description:
+          "Гүйлгээ бүртгэх цонхон дээр «Хөнгөлөлт» төрлийг сонгож, хөнгөлөлт үүсгэх эрх",
+      },
+      {
         id: "tulbur.ebarimt",
         label: "и-баримт",
         description: "и-баримт харах",

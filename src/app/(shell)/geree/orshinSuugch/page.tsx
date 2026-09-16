@@ -72,6 +72,15 @@ export default function OrshinSuugchPage() {
       residentId={kharakhId}
       token={token}
       baiguullagiinId={ajiltan?.baiguullagiinId}
+      onEdit={(resident) => {
+        setKharakhId(null);
+        actions.handleEditResident(
+          resident,
+          state.setEditingResident,
+          state.setNewResident,
+          state.setShowResidentModal,
+        );
+      }}
     />
     </>
   );

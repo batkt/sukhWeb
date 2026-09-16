@@ -226,6 +226,28 @@ function formatLedgerOgnooCell(raw: unknown): string {
   return ymd.replace(/-/g, ".");
 }
 
+/**
+ * «Бүртгэсэн огноо» — «Огноо» баганатай ижил `YYYY.MM.DD` хэлбэр, ард нь цаг.
+ *
+ * Өмнө нь `toLocaleString("mn-MN")` ашигладаг байсан нь хөтөч/орчноос
+ * хамаарч `7/8/2026, 14:33:26` гэсэн америк хэлбэрт унаж, зэрэгцээ байгаа
+ * «Огноо» баганын `2026.08.27`-той зөрдөг байв. Тиймээс locale-д найдалгүй
+ * өөрсдөө угсарна.
+ *
+ * Цагийг орон нутгийн бүсээр харуулна — `toLocaleString` ч мөн адил байсан
+ * тул харагдах утга өөрчлөгдөхгүй, зөвхөн бичиглэл нь жигдэрнэ.
+ */
+function formatBurtgesenOgnoo(raw: unknown): string {
+  if (raw === null || raw === undefined || raw === "-") return "-";
+  const ognoo = new Date(raw as string);
+  if (Number.isNaN(ognoo.getTime())) return "-";
+  const tt = (n: number) => String(n).padStart(2, "0");
+  return (
+    `${ognoo.getFullYear()}.${tt(ognoo.getMonth() + 1)}.${tt(ognoo.getDate())}` +
+    ` ${tt(ognoo.getHours())}:${tt(ognoo.getMinutes())}:${tt(ognoo.getSeconds())}`
+  );
+}
+
 function roundLedgerRunningStep(n: number): number {
   return Math.round(n * 100) / 100;
 }
@@ -2383,7 +2405,7 @@ export default function HistoryModal({
                         <th className="py-1 px-2 text-center text-[9px] border-r border-b border-slate-400 dark:border-slate-500 text-slate-900 dark:text-slate-100 uppercase font-semibold tracking-wide hidden lg:table-cell print:table-cell">
                           Бүртгэсэн огноо
                         </th>
-                        <th className="py-1 px-3 text-center text-[9px] border-b border-slate-400 dark:border-slate-500 text-slate-900 dark:text-slate-100 uppercase font-semibold tracking-wide w-28">
+                        <th className="py-1 px-1 text-center text-[9px] border-b border-slate-400 dark:border-slate-500 text-slate-900 dark:text-slate-100 uppercase font-semibold tracking-wide w-12">
                           Үйлдэл
                         </th>
                       </tr>
@@ -2472,15 +2494,9 @@ export default function HistoryModal({
                                 {row.tailbar || "-"}
                               </td>
                               <td className="py-1 px-2 text-[13px] border-r border-b border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 hidden lg:table-cell print:table-cell whitespace-nowrap text-center">
-                                {row.burtgesenOgnoo &&
-                                row.burtgesenOgnoo !== "-"
-                                  ? new Date(row.burtgesenOgnoo).toLocaleString(
-                                      "mn-MN",
-                                      { hour12: false },
-                                    )
-                                  : "-"}
+                                {formatBurtgesenOgnoo(row.burtgesenOgnoo)}
                               </td>
-                              <td className="py-1 px-3 border-b border-slate-300 dark:border-slate-600 text-center flex items-center justify-center">
+                              <td className="py-1 px-1 border-b border-slate-300 dark:border-slate-600 text-center w-12">
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -2495,7 +2511,7 @@ export default function HistoryModal({
                                       );
                                     }
                                   }}
-                                  className={`p-1 transition-all rounded-lg ${
+                                  className={`inline-flex items-center justify-center p-1 transition-all rounded-lg ${
                                     row._id &&
                                     !row.isSystem
                                       ? "!text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer"

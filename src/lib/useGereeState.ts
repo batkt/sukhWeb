@@ -22,6 +22,7 @@ export function useGereeState(searchParams: any, didInitRef: any) {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showAvlagaModal, setShowAvlagaModal] = useState(false);
   const [showMassKwtModal, setShowMassKwtModal] = useState(false);
+  const [showHongololtModal, setShowHongololtModal] = useState(false);
 
   // Khariltsagch Modal States
   const [showClientModal, setShowClientModal] = useState(false);
@@ -369,5 +370,7 @@ export function useGereeState(searchParams: any, didInitRef: any) {
     setEditingClient,
     showMassKwtModal,
     setShowMassKwtModal,
+    showHongololtModal,
+    setShowHongololtModal,
   };
 }

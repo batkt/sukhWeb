@@ -36,6 +36,8 @@ import {
   ClipboardList,
   DoorOpen,
   Loader2,
+  Printer,
+  Download,
 } from "lucide-react";
 import uilchilgee from "@/lib/uilchilgee";
 import { useAuth } from "@/lib/useAuth";
@@ -163,48 +165,84 @@ const buguiTokhirgoo = {
 
 /* ─── Дэд компонентууд ───────────────────────────────────────────────── */
 
+/**
+ * KPI карт — turees-ийн Хяналтын самбар дээрх `SummaryCard`-ын хэлбэрээр:
+ * өнгөт дүрсний хайрцаг, тухайн өнгөөр сүүдэрлэсэн дэвсгэр, хулгана
+ * ойртоход бага зэрэг өргөгдөх хөдөлгөөн.
+ */
 const Kpi: React.FC<{
   nert: string;
   utga: string;
   icon: React.ReactNode;
   ungu?: string;
-}> = ({ nert, utga, icon, ungu }) => (
-  <div className="rounded-2xl bg-white p-4 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-white/10">
-    <div className="flex items-center gap-2">
-      <span style={{ color: ungu || UNGU.bar }}>{icon}</span>
-      <span className="truncate text-[10px] uppercase tracking-wider text-slate-400">
-        {nert}
-      </span>
-    </div>
-    <p
-      className="mt-1.5 truncate text-lg font-semibold"
-      style={{ color: ungu || undefined }}
-      title={utga}
+}> = ({ nert, utga, icon, ungu }) => {
+  const undsen = ungu || UNGU.bar;
+  return (
+    <div
+      className="group relative overflow-hidden rounded-xl border p-2.5 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-md"
+      style={{
+        borderColor: `${undsen}33`,
+        backgroundColor: `${undsen}0f`,
+      }}
     >
-      {utga}
-    </p>
-  </div>
-);
+      <div className="flex items-center gap-2.5">
+        <div
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-white shadow-sm transition-transform duration-300 group-hover:rotate-6"
+          style={{ backgroundColor: undsen }}
+        >
+          {icon}
+        </div>
+        <div className="flex min-w-0 flex-col">
+          <span className="truncate text-[10px] font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            {nert}
+          </span>
+          <span
+            className="truncate text-sm font-semibold text-slate-900 dark:text-white"
+            title={utga}
+          >
+            {utga}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
 
+/**
+ * Графикийн карт — turees-ийн `GlassCard`-ын хэлбэрээр: дүрсний хайрцагтай
+ * тусдаа толгой мөр, доогуураа зураастай, том дугуйлсан булан.
+ */
 const Karti: React.FC<{
   garchig: string;
   tailbar?: string;
+  icon?: React.ReactNode;
   children: React.ReactNode;
   undur?: number;
   delgets?: string;
-}> = ({ garchig, tailbar, children, undur = 220, delgets }) => (
+}> = ({ garchig, tailbar, icon, children, undur = 220, delgets }) => (
   <div
-    className={`flex flex-col rounded-2xl bg-white p-4 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-white/10 ${delgets || ""}`}
+    className={`group flex flex-col overflow-hidden rounded-[1.5rem] border border-slate-200/70 bg-white/90 shadow-sm transition-all duration-300 hover:shadow-md dark:border-white/10 dark:bg-slate-900/60 ${
+      delgets || ""
+    }`}
   >
-    <div className="mb-3 flex items-baseline justify-between gap-2">
-      <h3 className="text-xs font-semibold text-slate-900 dark:text-white">
-        {garchig}
-      </h3>
+    <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-4 py-3 dark:border-white/5">
+      <div className="flex min-w-0 items-center gap-2">
+        {icon && (
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+            {icon}
+          </div>
+        )}
+        <span className="truncate text-[10px] font-medium uppercase tracking-wider text-slate-500">
+          {garchig}
+        </span>
+      </div>
       {tailbar && (
         <span className="shrink-0 text-[10px] text-slate-400">{tailbar}</span>
       )}
     </div>
-    <div style={{ height: undur }}>{children}</div>
+    <div className="p-3 md:p-4" style={{ height: undur }}>
+      {children}
+    </div>
   </div>
 );
 
@@ -223,6 +261,11 @@ export default function BiTailanPage() {
     null,
     null,
   ]);
+  /**
+   * Хэвлэхийн өмнө графикуудын тогтмол өндрийг суллаж, бүх карт нэг хуудсанд
+   * багтахаар бэлтгэнэ. turees-ийн Хяналтын самбар дээрх зарчим.
+   */
+  const [khevlej, setKhevlej] = useState(false);
 
   const ekhlekh = dateRange?.[0]
     ? dateRange[0].toISOString().slice(0, 10)
@@ -275,26 +318,27 @@ export default function BiTailanPage() {
       labels: sarShoshgo,
       datasets: [
         {
+          type: "bar" as const,
           label: "Нэхэмжилсэн",
           data: rows.map((r: any) => r.nekhemjilsen),
-          borderColor: UNGU.tsenher,
-          backgroundColor: "rgba(59,130,246,0.10)",
-          fill: true,
-          tension: 0.35,
-          pointRadius: rows.length > 20 ? 0 : 3,
-          pointHitRadius: 12,
-          borderWidth: 2,
+          backgroundColor: "rgba(59,130,246,0.25)",
+          borderRadius: 4,
+          barThickness: 12,
+          order: 2,
         },
         {
+          type: "line" as const,
           label: "Төлсөн",
           data: rows.map((r: any) => r.tulsun),
           borderColor: UNGU.nogoon,
-          backgroundColor: "rgba(16,185,129,0.10)",
-          fill: true,
-          tension: 0.35,
+          backgroundColor: "transparent",
+          fill: false,
+          tension: 0.4,
           pointRadius: rows.length > 20 ? 0 : 3,
+          pointBackgroundColor: UNGU.nogoon,
           pointHitRadius: 12,
           borderWidth: 2,
+          order: 1,
         },
       ],
     };
@@ -462,6 +506,97 @@ export default function BiTailanPage() {
 
   const kpi = data?.kpi;
 
+  /**
+   * Хэвлэх. Chart.js нь `resize`-д хариу үйлдэл үзүүлэхэд хэсэг хугацаа
+   * шаардагддаг тул төлвөө асаагаад нэг фрейм хүлээж байж `print()` дуудна,
+   * эс бөгөөс графикууд хуучин хэмжээгээрээ хэвлэгдэнэ.
+   */
+  const khevleye = () => {
+    setKhevlej(true);
+    setTimeout(() => {
+      window.print();
+      setKhevlej(false);
+    }, 300);
+  };
+
+  /** CSV-д аюулгүй болгох — таслал, хашилт, мөр таслалт агуулж болно. */
+  const nudTseverlye = (utga: unknown) => {
+    const text = utga === null || utga === undefined ? "" : String(utga);
+    return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+  };
+
+  /**
+   * Бүх үзүүлэлтийг нэг CSV болгон татна.
+   *
+   * turees-ийн самбар нь DOM дээрх <table>-уудыг гүйж цуглуулдаг. Энэ хуудас
+   * бараг бүхэлдээ график тул DOM-оос биш, графикуудыг тэжээж буй өгөгдлөөс
+   * шууд бичнэ — ингэснээр дэлгэцэнд харагдахгүй байгаа утга ч бүрэн орно.
+   */
+  const csvTatya = () => {
+    const murnuud: string[] = [];
+    const khesegNemye = (garchig: string, mur: (string | number)[][]) => {
+      if (!mur.length) return;
+      murnuud.push(garchig);
+      mur.forEach((r) => murnuud.push(r.map(nudTseverlye).join(",")));
+      murnuud.push("");
+    };
+
+    khesegNemye("KPI", [
+      ["Үзүүлэлт", "Утга"],
+      ["Оршин суугч", kpi?.niitOrshinSuugch ?? 0],
+      ["Гэрээ", kpi?.niitGeree ?? 0],
+      ["Нэхэмжилсэн", kpi?.niitNekhemjilsen ?? 0],
+      ["Төлсөн", kpi?.niitTulsun ?? 0],
+      ["Цуглуулгын хувь", `${kpi?.tsugluulgiinKhuvi ?? 0}%`],
+      ["Авлага", kpi?.niitUldegdel ?? 0],
+      ["Зогсоолын орлого", kpi?.zogsoolOrlogo ?? 0],
+    ]);
+
+    /** Chart.js-ийн өгөгдлийг мөр болгон буулгана. */
+    const graphikNemye = (garchig: string, chart: any) => {
+      if (!chart?.labels?.length) return;
+      const toluv = ["Ангилал", ...chart.datasets.map((d: any) => d.label || "")];
+      const mur: (string | number)[][] = [toluv];
+      chart.labels.forEach((shoshgo: string, i: number) => {
+        mur.push([shoshgo, ...chart.datasets.map((d: any) => d.data?.[i] ?? 0)]);
+      });
+      khesegNemye(garchig, mur);
+    };
+
+    graphikNemye("Нэхэмжилсэн ба төлсөн", orlogoChart);
+    graphikNemye("Авлагын насжилт", nasjiltChart);
+    graphikNemye("Гэрээний төлөв", gereeTuluvChart);
+    graphikNemye("Гэрээ барилгаар", gereeBarilgaChart);
+    graphikNemye("Төлбөрийн хэлбэр", tulburKhelberChart);
+    graphikNemye("Шинэ гэрээ", shineGereeChart);
+    graphikNemye("Зогсоол", zogsoolChart);
+    graphikNemye("Зогсоолын төрөл", zogsoolTurulChart);
+    graphikNemye("Хаалга", khaalgaChart);
+    graphikNemye("Санал асуулга", asuulgaChart);
+
+    const ikhUldegdel = data?.avlaga?.khamgiinIkhUldegdel || [];
+    if (ikhUldegdel.length > 0) {
+      khesegNemye("Хамгийн их авлагатай", [
+        ["Тоот / Гэрээ", "Үлдэгдэл"],
+        ...ikhUldegdel.map((r: any) => [
+          r.toot || r.gereeniiDugaar || "-",
+          r.uldegdel ?? 0,
+        ]),
+      ]);
+    }
+
+    // Excel нь UTF-8 BOM-гүй бол кирилл үсгийг эвдэж уншина.
+    const blob = new Blob(["\uFEFF" + murnuud.join("\n")], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `bi_tailan_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   /* ── Зурах ── */
   if (error)
     return (
@@ -472,7 +607,23 @@ export default function BiTailanPage() {
     );
 
   return (
-    <div className="mx-auto w-full max-w-[1600px] space-y-4 p-4">
+    <div
+      className={`mx-auto w-full max-w-[1600px] space-y-4 p-4 ${
+        khevlej ? "khevlekh-gorim" : ""
+      }`}
+    >
+      {/* Хэвлэхэд: хөндлөн байрлал, шелл далдлах, нэг хуудсанд багтаах */}
+      <style type="text/css" media="print">
+        {`
+          @page { size: landscape; margin: 6mm; }
+          body, html { background: #fff !important; }
+          .shell-sidebar, .shell-topbar, nav, aside { display: none !important; }
+          .khevlekh-nuuh { display: none !important; }
+          .khevlekh-gorim { max-width: none !important; padding: 0 !important; }
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        `}
+      </style>
+
       {/* Толгой */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -498,6 +649,22 @@ export default function BiTailanPage() {
               placeholder="Хугацаа (сүүлийн 12 сар)"
             />
           </div>
+          <button
+            onClick={csvTatya}
+            title="Бүх үзүүлэлтийг CSV-ээр татах"
+            className="khevlekh-nuuh flex h-10 items-center gap-1.5 rounded-xl px-3 text-xs ring-1 ring-slate-200 transition-colors hover:bg-slate-50 dark:ring-white/10 dark:hover:bg-white/5"
+          >
+            <Download className="h-4 w-4" />
+            <span className="hidden sm:inline">Excel</span>
+          </button>
+          <button
+            onClick={khevleye}
+            title="Тайланг хэвлэх"
+            className="khevlekh-nuuh flex h-10 items-center gap-1.5 rounded-xl px-3 text-xs ring-1 ring-slate-200 transition-colors hover:bg-slate-50 dark:ring-white/10 dark:hover:bg-white/5"
+          >
+            <Printer className="h-4 w-4" />
+            <span className="hidden sm:inline">Хэвлэх</span>
+          </button>
         </div>
       </div>
 
@@ -551,30 +718,50 @@ export default function BiTailanPage() {
       {/* Орлого — хамгийн чухал тул бүтэн өргөн */}
       <Karti
         garchig="Нэхэмжилсэн ба төлсөн"
+        icon={<Wallet className="h-4 w-4" />}
         tailbar="сараар"
         undur={260}
         delgets="xl:col-span-2"
       >
-        <Line data={orlogoChart as any} options={suuriTokhirgoo(true)} />
+        <Bar
+          data={orlogoChart as any}
+          options={{
+            ...suuriTokhirgoo(true),
+            plugins: {
+              ...suuriTokhirgoo(true).plugins,
+              // turees-ийн самбартай адил дээд баруун буланд
+              legend: {
+                display: true,
+                position: "top" as const,
+                align: "end" as const,
+                labels: {
+                  boxWidth: 6,
+                  usePointStyle: true,
+                  font: { size: 10 },
+                },
+              },
+            },
+          }}
+        />
       </Karti>
 
       {/* Авлага, гэрээ */}
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-        <Karti garchig="Авлагын насжилт" tailbar="хоногоор">
+        <Karti garchig="Авлагын насжилт" tailbar="хоногоор" icon={<AlertTriangle className="h-4 w-4" />}>
           {nasjiltChart ? (
             <Bar data={nasjiltChart as any} options={suuriTokhirgoo()} />
           ) : (
             <Khooson />
           )}
         </Karti>
-        <Karti garchig="Гэрээний төлөв">
+        <Karti garchig="Гэрээний төлөв" icon={<FileText className="h-4 w-4" />}>
           {gereeTuluvChart ? (
             <Doughnut data={gereeTuluvChart as any} options={buguiTokhirgoo} />
           ) : (
             <Khooson />
           )}
         </Karti>
-        <Karti garchig="Гэрээ барилгаар">
+        <Karti garchig="Гэрээ барилгаар" icon={<FileText className="h-4 w-4" />}>
           {gereeBarilgaChart ? (
             <Bar
               data={gereeBarilgaChart as any}
@@ -597,7 +784,7 @@ export default function BiTailanPage() {
 
       {/* Төлбөр, шинэ гэрээ */}
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-        <Karti garchig="Төлбөрийн хэлбэр" tailbar="дүнгээр">
+        <Karti garchig="Төлбөрийн хэлбэр" tailbar="дүнгээр" icon={<Wallet className="h-4 w-4" />}>
           {tulburKhelberChart ? (
             <Doughnut
               data={tulburKhelberChart as any}
@@ -607,7 +794,7 @@ export default function BiTailanPage() {
             <Khooson />
           )}
         </Karti>
-        <Karti garchig="Шинэ гэрээ" tailbar="сараар">
+        <Karti garchig="Шинэ гэрээ" tailbar="сараар" icon={<TrendingUp className="h-4 w-4" />}>
           {shineGereeChart ? (
             <Bar
               data={shineGereeChart as any}
@@ -626,7 +813,7 @@ export default function BiTailanPage() {
             <Khooson />
           )}
         </Karti>
-        <Karti garchig="Хамгийн их авлагатай" tailbar="тоот">
+        <Karti garchig="Хамгийн их авлагатай" tailbar="тоот" icon={<AlertTriangle className="h-4 w-4" />}>
           {(data?.avlaga?.khamgiinIkhUldegdel || []).length > 0 ? (
             <div className="h-full space-y-1.5 overflow-y-auto pr-1">
               {data.avlaga.khamgiinIkhUldegdel.map((r: any, i: number) => (
@@ -653,6 +840,7 @@ export default function BiTailanPage() {
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
         <Karti
           garchig="Зогсоолын хөдөлгөөн"
+          icon={<Car className="h-4 w-4" />}
           tailbar={`${tooFormat(kpi?.zogsoolSession || 0)} session`}
         >
           {zogsoolChart ? (
@@ -673,7 +861,7 @@ export default function BiTailanPage() {
             <Khooson />
           )}
         </Karti>
-        <Karti garchig="Зогсоолын төлбөр" tailbar="төрлөөр">
+        <Karti garchig="Зогсоолын төлбөр" tailbar="төрлөөр" icon={<Car className="h-4 w-4" />}>
           {zogsoolTurulChart ? (
             <Doughnut
               data={zogsoolTurulChart as any}
@@ -685,6 +873,7 @@ export default function BiTailanPage() {
         </Karti>
         <Karti
           garchig="Хаалга нээлт"
+          icon={<DoorOpen className="h-4 w-4" />}
           tailbar={`${tooFormat(kpi?.khaalgaNeelt || 0)} удаа`}
         >
           {khaalgaChart ? (
@@ -711,6 +900,7 @@ export default function BiTailanPage() {
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <Karti
           garchig="Санал асуулгын хариулт"
+          icon={<ClipboardList className="h-4 w-4" />}
           tailbar={`${tooFormat(kpi?.asuulgiinToo || 0)} асуулга`}
         >
           {asuulgaChart ? (
@@ -738,7 +928,7 @@ export default function BiTailanPage() {
             <Khooson />
           )}
         </Karti>
-        <Karti garchig="Мэдэгдэл ба санал хүсэлт" tailbar="төрлөөр">
+        <Karti garchig="Мэдэгдэл ба санал хүсэлт" tailbar="төрлөөр" icon={<ClipboardList className="h-4 w-4" />}>
           {(data?.medegdel || []).length > 0 ? (
             <div className="h-full space-y-2 overflow-y-auto pr-1">
               {data.medegdel.map((r: any) => (

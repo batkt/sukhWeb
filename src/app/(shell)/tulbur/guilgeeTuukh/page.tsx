@@ -144,6 +144,12 @@ export default function DansniiKhuulga() {
     ajiltan?.erkh?.toLowerCase?.() === "admin" ||
     hasPermission(ajiltan, "/tulbur/guilgeeHiikh") ||
     hasPermission(ajiltan, "tulbur.guilgeeHiikh");
+
+  /** Гүйлгээ бүртгэх цонхон дээр «Хөнгөлөлт» төрлийг сонгож болох эсэх. */
+  const canAddDiscount =
+    ajiltan?.erkh?.toLowerCase?.() === "admin" ||
+    hasPermission(ajiltan, "/tulbur/khungulultOruulakh") ||
+    hasPermission(ajiltan, "tulbur.khungulultOruulakh");
   const { selectedBuildingId } = useBuilding();
   const effectiveBarilgiinId = selectedBuildingId || barilgiinId || undefined;
   const { baiguullaga, baiguullagaMutate } = useBaiguullaga(
@@ -3810,6 +3816,7 @@ export default function DansniiKhuulga() {
         token={token ?? undefined}
         baiguullagiinId={ajiltan?.baiguullagiinId}
         barilgiinId={effectiveBarilgiinId ?? undefined}
+        canAddDiscount={canAddDiscount}
       />
 
       {/* Initial Balance Excel Import Modal */}

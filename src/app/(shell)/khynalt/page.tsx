@@ -117,8 +117,15 @@ export default function Khynalt() {
   const buildingDropdownRef = useRef<HTMLDivElement>(null);
 
   // Effective building ID for single-building queries
+  //
+  // "compare" нь ЗӨВХӨН шүүлтүүрийн цонхон доторх харьцуулсан графикийг
+  // тэжээдэг сонголт — тэр нь `compareBuildingIds`-аар өөрийн гэсэн
+  // хүсэлттэй. Өмнө нь энд "compare"-ийг `undefined` болгодог байсан тул
+  // Харьцуулах товч дармагц үндсэн самбар (KPI, графикууд) барилгын
+  // шүүлтээ алдаж, байгууллага даяарх өгөгдөл рүү шилждэг байв.
+  // Одоо зөвхөн "all" горим л бүх барилгыг нэгтгэнэ.
   const effectiveBarilgiinId =
-    buildingFilterMode === "all" || buildingFilterMode === "compare"
+    buildingFilterMode === "all"
       ? undefined
       : selectedBuildingId || barilgiinId || undefined;
 
@@ -1534,7 +1541,13 @@ export default function Khynalt() {
 
                   {/* Барилгын харьцуулах Dropdown Popover */}
                   {buildingDropdownOpen && (
-                    <div className="absolute left-0 top-full mt-2 w-[320px] sm:w-[360px] p-3.5 rounded-2xl shadow-2xl z-[9999] border border-[color:var(--panel-text)]/20 backdrop-blur-2xl bg-[color:var(--surface-bg)]/98 animate-in fade-in zoom-in-95 duration-150">
+                    <div
+                      className={`absolute left-0 top-full mt-2 p-3.5 rounded-2xl shadow-2xl z-[9999] border border-[color:var(--panel-text)]/20 backdrop-blur-2xl bg-[color:var(--surface-bg)]/98 animate-in fade-in zoom-in-95 duration-150 ${
+                        buildingFilterMode === "compare"
+                          ? "w-[340px] sm:w-[440px]"
+                          : "w-[320px] sm:w-[360px]"
+                      }`}
+                    >
                       <div className="flex items-center justify-between pb-2 mb-2 border-b border-[color:var(--panel-text)]/10">
                         <div className="flex items-center gap-1.5 text-xs font-semibold text-[color:var(--panel-text)]">
                           <SlidersHorizontal className="w-3.5 h-3.5 text-emerald-500" />
@@ -1699,6 +1712,100 @@ export default function Khynalt() {
                           })}
                       </div>
 
+                      {/* Харьцуулсан график — сонголт хийж байх үедээ
+                          үр дүнгээ шууд харахын тулд цонхныхоо дотор.
+                          Доорх дэлгэрэнгүй хэсэгтэй ижил өгөгдөл. */}
+                      {buildingFilterMode === "compare" &&
+                        buildingComparisonChartData &&
+                        compareBuildingIds.length > 0 && (
+                          <div className="pt-2 mt-2 border-t border-[color:var(--panel-text)]/10">
+                            <div className="flex items-center justify-between mb-1.5">
+                              <span className="text-[10px] font-medium uppercase tracking-wider text-[color:var(--muted-text)]">
+                                Харьцуулалт
+                              </span>
+                              <div className="flex items-center gap-2 text-[9px] text-[color:var(--muted-text)]">
+                                <span className="flex items-center gap-1">
+                                  <span className="w-2 h-2 rounded-sm bg-blue-500/70 inline-block" />
+                                  Нэхэмж.
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <span className="w-2 h-2 rounded-sm bg-emerald-500/70 inline-block" />
+                                  Цуглуул.
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <span className="w-2 h-2 rounded-sm bg-red-500/70 inline-block" />
+                                  Үлдэгдэл
+                                </span>
+                              </div>
+                            </div>
+                            <div className="h-[150px] w-full">
+                              <Bar
+                                data={buildingComparisonChartData as any}
+                                options={{
+                                  responsive: true,
+                                  maintainAspectRatio: false,
+                                  interaction: { mode: "index", intersect: false },
+                                  plugins: {
+                                    legend: { display: false },
+                                    tooltip: {
+                                      backgroundColor: "rgba(15, 23, 42, 0.9)",
+                                      titleColor: "#fff",
+                                      bodyColor: "#e2e8f0",
+                                      cornerRadius: 8,
+                                      padding: 8,
+                                      titleFont: { size: 10 },
+                                      bodyFont: { size: 10 },
+                                      callbacks: {
+                                        label: (ctx: any) =>
+                                          `${ctx.dataset.label}: ${formatCurrency(
+                                            ctx.parsed.y || 0,
+                                          )}`,
+                                      },
+                                    },
+                                  },
+                                  scales: {
+                                    x: {
+                                      grid: { display: false },
+                                      border: { display: false },
+                                      ticks: {
+                                        font: { size: 9 },
+                                        maxRotation: 0,
+                                        autoSkip: false,
+                                        // Нэр урт байвал цонхонд багтахгүй тул таслана
+                                        callback(this: any, value: any) {
+                                          const ner = String(
+                                            this.getLabelForValue(value) ?? "",
+                                          );
+                                          return ner.length > 8
+                                            ? ner.slice(0, 7) + "…"
+                                            : ner;
+                                        },
+                                      },
+                                    },
+                                    y: {
+                                      beginAtZero: true,
+                                      grid: { color: "rgba(100,116,139,0.12)" },
+                                      border: { display: false },
+                                      ticks: {
+                                        font: { size: 9 },
+                                        maxTicksLimit: 4,
+                                        callback: (v: any) => {
+                                          const n = Number(v) || 0;
+                                          if (Math.abs(n) >= 1e6)
+                                            return (n / 1e6).toFixed(1) + "М";
+                                          if (Math.abs(n) >= 1e3)
+                                            return Math.round(n / 1e3) + "мян";
+                                          return n;
+                                        },
+                                      },
+                                    },
+                                  },
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )}
+
                       {buildingFilterMode === "compare" && (
                         <div className="pt-2 mt-2 border-t border-[color:var(--panel-text)]/10">
                           <button
@@ -1805,137 +1912,6 @@ export default function Khynalt() {
               );
             })}
           </div>
-
-          {/* 🏢 Барилгуудын харьцуулалт & Гүйцэтгэлийн секц */}
-          {buildingFilterMode === "compare" && buildingComparisonData && buildingComparisonData.length > 0 && (
-            <div
-              id="khynalt-building-comparison-section"
-              className="neu-panel allow-overflow rounded-3xl p-5 mb-6 pr-4 mr-4 transition-all duration-500 flex flex-col space-y-4"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[color:var(--panel-text)]/10">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-2xl bg-emerald-500/10 flex items-center justify-center shrink-0">
-                    <BarChart3 className="w-5 h-5 text-emerald-500" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-[color:var(--panel-text)] leading-snug">
-                      Барилгуудын гүйцэтгэлийн харьцуулалт
-                    </h3>
-                    <p className="text-xs text-[color:var(--muted-text)]">
-                      {buildingComparisonData.length} барилгын нэхэмжилсэн, цуглуулсан болон авлагын харьцуулсан үзүүлэлт ({rangeStart} — {rangeEnd})
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 text-xs text-[color:var(--muted-text)] flex-wrap">
-                  <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-md bg-blue-500/70 inline-block" /> Нэхэмжилсэн</span>
-                  <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-md bg-emerald-500/70 inline-block" /> Цуглуулсан</span>
-                  <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-md bg-red-500/70 inline-block" /> Үлдэгдэл</span>
-                </div>
-              </div>
-
-              {/* Харьцуулсан Баганан График */}
-              {buildingComparisonChartData && (
-                <div className="h-[280px] w-full relative">
-                  <Bar
-                    data={buildingComparisonChartData as any}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      interaction: { mode: "index", intersect: false },
-                      plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                          backgroundColor: "rgba(15, 23, 42, 0.9)",
-                          titleColor: "#fff",
-                          bodyColor: "#e2e8f0",
-                          padding: 12,
-                          cornerRadius: 8,
-                          callbacks: {
-                            label: (ctx) => `${ctx.dataset.label}: ${Number(ctx.raw || 0).toLocaleString()} ₮`,
-                          },
-                        },
-                      },
-                      scales: {
-                        x: { ticks: { color: chartColors.text }, grid: { display: false } },
-                        y: {
-                          ticks: { color: chartColors.text },
-                          grid: { color: chartColors.grid, tickBorderDash: [5, 5] },
-                          beginAtZero: true,
-                        },
-                      },
-                    }}
-                  />
-                </div>
-              )}
-
-              {/* Барилга тус бүрийн картууд & Гүйцэтгэлийн хувь */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pt-2">
-                {buildingComparisonData.map((b) => (
-                  <div
-                    key={b.id}
-                    className="p-4 rounded-2xl border border-[color:var(--panel-text)]/10 bg-[color:var(--surface-hover)]/20 hover:bg-[color:var(--surface-hover)]/40 transition-all flex flex-col justify-between"
-                  >
-                    <div>
-                      <div className="flex items-center justify-between gap-2 mb-2">
-                        <span className="font-semibold text-sm text-[color:var(--panel-text)] truncate">{b.name}</span>
-                        <span
-                          className={`text-[11px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${b.rate >= 80
-                              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
-                              : b.rate >= 50
-                                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
-                                : "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20"
-                            }`}
-                        >
-                          {b.rate}% гүйцэтгэл
-                        </span>
-                      </div>
-
-                      {/* Прогресс бар */}
-                      <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden mb-3">
-                        <div
-                          className={`h-full rounded-full transition-all duration-700 ${b.rate >= 80 ? "bg-emerald-500" : b.rate >= 50 ? "bg-amber-500" : "bg-red-500"
-                            }`}
-                          style={{ width: `${Math.min(100, Math.max(0, b.rate))}%` }}
-                        />
-                      </div>
-
-                      <div className="space-y-1 text-xs">
-                        <div className="flex justify-between text-[color:var(--muted-text)]">
-                          <span>Нэхэмжилсэн:</span>
-                          <span className="font-medium text-[color:var(--panel-text)]">{formatCurrency(b.monthlyBilled)}</span>
-                        </div>
-                        <div className="flex justify-between text-[color:var(--muted-text)]">
-                          <span>Цуглуулсан:</span>
-                          <span className="font-medium text-emerald-600 dark:text-emerald-400">{formatCurrency(b.monthlyPaid)}</span>
-                        </div>
-                        <div className="flex justify-between text-[color:var(--muted-text)]">
-                          <span>Үлдэгдэл:</span>
-                          <span className="font-medium text-red-500">{formatCurrency(b.monthlyUnpaid)}</span>
-                        </div>
-                        {b.overdueTotal > 0 && (
-                          <div className="flex justify-between text-[11px] text-amber-600 dark:text-amber-400 pt-1 border-t border-[color:var(--panel-text)]/5">
-                            <span>2+ сар төлөөгүй:</span>
-                            <span className="font-semibold">{formatNumber(b.overdueTotal, 0)}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedBuildingId(b.id);
-                        setBuildingFilterMode("single");
-                      }}
-                      className="mt-3 w-full py-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 rounded-xl border border-emerald-500/20 transition-colors text-center"
-                    >
-                      Энэ барилгыг дэлгэрүүлж харах →
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           <div className="w-full min-w-0 pr-4 py-2 space-y-5">
 

@@ -5345,7 +5345,7 @@ body .premium-driver-popover .driver-stop-tour-btn:hover {
   --shell-rail-w: 76px;
   --shell-topbar-h: 56px;
   --shell-line: color-mix(in oklch, var(--panel-text), transparent 90%);
-  --shell-hover: color-mix(in oklch, var(--panel-text), transparent 94%);
+  --shell-hover: color-mix(in oklch, var(--panel-text), transparent 88%);
   /* One soft, theme-tinted fill shared by the sidebar and the top bar so the
      two chrome surfaces read as a single frame instead of two whites. The
      field tints step up from it, which keeps the search box legible on that
@@ -5599,6 +5599,19 @@ html[data-sidebar="rail"] .shell-collapse-btn {
   background: var(--shell-hover);
   color: var(--panel-text);
 }
+
+.shell-nav-item:not([data-active]):hover::before {
+  content: "";
+  position: absolute;
+  left: -0.75rem;
+  top: 50%;
+  translate: 0 -50%;
+  width: 3px;
+  height: 1.25rem;
+  border-radius: 0 3px 3px 0;
+  background: color-mix(in oklch, var(--panel-text), transparent 55%);
+}
+
 
 .shell-nav-item[data-active] {
   background: color-mix(in oklch, var(--theme), transparent 88%);

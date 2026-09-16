@@ -183,6 +183,13 @@ interface TransactionModalProps {
   token?: string;
   baiguullagiinId?: string;
   barilgiinId?: string | null;
+  /**
+   * Ажилтанд «Хөнгөлөлт» төрлөөр гүйлгээ бүртгэх эрх байгаа эсэх
+   * (`tulbur.khungulultOruulakh`). Эрхгүй бол тухайн сонголт харагдахгүй.
+   * Өгөгдөөгүй бол зөвшөөрнө — ингэснээр энэ цонхыг ашигладаг бусад газар
+   * хэвээрээ ажиллана.
+   */
+  canAddDiscount?: boolean;
 }
 
 export interface TransactionData {
@@ -270,6 +277,7 @@ export default function TransactionModal({
   token,
   baiguullagiinId,
   barilgiinId,
+  canAddDiscount = true,
 }: TransactionModalProps) {
   const [messageApi, contextHolder] = message.useMessage();
   const modalRef = React.useRef<HTMLDivElement>(null);
@@ -818,13 +826,19 @@ export default function TransactionModal({
                   <label className="block text-xs font-medium text-[color:var(--panel-text)] mb-1.5">
                     ГҮЙЛГЭЭНИЙ ТӨРӨЛ
                   </label>
-                  <div className="grid grid-cols-5 neu-panel gap-1 p-1 bg-[color:var(--surface-hover)] rounded-2xl">
+                  <div
+                    className={`grid ${
+                      canAddDiscount ? "grid-cols-5" : "grid-cols-4"
+                    } neu-panel gap-1 p-1 bg-[color:var(--surface-hover)] rounded-2xl`}
+                  >
                     {[
                       { value: "avlaga", label: "Авлага" },
                       { value: "ashiglalt", label: "Ашиглалт" },
                       { value: "torguuli", label: "Торгууль" },
                       { value: "tulult", label: "Төлөлт" },
-                      { value: "khungulult", label: "Хөнгөлөлт" },
+                      ...(canAddDiscount
+                        ? [{ value: "khungulult", label: "Хөнгөлөлт" }]
+                        : []),
                     ].map((option) => (
                       <button
                         key={option.value}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useSearchParams } from "next/navigation";
 import { notification, Select } from "antd";
@@ -30,6 +30,7 @@ import {
   User,
   Home,
   Phone,
+  Loader2,
 } from "lucide-react";
 import { useTourSteps } from "@/lib/useTourSteps";
 import { useRegisterTourSteps } from "@/context/TourContext";
@@ -115,6 +116,11 @@ export default function SanalKhuselt() {
   const keepSelectionRootIdRef = useRef<string | null>(null);
   /** Reply id we just sent from this tab; skip adding it again when we receive the same id via socket. */
   const lastSentAdminReplyIdRef = useRef<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
+  }, []);
 
   useEffect(() => {
     if (ajiltan?.baiguullagiinId && token) {
@@ -245,6 +251,29 @@ export default function SanalKhuselt() {
       if (found) setSelectedMedegdel(found);
     }
   }, [preselectedId, medegdelList]);
+
+  const displayMessages = useMemo(() => {
+    if (threadMessages.length > 0) {
+      const hasRoot = threadMessages.some(
+        (m) => String(m._id) === String(selectedMedegdel?._id),
+      );
+      if (!hasRoot && selectedMedegdel) {
+        return [selectedMedegdel, ...threadMessages];
+      }
+      return threadMessages;
+    }
+    return selectedMedegdel ? [selectedMedegdel] : [];
+  }, [threadMessages, selectedMedegdel]);
+
+  useEffect(() => {
+    scrollToBottom("auto");
+  }, [selectedMedegdel?._id, scrollToBottom]);
+
+  useEffect(() => {
+    if (displayMessages.length > 0) {
+      scrollToBottom("smooth");
+    }
+  }, [displayMessages.length, scrollToBottom]);
 
   const markedSeenRootIds = useRef<Set<string>>(new Set());
 
@@ -989,90 +1018,77 @@ export default function SanalKhuselt() {
 
   return (
     <>
-    <div className="h-[calc(100vh-64px)] p-4 md:p-6 flex flex-col gap-6 overflow-hidden relative">
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className={`flex items-center justify-between shrink-0 ${showDetail ? "hidden md:flex" : "flex"}`}
-      >
-        <div>
-          <h1 className="text-2xl  text-theme">{t("Санал хүсэлт")}</h1>
-          <p className="text-theme text-sm mt-1">
-            {t("Ирсэн санал, гомдлуудыг шийдвэрлэх")}
-          </p>
-        </div>
-      </motion.div>
-
-      <div className="flex-1 flex gap-6 min-h-0 relative">
+    <div className="h-[calc(100vh-64px)] p-3 sm:p-4 md:p-5 flex flex-col gap-3 overflow-hidden relative">
+      <div className="flex-1 flex gap-3.5 min-h-0 relative">
         {/* Left Panel: List */}
         <motion.div
-          initial={{ opacity: 0, x: -20 }}
+          initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.1 }}
-          className={`w-full md:w-[380px] lg:w-[420px] flex-col gap-4 shrink-0 ${showDetail ? "hidden md:flex" : "flex"}`}
+          className={`w-full md:w-[360px] lg:w-[400px] flex-col gap-3 shrink-0 ${showDetail ? "hidden md:flex" : "flex"}`}
         >
           {/* Dashboard: counts, click to filter list */}
-          <div id="feedback-stats" className="grid grid-cols-4 gap-2 shrink-0">
+          <div id="feedback-stats" className="grid grid-cols-4 gap-1.5 shrink-0">
             <button
               id="feedback-filter-all"
               type="button"
               onClick={() => setDashboardFilter("all")}
-              className={`rounded-2xl border p-3 text-center transition-all ${dashboardActive.all
+              className={`rounded-xl border p-2 text-center transition-all cursor-pointer ${dashboardActive.all
                 ? "border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400"
                 : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] hover:bg-[color:var(--surface-hover)] text-theme"
                 }`}
             >
-              <div className="text-lg ">{dashboardCounts.all}</div>
+              <div className="text-base font-normal">{dashboardCounts.all}</div>
               <div className="text-[10px] opacity-80">{t("Бүгд")}</div>
             </button>
             <button
               id="feedback-filter-done"
               type="button"
               onClick={() => setDashboardFilter("shiidegdsen")}
-              className={`rounded-2xl border p-3 text-center transition-all ${dashboardActive.shiidegdsen
+              className={`rounded-xl border p-2 text-center transition-all cursor-pointer ${dashboardActive.shiidegdsen
                 ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                 : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] hover:bg-[color:var(--surface-hover)] text-theme"
                 }`}
             >
-              <div className="text-lg ">{dashboardCounts.shiidegdsen}</div>
+              <div className="text-base font-normal">{dashboardCounts.shiidegdsen}</div>
               <div className="text-[10px] opacity-80">{t("Шийдэгдсэн")}</div>
             </button>
             <button
               id="feedback-filter-gomdol"
               type="button"
               onClick={() => setDashboardFilter("gomdol")}
-              className={`rounded-2xl border p-3 text-center transition-all ${dashboardActive.gomdol
+              className={`rounded-xl border p-2 text-center transition-all cursor-pointer ${dashboardActive.gomdol
                 ? "border-red-500 bg-red-500/10 text-red-600 dark:text-red-400"
                 : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] hover:bg-[color:var(--surface-hover)] text-theme"
                 }`}
             >
-              <div className="text-lg ">{dashboardCounts.gomdol}</div>
+              <div className="text-base font-normal">{dashboardCounts.gomdol}</div>
               <div className="text-[10px] opacity-80">{t("Гомдол")}</div>
             </button>
             <button
               id="feedback-filter-sanal"
               type="button"
               onClick={() => setDashboardFilter("sanal")}
-              className={`rounded-2xl border p-3 text-center transition-all ${dashboardActive.sanal
+              className={`rounded-xl border p-2 text-center transition-all cursor-pointer ${dashboardActive.sanal
                 ? "border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400"
                 : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] hover:bg-[color:var(--surface-hover)] text-theme"
                 }`}
             >
-              <div className="text-lg ">{dashboardCounts.sanal}</div>
+              <div className="text-base font-normal">{dashboardCounts.sanal}</div>
               <div className="text-[10px] opacity-80">{t("Санал")}</div>
             </button>
           </div>
 
           {/* Search and Filters */}
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2">
             <div id="feedback-search" className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-theme" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
               <input
                 type="text"
                 placeholder={t("Хайх...")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm transition-all"
+                className="w-full pl-9 pr-3 h-9 rounded-xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] text-slate-800 dark:text-slate-100 placeholder:text-slate-400 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all"
               />
             </div>
             <div id="feedback-filters" className="grid grid-cols-2 gap-2">
@@ -1081,9 +1097,10 @@ export default function SanalKhuselt() {
                 value={filterType}
                 onChange={setFilterType}
                 className="w-full"
+                size="middle"
                 classNames={{
                   popup: {
-                    root: "rounded-2xl border border-[color:var(--surface-border)] shadow-xl",
+                    root: "rounded-xl border border-[color:var(--surface-border)] shadow-xl",
                   },
                 }}
                 options={[
@@ -1097,9 +1114,10 @@ export default function SanalKhuselt() {
                 value={filterStatus}
                 onChange={setFilterStatus}
                 className="w-full"
+                size="middle"
                 classNames={{
                   popup: {
-                    root: "rounded-2xl border border-[color:var(--surface-border)] shadow-xl",
+                    root: "rounded-xl border border-[color:var(--surface-border)] shadow-xl",
                   },
                 }}
                 options={[
@@ -1231,76 +1249,79 @@ export default function SanalKhuselt() {
         >
           {selectedMedegdel ? (
             <>
-              {/* Detail Header */}
-              <div className="p-4 md:p-6 border-b border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] md:bg-theme/5 backdrop-blur-sm flex flex-col gap-4">
-                {/* Mobile Back Button */}
-                <div className="flex md:hidden items-center gap-2 mb-1">
-                  <button
-                    onClick={() => setShowDetail(false)}
-                    className="p-2 -ml-2 rounded-full hover:bg-[color:var(--surface-hover)] transition-colors active:scale-95"
-                  >
-                    <ArrowLeft className="w-6 h-6 text-theme" />
-                  </button>
-                  <span className=" text-lg text-theme">
-                    {t("Санал хүсэлт")}
-                  </span>
-                </div>
+              {/* Detail Header - Sleek, Compact & High-Density */}
+              <div className="px-4 py-2.5 sm:py-3 border-b border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] shrink-0 flex flex-col gap-2">
+                <div className="flex items-center justify-between gap-3">
+                  {/* Left: Mobile back button + Avatar + Resident Info + Subject */}
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    {/* Mobile Back Button */}
+                    <button
+                      type="button"
+                      onClick={() => setShowDetail(false)}
+                      className="flex md:hidden p-1.5 -ml-1 rounded-xl hover:bg-[color:var(--surface-hover)] text-theme shrink-0"
+                      aria-label="Буцах"
+                    >
+                      <ArrowLeft className="w-5 h-5" />
+                    </button>
 
-                <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 pt-2 md:pt-0">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-3">
-                      <span
-                        className={`px-2 py-1 rounded-2xl text-[10px] tracking-wider border ${isSanal(selectedMedegdel.turul)
-                          ? "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-400/50"
-                          : "bg-red-500/15 text-red-700 dark:text-red-300 border-red-400/50"
-                          }`}
-                      >
-                        {turulToLabel(selectedMedegdel.turul)}
-                      </span>
-                      <span className="text-xs text-theme">
-                        {moment(selectedMedegdel.createdAt).format(
-                          "YYYY-MM-DD HH:mm",
-                        )}
-                      </span>
+                    {/* Avatar Circle */}
+                    <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-500/20">
+                      <User className="w-4 h-4" />
                     </div>
-                    <h2 className="text-xl md:text-2xl  text-theme leading-tight">
-                      {selectedMedegdel.title}
-                    </h2>
-                    {selectedMedegdel.orshinSuugchId &&
-                      residentsMap[selectedMedegdel.orshinSuugchId] && (
-                        <div className="mt-3 p-3 rounded-xl bg-blue-50/60 dark:bg-blue-950/10 border border-blue-100/60 dark:border-blue-900/20 inline-flex flex-col gap-1.5">
-                          <div className="flex items-center gap-2">
-                            <User className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                            <span className="text-xs text-blue-400 dark:text-blue-500 shrink-0">Нэр:</span>
-                            <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">
-                              {residentsMap[selectedMedegdel.orshinSuugchId].ner}
+
+                    {/* Resident Info & Topic Title */}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-100 truncate">
+                          {selectedMedegdel.orshinSuugchId &&
+                          residentsMap[selectedMedegdel.orshinSuugchId]?.ner
+                            ? residentsMap[selectedMedegdel.orshinSuugchId].ner
+                            : "Оршин суугч"}
+                        </span>
+                        {selectedMedegdel.orshinSuugchId &&
+                          residentsMap[selectedMedegdel.orshinSuugchId]?.toot && (
+                            <span className="px-1.5 py-0.2 rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-300 text-[10px] font-normal shrink-0 border border-blue-200/60 dark:border-blue-800/40">
+                              {residentsMap[selectedMedegdel.orshinSuugchId].toot} тоот
                             </span>
-                          </div>
-                          <div className="flex items-center gap-4">
-                            {residentsMap[selectedMedegdel.orshinSuugchId].toot && (
-                              <div className="flex items-center gap-1.5">
-                                <Home className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                                <span className="text-xs text-blue-400 dark:text-blue-500 shrink-0">Тоот:</span>
-                                <span className="text-xs text-blue-600 dark:text-blue-400">
-                                  {residentsMap[selectedMedegdel.orshinSuugchId].toot}
-                                </span>
-                              </div>
-                            )}
-                            {residentsMap[selectedMedegdel.orshinSuugchId].utas && (
-                              <div className="flex items-center gap-1.5">
-                                <Phone className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                                <span className="text-xs text-blue-400 dark:text-blue-500 shrink-0">Утас:</span>
-                                <span className="text-xs text-blue-600 dark:text-blue-400">
-                                  {residentsMap[selectedMedegdel.orshinSuugchId].utas}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
+                          )}
+                        {selectedMedegdel.orshinSuugchId &&
+                          residentsMap[selectedMedegdel.orshinSuugchId]?.utas && (
+                            <a
+                              href={`tel:${residentsMap[selectedMedegdel.orshinSuugchId].utas}`}
+                              className="hidden sm:inline-flex items-center gap-1 text-[11px] text-slate-500 hover:text-blue-600 transition-colors"
+                            >
+                              <Phone className="w-3 h-3 text-slate-400" />
+                              <span>{residentsMap[selectedMedegdel.orshinSuugchId].utas}</span>
+                            </a>
+                          )}
+                        <span
+                          className={`px-1.5 py-0.2 rounded-md text-[10px] font-normal border shrink-0 ${
+                            isSanal(selectedMedegdel.turul)
+                              ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-400/40"
+                              : "bg-red-500/10 text-red-600 dark:text-red-400 border-red-400/40"
+                          }`}
+                        >
+                          {turulToLabel(selectedMedegdel.turul)}
+                        </span>
+                      </div>
+
+                      {/* Request title & timestamp */}
+                      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        <span
+                          className="truncate max-w-[220px] sm:max-w-[420px] font-normal text-slate-600 dark:text-slate-300"
+                          title={selectedMedegdel.title}
+                        >
+                          {selectedMedegdel.title}
+                        </span>
+                        <span className="text-[10px] text-slate-400 shrink-0">
+                          • {moment(selectedMedegdel.createdAt).format("YYYY-MM-DD HH:mm")}
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="flex flex-col items-end gap-3 min-w-[200px]">
+                  {/* Right: Status Dropdown */}
+                  <div className="shrink-0 flex items-center gap-2">
                     <Select
                       value={
                         pendingStatusChange?.id === selectedMedegdel._id
@@ -1308,338 +1329,310 @@ export default function SanalKhuselt() {
                           : selectedMedegdel.status || "pending"
                       }
                       onChange={handleStatusChange}
-                      className="w-full"
-                      classNames={{
-                        popup: {
-                          root: "rounded-2xl border border-[color:var(--surface-border)] shadow-xl",
-                        },
-                      }}
-                      size="large"
+                      className="w-[135px] sm:w-[155px]"
+                      size="middle"
                       options={[
                         {
                           value: "pending",
                           label: (
-                            <span className="flex items-center gap-2">
-                              <Clock className="w-4 h-4 text-amber-500" />{" "}
-                              {t("Хүлээгдэж байна")}
+                            <span className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 font-normal">
+                              <Clock className="w-3.5 h-3.5" />
+                              <span>{t("Хүлээгдэж байна")}</span>
                             </span>
                           ),
                         },
                         {
                           value: "done",
                           label: (
-                            <span className="flex items-center gap-2">
-                              <CheckCircle className="w-4 h-4 text-emerald-500" />{" "}
-                              {t("Шийдэгдсэн")}
+                            <span className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-normal">
+                              <CheckCircle className="w-3.5 h-3.5" />
+                              <span>{t("Шийдэгдсэн")}</span>
                             </span>
                           ),
                         },
                         {
                           value: "rejected",
                           label: (
-                            <span className="flex items-center gap-2">
-                              <XCircle className="w-4 h-4 text-rose-500" />{" "}
-                              {t("Татгалзсан")}
+                            <span className="flex items-center gap-1.5 text-xs text-rose-600 dark:text-rose-400 font-normal">
+                              <XCircle className="w-3.5 h-3.5" />
+                              <span>{t("Татгалзсан")}</span>
                             </span>
                           ),
                         },
                       ]}
                     />
-
-                    <AnimatePresence>
-                      {pendingStatusChange?.id === selectedMedegdel._id && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="flex flex-col gap-3 w-full overflow-hidden"
-                        >
-                          {(pendingStatusChange.newStatus === "done" ||
-                            pendingStatusChange.newStatus === "rejected") && (
-                              <div>
-                                <label className="block text-xs  text-theme mb-1.5">
-                                  {t("Хариу тайлбар")}{" "}
-                                  {pendingStatusChange.newStatus === "rejected" &&
-                                    `(${t("Татгалзсан шалтгаан")})`}
-                                </label>
-                                <textarea
-                                  value={tailbarText}
-                                  onChange={(e) => setTailbarText(e.target.value)}
-                                  placeholder={
-                                    pendingStatusChange.newStatus === "done"
-                                      ? t(
-                                        "Шийдвэрийн тайлбар (хэрэглэгчид илгээгдэнэ)",
-                                      )
-                                      : t(
-                                        "Татгалзсан шалтгаанаа бичнэ үү (хэрэглэгчид илгээгдэнэ)",
-                                      )
-                                  }
-                                  rows={3}
-                                  className="w-full px-3 py-2 rounded-2xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm resize-none"
-                                />
-                                <p className="text-[10px] text-theme mt-1">
-                                  {t("Хэрэглэгчийн апп-д шууд мэдэгдэл ирнэ")}
-                                </p>
-                              </div>
-                            )}
-                          <div className="flex gap-2">
-                            <button
-                              onClick={confirmStatusChange}
-                              className="flex-1 py-1.5 px-3 bg-blue-600 !text-white text-xs  rounded-2xl shadow-sm hover:bg-blue-700 transition-colors"
-                            >
-                              {t("Батлах")}
-                            </button>
-                            <button
-                              onClick={() => {
-                                setPendingStatusChange(null);
-                                setTailbarText("");
-                              }}
-                              className="flex-1 py-1.5 px-3 bg-gray-200 text-gray-700 text-xs  rounded-2xl hover:bg-gray-300 transition-colors dark:bg-gray-700 dark:text-gray-200"
-                            >
-                              {t("Хаах")}
-                            </button>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
                   </div>
                 </div>
+
+                {/* Inline banner for Pending Status Change Decision Explanation */}
+                <AnimatePresence>
+                  {pendingStatusChange?.id === selectedMedegdel._id && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="overflow-hidden pt-2 border-t border-[color:var(--surface-border)]"
+                    >
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700">
+                        <input
+                          type="text"
+                          value={tailbarText}
+                          onChange={(e) => setTailbarText(e.target.value)}
+                          placeholder={
+                            pendingStatusChange.newStatus === "done"
+                              ? t("Шийдвэрийн тайлбар (хэрэглэгчид илгээгдэнэ)...")
+                              : t("Татгалзсан шалтгаанаа бичнэ үү (хэрэглэгчид илгээгдэнэ)...")
+                          }
+                          className="flex-1 h-8 px-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        />
+                        <div className="flex items-center gap-1.5 shrink-0 justify-end">
+                          <button
+                            type="button"
+                            onClick={confirmStatusChange}
+                            className="h-8 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-lg transition-colors font-normal shadow-xs cursor-pointer"
+                          >
+                            {t("Батлах")}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPendingStatusChange(null);
+                              setTailbarText("");
+                            }}
+                            className="h-8 px-3 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-xs rounded-lg transition-colors font-normal cursor-pointer"
+                          >
+                            {t("Хаах")}
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
-              {/* Detail Content */}
-              <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 bg-[color:var(--surface-bg)]">
-                {/* Reply Section (single admin tailbar when no thread) */}
-                {selectedMedegdel.tailbar && threadMessages.length <= 1 && (
-                  <div>
-                    <h3 className="text-sm  text-blue-600 dark:text-blue-400  tracking-wide mb-3 flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-blue-500" />
-                      {t("Хариу тайлбар")}
-                    </h3>
-                    <div className="p-6 rounded-2xl bg-blue-200 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 text-theme leading-relaxed whitespace-pre-wrap relative">
-                      {selectedMedegdel.tailbar}
-                      {selectedMedegdel.repliedAt && (
-                        <div className="mt-4 pt-3 border-t border-blue-100 dark:border-blue-800/50 text-xs text-theme flex items-center gap-2">
-                          <CheckCircle className="w-3 h-3" />
-                          {t("Хариулсан")}:{" "}
-                          {moment(selectedMedegdel.repliedAt).format(
-                            "YYYY-MM-DD HH:mm",
-                          )}
-                        </div>
-                      )}
-                    </div>
+              {/* Chat Messages Body - Scrollable */}
+              <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2.5 custom-scrollbar bg-[color:var(--surface-bg)]">
+                {threadLoading && displayMessages.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 gap-2 text-slate-400">
+                    <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+                    <span className="text-xs">{t("Уншиж байна...")}</span>
                   </div>
-                )}
+                ) : displayMessages.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 text-center text-slate-400 gap-2">
+                    <MessageSquare className="w-8 h-8 opacity-40" />
+                    <span className="text-xs">{t("Харилцаа байхгүй")}</span>
+                  </div>
+                ) : (
+                  <>
+                    {displayMessages.map((msg, idx) => {
+                      const turul = (msg.turul || "").toLowerCase();
+                      const isAdminReply =
+                        turul === "khariu" ||
+                        turul === "hariu" ||
+                        turul === "хариу";
+                      const isUser = isAdminReply;
 
-                {/* Thread / chat history (same as app) */}
-                <div>
-                  <h3 className="text-sm text-theme tracking-wide mb-3 flex items-center gap-2">
-                    <MessageSquare className="w-4 h-4" />
-                  </h3>
-                  {threadLoading ? (
-                    <div className="py-6 text-center text-theme text-sm">
-                      {t("Уншиж байна...")}
-                    </div>
-                  ) : threadMessages.length === 0 ? (
-                    <div className="py-4 text-center text-theme text-sm">
-                      {t("Харилцаа байхгүй")}
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {threadMessages.map((msg) => {
-                        const turul = (msg.turul || "").toLowerCase();
-                        // In admin web view: user/resident messages (sanal, gomdol, user_reply) go LEFT
-                        // Admin replies (khariu, hariu, хариу) go RIGHT
-                        const isAdminReply =
-                          turul === "khariu" ||
-                          turul === "hariu" ||
-                          turul === "хариу";
-                        // isUser = true means RIGHT side (admin's own messages)
-                        const isUser = isAdminReply;
-                        return (
+                      return (
+                        <div
+                          key={msg._id || `msg-${idx}`}
+                          className={`flex ${isUser ? "justify-end" : "justify-start"}`}
+                        >
                           <div
-                            key={msg._id}
-                            className={`flex ${isUser ? "justify-end" : "justify-start"}`}
+                            className={`max-w-[85%] sm:max-w-[72%] rounded-2xl px-3.5 py-2.5 text-xs shadow-2xs ${
+                              isUser
+                                ? "bg-blue-600 text-white rounded-br-xs"
+                                : "bg-slate-100 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 text-slate-800 dark:text-slate-100 rounded-bl-xs"
+                            }`}
                           >
+                            {/* Sender label */}
                             <div
-                              className={`max-w-[85%] rounded-2xl px-4 py-3 ${isUser
-                                ? "bg-blue-100 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-br-md"
-                                : "bg-[color:var(--surface-hover)] border border-[color:var(--surface-border)] rounded-bl-md"
-                                }`}
+                              className={`flex items-center gap-1.5 mb-1 ${
+                                isUser ? "justify-end text-blue-200" : "justify-start text-blue-600 dark:text-blue-400"
+                              }`}
                             >
-                              {/* Sender label */}
-                              <div
-                                className={`flex items-center gap-1.5 mb-1.5 ${isUser ? "justify-end" : "justify-start"}`}
-                              >
-                                {isUser ? (
-                                  <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wide">
-                                    Админ
-                                  </span>
-                                ) : (
-                                  <>
-                                    {msg.orshinSuugchId &&
-                                      residentsMap[msg.orshinSuugchId] ? (
-                                      <span className="text-[10px] font-semibold text-theme dark:text-theme truncate max-w-[200px]">
-                                        {residentsMap[msg.orshinSuugchId].ner}
-                                      </span>
-                                    ) : (
-                                      <span className="text-[10px] font-semibold text-theme uppercase tracking-wide">
-                                        Оршин суугч
-                                      </span>
-                                    )}
-                                  </>
-                                )}
-                              </div>
-                              {msg.zurag &&
-                                (() => {
-                                  const paths = String(msg.zurag)
-                                    .split(",")
-                                    .map((p) =>
-                                      normalizeMedegdelAssetPath(p.trim()),
-                                    )
-                                    .filter(Boolean);
-                                  const base = getApiUrl().replace(/\/$/, "");
-                                  return paths.length ? (
-                                    <div className="flex flex-wrap gap-1 my-1">
-                                      {paths.map((path, i) => {
-                                        const url = `${base}/medegdel/${path}`;
-                                        return (
-                                          <button
-                                            key={i}
-                                            type="button"
-                                            onClick={() => setImagePreviewUrl(url)}
-                                            className="block rounded-xl overflow-hidden max-w-[140px] cursor-zoom-in hover:opacity-90 transition-opacity"
-                                          >
-                                            <img
-                                              src={url}
-                                              alt=""
-                                              className="w-full h-auto object-cover"
-                                            />
-                                          </button>
-                                        );
-                                      })}
-                                    </div>
-                                  ) : null;
-                                })()}
-                              {msg.duu &&
-                                (() => {
-                                  const path = normalizeMedegdelAssetPath(
-                                    msg.duu,
-                                  );
-                                  const audioUrl = path
-                                    ? `${getApiUrl().replace(/\/$/, "")}/medegdel/${path}`
-                                    : "";
-                                  return audioUrl ? (
-                                    <div className="my-1">
-                                      <audio
-                                        controls
-                                        src={audioUrl}
-                                        className="max-w-full h-9"
-                                      />
-                                    </div>
-                                  ) : null;
-                                })()}
-                              {msg.message ? (
-                                <p className="text-theme text-sm whitespace-pre-wrap">
-                                  {msg.message}
-                                </p>
-                              ) : null}
-                              <p className="text-theme text-xs mt-1">
-                                {moment(msg.createdAt).format(
-                                  "YYYY-MM-DD HH:mm",
-                                )}
+                              <span className="text-[10px] font-normal uppercase tracking-wider">
+                                {isUser
+                                  ? "Админ"
+                                  : msg.orshinSuugchId && residentsMap[msg.orshinSuugchId]
+                                  ? residentsMap[msg.orshinSuugchId].ner
+                                  : "Оршин суугч"}
+                              </span>
+                            </div>
+
+                            {/* Attached Images */}
+                            {msg.zurag &&
+                              (() => {
+                                const paths = String(msg.zurag)
+                                  .split(",")
+                                  .map((p) => normalizeMedegdelAssetPath(p.trim()))
+                                  .filter(Boolean);
+                                const base = getApiUrl().replace(/\/$/, "");
+                                return paths.length ? (
+                                  <div className="flex flex-wrap gap-1.5 my-1.5">
+                                    {paths.map((path, i) => {
+                                      const url = `${base}/medegdel/${path}`;
+                                      return (
+                                        <button
+                                          key={i}
+                                          type="button"
+                                          onClick={() => setImagePreviewUrl(url)}
+                                          className="block rounded-xl overflow-hidden max-w-[140px] cursor-zoom-in hover:opacity-90 transition-opacity border border-white/20"
+                                        >
+                                          <img
+                                            src={url}
+                                            alt=""
+                                            className="w-full h-auto object-cover max-h-36"
+                                          />
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                ) : null;
+                              })()}
+
+                            {/* Attached Voice Note */}
+                            {msg.duu &&
+                              (() => {
+                                const path = normalizeMedegdelAssetPath(msg.duu);
+                                const audioUrl = path
+                                  ? `${getApiUrl().replace(/\/$/, "")}/medegdel/${path}`
+                                  : "";
+                                return audioUrl ? (
+                                  <div className="my-1.5">
+                                    <audio controls src={audioUrl} className="max-w-full h-8" />
+                                  </div>
+                                ) : null;
+                              })()}
+
+                            {/* Text Message */}
+                            {msg.message ? (
+                              <p className="whitespace-pre-wrap leading-relaxed text-xs">
+                                {msg.message}
                               </p>
-                              {msg.kharsanEsekh && msg.updatedAt && (
-                                <p className="text-theme text-xs mt-1 flex items-center gap-1 justify-end">
-                                  <CheckCheck
-                                    className="w-3.5 h-3.5 text-blue-500"
-                                    aria-hidden
-                                  />
-                                  <span>
-                                    {moment(msg.updatedAt).format("HH:mm")}
-                                  </span>
-                                </p>
+                            ) : null}
+
+                            {/* Timestamp & Read Status */}
+                            <div
+                              className={`flex items-center gap-1 mt-1 text-[10px] ${
+                                isUser ? "justify-end text-blue-200" : "justify-end text-slate-400"
+                              }`}
+                            >
+                              <span>{moment(msg.createdAt).format("HH:mm")}</span>
+                              {isUser && msg.kharsanEsekh && (
+                                <CheckCheck className="w-3 h-3 text-blue-200" aria-hidden />
                               )}
                             </div>
                           </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
+                        </div>
+                      );
+                    })}
 
-                {/* Admin reply bar (like app) – text, image, voice */}
-                <div className="mt-4 pt-4 border-t border-[color:var(--surface-border)]">
-                  <input
-                    ref={replyImageInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) setReplyImage(f);
-                      e.target.value = "";
-                    }}
-                  />
-                  {(replyImage || replyVoiceBlob) && (
-                    <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      {replyImage && (
-                        <span className="inline-flex items-center gap-1 rounded-xl bg-blue-100 dark:bg-blue-900/30 px-2 py-1 text-sm">
-                          <ImagePlus className="w-4 h-4" />
-                          {replyImage.name}
-                          <button
-                            type="button"
-                            onClick={() => setReplyImage(null)}
-                            className="text-red-500 hover:underline"
-                          >
-                            ×
-                          </button>
-                        </span>
+                    {/* Legacy Admin Tailbar (if present and not already in displayMessages) */}
+                    {selectedMedegdel.tailbar &&
+                      !displayMessages.some((m) => m.message === selectedMedegdel.tailbar) && (
+                        <div className="flex justify-end">
+                          <div className="max-w-[85%] sm:max-w-[72%] rounded-2xl rounded-br-xs px-3.5 py-2.5 bg-blue-600 text-white shadow-2xs text-xs">
+                            <div className="flex items-center justify-between gap-1.5 mb-1 text-blue-200">
+                              <span className="text-[10px] font-normal uppercase tracking-wider">
+                                Хариу тайлбар (Админ)
+                              </span>
+                            </div>
+                            <p className="whitespace-pre-wrap leading-relaxed text-xs">
+                              {selectedMedegdel.tailbar}
+                            </p>
+                            {selectedMedegdel.repliedAt && (
+                              <div className="flex items-center justify-end gap-1 mt-1 text-[10px] text-blue-200">
+                                <CheckCircle className="w-3 h-3" />
+                                <span>{moment(selectedMedegdel.repliedAt).format("YYYY-MM-DD HH:mm")}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       )}
-                      {replyVoiceBlob && (
-                        <span className="inline-flex items-center gap-1 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 px-2 py-1 text-sm">
-                          <Mic className="w-4 h-4" />
-                          {t("Дуу")}
-                          <button
-                            type="button"
-                            onClick={() => setReplyVoiceBlob(null)}
-                            className="text-red-500 hover:underline"
-                          >
-                            ×
-                          </button>
-                        </span>
-                      )}
-                    </div>
-                  )}
-                  <div className="flex gap-2 items-center">
+                  </>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Chat Input Bar - DOCKED STICKY AT BOTTOM */}
+              <div className="shrink-0 p-2.5 sm:p-3 border-t border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]">
+                <input
+                  ref={replyImageInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) setReplyImage(f);
+                    e.target.value = "";
+                  }}
+                />
+
+                {/* Previews for attached image or voice note */}
+                {(replyImage || replyVoiceBlob) && (
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    {replyImage && (
+                      <span className="inline-flex items-center gap-1.5 rounded-xl bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 px-2.5 py-1 text-xs text-blue-700 dark:text-blue-300">
+                        <ImagePlus className="w-3.5 h-3.5" />
+                        <span className="truncate max-w-[140px]">{replyImage.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => setReplyImage(null)}
+                          className="text-red-500 hover:text-red-700 ml-1 cursor-pointer"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    )}
+                    {replyVoiceBlob && (
+                      <span className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 px-2.5 py-1 text-xs text-emerald-700 dark:text-emerald-300">
+                        <Mic className="w-3.5 h-3.5" />
+                        <span>{t("Дуу")}</span>
+                        <button
+                          type="button"
+                          onClick={() => setReplyVoiceBlob(null)}
+                          className="text-red-500 hover:text-red-700 ml-1 cursor-pointer"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* Input Controls Row */}
+                <div className="flex gap-2 items-center">
+                  <button
+                    type="button"
+                    onClick={() => replyImageInputRef.current?.click()}
+                    disabled={replySending}
+                    className="h-9 w-9 rounded-xl border border-[color:var(--surface-border)] flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-[color:var(--surface-hover)] disabled:opacity-50 transition cursor-pointer shrink-0"
+                    title={t("Зураг хавсаргах")}
+                  >
+                    <ImagePlus className="w-4 h-4" />
+                  </button>
+
+                  {!recording ? (
                     <button
                       type="button"
-                      onClick={() => replyImageInputRef.current?.click()}
+                      onClick={startRecording}
                       disabled={replySending}
-                      className="rounded-2xl border border-[color:var(--surface-border)] p-2.5 text-theme hover:bg-[color:var(--surface-hover)] disabled:opacity-50"
-                      aria-label={t("Зураг")}
+                      className="h-9 w-9 rounded-xl border border-[color:var(--surface-border)] flex items-center justify-center text-slate-500 hover:text-emerald-600 hover:bg-[color:var(--surface-hover)] disabled:opacity-50 transition cursor-pointer shrink-0"
+                      title={t("Дуу бичих")}
                     >
-                      <ImagePlus className="w-5 h-5" />
+                      <Mic className="w-4 h-4" />
                     </button>
-                    {!recording ? (
-                      <button
-                        type="button"
-                        onClick={startRecording}
-                        disabled={replySending}
-                        className="rounded-2xl border border-[color:var(--surface-border)] p-2.5 text-theme hover:bg-[color:var(--surface-hover)] disabled:opacity-50"
-                        aria-label={t("Дуу бичих")}
-                      >
-                        <Mic className="w-5 h-5" />
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={stopRecording}
-                        className="rounded-22xl border border-red-300 bg-red-50 dark:bg-red-900/20 p-2.5 text-red-600"
-                        aria-label={t("Зогсоох")}
-                      >
-                        <Square className="w-5 h-5" />
-                      </button>
-                    )}
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={stopRecording}
+                      className="h-9 w-9 rounded-xl border border-red-400 bg-red-500/10 text-red-600 flex items-center justify-center transition animate-pulse cursor-pointer shrink-0"
+                      title={t("Зогсоох")}
+                    >
+                      <Square className="w-4 h-4" />
+                    </button>
+                  )}
+
                     <input
                       type="text"
                       value={replyInput}
@@ -1651,9 +1644,10 @@ export default function SanalKhuselt() {
                         }
                       }}
                       placeholder={t("Хариу бичих...")}
-                      className="flex-1 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-ground)] px-4 py-3 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)]"
+                      className="flex-1 h-9 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-3 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 transition"
                       disabled={replySending}
                     />
+
                     <button
                       type="button"
                       onClick={sendAdminReply}
@@ -1661,16 +1655,15 @@ export default function SanalKhuselt() {
                         replySending ||
                         (!replyInput.trim() && !replyImage && !replyVoiceBlob)
                       }
-                      className="rounded-2xl bg-blue-500 dark:bg-blue-700 text-white p-3 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
-                      aria-label={t("Илгээх")}
+                      className="h-9 w-9 rounded-xl bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed transition shadow-xs cursor-pointer shrink-0 active:scale-95"
+                      title={t("Илгээх")}
                     >
-                      <Send className="w-5 h-5" />
+                      <Send className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
-              </div>
-            </>
-          ) : (
+              </>
+            ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-theme gap-4">
               <div className="w-20 h-20 bg-[color:var(--surface-hover)] rounded-full flex items-center justify-center">
                 <MessageSquare className="w-10 h-10 opacity-50" />

@@ -46,7 +46,7 @@ export default function InitialBalanceExcelModal({
     try {
       const resp = await uilchilgee(token || "").post(
         "/generateInitialBalanceTemplate",
-        {},
+        { baiguullagiinId, barilgiinId },
         { responseType: "blob" },
       );
       const url = window.URL.createObjectURL(new Blob([resp.data]));

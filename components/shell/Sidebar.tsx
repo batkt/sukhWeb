@@ -86,42 +86,8 @@ export default function Sidebar({
     isDesktop,
     setMobileOpen,
     railMode,
-    setPeeking,
   } = useSidebar();
 
-  /**
-   * Хулгана орох/гарахад автоматаар дэлгэж, хумина.
-   *
-   * Саатал аль болох богино: нээхэд 50мс нь хурдан өнгөрөх хулганыг
-   * шүүхэд хангалттай атлаа мэдрэгдэхээргүй богино. Хаахад 140мс - цэс
-   * рүү очих замдаа хилээс түр гарахад шууд хумигдахгүй.
-   *
-   * Түр дэлгэсэн үед цэс агуулгыг түлхэхгүй, дээгүүр нь тэлдэг тул
-   * санамсаргүй дэлгэгдлээ ч хуудас байрлалаа алдахгүй.
-   */
-  const peekTimerRef = useRef<number | null>(null);
-
-  const peekTsutslaya = useCallback(() => {
-    if (peekTimerRef.current != null) {
-      window.clearTimeout(peekTimerRef.current);
-      peekTimerRef.current = null;
-    }
-  }, []);
-
-  const khulganaOrlaa = useCallback(() => {
-    if (!collapsed || !isDesktop) return;
-    peekTsutslaya();
-    peekTimerRef.current = window.setTimeout(() => setPeeking(true), 50);
-  }, [collapsed, isDesktop, peekTsutslaya, setPeeking]);
-
-  const khulganaGarlaa = useCallback(() => {
-    if (!isDesktop) return;
-    peekTsutslaya();
-    peekTimerRef.current = window.setTimeout(() => setPeeking(false), 140);
-  }, [isDesktop, peekTsutslaya, setPeeking]);
-
-  // Компонент устахад азнаж буй timer үлдээхгүй
-  useEffect(() => peekTsutslaya, [peekTsutslaya]);
   const closeDrawer = useCallback(() => setMobileOpen(false), [setMobileOpen]);
 
   const handleBuildingChange = useCallback(
@@ -139,8 +105,6 @@ export default function Sidebar({
     <aside
       className="shell-sidebar"
       aria-label="Хажуугийн цэс"
-      onMouseEnter={khulganaOrlaa}
-      onMouseLeave={khulganaGarlaa}
     >
       {/* ── Brand ─────────────────────────────────────────────── */}
       <div className="shell-sidebar-head">
