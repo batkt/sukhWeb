@@ -33,6 +33,14 @@ export interface Tokhirgoo {
   gereeDuusakhTalbaiTulburNemekhEsekh: boolean;
   gereeDuusakhTulbur: number;
   zochinUrikhUneguiMinut: number;
+  /** Оршин суугчийн аппликейшнд хаалт нээх товч харуулах эсэх */
+  orshinSuugchKhaalgaNeehEsekh?: boolean;
+  /**
+   * Цахилгааныг заалтаар (кВт × тариф) бодох эсэх.
+   * false үед хэрэглэгч эцсийн дүнг Excel-ээр шууд оруулна.
+   * Тодорхойгүй бол `true` гэж үзнэ.
+   */
+  zaaltaarTsakhilgaanBodokhEsekh?: boolean;
 }
 
 export interface Davkhar {

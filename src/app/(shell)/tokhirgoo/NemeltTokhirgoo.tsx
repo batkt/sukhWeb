@@ -59,6 +59,12 @@ export default function NemeltTokhirgoo() {
   // Resident Gate Open state
   const [residentGateOpenEnabled, setResidentGateOpenEnabled] = useState<boolean>(false);
 
+  // Цахилгааны тооцооны горим.
+  // true  - тоолуурын заалт оруулж, систем кВт тарифаар бодно.
+  // false - хэрэглэгч эцсийн дүнг Excel-ээр шууд оруулах ба тэр дүн шууд
+  //         "Цахилгаан" төлбөр болно (систем юу ч бодохгүй).
+  const [zaaltaarBodokh, setZaaltaarBodokh] = useState<boolean>(true);
+
   // Calculation states
   const [calculationEnabled, setCalculationEnabled] = useState<boolean>(false);
   const [calculationMethod, setCalculationMethod] = useState<string>("Хуанли");
@@ -389,6 +395,9 @@ export default function NemeltTokhirgoo() {
     setStoragePaymentEnabled(!!find("aguulakhTolborEnabled", false));
 
     setResidentGateOpenEnabled(!!find("orshinSuugchKhaalgaNeehEsekh", false));
+
+    // Тодорхойгүй бол хуучин зан төлөв — заалтаар бодно.
+    setZaaltaarBodokh(find("zaaltaarTsakhilgaanBodokhEsekh", true) !== false);
   }, [baiguullaga, selectedBuildingId, barilgiinId]);
 
   const fetchGuestSettings = async () => {
@@ -719,6 +728,67 @@ export default function NemeltTokhirgoo() {
         openSuccessOverlay("Оршин суугч хаалга нээх эрхийн тохиргоо хадгалагдлаа");
       }
     } catch (error: any) {
+      openErrorOverlay(error?.message || "Хадгалахад алдаа гарлаа");
+    } finally {
+      hideSpinner();
+    }
+  };
+
+  const saveZaaltaarBodokhSettings = async (utga: boolean) => {
+    if (!token || !ajiltan?.baiguullagiinId) {
+      openErrorOverlay("Нэвтрэх шаардлагатай");
+      return;
+    }
+
+    const umnukh = zaaltaarBodokh;
+    setZaaltaarBodokh(utga);
+    showSpinner();
+
+    try {
+      const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
+      const resp = await uilchilgee(token).get(
+        `/baiguullaga/${ajiltan.baiguullagiinId}`,
+        {
+          headers: { "X-Org-Only": "1" },
+        },
+      );
+      const freshOrg = resp.data;
+      const payload: any = JSON.parse(JSON.stringify(freshOrg));
+
+      const zaaltData = { zaaltaarTsakhilgaanBodokhEsekh: utga };
+
+      if (effectiveBarilgiinId && payload.barilguud) {
+        payload.barilguud = payload.barilguud.map((b: any) => {
+          const bId = b._id || b.id;
+          if (String(bId).trim() === String(effectiveBarilgiinId).trim()) {
+            return {
+              ...b,
+              tokhirgoo: { ...(b.tokhirgoo || {}), ...zaaltData },
+            };
+          }
+          return b;
+        });
+      } else {
+        payload.tokhirgoo = { ...(payload.tokhirgoo || {}), ...zaaltData };
+      }
+
+      const result = await updateMethod("baiguullaga", token, payload);
+      if (result?.data) {
+        // Гүйлгээний түүх хуудас ч мөн энэ баримтаас горимоо уншдаг тул
+        // шинэчлэхэд тэнд байгаа Excel цэс шууд өөрчлөгдөнө.
+        await baiguullagaMutate(
+          (result.data as any).result || result.data,
+          false,
+        );
+        await baiguullagaMutate();
+        openSuccessOverlay(
+          utga
+            ? "Цахилгааныг заалтаар бодохоор тохирууллаа"
+            : "Цахилгааны дүнг гараар оруулахаар тохирууллаа",
+        );
+      }
+    } catch (error: any) {
+      setZaaltaarBodokh(umnukh);
       openErrorOverlay(error?.message || "Хадгалахад алдаа гарлаа");
     } finally {
       hideSpinner();
@@ -1182,6 +1252,70 @@ export default function NemeltTokhirgoo() {
                   <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 dark:peer-focus:ring-red-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 dark:peer-checked:bg-rose-600 peer-checked:bg-rose-600"></div>
                 </label>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Цахилгаан бодох горим */}
+        <div id="nemelt-tsakhilgaan-box">
+          <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden">
+            <div className="p-5 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-sky-50 to-cyan-50 dark:from-sky-900/20 dark:to-cyan-900/20">
+              <div className="flex items-center gap-3">
+                <div>
+                  <h3 className="text-lg text-theme">
+                    Заалтаар цахилгаан бодох
+                  </h3>
+                  <p className="text-xs text-[color:var(--muted-text)]">
+                    Цахилгааны төлбөрийг заалтаас бодох эсвэл дүнг нь шууд
+                    оруулах
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-theme">
+                  {zaaltaarBodokh ? "Идэвхтэй" : "Идэвхгүй"}
+                </span>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={zaaltaarBodokh}
+                    onChange={(e) =>
+                      saveZaaltaarBodokhSettings(e.currentTarget.checked)
+                    }
+                    className="sr-only peer"
+                    aria-label="Заалтаар цахилгаан бодох"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-sky-300 dark:peer-focus:ring-sky-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 dark:peer-checked:bg-sky-600 peer-checked:bg-sky-600"></div>
+                </label>
+              </div>
+            </div>
+
+            <div className="p-5 bg-gradient-to-br from-sky-50/50 to-cyan-50/50 dark:from-sky-950/10 dark:to-cyan-950/10 space-y-2">
+              {zaaltaarBodokh ? (
+                <>
+                  <p className="text-sm text-theme">
+                    Тоолуурын <b>Өдөр</b>, <b>Шөнө</b>, <b>Өмнөх</b> заалтыг
+                    Excel-ээр оруулна. Зөрүүг кВт тарифаар үржүүлж систем өөрөө
+                    бодно.
+                  </p>
+                  <p className="text-xs text-[color:var(--muted-text)]">
+                    Гүйлгээний түүх хуудасны Заалт цэснээс «Заалт татах»,
+                    «Заалтын жагсаалт татах» боломжтой.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-theme">
+                    Систем цахилгааныг <b>бодохгүй</b>. Та тоот тус бүрийн
+                    эцсийн дүнг Excel-д бичиж оруулах ба тэр дүн шууд{" "}
+                    <b>Цахилгаан</b> төлбөр болно.
+                  </p>
+                  <p className="text-xs text-[color:var(--muted-text)]">
+                    Гүйлгээний түүх хуудасны Цахилгаан цэснээс «Цахилгаан
+                    татах»-аар загварыг аваад, дүнг бөглөж буцаан оруулна.
+                  </p>
+                </>
+              )}
             </div>
           </div>
         </div>

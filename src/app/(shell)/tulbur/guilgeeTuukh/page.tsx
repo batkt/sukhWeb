@@ -150,6 +150,19 @@ export default function DansniiKhuulga() {
     token,
     (ajiltan?.baiguullagiinId || null) as string | null,
   );
+
+  // Барилгын «Заалтаар цахилгаан бодох» тохиргоо (Нэмэлт тохиргоо хуудас).
+  // Унтраалттай үед систем юу ч бодохгүй — хэрэглэгч цахилгааны эцсийн дүнг
+  // Excel-ээр оруулна. Тодорхойгүй бол хуучин зан төлөв буюу заалтаар бодно.
+  const zaaltaarBodokh = useMemo(() => {
+    const barilga = (baiguullaga as any)?.barilguud?.find((b: any) => {
+      const bId = b?._id || b?.id;
+      return String(bId).trim() === String(effectiveBarilgiinId || "").trim();
+    });
+    const utga = (barilga ?? (baiguullaga as any))?.tokhirgoo
+      ?.zaaltaarTsakhilgaanBodokhEsekh;
+    return utga !== false;
+  }, [baiguullaga, effectiveBarilgiinId]);
   const { handleSendInvoices: sendInvoicesApi } = useGereeActions(
     token,
     ajiltan,
@@ -2177,7 +2190,11 @@ export default function DansniiKhuulga() {
   ]);
 
   const zaaltTemplateTatak = async () => {
-    const loadingToastId = toast.loading("Заалтын загвар файл бэлдэж байна…");
+    const loadingToastId = toast.loading(
+      zaaltaarBodokh
+        ? "Заалтын загвар файл бэлдэж байна…"
+        : "Цахилгааны загвар файл бэлдэж байна…",
+    );
     const hide = () => toast.dismiss(loadingToastId);
 
     try {
@@ -2188,7 +2205,9 @@ export default function DansniiKhuulga() {
       }
 
       const response = await uilchilgee(token).post(
-        "/zaaltExcelTemplateAvya",
+        zaaltaarBodokh
+          ? "/zaaltExcelTemplateAvya"
+          : "/tsakhilgaanExcelTemplateAvya",
         {
           baiguullagiinId: ajiltan.baiguullagiinId,
           barilgiinId: effectiveBarilgiinId,
@@ -2206,7 +2225,9 @@ export default function DansniiKhuulga() {
 
       const cd = (response.headers?.["content-disposition"] ||
         response.headers?.["Content-Disposition"]) as string | undefined;
-      let filename = "Заалтын загвар.xlsx";
+      let filename = zaaltaarBodokh
+        ? "Заалтын загвар.xlsx"
+        : "Цахилгааны загвар.xlsx";
       if (cd && /filename\*=UTF-8''([^;]+)/i.test(cd)) {
         filename = decodeURIComponent(
           cd.match(/filename\*=UTF-8''([^;]+)/i)![1],
@@ -2224,7 +2245,11 @@ export default function DansniiKhuulga() {
       a.remove();
       window.URL.revokeObjectURL(url);
 
-      toast.success("Заалтын загвар амжилттай татагдлаа");
+      toast.success(
+        zaaltaarBodokh
+          ? "Заалтын загвар амжилттай татагдлаа"
+          : "Цахилгааны загвар амжилттай татагдлаа",
+      );
     } catch (err: any) {
       hide();
       openErrorOverlay(getErrorMessage(err));
@@ -2952,7 +2977,9 @@ export default function DansniiKhuulga() {
       const ognoo = today.toISOString().split("T")[0]; // YYYY-MM-DD format
       form.append("ognoo", ognoo);
 
-      const endpoint = "/zaaltExcelTatya";
+      const endpoint = zaaltaarBodokh
+        ? "/zaaltExcelTatya"
+        : "/tsakhilgaanExcelTatya";
 
       importToastId = toast.loading("Загвар оруулж байна…");
 
@@ -3425,7 +3452,7 @@ export default function DansniiKhuulga() {
                 </Tooltip>
               </div>
               <div ref={zaaltButtonRef} className="relative">
-                <Tooltip title="Заалт">
+                <Tooltip title={zaaltaarBodokh ? "Заалт" : "Цахилгаан"}>
                   <motion.button
                     whileHover={{ scale: 1.03 }}
                     transition={{ duration: 0.3 }}
@@ -3434,7 +3461,9 @@ export default function DansniiKhuulga() {
                     id="zaalt-btn"
                   >
                     <FileSpreadsheet className="w-5 h-5" />
-                    <span className="hidden">Заалт</span>
+                    <span className="hidden">
+                      {zaaltaarBodokh ? "Заалт" : "Цахилгаан"}
+                    </span>
                     <ChevronDown
                       className={`w-4 h-4 transition-transform ${
                         isZaaltDropdownOpen ? "rotate-180" : ""
@@ -3463,18 +3492,24 @@ export default function DansniiKhuulga() {
                       className="w-full px-4 py-2.5 text-left text-[13px] hover:bg-white/10 transition-colors flex items-center gap-2 border-t border-white/10"
                     >
                       <Download className="w-4 h-4" />
-                      <span>Заалтын загвар татах</span>
+                      <span>
+                        {zaaltaarBodokh ? "Заалт татах" : "Цахилгаан татах"}
+                      </span>
                     </button>
-                    <button
-                      onClick={() => {
-                        zaaltOruulakh();
-                        setIsZaaltDropdownOpen(false);
-                      }}
-                      className="w-full px-4 py-2.5 text-left text-[13px] hover:bg-white/10 transition-colors flex items-center gap-2 border-t border-white/10"
-                    >
-                      <Download className="w-4 h-4" />
-                      <span>Заалтын жагсаалт татах</span>
-                    </button>
+                    {/* Заалтын жагсаалт нь зөвхөн заалтаар бодох горимд
+                        утгатай — дүнгээр оруулах горимд унших заалт байхгүй. */}
+                    {zaaltaarBodokh && (
+                      <button
+                        onClick={() => {
+                          zaaltOruulakh();
+                          setIsZaaltDropdownOpen(false);
+                        }}
+                        className="w-full px-4 py-2.5 text-left text-[13px] hover:bg-white/10 transition-colors flex items-center gap-2 border-t border-white/10"
+                      >
+                        <Download className="w-4 h-4" />
+                        <span>Заалтын жагсаалт татах</span>
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
