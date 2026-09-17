@@ -138,31 +138,7 @@ function MedegdelContent() {
     return Boolean(u.firebaseToken && String(u.firebaseToken).trim() !== "");
   };
 
-  const selectedStats = useMemo(() => {
-    const total = songogdsonKhariltsagch.length;
-    let eligibleUsers: Geree[] = [];
-    let ineligibleUsers: Geree[] = [];
-
-    if (turul === "Мессеж") {
-      eligibleUsers = songogdsonKhariltsagch.filter(hasPhone);
-      ineligibleUsers = songogdsonKhariltsagch.filter((u) => !hasPhone(u));
-    } else if (turul === "Mail") {
-      eligibleUsers = songogdsonKhariltsagch.filter(hasEmail);
-      ineligibleUsers = songogdsonKhariltsagch.filter((u) => !hasEmail(u));
-    } else {
-      // App channel
-      eligibleUsers = songogdsonKhariltsagch.filter(hasApp);
-      ineligibleUsers = songogdsonKhariltsagch.filter((u) => !hasApp(u));
-    }
-
-    return {
-      total,
-      eligibleCount: eligibleUsers.length,
-      ineligibleCount: ineligibleUsers.length,
-      eligibleUsers,
-      ineligibleUsers,
-    };
-  }, [songogdsonKhariltsagch, turul]);
+  const [resultModalOpen, setResultModalOpen] = useState(false);
 
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
   const [templateName, setTemplateName] = useState("");
@@ -596,6 +572,7 @@ function MedegdelContent() {
         turul: turul,
         failedUsers: failedList,
       });
+      setResultModalOpen(true);
 
       // Show different success message with count details
       const successMessage = `${turul} амжилттай илгээгдлээ: ${sentCount} илгээсэн${failedCount > 0 ? `, ${failedCount} илгээгээгүй` : ""}`;
@@ -989,47 +966,6 @@ function MedegdelContent() {
                     transition={{ duration: 0.25 }}
                     className="flex flex-col gap-4 flex-1 min-h-0"
                   >
-                    {/* Мэдэгдэл илгээх тооцоолол - зөвхөн Илгээсэн, Илгээгээгүй */}
-                    <div className="grid grid-cols-2 gap-2.5">
-                      <div>
-                        <label className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 mb-1 flex items-center gap-1.5">
-                          <Check className="w-3.5 h-3.5 text-emerald-500" />
-                          Илгээсэн
-                        </label>
-                        <Input
-                          readOnly
-                          value={selectedStats.eligibleCount}
-                          className="!rounded-xl font-bold text-center !h-9 text-sm bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 mb-1 flex items-center gap-1.5">
-                          <X className="w-3.5 h-3.5 text-rose-500" />
-                          Илгээгээгүй
-                        </label>
-                        <Input
-                          readOnly
-                          value={selectedStats.ineligibleCount}
-                          className="!rounded-xl font-bold text-center !h-9 text-sm bg-rose-50/70 dark:bg-rose-950/30 border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <div className="flex flex-wrap gap-1.5 max-h-16 overflow-y-auto">
-                        {songogdsonKhariltsagch.map((mur) => (
-                          <span
-                            key={mur._id}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 border border-white/20 text-xs "
-                          >
-                            <span className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-400 to-purple-400 flex items-center justify-center text-white text-[10px]">
-                              {mur.ner?.[0] || "?"}
-                            </span>
-                            {mur.ner}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
 
                     <div className="flex flex-col gap-3 flex-1 min-h-0">
                       <Input
@@ -1142,46 +1078,6 @@ function MedegdelContent() {
                     exit={{ opacity: 0 }}
                     className="flex-1 flex flex-col items-center justify-center text-center py-6 px-4"
                   >
-                    {lastSendResult && (
-                      <div className="w-full max-w-sm p-3.5 rounded-2xl neu-panel border border-slate-200 dark:border-white/10 mb-6 text-left animate-in fade-in duration-200">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
-                            Илгээсэн үр дүн
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => setLastSendResult(null)}
-                            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2.5">
-                          <div>
-                            <label className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 mb-1 flex items-center gap-1.5">
-                              <Check className="w-3.5 h-3.5 text-emerald-500" />
-                              Илгээсэн
-                            </label>
-                            <Input
-                              readOnly
-                              value={lastSendResult.sent}
-                              className="!rounded-xl font-bold text-center !h-9 text-sm text-emerald-600 dark:text-emerald-400 bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 mb-1 flex items-center gap-1.5">
-                              <X className="w-3.5 h-3.5 text-rose-500" />
-                              Илгээгээгүй
-                            </label>
-                            <Input
-                              readOnly
-                              value={lastSendResult.failed}
-                              className="!rounded-xl font-bold text-center !h-9 text-sm text-rose-600 dark:text-rose-400 bg-rose-50/70 dark:bg-rose-950/40 border-rose-300 dark:border-rose-800"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    )}
 
                     <div className="w-16 h-16 rounded-2xl neu-panel flex items-center justify-center mb-4">
                       <MessageSquare className="w-8 h-8 text-slate-400" />
@@ -1351,6 +1247,89 @@ function MedegdelContent() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Мэдэгдэл илгээлтийн дэлгэрэнгүй үр дүнгийн Modal */}
+      <Modal
+        open={resultModalOpen}
+        onCancel={() => setResultModalOpen(false)}
+        footer={null}
+        closable={false}
+        centered
+        width={400}
+        className="[&_.ant-modal-content]:!p-0 [&_.ant-modal-content]:!rounded-xl overflow-hidden [&_.ant-modal-content]:!bg-white dark:[&_.ant-modal-content]:!bg-slate-900 shadow-xl"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200/80 dark:border-white/10">
+          <h3 className="text-sm font-semibold text-slate-800 dark:text-white m-0">
+            {lastSendResult?.turul ? `${lastSendResult.turul} илгээлтийн дэлгэрэнгүй` : "Мэдэгдэл илгээлтийн дэлгэрэнгүй"}
+          </h3>
+          <button
+            type="button"
+            onClick={() => setResultModalOpen(false)}
+            className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Content Cards */}
+        <div className="p-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col items-center justify-center py-4 px-3 rounded-lg bg-[#f0fdf4] dark:bg-emerald-950/20 border border-[#86efac] dark:border-emerald-700/60">
+              <span className="text-2xl sm:text-3xl font-bold text-[#00875a] dark:text-emerald-400 mb-1">
+                {lastSendResult?.sent ?? 0}
+              </span>
+              <span className="text-[11px] sm:text-xs font-medium text-slate-600 dark:text-slate-300 text-center">
+                Амжилттай илгээсэн
+              </span>
+            </div>
+
+            <div className="flex flex-col items-center justify-center py-4 px-3 rounded-lg bg-[#fef2f2] dark:bg-rose-950/20 border border-[#fca5a5] dark:border-rose-700/60">
+              <span className="text-2xl sm:text-3xl font-bold text-[#dc2626] dark:text-rose-400 mb-1">
+                {lastSendResult?.failed ?? 0}
+              </span>
+              <span className="text-[11px] sm:text-xs font-medium text-slate-600 dark:text-slate-300 text-center">
+                Амжилтгүй болсон
+              </span>
+            </div>
+          </div>
+
+          {/* Failed users detail if any */}
+          {lastSendResult?.failedUsers && lastSendResult.failedUsers.length > 0 && (
+            <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-white/10">
+              <span className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 block mb-1.5">
+                Амжилтгүй болсон шалтгаан ({lastSendResult.failedUsers.length}):
+              </span>
+              <div className="max-h-28 overflow-y-auto space-y-1 pr-1 text-[11px]">
+                {lastSendResult.failedUsers.map((u, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between px-2.5 py-1 rounded-md bg-rose-50/70 dark:bg-rose-950/30 text-slate-700 dark:text-slate-300"
+                  >
+                    <span className="font-medium truncate mr-2">
+                      {u.ner} {u.toot ? `(${u.toot})` : ""}
+                    </span>
+                    <span className="text-rose-500 dark:text-rose-400 text-[10px] shrink-0">
+                      {u.shaltgaan || "Алдаа"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end px-4 py-2.5 border-t border-slate-200/80 dark:border-white/10">
+          <button
+            type="button"
+            onClick={() => setResultModalOpen(false)}
+            className="px-4 py-1.5 rounded-md bg-[#00875a] hover:bg-[#00734c] text-white text-xs font-medium transition-colors shadow-xs"
+          >
+            Хаах
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }
