@@ -103,11 +103,56 @@ const useIsoLayoutEffect =
   typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 /**
- * Хүснэгтийн их биеийг цонхны үлдсэн өндрөөр дүүргэнэ.
+ * Хүснэгтийн ДООР эзлэгдэх зай: дараах ах дүү элементүүдийн өндөр, эцгүүдийн
+ * доод padding/border. Эдгээр нь хүснэгтийн өндрөөс хамаардаггүй тул
+ * тооцоололд тойрог үүсгэхгүй.
+ */
+function spaceBelow(root: HTMLElement, limit: HTMLElement | null): number {
+  let total = 0;
+  let node: HTMLElement | null = root;
+  while (node && node !== limit && node.parentElement) {
+    let sibling = node.nextElementSibling as HTMLElement | null;
+    while (sibling) {
+      const siblingStyle = window.getComputedStyle(sibling);
+      // fixed/absolute (модал, давхарга) нь урсгалд зай эзэлдэггүй — тооцвол
+      // хүснэгт хамгийн багадаа хүртэл хумигдана.
+      const inFlow =
+        siblingStyle.position !== "fixed" &&
+        siblingStyle.position !== "absolute" &&
+        siblingStyle.display !== "none";
+      if (inFlow) total += sibling.getBoundingClientRect().height;
+      sibling = sibling.nextElementSibling as HTMLElement | null;
+    }
+    const parentStyle = window.getComputedStyle(node.parentElement);
+    total += parseFloat(parentStyle.paddingBottom) || 0;
+    total += parseFloat(parentStyle.borderBottomWidth) || 0;
+    node = node.parentElement;
+    if (node === document.body) break;
+  }
+  return total;
+}
+
+/** Хамгийн ойрын ГҮЙДЭГ өвөг элементийг олно (байхгүй бол баримт өөрөө). */
+function getScrollParent(el: HTMLElement | null): HTMLElement | null {
+  let parent = el?.parentElement ?? null;
+  while (parent) {
+    const overflowY = window.getComputedStyle(parent).overflowY;
+    if (/(auto|scroll|overlay)/.test(overflowY)) return parent;
+    parent = parent.parentElement;
+  }
+  return null;
+}
+
+/**
+ * Хүснэгтийн их биеийг үлдсэн өндрөөр дүүргэнэ.
  *
  * Өмнө нь дэлгэц бүр `calc(100vh - 460px)` мэт ГАР тоо дамжуулдаг байсан тул
- * шүүлтүүр/картын өндөр өөр болмогц доор нь том хоосон зай үлддэг байв. Энд
- * бодит байрлалыг хэмжиж тооцдог тул дээр нь юу байхаас үл хамаарна.
+ * шүүлтүүр/картын өндөр өөр болмогц доор нь том хоосон зай үлддэг байв.
+ *
+ * ЧУХАЛ: өндрийг ЦОНХны биш, хамгийн ойрын ГҮЙДЭГ эцгийн ёроолоор тооцно.
+ * Цонхоор хэмжвэл хуудасны гүйдэг сав өөрөө хүснэгтээс нам болж, ХОЁР гүйлгэх
+ * зурвас (эхлээд хуудас, дараа нь хүснэгт) үүсдэг байв. Эцгийн доторх байрлалыг
+ * `scrollTop`-той нийлүүлж бодсоноор гүйлгэсэн байрлалаас хамаарахгүй.
  *
  * @param enabled  `scroll.y` гараар өгөгдөөгүй үед л ажиллана
  * @param rootRef  бүрдлийн үндэс (хуудаслалт/гарчгийг хамарна)
@@ -134,10 +179,34 @@ function useFillViewportHeight(
       // Гарчиг + хуудаслалт + хөл нь их биеэс ГАДНА байдаг тул тэдний өндрийг
       // хасна. Энэ зөрүү maxHeight-аас хамаардаггүй тул тойрог үүсгэхгүй.
       const chrome = root.getBoundingClientRect().height - bodyRect.height;
-      const next = Math.max(
-        180,
-        Math.round(window.innerHeight - bodyRect.top - chrome - 16),
-      );
+
+      const scrollParent = getScrollParent(root);
+      // Хүснэгтийн доор үлдэх зайг хасахгүй бол нийт агуулга савнаасаа өндөр
+      // болж, ХОЁР гүйлгэх зурвас (хуудас + хүснэгт) үүснэ.
+      const below = spaceBelow(root, scrollParent);
+      let available: number;
+      if (scrollParent) {
+        const parentStyle = window.getComputedStyle(scrollParent);
+        const paddingBottom = parseFloat(parentStyle.paddingBottom) || 0;
+        // Эцгийн доторх байрлал — гүйлгэсэн эсэхээс үл хамаарна.
+        const offsetTop =
+          bodyRect.top -
+          scrollParent.getBoundingClientRect().top +
+          scrollParent.scrollTop;
+        available =
+          scrollParent.clientHeight -
+          offsetTop -
+          chrome -
+          below -
+          paddingBottom -
+          8;
+      } else {
+        // Баримт өөрөө гүйдэг: байрлалыг гүйлгээнээс үл хамаарахаар бодно.
+        const docTop = bodyRect.top + window.scrollY;
+        available =
+          document.documentElement.clientHeight - docTop - chrome - below - 8;
+      }
+      const next = Math.max(180, Math.round(available));
       // 1px-ээс бага хэлбэлзэлд төлөв шинэчилбэл ResizeObserver-тэй хамт
       // төгсгөлгүй давталт үүсгэнэ.
       setMaxHeight((prev) =>
@@ -151,10 +220,12 @@ function useFillViewportHeight(
     if (typeof ResizeObserver !== "undefined") {
       ro = new ResizeObserver(measure);
       // Их биеийг ӨӨРИЙГ нь ажиглавал maxHeight-ийн өөрчлөлт дахин хэмжилт
-      // дуудаж давталт үүснэ — иймд зөвхөн дээд талын байрлалд нөлөөлөх
-      // эцэг элементийг ажиглана.
+      // дуудаж давталт үүснэ — иймд зөвхөн дээд талын байрлал/боломжит
+      // өндөрт нөлөөлөх элементүүдийг ажиглана.
       const parent = rootRef.current?.parentElement;
       if (parent) ro.observe(parent);
+      const scrollParent = getScrollParent(rootRef.current);
+      if (scrollParent && scrollParent !== parent) ro.observe(scrollParent);
     }
     return () => {
       window.removeEventListener("resize", measure);
