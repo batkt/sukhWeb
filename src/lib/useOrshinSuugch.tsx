@@ -146,7 +146,9 @@ const fetcherJagsaalt = async ([
     const toStr = (v: any) => (v == null ? "" : String(v));
     const list = data.jagsaalt || [];
     const orgOnly = (list || []).filter(
-      (it: any) => toStr(it?.baiguullagiinId) === toStr(baiguullagiinId)
+      (it: any) =>
+        toStr(it?.baiguullagiinId) === toStr(baiguullagiinId) &&
+        !it?.undsenId
     );
     const branchAware = orgOnly.filter((it: OrshinSuugch) => {
       if (!barilgiinId) return true;

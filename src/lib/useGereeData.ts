@@ -104,7 +104,9 @@ export function useGereeData(
   const socketCtx = useSocket();
 
   const contracts = gereeGaralt?.jagsaalt || [];
-  const residentsList = (orshinSuugchGaralt?.jagsaalt || []) as any[];
+  const residentsList = ((orshinSuugchGaralt?.jagsaalt || []) as any[]).filter(
+    (r: any) => !r?.undsenId,
+  );
   const clientsList = (KhariltsagchGaralt?.jagsaalt || []) as any[];
   const employeesList = (ajilchdiinGaralt?.jagsaalt || []) as any[];
 
