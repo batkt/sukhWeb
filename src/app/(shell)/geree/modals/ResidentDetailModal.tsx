@@ -18,6 +18,8 @@ import {
   Trash2,
   AlertCircle,
   ChevronDown,
+  ShieldCheck,
+  Eye,
 } from "lucide-react";
 import uilchilgee from "@/lib/uilchilgee";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
@@ -115,6 +117,12 @@ export const ResidentDetailModal: React.FC<Props> = ({
   const [mashinJagsaalt, setMashinJagsaalt] = useState<any[]>([]);
   /** Машины жагсаалт сүүлд татсанаасаа хойш өөрчлөгдсөн эсэх. */
   const [mashinOorchlogdson, setMashinOorchlogdson] = useState(false);
+  const [mashinUnshijBaina, setMashinUnshijBaina] = useState(false);
+
+  /* Гэр бүлийн гишүүд цэс болон засах төлөв */
+  const [tovchMenuGishuunId, setTovchMenuGishuunId] = useState<string | null>(null);
+  const [zasajBuiGishuun, setZasajBuiGishuun] = useState<any | null>(null);
+  const [gishuunKhadgaljBaina, setGishuunKhadgaljBaina] = useState(false);
 
   /* Хувийн мэдээлэл засах */
   const [zasajBuiKhuvi, setZasajBuiKhuvi] = useState(false);
@@ -139,7 +147,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
 
   const [zasajBuiToot, setZasajBuiToot] = useState(false);
   const [tootJagsaalt, setTootJagsaalt] = useState<any[]>([]);
-  const [omchFilter, setOmchFilter] = useState<"Бүгд" | "Орон сууц" | "Гараж" | "Агуулах">("Бүгд");
+  const [omchFilter, setOmchFilter] = useState<"Орон сууц" | "Гараж" | "Агуулах" | "Бүгд">("Орон сууц");
 
   const tataya = useCallback(async () => {
     if (!token || !residentId) return;
@@ -165,15 +173,19 @@ export const ResidentDetailModal: React.FC<Props> = ({
     if (show) {
       tataya();
       setZasajBuiToot(false);
-      setOmchFilter("Бүгд");
+      setOmchFilter("Орон сууц");
       setShineMashiniiDugaar("");
       setShineMashinToot("");
+      setTovchMenuGishuunId(null);
+      setZasajBuiGishuun(null);
     } else {
       setMedeelel(null);
       setMashinJagsaalt([]);
       setMashinOorchlogdson(false);
       setTootJagsaalt([]);
-      setOmchFilter("Бүгд");
+      setOmchFilter("Орон сууц");
+      setTovchMenuGishuunId(null);
+      setZasajBuiGishuun(null);
     }
   }, [show, tataya]);
 
@@ -185,6 +197,13 @@ export const ResidentDetailModal: React.FC<Props> = ({
     document.addEventListener("keydown", tovch);
     return () => document.removeEventListener("keydown", tovch);
   }, [show, onClose]);
+
+  useEffect(() => {
+    if (!tovchMenuGishuunId) return;
+    const haaya = () => setTovchMenuGishuunId(null);
+    window.addEventListener("click", haaya);
+    return () => window.removeEventListener("click", haaya);
+  }, [tovchMenuGishuunId]);
 
   /**
    * Гишүүнийг ШУУД нэмнэ (баталгаажуулалтгүй).
@@ -230,6 +249,89 @@ export const ResidentDetailModal: React.FC<Props> = ({
     }
   };
 
+  /** Гишүүний эрх солих (Харах + Төлөх <-> Зөвхөн харах) */
+  const gishuunErkhSoliyo = async (gishuuniiId: string, shineErkh: string) => {
+    if (!token || !residentId) return;
+    setTovchMenuGishuunId(null);
+    try {
+      await uilchilgee(token).put("/gerBuliinGishuunErkh", {
+        undsenId: residentId,
+        gishuuniiId,
+        erkh: shineErkh,
+      });
+      openSuccessOverlay("Гишүүний эрх амжилттай солигдлоо");
+      await tataya();
+    } catch (err: any) {
+      openErrorOverlay(
+        err?.response?.data?.aldaa ||
+        err?.response?.data?.message ||
+        "Эрх солиход алдаа гарлаа",
+      );
+    }
+  };
+
+  /** Гишүүн хасах / устгах */
+  const gishuunUstgaya = async (g: any) => {
+    if (!token || !residentId) return;
+    setTovchMenuGishuunId(null);
+    const nernuud = [g.ovog, g.ner].filter(Boolean).join(" ") || g.utas;
+    if (
+      !confirm(
+        `${nernuud ? `«${nernuud}» г` : "Г"}эр бүлийн гишүүнийг хасахдаа итгэлтэй байна уу?`,
+      )
+    ) {
+      return;
+    }
+    try {
+      await uilchilgee(token).post("/gerBuliinGishuunUstgakh", {
+        undsenId: residentId,
+        gishuuniiId: g._id,
+        utas: g.utas,
+      });
+      openSuccessOverlay("Гэр бүлийн гишүүн хасагдлаа");
+      await tataya();
+    } catch (err: any) {
+      openErrorOverlay(
+        err?.response?.data?.aldaa ||
+        err?.response?.data?.message ||
+        "Гишүүн хасахад алдаа гарлаа",
+      );
+    }
+  };
+
+  /** Гишүүний мэдээлэл засаж хадгалах */
+  const gishuunZasajKhadgalya = async () => {
+    if (!zasajBuiGishuun || !token || !residentId) return;
+    const utas = (zasajBuiGishuun.utas || "").replace(/\D/g, "");
+    if (utas.length < 8) {
+      openErrorOverlay("Утасны дугаараа зөв оруулна уу");
+      return;
+    }
+    setGishuunKhadgaljBaina(true);
+    try {
+      await uilchilgee(token).post("/gerBuliinGishuunZasakh", {
+        undsenId: residentId,
+        gishuuniiId: zasajBuiGishuun._id,
+        ovog: zasajBuiGishuun.ovog,
+        ner: zasajBuiGishuun.ner,
+        utas,
+        kholboo: zasajBuiGishuun.kholboo,
+        erkh: zasajBuiGishuun.erkh,
+      });
+      openSuccessOverlay("Гишүүний мэдээлэл шинэчлэгдлээ");
+      setZasajBuiGishuun(null);
+      await tataya();
+    } catch (err: any) {
+      openErrorOverlay(
+        err?.response?.data?.aldaa ||
+        err?.response?.data?.message ||
+        "Гишүүний мэдээлэл засахад алдаа гарлаа",
+      );
+    } finally {
+      setGishuunKhadgaljBaina(false);
+    }
+  };
+
   // Real family members only (no static data)
   const gerBuliinGishuud: any[] = useMemo(() => {
     return Array.isArray(medeelel?.gerBuliinGishuud)
@@ -237,8 +339,8 @@ export const ResidentDetailModal: React.FC<Props> = ({
       : [];
   }, [medeelel]);
 
-  // ── Handlers for Car (Direct input add & delete) ──
-  const shuudMashinNemekh = () => {
+  // ── Handlers for Car (Direct input add & delete with auto-save) ──
+  const shuudMashinNemekh = async () => {
     const cleaned = mashiniiDugaarTseverle(shineMashiniiDugaar);
     if (!cleaned) {
       openErrorOverlay("Улсын дугаараа оруулна уу");
@@ -246,39 +348,91 @@ export const ResidentDetailModal: React.FC<Props> = ({
     }
     if (!MASHINII_DUGAARIIN_ZAGVAR.test(cleaned)) {
       openErrorOverlay(
-        "Улсын дугаар 4 тоо, 3 монгол кирилл үсэг байх ёстой (Жишээ: 1234УБА)"
+        "Улсын дугаар 4 тоо, 3 монгол кирилл үсэг байх ёстой (Жишээ: 1234УБА)",
       );
       return;
     }
     if (
       mashinJagsaalt.some(
-        (m) => (m.mashiniiDugaar || "").trim().toUpperCase() === cleaned
+        (m) => (m.mashiniiDugaar || "").trim().toUpperCase() === cleaned,
       )
     ) {
       openErrorOverlay("Энэ улсын дугаар аль хэдийн бүртгэгдсэн байна");
       return;
     }
+    if (!token || !residentId) return;
+
     const newCar = {
-      _id: `car_${Date.now()}`,
       mashiniiDugaar: cleaned,
-      ezenToot: shineMashinToot || tootJagsaalt[0]?.toot || "",
+      ezenToot: shineMashinToot || tootJagsaalt[0]?.toot || medeelel?.toot || "",
     };
-    setMashinJagsaalt((prev) => [...prev, newCar]);
-    setMashinOorchlogdson(true);
-    setMedeelel((prev: any) => ({
-      ...prev,
-      mashinuud: [...(prev?.mashinuud || []), newCar],
-    }));
-    setShineMashiniiDugaar("");
+    const jagsaalt = [...mashinJagsaalt, newCar];
+
+    setMashinUnshijBaina(true);
+    try {
+      const resp = await uilchilgee(token).post(
+        "/orshinSuugchiinMashinKhadgalya",
+        {
+          orshinSuugchiinId: residentId,
+          baiguullagiinId,
+          mashinuud: jagsaalt.map((m: any) => ({
+            mashiniiDugaar: m.mashiniiDugaar,
+            ezenToot: m.ezenToot,
+          })),
+        },
+      );
+      const shineJagsaalt = Array.isArray(resp.data?.mashinuud)
+        ? resp.data.mashinuud
+        : jagsaalt;
+      setMashinJagsaalt(shineJagsaalt);
+      setMedeelel((prev: any) => ({ ...prev, mashinuud: shineJagsaalt }));
+      setShineMashiniiDugaar("");
+      setMashinOorchlogdson(false);
+      openSuccessOverlay("Машин амжилттай бүртгэгдлээ");
+    } catch (err: any) {
+      openErrorOverlay(
+        err?.response?.data?.aldaa ||
+        err?.response?.data?.message ||
+        "Машин нэмэхэд алдаа гарлаа",
+      );
+    } finally {
+      setMashinUnshijBaina(false);
+    }
   };
 
-  const mashinUstgakh = (index: number) => {
-    setMashinJagsaalt((prev) => prev.filter((_, i) => i !== index));
-    setMashinOorchlogdson(true);
-    setMedeelel((prev: any) => ({
-      ...prev,
-      mashinuud: (prev?.mashinuud || []).filter((_: any, i: number) => i !== index),
-    }));
+  const mashinUstgakh = async (index: number) => {
+    if (!token || !residentId) return;
+    const uldsenMashinuud = mashinJagsaalt.filter((_, i) => i !== index);
+
+    setMashinUnshijBaina(true);
+    try {
+      const resp = await uilchilgee(token).post(
+        "/orshinSuugchiinMashinKhadgalya",
+        {
+          orshinSuugchiinId: residentId,
+          baiguullagiinId,
+          mashinuud: uldsenMashinuud.map((m: any) => ({
+            mashiniiDugaar: m.mashiniiDugaar,
+            ezenToot: m.ezenToot,
+          })),
+        },
+      );
+      const shineJagsaalt = Array.isArray(resp.data?.mashinuud)
+        ? resp.data.mashinuud
+        : uldsenMashinuud;
+      setMashinJagsaalt(shineJagsaalt);
+      setMedeelel((prev: any) => ({ ...prev, mashinuud: shineJagsaalt }));
+      setMashinOorchlogdson(false);
+      openSuccessOverlay("Машин хасагдлаа");
+    } catch (err: any) {
+      openErrorOverlay(
+        err?.response?.data?.aldaa ||
+        err?.response?.data?.message ||
+        "Машин устгахад алдаа гарлаа",
+      );
+    } finally {
+      setMashinUnshijBaina(false);
+    }
   };
 
   // ── Handlers for Toot editing ──
@@ -935,10 +1089,14 @@ export const ResidentDetailModal: React.FC<Props> = ({
                         <button
                           type="button"
                           onClick={shuudMashinNemekh}
-                          disabled={!MASHINII_DUGAARIIN_ZAGVAR.test(shineMashiniiDugaar)}
-                          className="flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-theme hover:bg-theme/90 disabled:opacity-40 text-white text-xs font-medium shadow-xs transition active:scale-95 cursor-pointer shrink-0"
+                          disabled={!MASHINII_DUGAARIIN_ZAGVAR.test(shineMashiniiDugaar) || mashinUnshijBaina}
+                          className="flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-theme hover:bg-theme/90 disabled:opacity-40 text-white text-xs font-medium shadow-xs transition active:scale-95 cursor-pointer shrink-0 disabled:cursor-not-allowed"
                         >
-                          <Plus className="h-3.5 w-3.5" />
+                          {mashinUnshijBaina ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Plus className="h-3.5 w-3.5" />
+                          )}
                           <span>Нэмэх</span>
                         </button>
                       </div>
@@ -985,7 +1143,8 @@ export const ResidentDetailModal: React.FC<Props> = ({
                             <button
                               type="button"
                               onClick={() => mashinUstgakh(idx)}
-                              className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 transition cursor-pointer"
+                              disabled={mashinUnshijBaina}
+                              className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                               title="Устгах"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
@@ -1108,19 +1267,21 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                   className="w-full h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs"
                                 />
                               </div>
-                              <div>
-                                <label className="text-[10px] text-slate-400 block mb-0.5">
-                                  Цахилгааны заалт
-                                </label>
-                                <input
-                                  type="number"
-                                  value={t.tsahilgaaniiZaalt ?? 0}
-                                  onChange={(e) =>
-                                    tootFieldSolikh(idx, "tsahilgaaniiZaalt", Number(e.target.value))
-                                  }
-                                  className="w-full h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs"
-                                />
-                              </div>
+                              {getTurulCategory(t) === "Орон сууц" && (
+                                <div>
+                                  <label className="text-[10px] text-slate-400 block mb-0.5">
+                                    Цахилгааны заалт
+                                  </label>
+                                  <input
+                                    type="number"
+                                    value={t.tsahilgaaniiZaalt ?? 0}
+                                    onChange={(e) =>
+                                      tootFieldSolikh(idx, "tsahilgaaniiZaalt", Number(e.target.value))
+                                    }
+                                    className="w-full h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs"
+                                  />
+                                </div>
+                              )}
                             </div>
                             {getTurulCategory(t) !== "Орон сууц" && (
                               <div className="pt-2 border-t border-slate-200/50 dark:border-slate-700/50">
@@ -1159,10 +1320,10 @@ export const ResidentDetailModal: React.FC<Props> = ({
                         <div className="flex items-center gap-1.5 pb-3 overflow-x-auto no-scrollbar">
                           {(
                             [
-                              { key: "Бүгд", label: "Бүгд", count: tootJagsaalt.length },
                               { key: "Орон сууц", label: "Орон сууц", count: oronSuutsCount },
                               { key: "Гараж", label: "Гараж", count: garajCount },
                               { key: "Агуулах", label: "Агуулах", count: aguulakhCount },
+                              { key: "Бүгд", label: "Бүгд", count: tootJagsaalt.length },
                             ] as const
                           ).map((tab) => {
                             const isActive = omchFilter === tab.key;
@@ -1191,7 +1352,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                         </div>
 
                         {tootJagsaalt.length === 0 ? (
-                          <div className="py-8 text-center text-xs text-slate-400">
+                          <div className="h-[175px] flex flex-col items-center justify-center text-xs text-slate-400">
                             <Warehouse className="mx-auto mb-2 h-7 w-7 text-slate-300 dark:text-slate-600" />
                             <p className="text-slate-500 dark:text-slate-400 font-medium">
                               Өмч бүртгэлгүй байна
@@ -1205,112 +1366,116 @@ export const ResidentDetailModal: React.FC<Props> = ({
                             </button>
                           </div>
                         ) : filteredTootJagsaalt.length === 0 ? (
-                          <div className="py-8 text-center text-xs text-slate-400">
+                          <div className="h-[175px] flex flex-col items-center justify-center text-xs text-slate-400">
                             <p className="text-slate-500 dark:text-slate-400 font-medium">
                               {omchFilter} бүртгэлгүй байна
                             </p>
                           </div>
                         ) : (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                            {filteredTootJagsaalt.map((t: any, i: number) => {
-                              const category = getTurulCategory(t);
-                              const isB1 =
-                                t.davkhar === "B1" ||
-                                category === "Гараж" ||
-                                t.turul === "B1";
-                              const associatedToot = getAssociatedAptToot(t);
+                          <div className="h-[175px] overflow-y-auto pr-1">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                              {filteredTootJagsaalt.map((t: any, i: number) => {
+                                const category = getTurulCategory(t);
+                                const isB1 =
+                                  t.davkhar === "B1" ||
+                                  category === "Гараж" ||
+                                  t.turul === "B1";
+                                const associatedToot = getAssociatedAptToot(t);
 
-                              return (
-                                <div
-                                  key={t._id || i}
-                                  className="rounded-xl border border-slate-100 bg-slate-50/50 p-3.5 dark:border-slate-800 dark:bg-slate-800/30 flex flex-col justify-between space-y-3"
-                                >
-                                  <div className="flex items-start justify-between">
-                                    <div className="flex items-center gap-3">
-                                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-theme/10 text-theme dark:bg-theme/30 dark:text-theme font-bold text-xs">
-                                        {category === "Гараж" ? (
-                                          isB1 && t.turul === "B1" ? (
-                                            <span className="text-[11px] font-semibold">B1</span>
+                                return (
+                                  <div
+                                    key={t._id || i}
+                                    className="rounded-xl border border-slate-100 bg-slate-50/60 p-2.5 dark:border-slate-800 dark:bg-slate-800/30 flex flex-col justify-between space-y-2"
+                                  >
+                                    <div className="flex items-start justify-between">
+                                      <div className="flex items-center gap-2.5">
+                                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-theme/10 text-theme dark:bg-theme/30 dark:text-theme font-bold text-xs">
+                                          {category === "Гараж" ? (
+                                            isB1 && t.turul === "B1" ? (
+                                              <span className="text-[10px] font-semibold">B1</span>
+                                            ) : (
+                                              <Car className="h-3.5 w-3.5" />
+                                            )
+                                          ) : category === "Агуулах" ? (
+                                            <Warehouse className="h-3.5 w-3.5" />
                                           ) : (
-                                            <Car className="h-4 w-4" />
-                                          )
-                                        ) : category === "Агуулах" ? (
-                                          <Warehouse className="h-4 w-4" />
-                                        ) : (
-                                          <Building2 className="h-4 w-4" />
-                                        )}
+                                            <Building2 className="h-3.5 w-3.5" />
+                                          )}
+                                        </div>
+                                        <div>
+                                          <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-tight">
+                                            {tekst(t.turul || "Орон сууц")}
+                                          </p>
+                                          <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                                            {tekst(t.toot)}
+                                          </p>
+                                        </div>
                                       </div>
-                                      <div>
-                                        <p className="text-[11px] text-slate-400 dark:text-slate-500">
-                                          {tekst(t.turul || "Орон сууц")}
-                                        </p>
-                                        <p className="text-base font-bold text-slate-900 dark:text-white">
-                                          {tekst(t.toot)}
-                                        </p>
-                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => (onEdit ? onEdit(medeelel) : setZasajBuiToot(true))}
+                                        className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer p-0.5"
+                                        title="Засах"
+                                      >
+                                        <Pencil className="h-3 w-3" />
+                                      </button>
                                     </div>
-                                    <button
-                                      type="button"
-                                      onClick={() => (onEdit ? onEdit(medeelel) : setZasajBuiToot(true))}
-                                      className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-                                      title="Засах"
-                                    >
-                                      <Pencil className="h-3.5 w-3.5" />
-                                    </button>
-                                  </div>
 
-                                  <div className="pt-2 border-t border-slate-200/50 dark:border-slate-700/50 text-[11px] space-y-1">
-                                    {/* Гараж or Агуулах: rename Байр into Тоот and show associated Орон сууц тоот. For Орон сууц: remove it completely */}
-                                    {category !== "Орон сууц" && (
-                                      <div className="flex items-center justify-between">
-                                        <span className="text-slate-400">Тоот</span>
-                                        <span className="text-slate-700 dark:text-slate-200 font-medium">
-                                          {associatedToot
-                                            ? associatedToot.toLowerCase().includes("тоот")
-                                              ? associatedToot
-                                              : `${associatedToot} тоот`
-                                            : "—"}
-                                        </span>
-                                      </div>
-                                    )}
-
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-slate-400">
-                                        Цахилгааны заалт
-                                      </span>
-                                      <span className="text-slate-700 dark:text-slate-200">
-                                        {tekst(t.tsahilgaaniiZaalt ?? 0)}
-                                      </span>
-                                    </div>
-                                    {(() => {
-                                      const uldegdelVal =
-                                        t.uldegdel !== undefined && t.uldegdel !== null
-                                          ? t.uldegdel
-                                          : t.ekhniiUldegdel;
-                                      const hasUldegdel =
-                                        uldegdelVal !== undefined &&
-                                        uldegdelVal !== null &&
-                                        uldegdelVal !== "" &&
-                                        Number(uldegdelVal) !== 0;
-                                      return (
+                                    <div className="pt-1.5 border-t border-slate-200/50 dark:border-slate-700/50 text-[10px] space-y-0.5">
+                                      {/* Гараж or Агуулах: rename Байр into Тоот and show associated Орон сууц тоот. For Орон сууц: remove it completely */}
+                                      {category !== "Орон сууц" && (
                                         <div className="flex items-center justify-between">
-                                          <span className="text-slate-400">Үлдэгдэл</span>
-                                          <span
-                                            className={
-                                              hasUldegdel
-                                                ? "text-slate-700 dark:text-slate-200 font-medium"
-                                                : "text-slate-400 dark:text-slate-500"
-                                            }
-                                          >
-                                            {hasUldegdel ? `${formatNumber(uldegdelVal)}₮` : "Байхгүй"}
+                                          <span className="text-slate-400">Тоот</span>
+                                          <span className="text-slate-700 dark:text-slate-200 font-medium">
+                                            {associatedToot
+                                              ? associatedToot.toLowerCase().includes("тоот")
+                                                ? associatedToot
+                                                : `${associatedToot} тоот`
+                                              : "—"}
                                           </span>
                                         </div>
-                                      );
-                                    })()}
+                                      )}
+
+                                      {category === "Орон сууц" && (
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-slate-400">
+                                            Цахилгааны заалт
+                                          </span>
+                                          <span className="text-slate-700 dark:text-slate-200">
+                                            {tekst(t.tsahilgaaniiZaalt ?? 0)}
+                                          </span>
+                                        </div>
+                                      )}
+                                      {(() => {
+                                        const uldegdelVal =
+                                          t.uldegdel !== undefined && t.uldegdel !== null
+                                            ? t.uldegdel
+                                            : t.ekhniiUldegdel;
+                                        const hasUldegdel =
+                                          uldegdelVal !== undefined &&
+                                          uldegdelVal !== null &&
+                                          uldegdelVal !== "" &&
+                                          Number(uldegdelVal) !== 0;
+                                        return (
+                                          <div className="flex items-center justify-between">
+                                            <span className="text-slate-400">Үлдэгдэл</span>
+                                            <span
+                                              className={
+                                                hasUldegdel
+                                                  ? "text-slate-700 dark:text-slate-200 font-medium"
+                                                  : "text-slate-400 dark:text-slate-500"
+                                              }
+                                            >
+                                              {hasUldegdel ? `${formatNumber(uldegdelVal)}₮` : "Байхгүй"}
+                                            </span>
+                                          </div>
+                                        );
+                                      })()}
+                                    </div>
                                   </div>
-                                </div>
-                              );
-                            })}
+                                );
+                              })}
+                            </div>
                           </div>
                         )}
                       </div>
@@ -1332,178 +1497,360 @@ export const ResidentDetailModal: React.FC<Props> = ({
                       </div>
                       <button
                         type="button"
-                        onClick={() => setGishuunNemejBaina((n) => !n)}
-                        className="rounded-lg px-2 py-1 text-[11px] font-medium text-theme transition hover:bg-theme/10 dark:text-theme dark:hover:bg-theme/20"
+                        onClick={() => {
+                          setZasajBuiGishuun(null);
+                          setGishuunNemejBaina((n) => !n);
+                        }}
+                        className="rounded-lg px-2 py-1 text-[11px] font-medium text-theme transition hover:bg-theme/10 dark:text-theme dark:hover:bg-theme/20 cursor-pointer"
                       >
                         {gishuunNemejBaina ? "Цуцлах" : "+ Гишүүн нэмэх"}
                       </button>
                     </div>
 
-                    {/* Шууд нэмэх форм — баталгаажуулалтгүй */}
-                    {gishuunNemejBaina && (
-                      <div className="mt-3 rounded-xl border border-theme/30 bg-theme/5 p-3 dark:border-theme/25 dark:bg-theme/10">
-                        <div className="grid grid-cols-2 gap-2.5">
-                          <input
-                            placeholder="Овог"
-                            value={shineGishuun.ovog}
-                            onChange={(e) =>
-                              setShineGishuun((g) => ({
-                                ...g,
-                                ovog: e.target.value,
-                              }))
-                            }
-                            className="w-full h-8 rounded-lg border border-slate-200 bg-white px-2.5 text-xs text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-                          />
-                          <input
-                            placeholder="Нэр"
-                            value={shineGishuun.ner}
-                            onChange={(e) =>
-                              setShineGishuun((g) => ({
-                                ...g,
-                                ner: e.target.value,
-                              }))
-                            }
-                            className="w-full h-8 rounded-lg border border-slate-200 bg-white px-2.5 text-xs text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-                          />
-                          <input
-                            placeholder="Утас *"
-                            inputMode="numeric"
-                            maxLength={8}
-                            value={shineGishuun.utas}
-                            onChange={(e) => {
-                              const num = e.target.value.replace(/\D/g, "").slice(0, 8);
-                              setShineGishuun((g) => ({
-                                ...g,
-                                utas: num,
-                              }));
-                            }}
-                            className="w-full h-8 rounded-lg border border-slate-200 bg-white px-2.5 text-xs text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-                          />
-                          <div className="relative">
-                            <select
-                              value={shineGishuun.kholboo}
-                              onChange={(e) =>
-                                setShineGishuun((g) => ({
-                                  ...g,
-                                  kholboo: e.target.value,
-                                }))
-                              }
-                              className="w-full h-8 appearance-none rounded-lg border border-slate-200 bg-white pl-2.5 pr-8 text-xs text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 cursor-pointer"
-                            >
-                              <option value="Эхнэр/Нөхөр">Эхнэр/Нөхөр</option>
-                              <option value="Үр хүүхэд">Үр хүүхэд</option>
-                              <option value="Эцэг/Эх">Эцэг/Эх</option>
-                              <option value="Ах/Эгч/Дүү">Ах/Эгч/Дүү</option>
-                              <option value="Түрээслэгч">Түрээслэгч</option>
-                              <option value="Бусад">Бусад</option>
-                            </select>
-                            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-                          </div>
-                          <div className="relative col-span-2">
-                            <select
-                              value={shineGishuun.erkh}
-                              onChange={(e) =>
-                                setShineGishuun((g) => ({
-                                  ...g,
-                                  erkh: e.target.value,
-                                }))
-                              }
-                              className="w-full h-8 appearance-none rounded-lg border border-slate-200 bg-white pl-2.5 pr-8 text-xs text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 cursor-pointer"
-                            >
-                              <option value="Харах + Төлөх">Харах + Төлөх</option>
-                              <option value="Харах">Зөвхөн харах</option>
-                            </select>
-                            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                    <div className="h-[215px] pt-3 overflow-hidden">
+                      {gishuunNemejBaina ? (
+                        /* Шууд нэмэх форм — үндсэн хайрцаг дотор харагдана */
+                        <div className="h-full overflow-y-auto pr-1">
+                          <div className="rounded-xl border border-theme/30 bg-theme/5 p-3 dark:border-theme/25 dark:bg-theme/10 space-y-2.5">
+                            <div className="grid grid-cols-2 gap-2">
+                              <input
+                                placeholder="Овог"
+                                value={shineGishuun.ovog}
+                                onChange={(e) =>
+                                  setShineGishuun((g) => ({
+                                    ...g,
+                                    ovog: e.target.value,
+                                  }))
+                                }
+                                className="w-full h-8 rounded-lg border border-slate-200 bg-white px-2.5 text-xs text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                              />
+                              <input
+                                placeholder="Нэр"
+                                value={shineGishuun.ner}
+                                onChange={(e) =>
+                                  setShineGishuun((g) => ({
+                                    ...g,
+                                    ner: e.target.value,
+                                  }))
+                                }
+                                className="w-full h-8 rounded-lg border border-slate-200 bg-white px-2.5 text-xs text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                              />
+                              <input
+                                placeholder="Утас *"
+                                inputMode="numeric"
+                                maxLength={8}
+                                value={shineGishuun.utas}
+                                onChange={(e) => {
+                                  const num = e.target.value.replace(/\D/g, "").slice(0, 8);
+                                  setShineGishuun((g) => ({
+                                    ...g,
+                                    utas: num,
+                                  }));
+                                }}
+                                className="w-full h-8 rounded-lg border border-slate-200 bg-white px-2.5 text-xs text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                              />
+                              <div className="relative">
+                                <select
+                                  value={shineGishuun.kholboo}
+                                  onChange={(e) =>
+                                    setShineGishuun((g) => ({
+                                      ...g,
+                                      kholboo: e.target.value,
+                                    }))
+                                  }
+                                  className="w-full h-8 appearance-none rounded-lg border border-slate-200 bg-white pl-2.5 pr-7 text-xs text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 cursor-pointer"
+                                >
+                                  <option value="Эхнэр/Нөхөр">Эхнэр/Нөхөр</option>
+                                  <option value="Үр хүүхэд">Үр хүүхэд</option>
+                                  <option value="Эцэг/Эх">Эцэг/Эх</option>
+                                  <option value="Ах/Эгч/Дүү">Ах/Эгч/Дүү</option>
+                                  <option value="Түрээслэгч">Түрээслэгч</option>
+                                  <option value="Бусад">Бусад</option>
+                                </select>
+                                <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                              </div>
+                              <div className="relative col-span-2">
+                                <select
+                                  value={shineGishuun.erkh}
+                                  onChange={(e) =>
+                                    setShineGishuun((g) => ({
+                                      ...g,
+                                      erkh: e.target.value,
+                                    }))
+                                  }
+                                  className="w-full h-8 appearance-none rounded-lg border border-slate-200 bg-white pl-2.5 pr-7 text-xs text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 cursor-pointer"
+                                >
+                                  <option value="Харах + Төлөх">Харах + Төлөх</option>
+                                  <option value="Харах">Зөвхөн харах</option>
+                                </select>
+                                <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between pt-1">
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                                Баталгаажуулалт шаардахгүй.
+                              </p>
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => setGishuunNemejBaina(false)}
+                                  className="px-2.5 py-1 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 text-xs transition cursor-pointer"
+                                >
+                                  Цуцлах
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    const ok = await gishuunNemye();
+                                    if (ok) openSuccessOverlay("Гэр бүлийн гишүүн нэмэгдлээ");
+                                  }}
+                                  className="px-3 py-1 rounded-lg bg-theme hover:bg-theme/90 text-white text-xs font-medium transition cursor-pointer shadow-xs active:scale-95"
+                                >
+                                  Нэмэх
+                                </button>
+                              </div>
+                            </div>
                           </div>
                         </div>
+                      ) : zasajBuiGishuun ? (
+                        /* Гишүүн засах форм — үндсэн хайрцаг дотор */
+                        <div className="h-full overflow-y-auto pr-1">
+                          <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-800/40 space-y-2">
+                            <div className="flex items-center justify-between pb-1.5 border-b border-slate-200/60 dark:border-slate-700/60">
+                              <h4 className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                                Мэдээлэл засах
+                              </h4>
+                              <button
+                                type="button"
+                                onClick={() => setZasajBuiGishuun(null)}
+                                className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                              >
+                                Болих
+                              </button>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="text-[10px] text-slate-400 block mb-0.5">Овог</label>
+                                <input
+                                  placeholder="Овог"
+                                  value={zasajBuiGishuun.ovog}
+                                  onChange={(e) =>
+                                    setZasajBuiGishuun((prev: any) => ({ ...prev, ovog: e.target.value }))
+                                  }
+                                  className="w-full h-8 rounded-lg border border-slate-200 bg-white px-2.5 text-xs text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[10px] text-slate-400 block mb-0.5">Нэр</label>
+                                <input
+                                  placeholder="Нэр"
+                                  value={zasajBuiGishuun.ner}
+                                  onChange={(e) =>
+                                    setZasajBuiGishuun((prev: any) => ({ ...prev, ner: e.target.value }))
+                                  }
+                                  className="w-full h-8 rounded-lg border border-slate-200 bg-white px-2.5 text-xs text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[10px] text-slate-400 block mb-0.5">Утас *</label>
+                                <input
+                                  placeholder="Утас"
+                                  inputMode="numeric"
+                                  maxLength={8}
+                                  value={zasajBuiGishuun.utas}
+                                  onChange={(e) => {
+                                    const num = e.target.value.replace(/\D/g, "").slice(0, 8);
+                                    setZasajBuiGishuun((prev: any) => ({ ...prev, utas: num }));
+                                  }}
+                                  className="w-full h-8 rounded-lg border border-slate-200 bg-white px-2.5 text-xs text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[10px] text-slate-400 block mb-0.5">Холбоо</label>
+                                <div className="relative">
+                                  <select
+                                    value={zasajBuiGishuun.kholboo}
+                                    onChange={(e) =>
+                                      setZasajBuiGishuun((prev: any) => ({ ...prev, kholboo: e.target.value }))
+                                    }
+                                    className="w-full h-8 appearance-none rounded-lg border border-slate-200 bg-white pl-2.5 pr-7 text-xs text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 cursor-pointer"
+                                  >
+                                    <option value="Эхнэр/Нөхөр">Эхнэр/Нөхөр</option>
+                                    <option value="Үр хүүхэд">Үр хүүхэд</option>
+                                    <option value="Эцэг/Эх">Эцэг/Эх</option>
+                                    <option value="Ах/Эгч/Дүү">Ах/Эгч/Дүү</option>
+                                    <option value="Түрээслэгч">Түрээслэгч</option>
+                                    <option value="Бусад">Бусад</option>
+                                  </select>
+                                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                                </div>
+                              </div>
+                              <div className="col-span-2">
+                                <label className="text-[10px] text-slate-400 block mb-0.5">Эрх</label>
+                                <div className="relative">
+                                  <select
+                                    value={zasajBuiGishuun.erkh}
+                                    onChange={(e) =>
+                                      setZasajBuiGishuun((prev: any) => ({ ...prev, erkh: e.target.value }))
+                                    }
+                                    className="w-full h-8 appearance-none rounded-lg border border-slate-200 bg-white pl-2.5 pr-7 text-xs text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 cursor-pointer"
+                                  >
+                                    <option value="Харах + Төлөх">Харах + Төлөх</option>
+                                    <option value="Зөвхөн харах">Зөвхөн харах</option>
+                                    <option value="Харах">Зөвхөн харах</option>
+                                  </select>
+                                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                                </div>
+                              </div>
+                            </div>
 
-                        <div className="mt-3 flex items-center justify-between pt-1">
-                          <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                            Баталгаажуулалт шаардахгүй шууд идэвхжинэ.
-                          </p>
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setGishuunNemejBaina(false)}
-                              className="px-3 py-1 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 text-xs transition cursor-pointer"
-                            >
-                              Цуцлах
-                            </button>
-                            <button
-                              type="button"
-                              onClick={async () => {
-                                const ok = await gishuunNemye();
-                                if (ok) openSuccessOverlay("Гэр бүлийн гишүүн нэмэгдлээ");
-                              }}
-                              className="px-3.5 py-1 rounded-lg bg-theme hover:bg-theme/90 text-white text-xs font-medium transition cursor-pointer shadow-xs active:scale-95"
-                            >
-                              Нэмэх
-                            </button>
+                            <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
+                              <button
+                                type="button"
+                                onClick={() => setZasajBuiGishuun(null)}
+                                className="px-2.5 py-1 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 text-xs transition cursor-pointer"
+                              >
+                                Цуцлах
+                              </button>
+                              <button
+                                type="button"
+                                onClick={gishuunZasajKhadgalya}
+                                disabled={gishuunKhadgaljBaina}
+                                className="px-3 py-1 rounded-lg bg-theme hover:bg-theme/90 text-white text-xs font-medium transition cursor-pointer shadow-xs disabled:opacity-50"
+                              >
+                                {gishuunKhadgaljBaina ? "Хадгалж байна…" : "Хадгалах"}
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="pt-4 overflow-x-auto">
-                      {gerBuliinGishuud.length === 0 ? (
-                        <div className="py-8 text-center text-xs text-slate-400">
-                          <Users className="mx-auto mb-2 h-7 w-7 text-slate-300 dark:text-slate-600" />
-                          <p>Бүртгэлтэй гэр бүлийн гишүүн байхгүй байна</p>
                         </div>
                       ) : (
-                        <table className="w-full text-[11px] sm:text-xs">
-                          <thead>
-                            <tr className="text-[10px] sm:text-[11px] text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800">
-                              <th className="pb-2 text-left font-normal w-6">№</th>
-                              <th className="pb-2 text-left font-normal">Овог нэр</th>
-                              <th className="pb-2 text-left font-normal">Утас</th>
-                              <th className="pb-2 text-left font-normal">Эрх</th>
-                              <th className="pb-2 text-center font-normal">Төлөв</th>
-                              <th className="pb-2 text-right font-normal">Үйлдэл</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-slate-700 dark:text-slate-200">
-                            {gerBuliinGishuud.map((g: any, i: number) => (
-                              <tr
-                                key={g._id || i}
-                                className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition"
-                              >
-                                <td className="py-2.5 font-normal text-slate-800 dark:text-slate-100">
-                                  {i + 1}
-                                </td>
-                                <td className="py-2.5 font-normal text-slate-800 dark:text-slate-100">
-                                  {g.ovog ? `${g.ovog[0]}. ` : ""}
-                                  {tekst(g.ner)}
-                                </td>
-                                <td className="py-2.5 text-slate-600 dark:text-slate-300 font-normal">
-                                  {tekst(g.utas)}
-                                </td>
-                                <td className="py-2.5 text-slate-600 dark:text-slate-300 font-normal">
-                                  {tekst(
-                                    g.gishuuniiErkh ||
-                                    g.gishuuniiKholboo ||
-                                    "Гэр бүлийн гишүүн",
-                                  )}
-                                </td>
-                                <td className="py-2.5 text-center">
-                                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
-                                    {tekst(g.gishuuniiTuluv) === "—"
-                                      ? "Идэвхтэй"
-                                      : tekst(g.gishuuniiTuluv)}
-                                  </span>
-                                </td>
-                                <td className="py-2.5 text-right">
-                                  <button
-                                    type="button"
-                                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                        /* Table эсвэл хоосон төлөв — тогтмол өндөртэй */
+                        <div className="h-full overflow-y-auto pr-1">
+                          {gerBuliinGishuud.length === 0 ? (
+                            <div className="h-full flex flex-col items-center justify-center text-xs text-slate-400">
+                              <Users className="mx-auto mb-2 h-7 w-7 text-slate-300 dark:text-slate-600" />
+                              <p>Бүртгэлтэй гэр бүлийн гишүүн байхгүй байна</p>
+                            </div>
+                          ) : (
+                            <table className="w-full text-[11px] sm:text-xs">
+                              <thead>
+                                <tr className="text-[10px] sm:text-[11px] text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800 sticky top-0 bg-white dark:bg-slate-900 z-10">
+                                  <th className="pb-2 text-left font-normal w-6">№</th>
+                                  <th className="pb-2 text-left font-normal">Овог нэр</th>
+                                  <th className="pb-2 text-left font-normal">Утас</th>
+                                  <th className="pb-2 text-left font-normal">Эрх</th>
+                                  <th className="pb-2 text-center font-normal">Төлөв</th>
+                                  <th className="pb-2 text-right font-normal">Үйлдэл</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-slate-700 dark:text-slate-200">
+                                {gerBuliinGishuud.map((g: any, i: number) => (
+                                  <tr
+                                    key={g._id || i}
+                                    className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition"
                                   >
-                                    <MoreHorizontal className="h-4 w-4 inline" />
-                                  </button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                                    <td className="py-2.5 font-normal text-slate-800 dark:text-slate-100">
+                                      {i + 1}
+                                    </td>
+                                    <td className="py-2.5 font-normal text-slate-800 dark:text-slate-100">
+                                      {g.ovog ? `${g.ovog[0]}. ` : ""}
+                                      {tekst(g.ner)}
+                                    </td>
+                                    <td className="py-2.5 text-slate-600 dark:text-slate-300 font-normal">
+                                      {tekst(g.utas)}
+                                    </td>
+                                    <td className="py-2.5 text-slate-600 dark:text-slate-300 font-normal">
+                                      {tekst(
+                                        g.gishuuniiErkh ||
+                                        g.gishuuniiKholboo ||
+                                        "Гэр бүлийн гишүүн",
+                                      )}
+                                    </td>
+                                    <td className="py-2.5 text-center">
+                                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
+                                        {tekst(g.gishuuniiTuluv) === "—"
+                                          ? "Идэвхтэй"
+                                          : tekst(g.gishuuniiTuluv)}
+                                      </span>
+                                    </td>
+                                    <td className="py-2.5 text-right relative">
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setTovchMenuGishuunId((cur) =>
+                                            cur === (g._id || String(i)) ? null : (g._id || String(i))
+                                          );
+                                        }}
+                                        className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200 cursor-pointer transition"
+                                        title="Үйлдэл"
+                                      >
+                                        <MoreHorizontal className="h-4 w-4 inline" />
+                                      </button>
+
+                                      {tovchMenuGishuunId === (g._id || String(i)) && (
+                                        <div
+                                          onClick={(e) => e.stopPropagation()}
+                                          className="absolute right-0 top-8 z-30 w-44 rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900 text-left text-xs animate-in fade-in zoom-in-95 duration-150"
+                                        >
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              const currentErkh = g.gishuuniiErkh || g.erkh;
+                                              const nextErkh =
+                                                currentErkh === "Зөвхөн харах" || currentErkh === "Харах"
+                                                  ? "Харах + Төлөх"
+                                                  : "Зөвхөн харах";
+                                              gishuunErkhSoliyo(g._id, nextErkh);
+                                            }}
+                                            className="flex w-full items-center gap-2 px-3 py-2 text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/70 transition cursor-pointer"
+                                          >
+                                            <ShieldCheck className="h-3.5 w-3.5 text-theme" />
+                                            <span>
+                                              {(g.gishuuniiErkh || g.erkh) === "Зөвхөн харах" ||
+                                              (g.gishuuniiErkh || g.erkh) === "Харах"
+                                                ? "«Харах + Төлөх» болгох"
+                                                : "«Зөвхөн харах» болгох"}
+                                            </span>
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setTovchMenuGishuunId(null);
+                                              setGishuunNemejBaina(false);
+                                              setZasajBuiGishuun({
+                                                _id: g._id,
+                                                ovog: g.ovog || "",
+                                                ner: g.ner || "",
+                                                utas: g.utas || "",
+                                                kholboo: g.gishuuniiKholboo || g.kholboo || "Бусад",
+                                                erkh: g.gishuuniiErkh || g.erkh || "Харах + Төлөх",
+                                              });
+                                            }}
+                                            className="flex w-full items-center gap-2 px-3 py-2 text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/70 transition cursor-pointer"
+                                          >
+                                            <Pencil className="h-3.5 w-3.5 text-slate-400" />
+                                            <span>Мэдээлэл засах</span>
+                                          </button>
+                                          <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+                                          <button
+                                            type="button"
+                                            onClick={() => gishuunUstgaya(g)}
+                                            className="flex w-full items-center gap-2 px-3 py-2 text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/30 transition cursor-pointer"
+                                          >
+                                            <Trash2 className="h-3.5 w-3.5" />
+                                            <span>Гишүүн хасах</span>
+                                          </button>
+                                        </div>
+                                      )}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>
