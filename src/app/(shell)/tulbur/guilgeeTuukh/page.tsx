@@ -410,7 +410,7 @@ export default function DansniiKhuulga() {
         align: "start",
         minWidth: 140,
       },
-      { key: "action", label: "Үйлдэл", align: "center", minWidth: 80 },
+      { key: "action", label: "Үйлдэл", align: "center", minWidth: 160 },
     ],
     [],
   );
@@ -3683,7 +3683,6 @@ export default function DansniiKhuulga() {
               matrixMonthKey={effectiveDateFilter.monthKey}
               historyScopedByDate={historyScopedByDate}
               canCreateTransaction={canCreateTransaction}
-              maxHeight="calc(100vh - 550px)"
               token={token}
               ajiltan={ajiltan}
               effectiveBarilgiinId={effectiveBarilgiinId}

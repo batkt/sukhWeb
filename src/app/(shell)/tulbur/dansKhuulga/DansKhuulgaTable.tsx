@@ -54,7 +54,6 @@ interface DansKhuulgaTableProps {
   loading?: boolean;
   page?: number;
   rowsPerPage?: number;
-  maxHeight?: string | number;
   onLink?: (item: DansKhuulgaItem) => void;
   onUnlink?: (item: DansKhuulgaItem) => void;
   /**
@@ -73,7 +72,6 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
   loading = false,
   page = 1,
   rowsPerPage = 500,
-  maxHeight = "calc(100vh - 500px)",
   onLink,
   onUnlink,
   sortKey = null,
@@ -288,7 +286,7 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
           // үлддэг байв. Одоо тодорхой доод өргөн (багануудын нийлбэр) өгч,
           // "Гүйлгээний утга" баганыг өргөнгүй үлдээснээр тэр багана үлдсэн
           // зайг шингээж, хоосон багана арилна.
-          scroll={{ x: 1220, y: maxHeight }}
+          scroll={{ x: 1220 }}
           onChange={(_pagination, _filters, sorter: any) => {
             const s = Array.isArray(sorter) ? sorter[0] : sorter;
             const order = s?.order ?? null;

@@ -1381,7 +1381,7 @@ export default function Jagsaalt() {
               dataSource={vehicles}
               rowKey={(t, idx) => t._id || idx}
               pagination={false}
-              scroll={{ x: 1300, y: "calc(100vh - 320px)" }}
+              scroll={{ x: 1300 }}
               locale={{
                 emptyText: (
                   <div className="flex flex-col items-center gap-2">

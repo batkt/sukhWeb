@@ -42,8 +42,6 @@ interface ResidentsTableProps {
   onDelete?: (resident: ResidentItem) => void;
   onRemoveToot?: (residentId: string, baiguullagiinId: string, barilgiinId: string, toot: string) => void;
   onSort?: (key: SortKey, order?: "ascend" | "descend" | null) => void;
-  /** Viewport-based scroll height (same idea as /tulbur) */
-  maxHeight?: string | number;
 }
 
 export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
@@ -59,7 +57,6 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
   onDelete,
   onRemoveToot,
   onSort,
-  maxHeight = "calc(100vh - 460px)",
 }) => {
   const columns: ColumnsType<ResidentItem> = useMemo(
     () => [
@@ -402,7 +399,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
           pagination={false}
           loading={loading}
           className="min-w-[1000px]"
-          scroll={{ x: "max-content", y: maxHeight as any }}
+          scroll={{ x: "max-content" }}
           locale={{
             emptyText: (
               <span className="text-gray-500 dark:text-gray-400">

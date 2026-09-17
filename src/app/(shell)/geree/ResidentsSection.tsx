@@ -60,7 +60,6 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
               sortKey={sortKey}
               sortOrder={sortOrder}
               currentBaiguullagiinId={currentBaiguullagiinId}
-              maxHeight="calc(100vh - 460px)"
               onEdit={onEditResident}
               onView={onViewResident}
               onDelete={onRequestDeleteResident}

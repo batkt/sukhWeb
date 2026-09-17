@@ -667,7 +667,6 @@ export default function Ebarimt() {
               <EbarimtTable
                 data={statFilteredData}
                 loading={isLoading}
-                maxHeight="calc(100vh - 550px)"
                 onButsaakh={
                   hasPermission(ajiltan, "/tulbur/ebarimt")
                     ? ebarimtButsaaya

@@ -25,8 +25,6 @@ interface UnitsTableProps {
   onDeleteFloor?: (floor: string) => void;
   sortKey?: string;
   sortOrder?: "asc" | "desc";
-  /** Viewport-based scroll height (same idea as /tulbur) */
-  maxHeight?: string | number;
   propertyTab?: "Тоот" | "Зогсоол" | "Агуулах";
   selectedFloor?: string | null;
   onSelectFloor?: (floor: string) => void;
@@ -43,7 +41,6 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
   onDeleteFloor,
   sortKey,
   sortOrder,
-  maxHeight = "calc(100vh - 460px)",
   propertyTab = "Тоот",
   selectedFloor = null,
   onSelectFloor,
@@ -131,9 +128,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
     const tootuudWidth = Math.max(200, maxUnits * 54 + 16);
 
     cols.push({
-      // Тогтмол биш — доод хязгаар. Ингэснээр үлдсэн зайг энэ багана шингээж,
-      // № болон бусад нарийн багана зарласан өргөнөө хадгална.
-      minWidth: tootuudWidth,
+      width: tootuudWidth,
       title: (
         <span className="text-slate-900 dark:text-slate-200 text-center block font-semibold">
           {propertyTab === "Зогсоол"
@@ -277,7 +272,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
             }
           },
         })}
-        scroll={{ x: "max-content", y: maxHeight as any }}
+        scroll={{ x: "max-content" }}
         rowClassName={(record) =>
           // Ээлжлэх/hover өнгийг стандарт хүснэгт өөрөө хийнэ — энд зөвхөн
           // сонгосон давхарын онцлолт үлдэнэ.

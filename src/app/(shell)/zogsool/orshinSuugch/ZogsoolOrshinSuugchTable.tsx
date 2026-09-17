@@ -207,7 +207,7 @@ export const ZogsoolOrshinSuugchTable: React.FC<
         pagination={false}
         loading={loading}
         onChange={handleTableChange}
-        scroll={{ x: "max-content", y: "calc(100vh - 450px)" }}
+        scroll={{ x: "max-content" }}
         locale={{ emptyText: "Оршин суугчийн мэдээлэл олдсонгүй" }}
       />
     </div>

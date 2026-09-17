@@ -33,9 +33,7 @@ interface StandardTableProps<T extends object> {
   className?: string;
   containerClassName?: string;
   onRowClick?: (item: T) => void;
-  stickyHeader?: boolean;
   footer?: React.ReactNode;
-  maxHeight?: string | number;
   summary?: (rows: readonly T[]) => React.ReactNode;
   pagination?:
     | false
@@ -62,9 +60,7 @@ export function StandardTable<T extends object>({
   className,
   containerClassName,
   onRowClick,
-  stickyHeader = false,
   footer,
-  maxHeight,
   summary,
   pagination,
 }: StandardTableProps<T>) {
@@ -99,10 +95,8 @@ export function StandardTable<T extends object>({
         pagination={false}
         className={className}
         locale={{ emptyText: emptyMessage }}
-        scroll={{
-          x: "max-content",
-          ...(maxHeight || stickyHeader ? { y: maxHeight || "70vh" } : {}),
-        }}
+        // Өндрийг бүрдэл өөрөө цонхны үлдсэн зайгаар тооцно.
+        scroll={{ x: "max-content" }}
         summary={summary}
         onRow={(record) => ({
           onClick: onRowClick ? () => onRowClick(record) : undefined,

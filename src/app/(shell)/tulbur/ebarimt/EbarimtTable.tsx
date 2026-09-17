@@ -32,7 +32,6 @@ export interface EbarimtItem {
 interface EbarimtTableProps {
   data: EbarimtItem[];
   loading?: boolean;
-  maxHeight?: string | number;
   /** Баримт буцаах (устгах) — заагаагүй бол үйлдлийн багана харагдахгүй */
   onButsaakh?: (row: EbarimtItem) => void;
   /** Одоо буцаагдаж байгаа баримтын _id — тэр мөрд эргэлдэх зураг харуулна */
@@ -49,7 +48,6 @@ function butsaasanEsekh(row: EbarimtItem): boolean {
 export const EbarimtTable: React.FC<EbarimtTableProps> = ({
   data,
   loading = false,
-  maxHeight = "calc(100vh - 500px)",
   onButsaakh,
   butsaajBaigaaId = null,
   onKhevlekh,
@@ -304,7 +302,7 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
           pagination={false}
           loading={loading}
           className="min-w-[1180px]"
-          scroll={{ x: "max-content", y: maxHeight }}
+          scroll={{ x: "max-content" }}
           rowClassName={(record, index) => `
             ${butsaasanEsekh(record) ? "opacity-55 line-through decoration-red-400/70" : ""}
 `}

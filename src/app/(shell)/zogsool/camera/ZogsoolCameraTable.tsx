@@ -472,7 +472,7 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
         rowKey={(record) => record._id || Math.random().toString()}
         pagination={false}
         loading={loading}
-        scroll={{ x: "max-content", y: "calc(100vh - 280px)" }}
+        scroll={{ x: "max-content" }}
         locale={{ emptyText: "Мэдээлэл байхгүй байна" }}
       />
     </div>

@@ -1863,7 +1863,7 @@ export default function InvoicingZardluud() {
               current: currentPage,
               onChange: (page) => setCurrentPage(page),
             }}
-            scroll={{ x: "max-content", y: 400 }}
+            scroll={{ x: "max-content" }}
             loading={isLoading}
             locale={{ emptyText: "Мэдээлэл алга байна" }}
           />

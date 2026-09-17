@@ -41,8 +41,6 @@ interface ClientsTableProps {
   onDelete?: (Client: ClientItem) => void;
   onRemoveToot?: (ClientId: string, baiguullagiinId: string, barilgiinId: string, toot: string) => void;
   onSort?: (key: SortKey, order?: "ascend" | "descend" | null) => void;
-  /** Viewport-based scroll height (same idea as /tulbur) */
-  maxHeight?: string | number;
 }
 
 export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
@@ -57,7 +55,6 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
   onDelete,
   onRemoveToot,
   onSort,
-  maxHeight = "calc(100vh - 460px)",
 }) => {
   const [pendingTootRemove, setPendingTootRemove] = useState<{
     clientId: string;
@@ -294,7 +291,7 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
           pagination={false}
           loading={loading}
           className="min-w-[1000px]"
-          scroll={{ x: "max-content", y: maxHeight as any }}
+          scroll={{ x: "max-content" }}
           locale={{
             emptyText: (
               <span className="text-gray-500 dark:text-gray-400">

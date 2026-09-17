@@ -264,7 +264,6 @@ export default function NevtreltiinTuukh({
               rowKey="_id"
               loading={isLoading}
               emptyMessage="Нэвтрэлтийн түүх олдсонгүй"
-              maxHeight={pageSize * 60}
             />
 
             <div className="pt-2 border-t border-[color:var(--surface-border)]">

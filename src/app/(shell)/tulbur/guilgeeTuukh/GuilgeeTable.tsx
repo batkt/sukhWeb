@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Spin } from "antd";
+import { Spin, Tooltip } from "antd";
 import Table from "@/components/ui/table";
 import useSWR from "swr";
 import uilchilgee from "@/lib/uilchilgee";
@@ -44,7 +44,6 @@ interface GuilgeeTableProps {
   onViewHistory: (resident: any) => void;
   onTransaction: (resident: any, remainingValue: number) => void;
   canCreateTransaction?: boolean;
-  maxHeight?: string | number;
   token?: string | null;
   ajiltan?: any;
   effectiveBarilgiinId?: string | null;
@@ -79,7 +78,6 @@ export default function GuilgeeTable({
   onViewHistory,
   onTransaction,
   canCreateTransaction = true,
-  maxHeight = "calc(100vh - 500px)",
   token,
   ajiltan,
   effectiveBarilgiinId,
@@ -153,6 +151,18 @@ export default function GuilgeeTable({
         if (col.key === "index") {
           return {
             ...baseColumn,
+            onHeaderCell: () => ({
+              className: isCheckboxVisible
+                ? "!border-l !border-[hsl(var(--zt-border))] !text-center"
+                : "!text-center",
+            }),
+            onCell: () => ({
+              className: `!text-center ${
+                isCheckboxVisible
+                  ? "!border-l !border-[hsl(var(--zt-border))]"
+                  : ""
+              }`,
+            }),
             render: (_: any, __: any, index: number) =>
               (page - 1) * rowsPerPage + index + 1,
           };
@@ -570,6 +580,7 @@ export default function GuilgeeTable({
         if (col.key === "action") {
           return {
             ...baseColumn,
+            width: 160,
             render: (_: any, record: any) => {
               const resident =
                 (record?.orshinSuugchId &&
@@ -660,42 +671,50 @@ export default function GuilgeeTable({
                 };
 
               return (
-                <div className="flex items-center justify-around">
+                <div className="flex items-center justify-center gap-1.5 py-0.5">
                   {canCreateTransaction && (
-                    <button
-                      onClick={() => onTransaction(residentData, remainingValue)}
-                      className="p-1.5 rounded hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors group"
-                      title="Гүйлгээ хийх"
-                    >
-                      <Banknote className="w-4 h-4 text-emerald-500 dark:text-emerald-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-300" />
-                    </button>
+                    <Tooltip title="Гүйлгээ хийх">
+                      <button
+                        type="button"
+                        onClick={() => onTransaction(residentData, remainingValue)}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white/10 text-emerald-600 dark:text-emerald-400 transition-colors"
+                      >
+                        <Banknote className="w-4.5 h-4.5" />
+                      </button>
+                    </Tooltip>
                   )}
-                  <button
-                    onClick={() => handleSendReminderSms(record)}
-                    disabled={sendingSmsId === gid}
-                    className="p-1.5 rounded hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors disabled:opacity-50"
-                    title="Төлбөр сануулах SMS"
-                  >
-                    {sendingSmsId === gid ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-emerald-500"></div>
-                    ) : (
-                      <MessageSquare className="w-4 h-4 text-emerald-500 dark:text-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-300" />
-                    )}
-                  </button>
-                  <button
-                    onClick={() => onViewHistory(residentData)}
-                    className="p-1.5 rounded hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
-                    title="Түүх харах"
-                  >
-                    <History className="w-4 h-4 text-blue-500 dark:blue-400 hover:text-blue-600 dark:hover:text-blue-300" />
-                  </button>
-                  <button
-                    onClick={() => onViewInvoice(residentData)}
-                    className="p-1.5 rounded hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
-                    title="Нэхэмжлэх харах"
-                  >
-                    <Eye className="w-4 h-4 text-green-500 dark:text-green-400 hover:text-green-600 dark:hover:text-green-300" />
-                  </button>
+                  <Tooltip title="Төлбөр сануулах SMS">
+                    <button
+                      type="button"
+                      onClick={() => handleSendReminderSms(record)}
+                      disabled={sendingSmsId === gid}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white/10 text-amber-600 dark:text-amber-400 transition-colors disabled:opacity-50"
+                    >
+                      {sendingSmsId === gid ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-amber-500"></div>
+                      ) : (
+                        <MessageSquare className="w-4.5 h-4.5" />
+                      )}
+                    </button>
+                  </Tooltip>
+                  <Tooltip title="Түүх харах">
+                    <button
+                      type="button"
+                      onClick={() => onViewHistory(residentData)}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white/10 text-blue-600 dark:text-blue-400 transition-colors"
+                    >
+                      <History className="w-4.5 h-4.5" />
+                    </button>
+                  </Tooltip>
+                  <Tooltip title="Нэхэмжлэх харах">
+                    <button
+                      type="button"
+                      onClick={() => onViewInvoice(residentData)}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white/10 text-purple-600 dark:text-purple-400 transition-colors"
+                    >
+                      <Eye className="w-4.5 h-4.5" />
+                    </button>
+                  </Tooltip>
                 </div>
               );
             },
@@ -746,7 +765,10 @@ export default function GuilgeeTable({
       <Table.Summary fixed="bottom">
         <Table.Summary.Row className="bg-gray-50 dark:bg-gray-800">
           {isCheckboxVisible && (
-            <Table.Summary.Cell index={0} className="text-center text">
+            <Table.Summary.Cell
+              index={0}
+              className="text-center text border-r border-[hsl(var(--zt-border))]"
+            >
               -
             </Table.Summary.Cell>
           )}
@@ -883,7 +905,7 @@ export default function GuilgeeTable({
               : undefined
           }
           onChange={handleTableChange}
-          scroll={{ x: "max-content", y: maxHeight }}
+          scroll={{ x: "max-content" }}
           locale={{
             emptyText: (
               <span className="text-gray-500 dark:text-gray-400">

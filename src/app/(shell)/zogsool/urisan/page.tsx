@@ -1078,7 +1078,7 @@ export default function UrisanTuukh() {
             dataSource={logs}
             rowKey={(log) => log._id}
             pagination={false}
-            scroll={{ x: 900, y: "calc(100vh - 320px)" }}
+            scroll={{ x: 900 }}
             locale={{ emptyText: "Бүртгэл олдсонгүй." }}
             onRow={(log) => ({
               onClick: () => setSelectedLog(log),

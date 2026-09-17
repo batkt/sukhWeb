@@ -304,7 +304,6 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
           : false
       }
       footer={footer}
-      maxHeight="calc(100vh - 350px)"
     />
     </>
   );

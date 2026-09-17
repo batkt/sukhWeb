@@ -25,8 +25,6 @@ interface EmployeesTableProps {
   onDelete?: (employee: EmployeeItem) => void;
   onManagePermissions?: (employee: EmployeeItem) => void;
   onCredentialsUpdate?: (employee: EmployeeItem) => void;
-  /** Viewport-based scroll height (same idea as UnitsTable) */
-  maxHeight?: string | number;
 }
 
 export const EmployeesTable: React.FC<EmployeesTableProps> = ({
@@ -41,7 +39,6 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
   onDelete,
   onManagePermissions,
   onCredentialsUpdate,
-  maxHeight = "calc(100vh - 460px)",
 }) => {
   const columns: ColumnsType<EmployeeItem> = useMemo(
     () => [
@@ -168,7 +165,7 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
           pagination={false}
           loading={loading}
           className="min-w-[1000px]"
-          scroll={{ x: "max-content", y: maxHeight as any }}
+          scroll={{ x: "max-content" }}
           locale={{
             emptyText: (
               <span className="text-gray-500 dark:text-gray-400">

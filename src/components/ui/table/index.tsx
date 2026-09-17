@@ -1,6 +1,13 @@
 "use client";
 
-import React, { Fragment, useMemo, useRef, useState } from "react";
+import React, {
+  Fragment,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { cn } from "@/lib/utils";
 import Popup from "./Popup";
 import Pagination from "./Pagination";
@@ -17,8 +24,6 @@ export interface ColumnType<T = any> {
   dataIndex?: string | string[];
   title?: React.ReactNode | ((props: any) => React.ReactNode);
   width?: number | string;
-  /** Өргөнийг ТОГТООХГҮЙгээр доод хязгаар өгнө — багана үлдсэн зайг шингээнэ. */
-  minWidth?: number | string;
   align?: "left" | "right" | "center";
   fixed?: "left" | "right" | boolean;
   ellipsis?: boolean;
@@ -94,6 +99,73 @@ export interface TableProps<T = any> {
   tableLayout?: "auto" | "fixed";
 }
 
+const useIsoLayoutEffect =
+  typeof window === "undefined" ? useEffect : useLayoutEffect;
+
+/**
+ * Хүснэгтийн их биеийг цонхны үлдсэн өндрөөр дүүргэнэ.
+ *
+ * Өмнө нь дэлгэц бүр `calc(100vh - 460px)` мэт ГАР тоо дамжуулдаг байсан тул
+ * шүүлтүүр/картын өндөр өөр болмогц доор нь том хоосон зай үлддэг байв. Энд
+ * бодит байрлалыг хэмжиж тооцдог тул дээр нь юу байхаас үл хамаарна.
+ *
+ * @param enabled  `scroll.y` гараар өгөгдөөгүй үед л ажиллана
+ * @param rootRef  бүрдлийн үндэс (хуудаслалт/гарчгийг хамарна)
+ * @param bodyRef  гүйдэг хэсэг
+ */
+function useFillViewportHeight(
+  enabled: boolean,
+  rootRef: React.RefObject<HTMLDivElement | null>,
+  bodyRef: React.RefObject<HTMLDivElement | null>,
+  deps: unknown[],
+) {
+  const [maxHeight, setMaxHeight] = useState<number | undefined>(undefined);
+
+  useIsoLayoutEffect(() => {
+    if (!enabled) {
+      setMaxHeight(undefined);
+      return undefined;
+    }
+    const measure = () => {
+      const root = rootRef.current;
+      const body = bodyRef.current;
+      if (!root || !body) return;
+      const bodyRect = body.getBoundingClientRect();
+      // Гарчиг + хуудаслалт + хөл нь их биеэс ГАДНА байдаг тул тэдний өндрийг
+      // хасна. Энэ зөрүү maxHeight-аас хамаардаггүй тул тойрог үүсгэхгүй.
+      const chrome = root.getBoundingClientRect().height - bodyRect.height;
+      const next = Math.max(
+        180,
+        Math.round(window.innerHeight - bodyRect.top - chrome - 16),
+      );
+      // 1px-ээс бага хэлбэлзэлд төлөв шинэчилбэл ResizeObserver-тэй хамт
+      // төгсгөлгүй давталт үүсгэнэ.
+      setMaxHeight((prev) =>
+        prev != null && Math.abs(prev - next) <= 1 ? prev : next,
+      );
+    };
+
+    measure();
+    window.addEventListener("resize", measure);
+    let ro: ResizeObserver | undefined;
+    if (typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(measure);
+      // Их биеийг ӨӨРИЙГ нь ажиглавал maxHeight-ийн өөрчлөлт дахин хэмжилт
+      // дуудаж давталт үүснэ — иймд зөвхөн дээд талын байрлалд нөлөөлөх
+      // эцэг элементийг ажиглана.
+      const parent = rootRef.current?.parentElement;
+      if (parent) ro.observe(parent);
+    }
+    return () => {
+      window.removeEventListener("resize", measure);
+      if (ro) ro.disconnect();
+    };
+     
+  }, [enabled, ...deps]);
+
+  return maxHeight;
+}
+
 /* ----------------------------- туслахууд ----------------------------- */
 
 function getValue(record: any, dataIndex?: string | string[]) {
@@ -149,7 +221,7 @@ function extractText(node: React.ReactNode): string {
 // зөвхөн зөвлөмж бөгөөд гарчгийн текстээс нарийн байж болох тул шошгоны
 // тооцоолсон өргөнөөр доод хязгаарыг тавина.
 function headerMinWidth(col: ColumnType): number | undefined {
-  const declared = parseWidthPx(col.width) ?? parseWidthPx(col.minWidth);
+  const declared = parseWidthPx(col.width);
   const text = typeof col.title === "function" ? "" : extractText(col.title);
   if (!text) return declared ?? undefined;
   const textPx =
@@ -163,24 +235,6 @@ function headerMinWidth(col: ColumnType): number | undefined {
 // Зарласан өргөнгүй багана `auto` хэвээр үлдэх ёстой: table-layout:fixed дээр
 // бүх багана тогтмол өргөнтэй бол илүү зай хувь тэнцүүлэн тарааагдаж, № мэт
 // нарийн багана дэлгэц бүрт өөр өргөнтэй харагддаг.
-/**
- * Дугаар (№) ба Үйлдэл нь агуулгаараа тогтмол өргөнтэй туслах багана —
- * дэлгэц бүрт ижил байх ёстой. Үлдсэн багана бүгд `auto` байж илүү зайг
- * ХАМТДАА хуваана; эс бөгөөс (а) бүгд тогтмол бол илүү зай бүгдэд хувь
- * тэнцүүлэн тарааагдаж № сунана, (б) ганцхан нь `auto` бол тэр нь бүх
- * илүү зайг аваад хэт томордог.
- */
-function isUtilityColumn(col: ColumnType): boolean {
-  const key = String(col.key ?? "").toLowerCase();
-  if (["index", "no", "action", "uildel", "üildel"].includes(key)) return true;
-  const title = typeof col.title === "function" ? "" : extractText(col.title).trim();
-  return title === "№" || title === "Үйлдэл";
-}
-
-function headerFixedWidth(col: ColumnType): number | undefined {
-  return col.width != null && isUtilityColumn(col) ? headerMinWidth(col) : undefined;
-}
-
 function sorterFn(col: ColumnType): (a: any, b: any) => number {
   if (typeof col.sorter === "function") return col.sorter;
   if (
@@ -614,6 +668,18 @@ function Table<T extends object = any>({
 
   // Нягт өндөр — өгөгдөл олон харагдах нь эрхэм. Мөрийн өндрийг нүдний
   // дотоод элемент (товч/шошго) тодорхойлохоос сэргийлж leading-tight өгнө.
+  // `scroll.y` гараар өгөөгүй бол хүснэгт цонхны үлдсэн өндрийг дүүргэнэ.
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const bodyRef = useRef<HTMLDivElement | null>(null);
+  const explicitY = scroll?.y;
+  const autoMaxHeight = useFillViewportHeight(
+    explicitY == null,
+    rootRef,
+    bodyRef,
+    [dataSource.length, pageSize, current],
+  );
+  const effectiveY = explicitY ?? autoMaxHeight;
+
   const cellPad = small
     ? "px-2 py-0.5 leading-tight"
     : "px-3 py-1.5 leading-tight";
@@ -649,7 +715,7 @@ function Table<T extends object = any>({
           // table-layout:fixed зөвхөн жинхэнэ эхний мөрнөөс баганын өргөнийг
           // уншдаг; бүлгийн толгойн хүүхдүүд 2-р мөрөнд сууж байдаг тул
           // хүүхдүүдийн өргөний нийлбэрийг бүлгийн нүдэнд өгч засна.
-          width: isGroup ? groupWidth : headerFixedWidth(col),
+          width: isGroup ? groupWidth : headerMinWidth(col),
           minWidth: isGroup ? groupWidth : headerMinWidth(col),
           ...(fixed && { position: "sticky", ...fixed, zIndex: 2 }),
           ...(headerCellProps.style || {}),
@@ -728,7 +794,7 @@ function Table<T extends object = any>({
         <thead
           className={cn(
             "bg-[hsl(var(--zt-muted))]",
-            scroll && scroll.y && "sticky top-0 z-10",
+            effectiveY != null && "sticky top-0 z-10",
           )}
         >
           {headerRows ? (
@@ -925,8 +991,8 @@ function Table<T extends object = any>({
                         key={colKey(col, ci)}
                         {...restCell}
                         style={{
-                          width: isUtilityColumn(col) ? col.width : undefined,
-                          minWidth: col.width ?? col.minWidth,
+                          width: col.width,
+                          minWidth: col.width,
                           ...(fixed && { position: "sticky", ...fixed, zIndex: 1 }),
                           ...(cellStyle || {}),
                         }}
@@ -969,7 +1035,8 @@ function Table<T extends object = any>({
         // тухайн мөрийн хөлдөөсөн баганыг ч оруулаад — бүрэн халхлах ёстой.
         <tfoot
           className={cn(
-            scroll && scroll.y && "sticky bottom-0 z-10 bg-[hsl(var(--zt-card))]",
+            effectiveY != null &&
+              "sticky bottom-0 z-10 bg-[hsl(var(--zt-card))]",
           )}
         >
           {summary(pageRows)}
@@ -980,17 +1047,22 @@ function Table<T extends object = any>({
 
   return (
     <Spin spinning={isLoading}>
-      <div style={style} className={cn("zt-table w-full", className)}>
+      <div
+        ref={rootRef}
+        style={style}
+        className={cn("zt-table w-full", className)}
+      >
         {title && <div className="px-1 pb-2 text-[11px] font-medium">{title(pageRows)}</div>}
         {/* Карт нь бүрдлийн ӨӨРИЙН нь хэсэг — дэлгэц бүр өөрийн хүрээ/радиусаа
             зурдаг байсан тул хүснэгтүүд өөр өөр харагддаг байв. Хүрээ ГАНЦ:
             өмнө нь гадна карт + дотор хүрээ хоёулаа зурагдаж давхардаж байв. */}
         <div
+          ref={bodyRef}
           className={cn(
             "w-full overflow-x-auto rounded-md border border-[hsl(var(--zt-border))] bg-[hsl(var(--zt-card))]",
-            scroll && scroll.y && "overflow-y-auto",
+            effectiveY != null && "overflow-y-auto",
           )}
-          style={scroll && scroll.y ? { maxHeight: scroll.y } : undefined}
+          style={effectiveY != null ? { maxHeight: effectiveY } : undefined}
         >
           {tableEl}
         </div>

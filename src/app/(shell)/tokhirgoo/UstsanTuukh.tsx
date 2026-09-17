@@ -682,7 +682,6 @@ export default function UstsanTuukh({ token, baiguullaga, ajiltan }: Props) {
                 rowKey="_id"
                 loading={isLoading}
                 emptyMessage="Устгасан түүх олдсонгүй"
-                maxHeight={pageSize * 60}
               />
 
               <div className="pt-2 border-t border-[color:var(--surface-border)]">

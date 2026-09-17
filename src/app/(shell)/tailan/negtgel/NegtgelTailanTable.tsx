@@ -491,7 +491,6 @@ export function NegtgelTailanTable({ data, loading, niitUldegdel }: NegtgelTaila
       columns={columns}
       data={data || []}
       loading={loading}
-      maxHeight="calc(100vh - 320px)"
       containerClassName="rounded-md"
       footer={
         <div className="flex justify-end items-center gap-4 py-0.5 border-t border-gray-100 dark:border-gray-800">

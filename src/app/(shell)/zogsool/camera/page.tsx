@@ -2177,7 +2177,7 @@ export default function Camera() {
                 dataSource={transactions}
                 rowKey={(t, idx) => t._id || idx}
                 pagination={false}
-                scroll={{ x: 1300, y: "calc(100vh - 340px)" }}
+                scroll={{ x: 1300 }}
                 rowClassName={(t) => (murNiiluulye(t).isActive ? "zt-row-selected" : "")}
                 locale={{
                   emptyText: (

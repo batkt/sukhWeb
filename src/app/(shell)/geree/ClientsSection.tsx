@@ -58,7 +58,6 @@ const ClientsSection: React.FC<ClientsSectionProps> = ({
               sortKey={sortKey}
               sortOrder={sortOrder}
               currentBaiguullagiinId={currentBaiguullagiinId}
-              maxHeight="calc(100vh - 460px)"
               onEdit={onEditClient}
               onDelete={onRequestDeleteClient}
               onRemoveToot={onRemoveToot}

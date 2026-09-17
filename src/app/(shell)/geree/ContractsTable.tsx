@@ -35,8 +35,6 @@ interface ContractsTableProps {
   rowsPerPage: number;
   setCurrentPage: (page: number) => void;
   setRowsPerPage: (size: number) => void;
-  /** Viewport-based scroll height (same idea as /tulbur) */
-  maxHeight?: string | number;
 }
 
 export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
@@ -61,7 +59,6 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
   rowsPerPage,
   setCurrentPage,
   setRowsPerPage,
-  maxHeight = "calc(100vh - 460px)",
 }) => {
   // Устгах товч зөвхөн админд. `hasPermission` нь erkh === "admin"-д бүх эрх
   // өгдөг тул шууд түүгээр шалгав.
@@ -344,7 +341,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
           rowKey={(record) => record._id || record.id}
           pagination={false}
           className="min-w-[1000px]"
-          scroll={{ x: "max-content", y: maxHeight as any }}
+          scroll={{ x: "max-content" }}
           locale={{
             emptyText: (
               <span className="text-gray-500 dark:text-gray-400">

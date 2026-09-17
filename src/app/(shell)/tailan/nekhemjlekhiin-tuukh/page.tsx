@@ -651,7 +651,7 @@ export default function NekhemjlekhiinTuukhPage() {
         rowKey={(item, idx) => item._id || idx}
         loading={loading}
         pagination={false}
-        scroll={{ x: "max-content", y: "48vh" }}
+        scroll={{ x: "max-content" }}
         locale={{ emptyText: "Мэдээлэл алга байна" }}
         summary={() =>
           data.length > 0 ? (

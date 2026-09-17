@@ -618,7 +618,6 @@ export default function ZassanTuukh({ token, baiguullaga }: Props) {
                 rowKey="_id"
                 loading={isLoading}
                 emptyMessage="Зассан түүх олдсонгүй"
-                maxHeight={pageSize * 60}
               />
 
               <div className="pt-2 border-t border-[color:var(--surface-border)]">

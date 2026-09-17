@@ -763,7 +763,6 @@ export default function DansniiKhuulga() {
                 loading={isLoadingBankRows}
                 page={page}
                 rowsPerPage={rowsPerPage}
-                maxHeight="calc(100vh - 550px)"
                 onLink={handleOpenLinkModal}
                 onUnlink={handleUnlinkTransaction}
                 sortKey={sortKey}

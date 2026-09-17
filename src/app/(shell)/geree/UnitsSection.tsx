@@ -1230,7 +1230,6 @@ export default function UnitsSection({
                     loading={isSavingUnits}
                     page={unitPage}
                     pageSize={unitPageSize}
-                    maxHeight="calc(100vh - 520px)"
                     onAddUnit={onAddUnit}
                     onDeleteUnit={onDeleteUnit}
                     onDeleteFloor={onDeleteFloor}

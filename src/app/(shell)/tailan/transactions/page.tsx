@@ -306,7 +306,7 @@ export default function TransactionsPage() {
         rowKey={(r, idx) => r._id || idx}
         loading={loading}
         pagination={false}
-        scroll={{ x: "max-content", y: "60vh" }}
+        scroll={{ x: "max-content" }}
         locale={{ emptyText: "Мэдээлэл олдсонгүй" }}
       />
 
