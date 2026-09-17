@@ -7,7 +7,7 @@ import ThemedLogo from "@/components/ui/ThemedLogo";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import SafeLottie from "@/components/ui/SafeLottie";
 import ӨнгөнийЗагварСонгох from "../../../components/ungu/unguSongokh";
 
 /** Зүүн талд солигдох танилцуулга текстүүд. */
@@ -194,7 +194,7 @@ export default function LoginPage() {
         <section className="hidden flex-col items-center lg:flex">
           {isDesktop && (
             <div className="pointer-events-none h-72 w-72 opacity-95 xl:h-80 xl:w-80">
-              <DotLottieReact
+              <SafeLottie
                 src="/dark-blue-house.json"
                 loop
                 autoplay
