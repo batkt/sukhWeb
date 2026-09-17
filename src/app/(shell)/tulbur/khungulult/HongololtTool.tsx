@@ -838,10 +838,10 @@ export default function HongololtTool({
       {
         title: "Нэр",
         key: "ner",
+        width: 220,
         render: (_: any, r: any) => (
-          <div className="font-medium whitespace-nowrap">
-            {r.ovog ? `${r.ovog} ` : ""}
-            {r.ner}
+          <div className="font-normal whitespace-nowrap">
+            {r.ner || "—"}
           </div>
         ),
       },
@@ -849,6 +849,7 @@ export default function HongololtTool({
         title: "Дугаар",
         dataIndex: "utas",
         key: "utas",
+        width: 110,
         align: "center",
         render: (v: any) => v || "—",
       },
@@ -856,6 +857,7 @@ export default function HongololtTool({
         title: "Орц",
         dataIndex: "orts",
         key: "orts",
+        width: 60,
         align: "center",
         render: (v: any) => v || "—",
       },
@@ -863,6 +865,7 @@ export default function HongololtTool({
         title: "Давхар",
         dataIndex: "davkhar",
         key: "davkhar",
+        width: 65,
         align: "center",
         render: (v: any) => v || "—",
       },
@@ -870,6 +873,7 @@ export default function HongololtTool({
         title: "Тоот",
         dataIndex: "toot",
         key: "toot",
+        width: 70,
         align: "center",
         render: (v: any) => <span className="font-medium">{v || "—"}</span>,
       },
@@ -877,6 +881,7 @@ export default function HongololtTool({
         title: "Үлдэгдэл",
         dataIndex: "uldegdel",
         key: "uldegdel",
+        width: 110,
         align: "right",
         render: (v: any) => (
           <span
@@ -891,6 +896,7 @@ export default function HongololtTool({
       {
         title: "Хөнгөлөгдөх дүн",
         key: "khungulult",
+        width: 130,
         align: "right",
         render: (_: any, r: any) => {
           // "Бүгд" горимд сонголтоос үл хамааран бүх мөр хөнгөлөгдөнө.
@@ -1316,9 +1322,10 @@ export default function HongololtTool({
               )}
             </div>
 
-            {/* Table */}
-            <div className="flex-1 overflow-y-auto">
+            {/* Table — гүйлгэлтийг хүснэгт өөрөө хариуцна */}
+            <div className="min-h-0 flex-1">
               <Table<any>
+                  className="[&_td]:!py-2 [&_th]:!py-2.5"
                   columns={khungulultColumns}
                   dataSource={filteredResidents}
                   rowKey={(r) => r._id}
@@ -1411,9 +1418,10 @@ export default function HongololtTool({
               </div>
             </div>
 
-            {/* History table */}
-            <div className="flex-1 overflow-auto">
+            {/* History table — гүйлгэлтийг хүснэгт өөрөө хариуцна */}
+            <div className="min-h-0 flex-1">
               <Table<any>
+                  className="[&_td]:!py-2 [&_th]:!py-2.5"
                   columns={tuukhiinColumns}
                   dataSource={paginatedHistory}
                   rowKey={(h) => h._id}

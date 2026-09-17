@@ -139,11 +139,11 @@ export default function GuilgeeTable({
           fixed: col.sticky ? ("left" as const) : undefined,
           onCell: () => ({
             className:
-              col.align === "end"
+              (col.align === "end"
                 ? "!text-right"
                 : col.align === "start"
                   ? "!text-left"
-                  : "!text-center",
+                  : "!text-center") + " !py-0.5 !leading-tight",
           }),
         };
 
@@ -671,15 +671,15 @@ export default function GuilgeeTable({
                 };
 
               return (
-                <div className="flex items-center justify-center gap-1.5 py-0.5">
+                <div className="flex items-center justify-center gap-2 py-0">
                   {canCreateTransaction && (
                     <Tooltip title="Гүйлгээ хийх">
                       <button
                         type="button"
                         onClick={() => onTransaction(residentData, remainingValue)}
-                        className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white/10 text-emerald-600 dark:text-emerald-400 transition-colors"
+                        className="bg-transparent border-0 p-1 text-emerald-500 hover:text-emerald-600 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors focus:outline-none"
                       >
-                        <Banknote className="w-4.5 h-4.5" />
+                        <Banknote className="w-5 h-5" />
                       </button>
                     </Tooltip>
                   )}
@@ -688,12 +688,12 @@ export default function GuilgeeTable({
                       type="button"
                       onClick={() => handleSendReminderSms(record)}
                       disabled={sendingSmsId === gid}
-                      className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white/10 text-amber-600 dark:text-amber-400 transition-colors disabled:opacity-50"
+                      className="bg-transparent border-0 p-1 text-amber-500 hover:text-amber-600 dark:text-amber-400 dark:hover:text-amber-300 transition-colors disabled:opacity-40 focus:outline-none"
                     >
                       {sendingSmsId === gid ? (
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-amber-500"></div>
                       ) : (
-                        <MessageSquare className="w-4.5 h-4.5" />
+                        <MessageSquare className="w-5 h-5" />
                       )}
                     </button>
                   </Tooltip>
@@ -701,18 +701,18 @@ export default function GuilgeeTable({
                     <button
                       type="button"
                       onClick={() => onViewHistory(residentData)}
-                      className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white/10 text-blue-600 dark:text-blue-400 transition-colors"
+                      className="bg-transparent border-0 p-1 text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 transition-colors focus:outline-none"
                     >
-                      <History className="w-4.5 h-4.5" />
+                      <History className="w-5 h-5" />
                     </button>
                   </Tooltip>
                   <Tooltip title="Нэхэмжлэх харах">
                     <button
                       type="button"
                       onClick={() => onViewInvoice(residentData)}
-                      className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white/10 text-purple-600 dark:text-purple-400 transition-colors"
+                      className="bg-transparent border-0 p-1 text-purple-500 hover:text-purple-600 dark:text-purple-400 dark:hover:text-purple-300 transition-colors focus:outline-none"
                     >
-                      <Eye className="w-4.5 h-4.5" />
+                      <Eye className="w-5 h-5" />
                     </button>
                   </Tooltip>
                 </div>
@@ -883,6 +883,7 @@ export default function GuilgeeTable({
     <div className="w-full overflow-hidden">
       <div className="w-full">
         <Table
+          className="[&_td]:!py-0.5 [&_td]:!leading-tight"
           dataSource={data}
           loading={loading}
           pagination={false}

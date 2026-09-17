@@ -388,7 +388,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
 
   return (
     <div className="w-full overflow-hidden">
-      <div className="w-full overflow-x-auto hide-scrollbar">
+      <div className="w-full">
         <Table
           dataSource={data}
           columns={columns}

@@ -154,7 +154,7 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
 
   return (
     <div className="w-full overflow-hidden">
-      <div className="w-full overflow-x-auto hide-scrollbar">
+      <div className="w-full">
         <Table
           dataSource={data}
           columns={columns}

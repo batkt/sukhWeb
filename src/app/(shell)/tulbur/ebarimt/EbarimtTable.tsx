@@ -57,7 +57,7 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
       {
         title: <span className="text-inherit">№</span>,
         key: "index",
-        width: 40,
+        width: 44,
         align: "center",
         render: (_: any, __: any, index: number) => index + 1,
       },
@@ -66,6 +66,7 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
         dataIndex: "date",
         key: "date",
         align: "center",
+        width: 140,
         render: (val: string) => (
           <span className="text-inherit whitespace-nowrap">
             {val || "-"}
@@ -77,6 +78,7 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
         dataIndex: "toot",
         key: "toot",
         align: "center",
+        width: 65,
         render: (val: string, item: EbarimtItem) => (
           <span className="text-inherit whitespace-nowrap">
             {item.toot || item.medeelel?.toot || item.orshinSuugch?.toot || "-"}
@@ -90,6 +92,7 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
         dataIndex: "gereeniiDugaar",
         key: "gereeniiDugaar",
         align: "center",
+        width: 120,
         render: (val: string) => (
           <span className="text-inherit whitespace-nowrap">
             {val || "-"}
@@ -101,6 +104,7 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
         dataIndex: "type",
         key: "type",
         align: "center",
+        width: 80,
         render: (val: string) => {
           const isB2C = val === "B2C_RECEIPT";
           const isB2B = val === "B2B_RECEIPT";
@@ -124,8 +128,9 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
         dataIndex: "ddtd",
         key: "ddtd",
         align: "center",
+        width: 270,
         render: (val: string, item: EbarimtItem) => (
-          <span className="text-inherit whitespace-nowrap font-mono">
+          <span className="text-inherit whitespace-nowrap font-mono text-[11px]">
             {item.ddtd || item.receiptId || "-"}
           </span>
         ),
@@ -135,6 +140,7 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
         dataIndex: "total",
         key: "total",
         align: "center",
+        width: 120,
         onCell: () => ({ className: "!text-right" }),
         render: (val: number) => (
           <span className="text-inherit whitespace-nowrap font-medium">
@@ -147,6 +153,7 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
         dataIndex: "service",
         key: "service",
         align: "center",
+        width: 130,
         render: (val: string) => (
           <span className="text-inherit whitespace-nowrap">
             {val || "-"}
@@ -157,7 +164,7 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
         title: <span className="text-inherit">Төлөв</span>,
         key: "tuluv",
         align: "center",
-        width: 110,
+        width: 85,
         render: (_: any, row: EbarimtItem) =>
           butsaasanEsekh(row) ? (
             <Tooltip
@@ -181,7 +188,7 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
               title: <span className="text-inherit">Үйлдэл</span>,
               key: "uildel",
               align: "center",
-              width: onButsaakh && onKhevlekh ? 110 : 80,
+              width: onButsaakh && onKhevlekh ? 76 : 50,
               fixed: "right",
               render: (_: any, row: EbarimtItem) => {
                 const butsaajBaigaa =
@@ -290,7 +297,7 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
 
   return (
     <div className="w-full overflow-hidden">
-      <div className="w-full overflow-x-auto hide-scrollbar">
+      <div className="w-full">
         <Table
           dataSource={data}
           columns={columns}

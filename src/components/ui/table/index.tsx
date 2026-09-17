@@ -107,10 +107,10 @@ const useIsoLayoutEffect =
  * доод padding/border. Эдгээр нь хүснэгтийн өндрөөс хамаардаггүй тул
  * тооцоололд тойрог үүсгэхгүй.
  */
-function spaceBelow(root: HTMLElement, limit: HTMLElement | null): number {
+function spaceBelow(root: HTMLElement): number {
   let total = 0;
   let node: HTMLElement | null = root;
-  while (node && node !== limit && node.parentElement) {
+  while (node && node !== document.body && node.parentElement) {
     let sibling = node.nextElementSibling as HTMLElement | null;
     while (sibling) {
       const siblingStyle = window.getComputedStyle(sibling);
@@ -132,27 +132,19 @@ function spaceBelow(root: HTMLElement, limit: HTMLElement | null): number {
   return total;
 }
 
-/** Хамгийн ойрын ГҮЙДЭГ өвөг элементийг олно (байхгүй бол баримт өөрөө). */
-function getScrollParent(el: HTMLElement | null): HTMLElement | null {
-  let parent = el?.parentElement ?? null;
-  while (parent) {
-    const overflowY = window.getComputedStyle(parent).overflowY;
-    if (/(auto|scroll|overlay)/.test(overflowY)) return parent;
-    parent = parent.parentElement;
-  }
-  return null;
-}
-
 /**
  * Хүснэгтийн их биеийг үлдсэн өндрөөр дүүргэнэ.
  *
  * Өмнө нь дэлгэц бүр `calc(100vh - 460px)` мэт ГАР тоо дамжуулдаг байсан тул
  * шүүлтүүр/картын өндөр өөр болмогц доор нь том хоосон зай үлддэг байв.
  *
- * ЧУХАЛ: өндрийг ЦОНХны биш, хамгийн ойрын ГҮЙДЭГ эцгийн ёроолоор тооцно.
- * Цонхоор хэмжвэл хуудасны гүйдэг сав өөрөө хүснэгтээс нам болж, ХОЁР гүйлгэх
- * зурвас (эхлээд хуудас, дараа нь хүснэгт) үүсдэг байв. Эцгийн доторх байрлалыг
- * `scrollTop`-той нийлүүлж бодсоноор гүйлгэсэн байрлалаас хамаарахгүй.
+ * Хэмжилт нь ҮРГЭЛЖ цонхны ёроолоос эхэлж, хүснэгтийн доорх бүх зайг хасна.
+ * "Хамгийн ойрын гүйдэг эцэг"-ийг хайх гэсэн оролдлого БУРУУ байсан: CSS-ийн
+ * дагуу `overflow-x: auto` нь `overflow-y`-г `auto` болгодог тул хүснэгтийн
+ * өөрийнх нь хэвтээ ороолт "гүйдэг эцэг" мэт танигдаж, түүний clientHeight нь
+ * хүснэгтийн өндрөөс хамаардаг учир өндөр өсөх → сав өсөх → дахин өсөх гэсэн
+ * ТӨГСГӨЛГҮЙ давталт үүсгэж байв. Доорх томьёоны орц бүр хүснэгтийн өндрөөс
+ * хамаардаггүй тул ийм давталт боломжгүй.
  *
  * @param enabled  `scroll.y` гараар өгөгдөөгүй үед л ажиллана
  * @param rootRef  бүрдлийн үндэс (хуудаслалт/гарчгийг хамарна)
@@ -180,32 +172,13 @@ function useFillViewportHeight(
       // хасна. Энэ зөрүү maxHeight-аас хамаардаггүй тул тойрог үүсгэхгүй.
       const chrome = root.getBoundingClientRect().height - bodyRect.height;
 
-      const scrollParent = getScrollParent(root);
-      // Хүснэгтийн доор үлдэх зайг хасахгүй бол нийт агуулга савнаасаа өндөр
+      // Хүснэгтийн доор үлдэх зайг хасахгүй бол нийт агуулга цонхноосоо өндөр
       // болж, ХОЁР гүйлгэх зурвас (хуудас + хүснэгт) үүснэ.
-      const below = spaceBelow(root, scrollParent);
-      let available: number;
-      if (scrollParent) {
-        const parentStyle = window.getComputedStyle(scrollParent);
-        const paddingBottom = parseFloat(parentStyle.paddingBottom) || 0;
-        // Эцгийн доторх байрлал — гүйлгэсэн эсэхээс үл хамаарна.
-        const offsetTop =
-          bodyRect.top -
-          scrollParent.getBoundingClientRect().top +
-          scrollParent.scrollTop;
-        available =
-          scrollParent.clientHeight -
-          offsetTop -
-          chrome -
-          below -
-          paddingBottom -
-          8;
-      } else {
-        // Баримт өөрөө гүйдэг: байрлалыг гүйлгээнээс үл хамаарахаар бодно.
-        const docTop = bodyRect.top + window.scrollY;
-        available =
-          document.documentElement.clientHeight - docTop - chrome - below - 8;
-      }
+      const below = spaceBelow(root);
+      // Баримтын доторх ҮНЭМЛЭХҮЙ байрлал — гүйлгэсэн эсэхээс хамаарахгүй.
+      const docTop = bodyRect.top + window.scrollY;
+      const available =
+        document.documentElement.clientHeight - docTop - chrome - below - 8;
       const next = Math.max(180, Math.round(available));
       // 1px-ээс бага хэлбэлзэлд төлөв шинэчилбэл ResizeObserver-тэй хамт
       // төгсгөлгүй давталт үүсгэнэ.
@@ -224,8 +197,6 @@ function useFillViewportHeight(
       // өндөрт нөлөөлөх элементүүдийг ажиглана.
       const parent = rootRef.current?.parentElement;
       if (parent) ro.observe(parent);
-      const scrollParent = getScrollParent(rootRef.current);
-      if (scrollParent && scrollParent !== parent) ro.observe(scrollParent);
     }
     return () => {
       window.removeEventListener("resize", measure);

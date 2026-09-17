@@ -334,7 +334,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
 
   return (
     <div className="w-full overflow-hidden" id="contracts-table">
-      <div className="w-full overflow-x-auto hide-scrollbar" id="geree-table">
+      <div className="w-full" id="geree-table">
         <Table
           dataSource={currentContracts}
           columns={columns}
