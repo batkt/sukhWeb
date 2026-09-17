@@ -26,6 +26,8 @@ import { useAuth } from "@/lib/useAuth";
 import { MonthPickerInput } from "@/components/ui/MonthPickerInput";
 import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import { toast } from "sonner";
+import Table from "@/components/ui/table";
+import type { ColumnsType } from "@/components/ui/table";
 import {
   getResidentField,
   getResidentToots,
@@ -830,6 +832,228 @@ export default function HongololtTool({
     setLoading(false);
   };
 
+  // Хөнгөлөлт олгох оршин суугчдын хүснэгтийн багана.
+  const khungulultColumns: ColumnsType<any> = useMemo(
+    () => [
+      {
+        title: "Нэр",
+        key: "ner",
+        render: (_: any, r: any) => (
+          <div className="font-medium whitespace-nowrap">
+            {r.ovog ? `${r.ovog} ` : ""}
+            {r.ner}
+          </div>
+        ),
+      },
+      {
+        title: "Дугаар",
+        dataIndex: "utas",
+        key: "utas",
+        align: "center",
+        render: (v: any) => v || "—",
+      },
+      {
+        title: "Орц",
+        dataIndex: "orts",
+        key: "orts",
+        align: "center",
+        render: (v: any) => v || "—",
+      },
+      {
+        title: "Давхар",
+        dataIndex: "davkhar",
+        key: "davkhar",
+        align: "center",
+        render: (v: any) => v || "—",
+      },
+      {
+        title: "Тоот",
+        dataIndex: "toot",
+        key: "toot",
+        align: "center",
+        render: (v: any) => <span className="font-medium">{v || "—"}</span>,
+      },
+      {
+        title: "Үлдэгдэл",
+        dataIndex: "uldegdel",
+        key: "uldegdel",
+        align: "right",
+        render: (v: any) => (
+          <span
+            className={`tabular-nums whitespace-nowrap ${
+              (v || 0) > 0 ? "text-red-500 dark:text-red-400" : "opacity-70"
+            }`}
+          >
+            {fmt(v || 0)}₮
+          </span>
+        ),
+      },
+      {
+        title: "Хөнгөлөгдөх дүн",
+        key: "khungulult",
+        align: "right",
+        render: (_: any, r: any) => {
+          // "Бүгд" горимд сонголтоос үл хамааран бүх мөр хөнгөлөгдөнө.
+          const isTarget = selectMode === "all" || selectedIds.has(r._id);
+          const discountDun = computeDiscount(r);
+          return isTarget && discountDun > 0 ? (
+            <span className="font-medium tabular-nums whitespace-nowrap text-emerald-600 dark:text-emerald-400">
+              -{fmt(discountDun)}₮
+            </span>
+          ) : (
+            <span className="opacity-40">—</span>
+          );
+        },
+      },
+    ],
+     
+    [selectMode, selectedIds, computeDiscount],
+  );
+
+  // Хөнгөлөлтийн түүхийн хүснэгтийн багана.
+  const tuukhiinColumns: ColumnsType<any> = useMemo(
+    () => [
+      {
+        title: "Огноо",
+        key: "ognoo",
+        align: "center",
+        render: (_: any, h: any) => fmtDateTime(h.createdAt || h.ognoo),
+      },
+      {
+        title: "Хөнгөлөлт",
+        key: "bichlegiinToo",
+        align: "center",
+        render: (_: any, h: any) => (
+          <span className="cursor-pointer text-blue-600 hover:underline dark:text-blue-400">
+            Олон ({h.bichlegiinToo || 3})
+          </span>
+        ),
+      },
+      {
+        title: "Гэрээнүүд",
+        dataIndex: "gereeniiDugaar",
+        key: "gereeniiDugaar",
+        align: "center",
+        render: (v: any) => v || "—",
+      },
+      {
+        title: "Талбай дугаар",
+        dataIndex: "toot",
+        key: "toot",
+        align: "center",
+        render: (v: any) => v || "—",
+      },
+      {
+        title: "Түрээслэгчид",
+        dataIndex: "ner",
+        key: "ner",
+        render: (v: any) => v || "—",
+      },
+      {
+        title: "Эхлэх хугацаа",
+        dataIndex: "ekhlekhOgnoo",
+        key: "ekhlekhOgnoo",
+        align: "center",
+        render: (v: any) => v || "—",
+      },
+      {
+        title: "Дуусах хугацаа",
+        dataIndex: "duusakhOgnoo",
+        key: "duusakhOgnoo",
+        align: "center",
+        render: (v: any) => v || "—",
+      },
+      {
+        title: "Хөнгөлөх төрөл",
+        dataIndex: "khungulukhTurul",
+        key: "khungulukhTurul",
+        align: "center",
+        render: (v: any) => (
+          <span className="inline-block rounded-md bg-blue-500 px-3 py-0.5 text-white">
+            {v || "Гэрээнээс"}
+          </span>
+        ),
+      },
+      {
+        title: "Төлөх дүн",
+        dataIndex: "tulukhDun",
+        key: "tulukhDun",
+        align: "right",
+        render: (v: any) => (
+          <span className="tabular-nums whitespace-nowrap">{fmt2(v || 0)}</span>
+        ),
+      },
+      {
+        title: "Хөнгөлөх дүн",
+        dataIndex: "dun",
+        key: "dun",
+        align: "right",
+        render: (v: any) => (
+          <span className="tabular-nums whitespace-nowrap">
+            {fmt2(Math.abs(v || 0))}
+          </span>
+        ),
+      },
+      {
+        title: "Төлсөн дүн",
+        dataIndex: "tulsunDun",
+        key: "tulsunDun",
+        align: "right",
+        render: (v: any) => (
+          <span className="tabular-nums whitespace-nowrap">{fmt2(v || 0)}</span>
+        ),
+      },
+      {
+        title: "Төрөл",
+        dataIndex: "turul",
+        key: "turul",
+        align: "center",
+        render: (v: any) => v || "Шаталсан",
+      },
+      {
+        title: "Шалтгаан",
+        dataIndex: "tailbar",
+        key: "tailbar",
+        width: 140,
+        ellipsis: true,
+        render: (v: any) => <span title={v || ""}>{v || "—"}</span>,
+      },
+      {
+        title: "Ажилтан",
+        dataIndex: "guilgeeKhiisenAjiltniiNer",
+        key: "guilgeeKhiisenAjiltniiNer",
+        align: "center",
+        sorter: true,
+        render: (v: any) => v || "CAdmin",
+      },
+      {
+        title: "Зассан",
+        dataIndex: "zassan",
+        key: "zassan",
+        align: "center",
+        render: (v: any) => v || "-",
+      },
+      {
+        title: "Үйлдэл",
+        key: "action",
+        width: 96,
+        align: "center",
+        render: (_: any, h: any) => (
+          <button
+            type="button"
+            onClick={() => handleDeleteDiscount(h)}
+            className="rounded p-1.5 transition-colors hover:text-red-500"
+            title="Устгах"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        ),
+      },
+    ],
+     
+    [],
+  );
+
   if (!inline && !show) return null;
 
   /**
@@ -1061,7 +1285,7 @@ export default function HongololtTool({
           </div>
 
           {/* Right panel: resident table */}
-          <div className="flex-1 flex flex-col min-h-0 overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/20">
+          <div className="flex-1 flex flex-col min-h-0">
             {/* Toolbar */}
             <div className="flex items-center gap-3 px-5 py-3 border-b border-gray-200 dark:border-gray-700 shrink-0">
               <div className="relative flex-1">
@@ -1094,124 +1318,23 @@ export default function HongololtTool({
 
             {/* Table */}
             <div className="flex-1 overflow-y-auto">
-              {fetching ? (
-                <div className="flex items-center justify-center h-40 text-gray-400 text-xs gap-2">
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  Уншиж байна...
-                </div>
-              ) : filteredResidents.length === 0 ? (
-                <div className="flex items-center justify-center h-40 text-gray-400 text-xs">
-                  Оршин суугч олдсонгүй
-                </div>
-              ) : (
-                <table className="w-full text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-gray-50 dark:bg-gray-800/60 sticky top-0 z-10 border-b border-gray-200 dark:border-gray-700">
-                      <th className="w-10 px-3 py-2.5 text-center border-r border-gray-200 dark:border-gray-700">
-                        <button
-                          type="button"
-                          onClick={toggleAll}
-                          className="text-gray-400 hover:text-emerald-500 transition-colors"
-                        >
-                          {isAllSelected ? (
-                            <CheckSquare className="w-4 h-4 text-emerald-500" />
-                          ) : (
-                            <Square className="w-4 h-4" />
-                          )}
-                        </button>
-                      </th>
-                      <th className="px-3 py-2.5 text-left font-medium text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">
-                        Нэр
-                      </th>
-                      <th className="px-3 py-2.5 text-center font-medium text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">
-                        Дугаар
-                      </th>
-                      <th className="px-3 py-2.5 text-center font-medium text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">
-                        Орц
-                      </th>
-                      <th className="px-3 py-2.5 text-center font-medium text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">
-                        Давхар
-                      </th>
-                      <th className="px-3 py-2.5 text-center font-medium text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">
-                        Тоот
-                      </th>
-                      <th className="px-3 py-2.5 text-right font-medium text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">
-                        Үлдэгдэл
-                      </th>
-                      <th className="px-3 py-2.5 text-right font-medium text-gray-500 dark:text-gray-400">
-                        Хөнгөлөгдөх дүн
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredResidents.map((r, idx) => {
-                      const isSelected = selectedIds.has(r._id);
-                      const isTarget = selectMode === "all" || isSelected;
-                      const discountDun = computeDiscount(r);
-                      return (
-                        <tr
-                          key={r._id}
-                          onClick={() => toggleOne(r._id)}
-                          className={`border-b border-gray-200 dark:border-gray-700 cursor-pointer transition-colors ${isSelected
-                              ? "bg-emerald-50 dark:bg-emerald-500/10"
-                              : idx % 2 === 0
-                                ? "bg-white dark:bg-transparent"
-                                : "bg-gray-50/50 dark:bg-gray-800/20"
-                            } hover:bg-emerald-50 dark:hover:bg-emerald-500/5`}
-                        >
-                          <td className="w-10 px-3 py-2 text-center border-r border-gray-200 dark:border-gray-700">
-                            {isSelected ? (
-                              <CheckSquare className="w-4 h-4 text-emerald-500 inline" />
-                            ) : (
-                              <Square className="w-4 h-4 text-gray-300 dark:text-gray-600 inline" />
-                            )}
-                          </td>
-                          <td className="px-3 py-2 border-r border-gray-200 dark:border-gray-700">
-                            <div className="font-medium text-gray-800 dark:text-gray-200 whitespace-nowrap">
-                              {r.ovog ? `${r.ovog} ` : ""}
-                              {r.ner}
-                            </div>
-                          </td>
-                          <td className="px-3 py-2 text-center text-gray-600 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
-                            {r.utas || "—"}
-                          </td>
-                          <td className="px-3 py-2 text-center text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
-                            {r.orts || "—"}
-                          </td>
-                          <td className="px-3 py-2 text-center text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
-                            {r.davkhar || "—"}
-                          </td>
-                          <td className="px-3 py-2 text-center text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap font-medium">
-                            {r.toot || "—"}
-                          </td>
-                          <td className="px-3 py-2 text-right tabular-nums border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
-                            <span
-                              className={
-                                (r.uldegdel || 0) > 0
-                                  ? "text-red-500 dark:text-red-400"
-                                  : "text-gray-500 dark:text-gray-400"
-                              }
-                            >
-                              {fmt(r.uldegdel || 0)}₮
-                            </span>
-                          </td>
-                          <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">
-                            {isTarget && discountDun > 0 ? (
-                              <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-                                -{fmt(discountDun)}₮
-                              </span>
-                            ) : (
-                              <span className="text-gray-300 dark:text-gray-600">
-                                —
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              )}
+              <Table<any>
+                  columns={khungulultColumns}
+                  dataSource={filteredResidents}
+                  rowKey={(r) => r._id}
+                  loading={fetching}
+                  locale={{ emptyText: "Оршин суугч олдсонгүй" }}
+                  pagination={false}
+                  rowSelection={{
+                    selectedRowKeys: Array.from(selectedIds),
+                    onChange: (keys) =>
+                      setSelectedIds(new Set(keys as string[])),
+                  }}
+                  onRow={(r) => ({
+                    onClick: () => toggleOne(r._id),
+                    className: "cursor-pointer",
+                  })}
+                />
             </div>
           </div>
         </div>
@@ -1220,7 +1343,7 @@ export default function HongololtTool({
       {/* ══ TAB 2 — ТҮҮХ ══ */}
       {activeTab === "tuukh" && (
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden pt-3 px-2">
-          <div className="flex-1 flex flex-col min-h-0 overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/20 shadow-xs">
+          <div className="flex-1 flex flex-col min-h-0">
             {/* Toolbar */}
             <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-gray-200 dark:border-gray-700 shrink-0 bg-white dark:bg-gray-900/20 flex-wrap">
               <div className="flex items-center gap-2.5 flex-wrap">
@@ -1290,183 +1413,30 @@ export default function HongololtTool({
 
             {/* History table */}
             <div className="flex-1 overflow-auto">
-              {histFetching ? (
-                <div className="flex items-center justify-center h-40 text-gray-400 text-xs gap-2">
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  Уншиж байна...
-                </div>
-              ) : filteredHistory.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-40 text-gray-400 text-xs gap-2">
-                  <Clock className="w-8 h-8 text-gray-300 dark:text-gray-600" />
-                  Хөнгөлөлтийн түүх байхгүй
-                </div>
-              ) : (
-                <table className="w-full text-xs border-collapse min-w-[1300px]">
-                  <thead>
-                    <tr className="bg-gray-50/90 dark:bg-gray-800/80 sticky top-0 z-10 border-b border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300">
-                      <th className="px-3 py-2.5 text-center font-medium border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
-                        Огноо
-                      </th>
-                      <th className="px-3 py-2.5 text-center font-medium border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
-                        Хөнгөлөлт
-                      </th>
-                      <th className="px-3 py-2.5 text-center font-medium border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
-                        Гэрээнүүд
-                      </th>
-                      <th className="px-3 py-2.5 text-center font-medium border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
-                        Талбай дугаар
-                      </th>
-                      <th className="px-3 py-2.5 text-left font-medium border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
-                        Түрээслэгчид
-                      </th>
-                      <th className="px-3 py-2.5 text-center font-medium border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
-                        Эхлэх хугацаа
-                      </th>
-                      <th className="px-3 py-2.5 text-center font-medium border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
-                        Дуусах хугацаа
-                      </th>
-                      <th className="px-3 py-2.5 text-center font-medium border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
-                        Хөнгөлөх төрөл
-                      </th>
-                      <th className="px-3 py-2.5 text-right font-medium border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
-                        Төлөх дүн
-                      </th>
-                      <th className="px-3 py-2.5 text-right font-medium border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
-                        Хөнгөлөх дүн
-                      </th>
-                      <th className="px-3 py-2.5 text-right font-medium border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
-                        Төлсөн дүн
-                      </th>
-                      <th className="px-3 py-2.5 text-center font-medium border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
-                        Төрөл
-                      </th>
-                      <th className="px-3 py-2.5 text-left font-medium border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
-                        Шалтгаан
-                      </th>
-                      <th className="px-3 py-2.5 text-center font-medium border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
-                        <div className="inline-flex items-center gap-1 justify-center">
-                          <span>Ажилтан</span>
-                          <ArrowUpDown className="w-3 h-3 text-gray-400" />
-                        </div>
-                      </th>
-                      <th className="px-3 py-2.5 text-center font-medium border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
-                        Зассан
-                      </th>
-                      <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap w-16">
-                        Үйлдэл
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedHistory.map((h, idx) => (
-                      <tr
-                        key={h._id}
-                        className={`border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-colors ${
-                          idx % 2 === 0
-                            ? "bg-white dark:bg-transparent"
-                            : "bg-gray-50/40 dark:bg-gray-800/20"
-                        }`}
-                      >
-                        {/* Огноо */}
-                        <td className="px-3 py-2 text-center text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
-                          {fmtDateTime(h.createdAt || h.ognoo)}
-                        </td>
-                        {/* Хөнгөлөлт */}
-                        <td className="px-3 py-2 text-center border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
-                          <span className="text-blue-600 dark:text-blue-400 font-normal hover:underline cursor-pointer">
-                            Олон ({h.bichlegiinToo || 3})
-                          </span>
-                        </td>
-                        {/* Гэрээнүүд */}
-                        <td className="px-3 py-2 text-center text-gray-800 dark:text-gray-200 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap font-normal">
-                          {h.gereeniiDugaar || "—"}
-                        </td>
-                        {/* Талбай дугаар */}
-                        <td className="px-3 py-2 text-center text-gray-800 dark:text-gray-200 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap font-normal">
-                          {h.toot || "—"}
-                        </td>
-                        {/* Түрээслэгчид */}
-                        <td className="px-3 py-2 text-left text-gray-800 dark:text-gray-200 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap font-normal">
-                          {h.ner || "—"}
-                        </td>
-                        {/* Эхлэх хугацаа */}
-                        <td className="px-3 py-2 text-center text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
-                          {h.ekhlekhOgnoo || "—"}
-                        </td>
-                        {/* Дуусах хугацаа */}
-                        <td className="px-3 py-2 text-center text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
-                          {h.duusakhOgnoo || "—"}
-                        </td>
-                        {/* Хөнгөлөх төрөл */}
-                        <td className="px-3 py-1.5 text-center border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
-                          <span className="inline-block px-3 py-1 rounded-md text-xs font-normal bg-blue-500 hover:bg-blue-600 text-white transition-colors shadow-2xs">
-                            {h.khungulukhTurul || "Гэрээнээс"}
-                          </span>
-                        </td>
-                        {/* Төлөх дүн */}
-                        <td className="px-3 py-2 text-right tabular-nums text-gray-800 dark:text-gray-200 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap font-normal">
-                          {fmt2(h.tulukhDun || 0)}
-                        </td>
-                        {/* Хөнгөлөх дүн */}
-                        <td className="px-3 py-2 text-right tabular-nums text-gray-800 dark:text-gray-200 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap font-normal">
-                          {fmt2(Math.abs(h.dun || 0))}
-                        </td>
-                        {/* Төлсөн дүн */}
-                        <td className="px-3 py-2 text-right tabular-nums text-gray-800 dark:text-gray-200 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap font-normal">
-                          {fmt2(h.tulsunDun || 0)}
-                        </td>
-                        {/* Төрөл */}
-                        <td className="px-3 py-2 text-center text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
-                          {h.turul || "Шаталсан"}
-                        </td>
-                        {/* Шалтгаан */}
-                        <td
-                          className="px-3 py-2 text-left text-gray-700 dark:text-gray-300 max-w-[120px] truncate border-r border-gray-200 dark:border-gray-700 whitespace-nowrap"
-                          title={h.tailbar || ""}
-                        >
-                          {h.tailbar || "—"}
-                        </td>
-                        {/* Ажилтан */}
-                        <td className="px-3 py-2 text-center text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
-                          {h.guilgeeKhiisenAjiltniiNer || "CAdmin"}
-                        </td>
-                        {/* Зассан */}
-                        <td className="px-3 py-2 text-center text-gray-400 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
-                          {h.zassan || "-"}
-                        </td>
-                        {/* Үйлдэл */}
-                        <td className="px-2 py-2 text-center whitespace-nowrap">
-                          <div className="flex items-center justify-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteDiscount(h)}
-                              className="p-1 text-gray-400 hover:text-red-500 rounded transition-colors"
-                              title="Устгах"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr className="border-t-2 border-gray-200 dark:border-gray-700 font-bold bg-white dark:bg-gray-900/40">
-                      <td colSpan={8} className="px-3 py-2"></td>
-                      <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap text-gray-900 dark:text-white font-bold">
+              <Table<any>
+                  columns={tuukhiinColumns}
+                  dataSource={paginatedHistory}
+                  rowKey={(h) => h._id}
+                  loading={histFetching}
+                  locale={{ emptyText: "Хөнгөлөлтийн түүх байхгүй" }}
+                  pagination={false}
+                  scroll={{ x: 1300 }}
+                  summary={() => (
+                    <Table.Summary.Row>
+                      <Table.Summary.Cell colSpan={8} />
+                      <Table.Summary.Cell align="right" className="tabular-nums whitespace-nowrap">
                         {fmt2(totalTulukhDun)}
-                      </td>
-                      <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap text-gray-900 dark:text-white font-bold">
+                      </Table.Summary.Cell>
+                      <Table.Summary.Cell align="right" className="tabular-nums whitespace-nowrap">
                         {fmt2(totalKhungulukhDun)}
-                      </td>
-                      <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap text-gray-900 dark:text-white font-bold">
+                      </Table.Summary.Cell>
+                      <Table.Summary.Cell align="right" className="tabular-nums whitespace-nowrap">
                         {fmt2(totalTulsunDun)}
-                      </td>
-                      <td colSpan={5} className="px-3 py-2"></td>
-                    </tr>
-                  </tfoot>
-                </table>
-              )}
+                      </Table.Summary.Cell>
+                      <Table.Summary.Cell colSpan={5} />
+                    </Table.Summary.Row>
+                  )}
+                />
             </div>
 
             {/* Pagination Footer */}

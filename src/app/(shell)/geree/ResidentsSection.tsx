@@ -50,8 +50,8 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
           Уншиж байна...
         </div>
       ) : (
-        <div className="table-surface w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl">
-          <div className="p-1 allow-overflow no-scrollbar" id="residents-table">
+        <div className="w-full">
+          <div className="allow-overflow no-scrollbar" id="residents-table">
             <ResidentsTable
               data={currentResidents as ResidentItem[]}
               loading={isValidatingSuugch}

@@ -1,29 +1,17 @@
 "use client";
 
 import React from "react";
-import { Table, Spin, Tooltip } from "antd";
-import type { TableColumnsType } from "antd";
 import { cn } from "@/lib/utils";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Eye,
-  History,
-  Mail,
-  Trash2,
-  FileText,
-} from "lucide-react";
-import PageSongokh from "../../../components/selectZagvar/pageSongokh";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
-import { Field, FieldLabel } from "@/components/ui/field";
+import Table, { Pagination } from "@/components/ui/table";
+import type { ColumnsType } from "@/components/ui/table";
 
+/**
+ * StandardTable — `@/components/ui/table`-ийн нимгэн адаптер.
+ *
+ * Хуучин `{ key, label }` баганын хэлбэрийг хадгалсан тул түүнийг ашигладаг
+ * дэлгэцүүд өөрчлөлтгүй ажиллана; доор нь нэг л жишиг хүснэгт зурагдана.
+ * ШИНЭ код бичиж байгаа бол шууд `@/components/ui/table`-ийг ашигла.
+ */
 interface Column<T> {
   key: string;
   label: React.ReactNode;
@@ -48,7 +36,7 @@ interface StandardTableProps<T extends object> {
   stickyHeader?: boolean;
   footer?: React.ReactNode;
   maxHeight?: string | number;
-  bordered?: boolean;
+  summary?: (rows: readonly T[]) => React.ReactNode;
   pagination?:
     | false
     | {
@@ -57,6 +45,12 @@ interface StandardTableProps<T extends object> {
         total: number;
         onChange: (page: number, pageSize?: number) => void;
       };
+}
+
+function mapAlign(align?: string): "left" | "center" | "right" {
+  if (align === "center") return "center";
+  if (align === "end" || align === "right") return "right";
+  return "left";
 }
 
 export function StandardTable<T extends object>({
@@ -71,131 +65,62 @@ export function StandardTable<T extends object>({
   stickyHeader = false,
   footer,
   maxHeight,
-  bordered = false,
+  summary,
   pagination,
 }: StandardTableProps<T>) {
-  const getRowKey = (item: T, index: number): string => {
-    if (typeof rowKey === "function") return rowKey(item);
-    if (rowKey) return String(item[rowKey]);
-    return String(index);
-  };
-
-  const getAlign = (align?: string) => {
-    if (align === "center") return "center";
-    if (align === "end" || align === "right") return "right";
-    return "left";
-  };
-
-  // Convert our Column type to Ant Design's TableColumnsType with dark mode support
-  const mapColumn = (col: Column<T>, colIndex: number, totalCols: number): any => ({
+  const mapColumn = (col: Column<T>): any => ({
     key: col.key,
     dataIndex: col.children ? undefined : col.key,
     title: col.label,
     width: col.width,
-    align: getAlign(col.align) as "left" | "center" | "right",
+    align: mapAlign(col.align),
     sorter: col.sorter,
     fixed: col.fixed,
-    className: `
-      !bg-gray-50 dark:!bg-gray-900 
-      text-gray-900 dark:text-white 
-      border-b border-gray-200 dark:border-gray-800
-      font-normal py-2 px-2 leading-normal
-      ${col.className || ""}
-    `,
-    children: col.children?.map((child, idx) => mapColumn(child, idx, col.children!.length)),
-    onCell: () => ({
-      className: `
-        ${colIndex < totalCols - 1 ? "!border-r !border-slate-200 dark:!border-slate-800" : ""}
-        py-1.5 px-2 leading-normal
-      `,
-    }),
-    onHeaderCell: () => ({
-      className: `
-        ${colIndex < totalCols - 1 ? "!border-r !border-slate-200 dark:!border-slate-800" : ""}
-        !bg-gray-50 dark:!bg-gray-900 py-2 px-2 leading-normal
-      `,
-    }),
-    render: col.children ? undefined : (value: any, record: T, index: number) => {
-      return col.render ? (
-        col.render(value, record, index)
-      ) : (
-        <span className="text-gray-900 dark:text-white">{value}</span>
-      );
-    },
+    className: col.className,
+    children: col.children?.map(mapColumn),
+    render: col.children ? undefined : col.render,
   });
 
-  const antColumns: TableColumnsType<T> = columns.map((col, idx) => mapColumn(col, idx, columns.length));
+  const mapped: ColumnsType<T> = columns.map(mapColumn);
 
-  // Prepare data with keys for Ant Design
-  const dataWithKeys = data.map((item, index) => ({
-    ...item,
-    key: getRowKey(item, index),
-  }));
-
-  const handleRowClick = (record: T) => {
-    if (onRowClick) {
-      // Remove the key we added before passing to callback
-      const { key, ...rest } = record as any;
-      onRowClick(rest as T);
-    }
+  const getRowKey = (item: T, index: number): React.Key => {
+    if (typeof rowKey === "function") return rowKey(item);
+    if (rowKey) return String(item[rowKey]);
+    return index;
   };
 
   return (
-    <div className={cn("flex flex-col w-full", containerClassName)}>
-      <div
-        className={cn(
-          "relative border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-sm rounded-2xl",
-          className,
-        )}
-        style={{ maxHeight }}
-      >
-        <Spin spinning={loading} tip="Уншиж байна..." size="small">
-          <Table<T>
-            columns={antColumns}
-            dataSource={dataWithKeys}
-            pagination={false}
-            bordered={bordered}
-            locale={{
-              emptyText: (
-                <div className="py-12 text-center bg-transparent">
-                  <span className="text-gray-500 dark:text-gray-400 text-sm">
-                    {emptyMessage}
-                  </span>
-                </div>
-              ),
-            }}
-            sticky={stickyHeader}
-            onRow={(record) => ({
-              onClick: () => handleRowClick(record),
-              style: { cursor: onRowClick ? "pointer" : "default" },
-            })}
-            className="min-w-full"
-            scroll={{
-              x: "max-content",
-              ...(maxHeight ? { y: maxHeight } : {}),
-            }}
-            rowClassName={(record, index) => `
-                ${index % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-700/50"}
-                text-gray-900 dark:text-white
-                hover:bg-gray-100 dark:hover:bg-gray-600
-                transition-colors duration-200
-                border-b border-slate-100 dark:border-slate-800/50
-              `}
-          />
-        </Spin>
+    <div className={cn("flex w-full flex-col", containerClassName)}>
+      <Table<T>
+        columns={mapped}
+        dataSource={data}
+        rowKey={getRowKey}
+        loading={loading}
+        pagination={false}
+        className={className}
+        locale={{ emptyText: emptyMessage }}
+        scroll={{
+          x: "max-content",
+          ...(maxHeight || stickyHeader ? { y: maxHeight || "70vh" } : {}),
+        }}
+        summary={summary}
+        onRow={(record) => ({
+          onClick: onRowClick ? () => onRowClick(record) : undefined,
+          style: { cursor: onRowClick ? "pointer" : "default" },
+        })}
+      />
 
-        {pagination && typeof pagination === "object" && (
-          <StandardPagination
-            current={pagination.current}
-            total={pagination.total}
-            pageSize={pagination.pageSize}
-            onChange={pagination.onChange}
-            onPageSizeChange={(newSize) => pagination.onChange(1, newSize)}
-          />
-        )}
+      {pagination && typeof pagination === "object" && (
+        <StandardPagination
+          current={pagination.current}
+          total={pagination.total}
+          pageSize={pagination.pageSize}
+          onChange={pagination.onChange}
+          onPageSizeChange={(newSize) => pagination.onChange(1, newSize)}
+        />
+      )}
 
-        {footer && <div className="mt-4 px-4 pb-4">{footer}</div>}
-      </div>
+      {footer && <div className="px-1 pt-2">{footer}</div>}
     </div>
   );
 }
@@ -207,6 +132,7 @@ export function StandardPagination({
   onChange,
   onPageSizeChange,
   pageSizeOptions = [50, 100, 200, 300, 500, 1000],
+  className,
 }: {
   current: number;
   total: number;
@@ -214,81 +140,31 @@ export function StandardPagination({
   onChange: (page: number, pageSize?: number) => void;
   onPageSizeChange?: (pageSize: number) => void;
   pageSizeOptions?: number[];
+  className?: string;
 }) {
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-
-  // Ensure current pageSize is in the options to avoid Radix Select infinite loops
-  const actualOptions = React.useMemo(() => {
-    const opts = [...pageSizeOptions];
-    if (!opts.includes(pageSize)) {
-      opts.push(pageSize);
-      opts.sort((a, b) => a - b);
-    }
-    return opts;
-  }, [pageSize, pageSizeOptions]);
-
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between w-full px-4 py-4 gap-4">
-      {/* Left side: Total & Page Size */}
-      <div className="flex items-center gap-4">
-        <span className="text-[13px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
-          Нийт{" "}
-          <span className="text-slate-800 dark:text-slate-200">{total}</span>{" "}
-          мөр
-        </span>
-
-        {onPageSizeChange && (
-          <div className="relative group">
-            <select
-              value={pageSize}
-              onChange={(e) => {
-                const newSize = parseInt(e.target.value);
-                onPageSizeChange(newSize);
-                onChange(1, newSize);
-              }}
-              className="h-8 border-none bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl px-3 pr-7 text-[13px] font-normal text-slate-800 dark:text-slate-200 appearance-none cursor-pointer outline-none transition-colors"
-            >
-              {actualOptions.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt} / хуудас
-                </option>
-              ))}
-            </select>
-            <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400">
-              ▾
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* Right side: Navigation */}
-      <div className="flex items-center gap-2">
-        <button
-          onClick={() => current > 1 && onChange(current - 1, pageSize)}
-          disabled={current <= 1}
-          className="flex items-center gap-1.5 px-3 h-8 rounded-2xl bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all text-[13px]  border-none"
-        >
-          <span className="text-[13px]">Өмнөх</span>
-        </button>
-
-        <div className="flex items-center justify-center px-4 h-8 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm">
-          <span className="text-[13px] font-normal text-emerald-500 tabular-nums">
-            {current} <span className="text-slate-300 mx-1">/</span>{" "}
-            {totalPages}
-          </span>
-        </div>
-
-        <button
-          onClick={() =>
-            current < totalPages && onChange(current + 1, pageSize)
-          }
-          disabled={current >= totalPages}
-          className="flex items-center gap-1.5 px-3 h-8 rounded-2xl bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all text-[13px]  border-none"
-        >
-          <span className="text-[13px]">Дараах</span>
-        </button>
-      </div>
-    </div>
+    <Pagination
+      current={current}
+      total={total}
+      pageSize={pageSize}
+      size="small"
+      showSizeChanger={!!onPageSizeChange}
+      pageSizeOptions={pageSizeOptions}
+      className={className}
+      showTotal={(t) => (
+        <>
+          Нийт <span className="font-medium text-[hsl(var(--zt-fg))]">{t}</span> мөр
+        </>
+      )}
+      onChange={(page, size) => {
+        if (size !== pageSize) {
+          onPageSizeChange?.(size);
+          onChange(1, size);
+          return;
+        }
+        onChange(page, size);
+      }}
+    />
   );
 }
 

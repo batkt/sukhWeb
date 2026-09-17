@@ -264,7 +264,6 @@ export default function NevtreltiinTuukh({
               rowKey="_id"
               loading={isLoading}
               emptyMessage="Нэвтрэлтийн түүх олдсонгүй"
-              className="rounded-2xl guilgee-table border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] overflow-hidden"
               maxHeight={pageSize * 60}
             />
 

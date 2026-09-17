@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Table } from "antd";
-import type { ColumnsType } from "antd/es/table";
+import Table from "@/components/ui/table";
+import type { ColumnsType } from "@/components/ui/table";
 import { Copy, DollarSign, Tag, ArrowUpDown, Info } from "lucide-react";
 import moment from "moment";
 import formatNumber from "../../../../../tools/function/formatNumber";
@@ -82,7 +82,7 @@ const RealTimeDuration = ({
 
   if (!garsanTsag) {
     return (
-      <span className="text-[11px] font-mono">
+      <span className="font-mono">
         {String(hours).padStart(2, "0")} : {String(minutes).padStart(2, "0")} :{" "}
         {String(seconds).padStart(2, "0")}
       </span>
@@ -93,7 +93,7 @@ const RealTimeDuration = ({
   const h = Math.floor(khugatsaaMin / 60);
   const m = khugatsaaMin % 60;
   return (
-    <span className="text-[10px] uppercase tracking-wide">
+    <span className="uppercase tracking-wide">
       {h > 0 ? `${h} цаг ${m} мин` : `${m} мин`}
     </span>
   );
@@ -119,7 +119,7 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
       {
         title: "№",
         key: "index",
-        width: 50,
+        width: 40,
         align: "center",
         render: (_: any, __: any, idx: number) =>
           (page - 1) * pageSize + idx + 1,
@@ -130,12 +130,12 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
         width: 110,
         align: "center",
         render: (_: any, record: ParkingTransaction) => (
-          <div className="flex items-center justify-center gap-2">
-            <span className="text-slate-700 dark:text-slate-300 font-mono text-sm">
+          <div className="flex items-center justify-center gap-1">
+            <span className="text-slate-700 dark:text-slate-300 font-mono">
               {record.mashiniiDugaar || "-"}
             </span>
             <Copy
-              className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 cursor-pointer hover:text-blue-500 transition-colors"
+              className="w-4 h-4 text-slate-300 dark:text-slate-600 cursor-pointer hover:text-blue-500 transition-colors"
               onClick={() => copyToClipboard(record.mashiniiDugaar)}
             />
           </div>
@@ -151,7 +151,7 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
           const tsag = mur?.tsagiinTuukh?.[0];
           const orsonTsag = tsag?.orsonTsag;
           return (
-            <span className="text-slate-600 dark:text-slate-400 font-mono text-xs">
+            <span className="text-slate-600 dark:text-slate-400 font-mono">
               {orsonTsag ? moment(orsonTsag).format("MM-DD HH:mm:ss") : "-"}
             </span>
           );
@@ -167,7 +167,7 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
           const tsag = mur?.tsagiinTuukh?.[0];
           const garsanTsag = tsag?.garsanTsag;
           return (
-            <span className="text-slate-600 dark:text-slate-400 font-mono text-xs">
+            <span className="text-slate-600 dark:text-slate-400 font-mono">
               {garsanTsag ? moment(garsanTsag).format("MM-DD HH:mm:ss") : ""}
             </span>
           );
@@ -193,7 +193,7 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
             (tuluv === -4 || (tuluv === 0 && niitDun > 0 && !isCurrentlyIn));
 
           const badgeClass =
-            "flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-1 rounded-[6px] overflow-hidden border text-[10px] !text-white uppercase whitespace-nowrap";
+            "flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-0.5 rounded-[6px] overflow-hidden border !text-white uppercase whitespace-nowrap";
           const getStatusColor = () => {
             if (isFreeExit) {
               return "bg-gray-500 border-gray-600";
@@ -237,7 +237,7 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
         render: (_: any, record: ParkingTransaction) => {
           const mur = record.tuukh?.[0];
           return (
-            <span className="text-slate-600 dark:text-slate-400 text-[11px]">
+            <span className="text-slate-600 dark:text-slate-400">
               {record.turul || mur?.turul || "Үйлчлүүлэгч"}
             </span>
           );
@@ -252,7 +252,7 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
           const mur = record.tuukh?.[0];
           const disc = Number(mur?.khungulult || 0);
           return (
-            <span className="text-slate-600 dark:text-slate-400 font-mono text-[11px]">
+            <span className="text-slate-600 dark:text-slate-400 font-mono">
               {formatNumber(disc, 2)}
             </span>
           );
@@ -264,7 +264,7 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
         width: 110,
         align: "right",
         render: (_: any, record: ParkingTransaction) => (
-          <span className="text-slate-700 dark:text-slate-300 font-mono text-[11px]">
+          <span className="text-slate-700 dark:text-slate-300 font-mono">
             {formatNumber(record.niitDun || 0, 2)}
           </span>
         ),
@@ -294,10 +294,10 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
             );
             return (
               <div className="group/pay relative inline-block cursor-pointer">
-                <span className="text-[11px] text-slate-700 dark:text-slate-300 hover:text-blue-600 transition-colors border-b border-dashed border-slate-300 dark:border-slate-600 pb-0.5 font-mono">
+                <span className="text-slate-700 dark:text-slate-300 hover:text-blue-600 transition-colors border-b border-dashed border-slate-300 dark:border-slate-600 pb-0.5 font-mono">
                   {formatNumber(totalPaid, 2)}
                   {payHistory.length > 1 && (
-                    <span className="ml-1 text-[10px] text-slate-400">
+                    <span className="ml-1 text-slate-400">
                       ({payHistory.length})
                     </span>
                   )}
@@ -307,7 +307,7 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
           }
 
           return (
-            <span className="font-mono text-slate-700 dark:text-slate-300 text-[11px]">
+            <span className="font-mono text-slate-700 dark:text-slate-300">
               {formatNumber(tulsunDun || 0, 2)}
             </span>
           );
@@ -333,7 +333,7 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
 
           if (ebarimtId) {
             return (
-              <span className="text-slate-600 dark:text-slate-400 font-mono text-[11px]">
+              <span className="text-slate-600 dark:text-slate-400 font-mono">
                 {ebarimtId}
               </span>
             );
@@ -343,14 +343,14 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
 
           if (ebDun > 0) {
             return (
-              <span className="text-emerald-600 dark:text-emerald-400 font-mono text-[11px]">
+              <span className="text-emerald-600 dark:text-emerald-400 font-mono">
                 {formatNumber(ebDun, 2)}
               </span>
             );
           }
 
           return (
-            <span className="text-slate-400 font-mono text-[11px]">-</span>
+            <span className="text-slate-400 font-mono">-</span>
           );
         },
       },
@@ -370,7 +370,7 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
             tuluv === -4 || (tuluv === 0 && niitDun > 0 && !isCurrentlyIn);
           const showActionBtn = isCurrentlyIn || isDebt;
           const badgeClass =
-            "flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-1 rounded-[6px] overflow-hidden border text-[10px] !text-white uppercase whitespace-nowrap";
+            "flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-0.5 rounded-[6px] overflow-hidden border !text-white uppercase whitespace-nowrap";
 
           if (showActionBtn) {
             const actionClass =
@@ -471,10 +471,7 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
         columns={columns}
         rowKey={(record) => record._id || Math.random().toString()}
         pagination={false}
-        size="small"
-        bordered
         loading={loading}
-        className="guilgee-table"
         scroll={{ x: "max-content", y: "calc(100vh - 280px)" }}
         locale={{ emptyText: "Мэдээлэл байхгүй байна" }}
       />

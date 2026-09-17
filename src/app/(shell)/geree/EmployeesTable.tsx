@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Table } from "antd";
-import type { ColumnsType } from "antd/es/table";
+import Table from "@/components/ui/table";
+import type { ColumnsType } from "@/components/ui/table";
 import { Edit, Trash2, Shield, Lock } from "lucide-react";
 
 export interface EmployeeItem {
@@ -46,23 +46,17 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
   const columns: ColumnsType<EmployeeItem> = useMemo(
     () => [
       {
-        title: <span className="text-gray-900 dark:text-white">№</span>,
+        title: "№",
         key: "index",
-        width: 50,
+        width: 40,
         align: "center",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, __: any, index: number) =>
           (page - 1) * pageSize + index + 1,
       },
       {
-        title: (
-          <span className="text-gray-900 dark:text-white text-center block">
-            Нэр
-          </span>
-        ),
+        title: "Нэр",
         dataIndex: "ner",
         key: "ner",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (val: string | { ner?: string; kod?: string }) => {
           const name =
             typeof val === "object"
@@ -76,13 +70,10 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
         },
       },
       {
-        title: (
-          <span className="text-gray-900 dark:text-white">Холбоо барих</span>
-        ),
+        title: "Холбоо барих",
         dataIndex: "utas",
         key: "utas",
         align: "center",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (val: string) => (
           <span className="text-gray-900 dark:text-white whitespace-nowrap">
             {val || "-"}
@@ -90,13 +81,10 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
         ),
       },
       {
-        title: (
-          <span className="text-gray-900 dark:text-white">Албан тушаал</span>
-        ),
+        title: "Албан тушаал",
         dataIndex: "albanTushaal",
         key: "albanTushaal",
         align: "center",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (val: string) => (
           <span className="text-gray-900 dark:text-white whitespace-nowrap">
             {val || "-"}
@@ -104,49 +92,50 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
         ),
       },
       {
-        title: <span className="text-gray-900 dark:text-white">Үйлдэл</span>,
+        title: "Үйлдэл",
         key: "action",
         align: "center",
-        width: 180,
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        // Энэ хүснэгт 4 товчтой (эрх, нууц үг, засах, устгах) тул стандарт
+        // 96px-д багтахгүй: 4 × 28px + 3 × 4px зай = 124px.
+        width: 128,
         render: (_: any, record: EmployeeItem) => (
-          <div className="flex gap-2 justify-center">
+          <div className="flex gap-1 justify-center">
             {canManagePermissions && (
               <button
                 type="button"
                 onClick={() => onManagePermissions?.(record)}
-                className="p-2 rounded-2xl action-primary hover-surface transition-colors hover:bg-purple-100 dark:hover:bg-purple-900/30"
+                className="p-1.5 rounded-md action-primary hover-surface transition-colors hover:bg-purple-100 dark:hover:bg-purple-900/30"
                 title="Эрх удирдлага"
               >
-                <Shield className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                <Shield className="w-4 h-4 text-purple-600 dark:text-purple-400" />
               </button>
             )}
             <button
               type="button"
               onClick={() => onCredentialsUpdate?.(record)}
-              className="p-2 rounded-2xl action-secondary hover-surface transition-colors hover:bg-amber-100 dark:hover:bg-amber-900/30"
+              className="p-1.5 rounded-md action-secondary hover-surface transition-colors hover:bg-amber-100 dark:hover:bg-amber-900/30"
               title="Нэвтрэх эрх"
             >
-              <Lock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+              <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
             </button>
             {canEdit && (
               <button
                 type="button"
                 onClick={() => onEdit?.(record)}
-                className="p-2 rounded-2xl action-edit hover-surface transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                className="p-1.5 rounded-md action-edit hover-surface transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/30"
                 title="Засах"
               >
-                <Edit className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <Edit className="w-4 h-4 text-blue-600 dark:text-blue-400" />
               </button>
             )}
             {canDelete && (
               <button
                 type="button"
                 onClick={() => onDelete?.(record)}
-                className="p-2 rounded-2xl action-delete hover-surface transition-colors hover:bg-red-100 dark:hover:bg-red-900/30"
+                className="p-1.5 rounded-md action-delete hover-surface transition-colors hover:bg-red-100 dark:hover:bg-red-900/30"
                 title="Устгах"
               >
-                <Trash2 className="w-5 h-5 text-red-600 dark:text-red-400" />
+                <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
               </button>
             )}
           </div>
@@ -177,17 +166,9 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
             `emp_${String(typeof record.ner === "object" ? record.ner?.ner : record.ner)}_${record.utas || ""}_${record.albanTushaal || ""}`
           }
           pagination={false}
-          size="small"
-          bordered
           loading={loading}
-          className="guilgee-table geree-equal-height min-w-[1000px] dark:bg-gray-900 dark:text-gray-100"
+          className="min-w-[1000px]"
           scroll={{ x: "max-content", y: maxHeight as any }}
-          rowClassName={(record, index) => `
-            ${index % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-700/50"}
-            text-gray-900 dark:text-white
-            hover:bg-gray-100 dark:hover:bg-gray-600
-            transition-colors duration-200
-          `}
           locale={{
             emptyText: (
               <span className="text-gray-500 dark:text-gray-400">

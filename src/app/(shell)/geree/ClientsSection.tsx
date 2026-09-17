@@ -48,8 +48,8 @@ const ClientsSection: React.FC<ClientsSectionProps> = ({
           Уншиж байна...
         </div>
       ) : (
-        <div className="table-surface w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl">
-          <div className="p-1 allow-overflow no-scrollbar" id="Clients-table">
+        <div className="w-full">
+          <div className="allow-overflow no-scrollbar" id="Clients-table">
             <ClientsTable
               data={currentClients as ClientItem[]}
               loading={isValidatingSuugch}

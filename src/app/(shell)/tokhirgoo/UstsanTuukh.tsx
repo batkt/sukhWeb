@@ -682,7 +682,6 @@ export default function UstsanTuukh({ token, baiguullaga, ajiltan }: Props) {
                 rowKey="_id"
                 loading={isLoading}
                 emptyMessage="Устгасан түүх олдсонгүй"
-                className="rounded-2xl guilgee-table border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] overflow-hidden"
                 maxHeight={pageSize * 60}
               />
 

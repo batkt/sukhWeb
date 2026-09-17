@@ -13,8 +13,7 @@ import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
 import { useGereeJagsaalt } from "@/lib/useGeree";
 import uilchilgee from "@/lib/uilchilgee";
 import toast from "react-hot-toast";
-import { Tooltip, Table } from "antd";
-import type { TableColumnsType } from "antd";
+import { Tooltip } from "antd";
 import GuilgeeTable from "./GuilgeeTable";
 import TusgaiZagvar from "../../../../../components/selectZagvar/tusgaiZagvar";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
@@ -352,8 +351,8 @@ export default function DansniiKhuulga() {
         label: "№",
         align: "center",
         sticky: true,
-        width: 48,
-        minWidth: 48,
+        width: 40,
+        minWidth: 40,
       },
       {
         key: "ner",
@@ -3313,7 +3312,7 @@ export default function DansniiKhuulga() {
         },
       },
       {
-        element: "#guilgee-table",
+        element: "#",
         popover: {
           title: "Жагсаалт",
           description: "Гүйлгээний түүх энд харагдана.",
@@ -3656,9 +3655,9 @@ export default function DansniiKhuulga() {
           </div>
         </div>
 
-        {/* Ant Design Table */}
-        <div className="table-surface rounded-2xl w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
-          <div className="p-1 allow-overflow no-scrollbar" id="guilgee-table">
+        {/* Стандарт хүснэгт */}
+        <div className="w-full">
+          <div className="allow-overflow no-scrollbar">
             <GuilgeeTable
               data={paginated}
               loading={isLoadingHistory}

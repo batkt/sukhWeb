@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Table } from "antd";
-import type { ColumnsType } from "antd/es/table";
+import Table from "@/components/ui/table";
+import type { ColumnsType } from "@/components/ui/table";
 import { User, Phone, Car, Edit, Trash2 } from "lucide-react";
 import { getResidentToot } from "@/lib/residentDataHelper";
 import Button from "@/components/ui/Button";
@@ -54,56 +54,56 @@ export const ZogsoolOrshinSuugchTable: React.FC<
   const columns: ColumnsType<ResidentParking> = useMemo(
     () => [
       {
-        title: <span className="text-black dark:text-white">№</span>,
+        title: "№",
         key: "index",
-        width: 50,
+        width: 40,
         align: "center",
         render: (_: any, __: any, idx: number) => (
-          <span className="text-black dark:text-white text-[11px]">
+          <span className="text-black dark:text-white">
             {(page - 1) * pageSize + idx + 1}
           </span>
         ),
       },
       {
-        title: <span className="text-black dark:text-white">Нэр</span>,
+        title: "Нэр",
         key: "ner",
         width: 250,
         align: "center",
         render: (_: any, record: ResidentParking) => (
           <div className="text-left">
-            <p className="text-[12px] text-black dark:text-white font-sans">
+            <p className="text-black dark:text-white font-sans">
               {record.ner || record.orshinSuugchNer || "Нэр тодорхойгүй"}
             </p>
           </div>
         ),
       },
       {
-        title: <span className="text-black dark:text-white">Утас</span>,
+        title: "Утас",
         key: "utas",
         width: 120,
         align: "center",
         render: (_: any, record: ResidentParking) => (
-          <div className="flex items-center justify-center gap-2 text-[11px] text-black dark:text-white">
+          <div className="flex items-center justify-center gap-1 text-black dark:text-white">
             {record.utas || "-"}
           </div>
         ),
       },
       {
-        title: <span className="text-black dark:text-white">Дугаар</span>,
+        title: "Дугаар",
         key: "dugaar",
         width: 140,
         align: "center",
         render: (_: any, record: ResidentParking) => (
           <div className="flex flex-wrap gap-2 justify-center">
             {record.mashiniiDugaar && record.mashiniiDugaar !== "БҮРТГЭЛГҮЙ" ? (
-              <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10">
-                <span className="text-[10px] text-black dark:text-white">
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10">
+                <span className="text-black dark:text-white">
                   {record.mashiniiDugaar}
                 </span>
               </div>
             ) : (
-              <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10">
-                <span className="text-[10px] text-black dark:text-white">
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10">
+                <span className="text-black dark:text-white">
                   БҮРТГЭЛГҮЙ
                 </span>
               </div>
@@ -112,33 +112,33 @@ export const ZogsoolOrshinSuugchTable: React.FC<
         ),
       },
       {
-        title: <span className="text-black dark:text-white">Төрөл</span>,
+        title: "Төрөл",
         key: "turul",
         width: 110,
         align: "center",
         render: (_: any, record: ResidentParking) => (
           <div className="flex flex-col gap-1.5 items-center">
-            <span className="px-2 py-1 rounded text-[10px] bg-slate-100 dark:bg-slate-800 text-black dark:text-white w-fit">
+            <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-black dark:text-white w-fit">
               {record.zochinTurul || record.turul || "Оршин суугч"}
             </span>
           </div>
         ),
       },
       {
-        title: <span className="text-black dark:text-white">Орц</span>,
+        title: "Орц",
         key: "orts",
         width: 80,
         align: "center",
         filterMultiple: false,
         sorter: (a, b) => (a.orts || "").localeCompare(b.orts || ""),
         render: (_: any, record: ResidentParking) => (
-          <div className="text-[11px] text-black dark:text-white">
+          <div className="text-black dark:text-white">
             {record.orts || ""}
           </div>
         ),
       },
       {
-        title: <span className="text-black dark:text-white">Тоот</span>,
+        title: "Тоот",
         key: "toot",
         width: 120,
         align: "center",
@@ -148,8 +148,8 @@ export const ZogsoolOrshinSuugchTable: React.FC<
           if (!tootValue || tootValue === "-") return null;
           
           return (
-            <div className="flex items-center justify-center gap-2">
-              <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10 text-[10px] text-black dark:text-white">
+            <div className="flex items-center justify-center gap-1">
+              <span className="px-2.5 py-0.5 rounded-lg bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10 text-black dark:text-white">
                   {tootValue}
                   <span className="ml-1 opacity-70">тоот</span>
               </span>
@@ -158,32 +158,32 @@ export const ZogsoolOrshinSuugchTable: React.FC<
         },
       },
       {
-        title: <span className="text-black dark:text-white">Үйлдэл</span>,
+        title: "Үйлдэл",
         key: "action",
-        width: 100,
+        width: 96,
         align: "center",
         render: (_: any, record: ResidentParking) => (
           <div className="flex justify-center items-center gap-1">
             <button
               id="resident-edit-btn"
               onClick={() => onEdit(record)}
-              className="p-2 rounded-lg action-edit hover-surface transition-colors hover:bg-slate-200 dark:hover:bg-white/20"
+              className="p-1.5 rounded-lg action-edit hover-surface transition-colors hover:bg-slate-200 dark:hover:bg-white/20"
               title="Засах"
             >
-              <Edit className="w-5 h-5 text-black dark:text-white" />
+              <Edit className="w-4 h-4 text-black dark:text-white" />
             </button>
             <button
               id="resident-delete-btn"
               onClick={() => onDelete(record)}
               disabled={!record.mashiniiDugaar || record.mashiniiDugaar === "БҮРТГЭЛГҮЙ"}
-              className={`p-2 rounded-lg action-delete transition-all ${
+              className={`p-1.5 rounded-lg action-delete transition-all ${
                 (!record.mashiniiDugaar || record.mashiniiDugaar === "БҮРТГЭЛГҮЙ")
                   ? "opacity-20 cursor-not-allowed text-slate-400"
                   : "hover-surface hover:bg-red-50 dark:hover:bg-red-500/10 text-black dark:text-white hover:text-red-500"
               }`}
               title={(!record.mashiniiDugaar || record.mashiniiDugaar === "БҮРТГЭЛГҮЙ") ? "Машин бүртгэлгүй" : "Устгах"}
             >
-              <Trash2 className="w-5 h-5" />
+              <Trash2 className="w-4 h-4" />
             </button>
           </div>
         ),
@@ -205,10 +205,7 @@ export const ZogsoolOrshinSuugchTable: React.FC<
         columns={columns}
         rowKey={(record) => record._id || Math.random().toString()}
         pagination={false}
-        size="small"
-        bordered
         loading={loading}
-        className="guilgee-table"
         onChange={handleTableChange}
         scroll={{ x: "max-content", y: "calc(100vh - 450px)" }}
         locale={{ emptyText: "Оршин суугчийн мэдээлэл олдсонгүй" }}

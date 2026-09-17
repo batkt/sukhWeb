@@ -1,13 +1,9 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Table } from "antd";
-import type { ColumnsType } from "antd/es/table";
-import {
-  CheckOutlined,
-  ExclamationOutlined,
-  RightOutlined,
-} from "@ant-design/icons";
+import Table from "@/components/ui/table";
+import type { ColumnsType } from "@/components/ui/table";
+import { CheckOutlined, ExclamationOutlined } from "@ant-design/icons";
 import formatNumber from "../../../../../tools/function/formatNumber";
 
 const bankLabelMap: Record<string, string> = {
@@ -87,16 +83,15 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
   const columns: ColumnsType<DansKhuulgaItem> = useMemo(
     () => [
       {
-        title: <span className="text-gray-900 dark:text-white">№</span>,
+        title: "№",
         key: "index",
-        width: 50,
+        width: 40,
         align: "center",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, __: any, index: number) =>
           (page - 1) * rowsPerPage + index + 1,
       },
       {
-        title: <span className="text-gray-900 dark:text-white">Огноо</span>,
+        title: "Огноо",
         dataIndex: "date",
         key: "date",
         align: "center",
@@ -104,7 +99,6 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
         sorter: true,
         sortDirections: ["ascend", "descend"] as const,
         sortOrder: sortKey === "date" ? sortOrder : null,
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (val: string) => (
           <span className="text-gray-900 dark:text-white whitespace-nowrap">
             {val || "-"}
@@ -112,18 +106,13 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
         ),
       },
       {
-        title: (
-          <span className="text-gray-900 dark:text-white text-center block w-full">
-            Гүйлгээний утга
-          </span>
-        ),
+        title: "Гүйлгээний утга",
         dataIndex: "action",
         align: "left",
         key: "action",
         sorter: true,
         sortDirections: ["ascend", "descend"] as const,
         sortOrder: sortKey === "action" ? sortOrder : null,
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (val: string, item: DansKhuulgaItem) => (
           <span className="text-gray-900 dark:text-white" title={val}>
             {item.action || item.raw?.uilchilgeeniiUtga || "-"}
@@ -131,11 +120,7 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
         ),
       },
       {
-        title: (
-          <span className="text-gray-900 dark:text-white text-center block w-full">
-            Гүйлгээний дүн
-          </span>
-        ),
+        title: "Гүйлгээний дүн",
         dataIndex: "total",
         key: "total",
         align: "right",
@@ -143,7 +128,6 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
         sorter: true,
         sortDirections: ["ascend", "descend"] as const,
         sortOrder: sortKey === "total" ? sortOrder : null,
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (val: number) => (
           <span className="text-gray-900 dark:text-white whitespace-nowrap font-medium">
             {formatNumber(val || 0, 2)}
@@ -151,11 +135,7 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
         ),
       },
       {
-        title: (
-          <span className="text-gray-900 dark:text-white text-center block w-full">
-            Үлдэгдэл
-          </span>
-        ),
+        title: "Үлдэгдэл",
         dataIndex: "balance",
         key: "balance",
         align: "right",
@@ -163,7 +143,6 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
         sorter: true,
         sortDirections: ["ascend", "descend"] as const,
         sortOrder: sortKey === "balance" ? sortOrder : null,
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (val: number | undefined, item: DansKhuulgaItem) => {
           const bal =
             val ??
@@ -182,9 +161,7 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
         },
       },
       {
-        title: (
-          <span className="text-gray-900 dark:text-white">Шилжүүлсэн данс</span>
-        ),
+        title: "Шилжүүлсэн данс",
         dataIndex: "account",
         key: "account",
         align: "center",
@@ -192,7 +169,6 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
         sorter: true,
         sortDirections: ["ascend", "descend"] as const,
         sortOrder: sortKey === "account" ? sortOrder : null,
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (val: string, item: DansKhuulgaItem) => (
           <span className="text-gray-900 dark:text-white whitespace-nowrap">
             {item.account || item.raw?.bairlal || "-"}
@@ -202,16 +178,13 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
       {
         // Холбогдсон гүйлгээний ЭЗЭН хэн болохыг хүснэгтээс шууд харуулна
         // — өмнө нь зөвхөн "холбогдсон" гэдэг нь л мэдэгддэг байв.
-        title: (
-          <span className="text-gray-900 dark:text-white">Оршин суугч</span>
-        ),
+        title: "Оршин суугч",
         key: "resident",
         align: "left",
         width: 200,
         sorter: true,
         sortDirections: ["ascend", "descend"] as const,
         sortOrder: sortKey === "resident" ? sortOrder : null,
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, item: DansKhuulgaItem) => {
           const geree = item.contracts?.[0];
           if (!geree) {
@@ -241,9 +214,7 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
         },
       },
       {
-        title: (
-          <span className="text-gray-900 dark:text-white">Холбосон огноо</span>
-        ),
+        title: "Холбосон огноо",
         dataIndex: "updatedAt",
         key: "linkedDate",
         align: "center",
@@ -251,7 +222,6 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
         sorter: true,
         sortDirections: ["ascend", "descend"] as const,
         sortOrder: sortKey === "linkedDate" ? sortOrder : null,
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, item: DansKhuulgaItem) => {
           const isLinked = (item.contractIds?.length || 0) > 0;
           if (!isLinked) return "-";
@@ -263,14 +233,13 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
         },
       },
       {
-        title: <span className="text-gray-900 dark:text-white">Төлөв</span>,
+        title: "Төлөв",
         key: "status",
         align: "center",
         width: 100,
         sorter: true,
         sortDirections: ["ascend", "descend"] as const,
         sortOrder: sortKey === "status" ? sortOrder : null,
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, item: DansKhuulgaItem) => {
           const isLinked = (item.contractIds?.length || 0) > 0;
           return (
@@ -278,18 +247,18 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
               {isLinked ? (
                 <button
                   onClick={() => onUnlink?.(item)}
-                  className="flex items-center justify-center w-8 h-8 rounded-full bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30 hover:scale-105 active:scale-95 transition-all duration-200"
+                  className="flex items-center justify-center w-5 h-5 rounded-full bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30 hover:scale-105 active:scale-95 transition-all duration-200"
                   title="Холболт салгах"
                 >
-                  <CheckOutlined className="text-base" />
+                  <CheckOutlined className="" />
                 </button>
               ) : (
                 <button
                   onClick={() => onLink?.(item)}
-                  className="flex items-center justify-center w-8 h-8 rounded-full bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/30 hover:scale-105 active:scale-95 transition-all duration-200"
+                  className="flex items-center justify-center w-5 h-5 rounded-full bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/30 hover:scale-105 active:scale-95 transition-all duration-200"
                   title="Гүйлгээ холбох"
                 >
-                  <ExclamationOutlined className="text-base" />
+                  <ExclamationOutlined className="" />
                 </button>
               )}
             </div>
@@ -313,10 +282,7 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
           columns={columns}
           rowKey={(record) => record.id?.toString() || Math.random().toString()}
           pagination={false}
-          size="small"
-          bordered
           loading={loading}
-          className="guilgee-table dark:bg-gray-900 dark:text-gray-100"
           // `x: "max-content"` + `min-w-[1000px]` хоёр зэрэг ажиллаж байсан тул
           // баганууд өөрсдийн өргөнөөрөө хумигдаад баруун талд ЭЗЭНГҮЙ зурвас
           // үлддэг байв. Одоо тодорхой доод өргөн (багануудын нийлбэр) өгч,
@@ -329,23 +295,7 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
             onSort?.(order ? String(s?.columnKey ?? s?.field ?? "") : null, order);
           }}
           expandable={{
-            expandIconColumnIndex: columns.length,
-            expandRowByClick: false,
-            expandIcon: ({ expanded, onExpand, record }) => (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onExpand(record, e);
-                }}
-                className="flex items-center justify-center w-6 h-6 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                title={expanded ? "Хураах" : "Дэлгэрэнгүй"}
-              >
-                <RightOutlined
-                  className={`text-xs transition-transform duration-150 ${expanded ? "rotate-90" : ""}`}
-                />
-              </button>
-            ),
+            // Задлах товчийг стандарт хүснэгт өөрөө (зүүн талд) зурна.
             expandedRowRender: (record) => {
               const raw = record.raw || {};
               const txnNo =
@@ -369,7 +319,7 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
                     ? record.contractIds.join(", ")
                     : "-";
               return (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-3 p-4 bg-gray-50 dark:bg-gray-800/60 rounded-lg text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-3 p-4 bg-gray-50 dark:bg-gray-800/60 rounded-lg">
                   <div>
                     <div className="text-gray-500 dark:text-gray-400 mb-0.5">
                       Гүйлгээний №
@@ -430,16 +380,10 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
               );
             },
           }}
-          rowClassName={(record, index) => `
-          ${index % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-700/50"}
-          text-gray-900 dark:text-white
-          hover:bg-gray-100 dark:hover:bg-gray-600
-          transition-colors duration-200
-        `}
           locale={{
             emptyText: (
               <div className="py-8 text-center bg-white dark:bg-gray-900">
-                <span className="text-gray-500 dark:text-gray-400 text-sm">
+                <span className="text-gray-500 dark:text-gray-400">
                   Гүйлгээний мэдээлэл олдсонгүй
                 </span>
               </div>

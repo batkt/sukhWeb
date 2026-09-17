@@ -10,6 +10,8 @@ import useSWR from "swr";
 import uilchilgee from "@/lib/uilchilgee";
 import { getDefaultDateRange } from "@/lib/utils";
 import { StandardPagination } from "@/components/ui/StandardTable";
+import Table from "@/components/ui/table";
+import type { ColumnsType } from "@/components/ui/table";
 
 interface GateOpenLog {
   _id: string;
@@ -555,7 +557,6 @@ export default function UrisanTuukh() {
   const pageSize = 500;
   const [selectedLog, setSelectedLog] = useState<GateOpenLog | null>(null);
   const [statusFilter, setStatusFilter] = useState("all");
-  const [openFilter, setOpenFilter] = useState<string | null>(null);
 
   const [dateRange, setDateRange] = useState<
     [string | null, string | null] | null | undefined
@@ -771,29 +772,153 @@ export default function UrisanTuukh() {
     return building?.ner || bId;
   };
 
-  const HEADERS = [
-    { id: "no", label: "№", width: "w-12" },
-    { id: "ognoo", label: "Огноо" },
+  const urisanColumns: ColumnsType<any> = [
     {
-      id: "status",
-      label: "Төлөв",
-      filter: true,
-      current: statusFilter,
-      set: setStatusFilter,
-      options: [
-        { label: "Бүгд", value: "all" },
-        { label: "Урьсан", value: "urisan" },
-        { label: "Нээсэн", value: "neesen" },
-      ],
+      title: "№",
+      key: "no",
+      width: 40,
+      align: "center",
+      render: (_: any, __: any, idx: number) => (page - 1) * pageSize + idx + 1,
     },
-    { id: "ip", label: "Камер IP" },
-    { id: "suugch", label: "Оршин суугч" },
-    { id: "toot", label: "Тоот" },
-    { id: "utas", label: "Утас" },
-    { id: "dugaar", label: "Улсын дугаар" },
-    { id: "parkease", label: "ParkEase зогсоол" },
-    { id: "avlaga", label: "Хуримтлагдсан авлага" },
-    { id: "barilga", label: "Барилга" },
+    {
+      title: "Огноо",
+      key: "ognoo",
+      align: "center",
+      render: (_: any, log: any) =>
+        moment(log.createdAt).format("YYYY-MM-DD HH:mm:ss"),
+    },
+    {
+      title: "Төлөв",
+      key: "status",
+      align: "center",
+      // Нэг сонголттой шүүлтүүр — хүснэгтийн стандарт шүүлтүүрийн цэсэнд
+      // өөрийн жагсаалтыг зурна.
+      filterDropdown: ({ confirm }: any) => (
+        <div className="flex min-w-[9rem] flex-col gap-1 p-1.5">
+          {[
+            { label: "Бүгд", value: "all" },
+            { label: "Урьсан", value: "urisan" },
+            { label: "Нээсэн", value: "neesen" },
+          ].map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => {
+                setStatusFilter(opt.value);
+                setPage(1);
+                confirm();
+              }}
+              className={`rounded px-3 py-0.5 text-left transition-colors ${
+                statusFilter === opt.value
+                  ? "bg-[hsl(var(--zt-primary))] text-white"
+                  : "hover:bg-[hsl(var(--zt-accent))]"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      ),
+      render: (_: any, log: any) =>
+        log.ekhSurvalj === "parkease" ? (
+          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 font-medium text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">
+            <ParkingCircle className="h-3 w-3 shrink-0" />
+            ParkEase
+          </span>
+        ) : log.turul === "урьсан" ? (
+          <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 font-medium text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />
+            Урьсан
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 font-medium text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300">
+            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400" />
+            Нээсэн
+          </span>
+        ),
+    },
+    {
+      title: "Камер IP",
+      dataIndex: "ip",
+      key: "ip",
+      align: "center",
+      render: (v: any) => <span className="font-mono">{v || "-"}</span>,
+    },
+    {
+      title: "Оршин суугч",
+      key: "suugch",
+      align: "center",
+      render: (_: any, log: any) =>
+        log.orshinSuugchiinNer
+          ? log.orshinSuugchiinNer.trim().split(/\s+/).pop()
+          : "-",
+    },
+    {
+      title: "Тоот",
+      dataIndex: "toot",
+      key: "toot",
+      align: "center",
+      render: (v: any) => v || "-",
+    },
+    {
+      title: "Утас",
+      dataIndex: "utas",
+      key: "utas",
+      align: "center",
+      render: (v: any) => <span className="font-mono">{v || "-"}</span>,
+    },
+    {
+      title: "Улсын дугаар",
+      dataIndex: "mashiniiDugaar",
+      key: "dugaar",
+      align: "center",
+      render: (v: any) =>
+        v ? (
+          <span className="rounded-full bg-blue-600 px-2.5 py-0.5 tracking-widest !text-white">
+            {v}
+          </span>
+        ) : (
+          <span className="italic opacity-50">-</span>
+        ),
+    },
+    {
+      title: "ParkEase зогсоол",
+      key: "parkease",
+      align: "center",
+      render: (_: any, log: any) => (
+        <ParkEaseNudu
+          tuukh={
+            log.parkease ||
+            parkEaseMap.get((log.mashiniiDugaar || "").trim().toUpperCase())
+          }
+        />
+      ),
+    },
+    {
+      title: "Хуримтлагдсан авлага",
+      key: "avlaga",
+      align: "center",
+      render: (_: any, log: any) => {
+        const avl = avlagaMap.get(
+          (log.mashiniiDugaar || "").trim().toUpperCase(),
+        );
+        if (!avl || avl.dun <= 0) return <span className="opacity-40">-</span>;
+        return (
+          <span className="inline-flex flex-col items-center">
+            <span className="font-medium text-amber-600 dark:text-amber-400">
+              {avl.dun.toLocaleString("mn-MN")}₮
+            </span>
+            <span className="opacity-60">{avl.too} удаа</span>
+          </span>
+        );
+      },
+    },
+    {
+      title: "Барилга",
+      key: "barilga",
+      align: "center",
+      render: (_: any, log: any) => getBuildingName(log.barilgiinId),
+    },
   ];
 
   return (
@@ -947,173 +1072,19 @@ export default function UrisanTuukh() {
 
 
         {/* Table */}
-        <div className="relative rounded-[32px] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 backdrop-blur-xl shadow-2xl flex-1 overflow-hidden">
-          <div className="overflow-x-auto h-full">
-            <table className="w-full border-collapse min-w-[900px]">
-              <thead className="sticky top-0 z-10 bg-slate-900 dark:bg-slate-950 border-b border-white/5 text-slate-300">
-                <tr>
-                  {HEADERS.map((h) => (
-                    <th
-                      key={h.id}
-                      className={`group relative py-3.5 px-4 text-center text-[11px] font-medium uppercase tracking-wider whitespace-nowrap ${h.width || ""}`}
-                    >
-                      <div
-                        className="flex items-center justify-center gap-2 cursor-pointer hover:text-white transition-colors"
-                        onClick={() => {
-                          if (!h.filter) return;
-                          setOpenFilter(openFilter === h.id ? null : h.id);
-                        }}
-                      >
-                        {h.filter && (
-                          <Filter className={`w-3 h-3 transition-colors ${h.current !== "all" && h.current !== undefined
-                            ? "text-blue-400"
-                            : "text-slate-500 group-hover:text-blue-400"
-                            }`} />
-                        )}
-                        <span>{h.label}</span>
-                      </div>
-
-                      {h.options && (
-                        <div
-                          className={`absolute top-full left-1/2 -translate-x-1/2 mt-3 w-48 bg-slate-900/98 backdrop-blur-2xl text-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-2 transition-all duration-300 z-[100] border border-white/5 overflow-hidden ring-1 ring-white/10 ${openFilter === h.id ? "opacity-100 visible translate-y-0" : "opacity-0 invisible translate-y-3 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0"}`}
-                        >
-                          <div className="relative flex flex-col gap-1 z-10">
-                            <div className="px-3 py-1.5 mb-1 text-[11px] text-slate-500 uppercase tracking-widest border-b border-white/5 normal-case font-medium">
-                              Сонгох
-                            </div>
-                            {h.options.map((opt, idx) => (
-                              <div
-                                key={idx}
-                                onClick={() => {
-                                  h.set?.(opt.value);
-                                  setPage(1);
-                                  setOpenFilter(null);
-                                }}
-                                className={`px-4 py-2.5 rounded-xl text-[11px] text-left flex items-center justify-between cursor-pointer transition-all duration-200 normal-case font-normal ${h.current === opt.value
-                                  ? "bg-blue-500 text-white shadow-lg shadow-blue-500/40"
-                                  : "hover:bg-white/10 text-slate-300 hover:text-white"
-                                  }`}
-                              >
-                                <span>{opt.label}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="text-slate-600 dark:text-slate-300">
-                {logs.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={10}
-                      className="py-12 text-center text-slate-400 dark:text-slate-500 text-[13px]"
-                    >
-                      Бүртгэл олдсонгүй.
-                    </td>
-                  </tr>
-                ) : (
-                  logs.map((log, idx) => (
-                    <tr
-                      key={log._id}
-                      onClick={() => setSelectedLog(log)}
-                      className={`transition-colors hover:bg-blue-50/40 dark:hover:bg-blue-900/10 cursor-pointer ${
-                        idx % 2 === 0
-                          ? "bg-slate-100 dark:bg-slate-800/40"
-                          : "bg-white dark:bg-transparent"
-                      }`}
-                    >
-                      <td className="py-3 px-4 text-center text-[13px] text-slate-400">
-                        {(page - 1) * pageSize + idx + 1}
-                      </td>
-                      <td className="py-3 px-4 text-center text-[13px] font-medium font-[family-name:var(--font-mono)]">
-                        {moment(log.createdAt).format("YYYY-MM-DD HH:mm:ss")}
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        {log.ekhSurvalj === "parkease" ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
-                            <ParkingCircle className="w-3 h-3 shrink-0" />
-                            ParkEase
-                          </span>
-                        ) : log.turul === "урьсан" ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 text-[11px] font-medium text-amber-700 dark:text-amber-300">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
-                            Урьсан
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 text-[11px] font-medium text-blue-700 dark:text-blue-300">
-                            <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
-                            Нээсэн
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-3 px-4 text-center text-[13px] font-mono text-slate-500 dark:text-slate-400">
-                        {log.ip || "-"}
-                      </td>
-                      <td className="py-3 px-4 text-center text-[13px] font-medium text-slate-700 dark:text-slate-200">
-                        {log.orshinSuugchiinNer
-                          ? log.orshinSuugchiinNer.trim().split(/\s+/).pop()
-                          : "-"}
-                      </td>
-                      <td className="py-3 px-4 text-center text-[13px]">
-                        {log.toot || "-"}
-                      </td>
-                      <td className="py-3 px-4 text-center text-[13px] font-mono text-slate-500 dark:text-slate-400">
-                        {log.utas || "-"}
-                      </td>
-                      <td className="py-3 px-4 text-center text-[13px]">
-                        {log.mashiniiDugaar ? (
-                          <span className="px-2.5 py-0.5 rounded-full bg-blue-600 text-[12px] !text-white tracking-widest font-[family-name:var(--font-mono)]">
-                            {log.mashiniiDugaar}
-                          </span>
-                        ) : (
-                          <span className="text-slate-400 italic text-[13px]">-</span>
-                        )}
-                      </td>
-                      <td className="py-3 px-4 text-center text-[13px]">
-                        <ParkEaseNudu
-                          tuukh={
-                            log.parkease ||
-                            parkEaseMap.get(
-                              (log.mashiniiDugaar || "").trim().toUpperCase()
-                            )
-                          }
-                        />
-                      </td>
-                      <td className="py-3 px-4 text-center text-[13px]">
-                        {(() => {
-                          const avl = avlagaMap.get(
-                            (log.mashiniiDugaar || "").trim().toUpperCase(),
-                          );
-                          if (!avl || avl.dun <= 0)
-                            return (
-                              <span className="text-slate-300 dark:text-slate-600">
-                                -
-                              </span>
-                            );
-                          return (
-                            <span className="inline-flex flex-col items-center">
-                              <span className="font-medium text-amber-600 dark:text-amber-400">
-                                {avl.dun.toLocaleString("mn-MN")}₮
-                              </span>
-                              <span className="text-[10px] text-slate-400">
-                                {avl.too} удаа
-                              </span>
-                            </span>
-                          );
-                        })()}
-                      </td>
-                      <td className="py-3 px-4 text-center text-[13px] text-slate-500 dark:text-slate-400">
-                        {getBuildingName(log.barilgiinId)}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+        <div className="min-h-0 flex-1">
+          <Table<any>
+            columns={urisanColumns}
+            dataSource={logs}
+            rowKey={(log) => log._id}
+            pagination={false}
+            scroll={{ x: 900, y: "calc(100vh - 320px)" }}
+            locale={{ emptyText: "Бүртгэл олдсонгүй." }}
+            onRow={(log) => ({
+              onClick: () => setSelectedLog(log),
+              className: "cursor-pointer",
+            })}
+          />
         </div>
 
         {/* Pagination */}

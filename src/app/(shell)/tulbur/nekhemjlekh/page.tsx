@@ -2,7 +2,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
-import { Table } from "antd";
+import Table from "@/components/ui/table";
 import TusgaiZagvar from "../../../../../components/selectZagvar/tusgaiZagvar";
 import {
   Calendar,
@@ -1469,21 +1469,17 @@ export default function InvoicingZardluud() {
   const nekhemjlekhColumns = useMemo(
     () => [
       {
-        title: <span className="text-gray-900 dark:text-white">№</span>,
+        title: "№",
         dataIndex: "index",
         key: "index",
-        width: 50,
+        width: 40,
         align: "center" as const,
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, __: any, index: number) => index + 1,
       },
       {
-        title: (
-          <span className="text-gray-900 dark:text-white">Оршин суугч</span>
-        ),
+        title: "Оршин суугч",
         dataIndex: "ner",
         key: "ner",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (text: string, record: any) => (
           <div className="flex items-center gap-3">
             <div className="min-w-0">
@@ -1495,23 +1491,21 @@ export default function InvoicingZardluud() {
         ),
       },
       {
-        title: <span className="text-gray-900 dark:text-white">Тоот</span>,
+        title: "Тоот",
         dataIndex: "toot",
         key: "toot",
         align: "center" as const,
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (text: string) => (
-          <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-400 text-sm">
+          <span className="inline-flex items-center px-3 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-400">
             {text || "-"}
           </span>
         ),
       },
       {
-        title: <span className="text-gray-900 dark:text-white">Хаяг</span>,
+        title: "Хаяг",
         dataIndex: "khayag",
         key: "khayag",
         align: "center" as const,
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: any) => {
           const address =
             record.duureg && record.horoo && record.davkhar
@@ -1523,11 +1517,10 @@ export default function InvoicingZardluud() {
         },
       },
       {
-        title: <span className="text-gray-900 dark:text-white">Утас</span>,
+        title: "Утас",
         dataIndex: "utas",
         key: "utas",
         align: "center" as const,
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (text: string) => (
           <span className="text-gray-700 dark:text-gray-300 font-mono">
             {text || "-"}
@@ -1535,11 +1528,10 @@ export default function InvoicingZardluud() {
         ),
       },
       {
-        title: <span className="text-gray-900 dark:text-white">Төлөв</span>,
+        title: "Төлөв",
         dataIndex: "tuluv",
         key: "tuluv",
         align: "center" as const,
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: any) => {
           const id = String(record?._id || "");
           const label =
@@ -1553,18 +1545,17 @@ export default function InvoicingZardluud() {
                 ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-400"
                 : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400";
           return (
-            <span className={`px-3 py-1 rounded-full text-xs ${cls}`}>
+            <span className={`px-3 py-0.5 rounded-full ${cls}`}>
               {label}
             </span>
           );
         },
       },
       {
-        title: <span className="text-gray-900 dark:text-white">Үйлдэл</span>,
+        title: "Үйлдэл",
         key: "action",
         align: "center" as const,
-        width: 120,
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        width: 92,
         render: (_: any, record: any) => (
           <div
             className="flex justify-center items-center gap-2"
@@ -1572,7 +1563,7 @@ export default function InvoicingZardluud() {
           >
             <motion.button
               onClick={() => handleSendReminderSms(record)}
-              className="px-3 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white transition-colors text-sm flex items-center justify-center gap-1 disabled:opacity-50"
+              className="px-3 py-0.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               disabled={sendingSmsId === record._id}
@@ -1591,7 +1582,7 @@ export default function InvoicingZardluud() {
                 if (record.davkhar) params.set("davkhar", record.davkhar);
                 router.push(`/tulbur?${params.toString()}`);
               }}
-              className="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-500 text-white transition-colors text-sm"
+              className="px-4 py-0.5 rounded-lg bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-500 text-white transition-colors"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               title="Төлбөр хуудас руу шилжих"
@@ -1851,44 +1842,31 @@ export default function InvoicingZardluud() {
           </div>
         </motion.div>
 
-        {/* Enhanced Table */}
+        {/* Стандарт хүснэгт */}
         <motion.div
-          className="rounded-3xl overflow-hidden shadow-2xl bg-white/95 backdrop-blur-xl border border-white/30"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
-          <div className="p-1">
-            <div className="max-h-[50vh] overflow-y-auto overflow-x-auto custom-scrollbar w-full rounded-2xl border border-gray-100">
-              <div className="table-surface rounded-2xl mt-0 w-full">
-                <div className="rounded-3xl p-1 mb-4 neu-table allow-overflow">
-                  <Table
-                    dataSource={displayResidents}
-                    columns={nekhemjlekhColumns}
-                    rowKey="_id"
-                    rowSelection={{
-                      type: "checkbox",
-                      selectedRowKeys: selectedExpenses,
-                      onChange: (keys) => setSelectedExpenses(keys as string[]),
-                    }}
-                    pagination={{
-                      pageSize: rowsPerPage,
-                      total: totalRecords,
-                      current: currentPage,
-                      position: ["bottomCenter"],
-                      onChange: (page) => setCurrentPage(page),
-                    }}
-                    size="small"
-                    bordered
-                    className="guilgee-table"
-                    scroll={{ x: "max-content", y: 400 }}
-                    loading={isLoading}
-                    locale={{ emptyText: "Мэдээлэл алга байна" }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+          <Table
+            dataSource={displayResidents}
+            columns={nekhemjlekhColumns}
+            rowKey="_id"
+            rowSelection={{
+              type: "checkbox",
+              selectedRowKeys: selectedExpenses,
+              onChange: (keys) => setSelectedExpenses(keys as string[]),
+            }}
+            pagination={{
+              pageSize: rowsPerPage,
+              total: totalRecords,
+              current: currentPage,
+              onChange: (page) => setCurrentPage(page),
+            }}
+            scroll={{ x: "max-content", y: 400 }}
+            loading={isLoading}
+            locale={{ emptyText: "Мэдээлэл алга байна" }}
+          />
         </motion.div>
       </div>
 

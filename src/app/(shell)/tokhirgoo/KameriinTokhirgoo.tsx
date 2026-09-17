@@ -25,6 +25,8 @@ import { useBuilding } from "@/context/BuildingContext";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import Button from "@/components/ui/Button";
+import Table from "@/components/ui/table";
+import type { ColumnsType } from "@/components/ui/table";
 
 interface CameraConfig {
   id: string;
@@ -461,6 +463,116 @@ export default function KameriinTokhirgoo() {
   );
 
   // ── Маягтын горим — Зогсоолын тохиргоотой ижил бүтэц ────────────────────
+  const kameriinColumns: ColumnsType<any> = React.useMemo(
+    () => [
+      {
+        title: "№",
+        key: "index",
+        width: 40,
+        align: "center",
+        render: (_: any, __: any, index: number) =>
+          (page - 1) * pageSize + index + 1,
+      },
+      {
+        title: "Камерын нэр",
+        key: "name",
+        width: 240,
+        render: (_: any, cam: any) => (
+          <>
+            <span>{cam.name || "Нэргүй камер"}</span>
+            <span className="block font-mono opacity-60">
+              {cam.id}
+            </span>
+          </>
+        ),
+      },
+      {
+        title: "RTSP зам",
+        key: "rtsp",
+        render: (_: any, cam: any) => (
+          <span className="inline-flex items-center break-all rounded-lg border border-slate-300 bg-slate-100 px-3 py-0.5 font-mono dark:border-slate-700 dark:bg-slate-800">
+            rtsp://{cam.ip || cameraIp || "—"}:{cam.port || cameraPort}/
+            {cam.root}
+          </span>
+        ),
+      },
+      {
+        title: "Оршин суугч",
+        key: "residentVisible",
+        width: 130,
+        align: "center",
+        render: (_: any, cam: any) => (
+          <button
+            type="button"
+            onClick={() =>
+              handleChange(cam.id, {
+                ...cam,
+                residentVisible: !cam.residentVisible,
+              })
+            }
+            title="Оршин суугчид харуулах эсэхийг сольно"
+            className={`inline-flex items-center rounded-lg border px-3 py-0.5 transition-colors ${
+              cam.residentVisible
+                ? "border-blue-300 bg-blue-100 text-blue-950 dark:border-blue-700 dark:bg-blue-900/60 dark:text-blue-100"
+                : "border-slate-300 bg-slate-100 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
+            }`}
+          >
+            {cam.residentVisible ? "Харна" : "Харахгүй"}
+          </button>
+        ),
+      },
+      {
+        title: "Төлөв",
+        key: "enabled",
+        width: 120,
+        align: "center",
+        render: (_: any, cam: any) => (
+          <button
+            type="button"
+            onClick={() => handleChange(cam.id, { ...cam, enabled: !cam.enabled })}
+            title="Идэвхтэй эсэхийг сольно"
+            className={`inline-flex items-center rounded-lg border px-3 py-0.5 transition-colors ${
+              cam.enabled
+                ? "border-emerald-300 bg-emerald-100 text-emerald-950 dark:border-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-100"
+                : "border-slate-300 bg-slate-100 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
+            }`}
+          >
+            {cam.enabled ? "Идэвхтэй" : "Идэвхгүй"}
+          </button>
+        ),
+      },
+      {
+        title: "Үйлдэл",
+        key: "action",
+        width: 96,
+        align: "center",
+        render: (_: any, cam: any) => (
+          <div className="flex items-center justify-center gap-1">
+            <button
+              onClick={() => {
+                setEditingId(cam.id);
+                setView("form");
+              }}
+              className="rounded-lg p-1.5 text-blue-600 transition-colors hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-500/10"
+              title="Засах"
+            >
+              <Edit className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => handleRemove(cam.id)}
+              className="rounded-lg p-1.5 text-rose-600 transition-colors hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10"
+              title="Устгах"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        ),
+      },
+    ],
+     
+    [page, pageSize, cameraIp, cameraPort, handleChange, handleRemove],
+  );
+
   if (view === "form" && editingCamera) {
     return (
       <div className="h-full overflow-y-auto custom-scrollbar">
@@ -717,149 +829,29 @@ export default function KameriinTokhirgoo() {
             </div>
 
             {/* ── Хүснэгт ──────────────────────────────────────────────── */}
-            <div
-              style={{ borderRadius: "14px" }}
-              className="border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] overflow-hidden"
-            >
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-[13px]">
-                  <thead className="sticky top-0 z-10 bg-slate-100 dark:bg-slate-800 border-b border-[color:var(--surface-border)]">
-                    <tr>
-                      <th className="px-3 py-2.5 text-xs text-slate-700 dark:text-slate-300 text-center w-12">
-                        №
-                      </th>
-                      <th className="px-4 py-2.5 text-xs text-slate-700 dark:text-slate-300 text-left w-1/4">
-                        Камерын нэр
-                      </th>
-                      <th className="px-4 py-2.5 text-xs text-slate-700 dark:text-slate-300 text-left">
-                        RTSP зам
-                      </th>
-                      <th className="px-4 py-2.5 text-xs text-slate-700 dark:text-slate-300 text-center w-32">
-                        Оршин суугч
-                      </th>
-                      <th className="px-4 py-2.5 text-xs text-slate-700 dark:text-slate-300 text-center w-28">
-                        Төлөв
-                      </th>
-                      <th className="px-4 py-2.5 text-xs text-slate-700 dark:text-slate-300 text-center w-24">
-                        Үйлдэл
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[color:var(--surface-border)]">
-                    {paginatedCameras.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={6}
-                          className="px-4 py-16 text-center text-[color:var(--muted-text)]"
-                        >
-                          <div>
-                            <p className="text-slate-700 dark:text-slate-200">
-                              {activeTab === "soh"
-                                ? "Камер нэмэгдээгүй байна"
-                                : "Оршин суугчид харагдах камер алга"}
-                            </p>
-                            <p className="text-xs text-slate-400 mt-1">
-                              {activeTab === "soh"
-                                ? "Дээрх «Шинэ камер нэмэх» товчийг дарж камер тохируулна уу"
-                                : "Камер засах цонхноос «Оршин суугч харна» тохиргоог асаана уу"}
-                            </p>
-                          </div>
-                        </td>
-                      </tr>
-                    ) : (
-                      paginatedCameras.map((cam, index) => (
-                        <tr
-                          key={cam.id}
-                          className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
-                        >
-                          <td className="px-3 py-2.5 text-center text-slate-500 dark:text-slate-400 text-xs">
-                            {(page - 1) * pageSize + index + 1}
-                          </td>
-                          <td className="px-4 py-2.5">
-                            <span className="text-slate-800 dark:text-slate-100">
-                              {cam.name || "Нэргүй камер"}
-                            </span>
-                            <span className="block text-[10px] text-slate-500 dark:text-slate-400 font-mono">
-                              {cam.id}
-                            </span>
-                          </td>
-                          <td className="px-4 py-2.5">
-                            <span
-                              style={{ borderRadius: "8px" }}
-                              className="inline-flex items-center px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white text-[11px] font-mono border border-slate-300 dark:border-slate-700 break-all"
-                            >
-                              rtsp://{cam.ip || cameraIp || "—"}:
-                              {cam.port || cameraPort}/{cam.root}
-                            </span>
-                          </td>
-                          <td className="px-4 py-2.5 text-center">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleChange(cam.id, {
-                                  ...cam,
-                                  residentVisible: !cam.residentVisible,
-                                })
-                              }
-                              style={{ borderRadius: "8px" }}
-                              title="Оршин суугчид харуулах эсэхийг сольно"
-                              className={`inline-flex items-center px-3 py-1 text-xs border transition-colors ${
-                                cam.residentVisible
-                                  ? "bg-blue-100 dark:bg-blue-900/60 text-blue-950 dark:text-blue-100 border-blue-300 dark:border-blue-700"
-                                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700"
-                              }`}
-                            >
-                              {cam.residentVisible ? "Харна" : "Харахгүй"}
-                            </button>
-                          </td>
-                          <td className="px-4 py-2.5 text-center">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleChange(cam.id, {
-                                  ...cam,
-                                  enabled: !cam.enabled,
-                                })
-                              }
-                              style={{ borderRadius: "8px" }}
-                              title="Идэвхтэй эсэхийг сольно"
-                              className={`inline-flex items-center px-3 py-1 text-xs border transition-colors ${
-                                cam.enabled
-                                  ? "bg-emerald-100 dark:bg-emerald-900/60 text-emerald-950 dark:text-emerald-100 border-emerald-300 dark:border-emerald-700"
-                                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700"
-                              }`}
-                            >
-                              {cam.enabled ? "Идэвхтэй" : "Идэвхгүй"}
-                            </button>
-                          </td>
-                          <td className="px-4 py-2.5 text-center">
-                            <div className="flex items-center justify-center gap-1.5">
-                              <button
-                                onClick={() => {
-                                  setEditingId(cam.id);
-                                  setView("form");
-                                }}
-                                className="p-1.5 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors"
-                                title="Засах"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleRemove(cam.id)}
-                                className="p-1.5 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors"
-                                title="Устгах"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <Table<any>
+              columns={kameriinColumns}
+              dataSource={paginatedCameras}
+              rowKey={(cam) => cam.id}
+              pagination={false}
+              scroll={{ x: "max-content" }}
+              locale={{
+                emptyText: (
+                  <div>
+                    <p>
+                      {activeTab === "soh"
+                        ? "Камер нэмэгдээгүй байна"
+                        : "Оршин суугчид харагдах камер алга"}
+                    </p>
+                    <p className="mt-1 text-xs opacity-70">
+                      {activeTab === "soh"
+                        ? "Дээрх «Шинэ камер нэмэх» товчийг дарж камер тохируулна уу"
+                        : "Камер засах цонхноос «Оршин суугч харна» тохиргоог асаана уу"}
+                    </p>
+                  </div>
+                ),
+              }}
+            />
 
             {/* ── Хуудаслалт ───────────────────────────────────────────── */}
             {totalPages > 0 && (

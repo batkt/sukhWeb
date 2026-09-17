@@ -14,6 +14,8 @@ import {
 } from "@mantine/core";
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import formatNumber from "../../../../tools/function/formatNumber";
+import Table from "@/components/ui/table";
+import type { ColumnsType } from "@/components/ui/table";
 import { useAuth } from "@/lib/useAuth";
 import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
@@ -640,6 +642,93 @@ export default function AshiglaltiinZardluud() {
   // so they show up when the page is visited at `/tokhirgoo`.
   useRegisterTourSteps("/tokhirgoo", zardalTourSteps);
 
+  // Тогтмол/хувьсах зардлын хүснэгтийн нэгдсэн багана.
+  const zardliinColumns: ColumnsType<any> = useMemo(
+    () => [
+      {
+        title: "Нэр",
+        dataIndex: "ner",
+        key: "ner",
+        width: "33%",
+        render: (v: any) => (
+          <div className="max-w-[150px] leading-tight break-words sm:max-w-[300px] sm:">
+            {v}
+          </div>
+        ),
+      },
+      {
+        title: "Тариф",
+        key: "tariff",
+        align: "center",
+        render: (_: any, mur: any) => {
+          // Хувьсах цахилгаан дээр тариф биш суурь хураамжийг харуулна.
+          const nameLower = (mur.ner || "").toLowerCase();
+          const isVariableElectricity =
+            nameLower.includes("цахилгаан") &&
+            !nameLower.includes("дундын") &&
+            !nameLower.includes("өмчлөл");
+          const displayValue = isVariableElectricity
+            ? mur.suuriKhuraamj || 0
+            : mur.tariff;
+          const currentValue =
+            editedTariffs[mur._id!] !== undefined
+              ? editedTariffs[mur._id!]
+              : displayValue;
+          const changed = currentValue !== displayValue;
+          return (
+            <div className="flex flex-col items-center gap-0.5">
+              <div className="whitespace-nowrap">
+                {formatNumber(currentValue, 2)} {mur.tariffUsgeer || "₮"}
+              </div>
+              {changed && (
+                <span className="whitespace-nowrap tracking-tighter text-amber-600 uppercase">
+                  Өөрчлөгдсөн
+                </span>
+              )}
+            </div>
+          );
+        },
+      },
+      {
+        title: "Тайлбар",
+        dataIndex: "tailbar",
+        key: "tailbar",
+        className: "hidden md:table-cell",
+        ellipsis: true,
+        render: (v: any) => v || <span className="opacity-40">-</span>,
+      },
+      {
+        title: "Үйлдэл",
+        key: "action",
+        width: 96,
+        align: "center",
+        render: (_: any, mur: any) => (
+          <div className="flex items-center justify-center gap-1">
+            <button
+              onClick={() => openEditModal(mur, false)}
+              className="shrink-0 rounded-lg p-1.5 text-blue-600 transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/30"
+              title="Засах"
+            >
+              <Edit className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => {
+                setItemToDelete(mur);
+                setDeleteModalOpen(true);
+              }}
+              className="shrink-0 rounded-lg p-1.5 text-red-600 transition-colors hover:bg-red-100 dark:hover:bg-red-900/30"
+              title="Устгах"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        ),
+      },
+    ],
+     
+    [editedTariffs],
+  );
+
   return (
     <div className="h-full overflow-y-auto custom-scrollbar">
       <div className="bg-[color:var(--surface-bg)] rounded-2xl border border-[color:var(--surface-border)] shadow-lg p-4 sm:p-5 space-y-4">
@@ -720,152 +809,58 @@ export default function AshiglaltiinZardluud() {
                 </Button>
               </div>
 
-              {isLoadingAshiglaltiin ? (
-                <div className="flex justify-center items-center p-10">
-                  <Loader />
+              <div id="zardal-list" className="flex flex-col">
+                  <Table<any>
+                    columns={zardliinColumns}
+                    loading={isLoadingAshiglaltiin}
+                    locale={{
+                      emptyText: (
+                        <div>
+                          <p>Тогтмол зардал байхгүй байна</p>
+                          <p className="mt-1 text-xs opacity-70">
+                            Зардал нэмэх товчийг дарж эхлүүлнэ үү
+                          </p>
+                        </div>
+                      ),
+                    }}
+                    dataSource={
+                      bugdTogtmol
+                        ? togtmolZardluud
+                        : togtmolZardluud.slice(0, ZARDAL_URIDCHILAN_KHARUULAKH)
+                    }
+                    rowKey={(mur) => mur._id!}
+                    pagination={false}
+                    summary={() => (
+                      <Table.Summary.Row>
+                        <Table.Summary.Cell colSpan={4} align="right">
+                          <span className="whitespace-nowrap text-[11px] font-bold tracking-wide opacity-70 sm:text-xs">
+                            Нийт дүн:
+                          </span>{" "}
+                          <span className="whitespace-nowrap text-sm font-bold sm:text-base">
+                            {formatNumber(niitDungBodyo(togtmolZardluud), 2)} ₮
+                          </span>
+                        </Table.Summary.Cell>
+                      </Table.Summary.Row>
+                    )}
+                  />
+                  {togtmolZardluud.length > ZARDAL_URIDCHILAN_KHARUULAKH && (
+                    <div className="flex justify-end px-4">
+                      <button
+                        onClick={() => setBugdTogtmol((n) => !n)}
+                        className="flex cursor-pointer items-center gap-1.5 py-2 text-[11px] font-semibold transition-colors sm:text-xs"
+                      >
+                        {bugdTogtmol
+                          ? "Хураах"
+                          : `Бүгдийг харах (${togtmolZardluud.length})`}
+                        <ChevronDown
+                          className={`h-3.5 w-3.5 transition-transform ${
+                            bugdTogtmol ? "rotate-180" : ""
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  )}
                 </div>
-              ) : togtmolZardluud.length === 0 ? (
-                <div className="p-12 text-center">
-                  <p className="text-theme ">Тогтмол зардал байхгүй байна</p>
-                  <p className="text-xs text-[color:var(--muted-text)] mt-1">
-                    Зардал нэмэх товчийг дарж эхлүүлнэ үү
-                  </p>
-                </div>
-              ) : (
-                <div id="zardal-list" className="flex flex-col">
-                  <div>
-                    <table className="w-full text-sm">
-                      <thead className="bg-[color:var(--surface-bg)]">
-                        <tr className="text-left text-[color:var(--muted-text)] text-[10px] sm:text-xs uppercase tracking-wider border-b-2 border-slate-300 dark:border-slate-600">
-                          <th className="py-2 px-2 whitespace-nowrap">Нэр</th>
-                          <th className="py-2 px-2 text-center whitespace-nowrap">
-                            Тариф
-                          </th>
-                          <th className="py-2 px-2 hidden md:table-cell whitespace-nowrap">
-                            Тайлбар
-                          </th>
-                          <th className="py-2 px-2 text-center whitespace-nowrap">
-                            Үйлдэл
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(bugdTogtmol
-                          ? togtmolZardluud
-                          : togtmolZardluud.slice(0, ZARDAL_URIDCHILAN_KHARUULAKH)
-                        ).map((mur) => {
-                            const displayValue = mur.tariff;
-                            const currentValue =
-                              editedTariffs[mur._id!] !== undefined
-                                ? editedTariffs[mur._id!]
-                                : displayValue;
-                            const changed = currentValue !== displayValue;
-                            return (
-                              <tr
-                                key={mur._id}
-                                className="border-b border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors duration-150"
-                              >
-                                <td className="py-2 px-2 text-theme w-1/3">
-                                  <div className=" text-[13px] sm:text-sm max-w-[150px] sm:max-w-[400px] leading-tight break-words">
-                                    {mur.ner}
-                                  </div>
-                                </td>
-
-                                <td className="py-2 px-2">
-                                  <div className="flex flex-col items-center gap-0.5">
-                                    <div className="text-theme text-sm sm:text-sm whitespace-nowrap">
-                                      {formatNumber(currentValue, 2)} ₮
-                                    </div>
-                                    {changed && (
-                                      <span className="text-[9px] text-amber-600  uppercase tracking-tighter whitespace-nowrap">
-                                        Өөрчлөгдсөн
-                                      </span>
-                                    )}
-                                  </div>
-                                </td>
-                                <td className="py-2 px-2 text-theme text-[12px] sm:text-sm max-w-[100px] lg:max-w-[150px] truncate hidden md:table-cell">
-                                  {mur.tailbar || (
-                                    <span className="text-[color:var(--muted-text)] opacity-40">
-                                      -
-                                    </span>
-                                  )}
-                                </td>
-                                <td className="py-2 px-2">
-                                  <div className="flex items-center justify-center gap-1 sm:gap-2">
-                                    <button
-                                      onClick={() => openEditModal(mur, false)}
-                                      className="p-2 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors shrink-0"
-                                      style={{
-                                        borderRadius: "0.5rem",
-                                        color: "#2563eb",
-                                      }}
-                                      title="Засах"
-                                    >
-                                      <Edit className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                      onClick={() => {
-                                        setItemToDelete(mur);
-                                        setDeleteModalOpen(true);
-                                      }}
-                                      className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors shrink-0"
-                                      style={{
-                                        borderRadius: "0.5rem",
-                                        color: "#dc2626",
-                                      }}
-                                      title="Устгах"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        {togtmolZardluud.length >
-                          ZARDAL_URIDCHILAN_KHARUULAKH && (
-                          <tr>
-                            <td colSpan={4} className="p-0">
-                              <div className="flex justify-end px-4">
-                                <button
-                                  onClick={() => setBugdTogtmol((n) => !n)}
-                                  className="py-2 text-[11px] sm:text-xs font-semibold text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors flex items-center gap-1.5 cursor-pointer"
-                                >
-                                  {bugdTogtmol
-                                    ? "Хураах"
-                                    : `Бүгдийг харах (${togtmolZardluud.length})`}
-                                  <ChevronDown
-                                    className={`w-3.5 h-3.5 text-gray-500 dark:text-gray-400 transition-transform ${
-                                      bugdTogtmol ? "rotate-180" : ""
-                                    }`}
-                                  />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                      <tfoot className="border-t border-[color:var(--surface-border)]">
-                        <tr className="bg-white dark:bg-gray-900">
-                          <td colSpan={4} className="py-2.5 px-4">
-                            <div className="flex items-center justify-end gap-3 text-right">
-                              <span
-                                className="text-[11px] sm:text-xs font-sans font-bold tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap"
-                                style={{ fontFamily: "Segoe UI, sans-serif" }}
-                              >
-                                Нийт дүн:
-                              </span>
-                              <span className="text-sm sm:text-base font-bold text-gray-900 dark:text-white whitespace-nowrap">
-                                {formatNumber(niitDungBodyo(togtmolZardluud), 2)} ₮
-                              </span>
-                            </div>
-                          </td>
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 
@@ -894,164 +889,58 @@ export default function AshiglaltiinZardluud() {
                 </Button>
               </div>
 
-              {isLoadingAshiglaltiin ? (
-                <div className="flex justify-center items-center p-10">
-                  <Loader />
+              <div className="flex flex-col">
+                  <Table<any>
+                    columns={zardliinColumns}
+                    loading={isLoadingAshiglaltiin}
+                    locale={{
+                      emptyText: (
+                        <div>
+                          <p>Хувьсах зардал байхгүй байна</p>
+                          <p className="mt-1 text-xs opacity-70">
+                            Зардал нэмэх товчийг дарж эхлүүлнэ үү
+                          </p>
+                        </div>
+                      ),
+                    }}
+                    dataSource={
+                      bugdKhuvisakh
+                        ? khuvisakhZardluud
+                        : khuvisakhZardluud.slice(0, ZARDAL_URIDCHILAN_KHARUULAKH)
+                    }
+                    rowKey={(mur) => mur._id!}
+                    pagination={false}
+                    summary={() => (
+                      <Table.Summary.Row>
+                        <Table.Summary.Cell colSpan={4} align="right">
+                          <span className="whitespace-nowrap text-[11px] font-bold tracking-wide opacity-70 sm:text-xs">
+                            Нийт дүн:
+                          </span>{" "}
+                          <span className="whitespace-nowrap text-sm font-bold sm:text-base">
+                            {formatNumber(niitDungBodyo(khuvisakhZardluud), 2)} ₮
+                          </span>
+                        </Table.Summary.Cell>
+                      </Table.Summary.Row>
+                    )}
+                  />
+                  {khuvisakhZardluud.length > ZARDAL_URIDCHILAN_KHARUULAKH && (
+                    <div className="flex justify-end px-4">
+                      <button
+                        onClick={() => setBugdKhuvisakh((n) => !n)}
+                        className="flex cursor-pointer items-center gap-1.5 py-2 text-[11px] font-semibold transition-colors sm:text-xs"
+                      >
+                        {bugdKhuvisakh
+                          ? "Хураах"
+                          : `Бүгдийг харах (${khuvisakhZardluud.length})`}
+                        <ChevronDown
+                          className={`h-3.5 w-3.5 transition-transform ${
+                            bugdKhuvisakh ? "rotate-180" : ""
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  )}
                 </div>
-              ) : khuvisakhZardluud.length === 0 ? (
-                <div className="p-12 text-center">
-                  <p className="text-theme ">Хувьсах зардал байхгүй байна</p>
-                  <p className="text-xs text-[color:var(--muted-text)] mt-1">
-                    Зардал нэмэх товчийг дарж эхлүүлнэ үү
-                  </p>
-                </div>
-              ) : (
-                <div className="flex flex-col">
-                  <div>
-                    <table className="w-full text-sm">
-                      <thead className="bg-[color:var(--surface-bg)]">
-                        <tr className="text-left text-[color:var(--muted-text)] text-[10px] sm:text-xs uppercase tracking-wider border-b-2 border-slate-300 dark:border-slate-600">
-                          <th className="py-2 px-2 whitespace-nowrap">Нэр</th>
-                          <th className="py-2 px-2 text-center whitespace-nowrap">
-                            Тариф
-                          </th>
-                          <th className="py-2 px-2 hidden md:table-cell whitespace-nowrap">
-                            Тайлбар
-                          </th>
-                          <th className="py-2 px-2 text-center whitespace-nowrap">
-                            Үйлдэл
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(bugdKhuvisakh
-                          ? khuvisakhZardluud
-                          : khuvisakhZardluud.slice(0, ZARDAL_URIDCHILAN_KHARUULAKH)
-                        ).map((mur) => {
-                            const nameLower = (mur.ner || "").toLowerCase();
-                            const isVariableElectricity =
-                              nameLower.includes("цахилгаан") &&
-                              !nameLower.includes("дундын") &&
-                              !nameLower.includes("өмчлөл");
-                            const displayValue = isVariableElectricity
-                              ? mur.suuriKhuraamj || 0
-                              : mur.tariff;
-                            const currentValue =
-                              editedTariffs[mur._id!] !== undefined
-                                ? editedTariffs[mur._id!]
-                                : displayValue;
-                            const changed = currentValue !== displayValue;
-                            return (
-                              <tr
-                                key={mur._id}
-                                className="border-b border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors duration-150"
-                              >
-                                <td className="py-2 px-2 sm:px-4 text-theme w-1/3">
-                                  <div className=" text-[13px] sm:text-sm max-w-[150px] sm:max-w-[200px] md:max-w-[300px] leading-tight break-words">
-                                    {mur.ner}
-                                  </div>
-                                </td>
-
-                                <td className="py-2 px-2 sm:px-4">
-                                  <div className="flex flex-col items-center gap-0.5">
-                                    <div className="text-theme text-sm sm:text-sm whitespace-nowrap">
-                                      {formatNumber(currentValue, 2)}{" "}
-                                      {mur.tariffUsgeer || "₮"}
-                                    </div>
-                                    {changed && (
-                                      <span className="text-[9px] text-amber-600  uppercase tracking-tighter whitespace-nowrap">
-                                        Өөрчлөгдсөн
-                                      </span>
-                                    )}
-                                  </div>
-                                </td>
-                                <td className="py-2 px-2 text-theme text-[12px] sm:text-sm max-w-[100px] lg:max-w-[150px] truncate hidden md:table-cell">
-                                  {mur.tailbar || (
-                                    <span className="text-[color:var(--muted-text)] opacity-40">
-                                      -
-                                    </span>
-                                  )}
-                                </td>
-                                <td className="py-2 px-2">
-                                  <div className="flex items-center justify-center gap-1 sm:gap-2">
-                                    <button
-                                      onClick={() => openEditModal(mur, false)}
-                                      className="p-2 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors shrink-0"
-                                      style={{
-                                        borderRadius: "0.5rem",
-                                        color: "#2563eb",
-                                      }}
-                                      title="Засах"
-                                    >
-                                      <Edit className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                      onClick={() => {
-                                        setItemToDelete(mur);
-                                        setDeleteModalOpen(true);
-                                      }}
-                                      className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors shrink-0"
-                                      style={{
-                                        borderRadius: "0.5rem",
-                                        color: "#dc2626",
-                                      }}
-                                      title="Устгах"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        {khuvisakhZardluud.length >
-                          ZARDAL_URIDCHILAN_KHARUULAKH && (
-                          <tr>
-                            <td colSpan={4} className="p-0">
-                              <div className="flex justify-end px-4">
-                                <button
-                                  onClick={() => setBugdKhuvisakh((n) => !n)}
-                                  className="py-2 text-[11px] sm:text-xs font-semibold text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors flex items-center gap-1.5 cursor-pointer"
-                                >
-                                  {bugdKhuvisakh
-                                    ? "Хураах"
-                                    : `Бүгдийг харах (${khuvisakhZardluud.length})`}
-                                  <ChevronDown
-                                    className={`w-3.5 h-3.5 text-gray-500 dark:text-gray-400 transition-transform ${
-                                      bugdKhuvisakh ? "rotate-180" : ""
-                                    }`}
-                                  />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                      <tfoot className="border-t border-[color:var(--surface-border)]">
-                        <tr className="bg-white dark:bg-gray-900">
-                          <td colSpan={4} className="py-2.5 px-4">
-                            <div className="flex items-center justify-end gap-3 text-right">
-                              <span
-                                className="text-[11px] sm:text-xs font-sans font-bold tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap"
-                                style={{ fontFamily: "Segoe UI, sans-serif" }}
-                              >
-                                Нийт дүн:
-                              </span>
-                              <span className="text-sm sm:text-base font-bold text-gray-900 dark:text-white whitespace-nowrap">
-                                {formatNumber(
-                                  niitDungBodyo(khuvisakhZardluud, true),
-                                  2,
-                                )}{" "}
-                                ₮
-                              </span>
-                            </div>
-                          </td>
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>

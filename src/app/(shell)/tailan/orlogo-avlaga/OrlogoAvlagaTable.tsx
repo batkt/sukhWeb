@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Modal, Table, ConfigProvider } from "antd";
-import type { ColumnsType } from "antd/es/table";
+import { Modal, ConfigProvider } from "antd";
+import Table from "@/components/ui/table";
+import type { ColumnsType } from "@/components/ui/table";
 import { X } from "lucide-react";
 import { motion, useDragControls } from "framer-motion";
 import formatNumber from "../../../../../tools/function/formatNumber";
@@ -87,7 +88,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
   }, [modalOpen, selectedRecord]);
 
   const baseColumns = useMemo(() => [
-    { key: "index", label: "№", width: "50px", align: "center" as const },
+    { key: "index", label: "№", width: "40px", align: "center" as const },
     { key: "ner", label: "Харилцагчийн нэр", width: "180px", align: "left" as const },
     { key: "gereeniiDugaar", label: "Гэрээний дугаар", width: "120px", align: "center" as const },
     { key: "davkhar", label: "Давхар", width: "80px", align: "center" as const },
@@ -134,12 +135,6 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
     }
   };
 
-  const getCellClassName = (key: string) => {
-    if (key === "paid") return "text-emerald-600 dark:text-emerald-400";
-    if (key === "finalBalance") return "text-red-600 dark:text-red-400";
-    return "text-gray-900 dark:text-white";
-  };
-
   const getTotalValue = (key: string) => {
     switch (key) {
       case "ekhniiUldegdel": return formatNumber(grandTotalEkhniiUldegdel ?? 0, 2);
@@ -177,20 +172,18 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
       });
     })();
 
-    const headerClassName = "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white font-normal text-[13px]";
-
     const ledgerColumns: ColumnsType<any> = [
-      { title: "№", key: "index", width: 50, align: "center", className: headerClassName, render: (_: any, __: any, index: number) => (ledgerPage - 1) * 50 + index + 1 },
-      { title: "Огноо", dataIndex: "ognoo", key: "ognoo", width: 100, className: headerClassName,
-        render: (val: string) => <span className="text-gray-900 dark:text-white whitespace-nowrap text-[13px]">{val ? new Date(val).toLocaleString("mn-MN", { year: "numeric", month: "2-digit", day: "2-digit"}) : "-"}</span> },
-      { title: "Тайлбар", dataIndex: "tailbar", key: "tailbar", width: 200, className: headerClassName,
-        render: (val: string, row: any) => <span className="text-gray-900 dark:text-white max-w-[280px] truncate text-[13px]" title={val || row?.ner || "-"}>{val || row?.ner || row?.turul || "-"}</span> },
-      { title: "Төлөх дүн", dataIndex: "tulukhDun", key: "tulukhDun", width: 120, align: "right", className: headerClassName,
-        render: (_: any, row: any) => { const v = Number(row?.tulukhDun ?? 0); return v > 0 ? <span className="text-gray-900 dark:text-white text-[13px]">{formatNumber(v, 2)}</span> : <span className="text-[13px]">-</span>; } },
-      { title: "Төлсөн дүн", dataIndex: "tulsunDun", key: "tulsunDun", width: 120, align: "right", className: headerClassName,
-        render: (_: any, row: any) => { const v = Number(row?.tulsunDun ?? 0); return v > 0 ? <span className="text-gray-900 dark:text-white text-[13px]">{formatNumber(v, 2)}</span> : <span className="text-[13px]">-</span>; } },
-      { title: "Үлдэгдэл", dataIndex: "uldegdel", key: "uldegdel", width: 120, align: "right", className: headerClassName,
-        render: (val: any) => <span className="text-gray-900 dark:text-white text-[13px]">{formatNumber(Number(val) || 0, 2)}</span> },
+      { title: "№", key: "index", width: 40, align: "center", render: (_: any, __: any, index: number) => (ledgerPage - 1) * 50 + index + 1 },
+      { title: "Огноо", dataIndex: "ognoo", key: "ognoo", width: 100,
+        render: (val: string) => <span className="whitespace-nowrap">{val ? new Date(val).toLocaleString("mn-MN", { year: "numeric", month: "2-digit", day: "2-digit"}) : "-"}</span> },
+      { title: "Тайлбар", dataIndex: "tailbar", key: "tailbar", width: 200,
+        render: (val: string, row: any) => <span className="max-w-[280px] truncate" title={val || row?.ner || "-"}>{val || row?.ner || row?.turul || "-"}</span> },
+      { title: "Төлөх дүн", dataIndex: "tulukhDun", key: "tulukhDun", width: 120, align: "right",
+        render: (_: any, row: any) => { const v = Number(row?.tulukhDun ?? 0); return v > 0 ? <span className="">{formatNumber(v, 2)}</span> : <span className="">-</span>; } },
+      { title: "Төлсөн дүн", dataIndex: "tulsunDun", key: "tulsunDun", width: 120, align: "right",
+        render: (_: any, row: any) => { const v = Number(row?.tulsunDun ?? 0); return v > 0 ? <span className="">{formatNumber(v, 2)}</span> : <span className="">-</span>; } },
+      { title: "Үлдэгдэл", dataIndex: "uldegdel", key: "uldegdel", width: 120, align: "right",
+        render: (val: any) => <span className="">{formatNumber(Number(val) || 0, 2)}</span> },
     ];
 
     const totalTulukh = filteredLedger.reduce((s: number, row: any) => s + Number(row?.tulukhDun ?? 0), 0);
@@ -201,8 +194,8 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
         <div onPointerDown={(e) => dragControls.start(e)} className="p-4 border-b border-gray-200 dark:border-gray-700 cursor-move select-none bg-gray-50 dark:bg-gray-800">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <h2 className="text-xl text-gray-900 dark:text-white">Дэлгэрэнгүй мэдээлэл</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{titleInfo || gd}</p>
+              <h2 className="text-gray-900 dark:text-white">Дэлгэрэнгүй мэдээлэл</h2>
+              <p className="text-gray-500 dark:text-gray-400">{titleInfo || gd}</p>
             </div>
             <div
               onPointerDown={(e) => e.stopPropagation()}
@@ -229,11 +222,11 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
           </div>
         </div>
         {expandedLoading ? (
-          <div className="py-4 text-center text-gray-500 dark:text-gray-400">Уншиж байна...</div>
+          <div className="py-1 text-center text-gray-500 dark:text-gray-400">Уншиж байна...</div>
         ) : expandedError ? (
-          <div className="text-red-500 dark:text-red-400 py-2">Алдаа: {expandedError}</div>
+          <div className="text-red-500 dark:text-red-400 py-0.5">Алдаа: {expandedError}</div>
         ) : filteredLedger.length === 0 ? (
-          <div className="py-4 text-center text-gray-500 dark:text-gray-400">Тэмдэглэл алга байна</div>
+          <div className="py-1 text-center text-gray-500 dark:text-gray-400">Тэмдэглэл алга байна</div>
         ) : (
           <Table
             dataSource={filteredLedger}
@@ -245,26 +238,22 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
               current: ledgerPage,
               onChange: (p) => setLedgerPage(p)
             }}
-            size="small"
-            bordered
             sticky
-            className="guilgee-table"
             scroll={{ y: 500 }}
-            rowClassName={(_, i) => `${i % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-700/50"} text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors duration-200`}
             summary={() => (
               <Table.Summary fixed="bottom">
-                <Table.Summary.Row className="bg-gray-100 dark:bg-gray-800  ">
+                <Table.Summary.Row>
                   <Table.Summary.Cell index={0} colSpan={3} align="center">
-                    <span className="  text-gray-900 dark:!text-white text-[13px]">Нийт</span>
+                    <span className="">Нийт</span>
                   </Table.Summary.Cell>
                   <Table.Summary.Cell index={1} align="right">
-                    <span className="  text-gray-900 dark:!text-white text-[13px]">{formatNumber(totalTulukh, 2)}</span>
+                    <span className="">{formatNumber(totalTulukh, 2)}</span>
                   </Table.Summary.Cell>
                   <Table.Summary.Cell index={2} align="right">
-                    <span className="  text-gray-900 dark:!text-white text-[13px]">{formatNumber(totalTulsun, 2)}</span>
+                    <span className="">{formatNumber(totalTulsun, 2)}</span>
                   </Table.Summary.Cell>
                   <Table.Summary.Cell index={3} align="right">
-                    <span className="  text-gray-900 dark:!text-white text-[13px]">
+                    <span className="">
                       {filteredLedger.length > 0 ? formatNumber(Number(filteredLedger[filteredLedger.length - 1]?.uldegdel ?? 0), 2) : "0.00"}
                     </span>
                   </Table.Summary.Cell>
@@ -272,9 +261,9 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                 {expandedGlobalUldegdel !== null && (
                   <Table.Summary.Row className="bg-red-50 dark:bg-red-900/20">
                     <Table.Summary.Cell index={0} colSpan={6} align="right">
-                      <div className="flex items-center justify-end gap-2 py-1 px-2">
-                        <span className="font-semibold text-red-600 dark:text-red-400 text-[13px]">Нийт үлдэгдэл:</span>
-                        <span className="font-bold text-red-600 dark:text-red-400 text-[16px]">{formatNumber(expandedGlobalUldegdel, 2)} ₮</span>
+                      <div className="flex items-center justify-end gap-2 py-0.5 px-2">
+                        <span className="font-semibold text-red-600 dark:text-red-400">Нийт үлдэгдэл:</span>
+                        <span className="font-bold text-red-600 dark:text-red-400">{formatNumber(expandedGlobalUldegdel, 2)} ₮</span>
                       </div>
                     </Table.Summary.Cell>
                   </Table.Summary.Row>
@@ -287,121 +276,73 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
     );
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-          <span className="text-sm text-gray-500 dark:text-gray-400">Уншиж байна...</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (!data || data.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-48 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700">
-        <span className="text-sm text-gray-500 dark:text-gray-400">Мэдээлэл алга байна</span>
-      </div>
-    );
-  }
+  const columns: ColumnsType<OrlogoAvlagaItem> = useMemo(
+    () =>
+      allColumns.map((col) => ({
+        key: col.key,
+        title: col.label,
+        width: col.width,
+        align: col.align,
+        render: (_: any, record: OrlogoAvlagaItem, index: number) => {
+          const value = getCellValue(record, col.key, index);
+          if (col.key === "paid")
+            return (
+              <span className="cursor-pointer text-emerald-600 underline underline-offset-2 dark:text-emerald-400">
+                {value}
+              </span>
+            );
+          if (col.key === "finalBalance")
+            return <span className="text-red-600 dark:text-red-400">{value}</span>;
+          return value ?? "-";
+        },
+      })),
+    [allColumns, page, pageSize, getPaid, getUldegdel],
+  );
 
   return (
     <>
-      <div className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden">
-        <div
-          className="overflow-auto custom-scrollbar"
-          style={{ maxHeight: "calc(100vh - 320px)" }}
-        >
-          <table className="w-full text-[13px] border-collapse bg-white dark:bg-gray-900" style={{ minWidth: activeTab === "tulult" ? "800px" : "1200px" }}>
-            {/* Header */}
-            <thead className="sticky top-0 z-20">
-              <tr className="bg-gray-50 dark:bg-gray-800/90 backdrop-blur-sm">
-                {allColumns.map((col) => (
-                  <th
-                    key={col.key}
-                    className={`
-                      px-3 py-3 text-[13px]   tracking-tight whitespace-nowrap
-                      border-b-2 border-gray-200 dark:border-gray-600
-                      text-gray-700 dark:text-gray-200
-                      ${col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "text-left"}
-                    `}
-                    style={{ width: col.width, minWidth: col.width }}
-                  >
-                    {col.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-
-            {/* Body */}
-            <tbody>
-              {data.map((record, index) => (
-                <tr
-                  key={record._gereeDugaar || record.gereeniiDugaar || record._id || `row-${index}`}
-                  className={`
-                    cursor-pointer transition-colors duration-200
-                    ${index % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-700/50"}
-                    text-gray-900 dark:text-white
-                    hover:bg-gray-100 dark:hover:bg-gray-600
-                  `}
-                  onClick={() => onRowClick(record)}
+      <Table<OrlogoAvlagaItem>
+        dataSource={data}
+        columns={columns}
+        loading={loading}
+        rowKey={(record, index) =>
+          record._gereeDugaar ||
+          record.gereeniiDugaar ||
+          record._id ||
+          `row-${index}`
+        }
+        pagination={false}
+        scroll={{
+          x: activeTab === "tulult" ? 800 : 1200,
+          y: "calc(100vh - 320px)",
+        }}
+        locale={{ emptyText: "Мэдээлэл алга байна" }}
+        onRow={(record) => ({
+          onClick: () => onRowClick(record),
+          className: "cursor-pointer",
+        })}
+        summary={() => (
+          <Table.Summary>
+            <Table.Summary.Row>
+              {allColumns.map((col) => (
+                <Table.Summary.Cell
+                  key={col.key}
+                  align={col.align}
+                  className={
+                    col.key === "paid"
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : col.key === "finalBalance"
+                        ? "text-red-600 dark:text-red-400"
+                        : undefined
+                  }
                 >
-                  {allColumns.map((col) => (
-                    <td
-                      key={col.key}
-                      className={`
-                        px-3 py-2 text-[13px] whitespace-nowrap
-                        border-b border-slate-100 dark:border-slate-800/50
-                        ${col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "text-left"}
-                        ${getCellClassName(col.key)}
-                      `}
-                      style={{ width: col.width, minWidth: col.width }}
-                    >
-                      {col.key === "paid" ? (
-                        <span className="text-emerald-600 dark:text-emerald-400 underline underline-offset-2 cursor-pointer">
-                          {getCellValue(record, col.key, index)}
-                        </span>
-                      ) : (
-                        getCellValue(record, col.key, index)
-                      ) || "-"}
-                    </td>
-                  ))}
-                </tr>
+                  {col.key === "ner" ? "Нийт" : getTotalValue(col.key) || ""}
+                </Table.Summary.Cell>
               ))}
-            </tbody>
-
-            {/* Footer */}
-            <tfoot className="sticky bottom-0 z-20">
-              <tr className="bg-gray-100/95 dark:bg-gray-800/95 backdrop-blur-sm border-t-2 border-gray-300 dark:border-gray-600">
-                {allColumns.map((col) => {
-                  const totalVal = getTotalValue(col.key);
-                  const isFirstGroup = ["index", "gereeniiDugaar", "ner", "davkhar", "toot"].includes(col.key);
-
-                  return (
-                    <td
-                      key={col.key}
-                      className={`
-                        px-3 py-3 text-[13px] font-normal text-gray-900 dark:text-white
-                        ${col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "text-left"}
-                        ${col.key === "paid" ? "text-emerald-600 dark:text-emerald-400" : ""}
-                        ${col.key === "finalBalance" ? "text-red-600 dark:text-red-400" : ""}
-                        ${!["paid", "finalBalance"].includes(col.key) ? "text-gray-900 dark:text-white" : ""}
-                      `}
-                      style={{ width: col.width, minWidth: col.width }}
-                    >
-                      {col.key === "index" ? "" :
-                       col.key === "ner" ? "Нийт" :
-                       isFirstGroup ? "" :
-                       totalVal || ""}
-                    </td>
-                  );
-                })}
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-      </div>
+            </Table.Summary.Row>
+          </Table.Summary>
+        )}
+      />
 
       <Modal
         open={modalOpen}
@@ -413,7 +354,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
         wrapClassName="pointer-events-none"
         className="pointer-events-auto"
         rootClassName="!bg-transparent"
-        closeIcon={<X className="w-5 h-5" />}
+        closeIcon={<X className="w-4 h-4" />}
         modalRender={(node) => (
           <motion.div 
             drag 

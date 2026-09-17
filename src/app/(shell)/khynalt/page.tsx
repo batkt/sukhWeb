@@ -8,6 +8,8 @@ import React, {
   useState,
 } from "react";
 import { StandardPagination } from "@/components/ui/StandardTable";
+import Table from "@/components/ui/table";
+import type { ColumnsType } from "@/components/ui/table";
 import ResidentDetailModal from "../geree/modals/ResidentDetailModal";
 import { useAuth } from "@/lib/useAuth";
 import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
@@ -1483,6 +1485,103 @@ export default function Khynalt() {
 
   const kpiCards = kpiCardsRaw.filter((c) => c.show !== false);
 
+  // Төлөлтийн түүхийн хүснэгтийн багана — стандарт хүснэгтэд өгнө.
+  const tulultiinColumns: ColumnsType<any> = useMemo(
+    () => [
+      {
+        title: "Оршин суугч",
+        key: "orshinSuugchNer",
+        render: (_: any, item: any) => (
+          <span title={item.orshinSuugchUtas || undefined}>
+            {item.orshinSuugchNer || "—"}
+          </span>
+        ),
+      },
+      {
+        title: "Гэрээний дугаар",
+        key: "gereeniiDugaar",
+        render: (_: any, item: any) => {
+          const gereeniiDugaar =
+            item.gereeniiDugaar || item.orshinSuugchGereeniiDugaar || "";
+          if (!gereeniiDugaar) return "—";
+          return (
+            <span className="inline-flex items-center gap-1.5">
+              <span>{gereeniiDugaar}</span>
+              <button
+                type="button"
+                title="Хуулах"
+                onClick={() => dugaariigKhuulya(gereeniiDugaar)}
+                className="transition-colors hover:text-emerald-500"
+              >
+                {khuulsanDugaar === gereeniiDugaar ? (
+                  <Check className="h-4 w-4 text-emerald-500" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+              </button>
+            </span>
+          );
+        },
+      },
+      {
+        title: "Тоот",
+        key: "toot",
+        render: (_: any, item: any) =>
+          item.toot || medegdelToot(item.message) || "—",
+      },
+      {
+        title: "Дүн",
+        key: "dun",
+        align: "right",
+        render: (_: any, item: any) => {
+          // Шинэ бичлэг дээр талбар нь шууд ирнэ; хуучин дээр мэдэгдлийн
+          // текстээс уншина.
+          const dun =
+            typeof item.dun === "number" ? item.dun : medegdelDun(item.message);
+          return (
+            <span className="font-semibold whitespace-nowrap text-emerald-600 dark:text-emerald-400">
+              {dun !== null && dun !== undefined
+                ? `${dun.toLocaleString()}₮`
+                : "—"}
+            </span>
+          );
+        },
+      },
+      {
+        title: "Огноо, цаг",
+        key: "ognoo",
+        render: (_: any, item: any) => (
+          <span className="whitespace-nowrap">
+            {ognooTsagButen(item.createdAt || item.ognoo)}
+          </span>
+        ),
+      },
+      {
+        title: "Үйлдэл",
+        key: "action",
+        width: 96,
+        align: "center",
+        render: (_: any, item: any) => (
+          <button
+            type="button"
+            title={
+              item.orshinSuugchId
+                ? "Оршин суугчийн бүх мэдээлэл"
+                : "Оршин суугч холбогдоогүй"
+            }
+            disabled={!item.orshinSuugchId}
+            onClick={() => setKharakhOrshinSuugchId(item.orshinSuugchId || null)}
+            className="rounded-md p-1.5 transition-colors hover:bg-emerald-500/10 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-30"
+          >
+            <Eye className="h-4 w-4" />
+          </button>
+        ),
+      },
+    ],
+     
+    [khuulsanDugaar],
+  );
+
   return (
     <>
       <div className="h-full flex flex-col overflow-y-auto custom-scrollbar">
@@ -2186,134 +2285,30 @@ export default function Khynalt() {
                   харьцуулах боломжгүй байв. Одоо багана тус бүр өөрийн
                   талбартай (шинэ бичлэг дээр `toot`, `dun` шууд ирнэ). */}
                 <div className="overflow-x-auto pr-1 custom-scrollbar">
-                  {medegdelLoading ? (
-                    <div className="space-y-2">
-                      {[0, 1, 2].map((i) => (
-                        <div
-                          key={i}
-                          className="h-[52px] rounded-2xl bg-[color:var(--surface-hover)]/40 animate-pulse"
-                        />
-                      ))}
-                    </div>
-                  ) : filteredPaymentHistory.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-10 text-center">
-                      <div className="w-11 h-11 rounded-2xl bg-[color:var(--surface-hover)]/50 flex items-center justify-center mb-2.5">
-                        <Wallet className="w-5 h-5 text-[color:var(--muted-text)]" />
-                      </div>
-                      <p className="text-sm text-[color:var(--panel-text)]">
-                        {paymentQuery
-                          ? "Хайлтад тохирох төлөлт алга"
-                          : "Сонгосон хугацаанд төлөлт бүртгэгдээгүй"}
-                      </p>
-                      <p className="text-xs text-[color:var(--muted-text)] mt-0.5">
-                        {paymentQuery
-                          ? "Өөр түлхүүр үгээр хайж үзнэ үү"
-                          : "Огнооны мужаа өөрчилж үзнэ үү"}
-                      </p>
-                    </div>
-                  ) : (
-                    <table className="w-full min-w-[720px] text-left">
-                      <thead>
-                        <tr className="text-[11px] uppercase tracking-wider text-[color:var(--muted-text)]">
-                          <th className="py-2 pr-3 font-medium">Оршин суугч</th>
-                          <th className="py-2 pr-3 font-medium">
-                            Гэрээний дугаар
-                          </th>
-                          <th className="py-2 pr-3 font-medium">Тоот</th>
-                          <th className="py-2 pr-3 font-medium">Дүн</th>
-                          <th className="py-2 pr-3 font-medium">Огноо, цаг</th>
-                          <th className="py-2 font-medium text-center">Үйлдэл</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {pagedPaymentHistory.map((item: any) => {
-                          // Шинэ бичлэг дээр талбар нь шууд ирнэ; хуучин дээр
-                          // мэдэгдлийн текстээс уншина.
-                          const dun =
-                            typeof item.dun === "number"
-                              ? item.dun
-                              : medegdelDun(item.message);
-                          const toot = item.toot || medegdelToot(item.message);
-                          const gereeniiDugaar =
-                            item.gereeniiDugaar ||
-                            item.orshinSuugchGereeniiDugaar ||
-                            "";
-                          return (
-                            <tr
-                              key={item._id}
-                              className="border-t border-[color:var(--panel-text)]/10 hover:bg-emerald-500/[0.04] transition-colors"
-                            >
-                              <td className="py-2.5 pr-3">
-                                <span
-                                  className="text-[13px] text-[color:var(--panel-text)]"
-                                  title={item.orshinSuugchUtas || undefined}
-                                >
-                                  {item.orshinSuugchNer || "—"}
-                                </span>
-                              </td>
-                              <td className="py-2.5 pr-3">
-                                {gereeniiDugaar ? (
-                                  <span className="inline-flex items-center gap-1.5">
-                                    <span className="text-[13px] text-[color:var(--panel-text)]">
-                                      {gereeniiDugaar}
-                                    </span>
-                                    <button
-                                      type="button"
-                                      title="Хуулах"
-                                      onClick={() =>
-                                        dugaariigKhuulya(gereeniiDugaar)
-                                      }
-                                      className="text-[color:var(--muted-text)] hover:text-emerald-500 transition-colors"
-                                    >
-                                      {khuulsanDugaar === gereeniiDugaar ? (
-                                        <Check className="w-3.5 h-3.5 text-emerald-500" />
-                                      ) : (
-                                        <Copy className="w-3.5 h-3.5" />
-                                      )}
-                                    </button>
-                                  </span>
-                                ) : (
-                                  <span className="text-[13px] text-[color:var(--muted-text)]">
-                                    —
-                                  </span>
-                                )}
-                              </td>
-                              <td className="py-2.5 pr-3 text-[13px] text-[color:var(--panel-text)]">
-                                {toot || "—"}
-                              </td>
-                              <td className="py-2.5 pr-3 text-[13px] font-semibold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                                {dun !== null && dun !== undefined
-                                  ? `${dun.toLocaleString()}₮`
-                                  : "—"}
-                              </td>
-                              <td className="py-2.5 pr-3 text-[12px] text-[color:var(--muted-text)] whitespace-nowrap">
-                                {ognooTsagButen(item.createdAt || item.ognoo)}
-                              </td>
-                              <td className="py-2.5 text-center">
-                                <button
-                                  type="button"
-                                  title={
-                                    item.orshinSuugchId
-                                      ? "Оршин суугчийн бүх мэдээлэл"
-                                      : "Оршин суугч холбогдоогүй"
-                                  }
-                                  disabled={!item.orshinSuugchId}
-                                  onClick={() =>
-                                    setKharakhOrshinSuugchId(
-                                      item.orshinSuugchId || null,
-                                    )
-                                  }
-                                  className="p-1.5 rounded-xl text-[color:var(--muted-text)] hover:text-emerald-600 hover:bg-emerald-500/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                                >
-                                  <Eye className="w-4 h-4" />
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  )}
+                  <Table<any>
+                    columns={tulultiinColumns}
+                    dataSource={pagedPaymentHistory}
+                    rowKey={(item) => item._id}
+                    loading={medegdelLoading}
+                    pagination={false}
+                    scroll={{ x: 720 }}
+                    locale={{
+                      emptyText: (
+                        <div>
+                          <p className="text-sm">
+                            {paymentQuery
+                              ? "Хайлтад тохирох төлөлт алга"
+                              : "Сонгосон хугацаанд төлөлт бүртгэгдээгүй"}
+                          </p>
+                          <p className="mt-0.5 text-xs opacity-70">
+                            {paymentQuery
+                              ? "Өөр түлхүүр үгээр хайж үзнэ үү"
+                              : "Огнооны мужаа өөрчилж үзнэ үү"}
+                          </p>
+                        </div>
+                      ),
+                    }}
+                  />
                 </div>
 
                 {/* Хуудаслалт — өмнө нь бүх мөрийг нэг дор гүйлгэдэг байсан */}

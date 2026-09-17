@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Table, Tooltip } from "antd";
-import type { ColumnsType } from "antd/es/table";
+import { Tooltip } from "antd";
+import Table from "@/components/ui/table";
+import type { ColumnsType } from "@/components/ui/table";
 import { FileText, Eye, CalendarX2, Edit, Trash2 } from "lucide-react";
 import { ALL_COLUMNS } from "./columns";
 import { StandardPagination } from "@/components/ui/StandardTable";
@@ -72,9 +73,8 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
       {
         title: "№",
         key: "index",
-        width: 50,
+        width: 40,
         align: "center",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, __: any, index: number) => startIndex + index + 1,
       },
     ];
@@ -98,9 +98,6 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
                 columnKey === "baritsaaniiUldegdel"
               ? "right"
               : "center";
-
-        const headerClassName =
-          "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white font-semibold";
 
         let colWidth: number | undefined = undefined;
         if (columnKey === "ner") colWidth = 200;
@@ -156,11 +153,11 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
             }
 
             const tooltipContent = (
-              <div className="space-y-1.5 p-1 max-w-[220px]">
+              <div className="space-y-1.5 p-1.5 max-w-[220px]">
                 {allUnits.map((u: any, idx: number) => {
                   const label = u.turul === "Гараж" ? "Зогсоол" : u.turul;
                   return (
-                    <div key={idx} className="flex items-center gap-3 text-xs py-0.5">
+                    <div key={idx} className="flex items-center gap-3 py-0.5">
                       <span className="text-white font-medium">
                         Тоот {u.toot} {label}
                       </span>
@@ -172,9 +169,9 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
 
             return (
               <Tooltip title={tooltipContent} placement="top" color="#1e293b" trigger="hover">
-                <span className="inline-flex items-center gap-1.5 cursor-pointer px-2 py-0.5 rounded-lg bg-slate-50 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                <span className="inline-flex items-center gap-1.5 cursor-pointer px-2 py-0.5 rounded-lg bg-slate-50 dark:bg-slate-800 font-semibold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
                   {allUnits[0].toot}
-                  <span className="text-[10px] text-slate-500 font-bold">
+                  <span className="text-slate-500 font-bold">
                     +{allUnits.length - 1}
                   </span>
                 </span>
@@ -194,7 +191,6 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
             key: columnKey,
             align: alignClass as any,
             width: colWidth,
-            className: headerClassName,
             sorter: true,
             sortOrder:
               sortKey === targetKey
@@ -231,7 +227,6 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
             key: columnKey,
             align: alignClass as any,
             width: colWidth,
-            className: headerClassName,
             sorter: true,
             sortOrder:
               sortKey === targetKey
@@ -259,7 +254,6 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
           key: columnKey,
           align: alignClass as any,
           width: colWidth,
-          className: headerClassName,
           render: (_: any, record: any) => (
             <span className="text-gray-900 dark:text-white">
               {renderCellValue(record, columnKey)}
@@ -271,11 +265,10 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
 
     const actionColumn: ColumnsType<any> = [
       {
-        title: <span className="text-gray-900 dark:text-white">Үйлдэл</span>,
+        title: "Үйлдэл",
         key: "action",
         align: "center",
-        width: 140,
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        width: 96,
         render: (_: any, record: any, index: number) => {
           const tuluv = String(record?.tuluv || "").trim();
           const isCancelled = tuluv === "Цуцалсан" || tuluv.toLowerCase() === "цуцалсан";
@@ -296,30 +289,30 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
             <div className="flex gap-1 justify-center items-center">
               <button
                 onClick={() => handlePreviewContractTemplate(record)}
-                className="p-2 rounded-2xl hover-surface transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="p-1.5 rounded-md hover-surface transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
                 title="Гэрээний загвар харах"
               >
-                <Eye className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                <Eye className="w-4 h-4 text-gray-600 dark:text-gray-300" />
               </button>
               <button
                 onClick={() => handleEdit(record)}
-                className="p-2 rounded-2xl hover-surface transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                className="p-1.5 rounded-md hover-surface transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/30"
                 id={index === 0 ? "geree-edit-btn" : undefined}
                 title="Засах"
               >
-                <Edit className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <Edit className="w-4 h-4 text-blue-600 dark:text-blue-400" />
               </button>
               {isCancelled && isAdmin && handleAdminDelete && (
                 <button
                   onClick={() => handleAdminDelete(record)}
-                  className="p-2 rounded-2xl hover-surface transition-colors hover:bg-rose-100 dark:hover:bg-rose-900/30"
+                  className="p-1.5 rounded-md hover-surface transition-colors hover:bg-rose-100 dark:hover:bg-rose-900/30"
                   title={
                     cancelDate
                       ? `${cancelDate}-нд цуцлагдсан · Гэрээг авлагатай нь устгах`
                       : "Цуцлагдсан гэрээг авлагатай нь устгах"
                   }
                 >
-                  <Trash2 className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+                  <Trash2 className="w-4 h-4 text-rose-600 dark:text-rose-400" />
                 </button>
               )}
             </div>
@@ -343,68 +336,56 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
   ]);
 
   return (
-    <div className="table-surface rounded-2xl w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
-      <div className="p-1 allow-overflow no-scrollbar" id="contracts-table">
-        <div className="w-full overflow-hidden" id="geree-table">
-          <div className="w-full overflow-x-auto hide-scrollbar">
-            <Table
-              dataSource={currentContracts}
-              columns={columns}
-              rowKey={(record) => record._id || record.id}
-              pagination={false}
-              size="small"
-              bordered
-              className="guilgee-table geree-equal-height min-w-[1000px] dark:bg-gray-900 dark:text-gray-300"
-              scroll={{ x: "max-content", y: maxHeight as any }}
-              rowClassName={(record, index) => `
-                ${index % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-700/50"}
-                text-gray-900 dark:text-white
-                hover:bg-gray-100 dark:hover:bg-gray-600
-                transition-colors duration-200
-              `}
-              locale={{
-                emptyText: (
-                  <span className="text-gray-500 dark:text-gray-400">
-                    Гэрээ олдсонгүй
-                  </span>
-                ),
-              }}
-              onRow={(record) => ({
-                onClick: () => {
-                  if (ajiltan?.erkh === "Admin") {
-                    const id = String(record._id);
-                    setSelectedContracts((prev) =>
-                      prev.includes(id)
-                        ? prev.filter((x) => x !== id)
-                        : [...prev, id],
-                    );
-                  }
-                },
-                className: `transition-colors cursor-pointer hover:bg-[color:var(--surface-hover)] dark:hover:bg-gray-800 ${
-                  selectedContracts.includes(String(record._id))
-                    ? "bg-[color:var(--surface-hover)]/50 dark:bg-gray-800/50"
-                    : ""
-                }`,
-              })}
-              onChange={(_: any, __: any, sorter: any) => {
-                const keyMap: Record<string, string> = {
-                  ognoo: "createdAt",
-                  toot: "toot",
-                  orts: "orts",
-                  davkhar: "davkhar",
-                  ner: "ner",
-                  tuluv: "tuluv",
-                  gereeniiDugaar: "gereeniiDugaar",
-                };
-                const field = sorter.field || sorter.columnKey;
-                const targetKey = field
-                  ? keyMap[field as string] || (field as string)
-                  : undefined;
-                toggleSortFor(targetKey || "createdAt", sorter.order);
-              }}
-            />
-          </div>
-        </div>
+    <div className="w-full overflow-hidden" id="contracts-table">
+      <div className="w-full overflow-x-auto hide-scrollbar" id="geree-table">
+        <Table
+          dataSource={currentContracts}
+          columns={columns}
+          rowKey={(record) => record._id || record.id}
+          pagination={false}
+          className="min-w-[1000px]"
+          scroll={{ x: "max-content", y: maxHeight as any }}
+          locale={{
+            emptyText: (
+              <span className="text-gray-500 dark:text-gray-400">
+                Гэрээ олдсонгүй
+              </span>
+            ),
+          }}
+          onRow={(record) => ({
+            onClick: () => {
+              if (ajiltan?.erkh === "Admin") {
+                const id = String(record._id);
+                setSelectedContracts((prev) =>
+                  prev.includes(id)
+                    ? prev.filter((x) => x !== id)
+                    : [...prev, id],
+                );
+              }
+            },
+            className: `cursor-pointer${
+              selectedContracts.includes(String(record._id))
+                ? " zt-row-selected"
+                : ""
+            }`,
+          })}
+          onChange={(_: any, __: any, sorter: any) => {
+            const keyMap: Record<string, string> = {
+              ognoo: "createdAt",
+              toot: "toot",
+              orts: "orts",
+              davkhar: "davkhar",
+              ner: "ner",
+              tuluv: "tuluv",
+              gereeniiDugaar: "gereeniiDugaar",
+            };
+            const field = sorter.field || sorter.columnKey;
+            const targetKey = field
+              ? keyMap[field as string] || (field as string)
+              : undefined;
+            toggleSortFor(targetKey || "createdAt", sorter.order);
+          }}
+        />
       </div>
       <div id="geree-pagination">
         <StandardPagination

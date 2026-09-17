@@ -11,6 +11,8 @@ import uilchilgee from "@/lib/uilchilgee";
 import formatNumber from "../../../../../tools/function/formatNumber";
 import PageSongokh from "../../../../../components/selectZagvar/pageSongokh";
 import { FileSpreadsheet, Printer } from "lucide-react";
+import Table from "@/components/ui/table";
+import type { ColumnsType } from "@/components/ui/table";
 
 const PrintStyles = () => (
   <style jsx global>{`
@@ -309,6 +311,109 @@ export default function NekhemjlekhiinTuukhPage() {
     window.print();
   };
 
+  const tuukhColumns: ColumnsType<any> = useMemo(
+    () => [
+      {
+        title: "№",
+        key: "index",
+        width: 40,
+        align: "center",
+        render: (_: any, __: any, i: number) =>
+          (currentPage - 1) * pageSize + i + 1,
+      },
+      {
+        title: "Гэрээний дугаар",
+        dataIndex: "gereeniiDugaar",
+        key: "gereeniiDugaar",
+        align: "center",
+      },
+      { title: "Давхар", dataIndex: "davkhar", key: "davkhar", align: "center" },
+      { title: "Тоот", dataIndex: "toot", key: "toot", align: "center" },
+      { title: "Овог", dataIndex: "ovog", key: "ovog" },
+      { title: "Нэр", dataIndex: "ner", key: "ner" },
+      {
+        title: "Огноо",
+        dataIndex: "ognoo",
+        key: "ognoo",
+        align: "center",
+        render: (v: string) => (v ? v.split("T")[0].replace(/-/g, ".") : v),
+      },
+      {
+        title: "Төрөл",
+        key: "type",
+        align: "center",
+        render: (_: any, item: any) => (
+          <span
+            className={`rounded-lg border px-2 py-0.5 ${
+              TUROL_ANGI[item.type || "invoice"] || TUROL_ANGI.invoice
+            }`}
+          >
+            {TUROL_NER[item.type || "invoice"] || "Нэхэмжлэх"}
+          </span>
+        ),
+      },
+      {
+        title: "Дүн",
+        key: "tulbur",
+        align: "right",
+        render: (_: any, item: any) => (
+          <span
+            className={
+              item.type === "payment"
+                ? "font-medium text-teal-600 dark:text-teal-400"
+                : item.type === "khungulult"
+                  ? "font-medium text-emerald-600 dark:text-emerald-400"
+                  : undefined
+            }
+          >
+            {item.type === "payment" ? "+" : ""}
+            {formatNumber(item.tulbur)}₮
+          </span>
+        ),
+      },
+      {
+        title: "Хөнгөлөлт",
+        key: "khungulult",
+        align: "right",
+        render: (_: any, item: any) => (
+          <span className="font-medium text-emerald-600 dark:text-emerald-400">
+            {item.khungulult || item.type === "khungulult"
+              ? `${formatNumber(item.khungulult || item.tulbur)}₮`
+              : "—"}
+          </span>
+        ),
+      },
+      {
+        title: "Үлдэгдэл",
+        dataIndex: "uldegdel",
+        key: "uldegdel",
+        align: "right",
+        render: (v: any) => (typeof v === "number" ? `${formatNumber(v)}₮` : "—"),
+      },
+      {
+        title: "Төлөв",
+        dataIndex: "tuluv",
+        key: "tuluv",
+        align: "center",
+        render: (v: any) => (
+          <span
+            className={`rounded-full px-2 py-0.5 ${
+              v === "Төлсөн"
+                ? "badge-paid"
+                : v === "Төлөөгүй"
+                  ? "badge-unpaid"
+                  : "bg-yellow-100 text-yellow-800"
+            }`}
+          >
+            {v}
+          </span>
+        ),
+      },
+      { title: "Түүх", dataIndex: "tuukh", key: "tuukh", align: "center" },
+    ],
+    [currentPage, pageSize],
+  );
+
   return (
     <div className="p-6 print-container bg-[color:var(--surface-bg)] min-h-screen h-full flex flex-col">
       <PrintStyles />
@@ -536,185 +641,50 @@ export default function NekhemjlekhiinTuukhPage() {
         ))}
       </div>
 
-      {/* Data Table */}
-      <div className="overflow-hidden rounded-2xl w-full">
-        <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow">
-          <div className="max-h-[48vh] overflow-y-auto custom-scrollbar w-full">
-            <table className="table-ui text-sm min-w-full">
-              <thead>
-                <tr>
-                  <th className="z-10 p-3 text-xs text-theme text-center whitespace-nowrap w-12">
-                    №
-                  </th>
-                  <th className="z-10 p-3 text-xs text-theme text-center whitespace-nowrap">
-                    Гэрээний дугаар
-                  </th>
-                  {/* <th className="z-10 p-3 text-xs text-theme text-center whitespace-nowrap">
-                    Байрны нэр
-                  </th> */}
-                  <th className="z-10 p-3 text-xs text-theme text-center whitespace-nowrap">
-                    Давхар
-                  </th>
-                  <th className="z-10 p-3 text-xs text-theme text-center whitespace-nowrap">
-                    Тоот
-                  </th>
-                  <th className="z-10 p-3 text-xs text-theme text-center whitespace-nowrap">
-                    Овог
-                  </th>
-                  <th className="z-10 p-3 text-xs text-theme text-center whitespace-nowrap">
-                    Нэр
-                  </th>
-                  <th className="z-10 p-3 text-xs text-theme text-center whitespace-nowrap">
-                    Огноо
-                  </th>
-                  <th className="z-10 p-3 text-xs text-theme text-center whitespace-nowrap">
-                    Төрөл
-                  </th>
-                  <th className="z-10 p-3 text-xs text-theme text-right whitespace-nowrap">
-                    Дүн
-                  </th>
-                  <th className="z-10 p-3 text-xs text-theme text-right whitespace-nowrap">
-                    Хөнгөлөлт
-                  </th>
-                  <th className="z-10 p-3 text-xs text-theme text-right whitespace-nowrap">
-                    Үлдэгдэл
-                  </th>
-                  <th className="z-10 p-3 text-xs text-theme text-center whitespace-nowrap">
-                    Төлөв
-                  </th>
-                  <th className="z-10 p-3 text-xs text-theme text-center whitespace-nowrap">
-                    Түүх
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan={13} className="p-8 text-center text-theme">
-                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-                    </td>
-                  </tr>
-                ) : data.length === 0 ? (
-                  <tr>
-                    <td colSpan={13} className="p-8 text-center text-theme">
-                      Мэдээлэл алга байна
-                    </td>
-                  </tr>
-                ) : (
-                  data
-                    .slice((currentPage - 1) * pageSize, currentPage * pageSize)
-                    .map((item, idx) => (
-                      <tr
-                        key={item._id || idx}
-                        className="transition-colors border-b last:border-b-0"
-                      >
-                        <td className="p-3 text-center text-theme whitespace-nowrap">
-                          {(currentPage - 1) * pageSize + idx + 1}
-                        </td>
-                        <td className="p-3 text-center text-theme whitespace-nowrap">
-                          {item.gereeniiDugaar}
-                        </td>
-                        {/* <td className="p-3 text-center text-theme whitespace-nowrap">
-                          {item.bairNer}
-                        </td> */}
-                        <td className="p-3 text-center text-theme whitespace-nowrap">
-                          {item.davkhar}
-                        </td>
-                        <td className="p-3 text-center text-theme whitespace-nowrap">
-                          {item.toot}
-                        </td>
-                        <td className="p-3 text-left text-theme whitespace-nowrap">
-                          {item.ovog}
-                        </td>
-                        <td className="p-3 text-left text-theme whitespace-nowrap">
-                          {item.ner}
-                        </td>
-                        <td className="p-3 text-center text-theme whitespace-nowrap">
-                          {item.ognoo
-                            ? item.ognoo.split("T")[0].replace(/-/g, ".")
-                            : item.ognoo}
-                        </td>
-                        <td className="p-3 text-center whitespace-nowrap">
-                          <span
-                            className={`px-2 py-0.5 rounded-lg text-[11px] border ${
-                              TUROL_ANGI[item.type || "invoice"] ||
-                              TUROL_ANGI.invoice
-                            }`}
-                          >
-                            {TUROL_NER[item.type || "invoice"] || "Нэхэмжлэх"}
-                          </span>
-                        </td>
-                        <td
-                          className={`p-3 text-right whitespace-nowrap ${
-                            item.type === "payment"
-                              ? "text-teal-600 dark:text-teal-400 font-medium"
-                              : item.type === "khungulult"
-                              ? "text-emerald-600 dark:text-emerald-400 font-medium"
-                              : "text-theme"
-                          }`}
-                        >
-                          {item.type === "payment" ? "+" : ""}
-                          {formatNumber(item.tulbur)}₮
-                        </td>
-                        <td className="p-3 text-right whitespace-nowrap text-emerald-600 dark:text-emerald-400 font-medium">
-                          {item.khungulult || item.type === "khungulult"
-                            ? `${formatNumber(item.khungulult || item.tulbur)}₮`
-                            : "—"}
-                        </td>
-                        <td className="p-3 text-right text-theme whitespace-nowrap">
-                          {typeof item.uldegdel === "number"
-                            ? `${formatNumber(item.uldegdel)}₮`
-                            : "—"}
-                        </td>
-                        <td className="p-3 text-center text-theme whitespace-nowrap">
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs ${
-                              item.tuluv === "Төлсөн"
-                                ? "badge-paid"
-                                : item.tuluv === "Төлөөгүй"
-                                ? "badge-unpaid"
-                                : "bg-yellow-100 text-yellow-800"
-                            }`}
-                          >
-                            {item.tuluv}
-                          </span>
-                        </td>
-                        <td className="p-3 text-center text-theme whitespace-nowrap">
-                          {item.tuukh}
-                        </td>
-                      </tr>
-                    ))
-                )}
-              </tbody>
-              {/* Доод нийлбэрийг ӨӨР <table>-д биш, мөн хүснэгтийн <tfoot>-д
-                  байрлуулав */}
-              {data.length > 0 && (
-                <tfoot className="border-t dark:border-gray-800 border-gray-100">
-                  <tr>
-                    <td colSpan={7} className="p-3 text-right text-theme text-xs opacity-70">
-                      Нийт {data.length} бичлэг
-                    </td>
-                    <td className="p-3 text-center text-theme text-xs opacity-70">
-                      Дүн
-                    </td>
-                    <td className="p-3 text-right text-theme whitespace-nowrap font-semibold">
-                      {formatNumber(dungiinKhuraangui.nekhemjilsen)}₮
-                    </td>
-                    <td className="p-3 text-right text-emerald-600 dark:text-emerald-400 whitespace-nowrap font-semibold">
-                      {formatNumber(dungiinKhuraangui.khungulult)}₮
-                    </td>
-                    <td className="p-3 text-right whitespace-nowrap font-semibold text-rose-600 dark:text-rose-400">
-                      {formatNumber(dungiinKhuraangui.uldegdel)}₮
-                    </td>
-                    <td className="p-3" />
-                    <td className="p-3" />
-                  </tr>
-                </tfoot>
-              )}
-            </table>
-          </div>
-        </div>
-      </div>
+      {/* Стандарт хүснэгт */}
+      <Table<any>
+        columns={tuukhColumns}
+        dataSource={data.slice(
+          (currentPage - 1) * pageSize,
+          currentPage * pageSize,
+        )}
+        rowKey={(item, idx) => item._id || idx}
+        loading={loading}
+        pagination={false}
+        scroll={{ x: "max-content", y: "48vh" }}
+        locale={{ emptyText: "Мэдээлэл алга байна" }}
+        summary={() =>
+          data.length > 0 ? (
+            <Table.Summary.Row>
+              <Table.Summary.Cell colSpan={7} align="right">
+                <span className="text-xs opacity-70">
+                  Нийт {data.length} бичлэг
+                </span>
+              </Table.Summary.Cell>
+              <Table.Summary.Cell align="center">
+                <span className="text-xs opacity-70">Дүн</span>
+              </Table.Summary.Cell>
+              <Table.Summary.Cell align="right" className="whitespace-nowrap">
+                {formatNumber(dungiinKhuraangui.nekhemjilsen)}₮
+              </Table.Summary.Cell>
+              <Table.Summary.Cell
+                align="right"
+                className="whitespace-nowrap text-emerald-600 dark:text-emerald-400"
+              >
+                {formatNumber(dungiinKhuraangui.khungulult)}₮
+              </Table.Summary.Cell>
+              <Table.Summary.Cell
+                align="right"
+                className="whitespace-nowrap text-rose-600 dark:text-rose-400"
+              >
+                {formatNumber(dungiinKhuraangui.uldegdel)}₮
+              </Table.Summary.Cell>
+              <Table.Summary.Cell />
+              <Table.Summary.Cell />
+            </Table.Summary.Row>
+          ) : null
+        }
+      />
 
       <div className="flex items-center justify-between no-print">
         <div className="text-sm text-theme">Нийт: {data.length}</div>

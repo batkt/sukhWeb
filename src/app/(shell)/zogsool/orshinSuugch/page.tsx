@@ -441,7 +441,7 @@ export default function OrshinSuugch() {
         )}
 
         {/* Content Table */}
-        <div className="relative rounded-2xl border border-slate-200 dark:border-slate-800 backdrop-blur-xl shadow-2xl mt-2 flex-1 min-h-0 overflow-hidden">
+        <div className="mt-2 flex-1 min-h-0">
           <ZogsoolOrshinSuugchTable
             data={residents}
             loading={!residentsData && !residents.length}

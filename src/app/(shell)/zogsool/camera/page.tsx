@@ -59,6 +59,8 @@ import { type Uilchluulegch } from "@/lib/useParkingSocket";
 import PaymentModal from "./PaymentModal";
 import VehicleRegistrationModal from "./VehicleRegistrationModal";
 import { PaymentPopup } from "./PaymentPopup";
+import Table from "@/components/ui/table";
+import type { ColumnsType } from "@/components/ui/table";
 import { toast } from "react-hot-toast";
 import Button from "@/components/ui/Button";
 import { tulburiinZadargaaBodyo } from "@/lib/tulburiinZadargaa";
@@ -190,6 +192,82 @@ const FilterPopover = ({
     </div>
   );
 };
+
+/** Гүйлгээний БҮХ түүхээс төлбөрийн бичлэгүүдийг цуглуулна (хөнгөлөлтгүй). */
+function tulburuudiigTsugluulya(transaction: any): any[] {
+  const payHistory: any[] = (transaction?.tuukh || []).flatMap((th: any) => {
+    const raw = th?.tulbur;
+    if (Array.isArray(raw)) return raw;
+    if (raw && typeof raw === "object") return [raw];
+    return [];
+  });
+  return payHistory.filter(
+    (pay: any) =>
+      (pay?.dun ?? 0) > 0 &&
+      pay?.turul !== "khungulult" &&
+      pay?.turul !== "discount" &&
+      pay?.turul !== "Хөнгөлөлт",
+  );
+}
+
+/**
+ * Мөрийн төлвийг нэг дор бодно. Өмнө нь эдгээр хувьсагчид <tr> дотор
+ * тооцогддог байсан; багана бүр тусдаа render-тэй болсон тул нийтлэг
+ * функц болгов.
+ */
+function murNiiluulye(transaction: any) {
+  const mur = transaction?.tuukh?.[0];
+  const tsag = mur?.tsagiinTuukh?.[0];
+  const orsonTsag = tsag?.orsonTsag;
+  const garsanTsag = tsag?.garsanTsag;
+  const tuluv = mur?.tuluv;
+  const niitDun = transaction?.niitDun || 0;
+  const isCurrentlyIn = !mur?.garsanKhaalga;
+  const isFreeExit = !!mur?.uneguiGarsan && tuluv !== -2 && tuluv !== -1;
+  const isPaid = tuluv === 1;
+  const isDebt =
+    !isFreeExit &&
+    (tuluv === -4 || (tuluv === 0 && niitDun > 0 && !isCurrentlyIn));
+  const rawTulbur = mur?.tulbur;
+  const tulburArr: any[] = Array.isArray(rawTulbur)
+    ? rawTulbur
+    : rawTulbur
+      ? [rawTulbur]
+      : [];
+  const positivePaid = tulburArr.reduce(
+    (sum: number, pay: any) => sum + (pay?.dun > 0 ? pay.dun : 0),
+    0,
+  );
+  const discountTotal = tulburArr
+    .filter(
+      (pay: any) =>
+        pay?.turul === "khungulult" ||
+        pay?.turul === "discount" ||
+        pay?.turul === "Хөнгөлөлт",
+    )
+    .reduce((sum: number, pay: any) => sum + Math.abs(pay?.dun ?? 0), 0);
+  const effectiveOwed = Math.max(0, niitDun - discountTotal);
+  const hasRemainingBalance =
+    tuluv === 1 &&
+    effectiveOwed > 0 &&
+    !isCurrentlyIn &&
+    positivePaid < effectiveOwed;
+  return {
+    mur,
+    orsonTsag,
+    garsanTsag,
+    tuluv,
+    niitDun,
+    isCurrentlyIn,
+    isFreeExit,
+    isPaid,
+    isDebt,
+    discountTotal,
+    hasRemainingBalance,
+    isActive: isCurrentlyIn,
+    showActionBtn: isCurrentlyIn || isDebt || hasRemainingBalance,
+  };
+}
 
 export default function Camera() {
   const { token, ajiltan, baiguullaga, barilgiinId } = useAuth();
@@ -1340,6 +1418,497 @@ export default function Camera() {
     toast.success(`${text.toUpperCase()} дугаарыг хууллаа`);
   };
 
+  // ── Гүйлгээний хүснэгтийн багана ────────────────────────────────────────
+  // Толгойн шүүлтүүр/эрэмбийн харилцан үйлдэл нь өмнөхтэй яг адил —
+  // зөвхөн хүснэгтийн их бие стандарт бүрдэл рүү шилжив.
+  const erembiinTolgoi = (id: string, label: string) => (
+    <div
+      className="flex h-full cursor-pointer items-center justify-center gap-2"
+      onClick={() => {
+        setSortConfig((prev) => {
+          if (prev?.col !== id) return { col: id, dir: "asc" };
+          if (prev.dir === "asc") return { col: id, dir: "desc" };
+          return null;
+        });
+        setPage(1);
+      }}
+    >
+      <span>{label}</span>
+      {sortConfig?.col === id ? (
+        <ArrowUpDown
+          className={`h-3.5 w-3.5 text-blue-500 ${sortConfig.dir === "desc" ? "rotate-180" : ""}`}
+        />
+      ) : (
+        <ArrowUpDown className="h-3.5 w-3.5 text-slate-400 opacity-40" />
+      )}
+    </div>
+  );
+
+  const shuultuuriinTolgoi = (
+    label: string,
+    current: string,
+    options: { label: string; value: string }[],
+    onSelect: (v: string) => void,
+  ) => (
+    <FilterPopover
+      label={label}
+      options={options}
+      current={current}
+      onSelect={onSelect}
+    >
+      <div className="flex h-full cursor-pointer items-center justify-center gap-2">
+        <Filter className="h-3.5 w-3.5 text-blue-500 dark:text-blue-400" />
+        <span>{label}</span>
+      </div>
+    </FilterPopover>
+  );
+
+  const guilgeeniiColumns: ColumnsType<any> = [
+    {
+      title: "№",
+      key: "no",
+      width: 40,
+      align: "center",
+      render: (_: any, __: any, idx: number) => (page - 1) * pageSize + idx + 1,
+    },
+    {
+      title: erembiinTolgoi("dugaar", "Дугаар"),
+      key: "dugaar",
+      width: 110,
+      align: "center",
+      render: (_: any, transaction: any) => (
+        <div className="flex items-center justify-center gap-1">
+          <span className="font-[family-name:var(--font-mono)]">
+            {transaction.mashiniiDugaar || "-"}
+          </span>
+          <Copy
+            className="h-4 w-4 cursor-pointer text-slate-300 transition-colors hover:text-blue-500 dark:text-slate-600"
+            onClick={() => copyToClipboard(transaction.mashiniiDugaar)}
+          />
+        </div>
+      ),
+    },
+    {
+      title: erembiinTolgoi("orson", "Орсон"),
+      key: "orson",
+      width: 115,
+      align: "center",
+      render: (_: any, transaction: any) => {
+        const { orsonTsag } = murNiiluulye(transaction);
+        return (
+          <span className="font-[family-name:var(--font-mono)] whitespace-nowrap">
+            {orsonTsag ? moment(orsonTsag).format("MM-DD HH:mm:ss") : "-"}
+          </span>
+        );
+      },
+    },
+    {
+      title: erembiinTolgoi("garsan", "Гарсан"),
+      key: "garsan",
+      width: 115,
+      align: "center",
+      render: (_: any, transaction: any) => {
+        const { garsanTsag } = murNiiluulye(transaction);
+        return (
+          <span className="font-[family-name:var(--font-mono)] whitespace-nowrap">
+            {garsanTsag ? moment(garsanTsag).format("MM-DD HH:mm:ss") : ""}
+          </span>
+        );
+      },
+    },
+    {
+      title: shuultuuriinTolgoi(
+        "Хугацаа/мин",
+        durationFilter,
+        [
+          { label: "Удаан зогссон эхэнд", value: "longest" },
+          { label: "Сүүлд орсон эхэнд", value: "latest_in" },
+          { label: "Сүүлд гарсан эхэнд", value: "latest_out" },
+        ],
+        (v) => {
+          setDurationFilter(v);
+          setSortConfig(null);
+          setPage(1);
+        },
+      ),
+      key: "duration",
+      width: 120,
+      align: "center",
+      render: (_: any, transaction: any) => {
+        const {
+          mur,
+          orsonTsag,
+          garsanTsag,
+          tuluv,
+          niitDun,
+          isCurrentlyIn,
+          isFreeExit,
+          isDebt,
+          hasRemainingBalance,
+        } = murNiiluulye(transaction);
+        // Хугацааны өнгө нь Төлөв баганын өнгөтэй ЯГ ижил дарааллаар бодогдоно.
+        const getStatusColor = () => {
+          if (tuluv === -2 || tuluv === -1) return "bg-red-500 border-red-600";
+          if (hasRemainingBalance) return "bg-amber-500 border-amber-600";
+          if (isFreeExit) return "bg-gray-500 border-gray-600";
+          if (tuluv === 1)
+            return isCurrentlyIn && niitDun === 0
+              ? "bg-blue-500 border-blue-600"
+              : "bg-emerald-500 border-emerald-600";
+          if (!isCurrentlyIn && (niitDun > 0 || isDebt))
+            return "bg-amber-500 border-amber-600";
+          if (!isCurrentlyIn && niitDun === 0)
+            return "bg-gray-500 border-gray-600";
+          return "bg-blue-500 border-blue-600";
+        };
+        return (
+          <div
+            className={`mx-auto flex w-[100px] max-w-[100px] min-w-[100px] flex-nowrap items-center justify-center overflow-hidden rounded-[6px] border px-2 py-0.5 ${getStatusColor()}`}
+            style={{ borderRadius: "6px", color: "white" }}
+          >
+            <RealTimeDuration
+              orsonTsag={orsonTsag}
+              garsanTsag={garsanTsag}
+              niitKhugatsaa={mur?.niitKhugatsaa}
+            />
+          </div>
+        );
+      },
+    },
+    {
+      title: shuultuuriinTolgoi(
+        "Төрөл",
+        typeFilter,
+        [
+          { label: "Бүгд", value: "all" },
+          { label: "Үйлчлүүлэгч", value: "Үйлчлүүлэгч" },
+          { label: "Оршин суугч", value: "Оршин суугч" },
+          { label: "Зочин", value: "Зочин" },
+        ],
+        (v) => {
+          setTypeFilter(v);
+          setPage(1);
+        },
+      ),
+      key: "type",
+      width: 100,
+      align: "center",
+      render: (_: any, transaction: any) =>
+        transaction.turul || transaction.tuukh?.[0]?.turul || "Үйлчлүүлэгч",
+    },
+    {
+      title: erembiinTolgoi("amount", "Дүн"),
+      key: "amount",
+      width: 90,
+      align: "right",
+      render: (_: any, transaction: any) => (
+        <span className="font-[family-name:var(--font-mono)]">
+          {formatNumber(transaction.niitDun || 0, 2)}
+        </span>
+      ),
+    },
+    {
+      title: erembiinTolgoi("payment", "Төлбөр"),
+      key: "payment",
+      width: 90,
+      align: "center",
+      render: (_: any, transaction: any) => {
+        const tulsunDun = transaction.tuukh?.[0]?.tulsunDun || 0;
+        // Төрлийн шүүлтүүрээс үл хамааран бүх түүхээс төлбөрийг нэгтгэнэ.
+        const payOnly = tulburuudiigTsugluulya(transaction);
+        if (payOnly.length > 0) {
+          const totalPaid = payOnly.reduce(
+            (sum: number, pay: any) => sum + (pay.dun || 0),
+            0,
+          );
+          const uniqueTypes = [
+            ...new Set(payOnly.map((pay: any) => pay.turul).filter(Boolean)),
+          ] as string[];
+          return (
+            <PaymentPopup
+              payHistory={payOnly}
+              totalPaid={totalPaid}
+              uniqueTypes={uniqueTypes}
+            />
+          );
+        }
+        return (
+          <span className="font-[family-name:var(--font-mono)]">
+            {formatNumber(tulsunDun || 0, 2)}
+          </span>
+        );
+      },
+    },
+    {
+      title: erembiinTolgoi("discount", "Хөнгөлөлт"),
+      key: "discount",
+      width: 110,
+      align: "right",
+      render: (_: any, transaction: any) => (
+        <span className="font-[family-name:var(--font-mono)]">
+          {formatNumber(murNiiluulye(transaction).discountTotal || 0, 2)}
+        </span>
+      ),
+    },
+    {
+      title: erembiinTolgoi("ebarimt", "И-Баримт"),
+      key: "ebarimt",
+      width: 100,
+      align: "center",
+      render: (_: any, transaction: any) => {
+        const mur = transaction.tuukh?.[0] as any;
+        const ebarimtId =
+          mur?.ebarimtId ||
+          mur?.ebarimtDugaar ||
+          mur?.lottery ||
+          mur?.receiptId ||
+          mur?.ebarimt?.id ||
+          mur?.ebarimt?.lottery ||
+          transaction?.ebarimtId ||
+          transaction?.ebarimtDugaar ||
+          transaction?.lottery;
+        if (ebarimtId)
+          return (
+            <span className="font-[family-name:var(--font-mono)]">
+              {ebarimtId}
+            </span>
+          );
+        const ebDun =
+          (mur?.ebarimtAvsanDun ?? transaction?.ebarimtAvsanDun) || 0;
+        return (
+          <span className="font-[family-name:var(--font-mono)]">
+            {ebDun > 0 ? formatNumber(ebDun, 2) : "-"}
+          </span>
+        );
+      },
+    },
+    {
+      title: shuultuuriinTolgoi(
+        "Төлөв",
+        statusFilter,
+        [
+          { label: "Бүгд", value: "all" },
+          { label: "Идэвхтэй", value: "active" },
+          { label: "Төлсөн", value: "paid" },
+          { label: "Төлөөгүй", value: "unpaid" },
+          { label: "Үнэгүй", value: "free" },
+        ],
+        (v) => {
+          setStatusFilter(v);
+          setPage(1);
+        },
+      ),
+      key: "status",
+      width: 120,
+      align: "center",
+      render: (_: any, transaction: any) => {
+        const {
+          tuluv,
+          niitDun,
+          isCurrentlyIn,
+          isFreeExit,
+          isPaid,
+          isDebt,
+          hasRemainingBalance,
+          showActionBtn,
+        } = murNiiluulye(transaction);
+        const badgeClass =
+          "mx-auto flex w-[100px] max-w-[100px] min-w-[100px] flex-nowrap items-center justify-center overflow-hidden rounded-[6px] border px-2 py-0.5";
+        const badge = (color: string, text: string) => (
+          <div
+            className={`${badgeClass} ${color}`}
+            style={{ borderRadius: "6px", color: "white" }}
+          >
+            <span className="whitespace-nowrap uppercase">
+              {text}
+            </span>
+          </div>
+        );
+
+        if (!showActionBtn) {
+          if (isFreeExit) return badge("bg-gray-500 border-gray-600", "Үнэгүй");
+          if (tuluv === 1)
+            return isCurrentlyIn && niitDun === 0
+              ? badge("bg-blue-500 border-blue-600", "Идэвхтэй")
+              : badge("bg-emerald-500 border-emerald-600", "Төлсөн");
+          if (tuluv === -2 || tuluv === -1)
+            return badge("bg-red-500 border-red-600", "Зөрчилтэй");
+          if (hasRemainingBalance)
+            return badge("bg-amber-500 border-amber-600", "Төлбөртэй");
+          if (!isCurrentlyIn && (niitDun > 0 || isDebt))
+            return badge("bg-amber-500 border-amber-600", "Төлбөртэй");
+          if (!isCurrentlyIn && niitDun === 0)
+            return badge("bg-gray-500 border-gray-600", "Үнэгүй");
+          return badge("bg-blue-500 border-blue-600", "Идэвхтэй");
+        }
+
+        return (
+          <div className="action-menu-container flex items-center justify-center gap-1">
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
+                if (confirmExitId === transaction._id) {
+                  setConfirmExitId(null);
+                  setDropdownPos(null);
+                } else {
+                  const rect = (
+                    e.currentTarget as HTMLElement
+                  ).getBoundingClientRect();
+                  setDropdownPos({
+                    top: rect.bottom + 6,
+                    right: window.innerWidth - rect.right,
+                  });
+                  setConfirmExitId(transaction._id ?? null);
+                }
+              }}
+              className={`mx-auto flex w-[100px] max-w-[100px] min-w-[100px] cursor-pointer flex-nowrap items-center justify-center overflow-hidden rounded-[6px] border px-2 py-0.5 whitespace-nowrap uppercase ${
+                hasRemainingBalance
+                  ? "bg-amber-500 border-amber-600"
+                  : !isCurrentlyIn && isDebt
+                    ? "bg-amber-500 border-amber-600"
+                    : tuluv === -1 || tuluv === -2
+                      ? "bg-red-500 border-red-600"
+                      : "bg-blue-500 border-blue-600"
+              }`}
+              style={{ color: "white" }}
+            >
+              {!isCurrentlyIn
+                ? hasRemainingBalance
+                  ? "Төлбөр"
+                  : isDebt
+                    ? "Төлбөртэй"
+                    : "Дууссан"
+                : isPaid && niitDun > 0
+                  ? "Төлсөн"
+                  : tuluv === 2
+                    ? "Төлбөртэй"
+                    : niitDun > 0
+                      ? "Төлбөр"
+                      : "Идэвхтэй"}
+            </div>
+            {confirmExitId === transaction._id &&
+              dropdownPos &&
+              createPortal(
+                <div
+                  className="action-menu-container fixed z-[9999] min-w-[170px] rounded-md border border-slate-200/50 bg-white/95 p-1.5 text-left shadow-[0_20px_50px_rgba(0,0,0,0.15)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/95 dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)]"
+                  style={{ top: dropdownPos.top, right: dropdownPos.right }}
+                >
+                  <div className="space-y-0">
+                    {(isCurrentlyIn
+                      ? [
+                          {
+                            label: "Хөнгөлөлт",
+                            icon: Tag,
+                            color: "amber",
+                            action: () => {
+                              setDiscountModalTransaction(transaction);
+                              setDiscountAmount("");
+                              setDiscountMinutes("");
+                              setConfirmExitId(null);
+                            },
+                          },
+                          {
+                            label: "Гаргах",
+                            icon: ArrowUpDown,
+                            color: "blue",
+                            action: () =>
+                              isPaid || niitDun === 0
+                                ? handleManualExit(transaction, "free")
+                                : handleManualExit(transaction, "pay"),
+                          },
+                          {
+                            label: "Зөрчил",
+                            icon: AlertTriangle,
+                            color: "red",
+                            action: () => {
+                              setViolationModalTransaction(transaction);
+                              setViolationReason("");
+                              setConfirmExitId(null);
+                            },
+                          },
+                        ]
+                      : [
+                          {
+                            label: "Төлөх",
+                            icon: DollarSign,
+                            color: "emerald",
+                            action: () => handleManualExit(transaction, "pay"),
+                          },
+                          {
+                            label: "Үнэгүй",
+                            icon: Info,
+                            color: "slate",
+                            action: () => {
+                              setFreeExitModalTransaction(transaction);
+                              setFreeExitReason("Агуулах");
+                              setCustomFreeExitReason("");
+                              setConfirmExitId(null);
+                            },
+                          },
+                        ]
+                    ).map((btn, bi, arr) => (
+                      <div key={bi}>
+                        <button
+                          onClick={btn.action}
+                          className={`group/item flex w-full items-center justify-between rounded-md px-3 py-0.5 text-slate-700 transition-all duration-200 dark:text-slate-300 ${
+                            btn.color === "amber"
+                              ? "hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-500/10"
+                              : btn.color === "blue"
+                                ? "hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-500/10"
+                                : btn.color === "emerald"
+                                  ? "hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-500/10"
+                                  : btn.color === "red"
+                                    ? "hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10"
+                                    : "hover:bg-slate-50 hover:text-slate-600 dark:hover:bg-slate-500/10"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <btn.icon
+                              className={`h-4 w-4 transition-transform group-hover/item:scale-110 ${
+                                btn.color === "amber"
+                                  ? "text-amber-600 dark:text-amber-400"
+                                  : btn.color === "blue"
+                                    ? "text-blue-600 dark:text-blue-400"
+                                    : btn.color === "emerald"
+                                      ? "text-emerald-600 dark:text-emerald-400"
+                                      : btn.color === "red"
+                                        ? "text-red-600 dark:text-red-400"
+                                        : "text-slate-600 dark:text-slate-400"
+                              }`}
+                            />
+                            <span>{btn.label}</span>
+                          </div>
+                        </button>
+                        {bi < arr.length - 1 && (
+                          <div className="mx-2 my-1 h-px bg-slate-200 dark:bg-white/10" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>,
+                document.body,
+              )}
+          </div>
+        );
+      },
+    },
+    {
+      title: erembiinTolgoi("reason", "Шалтгаан"),
+      key: "reason",
+      width: 130,
+      align: "center",
+      ellipsis: true,
+      render: (_: any, transaction: any) => (
+        <span className="italic text-gray-400">
+          {transaction.tuukh?.[0]?.uneguiGarsan ||
+            transaction.zurchil ||
+            (transaction.tuukh?.[0] as any)?.zurchil ||
+            ""}
+        </span>
+      ),
+    },
+  ];
+
   return (
     <div className="w-full bg-[color:var(--surface-bg)]">
       <div className="p-4 lg:p-6 space-y-6">
@@ -1601,671 +2170,76 @@ export default function Camera() {
             </div>
           </div>
 
-          <div
-            className="relative rounded-3xl border border-[color:var(--surface-border)] bg-var(--color-bg-primary) backdrop-blur-md shadow-xl flex flex-col"
-            style={{ overflow: "visible" }}
-          >
-            <div
-              className="overflow-auto custom-scrollbar"
-              style={{ maxHeight: "calc(100vh - 340px)", minHeight: "400px" }}
-            >
-              <table className="w-full min-w-[1300px] text-[11px] border-collapse bg-white dark:bg-slate-950/50 table-fixed">
-                <colgroup>
-                  <col style={{ width: "50px" }} />
-                  <col style={{ width: "110px" }} />
-                  <col style={{ width: "115px" }} />
-                  <col style={{ width: "115px" }} />
-                  <col style={{ width: "120px" }} />
-                  <col style={{ width: "100px" }} />
-                  <col style={{ width: "90px" }} />
-                  <col style={{ width: "90px" }} />
-                  <col style={{ width: "110px" }} />
-                  <col style={{ width: "100px" }} />
-                  <col style={{ width: "120px" }} />
-                  <col style={{ width: "130px" }} />
-                </colgroup>
-                <thead className="sticky top-0 z-40 bg-white dark:bg-slate-900">
-                  <tr className="border-y border-slate-200 dark:border-white/10 shadow-sm h-[32px]">
-                    {[
-                      { id: "no", label: "№", width: "w-12" },
-                      { id: "dugaar", label: "Дугаар", width: "w-28", sortable: true },
-                      { id: "orson", label: "Орсон", width: "w-36", sortable: true },
-                      { id: "garsan", label: "Гарсан", width: "w-36", sortable: true },
-                      {
-                        id: "duration",
-                        label: "Хугацаа/мин",
-                        width: "w-42",
-                        filter: true,
-                        current: durationFilter,
-                        set: (v: string) => {
-                          setDurationFilter(v);
-                          setSortConfig(null);
-                          setPage(1);
-                        },
-                        options: [
-                          { label: "Удаан зогссон эхэнд", value: "longest" },
-                          { label: "Сүүлд орсон эхэнд", value: "latest_in" },
-                          { label: "Сүүлд гарсан эхэнд", value: "latest_out" },
-                        ],
-                      },
-                      {
-                        id: "type",
-                        label: "Төрөл",
-                        width: "w-28",
-                        filter: true,
-                        current: typeFilter,
-                        set: (v: string) => {
-                          setTypeFilter(v);
-                          setPage(1);
-                        },
-                        options: [
-                          { label: "Бүгд", value: "all" },
-                          { label: "Үйлчлүүлэгч", value: "Үйлчлүүлэгч" },
-                          { label: "Оршин суугч", value: "Оршин суугч" },
-                          { label: "Зочин", value: "Зочин" },
-                        ],
-                      },
-                      { id: "amount", label: "Дүн", width: "w-28", sortable: true },
-                      { id: "payment", label: "Төлбөр", width: "w-36", sortable: true },
-                      { id: "discount", label: "Хөнгөлөлт", width: "w-28", sortable: true },
-                      { id: "ebarimt", label: "И-Баримт", width: "w-28", sortable: true },
-                      {
-                        id: "status",
-                        label: "Төлөв",
-                        width: "w-36",
-                        filter: true,
-                        current: statusFilter,
-                        set: (v: string) => {
-                          setStatusFilter(v);
-                          setPage(1);
-                        },
-                        options: [
-                          { label: "Бүгд", value: "all" },
-                          { label: "Идэвхтэй", value: "active" },
-                          { label: "Төлсөн", value: "paid" },
-                          { label: "Төлөөгүй", value: "unpaid" },
-                          { label: "Үнэгүй", value: "free" },
-                        ],
-                      },
-                      { id: "reason", label: "Шалтгаан", width: "w-36", sortable: true },
-                    ].map((h, i) => {
-                      const isActive = sortConfig?.col === h.id;
-                      return (
-                        <th
-                          key={h.id}
-                          className={`filter-header-cell group relative py-1.5 px-3 text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[11px] border-r border-slate-200 dark:border-white/5 last:border-r-0 text-center ${h.width || ""} hover:bg-slate-50 dark:hover:bg-white/5 transition-colors hover:z-[100]`}
-                        >
-                          {(h as any).options ? (
-                            <FilterPopover
-                              label={h.label}
-                              options={(h as any).options}
-                              current={(h as any).current}
-                              onSelect={(v) => { (h as any).set?.(v); }}
-                            >
-                              <div className="flex items-center justify-center gap-2 cursor-pointer h-full">
-                                <Filter className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
-                                <span>{h.label}</span>
-                              </div>
-                            </FilterPopover>
-                          ) : (
-                            <div
-                              className="flex items-center justify-center gap-2 cursor-pointer h-full"
-                              onClick={() => {
-                                if ((h as any).sortable && h.id !== "no") {
-                                  setSortConfig(prev => {
-                                    if (prev?.col !== h.id) return { col: h.id, dir: "asc" };
-                                    if (prev.dir === "asc") return { col: h.id, dir: "desc" };
-                                    return null;
-                                  });
-                                  setPage(1);
-                                }
-                              }}
-                            >
-                              <span>{h.label}</span>
-                              {(h as any).sortable && h.id !== "no" && (
-                                isActive
-                                  ? sortConfig!.dir === "asc"
-                                    ? <ArrowUpDown className="w-3.5 h-3.5 text-blue-500" />
-                                    : <ArrowUpDown className="w-3.5 h-3.5 text-blue-500 rotate-180" />
-                                  : <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 opacity-40" />
-                              )}
-                            </div>
-                          )}
-                        </th>
-                      );
-                    })}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
-                  {transactions.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={12}
-                        className="py-40 text-center"
-                      >
-                        <div className="flex flex-col items-center justify-center gap-4 opacity-40">
-                          <div className="p-6 rounded-full bg-slate-100 dark:bg-slate-800/50 shadow-inner">
-                            <Calendar className="w-12 h-12 text-slate-400" />
-                          </div>
-                          <p className="text-base uppercase tracking-[0.2em] text-slate-400">
-                            Одоогоор мэдээлэл байхгүй байна
-                          </p>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : (
-                    transactions.map((transaction, idx) => {
-                      const mur = transaction.tuukh?.[0];
-                      // ... (unchanged logic variables) ...
-                      const tsag = mur?.tsagiinTuukh?.[0];
-                      const orsonTsag = tsag?.orsonTsag;
-                      const garsanTsag = tsag?.garsanTsag;
-                      const tuluv = mur?.tuluv;
-                      const niitDun = transaction.niitDun || 0;
-                      const isCurrentlyIn = !mur?.garsanKhaalga;
-                      const isFreeExit = !!mur?.uneguiGarsan && tuluv !== -2 && tuluv !== -1;
-                      const isPaid = tuluv === 1;
-                      const isDebt =
-                        !isFreeExit &&
-                        (tuluv === -4 ||
-                          (tuluv === 0 && niitDun > 0 && !isCurrentlyIn));
-                      const rawTulbur = mur?.tulbur;
-                      const tulburArr: any[] = Array.isArray(rawTulbur) ? rawTulbur : (rawTulbur ? [rawTulbur] : []);
-                      const positivePaid = tulburArr.reduce((s: number, p: any) => s + (p?.dun > 0 ? p.dun : 0), 0);
-                      const discountTotal = tulburArr
-                        .filter((p: any) => p?.turul === "khungulult" || p?.turul === "discount" || p?.turul === "Хөнгөлөлт")
-                        .reduce((s: number, p: any) => s + Math.abs(p?.dun ?? 0), 0);
-                      const effectiveOwed = Math.max(0, niitDun - discountTotal);
-                      const hasRemainingBalance = tuluv === 1 && effectiveOwed > 0 && !isCurrentlyIn && positivePaid < effectiveOwed;
-                      const isActive = isCurrentlyIn;
-                      const showActionBtn = isCurrentlyIn || isDebt || hasRemainingBalance;
-                      const hasPayment = niitDun > 0 || isDebt;
-
-                      return (
-                        <tr
-                          key={transaction._id || idx}
-                          className={`hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-all duration-200 group border-b border-slate-200 dark:border-white/5 h-[32px] ${isActive ? "bg-blue-50/40 dark:bg-blue-900/10" : idx % 2 === 0 ? "bg-slate-100 dark:bg-slate-800/40" : "bg-white dark:bg-transparent"}`}
-                        >
-                          <td className="py-1.5 px-3 text-center text-gray-400 border-r border-slate-200 dark:border-white/5 text-[11px]">
-                            {(page - 1) * pageSize + idx + 1}
-                          </td>
-                          <td className="py-1.5 px-3 border-r border-slate-200 dark:border-white/5 text-center">
-                            <div className="flex items-center justify-center gap-2">
-                              <span className=" text-slate-700 dark:text-slate-300  font-[family-name:var(--font-mono)] text-[11px]">
-                                {transaction.mashiniiDugaar || "-"}
-                              </span>
-                              <Copy
-                                className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 cursor-pointer hover:text-blue-500 transition-colors"
-                                onClick={() =>
-                                  copyToClipboard(transaction.mashiniiDugaar)
-                                }
-                              />
-                            </div>
-                          </td>
-                          <td className="py-1.5 px-3 whitespace-nowrap border-r border-slate-200 dark:border-white/5 text-center">
-                            <span className=" text-slate-600 dark:text-slate-400  font-[family-name:var(--font-mono)] text-[11px]">
-                              {orsonTsag
-                                ? moment(orsonTsag).format("MM-DD HH:mm:ss")
-                                : "-"}
-                            </span>
-                          </td>
-                          <td className="py-1.5 px-3 whitespace-nowrap border-r border-slate-200 dark:border-white/5 text-center">
-                            <span className=" text-slate-600 dark:text-slate-400  font-[family-name:var(--font-mono)] text-[11px]">
-                              {garsanTsag
-                                ? moment(garsanTsag).format("MM-DD HH:mm:ss")
-                                : ""}
-                            </span>
-                          </td>
-                          <td className="py-1.5 px-3 border-r border-slate-200 dark:border-white/5 text-center">
-                            {(() => {
-                              // Match duration color to status color - must follow exact same logic order as status column
-                              const getStatusColor = () => {
-                                if (tuluv === -2 || tuluv === -1) {
-                                  return "bg-red-500 border-red-600";
-                                }
-                                if (hasRemainingBalance) {
-                                  return "bg-amber-500 border-amber-600";
-                                }
-                                if (isFreeExit) {
-                                  return "bg-gray-500 border-gray-600";
-                                }
-                                if (tuluv === 1) {
-                                  return isCurrentlyIn && niitDun === 0
-                                    ? "bg-blue-500 border-blue-600"
-                                    : "bg-emerald-500 border-emerald-600";
-                                }
-                                if (!isCurrentlyIn && (niitDun > 0 || isDebt)) {
-                                  return "bg-amber-500 border-amber-600";
-                                }
-                                if (!isCurrentlyIn && niitDun === 0) {
-                                  return "bg-gray-500 border-gray-600";
-                                }
-                                return "bg-blue-500 border-blue-600";
-                              };
-
-                              return (
-                                <div
-                                  className={`flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-1 rounded-[6px] overflow-hidden border text-[10px] text-white ${getStatusColor()}`}
-                                  style={{
-                                    borderRadius: "6px",
-                                    color: "white",
-                                  }}
-                                >
-                                  <RealTimeDuration
-                                    orsonTsag={orsonTsag}
-                                    garsanTsag={garsanTsag}
-                                    niitKhugatsaa={mur?.niitKhugatsaa}
-                                  />
-                                </div>
-                              );
-                            })()}
-                          </td>
-                          <td className="py-1.5 px-3 text-slate-600 dark:text-slate-400 text-center  border-r border-slate-200 dark:border-white/5 text-[11px]">
-                            {transaction.turul ||
-                              transaction.tuukh?.[0]?.turul ||
-                              "Үйлчлүүлэгч"}
-                          </td>
-                          <td className="py-1.5 px-3 text-slate-700 dark:text-slate-300 text-right border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] text-[11px]">
-                            {formatNumber(transaction.niitDun || 0, 2)}
-                          </td>
-                          <td className="py-1.5 px-3 text-center relative border-r border-slate-200 dark:border-white/5 text-[11px]">
-                            {(() => {
-                              const history = transaction.tuukh?.[0];
-                              const tulsunDun = history?.tulsunDun || 0;
-                              // Aggregate tulbur from ALL tuukh entries so payment details are complete regardless of type filter
-                              const payHistory: any[] = (transaction.tuukh || []).flatMap((th: any) => {
-                                const raw = th?.tulbur;
-                                if (Array.isArray(raw)) return raw;
-                                if (raw && typeof raw === "object") return [raw];
-                                return [];
-                              });
-
-                              if (payHistory.length > 0) {
-                                const payOnly = payHistory.filter((p: any) => (p?.dun ?? 0) > 0 && p?.turul !== "khungulult" && p?.turul !== "discount" && p?.turul !== "Хөнгөлөлт");
-                                if (payOnly.length > 0) {
-                                  const totalPaid = payOnly.reduce(
-                                    (s: number, p: any) => s + (p.dun || 0), 0,
-                                  );
-                                  const uniqueTypes = [
-                                    ...new Set(payOnly.map((p: any) => p.turul).filter(Boolean)),
-                                  ] as string[];
-                                  return (
-                                    <PaymentPopup
-                                      payHistory={payOnly}
-                                      totalPaid={totalPaid}
-                                      uniqueTypes={uniqueTypes}
-                                    />
-                                  );
-                                }
-                              }
-
-                              if (tulsunDun > 0) {
-                                return (
-                                  <span className="text-[11px] text-slate-700 dark:text-slate-300 font-[family-name:var(--font-mono)]">
-                                    {formatNumber(tulsunDun, 2)}
-                                  </span>
-                                );
-                              }
-
-                              return (
-                                <span className="font-[family-name:var(--font-mono)] text-slate-700 dark:text-slate-300 text-[11px]">
-                                  {formatNumber(tulsunDun || 0, 2)}
-                                </span>
-                              );
-                            })()}
-                          </td>
-                          <td className="py-1.5 px-3 text-slate-600 dark:text-slate-400 text-right border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] text-[11px]">
-                            {formatNumber(discountTotal || 0, 2)}
-                          </td>
-                          <td className="py-1.5 px-3 text-slate-600 dark:text-slate-400 text-center border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] text-[11px]">
-                            {(() => {
-                              const mur = transaction.tuukh?.[0] as any;
-                              const ebarimtId =
-                                mur?.ebarimtId ||
-                                mur?.ebarimtDugaar ||
-                                mur?.lottery ||
-                                mur?.receiptId ||
-                                mur?.ebarimt?.id ||
-                                mur?.ebarimt?.lottery ||
-                                (transaction as any)?.ebarimtId ||
-                                (transaction as any)?.ebarimtDugaar ||
-                                (transaction as any)?.lottery;
-
-                              if (ebarimtId) return ebarimtId;
-
-                              const ebDun = (mur?.ebarimtAvsanDun ?? (transaction as any)?.ebarimtAvsanDun) || 0;
-
-                              return ebDun > 0 ? formatNumber(ebDun, 2) : "-";
-                            })()}
-                          </td>
-                          <td className="py-1.5 px-3 relative border-r border-slate-200 dark:border-white/5 text-center">
-                            {showActionBtn ? (
-                              <div className="flex items-center justify-center gap-1 action-menu-container">
-                                <div
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (confirmExitId === transaction._id) {
-                                      setConfirmExitId(null);
-                                      setDropdownPos(null);
-                                    } else {
-                                      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                                      setDropdownPos({ top: rect.bottom + 6, right: window.innerWidth - rect.right });
-                                      setConfirmExitId(transaction._id ?? null);
-                                    }
-                                  }}
-                                  className={`flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-1 rounded-[6px] overflow-hidden border text-[10px] uppercase whitespace-nowrap cursor-pointer ${hasRemainingBalance
-                                    ? "bg-amber-500 border-amber-600"
-                                    : !isCurrentlyIn && isDebt
-                                      ? "bg-amber-500 border-amber-600"
-                                      : tuluv === -1 || tuluv === -2
-                                        ? "bg-red-500 border-red-600"
-                                        : "bg-blue-500 border-blue-600"
-                                    }`}
-                                  style={{ color: "white" }}
-                                >
-                                  {!isCurrentlyIn
-                                    ? hasRemainingBalance
-                                      ? "Төлбөр"
-                                      : isDebt
-                                        ? "Төлбөртэй"
-                                        : "Дууссан"
-                                    : isPaid && niitDun > 0
-                                      ? "Төлсөн"
-                                      : tuluv === 2
-                                        ? "Төлбөртэй"
-                                        : niitDun > 0
-                                          ? "Төлбөр"
-                                          : "Идэвхтэй"}
-                                </div>
-                                {/* ... dropdown menu code ... */}
-                                {confirmExitId === transaction._id && dropdownPos && createPortal(
-                                  <div className="fixed z-[9999] min-w-[170px] p-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] animate-in fade-in slide-in-from-top-2 duration-200 text-left action-menu-container" style={{ top: dropdownPos.top, right: dropdownPos.right }}>
-                                    {/* ... dropdown content ... */}
-                                    <div className="space-y-0">
-                                      {/* Re-implement dropdown buttons with same logic but larger padding text */}
-                                      {(isCurrentlyIn
-                                        ? [
-                                          {
-                                            label: "Хөнгөлөлт",
-                                            icon: Tag,
-                                            color: "amber",
-                                            action: () => {
-                                              setDiscountModalTransaction(
-                                                transaction,
-                                              );
-                                              setDiscountAmount("");
-                                              setDiscountMinutes("");
-                                              setConfirmExitId(null);
-                                            },
-                                          },
-                                          {
-                                            label: "Гаргах",
-                                            icon: ArrowUpDown,
-                                            color: "blue",
-                                            action: () =>
-                                              isPaid || niitDun === 0
-                                                ? handleManualExit(
-                                                  transaction,
-                                                  "free",
-                                                )
-                                                : handleManualExit(
-                                                  transaction,
-                                                  "pay",
-                                                ),
-                                          },
-                                          {
-                                            label: "Зөрчил",
-                                            icon: AlertTriangle,
-                                            color: "red",
-                                            action: () => {
-                                              setViolationModalTransaction(transaction);
-                                              setViolationReason("");
-                                              setConfirmExitId(null);
-                                            },
-                                          },
-                                        ]
-                                        : [
-                                          {
-                                            label: "Төлөх",
-                                            icon: DollarSign,
-                                            color: "emerald",
-                                            action: () =>
-                                              handleManualExit(
-                                                transaction,
-                                                "pay",
-                                              ),
-                                          },
-                                          {
-                                            label: "Үнэгүй",
-                                            icon: Info,
-                                            color: "slate",
-                                            action: () => {
-                                              setFreeExitModalTransaction(transaction);
-                                              setFreeExitReason("Агуулах");
-                                              setCustomFreeExitReason("");
-                                              setConfirmExitId(null);
-                                            },
-                                          },
-                                        ]
-                                      ).map((btn, bi, arr) => (
-                                        <div key={bi}>
-                                          <button
-                                            onClick={btn.action}
-                                            className={`flex items-center justify-between w-full px-3 py-2.5 rounded-md text-[11px] text-slate-700 dark:text-slate-300 transition-all duration-200 group/item ${btn.color === "amber"
-                                              ? "hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-500/10"
-                                              : btn.color === "blue"
-                                                ? "hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-500/10"
-                                                : btn.color === "emerald"
-                                                  ? "hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-500/10"
-                                                  : btn.color === "red"
-                                                    ? "hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10"
-                                                    : "hover:bg-slate-50 hover:text-slate-600 dark:hover:bg-slate-500/10"
-                                              } hover:rounded-lg`}
-                                            style={{
-                                              borderRadius: "0.375rem",
-                                            }}
-                                            onMouseEnter={(e) => {
-                                              e.currentTarget.style.borderRadius =
-                                                "0.5rem";
-                                            }}
-                                            onMouseLeave={(e) => {
-                                              e.currentTarget.style.borderRadius =
-                                                "0.375rem";
-                                            }}
-                                          >
-                                            <div className="flex items-center gap-2">
-                                              <btn.icon
-                                                className={`w-3.5 h-3.5 ${btn.color === "amber"
-                                                  ? "text-amber-600 dark:text-amber-400"
-                                                  : btn.color === "blue"
-                                                    ? "text-blue-600 dark:text-blue-400"
-                                                    : btn.color === "emerald"
-                                                      ? "text-emerald-600 dark:text-emerald-400"
-                                                      : btn.color === "red"
-                                                        ? "text-red-600 dark:text-red-400"
-                                                        : "text-slate-600 dark:text-slate-400"
-                                                  } group-hover/item:scale-110 transition-transform`}
-                                              />
-                                              <span>{btn.label}</span>
-                                            </div>
-                                          </button>
-                                          {bi < arr.length - 1 && (
-                                            <div className="h-px bg-slate-200 dark:bg-white/10 mx-2 my-1" />
-                                          )}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>,
-                                  document.body
-                                )}
-                              </div>
-                            ) : (
-                              (() => {
-                                // Status badges logic
-                                const badgeClass =
-                                  "flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-1 rounded-[6px] overflow-hidden border";
-                                if (isFreeExit)
-                                  return (
-                                    <div
-                                      className={`${badgeClass} bg-gray-500 border-gray-600`}
-                                      style={{
-                                        borderRadius: "6px",
-                                        color: "white",
-                                      }}
-                                    >
-                                      <span className="text-[10px] uppercase whitespace-nowrap">
-                                        Үнэгүй
-                                      </span>
-                                    </div>
-                                  );
-                                if (tuluv === 1)
-                                  return (
-                                    <div
-                                      className={`${badgeClass} ${isCurrentlyIn && niitDun === 0 ? "bg-blue-500 border-blue-600" : "bg-emerald-500 border-emerald-600"}`}
-                                      style={{
-                                        borderRadius: "6px",
-                                        color: "white",
-                                      }}
-                                    >
-                                      <span className="text-[10px] uppercase whitespace-nowrap">
-                                        {isCurrentlyIn && niitDun === 0
-                                          ? "Идэвхтэй"
-                                          : "Төлсөн"}
-                                      </span>
-                                    </div>
-                                  );
-                                if (tuluv === -2 || tuluv === -1)
-                                  return (
-                                    <div
-                                      className={`${badgeClass} bg-red-500 border-red-600`}
-                                      style={{
-                                        borderRadius: "6px",
-                                        color: "white",
-                                      }}
-                                    >
-                                      <span className="text-[10px] uppercase whitespace-nowrap">
-                                        Зөрчилтэй
-                                      </span>
-                                    </div>
-                                  );
-                                if (hasRemainingBalance)
-                                  return (
-                                    <div
-                                      className={`${badgeClass} bg-amber-500 border-amber-600`}
-                                      style={{ borderRadius: "6px", color: "white" }}
-                                    >
-                                      <span className="text-[10px] uppercase whitespace-nowrap">
-                                        Төлбөртэй
-                                      </span>
-                                    </div>
-                                  );
-                                if (!isCurrentlyIn && (niitDun > 0 || isDebt))
-                                  return (
-                                    <div
-                                      className={`${badgeClass} bg-amber-500 border-amber-600`}
-                                      style={{
-                                        borderRadius: "6px",
-                                        color: "white",
-                                      }}
-                                    >
-                                      <span className="text-[10px] uppercase whitespace-nowrap">
-                                        Төлбөртэй
-                                      </span>
-                                    </div>
-                                  );
-                                if (!isCurrentlyIn && niitDun === 0)
-                                  return (
-                                    <div
-                                      className={`${badgeClass} bg-gray-500 border-gray-600`}
-                                      style={{
-                                        borderRadius: "6px",
-                                        color: "white",
-                                      }}
-                                    >
-                                      <span className="text-[10px] uppercase whitespace-nowrap">
-                                        Үнэгүй
-                                      </span>
-                                    </div>
-                                  );
-                                return (
-                                  <div
-                                    className={`${badgeClass} bg-blue-500 border-blue-600`}
-                                    style={{
-                                      borderRadius: "6px",
-                                      color: "white",
-                                    }}
-                                  >
-                                    <span className="text-[10px] uppercase tracking-tight whitespace-nowrap text-center">
-                                      Идэвхтэй
-                                    </span>
-                                  </div>
-                                );
-                              })()
-                            )}
-                          </td>
-                          <td className="py-1.5 px-3 text-gray-400 italic truncate max-w-[100px] border-r border-slate-200 dark:border-white/5 text-[10px] text-center">
-                            {transaction.tuukh?.[0]?.uneguiGarsan ||
-                              transaction.zurchil ||
-                              (transaction.tuukh?.[0] as any)?.zurchil ||
-                              ""}
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-                {transactions.length > 0 && (
-                  <tfoot className="bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-white/10 text-slate-800 dark:text-white font-[family-name:var(--font-mono)] text-[11px] sticky bottom-0 z-40">
-                    <tr className="h-[32px] border-t border-slate-200 dark:border-white/10">
-                      <td
-                        colSpan={6}
-                        className="py-1.5 px-3 text-right font-black uppercase tracking-wider border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-sans)] font-bold "
-                      >
+          <div className="flex flex-col">
+            <div>
+              <Table<any>
+                columns={guilgeeniiColumns}
+                dataSource={transactions}
+                rowKey={(t, idx) => t._id || idx}
+                pagination={false}
+                scroll={{ x: 1300, y: "calc(100vh - 340px)" }}
+                rowClassName={(t) => (murNiiluulye(t).isActive ? "zt-row-selected" : "")}
+                locale={{
+                  emptyText: (
+                    <div className="flex flex-col items-center justify-center gap-4 py-20 opacity-40">
+                      <div className="rounded-full bg-slate-100 p-6 shadow-inner dark:bg-slate-800/50">
+                        <Calendar className="h-12 w-12 text-slate-400" />
+                      </div>
+                      <p className="text-base tracking-[0.2em] text-slate-400 uppercase">
+                        Одоогоор мэдээлэл байхгүй байна
+                      </p>
+                    </div>
+                  ),
+                }}
+                summary={() => (
+                  <Table.Summary.Row className="font-[family-name:var(--font-mono)] text-[11px]">
+                    <Table.Summary.Cell colSpan={6} align="right">
+                      <span className="font-bold tracking-wider uppercase">
                         Нийт Дүн:
-                      </td>
-                      <td className="py-1.5 px-3 text-right font-bold border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] whitespace-nowrap">
-                        {formatNumber(
-                          transactions.reduce(
-                            (sum, t) => sum + (Number(t.niitDun) || 0),
-                            0,
-                          ),
-                        )}
-                      </td>
-                      <td className="py-1.5 px-3 text-right font-bold border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] whitespace-nowrap">
-                        {formatNumber(
-                          transactions.reduce((sum, t) => {
-                            const payHistory: any[] = (t.tuukh || []).flatMap((th: any) => {
-                              const raw = th?.tulbur;
-                              return Array.isArray(raw) ? raw : raw ? [raw] : [];
-                            });
-                            const payOnly = payHistory.filter((p: any) => (p?.dun ?? 0) > 0 && p?.turul !== "khungulult" && p?.turul !== "discount" && p?.turul !== "Хөнгөлөлт");
-                            if (payOnly.length > 0) {
-                              return sum + payOnly.reduce((s: number, p: any) => s + (p.dun || 0), 0);
-                            }
-                            return sum + (Number(t.tuukh?.[0]?.tulsunDun) || 0);
-                          }, 0),
-                        )}
-                      </td>
-                      <td className="py-1.5 px-3 text-right font-bold border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] whitespace-nowrap">
-                        {formatNumber(
-                          transactions.reduce((sum, t) => {
-                            const rawT = t.tuukh?.[0]?.tulbur;
-                            const tArr: any[] = Array.isArray(rawT) ? rawT : (rawT ? [rawT] : []);
-                            const disc = tArr
-                              .filter((p: any) => p?.turul === "khungulult" || p?.turul === "discount" || p?.turul === "Хөнгөлөлт")
-                              .reduce((s: number, p: any) => s + Math.abs(p?.dun ?? 0), 0);
-                            return sum + (disc > 0 ? disc : (Number(t.tuukh?.[0]?.khungulult) || 0));
-                          }, 0),
-                        )}
-                      </td>
-                      <td
-                        colSpan={3}
-                        className="border-r border-slate-200 dark:border-white/5 last:border-r-0"
-                      ></td>
-                    </tr>
-                  </tfoot>
+                      </span>
+                    </Table.Summary.Cell>
+                    <Table.Summary.Cell align="right" className="font-bold whitespace-nowrap">
+                      {formatNumber(
+                        transactions.reduce(
+                          (sum, t) => sum + (Number(t.niitDun) || 0),
+                          0,
+                        ),
+                      )}
+                    </Table.Summary.Cell>
+                    <Table.Summary.Cell align="right" className="font-bold whitespace-nowrap">
+                      {formatNumber(
+                        transactions.reduce((sum, t) => {
+                          const payOnly = tulburuudiigTsugluulya(t);
+                          if (payOnly.length > 0) {
+                            return (
+                              sum +
+                              payOnly.reduce(
+                                (acc: number, pay: any) => acc + (pay.dun || 0),
+                                0,
+                              )
+                            );
+                          }
+                          return sum + (Number(t.tuukh?.[0]?.tulsunDun) || 0);
+                        }, 0),
+                      )}
+                    </Table.Summary.Cell>
+                    <Table.Summary.Cell align="right" className="font-bold whitespace-nowrap">
+                      {formatNumber(
+                        transactions.reduce((sum, t) => {
+                          const disc = murNiiluulye(t).discountTotal;
+                          return (
+                            sum +
+                            (disc > 0
+                              ? disc
+                              : Number(t.tuukh?.[0]?.khungulult) || 0)
+                          );
+                        }, 0),
+                      )}
+                    </Table.Summary.Cell>
+                    <Table.Summary.Cell colSpan={3} />
+                  </Table.Summary.Row>
                 )}
-              </table>
+              />
             </div>
 
             {/* Pagination */}

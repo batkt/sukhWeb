@@ -14,6 +14,8 @@ import IconTextButton from "@/components/ui/IconTextButton";
 import { getDefaultDateRange } from "@/lib/utils";
 import { Download, ChevronLeft, ChevronRight, Printer } from "lucide-react";
 import formatNumber from "../../../../../tools/function/formatNumber";
+import Table from "@/components/ui/table";
+import type { ColumnsType } from "@/components/ui/table";
 
 const PrintStyles = () => (
   <style jsx global>{`
@@ -147,6 +149,57 @@ export default function TransactionsPage() {
     window.print();
   };
 
+  const transactionColumns: ColumnsType<any> = React.useMemo(
+    () => [
+      {
+        title: "#",
+        key: "index",
+        width: 40,
+        align: "center",
+        render: (_: any, __: any, i: number) => (page - 1) * pageSize + i + 1,
+      },
+      {
+        title: "Огноо",
+        key: "ognoo",
+        align: "center",
+        render: (_: any, r: any) => r.ognoo || r.date || "-",
+      },
+      {
+        title: "Төрөл",
+        dataIndex: "type",
+        key: "type",
+        align: "center",
+        render: (v: any) => v || "-",
+      },
+      {
+        title: "Дүн",
+        key: "amount",
+        align: "right",
+        render: (_: any, r: any) =>
+          r.amount ? formatNumber(Number(r.amount)) : "-",
+      },
+      {
+        title: "Данс/Банк",
+        key: "bank",
+        align: "center",
+        render: (_: any, r: any) => r.bank || r.account || "-",
+      },
+      {
+        title: "Тайлбар / Нэх.",
+        key: "note",
+        render: (_: any, r: any) => r.note || r.invoiceId || "-",
+      },
+      {
+        title: "Төлөв",
+        dataIndex: "status",
+        key: "status",
+        align: "center",
+        render: (v: any) => v || "-",
+      },
+    ],
+    [page, pageSize],
+  );
+
   return (
     <div className="min-h-screen p-6 print-container h-full flex flex-col">
       <PrintStyles />
@@ -247,84 +300,15 @@ export default function TransactionsPage() {
         </div>
       </div>
 
-      <div className="table-surface rounded-2xl overflow-hidden">
-        <div className="rounded-3xl p-6 neu-table">
-          <div className="max-h-[60vh] overflow-y-auto custom-scrollbar">
-            <table className="table-ui text-xs min-w-full">
-              <thead>
-                <tr className="bg-gray-50 dark:bg-gray-900">
-                  <th className="p-2 text-center w-12 text-gray-900 dark:text-white">
-                    #
-                  </th>
-                  <th className="p-2 text-center text-gray-900 dark:text-white">
-                    Огноо
-                  </th>
-                  <th className="p-2 text-center text-gray-900 dark:text-white">
-                    Төрөл
-                  </th>
-                  <th className="p-2 text-center text-gray-900 dark:text-white">
-                    Дүн
-                  </th>
-                  <th className="p-2 text-center text-gray-900 dark:text-white">
-                    Данс/Банк
-                  </th>
-                  <th className="p-2 text-center text-gray-900 dark:text-white">
-                    Тайлбар / Нэх.
-                  </th>
-                  <th className="p-2 text-center text-gray-900 dark:text-white">
-                    Төлөв
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={7}
-                      className="p-8 text-center text-gray-500 dark:text-gray-400"
-                    >
-                      Мэдээлэл олдсонгүй
-                    </td>
-                  </tr>
-                ) : (
-                  rows.map((r: any, idx: number) => (
-                    <tr
-                      key={r._id || idx}
-                      className={`border-b border-gray-200 dark:border-gray-700 last:border-b-0 ${
-                        idx % 2 === 0
-                          ? "bg-white dark:bg-gray-800"
-                          : "bg-gray-50 dark:bg-gray-700/50"
-                      } hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors`}
-                    >
-                      <td className="p-2 text-center text-gray-900 dark:text-white">
-                        {(page - 1) * pageSize + idx + 1}
-                      </td>
-                      <td className="p-2 text-center text-gray-900 dark:text-white">
-                        {r.ognoo || r.date || "-"}
-                      </td>
-                      <td className="p-2 text-center text-gray-900 dark:text-white">
-                        {r.type || "-"}
-                      </td>
-                      <td className="p-2 text-center text-gray-900 dark:text-white">
-                        {r.amount ? formatNumber(Number(r.amount)) + " " : "-"}
-                      </td>
-                      <td className="p-2 text-center text-gray-900 dark:text-white">
-                        {r.bank || r.account || "-"}
-                      </td>
-                      <td className="p-2 text-center text-gray-900 dark:text-white">
-                        {r.note || r.invoiceId || "-"}
-                      </td>
-                      <td className="p-2 text-center text-gray-900 dark:text-white">
-                        {r.status || "-"}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+      <Table<any>
+        columns={transactionColumns}
+        dataSource={rows}
+        rowKey={(r, idx) => r._id || idx}
+        loading={loading}
+        pagination={false}
+        scroll={{ x: "max-content", y: "60vh" }}
+        locale={{ emptyText: "Мэдээлэл олдсонгүй" }}
+      />
 
       <div className="flex items-center justify-between mt-4 no-print">
         <div>Нийт: {total}</div>

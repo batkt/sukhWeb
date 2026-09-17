@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Table, Tooltip } from "antd";
-import type { ColumnsType } from "antd/es/table";
+import { Tooltip } from "antd";
+import Table from "@/components/ui/table";
+import type { ColumnsType } from "@/components/ui/table";
 import { Edit, Eye, Trash2, ChevronUp, ChevronDown, X } from "lucide-react";
 import { getPaymentStatusLabel } from "@/lib/utils";
 import {
@@ -64,20 +65,15 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
     () => [
       // ... (index and ner columns omitted for brevity, keeping them as they are)
       {
-        title: <span className="text-gray-900 dark:text-white">№</span>,
+        title: "№",
         key: "index",
-        width: 50,
+        width: 40,
         align: "center",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, __: any, index: number) =>
           (page - 1) * pageSize + index + 1,
       },
       {
-        title: (
-          <span className="text-gray-900 dark:text-white text-center block">
-            Нэр
-          </span>
-        ),
+        title: "Нэр",
         dataIndex: "ner",
         key: "ner",
         width: 250,
@@ -89,7 +85,6 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
               : "descend"
             : null,
         align: "left",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (val: string | { ner?: string; kod?: string }) => {
           const name =
             typeof val === "object"
@@ -103,11 +98,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
         },
       },
       {
-        title: (
-          <span className="text-gray-900 dark:text-white text-center block">
-            Орц
-          </span>
-        ),
+        title: "Орц",
         key: "orts",
         dataIndex: "orts",
         width: 80,
@@ -119,7 +110,6 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
               : "descend"
             : null,
         align: "center",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: ResidentItem) => (
           <span className="text-gray-900 dark:text-white whitespace-nowrap">
             {getResidentOrtsuud(record) || "-"}
@@ -127,11 +117,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
         ),
       },
       {
-        title: (
-          <span className="text-gray-900 dark:text-white text-center block">
-            Давхар
-          </span>
-        ),
+        title: "Давхар",
         key: "davkhar",
         dataIndex: "davkhar",
         width: 90,
@@ -143,7 +129,6 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
               : "descend"
             : null,
         align: "center",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: ResidentItem) => (
           <span className="text-gray-900 dark:text-white whitespace-nowrap">
             {getResidentDavkhauraud(record) || "-"}
@@ -151,11 +136,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
         ),
       },
       {
-        title: (
-          <span className="text-gray-900 dark:text-white text-center block">
-            Тоот
-          </span>
-        ),
+        title: "Тоот",
         key: "toot",
         dataIndex: "toot",
         width: 140,
@@ -167,7 +148,6 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
               : "descend"
             : null,
         align: "center",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: ResidentItem) => {
           let toots =
             Array.isArray(record.toots) && record.toots.length > 0
@@ -201,11 +181,11 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
           if (toots.length === 0) return "-";
 
           const tooltipContent = (
-            <div className="space-y-1.5 p-1 max-w-[220px]">
+            <div className="space-y-1.5 p-1.5 max-w-[220px]">
               {toots.map((t: any, idx: number) => {
                 const label = t.turul === "Гараж" ? "Зогсоол" : t.turul === "Агуулах" ? "Агуулах" : "Орон сууц";
                 return (
-                  <div key={idx} className="flex items-center justify-between gap-3 text-xs py-0.5">
+                  <div key={idx} className="flex items-center justify-between gap-3 py-0.5">
                     <span className="text-white font-medium">Тоот {t.toot} {label}</span>
                     <button
                       type="button"
@@ -223,7 +203,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
                       className="p-0.5 text-red-400 hover:text-red-500 rounded hover:bg-red-950/30 transition-colors"
                       title="Хасах"
                     >
-                      <X className="w-3.5 h-3.5" />
+                      <X className="w-4 h-4" />
                     </button>
                   </div>
                 );
@@ -233,10 +213,10 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
 
           return (
             <Tooltip title={tooltipContent} placement="top" color="#1e293b" trigger="hover">
-              <span className="inline-flex items-center gap-1.5 cursor-pointer px-2.5 py-1 rounded-xl bg-slate-50 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+              <span className="inline-flex items-center gap-1.5 cursor-pointer px-2.5 py-0.5 rounded-md bg-slate-50 dark:bg-slate-800 font-semibold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
                 {toots[0].toot}
                 {toots.length > 1 && (
-                  <span className="text-[10px] text-slate-500 font-bold">
+                  <span className="text-slate-500 font-bold">
                     +{toots.length - 1}
                   </span>
                 )}
@@ -246,15 +226,10 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
         },
       },
       {
-        title: (
-          <span className="text-gray-900 dark:text-white text-center block">
-            Гараж / Агуулах
-          </span>
-        ),
+        title: "Гараж / Агуулах",
         key: "garage_storage",
         width: 140,
         align: "center",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: ResidentItem) => {
           let toots =
             Array.isArray(record.toots) && record.toots.length > 0
@@ -279,11 +254,11 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
           if (toots.length === 0) return "-";
 
           const tooltipContent = (
-            <div className="space-y-1.5 p-1 max-w-[220px]">
+            <div className="space-y-1.5 p-1.5 max-w-[220px]">
               {toots.map((t: any, idx: number) => {
                 const label = t.turul === "Гараж" ? "Зогсоол" : "Агуулах";
                 return (
-                  <div key={idx} className="flex items-center justify-between gap-3 text-xs py-0.5">
+                  <div key={idx} className="flex items-center justify-between gap-3 py-0.5">
                     <span className="text-white font-medium">Тоот {t.toot} {label}</span>
                     <button
                       type="button"
@@ -301,7 +276,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
                       className="p-0.5 text-red-400 hover:text-red-500 rounded hover:bg-red-950/30 transition-colors"
                       title="Хасах"
                     >
-                      <X className="w-3.5 h-3.5" />
+                      <X className="w-4 h-4" />
                     </button>
                   </div>
                 );
@@ -311,10 +286,10 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
 
           return (
             <Tooltip title={tooltipContent} placement="top" color="#1e293b" trigger="hover">
-              <span className="inline-flex items-center gap-1.5 cursor-pointer px-2.5 py-1 rounded-xl bg-slate-50 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+              <span className="inline-flex items-center gap-1.5 cursor-pointer px-2.5 py-0.5 rounded-md bg-slate-50 dark:bg-slate-800 font-semibold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
                 {toots[0].toot}
                 {toots.length > 1 && (
-                  <span className="text-[10px] text-slate-500 font-bold">
+                  <span className="text-slate-500 font-bold">
                     +{toots.length - 1}
                   </span>
                 )}
@@ -324,11 +299,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
         },
       },
       {
-        title: (
-          <span className="text-gray-900 dark:text-white text-center block">
-            Холбоо барих
-          </span>
-        ),
+        title: "Холбоо барих",
         dataIndex: "utas",
         key: "utas",
         width: 140,
@@ -340,7 +311,6 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
               : "descend"
             : null,
         align: "center",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (val: string) => (
           <span className="text-gray-900 dark:text-white whitespace-nowrap">
             {val || "-"}
@@ -348,15 +318,10 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
         ),
       },
       {
-        title: (
-          <span className="text-gray-900 dark:text-white text-center block">
-            Төлөв
-          </span>
-        ),
+        title: "Төлөв",
         key: "tuluv",
         width: 110,
         align: "center",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: any) => {
           const uldegdel = Number(record?.uldegdel ?? record?.ekhniiUldegdel ?? 0);
           const label = uldegdel <= 0 ? "Төлсөн" : "Төлөөгүй";
@@ -374,39 +339,38 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
         },
       },
       {
-        title: <span className="text-gray-900 dark:text-white">Үйлдэл</span>,
+        title: "Үйлдэл",
         key: "action",
         align: "center",
-        width: 140,
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        width: 96,
         render: (_: any, record: ResidentItem, index: number) => (
-          <div className="flex gap-2 justify-center">
+          <div className="flex gap-1 justify-center">
             <button
               type="button"
               onClick={() => onView?.(record)}
-              className="p-2 rounded-2xl hover-surface transition-colors hover:bg-emerald-100 dark:hover:bg-emerald-900/30"
+              className="p-1.5 rounded-md hover-surface transition-colors hover:bg-emerald-100 dark:hover:bg-emerald-900/30"
               id={index === 0 ? "resident-view-btn" : undefined}
               title="Бүх мэдээлэл харах"
             >
-              <Eye className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              <Eye className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             </button>
             <button
               type="button"
               onClick={() => onEdit?.(record)}
-              className="p-2 rounded-2xl action-edit hover-surface transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/30"
+              className="p-1.5 rounded-md action-edit hover-surface transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/30"
               id={index === 0 ? "resident-edit-btn" : undefined}
               title="Засах"
             >
-              <Edit className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <Edit className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             </button>
             <button
               type="button"
               onClick={() => onDelete?.(record)}
-              className="p-2 rounded-2xl action-delete hover-surface transition-colors hover:bg-red-100 dark:hover:bg-red-900/30"
+              className="p-1.5 rounded-md action-delete hover-surface transition-colors hover:bg-red-100 dark:hover:bg-red-900/30"
               id={index === 0 ? "resident-delete-btn" : undefined}
               title="Устгах"
             >
-              <Trash2 className="w-5 h-5 text-red-600 dark:text-red-400" />
+              <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
             </button>
           </div>
         ),
@@ -436,17 +400,9 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
             `res_${String(typeof record.ner === "object" ? record.ner?.ner : record.ner)}_${record.toot}_${record.utas}`
           }
           pagination={false}
-          size="small"
-          bordered
           loading={loading}
-          className="guilgee-table geree-equal-height min-w-[1000px] dark:bg-gray-900 dark:text-gray-100"
+          className="min-w-[1000px]"
           scroll={{ x: "max-content", y: maxHeight as any }}
-          rowClassName={(record, index) => `
-        ${index % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-700/50"}
-        text-gray-900 dark:text-white
-        hover:bg-gray-100 dark:hover:bg-gray-600
-        transition-colors duration-200
-      `}
           locale={{
             emptyText: (
               <span className="text-gray-500 dark:text-gray-400">

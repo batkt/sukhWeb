@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Table } from "antd";
-import type { ColumnsType } from "antd/es/table";
+import Table from "@/components/ui/table";
+import type { ColumnsType } from "@/components/ui/table";
 import { Plus, Trash2 } from "lucide-react";
 
 export interface FloorItem {
@@ -53,9 +53,8 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
       {
         title: <span className="text-slate-900 dark:text-slate-200">№</span>,
         key: "index",
-        width: 50,
+        width: 40,
         align: "center",
-        className: "text-slate-900 dark:text-slate-200",
         render: (_: any, __: any, index: number) =>
           (page - 1) * pageSize + index + 1,
       },
@@ -74,7 +73,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
               ? "ascend"
               : "descend"
             : null,
-        className: "text-slate-900 dark:text-slate-200 font-medium",
+        className: "font-medium",
         render: (units: string[]) => (
           <span className="text-slate-900 dark:text-slate-200 whitespace-nowrap">
             {units ? units.length : 0}
@@ -94,7 +93,6 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
               ? "ascend"
               : "descend"
             : null,
-        className: "text-slate-900 dark:text-slate-200",
         render: (val: string) => (
           <span className="text-slate-900 dark:text-slate-200 whitespace-nowrap">
             {val ? `${val}-р орц` : "-"}
@@ -116,7 +114,6 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
               ? "ascend"
               : "descend"
             : null,
-        className: "text-slate-900 dark:text-slate-200",
         render: (val: string) => (
           <span className="text-slate-900 dark:text-slate-200 whitespace-nowrap">
             {val}-р давхар
@@ -125,7 +122,18 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
       },
     ];
 
+    // Нэг мөрөнд хамгийн олон тоот хэдэн ширхэг байгааг олж баганын өргөнийг
+    // түүгээр тогтооно (чипний өргөн 48px + 6px зай + нүдний 16px хүрээ).
+    const maxUnits = (data || []).reduce(
+      (max, row) => Math.max(max, row.filteredUnits?.length || 0),
+      0,
+    );
+    const tootuudWidth = Math.max(200, maxUnits * 54 + 16);
+
     cols.push({
+      // Тогтмол биш — доод хязгаар. Ингэснээр үлдсэн зайг энэ багана шингээж,
+      // № болон бусад нарийн багана зарласан өргөнөө хадгална.
+      minWidth: tootuudWidth,
       title: (
         <span className="text-slate-900 dark:text-slate-200 text-center block font-semibold">
           {propertyTab === "Зогсоол"
@@ -138,7 +146,6 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
       dataIndex: "filteredUnits",
       key: "filteredUnits",
       align: "center",
-        className: "text-slate-900 dark:text-slate-200",
         render: (filteredUnits: string[], record: FloorItem) => {
           if (!filteredUnits || filteredUnits.length === 0) {
             return (
@@ -148,13 +155,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
             );
           }
           return (
-            <div
-              className="grid gap-1.5 py-1 justify-center"
-              style={{
-                gridTemplateColumns: "repeat(auto-fill, minmax(48px, 1fr))",
-                justifyItems: "center",
-              }}
-            >
+            <div className="flex flex-nowrap items-center justify-center gap-1.5 py-0.5">
               {filteredUnits.map((unit) => {
                 const unitStr = String(unit).trim();
                 const hasActive = record.activeToots.has(unitStr);
@@ -180,14 +181,14 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
                       <div className="absolute top-1 left-1 w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
                     )}
                     <button
-                      className="absolute -top-1 -right-1 w-3.5 h-3.5 flex items-center justify-center rounded-full bg-slate-800 text-white opacity-0 group-hover:opacity-100 transition-all shadow-md hover:bg-red-600 z-20 scale-90 group-hover:scale-100"
+                      className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center rounded-full bg-slate-800 text-white opacity-0 group-hover:opacity-100 transition-all shadow-md hover:bg-red-600 z-20 scale-90 group-hover:scale-100"
                       aria-label={`Устгах ${unitStr}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         onDeleteUnit?.(record.floor, unitStr);
                       }}
                     >
-                      <span className="text-xs leading-none">×</span>
+                      <span className="leading-none">×</span>
                     </button>
                   </div>
                 );
@@ -201,12 +202,11 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
       title: <span className="text-slate-900 dark:text-slate-200">Үйлдэл</span>,
       key: "action",
       align: "center",
-      width: 120,
-      className: "text-slate-900 dark:text-slate-200",
+      width: 96,
       render: (_: any, record: FloorItem) => (
-        <div className="flex items-center justify-center gap-2">
+        <div className="flex items-center justify-center gap-1">
           <button
-            className="p-1 rounded-xl hover-surface transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/30"
+            className="p-1.5 rounded-md hover-surface transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/30"
             title="Шинэ тоот нэмэх"
             onClick={(e) => {
               e.stopPropagation();
@@ -216,7 +216,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
             <Plus className="w-4 h-4 text-blue-500 dark:text-blue-400" />
           </button>
           <button
-            className={`p-1 rounded-xl action-delete hover-surface transition-colors hover:bg-red-100 dark:hover:bg-red-900/30 ${
+            className={`p-1.5 rounded-md action-delete hover-surface transition-colors hover:bg-red-100 dark:hover:bg-red-900/30 ${
               record.units.length === 0
                 ? "opacity-20 cursor-not-allowed grayscale"
                 : ""
@@ -242,6 +242,8 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
 
     return cols;
   }, [
+    // Баганын өргөн нь мөрүүдийн тоотын тооноос хамаардаг тул `data` хэрэгтэй.
+    data,
     page,
     pageSize,
     onAddUnit,
@@ -253,16 +255,13 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
   ]);
 
   return (
-    <div className="guilgee-table-wrap bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div className="w-full">
       <Table
         dataSource={data}
         columns={columns}
         rowKey={(record) => `${record.orts || ""}-${record.floor}`}
         pagination={false}
-        size="small"
-        bordered
         loading={loading}
-        className="guilgee-table units-table"
         onChange={(_: any, __: any, sorter: any) => {
           if (actions?.toggleSortFor) {
             actions.toggleSortFor(
@@ -279,19 +278,13 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
           },
         })}
         scroll={{ x: "max-content", y: maxHeight as any }}
-        rowClassName={(record, index) => `
-          cursor-pointer
-          ${
-            selectedFloor === record.floor
-              ? "bg-blue-50/70 dark:bg-blue-950/20 font-semibold shadow-inner"
-              : index % 2 === 0
-                ? "bg-white dark:bg-slate-900/40"
-                : "bg-slate-50 dark:bg-slate-800/40"
-          }
-          text-slate-900 dark:text-slate-200
-          hover:bg-slate-100 dark:hover:bg-slate-800/60
-          transition-all duration-200
-        `}
+        rowClassName={(record) =>
+          // Ээлжлэх/hover өнгийг стандарт хүснэгт өөрөө хийнэ — энд зөвхөн
+          // сонгосон давхарын онцлолт үлдэнэ.
+          `cursor-pointer${
+            selectedFloor === record.floor ? " zt-row-selected font-semibold" : ""
+          }`
+        }
         locale={{
           emptyText: (
             <span className="text-gray-500 dark:text-gray-400">

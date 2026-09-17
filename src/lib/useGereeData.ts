@@ -494,7 +494,7 @@ export function useGereeData(
           return React.createElement(
             "span",
             {
-              className: `inline-flex items-center px-2 py-0.5 rounded-full text-xs  ${statusClass}`,
+              className: `inline-flex items-center px-2 py-0.5 rounded-full ${statusClass}`,
             },
             status || "Идэвхтэй",
           );
@@ -507,15 +507,11 @@ export function useGereeData(
           try {
             const date = new Date(createdDate);
             if (!isNaN(date.getTime())) {
-              return React.createElement(
-                "span",
-                { className: "text-green-600 dark:text-green-400 font-medium" },
-                date.toLocaleDateString("mn-MN", {
-                  year: "numeric",
-                  month: "2-digit",
-                  day: "2-digit",
-                }),
-              );
+              return date.toLocaleDateString("mn-MN", {
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+              });
             }
           } catch (e) {}
           return "-";

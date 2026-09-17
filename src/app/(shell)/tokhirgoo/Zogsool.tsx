@@ -11,6 +11,8 @@ import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { Loader } from "@mantine/core";
 import Button from "@/components/ui/Button";
+import Table from "@/components/ui/table";
+import type { ColumnsType } from "@/components/ui/table";
 
 interface ZogsoolItem {
   _id?: string;
@@ -166,8 +168,95 @@ export default function Zogsool({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const zogsoolColumns: ColumnsType<ZogsoolItem> = useMemo(
+    () => [
+      {
+        title: "№",
+        key: "index",
+        width: 40,
+        align: "center",
+        render: (_: any, __: any, index: number) =>
+          (page - 1) * pageSize + index + 1,
+      },
+      { title: "Зогсоолын нэр", dataIndex: "ner", key: "ner", width: 240 },
+      {
+        title: "Багтаамж",
+        dataIndex: "too",
+        key: "too",
+        width: 120,
+        align: "center",
+        render: (v: any) => (
+          <span className="inline-flex items-center rounded-lg border border-slate-300 bg-slate-100 px-3 py-0.5 dark:border-slate-700 dark:bg-slate-800">
+            {v} <span className="ml-1 opacity-70">машин</span>
+          </span>
+        ),
+      },
+      {
+        title: "Үндсэн тариф",
+        dataIndex: "undsenUne",
+        key: "undsenUne",
+        width: 150,
+        align: "right",
+        render: (v: any) => (
+          <span className="inline-flex items-center rounded-lg border border-emerald-300 bg-emerald-100 px-3 py-0.5 text-emerald-950 dark:border-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-100">
+            {formatNumber(v)} ₮
+          </span>
+        ),
+      },
+      {
+        title: "Хаалганууд",
+        dataIndex: "khaalga",
+        key: "khaalga",
+        render: (khaalga: any[]) => (
+          <div className="flex flex-wrap gap-1.5">
+            {khaalga && khaalga.length > 0 ? (
+              khaalga.map((gate: any, gateIdx: number) => (
+                <span
+                  key={gateIdx}
+                  className="inline-flex items-center rounded-lg border border-blue-300 bg-blue-100 px-3 py-0.5 text-blue-950 dark:border-blue-700 dark:bg-blue-900/60 dark:text-blue-100"
+                >
+                  {gate.ner}
+                </span>
+              ))
+            ) : (
+              <span className="italic opacity-60">Хаалга холбоогүй</span>
+            )}
+          </div>
+        ),
+      },
+      {
+        title: "Үйлдэл",
+        key: "action",
+        width: 96,
+        align: "center",
+        render: (_: any, record: ZogsoolItem) => (
+          <div className="flex items-center justify-center gap-1">
+            <button
+              onClick={() => openEdit(record)}
+              className="rounded-lg p-1.5 text-blue-600 transition-colors hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-500/10"
+              title="Засах"
+            >
+              <Edit className="h-4 w-4" />
+            </button>
+            {record._id && (
+              <button
+                onClick={() => deleteZogsool(record._id!)}
+                className="rounded-lg p-1.5 text-rose-600 transition-colors hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10"
+                title="Устгах"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        ),
+      },
+    ],
+     
+    [page, pageSize],
+  );
+
   if (view === "form") {
-    return (
+  return (
       <div className="h-full flex flex-col overflow-hidden">
         <div className="bg-[color:var(--surface-bg)] rounded-2xl border border-[color:var(--surface-border)] p-4 sm:p-6 flex-1 flex flex-col overflow-hidden">
           {/* Header */}
@@ -259,126 +348,27 @@ export default function Zogsool({
           </Button>
         </div>
 
-        {/* Table Section — Fits content height naturally */}
-        {isValidating ? (
-          <div className="flex flex-col items-center justify-center py-12 gap-3">
-            <Loader size="md" />
-            <span className="text-xs text-[color:var(--muted-text)]">Мэдээлэл уншиж байна...</span>
-          </div>
-        ) : (
-          <>
-            <div style={{ borderRadius: '14px' }} className="border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-[13px]">
-                  <thead className="sticky top-0 z-10 bg-slate-100 dark:bg-slate-800 border-b border-[color:var(--surface-border)]">
-                    <tr>
-                      <th className="px-3 py-2.5 text-xs text-slate-700 dark:text-slate-300 text-center w-12">
-                        №
-                      </th>
-                      <th className="px-4 py-2.5 text-xs text-slate-700 dark:text-slate-300 text-left w-1/4">
-                        Зогсоолын нэр
-                      </th>
-                      <th className="px-4 py-2.5 text-xs text-slate-700 dark:text-slate-300 text-center w-28">
-                        Багтаамж
-                      </th>
-                      <th className="px-4 py-2.5 text-xs text-slate-700 dark:text-slate-300 text-right w-36">
-                        Үндсэн тариф
-                      </th>
-                      <th className="px-4 py-2.5 text-xs text-slate-700 dark:text-slate-300 text-left">
-                        Хаалганууд
-                      </th>
-                      <th className="px-4 py-2.5 text-xs text-slate-700 dark:text-slate-300 text-center w-24">
-                        Үйлдэл
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[color:var(--surface-border)]">
-                    {paginatedData.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={6}
-                          className="px-4 py-16 text-center text-[color:var(--muted-text)]"
-                        >
-                          <div>
-                            <p className="text-slate-700 dark:text-slate-200">
-                              Зогсоолын талбай бүртгэгдээгүй байна
-                            </p>
-                            <p className="text-xs text-slate-400 mt-1">
-                              "Шинэ зогсоол нэмэх" товчийг дарж зогсоолын систем тохируулна уу
-                            </p>
-                          </div>
-                        </td>
-                      </tr>
-                    ) : (
-                      paginatedData.map((record, index) => {
-                        return (
-                          <tr
-                            key={record._id || record.key || index}
-                            className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
-                          >
-                            <td className="px-3 py-2.5 text-center text-slate-500 dark:text-slate-400 text-xs">
-                              {(page - 1) * pageSize + index + 1}
-                            </td>
-                            <td className="px-4 py-2.5 text-slate-900 dark:text-white">
-                              <span className="text-slate-800 dark:text-slate-100">{record.ner}</span>
-                            </td>
-                            <td className="px-4 py-2.5 text-center">
-                              <span style={{ borderRadius: '8px' }} className="inline-flex items-center px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white text-xs border border-slate-300 dark:border-slate-700">
-                                {record.too} <span className="text-[10px] text-slate-600 dark:text-slate-300 ml-1">машин</span>
-                              </span>
-                            </td>
-                            <td className="px-4 py-2.5 text-right">
-                              <span style={{ borderRadius: '8px' }} className="inline-flex items-center px-3 py-1 bg-emerald-100 dark:bg-emerald-900/60 text-emerald-950 dark:text-emerald-100 text-xs border border-emerald-300 dark:border-emerald-700">
-                                {formatNumber(record.undsenUne)} ₮
-                              </span>
-                            </td>
-                            <td className="px-4 py-2.5">
-                              <div className="flex flex-wrap gap-1.5">
-                                {record.khaalga && record.khaalga.length > 0 ? (
-                                  record.khaalga.map((gate: any, gateIdx: number) => (
-                                    <span
-                                      key={gateIdx}
-                                      style={{ borderRadius: '8px' }}
-                                      className="inline-flex items-center px-3 py-1 bg-blue-100 dark:bg-blue-900/60 text-blue-950 dark:text-blue-100 text-xs border border-blue-300 dark:border-blue-700"
-                                    >
-                                      {gate.ner}
-                                    </span>
-                                  ))
-                                ) : (
-                                  <span className="text-xs text-slate-500 italic">
-                                    Хаалга холбоогүй
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-4 py-2.5 text-center">
-                              <div className="flex items-center justify-center gap-1.5">
-                                <button
-                                  onClick={() => openEdit(record)}
-                                  className="p-1.5 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors"
-                                  title="Засах"
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </button>
-                                {record._id && (
-                                  <button
-                                    onClick={() => deleteZogsool(record._id!)}
-                                    className="p-1.5 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors"
-                                    title="Устгах"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+        {/* Стандарт хүснэгт */}
+        <>
+          <Table<ZogsoolItem>
+            columns={zogsoolColumns}
+            dataSource={paginatedData}
+            rowKey={(record, index) => record._id || record.key || index}
+            loading={isValidating}
+            pagination={false}
+            scroll={{ x: "max-content" }}
+            locale={{
+              emptyText: (
+                <div>
+                  <p>Зогсоолын талбай бүртгэгдээгүй байна</p>
+                  <p className="mt-1 text-xs opacity-70">
+                    &quot;Шинэ зогсоол нэмэх&quot; товчийг дарж зогсоолын систем
+                    тохируулна уу
+                  </p>
+                </div>
+              ),
+            }}
+          />
 
             {/* Pagination Controls — Fixed at bottom */}
             {totalPages > 0 && (
@@ -449,8 +439,7 @@ export default function Zogsool({
                 </div>
               </div>
             )}
-          </>
-        )}
+        </>
       </div>
     </div>
   );

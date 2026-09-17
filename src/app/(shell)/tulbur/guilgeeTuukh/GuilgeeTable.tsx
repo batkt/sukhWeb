@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Table, Spin } from "antd";
+import { Spin } from "antd";
+import Table from "@/components/ui/table";
 import useSWR from "swr";
 import uilchilgee from "@/lib/uilchilgee";
 import { Eye, History, Banknote, MessageSquare } from "lucide-react";
@@ -138,8 +139,6 @@ export default function GuilgeeTable({
               ? true
               : false,
           fixed: col.sticky ? ("left" as const) : undefined,
-          className:
-            "text-[11px] bg-gray-50/50 dark:bg-slate-900/50 text-[color:var(--panel-text)] py-1",
           onCell: () => ({
             className:
               col.align === "end"
@@ -207,7 +206,7 @@ export default function GuilgeeTable({
                   : resident?.toot;
               const displayToot = ct?.toot || record?.toot || residentToot || "-";
               return (
-                <span className="text-center block text-gray-900 dark:text-white text-[9px] leading-tight">
+                <span className="text-center block text-gray-900 dark:text-white leading-tight">
                   {displayToot}
                 </span>
               );
@@ -524,10 +523,10 @@ export default function GuilgeeTable({
               }
               const isPaid = tuluvLabel === "Төлсөн";
               return (
-                <div className="flex items-center justify-center gap-2">
+                <div className="flex items-center justify-center gap-1">
                   <span
                     className={
-                      "px-2 py-0.5 rounded-full text-sm " +
+                      "px-2 py-0.5 rounded-full " +
                       (isPaid
                         ? "badge-paid"
                         : tuluvLabel === "Цуцалсан"
@@ -668,7 +667,7 @@ export default function GuilgeeTable({
                       className="p-1.5 rounded hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors group"
                       title="Гүйлгээ хийх"
                     >
-                      <Banknote className="w-5 h-5 text-emerald-500 dark:text-emerald-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-300" />
+                      <Banknote className="w-4 h-4 text-emerald-500 dark:text-emerald-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-300" />
                     </button>
                   )}
                   <button
@@ -680,7 +679,7 @@ export default function GuilgeeTable({
                     {sendingSmsId === gid ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-emerald-500"></div>
                     ) : (
-                      <MessageSquare className="w-5 h-5 text-emerald-500 dark:text-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-300" />
+                      <MessageSquare className="w-4 h-4 text-emerald-500 dark:text-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-300" />
                     )}
                   </button>
                   <button
@@ -688,14 +687,14 @@ export default function GuilgeeTable({
                     className="p-1.5 rounded hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
                     title="Түүх харах"
                   >
-                    <History className="w-5 h-5 text-blue-500 dark:blue-400 hover:text-blue-600 dark:hover:text-blue-300" />
+                    <History className="w-4 h-4 text-blue-500 dark:blue-400 hover:text-blue-600 dark:hover:text-blue-300" />
                   </button>
                   <button
                     onClick={() => onViewInvoice(residentData)}
                     className="p-1.5 rounded hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
                     title="Нэхэмжлэх харах"
                   >
-                    <Eye className="w-5 h-5 text-green-500 dark:text-green-400 hover:text-green-600 dark:hover:text-green-300" />
+                    <Eye className="w-4 h-4 text-green-500 dark:text-green-400 hover:text-green-600 dark:hover:text-green-300" />
                   </button>
                 </div>
               );
@@ -862,12 +861,9 @@ export default function GuilgeeTable({
     <div className="w-full overflow-hidden">
       <div className="w-full">
         <Table
-          className="guilgee-table"
           dataSource={data}
           loading={loading}
           pagination={false}
-          size="small"
-          bordered
           rowKey={(record: any) => record._id || Math.random().toString()}
           rowSelection={
             isCheckboxVisible
@@ -897,14 +893,9 @@ export default function GuilgeeTable({
           }}
           summary={getSummary}
           columns={columns}
-          rowClassName={(record: any, index: number) => {
-            // Base alternating row colors
-            const baseClass =
-              index % 2 === 0
-                ? "bg-white dark:bg-gray-800"
-                : "bg-gray-50 dark:bg-gray-700/50";
-
-            // Highlight cancelled items with red background
+          rowClassName={(record: any) => {
+            // Ээлжлэх өнгө/hover нь стандарт хүснэгтэд шингэсэн — энд зөвхөн
+            // цуцалсан мөрийг улаанаар ялгана.
             const gid = getGereeId(record);
             const historyAggregate =
               Number(record?._totalTulbur || 0) -
@@ -931,9 +922,7 @@ export default function GuilgeeTable({
               tuluvLabel = "Төлсөн";
             }
 
-            const cancelledClass =
-              tuluvLabel === "Цуцалсан" ? " row-cancelled" : "";
-            return `${baseClass} text-gray-900 dark:text-white transition-colors compact-row${cancelledClass}`;
+            return tuluvLabel === "Цуцалсан" ? "zt-row-error" : "";
           }}
         />
       </div>

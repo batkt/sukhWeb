@@ -7,6 +7,8 @@ import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
 import { UnitsTable, FloorItem } from "./UnitsTable";
 import { StandardPagination } from "@/components/ui/StandardTable";
 import Button from "@/components/ui/Button";
+import Table from "@/components/ui/table";
+import type { ColumnsType } from "@/components/ui/table";
 import QuickRegisterModal from "./modals/QuickRegisterModal";
 import SendInvoiceConfirmModal from "./modals/SendInvoiceConfirmModal";
 import DeleteConfirmModal from "./modals/DeleteModal";
@@ -1067,6 +1069,128 @@ export default function UnitsSection({
     return zogsoolTableRows.reduce((sum, r) => sum + (r.tulbur || 0), 0);
   }, [zogsoolTableRows]);
 
+  // Зогсоол/агуулахын хүснэгтийн багана.
+  const zogsoolColumns: ColumnsType<any> = useMemo(
+    () => [
+      { title: "№", dataIndex: "index", key: "index", width: 40, align: "center" },
+      { title: "Огноо", dataIndex: "ognoo", key: "ognoo" },
+      {
+        title: "Нэр",
+        dataIndex: "ner",
+        key: "ner",
+        render: (v: any) => <span className="font-semibold">{v}</span>,
+      },
+      { title: "Орц", dataIndex: "orts", key: "orts", align: "center" },
+      { title: "Тоот", dataIndex: "toot", key: "toot", align: "center" },
+      { title: "Дугаар", dataIndex: "dugaar", key: "dugaar" },
+      {
+        title: propertyTab === "Зогсоол" ? "Зогсоол" : "Агуулах",
+        dataIndex: "zogsoolDugaar",
+        key: "zogsoolDugaar",
+        align: "center",
+        render: (v: any) => (
+          <span className="font-bold text-emerald-600 dark:text-emerald-400">
+            {v}
+          </span>
+        ),
+      },
+      {
+        title: "Төлбөр",
+        dataIndex: "tulbur",
+        key: "tulbur",
+        align: "right",
+        render: (v: number) => (
+          <span className="font-bold">
+            {Number(v || 0).toLocaleString("mn-MN", {
+              minimumFractionDigits: 2,
+            })}
+            ₮
+          </span>
+        ),
+      },
+      {
+        title: "Төлсөн эсэх",
+        key: "tolsenEsekh",
+        align: "center",
+        render: (_: any, row: any) => (
+          <span
+            className={`inline-block rounded-full px-2.5 py-0.5 font-bold ${
+              !row.isOccupied
+                ? "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500"
+                : row.tolsenEsekh
+                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                  : "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
+            }`}
+          >
+            {row.isOccupied ? (row.tolsenEsekh ? "Төлсөн" : "Төлөөгүй") : "-"}
+          </span>
+        ),
+      },
+      {
+        title: "Үйлдэл",
+        key: "action",
+        width: 96,
+        align: "center",
+        render: (_: any, row: any) => (
+          <div className="flex items-center justify-center gap-1">
+            {row.isOccupied ? (
+              <>
+                <button
+                  onClick={() =>
+                    handleSendSingleUnitInvoice(row.resident, row.id)
+                  }
+                  className="cursor-pointer rounded-lg p-1.5 text-emerald-600 transition hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+                  title="Нэхэмжлэх/авлага илгээх"
+                >
+                  <Send className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!row.resident) return;
+                    if (
+                      !confirm(
+                        `Тоот ${row.zogsoolDugaar}-аас ${row.ner}-г хасах уу?`,
+                      )
+                    )
+                      return;
+                    await actions.handleUnlinkFromUnit(
+                      row.resident,
+                      row.id,
+                      propertyTab,
+                    );
+                  }}
+                  className="cursor-pointer rounded-lg p-1.5 text-orange-500 transition hover:bg-orange-50 dark:hover:bg-orange-950/30"
+                  title="Холбоос хасах"
+                >
+                  <UserX className="h-4 w-4" />
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() =>
+                  setQuickRegister({ unit: row.id, floor: selectedFloor || "" })
+                }
+                className="cursor-pointer rounded-lg p-1.5 text-blue-600 transition hover:bg-blue-50 dark:hover:bg-blue-950/30"
+                title="Бүртгэх"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            )}
+            <button
+              onClick={() => onDeleteUnit(selectedFloor || "", row.id)}
+              className="cursor-pointer rounded-lg p-1.5 text-red-500 transition hover:bg-red-50 dark:hover:bg-red-950/30"
+              title="Устгах"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        ),
+      },
+    ],
+     
+    [propertyTab, selectedFloor],
+  );
+
   if (davkharOptions.length === 0) {
     return (
       <div className="p-3 rounded-md border border-amber-300 text-amber-700 text-sm">
@@ -1095,8 +1219,8 @@ export default function UnitsSection({
         {selectedOrts !== undefined && (
           <>
             {propertyTab === "Тоот" && (
-              <div className="table-surface w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl">
-                <div className="p-1 allow-overflow no-scrollbar" id="units-table">
+              <div className="w-full">
+                <div className="allow-overflow no-scrollbar" id="units-table">
                   <UnitsTable
                     data={floorData.slice(
                       (unitPage - 1) * unitPageSize,
@@ -1180,7 +1304,7 @@ export default function UnitsSection({
                 </div>
 
                 {/* Table Component Box */}
-                <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xs p-5 space-y-4">
+                <div className="space-y-4">
                   {/* Header Bar */}
                   <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-gray-100 dark:border-gray-800">
                     <div className="flex items-center gap-2">
@@ -1251,138 +1375,23 @@ export default function UnitsSection({
                   </div>
 
                   {/* Table */}
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-xs text-left border-collapse">
-                      <thead>
-                        <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 uppercase font-semibold">
-                          <th className="p-3 text-center w-10">
-                            <input
-                              type="checkbox"
-                              checked={zogsoolTableRows.length > 0 && checkedUnits.length === zogsoolTableRows.length}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setCheckedUnits(zogsoolTableRows.map((r) => r.id));
-                                } else {
-                                  setCheckedUnits([]);
-                                }
-                              }}
-                              className="rounded text-emerald-600 cursor-pointer"
-                            />
-                          </th>
-                          <th className="p-3 text-center w-12">№</th>
-                          <th className="p-3">Огноо</th>
-                          <th className="p-3">Нэр</th>
-                          <th className="p-3 text-center">Орц</th>
-                          <th className="p-3 text-center">Тоот</th>
-                          <th className="p-3">Дугаар</th>
-                          <th className="p-3 text-center">{propertyTab === "Зогсоол" ? "Зогсоол" : "Агуулах"}</th>
-                          <th className="p-3 text-right">Төлбөр</th>
-                          <th className="p-3 text-center">Төлсөн эсэх</th>
-                          <th className="p-3 text-center">Үйлдэл</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                        {zogsoolTableRows.length === 0 ? (
-                          <tr>
-                            <td colSpan={11} className="py-8 text-center text-slate-400 italic">
-                              {propertyTab === "Зогсоол" ? "Бүртгэгдсэн зогсоол байхгүй байна" : "Бүртгэгдсэн агуулах байхгүй байна"}
-                            </td>
-                          </tr>
-                        ) : (
-                          zogsoolTableRows.map((row) => {
-                            const isChecked = checkedUnits.includes(row.id);
-                            return (
-                              <tr
-                                key={row.id}
-                                className={`hover:bg-slate-50 dark:hover:bg-slate-800/40 transition ${
-                                  isChecked ? "bg-emerald-50/40 dark:bg-emerald-950/20" : ""
-                                }`}
-                              >
-                                <td className="p-3 text-center">
-                                  <input
-                                    type="checkbox"
-                                    checked={isChecked}
-                                    onChange={(e) => {
-                                      if (e.target.checked) {
-                                        setCheckedUnits((prev) => [...prev, row.id]);
-                                      } else {
-                                        setCheckedUnits((prev) => prev.filter((x) => x !== row.id));
-                                      }
-                                    }}
-                                    className="rounded text-emerald-600 cursor-pointer"
-                                  />
-                                </td>
-                                <td className="p-3 text-center font-medium text-slate-500">{row.index}</td>
-                                <td className="p-3 text-slate-600 dark:text-slate-300">{row.ognoo}</td>
-                                <td className="p-3 font-semibold text-slate-800 dark:text-slate-100">{row.ner}</td>
-                                <td className="p-3 text-center font-semibold text-slate-700 dark:text-slate-300">{row.orts}</td>
-                                <td className="p-3 text-center font-semibold text-slate-700 dark:text-slate-300">{row.toot}</td>
-                                <td className="p-3 text-slate-600 dark:text-slate-300">{row.dugaar}</td>
-                                <td className="p-3 text-center font-bold text-emerald-600 dark:text-emerald-400">{row.zogsoolDugaar}</td>
-                                <td className="p-3 text-right font-bold text-slate-900 dark:text-white">
-                                  {row.tulbur.toLocaleString("mn-MN", { minimumFractionDigits: 2 })}₮
-                                </td>
-                                <td className="p-3 text-center">
-                                  <span
-                                    className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                                       !row.isOccupied
-                                         ? "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500"
-                                         : row.tolsenEsekh
-                                           ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
-                                           : "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
-                                    }`}
-                                  >
-                                    {row.isOccupied ? (row.tolsenEsekh ? "Төлсөн" : "Төлөөгүй") : "-"}
-                                  </span>
-                                </td>
-                                <td className="p-3 text-center">
-                                  <div className="flex items-center justify-center gap-1.5">
-                                    {row.isOccupied ? (
-                                      <>
-                                        <button
-                                          onClick={() => handleSendSingleUnitInvoice(row.resident, row.id)}
-                                          className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition cursor-pointer"
-                                          title="Нэхэмжлэх/авлага илгээх"
-                                        >
-                                          <Send className="w-3.5 h-3.5" />
-                                        </button>
-                                        <button
-                                          onClick={async () => {
-                                            if (!row.resident) return;
-                                            if (!confirm(`Тоот ${row.zogsoolDugaar}-аас ${row.ner}-г хасах уу?`)) return;
-                                            await actions.handleUnlinkFromUnit(row.resident, row.id, propertyTab);
-                                          }}
-                                          className="p-1.5 rounded-lg text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-950/30 transition cursor-pointer"
-                                          title="Холбоос хасах"
-                                        >
-                                          <UserX className="w-3.5 h-3.5" />
-                                        </button>
-                                      </>
-                                    ) : (
-                                      <button
-                                        onClick={() => setQuickRegister({ unit: row.id, floor: selectedFloor || "" })}
-                                        className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition cursor-pointer"
-                                        title="Бүртгэх"
-                                      >
-                                        <Plus className="w-3.5 h-3.5" />
-                                      </button>
-                                    )}
-                                    <button
-                                      onClick={() => onDeleteUnit(selectedFloor || "", row.id)}
-                                      className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition cursor-pointer"
-                                      title="Устгах"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            );
-                          })
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
+                  <Table<any>
+                    columns={zogsoolColumns}
+                    dataSource={zogsoolTableRows}
+                    rowKey={(row) => row.id}
+                    pagination={false}
+                    scroll={{ x: "max-content" }}
+                    rowSelection={{
+                      selectedRowKeys: checkedUnits,
+                      onChange: (keys) => setCheckedUnits(keys as string[]),
+                    }}
+                    locale={{
+                      emptyText:
+                        propertyTab === "Зогсоол"
+                          ? "Бүртгэгдсэн зогсоол байхгүй байна"
+                          : "Бүртгэгдсэн агуулах байхгүй байна",
+                    }}
+                  />
 
                   {/* Summary Footer Row */}
                   <div className="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-700 font-bold text-sm text-slate-900 dark:text-white">

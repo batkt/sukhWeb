@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { Table } from "antd";
+import Table from "@/components/ui/table";
 import { useBuilding } from "@/context/BuildingContext";
 import { useAuth } from "@/lib/useAuth";
 import useBaiguullaga from "@/lib/useBaiguullaga";
@@ -374,7 +374,7 @@ export default function ZogsoolTailanPage() {
         title: "№",
         dataIndex: "index",
         key: "index",
-        width: 50,
+        width: 40,
         align: "center" as const,
         render: (_: any, __: any, index: number) => index + 1,
       },
@@ -500,7 +500,7 @@ export default function ZogsoolTailanPage() {
         title: "№",
         dataIndex: "index",
         key: "index",
-        width: 50,
+        width: 40,
         align: "center" as const,
         render: (_: any, __: any, index: number) => index + 1,
       },
@@ -580,7 +580,7 @@ export default function ZogsoolTailanPage() {
         title: "№",
         dataIndex: "index",
         key: "index",
-        width: 50,
+        width: 40,
         align: "center" as const,
         render: (_: any, __: any, index: number) => index + 1,
       },
@@ -766,19 +766,16 @@ export default function ZogsoolTailanPage() {
       </div>
 
       {activeTab === "residentSummary" && (
-        <div className="overflow-hidden rounded-2xl neu-table allow-overflow">
-          <h3 className="p-4 text-theme border-b">
+        <div className="allow-overflow">
+          <h3 className="pb-3 text-theme">
             Оршин суугчдын урьсан зочдын машин бүртгэлийн тайлан
           </h3>
-          <div className="max-h-[30vh] overflow-y-auto custom-scrollbar p-4">
+          <div>
             <Table
               dataSource={residentSummary}
               columns={residentSummaryColumns}
               rowKey="orshinSuugchiinId"
               pagination={false}
-              size="small"
-              bordered
-              className="guilgee-table"
               scroll={{ x: "max-content", y: 240 }}
               locale={{ emptyText: "Мэдээлэл алга байна" }}
               onRow={(record) => ({
@@ -786,9 +783,9 @@ export default function ZogsoolTailanPage() {
                   handleResidentClick(record.orshinSuugchiinId);
                   setActiveTab("guestDetail");
                 },
-                className: `cursor-pointer hover:bg-[color:var(--surface-hover)]/30 ${
+                className: `cursor-pointer${
                   selectedResidentId === record.orshinSuugchiinId
-                    ? "bg-[color:var(--surface-hover)]/50"
+                    ? " zt-row-selected"
                     : ""
                 }`,
               })}
@@ -847,8 +844,8 @@ export default function ZogsoolTailanPage() {
       )}
 
       {activeTab === "guestDetail" && (
-        <div className="overflow-hidden rounded-2xl neu-table allow-overflow">
-          <h3 className="p-4 text-theme border-b flex items-center justify-between flex-wrap gap-2">
+        <div className="allow-overflow">
+          <h3 className="pb-3 text-theme flex items-center justify-between flex-wrap gap-2">
             <span className="font-semibold">Зочдын дэлгэрэнгүй тайлан</span>
             {selectedResident && (
               <div className="flex items-center gap-3 text-xs text-theme/80 flex-wrap">
@@ -870,7 +867,7 @@ export default function ZogsoolTailanPage() {
               </div>
             )}
           </h3>
-          <div className="max-h-[30vh] overflow-y-auto custom-scrollbar p-4">
+          <div>
             <Table
               dataSource={displayDetail || []}
               columns={guestDetailColumns}
@@ -878,9 +875,6 @@ export default function ZogsoolTailanPage() {
               //   `${record.mashiniiDugaar}-${record._id || Math.random().toString()}`
               // }
               pagination={false}
-              size="small"
-              bordered
-              className="guilgee-table"
               scroll={{ x: "max-content", y: 240 }}
               loading={detailLoading}
               locale={{
@@ -938,16 +932,13 @@ export default function ZogsoolTailanPage() {
       )}
 
       {activeTab === "guestCarList" && (
-        <div className="overflow-hidden rounded-2xl neu-table allow-overflow">
-          <h3 className="p-4 text-theme border-b">Зочдын машины жагсаалт</h3>
-          <div className="max-h-[30vh] overflow-y-auto custom-scrollbar p-4">
+        <div className="allow-overflow">
+          <h3 className="pb-3 text-theme">Зочдын машины жагсаалт</h3>
+          <div>
             <Table
               dataSource={guestCarList}
               columns={guestCarListColumns}
               pagination={false}
-              size="small"
-              bordered
-              className="guilgee-table"
               scroll={{ x: "max-content", y: 240 }}
               locale={{ emptyText: "Мэдээлэл алга байна" }}
             />

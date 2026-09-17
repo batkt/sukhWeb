@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Table, Popconfirm, Tag, Tooltip } from "antd";
-import type { ColumnsType } from "antd/es/table";
+import { Popconfirm, Tag, Tooltip } from "antd";
+import Table from "@/components/ui/table";
+import type { ColumnsType } from "@/components/ui/table";
 import { Trash2, Loader2, Printer } from "lucide-react";
 import formatNumber from "../../../../../tools/function/formatNumber";
 
@@ -58,9 +59,8 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
       {
         title: <span className="text-inherit">№</span>,
         key: "index",
-        width: 50,
+        width: 40,
         align: "center",
-        className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
         render: (_: any, __: any, index: number) => index + 1,
       },
       {
@@ -68,7 +68,6 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
         dataIndex: "date",
         key: "date",
         align: "center",
-        className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
         render: (val: string) => (
           <span className="text-inherit whitespace-nowrap">
             {val || "-"}
@@ -80,7 +79,6 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
         dataIndex: "toot",
         key: "toot",
         align: "center",
-        className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
         render: (val: string, item: EbarimtItem) => (
           <span className="text-inherit whitespace-nowrap">
             {item.toot || item.medeelel?.toot || item.orshinSuugch?.toot || "-"}
@@ -94,7 +92,6 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
         dataIndex: "gereeniiDugaar",
         key: "gereeniiDugaar",
         align: "center",
-        className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
         render: (val: string) => (
           <span className="text-inherit whitespace-nowrap">
             {val || "-"}
@@ -106,7 +103,6 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
         dataIndex: "type",
         key: "type",
         align: "center",
-        className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
         render: (val: string) => {
           const isB2C = val === "B2C_RECEIPT";
           const isB2B = val === "B2B_RECEIPT";
@@ -118,7 +114,7 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
               : "bg-gray-500/10 text-gray-600 dark:bg-gray-800 dark:text-gray-400 border border-gray-500/20 dark:border-gray-500/30";
           return (
             <span
-              className={`px-2 py-0.5 rounded-full text-[10px] ${badgeClass}`}
+              className={`px-2 py-0.5 rounded-full ${badgeClass}`}
             >
               {label}
             </span>
@@ -130,9 +126,8 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
         dataIndex: "ddtd",
         key: "ddtd",
         align: "center",
-        className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
         render: (val: string, item: EbarimtItem) => (
-          <span className="text-inherit whitespace-nowrap font-mono text-xs">
+          <span className="text-inherit whitespace-nowrap font-mono">
             {item.ddtd || item.receiptId || "-"}
           </span>
         ),
@@ -142,7 +137,6 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
         dataIndex: "total",
         key: "total",
         align: "center",
-        className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
         onCell: () => ({ className: "!text-right" }),
         render: (val: number) => (
           <span className="text-inherit whitespace-nowrap font-medium">
@@ -155,7 +149,6 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
         dataIndex: "service",
         key: "service",
         align: "center",
-        className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
         render: (val: string) => (
           <span className="text-inherit whitespace-nowrap">
             {val || "-"}
@@ -167,7 +160,6 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
         key: "tuluv",
         align: "center",
         width: 110,
-        className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
         render: (_: any, row: EbarimtItem) =>
           butsaasanEsekh(row) ? (
             <Tooltip
@@ -193,8 +185,6 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
               align: "center",
               width: onButsaakh && onKhevlekh ? 110 : 80,
               fixed: "right",
-              className:
-                "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
               render: (_: any, row: EbarimtItem) => {
                 const butsaajBaigaa =
                   !!butsaajBaigaaId && butsaajBaigaaId === String(row._id);
@@ -238,7 +228,7 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
                     <Popconfirm
                       title="И-баримт буцаах уу?"
                       description={
-                        <span className="text-xs">
+                        <span className="">
                           Татварын системээс мөн буцаагдана.
                           <br />
                           Үйлдлийг эргүүлэх боломжгүй.
@@ -312,22 +302,16 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
             Math.random().toString()
           }
           pagination={false}
-          size="small"
-          bordered
           loading={loading}
-          className="guilgee-table min-w-[1180px] dark:bg-gray-900 dark:text-gray-100"
+          className="min-w-[1180px]"
           scroll={{ x: "max-content", y: maxHeight }}
           rowClassName={(record, index) => `
-            ${index % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-700/50"}
-            text-gray-900 dark:text-white
-            hover:bg-gray-100 dark:hover:bg-gray-600
-            transition-colors duration-200
             ${butsaasanEsekh(record) ? "opacity-55 line-through decoration-red-400/70" : ""}
-          `}
+`}
           locale={{
             emptyText: (
               <div className="py-8 text-center bg-white dark:bg-gray-900">
-                <span className="text-gray-500 dark:text-gray-400 text-sm">
+                <span className="text-gray-500 dark:text-gray-400">
                   Хайсан мэдээлэл алга байна
                 </span>
               </div>
@@ -371,7 +355,7 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
                     className="bg-gray-50 dark:bg-gray-800"
                   >
                     {butsaasanToo > 0 ? (
-                      <span className="whitespace-nowrap text-xs text-red-500 font-medium">
+                      <span className="whitespace-nowrap text-red-500 font-medium">
                         Буцаасан {butsaasanToo}: {formatNumber(butsaasanDun)}₮
                       </span>
                     ) : (
