@@ -25,6 +25,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import useSWR from "swr";
 import Button from "@/components/ui/Button";
 import useModalHotkeys from "@/lib/useModalHotkeys";
+import { useAuth } from "@/lib/useAuth";
 
 interface ResidentRegistrationModalProps {
   onClose: () => void;
@@ -46,6 +47,95 @@ export default function ResidentRegistrationModal({
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
   const [step, setStep] = useState(editData ? 2 : 1);
+
+  const { baiguullaga } = useAuth();
+
+  /** Тухайн эзэн дээр аль хэдийн бүртгэлтэй машины дугаарууд. */
+  const [baigaaMashinuud, setBaigaaMashinuud] = useState<string[]>([]);
+
+  /**
+   * Нэг оршин суугч дээр бүртгэж болох машины дээд тоо.
+   *
+   * Вебийн «Нэмэлт тохиргоо → Машины бүртгэлийн хязгаар»-аас тохируулна.
+   * Барилга → байгууллагын дарааллаар уншина; 0 бол тохируулаагүй тул
+   * хязгаарлахгүй (backend-ийн `mashiniiKhyazgaarOlya`-тай ижил дүрэм).
+   */
+  const mashiniiKhyazgaar = useMemo(() => {
+    const org = baiguullaga as any;
+    const barilga = org?.barilguud?.find(
+      (b: any) => String(b?._id || b?.id) === String(barilgiinId || ""),
+    );
+
+    const utga =
+      barilga?.tokhirgoo?.zochinTokhirgoo?.orshinSuugchMashiniiLimit ??
+      barilga?.zochinTokhirgoo?.orshinSuugchMashiniiLimit ??
+      org?.tokhirgoo?.zochinTokhirgoo?.orshinSuugchMashiniiLimit ??
+      org?.zochinTokhirgoo?.orshinSuugchMashiniiLimit;
+
+    const toon = Number(utga);
+    return Number.isFinite(toon) && toon > 0 ? Math.floor(toon) : 0;
+  }, [baiguullaga, barilgiinId]);
+
+  /** Засаж байгаа биш, ШИНЭ машин нэмэх үед хязгаар дүүрсэн эсэх. */
+  const khyazgaarDuurenEsekh =
+    !editData &&
+    mashiniiKhyazgaar > 0 &&
+    baigaaMashinuud.length >= mashiniiKhyazgaar;
+
+  /**
+   * Эзний бүртгэлтэй машинуудыг утсаар татна.
+   *
+   * `/zochinJagsaalt` нь машин тус бүрээр мөр буцаадаг тул тухайн утасны
+   * мөрүүдийн дугаарыг цуглуулна. Засаж байгаа мөрийг нь тоохгүй — өөрийгөө
+   * "хязгаар дүүрсэн" гэж тоолуулахгүйн тулд.
+   */
+  const baigaaMashinuudAvya = async (utas: string) => {
+    if (!utas || !baiguullagiinId) return;
+    try {
+      const resp = await uilchilgee(token).get("/zochinJagsaalt", {
+        params: {
+          baiguullagiinId,
+          ...(barilgiinId ? { barilgiinId } : {}),
+          khuudasniiDugaar: 1,
+          khuudasniiKhemjee: 200,
+          search: utas,
+          turul: "Оршин суугч",
+        },
+      });
+
+      const jagsaalt: any[] = Array.isArray(resp.data?.jagsaalt)
+        ? resp.data.jagsaalt
+        : [];
+
+      const dugaaruud = jagsaalt
+        .filter((r) => {
+          const rUtas = Array.isArray(r?.utas) ? r.utas[0] : r?.utas;
+          const ezniiUtas = String(
+            r?.ezemshigchiinUtas || rUtas || "",
+          ).replace(/\s/g, "");
+          if (ezniiUtas !== String(utas).replace(/\s/g, "")) return false;
+          if (editData?._id && String(r?._id) === String(editData._id)) {
+            return false;
+          }
+          return true;
+        })
+        .map((r) =>
+          String(r?.mashiniiDugaar || r?.dugaar || "").trim().toUpperCase(),
+        )
+        .filter((d) => d && d !== "БҮРТГЭЛГҮЙ" && d !== "-");
+
+      setBaigaaMashinuud(Array.from(new Set(dugaaruud)));
+    } catch {
+      // Тоолж чадаагүй ч бүртгэлийг хаахгүй — backend талдаа шалгана.
+      setBaigaaMashinuud([]);
+    }
+  };
+
+  useEffect(() => {
+    if (editData && formData.phone) {
+      baigaaMashinuudAvya(formData.phone);
+    }
+  }, []);
 
   const [formData, setFormData] = useState({
     plate: editData?.mashiniiDugaar || "",
@@ -154,6 +244,7 @@ export default function ResidentRegistrationModal({
           frequency: found.davtamjiinTurul || prev.frequency,
         }));
         toast.success("Оршин суугчийн мэдээлэл олдлоо");
+        await baigaaMashinuudAvya(phoneToSearch);
         setStep(2);
       } else {
         if (formData.orshinSuugchTurul === "Оршин суугч") {
@@ -206,6 +297,15 @@ export default function ResidentRegistrationModal({
     }
 
     if (hasError) return;
+
+    // Хязгаарыг backend ч шалгадаг; энд шалгах нь хэрэглэгчид шалтгааныг
+    // хүсэлт явуулахаас өмнө хэлэх зорилготой.
+    if (khyazgaarDuurenEsekh) {
+      toast.error(
+        `Нэг оршин суугч дээр хамгийн олон ${mashiniiKhyazgaar} машин бүртгэх боломжтой. Хязгаарыг Нэмэлт тохиргооноос өөрчилнө.`,
+      );
+      return;
+    }
 
     setLoading(true);
     try {
@@ -514,10 +614,46 @@ export default function ResidentRegistrationModal({
                         </label>
                       </div>
 
+                      {/* Эзэн дээр аль хэдийн бүртгэлтэй машинууд */}
+                      {baigaaMashinuud.length > 0 && (
+                        <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.03] p-4">
+                          <div className="flex items-center justify-between mb-2.5">
+                            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                              Бүртгэлтэй машин
+                            </span>
+                            {mashiniiKhyazgaar > 0 && (
+                              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                                {baigaaMashinuud.length}/{mashiniiKhyazgaar}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {baigaaMashinuud.map((dugaar) => (
+                              <span
+                                key={dugaar}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-mono font-bold tracking-wider text-slate-800 dark:text-slate-100"
+                              >
+                                <Car className="w-3.5 h-3.5 text-slate-400" />
+                                {dugaar}
+                              </span>
+                            ))}
+                          </div>
+                          {khyazgaarDuurenEsekh && (
+                            <p className="mt-3 text-[11px] leading-relaxed text-amber-600 dark:text-amber-400">
+                              Хязгаар дүүрсэн байна. Шинэ машин нэмэхийн тулд
+                              Тохиргоо → Нэмэлт тохиргоо → «Машины бүртгэлийн
+                              хязгаар»-аас дээд тоог өсгөнө.
+                            </p>
+                          )}
+                        </div>
+                      )}
+
                       {/* License Plate Special Input */}
                       <div className="relative p-5 rounded-2xl bg-[#edf2f7] bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px] dark:bg-slate-900/50 flex flex-col justify-center items-center overflow-hidden group border border-slate-200/60 dark:border-white/10 shadow-inner">
                         <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2 uppercase tracking-wider">
-                          Улсын дугаар (4 тоо + 3 Монгол кирилл үсэг)
+                          {baigaaMashinuud.length > 0 && !editData
+                            ? "Шинэ машины улсын дугаар"
+                            : "Улсын дугаар (4 тоо + 3 Монгол кирилл үсэг)"}
                         </label>
                         <div className="relative w-64 h-[68px] bg-white dark:bg-slate-900 rounded-xl border-2 border-slate-300 dark:border-slate-700 flex items-center shadow-md transform group-hover:scale-102 transition-transform duration-300">
                           <input
