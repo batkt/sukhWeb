@@ -16,14 +16,14 @@ import {
 import uilchilgee from "@/lib/uilchilgee";
 import Button from "@/components/ui/Button";
 
-/** Excel-ийн баганын гарчгууд — загвар татах болон унших үед хоёуланд нь. */
+/** Excel-ийн баганын гарчгууд — хэрэглэгчийн хүссэн дарааллаар: Овог, Нэр, Утас, Тоот, Төрөл, Улсын дугаар, Тайлбар */
 const COLUMNS = [
-  "Улсын дугаар",
   "Овог",
   "Нэр",
   "Утас",
   "Тоот",
   "Төрөл",
+  "Улсын дугаар",
   "Тайлбар",
 ] as const;
 
@@ -32,10 +32,28 @@ const TURUL_OPTIONS = [
   "Оршин суугч",
   "Харилцагч",
   "Ажилтан",
+  "Дотоод",
   "СӨХ",
   "Үнэгүй",
-  "Дотоод",
-];
+] as const;
+
+function normalizeTurul(raw: string): string {
+  const val = String(raw ?? "").trim();
+  if (!val) return "Оршин суугч";
+  const lower = val.toLowerCase().replace(/\s+/g, "");
+  if (
+    lower === "о.суугч" ||
+    lower === "осуугч" ||
+    lower === "оршинсуугч" ||
+    lower === "оршинсуугч."
+  ) {
+    return "Оршин суугч";
+  }
+  const matched = TURUL_OPTIONS.find(
+    (opt) => opt.toLowerCase().replace(/\s+/g, "") === lower,
+  );
+  return matched || val;
+}
 
 interface ParsedRow {
   /** Excel дэх мөрийн дугаар (гарчиг 1-р мөр тул +2). */
@@ -115,7 +133,7 @@ function validateRow(
     }
   }
 
-  if (row.turul && !TURUL_OPTIONS.includes(row.turul)) {
+  if (row.turul && !(TURUL_OPTIONS as readonly string[]).includes(row.turul)) {
     errors.push(`Төрөл буруу (${TURUL_OPTIONS.join(", ")})`);
   }
 
@@ -156,25 +174,100 @@ export default function ExcelImportModal({
       return shine;
     });
 
-  /** Хоосон загвар татах — хэрэглэгч ямар багана хэрэгтэйг эндээс мэдэнэ. */
+  /** Загвар татах — Төрөл баганад Excel dropdown Data Validation орсон байна. */
   const handleDownloadTemplate = async () => {
-    // xlsx ~400 kB тул зөвхөн хэрэгтэй үед нь ачаална.
-    const XLSX = await import("xlsx");
-    const sample = [
-      {
-        "Улсын дугаар": "1234УБА",
-        Овог: "Дорж",
-        Нэр: "Бат",
-        Утас: "99112233",
-        Тоот: "106",
-        Төрөл: "Оршин суугч",
-        Тайлбар: "",
-      },
-    ];
-    const ws = XLSX.utils.json_to_sheet(sample, { header: COLUMNS as unknown as string[] });
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Машин бүртгэл");
-    XLSX.writeFile(wb, "Машин_бүртгэл_загвар.xlsx");
+    try {
+      const ExcelJS = (await import("exceljs")).default || (await import("exceljs"));
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("Машин бүртгэл");
+
+      worksheet.columns = [
+        { header: "Овог", key: "ovog", width: 14 },
+        { header: "Нэр", key: "ner", width: 14 },
+        { header: "Утас", key: "utas", width: 14 },
+        { header: "Тоот", key: "toot", width: 12 },
+        { header: "Төрөл", key: "turul", width: 18 },
+        { header: "Улсын дугаар", key: "plate", width: 16 },
+        { header: "Тайлбар", key: "tailbar", width: 22 },
+      ];
+
+      const headerRow = worksheet.getRow(1);
+      headerRow.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 11 };
+      headerRow.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FF1E293B" },
+      };
+      headerRow.alignment = { vertical: "middle", horizontal: "center" };
+      headerRow.height = 26;
+
+      const sampleRows = [
+        {
+          ovog: "Дорж",
+          ner: "Бат",
+          utas: "99112233",
+          toot: "106",
+          turul: "Оршин суугч",
+          plate: "1234УБА",
+          tailbar: "1-р орц",
+        },
+        {
+          ovog: "Цэцэг",
+          ner: "Болд",
+          utas: "88112233",
+          toot: "204",
+          turul: "Харилцагч",
+          plate: "5678УБВ",
+          tailbar: "Харилцагч / Түрээслэгч",
+        },
+        {
+          ovog: "Сүх",
+          ner: "Баяр",
+          utas: "91112233",
+          toot: "",
+          turul: "Ажилтан",
+          plate: "3456УБС",
+          tailbar: "Харуул",
+        },
+        {
+          ovog: "",
+          ner: "Гэрэл",
+          utas: "95112233",
+          toot: "",
+          turul: "Дотоод",
+          plate: "7890УБЕ",
+          tailbar: "Албаны машин",
+        },
+      ];
+
+      sampleRows.forEach((r) => worksheet.addRow(r));
+
+      // Төрөл баганад (E2:E1000) Excel dropdown Data Validation нэмэх
+      const dropdownList = TURUL_OPTIONS.join(",");
+      for (let i = 2; i <= 1000; i++) {
+        worksheet.getCell(`E${i}`).dataValidation = {
+          type: "list",
+          allowBlank: true,
+          formulae: [`"${dropdownList}"`],
+          showErrorMessage: true,
+          errorTitle: "Буруу утга",
+          error: `Төрлийг жагсаалтаас сонгоно уу: ${dropdownList}`,
+        };
+      }
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "Машин_бүртгэл_загвар.xlsx";
+      anchor.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      toast.error("Загвар татахад алдаа гарлаа");
+    }
   };
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -211,7 +304,7 @@ export default function ExcelImportModal({
             ner: cellText(r["Нэр"]),
             utas: cellText(r["Утас"]).replace(/\D/g, ""),
             toot: cellText(r["Тоот"]),
-            turul: cellText(r["Төрөл"]) || "Оршин суугч",
+            turul: normalizeTurul(cellText(r["Төрөл"])),
             tailbar: cellText(r["Тайлбар"]),
           };
           const errors = validateRow(base, uzegdsen);
@@ -451,10 +544,7 @@ export default function ExcelImportModal({
                         №
                       </th>
                       <th className="px-3 py-2 text-xs text-slate-700 dark:text-slate-300">
-                        Улсын дугаар
-                      </th>
-                      <th className="px-3 py-2 text-xs text-slate-700 dark:text-slate-300">
-                        Нэр
+                        Овог, Нэр
                       </th>
                       <th className="px-3 py-2 text-xs text-slate-700 dark:text-slate-300">
                         Утас
@@ -464,6 +554,9 @@ export default function ExcelImportModal({
                       </th>
                       <th className="px-3 py-2 text-xs text-slate-700 dark:text-slate-300">
                         Төрөл
+                      </th>
+                      <th className="px-3 py-2 text-xs text-slate-700 dark:text-slate-300">
+                        Улсын дугаар
                       </th>
                       <th className="px-3 py-2 text-xs text-slate-700 dark:text-slate-300">
                         Төлөв
@@ -487,10 +580,7 @@ export default function ExcelImportModal({
                         <td className="px-3 py-2 text-center text-xs text-slate-500">
                           {r.excelRow}
                         </td>
-                        <td className="px-3 py-2 font-mono text-xs text-slate-800 dark:text-slate-100">
-                          {r.plate || "БҮРТГЭЛГҮЙ"}
-                        </td>
-                        <td className="px-3 py-2 text-slate-800 dark:text-slate-100">
+                        <td className="px-3 py-2 text-slate-800 dark:text-slate-100 font-medium">
                           {[r.ovog, r.ner].filter(Boolean).join(" ") || "—"}
                         </td>
                         <td className="px-3 py-2 text-slate-700 dark:text-slate-300">
@@ -501,6 +591,9 @@ export default function ExcelImportModal({
                         </td>
                         <td className="px-3 py-2 text-slate-700 dark:text-slate-300">
                           {r.turul}
+                        </td>
+                        <td className="px-3 py-2 font-mono text-xs text-slate-800 dark:text-slate-100 font-semibold">
+                          {r.plate || "БҮРТГЭЛГҮЙ"}
                         </td>
                         <td className="px-3 py-2">
                           {r.errors.length > 0 ? (

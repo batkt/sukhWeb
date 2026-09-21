@@ -144,9 +144,12 @@ export default function ResidentRegistrationModal({
     phone: editData?.utas || "",
     register: editData?.register || "",
     unit: editData?.toot || editData?.burtgeliinDugaar || editData?.ezenToot || "",
+    // Харилцагч (зогсоол/агуулахын эзэн) ч энэ модалаар бүртгэгддэг тул
+    // төрлийн нэгдэлд нь орсон байх ёстой.
     type: (editData?.zochinTurul || editData?.turul || "Оршин суугч") as
       | "Оршин суугч"
-      | "Түр оршин суугч",
+      | "Түр оршин суугч"
+      | "Харилцагч",
     frequency: editData?.davtamjiinTurul || "saraar",
     rightsCount: editData?.zochinErkhiinToo ?? 1,
     freeMinutes: editData?.zochinTusBurUneguiMinut ?? 8,
@@ -198,11 +201,6 @@ export default function ResidentRegistrationModal({
     const phoneToSearch =
       typeof phoneOverride === "string" ? phoneOverride : formData.phone;
 
-    if (formData.orshinSuugchTurul && formData.orshinSuugchTurul !== "Оршин суугч") {
-      setStep(2);
-      return;
-    }
-
     if (!phoneToSearch || phoneToSearch.length !== 8) {
       toast.error("Утасны дугаар 8 оронтой байх ёстой");
       return;
@@ -210,50 +208,93 @@ export default function ResidentRegistrationModal({
 
     setSearching(true);
     try {
-      const resp = await uilchilgee(token).get("/orshinSuugch", {
-        params: {
-          baiguullagiinId,
-          barilgiinId,
-          search: phoneToSearch,
-        },
-      });
+      // 1. First search in OrshinSuugch collection
+      let found: any = null;
+      let isCustomer = false;
 
-      const found = Array.isArray(resp.data?.jagsaalt)
-        ? resp.data.jagsaalt[0]
-        : null;
+      try {
+        const resp = await uilchilgee(token).get("/orshinSuugch", {
+          params: {
+            baiguullagiinId,
+            barilgiinId,
+            search: phoneToSearch,
+          },
+        });
+        if (Array.isArray(resp.data?.jagsaalt) && resp.data.jagsaalt.length > 0) {
+          found = resp.data.jagsaalt[0];
+        }
+      } catch (e) {
+        console.warn("OrshinSuugch search error:", e);
+      }
+
+      // 2. If not found in OrshinSuugch, search in Khariltsagch collection
+      if (!found) {
+        try {
+          const kResp = await uilchilgee(token).get("/khariltsagch", {
+            params: {
+              baiguullagiinId,
+              barilgiinId,
+              search: phoneToSearch,
+            },
+          });
+          if (Array.isArray(kResp.data?.jagsaalt) && kResp.data.jagsaalt.length > 0) {
+            found = kResp.data.jagsaalt[0];
+            isCustomer = true;
+          }
+        } catch (e) {
+          console.warn("Khariltsagch search error:", e);
+        }
+      }
 
       if (found) {
-        // Find specific unit for current building, excluding WALLET_API sources
-        const specificToot = Array.isArray(found.toots)
-          ? found.toots.find(
-            (t: any) =>
-              String(t.barilgiinId) === String(barilgiinId) &&
-              t.source !== "WALLET_API",
-          )
-          : null;
+        if (isCustomer) {
+          // Found Customer
+          setFormData((prev) => ({
+            ...prev,
+            phone: phoneToSearch,
+            name: found.ner || found.khariltsagchNer || prev.name,
+            ovog: found.ovog || prev.ovog,
+            register: found.register || prev.register,
+            unit: found.toot || found.zogsooliinDugaar || prev.unit,
+            orshinSuugchTurul: prev.orshinSuugchTurul || "Харилцагч",
+            type: "Харилцагч",
+          }));
+          toast.success("Харилцагчийн мэдээлэл олдлоо");
+        } else {
+          // Found Resident
+          const specificToot = Array.isArray(found.toots)
+            ? found.toots.find(
+              (t: any) =>
+                String(t.barilgiinId) === String(barilgiinId) &&
+                t.source !== "WALLET_API",
+            )
+            : null;
 
-        setFormData((prev) => ({
-          ...prev,
-          phone: phoneToSearch,
-          name: specificToot?.ner || found.ner || found.orshinSuugchNer || prev.name,
-          ovog: found.ovog || prev.ovog,
-          unit: specificToot?.toot || "", // Only use if it matches our building and isn't WALLET_API
-          rightsCount: found.zochinErkhiinToo ?? prev.rightsCount,
-          freeMinutes: found.zochinTusBurUneguiMinut ?? prev.freeMinutes,
-          type: found.zochinTurul || found.turul || prev.type,
-          frequency: found.davtamjiinTurul || prev.frequency,
-        }));
-        toast.success("Оршин суугчийн мэдээлэл олдлоо");
+          setFormData((prev) => ({
+            ...prev,
+            phone: phoneToSearch,
+            name: specificToot?.ner || found.ner || found.orshinSuugchNer || prev.name,
+            ovog: found.ovog || prev.ovog,
+            register: found.register || prev.register,
+            unit: specificToot?.toot || found.toot || prev.unit,
+            rightsCount: found.zochinErkhiinToo ?? prev.rightsCount,
+            freeMinutes: found.zochinTusBurUneguiMinut ?? prev.freeMinutes,
+            type: found.zochinTurul || found.turul || prev.type,
+            frequency: found.davtamjiinTurul || prev.frequency,
+            orshinSuugchTurul: prev.orshinSuugchTurul || found.zochinTurul || found.turul || "Оршин суугч",
+          }));
+          toast.success("Оршин суугчийн мэдээлэл олдлоо");
+        }
+
         await baigaaMashinuudAvya(phoneToSearch);
         setStep(2);
       } else {
-        if (formData.orshinSuugchTurul === "Оршин суугч") {
-          toast.error("Энэ дугаар дээр оршин суугч бүртгэгдээгүй байна. Та өөр төрөл сонгох эсвэл эхлээд оршин суугчийг бүртгэнэ үү.");
-        } else {
-          setFormData((prev) => ({ ...prev, phone: phoneToSearch }));
-          toast.success("Шинээр бүртгэнэ.");
-          setStep(2);
-        }
+        // Unregistered - auto proceed to allow entering details smoothly
+        setFormData((prev) => ({ ...prev, phone: phoneToSearch }));
+        toast("Бүртгэлгүй тул мэдээллийг шинээр оруулна уу.", {
+          icon: "ℹ️",
+        });
+        setStep(2);
       }
     } catch (err) {
       setFormData((prev) => ({ ...prev, phone: phoneToSearch }));
@@ -268,15 +309,7 @@ export default function ResidentRegistrationModal({
       toast.error("Утасны дугаар 8 оронтой байх ёстой");
       return;
     }
-
-    // If it's a resident, we MUST search and find them first.
-    // We don't allow manual registration of NEW residents from the parking module.
-    if (!formData.orshinSuugchTurul || formData.orshinSuugchTurul === "Оршин суугч") {
-      handleSearch(formData.phone);
-    } else {
-      // For Staff, SÖH, etc., we allow manual proceed to Step 2
-      setStep(2);
-    }
+    handleSearch(formData.phone);
   };
 
   const handleSave = async () => {
@@ -464,7 +497,7 @@ export default function ResidentRegistrationModal({
                       const val = v.replace(/\D/g, "");
                       if (val.length > 8) return;
                       setFormData({ ...formData, phone: val });
-                      if (val.length === 8 && (formData.orshinSuugchTurul === "Оршин суугч" || !formData.orshinSuugchTurul)) {
+                      if (val.length === 8) {
                         handleSearch(val);
                       }
                     }}
@@ -606,11 +639,28 @@ export default function ResidentRegistrationModal({
                         <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
                           <User className="w-4 h-4" />
                         </div>
-                        <div className="w-full h-11 pl-10 pr-8 flex items-center bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 rounded-xl text-sm text-black dark:text-white">
-                          {formData.orshinSuugchTurul || "Оршин суугч"}
-                        </div>
+                        <select
+                          value={formData.orshinSuugchTurul || "Оршин суугч"}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setFormData((prev) => ({
+                              ...prev,
+                              orshinSuugchTurul: val,
+                              type: val === "Оршин суугч" ? "Оршин суугч" : (val as any),
+                            }));
+                          }}
+                          className="w-full h-11 pl-10 pr-8 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 rounded-xl text-sm text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer"
+                        >
+                          <option value="Оршин суугч">Оршин суугч</option>
+                          <option value="Харилцагч">Харилцагч</option>
+                          <option value="Ажилтан">Ажилтан</option>
+                          <option value="Дотоод">Дотоод</option>
+                          <option value="СӨХ">СӨХ</option>
+                          <option value="Үнэгүй">Үнэгүй</option>
+                        </select>
+                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                         <label className="absolute -top-2 left-3 px-1 bg-white dark:bg-[#11131a] text-[11px] font-sans text-slate-400 dark:text-slate-300">
-                          Төрөл
+                          Бүртгэх төрөл
                         </label>
                       </div>
 

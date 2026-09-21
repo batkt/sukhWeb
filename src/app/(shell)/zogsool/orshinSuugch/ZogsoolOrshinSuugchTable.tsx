@@ -28,6 +28,10 @@ interface ResidentParking {
   zochinTurul?: string;
   davtamjiinTurul?: string;
   mashiniiDugaar?: string;
+  /** Тухайн эзний БҮХ машины дугаар (backend-ээс мөр тус бүрд хамт ирнэ). */
+  ezniiMashinuud?: string[];
+  /** Тухайн эзэнд бүртгэлтэй машины тоо. */
+  mashiniiToo?: number;
   dugaarUurchilsunOgnoo?: string;
   ezenToot?: string;
   zochinTailbar?: string;
@@ -74,6 +78,14 @@ export const ZogsoolOrshinSuugchTable: React.FC<
             <p className="text-black dark:text-white font-sans">
               {record.ner || record.orshinSuugchNer || "Нэр тодорхойгүй"}
             </p>
+            {/* Олон машинтай эзэн нь машин тутамдаа нэг мөр эзэлдэг тул нэр
+                давтагдана — тоог хамт харуулж шалтгааныг тодруулна. */}
+            {(record.mashiniiToo ?? 0) > 1 && (
+              <span className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400">
+                <Car className="w-3 h-3" />
+                {record.mashiniiToo} машин
+              </span>
+            )}
           </div>
         ),
       },

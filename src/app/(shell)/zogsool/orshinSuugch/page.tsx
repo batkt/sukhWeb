@@ -282,15 +282,28 @@ export default function OrshinSuugch() {
     if (!id) return;
 
     try {
-      const res = await deleteMethod("orshinSuugch", token, id);
-      if (res.data) {
-        toast.success("Амжилттай устгагдлаа");
+      // Мөр бүр НЭГ машины бүртгэл — тиймээс машиныг л устгана, оршин
+      // суугчийг биш. Өмнө нь `deleteMethod("orshinSuugch", ...)`-г МАШИНЫ
+      // id-гаар дууддаг тул оршин суугч олдохгүй, устгал чимээгүй унадаг байв.
+      const res = await uilchilgee(token).delete(
+        `/orshinSuugchiinMashin/${id}`,
+        { data: { baiguullagiinId: ajiltan?.baiguullagiinId } },
+      );
+
+      if (res.data?.success) {
+        toast.success(res.data.message || "Машины бүртгэл устгагдлаа");
         mutate();
         setShowDeleteModal(false);
         setItemToDelete(null);
+      } else {
+        toast.error(res.data?.aldaa || "Устгахад алдаа гарлаа");
       }
-    } catch (err) {
-      toast.error("Устгахад алдаа гарлаа");
+    } catch (err: any) {
+      toast.error(
+        err?.response?.data?.aldaa ||
+          err?.response?.data?.message ||
+          "Устгахад алдаа гарлаа",
+      );
     }
   };
 
