@@ -60,6 +60,11 @@ interface GereeHeaderProps {
   isUploadingUnits: boolean;
   unitExcelInputRef: React.RefObject<HTMLInputElement | null>;
   onUnitsExcelFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onDownloadClientsTemplate?: () => void;
+  onClientsExcelImportClick?: () => void;
+  isUploadingClients?: boolean;
+  clientExcelInputRef?: React.RefObject<HTMLInputElement | null>;
+  onClientsExcelFileChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 export default function GereeHeader({
@@ -101,6 +106,11 @@ export default function GereeHeader({
   isUploadingUnits,
   unitExcelInputRef,
   onUnitsExcelFileChange,
+  onDownloadClientsTemplate,
+  onClientsExcelImportClick,
+  isUploadingClients,
+  clientExcelInputRef,
+  onClientsExcelFileChange,
 }: GereeHeaderProps) {
   const [isDesktopExcelOpen, setIsDesktopExcelOpen] = useState(false);
   const [isMobileExcelOpen, setIsMobileExcelOpen] = useState(false);
@@ -516,18 +526,68 @@ export default function GereeHeader({
               )}
 
               {activeTab === "clients" && (
-                <button
-                  onClick={onShowClientModal}
-                  className="btn-minimal h-10"
-                  aria-label="Харилцагч нэмэх"
-                  title="Харилцагч нэмэх"
-                  id="clients-new-btn-top"
-                >
-                  <UserPlus className="w-5 h-5" />
-                  <span className="hidden sm:inline text-xs ml-1">
-                    Харилцагч нэмэх
-                  </span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={onShowClientModal}
+                    className="btn-minimal h-10"
+                    aria-label="Харилцагч нэмэх"
+                    title="Харилцагч нэмэх"
+                    id="clients-new-btn-top"
+                  >
+                    <UserPlus className="w-5 h-5" />
+                    <span className="hidden sm:inline text-xs ml-1">
+                      Харилцагч нэмэх
+                    </span>
+                  </button>
+                  {onClientsExcelImportClick && onDownloadClientsTemplate && (
+                    <div ref={desktopExcelRef} className="relative">
+                      <button
+                        onClick={() =>
+                          setIsDesktopExcelOpen(!isDesktopExcelOpen)
+                        }
+                        className="btn-minimal h-10 inline-flex items-center gap-2"
+                        id="client-excel-btn-top"
+                        aria-label="Excel"
+                        title="Excel үйлдлүүд"
+                      >
+                        <Download className="w-5 h-5" />
+                        <span className="hidden sm:inline text-xs">Excel</span>
+                        <ChevronDown
+                          className={`w-4 h-4 transition-transform ${
+                            isDesktopExcelOpen ? "rotate-180" : ""
+                          }`}
+                        />
+                      </button>
+                      {isDesktopExcelOpen && (
+                        <div className="absolute right-0 top-full mt-2 z-50 min-w-[180px] menu-surface rounded-xl shadow-lg overflow-hidden">
+                          <button
+                            onClick={() => {
+                              onClientsExcelImportClick();
+                              setIsDesktopExcelOpen(false);
+                            }}
+                            className="w-full px-4 py-2.5 text-left text-sm hover:bg-white/10 transition-colors flex items-center gap-2"
+                            id="client-upload-template-btn-top"
+                            disabled={isUploadingClients}
+                          >
+                            <FileUp className="w-4 h-4" />
+                            <span>Загвар оруулах</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              onDownloadClientsTemplate();
+                              setIsDesktopExcelOpen(false);
+                            }}
+                            className="w-full px-4 py-2.5 text-left text-sm hover:bg-white/10 transition-colors flex items-center gap-2 border-t border-white/10"
+                            id="client-download-template-btn-top"
+                          >
+                            <FileDown className="w-4 h-4" />
+                            <span>Загвар татах</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -763,18 +823,66 @@ export default function GereeHeader({
           </>
         )}
         {activeTab === "clients" && (
-          <button
-            onClick={onShowClientModal}
-            className="btn-minimal h-10"
-            aria-label="Харилцагч нэмэх"
-            title="Харилцагч нэмэх"
-            id="clients-new-btn"
-          >
-            <UserPlus className="w-5 h-5" />
-            <span className="hidden sm:inline text-xs ml-1">
-              Харилцагч нэмэх
-            </span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onShowClientModal}
+              className="btn-minimal h-10"
+              aria-label="Харилцагч нэмэх"
+              title="Харилцагч нэмэх"
+              id="clients-new-btn"
+            >
+              <UserPlus className="w-5 h-5" />
+              <span className="hidden sm:inline text-xs ml-1">
+                Харилцагч нэмэх
+              </span>
+            </button>
+            {onClientsExcelImportClick && onDownloadClientsTemplate && (
+              <div ref={mobileExcelRef} className="relative">
+                <button
+                  onClick={() => setIsMobileExcelOpen(!isMobileExcelOpen)}
+                  className="btn-minimal h-10 inline-flex items-center gap-2"
+                  id="client-excel-btn"
+                  aria-label="Excel"
+                  title="Excel үйлдлүүд"
+                >
+                  <Download className="w-5 h-5" />
+                  <span className="hidden sm:inline text-xs">Excel</span>
+                  <ChevronDown
+                    className={`w-4 h-4 transition-transform ${
+                      isMobileExcelOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+                {isMobileExcelOpen && (
+                  <div className="absolute right-0 top-full mt-2 z-50 min-w-[180px] menu-surface rounded-xl shadow-lg overflow-hidden">
+                    <button
+                      onClick={() => {
+                        onDownloadClientsTemplate();
+                        setIsMobileExcelOpen(false);
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-sm hover:bg-white/10 transition-colors flex items-center gap-2"
+                      id="client-download-template-btn"
+                    >
+                      <FileDown className="w-4 h-4" />
+                      <span>Загвар татах</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        onClientsExcelImportClick();
+                        setIsMobileExcelOpen(false);
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-sm hover:bg-white/10 transition-colors flex items-center gap-2 border-t border-white/10"
+                      id="client-upload-template-btn"
+                      disabled={isUploadingClients}
+                    >
+                      <FileUp className="w-4 h-4" />
+                      <span>Загвар оруулах</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         )}
       </div>
 
@@ -793,6 +901,15 @@ export default function GereeHeader({
         onChange={onUnitsExcelFileChange}
         className="hidden"
       />
+      {clientExcelInputRef && onClientsExcelFileChange && (
+        <input
+          ref={clientExcelInputRef}
+          type="file"
+          accept=".xlsx,.xls"
+          onChange={onClientsExcelFileChange}
+          className="hidden"
+        />
+      )}
     </div>
   );
 }

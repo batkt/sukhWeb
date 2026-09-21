@@ -338,6 +338,24 @@ type LedgerMonthBreakdownRow = {
  * (recomputeLedgerRunningBalances-тэй ижил томьёо — хөнгөлөлтийг мартвал
  * эхний үлдэгдэл хөнгөлөлтийн дүнгээр зөрнө.)
  */
+/**
+ * «Эхний үлдэгдэл» мөр нь `isSystem` тэмдэгтэй боловч guilgeeAvlaguud дээрх
+ * жинхэнэ бичлэг (өөрийн `_id`-тэй) тул Хуулга дээрээс устгахыг зөвшөөрнө.
+ * Нэхэмжлэхийн задаргаанаас үүссэн бусад системийн мөрүүд нь нийлмэл id-тай
+ * (invoiceId-zardalId) тул өмнөх шигээ хаалттай хэвээр.
+ */
+function ekhniiUldegdliinMurEsekh(row: LedgerEntry): boolean {
+  return String(row?.ner || "").includes("Эхний үлдэгдэл");
+}
+
+function murUstgakhBolomjtoi(row: LedgerEntry): boolean {
+  if (!row?._id) return false;
+  if (!row.isSystem) return true;
+  return (
+    row.sourceCollection === "guilgeeAvlaguud" && ekhniiUldegdliinMurEsekh(row)
+  );
+}
+
 function ledgerOpeningBeforeFirstEntry(first: LedgerEntry): number {
   if (!first) return 0;
   // If the first entry is the initial balance record ("Эхний үлдэгдэл"), opening balance BEFORE it is 0!
@@ -2500,9 +2518,7 @@ export default function HistoryModal({
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    const isDeletable =
-                                      row._id &&
-                                      !row.isSystem;
+                                    const isDeletable = murUstgakhBolomjtoi(row);
 
                                     if (isDeletable && row._id) {
                                       handleDeleteClick(
@@ -2512,27 +2528,22 @@ export default function HistoryModal({
                                     }
                                   }}
                                   className={`inline-flex items-center justify-center p-1 transition-all rounded-lg ${
-                                    row._id &&
-                                    !row.isSystem
+                                    murUstgakhBolomjtoi(row)
                                       ? "!text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer"
                                       : "text-gray-200 dark:text-gray-800 cursor-not-allowed opacity-50"
                                   }`}
                                   title={
-                                    row.isSystem
-                                      ? "Системээс үүсгэсэн - устгах боломжгүй"
-                                      : row._id
-                                        ? "Устгах"
+                                    murUstgakhBolomjtoi(row)
+                                      ? "Устгах"
+                                      : row.isSystem
+                                        ? "Системээс үүсгэсэн - устгах боломжгүй"
                                         : "Устгах боломжгүй"
                                   }
-                                  disabled={
-                                    !row._id ||
-                                    row.isSystem
-                                  }
+                                  disabled={!murUstgakhBolomjtoi(row)}
                                 >
                                   <Trash2
                                     className={`h-4 w-4 ${
-                                      row._id &&
-                                      !row.isSystem
+                                      murUstgakhBolomjtoi(row)
                                         ? "!text-red-500"
                                         : "text-slate-300 dark:text-slate-600"
                                     }`}

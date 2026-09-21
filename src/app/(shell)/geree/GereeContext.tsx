@@ -123,7 +123,9 @@ export function GereeProvider({ children }: { children: React.ReactNode }) {
     state.sortKey,
     state.setSortKey,
     state.sortOrder,
-    state.setSortOrder
+    state.setSortOrder,
+    state.setIsUploadingClients,
+    state.clientExcelInputRef
   );
 
   // Socket listeners

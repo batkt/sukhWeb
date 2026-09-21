@@ -119,6 +119,11 @@ export default function GereeLayout({ children, activeTab }: GereeLayoutProps) {
         isUploadingUnits={state.isUploadingUnits}
         unitExcelInputRef={state.unitExcelInputRef}
         onUnitsExcelFileChange={actions.onUnitsExcelFileChange}
+        onDownloadClientsTemplate={actions.handleDownloadClientsTemplate}
+        onClientsExcelImportClick={actions.handleClientsExcelImportClick}
+        isUploadingClients={state.isUploadingClients}
+        clientExcelInputRef={state.clientExcelInputRef}
+        onClientsExcelFileChange={actions.onClientsExcelFileChange}
       />
 
       {children}

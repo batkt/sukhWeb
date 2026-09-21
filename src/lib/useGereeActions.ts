@@ -48,6 +48,8 @@ export function useGereeActions(
   setSortKey?: (key: any) => void,
   sortOrder?: "asc" | "desc",
   setSortOrder?: (order: "asc" | "desc") => void,
+  setIsUploadingClients?: (uploading: boolean) => void,
+  clientExcelInputRef?: React.RefObject<HTMLInputElement | null>,
 ) {
   const { mutate } = useSWRConfig();
 
@@ -1334,6 +1336,123 @@ export function useGereeActions(
       setIsUploadingUnits,
       unitExcelInputRef,
       baiguullagaMutate,
+    ],
+  );
+
+  // --- ХАРИЛЦАГЧИЙН EXCEL ---
+  // Загвар дээр зогсоол/агуулахын дугаартай хамт "Машины дугаар" багана
+  // байдаг тул харилцагч, гэрээ, нэхэмжлэх, машин нь нэг мөрөөс зэрэг үүснэ.
+  const handleDownloadClientsTemplate = useCallback(async () => {
+    if (!token || !ajiltan?.baiguullagiinId) {
+      openErrorOverlay("Нэвтэрсэн эсэхээ шалгана уу");
+      return;
+    }
+
+    onLoadingChange?.(true);
+    try {
+      const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
+      const resp = await uilchilgee(token).get("/khariltsagchExcelTemplate", {
+        params: {
+          baiguullagiinId: ajiltan.baiguullagiinId,
+          ...(effectiveBarilgiinId
+            ? { barilgiinId: effectiveBarilgiinId }
+            : {}),
+        },
+        responseType: "blob" as any,
+      });
+
+      const blob = new Blob([resp.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "Харилцагчийн загвар.xlsx";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      openSuccessOverlay("Загвар татагдлаа");
+    } catch (err) {
+      openErrorOverlay(getErrorMessage(err));
+    } finally {
+      onLoadingChange?.(false);
+    }
+  }, [token, ajiltan, selectedBuildingId, barilgiinId, onLoadingChange]);
+
+  const handleClientsExcelImportClick = useCallback(() => {
+    clientExcelInputRef?.current?.click();
+  }, [clientExcelInputRef]);
+
+  const onClientsExcelFileChange = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      if (!token || !ajiltan?.baiguullagiinId) {
+        openErrorOverlay("Нэвтэрсэн эсэхээ шалгана уу");
+        return;
+      }
+
+      setIsUploadingClients?.(true);
+      try {
+        const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
+        const form = new FormData();
+        form.append("excelFile", file);
+        form.append("baiguullagiinId", ajiltan.baiguullagiinId);
+        if (effectiveBarilgiinId) {
+          form.append("barilgiinId", effectiveBarilgiinId);
+        }
+
+        const resp: any = await uilchilgee(token).post(
+          "/khariltsagchExcelImport",
+          form,
+          {
+            headers: { "Content-Type": "multipart/form-data" },
+          },
+        );
+
+        const data = resp?.data;
+        const failed = data?.result?.failed;
+        if (Array.isArray(failed) && failed.length > 0) {
+          const detailLines = failed.map(
+            (f: any) =>
+              `Мөр ${f.row || "?"}: ${f.error || f.message || "Алдаа"}`,
+          );
+          const topMsg =
+            data?.message || "Импортын явцад зарим мөр алдаатай байна";
+          openErrorOverlay(`${topMsg}\n${detailLines.join("\n")}`);
+        } else {
+          openSuccessOverlay("Загвар амжилттай орууллаа.");
+          if (baiguullagaMutate) {
+            await baiguullagaMutate();
+          }
+          mutate(
+            (key: any) =>
+              Array.isArray(key) &&
+              (key[0] === "/khariltsagch" || key[0] === "/geree"),
+            undefined,
+            { revalidate: true },
+          );
+        }
+      } catch (err) {
+        openErrorOverlay(getErrorMessage(err));
+      } finally {
+        setIsUploadingClients?.(false);
+        if (clientExcelInputRef?.current) {
+          clientExcelInputRef.current.value = "";
+        }
+      }
+    },
+    [
+      token,
+      ajiltan,
+      selectedBuildingId,
+      barilgiinId,
+      setIsUploadingClients,
+      clientExcelInputRef,
+      baiguullagaMutate,
+      mutate,
     ],
   );
 
@@ -2827,6 +2946,9 @@ export function useGereeActions(
     handleDownloadUnitsTemplate,
     handleUnitsExcelImportClick,
     onUnitsExcelFileChange,
+    handleDownloadClientsTemplate,
+    handleClientsExcelImportClick,
+    onClientsExcelFileChange,
     handlePreviewTemplate: (_id: string) => { },
     handleEditTemplate: (_id: string) => { },
     handleDeleteTemplate: (_id: string) => { },

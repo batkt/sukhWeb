@@ -83,6 +83,7 @@ export function useGereeState(searchParams: any, didInitRef: any) {
   const [isSavingUnits, setIsSavingUnits] = useState(false);
   const [isUploadingResidents, setIsUploadingResidents] = useState(false);
   const [isUploadingUnits, setIsUploadingUnits] = useState(false);
+  const [isUploadingClients, setIsUploadingClients] = useState(false);
 
   const [newContract, setNewContract] = useState<any>({
     ovog: "",
@@ -144,6 +145,7 @@ export function useGereeState(searchParams: any, didInitRef: any) {
 
   const residentExcelInputRef = useRef<HTMLInputElement | null>(null);
   const unitExcelInputRef = useRef<HTMLInputElement | null>(null);
+  const clientExcelInputRef = useRef<HTMLInputElement | null>(null);
   const columnMenuRef = useRef<HTMLDivElement | null>(null);
 
   // Initialize from URL tab and status
@@ -352,6 +354,8 @@ export function useGereeState(searchParams: any, didInitRef: any) {
     setIsUploadingResidents,
     isUploadingUnits,
     setIsUploadingUnits,
+    isUploadingClients,
+    setIsUploadingClients,
     newContract,
     setNewContract,
     newResident,
@@ -360,6 +364,7 @@ export function useGereeState(searchParams: any, didInitRef: any) {
     setNewEmployee,
     residentExcelInputRef,
     unitExcelInputRef,
+    clientExcelInputRef,
     columnMenuRef,
     showClientModal,
     setShowClientModal,
