@@ -255,7 +255,20 @@ function extractText(node: React.ReactNode): string {
   if (node == null || typeof node === "boolean") return "";
   if (typeof node === "string" || typeof node === "number") return String(node);
   if (Array.isArray(node)) return node.map(extractText).join("");
-  if (React.isValidElement(node)) return extractText((node.props as any)?.children);
+  if (React.isValidElement(node)) {
+    const props = (node.props || {}) as any;
+    const cls = String(props.className || "");
+    // Шүүлтүүрийн доош дэлгэгдэх цэс, absolute, hidden, invisible элементүүдийн текстийг баганын өргөнд тооцохгүй
+    if (
+      cls.includes("absolute") ||
+      cls.includes("invisible") ||
+      cls.includes("hidden") ||
+      props.style?.display === "none"
+    ) {
+      return "";
+    }
+    return extractText(props.children);
+  }
   return "";
 }
 

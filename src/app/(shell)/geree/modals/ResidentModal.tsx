@@ -1096,7 +1096,7 @@ export default function ResidentModal({
                       {/* Main Units (Тоот) */}
                       {mainUnits.map((mainUnit, index) => {
                         return (
-                          <div key={index} className="relative rounded-xl border-l-4 border-l-blue-500 border border-[color:var(--surface-border)] shadow-sm bg-white overflow-hidden transition-all">
+                          <div key={index} className="relative rounded-xl border-l-4 border-l-blue-500 border border-[color:var(--surface-border)] shadow-sm bg-[color:var(--surface-bg)] overflow-hidden transition-all">
                             {/* Toot Header — clickable to collapse */}
                             <div
                               className="flex items-center justify-between gap-2 px-4 py-2.5 bg-theme/50 border-b border-theme/30"
@@ -1275,7 +1275,7 @@ export default function ResidentModal({
                                     onChange={(e) => updateMainUnitRow(index, "khonogoorBodokhEsekh", e.target.checked)}
                                     className="sr-only peer"
                                   />
-                                  <div className="w-11 h-6 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme dark:peer-focus:ring-theme rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-theme"></div>
+                                  <div className="w-11 h-6 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme dark:peer-focus:ring-theme rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-[color:var(--surface-bg)] after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-theme"></div>
                                 </label>
                                 <span className="text-[11px] font-medium text-[color:var(--muted-text)]">Ирээдүйд ашиглах хоног</span>
                                 {mainUnit.khonogoorBodokhEsekh && (

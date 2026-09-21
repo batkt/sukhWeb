@@ -1570,7 +1570,7 @@ export default function InvoicingZardluud() {
               title="Төлбөр сануулах SMS илгээх"
             >
               {sendingSmsId === record._id ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[color:var(--surface-border)]"></div>
               ) : (
                 <MessageSquare className="w-4 h-4" />
               )}
@@ -1806,7 +1806,7 @@ export default function InvoicingZardluud() {
                   onClick={handleAddGarageChargesClick}
                   icon={
                     isAddingGarageCharges ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[color:var(--surface-border)]"></div>
                     ) : null
                   }
                   label={
@@ -1828,7 +1828,7 @@ export default function InvoicingZardluud() {
                   onClick={handleSendInvoices}
                   icon={
                     isSendingInvoices ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[color:var(--surface-border)]"></div>
                     ) : null
                   }
                   label={

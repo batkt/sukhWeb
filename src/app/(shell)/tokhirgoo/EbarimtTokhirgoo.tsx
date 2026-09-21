@@ -485,7 +485,7 @@ export default function EbarimtTokhirgoo() {
                     value={merchantTin}
                     onChange={(e) => setMerchantTin(e.target.value.trim())}
                     placeholder="Татварын бүртгэлийн дугаар"
-                    className="w-full rounded-xl border border-theme/30 px-4 py-2.5 text-theme dark:text-white bg-white focus:outline-none focus:ring-2 focus:ring-theme dark:focus:ring-theme transition-all duration-200"
+                    className="w-full rounded-xl border border-theme/30 px-4 py-2.5 text-theme dark:text-white bg-[color:var(--surface-bg)] focus:outline-none focus:ring-2 focus:ring-theme dark:focus:ring-theme transition-all duration-200"
                     disabled={isLoading}
                   />
                 </div>

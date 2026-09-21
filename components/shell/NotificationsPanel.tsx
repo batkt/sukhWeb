@@ -194,7 +194,7 @@ export default function NotificationsPanel({
               onClick={() => setTab("sanal")}
               className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
                 tab === "sanal"
-                  ? "bg-white text-[color:var(--panel-text)] shadow-sm font-bold scale-[1.01]"
+                  ? "bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] shadow-sm font-bold scale-[1.01]"
                   : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
               }`}
             >
@@ -214,7 +214,7 @@ export default function NotificationsPanel({
               onClick={() => setTab("medegdel")}
               className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
                 tab === "medegdel"
-                  ? "bg-white text-[color:var(--panel-text)] shadow-sm font-bold scale-[1.01]"
+                  ? "bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] shadow-sm font-bold scale-[1.01]"
                   : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
               }`}
             >

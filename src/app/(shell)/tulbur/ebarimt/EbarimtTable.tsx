@@ -315,7 +315,7 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
 `}
           locale={{
             emptyText: (
-              <div className="py-8 text-center bg-white">
+              <div className="py-8 text-center bg-[color:var(--surface-bg)]">
                 <span className="text-[color:var(--muted-text)]">
                   Хайсан мэдээлэл алга байна
                 </span>

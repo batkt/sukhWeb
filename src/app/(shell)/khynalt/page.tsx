@@ -1677,7 +1677,7 @@ export default function Khynalt() {
                           type="button"
                           onClick={() => setBuildingFilterMode("single")}
                           className={`py-1 px-1.5 rounded-lg transition-all text-center truncate ${buildingFilterMode === "single"
-                              ? "bg-white text-[color:var(--panel-text)] font-semibold shadow-sm"
+                              ? "bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] font-semibold shadow-sm"
                               : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
                             }`}
                         >
@@ -1703,7 +1703,7 @@ export default function Khynalt() {
                           type="button"
                           onClick={() => setBuildingFilterMode("all")}
                           className={`py-1 px-1.5 rounded-lg transition-all text-center truncate ${buildingFilterMode === "all"
-                              ? "bg-white text-[color:var(--panel-text)] font-semibold shadow-sm"
+                              ? "bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] font-semibold shadow-sm"
                               : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
                             }`}
                         >

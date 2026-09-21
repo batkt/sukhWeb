@@ -167,9 +167,9 @@ export default function VehicleRegistrationModal({
         onClick={onClose}
       />
 
-      <div className="relative w-full max-w-lg bg-white backdrop-blur-xl rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 border border-[color:var(--surface-border)] dark:border-white/10">
+      <div className="relative w-full max-w-lg bg-[color:var(--surface-bg)] backdrop-blur-xl rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 border border-[color:var(--surface-border)] dark:border-white/10">
         {/* Header */}
-        <div className="relative flex items-center justify-between px-5 py-4 border-b border-[color:var(--surface-border)] bg-white">
+        <div className="relative flex items-center justify-between px-5 py-4 border-b border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]">
           <div className="flex items-center gap-3">
             <Keyboard className="w-5 h-5 text-[color:var(--muted-text)]" />
             <div>
@@ -199,7 +199,7 @@ export default function VehicleRegistrationModal({
               </label>
               <div className="relative group">
                 <div
-                  className="relative bg-white rounded-lg border-2 border-[color:var(--surface-border)] overflow-hidden group-focus-within:border-theme transition-all shadow-sm"
+                  className="relative bg-[color:var(--surface-bg)] rounded-lg border-2 border-[color:var(--surface-border)] overflow-hidden group-focus-within:border-theme transition-all shadow-sm"
                   style={{ borderRadius: "0.5rem" }}
                 >
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-[color:var(--muted-text)] select-none">
@@ -304,7 +304,7 @@ export default function VehicleRegistrationModal({
                       onClick={() => handleKey(char)}
                       className="
                         relative w-8 h-8 rounded-lg
-                        bg-white 
+                        bg-[color:var(--surface-bg)] 
                         border-2 border-[color:var(--surface-border)] dark:border-white/10
                         active:scale-95 active:translate-y-0.5
  text-[11px] text-[color:var(--panel-text)]

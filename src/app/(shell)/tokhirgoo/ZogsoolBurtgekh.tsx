@@ -626,7 +626,7 @@ function ZogsoolBurtgekh(
                       setFormData((prev) => ({ ...prev, khaalga: newKhaalga }));
                     }}
                     placeholder="Жишээ: Хойд Gate 1"
-                    classNames={{ input: "!rounded-xl h-9 bg-white border border-[color:var(--surface-border)] focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] text-xs placeholder:text-[color:var(--muted-text)]" }}
+                    classNames={{ input: "!rounded-xl h-9 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] text-xs placeholder:text-[color:var(--muted-text)]" }}
                     style={{ borderRadius: '10px' }}
                   />
                 </div>
@@ -640,7 +640,7 @@ function ZogsoolBurtgekh(
                       setFormData((prev) => ({ ...prev, khaalga: newKhaalga }));
                     }}
                     placeholder="Орох / Гарах"
-                    classNames={{ input: "!rounded-xl h-9 bg-white border border-[color:var(--surface-border)] focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] text-xs placeholder:text-[color:var(--muted-text)]" }}
+                    classNames={{ input: "!rounded-xl h-9 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] text-xs placeholder:text-[color:var(--muted-text)]" }}
                     style={{ borderRadius: '10px' }}
                     data={[{ label: "Орох", value: "Орох" }, { label: "Гарах", value: "Гарах" }]}
                   />
@@ -678,7 +678,7 @@ function ZogsoolBurtgekh(
 
                 <div className="space-y-3">
                   {gate.camera?.map((cam: any, camIndex: number) => (
-                    <div key={camIndex} style={{ borderRadius: '10px' }} className="p-3 bg-white border border-[color:var(--surface-border)] space-y-3">
+                    <div key={camIndex} style={{ borderRadius: '10px' }} className="p-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] space-y-3">
                       <div className="flex justify-between items-center pb-2 border-b border-[color:var(--surface-border)]">
                         <div className="flex items-center gap-1.5">
                           <span className="w-5 h-5 rounded-full bg-theme/10 flex items-center justify-center text-[10px] text-brand font-semibold">#{camIndex + 1}</span>
@@ -772,7 +772,7 @@ function ZogsoolBurtgekh(
                                 newKhaalga[index].camera[camIndex].tokhirgoo.USER = e.currentTarget.value;
                                 setFormData((prev) => ({ ...prev, khaalga: newKhaalga }));
                               }}
-                              classNames={{ input: "!rounded-xl h-7 bg-white border border-[color:var(--surface-border)] text-xs" }}
+                              classNames={{ input: "!rounded-xl h-7 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] text-xs" }}
                               style={{ borderRadius: '6px' }}
                             />
                           </div>
@@ -787,7 +787,7 @@ function ZogsoolBurtgekh(
                                 newKhaalga[index].camera[camIndex].tokhirgoo.PASSWD = e.currentTarget.value;
                                 setFormData((prev) => ({ ...prev, khaalga: newKhaalga }));
                               }}
-                              classNames={{ input: "!rounded-xl h-7 bg-white border border-[color:var(--surface-border)] text-xs" }}
+                              classNames={{ input: "!rounded-xl h-7 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] text-xs" }}
                               style={{ borderRadius: '6px' }}
                             />
                           </div>
@@ -801,7 +801,7 @@ function ZogsoolBurtgekh(
                                 newKhaalga[index].camera[camIndex].tokhirgoo.ROOT = e.currentTarget.value;
                                 setFormData((prev) => ({ ...prev, khaalga: newKhaalga }));
                               }}
-                              classNames={{ input: "!rounded-xl h-7 bg-white border border-[color:var(--surface-border)] text-xs" }}
+                              classNames={{ input: "!rounded-xl h-7 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] text-xs" }}
                               style={{ borderRadius: '6px' }}
                             />
                           </div>
@@ -817,7 +817,7 @@ function ZogsoolBurtgekh(
                               }}
                               min={1}
                               max={65535}
-                              classNames={{ input: "!rounded-xl h-7 bg-white border border-[color:var(--surface-border)] text-xs" }}
+                              classNames={{ input: "!rounded-xl h-7 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] text-xs" }}
                               style={{ borderRadius: '6px' }}
                             />
                           </div>
@@ -840,7 +840,7 @@ function ZogsoolBurtgekh(
                     </div>
                   ))}
                   {(!gate.camera || gate.camera.length === 0) && (
-                    <div style={{ borderRadius: '10px' }} className="text-center py-6 border-2 border-dashed border-[color:var(--surface-border)] bg-white">
+                    <div style={{ borderRadius: '10px' }} className="text-center py-6 border-2 border-dashed border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]">
                       <p className="text-xs text-[color:var(--muted-text)]">Холболттой камер байхгүй</p>
                     </div>
                   )}
@@ -849,7 +849,7 @@ function ZogsoolBurtgekh(
             </div>
           ))}
           {(!formData.khaalga || formData.khaalga.length === 0) && (
-            <div style={{ borderRadius: '10px' }} className="text-center py-10 border-2 border-dashed border-[color:var(--surface-border)] bg-white">
+            <div style={{ borderRadius: '10px' }} className="text-center py-10 border-2 border-dashed border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]">
               <p className="text-sm text-[color:var(--panel-text)]">Gate тохиргоо одоогоор хоосон байна</p>
               <p className="text-xs text-[color:var(--muted-text)] mt-1">Хаалга нэмэх товчийг дарж системд бүртгэнэ үү</p>
             </div>

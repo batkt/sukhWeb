@@ -286,7 +286,7 @@ const ZassanMedegdelModal: React.FC<Props> = ({ open, onClose, record }) => {
         onClick={onClose}
       />
       <div
-        className="relative w-full max-w-6xl bg-[#111111] text-[color:var(--muted-text)] rounded-3xl shadow-2xl overflow-hidden border border-[color:var(--surface-border)] font-sans animate-in fade-in zoom-in duration-200"
+        className="relative w-full max-w-6xl bg-[color:var(--panel)] text-[color:var(--muted-text)] rounded-3xl shadow-2xl overflow-hidden border border-[color:var(--surface-border)] font-sans animate-in fade-in zoom-in duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -338,7 +338,7 @@ const ZassanMedegdelModal: React.FC<Props> = ({ open, onClose, record }) => {
         <div className="max-h-[60vh] overflow-y-auto custom-scrollbar p-6">
           <div className="rounded-2xl border border-[color:var(--surface-border)] bg-black/20 overflow-hidden shadow-inner">
             <table className="w-full text-sm border-collapse">
-              <thead className="bg-[#1A1A1A] text-[color:var(--muted-text)] uppercase text-[10px] tracking-widest font-bold">
+              <thead className="bg-[color:var(--panel)] text-[color:var(--muted-text)] uppercase text-[10px] tracking-widest font-bold">
                 <tr>
                   <th className="py-4 px-6 text-left w-[20%]">Талбарын нэр</th>
                   <th className="py-4 px-6 text-center w-[40%] bg-danger/5">Өмнөх утга</th>
@@ -393,7 +393,7 @@ const ZassanMedegdelModal: React.FC<Props> = ({ open, onClose, record }) => {
           </p>
           <button
             onClick={onClose}
-            className="px-8 py-2.5 bg-white hover:bg-[color:var(--panel)] text-black font-bold text-sm rounded-xl shadow-lg transition-all active:scale-95"
+            className="px-8 py-2.5 bg-[color:var(--surface-bg)] hover:bg-[color:var(--panel)] text-[color:var(--panel-text)] font-bold text-sm rounded-xl shadow-lg transition-all active:scale-95"
           >
             Хаах
           </button>

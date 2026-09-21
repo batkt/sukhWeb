@@ -78,7 +78,7 @@ export default function TuslamjTokhirgoo(props: Props) {
       style={compact ? {} : { height: "calc(100vh - 220px)" }}
     >
       <div className={`${compact ? "p-4" : "p-4 md:p-6"} flex flex-col flex-1 min-h-0 overflow-hidden`}>
-        <div className="flex flex-col flex-1 min-h-0 bg-white rounded-3xl shadow-xl border border-[color:var(--surface-border)] dark:border-white/5 overflow-hidden">
+        <div className="flex flex-col flex-1 min-h-0 bg-[color:var(--surface-bg)] rounded-3xl shadow-xl border border-[color:var(--surface-border)] dark:border-white/5 overflow-hidden">
           {/* Header */}
           <div className="px-6 py-5 border-b border-[color:var(--surface-border)] dark:border-white/5 bg-[color:var(--surface-hover)] dark:bg-white/5 flex items-center gap-4">
             <div className="flex items-center justify-center h-12 w-12 rounded-2xl bg-theme/10 text-brand">

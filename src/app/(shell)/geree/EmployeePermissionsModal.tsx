@@ -78,7 +78,7 @@ const Shiljuurch: React.FC<{
     }`}
   >
     <span
-      className={`absolute top-1/2 -translate-y-1/2 rounded-full bg-white shadow transition-all ${
+      className={`absolute top-1/2 -translate-y-1/2 rounded-full bg-[color:var(--surface-bg)] shadow transition-all ${
         jijig ? "h-4 w-4" : "h-5 w-5"
       } ${
         idevkhitei
@@ -274,7 +274,7 @@ export default function EmployeePermissionsModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-[color:var(--surface-border)] dark:ring-white/10"
+        className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-[color:var(--surface-bg)] shadow-2xl ring-1 ring-[color:var(--surface-border)] dark:ring-white/10"
       >
         {/* ── Толгой ── */}
         <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[color:var(--surface-border)] px-6 py-4 dark:border-white/10">

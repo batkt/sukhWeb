@@ -279,7 +279,7 @@ export default function TusgaiZagvar({
             <div
               className={`mt-2 w-full max-h-60 rounded-2xl overflow-hidden shadow-xl bg-[color:var(--surface-bg)] backdrop-blur-xl border border-white/10 isolate ${
                 tone === "neutral"
-                  ? "!bg-white !text-[color:var(--panel-text)] !border !border-[color:var(--surface-border)]"
+                  ? "!bg-[color:var(--surface-bg)] !text-[color:var(--panel-text)] !border !border-[color:var(--surface-border)]"
                   : ""
               } ${dropdownClassName}`}
             >

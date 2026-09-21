@@ -39,7 +39,7 @@ export function Calendar({
           : "order-2 absolute top-5 left-28 w-full flex items-center justify-center",
         nav_button: cn(
           "h-14 w-14 sm:h-16 sm:w-16 rounded-xl",
-          "inline-flex items-center justify-center text-theme text-2xl hover:bg-white dark:hover:bg-black transition-all"
+          "inline-flex items-center justify-center text-theme text-2xl hover:bg-[color:var(--surface-bg)] dark:hover:bg-black transition-all"
         ),
         nav_button_previous: "",
         nav_button_next: "",

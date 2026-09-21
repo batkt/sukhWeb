@@ -275,7 +275,7 @@ export default function SanalAsuulgaTracker() {
             className="absolute top-full right-0 mt-3 z-[1100] w-[340px] sm:w-[400px] rounded-2xl border border-[color:var(--surface-border)]/90 bg-white/95 backdrop-blur-xl shadow-2xl text-[color:var(--panel-text)] overflow-hidden"
           >
             {/* Upward Pointing Arrow Pointer */}
-            <div className="absolute -top-2 right-5 w-4 h-4 rotate-45 border-t border-l border-[color:var(--surface-border)]/90 bg-white z-10" />
+            <div className="absolute -top-2 right-5 w-4 h-4 rotate-45 border-t border-l border-[color:var(--surface-border)]/90 bg-[color:var(--surface-bg)] z-10" />
 
             {/* Modal Header */}
             <div className="relative z-20 flex items-center justify-between px-4 py-3 border-b border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]/70">
@@ -320,7 +320,7 @@ export default function SanalAsuulgaTracker() {
             {/* Quick Metrics Bar: Явагдаж буй/Идэвхтэй = Шар, Дууссан = Ногоон */}
             <div className="relative z-20 grid grid-cols-3 gap-2 px-4 py-2.5 bg-[color:var(--surface-hover)]/50 border-b border-[color:var(--surface-border)] text-center">
               {/* ИДЭВХТЭЙ — ШАР / AMBER */}
-              <div className="p-2 rounded-xl bg-white border border-[color:var(--surface-border)]/60 shadow-xs">
+              <div className="p-2 rounded-xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)]/60 shadow-xs">
                 <span className="block text-[10px] font-normal text-[color:var(--panel-text)]/50 uppercase tracking-wider">
                   Идэвхтэй
                 </span>
@@ -330,7 +330,7 @@ export default function SanalAsuulgaTracker() {
               </div>
 
               {/* НИЙТ САНАЛ — BLUE */}
-              <div className="p-2 rounded-xl bg-white border border-[color:var(--surface-border)]/60 shadow-xs">
+              <div className="p-2 rounded-xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)]/60 shadow-xs">
                 <span className="block text-[10px] font-normal text-[color:var(--panel-text)]/50 uppercase tracking-wider">
                   Нийт санал
                 </span>
@@ -340,7 +340,7 @@ export default function SanalAsuulgaTracker() {
               </div>
 
               {/* ДУУССАН — НОГООН / EMERALD */}
-              <div className="p-2 rounded-xl bg-white border border-[color:var(--surface-border)]/60 shadow-xs">
+              <div className="p-2 rounded-xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)]/60 shadow-xs">
                 <span className="block text-[10px] font-normal text-[color:var(--panel-text)]/50 uppercase tracking-wider">
                   Дууссан
                 </span>

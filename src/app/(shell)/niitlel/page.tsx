@@ -248,7 +248,7 @@ export default function BlogNiitlelPage() {
           </div>
         ) : (
           <div className="flex flex-col h-full">
-            <div className="table-surface rounded-2xl border border-[color:var(--surface-border)] bg-white p-4 sm:p-5 mb-4">
+            <div className="table-surface rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-4 sm:p-5 mb-4">
               <div className="max-h-[calc(100vh-320px)] overflow-auto custom-scrollbar">
                 {pagedBlogs.length === 0 ? (
                   <div className="py-16 text-center text-sm text-[color:var(--muted-text)]">
@@ -259,7 +259,7 @@ export default function BlogNiitlelPage() {
                     {pagedBlogs.map((blog) => (
                       <article
                         key={blog._id}
-                        className="h-[380px] rounded-2xl border border-[color:var(--surface-border)] overflow-hidden bg-white shadow-sm flex flex-col"
+                        className="h-[380px] rounded-2xl border border-[color:var(--surface-border)] overflow-hidden bg-[color:var(--surface-bg)] shadow-sm flex flex-col"
                       >
                         <div className="h-1/2 bg-[color:var(--surface-hover)] flex items-center justify-center overflow-hidden">
                           <img
@@ -268,7 +268,7 @@ export default function BlogNiitlelPage() {
                             className="w-full h-full object-contain"
                           />
                         </div>
-                        <div className="h-1/2 bg-white border-t border-[color:var(--surface-border)] p-4 flex flex-col">
+                        <div className="h-1/2 bg-[color:var(--surface-bg)] border-t border-[color:var(--surface-border)] p-4 flex flex-col">
                           <h3 className="text-sm font-medium text-[color:var(--panel-text)] dark:text-white line-clamp-1 mb-1">{blog.title}</h3>
                           <p className="text-[11px] text-[color:var(--muted-text)] mb-2">
                             {new Date(blog.createdAt).toLocaleString("mn-MN")}

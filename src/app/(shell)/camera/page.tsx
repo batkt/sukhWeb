@@ -494,7 +494,7 @@ export default function CameraVideoWall() {
                             onClick={() => handleToggleEnabled(cam.id, !cam.enabled)}
                             className={`w-7 h-4 rounded-full p-0.5 transition-all duration-300 shrink-0 ${cam.enabled ? "bg-theme" : "bg-[color:var(--panel)]"}`}
                           >
-                            <div className={`w-3 h-3 rounded-full bg-white transition-all ${cam.enabled ? "translate-x-3" : "translate-x-0"}`}></div>
+                            <div className={`w-3 h-3 rounded-full bg-[color:var(--surface-bg)] transition-all ${cam.enabled ? "translate-x-3" : "translate-x-0"}`}></div>
                           </button>
 
                           <div className="min-w-0">

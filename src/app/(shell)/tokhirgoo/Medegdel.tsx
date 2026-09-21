@@ -21,7 +21,7 @@ const FloatingInput = ({
       value={value}
       onChange={onChange}
       placeholder=" "
-      className="peer w-full rounded-xl border border-white bg-transparent px-4 pt-5 pb-2 text-theme focus:border-theme focus:ring-1 focus:ring-theme focus:outline-none transition"
+      className="peer w-full rounded-xl border border-[color:var(--surface-border)] bg-transparent px-4 pt-5 pb-2 text-theme focus:border-theme focus:ring-1 focus:ring-theme focus:outline-none transition"
     />
     <label className="absolute left-4 top-2 text-[color:var(--muted-text)] text-sm transition-all peer-placeholder-shown:top-5 peer-placeholder-shown:text-[color:var(--muted-text)] peer-placeholder-shown:text-base peer-focus:top-2 peer-focus:text-[color:var(--panel-text)] peer-focus:text-sm">
       {label}

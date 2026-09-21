@@ -416,7 +416,7 @@ export default function AvlagiinNasjiltPage() {
               <button
                 disabled={currentPage <= 1}
                 onClick={() => setCurrentPage(currentPage - 1)}
-                className="px-4 py-1.5 rounded-2xl text-sm font-bold disabled:opacity-20 hover:bg-white transition-all text-[color:var(--muted-text)]"
+                className="px-4 py-1.5 rounded-2xl text-sm font-bold disabled:opacity-20 hover:bg-[color:var(--surface-bg)] transition-all text-[color:var(--muted-text)]"
               >
                 Өмнөх
               </button>
@@ -430,7 +430,7 @@ export default function AvlagiinNasjiltPage() {
               <button
                 disabled={currentPage * pageSize >= (summary?.count || filteredData.length)}
                 onClick={() => setCurrentPage(currentPage + 1)}
-                className="px-4 py-1.5 rounded-2xl text-sm font-bold disabled:opacity-20 hover:bg-white transition-all text-[color:var(--muted-text)]"
+                className="px-4 py-1.5 rounded-2xl text-sm font-bold disabled:opacity-20 hover:bg-[color:var(--surface-bg)] transition-all text-[color:var(--muted-text)]"
               >
                 Дараах
               </button>

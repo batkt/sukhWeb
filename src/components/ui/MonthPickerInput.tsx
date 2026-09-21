@@ -226,7 +226,7 @@ export function MonthPickerInput(
         >
           <div className="flex items-center justify-between mb-2 px-1">
             <button
-              className="h-8 w-8 rounded-lg hover:bg-white dark:hover:bg-black"
+              className="h-8 w-8 rounded-lg hover:bg-[color:var(--surface-bg)] dark:hover:bg-black"
               onClick={() => setDisplayYear((y) => y - 1)}
               aria-label="Prev year"
             >
@@ -236,7 +236,7 @@ export function MonthPickerInput(
               {displayYear}
             </div>
             <button
-              className="h-8 w-8 rounded-lg hover:bg-white dark:hover:bg-black"
+              className="h-8 w-8 rounded-lg hover:bg-[color:var(--surface-bg)] dark:hover:bg-black"
               onClick={() => setDisplayYear((y) => y + 1)}
               aria-label="Next year"
             >
@@ -253,7 +253,7 @@ export function MonthPickerInput(
                   onClick={() => onMonthClick(m)}
                   className={
                     `h-10 rounded-xl text-sm  transition-colors ` +
-                    `hover:bg-white dark:hover:bg-black ` +
+                    `hover:bg-[color:var(--surface-bg)] dark:hover:bg-black ` +
                     (active
                       ? ` bg-primary text-white hover:bg-primary/90`
                       : ` text-theme`)

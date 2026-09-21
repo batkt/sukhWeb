@@ -496,7 +496,7 @@ export default function Jagsaalt() {
       const mashin = v.mashin;
       const hasResidentData = mashin?.ezenToot || mashin?.orshinSuugchiinId || mashin?.ezemshigchiinNer;
       const mashinTurul = mashin?.turul;
-      
+
       // If root turul is missing but mashin has it, or mashin has resident indicators
       if (!v.turul && (mashinTurul || hasResidentData)) {
         return {
@@ -946,11 +946,11 @@ export default function Jagsaalt() {
       const tulburArray = t.tuukh?.[0]?.tulbur || [];
       const totalPaid = Array.isArray(tulburArray)
         ? tulburArray.reduce((s: number, p: any) => {
-            const turul = p.turul || "";
-            const dun = p.dun || 0;
-            if (turul === "discount" || turul === "khungulult" || turul === "Хөнгөлөлт" || dun < 0) return s;
-            return s + dun;
-          }, 0)
+          const turul = p.turul || "";
+          const dun = p.dun || 0;
+          if (turul === "discount" || turul === "khungulult" || turul === "Хөнгөлөлт" || dun < 0) return s;
+          return s + dun;
+        }, 0)
         : 0;
       return sum + totalPaid;
     }, 0);
@@ -958,13 +958,13 @@ export default function Jagsaalt() {
       const tulburArray = t.tuukh?.[0]?.tulbur || [];
       const totalDiscount = Array.isArray(tulburArray)
         ? tulburArray.reduce((s: number, p: any) => {
-            const turul = p.turul || "";
-            const dun = p.dun || 0;
-            if (turul === "discount" || turul === "khungulult" || turul === "Хөнгөлөлт" || dun < 0) {
-              return s + Math.abs(dun);
-            }
-            return s;
-          }, 0)
+          const turul = p.turul || "";
+          const dun = p.dun || 0;
+          if (turul === "discount" || turul === "khungulult" || turul === "Хөнгөлөлт" || dun < 0) {
+            return s + Math.abs(dun);
+          }
+          return s;
+        }, 0)
         : 0;
       return sum + totalDiscount;
     }, 0);
@@ -1019,19 +1019,17 @@ export default function Jagsaalt() {
       onClick={() => setOpenFilter(openFilter === id ? null : id)}
     >
       <Filter
-        className={`h-3 w-3 transition-colors ${
-          current !== "all" && current !== undefined
-            ? "text-brand"
-            : "text-[color:var(--muted-text)] group-hover/f:text-brand"
-        }`}
+        className={`h-3 w-3 transition-colors ${current !== "all" && current !== undefined
+          ? "text-brand"
+          : "text-[color:var(--muted-text)] group-hover/f:text-brand"
+          }`}
       />
       {label}
       <div
-        className={`absolute top-full left-1/2 z-[100] mt-3 w-48 -translate-x-1/2 overflow-hidden rounded-2xl border border-white/5 bg-[color:var(--panel)] p-2 text-white shadow-[0_20px_50px_rgba(0,0,0,0.5)] ring-1 ring-white/10 backdrop-blur-2xl transition-all duration-300 ${
-          openFilter === id
-            ? "visible translate-y-0 opacity-100"
-            : "invisible translate-y-3 opacity-0"
-        }`}
+        className={`absolute top-full left-1/2 z-[100] mt-3 w-48 -translate-x-1/2 overflow-hidden rounded-2xl border border-white/5 bg-[color:var(--panel)] p-2 text-white shadow-[0_20px_50px_rgba(0,0,0,0.5)] ring-1 ring-white/10 backdrop-blur-2xl transition-all duration-300 ${openFilter === id
+          ? "visible translate-y-0 opacity-100"
+          : "invisible translate-y-3 opacity-0 pointer-events-none"
+          }`}
       >
         <div className="relative z-10 flex flex-col gap-1">
           <div className="mb-1 border-b border-white/5 px-3 py-1.5 text-[9px] tracking-widest text-[color:var(--muted-text)] uppercase">
@@ -1046,11 +1044,10 @@ export default function Jagsaalt() {
                 setPage(1);
                 setOpenFilter(null);
               }}
-              className={`flex cursor-pointer items-center justify-between rounded-xl px-4 py-2.5 text-left text-[10px] transition-all duration-200 ${
-                current === opt.value
-                  ? "bg-theme text-white shadow-lg shadow-theme/40"
-                  : "text-[color:var(--muted-text)] hover:bg-white/10 hover:text-white"
-              }`}
+              className={`flex cursor-pointer items-center justify-between rounded-xl px-4 py-2.5 text-left text-[10px] transition-all duration-200 ${current === opt.value
+                ? "bg-theme text-white shadow-lg shadow-theme/40"
+                : "text-[color:var(--muted-text)] hover:bg-white/10 hover:text-white"
+                }`}
             >
               <span>{opt.label}</span>
             </div>
@@ -1106,21 +1103,22 @@ export default function Jagsaalt() {
       },
     },
     {
-      title: shuultuuriinTolgoi(
-        "type",
-        "Төрөл",
-        typeFilter,
-        [
-          { label: "Бүгд", value: "all" },
-          { label: "Оршин суугч", value: "Оршин суугч" },
-          { label: "Харилцагч", value: "Харилцагч" },
-          { label: "Зочин", value: "Зочин" },
-          { label: "Үйлчлүүлэгч", value: "Үйлчлүүлэгч" },
-        ],
-        setTypeFilter,
-      ),
+      title: () =>
+        shuultuuriinTolgoi(
+          "type",
+          "Төрөл",
+          typeFilter,
+          [
+            { label: "Бүгд", value: "all" },
+            { label: "Оршин суугч", value: "Оршин суугч" },
+            { label: "Харилцагч", value: "Харилцагч" },
+            { label: "Зочин", value: "Зочин" },
+            { label: "Үйлчлүүлэгч", value: "Үйлчлүүлэгч" },
+          ],
+          setTypeFilter,
+        ),
       key: "turul",
-      width: 120,
+      width: 95,
       align: "center",
       render: (_: any, transaction: any) => {
         const type = getVehicleType(transaction);
@@ -1142,9 +1140,8 @@ export default function Jagsaalt() {
                   ? `Блоклсон${blockRecord.tailbar ? ": " + blockRecord.tailbar : ""}`
                   : undefined
               }
-              className={`rounded-full px-2.5 py-0.5 font-[family-name:var(--font-mono)] font-bold tracking-widest !text-white ${
-                blockRecord ? "bg-danger" : "bg-theme"
-              }`}
+              className={`rounded-full px-2.5 py-0.5 font-[family-name:var(--font-mono)] font-bold tracking-widest !text-white ${blockRecord ? "bg-danger" : "bg-theme"
+                }`}
             >
               {transaction.mashiniiDugaar || ""}
             </span>
@@ -1157,19 +1154,20 @@ export default function Jagsaalt() {
       },
     },
     {
-      title: shuultuuriinTolgoi(
-        "duration",
-        "Хугацаа/мин",
-        durationFilter,
-        [
-          { label: "Удаан зогссон эхэнд", value: "longest" },
-          { label: "Сүүлд орсон эхэнд", value: "latest_in" },
-          { label: "Сүүлд гарсан эхэнд", value: "latest_out" },
-        ],
-        setDurationFilter,
-      ),
+      title: () =>
+        shuultuuriinTolgoi(
+          "duration",
+          "Хугацаа/мин",
+          durationFilter,
+          [
+            { label: "Удаан зогссон эхэнд", value: "longest" },
+            { label: "Сүүлд орсон эхэнд", value: "latest_in" },
+            { label: "Сүүлд гарсан эхэнд", value: "latest_out" },
+          ],
+          setDurationFilter,
+        ),
       key: "duration",
-      width: 120,
+      width: 105,
       align: "center",
       render: (_: any, transaction: any) => {
         const { mur, orsonTsag, garsanTsag, getStatusColor } =
@@ -1200,21 +1198,22 @@ export default function Jagsaalt() {
       ),
     },
     {
-      title: shuultuuriinTolgoi(
-        "payment",
-        "Төлбөр",
-        paymentMethodFilter,
-        [
-          { label: "Бүгд", value: "all" },
-          { label: "Бэлэн", value: "cash" },
-          { label: "Карт", value: "card" },
-          { label: "Дансаар", value: "transfer" },
-          { label: "QPay", value: "qpay" },
-        ],
-        setPaymentMethodFilter,
-      ),
+      title: () =>
+        shuultuuriinTolgoi(
+          "payment",
+          "Төлбөр",
+          paymentMethodFilter,
+          [
+            { label: "Бүгд", value: "all" },
+            { label: "Бэлэн", value: "cash" },
+            { label: "Карт", value: "card" },
+            { label: "Дансаар", value: "transfer" },
+            { label: "QPay", value: "qpay" },
+          ],
+          setPaymentMethodFilter,
+        ),
       key: "payment",
-      width: 110,
+      width: 85,
       align: "center",
       render: (_: any, transaction: any) => {
         const paymentHistory = tulburTuukhAvya(transaction, "tulult");
@@ -1273,21 +1272,22 @@ export default function Jagsaalt() {
       ),
     },
     {
-      title: shuultuuriinTolgoi(
-        "status",
-        "Төлөв",
-        statusFilter,
-        [
-          { label: "Бүгд", value: "all" },
-          { label: "Идэвхтэй", value: "active" },
-          { label: "Төлсөн", value: "paid" },
-          { label: "Төлөөгүй", value: "unpaid" },
-          { label: "Үнэгүй", value: "free" },
-        ],
-        setStatusFilter,
-      ),
+      title: () =>
+        shuultuuriinTolgoi(
+          "status",
+          "Төлөв",
+          statusFilter,
+          [
+            { label: "Бүгд", value: "all" },
+            { label: "Идэвхтэй", value: "active" },
+            { label: "Төлсөн", value: "paid" },
+            { label: "Төлөөгүй", value: "unpaid" },
+            { label: "Үнэгүй", value: "free" },
+          ],
+          setStatusFilter,
+        ),
       key: "status",
-      width: 120,
+      width: 105,
       align: "center",
       render: (_: any, transaction: any) => {
         const {
@@ -1343,453 +1343,453 @@ export default function Jagsaalt() {
       key: "staff",
       width: 120,
       align: "center",
-      render: (_: any, transaction: any) => (
-        <span className="">
-          {murNiiluulye(transaction).mur?.burtgesenAjiltaniiNer || ""}
-        </span>
-      ),
+          render: (_: any, transaction: any) => (
+            <span className="">
+              {murNiiluulye(transaction).mur?.burtgesenAjiltaniiNer || ""}
+            </span>
+          ),
     },
-    {
-      title: "Блок",
-      key: "block",
+{
+  title: "Блок",
+    key: "block",
       width: 84,
-      align: "center",
-      render: (_: any, transaction: any) => {
-        const blockRecord = blockolsonEsekh(transaction.mashiniiDugaar);
-        return blockRecord ? (
-          <button
-            onClick={() => blockGargaya(blockRecord)}
-            title={
-              blockRecord.tailbar
-                ? `Блокоос гаргах — ${blockRecord.tailbar}`
-                : "Блокоос гаргах"
-            }
-            className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-danger text-white shadow-sm transition-all hover:bg-danger active:bg-danger"
-          >
-            <ShieldCheck className="h-4 w-4" />
-          </button>
-        ) : (
-          <button
-            onClick={() =>
-              setBlockModal({
-                dugaar: mashiniiDugaarTseverle(transaction.mashiniiDugaar || ""),
-                tailbar: "",
-              })
-            }
-            disabled={!transaction.mashiniiDugaar}
-            title="Машиныг блоклох"
-            className="inline-flex h-6 w-6 items-center justify-center rounded-full text-[color:var(--muted-text)] opacity-40 transition-all hover:bg-danger/10 hover:text-danger focus:opacity-100 disabled:cursor-not-allowed disabled:opacity-30"
-          >
-            <Ban className="h-4 w-4" />
-          </button>
-        );
-      },
+        align: "center",
+          render: (_: any, transaction: any) => {
+            const blockRecord = blockolsonEsekh(transaction.mashiniiDugaar);
+            return blockRecord ? (
+              <button
+                onClick={() => blockGargaya(blockRecord)}
+                title={
+                  blockRecord.tailbar
+                    ? `Блокоос гаргах — ${blockRecord.tailbar}`
+                    : "Блокоос гаргах"
+                }
+                className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-danger text-white shadow-sm transition-all hover:bg-danger active:bg-danger"
+              >
+                <ShieldCheck className="h-4 w-4" />
+              </button>
+            ) : (
+              <button
+                onClick={() =>
+                  setBlockModal({
+                    dugaar: mashiniiDugaarTseverle(transaction.mashiniiDugaar || ""),
+                    tailbar: "",
+                  })
+                }
+                disabled={!transaction.mashiniiDugaar}
+                title="Машиныг блоклох"
+                className="inline-flex h-6 w-6 items-center justify-center rounded-full text-[color:var(--muted-text)] opacity-40 transition-all hover:bg-danger/10 hover:text-danger focus:opacity-100 disabled:cursor-not-allowed disabled:opacity-30"
+              >
+                <Ban className="h-4 w-4" />
+              </button>
+            );
+          },
     },
   ];
 
-  return (
-    <div className="flex flex-col h-[calc(100dvh-var(--shell-topbar-h)-3.5rem-2px)] min-h-[420px] overflow-hidden">
-      <div className="flex-1 min-h-0 flex flex-col gap-4 max-w-[1700px] mx-auto w-full overflow-hidden">
-        <div className="relative z-10 flex-shrink-0 px-1">
-          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
-            {/* Left: Date picker + Search */}
-            <div className="flex items-center gap-4 shrink-0">
-              <div className="w-[50px] sm:w-40 lg:w-[300px] h-11 [&_.ant-picker-input]:!bg-transparent [&_input]:!bg-transparent [&_.ant-picker-input-active]:!bg-transparent dark:[&_.ant-picker-suffix]:!text-white dark:[&_.ant-picker-suffix_svg]:!fill-white dark:[&_.ant-picker:hover]:!bg-[color:var(--panel)] dark:[&_.ant-picker-focused]:!bg-[color:var(--panel)] [&_.ant-picker-range-separator]:!text-[color:var(--muted-text)] dark:[&_.ant-picker-range-separator]:!text-[color:var(--muted-text)]">
-                <StandardDatePicker
-                  isRange={true}
-                  value={dateRange ?? undefined}
-                  onChange={(date: any, dateString: [string, string]) => {
-                    setDateRange(dateString);
-                    setPage(1);
-                  }}
-                  format="YYYY-MM-DD"
-                  className="w-full !bg-white dark:!bg-[color:var(--panel)] hover:!bg-white dark:hover:!bg-[color:var(--panel)] !border-[color:var(--surface-border)] dark:!border-[color:var(--surface-border)] hover:!border-[color:var(--surface-border)] dark:hover:!border-[color:var(--surface-border)] shadow-sm"
-                  classNames={{
-                    input: "!bg-transparent !border-0 !shadow-none text-[11px] !text-[color:var(--panel-text)] dark:!text-[color:var(--muted-text)] px-2",
-                  }}
-                  allowClear
-                />
-              </div>
-
+return (
+  <div className="flex flex-col h-[calc(100dvh-var(--shell-topbar-h)-3.5rem-2px)] min-h-[420px] overflow-hidden">
+    <div className="flex-1 min-h-0 flex flex-col gap-4 max-w-[1700px] mx-auto w-full overflow-hidden">
+      <div className="relative z-10 flex-shrink-0 px-1">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+          {/* Left: Date picker + Search */}
+          <div className="flex items-center gap-4 shrink-0">
+            <div className="w-[50px] sm:w-40 lg:w-[300px] h-11 [&_.ant-picker-input]:!bg-transparent [&_input]:!bg-transparent [&_.ant-picker-input-active]:!bg-transparent dark:[&_.ant-picker-suffix]:!text-white dark:[&_.ant-picker-suffix_svg]:!fill-white dark:[&_.ant-picker:hover]:!bg-[color:var(--panel)] dark:[&_.ant-picker-focused]:!bg-[color:var(--panel)] [&_.ant-picker-range-separator]:!text-[color:var(--muted-text)] dark:[&_.ant-picker-range-separator]:!text-[color:var(--muted-text)]">
+              <StandardDatePicker
+                isRange={true}
+                value={dateRange ?? undefined}
+                onChange={(date: any, dateString: [string, string]) => {
+                  setDateRange(dateString);
+                  setPage(1);
+                }}
+                format="YYYY-MM-DD"
+                className="w-full !bg-white dark:!bg-[color:var(--panel)] hover:!bg-white dark:hover:!bg-[color:var(--panel)] !border-[color:var(--surface-border)] dark:!border-[color:var(--surface-border)] hover:!border-[color:var(--surface-border)] dark:hover:!border-[color:var(--surface-border)] shadow-sm"
+                classNames={{
+                  input: "!bg-transparent !border-0 !shadow-none text-[11px] !text-[color:var(--panel-text)] dark:!text-[color:var(--muted-text)] px-2",
+                }}
+                allowClear
+              />
             </div>
 
-            {/* Right: Export + Revenue Report */}
-            <div className="flex items-center gap-3 flex-1 justify-end">
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setBlockModal({ dugaar: "", tailbar: "" })}
-                  className="flex items-center justify-center gap-1.5 h-8.5 w-32 rounded-xl bg-danger hover:bg-danger/90 active:bg-danger text-white text-xs font-medium shadow-sm transition-all whitespace-nowrap flex-shrink-0"
-                >
-                  <Ban className="w-3.5 h-3.5" />
-                  Блок
-                  {blockedMap.size > 0 && (
-                    <span className="ml-0.5 min-w-[16px] h-4 px-1 rounded-full bg-white/25 flex items-center justify-center text-[10px] font-bold">
-                      {blockedMap.size}
-                    </span>
-                  )}
-                </button>
-                <button
-                  onClick={() => setRevenueModalOpen(true)}
-                  className="flex items-center justify-center gap-1.5 h-8.5 w-32 rounded-xl bg-theme hover:bg-theme/90 active:bg-theme text-white text-xs font-medium shadow-sm transition-all whitespace-nowrap flex-shrink-0"
-                >
-                  <TrendingUp className="w-3.5 h-3.5" />
-                  Орлого тайлан
-                </button>
-                <button
-                  onClick={downloadExcel}
-                  className="flex items-center justify-center gap-1.5 h-8.5 w-32 rounded-xl bg-theme hover:bg-theme/90 active:bg-theme text-white text-xs font-medium shadow-sm transition-all whitespace-nowrap flex-shrink-0"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  Excel татах
-                </button>
-              </div>
-            </div>
           </div>
 
-          {/* Active filter chips */}
-
-        </div>
-        <div className="min-h-0 flex-1">
-          <div>
-            <Table<any>
-              columns={mashiniiColumns}
-              dataSource={displayVehicles}
-              rowKey={(t, idx) => t._id || idx}
-              pagination={false}
-              scroll={{ x: 1400 }}
-              locale={{
-                emptyText: (
-                  <div className="flex flex-col items-center gap-2">
-                    <Car className="h-12 w-12 opacity-50" />
-                    <p>Машины мэдээлэл олдсонгүй</p>
-                  </div>
-                ),
-              }}
-              summary={() => (
-                <Table.Summary.Row>
-                  <Table.Summary.Cell colSpan={6} align="right">
-                    <span className="text-[11px] font-semibold tracking-wider uppercase text-slate-700 dark:text-slate-300">
-                      Нийт Дүн:
-                    </span>
-                  </Table.Summary.Cell>
-                  <Table.Summary.Cell
-                    align="center"
-                    className="font-[family-name:var(--font-mono)] text-xs font-semibold whitespace-nowrap text-slate-800 dark:text-slate-200"
-                  >
-                    {formatNumber(
-                      displayVehicles.reduce(
-                        (sum, t) => sum + (Number(t.niitDun) || 0),
-                        0,
-                      ),
-                      2,
-                    )}
-                  </Table.Summary.Cell>
-                  <Table.Summary.Cell
-                    align="center"
-                    className="font-[family-name:var(--font-mono)] text-xs font-semibold whitespace-nowrap text-slate-800 dark:text-slate-200"
-                  >
-                    {formatNumber(
-                      displayVehicles.reduce(
-                        (sum, t) =>
-                          sum +
-                          tulburTuukhAvya(t, "tulult").reduce(
-                            (acc: number, pay: any) => acc + (pay.dun || 0),
-                            0,
-                          ),
-                        0,
-                      ),
-                      2,
-                    )}
-                  </Table.Summary.Cell>
-                  <Table.Summary.Cell
-                    align="center"
-                    className="font-[family-name:var(--font-mono)] text-xs font-semibold whitespace-nowrap text-slate-800 dark:text-slate-200"
-                  >
-                    {formatNumber(
-                      displayVehicles.reduce(
-                        (sum, t) =>
-                          sum +
-                          tulburTuukhAvya(t, "khungulult").reduce(
-                            (acc: number, pay: any) =>
-                              acc + Math.abs(pay.dun || 0),
-                            0,
-                          ),
-                        0,
-                      ),
-                      2,
-                    )}
-                  </Table.Summary.Cell>
-                  <Table.Summary.Cell colSpan={5} />
-                </Table.Summary.Row>
-              )}
-            />
+          {/* Right: Export + Revenue Report */}
+          <div className="flex items-center gap-3 flex-1 justify-end">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setBlockModal({ dugaar: "", tailbar: "" })}
+                className="flex items-center justify-center gap-1.5 h-8.5 w-32 rounded-xl bg-danger hover:bg-danger/90 active:bg-danger text-white text-xs font-medium shadow-sm transition-all whitespace-nowrap flex-shrink-0"
+              >
+                <Ban className="w-3.5 h-3.5" />
+                Блок
+                {blockedMap.size > 0 && (
+                  <span className="ml-0.5 min-w-[16px] h-4 px-1 rounded-full bg-white/25 flex items-center justify-center text-[10px] font-bold">
+                    {blockedMap.size}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => setRevenueModalOpen(true)}
+                className="flex items-center justify-center gap-1.5 h-8.5 w-32 rounded-xl bg-theme hover:bg-theme/90 active:bg-theme text-white text-xs font-medium shadow-sm transition-all whitespace-nowrap flex-shrink-0"
+              >
+                <TrendingUp className="w-3.5 h-3.5" />
+                Орлого тайлан
+              </button>
+              <button
+                onClick={downloadExcel}
+                className="flex items-center justify-center gap-1.5 h-8.5 w-32 rounded-xl bg-theme hover:bg-theme/90 active:bg-theme text-white text-xs font-medium shadow-sm transition-all whitespace-nowrap flex-shrink-0"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Excel татах
+              </button>
+            </div>
           </div>
         </div>
 
-        <StandardPagination
-          current={page}
-          total={vehiclesData?.niitMur || 0}
-          pageSize={pageSize}
-          onChange={setPage}
-        />
-        {blockModal && createPortal(
-          <div
-            className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-            style={{
-              background: "rgba(0,0,0,0.45)",
-              backdropFilter: "blur(12px)",
+        {/* Active filter chips */}
+
+      </div>
+      <div className="min-h-0 flex-1">
+        <div>
+          <Table<any>
+            columns={mashiniiColumns}
+            dataSource={displayVehicles}
+            rowKey={(t, idx) => t._id || idx}
+            pagination={false}
+            scroll={{ x: 1300 }}
+            locale={{
+              emptyText: (
+                <div className="flex flex-col items-center gap-2">
+                  <Car className="h-12 w-12 opacity-50" />
+                  <p>Машины мэдээлэл олдсонгүй</p>
+                </div>
+              ),
             }}
-            onClick={() =>
-              !blockSaving && !excelKhadgalj && setBlockModal(null)
-            }
+            summary={() => (
+              <Table.Summary.Row>
+                <Table.Summary.Cell colSpan={6} align="right">
+                  <span className="text-[11px] font-semibold tracking-wider uppercase text-slate-700 dark:text-slate-300">
+                    Нийт Дүн:
+                  </span>
+                </Table.Summary.Cell>
+                <Table.Summary.Cell
+                  align="center"
+                  className="font-[family-name:var(--font-mono)] text-xs font-semibold whitespace-nowrap text-slate-800 dark:text-slate-200"
+                >
+                  {formatNumber(
+                    displayVehicles.reduce(
+                      (sum, t) => sum + (Number(t.niitDun) || 0),
+                      0,
+                    ),
+                    2,
+                  )}
+                </Table.Summary.Cell>
+                <Table.Summary.Cell
+                  align="center"
+                  className="font-[family-name:var(--font-mono)] text-xs font-semibold whitespace-nowrap text-slate-800 dark:text-slate-200"
+                >
+                  {formatNumber(
+                    displayVehicles.reduce(
+                      (sum, t) =>
+                        sum +
+                        tulburTuukhAvya(t, "tulult").reduce(
+                          (acc: number, pay: any) => acc + (pay.dun || 0),
+                          0,
+                        ),
+                      0,
+                    ),
+                    2,
+                  )}
+                </Table.Summary.Cell>
+                <Table.Summary.Cell
+                  align="center"
+                  className="font-[family-name:var(--font-mono)] text-xs font-semibold whitespace-nowrap text-slate-800 dark:text-slate-200"
+                >
+                  {formatNumber(
+                    displayVehicles.reduce(
+                      (sum, t) =>
+                        sum +
+                        tulburTuukhAvya(t, "khungulult").reduce(
+                          (acc: number, pay: any) =>
+                            acc + Math.abs(pay.dun || 0),
+                          0,
+                        ),
+                      0,
+                    ),
+                    2,
+                  )}
+                </Table.Summary.Cell>
+                <Table.Summary.Cell colSpan={5} />
+              </Table.Summary.Row>
+            )}
+          />
+        </div>
+      </div>
+
+      <StandardPagination
+        current={page}
+        total={vehiclesData?.niitMur || 0}
+        pageSize={pageSize}
+        onChange={setPage}
+      />
+      {blockModal && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          style={{
+            background: "rgba(0,0,0,0.45)",
+            backdropFilter: "blur(12px)",
+          }}
+          onClick={() =>
+            !blockSaving && !excelKhadgalj && setBlockModal(null)
+          }
+        >
+          <div
+            className={`relative ${excelMuruud.length > 0 ? "w-[780px]" : "w-[580px]"} max-w-full max-h-[85vh] flex flex-col rounded-[28px] overflow-hidden shadow-2xl border bg-white dark:bg-[color:var(--panel)] border-[color:var(--surface-border)] dark:border-white/[0.06] transition-[width] duration-200`}
+            onClick={(e) => e.stopPropagation()}
           >
-            <div
-              className={`relative ${excelMuruud.length > 0 ? "w-[780px]" : "w-[580px]"} max-w-full max-h-[85vh] flex flex-col rounded-[28px] overflow-hidden shadow-2xl border bg-white dark:bg-[#18181b] border-[color:var(--surface-border)] dark:border-white/[0.06] transition-[width] duration-200`}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Толгой */}
-              <div className="relative px-7 pt-6 pb-5 border-b border-[color:var(--surface-border)] dark:border-white/[0.06] flex-shrink-0">
-                <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-danger/20 via-danger/20 to-warning/20 opacity-80" />
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-2xl bg-danger/10 flex items-center justify-center">
-                      <Ban className="w-5 h-5 text-danger" />
-                    </div>
-                    <div>
-                      <h3 className="text-[15px] font-semibold text-[color:var(--panel-text)] dark:text-white">
-                        Машин блоклох
-                      </h3>
-                      <p className="text-[11px] text-[color:var(--muted-text)]">
-                        Блоклосон машиныг хаалга оруулахгүй
-                      </p>
-                    </div>
+            {/* Толгой */}
+            <div className="relative px-7 pt-6 pb-5 border-b border-[color:var(--surface-border)] dark:border-white/[0.06] flex-shrink-0">
+              <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-danger/20 via-danger/20 to-warning/20 opacity-80" />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-2xl bg-danger/10 flex items-center justify-center">
+                    <Ban className="w-5 h-5 text-danger" />
                   </div>
-                  <button
-                    onClick={() => setBlockModal(null)}
-                    disabled={blockSaving}
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] dark:hover:text-white hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/5 transition-all disabled:opacity-40"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
+                  <div>
+                    <h3 className="text-[15px] font-semibold text-[color:var(--panel-text)] dark:text-white">
+                      Машин блоклох
+                    </h3>
+                    <p className="text-[11px] text-[color:var(--muted-text)]">
+                      Блоклосон машиныг хаалга оруулахгүй
+                    </p>
+                  </div>
                 </div>
-              </div>
-
-              {/* Шинэ дугаар бүртгэх */}
-              <div className="px-7 py-5 border-b border-[color:var(--surface-border)] dark:border-white/[0.06] flex-shrink-0">
-                <div className="flex items-end gap-3">
-                  <div className="w-[150px] flex-shrink-0 space-y-1.5">
-                    <label className="text-[10px] font-semibold text-[color:var(--muted-text)] uppercase tracking-wider">
-                      Улсын дугаар <span className="text-danger">*</span>
-                    </label>
-                    <input
-                      autoFocus
-                      value={blockModal.dugaar}
-                      onChange={(e) =>
-                        setBlockModal((st) =>
-                          st
-                            ? {
-                                ...st,
-                                dugaar: mashiniiDugaarTseverle(e.target.value),
-                              }
-                            : st,
-                        )
-                      }
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") blokloyo();
-                      }}
-                      placeholder="1234УБА"
-                      maxLength={7}
-                      className="w-full h-10 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] px-4 text-[13px] font-bold tracking-widest text-center font-[family-name:var(--font-mono)] text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] placeholder:font-normal placeholder:tracking-normal outline-none focus:border-danger transition-colors"
-                    />
-                  </div>
-                  <div className="flex-1 space-y-1.5">
-                    <label className="text-[10px] font-semibold text-[color:var(--muted-text)] uppercase tracking-wider">
-                      Шалтгаан <span className="text-danger">*</span>
-                    </label>
-                    <input
-                      value={blockModal.tailbar}
-                      onChange={(e) =>
-                        setBlockModal((st) =>
-                          st ? { ...st, tailbar: e.target.value } : st,
-                        )
-                      }
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") blokloyo();
-                      }}
-                      placeholder="Төлбөрөө төлөөгүй"
-                      className="w-full h-10 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] px-4 text-[12px] text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] outline-none focus:border-danger transition-colors"
-                    />
-                  </div>
-                  <button
-                    onClick={blokloyo}
-                    disabled={
-                      blockSaving ||
-                      !MASHINII_DUGAARIIN_ZAGVAR.test(blockModal.dugaar) ||
-                      !blockModal.tailbar.trim()
-                    }
-                    className="h-10 px-5 rounded-[30px] bg-danger hover:bg-danger active:bg-danger text-white text-[11px] font-semibold shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-2 flex-shrink-0"
-                  >
-                    {blockSaving ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <Plus className="w-3.5 h-3.5" />
-                    )}
-                    Нэмэх
-                  </button>
-                </div>
-              </div>
-
-              {/* Excel-ээр олноор бүртгэх */}
-              <div className="px-7 py-3.5 border-b border-[color:var(--surface-border)] dark:border-white/[0.06] flex-shrink-0 flex items-center gap-3">
-                <span className="text-[10px] font-semibold text-[color:var(--muted-text)] uppercase tracking-wider whitespace-nowrap">
-                  Excel-ээр машин бүртгэх
-                </span>
-                <div className="flex-1 h-px bg-[color:var(--surface-hover)] dark:bg-white/[0.06]" />
                 <button
-                  onClick={excelZagvarTatya}
-                  disabled={excelKhadgalj}
-                  className="h-8 px-3 rounded-2xl border border-[color:var(--surface-border)] text-[color:var(--muted-text)] hover:border-[color:var(--surface-border)] hover:text-[color:var(--panel-text)] text-[11px] font-semibold transition-all inline-flex items-center gap-1.5 disabled:opacity-40"
+                  onClick={() => setBlockModal(null)}
+                  disabled={blockSaving}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] dark:hover:text-white hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/5 transition-all disabled:opacity-40"
                 >
-                  <Download className="w-3.5 h-3.5" />
-                  Загвар
+                  <X className="w-4 h-4" />
                 </button>
+              </div>
+            </div>
+
+            {/* Шинэ дугаар бүртгэх */}
+            <div className="px-7 py-5 border-b border-[color:var(--surface-border)] dark:border-white/[0.06] flex-shrink-0">
+              <div className="flex items-end gap-3">
+                <div className="w-[150px] flex-shrink-0 space-y-1.5">
+                  <label className="text-[10px] font-semibold text-[color:var(--muted-text)] uppercase tracking-wider">
+                    Улсын дугаар <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    autoFocus
+                    value={blockModal.dugaar}
+                    onChange={(e) =>
+                      setBlockModal((st) =>
+                        st
+                          ? {
+                            ...st,
+                            dugaar: mashiniiDugaarTseverle(e.target.value),
+                          }
+                          : st,
+                      )
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") blokloyo();
+                    }}
+                    placeholder="1234УБА"
+                    maxLength={7}
+                    className="w-full h-10 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] px-4 text-[13px] font-bold tracking-widest text-center font-[family-name:var(--font-mono)] text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] placeholder:font-normal placeholder:tracking-normal outline-none focus:border-danger transition-colors"
+                  />
+                </div>
+                <div className="flex-1 space-y-1.5">
+                  <label className="text-[10px] font-semibold text-[color:var(--muted-text)] uppercase tracking-wider">
+                    Шалтгаан <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    value={blockModal.tailbar}
+                    onChange={(e) =>
+                      setBlockModal((st) =>
+                        st ? { ...st, tailbar: e.target.value } : st,
+                      )
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") blokloyo();
+                    }}
+                    placeholder="Төлбөрөө төлөөгүй"
+                    className="w-full h-10 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] px-4 text-[12px] text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] outline-none focus:border-danger transition-colors"
+                  />
+                </div>
                 <button
-                  onClick={() => excelFileRef.current?.click()}
-                  disabled={excelUnshij || excelKhadgalj}
-                  className="h-8 px-3 rounded-2xl bg-theme hover:bg-theme active:bg-theme text-white text-[11px] font-semibold shadow-sm transition-all inline-flex items-center gap-1.5 disabled:opacity-40"
+                  onClick={blokloyo}
+                  disabled={
+                    blockSaving ||
+                    !MASHINII_DUGAARIIN_ZAGVAR.test(blockModal.dugaar) ||
+                    !blockModal.tailbar.trim()
+                  }
+                  className="h-10 px-5 rounded-[30px] bg-danger hover:bg-danger active:bg-danger text-white text-[11px] font-semibold shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-2 flex-shrink-0"
                 >
-                  {excelUnshij ? (
+                  {blockSaving ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   ) : (
-                    <Upload className="w-3.5 h-3.5" />
+                    <Plus className="w-3.5 h-3.5" />
                   )}
-                  Файл сонгох
+                  Нэмэх
                 </button>
-                <input
-                  ref={excelFileRef}
-                  type="file"
-                  accept=".xlsx,.xls"
-                  onChange={excelFileSongoyo}
-                  className="hidden"
-                />
               </div>
+            </div>
 
-              {excelMuruud.length > 0 ? (
-                <>
-                  {/* Урьдчилан харах — хэрэглэгч шалгасны дараа л хадгална */}
-                  <div className="px-7 py-4 flex items-center justify-between gap-3 flex-shrink-0">
-                    <span className="text-[11px] font-semibold text-[color:var(--muted-text)] uppercase tracking-wider whitespace-nowrap">
-                      Урьдчилан харах
+            {/* Excel-ээр олноор бүртгэх */}
+            <div className="px-7 py-3.5 border-b border-[color:var(--surface-border)] dark:border-white/[0.06] flex-shrink-0 flex items-center gap-3">
+              <span className="text-[10px] font-semibold text-[color:var(--muted-text)] uppercase tracking-wider whitespace-nowrap">
+                Excel-ээр машин бүртгэх
+              </span>
+              <div className="flex-1 h-px bg-[color:var(--surface-hover)] dark:bg-white/[0.06]" />
+              <button
+                onClick={excelZagvarTatya}
+                disabled={excelKhadgalj}
+                className="h-8 px-3 rounded-2xl border border-[color:var(--surface-border)] text-[color:var(--muted-text)] hover:border-[color:var(--surface-border)] hover:text-[color:var(--panel-text)] text-[11px] font-semibold transition-all inline-flex items-center gap-1.5 disabled:opacity-40"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Загвар
+              </button>
+              <button
+                onClick={() => excelFileRef.current?.click()}
+                disabled={excelUnshij || excelKhadgalj}
+                className="h-8 px-3 rounded-2xl bg-theme hover:bg-theme active:bg-theme text-white text-[11px] font-semibold shadow-sm transition-all inline-flex items-center gap-1.5 disabled:opacity-40"
+              >
+                {excelUnshij ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Upload className="w-3.5 h-3.5" />
+                )}
+                Файл сонгох
+              </button>
+              <input
+                ref={excelFileRef}
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={excelFileSongoyo}
+                className="hidden"
+              />
+            </div>
+
+            {excelMuruud.length > 0 ? (
+              <>
+                {/* Урьдчилан харах — хэрэглэгч шалгасны дараа л хадгална */}
+                <div className="px-7 py-4 flex items-center justify-between gap-3 flex-shrink-0">
+                  <span className="text-[11px] font-semibold text-[color:var(--muted-text)] uppercase tracking-wider whitespace-nowrap">
+                    Урьдчилан харах
+                  </span>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="flex items-center gap-1.5 text-[11px] text-[color:var(--muted-text)] min-w-0">
+                      <FileSpreadsheet className="w-3.5 h-3.5 shrink-0" />
+                      <span className="truncate">{excelFileNer}</span>
                     </span>
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="flex items-center gap-1.5 text-[11px] text-[color:var(--muted-text)] min-w-0">
-                        <FileSpreadsheet className="w-3.5 h-3.5 shrink-0" />
-                        <span className="truncate">{excelFileNer}</span>
+                    <span className="px-2 py-0.5 rounded-full bg-theme/10 text-brand text-[11px] font-semibold whitespace-nowrap">
+                      Зөв: {excelZuvMuruud.length}
+                    </span>
+                    {excelMuruud.length - excelZuvMuruud.length > 0 && (
+                      <span className="px-2 py-0.5 rounded-full bg-danger/10 text-danger text-[11px] font-semibold whitespace-nowrap">
+                        Алдаатай: {excelMuruud.length - excelZuvMuruud.length}
                       </span>
-                      <span className="px-2 py-0.5 rounded-full bg-theme/10 text-brand text-[11px] font-semibold whitespace-nowrap">
-                        Зөв: {excelZuvMuruud.length}
-                      </span>
-                      {excelMuruud.length - excelZuvMuruud.length > 0 && (
-                        <span className="px-2 py-0.5 rounded-full bg-danger/10 text-danger text-[11px] font-semibold whitespace-nowrap">
-                          Алдаатай: {excelMuruud.length - excelZuvMuruud.length}
-                        </span>
-                      )}
-                    </div>
+                    )}
                   </div>
+                </div>
 
-                  <div className="px-7 overflow-y-auto flex-1 min-h-0">
-                    <div className="rounded-2xl border border-[color:var(--surface-border)] dark:border-white/[0.06] overflow-hidden">
-                      <table className="w-full border-collapse">
-                        <thead className="sticky top-0 z-10 bg-[color:var(--surface-hover)]">
-                          <tr className="text-[11px] uppercase font-semibold text-[color:var(--muted-text)]">
-                            <th className="py-2.5 px-3 w-14 text-center">Мөр</th>
-                            <th className="py-2.5 px-3 text-center w-[130px]">
-                              Улсын дугаар
-                            </th>
-                            <th className="py-2.5 px-3 text-left">Шалтгаан</th>
-                            <th className="py-2.5 px-3 text-left w-[250px]">
-                              Төлөв
-                            </th>
+                <div className="px-7 overflow-y-auto flex-1 min-h-0">
+                  <div className="rounded-2xl border border-[color:var(--surface-border)] dark:border-white/[0.06] overflow-hidden">
+                    <table className="w-full border-collapse">
+                      <thead className="sticky top-0 z-10 bg-[color:var(--surface-hover)]">
+                        <tr className="text-[11px] uppercase font-semibold text-[color:var(--muted-text)]">
+                          <th className="py-2.5 px-3 w-14 text-center">Мөр</th>
+                          <th className="py-2.5 px-3 text-center w-[130px]">
+                            Улсын дугаар
+                          </th>
+                          <th className="py-2.5 px-3 text-left">Шалтгаан</th>
+                          <th className="py-2.5 px-3 text-left w-[250px]">
+                            Төлөв
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="text-[13px] divide-y divide-[color:var(--surface-border)] dark:divide-white/[0.05]">
+                        {excelMuruud.map((mur) => (
+                          <tr
+                            key={mur.excelMur}
+                            className={
+                              mur.aldaanuud.length > 0
+                                ? "bg-danger/60"
+                                : ""
+                            }
+                          >
+                            <td className="py-2.5 px-3 text-center text-[11px] text-[color:var(--muted-text)]">
+                              {mur.excelMur}
+                            </td>
+                            <td className="py-2.5 px-3 text-center">
+                              {mur.dugaar ? (
+                                <span className="px-3 py-0.5 rounded-full bg-danger text-[11px] font-bold !text-white tracking-wider whitespace-nowrap font-[family-name:var(--font-mono)]">
+                                  {mur.dugaar}
+                                </span>
+                              ) : (
+                                <span className="text-[color:var(--muted-text)] italic">
+                                  —
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-2.5 px-3 text-left text-[color:var(--muted-text)]">
+                              {mur.tailbar || "—"}
+                            </td>
+                            <td className="py-2.5 px-3 text-left">
+                              {mur.aldaanuud.length === 0 ? (
+                                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand">
+                                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                                  Бэлэн
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-start gap-1 text-[11px] font-semibold text-danger">
+                                  <AlertTriangle className="w-3.5 h-3.5 mt-px shrink-0" />
+                                  {mur.aldaanuud.join(", ")}
+                                </span>
+                              )}
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody className="text-[13px] divide-y divide-[color:var(--surface-border)] dark:divide-white/[0.05]">
-                          {excelMuruud.map((mur) => (
-                            <tr
-                              key={mur.excelMur}
-                              className={
-                                mur.aldaanuud.length > 0
-                                  ? "bg-danger/60"
-                                  : ""
-                              }
-                            >
-                              <td className="py-2.5 px-3 text-center text-[11px] text-[color:var(--muted-text)]">
-                                {mur.excelMur}
-                              </td>
-                              <td className="py-2.5 px-3 text-center">
-                                {mur.dugaar ? (
-                                  <span className="px-3 py-0.5 rounded-full bg-danger text-[11px] font-bold !text-white tracking-wider whitespace-nowrap font-[family-name:var(--font-mono)]">
-                                    {mur.dugaar}
-                                  </span>
-                                ) : (
-                                  <span className="text-[color:var(--muted-text)] italic">
-                                    —
-                                  </span>
-                                )}
-                              </td>
-                              <td className="py-2.5 px-3 text-left text-[color:var(--muted-text)]">
-                                {mur.tailbar || "—"}
-                              </td>
-                              <td className="py-2.5 px-3 text-left">
-                                {mur.aldaanuud.length === 0 ? (
-                                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand">
-                                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                                    Бэлэн
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-start gap-1 text-[11px] font-semibold text-danger">
-                                    <AlertTriangle className="w-3.5 h-3.5 mt-px shrink-0" />
-                                    {mur.aldaanuud.join(", ")}
-                                  </span>
-                                )}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
+                </div>
 
-                  <div className="px-7 py-4 mt-4 border-t border-[color:var(--surface-border)] dark:border-white/[0.06] flex items-center justify-between gap-3 flex-shrink-0">
-                    <p className="text-[11px] text-[color:var(--muted-text)]">
-                      {excelKhadgalj
-                        ? `Илгээж байна... ${excelYavts} / ${excelZuvMuruud.length}`
-                        : `${excelZuvMuruud.length} машин блоклоход бэлэн`}
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={excelTsutslaya}
-                        disabled={excelKhadgalj}
-                        className="h-10 px-5 rounded-[30px] border border-[color:var(--surface-border)] text-[color:var(--muted-text)] text-[11px] font-semibold hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/5 transition-all disabled:opacity-40"
-                      >
-                        Болих
-                      </button>
-                      <button
-                        onClick={excelBlokloyo}
-                        disabled={excelKhadgalj || excelZuvMuruud.length === 0}
-                        className="h-10 px-5 rounded-[30px] bg-danger hover:bg-danger active:bg-danger text-white text-[11px] font-semibold shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-2"
-                      >
-                        {excelKhadgalj ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <Ban className="w-3.5 h-3.5" />
-                        )}
-                        Блоклох ({excelZuvMuruud.length})
-                      </button>
-                    </div>
+                <div className="px-7 py-4 mt-4 border-t border-[color:var(--surface-border)] dark:border-white/[0.06] flex items-center justify-between gap-3 flex-shrink-0">
+                  <p className="text-[11px] text-[color:var(--muted-text)]">
+                    {excelKhadgalj
+                      ? `Илгээж байна... ${excelYavts} / ${excelZuvMuruud.length}`
+                      : `${excelZuvMuruud.length} машин блоклоход бэлэн`}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={excelTsutslaya}
+                      disabled={excelKhadgalj}
+                      className="h-10 px-5 rounded-[30px] border border-[color:var(--surface-border)] text-[color:var(--muted-text)] text-[11px] font-semibold hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/5 transition-all disabled:opacity-40"
+                    >
+                      Болих
+                    </button>
+                    <button
+                      onClick={excelBlokloyo}
+                      disabled={excelKhadgalj || excelZuvMuruud.length === 0}
+                      className="h-10 px-5 rounded-[30px] bg-danger hover:bg-danger active:bg-danger text-white text-[11px] font-semibold shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-2"
+                    >
+                      {excelKhadgalj ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Ban className="w-3.5 h-3.5" />
+                      )}
+                      Блоклох ({excelZuvMuruud.length})
+                    </button>
                   </div>
-                </>
-              ) : (
-                <>
+                </div>
+              </>
+            ) : (
+              <>
                 {/* Блоклсон машинууд */}
                 <div className="px-7 py-4 flex items-center justify-between gap-3 flex-shrink-0">
                   <span className="text-[11px] font-semibold text-[color:var(--muted-text)] uppercase tracking-wider whitespace-nowrap">
@@ -1856,126 +1856,126 @@ export default function Jagsaalt() {
                     </div>
                   )}
                 </div>
-                </>
+              </>
+            )}
+          </div>
+        </div>,
+        document.body,
+      )}
+      {revenueModalOpen && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          style={{
+            background: "rgba(0,0,0,0.45)",
+            backdropFilter: "blur(12px)",
+          }}
+          onClick={() => setRevenueModalOpen(false)}
+        >
+          <div
+            className="relative w-[420px] max-w-full rounded-[28px] overflow-hidden shadow-2xl border bg-white dark:bg-[color:var(--panel)] border-[color:var(--surface-border)] dark:border-white/[0.06]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="relative px-7 pt-6 pb-5 border-b border-[color:var(--surface-border)] dark:border-white/[0.06]">
+              <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-theme/20 via-theme/20 to-theme/20 opacity-80" />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-[color:var(--surface-hover)] dark:bg-white/[0.06] border border-[color:var(--surface-border)] dark:border-white/[0.06]">
+                    <Receipt className="w-5 h-5 text-brand" />
+                  </div>
+                  <div>
+                    <h2 className="text-[15px] text-[color:var(--panel-text)] dark:text-white tracking-tight">
+                      Орлого тайлан
+                    </h2>
+                    <div className="mt-1.5 min-w-[220px]">
+                      <ConfigProvider theme={{ token: { zIndexPopupBase: 10000 } }}>
+                        <StandardDatePicker
+                          isRange={true}
+                          value={revenueDateRange}
+                          onChange={(_: any, dateStrings: [string, string]) => setRevenueDateRange(dateStrings)}
+                          format="YYYY-MM-DD"
+                          classNames={{
+                            input: "flex items-center gap-2 rounded-full border border-[color:var(--surface-border)] dark:border-white/[0.06] h-8 px-3 text-[11px] text-[color:var(--muted-text)] focus:ring-2 focus:ring-theme/10 transition-all",
+                          }}
+                          allowClear
+                          getPopupContainer={() => document.body}
+                        />
+                      </ConfigProvider>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setRevenueModalOpen(false)}
+                  className="w-9 h-9 rounded-full bg-[color:var(--surface-hover)] dark:bg-white/[0.06] flex items-center justify-center text-[color:var(--muted-text)] hover:text-[color:var(--muted-text)] transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="p-5 space-y-2 max-h-[60vh] overflow-y-auto">
+              <p className="text-[10px] text-[color:var(--muted-text)] uppercase tracking-[0.15em] mb-1">
+                Төлбөрийн хэлбэр
+              </p>
+              {revenueLoading && (
+                <div className="text-center py-8 text-[11px] text-[color:var(--muted-text)]">Уншиж байна...</div>
+              )}
+              {!revenueLoading && revenueModalBreakdown.items.map((item) => (
+                <div
+                  key={item.key}
+                  className="relative flex items-center gap-3 py-2.5 px-3 rounded-2xl border border-[color:var(--surface-border)] dark:border-white/[0.06] bg-[color:var(--surface-hover)] dark:bg-white/[0.02] overflow-hidden"
+                >
+                  {/* Percentage fill background */}
+                  <div
+                    className={`absolute inset-y-0 left-0 ${item.color} opacity-[0.08] dark:opacity-[0.06] transition-all duration-500`}
+                    style={{ width: `${item.pct}%` }}
+                  />
+                  <div
+                    className={`w-1 h-8 rounded-full ${item.color} shrink-0 relative z-10`}
+                  />
+                  <div className="w-8 h-8 rounded-xl bg-[color:var(--surface-hover)] dark:bg-white/[0.06] flex items-center justify-center text-[color:var(--muted-text)] shrink-0 relative z-10">
+                    {item.icon}
+                  </div>
+                  <div className="flex-1 min-w-0 relative z-10">
+                    <span className="text-[12px] text-[color:var(--panel-text)] block">
+                      {item.name}
+                    </span>
+                  </div>
+                  <span className="text-[13px] font-black text-[color:var(--panel-text)] dark:text-white font-[family-name:var(--font-mono)] shrink-0 relative z-10">
+                    {formatNumber(item.amount)}₮
+                  </span>
+                  <span className="text-[11px] text-[color:var(--muted-text)] font-[family-name:var(--font-mono)] w-6 text-center shrink-0 relative z-10">
+                    {item.count}
+                  </span>
+                  <span className="text-[11px] text-[color:var(--muted-text)] font-[family-name:var(--font-mono)] w-12 text-right shrink-0 relative z-10">
+                    {item.pct}%
+                  </span>
+                </div>
+              ))}
+              {!revenueLoading && revenueModalBreakdown.items.length === 0 && (
+                <p className="text-center text-[11px] text-[color:var(--muted-text)] py-8">
+                  Төлбөрийн мэдээлэл олдсонгүй
+                </p>
               )}
             </div>
-          </div>,
-          document.body,
-        )}
-        {revenueModalOpen && createPortal(
-          <div
-            className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-            style={{
-              background: "rgba(0,0,0,0.45)",
-              backdropFilter: "blur(12px)",
-            }}
-            onClick={() => setRevenueModalOpen(false)}
-          >
-            <div
-              className="relative w-[420px] max-w-full rounded-[28px] overflow-hidden shadow-2xl border bg-white dark:bg-[#18181b] border-[color:var(--surface-border)] dark:border-white/[0.06]"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Header */}
-              <div className="relative px-7 pt-6 pb-5 border-b border-[color:var(--surface-border)] dark:border-white/[0.06]">
-                <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-theme/20 via-theme/20 to-theme/20 opacity-80" />
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-[color:var(--surface-hover)] dark:bg-white/[0.06] border border-[color:var(--surface-border)] dark:border-white/[0.06]">
-                      <Receipt className="w-5 h-5 text-brand" />
-                    </div>
-                    <div>
-                      <h2 className="text-[15px] text-[color:var(--panel-text)] dark:text-white tracking-tight">
-                        Орлого тайлан
-                      </h2>
-                      <div className="mt-1.5 min-w-[220px]">
-                        <ConfigProvider theme={{ token: { zIndexPopupBase: 10000 } }}>
-                          <StandardDatePicker
-                            isRange={true}
-                            value={revenueDateRange}
-                            onChange={(_: any, dateStrings: [string, string]) => setRevenueDateRange(dateStrings)}
-                            format="YYYY-MM-DD"
-                            classNames={{
-                              input: "flex items-center gap-2 rounded-full border border-[color:var(--surface-border)] dark:border-white/[0.06] h-8 px-3 text-[11px] text-[color:var(--muted-text)] focus:ring-2 focus:ring-theme/10 transition-all",
-                            }}
-                            allowClear
-                            getPopupContainer={() => document.body}
-                          />
-                        </ConfigProvider>
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setRevenueModalOpen(false)}
-                    className="w-9 h-9 rounded-full bg-[color:var(--surface-hover)] dark:bg-white/[0.06] flex items-center justify-center text-[color:var(--muted-text)] hover:text-[color:var(--muted-text)] transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
 
-              {/* Body */}
-              <div className="p-5 space-y-2 max-h-[60vh] overflow-y-auto">
-                <p className="text-[10px] text-[color:var(--muted-text)] uppercase tracking-[0.15em] mb-1">
-                  Төлбөрийн хэлбэр
-                </p>
-                {revenueLoading && (
-                  <div className="text-center py-8 text-[11px] text-[color:var(--muted-text)]">Уншиж байна...</div>
-                )}
-                {!revenueLoading && revenueModalBreakdown.items.map((item) => (
-                  <div
-                    key={item.key}
-                    className="relative flex items-center gap-3 py-2.5 px-3 rounded-2xl border border-[color:var(--surface-border)] dark:border-white/[0.06] bg-[color:var(--surface-hover)] dark:bg-white/[0.02] overflow-hidden"
-                  >
-                    {/* Percentage fill background */}
-                    <div
-                      className={`absolute inset-y-0 left-0 ${item.color} opacity-[0.08] dark:opacity-[0.06] transition-all duration-500`}
-                      style={{ width: `${item.pct}%` }}
-                    />
-                    <div
-                      className={`w-1 h-8 rounded-full ${item.color} shrink-0 relative z-10`}
-                    />
-                    <div className="w-8 h-8 rounded-xl bg-[color:var(--surface-hover)] dark:bg-white/[0.06] flex items-center justify-center text-[color:var(--muted-text)] shrink-0 relative z-10">
-                      {item.icon}
-                    </div>
-                    <div className="flex-1 min-w-0 relative z-10">
-                      <span className="text-[12px] text-[color:var(--panel-text)] block">
-                        {item.name}
-                      </span>
-                    </div>
-                    <span className="text-[13px] font-black text-[color:var(--panel-text)] dark:text-white font-[family-name:var(--font-mono)] shrink-0 relative z-10">
-                      {formatNumber(item.amount)}₮
-                    </span>
-                    <span className="text-[11px] text-[color:var(--muted-text)] font-[family-name:var(--font-mono)] w-6 text-center shrink-0 relative z-10">
-                      {item.count}
-                    </span>
-                    <span className="text-[11px] text-[color:var(--muted-text)] font-[family-name:var(--font-mono)] w-12 text-right shrink-0 relative z-10">
-                      {item.pct}%
-                    </span>
-                  </div>
-                ))}
-                {!revenueLoading && revenueModalBreakdown.items.length === 0 && (
-                  <p className="text-center text-[11px] text-[color:var(--muted-text)] py-8">
-                    Төлбөрийн мэдээлэл олдсонгүй
-                  </p>
-                )}
-              </div>
-
-              {/* Footer total */}
-              <div className="px-7 pb-6 pt-2">
-                <div className="flex justify-between items-center py-3 px-4 rounded-2xl bg-theme/[0.08] border border-theme/30">
-                  <span className="text-[11px] font-black text-brand uppercase tracking-wider">
-                    Нийт орлого
-                  </span>
-                  <span className="text-[14px] font-black text-brand font-[family-name:var(--font-mono)]">
-                    {formatNumber(revenueModalBreakdown.totalAmount)}₮
-                  </span>
-                </div>
+            {/* Footer total */}
+            <div className="px-7 pb-6 pt-2">
+              <div className="flex justify-between items-center py-3 px-4 rounded-2xl bg-theme/[0.08] border border-theme/30">
+                <span className="text-[11px] font-black text-brand uppercase tracking-wider">
+                  Нийт орлого
+                </span>
+                <span className="text-[14px] font-black text-brand font-[family-name:var(--font-mono)]">
+                  {formatNumber(revenueModalBreakdown.totalAmount)}₮
+                </span>
               </div>
             </div>
-          </div>,
-          document.body
-        )}
-      </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
-  );
+  </div>
+);
 }

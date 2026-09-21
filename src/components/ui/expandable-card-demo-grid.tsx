@@ -66,7 +66,7 @@ export default function ExpandableCardDemo({ cards, onEdit, onDelete }: Expandab
             <motion.div
               layoutId={`card-${active._id}-${id}`}
               ref={ref}
-              className="w-full max-w-[1000px] h-full md:h-fit md:max-h-[90%] flex flex-col md:flex-row bg-white rounded-3xl overflow-hidden shadow-2xl border border-white/10"
+              className="w-full max-w-[1000px] h-full md:h-fit md:max-h-[90%] flex flex-col md:flex-row bg-[color:var(--surface-bg)] rounded-3xl overflow-hidden shadow-2xl border border-white/10"
             >
               {/* Left Side: Large Image */}
               <motion.div layoutId={`image-${active._id}-${id}`} className="relative w-full md:w-1/2 h-64 md:h-auto min-h-[300px]">
@@ -85,7 +85,7 @@ export default function ExpandableCardDemo({ cards, onEdit, onDelete }: Expandab
               </motion.div>
 
               {/* Right Side: Content Area */}
-              <div className="md:w-1/2 flex flex-col bg-white relative">
+              <div className="md:w-1/2 flex flex-col bg-[color:var(--surface-bg)] relative">
                 <div className="flex justify-between items-start p-6 md:p-8 pb-4">
                   <div className="flex-1">
                     <motion.h3
@@ -136,7 +136,7 @@ export default function ExpandableCardDemo({ cards, onEdit, onDelete }: Expandab
             layoutId={`card-${card._id}-${id}`}
             key={card._id}
             onClick={() => setActive(card)}
-            className="group relative flex flex-col bg-white border border-[color:var(--surface-border)] rounded-2xl cursor-pointer hover:shadow-xl transition-all duration-300 overflow-hidden"
+            className="group relative flex flex-col bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-2xl cursor-pointer hover:shadow-xl transition-all duration-300 overflow-hidden"
           >
             <div className="relative h-56 w-full overflow-hidden">
               <motion.div layoutId={`image-${card._id}-${id}`} className="h-full w-full">
@@ -149,7 +149,7 @@ export default function ExpandableCardDemo({ cards, onEdit, onDelete }: Expandab
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </div>
             
-            <div className="p-5 flex flex-col bg-white border-t border-[color:var(--surface-border)]">
+            <div className="p-5 flex flex-col bg-[color:var(--surface-bg)] border-t border-[color:var(--surface-border)]">
               <motion.h3
                 layoutId={`title-${card._id}-${id}`}
                 className="font-bold text-[color:var(--panel-text)] text-base mb-1 line-clamp-1"

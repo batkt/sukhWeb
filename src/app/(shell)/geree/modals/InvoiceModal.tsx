@@ -1965,7 +1965,7 @@ export default function InvoiceModal({
                   </div>
 
                   {/* PDF/Printable Content Area */}
-                  <div className="flex-1 overflow-y-auto p-10 custom-scrollbar bg-white font-noto">
+                  <div className="flex-1 overflow-y-auto p-10 custom-scrollbar bg-[color:var(--surface-bg)] font-noto">
                     <div className="max-w-[1000px] mx-auto text-[11px] text-theme dark:text-white leading-tight">
                       {/* Top Labels */}
 

@@ -73,7 +73,7 @@ function DoubleYearMonthPicker({
         type="button"
         disabled={disabled}
         onClick={() => setIsOpen((prev) => !prev)}
-        className="w-full px-3 py-2.5 border border-theme/30 bg-white text-brand rounded-2xl focus:outline-none focus:ring-2 focus:ring-theme/30 focus:border-theme transition-all text-sm font-medium flex items-center justify-between cursor-pointer"
+        className="w-full px-3 py-2.5 border border-theme/30 bg-[color:var(--surface-bg)] text-brand rounded-2xl focus:outline-none focus:ring-2 focus:ring-theme/30 focus:border-theme transition-all text-sm font-medium flex items-center justify-between cursor-pointer"
       >
         <span>{formattedDisplay}</span>
         <Calendar className="w-4 h-4 text-brand" />
@@ -86,7 +86,7 @@ function DoubleYearMonthPicker({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 6, scale: 0.98 }}
             transition={{ duration: 0.15 }}
-            className="absolute left-0 top-full mt-2 z-[13000] !bg-white !opacity-100 border border-[color:var(--surface-border)] rounded-2xl shadow-2xl p-4 w-[480px] sm:w-[520px] select-none text-[color:var(--panel-text)] shadow-[color:var(--surface-border)]/30"
+            className="absolute left-0 top-full mt-2 z-[13000] !bg-[color:var(--surface-bg)] !opacity-100 border border-[color:var(--surface-border)] rounded-2xl shadow-2xl p-4 w-[480px] sm:w-[520px] select-none text-[color:var(--panel-text)] shadow-[color:var(--surface-border)]/30"
           >
             {/* Top Navigation Bar: <<  2026                 2027  >> */}
             <div className="flex items-center justify-between pb-3 border-b border-[color:var(--surface-border)] mb-3 px-2">
@@ -968,7 +968,7 @@ export default function TransactionModal({
                             setDiscountValue("");
                           }}
                           disabled={isProcessing}
-                          className="w-full px-3 py-2.5 border border-theme/30 bg-white text-brand rounded-2xl focus:outline-none focus:ring-2 focus:ring-theme/30 focus:border-theme transition-all text-sm font-medium"
+                          className="w-full px-3 py-2.5 border border-theme/30 bg-[color:var(--surface-bg)] text-brand rounded-2xl focus:outline-none focus:ring-2 focus:ring-theme/30 focus:border-theme transition-all text-sm font-medium"
                         >
                           <option value="percent">Хувиар</option>
                           <option value="amount">Дүнгээр</option>
@@ -1001,7 +1001,7 @@ export default function TransactionModal({
                           }
                           placeholder={discountType === "percent" ? "0" : "0.00"}
                           disabled={isProcessing}
-                          className="w-full rounded-2xl border border-theme/30 bg-white py-3 pl-4 pr-12 text-right text-lg font-semibold tabular-nums tracking-wide text-brand transition-all focus:border-theme focus:outline-none focus:ring-2 focus:ring-theme/30 disabled:opacity-60"
+                          className="w-full rounded-2xl border border-theme/30 bg-[color:var(--surface-bg)] py-3 pl-4 pr-12 text-right text-lg font-semibold tabular-nums tracking-wide text-brand transition-all focus:border-theme focus:outline-none focus:ring-2 focus:ring-theme/30 disabled:opacity-60"
                         />
                         <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-base font-semibold text-brand/70">
                           {discountType === "percent" ? "%" : "₮"}

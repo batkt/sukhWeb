@@ -160,7 +160,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
                     className={`group relative flex items-center justify-center w-[48px] h-[28px] rounded-lg border transition-all duration-150 ${
                       hasActive
                         ? "border-theme bg-theme/50 shadow-sm ring-1 ring-theme/10"
-                        : "border-[color:var(--surface-border)] bg-white hover:border-theme shadow-sm"
+                        : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] hover:border-theme shadow-sm"
                     }`}
                   >
                     <span

@@ -3638,7 +3638,7 @@ export default function DansniiKhuulga() {
                     onClick={handleSendInvoices}
                     icon={
                       isSendingInvoices ? (
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[color:var(--surface-border)]"></div>
                       ) : (
                         <Send className="w-5 h-5" />
                       )
@@ -3884,7 +3884,7 @@ export default function DansniiKhuulga() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[900px] max-h-[85vh] rounded-2xl overflow-hidden shadow-2xl bg-white ring-1 ring-[color:var(--surface-border)] font-sans flex flex-col"
+              className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[900px] max-h-[85vh] rounded-2xl overflow-hidden shadow-2xl bg-[color:var(--surface-bg)] ring-1 ring-[color:var(--surface-border)] font-sans flex flex-col"
               onClick={(e) => e.stopPropagation()}
               onKeyDown={(e) => {
                 if (e.key === 'Escape') {
@@ -3933,7 +3933,7 @@ export default function DansniiKhuulga() {
                 ) : (
                   <>
                     {/* Date Filter & Stats Summary */}
-                    <div className="px-4 py-3 bg-white border-b border-[color:var(--surface-border)]">
+                    <div className="px-4 py-3 bg-[color:var(--surface-bg)] border-b border-[color:var(--surface-border)]">
                       <div className="flex items-center gap-3">
                         <div className="w-[50px] sm:w-40 lg:w-[280px] h-11 z-[12002] [&_.ant-picker-dropdown]:!z-[12003] [&_.ant-picker-input]:!bg-transparent [&_input]:!bg-transparent [&_.ant-picker-input-active]:!bg-transparent dark:[&_.ant-picker-suffix]:!text-white dark:[&_.ant-picker-suffix_svg]:!fill-white dark:[&_.ant-picker:hover]:!bg-[color:var(--panel)] dark:[&_.ant-picker-focused]:!bg-[color:var(--panel)] [&_.ant-picker-range-separator]:!text-[color:var(--muted-text)] dark:[&_.ant-picker-range-separator]:!text-[color:var(--muted-text)]">
                           <StandardDatePicker
@@ -3963,7 +3963,7 @@ export default function DansniiKhuulga() {
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: idx * 0.05 }}
-                          className="bg-white rounded-xl p-4 border border-[color:var(--surface-border)] shadow-sm hover:shadow-md transition-shadow"
+                          className="bg-[color:var(--surface-bg)] rounded-xl p-4 border border-[color:var(--surface-border)] shadow-sm hover:shadow-md transition-shadow"
                         >
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex-1 min-w-0">
@@ -3994,7 +3994,7 @@ export default function DansniiKhuulga() {
 
                     {/* Pagination */}
                     {smsHistoryTotal > smsHistoryLimit && (
-                      <div className="px-4 py-3 bg-white border-t border-[color:var(--surface-border)]">
+                      <div className="px-4 py-3 bg-[color:var(--surface-bg)] border-t border-[color:var(--surface-border)]">
                         <div className="flex items-center justify-between">
                           <span className="text-sm text-[color:var(--muted-text)]">
                             Нийт {smsHistoryTotal} бичлэг
@@ -4011,7 +4011,7 @@ export default function DansniiKhuulga() {
                     )}
 
                     {/* Close Button */}
-                    <div className="px-4 py-4 bg-white border-t border-[color:var(--surface-border)] flex justify-end">
+                    <div className="px-4 py-4 bg-[color:var(--surface-bg)] border-t border-[color:var(--surface-border)] flex justify-end">
                       <button
                         onClick={() => setIsSmsHistoryOpen(false)}
                         className="py-2 px-6 bg-theme hover:bg-theme text-white font-medium rounded-2xl transition-colors"

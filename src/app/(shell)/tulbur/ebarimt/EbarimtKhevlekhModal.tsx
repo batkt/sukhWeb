@@ -140,7 +140,7 @@ export default function EbarimtKhevlekhModal({
 
       <div className="fixed inset-0 z-[13001] flex items-center justify-center p-4 pointer-events-none">
         <div
-          className="pointer-events-auto w-[360px] max-w-full max-h-[90vh] flex flex-col rounded-[20px] overflow-hidden shadow-2xl border bg-white dark:bg-[#18181b] border-[color:var(--surface-border)] dark:border-white/[0.06]"
+          className="pointer-events-auto w-[360px] max-w-full max-h-[90vh] flex flex-col rounded-[20px] overflow-hidden shadow-2xl border bg-white dark:bg-[color:var(--panel)] border-[color:var(--surface-border)] dark:border-white/[0.06]"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Толгой */}
@@ -168,7 +168,7 @@ export default function EbarimtKhevlekhModal({
 
           {/* Баримт */}
           <div className="overflow-y-auto flex-1 min-h-0 bg-[color:var(--surface-hover)] p-4">
-            <div className="ebarimt-print bg-white text-black mx-auto w-full max-w-[300px] px-4 py-4 font-[family-name:var(--font-mono)] text-[11px] leading-[1.5]">
+            <div className="ebarimt-print bg-[color:var(--surface-bg)] text-black mx-auto w-full max-w-[300px] px-4 py-4 font-[family-name:var(--font-mono)] text-[11px] leading-[1.5]">
               <div className="text-center">
                 <p className="text-[12px] font-bold uppercase">
                   {baiguullagiinNer || "-"}

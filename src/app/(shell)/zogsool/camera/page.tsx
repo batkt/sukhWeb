@@ -2183,7 +2183,7 @@ export default function Camera() {
             </div>
 
             {/* Pagination */}
-            <div className="p-4 border-t border-[color:var(--surface-border)] dark:border-white/5 bg-white rounded-b-2xl flex items-center justify-between gap-4 flex-wrap">
+            <div className="p-4 border-t border-[color:var(--surface-border)] dark:border-white/5 bg-[color:var(--surface-bg)] rounded-b-2xl flex items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-3">
                 <div className="relative" ref={pageSizeRef}>
                   <button
@@ -2439,7 +2439,7 @@ export default function Camera() {
             onClick={() => setEbarimtResult(null)}
           >
             <div
-              className="relative w-[360px] max-w-full rounded-[28px] overflow-hidden shadow-2xl border bg-white border-[color:var(--surface-border)] dark:border-white/[0.08]"
+              className="relative w-[360px] max-w-full rounded-[28px] overflow-hidden shadow-2xl border bg-[color:var(--surface-bg)] border-[color:var(--surface-border)] dark:border-white/[0.08]"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Top gradient bar */}
@@ -2460,7 +2460,7 @@ export default function Camera() {
 
                 {/* QR code */}
                 {ebarimtResult.qrData && ebarimtResult.qrData !== "FALSE" ? (
-                  <div className="p-3 bg-white rounded-2xl border border-[color:var(--surface-border)] shadow-sm">
+                  <div className="p-3 bg-[color:var(--surface-bg)] rounded-2xl border border-[color:var(--surface-border)] shadow-sm">
                     <QRCodeSVG
                       value={ebarimtResult.qrData}
                       size={176}
@@ -2556,7 +2556,7 @@ export default function Camera() {
             }}
           >
             <div
-              className="relative w-[380px] max-w-full rounded-[28px] overflow-hidden shadow-2xl border bg-white dark:bg-[#18181b] border-[color:var(--surface-border)] dark:border-white/[0.06]"
+              className="relative w-[380px] max-w-full rounded-[28px] overflow-hidden shadow-2xl border bg-white dark:bg-[color:var(--panel)] border-[color:var(--surface-border)] dark:border-white/[0.06]"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
@@ -2720,11 +2720,11 @@ export default function Camera() {
             onClick={() => setFreeExitModalTransaction(null)}
           >
             <div
-              className="relative w-full max-w-lg bg-white rounded-2xl overflow-hidden shadow-2xl border border-[color:var(--surface-border)] dark:border-white/10 animate-in zoom-in-95 duration-200"
+              className="relative w-full max-w-lg bg-[color:var(--surface-bg)] rounded-2xl overflow-hidden shadow-2xl border border-[color:var(--surface-border)] dark:border-white/10 animate-in zoom-in-95 duration-200"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-[color:var(--surface-border)] dark:border-white/10 bg-white">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-[color:var(--surface-border)] dark:border-white/10 bg-[color:var(--surface-bg)]">
                 <div>
                   <h2 className="text-sm font-black text-[color:var(--panel-text)] dark:text-white tracking-tight">
                     Үнэгүй үйлчлүүлэгчийн төрөл сонгох
@@ -2835,7 +2835,7 @@ export default function Camera() {
             onClick={() => setViolationModalTransaction(null)}
           >
             <div
-              className="relative w-full max-w-sm bg-white rounded-2xl overflow-hidden shadow-2xl border border-[color:var(--surface-border)] dark:border-white/10 animate-in zoom-in-95 duration-200"
+              className="relative w-full max-w-sm bg-[color:var(--surface-bg)] rounded-2xl overflow-hidden shadow-2xl border border-[color:var(--surface-border)] dark:border-white/10 animate-in zoom-in-95 duration-200"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
@@ -2923,7 +2923,7 @@ export default function Camera() {
             onClick={() => setRevenueModalOpen(false)}
           >
             <div
-              className="relative w-[420px] max-w-full rounded-[28px] overflow-hidden shadow-2xl border bg-white dark:bg-[#18181b] border-[color:var(--surface-border)] dark:border-white/[0.06]"
+              className="relative w-[420px] max-w-full rounded-[28px] overflow-hidden shadow-2xl border bg-white dark:bg-[color:var(--panel)] border-[color:var(--surface-border)] dark:border-white/[0.06]"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
@@ -3254,7 +3254,7 @@ const CameraStream = React.memo(
           `}
           >
             <div
-              className={`w-2 h-2 rounded-full animate-pulse ${cameraType === "entry" ? "bg-success" : "bg-danger"} group-hover:bg-white `}
+              className={`w-2 h-2 rounded-full animate-pulse ${cameraType === "entry" ? "bg-success" : "bg-danger"} group-hover:bg-[color:var(--surface-bg)] `}
             ></div>
             <span className="!text-white">Нээх</span>
             <div className="absolute inset-0 rounded-full bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>

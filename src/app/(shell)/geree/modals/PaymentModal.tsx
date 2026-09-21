@@ -119,7 +119,7 @@ export default function PaymentModal({
                     onChange={(e) => setPaymentIncludeEkhniiUldegdel(e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:shadow-sm after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-theme"></div>
+                  <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[color:var(--surface-bg)] after:shadow-sm after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-theme"></div>
                 </label>
               </div>
 

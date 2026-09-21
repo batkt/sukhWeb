@@ -855,7 +855,7 @@ export default function DansniiKhuulga() {
                   }}
                 />
                 {showDropdown && (
-                  <div className="absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto rounded-md border border-[color:var(--surface-border)] bg-white p-1 shadow-lg text-xs">
+                  <div className="absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto rounded-md border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-1 shadow-lg text-xs">
                     {isSearchingContracts ? (
                       <div className="p-3 text-center text-[color:var(--muted-text)]">Уншиж байна...</div>
                     ) : contractsList.length === 0 ? (

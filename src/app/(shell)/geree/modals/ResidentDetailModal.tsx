@@ -828,7 +828,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
         onClick={onClose}
       >
         <div
-          className="my-auto w-full max-w-6xl overflow-hidden rounded-3xl border border-[color:var(--surface-border)] bg-white shadow-2xl transition-all text-[color:var(--panel-text)]"
+          className="my-auto w-full max-w-6xl overflow-hidden rounded-3xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] shadow-2xl transition-all text-[color:var(--panel-text)]"
           onClick={(e) => e.stopPropagation()}
         >
           {/* ── Modal Header ── */}
@@ -894,7 +894,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
             {!unshij && !aldaa && medeelel && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
                 {/* 1. Хувийн мэдээлэл Card (Edit button removed) */}
-                <div className="rounded-2xl border border-[color:var(--surface-border)] bg-white p-5 shadow-xs flex flex-col justify-between">
+                <div className="rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-5 shadow-xs flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between pb-3.5 border-b border-[color:var(--surface-border)]">
                       <div className="flex items-center gap-2">
@@ -931,7 +931,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                   ovog: e.target.value,
                                 }))
                               }
-                              className="w-full rounded-lg border border-[color:var(--surface-border)] bg-white px-2.5 py-1.5 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme"
+                              className="w-full rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-2.5 py-1.5 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme"
                             />
                           </div>
                           <div>
@@ -944,7 +944,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                   ner: e.target.value,
                                 }))
                               }
-                              className="w-full rounded-lg border border-[color:var(--surface-border)] bg-white px-2.5 py-1.5 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme"
+                              className="w-full rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-2.5 py-1.5 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme"
                             />
                           </div>
                           <div>
@@ -958,7 +958,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                   utas: e.target.value,
                                 }))
                               }
-                              className="w-full rounded-lg border border-[color:var(--surface-border)] bg-white px-2.5 py-1.5 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme"
+                              className="w-full rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-2.5 py-1.5 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme"
                             />
                           </div>
                           <div>
@@ -972,7 +972,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                   mail: e.target.value,
                                 }))
                               }
-                              className="w-full rounded-lg border border-[color:var(--surface-border)] bg-white px-2.5 py-1.5 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme"
+                              className="w-full rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-2.5 py-1.5 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme"
                             />
                           </div>
                           <div className="col-span-2">
@@ -987,7 +987,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                   tailbar: e.target.value,
                                 }))
                               }
-                              className="w-full rounded-lg border border-[color:var(--surface-border)] bg-white px-2.5 py-1.5 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme"
+                              className="w-full rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-2.5 py-1.5 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme"
                             />
                           </div>
                         </div>
@@ -1085,7 +1085,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                 </div>
 
                 {/* 2. Машин Card (Direct Input) */}
-                <div className="rounded-2xl border border-[color:var(--surface-border)] bg-white p-5 shadow-xs flex flex-col justify-between">
+                <div className="rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-5 shadow-xs flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between pb-3.5 border-b border-[color:var(--surface-border)]">
                       <div className="flex items-center gap-2">
@@ -1123,7 +1123,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                               }
                             }}
                             placeholder="Улсын дугаар (жишээ: 1234УБА)..."
-                            className={`w-full h-9 pl-9 pr-3 rounded-xl border bg-white text-xs font-mono font-semibold tracking-wider uppercase placeholder:text-[color:var(--muted-text)] placeholder:font-normal placeholder:tracking-normal focus:outline-none transition shadow-2xs ${shineMashiniiDugaar.length === 0
+                            className={`w-full h-9 pl-9 pr-3 rounded-xl border bg-[color:var(--surface-bg)] text-xs font-mono font-semibold tracking-wider uppercase placeholder:text-[color:var(--muted-text)] placeholder:font-normal placeholder:tracking-normal focus:outline-none transition shadow-2xs ${shineMashiniiDugaar.length === 0
                               ? "border-[color:var(--surface-border)] text-[color:var(--panel-text)] dark:text-white focus:ring-2 focus:ring-theme"
                               : !MASHINII_DUGAARIIN_ZAGVAR.test(shineMashiniiDugaar)
                                 ? "border-danger text-danger focus:ring-2 focus:ring-danger/20"
@@ -1136,7 +1136,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                             <select
                               value={shineMashinToot}
                               onChange={(e) => setShineMashinToot(e.target.value)}
-                              className="h-9 appearance-none pl-3 pr-8 rounded-xl border border-[color:var(--surface-border)] bg-white text-xs text-[color:var(--panel-text)] focus:outline-none focus:ring-2 focus:ring-theme transition shadow-2xs cursor-pointer"
+                              className="h-9 appearance-none pl-3 pr-8 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-xs text-[color:var(--panel-text)] focus:outline-none focus:ring-2 focus:ring-theme transition shadow-2xs cursor-pointer"
                             >
                               {tootJagsaalt.map((t, i) => (
                                 <option key={i} value={t.toot}>
@@ -1218,7 +1218,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                 </div>
 
                 {/* 3. Гараж / B1 Card (Edit implemented) */}
-                <div className="rounded-2xl border border-[color:var(--surface-border)] bg-white p-5 shadow-xs flex flex-col justify-between">
+                <div className="rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-5 shadow-xs flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between pb-3.5 border-b border-[color:var(--surface-border)]">
                       <div className="flex items-center gap-2">
@@ -1290,7 +1290,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                     tootFieldSolikh(idx, "toot", e.target.value)
                                   }
                                   placeholder="101"
-                                  className="w-full h-8 px-2 rounded-lg border border-[color:var(--surface-border)] bg-white text-xs"
+                                  className="w-full h-8 px-2 rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-xs"
                                 />
                               </div>
                               <div>
@@ -1303,7 +1303,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                     onChange={(e) =>
                                       tootFieldSolikh(idx, "turul", e.target.value)
                                     }
-                                    className="w-full h-8 appearance-none pl-2 pr-7 rounded-lg border border-[color:var(--surface-border)] bg-white text-xs cursor-pointer"
+                                    className="w-full h-8 appearance-none pl-2 pr-7 rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-xs cursor-pointer"
                                   >
                                     <option value="Орон сууц">Орон сууц</option>
                                     <option value="Гараж">Гараж</option>
@@ -1325,7 +1325,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                     tootFieldSolikh(idx, "davkhar", e.target.value)
                                   }
                                   placeholder="1"
-                                  className="w-full h-8 px-2 rounded-lg border border-[color:var(--surface-border)] bg-white text-xs"
+                                  className="w-full h-8 px-2 rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-xs"
                                 />
                               </div>
                               {getTurulCategory(t) === "Орон сууц" && (
@@ -1339,7 +1339,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                     onChange={(e) =>
                                       tootFieldSolikh(idx, "tsahilgaaniiZaalt", Number(e.target.value))
                                     }
-                                    className="w-full h-8 px-2 rounded-lg border border-[color:var(--surface-border)] bg-white text-xs"
+                                    className="w-full h-8 px-2 rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-xs"
                                   />
                                 </div>
                               )}
@@ -1356,7 +1356,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                     tootFieldSolikh(idx, "linkedAptToot", e.target.value)
                                   }
                                   placeholder={getAssociatedAptToot(t) || "101"}
-                                  className="w-full max-w-xs h-8 px-2 rounded-lg border border-[color:var(--surface-border)] bg-white text-xs"
+                                  className="w-full max-w-xs h-8 px-2 rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-xs"
                                 />
                               </div>
                             )}
@@ -1545,7 +1545,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                 </div>
 
                 {/* 4. Гэр бүлийн гишүүд / Нэмэлт хэрэглэгч Card (Edit button removed, Real data only) */}
-                <div className="rounded-2xl border border-[color:var(--surface-border)] bg-white p-5 shadow-xs flex flex-col justify-between">
+                <div className="rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-5 shadow-xs flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between pb-3.5 border-b border-[color:var(--surface-border)]">
                       <div className="flex items-center gap-2">
@@ -1594,7 +1594,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                     ovog: e.target.value,
                                   }))
                                 }
-                                className="w-full h-8 rounded-lg border border-[color:var(--surface-border)] bg-white px-2.5 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme"
+                                className="w-full h-8 rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-2.5 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme"
                               />
                               <input
                                 placeholder="Нэр"
@@ -1605,7 +1605,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                     ner: e.target.value,
                                   }))
                                 }
-                                className="w-full h-8 rounded-lg border border-[color:var(--surface-border)] bg-white px-2.5 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme"
+                                className="w-full h-8 rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-2.5 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme"
                               />
                               <input
                                 placeholder="Утас *"
@@ -1619,7 +1619,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                     utas: num,
                                   }));
                                 }}
-                                className="w-full h-8 rounded-lg border border-[color:var(--surface-border)] bg-white px-2.5 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme"
+                                className="w-full h-8 rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-2.5 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme"
                               />
                               <div className="relative">
                                 <select
@@ -1630,7 +1630,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                       kholboo: e.target.value,
                                     }))
                                   }
-                                  className="w-full h-8 appearance-none rounded-lg border border-[color:var(--surface-border)] bg-white pl-2.5 pr-7 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme cursor-pointer"
+                                  className="w-full h-8 appearance-none rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] pl-2.5 pr-7 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme cursor-pointer"
                                 >
                                   <option value="Эхнэр/Нөхөр">Эхнэр/Нөхөр</option>
                                   <option value="Үр хүүхэд">Үр хүүхэд</option>
@@ -1650,7 +1650,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                       erkh: e.target.value,
                                     }))
                                   }
-                                  className="w-full h-8 appearance-none rounded-lg border border-[color:var(--surface-border)] bg-white pl-2.5 pr-7 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme cursor-pointer"
+                                  className="w-full h-8 appearance-none rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] pl-2.5 pr-7 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme cursor-pointer"
                                 >
                                   <option value="Харах + Төлөх">Харах + Төлөх</option>
                                   <option value="Харах">Зөвхөн харах</option>
@@ -1710,7 +1710,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                   onChange={(e) =>
                                     setZasajBuiGishuun((prev: any) => ({ ...prev, ovog: e.target.value }))
                                   }
-                                  className="w-full h-8 rounded-lg border border-[color:var(--surface-border)] bg-white px-2.5 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme"
+                                  className="w-full h-8 rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-2.5 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme"
                                 />
                               </div>
                               <div>
@@ -1721,7 +1721,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                   onChange={(e) =>
                                     setZasajBuiGishuun((prev: any) => ({ ...prev, ner: e.target.value }))
                                   }
-                                  className="w-full h-8 rounded-lg border border-[color:var(--surface-border)] bg-white px-2.5 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme"
+                                  className="w-full h-8 rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-2.5 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme"
                                 />
                               </div>
                               <div>
@@ -1735,7 +1735,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                     const num = e.target.value.replace(/\D/g, "").slice(0, 8);
                                     setZasajBuiGishuun((prev: any) => ({ ...prev, utas: num }));
                                   }}
-                                  className="w-full h-8 rounded-lg border border-[color:var(--surface-border)] bg-white px-2.5 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme"
+                                  className="w-full h-8 rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-2.5 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme"
                                 />
                               </div>
                               <div>
@@ -1746,7 +1746,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                     onChange={(e) =>
                                       setZasajBuiGishuun((prev: any) => ({ ...prev, kholboo: e.target.value }))
                                     }
-                                    className="w-full h-8 appearance-none rounded-lg border border-[color:var(--surface-border)] bg-white pl-2.5 pr-7 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme cursor-pointer"
+                                    className="w-full h-8 appearance-none rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] pl-2.5 pr-7 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme cursor-pointer"
                                   >
                                     <option value="Эхнэр/Нөхөр">Эхнэр/Нөхөр</option>
                                     <option value="Үр хүүхэд">Үр хүүхэд</option>
@@ -1766,7 +1766,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                     onChange={(e) =>
                                       setZasajBuiGishuun((prev: any) => ({ ...prev, erkh: e.target.value }))
                                     }
-                                    className="w-full h-8 appearance-none rounded-lg border border-[color:var(--surface-border)] bg-white pl-2.5 pr-7 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme cursor-pointer"
+                                    className="w-full h-8 appearance-none rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] pl-2.5 pr-7 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme cursor-pointer"
                                   >
                                     <option value="Харах + Төлөх">Харах + Төлөх</option>
                                     <option value="Зөвхөн харах">Зөвхөн харах</option>
@@ -1807,7 +1807,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                           ) : (
                             <table className="w-full text-[11px] sm:text-xs">
                               <thead>
-                                <tr className="text-[10px] sm:text-[11px] text-[color:var(--muted-text)] border-b border-[color:var(--surface-border)] sticky top-0 bg-white z-10">
+                                <tr className="text-[10px] sm:text-[11px] text-[color:var(--muted-text)] border-b border-[color:var(--surface-border)] sticky top-0 bg-[color:var(--surface-bg)] z-10">
                                   <th className="pb-2 text-left font-normal w-6">№</th>
                                   <th className="pb-2 text-left font-normal">Овог нэр</th>
                                   <th className="pb-2 text-left font-normal">Утас</th>
@@ -1864,7 +1864,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                       {tovchMenuGishuunId === (g._id || String(i)) && (
                                         <div
                                           onClick={(e) => e.stopPropagation()}
-                                          className="absolute right-0 top-8 z-30 w-44 rounded-xl border border-[color:var(--surface-border)] bg-white py-1 shadow-lg text-left text-xs animate-in fade-in zoom-in-95 duration-150"
+                                          className="absolute right-0 top-8 z-30 w-44 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] py-1 shadow-lg text-left text-xs animate-in fade-in zoom-in-95 duration-150"
                                         >
                                           <button
                                             type="button"
@@ -1932,11 +1932,11 @@ export const ResidentDetailModal: React.FC<Props> = ({
           </div>
 
           {/* ── Modal Footer ── */}
-          <div className="flex items-center justify-end gap-2 px-6 py-3.5 border-t border-[color:var(--surface-border)] bg-white">
+          <div className="flex items-center justify-end gap-2 px-6 py-3.5 border-t border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl border border-[color:var(--surface-border)] bg-white px-6 py-1.5 text-xs font-normal text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] transition shadow-2xs active:scale-95 cursor-pointer"
+              className="rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-6 py-1.5 text-xs font-normal text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] transition shadow-2xs active:scale-95 cursor-pointer"
             >
               Хаах
             </button>

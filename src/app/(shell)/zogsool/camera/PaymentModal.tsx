@@ -569,7 +569,7 @@ export default function PaymentModal({
         onClick={onClose}
       />
       <div
-        className="relative w-full max-w-[920px] rounded-2xl overflow-hidden flex flex-col max-h-[92vh] shadow-2xl border bg-white border-[color:var(--surface-border)] dark:border-white/10 animate-in zoom-in-95 duration-300"
+        className="relative w-full max-w-[920px] rounded-2xl overflow-hidden flex flex-col max-h-[92vh] shadow-2xl border bg-[color:var(--surface-bg)] border-[color:var(--surface-border)] dark:border-white/10 animate-in zoom-in-95 duration-300"
       >
         {/* ─── Header ─── */}
         <div className="relative px-7 pt-6 pb-5 border-b border-[color:var(--surface-border)] dark:border-white/[0.06]">
@@ -862,7 +862,7 @@ export default function PaymentModal({
                       `data:image/png;base64,${qpayData.qrData}`
                     }
                     alt="QPay QR"
-                    className="w-36 h-36 mb-3 rounded-xl shadow-lg bg-white border border-[color:var(--surface-border)]"
+                    className="w-36 h-36 mb-3 rounded-xl shadow-lg bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)]"
                   />
                   <p className="text-[10px]  text-brand uppercase tracking-widest animate-pulse text-center leading-relaxed">
                     Утсаараа уншуулж төлнө үү

@@ -877,7 +877,7 @@ export default function OrlogoAvlagaPage() {
   }
 
   return (
-    <div className="p-6 print-container bg-white min-h-full h-auto w-full">
+    <div className="p-6 print-container bg-[color:var(--surface-bg)] min-h-full h-auto w-full">
       <PrintStyles />
 
       {/* Print-only Header */}

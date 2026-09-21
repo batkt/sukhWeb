@@ -1383,7 +1383,7 @@ export default function SanalKhuselt() {
                               ? t("Шийдвэрийн тайлбар (хэрэглэгчид илгээгдэнэ)...")
                               : t("Татгалзсан шалтгаанаа бичнэ үү (хэрэглэгчид илгээгдэнэ)...")
                           }
-                          className="flex-1 h-8 px-3 rounded-lg bg-white border border-[color:var(--surface-border)] text-xs text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] focus:outline-none focus:ring-1 focus:ring-theme"
+                          className="flex-1 h-8 px-3 rounded-lg bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] text-xs text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] focus:outline-none focus:ring-1 focus:ring-theme"
                         />
                         <div className="flex items-center gap-1.5 shrink-0 justify-end">
                           <button

@@ -324,7 +324,7 @@ export default function OrshinSuugch() {
                   setTurulFilter(stat.value);
                   setPage(1);
                 }}
-                className={`relative group rounded-2xl transition-all duration-300 cursor-pointer border bg-white ${
+                className={`relative group rounded-2xl transition-all duration-300 cursor-pointer border bg-[color:var(--surface-bg)] ${
                   isActive
                     ? "border-theme shadow-md shadow-theme/10 scale-[1.02]"
                     : "border-[color:var(--surface-border)] dark:border-white/5 shadow-sm hover:shadow-md hover:border-[color:var(--surface-border)] dark:hover:border-white/10"
@@ -386,7 +386,7 @@ export default function OrshinSuugch() {
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.95, opacity: 0, y: 20 }}
-                className="relative w-full max-w-sm bg-white dark:bg-[#0f1117] rounded-2xl shadow-2xl overflow-hidden border border-white/20 dark:border-white/5 p-8"
+                className="relative w-full max-w-sm bg-white dark:bg-[color:var(--panel)] rounded-2xl shadow-2xl overflow-hidden border border-white/20 dark:border-white/5 p-8"
               >
                 <div className="flex flex-col items-center text-center">
                   <div className="w-16 h-16 rounded-full bg-danger/10 flex items-center justify-center mb-6">

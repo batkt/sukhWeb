@@ -500,7 +500,7 @@ export default function ResidentRegistrationModal({
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className={`relative w-full ${step === 1 ? "max-w-md" : "max-w-3xl"} bg-white dark:bg-[#11131a] rounded-[32px] shadow-2xl overflow-hidden border border-[color:var(--surface-border)] dark:border-white/10 ring-1 ring-black/5 transition-all duration-500 ease-in-out`}
+          className={`relative w-full ${step === 1 ? "max-w-md" : "max-w-3xl"} bg-white dark:bg-[color:var(--panel)] rounded-[32px] shadow-2xl overflow-hidden border border-[color:var(--surface-border)] dark:border-white/10 ring-1 ring-black/5 transition-all duration-500 ease-in-out`}
         >
           {/* Header */}
           <div className="relative px-8 py-6 border-b border-[color:var(--surface-border)] dark:border-white/5 bg-white/50 dark:bg-white/[0.02]">
@@ -556,7 +556,7 @@ export default function ResidentRegistrationModal({
                     <option value="Дотоод">Дотоод</option>
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--muted-text)] pointer-events-none" />
-                  <label className="absolute -top-2 left-3 px-1 bg-white dark:bg-[#11131a] text-[11px] font-sans text-[color:var(--muted-text)]">
+                  <label className="absolute -top-2 left-3 px-1 bg-white dark:bg-[color:var(--panel)] text-[11px] font-sans text-[color:var(--muted-text)]">
                     Төрөл
                   </label>
                 </div>
@@ -643,7 +643,7 @@ export default function ResidentRegistrationModal({
                               <option key={t} value={t} />
                             ))}
                           </datalist>
-                          <label className="absolute -top-2 left-3 px-1 bg-white dark:bg-[#11131a] text-[11px] font-sans text-[color:var(--muted-text)] group-focus-within:text-brand transition-colors">
+                          <label className="absolute -top-2 left-3 px-1 bg-white dark:bg-[color:var(--panel)] text-[11px] font-sans text-[color:var(--muted-text)] group-focus-within:text-brand transition-colors">
                             Тоот
                           </label>
                         </div>
@@ -689,7 +689,7 @@ export default function ResidentRegistrationModal({
                             <option value="Түр оршин суугч">Түр оршин суугч</option>
                           </select>
                           <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--muted-text)] pointer-events-none" />
-                          <label className="absolute -top-2 left-3 px-1 bg-white dark:bg-[#11131a] text-[10px]  text-[color:var(--muted-text)] uppercase tracking-wider">
+                          <label className="absolute -top-2 left-3 px-1 bg-white dark:bg-[color:var(--panel)] text-[10px]  text-[color:var(--muted-text)] uppercase tracking-wider">
                             Төрөл
                           </label>
                         </div>
@@ -733,7 +733,7 @@ export default function ResidentRegistrationModal({
                           <option value="Үнэгүй">Үнэгүй</option>
                         </select>
                         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--muted-text)] pointer-events-none" />
-                        <label className="absolute -top-2 left-3 px-1 bg-white dark:bg-[#11131a] text-[11px] font-sans text-[color:var(--muted-text)]">
+                        <label className="absolute -top-2 left-3 px-1 bg-white dark:bg-[color:var(--panel)] text-[11px] font-sans text-[color:var(--muted-text)]">
                           Бүртгэх төрөл
                         </label>
                       </div>
@@ -764,7 +764,7 @@ export default function ResidentRegistrationModal({
                                   className={`flex items-center gap-2 pl-3 pr-2 py-2 rounded-xl border transition-colors ${
                                     zasajBui
                                       ? "border-theme bg-theme/10"
-                                      : "border-[color:var(--surface-border)] bg-white"
+                                      : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]"
                                   }`}
                                 >
                                   <Car className="w-4 h-4 text-[color:var(--muted-text)] shrink-0" />
@@ -837,7 +837,7 @@ export default function ResidentRegistrationModal({
                       )}
 
                       {/* License Plate Special Input */}
-                      <div className="relative p-5 rounded-2xl bg-[#edf2f7] bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px] flex flex-col justify-center items-center overflow-hidden group border border-[color:var(--surface-border)] dark:border-white/10 shadow-inner">
+                      <div className="relative p-5 rounded-2xl bg-[color:var(--panel)] bg-[radial-gradient(var(--surface-border)_1px,transparent_1px)] [background-size:16px_16px] flex flex-col justify-center items-center overflow-hidden group border border-[color:var(--surface-border)] dark:border-white/10 shadow-inner">
                         <label className="text-xs font-semibold text-[color:var(--muted-text)] mb-2 uppercase tracking-wider">
                           {zasajBuiMashiniiId
                             ? "Улсын дугаар засах (4 тоо + 3 кирилл үсэг)"
@@ -845,7 +845,7 @@ export default function ResidentRegistrationModal({
                               ? "ШИНЭ машины улсын дугаар"
                               : "Улсын дугаар (4 тоо + 3 Монгол кирилл үсэг)"}
                         </label>
-                        <div className="relative w-64 h-[68px] bg-white rounded-xl border-2 border-[color:var(--surface-border)] flex items-center shadow-md transform group-hover:scale-102 transition-transform duration-300">
+                        <div className="relative w-64 h-[68px] bg-[color:var(--surface-bg)] rounded-xl border-2 border-[color:var(--surface-border)] flex items-center shadow-md transform group-hover:scale-102 transition-transform duration-300">
                           <input
                             type="text"
                             value={formData.plate === "БҮРТГЭЛГҮЙ" ? "" : formData.plate}
@@ -944,7 +944,7 @@ const InputField = ({
       className="w-full h-11 pl-10 pr-4 bg-[color:var(--surface-hover)] border border-[color:var(--surface-border)] dark:border-white/10 rounded-xl text-sm  text-[color:var(--panel-text)] dark:text-white placeholder:text-[color:var(--muted-text)] focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all"
       placeholder={placeholder}
     />
-    <label className="absolute -top-2 left-3 px-1 bg-white dark:bg-[#11131a] text-[11px] font-sans text-[color:var(--muted-text)] group-focus-within:text-brand transition-colors">
+    <label className="absolute -top-2 left-3 px-1 bg-white dark:bg-[color:var(--panel)] text-[11px] font-sans text-[color:var(--muted-text)] group-focus-within:text-brand transition-colors">
       {label}
     </label>
   </div>

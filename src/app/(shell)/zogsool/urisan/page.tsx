@@ -271,7 +271,7 @@ function UserHistoryModal({
       onClick={onClose}
     >
       <div
-        className="relative w-[650px] max-w-full rounded-[28px] overflow-hidden shadow-2xl border bg-white dark:bg-[#18181b] border-[color:var(--surface-border)] dark:border-white/[0.06] flex flex-col max-h-[85vh]"
+        className="relative w-[650px] max-w-full rounded-[28px] overflow-hidden shadow-2xl border bg-white dark:bg-[color:var(--panel)] border-[color:var(--surface-border)] dark:border-white/[0.06] flex flex-col max-h-[85vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -972,7 +972,7 @@ export default function UrisanTuukh() {
                     setPage(1);
                   }}
                   format="YYYY-MM-DD"
-                  className="w-full !bg-white dark:!bg-[color:var(--panel)] hover:!bg-white dark:hover:!bg-[color:var(--panel)] !border-[color:var(--surface-border)] dark:!border-[color:var(--surface-border)] hover:!border-[color:var(--surface-border)] dark:hover:!border-[color:var(--surface-border)] shadow-sm"
+                  className="w-full !bg-[color:var(--surface-bg)] dark:!bg-[color:var(--panel)] hover:!bg-[color:var(--surface-bg)] dark:hover:!bg-[color:var(--panel)] !border-[color:var(--surface-border)] dark:!border-[color:var(--surface-border)] hover:!border-[color:var(--surface-border)] dark:hover:!border-[color:var(--surface-border)] shadow-sm"
                   classNames={{
                     input: "!bg-transparent !border-0 !shadow-none text-[12px] !text-[color:var(--panel-text)] dark:!text-[color:var(--muted-text)] px-2",
                   }}

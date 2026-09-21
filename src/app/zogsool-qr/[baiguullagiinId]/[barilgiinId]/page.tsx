@@ -458,7 +458,7 @@ export default function ZogsoolQrPage() {
           </div>
 
           {qrTekstAvya(qpay) && (
-            <div className="mx-auto w-fit rounded-3xl bg-white p-4 ring-1 ring-[color:var(--surface-border)] dark:ring-white/10">
+            <div className="mx-auto w-fit rounded-3xl bg-[color:var(--surface-bg)] p-4 ring-1 ring-[color:var(--surface-border)] dark:ring-white/10">
               <QRCodeSVG value={qrTekstAvya(qpay)} size={200} level="M" />
             </div>
           )}
@@ -539,7 +539,7 @@ export default function ZogsoolQrPage() {
 
 const Khuudas: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div className="flex min-h-screen items-center justify-center bg-[color:var(--surface-hover)] p-4">
-    <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl ring-1 ring-[color:var(--surface-border)] dark:ring-white/10">
+    <div className="w-full max-w-md rounded-3xl bg-[color:var(--surface-bg)] p-6 shadow-xl ring-1 ring-[color:var(--surface-border)] dark:ring-white/10">
       {children}
     </div>
   </div>

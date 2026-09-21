@@ -107,7 +107,7 @@ export default function AdminGereeUstgakhModal({
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="relative w-full max-w-lg bg-white dark:bg-[#0f1117] rounded-2xl shadow-2xl overflow-hidden border border-white/20 dark:border-white/5"
+        className="relative w-full max-w-lg bg-white dark:bg-[color:var(--panel)] rounded-2xl shadow-2xl overflow-hidden border border-white/20 dark:border-white/5"
       >
         <div className="flex items-start justify-between gap-3 px-6 pt-6">
           <div className="flex items-start gap-3">

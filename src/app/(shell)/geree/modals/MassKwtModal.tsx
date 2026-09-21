@@ -573,7 +573,7 @@ export default function MassKwtModal({
                   placeholder="Тоот, давхар эсвэл нэрээр хайх..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] dark:text-white focus:outline-none focus:ring-2 focus:ring-warning"
+                  className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] dark:text-white focus:outline-none focus:ring-2 focus:ring-warning"
                 />
               </div>
 
@@ -660,7 +660,7 @@ export default function MassKwtModal({
                           handleApplyBulkValue();
                         }
                       }}
-                      className="w-full px-2.5 py-1.5 text-xs rounded-xl border border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] dark:text-white focus:outline-none focus:ring-2 focus:ring-warning"
+                      className="w-full px-2.5 py-1.5 text-xs rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] dark:text-white focus:outline-none focus:ring-2 focus:ring-warning"
                     />
                   </div>
                   <button
@@ -676,7 +676,7 @@ export default function MassKwtModal({
             </div>
 
             {/* Resident List Table with Sticky Header and solid background */}
-            <div className="flex-1 overflow-y-auto min-h-[260px] max-h-[50vh] border border-[color:var(--surface-border)] rounded-xl relative my-2 bg-white">
+            <div className="flex-1 overflow-y-auto min-h-[260px] max-h-[50vh] border border-[color:var(--surface-border)] rounded-xl relative my-2 bg-[color:var(--surface-bg)]">
               {fetching ? (
                 <div className="flex items-center justify-center h-48 text-[color:var(--muted-text)] gap-2">
                   <Loader2 className="w-5 h-5 animate-spin text-warning" />
@@ -734,7 +734,7 @@ export default function MassKwtModal({
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white">
+                  <tbody className="bg-[color:var(--surface-bg)]">
                     {filteredResidents.map((r, index) => (
                       <tr
                         key={r._id}
@@ -771,7 +771,7 @@ export default function MassKwtModal({
                               onChange={(e) => handleKwtChange(r._id, e.target.value)}
                               onKeyDown={(e) => handleKeyDown(e, index)}
                               placeholder="0"
-                              className="w-full px-2.5 py-1 text-center text-xs rounded-lg border border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] dark:text-white focus:outline-none focus:ring-2 focus:ring-theme"
+                              className="w-full px-2.5 py-1 text-center text-xs rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] dark:text-white focus:outline-none focus:ring-2 focus:ring-theme"
                             />
                           </div>
                         </td>

@@ -313,7 +313,7 @@ export default function ResidentChatPanel() {
   // ── Жагсаалтын харагдац ──────────────────────────────────────────────
   if (!songogdson) {
     return (
-      <div className="flex h-full min-h-0 flex-col bg-white">
+      <div className="flex h-full min-h-0 flex-col bg-[color:var(--surface-bg)]">
         <div className="shrink-0 border-b border-[color:var(--surface-border)] p-3">
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[color:var(--muted-text)]" />
@@ -395,7 +395,7 @@ export default function ResidentChatPanel() {
   const idevkhteiSuugch = suugchAvya(songogdson);
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-white">
+    <div className="flex h-full min-h-0 flex-col bg-[color:var(--surface-bg)]">
       <div className="flex shrink-0 items-center gap-2 border-b border-[color:var(--surface-border)] px-3 py-2.5">
         <button
           onClick={() => setSongogdson(null)}
@@ -451,7 +451,7 @@ export default function ResidentChatPanel() {
                   className={`max-w-[80%] rounded-2xl px-3 py-2 ${
                     minii
                       ? "bg-theme text-white"
-                      : "bg-white text-[color:var(--panel-text)] ring-1 ring-[color:var(--surface-border)]"
+                      : "bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] ring-1 ring-[color:var(--surface-border)]"
                   }`}
                 >
                   <p className="whitespace-pre-wrap break-words text-[11px] leading-relaxed">

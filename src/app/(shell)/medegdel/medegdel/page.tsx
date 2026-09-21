@@ -1256,7 +1256,7 @@ function MedegdelContent() {
         closable={false}
         centered
         width={400}
-        className="[&_.ant-modal-content]:!p-0 [&_.ant-modal-content]:!rounded-xl overflow-hidden [&_.ant-modal-content]:!bg-white dark:[&_.ant-modal-content]:!bg-[color:var(--panel)] shadow-xl"
+        className="[&_.ant-modal-content]:!p-0 [&_.ant-modal-content]:!rounded-xl overflow-hidden [&_.ant-modal-content]:!bg-[color:var(--surface-bg)] dark:[&_.ant-modal-content]:!bg-[color:var(--panel)] shadow-xl"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-[color:var(--surface-border)] dark:border-white/10">
@@ -1275,7 +1275,7 @@ function MedegdelContent() {
         {/* Content Cards */}
         <div className="p-4">
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col items-center justify-center py-4 px-3 rounded-lg bg-[#f0fdf4] dark:bg-theme/20 border border-[#86efac] dark:border-theme/60">
+            <div className="flex flex-col items-center justify-center py-4 px-3 rounded-lg bg-success/10 dark:bg-theme/20 border border-[#86efac] dark:border-theme/60">
               <span className="text-2xl sm:text-3xl font-bold text-[#00875a] dark:text-brand mb-1">
                 {lastSendResult?.sent ?? 0}
               </span>
@@ -1284,7 +1284,7 @@ function MedegdelContent() {
               </span>
             </div>
 
-            <div className="flex flex-col items-center justify-center py-4 px-3 rounded-lg bg-[#fef2f2] border border-[#fca5a5]">
+            <div className="flex flex-col items-center justify-center py-4 px-3 rounded-lg bg-danger/10 border border-[#fca5a5]">
               <span className="text-2xl sm:text-3xl font-bold text-[#dc2626] mb-1">
                 {lastSendResult?.failed ?? 0}
               </span>
@@ -1324,7 +1324,7 @@ function MedegdelContent() {
           <button
             type="button"
             onClick={() => setResultModalOpen(false)}
-            className="px-4 py-1.5 rounded-md bg-[#00875a] hover:bg-[#00734c] text-white text-xs font-medium transition-colors shadow-xs"
+            className="px-4 py-1.5 rounded-md bg-[color:var(--theme)] hover:bg-[color:var(--theme)] text-white text-xs font-medium transition-colors shadow-xs"
           >
             Хаах
           </button>

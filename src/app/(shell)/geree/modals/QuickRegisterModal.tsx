@@ -231,7 +231,7 @@ export default function QuickRegisterModal({
         />
 
         {/* Modal */}
-        <div className="relative z-10 w-full max-w-md mx-4 bg-white rounded-3xl shadow-2xl border border-[color:var(--surface-border)] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="relative z-10 w-full max-w-md mx-4 bg-[color:var(--surface-bg)] rounded-3xl shadow-2xl border border-[color:var(--surface-border)] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-[color:var(--surface-border)]">
           <div className="flex items-center gap-3">

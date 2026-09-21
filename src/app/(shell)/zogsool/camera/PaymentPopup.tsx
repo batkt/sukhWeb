@@ -134,7 +134,7 @@ export const PaymentPopup = ({
       {open && createPortal(
         <div
           style={{ position: "fixed", top: pos.top, left: pos.left, transform: "translate(-50%, -100%)", zIndex: 99999 }}
-          className="min-w-[260px] max-w-[320px] bg-white border border-[color:var(--surface-border)] dark:border-white/10 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.3)] overflow-hidden"
+          className="min-w-[260px] max-w-[320px] bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] dark:border-white/10 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.3)] overflow-hidden"
           onMouseEnter={() => setOpen(true)}
           onMouseLeave={() => setOpen(false)}
         >

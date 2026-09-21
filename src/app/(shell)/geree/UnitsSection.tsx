@@ -1381,7 +1381,7 @@ export default function UnitsSection({
                           value={zogsoolSearch}
                           onChange={(e) => setZogsoolSearch(e.target.value)}
                           placeholder={propertyTab === "Зогсоол" ? "Хайх /зогсоолын дугаар/" : "Хайх /агуулахын дугаар/"}
-                          className="h-9 w-full rounded-xl border border-[color:var(--surface-border)] bg-white px-3 text-xs text-[color:var(--panel-text)] dark:text-white placeholder:text-[color:var(--muted-text)] focus:border-theme focus:outline-none transition shadow-2xs"
+                          className="h-9 w-full rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-3 text-xs text-[color:var(--panel-text)] dark:text-white placeholder:text-[color:var(--muted-text)] focus:border-theme focus:outline-none transition shadow-2xs"
                         />
                       </div>
 
@@ -1513,7 +1513,7 @@ export default function UnitsSection({
             />
 
             {/* Modal */}
-            <div className="relative z-10 w-full max-w-md mx-4 bg-white rounded-3xl shadow-2xl border border-[color:var(--surface-border)] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="relative z-10 w-full max-w-md mx-4 bg-[color:var(--surface-bg)] rounded-3xl shadow-2xl border border-[color:var(--surface-border)] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
               {/* Header */}
               <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-[color:var(--surface-border)]">
                 <div>

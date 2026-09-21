@@ -1154,7 +1154,7 @@ export default function HongololtTool({
               <select
                 value={orts}
                 onChange={(e) => setOrts(e.target.value)}
-                className="flex-1 px-3 py-1.5 text-xs rounded-xl border border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] dark:text-white focus:outline-none focus:ring-2 focus:ring-theme"
+                className="flex-1 px-3 py-1.5 text-xs rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] dark:text-white focus:outline-none focus:ring-2 focus:ring-theme"
               >
                 <option value="">Бүх орц</option>
                 {ortsSongoltuud.map((o: string) => (
@@ -1173,7 +1173,7 @@ export default function HongololtTool({
               <select
                 value={davkhar}
                 onChange={(e) => setDavkhar(e.target.value)}
-                className="flex-1 px-3 py-1.5 text-xs rounded-xl border border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] dark:text-white focus:outline-none focus:ring-2 focus:ring-theme"
+                className="flex-1 px-3 py-1.5 text-xs rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] dark:text-white focus:outline-none focus:ring-2 focus:ring-theme"
               >
                 <option value="">Бүх давхар</option>
                 {davkharSongoltuud.map((d: string) => (
@@ -1263,7 +1263,7 @@ export default function HongololtTool({
                   placeholder={hongololtTurul === "percent" ? "0 – 100" : "0"}
                   value={hongololtUtga}
                   onChange={(e) => setHongololtUtga(e.target.value)}
-                  className="w-full pl-3 pr-8 py-2 text-xs rounded-xl border border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] dark:text-white focus:outline-none focus:ring-2 focus:ring-theme"
+                  className="w-full pl-3 pr-8 py-2 text-xs rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] dark:text-white focus:outline-none focus:ring-2 focus:ring-theme"
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[color:var(--muted-text)] pointer-events-none">
                   {hongololtTurul === "percent" ? "%" : "₮"}
@@ -1286,7 +1286,7 @@ export default function HongololtTool({
                 placeholder="Шалтгаан"
                 value={shaltgaan}
                 onChange={(e) => setShaltgaan(e.target.value)}
-                className="w-full px-3 py-1.5 text-xs rounded-xl border border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] dark:text-white focus:outline-none focus:ring-2 focus:ring-theme resize-none"
+                className="w-full px-3 py-1.5 text-xs rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] dark:text-white focus:outline-none focus:ring-2 focus:ring-theme resize-none"
               />
             </div>
 
@@ -1336,7 +1336,7 @@ export default function HongololtTool({
                   placeholder="Тоот, нэр эсвэл утасны дугаараар хайх..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] dark:text-white focus:outline-none focus:ring-2 focus:ring-theme"
+                  className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] dark:text-white focus:outline-none focus:ring-2 focus:ring-theme"
                 />
               </div>
               <button
@@ -1387,7 +1387,7 @@ export default function HongololtTool({
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden pt-3 px-2">
           <div className="flex-1 flex flex-col min-h-0">
             {/* Toolbar */}
-            <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-[color:var(--surface-border)] shrink-0 bg-white flex-wrap">
+            <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-[color:var(--surface-border)] shrink-0 bg-[color:var(--surface-bg)] flex-wrap">
               <div className="flex items-center gap-2.5 flex-wrap">
                 <div className="w-64 h-[36px]">
                   <StandardDatePicker
@@ -1420,7 +1420,7 @@ export default function HongololtTool({
                       setHistSearch(e.target.value);
                       setHistPage(1);
                     }}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] dark:text-white placeholder-[color:var(--muted-text)] focus:outline-none focus:ring-2 focus:ring-theme h-[36px]"
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] dark:text-white placeholder-[color:var(--muted-text)] focus:outline-none focus:ring-2 focus:ring-theme h-[36px]"
                   />
                 </div>
                 <div className="w-28">
@@ -1430,7 +1430,7 @@ export default function HongololtTool({
                       setHistDavkhar(e.target.value);
                       setHistPage(1);
                     }}
-                    className="w-full px-2.5 py-1.5 text-xs rounded-xl border border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] focus:outline-none focus:ring-2 focus:ring-theme"
+                    className="w-full px-2.5 py-1.5 text-xs rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] focus:outline-none focus:ring-2 focus:ring-theme"
                   >
                     <option value="">Давхар</option>
                     {davkharOptions.map((d) => (
@@ -1457,7 +1457,7 @@ export default function HongololtTool({
                 <button
                   type="button"
                   onClick={handleExportExcel}
-                  className="px-4 py-1.5 text-xs font-medium rounded-xl border border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] transition-colors shadow-xs cursor-pointer"
+                  className="px-4 py-1.5 text-xs font-medium rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] transition-colors shadow-xs cursor-pointer"
                 >
                   Excel
                 </button>
@@ -1494,7 +1494,7 @@ export default function HongololtTool({
             </div>
 
             {/* Pagination Footer */}
-            <div className="flex items-center justify-end gap-3 px-4 py-2 border-t border-[color:var(--surface-border)] bg-white text-xs text-[color:var(--muted-text)] shrink-0">
+            <div className="flex items-center justify-end gap-3 px-4 py-2 border-t border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-xs text-[color:var(--muted-text)] shrink-0">
               <div className="flex items-center gap-1">
                 <button
                   type="button"
@@ -1522,7 +1522,7 @@ export default function HongololtTool({
                   setHistPageSize(Number(e.target.value));
                   setHistPage(1);
                 }}
-                className="px-2 py-1 rounded border border-[color:var(--surface-border)] bg-white text-xs focus:outline-none focus:ring-1 focus:ring-theme"
+                className="px-2 py-1 rounded border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-xs focus:outline-none focus:ring-1 focus:ring-theme"
               >
                 <option value={20}>20 / хуудас</option>
                 <option value={50}>50 / хуудас</option>

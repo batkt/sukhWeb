@@ -3,7 +3,7 @@ import React from "react";
 export default function AccountDeletionPage() {
   return (
     <main className="min-h-screen bg-[color:var(--surface-hover)] px-4 py-10">
-      <div className="mx-auto max-w-md rounded-2xl bg-white p-6 shadow-sm">
+      <div className="mx-auto max-w-md rounded-2xl bg-[color:var(--surface-bg)] p-6 shadow-sm">
         <h1 className="mb-4 text-center text-2xl  text-[color:var(--panel-text)]">
           Хэрэглэгчийн бүртгэл устгах заавар
         </h1>

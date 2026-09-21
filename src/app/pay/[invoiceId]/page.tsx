@@ -339,7 +339,7 @@ export default function PaymentLandingPage() {
                 <button
                   onClick={() => setActiveTab("deeplink")}
                   className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 ${activeTab === "deeplink"
-                    ? "bg-[#10b981] text-white shadow-lg shadow-[#10b981]/15"
+                    ? "bg-[color:var(--theme)] text-white shadow-lg shadow-[#10b981]/15"
                     : "text-[color:var(--muted-text)] hover:text-white"
                     }`}
                 >
@@ -349,7 +349,7 @@ export default function PaymentLandingPage() {
                 <button
                   onClick={() => setActiveTab("qrcode")}
                   className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 ${activeTab === "qrcode"
-                    ? "bg-[#10b981] text-white shadow-lg shadow-[#10b981]/15"
+                    ? "bg-[color:var(--theme)] text-white shadow-lg shadow-[#10b981]/15"
                     : "text-[color:var(--muted-text)] hover:text-white"
                     }`}
                 >
@@ -418,7 +418,7 @@ export default function PaymentLandingPage() {
                     </div>
 
                     {invoice.qpayUrl ? (
-                      <div className="relative p-5 bg-white rounded-3xl shadow-xl flex items-center justify-center">
+                      <div className="relative p-5 bg-[color:var(--surface-bg)] rounded-3xl shadow-xl flex items-center justify-center">
                         {invoice.qpayUrl.startsWith("data:image/") || invoice.qpayUrl.length > 500 ? (
                           <div className="relative w-36 h-36 sm:w-44 sm:h-44 flex items-center justify-center">
                             <img
@@ -427,7 +427,7 @@ export default function PaymentLandingPage() {
                               className="w-36 h-36 sm:w-44 sm:h-44 object-contain"
                             />
                             {/* Overlay Amarhome logo in center */}
-                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-white border-2 border-white flex items-center justify-center shadow-lg p-0.5">
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-[color:var(--surface-bg)] border-2 border-[color:var(--surface-border)] flex items-center justify-center shadow-lg p-0.5">
                               <img src="/logo.png" alt="Amarhome Logo" className="w-full h-full object-contain" />
                             </div>
                           </div>
@@ -442,7 +442,7 @@ export default function PaymentLandingPage() {
                               className="w-36 h-36 sm:w-44 sm:h-44"
                             />
                             {/* Overlay Amarhome logo in center */}
-                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-white border-2 border-white flex items-center justify-center shadow-lg p-0.5">
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-[color:var(--surface-bg)] border-2 border-[color:var(--surface-border)] flex items-center justify-center shadow-lg p-0.5">
                               <img src="/logo.png" alt="Amarhome Logo" className="w-full h-full object-contain" />
                             </div>
                           </div>

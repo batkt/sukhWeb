@@ -62,7 +62,7 @@ export default function SendInvoiceConfirmModal({
             dragConstraints={constraintsRef}
             dragMomentum={false}
             onClick={(e) => e.stopPropagation()}
-            className="relative z-[12001] w-[90vw] max-w-[440px] bg-white rounded-3xl border border-[color:var(--surface-border)] shadow-2xl p-6 text-center select-none"
+            className="relative z-[12001] w-[90vw] max-w-[440px] bg-[color:var(--surface-bg)] rounded-3xl border border-[color:var(--surface-border)] shadow-2xl p-6 text-center select-none"
           >
             <div
               className="cursor-move pb-2"
@@ -95,7 +95,7 @@ export default function SendInvoiceConfirmModal({
                 >
                   {isSubmitting ? (
                     <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <div className="w-4 h-4 border-2 border-[color:var(--surface-border)] border-t-transparent rounded-full animate-spin" />
                       Илгээж байна...
                     </>
                   ) : (

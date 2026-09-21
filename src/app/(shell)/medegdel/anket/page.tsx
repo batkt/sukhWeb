@@ -160,7 +160,7 @@ function AsuultOruulakh({
           />
         </Form.Item>
         {fields.length > 0 ? (
-          <div className="absolute -right-3 -top-11 rounded-full bg-white lg:-right-5 lg:-top-10">
+          <div className="absolute -right-3 -top-11 rounded-full bg-[color:var(--surface-bg)] lg:-right-5 lg:-top-10">
             <CloseCircleOutlined
               className="dynamic-delete-button text-2xl text-[color:var(--panel-text)] text-opacity-60 transition-colors hover:text-danger dark:text-white dark:text-opacity-50"
               onClick={() => {
@@ -266,7 +266,7 @@ function AnketiinZagvar({
         <div>{a.ner as string}</div>
         <div className="flex justify-end gap-2">
           <Button
-            className="bg-white text-brand hover:text-brand"
+            className="bg-[color:var(--surface-bg)] text-brand hover:text-brand"
             onClick={(e) => {
               e.stopPropagation();
               anketIlgeeye(a);
@@ -274,7 +274,7 @@ function AnketiinZagvar({
             icon={<SendOutlined className="dark:text-brand" />}
           />
           <Button
-            className="bg-white text-brand hover:text-brand"
+            className="bg-[color:var(--surface-bg)] text-brand hover:text-brand"
             onClick={(e) => {
               e.stopPropagation();
               setData({ ...a, khariultuud: undefined });
@@ -291,7 +291,7 @@ function AnketiinZagvar({
             cancelText={t("Үгүй")}
           >
             <Button
-              className="bg-white text-danger hover:text-danger"
+              className="bg-[color:var(--surface-bg)] text-danger hover:text-danger"
               onClick={(e) => {
                 e.stopPropagation();
               }}
@@ -337,7 +337,7 @@ function AnketiinZagvar({
                       });
                     }}
                     className={`flex w-full cursor-pointer justify-between rounded-2xl border p-2 py-1 ${
-                      data?._id === b._id ? "bg-theme/20" : "bg-white"
+                      data?._id === b._id ? "bg-theme/20" : "bg-[color:var(--surface-bg)]"
                     } border-border`}
                     key={i}
                   >

@@ -190,7 +190,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
     const totalTulsun = filteredLedger.reduce((s: number, row: any) => s + Number(row?.tulsunDun ?? 0), 0);
 
     return (
-      <div className="flex flex-col bg-white rounded-lg shadow-2xl overflow-hidden">
+      <div className="flex flex-col bg-[color:var(--surface-bg)] rounded-lg shadow-2xl overflow-hidden">
         <div onPointerDown={(e) => dragControls.start(e)} className="p-4 border-b border-[color:var(--surface-border)] cursor-move select-none bg-[color:var(--surface-hover)]">
           <div className="flex items-center justify-between gap-4">
             <div>

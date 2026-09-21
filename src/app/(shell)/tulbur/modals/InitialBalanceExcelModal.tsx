@@ -137,7 +137,7 @@ export default function InitialBalanceExcelModal({
           dragControls={dragControls}
           dragConstraints={constraintsRef}
           dragMomentum={false}
-          className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 bg-white rounded-[32px] shadow-2xl w-[min(560px,95vw)] overflow-hidden"
+          className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 bg-[color:var(--surface-bg)] rounded-[32px] shadow-2xl w-[min(560px,95vw)] overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="p-8">

@@ -179,7 +179,7 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
                     </svg>
                     Зардлын жагсаалт
                   </h4>
-                  <div className="overflow-x-auto rounded-2xl border border-[color:var(--surface-border)] bg-white">
+                  <div className="overflow-x-auto rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]">
                     <table className="w-full text-sm">
                       <thead className="bg-[color:var(--surface-hover)] border-b">
                         <tr>

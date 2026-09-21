@@ -434,7 +434,7 @@ export default function ExcelImportModal({
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="relative w-full max-w-3xl max-h-[88vh] flex flex-col bg-white dark:bg-[#0f1117] rounded-2xl shadow-2xl overflow-hidden border border-white/20 dark:border-white/5"
+        className="relative w-full max-w-3xl max-h-[88vh] flex flex-col bg-white dark:bg-[color:var(--panel)] rounded-2xl shadow-2xl overflow-hidden border border-white/20 dark:border-white/5"
       >
         {/* Толгой */}
         <div className="flex items-center justify-between gap-3 px-6 py-4 border-b border-[color:var(--surface-border)] dark:border-white/5">

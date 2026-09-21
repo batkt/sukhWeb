@@ -1095,7 +1095,7 @@ export default function NemeltTokhirgoo() {
                       className="sr-only peer"
                       aria-label="Нэхэмжлэх идэвхжүүлэх"
                     />
-                    <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme dark:peer-focus:ring-theme rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-theme"></div>
+                    <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme dark:peer-focus:ring-theme rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-[color:var(--surface-bg)] after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-theme"></div>
                   </label>
                 </div>
               </div>
@@ -1173,7 +1173,7 @@ export default function NemeltTokhirgoo() {
                       className="sr-only peer"
                       aria-label="Лифт идэвхжүүлэх"
                     />
-                    <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-warning dark:peer-focus:ring-warning rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-warning"></div>
+                    <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-warning dark:peer-focus:ring-warning rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-[color:var(--surface-bg)] after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-warning"></div>
                   </label>
                 </div>
               </div>
@@ -1256,7 +1256,7 @@ export default function NemeltTokhirgoo() {
                     }}
                     className="sr-only peer"
                   />
-                  <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme dark:peer-focus:ring-theme rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:peer-checked:bg-theme peer-checked:bg-theme"></div>
+                  <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme dark:peer-focus:ring-theme rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-[color:var(--surface-bg)] after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:peer-checked:bg-theme peer-checked:bg-theme"></div>
                 </label>
               </div>
             </div>
@@ -1270,7 +1270,7 @@ export default function NemeltTokhirgoo() {
                       <select
                         value={guestFrequencyType}
                         onChange={(e) => setGuestFrequencyType(e.target.value)}
-                        className="w-full h-9 px-2.5 rounded-lg border border-[color:var(--surface-border)] bg-white text-xs focus:outline-none focus:border-theme"
+                        className="w-full h-9 px-2.5 rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-xs focus:outline-none focus:border-theme"
                       >
                         <option value="udruur">Өдөр бүр</option>
                         <option value="7khonogoor">Долоо хоног бүр</option>
@@ -1306,7 +1306,7 @@ export default function NemeltTokhirgoo() {
                       Нэхэмжлэх дээр нэмэх эсэх
                     </label>
                     <div
-                      className="h-9 px-3 flex items-center justify-between rounded-lg border border-[color:var(--surface-border)] bg-white text-xs"
+                      className="h-9 px-3 flex items-center justify-between rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-xs"
                       title={
                         guestInvoiceEnabled
                           ? 'Оршин суугч зочин урихдаа "Би даана" сонгож, зогсоолын төлбөрийг өөрийн нэхэмжлэхэд бичүүлж болно.'
@@ -1327,7 +1327,7 @@ export default function NemeltTokhirgoo() {
                           }
                           className="sr-only peer"
                         />
-                        <div className="w-9 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme dark:peer-focus:ring-theme rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:peer-checked:bg-theme peer-checked:bg-theme"></div>
+                        <div className="w-9 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme dark:peer-focus:ring-theme rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-[color:var(--surface-bg)] after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:peer-checked:bg-theme peer-checked:bg-theme"></div>
                       </label>
                     </div>
                   </div>
@@ -1462,7 +1462,7 @@ export default function NemeltTokhirgoo() {
                     className="sr-only peer"
                     aria-label="Заалтаар цахилгаан бодох"
                   />
-                  <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme dark:peer-focus:ring-theme rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:peer-checked:bg-theme peer-checked:bg-theme"></div>
+                  <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme dark:peer-focus:ring-theme rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-[color:var(--surface-bg)] after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:peer-checked:bg-theme peer-checked:bg-theme"></div>
                 </label>
               </div>
             </div>
@@ -1529,7 +1529,7 @@ export default function NemeltTokhirgoo() {
                       className="sr-only peer"
                       aria-label="Хаалт нээх эрх идэвхжүүлэх"
                     />
-                    <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-danger dark:peer-focus:ring-danger rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-danger"></div>
+                    <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-danger dark:peer-focus:ring-danger rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-[color:var(--surface-bg)] after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-danger"></div>
                   </label>
                 </div>
               </div>
@@ -1571,7 +1571,7 @@ export default function NemeltTokhirgoo() {
                       className="sr-only peer"
                       aria-label="Гэр бүлийн гишүүн урих боломж идэвхжүүлэх"
                     />
-                    <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme dark:peer-focus:ring-theme rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:peer-checked:bg-theme peer-checked:bg-theme"></div>
+                    <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme dark:peer-focus:ring-theme rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-[color:var(--surface-bg)] after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:peer-checked:bg-theme peer-checked:bg-theme"></div>
                   </label>
                 </div>
               </div>
@@ -1612,7 +1612,7 @@ export default function NemeltTokhirgoo() {
                       }}
                       className="sr-only peer"
                     />
-                    <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme dark:peer-focus:ring-theme rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:peer-checked:bg-theme peer-checked:bg-theme"></div>
+                    <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme dark:peer-focus:ring-theme rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-[color:var(--surface-bg)] after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:peer-checked:bg-theme peer-checked:bg-theme"></div>
                   </label>
                 </div>
               </div>
@@ -1629,7 +1629,7 @@ export default function NemeltTokhirgoo() {
                           <button
                             onClick={() => setCalculationMethod("Хуанли")}
                             className={`px-3.5 py-1 rounded-md text-xs transition-all ${calculationMethod === "Хуанли"
-                              ? "bg-white shadow-xs text-brand"
+                              ? "bg-[color:var(--surface-bg)] shadow-xs text-brand"
                               : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
                               }`}
                           >
@@ -1638,7 +1638,7 @@ export default function NemeltTokhirgoo() {
                           <button
                             onClick={() => setCalculationMethod("Тогтмол")}
                             className={`px-3.5 py-1 rounded-md text-xs transition-all ${calculationMethod === "Тогтмол"
-                              ? "bg-white shadow-xs text-brand"
+                              ? "bg-[color:var(--surface-bg)] shadow-xs text-brand"
                               : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
                               }`}
                           >
@@ -1740,7 +1740,7 @@ export default function NemeltTokhirgoo() {
                       className="sr-only peer"
                       aria-label="Граж, агуулах төлбөр идэвхжүүлэх"
                     />
-                    <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme dark:peer-focus:ring-theme rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:peer-checked:bg-theme peer-checked:bg-theme"></div>
+                    <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme dark:peer-focus:ring-theme rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-[color:var(--surface-bg)] after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:peer-checked:bg-theme peer-checked:bg-theme"></div>
                   </label>
                 </div>
               </div>

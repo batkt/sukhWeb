@@ -508,7 +508,7 @@ export default function SanalAsuulgaPage() {
               value={hailtUg}
               onChange={(e) => setHailtUg(e.target.value)}
               placeholder="Санал асуулга хайх..."
-              className="w-full h-9.5 pl-9 pr-8 rounded-xl border border-[color:var(--surface-border)] bg-white text-xs text-[color:var(--panel-text)] dark:text-white placeholder:text-[color:var(--muted-text)] focus:outline-none focus:ring-2 focus:ring-theme transition shadow-2xs"
+              className="w-full h-9.5 pl-9 pr-8 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-xs text-[color:var(--panel-text)] dark:text-white placeholder:text-[color:var(--muted-text)] focus:outline-none focus:ring-2 focus:ring-theme transition shadow-2xs"
             />
             {hailtUg && (
               <button
@@ -536,7 +536,7 @@ export default function SanalAsuulgaPage() {
         {/* ── Summary Stat KPI Cards ── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
           {/* Total Polls */}
-          <div className="rounded-2xl border border-[color:var(--surface-border)] bg-white p-4 shadow-xs flex items-center justify-between">
+          <div className="rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-4 shadow-xs flex items-center justify-between">
             <div className="space-y-1">
               <p className="text-[11px] font-medium text-[color:var(--muted-text)] uppercase tracking-wider">
                 Нийт асуулга
@@ -583,7 +583,7 @@ export default function SanalAsuulgaPage() {
           </div>
 
           {/* Total Responses */}
-          <div className="rounded-2xl border border-[color:var(--surface-border)] bg-white p-4 shadow-xs flex items-center justify-between">
+          <div className="rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-4 shadow-xs flex items-center justify-between">
             <div className="space-y-1">
               <p className="text-[11px] font-medium text-[color:var(--muted-text)] uppercase tracking-wider">
                 Нийт хариулт
@@ -606,7 +606,7 @@ export default function SanalAsuulgaPage() {
             className={`px-3 py-1.5 text-xs font-normal rounded-xl transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
               filterTuluv === "bugd"
                 ? "bg-[color:var(--panel)] text-white dark:bg-white shadow-xs"
-                : "bg-white text-[color:var(--muted-text)] border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)]"
+                : "bg-[color:var(--surface-bg)] text-[color:var(--muted-text)] border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)]"
             }`}
           >
             <span>Бүгд</span>
@@ -627,12 +627,12 @@ export default function SanalAsuulgaPage() {
             className={`px-3 py-1.5 text-xs font-normal rounded-xl transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
               filterTuluv === "idevkhtei"
                 ? "bg-warning text-white shadow-xs"
-                : "bg-white text-warning border border-warning/80 hover:bg-warning/10"
+                : "bg-[color:var(--surface-bg)] text-warning border border-warning/80 hover:bg-warning/10"
             }`}
           >
             <span
               className={`h-1.5 w-1.5 rounded-full ${
-                filterTuluv === "idevkhtei" ? "bg-white" : "bg-warning animate-pulse"
+                filterTuluv === "idevkhtei" ? "bg-[color:var(--surface-bg)]" : "bg-warning animate-pulse"
               }`}
             />
             <span>Явагдаж байна</span>
@@ -653,12 +653,12 @@ export default function SanalAsuulgaPage() {
             className={`px-3 py-1.5 text-xs font-normal rounded-xl transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
               filterTuluv === "duussan"
                 ? "bg-theme text-white shadow-xs"
-                : "bg-white text-brand border border-theme/80 hover:bg-theme/10 dark:hover:bg-theme/10"
+                : "bg-[color:var(--surface-bg)] text-brand border border-theme/80 hover:bg-theme/10 dark:hover:bg-theme/10"
             }`}
           >
             <span
               className={`h-1.5 w-1.5 rounded-full ${
-                filterTuluv === "duussan" ? "bg-white" : "bg-theme"
+                filterTuluv === "duussan" ? "bg-[color:var(--surface-bg)]" : "bg-theme"
               }`}
             />
             <span>Дууссан</span>
@@ -679,7 +679,7 @@ export default function SanalAsuulgaPage() {
             className={`px-3 py-1.5 text-xs font-normal rounded-xl transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
               filterTuluv === "noots"
                 ? "bg-[color:var(--panel)] text-white shadow-xs"
-                : "bg-white text-[color:var(--muted-text)] border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)]"
+                : "bg-[color:var(--surface-bg)] text-[color:var(--muted-text)] border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)]"
             }`}
           >
             <span>Ноорог</span>
@@ -702,7 +702,7 @@ export default function SanalAsuulgaPage() {
             <p className="text-xs text-[color:var(--muted-text)]">Ачаалж байна...</p>
           </div>
         ) : shuugdsanJagsaalt.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 rounded-3xl bg-white py-20 border border-[color:var(--surface-border)] shadow-xs">
+          <div className="flex flex-col items-center gap-3 rounded-3xl bg-[color:var(--surface-bg)] py-20 border border-[color:var(--surface-border)] shadow-xs">
             <ClipboardList className="h-12 w-12 text-[color:var(--muted-text)]" />
             <p className="text-sm font-normal text-[color:var(--muted-text)]">
               {hailtUg
@@ -727,7 +727,7 @@ export default function SanalAsuulgaPage() {
             {shuugdsanJagsaalt.map((a) => (
               <div
                 key={a._id}
-                className="flex flex-col rounded-2xl bg-white border border-[color:var(--surface-border)] shadow-xs hover:shadow-md transition-all duration-200 overflow-hidden group"
+                className="flex flex-col rounded-2xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] shadow-xs hover:shadow-md transition-all duration-200 overflow-hidden group"
               >
                 {/* Header */}
                 <div className="p-5 pb-3 space-y-2">
@@ -837,7 +837,7 @@ export default function SanalAsuulgaPage() {
             <button
               type="button"
               onClick={() => setGorim("jagsaalt")}
-              className="flex items-center justify-center h-9 w-9 rounded-xl border border-[color:var(--surface-border)] bg-white text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] transition cursor-pointer"
+              className="flex items-center justify-center h-9 w-9 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] transition cursor-pointer"
               title="Буцах"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -853,7 +853,7 @@ export default function SanalAsuulgaPage() {
           {/* ── Left Column: Form Controls (8 Cols) ── */}
           <div ref={leftColRef} className="lg:col-span-8 space-y-6">
             {/* Card 1: Санал асуулгын мэдээлэл */}
-            <div className="rounded-2xl border border-[color:var(--surface-border)] bg-white p-6 shadow-xs space-y-5">
+            <div className="rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-6 shadow-xs space-y-5">
               <div className="flex flex-wrap items-center justify-between border-b border-[color:var(--surface-border)] pb-3 gap-3">
                 <h2 className="text-xs font-normal uppercase tracking-wider text-[color:var(--panel-text)] shrink-0">
                   Санал асуулгын мэдээлэл
@@ -887,7 +887,7 @@ export default function SanalAsuulgaPage() {
                   maxLength={100}
                   onChange={(e) => setGarchig(e.target.value)}
                   placeholder="Оршин суугчдын сэтгэл ханамж 2024 оны эхний хагас жил"
-                  className="h-11 w-full rounded-xl border border-[color:var(--surface-border)] bg-white px-3.5 text-xs text-[color:var(--panel-text)] dark:text-white placeholder:text-[color:var(--muted-text)] focus:border-theme focus:outline-none transition shadow-2xs"
+                  className="h-11 w-full rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-3.5 text-xs text-[color:var(--panel-text)] dark:text-white placeholder:text-[color:var(--muted-text)] focus:border-theme focus:outline-none transition shadow-2xs"
                 />
               </div>
 
@@ -907,7 +907,7 @@ export default function SanalAsuulgaPage() {
                   onChange={(e) => setTailbar(e.target.value)}
                   rows={3}
                   placeholder="Таны үнэлгээ, санал хүсэлт нь бидний үйлчилгээ, орчныг сайжруулахад чухал нөлөөтэй."
-                  className="w-full resize-none rounded-xl border border-[color:var(--surface-border)] bg-white p-3 text-xs text-[color:var(--panel-text)] dark:text-white placeholder:text-[color:var(--muted-text)] focus:border-theme focus:outline-none transition shadow-2xs"
+                  className="w-full resize-none rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-3 text-xs text-[color:var(--panel-text)] dark:text-white placeholder:text-[color:var(--muted-text)] focus:border-theme focus:outline-none transition shadow-2xs"
                 />
               </div>
 
@@ -949,7 +949,7 @@ export default function SanalAsuulgaPage() {
             </div>
 
             {/* Card 2: Асуулт & хариултууд */}
-            <div className="rounded-2xl border border-[color:var(--surface-border)] bg-white p-6 shadow-xs space-y-5">
+            <div className="rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-6 shadow-xs space-y-5">
               <h2 className="text-xs font-normal uppercase tracking-wider text-[color:var(--panel-text)] border-b border-[color:var(--surface-border)] pb-3">
                 Асуулт & хариултууд
               </h2>
@@ -985,7 +985,7 @@ export default function SanalAsuulgaPage() {
                           asuultZasya(i, { asuult: e.target.value })
                         }
                         placeholder="Асуултын текстаа энд бичнэ үү..."
-                        className="h-10 flex-1 rounded-xl border border-[color:var(--surface-border)] bg-white px-3 text-xs font-normal text-[color:var(--panel-text)] dark:text-white focus:border-theme focus:outline-none"
+                        className="h-10 flex-1 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-3 text-xs font-normal text-[color:var(--panel-text)] dark:text-white focus:border-theme focus:outline-none"
                       />
                       {asuultuud.length > 1 && (
                         <button
@@ -1012,7 +1012,7 @@ export default function SanalAsuulgaPage() {
                             turul: e.target.value as AsuultiinTurul,
                           })
                         }
-                        className="h-9 rounded-xl border border-[color:var(--surface-border)] bg-white px-3 text-xs font-normal text-[color:var(--panel-text)] focus:border-theme focus:outline-none cursor-pointer"
+                        className="h-9 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-3 text-xs font-normal text-[color:var(--panel-text)] focus:border-theme focus:outline-none cursor-pointer"
                       >
                         <option value="songolt">
                           Сонголттой (нэг сонголт)
@@ -1039,7 +1039,7 @@ export default function SanalAsuulgaPage() {
                                 songoltZasya(i, si, e.target.value)
                               }
                               placeholder={`Сонголт ${si + 1}`}
-                              className="h-9 flex-1 rounded-xl border border-[color:var(--surface-border)] bg-white px-3 text-xs text-[color:var(--panel-text)] dark:text-white focus:border-theme focus:outline-none"
+                              className="h-9 flex-1 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-3 text-xs text-[color:var(--panel-text)] dark:text-white focus:border-theme focus:outline-none"
                             />
                             {a.songoltuud.length > 2 && (
                               <button
@@ -1151,7 +1151,7 @@ export default function SanalAsuulgaPage() {
             {/* Authentic iPhone 16 / 17 Device Container */}
             <div className="relative mx-auto w-full max-w-[320px]">
               {/* Main Phone Body with realistic 640px iPhone height */}
-              <div className="relative z-10 w-full h-[640px] rounded-[44px] border-[8px] border-[color:var(--surface-border)] bg-white p-3.5 pt-7 pb-3 shadow-2xl flex flex-col justify-between overflow-hidden box-border">
+              <div className="relative z-10 w-full h-[640px] rounded-[44px] border-[8px] border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-3.5 pt-7 pb-3 shadow-2xl flex flex-col justify-between overflow-hidden box-border">
                 {/* Top Dynamic Island / Pill Cutout */}
                 <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-24 h-4 bg-[color:var(--panel)] rounded-full flex items-center justify-between px-2 z-30 shadow-xs">
                   <div className="h-1.5 w-1.5 rounded-full bg-[color:var(--panel)]" />
@@ -1249,7 +1249,7 @@ export default function SanalAsuulgaPage() {
                               }
                               className={`flex items-center gap-2 p-2 rounded-xl border text-[11px] font-normal cursor-pointer transition ${isSelected
                                 ? "border-theme bg-theme/50 text-brand font-normal"
-                                : "border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] hover:border-[color:var(--surface-border)]"
+                                : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] hover:border-[color:var(--surface-border)]"
                                 }`}
                             >
                               <div
@@ -1281,7 +1281,7 @@ export default function SanalAsuulgaPage() {
                             className={`flex flex-col gap-1.5 p-2 rounded-xl border text-[11px] font-normal cursor-pointer transition ${
                               previewAnswers[previewQuestionIndex]?.startsWith("Бусад")
                                 ? "border-theme bg-theme/50 text-brand font-normal"
-                                : "border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] hover:border-[color:var(--surface-border)]"
+                                : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] hover:border-[color:var(--surface-border)]"
                             }`}
                           >
                             <div className="flex items-center gap-2">
@@ -1303,7 +1303,7 @@ export default function SanalAsuulgaPage() {
                                 type="text"
                                 placeholder="Хариултаа бичнэ үү..."
                                 onClick={(e) => e.stopPropagation()}
-                                className="w-full h-7 px-2 text-[10px] rounded-lg border border-theme/30 bg-white text-[color:var(--panel-text)] dark:text-white focus:outline-none"
+                                className="w-full h-7 px-2 text-[10px] rounded-lg border border-theme/30 bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] dark:text-white focus:outline-none"
                               />
                             )}
                           </div>
@@ -1420,7 +1420,7 @@ export default function SanalAsuulgaPage() {
               {dun?.asuultuud.map((a, i) => (
                 <div
                   key={a.asuultiinId}
-                  className="rounded-2xl border border-[color:var(--surface-border)] bg-white p-5 shadow-xs space-y-4"
+                  className="rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-5 shadow-xs space-y-4"
                 >
                   <h3 className="text-sm font-normal text-[color:var(--panel-text)] dark:text-white">
                     {i + 1}. {a.asuult}
@@ -1479,7 +1479,7 @@ export default function SanalAsuulgaPage() {
             </div>
 
             {/* Right: Resident Responses List */}
-            <div className="lg:col-span-5 rounded-2xl border border-[color:var(--surface-border)] bg-white p-5 shadow-xs space-y-4">
+            <div className="lg:col-span-5 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-5 shadow-xs space-y-4">
               <h3 className="text-sm font-normal text-[color:var(--panel-text)] dark:text-white border-b border-[color:var(--surface-border)] pb-3">
                 Хариулсан оршин суугчид ({khariultuud.length})
               </h3>

@@ -514,7 +514,7 @@ function LedgerMonthlyBreakdownTable({
                 className={`border-b border-[color:var(--surface-border)] ${
                   hi
                     ? "bg-theme/70"
-                    : "bg-white dark:bg-[#0f172a]"
+                    : "bg-white dark:bg-[color:var(--panel)]"
                 }`}
               >
                 <td className="py-1.5 px-2 text-center text-[color:var(--panel-text)] whitespace-nowrap border-r border-[color:var(--surface-border)]">
@@ -535,7 +535,7 @@ function LedgerMonthlyBreakdownTable({
               </tr>
             );
           })}
-          <tr className="history-print-total-row border-t border-[color:var(--surface-border)] bg-white">
+          <tr className="history-print-total-row border-t border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]">
             <td
               colSpan={2}
               className="py-1.5 px-2 text-left text-[color:var(--panel-text)] font-bold border-r border-[color:var(--surface-border)]"
@@ -2293,7 +2293,7 @@ export default function HistoryModal({
               onClick={(e) => e.stopPropagation()}
             >
               <div
-                className={`flex flex-col overflow-hidden min-h-0 min-w-0 bg-white dark:bg-[#0f172a] rounded-2xl sm:rounded-3xl shadow-2xl border border-[color:var(--surface-border)] history-print-container ${
+                className={`flex flex-col overflow-hidden min-h-0 min-w-0 bg-white dark:bg-[color:var(--panel)] rounded-2xl sm:rounded-3xl shadow-2xl border border-[color:var(--surface-border)] history-print-container ${
                   ledgerDetailSelection
                     ? "flex-1 min-h-[42%] lg:min-h-0 lg:basis-[min(52%,780px)]"
                     : "w-full flex-1"
@@ -2391,7 +2391,7 @@ export default function HistoryModal({
                 {/* Table Section - Scrollable */}
                 <div className="history-print-table-body flex-1 overflow-auto custom-scrollbar px-5 sm:px-6 print:px-0">
                   <table className="w-full text-[12px] border-collapse leading-tight">
-                    <thead className="sticky top-0 z-10 bg-white dark:bg-[#0f172a]">
+                    <thead className="sticky top-0 z-10 bg-white dark:bg-[color:var(--panel)]">
                       <tr className="border-b border-[color:var(--surface-border)]">
                         <th className="py-1 px-1.5 text-center text-[9px] border-r border-b border-[color:var(--surface-border)] text-[color:var(--panel-text)] uppercase font-semibold tracking-wide w-10 print:w-8">
                           №
@@ -2567,36 +2567,36 @@ export default function HistoryModal({
                             return (
                               <>
                                 {isFiltered && filteredData.length > 0 && (
-                                  <tr className="history-print-total-row bg-white print:bg-transparent italic">
-                                    <td className="sticky bottom-[37px] z-10 bg-white py-1 px-1.5 border-t border-r border-[color:var(--surface-border)]"></td>
-                                    <td colSpan={2} className="sticky bottom-[37px] z-10 bg-white py-1 px-2 text-[12px] text-[color:var(--panel-text)] text-right border-t border-r border-[color:var(--surface-border)]">
+                                  <tr className="history-print-total-row bg-[color:var(--surface-bg)] print:bg-transparent italic">
+                                    <td className="sticky bottom-[37px] z-10 bg-[color:var(--surface-bg)] py-1 px-1.5 border-t border-r border-[color:var(--surface-border)]"></td>
+                                    <td colSpan={2} className="sticky bottom-[37px] z-10 bg-[color:var(--surface-bg)] py-1 px-2 text-[12px] text-[color:var(--panel-text)] text-right border-t border-r border-[color:var(--surface-border)]">
                                       Хугацааны эхний үлдэгдэл:
                                     </td>
-                                    <td colSpan={2} className="sticky bottom-[37px] z-10 bg-white border-t border-r border-[color:var(--surface-border)]"></td>
-                                    <td className="sticky bottom-[37px] z-10 bg-white py-1 px-2 text-[12px] text-[color:var(--panel-text)] text-right border-t border-r border-[color:var(--surface-border)]">
+                                    <td colSpan={2} className="sticky bottom-[37px] z-10 bg-[color:var(--surface-bg)] border-t border-r border-[color:var(--surface-border)]"></td>
+                                    <td className="sticky bottom-[37px] z-10 bg-[color:var(--surface-bg)] py-1 px-2 text-[12px] text-[color:var(--panel-text)] text-right border-t border-r border-[color:var(--surface-border)]">
                                       {totalDiscounts > 0 ? `${formatCurrency(totalDiscounts)} ₮` : ""}
                                     </td>
-                                    <td className="sticky bottom-[37px] z-10 bg-white py-1 px-2 text-[12px] font-bold text-[color:var(--panel-text)] text-right border-t border-r border-[color:var(--surface-border)]">
+                                    <td className="sticky bottom-[37px] z-10 bg-[color:var(--surface-bg)] py-1 px-2 text-[12px] font-bold text-[color:var(--panel-text)] text-right border-t border-r border-[color:var(--surface-border)]">
                                       {formatCurrency(openingBalance)} ₮
                                     </td>
-                                    <td colSpan={4} className="sticky bottom-[37px] z-10 bg-white border-t border-r border-[color:var(--surface-border)]"></td>
+                                    <td colSpan={4} className="sticky bottom-[37px] z-10 bg-[color:var(--surface-bg)] border-t border-r border-[color:var(--surface-border)]"></td>
                                   </tr>
                                 )}
-                                <tr className="history-print-total-row bg-white">
+                                <tr className="history-print-total-row bg-[color:var(--surface-bg)]">
                                   
                                 <td
                                   colSpan={3}
-                                  className="sticky bottom-0 z-10 bg-white py-1 px-2 text-[13px] font-bold text-black text-left border-t-2 border-r border-[color:var(--surface-border)]"
+                                  className="sticky bottom-0 z-10 bg-[color:var(--surface-bg)] py-1 px-2 text-[13px] font-bold text-[color:var(--panel-text)] text-left border-t-2 border-r border-[color:var(--surface-border)]"
                                 >
                                   Нийт
                                 </td>
-                                <td className="sticky bottom-0 z-10 bg-white py-1 px-2 text-[13px] font-bold text-black text-right whitespace-nowrap border-t-2 border-r border-[color:var(--surface-border)]">
+                                <td className="sticky bottom-0 z-10 bg-[color:var(--surface-bg)] py-1 px-2 text-[13px] font-bold text-[color:var(--panel-text)] text-right whitespace-nowrap border-t-2 border-r border-[color:var(--surface-border)]">
                                   {formatCurrency(totalCharges)} ₮
                                 </td>
-                                <td className="sticky bottom-0 z-10 bg-white py-1 px-2 text-[13px] font-bold text-black text-right whitespace-nowrap border-t-2 border-r border-[color:var(--surface-border)]">
+                                <td className="sticky bottom-0 z-10 bg-[color:var(--surface-bg)] py-1 px-2 text-[13px] font-bold text-[color:var(--panel-text)] text-right whitespace-nowrap border-t-2 border-r border-[color:var(--surface-border)]">
                                   {formatCurrency(totalPayments)} ₮
                                 </td>
-                                <td className="sticky bottom-0 z-10 bg-white py-1 px-2 text-[13px] font-bold text-black text-right whitespace-nowrap border-t-2 border-r border-[color:var(--surface-border)]">
+                                <td className="sticky bottom-0 z-10 bg-[color:var(--surface-bg)] py-1 px-2 text-[13px] font-bold text-[color:var(--panel-text)] text-right whitespace-nowrap border-t-2 border-r border-[color:var(--surface-border)]">
                                   {formatCurrency(totalDiscounts)} ₮
                                 </td>
                                 <td
@@ -2694,7 +2694,7 @@ export default function HistoryModal({
                         initial={{ scale: 0.9, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0.9, opacity: 0 }}
-                        className="bg-white rounded-2xl p-6 shadow-xl max-w-md w-full mx-4"
+                        className="bg-[color:var(--surface-bg)] rounded-2xl p-6 shadow-xl max-w-md w-full mx-4"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <div className="text-center">
@@ -2754,7 +2754,7 @@ export default function HistoryModal({
                         initial={{ scale: 0.8, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0.8, opacity: 0 }}
-                        className="bg-white rounded-2xl p-6 shadow-xl"
+                        className="bg-[color:var(--surface-bg)] rounded-2xl p-6 shadow-xl"
                       >
                         <div className="text-center">
                           <div className="mx-auto w-12 h-12 rounded-full bg-theme/10 flex items-center justify-center mb-3">
@@ -2806,7 +2806,7 @@ export default function HistoryModal({
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 28 }}
                     transition={{ type: "spring", stiffness: 320, damping: 32 }}
-                    className="ledger-print-panel flex flex-col overflow-hidden min-h-0 min-w-0 flex-none w-full max-h-[48%] lg:max-h-none lg:w-[min(48vw,580px)] lg:max-w-[min(94vw,620px)] bg-white dark:bg-[#0f172a] rounded-2xl sm:rounded-3xl shadow-2xl border border-[color:var(--surface-border)]"
+                    className="ledger-print-panel flex flex-col overflow-hidden min-h-0 min-w-0 flex-none w-full max-h-[48%] lg:max-h-none lg:w-[min(48vw,580px)] lg:max-w-[min(94vw,620px)] bg-white dark:bg-[color:var(--panel)] rounded-2xl sm:rounded-3xl shadow-2xl border border-[color:var(--surface-border)]"
                   >
                     <div className="hidden print:block w-full border-b border-black pb-2 mb-2 text-center text-[11pt] font-bold text-black px-4">
                       {String(baiguullagiinNer ?? "").trim() || "—"}

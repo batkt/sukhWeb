@@ -122,7 +122,7 @@ export default function EmployeeModal({
                       const value = e.target.value.replace(/[^a-zA-Zа-яА-ЯөүёӨҮЁ-]/g, "");
                       setNewEmployee((p: any) => ({ ...p, ovog: value }));
                     }}
-                    className="w-full p-3 rounded-2xl border border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] dark:text-white"
+                    className="w-full p-3 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] dark:text-white"
                     required
                   />
                 </div>
@@ -138,7 +138,7 @@ export default function EmployeeModal({
                       const value = e.target.value.replace(/[^a-zA-Zа-яА-ЯөүёӨҮЁ-]/g, "");
                       setNewEmployee((p: any) => ({ ...p, ner: value }));
                     }}
-                    className="w-full p-3 rounded-2xl border border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] dark:text-white"
+                    className="w-full p-3 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] dark:text-white"
                     required
                   />
                 </div>
@@ -154,7 +154,7 @@ export default function EmployeeModal({
                       const value = e.target.value.replace(/[^0-9]/g, "").slice(0, 8);
                       setNewEmployee((p: any) => ({ ...p, utas: value }));
                     }}
-                    className="w-full p-3 rounded-2xl border border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] dark:text-white"
+                    className="w-full p-3 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] dark:text-white"
                     maxLength={8}
                     pattern="[0-9]{8}"
                     required
@@ -169,7 +169,7 @@ export default function EmployeeModal({
                     name="email"
                     value={newEmployee.email}
                     onChange={(e) => setNewEmployee((p: any) => ({ ...p, email: e.target.value }))}
-                    className="w-full p-3 rounded-2xl border border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] dark:text-white"
+                    className="w-full p-3 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] dark:text-white"
                   />
                 </div>
                 <div>
@@ -183,7 +183,7 @@ export default function EmployeeModal({
                     onChange={(e) =>
                       setNewEmployee((p: any) => ({ ...p, albanTushaal: e.target.value }))
                     }
-                    className="w-full p-3 rounded-2xl border border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] dark:text-white"
+                    className="w-full p-3 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] dark:text-white"
                     required
                   />
                 </div>
@@ -216,7 +216,7 @@ export default function EmployeeModal({
                     popupStyle={{ zIndex: 13010 }}
                     classNames={{
                       input:
-                        "text-[color:var(--panel-text)] dark:text-white bg-white neu-panel neu-calendar placeholder:text-[color:var(--muted-text)] !h-[50px] !py-2 !w-[420px]",
+                        "text-[color:var(--panel-text)] dark:text-white bg-[color:var(--surface-bg)] neu-panel neu-calendar placeholder:text-[color:var(--muted-text)] !h-[50px] !py-2 !w-[420px]",
                     }}
                   />
                   <input type="hidden" name="ajildOrsonOgnoo" value={newEmployee.ajildOrsonOgnoo || ""} />
@@ -234,7 +234,7 @@ export default function EmployeeModal({
                         onChange={(e) =>
                           setNewEmployee((p: any) => ({ ...p, nevtrekhNer: e.target.value }))
                         }
-                        className="w-full p-3 rounded-2xl border border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] dark:text-white"
+                        className="w-full p-3 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] dark:text-white"
                         required
                       />
                     </div>
@@ -247,7 +247,7 @@ export default function EmployeeModal({
                         name="nuutsUg"
                         value={newEmployee.nuutsUg}
                         onChange={(e) => setNewEmployee((p: any) => ({ ...p, nuutsUg: e.target.value }))}
-                        className="w-full p-3 rounded-2xl border border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] dark:text-white"
+                        className="w-full p-3 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] dark:text-white"
                         required
                       />
                     </div>

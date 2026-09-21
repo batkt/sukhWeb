@@ -75,7 +75,7 @@ export default function Tailan() {
         <div className="relative">
           <div className="w-24 h-24 mx-auto mb-6 relative">
             <div className="absolute inset-0 bg-gradient-to-br from-theme/20 to-theme/20 rounded-full animate-spin-slow"></div>
-            <div className="absolute inset-2 bg-white rounded-full flex items-center justify-center">
+            <div className="absolute inset-2 bg-[color:var(--surface-bg)] rounded-full flex items-center justify-center">
               <Rocket className="w-10 h-10 text-brand animate-bounce" />
             </div>
             <div className="absolute -top-2 -right-2">
