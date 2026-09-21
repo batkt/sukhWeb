@@ -115,24 +115,6 @@ const RealTimeDuration = ({
   );
 };
 
-const RealTimeClock = () => {
-  const [time, setTime] = useState(moment());
-  useEffect(() => {
-    const interval = setInterval(() => setTime(moment()), 1000);
-    return () => clearInterval(interval);
-  }, []);
-  return (
-    <div className="text-right hidden md:block">
-      <p className="text-sm font-black text-slate-800 dark:text-gray-200">
-        {time.format("YYYY-MM-DD")}
-      </p>
-      <p className="text-[10px]  text-slate-400 uppercase tracking-widest">
-        {time.format("HH:mm:ss")}
-      </p>
-    </div>
-  );
-};
-
 const FilterPopover = ({
   label,
   options,
@@ -1080,8 +1062,6 @@ export default function Camera() {
     fetchList,
   ]);
 
-  const isSocketConnected = isConnected;
-
   const { transactions, totalFiltered } = useMemo(() => {
     const data = listData;
     let list: Uilchluulegch[] = [];
@@ -1911,35 +1891,7 @@ export default function Camera() {
 
   return (
     <div className="w-full bg-[color:var(--surface-bg)]">
-      <div className="p-4 lg:p-6 space-y-6">
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div className="flex items-center justify-between w-full">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-1.5 h-6 bg-theme rounded-full"></div>
-                <h1 className="text-2xl text-[color:var(--panel-text)]  ">
-                  Хяналтын самбар
-                </h1>
-              </div>
-              <div className="flex items-center gap-3">
-                <div
-                  className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[9px] font-black uppercase tracking-tighter ${isSocketConnected ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600" : "bg-red-500/10 border-red-500/20 text-red-600"}`}
-                >
-                  <span
-                    className={`w-1.5 h-1.5 rounded-full ${isSocketConnected ? "bg-emerald-500 animate-pulse" : "bg-red-500"}`}
-                  ></span>
-                  {isSocketConnected ? "Socket Connected" : "Socket Offline"}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-6">
-              <RealTimeClock />
-            </div>
-          </div>
-        </div>
-
+      <div className="px-4 pt-3 pb-4 lg:px-6 lg:pb-6 space-y-4">
         {/* Camera Streaming Sections */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           {/* Entry Camera Stream */}
@@ -2179,18 +2131,6 @@ export default function Camera() {
                 pagination={false}
                 scroll={{ x: 1300 }}
                 rowClassName={(t) => (murNiiluulye(t).isActive ? "zt-row-selected" : "")}
-                locale={{
-                  emptyText: (
-                    <div className="flex flex-col items-center justify-center gap-4 py-20 opacity-40">
-                      <div className="rounded-full bg-slate-100 p-6 shadow-inner dark:bg-slate-800/50">
-                        <Calendar className="h-12 w-12 text-slate-400" />
-                      </div>
-                      <p className="text-base tracking-[0.2em] text-slate-400 uppercase">
-                        Одоогоор мэдээлэл байхгүй байна
-                      </p>
-                    </div>
-                  ),
-                }}
                 summary={() => (
                   <Table.Summary.Row className="font-[family-name:var(--font-mono)] text-[11px]">
                     <Table.Summary.Cell colSpan={6} align="right">

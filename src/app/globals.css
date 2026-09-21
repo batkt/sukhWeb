@@ -445,13 +445,24 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 
-  /* Surface variables for dark mode */
-  --surface-bg: #0f172a;
-  --surface-border: rgba(255, 255, 255, 0.1);
-  --surface-hover: rgba(255, 255, 255, 0.05);
-  --panel-text: #f1f5f9;
+  /* ── Харанхуй горимын гадаргуу ────────────────────────────────────────
+     Өмнө нь navy-хар (#0f172a) байсан. Брэндийн ногоон (#059669) руу
+     хазайсан бараан болгов — «хар биш ногоон» гэсэн шаардлагын дагуу.
+     Тодорхой data-theme (dark-gray, dark-black, blue-gradient) нь өөрийн
+     гадаргууг тодорхойлдог тул энэ нь тэднийг хөндөхгүй; тодорхойлоогүй
+     сэдвүүд (жишээ нь dark-green) л эндээс уншина. */
+  --surface-bg: #0b241a;
+  /* Картын градиентийн хоёр дахь өнгө. Хаана ч тодорхойлогдоогүй байсан
+     тул `to-[color:var(--panel)]` бүхэн хүчингүй болж, картууд хавтгай
+     нэг өнгөөр гардаг байв. */
+  --panel: #0f3024;
+  /* Хүрээ/hover-ийг цагаанаас ногоон болгосон нь өнгөний мэдрэмжийг
+     дэвсгэрээс ч илүү зөөлөн зөв болгодог. */
+  --surface-border: rgba(52, 211, 153, 0.16);
+  --surface-hover: rgba(52, 211, 153, 0.07);
+  --panel-text: #e9fff6;
 
-  --muted-text: #94a3b8;
+  --muted-text: #8fbda9;
 }
 @layer base {
   html {
@@ -541,6 +552,9 @@
   --glass-tint-2: rgba(255, 255, 255, 0.06);
   --glass-shadow: rgba(8, 18, 24, 0.16);
   --surface-bg: #ffffff;
+  /* Картын градиентийн 2 дахь өнгө. Цайвар горимд ч тодорхойлогдоогүй
+     байсан тул `to-[color:var(--panel)]` хүчингүй байв. */
+  --panel: #f5faf7;
   --surface-border: rgba(15, 23, 42, 0.08);
   --surface-hover: rgba(15, 23, 42, 0.04);
   /* Brand accent. The old top navbar hardcoded emerald for its active states
@@ -755,11 +769,19 @@
 
   --glass-tint: rgba(24, 58, 44, 0.45);
   --glass-tint-2: rgba(24, 58, 44, 0.25);
-  --glass-border: rgba(255, 255, 255, 0.18);
-  --glass-highlight: rgba(255, 255, 255, 0.22);
+  --glass-border: rgba(52, 211, 153, 0.2);
+  --glass-highlight: rgba(167, 243, 208, 0.18);
   --glass-shadow: rgba(6, 24, 18, 0.28);
   --panel-text: #e6fffa;
   --table-hover-bg: color-mix(in oklch, #2f7c57, transparent 90%);
+
+  /* Өмнө нь гадаргууг тодорхойлдоггүй тул `.dark`-ийн navy-хар
+     (#0f172a) уншигдаж, «ногоон» сэдэв ногоон биш харагддаг байв. */
+  --surface-bg: #0d2a1e;
+  --panel: #12382a;
+  --surface-border: rgba(52, 211, 153, 0.2);
+  --surface-hover: rgba(52, 211, 153, 0.08);
+  --muted-text: #93c7b1;
 }
 
 /* Paper / contract preview styles */
@@ -1712,16 +1734,30 @@ html[data-mode="dark"]:not([data-theme]),
 }
 [data-theme="dark-gray"] {
   --surface-bg: #0f172a; /* gray-900 */
+  /* `.dark` нь ногоон `--panel` / `--surface-hover` / `--muted-text`
+     тавьдаг болсон тул саарал сэдэв өөрийн нейтрал утгуудаа зааж өгнө —
+     эс бөгөөс саарал сэдэв дээр ногоон карт гарна. */
+  --panel: #17203a;
+  --surface-hover: rgba(255, 255, 255, 0.06);
+  --muted-text: #94a3b8;
   --surface-border: rgba(255, 255, 255, 0.16);
 }
 [data-theme="dark-green"] {
   --surface-bg: #0f2a1e; /* deep green */
-  --surface-border: rgba(255, 255, 255, 0.16);
+  --panel: #143a2a; /* өргөгдсөн гадаргуу (картын градиент) */
+  /* Цагаан хүрээ нь ногоон дэвсгэр дээр саарал болж харагддаг тул
+     эмералд хазайлттай хүрээ болгов. */
+  --surface-border: rgba(52, 211, 153, 0.2);
+  --surface-hover: rgba(52, 211, 153, 0.08);
 }
 
 /* Dark-black surface tokens (append here to win cascade over :root) */
 [data-theme="dark-black"] {
   --surface-bg: #0f0f16; /* deep near-black surface */
+  /* Дээрхтэй ижил шалтгаан — хар сэдэв нейтрал хэвээр байх. */
+  --panel: #17171f;
+  --surface-hover: rgba(255, 255, 255, 0.05);
+  --muted-text: #a1a1aa;
   --surface-border: rgba(255, 255, 255, 0.14);
 }
 
@@ -3627,6 +3663,7 @@ body .mantine-Month-weekday {
   );
   /* Light surfaces + readable dark text */
   --surface-bg: #ffffff; /* remove yellow tint */
+  --panel: #f4faf7; /* картын градиентийн 2 дахь өнгө */
   --surface-border: rgba(15, 23, 42, 0.12);
   --panel-text: #0f172a;
   /* Glass tokens tuned for subtle depth on light backgrounds */
@@ -3809,16 +3846,23 @@ body .mantine-Month-weekday {
 }
 /* Dark variant for soft-sage (uses data-mode="dark") */
 [data-theme="soft-sage"][data-mode="dark"] {
-  /* Deep dark variant with a navy tail */
-  --gradient-bg: linear-gradient(135deg, #0c1713 0%, #0e1f18 50%, #0f1730 100%);
-  --surface-bg: #0e1814; /* near-black with green hint */
-  --surface-border: rgba(255, 255, 255, 0.14);
+  /* ── Ногоон харанхуй ──────────────────────────────────────────────────
+     Өмнө нь: `#0c1713 → #0e1f18 → #0f1730`. Гурав дахь зогсоол нь NAVY
+     (#0f1730) байсан тул дэлгэцийн доод/баруун тал хөх-хар болж, ногоон
+     мэдрэмж алга болдог байв. Мөн гадаргуу нь #0e1814 — ногоон хэлтэй ч
+     бараг хар. Гурвуулангийг эмералд руу хазайсан бараан болгов. */
+  --gradient-bg: linear-gradient(135deg, #061a13 0%, #092219 48%, #0c2a1f 100%);
+  --surface-bg: #0b241a; /* карт/панелийн дэвсгэр — ногоон бараан */
+  --panel: #0f3024; /* картын градиентийн 2 дахь өнгө (өргөгдсөн гадаргуу) */
+  --surface-border: rgba(52, 211, 153, 0.18);
+  --surface-hover: rgba(52, 211, 153, 0.08);
   --panel-text: #e6fff5; /* minty white */
-  --glass-tint: rgba(10, 22, 18, 0.5);
-  --glass-tint-2: rgba(12, 26, 21, 0.32);
-  --glass-border: rgba(255, 255, 255, 0.18);
-  --glass-highlight: rgba(255, 255, 255, 0.2);
-  --glass-shadow: rgba(3, 12, 9, 0.42);
+  --muted-text: #8fbda9; /* ногоон хазайлттай хоёрдогч текст */
+  --glass-tint: rgba(9, 34, 25, 0.55);
+  --glass-tint-2: rgba(12, 42, 31, 0.34);
+  --glass-border: rgba(52, 211, 153, 0.2);
+  --glass-highlight: rgba(167, 243, 208, 0.16);
+  --glass-shadow: rgba(2, 14, 10, 0.45);
 
   /* Tabs (dark) */
   --tab-active-from: #134e4a; /* teal/emerald deep */

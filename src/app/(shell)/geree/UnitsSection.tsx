@@ -1219,27 +1219,69 @@ export default function UnitsSection({
         {selectedOrts !== undefined && (
           <>
             {propertyTab === "Тоот" && (
-              <div className="w-full">
-                <div className="allow-overflow no-scrollbar" id="units-table">
-                  <UnitsTable
-                    data={floorData.slice(
+              <div className="w-full space-y-6">
+                {(() => {
+                  // Group floorData by orts
+                  const ortsGroups: Record<string, typeof floorData> = {};
+                  for (const item of floorData) {
+                    const key = item.orts || "";
+                    if (!ortsGroups[key]) ortsGroups[key] = [];
+                    ortsGroups[key].push(item);
+                  }
+
+                  const groupKeys = Object.keys(ortsGroups).sort((a, b) => {
+                    const aNum = parseInt(a);
+                    const bNum = parseInt(b);
+                    if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
+                    return a.localeCompare(b);
+                  });
+
+                  const hasMultipleOrts = groupKeys.length > 1;
+
+                  return groupKeys.map((ortsKey) => {
+                    const groupItems = ortsGroups[ortsKey];
+                    const paginatedItems = groupItems.slice(
                       (unitPage - 1) * unitPageSize,
                       unitPage * unitPageSize,
-                    )}
-                    actions={actions}
-                    loading={isSavingUnits}
-                    page={unitPage}
-                    pageSize={unitPageSize}
-                    onAddUnit={onAddUnit}
-                    onDeleteUnit={onDeleteUnit}
-                    onDeleteFloor={onDeleteFloor}
-                    sortKey={sortKey}
-                    sortOrder={sortOrder}
-                    propertyTab={propertyTab}
-                    selectedFloor={selectedFloor}
-                    onSelectFloor={setSelectedFloor}
-                  />
-                </div>
+                    );
+
+                    return (
+                      <div key={ortsKey} className="w-full">
+                        {hasMultipleOrts && (
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
+                              <span className="text-sm font-bold text-blue-700 dark:text-blue-300">
+                                {ortsKey ? `${ortsKey}-р орц` : "Орцгүй"}
+                              </span>
+                              <span className="text-xs text-blue-500 dark:text-blue-400 font-medium">
+                                ({groupItems.reduce((s, f) => s + f.units.length, 0)} тоот,{" "}
+                                {groupItems.reduce((s, f) => s + f.activeToots.size, 0)} бүртгэлтэй)
+                              </span>
+                            </div>
+                            <div className="flex-1 h-px bg-blue-100 dark:bg-blue-900/40" />
+                          </div>
+                        )}
+                        <div className="allow-overflow no-scrollbar" id={`units-table-orts-${ortsKey}`}>
+                          <UnitsTable
+                            data={paginatedItems}
+                            actions={actions}
+                            loading={isSavingUnits}
+                            page={unitPage}
+                            pageSize={unitPageSize}
+                            onAddUnit={onAddUnit}
+                            onDeleteUnit={onDeleteUnit}
+                            onDeleteFloor={onDeleteFloor}
+                            sortKey={sortKey}
+                            sortOrder={sortOrder}
+                            propertyTab={propertyTab}
+                            selectedFloor={selectedFloor}
+                            onSelectFloor={setSelectedFloor}
+                          />
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
                 <div id="units-pagination">
                   <StandardPagination
                     current={unitPage}
