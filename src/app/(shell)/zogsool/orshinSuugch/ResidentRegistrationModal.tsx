@@ -50,9 +50,6 @@ export default function ResidentRegistrationModal({
 
   const { baiguullaga } = useAuth();
 
-  /** Тухайн эзэн дээр аль хэдийн бүртгэлтэй машины дугаарууд. */
-  const [baigaaMashinuud, setBaigaaMashinuud] = useState<string[]>([]);
-
   /**
    * Нэг оршин суугч дээр бүртгэж болох машины дээд тоо.
    *
@@ -76,67 +73,6 @@ export default function ResidentRegistrationModal({
     return Number.isFinite(toon) && toon > 0 ? Math.floor(toon) : 0;
   }, [baiguullaga, barilgiinId]);
 
-  /** Засаж байгаа биш, ШИНЭ машин нэмэх үед хязгаар дүүрсэн эсэх. */
-  const khyazgaarDuurenEsekh =
-    !editData &&
-    mashiniiKhyazgaar > 0 &&
-    baigaaMashinuud.length >= mashiniiKhyazgaar;
-
-  /**
-   * Эзний бүртгэлтэй машинуудыг утсаар татна.
-   *
-   * `/zochinJagsaalt` нь машин тус бүрээр мөр буцаадаг тул тухайн утасны
-   * мөрүүдийн дугаарыг цуглуулна. Засаж байгаа мөрийг нь тоохгүй — өөрийгөө
-   * "хязгаар дүүрсэн" гэж тоолуулахгүйн тулд.
-   */
-  const baigaaMashinuudAvya = async (utas: string) => {
-    if (!utas || !baiguullagiinId) return;
-    try {
-      const resp = await uilchilgee(token).get("/zochinJagsaalt", {
-        params: {
-          baiguullagiinId,
-          ...(barilgiinId ? { barilgiinId } : {}),
-          khuudasniiDugaar: 1,
-          khuudasniiKhemjee: 200,
-          search: utas,
-          turul: "Оршин суугч",
-        },
-      });
-
-      const jagsaalt: any[] = Array.isArray(resp.data?.jagsaalt)
-        ? resp.data.jagsaalt
-        : [];
-
-      const dugaaruud = jagsaalt
-        .filter((r) => {
-          const rUtas = Array.isArray(r?.utas) ? r.utas[0] : r?.utas;
-          const ezniiUtas = String(
-            r?.ezemshigchiinUtas || rUtas || "",
-          ).replace(/\s/g, "");
-          if (ezniiUtas !== String(utas).replace(/\s/g, "")) return false;
-          if (editData?._id && String(r?._id) === String(editData._id)) {
-            return false;
-          }
-          return true;
-        })
-        .map((r) =>
-          String(r?.mashiniiDugaar || r?.dugaar || "").trim().toUpperCase(),
-        )
-        .filter((d) => d && d !== "БҮРТГЭЛГҮЙ" && d !== "-");
-
-      setBaigaaMashinuud(Array.from(new Set(dugaaruud)));
-    } catch {
-      // Тоолж чадаагүй ч бүртгэлийг хаахгүй — backend талдаа шалгана.
-      setBaigaaMashinuud([]);
-    }
-  };
-
-  useEffect(() => {
-    if (editData && formData.phone) {
-      baigaaMashinuudAvya(formData.phone);
-    }
-  }, []);
-
   const [formData, setFormData] = useState({
     plate: editData?.mashiniiDugaar || "",
     name: editData?.ner || editData?.orshinSuugchNer || "",
@@ -156,6 +92,139 @@ export default function ResidentRegistrationModal({
     description: editData?.zochinTailbar || editData?.tailbar || "",
     orshinSuugchTurul: editData?.orshinSuugchTurul || editData?.zochinTurul || editData?.turul || "Оршин суугч",
   });
+
+  /**
+   * Эзэнд бүртгэлтэй машинууд (id-тай — засах/устгахад хэрэгтэй).
+   *
+   * Зогсоолын жагсаалт машин тус бүрээр мөр буцаадаг тул тухайн утасны
+   * мөрүүдээс цуглуулна.
+   */
+  const [baigaaMashinuud, setBaigaaMashinuud] = useState<
+    Array<{ _id: string; mashiniiDugaar: string }>
+  >([]);
+
+  /**
+   * Одоо ЗАСАЖ байгаа машины id. `null` бол шинэ машин нэмэх горим.
+   *
+   * Хадгалахад `mashinMedeelel._id`-гаар дамждаг тул backend яг ТЭР машиныг
+   * шинэчилнэ. Өмнө нь зөвхөн `editData`-аас уншдаг тул модал дотроос өөр
+   * машин сонгож засах боломжгүй байв.
+   */
+  const [zasajBuiMashiniiId, setZasajBuiMashiniiId] = useState<string | null>(
+    editData?._id &&
+      String(editData._id) !== String(editData?.ezemshigchiinId) &&
+      editData?.mashiniiDugaar
+      ? String(editData._id)
+      : null,
+  );
+
+  /** Аль машиныг устгаж байгаа (товч дээр эргэлт харуулахад). */
+  const [mashinUstgaj, setMashinUstgaj] = useState<string | null>(null);
+
+  /** Шинэ машин нэмэх үед хязгаар дүүрсэн эсэх (засах үед хамаарахгүй). */
+  const khyazgaarDuurenEsekh =
+    !zasajBuiMashiniiId &&
+    mashiniiKhyazgaar > 0 &&
+    baigaaMashinuud.length >= mashiniiKhyazgaar;
+
+  /** Эзний бүртгэлтэй машинуудыг утсаар татна. */
+  const baigaaMashinuudAvya = async (utas: string) => {
+    if (!utas || !baiguullagiinId) return;
+    try {
+      const resp = await uilchilgee(token).get("/zochinJagsaalt", {
+        params: {
+          baiguullagiinId,
+          ...(barilgiinId ? { barilgiinId } : {}),
+          khuudasniiDugaar: 1,
+          khuudasniiKhemjee: 200,
+          search: utas,
+          turul: "Оршин суугч",
+        },
+      });
+
+      const jagsaalt: any[] = Array.isArray(resp.data?.jagsaalt)
+        ? resp.data.jagsaalt
+        : [];
+
+      const tseverlesen = new Map<
+        string,
+        { _id: string; mashiniiDugaar: string }
+      >();
+
+      jagsaalt.forEach((r) => {
+        const rUtas = Array.isArray(r?.utas) ? r.utas[0] : r?.utas;
+        const ezniiUtas = String(r?.ezemshigchiinUtas || rUtas || "").replace(
+          /\s/g,
+          "",
+        );
+        if (ezniiUtas !== String(utas).replace(/\s/g, "")) return;
+
+        const dugaar = String(r?.mashiniiDugaar || r?.dugaar || "")
+          .trim()
+          .toUpperCase();
+        if (!dugaar || dugaar === "БҮРТГЭЛГҮЙ" || dugaar === "-") return;
+
+        if (!tseverlesen.has(dugaar)) {
+          tseverlesen.set(dugaar, { _id: String(r._id), mashiniiDugaar: dugaar });
+        }
+      });
+
+      setBaigaaMashinuud(Array.from(tseverlesen.values()));
+    } catch {
+      // Тоолж чадаагүй ч бүртгэлийг хаахгүй — backend талдаа шалгана.
+      setBaigaaMashinuud([]);
+    }
+  };
+
+  /** Жагсаалтаас нэг машиныг засах горимд авна. */
+  const mashinZasaya = (mashin: { _id: string; mashiniiDugaar: string }) => {
+    setZasajBuiMashiniiId(mashin._id);
+    setFormData((prev) => ({ ...prev, plate: mashin.mashiniiDugaar }));
+  };
+
+  /** Засах горимоос гарч шинэ машин нэмэх. */
+  const shineMashinNemey = () => {
+    setZasajBuiMashiniiId(null);
+    setFormData((prev) => ({ ...prev, plate: "" }));
+  };
+
+  /** Нэг машины бүртгэлийг устгана. */
+  const mashinUstgaya = async (mashin: {
+    _id: string;
+    mashiniiDugaar: string;
+  }) => {
+    if (!token) return;
+    setMashinUstgaj(mashin._id);
+    try {
+      const resp = await uilchilgee(token).delete(
+        `/orshinSuugchiinMashin/${mashin._id}`,
+        { data: { baiguullagiinId } },
+      );
+
+      if (resp.data?.success) {
+        toast.success(resp.data.message || "Машины бүртгэл устгагдлаа");
+        if (zasajBuiMashiniiId === mashin._id) shineMashinNemey();
+        await baigaaMashinuudAvya(formData.phone);
+        onSuccess?.();
+      } else {
+        toast.error(resp.data?.aldaa || "Устгахад алдаа гарлаа");
+      }
+    } catch (err: any) {
+      toast.error(
+        err?.response?.data?.aldaa ||
+          err?.response?.data?.message ||
+          "Устгахад алдаа гарлаа",
+      );
+    } finally {
+      setMashinUstgaj(null);
+    }
+  };
+
+  useEffect(() => {
+    if (editData && formData.phone) {
+      baigaaMashinuudAvya(formData.phone);
+    }
+  }, []);
 
   // Fetch guest defaults from Barilga - Disabled as endpoint /barilga does not exist
   const buildingData: any = null;
