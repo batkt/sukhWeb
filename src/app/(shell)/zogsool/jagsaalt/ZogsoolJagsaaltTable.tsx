@@ -184,7 +184,7 @@ export const ZogsoolJagsaaltTable: React.FC<ZogsoolJagsaaltTableProps> = ({
               {record.mashiniiDugaar || ""}
             </span>
             <Copy
-              className="w-4 h-4 text-[color:var(--muted-text)] cursor-pointer hover:text-theme transition-all opacity-0 group-hover/copy:opacity-100 scale-90 group-hover/copy:scale-100"
+              className="w-4 h-4 text-[color:var(--muted-text)] cursor-pointer hover:text-brand transition-all opacity-0 group-hover/copy:opacity-100 scale-90 group-hover/copy:scale-100"
               onClick={() => copyToClipboard(record.mashiniiDugaar)}
             />
           </div>
@@ -206,7 +206,7 @@ export const ZogsoolJagsaaltTable: React.FC<ZogsoolJagsaaltTableProps> = ({
             <div
               className={`px-2.5 py-0.5 rounded-md text-center inline-block whitespace-nowrap border-2 transition-all ${
                 !garsanTsag
-                  ? "bg-theme/10 border-theme/30 text-theme dark:bg-theme/30 dark:border-theme/50 dark:text-theme shadow-sm"
+                  ? "bg-theme/10 border-theme/30 text-brand/30 shadow-sm"
                   : "bg-[color:var(--surface-hover)] border-[color:var(--surface-border)] text-[color:var(--muted-text)]"
               }`}
             >
@@ -241,7 +241,7 @@ export const ZogsoolJagsaaltTable: React.FC<ZogsoolJagsaaltTableProps> = ({
           if (tulsunDun > 0) {
             return (
               <div className="flex flex-col items-center gap-0.5">
-                <span className="font-black text-theme dark:text-theme">
+                <span className="font-black text-brand">
                   {formatNumber(tulsunDun)}
                 </span>
                 <span className="text-[color:var(--muted-text)] uppercase tracking-widest">
@@ -393,7 +393,7 @@ export const ZogsoolJagsaaltTable: React.FC<ZogsoolJagsaaltTableProps> = ({
 
           if (ebDun > 0) {
             return (
-              <span className="text-theme font-mono text-center">
+              <span className="text-brand font-mono text-center">
                 {formatNumber(ebDun, 2)}
               </span>
             );

@@ -279,7 +279,7 @@ export default function BlogNiitlelPage() {
                           <div className="mt-3 pt-3 border-t border-[color:var(--surface-border)] flex items-center justify-end gap-2">
                             <button
                               onClick={() => handleOpenModal(blog)}
-                              className="h-8 px-3 rounded-lg bg-theme/10 text-theme hover:bg-theme/10 dark:bg-theme/50 dark:text-theme dark:hover:bg-theme/50 transition-colors inline-flex items-center gap-1.5 text-xs font-medium"
+                              className="h-8 px-3 rounded-lg bg-theme/10 text-brand hover:bg-theme/10 dark:hover:bg-theme/50 transition-colors inline-flex items-center gap-1.5 text-xs font-medium"
                               title="Засах"
                             >
                               <Edit2 size={14} />
@@ -370,7 +370,7 @@ export default function BlogNiitlelPage() {
                       setExistingImages(existingImagesBackup);
                       setAutoReplacedExisting(false);
                     }}
-                    className="text-[11px] text-theme hover:underline"
+                    className="text-[11px] text-brand hover:underline"
                   >
                     Буцаах
                   </button>

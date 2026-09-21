@@ -158,7 +158,7 @@ const EditBuildingModal: React.FC<{
         <div className="px-6 py-5 border-b border-[color:var(--surface-border)] bg-gradient-to-r from-theme/50 to-theme/50 dark:from-theme/20 dark:to-theme/20">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Edit className="w-5 h-5 text-theme dark:text-theme" />
+              <Edit className="w-5 h-5 text-brand" />
               <div>
                 <h3 className="text-xl  text-[color:var(--panel-text)]">
                   Барилга засах
@@ -202,7 +202,7 @@ const EditBuildingModal: React.FC<{
           {/* Location Section */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 pb-2 border-b border-[color:var(--surface-border)]">
-              <MapPin className="w-4 h-4 text-theme" />
+              <MapPin className="w-4 h-4 text-brand" />
               <h4 className="text-sm  text-[color:var(--panel-text)]">
                 Байршил
               </h4>
@@ -266,7 +266,7 @@ const EditBuildingModal: React.FC<{
           {/* Building Details Section */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 pb-2 border-b border-[color:var(--surface-border)]">
-              <Home className="w-4 h-4 text-theme" />
+              <Home className="w-4 h-4 text-brand" />
               <h4 className="text-sm  text-[color:var(--panel-text)]">
                 Барилгын дэлгэрэнгүй
               </h4>
@@ -332,7 +332,7 @@ const EditBuildingModal: React.FC<{
                   className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
                 />
                 {(editZogsoolDavkharCount && Number(editZogsoolDavkharCount) > 0) ? (
-                  <p className="text-xs text-theme dark:text-theme mt-1">
+                  <p className="text-xs text-brand mt-1">
                     Үүсгэх давхар: {Array.from({ length: Number(editZogsoolDavkharCount) }, (_, i) => `B${i + 1}`).join(", ")}
                   </p>
                 ) : null}
@@ -468,7 +468,7 @@ const NewBuildingModal: React.FC<{
         <div className="px-6 py-5 border-b border-[color:var(--surface-border)] bg-gradient-to-r from-theme/50 to-theme/50 dark:from-theme/20 dark:to-theme/20">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Building2 className="w-5 h-5 text-theme dark:text-theme" />
+              <Building2 className="w-5 h-5 text-brand" />
               <div>
                 <h3 className="text-xl  text-[color:var(--panel-text)]">
                   Шинэ барилга нэмэх
@@ -508,7 +508,7 @@ const NewBuildingModal: React.FC<{
           {/* Location Section */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 pb-2 border-b border-[color:var(--surface-border)]">
-              <MapPin className="w-4 h-4 text-theme" />
+              <MapPin className="w-4 h-4 text-brand" />
               <h4 className="text-sm  text-[color:var(--panel-text)]">
                 Байршил
               </h4>
@@ -572,7 +572,7 @@ const NewBuildingModal: React.FC<{
           {/* Building Details Section */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 pb-2 border-b border-[color:var(--surface-border)]">
-              <Home className="w-4 h-4 text-theme" />
+              <Home className="w-4 h-4 text-brand" />
               <h4 className="text-sm  text-[color:var(--panel-text)]">
                 Барилгын дэлгэрэнгүй
               </h4>
@@ -635,7 +635,7 @@ const NewBuildingModal: React.FC<{
                   className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
                 />
                 {(zogsoolDavkharCount && Number(zogsoolDavkharCount) > 0) ? (
-                  <p className="text-xs text-theme dark:text-theme mt-1">
+                  <p className="text-xs text-brand mt-1">
                     Үүсгэх давхар: {Array.from({ length: Number(zogsoolDavkharCount) }, (_, i) => `B${i + 1}`).join(", ")}
                   </p>
                 ) : null}
@@ -2162,7 +2162,7 @@ export default function BarilgiinTokhirgoo() {
         {/* Header Section */}
         <div className="space-y-4">
           <div className="flex items-center gap-3 pb-3 border-b border-[color:var(--surface-border)] rounded-t-lg">
-            <Building2 className="w-5 h-5 text-theme dark:text-theme" />
+            <Building2 className="w-5 h-5 text-brand" />
             <h2 className="text-xl  text-[color:var(--panel-text)]">
               Барилгын тохиргоо
             </h2>
@@ -2188,7 +2188,7 @@ export default function BarilgiinTokhirgoo() {
           {/* Contact Information */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 pb-2 border-b border-[color:var(--surface-border)]">
-              <Users className="w-4 h-4 text-theme" />
+              <Users className="w-4 h-4 text-brand" />
               <h3 className="text-sm  text-[color:var(--panel-text)]">
                 Холбоо барих мэдээлэл
               </h3>
@@ -2270,7 +2270,7 @@ export default function BarilgiinTokhirgoo() {
           <div className="space-y-4 pt-4 border-t border-[color:var(--surface-border)]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Home className="w-4 h-4 text-theme" />
+                <Home className="w-4 h-4 text-brand" />
                 <h3 className="text-lg  text-[color:var(--panel-text)]">
                   Бүртгэлтэй барилгууд (Байр)
                 </h3>
@@ -2309,7 +2309,7 @@ export default function BarilgiinTokhirgoo() {
                         e.stopPropagation();
                         setSelectedBuildingId(String(b._id));
                       }}
-                      className="flex-1 cursor-pointer text-[color:var(--panel-text)] hover:text-theme dark:hover:text-theme transition-colors  pointer-events-auto"
+                      className="flex-1 cursor-pointer text-[color:var(--panel-text)] hover:text-brand dark:hover:text-brand transition-colors  pointer-events-auto"
                     >
                       {b.ner || "-"}
                     </div>
@@ -2328,7 +2328,7 @@ export default function BarilgiinTokhirgoo() {
                           variant="ghost"
                           size="sm"
                           title="Шилжүүлэх"
-                          className="!rounded-lg hover:bg-theme/10 dark:hover:bg-theme/20 hover:text-theme dark:hover:text-theme"
+                          className="!rounded-lg hover:bg-theme/10 dark:hover:bg-theme/20 hover:text-brand dark:hover:text-brand"
                           style={{ borderRadius: "0.5rem" }}
                         >
                           <ArrowRight className="w-4 h-4" />
@@ -2366,7 +2366,7 @@ export default function BarilgiinTokhirgoo() {
 
         {/* No Building Message */}
         {!barilga && (
-          <div className="p-4 rounded-lg border border-theme/30 dark:border-theme bg-theme/50 dark:bg-theme/20 text-theme dark:text-theme text-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="p-4 rounded-lg border border-theme/30 bg-theme/50 text-brand text-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-start gap-2">
               <Building2 className="w-5 h-5 mt-0.5 flex-shrink-0" />
               <div>

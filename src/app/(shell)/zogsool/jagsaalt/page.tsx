@@ -266,6 +266,51 @@ function murNiiluulye(transaction: any) {
   };
 }
 
+/** Машины төрлийг тодорхойлох helper */
+function getVehicleType(transaction: any): string {
+  const mur = transaction?.tuukh?.[0];
+  const typeValue =
+    transaction?.turul ||
+    mur?.turul ||
+    transaction?.mashin?.turul ||
+    transaction?.mashin?.zochinTurul;
+  if (typeValue) return typeValue;
+  const isResident =
+    transaction?.toot ||
+    transaction?.ezenToot ||
+    transaction?.orshinSuugchiinNer ||
+    transaction?.mashin?.ezenToot ||
+    transaction?.mashin?.orshinSuugchiinId ||
+    transaction?.mashin?.ezemshigchiinNer;
+  return isResident ? "Оршин суугч" : "Үйлчлүүлэгч";
+}
+
+/** Төрлийн badge харуулах helper */
+function renderTypeBadge(type: string) {
+  let badgeClass =
+    "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)] dark:bg-[color:var(--panel)] dark:text-[color:var(--muted-text)] border-[color:var(--surface-border)] dark:border-[color:var(--surface-border)]";
+  if (type === "Оршин суугч") {
+    badgeClass =
+      "bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800/40";
+  } else if (type === "Харилцагч") {
+    badgeClass =
+      "bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400 border-purple-200 dark:border-purple-800/40";
+  } else if (type === "Зочин") {
+    badgeClass =
+      "bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200 dark:border-amber-800/40";
+  } else if (type === "Үйлчлүүлэгч") {
+    badgeClass =
+      "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/40";
+  }
+  return (
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded-[6px] border text-[11px] font-medium whitespace-nowrap ${badgeClass}`}
+    >
+      {type}
+    </span>
+  );
+}
+
 export default function Jagsaalt() {
   const { token, ajiltan, barilgiinId } = useAuth();
   const { selectedBuildingId, isInitialized } = useBuilding();
@@ -277,6 +322,7 @@ export default function Jagsaalt() {
   const [durationFilter, setDurationFilter] = useState("latest_out");
   const [statusFilter, setStatusFilter] = useState("all");
   const [paymentMethodFilter, setPaymentMethodFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
   const [openFilter, setOpenFilter] = useState<string | null>(null);
 
   const [revenueModalOpen, setRevenueModalOpen] = useState(false);
@@ -463,6 +509,11 @@ export default function Jagsaalt() {
       return v;
     });
   }, [vehiclesData]);
+
+  const displayVehicles: Vehicle[] = useMemo(() => {
+    if (typeFilter === "all") return vehicles;
+    return vehicles.filter((v) => getVehicleType(v) === typeFilter);
+  }, [vehicles, typeFilter]);
 
   // Force revalidate when searchTerm changes
   useEffect(() => {
@@ -802,7 +853,7 @@ export default function Jagsaalt() {
   );
 
   const downloadExcel = async () => {
-    if (!vehicles.length) {
+    if (!displayVehicles.length) {
       toast.error("Татаж авах мэдээлэл байхгүй");
       return;
     }
@@ -814,7 +865,7 @@ export default function Jagsaalt() {
       1: "Төлсөн", 2: "Төлсөн", 0: "Идэвхтэй", [-2]: "Идэвхтэй", [-4]: "Төлбөртэй",
     };
 
-    const rows: any[] = vehicles.map((t, i) => {
+    const rows: any[] = displayVehicles.map((t, i) => {
       const mur = t.tuukh?.[0];
       const tsag = mur?.tsagiinTuukh?.[0];
       const orsonTsag = tsag?.orsonTsag;
@@ -873,10 +924,11 @@ export default function Jagsaalt() {
 
       return {
         "№": i + 1,
-        "Улсын дугаар": t.mashiniiDugaar || "",
-        "Гэрээний төлөв": gereeTuluv,
         "Орсон": orsonTsag ? moment(orsonTsag).format("YYYY-MM-DD HH:mm:ss") : "",
         "Гарсан": garsanTsag ? moment(garsanTsag).format("YYYY-MM-DD HH:mm:ss") : "",
+        "Төрөл": getVehicleType(t),
+        "Улсын дугаар": t.mashiniiDugaar || "",
+        "Гэрээний төлөв": gereeTuluv,
         "Хугацаа": khugatsaa,
         "Бодогдсон дүн": Number((niitDun || 0).toFixed(2)),
         "Төлбөр": Number((paymentAmount || 0).toFixed(2)),
@@ -889,8 +941,8 @@ export default function Jagsaalt() {
     });
 
     // Calculate totals across all vehicles
-    const totalNiitDun = vehicles.reduce((sum, t) => sum + (Number(t.niitDun) || 0), 0);
-    const totalPaymentAmount = vehicles.reduce((sum, t) => {
+    const totalNiitDun = displayVehicles.reduce((sum, t) => sum + (Number(t.niitDun) || 0), 0);
+    const totalPaymentAmount = displayVehicles.reduce((sum, t) => {
       const tulburArray = t.tuukh?.[0]?.tulbur || [];
       const totalPaid = Array.isArray(tulburArray)
         ? tulburArray.reduce((s: number, p: any) => {
@@ -902,7 +954,7 @@ export default function Jagsaalt() {
         : 0;
       return sum + totalPaid;
     }, 0);
-    const totalDiscountAmount = vehicles.reduce((sum, t) => {
+    const totalDiscountAmount = displayVehicles.reduce((sum, t) => {
       const tulburArray = t.tuukh?.[0]?.tulbur || [];
       const totalDiscount = Array.isArray(tulburArray)
         ? tulburArray.reduce((s: number, p: any) => {
@@ -920,10 +972,11 @@ export default function Jagsaalt() {
     // Append Total Summary Row
     rows.push({
       "№": "НИЙТ",
-      "Улсын дугаар": "",
-      "Гэрээний төлөв": "",
       "Орсон": "",
       "Гарсан": "",
+      "Төрөл": "",
+      "Улсын дугаар": "",
+      "Гэрээний төлөв": "",
       "Хугацаа": "",
       "Бодогдсон дүн": Number(totalNiitDun.toFixed(2)),
       "Төлбөр": Number(totalPaymentAmount.toFixed(2)),
@@ -936,8 +989,8 @@ export default function Jagsaalt() {
 
     const ws = XLSX.utils.json_to_sheet(rows);
     ws["!cols"] = [
-      { wch: 8 }, { wch: 14 }, { wch: 16 }, { wch: 20 }, { wch: 20 }, { wch: 12 },
-      { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 14 }, { wch: 20 },
+      { wch: 8 }, { wch: 20 }, { wch: 20 }, { wch: 14 }, { wch: 14 }, { wch: 16 },
+      { wch: 12 }, { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 14 }, { wch: 20 },
       { wch: 16 }, { wch: 14 },
     ];
 
@@ -948,7 +1001,7 @@ export default function Jagsaalt() {
     const endDateStr = rangeEnd || "бүгд";
     const fileName = `Зогсоолын_жагсаалт_${startDateStr}_${endDateStr}.xlsx`;
     XLSX.writeFile(wb, fileName);
-    toast.success(`${vehicles.length} мөр мэдээлэл (Нийт дүнтэй) татагдлаа`);
+    toast.success(`${displayVehicles.length} мөр мэдээлэл (Нийт дүнтэй) татагдлаа`);
   };
 
   // ── Машины жагсаалтын багана ────────────────────────────────────────────
@@ -968,8 +1021,8 @@ export default function Jagsaalt() {
       <Filter
         className={`h-3 w-3 transition-colors ${
           current !== "all" && current !== undefined
-            ? "text-theme"
-            : "text-[color:var(--muted-text)] group-hover/f:text-theme"
+            ? "text-brand"
+            : "text-[color:var(--muted-text)] group-hover/f:text-brand"
         }`}
       />
       {label}
@@ -1053,6 +1106,28 @@ export default function Jagsaalt() {
       },
     },
     {
+      title: shuultuuriinTolgoi(
+        "type",
+        "Төрөл",
+        typeFilter,
+        [
+          { label: "Бүгд", value: "all" },
+          { label: "Оршин суугч", value: "Оршин суугч" },
+          { label: "Харилцагч", value: "Харилцагч" },
+          { label: "Зочин", value: "Зочин" },
+          { label: "Үйлчлүүлэгч", value: "Үйлчлүүлэгч" },
+        ],
+        setTypeFilter,
+      ),
+      key: "turul",
+      width: 120,
+      align: "center",
+      render: (_: any, transaction: any) => {
+        const type = getVehicleType(transaction);
+        return renderTypeBadge(type);
+      },
+    },
+    {
       title: "Дугаар",
       key: "dugaar",
       width: 130,
@@ -1074,7 +1149,7 @@ export default function Jagsaalt() {
               {transaction.mashiniiDugaar || ""}
             </span>
             <Copy
-              className="h-4 w-4 scale-90 cursor-pointer text-[color:var(--muted-text)] opacity-0 transition-all group-hover/copy:scale-100 group-hover/copy:opacity-100 hover:text-theme"
+              className="h-4 w-4 scale-90 cursor-pointer text-[color:var(--muted-text)] opacity-0 transition-all group-hover/copy:scale-100 group-hover/copy:opacity-100 hover:text-brand"
               onClick={() => copyToClipboard(transaction.mashiniiDugaar)}
             />
           </div>
@@ -1343,26 +1418,26 @@ export default function Jagsaalt() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setBlockModal({ dugaar: "", tailbar: "" })}
-                  className="flex items-center gap-2 h-11 px-5 rounded-[30px] bg-danger hover:bg-danger active:bg-danger text-white text-[11px] font-semibold shadow-sm transition-all whitespace-nowrap flex-shrink-0"
+                  className="flex items-center justify-center gap-1.5 h-8.5 w-32 rounded-xl bg-danger hover:bg-danger/90 active:bg-danger text-white text-xs font-medium shadow-sm transition-all whitespace-nowrap flex-shrink-0"
                 >
                   <Ban className="w-3.5 h-3.5" />
                   Блок
                   {blockedMap.size > 0 && (
-                    <span className="ml-0.5 min-w-[18px] h-[18px] px-1.5 rounded-full bg-white/25 flex items-center justify-center text-[10px] font-bold">
+                    <span className="ml-0.5 min-w-[16px] h-4 px-1 rounded-full bg-white/25 flex items-center justify-center text-[10px] font-bold">
                       {blockedMap.size}
                     </span>
                   )}
                 </button>
                 <button
                   onClick={() => setRevenueModalOpen(true)}
-                  className="flex items-center gap-2 h-11 px-5 rounded-[30px] bg-theme hover:bg-theme active:bg-theme text-white text-[11px] font-semibold shadow-sm transition-all whitespace-nowrap flex-shrink-0"
+                  className="flex items-center justify-center gap-1.5 h-8.5 w-32 rounded-xl bg-theme hover:bg-theme/90 active:bg-theme text-white text-xs font-medium shadow-sm transition-all whitespace-nowrap flex-shrink-0"
                 >
                   <TrendingUp className="w-3.5 h-3.5" />
                   Орлого тайлан
                 </button>
                 <button
                   onClick={downloadExcel}
-                  className="flex items-center gap-2 h-11 px-5 rounded-[30px] bg-theme hover:bg-theme active:bg-theme text-white text-[11px] font-semibold shadow-sm transition-all whitespace-nowrap flex-shrink-0"
+                  className="flex items-center justify-center gap-1.5 h-8.5 w-32 rounded-xl bg-theme hover:bg-theme/90 active:bg-theme text-white text-xs font-medium shadow-sm transition-all whitespace-nowrap flex-shrink-0"
                 >
                   <Download className="w-3.5 h-3.5" />
                   Excel татах
@@ -1378,10 +1453,10 @@ export default function Jagsaalt() {
           <div>
             <Table<any>
               columns={mashiniiColumns}
-              dataSource={vehicles}
+              dataSource={displayVehicles}
               rowKey={(t, idx) => t._id || idx}
               pagination={false}
-              scroll={{ x: 1300 }}
+              scroll={{ x: 1400 }}
               locale={{
                 emptyText: (
                   <div className="flex flex-col items-center gap-2">
@@ -1392,17 +1467,17 @@ export default function Jagsaalt() {
               }}
               summary={() => (
                 <Table.Summary.Row>
-                  <Table.Summary.Cell colSpan={5} align="right">
-                    <span className="text-[11px] font-black tracking-wider uppercase">
+                  <Table.Summary.Cell colSpan={6} align="right">
+                    <span className="text-[11px] font-semibold tracking-wider uppercase text-slate-700 dark:text-slate-300">
                       Нийт Дүн:
                     </span>
                   </Table.Summary.Cell>
                   <Table.Summary.Cell
                     align="center"
-                    className="font-[family-name:var(--font-mono)] text-xs font-black whitespace-nowrap"
+                    className="font-[family-name:var(--font-mono)] text-xs font-semibold whitespace-nowrap text-slate-800 dark:text-slate-200"
                   >
                     {formatNumber(
-                      vehicles.reduce(
+                      displayVehicles.reduce(
                         (sum, t) => sum + (Number(t.niitDun) || 0),
                         0,
                       ),
@@ -1411,10 +1486,10 @@ export default function Jagsaalt() {
                   </Table.Summary.Cell>
                   <Table.Summary.Cell
                     align="center"
-                    className="font-[family-name:var(--font-mono)] text-xs font-black whitespace-nowrap"
+                    className="font-[family-name:var(--font-mono)] text-xs font-semibold whitespace-nowrap text-slate-800 dark:text-slate-200"
                   >
                     {formatNumber(
-                      vehicles.reduce(
+                      displayVehicles.reduce(
                         (sum, t) =>
                           sum +
                           tulburTuukhAvya(t, "tulult").reduce(
@@ -1428,10 +1503,10 @@ export default function Jagsaalt() {
                   </Table.Summary.Cell>
                   <Table.Summary.Cell
                     align="center"
-                    className="font-[family-name:var(--font-mono)] text-xs font-black whitespace-nowrap"
+                    className="font-[family-name:var(--font-mono)] text-xs font-semibold whitespace-nowrap text-slate-800 dark:text-slate-200"
                   >
                     {formatNumber(
-                      vehicles.reduce(
+                      displayVehicles.reduce(
                         (sum, t) =>
                           sum +
                           tulburTuukhAvya(t, "khungulult").reduce(
@@ -1611,7 +1686,7 @@ export default function Jagsaalt() {
                         <FileSpreadsheet className="w-3.5 h-3.5 shrink-0" />
                         <span className="truncate">{excelFileNer}</span>
                       </span>
-                      <span className="px-2 py-0.5 rounded-full bg-theme/10 dark:bg-theme/10 text-theme dark:text-theme text-[11px] font-semibold whitespace-nowrap">
+                      <span className="px-2 py-0.5 rounded-full bg-theme/10 text-brand text-[11px] font-semibold whitespace-nowrap">
                         Зөв: {excelZuvMuruud.length}
                       </span>
                       {excelMuruud.length - excelZuvMuruud.length > 0 && (
@@ -1666,7 +1741,7 @@ export default function Jagsaalt() {
                               </td>
                               <td className="py-2.5 px-3 text-left">
                                 {mur.aldaanuud.length === 0 ? (
-                                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-theme dark:text-theme">
+                                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand">
                                     <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
                                     Бэлэн
                                   </span>
@@ -1806,7 +1881,7 @@ export default function Jagsaalt() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-[color:var(--surface-hover)] dark:bg-white/[0.06] border border-[color:var(--surface-border)] dark:border-white/[0.06]">
-                      <Receipt className="w-5 h-5 text-theme dark:text-theme" />
+                      <Receipt className="w-5 h-5 text-brand" />
                     </div>
                     <div>
                       <h2 className="text-[15px] text-[color:var(--panel-text)] dark:text-white tracking-tight">
@@ -1887,11 +1962,11 @@ export default function Jagsaalt() {
 
               {/* Footer total */}
               <div className="px-7 pb-6 pt-2">
-                <div className="flex justify-between items-center py-3 px-4 rounded-2xl bg-theme/10 dark:bg-theme/[0.08] border border-theme/30 dark:border-theme/20">
-                  <span className="text-[11px] font-black text-theme dark:text-theme uppercase tracking-wider">
+                <div className="flex justify-between items-center py-3 px-4 rounded-2xl bg-theme/[0.08] border border-theme/30">
+                  <span className="text-[11px] font-black text-brand uppercase tracking-wider">
                     Нийт орлого
                   </span>
-                  <span className="text-[14px] font-black text-theme dark:text-theme font-[family-name:var(--font-mono)]">
+                  <span className="text-[14px] font-black text-brand font-[family-name:var(--font-mono)]">
                     {formatNumber(revenueModalBreakdown.totalAmount)}₮
                   </span>
                 </div>

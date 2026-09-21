@@ -198,7 +198,7 @@ export default function Zogsool({
         width: 150,
         align: "right",
         render: (v: any) => (
-          <span className="inline-flex items-center rounded-lg border border-theme/30 bg-theme/10 px-3 py-0.5 text-theme dark:border-theme dark:bg-theme/60 dark:text-theme">
+          <span className="inline-flex items-center rounded-lg border border-theme/30 bg-theme/10 px-3 py-0.5 text-brand/60">
             {formatNumber(v)} ₮
           </span>
         ),
@@ -213,7 +213,7 @@ export default function Zogsool({
               khaalga.map((gate: any, gateIdx: number) => (
                 <span
                   key={gateIdx}
-                  className="inline-flex items-center rounded-lg border border-theme/30 bg-theme/10 px-3 py-0.5 text-theme dark:border-theme dark:bg-theme/60 dark:text-theme"
+                  className="inline-flex items-center rounded-lg border border-theme/30 bg-theme/10 px-3 py-0.5 text-brand/60"
                 >
                   {gate.ner}
                 </span>
@@ -233,7 +233,7 @@ export default function Zogsool({
           <div className="flex items-center justify-center gap-1">
             <button
               onClick={() => openEdit(record)}
-              className="rounded-lg p-1.5 text-theme transition-colors hover:bg-theme/10 dark:text-theme dark:hover:bg-theme/10"
+              className="rounded-lg p-1.5 text-brand transition-colors hover:bg-theme/10 dark:hover:bg-theme/10"
               title="Засах"
             >
               <Edit className="h-4 w-4" />
@@ -319,20 +319,20 @@ export default function Zogsool({
                 Зогсоолын тохиргоо
               </h2>
               <p className="text-xs text-[color:var(--muted-text)]">
-                Нийт <span className="text-theme dark:text-theme">{totalRecords}</span> талбай тохируулагдсан
+                Нийт <span className="text-brand">{totalRecords}</span> талбай тохируулагдсан
               </p>
             </div>
             
             {/* Quick Metrics Pills */}
             <div className="flex items-center gap-2 text-xs">
               <span style={{ borderRadius: '10px' }} className="px-3 py-1 bg-[color:var(--surface-hover)] text-[color:var(--panel-text)] dark:text-white border border-[color:var(--surface-border)] font-medium">
-                Нийт талбай: <span className="text-theme dark:text-theme font-semibold">{totalRecords}</span>
+                Нийт талбай: <span className="text-brand font-semibold">{totalRecords}</span>
               </span>
-              <span style={{ borderRadius: '10px' }} className="px-3 py-1 bg-theme/10 dark:bg-theme/60 text-theme dark:text-theme border border-theme/30 dark:border-theme font-medium">
-                Багтаамж: <span className="text-theme dark:text-theme font-semibold">{totalCapacity} машин</span>
+              <span style={{ borderRadius: '10px' }} className="px-3 py-1 bg-theme/10 text-brand border border-theme/30 font-medium">
+                Багтаамж: <span className="text-brand font-semibold">{totalCapacity} машин</span>
               </span>
-              <span style={{ borderRadius: '10px' }} className="px-3 py-1 bg-theme/10 dark:bg-theme/60 text-theme dark:text-theme border border-theme/30 dark:border-theme font-medium">
-                Хаалга: <span className="text-theme dark:text-theme font-semibold">{totalGates}</span>
+              <span style={{ borderRadius: '10px' }} className="px-3 py-1 bg-theme/10 text-brand border border-theme/30 font-medium">
+                Хаалга: <span className="text-brand font-semibold">{totalGates}</span>
               </span>
             </div>
           </div>
@@ -400,7 +400,7 @@ export default function Zogsool({
                             }}
                             className={`w-full px-3 py-1.5 rounded-xl text-left text-xs transition-colors ${
                               pageSize === size
-                                ? "bg-theme/10 text-theme dark:text-theme"
+                                ? "bg-theme/10 text-brand"
                                 : "text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"
                             }`}
                           >

@@ -20,7 +20,7 @@ export default function SignUpPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden p-4 bg-[color:var(--surface-hover)]">
-      <div className="absolute inset-0 bg-gradient-to-br from-theme/20 via-background to-cyan-600/20"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-theme/20 via-background to-theme/20"></div>
       <div className="absolute inset-0 opacity-30">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%, rgba(120,119,198,0.3), rgba(255,255,255,0))]"></div>
       </div>
@@ -28,19 +28,19 @@ export default function SignUpPage() {
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 -right-32 w-96 h-96 bg-gradient-to-r from-primary/30 to-theme/30 rounded-full blur-3xl animate-pulse"></div>
         <div
-          className="absolute bottom-1/4 -right-32 w-96 h-96 bg-gradient-to-l from-cyan-500/30 to-primary/20 rounded-full blur-3xl animate-pulse"
+          className="absolute bottom-1/4 -right-32 w-96 h-96 bg-gradient-to-l from-theme/30 to-primary/20 rounded-full blur-3xl animate-pulse"
           style={{ animationDelay: "1s" }}
         ></div>
         <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-theme/10 via-primary/10 to-cyan-500/10 rounded-full blur-3xl animate-pulse"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-theme/10 via-primary/10 to-theme/10 rounded-full blur-3xl animate-pulse"
           style={{ animationDelay: "2s" }}
         ></div>
         <div
-          className="absolute top-20 right-1/4 w-64 h-64 bg-gradient-to-br from-pink-500/20 to-warning/20 rounded-full blur-2xl animate-pulse"
+          className="absolute top-20 right-1/4 w-64 h-64 bg-gradient-to-br from-theme/20 to-warning/20 rounded-full blur-2xl animate-pulse"
           style={{ animationDelay: "3s" }}
         ></div>
         <div
-          className="absolute bottom-20 left-1/4 w-80 h-80 bg-gradient-to-tl from-theme/20 to-purple-500/20 rounded-full blur-3xl animate-pulse"
+          className="absolute bottom-20 left-1/4 w-80 h-80 bg-gradient-to-tl from-theme/20 to-theme/20 rounded-full blur-3xl animate-pulse"
           style={{ animationDelay: "1.5s" }}
         ></div>
       </div>

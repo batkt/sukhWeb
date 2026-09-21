@@ -108,7 +108,7 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
                 <div className="grid grid-cols-2 gap-4 print-break">
                   {/* Left: Нэхэмжлэгч (Organization) */}
                   <div className="rounded-2xl border border-theme/30 bg-transparent p-4">
-                    <h3 className="text-sm  text-theme mb-3 flex items-center gap-2 border-b">
+                    <h3 className="text-sm  text-brand mb-3 flex items-center gap-2 border-b">
                       <span className="text-theme" />
                       Нэхэмжлэгч
                     </h3>
@@ -224,7 +224,7 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
                     <div className="h-px bg-[color:var(--panel)]"></div>
                     <div className="flex justify-between items-center">
                       <span className="text-base  text-[color:var(--panel-text)]">Нийт төлбөр:</span>
-                      <span className="text-2xl  text-theme dark:text-theme">
+                      <span className="text-2xl  text-brand">
                         {formatNumber(preview.niitTulbur || preview.zardluud?.reduce((sum: number, z: any) => sum + (z.dun || 0), 0) || 0)} 
                       </span>
                     </div>

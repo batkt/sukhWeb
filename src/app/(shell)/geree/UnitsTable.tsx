@@ -159,14 +159,14 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
                     key={unitStr}
                     className={`group relative flex items-center justify-center w-[48px] h-[28px] rounded-lg border transition-all duration-150 ${
                       hasActive
-                        ? "border-theme bg-theme/50 dark:bg-theme/20 dark:border-theme shadow-sm ring-1 ring-theme/10"
+                        ? "border-theme bg-theme/50 shadow-sm ring-1 ring-theme/10"
                         : "border-[color:var(--surface-border)] bg-white hover:border-theme shadow-sm"
                     }`}
                   >
                     <span
                       className={`font-semibold ${
                         hasActive
-                          ? "text-theme dark:text-theme"
+                          ? "text-brand"
                           : "text-[color:var(--muted-text)]"
                       }`}
                     >
@@ -208,7 +208,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
               onAddUnit?.(record.floor);
             }}
           >
-            <Plus className="w-4 h-4 text-theme dark:text-theme" />
+            <Plus className="w-4 h-4 text-brand" />
           </button>
           <button
             className={`p-1.5 rounded-md action-delete hover-surface transition-colors hover:bg-danger/10 ${

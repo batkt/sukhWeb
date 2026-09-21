@@ -294,7 +294,7 @@ export default function VehicleRegistrationModal({
           </div>
 
           {/* Virtual Keyboard */}
-          <div className="bg-gradient-to-br from-theme/10 to-theme/5/50 p-3 rounded-xl border border-[color:var(--surface-border)] dark:border-white/10 shadow-lg">
+          <div className="bg-gradient-to-br from-theme/10 to-theme/5 p-3 rounded-xl border border-[color:var(--surface-border)] dark:border-white/10 shadow-lg">
             <div className="space-y-1">
               {keys.map((row, i) => (
                 <div key={i} className="flex justify-center flex-wrap gap-1">

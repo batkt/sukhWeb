@@ -224,7 +224,7 @@ export default function SanalKhuselt() {
                       : "bg-white/10 border border-white/20 hover:bg-white/20 hover:shadow-lg"
                   }`}
                 >
-                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-theme/20 via-purple-400 to-pink-400 flex items-center justify-center text-white  text-lg shadow-md">
+                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-theme/20 via-theme/20 to-theme/20 flex items-center justify-center text-white  text-lg shadow-md">
                     {mur.ner[0]}
                   </div>
 
@@ -281,7 +281,7 @@ export default function SanalKhuselt() {
                     {item.tuluv === 0 && (
                       <button
                         onClick={() => sanalGomdolAvakh(item._id)}
-                        className="btn-minimal text-theme underline"
+                        className="btn-minimal text-brand underline"
                       >
                         {t("Хүлээж авах")}
                       </button>

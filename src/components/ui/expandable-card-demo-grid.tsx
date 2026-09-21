@@ -136,7 +136,7 @@ export default function ExpandableCardDemo({ cards, onEdit, onDelete }: Expandab
             layoutId={`card-${card._id}-${id}`}
             key={card._id}
             onClick={() => setActive(card)}
-            className="group relative flex flex-col bg-white border border-[color:var(--surface-border)] rounded-2xl cursor-pointer hover:shadow-xl dark:hover:shadow-neutral-900/50 transition-all duration-300 overflow-hidden"
+            className="group relative flex flex-col bg-white border border-[color:var(--surface-border)] rounded-2xl cursor-pointer hover:shadow-xl transition-all duration-300 overflow-hidden"
           >
             <div className="relative h-56 w-full overflow-hidden">
               <motion.div layoutId={`image-${card._id}-${id}`} className="h-full w-full">

@@ -27,8 +27,8 @@ export default function TourReplayButton() {
         zaavar: `<div class="space-y-4">
   <p><strong>Оршин суугчдын бүртгэлийн хэсэг</strong> нь орон сууцны хотхон, барилгын оршин суугчид болон тэдгээрийн тээврийн хэрэгслийн мэдээллийг нэгдсэн байдлаар удирдах зориулалттай.</p>
   
-  <div class="bg-theme/10 dark:bg-theme/20 p-5 rounded-3xl border border-theme/30 dark:border-theme/30">
-    <h4 class="font-bold text-theme dark:text-theme mb-2">Үндсэн боломжууд:</h4>
+  <div class="bg-theme/10 p-5 rounded-3xl border border-theme/30">
+    <h4 class="font-bold text-brand mb-2">Үндсэн боломжууд:</h4>
     <ul class="list-disc pl-5 space-y-1.5 text-[color:var(--panel-text)]">
       <li>Шинээр оршин суугч болон түүний тээврийн хэрэгслийн дугаарыг бүртгэх</li>
       <li>Оршин суугчдын мэдээллийг харах, шүүх болон засах</li>
@@ -122,7 +122,7 @@ export default function TourReplayButton() {
                   className="absolute right-full mr-3 px-4 py-2 rounded-2xl bg-white/90 backdrop-blur-xl border border-white/20 shadow-2xl pointer-events-none whitespace-nowrap hidden md:block"
                 >
                   <span className="text-sm font-medium text-[color:var(--panel-text)] dark:text-white flex items-center gap-2">
-                    {currentTsonkh?.ner ? `${currentTsonkh.ner} тусламж хэрэгтэй юу?` : "Ерөнхий тусламж хэрэгтэй юу?"} <span className="text-theme">👋</span>
+                    {currentTsonkh?.ner ? `${currentTsonkh.ner} тусламж хэрэгтэй юу?` : "Ерөнхий тусламж хэрэгтэй юу?"} <span className="text-brand">👋</span>
                   </span>
                   <div className="absolute top-1/2 -right-1 -translate-y-1/2 w-2 h-2 rotate-45 bg-white/90 border-r border-t border-white/20" />
                 </motion.div>
@@ -187,7 +187,7 @@ export default function TourReplayButton() {
                   className="group flex items-center justify-between w-full p-3 rounded-2xl hover:bg-theme/10 dark:hover:bg-theme/10 transition-colors text-left"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-theme/10 dark:bg-theme/20 text-theme dark:text-theme group-hover:scale-110 transition-transform">
+                    <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-theme/10 text-brand group-hover:scale-110 transition-transform">
                       <RotateCcw className="w-5 h-5" />
                     </div>
                     <div>
@@ -208,7 +208,7 @@ export default function TourReplayButton() {
                     className="group flex items-center justify-between w-full p-3 rounded-2xl hover:bg-theme/10 dark:hover:bg-theme/10 transition-colors text-left"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-theme/10 dark:bg-theme/20 text-theme dark:text-theme group-hover:scale-110 transition-transform">
+                      <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-theme/10 text-brand group-hover:scale-110 transition-transform">
                         <HelpCircle className="w-5 h-5" />
                       </div>
                       <div>

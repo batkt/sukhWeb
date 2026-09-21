@@ -277,12 +277,12 @@ export default function QuickRegisterModal({
               {/* Resident option */}
               <button
                 onClick={() => handleSelectType("orshinSuugch")}
-                className="group flex flex-col items-center gap-3.5 p-5 rounded-2xl border-2 border-theme/30 dark:border-theme/40 bg-theme/20 dark:bg-theme/10 hover:bg-theme/10 dark:hover:bg-theme/20 hover:border-theme dark:hover:border-theme transition-all cursor-pointer"
+                className="group flex flex-col items-center gap-3.5 p-5 rounded-2xl border-2 border-theme/30 bg-theme/20 hover:bg-theme/10 dark:hover:bg-theme/20 hover:border-theme dark:hover:border-theme transition-all cursor-pointer"
               >
-                <div className="w-12 h-12 rounded-2xl bg-theme/10 dark:bg-theme/40 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <UserCheck className="w-6 h-6 text-theme dark:text-theme" />
+                <div className="w-12 h-12 rounded-2xl bg-theme/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <UserCheck className="w-6 h-6 text-brand" />
                 </div>
-                <span className="text-sm font-bold text-theme dark:text-theme text-center leading-tight">
+                <span className="text-sm font-bold text-brand text-center leading-tight">
                   Оршин суугч
                 </span>
               </button>
@@ -290,12 +290,12 @@ export default function QuickRegisterModal({
               {/* Client option */}
               <button
                 onClick={() => handleSelectType("khariltsagch")}
-                className="group flex flex-col items-center gap-3.5 p-5 rounded-2xl border-2 border-theme/30 dark:border-theme/40 bg-theme/20 dark:bg-theme/10 hover:bg-theme/10 dark:hover:bg-theme/20 hover:border-theme dark:hover:border-theme transition-all cursor-pointer"
+                className="group flex flex-col items-center gap-3.5 p-5 rounded-2xl border-2 border-theme/30 bg-theme/20 hover:bg-theme/10 dark:hover:bg-theme/20 hover:border-theme dark:hover:border-theme transition-all cursor-pointer"
               >
-                <div className="w-12 h-12 rounded-2xl bg-theme/10 dark:bg-theme/40 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Building2 className="w-6 h-6 text-theme dark:text-theme" />
+                <div className="w-12 h-12 rounded-2xl bg-theme/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Building2 className="w-6 h-6 text-brand" />
                 </div>
-                <span className="text-sm font-bold text-theme dark:text-theme text-center leading-tight">
+                <span className="text-sm font-bold text-brand text-center leading-tight">
                   Харилцагч
                 </span>
               </button>
@@ -333,7 +333,7 @@ export default function QuickRegisterModal({
                   }
                   onClose();
                 }}
-                className="w-full py-2 px-4 rounded-xl border border-dashed border-theme/30 dark:border-theme bg-theme/30 dark:bg-theme/10 text-theme dark:text-theme hover:bg-theme/10 dark:hover:bg-theme/20 font-semibold text-xs transition-all flex items-center justify-center gap-1.5"
+                className="w-full py-2 px-4 rounded-xl border border-dashed border-theme/30 bg-theme/30 text-brand hover:bg-theme/10 dark:hover:bg-theme/20 font-semibold text-xs transition-all flex items-center justify-center gap-1.5"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Шинэ {selectedType === "orshinSuugch" ? "оршин суугч" : "харилцагч"} бүртгэх
@@ -379,7 +379,7 @@ export default function QuickRegisterModal({
                       className="w-full text-left p-3.5 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] hover:bg-[color:var(--surface-hover)] hover:border-[color:var(--surface-border)] transition-all flex items-center justify-between group disabled:opacity-50"
                     >
                       <div className="min-w-0 pr-3">
-                        <p className="text-sm font-semibold text-[color:var(--panel-text)] truncate group-hover:text-theme dark:group-hover:text-theme">
+                        <p className="text-sm font-semibold text-[color:var(--panel-text)] truncate group-hover:text-brand dark:group-hover:text-brand">
                           {fullName}
                         </p>
                         <div className="flex flex-wrap items-center gap-x-3 mt-1.5 text-xs text-[color:var(--muted-text)]">
@@ -395,7 +395,7 @@ export default function QuickRegisterModal({
 
                       {/* Right indicator: resident's own apartment toot number(s) */}
                       {tootLabel && (
-                        <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full bg-theme/10 dark:bg-theme/30 text-theme dark:text-theme border border-theme/30 dark:border-theme/30">
+                        <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full bg-theme/10 text-brand border border-theme/30">
                           {tootLabel}
                         </span>
                       )}
@@ -430,11 +430,11 @@ export default function QuickRegisterModal({
                     className="w-full text-left p-3.5 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] hover:bg-theme/10 dark:hover:bg-theme/20 hover:border-theme/30 dark:hover:border-theme transition-all flex items-center justify-between group disabled:opacity-50"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-theme/10 dark:bg-theme/30 flex items-center justify-center shrink-0">
-                        <FileText className="w-4 h-4 text-theme dark:text-theme" />
+                      <div className="w-9 h-9 rounded-xl bg-theme/10 flex items-center justify-center shrink-0">
+                        <FileText className="w-4 h-4 text-brand" />
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-[color:var(--panel-text)] group-hover:text-theme dark:group-hover:text-theme">
+                        <p className="text-sm font-semibold text-[color:var(--panel-text)] group-hover:text-brand dark:group-hover:text-brand">
                           {dugaarStr}
                         </p>
                         <p className="text-xs text-[color:var(--muted-text)] mt-0.5">

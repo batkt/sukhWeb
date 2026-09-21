@@ -1089,7 +1089,7 @@ export default function UnitsSection({
         key: "zogsoolDugaar",
         align: "center",
         render: (v: any) => (
-          <span className="font-bold text-theme dark:text-theme">
+          <span className="font-bold text-brand">
             {v}
           </span>
         ),
@@ -1118,7 +1118,7 @@ export default function UnitsSection({
               !row.isOccupied
                 ? "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]"
                 : row.tolsenEsekh
-                  ? "bg-success/10 text-success dark:bg-success/40 dark:text-success"
+                  ? "bg-success/10 text-success/40"
                   : "bg-warning/10 text-warning"
             }`}
           >
@@ -1139,7 +1139,7 @@ export default function UnitsSection({
                   onClick={() =>
                     handleSendSingleUnitInvoice(row.resident, row.id)
                   }
-                  className="cursor-pointer rounded-lg p-1.5 text-theme transition hover:bg-theme/10 dark:hover:bg-theme/30"
+                  className="cursor-pointer rounded-lg p-1.5 text-brand transition hover:bg-theme/10 dark:hover:bg-theme/30"
                   title="Нэхэмжлэх/авлага илгээх"
                 >
                   <Send className="h-4 w-4" />
@@ -1170,7 +1170,7 @@ export default function UnitsSection({
                 onClick={() =>
                   setQuickRegister({ unit: row.id, floor: selectedFloor || "" })
                 }
-                className="cursor-pointer rounded-lg p-1.5 text-theme transition hover:bg-theme/10 dark:hover:bg-theme/30"
+                className="cursor-pointer rounded-lg p-1.5 text-brand transition hover:bg-theme/10 dark:hover:bg-theme/30"
                 title="Бүртгэх"
               >
                 <Plus className="h-4 w-4" />
@@ -1210,7 +1210,7 @@ export default function UnitsSection({
 
       <div className="space-y-4">
         {ortsOptions.length === 0 && (
-          <div className="p-3 rounded-2xl border border-theme/30 text-theme text-sm">
+          <div className="p-3 rounded-2xl border border-theme/30 text-brand text-sm">
             Орцын тохиргоо хийгдээгүй байна. "Барилгын тохиргоо" хэсгээс Орцын
             тоог оруулбал энд сонгох боломжтой болно.
           </div>
@@ -1249,16 +1249,16 @@ export default function UnitsSection({
                       <div key={ortsKey} className="w-full">
                         {hasMultipleOrts && (
                           <div className="flex items-center gap-3 mb-3">
-                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-theme/10 dark:bg-theme/30 border border-theme/30 dark:border-theme">
-                              <span className="text-sm font-bold text-theme dark:text-theme">
+                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-theme/10 border border-theme/30">
+                              <span className="text-sm font-bold text-brand">
                                 {ortsKey ? `${ortsKey}-р орц` : "Орцгүй"}
                               </span>
-                              <span className="text-xs text-theme dark:text-theme font-medium">
+                              <span className="text-xs text-brand font-medium">
                                 ({groupItems.reduce((s, f) => s + f.units.length, 0)} тоот,{" "}
                                 {groupItems.reduce((s, f) => s + f.activeToots.size, 0)} бүртгэлтэй)
                               </span>
                             </div>
-                            <div className="flex-1 h-px bg-theme/10 dark:bg-theme/40" />
+                            <div className="flex-1 h-px bg-theme/10" />
                           </div>
                         )}
                         <div className="allow-overflow no-scrollbar" id={`units-table-orts-${ortsKey}`}>
@@ -1441,7 +1441,7 @@ export default function UnitsSection({
                   {/* Summary Footer Row */}
                   <div className="flex items-center justify-between pt-3 border-t border-[color:var(--surface-border)] font-bold text-sm text-[color:var(--panel-text)] dark:text-white">
                     <span>Нийт дүн:</span>
-                    <span className="text-theme dark:text-theme text-base font-extrabold">
+                    <span className="text-brand text-base font-extrabold">
                       {totalZogsoolAmount.toLocaleString("mn-MN", { minimumFractionDigits: 2 })}₮
                     </span>
                   </div>

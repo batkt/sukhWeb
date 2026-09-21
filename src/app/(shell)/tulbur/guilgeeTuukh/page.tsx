@@ -3903,7 +3903,7 @@ export default function DansniiKhuulga() {
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold text-white">Илгээсэн SMS түүх</h3>
-                      <p className="text-sm text-theme">Нийт {smsHistoryTotal} мессеж</p>
+                      <p className="text-sm text-brand">Нийт {smsHistoryTotal} мессеж</p>
                     </div>
                   </div>
                 </div>
@@ -3949,7 +3949,7 @@ export default function DansniiKhuulga() {
                         <div className="flex items-center gap-2 text-sm ml-auto">
                           <div className="w-2 h-2 rounded-full bg-theme" />
                           <span className="text-[color:var(--muted-text)]">
-                            Амжилттай: <span className="font-semibold text-theme dark:text-theme">{smsHistoryList.length}</span>
+                            Амжилттай: <span className="font-semibold text-brand">{smsHistoryList.length}</span>
                           </span>
                         </div>
                       </div>
@@ -3971,7 +3971,7 @@ export default function DansniiKhuulga() {
                                 <span className="font-semibold text-[color:var(--panel-text)]">
                                   {Array.isArray(item.dugaar) ? item.dugaar.join(", ") : item.dugaar || "-"}
                                 </span>
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-theme/10 text-theme dark:bg-theme/20 dark:text-theme">
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-theme/10 text-brand/20">
                                   Амжилттай
                                 </span>
                               </div>

@@ -297,7 +297,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
                 id={index === 0 ? "geree-edit-btn" : undefined}
                 title="Засах"
               >
-                <Edit className="w-4 h-4 text-theme dark:text-theme" />
+                <Edit className="w-4 h-4 text-brand" />
               </button>
               {isCancelled && isAdmin && handleAdminDelete && (
                 <button

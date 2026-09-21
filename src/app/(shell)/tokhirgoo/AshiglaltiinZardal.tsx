@@ -706,7 +706,7 @@ export default function AshiglaltiinZardluud() {
           <div className="flex items-center justify-center gap-1">
             <button
               onClick={() => openEditModal(mur, false)}
-              className="shrink-0 rounded-lg p-1.5 text-theme transition-colors hover:bg-theme/10 dark:hover:bg-theme/30"
+              className="shrink-0 rounded-lg p-1.5 text-brand transition-colors hover:bg-theme/10 dark:hover:bg-theme/30"
               title="Засах"
             >
               <Edit className="h-4 w-4" />
@@ -734,7 +734,7 @@ export default function AshiglaltiinZardluud() {
       <div className="bg-[color:var(--surface-bg)] rounded-2xl border border-[color:var(--surface-border)] shadow-lg p-4 sm:p-5 space-y-4">
         <div className="flex items-center justify-between pb-3 border-b border-[color:var(--surface-border)]">
           <div className="flex items-center gap-3">
-            <CreditCard className="w-5 h-5 text-theme dark:text-theme" />
+            <CreditCard className="w-5 h-5 text-brand" />
             <h2 className="text-xl text-[color:var(--panel-text)]">
               Ашиглалтын зардал
             </h2>
@@ -976,8 +976,8 @@ export default function AshiglaltiinZardluud() {
                     className="flex items-start justify-between gap-3 px-5 py-4 border-b border-[color:var(--surface-border)] cursor-move select-none shrink-0"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-10 h-10 rounded-xl bg-theme/10 dark:bg-theme/30 flex items-center justify-center shrink-0">
-                        <Wallet className="w-5 h-5 text-theme dark:text-theme" />
+                      <div className="w-10 h-10 rounded-xl bg-theme/10 flex items-center justify-center shrink-0">
+                        <Wallet className="w-5 h-5 text-brand" />
                       </div>
                       <div className="min-w-0">
                         <h2 className="text-base text-[color:var(--panel-text)] font-semibold leading-tight">
@@ -1089,7 +1089,7 @@ export default function AshiglaltiinZardluud() {
                               input: "rounded-xl h-10 text-theme text-sm shadow-sm",
                             }}
                             leftSection={
-                              <span className="text-theme dark:text-theme font-bold text-xs">
+                              <span className="text-brand font-bold text-xs">
                                 ₮
                               </span>
                             }
@@ -1122,7 +1122,7 @@ export default function AshiglaltiinZardluud() {
                             input: "rounded-xl h-10 text-theme text-sm shadow-sm",
                           }}
                           leftSection={
-                            <span className="text-theme dark:text-theme font-bold text-xs">
+                            <span className="text-brand font-bold text-xs">
                               ₮
                             </span>
                           }

@@ -39,7 +39,7 @@ export default function ӨмчБүртгэлPage() {
             onClick={() => state.setPropertyTab(tab as any)}
             className={`pb-2 px-4 text-sm font-medium transition-colors ${
               state.propertyTab === tab
-                ? "border-b-2 border-theme text-theme dark:text-theme dark:border-theme"
+                ? "border-b-2 border-theme text-brand"
                 : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
             }`}
           >

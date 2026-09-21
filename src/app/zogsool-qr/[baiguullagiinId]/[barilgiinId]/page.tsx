@@ -344,7 +344,7 @@ export default function ZogsoolQrPage() {
     return (
       <Khuudas>
         <div className="flex flex-col items-center gap-4 py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-theme" />
+          <Loader2 className="h-8 w-8 animate-spin text-brand" />
           <p className="text-sm text-[color:var(--muted-text)]">
             Ачаалж байна...
           </p>
@@ -366,9 +366,9 @@ export default function ZogsoolQrPage() {
             Зогсоолын төлбөр
           </p>
         </div>
-        <div className="flex items-center gap-1.5 rounded-full bg-theme/10 px-3 py-1.5 ring-1 ring-theme dark:bg-theme/10 dark:ring-theme/20">
-          <Clock className="h-3.5 w-3.5 shrink-0 text-theme dark:text-theme" />
-          <span className="text-[11px] font-medium text-theme dark:text-theme">
+        <div className="flex items-center gap-1.5 rounded-full bg-theme/10 px-3 py-1.5 ring-1 ring-theme/20">
+          <Clock className="h-3.5 w-3.5 shrink-0 text-brand" />
+          <span className="text-[11px] font-medium text-brand">
             Төлснөөс хойш {garakhKhugatsaa} минут дотор гарна уу
           </span>
         </div>
@@ -497,7 +497,7 @@ export default function ZogsoolQrPage() {
           )}
 
           <p className="flex items-center justify-center gap-1.5 text-center text-[11px] text-[color:var(--muted-text)]">
-            <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-theme" />
+            <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-brand" />
             Төлөгдмөгц автоматаар шалгагдана
           </p>
 
@@ -508,14 +508,14 @@ export default function ZogsoolQrPage() {
       {/* ── 4. Амжилттай ── */}
       {alkham === "amjilttai" && (
         <div className="space-y-5 text-center">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-theme/10 ring-1 ring-theme dark:bg-theme/10 dark:ring-theme/20">
-            <CheckCircle2 className="h-10 w-10 text-theme dark:text-theme" />
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-theme/10 ring-1 ring-theme/20">
+            <CheckCircle2 className="h-10 w-10 text-brand" />
           </div>
           <div>
             <h2 className="text-xl font-bold text-[color:var(--panel-text)] dark:text-white">
               Төлбөр бүртгэгдлээ
             </h2>
-            <p className="mt-1 text-2xl font-bold text-theme dark:text-theme">
+            <p className="mt-1 text-2xl font-bold text-brand">
               {dunFormat(tulsunDun)}
             </p>
             <p className="mt-2 text-xs text-[color:var(--muted-text)]">
@@ -554,7 +554,7 @@ const Tovch: React.FC<{
   <button
     onClick={onClick}
     disabled={ajillaj}
-    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-theme py-4 text-sm font-semibold text-white transition-colors hover:bg-theme disabled:opacity-40 dark:bg-theme dark:hover:bg-theme"
+    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-theme py-4 text-sm font-semibold text-white transition-colors hover:bg-theme disabled:opacity-40 dark:hover:bg-theme"
   >
     {ajillaj ? <Loader2 className="h-4 w-4 animate-spin" /> : icon}
     {children}
@@ -581,7 +581,7 @@ const Mur: React.FC<{ nert: string; utga: string; tom?: boolean }> = ({
     <span
       className={
         tom
-          ? "text-lg font-bold text-theme dark:text-theme"
+          ? "text-lg font-bold text-brand"
           : "text-sm font-medium text-[color:var(--panel-text)] dark:text-white"
       }
     >
@@ -595,7 +595,7 @@ const MashiniiKhuudas: React.FC<{ mashin: MashiniiMedeelel }> = ({
 }) => (
   <div className="space-y-3 rounded-3xl bg-[color:var(--surface-hover)] p-4 ring-1 ring-[color:var(--surface-border)] dark:bg-white/5 dark:ring-white/10">
     <div className="flex items-center gap-2">
-      <CarFront className="h-4 w-4 shrink-0 text-theme dark:text-theme" />
+      <CarFront className="h-4 w-4 shrink-0 text-brand" />
       <span className="text-base font-bold tracking-wider text-[color:var(--panel-text)] dark:text-white">
         {mashin.plate_number}
       </span>

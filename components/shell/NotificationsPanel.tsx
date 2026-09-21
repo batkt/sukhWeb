@@ -60,14 +60,14 @@ const isGomdolType = (t?: string) => {
 function EmptyState({ label, type }: { label: string; type: "sanal" | "medegdel" }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 px-6 py-20 text-center animate-in fade-in duration-300">
-      <div className="relative grid h-16 w-16 place-items-center rounded-3xl bg-gradient-to-tr from-emerald-500/10 via-[color:var(--surface-hover)] to-blue-500/10 border border-[color:var(--panel-text)]/10 shadow-inner">
+      <div className="relative grid h-16 w-16 place-items-center rounded-3xl bg-gradient-to-tr from-theme/10 via-[color:var(--surface-hover)] to-theme/10 border border-[color:var(--panel-text)]/10 shadow-inner">
         {type === "sanal" ? (
-          <MessageSquare className="h-7 w-7 text-emerald-500/80" strokeWidth={1.5} />
+          <MessageSquare className="h-7 w-7 text-brand/80" strokeWidth={1.5} />
         ) : (
-          <Bell className="h-7 w-7 text-blue-500/80" strokeWidth={1.5} />
+          <Bell className="h-7 w-7 text-brand/80" strokeWidth={1.5} />
         )}
-        <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500/20 border-2 border-[color:var(--surface-bg)] flex items-center justify-center">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+        <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-theme/20 border-2 border-[color:var(--surface-bg)] flex items-center justify-center">
+          <span className="w-1.5 h-1.5 rounded-full bg-theme" />
         </div>
       </div>
       <div className="space-y-1 mt-1">
@@ -153,10 +153,10 @@ export default function NotificationsPanel({
         {/* Header */}
         <header className="flex shrink-0 items-center justify-between px-5 py-4 border-b border-[color:var(--panel-text)]/10 bg-[color:var(--surface-bg)]">
           <div className="flex items-center gap-2.5">
-            <div className="relative flex items-center justify-center w-9 h-9 rounded-2xl bg-gradient-to-tr from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 shadow-sm">
+            <div className="relative flex items-center justify-center w-9 h-9 rounded-2xl bg-gradient-to-tr from-success/20 to-success/20 border border-success/30 text-success shadow-sm">
               <Bell className="w-4.5 h-4.5" strokeWidth={ICON_STROKE} />
               {totalUnread > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white shadow-sm ring-2 ring-[color:var(--surface-bg)] animate-pulse">
+                <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-white shadow-sm ring-2 ring-[color:var(--surface-bg)] animate-pulse">
                   {totalUnread}
                 </span>
               )}
@@ -194,14 +194,14 @@ export default function NotificationsPanel({
               onClick={() => setTab("sanal")}
               className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
                 tab === "sanal"
-                  ? "bg-white dark:bg-slate-800 text-[color:var(--panel-text)] shadow-sm font-bold scale-[1.01]"
+                  ? "bg-white text-[color:var(--panel-text)] shadow-sm font-bold scale-[1.01]"
                   : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
               }`}
             >
-              <MessageSquare className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+              <MessageSquare className="h-3.5 w-3.5 text-brand shrink-0" />
               <span>Санал хүсэлт</span>
               {unreadSanalCount > 0 && (
-                <span className="ml-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.2 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                <span className="ml-1 rounded-full bg-theme/15 border border-theme/30 px-1.5 py-0.2 text-[10px] font-bold text-brand tabular-nums">
                   {unreadSanalCount}
                 </span>
               )}
@@ -214,14 +214,14 @@ export default function NotificationsPanel({
               onClick={() => setTab("medegdel")}
               className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
                 tab === "medegdel"
-                  ? "bg-white dark:bg-slate-800 text-[color:var(--panel-text)] shadow-sm font-bold scale-[1.01]"
+                  ? "bg-white text-[color:var(--panel-text)] shadow-sm font-bold scale-[1.01]"
                   : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
               }`}
             >
-              <Bell className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+              <Bell className="h-3.5 w-3.5 text-brand shrink-0" />
               <span>Мэдэгдэл</span>
               {unreadMedegdelCount > 0 && (
-                <span className="ml-1 rounded-full bg-blue-500/15 border border-blue-500/30 px-1.5 py-0.2 text-[10px] font-bold text-blue-600 dark:text-blue-400 tabular-nums">
+                <span className="ml-1 rounded-full bg-theme/15 border border-theme/30 px-1.5 py-0.2 text-[10px] font-bold text-brand tabular-nums">
                   {unreadMedegdelCount}
                 </span>
               )}
@@ -273,7 +273,7 @@ export default function NotificationsPanel({
                       }}
                       className={`group relative flex w-full items-start gap-3.5 p-3.5 rounded-2xl border text-left transition-all duration-200 ${
                         unread
-                          ? "border-emerald-500/30 bg-emerald-500/[0.04] hover:bg-emerald-500/[0.08] shadow-sm"
+                          ? "border-theme/30 bg-theme/[0.04] hover:bg-theme/[0.08] shadow-sm"
                           : "border-[color:var(--panel-text)]/8 bg-[color:var(--surface-hover)]/20 hover:bg-[color:var(--surface-hover)]/60 hover:border-[color:var(--panel-text)]/15"
                       } hover:translate-x-0.5`}
                     >
@@ -281,10 +281,10 @@ export default function NotificationsPanel({
                       <div
                         className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${
                           gomdolItem
-                            ? "bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-400"
+                            ? "bg-danger/10 border-danger/20 text-danger"
                             : sanalItem
-                            ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
-                            : "bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400"
+                            ? "bg-success/10 border-success/20 text-success"
+                            : "bg-theme/10 border-theme/20 text-brand"
                         }`}
                       >
                         {gomdolItem ? (
@@ -304,17 +304,17 @@ export default function NotificationsPanel({
                             <span
                               className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
                                 gomdolItem
-                                  ? "bg-rose-500/15 text-rose-700 dark:text-rose-300"
+                                  ? "bg-danger/15 text-danger"
                                   : sanalItem
-                                  ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-                                  : "bg-blue-500/15 text-blue-700 dark:text-blue-300"
+                                  ? "bg-success/15 text-success"
+                                  : "bg-theme/15 text-brand"
                               }`}
                             >
                               {typeLabel}
                             </span>
                             {unread && (
-                              <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                              <span className="flex items-center gap-1 text-[10px] font-bold text-brand">
+                                <span className="w-1.5 h-1.5 rounded-full bg-theme animate-pulse" />
                                 Шинэ
                               </span>
                             )}
@@ -329,7 +329,7 @@ export default function NotificationsPanel({
                         </div>
 
                         {/* Title */}
-                        <h4 className="text-[13px] font-semibold text-[color:var(--panel-text)] leading-snug truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                        <h4 className="text-[13px] font-semibold text-[color:var(--panel-text)] leading-snug truncate group-hover:text-brand dark:group-hover:text-brand transition-colors">
                           {item.title || (tab === "sanal" ? "Санал хүсэлт" : "Мэдэгдэл")}
                         </h4>
 
@@ -343,7 +343,7 @@ export default function NotificationsPanel({
 
                       {/* Chevron Arrow */}
                       <ChevronRight
-                        className="mt-1 h-4 w-4 shrink-0 text-[color:var(--muted-text)] transition-transform duration-200 group-hover:translate-x-1 group-hover:text-emerald-500"
+                        className="mt-1 h-4 w-4 shrink-0 text-[color:var(--muted-text)] transition-transform duration-200 group-hover:translate-x-1 group-hover:text-brand"
                         strokeWidth={2}
                       />
                     </button>
@@ -366,7 +366,7 @@ export default function NotificationsPanel({
                   : "/medegdel/medegdel?tab=tulult",
               );
             }}
-            className="flex w-full items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm transition-all hover:scale-[1.01]"
+            className="flex w-full items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-semibold bg-theme hover:bg-theme text-white shadow-sm transition-all hover:scale-[1.01]"
           >
             <span>{tab === "sanal" ? "Бүх санал хүсэлт рүү шилжих" : "Бүх мэдэгдэл рүү шилжих"}</span>
             <ChevronRight className="h-3.5 w-3.5" strokeWidth={2.5} />

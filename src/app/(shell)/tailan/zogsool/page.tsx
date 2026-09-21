@@ -848,7 +848,7 @@ export default function ZogsoolTailanPage() {
           <h3 className="pb-3 text-theme flex items-center justify-between flex-wrap gap-2">
             <span className="font-semibold">Зочдын дэлгэрэнгүй тайлан</span>
             {selectedResident && (
-              <div className="flex items-center gap-3 text-xs text-theme/80 flex-wrap">
+              <div className="flex items-center gap-3 text-xs text-brand/80 flex-wrap">
                 <span className="font-medium text-[color:var(--panel-text)]">
                   {selectedResident.ner}
                 </span>

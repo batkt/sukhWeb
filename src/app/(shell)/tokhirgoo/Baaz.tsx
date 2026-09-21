@@ -60,9 +60,9 @@ function Baaz({ token, ajiltan }: BaazProps) {
 
         {/* Storage Info Card */}
         <div className="col-span-12 lg:col-span-6">
-          <div className="bg-gradient-to-br from-theme/10 to-theme/5 shadow-lg rounded-2xl overflow-hidden border border-theme/50 dark:border-theme/50">
-            <div className="px-6 py-4 border-b border-theme/50 dark:border-theme/50 bg-gradient-to-r from-theme/50 to-theme/50 flex items-center gap-2">
-              <HardDrive className="w-5 h-5 text-theme dark:text-theme" />
+          <div className="bg-gradient-to-br from-theme/10 to-theme/5 shadow-lg rounded-2xl overflow-hidden border border-theme/50">
+            <div className="px-6 py-4 border-b border-theme/50 bg-gradient-to-r from-theme/50 to-theme/50 flex items-center gap-2">
+              <HardDrive className="w-5 h-5 text-brand" />
               <h2 className="text-lg text-theme">{t("Ашиглаж буй Storage")}</h2>
             </div>
             <div className="p-6">
@@ -70,9 +70,9 @@ function Baaz({ token, ajiltan }: BaazProps) {
                 <div className="text-sm text-theme opacity-60">Уншиж байна...</div>
               ) : storageInfo ? (
                 <div className="flex items-center gap-4">
-                  <HardDrive className="w-10 h-10 text-theme flex-shrink-0" />
+                  <HardDrive className="w-10 h-10 text-brand flex-shrink-0" />
                   <div>
-                    <div className="text-3xl font-semibold text-theme dark:text-theme">
+                    <div className="text-3xl font-semibold text-brand">
                       {fmtBytes(storageInfo.total.dataSize)}
                     </div>
                     <div className="text-xs text-theme opacity-60 mt-1 uppercase tracking-wide">
@@ -89,11 +89,11 @@ function Baaz({ token, ajiltan }: BaazProps) {
 
         {/* Backup Card */}
         <div className="col-span-12 lg:col-span-6">
-          <div className="bg-gradient-to-br from-theme/10 to-theme/5 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl overflow-hidden border border-theme/50 dark:border-theme/50">
-            <div className="px-6 py-4 border-b border-theme/50 dark:border-theme/50 bg-gradient-to-r from-theme/50 to-theme/50">
+          <div className="bg-gradient-to-br from-theme/10 to-theme/5 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl overflow-hidden border border-theme/50">
+            <div className="px-6 py-4 border-b border-theme/50 bg-gradient-to-r from-theme/50 to-theme/50">
               <h2 className="text-lg text-theme flex items-center gap-2">
-                <div className="p-2 bg-theme/10 dark:bg-theme/20 rounded-lg">
-                  <Download className="w-5 h-5 text-theme dark:text-theme" />
+                <div className="p-2 bg-theme/10 rounded-lg">
+                  <Download className="w-5 h-5 text-brand" />
                 </div>
                 {t("Мэдээллийн сан")}
               </h2>

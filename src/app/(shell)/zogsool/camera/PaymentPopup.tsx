@@ -12,52 +12,52 @@ export const PAY_LABELS: Record<string, string> = {
   socialpay: "SocialPay", toki: "Toki",
 };
 export const PAY_COLOR: Record<string, string> = {
-  belen: "bg-theme/10 !text-theme dark:!text-theme border-theme/30",
-  cash: "bg-theme/10 !text-theme dark:!text-theme border-theme/30",
-  khaan: "bg-theme/10 !text-theme dark:!text-theme border-theme/30",
-  qpay: "bg-purple-100 !text-purple-700 dark:!text-purple-800 border-purple-200",
-  khariltsakh: "bg-theme/10 !text-theme dark:!text-theme border-theme/30",
-  transfer: "bg-theme/10 !text-theme dark:!text-theme border-theme/30",
+  belen: "bg-theme/10 !text-brand dark:!text-brand border-theme/30",
+  cash: "bg-theme/10 !text-brand dark:!text-brand border-theme/30",
+  khaan: "bg-theme/10 !text-brand dark:!text-brand border-theme/30",
+  qpay: "bg-theme/10 !text-brand dark:!text-brand border-theme/30",
+  khariltsakh: "bg-theme/10 !text-brand dark:!text-brand border-theme/30",
+  transfer: "bg-theme/10 !text-brand dark:!text-brand border-theme/30",
   khungulult: "bg-warning/10 !text-warning dark:!text-warning border-warning/30",
   discount: "bg-warning/10 !text-warning dark:!text-warning border-warning/30",
   "Хөнгөлөлт": "bg-warning/10 !text-warning dark:!text-warning border-warning/30",
-  monpay: "bg-theme/10 !text-theme dark:!text-theme border-theme/30",
-  socialpay: "bg-theme/10 !text-theme dark:!text-theme border-theme/30",
+  monpay: "bg-theme/10 !text-brand dark:!text-brand border-theme/30",
+  socialpay: "bg-theme/10 !text-brand dark:!text-brand border-theme/30",
   toki: "bg-warning/10 !text-warning dark:!text-warning border-warning/30",
 };
 export const PAY_TEXT_COLOR: Record<string, string> = {
-  belen: "text-success dark:text-success",
-  cash: "text-theme dark:text-theme",
-  khaan: "text-theme dark:text-theme",
-  qpay: "text-purple-600 dark:text-purple-400",
-  khariltsakh: "text-theme dark:text-theme",
-  transfer: "text-theme dark:text-theme",
+  belen: "text-success",
+  cash: "text-brand",
+  khaan: "text-brand",
+  qpay: "text-brand",
+  khariltsakh: "text-brand",
+  transfer: "text-brand",
   khungulult: "text-warning",
   discount: "text-warning",
   "Хөнгөлөлт": "text-warning",
-  monpay: "text-theme dark:text-theme",
-  socialpay: "text-theme dark:text-theme",
+  monpay: "text-brand",
+  socialpay: "text-brand",
   toki: "text-warning",
 };
 export const PAY_BG: Record<string, string> = {
   belen: "bg-success", cash: "bg-success",
-  khaan: "bg-success", qpay: "bg-purple-500",
+  khaan: "bg-success", qpay: "bg-theme",
   khariltsakh: "bg-theme", transfer: "bg-theme",
   khungulult: "bg-warning", discount: "bg-warning", "Хөнгөлөлт": "bg-warning",
   monpay: "bg-theme", socialpay: "bg-theme", toki: "bg-warning",
 };
 export const PAY_ICON_BG: Record<string, string> = {
-  belen: "bg-success/10 dark:bg-success/20 text-success dark:text-success",
-  cash: "bg-theme/10 dark:bg-theme/20 text-theme dark:text-theme",
-  khaan: "bg-theme/10 dark:bg-theme/20 text-theme dark:text-theme",
-  qpay: "bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400",
-  khariltsakh: "bg-theme/10 dark:bg-theme/20 text-theme dark:text-theme",
-  transfer: "bg-theme/10 dark:bg-theme/20 text-theme dark:text-theme",
+  belen: "bg-success/10 text-success",
+  cash: "bg-theme/10 text-brand",
+  khaan: "bg-theme/10 text-brand",
+  qpay: "bg-theme/10 text-brand",
+  khariltsakh: "bg-theme/10 text-brand",
+  transfer: "bg-theme/10 text-brand",
   khungulult: "bg-warning/10 text-warning",
   discount: "bg-warning/10 text-warning",
   "Хөнгөлөлт": "bg-warning/10 text-warning",
-  monpay: "bg-theme/10 dark:bg-theme/20 text-theme dark:text-theme",
-  socialpay: "bg-theme/10 dark:bg-theme/20 text-theme dark:text-theme",
+  monpay: "bg-theme/10 text-brand",
+  socialpay: "bg-theme/10 text-brand",
   toki: "bg-warning/10 text-warning",
 };
 
@@ -189,7 +189,7 @@ export const PaymentPopup = ({
           </div>
           <div className="px-4 py-3 border-t border-[color:var(--surface-border)] dark:border-white/5 flex justify-between items-center bg-[color:var(--surface-hover)] dark:bg-white/[0.02]">
             <span className="text-[10px] font-black text-[color:var(--muted-text)] uppercase tracking-wider">НИЙТ</span>
-            <span className="text-[13px] font-black text-theme dark:text-theme font-[family-name:var(--font-mono)]">{formatNumber(totalPaid)}</span>
+            <span className="text-[13px] font-black text-brand font-[family-name:var(--font-mono)]">{formatNumber(totalPaid)}</span>
           </div>
         </div>,
         document.body

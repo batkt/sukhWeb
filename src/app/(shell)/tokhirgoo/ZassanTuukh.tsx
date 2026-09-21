@@ -102,7 +102,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                   <td className="p-1 border-b border-[color:var(--surface-border)] text-left truncate max-w-[80px]">{item.ner || "-"}</td>
                   <td className="p-1 border-b border-[color:var(--surface-border)] text-center">{item.turul || "-"}</td>
                   <td className="p-1 border-b border-[color:var(--surface-border)] text-right">{formatNumber(item.turul === "Дурын" ? item.dun : item.tariff)}</td>
-                  <td className="p-1 border-b border-[color:var(--surface-border)] text-right text-theme">{formatNumber(item.tulukhDun)}</td>
+                  <td className="p-1 border-b border-[color:var(--surface-border)] text-right text-brand">{formatNumber(item.tulukhDun)}</td>
                 </tr>
               ))}
             </tbody>
@@ -152,7 +152,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                     {item.ognoonuud ? `${moment(item.ognoonuud[0]).format("MM-DD")} ~ ${moment(item.ognoonuud[1]).format("MM-DD")}` : "-"}
                   </td>
                   <td className="p-1 border-b border-[color:var(--surface-border)] text-center">{item.khungulukhKhuvi}%</td>
-                  <td className="p-1 border-b border-[color:var(--surface-border)] text-right text-theme">{formatNumber(item.khungulultiinDun)}</td>
+                  <td className="p-1 border-b border-[color:var(--surface-border)] text-right text-brand">{formatNumber(item.khungulultiinDun)}</td>
                 </tr>
               ))}
             </tbody>
@@ -492,7 +492,7 @@ export default function ZassanTuukh({ token, baiguullaga }: Props) {
           {/* Header */}
           <div className="flex items-center justify-between pb-4 border-b border-[color:var(--surface-border)]">
             <div className="flex items-center gap-3">
-              <Edit className="w-5 h-5 text-theme dark:text-theme" />
+              <Edit className="w-5 h-5 text-brand" />
               <h2 className="text-xl text-[color:var(--panel-text)]">
                 {t("Зассан түүх")}
               </h2>
@@ -610,7 +610,7 @@ export default function ZassanTuukh({ token, baiguullaga }: Props) {
                         className="p-2 hover:bg-theme/10 dark:hover:bg-theme/20 rounded-full transition-colors relative z-10"
                         title="Дэлгэрэнгүй үзэх"
                       >
-                        <Eye className="w-4 h-4 text-theme pointer-events-none" />
+                        <Eye className="w-4 h-4 text-brand pointer-events-none" />
                       </button>
                     ),
                   },

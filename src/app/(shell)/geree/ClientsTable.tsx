@@ -249,7 +249,7 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
               id={index === 0 ? "Client-edit-btn" : undefined}
               title="Засах"
             >
-              <Edit className="w-4 h-4 text-theme dark:text-theme" />
+              <Edit className="w-4 h-4 text-brand" />
             </button>
             <button
               type="button"

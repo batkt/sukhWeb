@@ -176,7 +176,7 @@ function ZogsoolBurtgekh(
 
   const SectionHeader = ({ icon: Icon, title, description, colorClass }: any) => (
     <div className="flex items-center gap-3 mb-4 pb-3 border-b border-[color:var(--surface-border)]">
-      <div className={`p-2 rounded-lg ${colorClass || 'bg-theme/10 dark:bg-theme/30 text-theme dark:text-theme'}`}>
+      <div className={`p-2 rounded-lg ${colorClass || 'bg-theme/10 text-brand'}`}>
         <Icon className="w-4 h-4" />
       </div>
       <div>
@@ -196,7 +196,7 @@ function ZogsoolBurtgekh(
           style={{ borderRadius: '10px' }}
           className={`flex items-center gap-1.5 px-3.5 py-1.5 transition-all whitespace-nowrap font-medium ${
             activeTab === "general"
-              ? "bg-theme/10 dark:bg-theme/60 text-theme dark:text-theme border border-theme/30 dark:border-theme shadow-xs"
+              ? "bg-theme/10 text-brand border border-theme/30 shadow-xs"
               : "text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] border border-transparent"
           }`}
         >
@@ -209,14 +209,14 @@ function ZogsoolBurtgekh(
           style={{ borderRadius: '10px' }}
           className={`flex items-center gap-1.5 px-3.5 py-1.5 transition-all whitespace-nowrap font-medium ${
             activeTab === "gates"
-              ? "bg-theme/10 dark:bg-theme/60 text-theme dark:text-theme border border-theme/30 dark:border-theme shadow-xs"
+              ? "bg-theme/10 text-brand border border-theme/30 shadow-xs"
               : "text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] border border-transparent"
           }`}
         >
           <span>Хаалга & Камер</span>
           <span className={`inline-flex items-center justify-center min-w-[20px] px-2 py-0.5 text-[11px] font-bold rounded-full transition-colors ${
             activeTab === "gates"
-              ? "bg-theme/80 dark:bg-theme/80 text-theme dark:text-theme border border-theme/60 dark:border-theme/60"
+              ? "bg-theme/80 text-brand border border-theme/60"
               : "bg-[color:var(--panel)] text-[color:var(--panel-text)] border border-[color:var(--surface-border)]"
           }`}>
             {formData.khaalga?.length || 0}
@@ -229,14 +229,14 @@ function ZogsoolBurtgekh(
           style={{ borderRadius: '10px' }}
           className={`flex items-center gap-1.5 px-3.5 py-1.5 transition-all whitespace-nowrap font-medium ${
             activeTab === "tariffs"
-              ? "bg-theme/10 dark:bg-theme/60 text-theme dark:text-theme border border-theme/30 dark:border-theme shadow-xs"
+              ? "bg-theme/10 text-brand border border-theme/30 shadow-xs"
               : "text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] border border-transparent"
           }`}
         >
           <span>Шатлалт тариф</span>
           <span className={`inline-flex items-center justify-center min-w-[20px] px-2 py-0.5 text-[11px] font-bold rounded-full transition-colors ${
             activeTab === "tariffs"
-              ? "bg-theme/80 dark:bg-theme/80 text-theme dark:text-theme border border-theme/60 dark:border-theme/60"
+              ? "bg-theme/80 text-brand border border-theme/60"
               : "bg-[color:var(--panel)] text-[color:var(--panel-text)] border border-[color:var(--surface-border)]"
           }`}>
             {formData.tulburuud?.length || 0}
@@ -249,7 +249,7 @@ function ZogsoolBurtgekh(
           style={{ borderRadius: '10px' }}
           className={`flex items-center gap-1.5 px-3.5 py-1.5 transition-all whitespace-nowrap font-medium ${
             activeTab === "switches"
-              ? "bg-theme/10 dark:bg-theme/60 text-theme dark:text-theme border border-theme/30 dark:border-theme shadow-xs"
+              ? "bg-theme/10 text-brand border border-theme/30 shadow-xs"
               : "text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] border border-transparent"
           }`}
         >
@@ -309,7 +309,7 @@ function ZogsoolBurtgekh(
 
           {/* Financial Settings */}
           <section className="bg-[color:var(--surface-bg)] rounded-xl border border-[color:var(--surface-border)] p-4">
-            <SectionHeader icon={CreditCard} title="Санхүүгийн тохиргоо" description="Дансны мэдээлэл" colorClass="bg-theme/10 dark:bg-theme/30 text-theme dark:text-theme" />
+            <SectionHeader icon={CreditCard} title="Санхүүгийн тохиргоо" description="Дансны мэдээлэл" colorClass="bg-theme/10 text-brand" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="block text-sm text-[color:var(--panel-text)]">Үндсэн данс</label>
@@ -334,14 +334,14 @@ function ZogsoolBurtgekh(
             </div>
             
             {formData.togtmolTulburEsekh && (
-              <div style={{ borderRadius: '10px' }} className="mt-4 p-4 bg-theme/10 dark:bg-theme/10 border border-theme/30 dark:border-theme">
+              <div style={{ borderRadius: '10px' }} className="mt-4 p-4 bg-theme/10 border border-theme/30">
                 <label className="block text-sm text-[color:var(--panel-text)] mb-2">Тогтмол төлбөрийн дүн</label>
                 <MNumberInput
                   value={formData.togtmolTulburiinDun as number}
                   onChange={(val) => updateField("togtmolTulburiinDun", val)}
                   placeholder="0.00"
                   min={0}
-                  classNames={{ input: "!rounded-xl h-10 bg-[color:var(--surface-bg)] border border-theme/30 dark:border-theme focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
+                  classNames={{ input: "!rounded-xl h-10 bg-[color:var(--surface-bg)] border border-theme/30 focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
                   style={{ borderRadius: '10px' }}
                   thousandSeparator=","
                 />
@@ -351,7 +351,7 @@ function ZogsoolBurtgekh(
 
           {/* Operational Settings */}
           <section className="bg-[color:var(--surface-bg)] rounded-xl border border-[color:var(--surface-border)] p-4">
-            <SectionHeader icon={Clock} title="Үйл ажиллагааны хугацаа" description="Автомат процесс болон устгах хугацаа" colorClass="bg-theme/10 dark:bg-theme/30 text-theme dark:text-theme" />
+            <SectionHeader icon={Clock} title="Үйл ажиллагааны хугацаа" description="Автомат процесс болон устгах хугацаа" colorClass="bg-theme/10 text-brand" />
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <label className="block text-sm text-[color:var(--panel-text)]">Гарах хугацаа (мин)</label>
@@ -407,7 +407,7 @@ function ZogsoolBurtgekh(
       {/* Tab 2: System Switches */}
       {activeTab === "switches" && (
         <section className="bg-[color:var(--surface-bg)] rounded-lg border border-[color:var(--surface-border)] p-4">
-          <SectionHeader icon={ShieldCheck} title="Системийн хязгаарлалт" description="Нэмэлт тохиргоонууд" colorClass="bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400" />
+          <SectionHeader icon={ShieldCheck} title="Системийн хязгаарлалт" description="Нэмэлт тохиргоонууд" colorClass="bg-theme/10 text-brand" />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {[
               { label: "Тариф 30 минутаар бодох", field: "undsenMin" },
@@ -446,7 +446,7 @@ function ZogsoolBurtgekh(
       {activeTab === "tariffs" && (
       <section className="bg-[color:var(--surface-bg)] rounded-lg border border-[color:var(--surface-border)] p-4">
         <div className="flex flex-col sm:flex-row items-center justify-between mb-4 gap-3">
-          <SectionHeader icon={Layers} title="Тарифын бүтэц" description="Цагийн шатлалтай үнийн тохиргоо" colorClass="bg-theme/10 dark:bg-theme/30 text-theme dark:text-theme" />
+          <SectionHeader icon={Layers} title="Тарифын бүтэц" description="Цагийн шатлалтай үнийн тохиргоо" colorClass="bg-theme/10 text-brand" />
           <Button
             onClick={addTariff}
             variant="primary"
@@ -471,7 +471,7 @@ function ZogsoolBurtgekh(
               </button>
               
               <div className="flex items-center gap-2 mb-4 pb-3 border-b border-[color:var(--surface-border)]">
-                <Activity className="w-4 h-4 text-theme dark:text-theme" />
+                <Activity className="w-4 h-4 text-brand" />
                 <span className="text-sm  text-[color:var(--panel-text)]">Групп #{index + 1}</span>
               </div>
 
@@ -651,7 +651,7 @@ function ZogsoolBurtgekh(
               <div className="mt-3 space-y-3">
                 <div className="flex items-center justify-between pb-2 border-b border-[color:var(--surface-border)]">
                   <div className="flex items-center gap-1.5 text-xs font-medium text-[color:var(--panel-text)]">
-                    <Camera className="w-3.5 h-3.5 text-theme dark:text-theme" />
+                    <Camera className="w-3.5 h-3.5 text-brand" />
                     <span>Холболттой IP Камерууд</span>
                   </div>
                   <Button
@@ -681,7 +681,7 @@ function ZogsoolBurtgekh(
                     <div key={camIndex} style={{ borderRadius: '10px' }} className="p-3 bg-white border border-[color:var(--surface-border)] space-y-3">
                       <div className="flex justify-between items-center pb-2 border-b border-[color:var(--surface-border)]">
                         <div className="flex items-center gap-1.5">
-                          <span className="w-5 h-5 rounded-full bg-theme/10 dark:bg-theme/40 flex items-center justify-center text-[10px] text-theme dark:text-theme font-semibold">#{camIndex + 1}</span>
+                          <span className="w-5 h-5 rounded-full bg-theme/10 flex items-center justify-center text-[10px] text-brand font-semibold">#{camIndex + 1}</span>
                           <span className="text-xs font-medium text-[color:var(--panel-text)]">Камер #{camIndex + 1}</span>
                         </div>
                         <button

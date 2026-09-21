@@ -156,7 +156,7 @@ const FilterPopover = ({
               <div
                 onClick={() => { onSelect(opt.value); setOpen(false); }}
                 className={`px-3 py-2.5 rounded-xl text-[11px] text-left flex items-center justify-between cursor-pointer transition-all border border-transparent ${current === opt.value
-                  ? "bg-theme/10 text-theme dark:bg-theme/20 dark:text-white"
+                  ? "bg-theme/10 text-brand/20 dark:text-white"
                   : "hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/5 text-[color:var(--muted-text)] dark:text-white hover:text-[color:var(--panel-text)]"
                   }`}
               >
@@ -1416,7 +1416,7 @@ export default function Camera() {
       <span>{label}</span>
       {sortConfig?.col === id ? (
         <ArrowUpDown
-          className={`h-3.5 w-3.5 text-theme ${sortConfig.dir === "desc" ? "rotate-180" : ""}`}
+          className={`h-3.5 w-3.5 text-brand ${sortConfig.dir === "desc" ? "rotate-180" : ""}`}
         />
       ) : (
         <ArrowUpDown className="h-3.5 w-3.5 text-[color:var(--muted-text)] opacity-40" />
@@ -1437,7 +1437,7 @@ export default function Camera() {
       onSelect={onSelect}
     >
       <div className="flex h-full cursor-pointer items-center justify-center gap-2">
-        <Filter className="h-3.5 w-3.5 text-theme dark:text-theme" />
+        <Filter className="h-3.5 w-3.5 text-brand" />
         <span>{label}</span>
       </div>
     </FilterPopover>
@@ -1462,7 +1462,7 @@ export default function Camera() {
             {transaction.mashiniiDugaar || "-"}
           </span>
           <Copy
-            className="h-4 w-4 cursor-pointer text-[color:var(--muted-text)] transition-colors hover:text-theme"
+            className="h-4 w-4 cursor-pointer text-[color:var(--muted-text)] transition-colors hover:text-brand"
             onClick={() => copyToClipboard(transaction.mashiniiDugaar)}
           />
         </div>
@@ -1834,7 +1834,7 @@ export default function Camera() {
                             btn.color === "amber"
                               ? "hover:bg-warning/10 hover:text-warning"
                               : btn.color === "blue"
-                                ? "hover:bg-theme/10 hover:text-theme dark:hover:bg-theme/10"
+                                ? "hover:bg-theme/10 hover:text-brand dark:hover:bg-theme/10"
                                 : btn.color === "emerald"
                                   ? "hover:bg-success/10 hover:text-success dark:hover:bg-success/10"
                                   : btn.color === "red"
@@ -1848,9 +1848,9 @@ export default function Camera() {
                                 btn.color === "amber"
                                   ? "text-warning"
                                   : btn.color === "blue"
-                                    ? "text-theme dark:text-theme"
+                                    ? "text-brand"
                                     : btn.color === "emerald"
-                                      ? "text-success dark:text-success"
+                                      ? "text-success"
                                       : btn.color === "red"
                                         ? "text-danger"
                                         : "text-[color:var(--muted-text)]"
@@ -2206,7 +2206,7 @@ export default function Camera() {
                             setIsPageSizeOpen(false);
                           }}
                           className={`w-full px-3 py-2 rounded-lg text-xs  text-left transition-all duration-200 ${pageSize === size
-                            ? "bg-theme/10 text-theme dark:bg-theme/20 dark:text-theme"
+                            ? "bg-theme/10 text-brand/20"
                             : "hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/5 text-[color:var(--panel-text)] hover:text-[color:var(--panel-text)] dark:hover:text-white"
                             }`}
                           style={{
@@ -2279,7 +2279,7 @@ export default function Camera() {
                   {formatCurrency(stats.total)}
                 </p>
               </div>
-              <DollarSign className="w-5 h-5 text-theme" />
+              <DollarSign className="w-5 h-5 text-brand" />
             </div>
           </div>
           <div className="neu-panel rounded-lg p-3">
@@ -2288,11 +2288,11 @@ export default function Camera() {
                 <p className="text-xs text-[color:var(--muted-text)] mb-1">
                   Төлсөн
                 </p>
-                <p className="text-lg  text-theme">
+                <p className="text-lg  text-brand">
                   {formatCurrency(stats.paid)}
                 </p>
               </div>
-              <DollarSign className="w-5 h-5 text-theme" />
+              <DollarSign className="w-5 h-5 text-brand" />
             </div>
           </div>
           <div className="neu-panel rounded-lg p-3">
@@ -2321,7 +2321,7 @@ export default function Camera() {
                   Төлсөн: {stats.paidCount}
                 </p>
               </div>
-              <Calendar className="w-5 h-5 text-theme" />
+              <Calendar className="w-5 h-5 text-brand" />
             </div>
           </div>
         </div> */}
@@ -2447,8 +2447,8 @@ export default function Camera() {
 
               <div className="px-6 pt-7 pb-6 flex flex-col items-center gap-4">
                 {/* Success icon */}
-                <div className="w-14 h-14 rounded-full bg-theme/10 dark:bg-theme/10 flex items-center justify-center">
-                  <svg className="w-7 h-7 text-theme" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <div className="w-14 h-14 rounded-full bg-theme/10 flex items-center justify-center">
+                  <svg className="w-7 h-7 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
@@ -2561,7 +2561,7 @@ export default function Camera() {
             >
               {/* Header */}
               <div className="relative px-7 pt-6 pb-5 border-b border-[color:var(--surface-border)] dark:border-white/[0.06]">
-                <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-warning/20 via-danger/20 to-pink-500 opacity-80" />
+                <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-warning/20 via-danger/20 to-theme/20 opacity-80" />
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-[color:var(--surface-hover)] dark:bg-white/[0.06] border border-[color:var(--surface-border)] dark:border-white/[0.06]">
@@ -2932,7 +2932,7 @@ export default function Camera() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-[color:var(--surface-hover)] dark:bg-white/[0.06] border border-[color:var(--surface-border)] dark:border-white/[0.06]">
-                      <Receipt className="w-5 h-5 text-theme dark:text-theme" />
+                      <Receipt className="w-5 h-5 text-brand" />
                     </div>
                     <div>
                       <h2 className="text-[15px] text-[color:var(--panel-text)] dark:text-white tracking-tight">
@@ -3013,11 +3013,11 @@ export default function Camera() {
 
               {/* Footer total */}
               <div className="px-7 pb-6 pt-2">
-                <div className="flex justify-between items-center py-3 px-4 rounded-2xl bg-theme/10 dark:bg-theme/[0.08] border border-theme/30 dark:border-theme/20">
-                  <span className="text-[11px] font-black text-theme dark:text-theme uppercase tracking-wider">
+                <div className="flex justify-between items-center py-3 px-4 rounded-2xl bg-theme/[0.08] border border-theme/30">
+                  <span className="text-[11px] font-black text-brand uppercase tracking-wider">
                     Нийт орлого
                   </span>
-                  <span className="text-[14px] font-black text-theme dark:text-theme font-[family-name:var(--font-mono)]">
+                  <span className="text-[14px] font-black text-brand font-[family-name:var(--font-mono)]">
                     {formatNumber(revenueModalBreakdown.totalAmount)}₮
                   </span>
                 </div>
@@ -3178,7 +3178,7 @@ const CameraStream = React.memo(
     if (error) {
       const rtspUrl = `rtsp://${username || "admin"}:${password || "***"}@${ip}:${port}/${root}`;
       return (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white">
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-[color:var(--panel)] to-black text-white">
           <div className="relative max-w-md px-4">
             <div className="absolute inset-0 bg-danger/20 rounded-full blur-2xl animate-pulse"></div>
             <div className="relative p-6 rounded-3xl bg-[color:var(--panel)] backdrop-blur-sm border border-danger/30 space-y-3">

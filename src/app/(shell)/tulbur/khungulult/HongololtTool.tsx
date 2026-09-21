@@ -902,7 +902,7 @@ export default function HongololtTool({
           const isTarget = selectMode === "all" || selectedIds.has(r._id);
           const discountDun = computeDiscount(r);
           return isTarget && discountDun > 0 ? (
-            <span className="font-medium tabular-nums whitespace-nowrap text-theme dark:text-theme">
+            <span className="font-medium tabular-nums whitespace-nowrap text-brand">
               -{fmt(discountDun)}₮
             </span>
           ) : (
@@ -1005,7 +1005,7 @@ export default function HongololtTool({
         width: 110,
         align: "right" as const,
         render: (v: any) => (
-          <span className="tabular-nums whitespace-nowrap font-semibold text-theme dark:text-theme">
+          <span className="tabular-nums whitespace-nowrap font-semibold text-brand">
             {fmt2(Math.abs(v || 0))}
           </span>
         ),
@@ -1059,7 +1059,7 @@ export default function HongololtTool({
                 // TODO: Edit discount modal
                 toast.info("Засах функц удахгүй нэмэгдэнэ");
               }}
-              className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-theme transition-colors hover:bg-theme/10 dark:text-theme dark:hover:bg-theme/30"
+              className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-brand transition-colors hover:bg-theme/10 dark:hover:bg-theme/30"
               title="Засах"
             >
               <Edit2 className="h-3.5 w-3.5" />
@@ -1104,7 +1104,7 @@ export default function HongololtTool({
             type="button"
             onClick={() => setActiveTab(id)}
             className={`flex items-center gap-1.5 px-4 py-1.5 text-xs font-medium rounded-xl transition-all ${activeTab === id
-              ? "bg-theme/15 text-theme dark:text-theme"
+              ? "bg-theme/15 text-brand"
               : "text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)]"
               }`}
           >
@@ -1295,7 +1295,7 @@ export default function HongololtTool({
 
               <div className="flex justify-between text-xs">
                 <span className="text-[color:var(--muted-text)]">Нийт хөнгөлөгдсөн дүн :</span>
-                <span className="font-medium text-theme dark:text-theme">
+                <span className="font-medium text-brand">
                   {fmt(totalDun)}₮
                 </span>
               </div>
@@ -1351,7 +1351,7 @@ export default function HongololtTool({
                 />
               </button>
               {selectMode === "selected" && (
-                <span className="text-xs text-theme dark:text-theme font-medium">
+                <span className="text-xs text-brand font-medium">
                   {selectedIds.size} сонгосон
                 </span>
               )}
@@ -1504,7 +1504,7 @@ export default function HongololtTool({
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
-                <span className="min-w-[28px] text-center px-2 py-0.5 rounded border border-theme text-theme dark:text-theme font-medium bg-theme/10 dark:bg-theme/30">
+                <span className="min-w-[28px] text-center px-2 py-0.5 rounded border border-theme text-brand font-medium bg-theme/10">
                   {histPage}
                 </span>
                 <button
@@ -1573,7 +1573,7 @@ export default function HongololtTool({
             >
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-theme/15 flex items-center justify-center shrink-0">
-                  <Tag className="w-4 h-4 text-theme dark:text-theme" />
+                  <Tag className="w-4 h-4 text-brand" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-base text-[color:var(--panel-text)] dark:text-white leading-tight">

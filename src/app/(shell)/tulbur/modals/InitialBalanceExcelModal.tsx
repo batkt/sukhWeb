@@ -182,7 +182,7 @@ export default function InitialBalanceExcelModal({
                 transition-all duration-300
                 ${
                   file
-                    ? "border-theme/30 bg-theme/50 dark:border-theme/30 dark:bg-theme/5"
+                    ? "border-theme/30 bg-theme/50"
                     : "border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] hover:border-theme hover:bg-theme/30 dark:hover:border-theme/50"
                 }
               `}
@@ -199,7 +199,7 @@ export default function InitialBalanceExcelModal({
                 className={`
                 w-16 h-16 rounded-2xl flex items-center justify-center mb-2
                 transition-transform duration-300 group-hover:scale-110
-                ${file ? "bg-theme/10 text-theme dark:bg-theme/20 dark:text-theme" : "bg-theme/10 text-theme dark:bg-theme/20 dark:text-theme"}
+                ${file ? "bg-theme/10 text-brand/20" : "bg-theme/10 text-brand/20"}
               `}
               >
                 {file ? <FileSpreadsheet size={32} /> : <Upload size={32} />}

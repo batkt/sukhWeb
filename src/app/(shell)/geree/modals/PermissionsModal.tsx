@@ -228,7 +228,7 @@ export default function PermissionsModal({
           className={`w-8 text-[10px] text-center px-1 py-0.5 rounded border ${
             isFull 
               ? "bg-danger/10 border-danger/30 text-danger" 
-              : "bg-success/10 border-success/30 text-success dark:bg-success/20 dark:border-success dark:text-success"
+              : "bg-success/10 border-success/30 text-success/20"
           } focus:outline-none`} 
         />
       </div>
@@ -343,7 +343,7 @@ export default function PermissionsModal({
               className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3 border-b border-[color:var(--surface-border)] cursor-move select-none"
             >
               <div className="flex items-center gap-2 min-w-0 flex-1">
-                <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-theme dark:text-theme shrink-0" />
+                <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-brand shrink-0" />
                 <div className="min-w-0 flex-1">
                   <h2 className="text-sm sm:text-base  text-theme truncate">
                     Эрх тохируулах
@@ -375,13 +375,13 @@ export default function PermissionsModal({
             {/* Quick Actions */}
             <div className="px-3 sm:px-4 py-1.5 sm:py-2 bg-[color:var(--surface-bg)] dark:bg-[color:var(--surface-bg-dark)] border-b border-[color:var(--surface-border)] flex items-center justify-between gap-2">
               <div className="text-[10px] sm:text-xs text-subtle">
-                <span className=" text-theme dark:text-theme">{selectedPermissions.length}</span> эрх
+                <span className=" text-brand">{selectedPermissions.length}</span> эрх
               </div>
               <div className="flex gap-1.5">
                 <button
                   type="button"
                   onClick={selectAll}
-                  className="px-2 py-1 text-[10px] sm:text-xs  text-theme dark:text-theme hover:bg-theme/10 dark:hover:bg-theme/20 rounded transition-colors"
+                  className="px-2 py-1 text-[10px] sm:text-xs  text-brand hover:bg-theme/10 dark:hover:bg-theme/20 rounded transition-colors"
                 >
                   Бүгд
                 </button>
@@ -421,7 +421,7 @@ export default function PermissionsModal({
                         disabled 
                           ? "cursor-not-allowed" 
                           : isSelected || someSelected
-                            ? "bg-theme/10 dark:bg-theme/20 cursor-pointer"
+                            ? "bg-theme/10 cursor-pointer"
                             : "hover:bg-[color:var(--hover-bg)] cursor-pointer"
                       }`}
                       onClick={() => !disabled && hasChildren && toggleSection(item.id)}
@@ -454,9 +454,9 @@ export default function PermissionsModal({
                           <div
                             className={`w-3.5 h-3.5 sm:w-4 sm:h-4 rounded border-2 flex items-center justify-center transition-all shrink-0 ${
                               isSelected || allSelected
-                                ? "bg-theme dark:bg-theme border-theme dark:border-theme"
+                                ? "bg-theme border-theme"
                                 : someSelected
-                                ? "bg-theme/20 dark:bg-theme border-theme dark:border-theme"
+                                ? "bg-theme/20 border-theme"
                                 : "border-[color:var(--surface-border)]"
                             }`}
                           >
@@ -464,7 +464,7 @@ export default function PermissionsModal({
                               <Check className="w-2.5 h-2.5 text-white" />
                             )}
                             {someSelected && !allSelected && (
-                              <div className="w-1.5 h-1.5 bg-theme dark:bg-theme rounded-sm" />
+                              <div className="w-1.5 h-1.5 bg-theme rounded-sm" />
                             )}
                           </div>
                           
@@ -492,7 +492,7 @@ export default function PermissionsModal({
                                 childDisabled
                                   ? "opacity-60 grayscale cursor-not-allowed"
                                   : isChildSelected
-                                    ? "bg-theme/10 dark:bg-theme/30 cursor-pointer"
+                                    ? "bg-theme/10 cursor-pointer"
                                     : "hover:bg-[color:var(--hover-bg)] cursor-pointer"
                               }`}
                               onClick={() => !childDisabled && toggleChildPermission(child.id)}
@@ -500,7 +500,7 @@ export default function PermissionsModal({
                               <div
                                 className={`w-3 h-3 rounded border-2 flex items-center justify-center transition-all shrink-0 ${
                                   isChildSelected
-                                    ? "bg-theme dark:bg-theme border-theme dark:border-theme"
+                                    ? "bg-theme border-theme"
                                     : "border-[color:var(--surface-border)]"
                                 }`}
                               >

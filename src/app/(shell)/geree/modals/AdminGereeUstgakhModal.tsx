@@ -186,8 +186,8 @@ export default function AdminGereeUstgakhModal({
                 ))}
               </div>
 
-              <div className="rounded-xl border border-theme/30 dark:border-theme/50 bg-theme/60 dark:bg-theme/20 p-3">
-                <p className="text-xs text-theme dark:text-theme leading-relaxed">
+              <div className="rounded-xl border border-theme/30 bg-theme/60 p-3">
+                <p className="text-xs text-brand leading-relaxed">
                   <span className="font-semibold">{ezemshigch}</span> болон түүний
                   бусад гэрээнд хүрэхгүй — зөвхөн энэ нэг цуцлагдсан гэрээ
                   устана. Устгасан бичлэг бүр «Устгасан түүх» рүү хуулбараар

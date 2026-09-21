@@ -171,7 +171,7 @@ export default function PaymentLandingPage() {
     >
       {/* Dynamic background glow shapes (only rendered on desktop to avoid mobile rendering lag) */}
       <span className="hidden sm:block pointer-events-none absolute -top-48 -left-48 w-96 h-96 rounded-full bg-theme/10 blur-[100px]" />
-      <span className="hidden sm:block pointer-events-none absolute -bottom-48 -right-48 w-[450px] h-[450px] rounded-full bg-purple-500/10 blur-[120px]" />
+      <span className="hidden sm:block pointer-events-none absolute -bottom-48 -right-48 w-[450px] h-[450px] rounded-full bg-theme/10 blur-[120px]" />
 
       <div className="w-full max-w-lg relative z-10 my-8">
 
@@ -199,14 +199,14 @@ export default function PaymentLandingPage() {
                   animate={{ scale: 1 }}
                   transition={{ delay: 0.15, type: "spring", stiffness: 200 }}
                 >
-                  <CheckCircle2 className="w-10 h-10 text-theme" />
+                  <CheckCircle2 className="w-10 h-10 text-brand" />
                 </motion.div>
                 <span className="absolute inset-0 rounded-full bg-theme/5 animate-ping" />
               </div>
 
               <div className="space-y-2">
                 <h1 className="text-2xl font-bold text-white">Нэхэмжлэх төлөгдсөн</h1>
-                <p className="text-sm text-theme font-medium bg-theme/10 px-3 py-1 rounded-full inline-block border border-theme/15">
+                <p className="text-sm text-brand font-medium bg-theme/10 px-3 py-1 rounded-full inline-block border border-theme/15">
                   Төлбөр амжилттай баталгаажлаа
                 </p>
               </div>
@@ -274,7 +274,7 @@ export default function PaymentLandingPage() {
                   {formatAmount(displayAmount)}
                 </h2>
                 {actualIsPaid ? (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-theme/10 border border-theme/20 text-theme text-xs">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-theme/10 border border-theme/20 text-brand text-xs">
                     <span className="w-1.5 h-1.5 rounded-full bg-theme" />
                     Төлбөр төлөгдсөн
                   </div>
@@ -374,7 +374,7 @@ export default function PaymentLandingPage() {
                             key={bank.name}
                             className="relative flex items-center gap-2.5 p-3 rounded-2xl bg-white/[0.02] hover:bg-white/[0.06] active:bg-white/[0.1] border border-white/5 hover:border-white/10 transition-all group overflow-hidden"
                           >
-                            <div className="absolute inset-0 bg-gradient-to-r from-theme/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <div className="absolute inset-0 bg-gradient-to-r from-theme/5 to-theme/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                             {bank.logo ? (
                               <img
                                 src={bank.logo}
@@ -390,7 +390,7 @@ export default function PaymentLandingPage() {
                               </div>
                             )}
                             <div className="flex-1 min-w-0">
-                              <div className="text-xs font-semibold text-white truncate group-hover:text-theme transition-colors">
+                              <div className="text-xs font-semibold text-white truncate group-hover:text-brand transition-colors">
                                 {bank.description || bank.name}
                               </div>
                               <span className="text-[9px] text-[color:var(--muted-text)] block">

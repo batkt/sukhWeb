@@ -50,7 +50,7 @@ const Button = React.forwardRef<HTMLElement, ButtonProps>(
     const baseStyles = "inline-flex items-center justify-center gap-2 transition-all duration-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed border-none";
 
     const variants = {
-      primary: "bg-theme hover:bg-theme !text-white shadow-sm dark:bg-theme dark:hover:bg-theme",
+      primary: "bg-theme hover:bg-theme !text-white shadow-sm dark:hover:bg-theme",
       secondary: "bg-[color:var(--panel)] hover:bg-[color:var(--panel)] !text-[color:var(--panel-text)] dark:!text-[color:var(--muted-text)]",
       back: "!text-[color:var(--muted-text)] !border !border-[color:var(--surface-border)] dark:!border-white dark:!bg-[color:var(--panel)] dark:!text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)]",
       text: "bg-transparent border-none !text-[color:var(--muted-text)] hover:bg-success/10 hover:!text-success dark:!text-[color:var(--muted-text)] dark:hover:bg-white/5",

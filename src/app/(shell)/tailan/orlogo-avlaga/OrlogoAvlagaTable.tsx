@@ -287,7 +287,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
           const value = getCellValue(record, col.key, index);
           if (col.key === "paid")
             return (
-              <span className="cursor-pointer text-theme underline underline-offset-2 dark:text-theme">
+              <span className="cursor-pointer text-brand underline underline-offset-2">
                 {value}
               </span>
             );
@@ -330,7 +330,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                   align={col.align}
                   className={
                     col.key === "paid"
-                      ? "text-success dark:text-success"
+                      ? "text-success"
                       : col.key === "finalBalance"
                         ? "text-danger"
                         : undefined

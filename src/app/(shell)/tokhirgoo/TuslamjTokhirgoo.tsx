@@ -31,8 +31,8 @@ export default function TuslamjTokhirgoo(props: Props) {
         zaavar: `<div class="space-y-4">
   <p><strong>Оршин суугч ба тээврийн хэрэгслийн бүртгэлийн хэсэг</strong> нь орон сууцны хотхон, барилгын оршин суугчид болон тэдгээрийн тээврийн хэрэгслийн мэдээллийг нэгдсэн байдлаар удирдах зориулалттай.</p>
   
-  <div class="bg-theme/10 dark:bg-theme/20 p-5 rounded-3xl border border-theme/30 dark:border-theme/30">
-    <h4 class="font-bold text-theme dark:text-theme mb-2">Үндсэн боломжууд:</h4>
+  <div class="bg-theme/10 p-5 rounded-3xl border border-theme/30">
+    <h4 class="font-bold text-brand mb-2">Үндсэн боломжууд:</h4>
     <ul class="list-disc pl-5 space-y-1.5 text-[color:var(--panel-text)]">
       <li>Шинээр оршин суугч болон түүний тээврийн хэрэгслийн дугаарыг бүртгэх</li>
       <li>Оршин суугчдын мэдээллийг харах, орц тоотоор болон машины дугаараар шүүх</li>
@@ -81,7 +81,7 @@ export default function TuslamjTokhirgoo(props: Props) {
         <div className="flex flex-col flex-1 min-h-0 bg-white rounded-3xl shadow-xl border border-[color:var(--surface-border)] dark:border-white/5 overflow-hidden">
           {/* Header */}
           <div className="px-6 py-5 border-b border-[color:var(--surface-border)] dark:border-white/5 bg-[color:var(--surface-hover)] dark:bg-white/5 flex items-center gap-4">
-            <div className="flex items-center justify-center h-12 w-12 rounded-2xl bg-theme/10 dark:bg-theme/20 text-theme dark:text-theme">
+            <div className="flex items-center justify-center h-12 w-12 rounded-2xl bg-theme/10 text-brand">
               <BookOpen className="w-6 h-6" />
             </div>
             <div>
@@ -98,7 +98,7 @@ export default function TuslamjTokhirgoo(props: Props) {
           <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-6">
             {tsonkhLoading ? (
               <div className="flex flex-col items-center justify-center py-20 text-[color:var(--muted-text)]">
-                <Loader2 className="w-10 h-10 animate-spin mb-4 text-theme" />
+                <Loader2 className="w-10 h-10 animate-spin mb-4 text-brand" />
                 <p className="text-sm font-medium">Уншиж байна...</p>
               </div>
             ) : !currentTsonkh ? (

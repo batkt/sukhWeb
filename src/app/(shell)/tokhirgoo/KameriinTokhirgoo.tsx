@@ -513,7 +513,7 @@ export default function KameriinTokhirgoo() {
             title="Оршин суугчид харуулах эсэхийг сольно"
             className={`inline-flex items-center rounded-lg border px-3 py-0.5 transition-colors ${
               cam.residentVisible
-                ? "border-theme/30 bg-theme/10 text-theme dark:border-theme dark:bg-theme/60 dark:text-theme"
+                ? "border-theme/30 bg-theme/10 text-brand/60"
                 : "border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]"
             }`}
           >
@@ -533,7 +533,7 @@ export default function KameriinTokhirgoo() {
             title="Идэвхтэй эсэхийг сольно"
             className={`inline-flex items-center rounded-lg border px-3 py-0.5 transition-colors ${
               cam.enabled
-                ? "border-theme/30 bg-theme/10 text-theme dark:border-theme dark:bg-theme/60 dark:text-theme"
+                ? "border-theme/30 bg-theme/10 text-brand/60"
                 : "border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]"
             }`}
           >
@@ -553,7 +553,7 @@ export default function KameriinTokhirgoo() {
                 setEditingId(cam.id);
                 setView("form");
               }}
-              className="rounded-lg p-1.5 text-theme transition-colors hover:bg-theme/10 dark:text-theme dark:hover:bg-theme/10"
+              className="rounded-lg p-1.5 text-brand transition-colors hover:bg-theme/10 dark:hover:bg-theme/10"
               title="Засах"
             >
               <Edit className="h-4 w-4" />
@@ -639,7 +639,7 @@ export default function KameriinTokhirgoo() {
               </h2>
               <p className="text-xs text-[color:var(--muted-text)]">
                 Нийт{" "}
-                <span className="text-theme dark:text-theme">
+                <span className="text-brand">
                   {sohCameras.length}
                 </span>{" "}
                 камер тохируулагдсан
@@ -652,25 +652,25 @@ export default function KameriinTokhirgoo() {
                 className="px-3 py-1 bg-[color:var(--surface-hover)] text-[color:var(--panel-text)] dark:text-white border border-[color:var(--surface-border)] font-medium"
               >
                 Нийт камер:{" "}
-                <span className="text-theme dark:text-theme font-semibold">
+                <span className="text-brand font-semibold">
                   {sohCameras.length}
                 </span>
               </span>
               <span
                 style={{ borderRadius: "10px" }}
-                className="px-3 py-1 bg-theme/10 dark:bg-theme/60 text-theme dark:text-theme border border-theme/30 dark:border-theme font-medium"
+                className="px-3 py-1 bg-theme/10 text-brand border border-theme/30 font-medium"
               >
                 Идэвхтэй:{" "}
-                <span className="text-theme dark:text-theme font-semibold">
+                <span className="text-brand font-semibold">
                   {sohCameras.filter((c) => c.enabled).length}
                 </span>
               </span>
               <span
                 style={{ borderRadius: "10px" }}
-                className="px-3 py-1 bg-theme/10 dark:bg-theme/60 text-theme dark:text-theme border border-theme/30 dark:border-theme font-medium"
+                className="px-3 py-1 bg-theme/10 text-brand border border-theme/30 font-medium"
               >
                 Оршин суугч харах:{" "}
-                <span className="text-theme dark:text-theme font-semibold">
+                <span className="text-brand font-semibold">
                   {residentCameras.length}
                 </span>
               </span>
@@ -819,7 +819,7 @@ export default function KameriinTokhirgoo() {
                   style={{ borderRadius: "10px" }}
                   className={`px-3 py-1.5 text-xs border transition-colors ${
                     activeTab === key
-                      ? "bg-theme/10 dark:bg-theme/60 text-theme dark:text-theme border-theme/30 dark:border-theme font-semibold"
+                      ? "bg-theme/10 text-brand border-theme/30 font-semibold"
                       : "bg-[color:var(--surface-hover)] text-[color:var(--panel-text)] border-[color:var(--surface-border)] hover:bg-[color:var(--panel)]"
                   }`}
                 >
@@ -882,7 +882,7 @@ export default function KameriinTokhirgoo() {
                             }}
                             className={`w-full px-3 py-1.5 rounded-xl text-left text-xs transition-colors ${
                               pageSize === size
-                                ? "bg-theme/10 text-theme dark:text-theme"
+                                ? "bg-theme/10 text-brand"
                                 : "text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"
                             }`}
                           >

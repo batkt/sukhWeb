@@ -110,9 +110,9 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
           const isB2B = val === "B2B_RECEIPT";
           const label = isB2C ? "Иргэн" : isB2B ? "ААН" : val || "-";
           const badgeClass = isB2C
-            ? "bg-theme/10 text-theme dark:bg-theme/40 dark:text-theme border border-theme/20 dark:border-theme/30"
+            ? "bg-theme/10 text-brand/40 border border-theme/20"
             : isB2B
-              ? "bg-theme/10 text-theme dark:bg-theme/40 dark:text-theme border border-theme/20 dark:border-theme/30"
+              ? "bg-theme/10 text-brand/40 border border-theme/20"
               : "bg-[color:var(--panel)] text-[color:var(--muted-text)] border border-[color:var(--surface-border)]";
           return (
             <span
@@ -202,7 +202,7 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
                       type="button"
                       aria-label="И-баримт дахин хэвлэх"
                       onClick={() => onKhevlekh(row)}
-                      className="flex h-7 w-7 items-center justify-center rounded-full text-[color:var(--muted-text)] transition-colors hover:bg-[color:var(--surface-hover)] hover:text-[color:var(--panel-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400 dark:hover:bg-white/10 dark:hover:text-white"
+                      className="flex h-7 w-7 items-center justify-center rounded-full text-[color:var(--muted-text)] transition-colors hover:bg-[color:var(--surface-hover)] hover:text-[color:var(--panel-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--surface-border)] dark:hover:bg-white/10 dark:hover:text-white"
                     >
                       <Printer className="h-4 w-4" />
                     </button>

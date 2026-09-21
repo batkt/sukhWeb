@@ -333,14 +333,14 @@ export default function OrshinSuugch() {
                 <div className="relative p-5 overflow-hidden flex flex-col h-full justify-between">
                   <div
                     className={`text-3xl font-sans mb-1 transition-colors ${
-                      isActive ? "text-theme dark:text-theme font-bold" : "text-[color:var(--panel-text)]"
+                      isActive ? "text-brand font-bold" : "text-[color:var(--panel-text)]"
                     }`}
                   >
                     {stat.count || "0"}
                   </div>
                   <div
                     className={`text-[13px] font-sans leading-tight transition-colors ${
-                      isActive ? "text-theme/80 dark:text-theme/80 font-medium" : "text-[color:var(--muted-text)]"
+                      isActive ? "text-brand/80 font-medium" : "text-[color:var(--muted-text)]"
                     }`}
                   >
                     {stat.label}

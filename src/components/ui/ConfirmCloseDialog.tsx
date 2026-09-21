@@ -92,7 +92,7 @@ export function ConfirmCloseDialog({
               onClick={onConfirm}
               className={`inline-flex items-center justify-center px-5 py-2 rounded-2xl text-xs font-semibold text-white shadow-sm transition-all duration-300 ${confirmVariant === "danger"
                 ? "bg-danger hover:bg-danger"
-                : "bg-success hover:bg-success dark:bg-success dark:hover:bg-success"
+                : "bg-success hover:bg-success dark:hover:bg-success"
                 }`}
             >
               {confirmLabel}

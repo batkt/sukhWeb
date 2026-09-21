@@ -907,7 +907,7 @@ export default function DansniiKhuulga() {
                     <div className="text-[color:var(--muted-text)]">
                       {selectedContract.register || selectedContract.gereeniiDugaar || ""}
                     </div>
-                    <div className="text-right text-theme dark:text-theme">
+                    <div className="text-right text-brand">
                       <input
                         className="w-full rounded-md border border-[color:var(--surface-border)] bg-[color:var(--panel)] px-2 py-0.5 text-right dark:text-white"
                         placeholder="Төлөх дүн"
@@ -924,7 +924,7 @@ export default function DansniiKhuulga() {
               <div className="grid w-full grid-cols-2 divide-x-2 divide-[color:var(--surface-border)] px-2">
                 <div className="flex flex-col justify-between pr-2 lg:flex-row text-xs">
                   <div className="">Холбосон дүн:</div>
-                  <div className="text-right text-base font-bold text-theme dark:text-theme">
+                  <div className="text-right text-base font-bold text-brand">
                     {formatNumber(selectedContract ? selectedGuilgee.total : 0)}
                   </div>
                 </div>

@@ -295,7 +295,7 @@ export function NegtgelTailanTable({ data, loading, niitUldegdel }: NegtgelTaila
             label: (
               <div className="flex justify-center w-full py-0.5">
                 <Tooltip title={assessment.tailbar}>
-                  <span className={`block truncate max-w-[105px] text-center leading-normal pb-1 font-medium ${isKhungCol ? "text-theme dark:text-theme" : ""}`}>
+                  <span className={`block truncate max-w-[105px] text-center leading-normal pb-1 font-medium ${isKhungCol ? "text-brand" : ""}`}>
                     {assessment.tailbar}
                   </span>
                 </Tooltip>
@@ -404,7 +404,7 @@ export function NegtgelTailanTable({ data, loading, niitUldegdel }: NegtgelTaila
 
               if (total <= 0) return "";
               return (
-                <span className={` leading-normal ${isKhungCol ? "text-theme dark:text-theme font-medium" : "text-black dark:text-white"}`}>
+                <span className={` leading-normal ${isKhungCol ? "text-brand font-medium" : "text-black dark:text-white"}`}>
                   {formatNumber(total, 2)}
                 </span>
               );
@@ -452,7 +452,7 @@ export function NegtgelTailanTable({ data, loading, niitUldegdel }: NegtgelTaila
               });
             }
             return rowKhungulult > 0 ? (
-              <span className="text-theme dark:text-theme font-medium leading-normal">
+              <span className="text-brand font-medium leading-normal">
                 {formatNumber(rowKhungulult, 2)}
               </span>
             ) : "-";
@@ -502,14 +502,14 @@ export function NegtgelTailanTable({ data, loading, niitUldegdel }: NegtgelTaila
           {localTotalKhungulult > 0 && (
             <>
               <span className="text-[color:var(--muted-text)]">Нийт хөнгөлөлт:</span>
-              <span className="text-theme dark:text-theme font-medium">
+              <span className="text-brand font-medium">
                 {formatNumber(localTotalKhungulult, 2)} ₮
               </span>
               <span className="text-[color:var(--muted-text)]">|</span>
             </>
           )}
           <span className="text-[color:var(--muted-text)]">Нийт үлдэгдэл:</span>
-          <span className="text-theme font-medium">{formatNumber(totalUldegdel, 2)} ₮</span>
+          <span className="text-brand font-medium">{formatNumber(totalUldegdel, 2)} ₮</span>
         </div>
       }
     />

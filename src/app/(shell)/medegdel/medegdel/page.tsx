@@ -919,7 +919,7 @@ function MedegdelContent() {
                         animate={{ opacity: 1 }}
                         onClick={() => khariltsagchSongokh(mur)}
                         className={`flex items-center gap-3 py-2 px-3 rounded-2xl cursor-pointer transition-all duration-200 border-2 ${isActive
-                          ? "bg-theme/10 dark:bg-theme/20 border-theme"
+                          ? "bg-theme/10 border-theme"
                           : "border-transparent hover:bg-white/10"
                           }`}
                       >
@@ -929,7 +929,7 @@ function MedegdelContent() {
                           readOnly
                           className="w-4 h-4 rounded shrink-0 pointer-events-none"
                         />
-                        <div className="h-9 w-9 rounded-full bg-gradient-to-br from-theme/20 via-purple-400 to-pink-400 flex items-center justify-center text-white text-sm  shrink-0">
+                        <div className="h-9 w-9 rounded-full bg-gradient-to-br from-theme/20 via-theme/20 to-theme/20 flex items-center justify-center text-white text-sm  shrink-0">
                           {mur.ner?.[0] || "?"}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -1106,7 +1106,7 @@ function MedegdelContent() {
             <div className="neu-panel p-4 sm:p-5 flex flex-col min-w-0 lg:w-[350px] shrink-0">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-semibold flex items-center gap-2 text-[color:var(--panel-text)] dark:text-white">
-                  <Bell className="w-4 h-4 text-theme" />
+                  <Bell className="w-4 h-4 text-brand" />
                   Төлөлтийн мэдэгдлүүд
                 </h3>
                 <span className="text-xs bg-[color:var(--surface-hover)] dark:bg-white/10 px-2 py-0.5 rounded-2xl text-[color:var(--muted-text)]">
@@ -1141,7 +1141,7 @@ function MedegdelContent() {
                         key={item._id}
                         onClick={() => setSelectedTulult(item)}
                         className={`p-2.5 rounded-xl cursor-pointer transition-all duration-200 border flex flex-col gap-1.5 relative ${isSelected
-                          ? "bg-success/10 dark:bg-success/20 border-success shadow-sm"
+                          ? "bg-success/10 border-success shadow-sm"
                           : isUnread
                             ? "border-warning/30 bg-warning/5 hover:bg-warning/10"
                             : "border-theme/20 bg-theme/5 hover:bg-theme/10"
@@ -1158,7 +1158,7 @@ function MedegdelContent() {
                               Шинэ
                             </span>
                           ) : (
-                            <span className="px-1.5 py-0.5 rounded text-[9px] bg-theme/20 text-theme dark:text-theme border border-theme/50 shrink-0">
+                            <span className="px-1.5 py-0.5 rounded text-[9px] bg-theme/20 text-brand border border-theme/50 shrink-0">
                               Уншсан
                             </span>
                           )}
@@ -1193,23 +1193,23 @@ function MedegdelContent() {
                   </div>
 
                   {/* Resident Info Box */}
-                  <div className="p-4 rounded-2xl bg-theme/20 dark:bg-theme/5 border border-theme/10 flex flex-col gap-3">
+                  <div className="p-4 rounded-2xl bg-theme/20 border border-theme/10 flex flex-col gap-3">
                     <div className="flex items-center gap-2">
-                      <User className="w-4 h-4 text-theme shrink-0" />
+                      <User className="w-4 h-4 text-brand shrink-0" />
                       <span className="text-xs text-[color:var(--muted-text)] shrink-0">Нэр:</span>
                       <span className="text-xs font-semibold text-[color:var(--panel-text)] dark:text-white truncate">
                         {residentsMap[selectedTulult.orshinSuugchId]?.ner || selectedTulult.orshinSuugchNer || "..."}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Home className="w-4 h-4 text-theme shrink-0" />
+                      <Home className="w-4 h-4 text-brand shrink-0" />
                       <span className="text-xs text-[color:var(--muted-text)] shrink-0">Тоот:</span>
                       <span className="text-xs font-semibold text-[color:var(--panel-text)] dark:text-white">
                         {residentsMap[selectedTulult.orshinSuugchId]?.toot || selectedTulult.gereeniiDugaar || "..."}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-theme shrink-0" />
+                      <Phone className="w-4 h-4 text-brand shrink-0" />
                       <span className="text-xs text-[color:var(--muted-text)] shrink-0">Утас:</span>
                       <span className="text-xs font-semibold text-[color:var(--panel-text)] dark:text-white">
                         {residentsMap[selectedTulult.orshinSuugchId]?.utas || selectedTulult.orshinSuugchUtas || "..."}
@@ -1276,7 +1276,7 @@ function MedegdelContent() {
         <div className="p-4">
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col items-center justify-center py-4 px-3 rounded-lg bg-[#f0fdf4] dark:bg-theme/20 border border-[#86efac] dark:border-theme/60">
-              <span className="text-2xl sm:text-3xl font-bold text-[#00875a] dark:text-theme mb-1">
+              <span className="text-2xl sm:text-3xl font-bold text-[#00875a] dark:text-brand mb-1">
                 {lastSendResult?.sent ?? 0}
               </span>
               <span className="text-[11px] sm:text-xs font-medium text-[color:var(--muted-text)] text-center">

@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
+import { useSearch } from "@/context/SearchContext";
 import { Search, X, User, BarChart2, Users, Key, Monitor, Filter, ParkingCircle, Car, Wallet } from "lucide-react";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import moment from "moment";
@@ -76,7 +77,7 @@ const URILGIIN_TULUV: Record<number, { ner: string; angi: string }> = {
   1: {
     ner: "Идэвхтэй",
     angi:
-      "bg-theme/10 dark:bg-theme/10 border-theme/30 dark:border-theme/30 text-theme dark:text-theme",
+      "bg-theme/10 border-theme/30 text-brand",
   },
   2: {
     ner: "Гарсан",
@@ -129,47 +130,50 @@ function ParkEaseMur({
 
 function ParkEaseNudu({ tuukh }: { tuukh?: ParkEaseTuukh }) {
   if (!tuukh)
-    return <span className="text-[color:var(--muted-text)] italic text-[13px]">-</span>;
+    return <span className="text-[color:var(--muted-text)] italic text-xs">-</span>;
 
   const dotor = !tuukh.garsanTsag;
   const ezenTulsun = tuukh.tulburiinTurul === "ezen";
   const dun = Number(tuukh.tulukhDun) || 0;
 
+  const tooltipParts = [
+    dotor ? "Зогсоол дээр байгаа" : `Нийт: ${mongoloorKhugatsaa(tuukh.niitKhugatsaa)}`,
+    (tuukh.uneguiMinutUldsen ?? 0) > 0 ? `Үнэгүй ${tuukh.uneguiMinutUldsen} мин үлдсэн` : "",
+    (tuukh.uneguiMinutAshiglasan ?? 0) > 0 ? `Үнэгүй ${tuukh.uneguiMinutAshiglasan} мин дууссан` : "",
+    dun > 0 ? `${dunFormat(dun)} (${ezenTulsun ? "Amarhome" : "Зочин"})` : "",
+  ].filter(Boolean);
+
   return (
-    <div className="flex flex-col items-center gap-1">
+    <div
+      title={tooltipParts.join(" | ")}
+      className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
+    >
       {dotor ? (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-theme/10 dark:bg-theme/10 border border-theme/30 dark:border-theme/30 text-[11px] font-medium text-theme dark:text-theme">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-theme/10 border border-theme/30 text-[11px] font-medium text-brand">
           <span className="w-1.5 h-1.5 rounded-full bg-theme shrink-0" />
           Зогсоол дээр
         </span>
       ) : (
-        <span className="text-[13px] font-medium text-[color:var(--muted-text)] font-[family-name:var(--font-mono)]">
+        <span className="text-xs font-medium text-[color:var(--muted-text)] font-[family-name:var(--font-mono)]">
           {mongoloorKhugatsaa(tuukh.niitKhugatsaa)}
         </span>
       )}
 
-      <div className="flex items-center gap-1.5">
-        {(tuukh.uneguiMinutUldsen ?? 0) > 0 ? (
-          <span className="text-[11px] text-[color:var(--muted-text)]">
-            Үнэгүй {tuukh.uneguiMinutUldsen} мин үлдсэн
-          </span>
-        ) : (tuukh.uneguiMinutAshiglasan ?? 0) > 0 ? (
-          <span className="text-[11px] text-[color:var(--muted-text)]">
-            Үнэгүй {tuukh.uneguiMinutAshiglasan} мин дууссан
-          </span>
-        ) : null}
-
-        {dun > 0 &&
-          (ezenTulsun ? (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-warning text-black dark:text-white text-[11px]">
-              {dunFormat(dun)} · Amarhome
-            </span>
-          ) : (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-[color:var(--surface-hover)] dark:bg-white/[0.06] border border-[color:var(--surface-border)] dark:border-white/[0.06] text-[11px] font-medium text-[color:var(--muted-text)]">
-              {dunFormat(dun)} · Зочин
-            </span>
-          ))}
-      </div>
+      {dun > 0 ? (
+        <span
+          className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${
+            ezenTulsun
+              ? "bg-warning text-black"
+              : "bg-[color:var(--surface-hover)] dark:bg-white/[0.06] text-[color:var(--muted-text)] border border-[color:var(--surface-border)] dark:border-white/[0.06]"
+          }`}
+        >
+          {dunFormat(dun)}
+        </span>
+      ) : (tuukh.uneguiMinutUldsen ?? 0) > 0 ? (
+        <span className="text-[10px] text-[color:var(--muted-text)] opacity-75">
+          ({tuukh.uneguiMinutUldsen}м)
+        </span>
+      ) : null}
     </div>
   );
 }
@@ -276,7 +280,7 @@ function UserHistoryModal({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-[color:var(--surface-hover)] dark:bg-white/[0.06] border border-[color:var(--surface-border)] dark:border-white/[0.06]">
-                <User className="w-5 h-5 text-theme dark:text-theme" />
+                <User className="w-5 h-5 text-brand" />
               </div>
               <div>
                 <h2 className="text-[15px] font-medium text-[color:var(--panel-text)] dark:text-white tracking-tight">
@@ -302,7 +306,7 @@ function UserHistoryModal({
           {urisanMashinuud.length > 0 && (
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-3">
-                <Car className="w-4 h-4 text-theme dark:text-theme" />
+                <Car className="w-4 h-4 text-brand" />
                 <h3 className="text-[13px] font-medium text-[color:var(--panel-text)]">
                   Уригдсан машин
                 </h3>
@@ -373,7 +377,7 @@ function UserHistoryModal({
           {parkEaseTuukh.length > 0 && (
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-3">
-                <ParkingCircle className="w-4 h-4 text-theme dark:text-theme" />
+                <ParkingCircle className="w-4 h-4 text-brand" />
                 <h3 className="text-[13px] font-medium text-[color:var(--panel-text)]">
                   ParkEase зогсоол
                 </h3>
@@ -394,7 +398,7 @@ function UserHistoryModal({
                     >
                       <div className="flex items-center justify-between mb-3">
                         {dotor ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-theme/10 dark:bg-theme/10 border border-theme/30 dark:border-theme/30 text-[11px] font-medium text-theme dark:text-theme">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-theme/10 border border-theme/30 text-[11px] font-medium text-brand">
                             <span className="w-1.5 h-1.5 rounded-full bg-theme shrink-0" />
                             Зогсоол дээр байна
                           </span>
@@ -505,7 +509,7 @@ function UserHistoryModal({
                               Урьсан
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-theme/10 dark:bg-theme/10 border border-theme/30 dark:border-theme/30 text-[11px] font-medium text-theme dark:text-theme">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-theme/10 border border-theme/30 text-[11px] font-medium text-brand">
                               Нээсэн
                             </span>
                           )}
@@ -552,11 +556,15 @@ export default function UrisanTuukh() {
   const { token, ajiltan, barilgiinId } = useAuth();
   const { selectedBuildingId, isInitialized } = useBuilding();
   const effectiveBarilgiinId = selectedBuildingId || barilgiinId || undefined;
-  const [searchTerm, setSearchTerm] = useState("");
+  const { searchTerm, setSearchTerm } = useSearch();
   const [page, setPage] = useState(1);
   const pageSize = 500;
   const [selectedLog, setSelectedLog] = useState<GateOpenLog | null>(null);
   const [statusFilter, setStatusFilter] = useState("all");
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm]);
 
   const [dateRange, setDateRange] = useState<
     [string | null, string | null] | null | undefined
@@ -776,20 +784,29 @@ export default function UrisanTuukh() {
     {
       title: "№",
       key: "no",
-      width: 40,
+      width: 45,
       align: "center",
-      render: (_: any, __: any, idx: number) => (page - 1) * pageSize + idx + 1,
+      render: (_: any, __: any, idx: number) => (
+        <span className="whitespace-nowrap font-mono text-xs text-[color:var(--muted-text)]">
+          {(page - 1) * pageSize + idx + 1}
+        </span>
+      ),
     },
     {
       title: "Огноо",
       key: "ognoo",
+      width: 155,
       align: "center",
-      render: (_: any, log: any) =>
-        moment(log.createdAt).format("YYYY-MM-DD HH:mm:ss"),
+      render: (_: any, log: any) => (
+        <span className="whitespace-nowrap font-mono text-xs text-[color:var(--panel-text)]">
+          {log.createdAt ? moment(log.createdAt).format("YYYY-MM-DD HH:mm:ss") : "-"}
+        </span>
+      ),
     },
     {
       title: "Төлөв",
       key: "status",
+      width: 110,
       align: "center",
       // Нэг сонголттой шүүлтүүр — хүснэгтийн стандарт шүүлтүүрийн цэсэнд
       // өөрийн жагсаалтыг зурна.
@@ -819,71 +836,83 @@ export default function UrisanTuukh() {
           ))}
         </div>
       ),
-      render: (_: any, log: any) =>
-        log.ekhSurvalj === "parkease" ? (
-          <span className="inline-flex items-center gap-1 rounded-full border border-theme/30 bg-theme/10 px-2 py-0.5 font-medium text-theme dark:border-theme/30 dark:bg-theme/10 dark:text-theme">
-            <ParkingCircle className="h-3 w-3 shrink-0" />
-            ParkEase
-          </span>
-        ) : log.turul === "урьсан" ? (
-          <span className="inline-flex items-center gap-1 rounded-full border border-warning/30 bg-warning/10 px-2 py-0.5 font-medium text-warning">
-            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-warning" />
-            Урьсан
-          </span>
-        ) : (
-          <span className="inline-flex items-center gap-1 rounded-full border border-theme/30 bg-theme/10 px-2 py-0.5 font-medium text-theme dark:border-theme/30 dark:bg-theme/10 dark:text-theme">
-            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-theme" />
-            Нээсэн
-          </span>
-        ),
+      render: (_: any, log: any) => (
+        <div className="flex items-center justify-center whitespace-nowrap">
+          {log.ekhSurvalj === "parkease" ? (
+            <span className="inline-flex items-center gap-1 rounded-full border border-theme/30 bg-theme/10 px-2 py-0.5 text-xs font-medium text-brand">
+              <ParkingCircle className="h-3 w-3 shrink-0" />
+              ParkEase
+            </span>
+          ) : log.turul === "урьсан" ? (
+            <span className="inline-flex items-center gap-1 rounded-full border border-warning/30 bg-warning/10 px-2 py-0.5 text-xs font-medium text-warning">
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-warning" />
+              Урьсан
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 rounded-full border border-theme/30 bg-theme/10 px-2 py-0.5 text-xs font-medium text-brand">
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-theme" />
+              Нээсэн
+            </span>
+          )}
+        </div>
+      ),
     },
     {
       title: "Камер IP",
       dataIndex: "ip",
       key: "ip",
+      width: 120,
       align: "center",
-      render: (v: any) => <span className="font-mono">{v || "-"}</span>,
+      render: (v: any) => <span className="font-mono text-xs whitespace-nowrap">{v || "-"}</span>,
     },
     {
       title: "Оршин суугч",
       key: "suugch",
+      width: 120,
       align: "center",
-      render: (_: any, log: any) =>
-        log.orshinSuugchiinNer
-          ? log.orshinSuugchiinNer.trim().split(/\s+/).pop()
-          : "-",
+      render: (_: any, log: any) => (
+        <span className="whitespace-nowrap truncate max-w-[120px] inline-block text-xs">
+          {log.orshinSuugchiinNer
+            ? log.orshinSuugchiinNer.trim().split(/\s+/).pop()
+            : "-"}
+        </span>
+      ),
     },
     {
       title: "Тоот",
       dataIndex: "toot",
       key: "toot",
+      width: 70,
       align: "center",
-      render: (v: any) => v || "-",
+      render: (v: any) => <span className="whitespace-nowrap text-xs">{v || "-"}</span>,
     },
     {
       title: "Утас",
       dataIndex: "utas",
       key: "utas",
+      width: 100,
       align: "center",
-      render: (v: any) => <span className="font-mono">{v || "-"}</span>,
+      render: (v: any) => <span className="font-mono text-xs whitespace-nowrap">{v || "-"}</span>,
     },
     {
       title: "Улсын дугаар",
       dataIndex: "mashiniiDugaar",
       key: "dugaar",
+      width: 120,
       align: "center",
       render: (v: any) =>
         v ? (
-          <span className="rounded-full bg-theme px-2.5 py-0.5 tracking-widest !text-white">
+          <span className="rounded-full bg-theme px-2.5 py-0.5 font-mono text-xs tracking-widest !text-white whitespace-nowrap">
             {v}
           </span>
         ) : (
-          <span className="italic opacity-50">-</span>
+          <span className="italic opacity-50 text-xs">-</span>
         ),
     },
     {
       title: "ParkEase зогсоол",
       key: "parkease",
+      width: 160,
       align: "center",
       render: (_: any, log: any) => (
         <ParkEaseNudu
@@ -897,18 +926,19 @@ export default function UrisanTuukh() {
     {
       title: "Хуримтлагдсан авлага",
       key: "avlaga",
+      width: 130,
       align: "center",
       render: (_: any, log: any) => {
         const avl = avlagaMap.get(
           (log.mashiniiDugaar || "").trim().toUpperCase(),
         );
-        if (!avl || avl.dun <= 0) return <span className="opacity-40">-</span>;
+        if (!avl || avl.dun <= 0) return <span className="opacity-40 text-xs">-</span>;
         return (
-          <span className="inline-flex flex-col items-center">
+          <span className="inline-flex items-center justify-center gap-1 whitespace-nowrap text-xs font-mono">
             <span className="font-medium text-warning">
               {avl.dun.toLocaleString("mn-MN")}₮
             </span>
-            <span className="opacity-60">{avl.too} удаа</span>
+            <span className="text-[10px] opacity-60">({avl.too})</span>
           </span>
         );
       },
@@ -916,8 +946,13 @@ export default function UrisanTuukh() {
     {
       title: "Барилга",
       key: "barilga",
+      width: 140,
       align: "center",
-      render: (_: any, log: any) => getBuildingName(log.barilgiinId),
+      render: (_: any, log: any) => (
+        <span className="whitespace-nowrap truncate max-w-[140px] inline-block text-xs">
+          {getBuildingName(log.barilgiinId)}
+        </span>
+      ),
     },
   ];
 
@@ -925,10 +960,10 @@ export default function UrisanTuukh() {
     <div className="h-full overflow-y-auto custom-scrollbar">
       <div className="flex-1 flex flex-col gap-4 px-4 py-4 max-w-[1700px] mx-auto w-full pb-8">
         {/* Filter bar */}
-        <div className="relative z-10 px-6 py-4 rounded-[32px] bg-white border border-[color:var(--surface-border)] shadow-sm shadow-slate-200/50">
-          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+        <div className="relative z-10 px-5 py-3 rounded-2xl bg-white dark:bg-[color:var(--panel)] border border-[color:var(--surface-border)] shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4 shrink-0">
-              <div className="w-[50px] sm:w-40 lg:w-[300px] h-11 [&_.ant-picker-input]:!bg-transparent [&_input]:!bg-transparent [&_.ant-picker-input-active]:!bg-transparent dark:[&_.ant-picker-suffix]:!text-white dark:[&_.ant-picker-suffix_svg]:!fill-white dark:[&_.ant-picker:hover]:!bg-[color:var(--panel)] dark:[&_.ant-picker-focused]:!bg-[color:var(--panel)] [&_.ant-picker-range-separator]:!text-[color:var(--muted-text)] dark:[&_.ant-picker-range-separator]:!text-[color:var(--muted-text)]">
+              <div className="w-[50px] sm:w-40 lg:w-[300px] h-10 [&_.ant-picker-input]:!bg-transparent [&_input]:!bg-transparent [&_.ant-picker-input-active]:!bg-transparent dark:[&_.ant-picker-suffix]:!text-white dark:[&_.ant-picker-suffix_svg]:!fill-white dark:[&_.ant-picker:hover]:!bg-[color:var(--panel)] dark:[&_.ant-picker-focused]:!bg-[color:var(--panel)] [&_.ant-picker-range-separator]:!text-[color:var(--muted-text)] dark:[&_.ant-picker-range-separator]:!text-[color:var(--muted-text)]">
                 <StandardDatePicker
                   isRange={true}
                   value={dateRange ?? undefined}
@@ -945,34 +980,18 @@ export default function UrisanTuukh() {
                 />
               </div>
             </div>
-
-            <div className="relative group w-full xl:w-80 max-w-md">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[color:var(--muted-text)]">
-                <Search className="w-4 h-4" />
-              </span>
-              <input
-                type="text"
-                placeholder="Хайх (Оршин суугч, Тоот, Утас, Улсын дугаар, IP)..."
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setPage(1);
-                }}
-                className="w-full pl-11 pr-4 h-11 rounded-[30px] bg-[color:var(--surface-hover)] border border-[color:var(--surface-border)] text-[12px] text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] focus:ring-2 focus:ring-theme/20 outline-none transition-all shadow-inner"
-              />
-            </div>
           </div>
 
           {statusFilter !== "all" && (
-            <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-[color:var(--surface-border)]">
+            <div className="flex flex-wrap items-center gap-2 mt-2.5 pt-2.5 border-t border-[color:var(--surface-border)]">
               <span className="text-[11px] text-[color:var(--muted-text)] uppercase tracking-wider">Шүүлт:</span>
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-theme/10 dark:bg-theme/10 text-theme dark:text-theme text-[11px] rounded-full border border-theme/30 dark:border-theme/20">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-theme/10 text-brand text-[11px] rounded-full border border-theme/30">
                 Төлөв: {
                   { urisan: "Урьсан", neesen: "Нээсэн" }[statusFilter] || statusFilter
                 }
                 <button
                   onClick={() => { setStatusFilter("all"); setPage(1); }}
-                  className="ml-0.5 hover:text-theme dark:hover:text-theme transition-colors"
+                  className="ml-0.5 hover:text-brand dark:hover:text-brand transition-colors"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -982,89 +1001,73 @@ export default function UrisanTuukh() {
         </div>
 
         {/* Dashboard Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-          <div className="relative overflow-hidden p-6 rounded-[28px] border border-[color:var(--surface-border)] bg-white shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-theme/10 dark:bg-theme/10 flex items-center justify-center text-theme dark:text-theme">
-                <BarChart2 className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-[11px] text-[color:var(--muted-text)] uppercase tracking-wider">Нийт хандалт</p>
-                <p className="text-2xl font-medium text-[color:var(--panel-text)] dark:text-white mt-0.5">{counts.total}</p>
-              </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
+          <div className="p-3 rounded-2xl border border-[color:var(--surface-border)] bg-white dark:bg-[color:var(--panel)] shadow-sm flex items-center gap-3 hover:shadow-md transition-all">
+            <div className="w-9 h-9 rounded-xl bg-theme/10 flex items-center justify-center text-brand shrink-0">
+              <BarChart2 className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] text-[color:var(--muted-text)] uppercase tracking-wider font-medium truncate">Нийт хандалт</p>
+              <p className="text-base font-semibold text-[color:var(--panel-text)] dark:text-white leading-tight mt-0.5">{counts.total}</p>
             </div>
           </div>
           
-          <div className="relative overflow-hidden p-6 rounded-[28px] border border-[color:var(--surface-border)] bg-white shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-warning/10 flex items-center justify-center text-warning">
-                <Users className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-[11px] text-[color:var(--muted-text)] uppercase tracking-wider">Урьсан</p>
-                <p className="text-2xl font-medium text-[color:var(--panel-text)] dark:text-white mt-0.5">{counts.urisan}</p>
-              </div>
+          <div className="p-3 rounded-2xl border border-[color:var(--surface-border)] bg-white dark:bg-[color:var(--panel)] shadow-sm flex items-center gap-3 hover:shadow-md transition-all">
+            <div className="w-9 h-9 rounded-xl bg-warning/10 flex items-center justify-center text-warning shrink-0">
+              <Users className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] text-[color:var(--muted-text)] uppercase tracking-wider font-medium truncate">Урьсан</p>
+              <p className="text-base font-semibold text-[color:var(--panel-text)] dark:text-white leading-tight mt-0.5">{counts.urisan}</p>
             </div>
           </div>
 
-          <div className="relative overflow-hidden p-6 rounded-[28px] border border-[color:var(--surface-border)] bg-white shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-theme/10 dark:bg-theme/10 flex items-center justify-center text-theme dark:text-theme">
-                <Key className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-[11px] text-[color:var(--muted-text)] uppercase tracking-wider">Нээсэн</p>
-                <p className="text-2xl font-medium text-[color:var(--panel-text)] dark:text-white mt-0.5">{counts.neesen}</p>
-              </div>
+          <div className="p-3 rounded-2xl border border-[color:var(--surface-border)] bg-white dark:bg-[color:var(--panel)] shadow-sm flex items-center gap-3 hover:shadow-md transition-all">
+            <div className="w-9 h-9 rounded-xl bg-theme/10 flex items-center justify-center text-theme shrink-0">
+              <Key className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] text-[color:var(--muted-text)] uppercase tracking-wider font-medium truncate">Нээсэн</p>
+              <p className="text-base font-semibold text-[color:var(--panel-text)] dark:text-white leading-tight mt-0.5">{counts.neesen}</p>
             </div>
           </div>
 
-          <div className="relative overflow-hidden p-6 rounded-[28px] border border-[color:var(--surface-border)] bg-white shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-theme/10 dark:bg-theme/10 flex items-center justify-center text-theme dark:text-theme">
-                <Monitor className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-[11px] text-[color:var(--muted-text)] uppercase tracking-wider">Идэвхтэй камер</p>
-                <p className="text-2xl font-medium text-[color:var(--panel-text)] dark:text-white mt-0.5">{topGates.length}</p>
-              </div>
+          <div className="p-3 rounded-2xl border border-[color:var(--surface-border)] bg-white dark:bg-[color:var(--panel)] shadow-sm flex items-center gap-3 hover:shadow-md transition-all">
+            <div className="w-9 h-9 rounded-xl bg-theme/10 flex items-center justify-center text-theme shrink-0">
+              <Monitor className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] text-[color:var(--muted-text)] uppercase tracking-wider font-medium truncate">Идэвхтэй камер</p>
+              <p className="text-base font-semibold text-[color:var(--panel-text)] dark:text-white leading-tight mt-0.5">{topGates.length}</p>
             </div>
           </div>
 
-            {/* Төлөгдөөгүй хуримтлагдсан зогсоолын төлбөр */}
-          <div className="relative overflow-hidden p-6 rounded-[28px] border border-[color:var(--surface-border)] bg-white shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-warning/10 flex items-center justify-center text-warning">
-                <Wallet className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-[11px] text-[color:var(--muted-text)] uppercase tracking-wider">
-                  Хуримтлагдсан авлага
-                </p>
-                <p className="text-2xl font-medium text-warning mt-0.5">
+          <div className="p-3 rounded-2xl border border-[color:var(--surface-border)] bg-white dark:bg-[color:var(--panel)] shadow-sm flex items-center gap-3 hover:shadow-md transition-all">
+            <div className="w-9 h-9 rounded-xl bg-warning/10 flex items-center justify-center text-warning shrink-0">
+              <Wallet className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] text-[color:var(--muted-text)] uppercase tracking-wider font-medium truncate">Хуримтлагдсан авлага</p>
+              <div className="flex items-baseline gap-1 mt-0.5">
+                <p className="text-base font-semibold text-warning leading-tight truncate">
                   {avlagaNiit.dun.toLocaleString("mn-MN")}₮
                 </p>
-                <p className="text-[10px] text-[color:var(--muted-text)] mt-0.5">
-                  {avlagaNiit.too} машин
-                </p>
+                {avlagaNiit.too > 0 && (
+                  <span className="text-[10px] text-[color:var(--muted-text)] whitespace-nowrap">
+                    ({avlagaNiit.too})
+                  </span>
+                )}
               </div>
             </div>
           </div>
 
-        {/* ParkEase дээр бодитоор зогссон зочид */}
-          <div className="relative overflow-hidden p-6 rounded-[28px] border border-[color:var(--surface-border)] bg-white shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-theme/10 dark:bg-theme/10 flex items-center justify-center text-theme dark:text-theme">
-                <ParkingCircle className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-[11px] text-[color:var(--muted-text)] uppercase tracking-wider">
-                  ParkEase зогсоол
-                </p>
-                <p className="text-2xl font-medium text-[color:var(--panel-text)] dark:text-white mt-0.5">
-                  {parkEaseNiit}
-                </p>
-              </div>
+          <div className="p-3 rounded-2xl border border-[color:var(--surface-border)] bg-white dark:bg-[color:var(--panel)] shadow-sm flex items-center gap-3 hover:shadow-md transition-all">
+            <div className="w-9 h-9 rounded-xl bg-theme/10 flex items-center justify-center text-brand shrink-0">
+              <ParkingCircle className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] text-[color:var(--muted-text)] uppercase tracking-wider font-medium truncate">ParkEase зогсоол</p>
+              <p className="text-base font-semibold text-[color:var(--panel-text)] dark:text-white leading-tight mt-0.5">{parkEaseNiit}</p>
             </div>
           </div>
         </div>
@@ -1078,7 +1081,9 @@ export default function UrisanTuukh() {
             dataSource={logs}
             rowKey={(log) => log._id}
             pagination={false}
-            scroll={{ x: 900 }}
+            scroll={{ x: 1100 }}
+            size="middle"
+            className="[&_.ant-table-cell]:!py-2.5 [&_.ant-table-cell]:whitespace-nowrap [&_.ant-table-row]:!h-[44px]"
             locale={{ emptyText: "Бүртгэл олдсонгүй." }}
             onRow={(log) => ({
               onClick: () => setSelectedLog(log),

@@ -513,7 +513,7 @@ function LedgerMonthlyBreakdownTable({
                 key={r.ym}
                 className={`border-b border-[color:var(--surface-border)] ${
                   hi
-                    ? "bg-theme/70 dark:bg-theme/25"
+                    ? "bg-theme/70"
                     : "bg-white dark:bg-[#0f172a]"
                 }`}
               >
@@ -2757,10 +2757,10 @@ export default function HistoryModal({
                         className="bg-white rounded-2xl p-6 shadow-xl"
                       >
                         <div className="text-center">
-                          <div className="mx-auto w-12 h-12 rounded-full bg-theme/10 dark:bg-theme/30 flex items-center justify-center mb-3">
+                          <div className="mx-auto w-12 h-12 rounded-full bg-theme/10 flex items-center justify-center mb-3">
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
-                              className="h-6 w-6 text-theme dark:text-theme"
+                              className="h-6 w-6 text-brand"
                               fill="none"
                               viewBox="0 0 24 24"
                               stroke="currentColor"
@@ -2841,7 +2841,7 @@ export default function HistoryModal({
                             }
                             className={`no-print rounded-2xl px-4 py-3 border border-[color:var(--surface-border)] ${
                               (ledgerDetailSelection.row.uldegdel ?? 0) < 0.01
-                                ? "bg-success/80 dark:bg-success/25"
+                                ? "bg-success/80"
                                 : "bg-danger/80"
                             }`}
                           >
@@ -2856,7 +2856,7 @@ export default function HistoryModal({
                               }
                               className={`text-xl sm:text-2xl font-semibold tabular-nums ${
                                 (ledgerDetailSelection.row.uldegdel ?? 0) < 0.01
-                                  ? "text-success dark:text-success"
+                                  ? "text-success"
                                   : "text-danger"
                               }`}
                             >
@@ -2881,7 +2881,7 @@ export default function HistoryModal({
                             }
                             className={`no-print rounded-2xl px-4 py-3 border border-[color:var(--surface-border)] ${
                               ledgerDetailSelection.balance < 0.01
-                                ? "bg-success/80 dark:bg-success/25"
+                                ? "bg-success/80"
                                 : "bg-danger/80"
                             }`}
                           >
@@ -2896,7 +2896,7 @@ export default function HistoryModal({
                               }
                               className={`text-xl sm:text-2xl font-semibold tabular-nums ${
                                 ledgerDetailSelection.balance < 0.01
-                                  ? "text-success dark:text-success"
+                                  ? "text-success"
                                   : "text-danger"
                               }`}
                             >

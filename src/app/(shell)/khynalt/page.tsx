@@ -1422,13 +1422,18 @@ export default function Khynalt() {
     ajiltan &&
     (hasPermission(ajiltan, "/tulbur") || hasPermission(ajiltan, "tulbur"));
 
-  /** KPI `color` (Tailwind gradient classes) → SVG stroke gradient stops */
-  const kpiIconGradientStops: Record<string, [string, string]> = {
-    "from-warning/20 to-warning/20": ["#f59e0b", "#ea580c"],
-    "from-success/20 to-success/20": ["#10b981", "#0d9488"],
-    "from-theme/20 to-theme/20": ["#6366f1", "#4f46e5"],
-    "from-purple-500 to-purple-600": ["#a855f7", "#9333ea"],
-    "from-danger/20 to-danger/20": ["#ef4444", "#dc2626"],
+  /**
+   * KPI-ийн семантик төрөл → дүрсний өнгөний токен.
+   *
+   * Өмнө нь Tailwind класс МӨР нь map-ийн түлхүүр байсан тул өнгийг
+   * токен руу нэгтгэхэд хоёр түлхүүр давхардаж, TS алдаа гарав. Одоо
+   * түлхүүр нь семантик нэр, утга нь CSS токен — hex давхардахгүй.
+   */
+  const kpiIconOngo: Record<string, string> = {
+    warning: "var(--warning)",
+    success: "var(--success)",
+    theme: "var(--theme)",
+    danger: "var(--danger)",
   };
 
   const kpiCardsRaw = [
@@ -1437,6 +1442,7 @@ export default function Khynalt() {
       value: formatNumber(overdueData?.total ?? 0, 0),
       subtitle: "Төлбөр төлөгдөөгүй",
       color: "from-warning/20 to-warning/20",
+      ongoTurul: "warning",
       href: "/tulbur?tuluv=unpaid",
       icon: Users,
       delay: 100,
@@ -1447,6 +1453,7 @@ export default function Khynalt() {
       value: formatCurrency(currentMonthTotalComputed.total),
       subtitle: "Сарын нийт төлбөр",
       color: "from-theme/20 to-theme/20",
+      ongoTurul: "theme",
       icon: Building2,
       delay: 0,
       show: true,
@@ -1455,7 +1462,8 @@ export default function Khynalt() {
       title: "Орлого/Гүйцэтгэл",
       value: formatCurrency(incomeTotals.paid),
       subtitle: "Төлсөн дүн",
-      color: "from-purple-500 to-purple-600",
+      color: "from-theme/20 to-theme/20",
+      ongoTurul: "theme",
       href: "/tulbur",
       icon: Wallet,
       delay: 400,
@@ -1466,6 +1474,7 @@ export default function Khynalt() {
       value: formatCurrency(incomeTotals.unpaid),
       subtitle: "Үлдэгдэл дүн",
       color: "from-danger/20 to-danger/20",
+      ongoTurul: "danger",
       href: "/tulbur",
       icon: CircleDollarSign,
       delay: 500,
@@ -1476,6 +1485,7 @@ export default function Khynalt() {
       value: formatCurrency(currentMonthTotalComputed.paid),
       subtitle: "Сарын төлсөн дүн",
       color: "from-theme/20 to-theme/20",
+      ongoTurul: "theme",
       href: "/tulbur",
       icon: UserCheck,
       delay: 600,
@@ -1511,10 +1521,10 @@ export default function Khynalt() {
                 type="button"
                 title="Хуулах"
                 onClick={() => dugaariigKhuulya(gereeniiDugaar)}
-                className="transition-colors hover:text-theme"
+                className="transition-colors hover:text-brand"
               >
                 {khuulsanDugaar === gereeniiDugaar ? (
-                  <Check className="h-4 w-4 text-theme" />
+                  <Check className="h-4 w-4 text-brand" />
                 ) : (
                   <Copy className="h-4 w-4" />
                 )}
@@ -1539,7 +1549,7 @@ export default function Khynalt() {
           const dun =
             typeof item.dun === "number" ? item.dun : medegdelDun(item.message);
           return (
-            <span className="font-semibold whitespace-nowrap text-theme dark:text-theme">
+            <span className="font-semibold whitespace-nowrap text-brand">
               {dun !== null && dun !== undefined
                 ? `${dun.toLocaleString()}₮`
                 : "—"}
@@ -1571,7 +1581,7 @@ export default function Khynalt() {
             }
             disabled={!item.orshinSuugchId}
             onClick={() => setKharakhOrshinSuugchId(item.orshinSuugchId || null)}
-            className="rounded-md p-1.5 transition-colors hover:bg-theme/10 hover:text-theme disabled:cursor-not-allowed disabled:opacity-30"
+            className="rounded-md p-1.5 transition-colors hover:bg-theme/10 hover:text-brand disabled:cursor-not-allowed disabled:opacity-30"
           >
             <Eye className="h-4 w-4" />
           </button>
@@ -1619,12 +1629,12 @@ export default function Khynalt() {
                     id="khynalt-building-compare"
                     onClick={() => setBuildingDropdownOpen((v) => !v)}
                     className={`btn-minimal h-[40px] px-3.5 flex items-center gap-2 text-xs font-medium rounded-2xl transition-all border shrink-0 ${buildingFilterMode === "compare"
-                        ? "border-theme/40 bg-theme/10 text-theme dark:text-theme shadow-sm"
+                        ? "border-theme/40 bg-theme/10 text-brand shadow-sm"
                         : "border-[color:var(--panel-text)]/15 text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]/60"
                       }`}
                     title="Барилгаар шүүх болон харьцуулах"
                   >
-                    <Building2 className="w-4 h-4 text-theme shrink-0" />
+                    <Building2 className="w-4 h-4 text-brand shrink-0" />
                     <span className="max-w-[180px] sm:max-w-[220px] truncate">
                       {buildingFilterMode === "compare"
                         ? `Харьцуулалт (${compareBuildingIds.length} барилга)`
@@ -1649,7 +1659,7 @@ export default function Khynalt() {
                     >
                       <div className="flex items-center justify-between pb-2 mb-2 border-b border-[color:var(--panel-text)]/10">
                         <div className="flex items-center gap-1.5 text-xs font-semibold text-[color:var(--panel-text)]">
-                          <SlidersHorizontal className="w-3.5 h-3.5 text-theme" />
+                          <SlidersHorizontal className="w-3.5 h-3.5 text-brand" />
                           <span>Барилгын шүүлт & Харьцуулалт</span>
                         </div>
                         <button
@@ -1721,7 +1731,7 @@ export default function Khynalt() {
                             <button
                               type="button"
                               onClick={() => setCompareBuildingIds(allBuildings.map((b) => String(b._id)))}
-                              className="text-theme hover:underline font-medium"
+                              className="text-brand hover:underline font-medium"
                             >
                               Бүгдийг
                             </button>
@@ -1770,7 +1780,7 @@ export default function Khynalt() {
                                 >
                                   <div className="flex items-center gap-2 min-w-0">
                                     {isCompareSelected ? (
-                                      <CheckSquare className="w-4 h-4 text-theme shrink-0" />
+                                      <CheckSquare className="w-4 h-4 text-brand shrink-0" />
                                     ) : (
                                       <Square className="w-4 h-4 text-[color:var(--muted-text)] shrink-0" />
                                     )}
@@ -1795,7 +1805,7 @@ export default function Khynalt() {
                                   setBuildingDropdownOpen(false);
                                 }}
                                 className={`w-full flex items-center justify-between p-2 rounded-xl text-xs transition-colors text-left ${isSingleSelected
-                                    ? "bg-theme/10 border border-theme/30 text-theme dark:text-theme font-semibold"
+                                    ? "bg-theme/10 border border-theme/30 text-brand font-semibold"
                                     : "hover:bg-[color:var(--surface-hover)]/60 text-[color:var(--panel-text)]"
                                   }`}
                               >
@@ -1804,7 +1814,7 @@ export default function Khynalt() {
                                   <span className="truncate">{b.ner}</span>
                                 </div>
                                 {isSingleSelected && (
-                                  <Check className="w-3.5 h-3.5 text-theme shrink-0" />
+                                  <Check className="w-3.5 h-3.5 text-brand shrink-0" />
                                 )}
                               </button>
                             );
@@ -1940,9 +1950,14 @@ export default function Khynalt() {
                     </h3>
                     {Icon &&
                       (() => {
-                        const stops = kpiIconGradientStops[
-                          (card as { color: string }).color
-                        ] ?? ["#64748b", "#64748b"];
+                        const dursniiOngo =
+                          kpiIconOngo[
+                            (card as { ongoTurul?: string }).ongoTurul ?? ""
+                          ] ?? "var(--muted-text)";
+                        const stops: [string, string] = [
+                          dursniiOngo,
+                          dursniiOngo,
+                        ];
                         const gradId = `kpi-icon-grad-${index}`;
                         return (
                           <div className="relative flex-shrink-0 w-4 h-4 flex items-center justify-center">
@@ -2242,7 +2257,7 @@ export default function Khynalt() {
                 <div className="mb-3 flex flex-row items-start justify-between flex-wrap gap-3">
                   <div className="flex items-center gap-2.5">
                     <div className="w-9 h-9 rounded-2xl bg-theme/10 flex items-center justify-center shrink-0">
-                      <Wallet className="w-[18px] h-[18px] text-theme" />
+                      <Wallet className="w-[18px] h-[18px] text-brand" />
                     </div>
                     <div>
                       <h3 className="text-lg font-medium leading-snug text-[color:var(--panel-text)]">
@@ -2256,7 +2271,7 @@ export default function Khynalt() {
 
                   <div className="flex items-center gap-2">
                     {paymentTotal !== null && (
-                      <span className="text-xs px-2.5 py-1 rounded-2xl bg-theme/10 text-theme dark:text-theme border border-theme/20 font-semibold whitespace-nowrap">
+                      <span className="text-xs px-2.5 py-1 rounded-2xl bg-theme/10 text-brand border border-theme/20 font-semibold whitespace-nowrap">
                         {paymentTotal.toLocaleString()}₮
                       </span>
                     )}

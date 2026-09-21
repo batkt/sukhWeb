@@ -995,7 +995,7 @@ export default function ResidentModal({
                         className="relative"
                       >
                         <label className="block text-xs text-[color:var(--muted-text)] mb-1 transition-colors flex items-center gap-1.5">
-                          <Calendar className="w-3.5 h-3.5 text-theme" />
+                          <Calendar className="w-3.5 h-3.5 text-brand" />
                           Гэрээ дуусах огноо <span className="text-danger">*</span>
                         </label>
                         <div className="h-8">
@@ -1099,7 +1099,7 @@ export default function ResidentModal({
                           <div key={index} className="relative rounded-xl border-l-4 border-l-blue-500 border border-[color:var(--surface-border)] shadow-sm bg-white overflow-hidden transition-all">
                             {/* Toot Header — clickable to collapse */}
                             <div
-                              className="flex items-center justify-between gap-2 px-4 py-2.5 bg-theme/50 dark:bg-theme/20 border-b border-theme/30 dark:border-theme/30"
+                              className="flex items-center justify-between gap-2 px-4 py-2.5 bg-theme/50 border-b border-theme/30"
                             >
                               <button
                                 type="button"
@@ -1107,10 +1107,10 @@ export default function ResidentModal({
                                 className="flex-1 flex items-center gap-2 cursor-pointer text-left min-w-0"
                               >
                                 <span className="w-2 h-2 rounded-full bg-theme shadow-sm shadow-theme/50 flex-shrink-0" />
-                                <h4 className="text-xs font-bold uppercase tracking-wider text-theme dark:text-theme min-w-0 truncate">
+                                <h4 className="text-xs font-bold uppercase tracking-wider text-brand min-w-0 truncate">
                                   Тоот {mainUnits.length > 1 ? `#${index + 1}` : "(Үндсэн)"}
                                   {collapsedMains.includes(index) && mainUnit.toot && (
-                                    <span className="ml-2 font-normal text-theme dark:text-theme normal-case tracking-normal">
+                                    <span className="ml-2 font-normal text-brand normal-case tracking-normal">
                                       — {mainUnit.orts && `${mainUnit.orts} орц, `}{mainUnit.davkhar && `${mainUnit.davkhar} давхар, `}{mainUnit.toot} тоот
                                     </span>
                                   )}
@@ -1120,7 +1120,7 @@ export default function ResidentModal({
                                 <button
                                   type="button"
                                   onClick={() => toggleMainCollapse(index)}
-                                  className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium text-theme dark:text-theme hover:bg-theme/10 dark:hover:bg-theme/40 transition-colors cursor-pointer"
+                                  className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium text-brand hover:bg-theme/10 dark:hover:bg-theme/40 transition-colors cursor-pointer"
                                 >
                                   <svg
                                     className={`w-3.5 h-3.5 transition-transform duration-200 ${collapsedMains.includes(index) ? "-rotate-90" : "rotate-0"}`}
@@ -1301,7 +1301,7 @@ export default function ResidentModal({
                               <button
                                 type="button"
                                 onClick={() => addGarageToUnit(index)}
-                                className="flex items-center gap-1.5 text-[11px] font-semibold text-theme dark:text-theme hover:text-theme dark:hover:text-theme transition-colors px-2.5 py-1.5 rounded-lg hover:bg-theme/10 dark:hover:bg-theme/20 border border-theme/30 dark:border-theme"
+                                className="flex items-center gap-1.5 text-[11px] font-semibold text-brand hover:text-brand dark:hover:text-brand transition-colors px-2.5 py-1.5 rounded-lg hover:bg-theme/10 dark:hover:bg-theme/20 border border-theme/30"
                               >
                                 Гараж нэмэх
                                 {(mainUnit.garages || []).length > 0 && (
@@ -1316,7 +1316,7 @@ export default function ResidentModal({
                               <button
                                 type="button"
                                 onClick={() => addStorageToUnit(index)}
-                                className="flex items-center gap-1.5 text-[11px] font-semibold text-theme dark:text-theme hover:text-theme dark:hover:text-theme transition-colors px-2.5 py-1.5 rounded-lg hover:bg-theme/10 dark:hover:bg-theme/20 border border-theme/30 dark:border-theme"
+                                className="flex items-center gap-1.5 text-[11px] font-semibold text-brand hover:text-brand dark:hover:text-brand transition-colors px-2.5 py-1.5 rounded-lg hover:bg-theme/10 dark:hover:bg-theme/20 border border-theme/30"
                               >
                                 Агуулах нэмэх
                                 {(mainUnit.storages || []).length > 0 && (
@@ -1332,10 +1332,10 @@ export default function ResidentModal({
                             {(mainUnit.garages || []).map((garage: any, gIdx: number) => {
                               const gFlatIdx = getGarageFlatIndex(index, gIdx);
                               return (
-                                <div key={gIdx} className="mx-4 mb-2 rounded-lg border-l-4 border-l-emerald-500 border border-theme/30 dark:border-theme/40 bg-theme/30 dark:bg-theme/10 overflow-hidden">
-                                  <div className="flex items-center justify-between px-3 py-2 border-b border-theme/30 dark:border-theme/40 bg-theme/60 dark:bg-theme/20">
+                                <div key={gIdx} className="mx-4 mb-2 rounded-lg border-l-4 border-l-emerald-500 border border-theme/30 bg-theme/30 overflow-hidden">
+                                  <div className="flex items-center justify-between px-3 py-2 border-b border-theme/30 bg-theme/60">
                                     <div className="flex items-center gap-2">
-                                      <h5 className="text-[10px] font-bold uppercase tracking-wider text-theme dark:text-theme">
+                                      <h5 className="text-[10px] font-bold uppercase tracking-wider text-brand">
                                         Гараж {(mainUnit.garages || []).length > 1 ? `#${gIdx + 1}` : ""}
                                       </h5>
                                     </div>
@@ -1348,14 +1348,14 @@ export default function ResidentModal({
                                   </div>
                                   <div className="p-3 grid grid-cols-2 gap-3">
                                     <div>
-                                      <label className="block text-[10px] uppercase tracking-wider font-bold text-theme dark:text-theme mb-1">Давхар</label>
+                                      <label className="block text-[10px] uppercase tracking-wider font-bold text-brand mb-1">Давхар</label>
                                       <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${gFlatIdx}.davkhar`) ? "input-error" : ""}`}>
                                         <TusgaiZagvar value={garage.davkhar || ""} onChange={(val: string) => updateGarageField(index, gIdx, "davkhar", val)}
                                           options={additionalFloors.map((d) => ({ value: d, label: d }))} className="w-full h-full" placeholder="Давхар..." />
                                       </div>
                                     </div>
                                     <div>
-                                      <label className="block text-[10px] uppercase tracking-wider font-bold text-theme dark:text-theme mb-1">Дугаар</label>
+                                      <label className="block text-[10px] uppercase tracking-wider font-bold text-brand mb-1">Дугаар</label>
                                       {(() => {
                                         const opts = getTootOptions("1", garage.davkhar || "", "Зогсоол");
                                         return (
@@ -1375,10 +1375,10 @@ export default function ResidentModal({
                             {(mainUnit.storages || []).map((storage: any, sIdx: number) => {
                               const sFlatIdxNested = getStorageFlatIndex(index, sIdx);
                               return (
-                                <div key={sIdx} className="mx-4 mb-2 rounded-lg border-l-4 border-l-indigo-500 border border-theme/30 dark:border-theme/40 bg-theme/30 dark:bg-theme/10 overflow-hidden">
-                                  <div className="flex items-center justify-between px-3 py-2 border-b border-theme/30 dark:border-theme/40 bg-theme/60 dark:bg-theme/20">
+                                <div key={sIdx} className="mx-4 mb-2 rounded-lg border-l-4 border-l-indigo-500 border border-theme/30 bg-theme/30 overflow-hidden">
+                                  <div className="flex items-center justify-between px-3 py-2 border-b border-theme/30 bg-theme/60">
                                     <div className="flex items-center gap-2">
-                                      <h5 className="text-[10px] font-bold uppercase tracking-wider text-theme dark:text-theme">
+                                      <h5 className="text-[10px] font-bold uppercase tracking-wider text-brand">
                                         Агуулах {(mainUnit.storages || []).length > 1 ? `#${sIdx + 1}` : ""}
                                       </h5>
                                     </div>
@@ -1391,14 +1391,14 @@ export default function ResidentModal({
                                   </div>
                                   <div className="p-3 grid grid-cols-2 gap-3">
                                     <div>
-                                      <label className="block text-[10px] uppercase tracking-wider font-bold text-theme dark:text-theme mb-1">Давхар</label>
+                                      <label className="block text-[10px] uppercase tracking-wider font-bold text-brand mb-1">Давхар</label>
                                       <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${sFlatIdxNested}.davkhar`) ? "input-error" : ""}`}>
                                         <TusgaiZagvar value={storage.davkhar || ""} onChange={(val: string) => updateStorageField(index, sIdx, "davkhar", val)}
                                           options={additionalFloors.map((d) => ({ value: d, label: d }))} className="w-full h-full" placeholder="Давхар..." />
                                       </div>
                                     </div>
                                     <div>
-                                      <label className="block text-[10px] uppercase tracking-wider font-bold text-theme dark:text-theme mb-1">Дугаар</label>
+                                      <label className="block text-[10px] uppercase tracking-wider font-bold text-brand mb-1">Дугаар</label>
                                       {(() => {
                                         const opts = getTootOptions("1", storage.davkhar || "", "Агуулах");
                                         return (

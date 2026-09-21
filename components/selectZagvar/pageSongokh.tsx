@@ -94,7 +94,7 @@ export default function PageSongokh({
               setOpen(false);
             }}
             className={`w-full text-left px-3 py-1.5 rounded-lg text-sm transition-colors whitespace-nowrap ${
-              active ? "bg-emerald-500 text-white font-bold" : "hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-theme"
+              active ? "bg-theme text-white font-bold" : "hover:bg-theme/10 dark:hover:bg-theme/20 text-theme"
             }`}
           >
             {opt} {suffix}
@@ -110,7 +110,7 @@ export default function PageSongokh({
         <button
           ref={buttonRef}
           type="button"
-          className={`inline-flex items-center gap-2 rounded-xl text-xs px-3 py-1.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm hover:border-slate-300 dark:hover:border-slate-700 transition-all focus-visible:outline-none text-theme/80 ${className}`}
+          className={`inline-flex items-center gap-2 rounded-xl text-xs px-3 py-1.5 border border-[color:var(--surface-border)] bg-white shadow-sm hover:border-[color:var(--surface-border)] transition-all focus-visible:outline-none text-brand/80 ${className}`}
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();

@@ -626,7 +626,7 @@ export default function ResidentRegistrationModal({
 
                       {!["СӨХ", "Ажилтан", "Үнэгүй", "Дотоод", "Харилцагч"].includes(formData.orshinSuugchTurul) && (
                         <div className="group relative">
-                          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--muted-text)] group-focus-within:text-theme transition-colors z-10">
+                          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--muted-text)] group-focus-within:text-brand transition-colors z-10">
                             <Home className="w-4 h-4" />
                           </div>
                           <input
@@ -643,7 +643,7 @@ export default function ResidentRegistrationModal({
                               <option key={t} value={t} />
                             ))}
                           </datalist>
-                          <label className="absolute -top-2 left-3 px-1 bg-white dark:bg-[#11131a] text-[11px] font-sans text-[color:var(--muted-text)] group-focus-within:text-theme transition-colors">
+                          <label className="absolute -top-2 left-3 px-1 bg-white dark:bg-[#11131a] text-[11px] font-sans text-[color:var(--muted-text)] group-focus-within:text-brand transition-colors">
                             Тоот
                           </label>
                         </div>
@@ -763,7 +763,7 @@ export default function ResidentRegistrationModal({
                                   key={mashin._id}
                                   className={`flex items-center gap-2 pl-3 pr-2 py-2 rounded-xl border transition-colors ${
                                     zasajBui
-                                      ? "border-theme bg-theme/10 dark:bg-theme/10"
+                                      ? "border-theme bg-theme/10"
                                       : "border-[color:var(--surface-border)] bg-white"
                                   }`}
                                 >
@@ -773,7 +773,7 @@ export default function ResidentRegistrationModal({
                                   </span>
 
                                   {zasajBui && (
-                                    <span className="text-[10px] font-semibold uppercase tracking-wider text-theme dark:text-theme">
+                                    <span className="text-[10px] font-semibold uppercase tracking-wider text-brand">
                                       Засаж байна
                                     </span>
                                   )}
@@ -783,7 +783,7 @@ export default function ResidentRegistrationModal({
                                     onClick={() => mashinZasaya(mashin)}
                                     disabled={ustgaj}
                                     title="Дугаарыг засах"
-                                    className="p-1.5 rounded-lg text-[color:var(--muted-text)] hover:text-theme hover:bg-theme/10 dark:hover:bg-theme/10 disabled:opacity-40 transition-colors"
+                                    className="p-1.5 rounded-lg text-[color:var(--muted-text)] hover:text-brand hover:bg-theme/10 dark:hover:bg-theme/10 disabled:opacity-40 transition-colors"
                                   >
                                     <Pencil className="w-4 h-4" />
                                   </button>
@@ -815,7 +815,7 @@ export default function ResidentRegistrationModal({
                                 mashiniiKhyazgaar > 0 &&
                                 baigaaMashinuud.length >= mashiniiKhyazgaar
                               }
-                              className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-theme dark:text-theme hover:underline disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
+                              className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-brand hover:underline disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
                             >
                               <Plus className="w-3.5 h-3.5" />
                               Шинэ машин нэмэх
@@ -934,7 +934,7 @@ const InputField = ({
   placeholder?: string;
 }) => (
   <div className="group relative">
-    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--muted-text)] group-focus-within:text-theme transition-colors">
+    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--muted-text)] group-focus-within:text-brand transition-colors">
       <Icon className="w-4 h-4" />
     </div>
     <input
@@ -944,7 +944,7 @@ const InputField = ({
       className="w-full h-11 pl-10 pr-4 bg-[color:var(--surface-hover)] border border-[color:var(--surface-border)] dark:border-white/10 rounded-xl text-sm  text-[color:var(--panel-text)] dark:text-white placeholder:text-[color:var(--muted-text)] focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all"
       placeholder={placeholder}
     />
-    <label className="absolute -top-2 left-3 px-1 bg-white dark:bg-[#11131a] text-[11px] font-sans text-[color:var(--muted-text)] group-focus-within:text-theme transition-colors">
+    <label className="absolute -top-2 left-3 px-1 bg-white dark:bg-[#11131a] text-[11px] font-sans text-[color:var(--muted-text)] group-focus-within:text-brand transition-colors">
       {label}
     </label>
   </div>

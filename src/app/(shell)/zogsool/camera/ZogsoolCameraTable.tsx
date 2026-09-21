@@ -135,7 +135,7 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
               {record.mashiniiDugaar || "-"}
             </span>
             <Copy
-              className="w-4 h-4 text-[color:var(--muted-text)] cursor-pointer hover:text-theme transition-colors"
+              className="w-4 h-4 text-[color:var(--muted-text)] cursor-pointer hover:text-brand transition-colors"
               onClick={() => copyToClipboard(record.mashiniiDugaar)}
             />
           </div>
@@ -294,7 +294,7 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
             );
             return (
               <div className="group/pay relative inline-block cursor-pointer">
-                <span className="text-[color:var(--panel-text)] hover:text-theme transition-colors border-b border-dashed border-[color:var(--surface-border)] pb-0.5 font-mono">
+                <span className="text-[color:var(--panel-text)] hover:text-brand transition-colors border-b border-dashed border-[color:var(--surface-border)] pb-0.5 font-mono">
                   {formatNumber(totalPaid, 2)}
                   {payHistory.length > 1 && (
                     <span className="ml-1 text-[color:var(--muted-text)]">
@@ -343,7 +343,7 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
 
           if (ebDun > 0) {
             return (
-              <span className="text-theme dark:text-theme font-mono">
+              <span className="text-brand font-mono">
                 {formatNumber(ebDun, 2)}
               </span>
             );

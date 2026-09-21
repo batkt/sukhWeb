@@ -36,12 +36,12 @@ const FloatingInput = ({
       value={value}
       onChange={onChange}
       placeholder=" "
-      className="peer w-full rounded-xl border border-theme/30 dark:border-theme bg-white/50 px-4 pt-5 pb-2 text-theme dark:text-white focus:border-theme dark:focus:border-theme focus:ring-2 focus:ring-theme/20 dark:focus:ring-theme/20 focus:outline-none transition-all duration-200"
+      className="peer w-full rounded-xl border border-theme/30 bg-white/50 px-4 pt-5 pb-2 text-theme dark:text-white focus:border-theme dark:focus:border-theme focus:ring-2 focus:ring-theme/20 dark:focus:ring-theme/20 focus:outline-none transition-all duration-200"
     />
     <label
       className="absolute left-4 top-2 text-[color:var(--muted-text)] text-sm transition-all pointer-events-none
       peer-placeholder-shown:top-5 peer-placeholder-shown:text-[color:var(--muted-text)] dark:peer-placeholder-shown:text-[color:var(--muted-text)] peer-placeholder-shown:text-base
-      peer-focus:top-2 peer-focus:text-theme dark:peer-focus:text-theme peer-focus:text-sm"
+      peer-focus:top-2 peer-focus:text-brand dark:peer-focus:text-brand peer-focus:text-sm"
     >
       {label}
     </label>
@@ -79,8 +79,8 @@ const EmailTokhirgoo: React.FC<EmailTokhirgooProps> = ({
 
   return (
     <div className="col-span-12 lg:col-span-6 xl:col-span-4">
-      <div className="bg-gradient-to-br from-theme/10 to-theme/5 shadow-lg dark:shadow-theme/20 hover:shadow-xl dark:hover:shadow-theme/30 transition-all duration-300 rounded-2xl overflow-hidden border border-theme/50 dark:border-theme/50">
-        <div className="px-6 py-4 border-b border-theme/50 dark:border-theme/50 bg-gradient-to-r from-theme/50 to-cyan-100/50">
+      <div className="bg-gradient-to-br from-theme/10 to-theme/5 shadow-lg dark:shadow-theme/20 hover:shadow-xl dark:hover:shadow-theme/30 transition-all duration-300 rounded-2xl overflow-hidden border border-theme/50">
+        <div className="px-6 py-4 border-b border-theme/50 bg-gradient-to-r from-theme/50 to-theme/50">
           <h2 className="text-lg  text-theme dark:text-white">
             {t("Нэхэмжлэл и-мэйлээр илгээх")}
           </h2>

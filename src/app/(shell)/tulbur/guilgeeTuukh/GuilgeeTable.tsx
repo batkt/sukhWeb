@@ -677,7 +677,7 @@ export default function GuilgeeTable({
                       <button
                         type="button"
                         onClick={() => onTransaction(residentData, remainingValue)}
-                        className="bg-transparent border-0 p-1 text-theme hover:text-theme dark:text-theme dark:hover:text-theme transition-colors focus:outline-none"
+                        className="bg-transparent border-0 p-1 text-success hover:opacity-80 transition-opacity focus:outline-none"
                       >
                         <Banknote className="w-5 h-5" />
                       </button>
@@ -688,7 +688,7 @@ export default function GuilgeeTable({
                       type="button"
                       onClick={() => handleSendReminderSms(record)}
                       disabled={sendingSmsId === gid}
-                      className="bg-transparent border-0 p-1 text-warning hover:text-warning transition-colors disabled:opacity-40 focus:outline-none"
+                      className="bg-transparent border-0 p-1 text-warning hover:opacity-80 transition-opacity disabled:opacity-40 focus:outline-none"
                     >
                       {sendingSmsId === gid ? (
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-warning"></div>
@@ -701,7 +701,7 @@ export default function GuilgeeTable({
                     <button
                       type="button"
                       onClick={() => onViewHistory(residentData)}
-                      className="bg-transparent border-0 p-1 text-theme hover:text-theme dark:text-theme dark:hover:text-theme transition-colors focus:outline-none"
+                      className="bg-transparent border-0 p-1 text-info hover:opacity-80 transition-opacity focus:outline-none"
                     >
                       <History className="w-5 h-5" />
                     </button>
@@ -710,7 +710,7 @@ export default function GuilgeeTable({
                     <button
                       type="button"
                       onClick={() => onViewInvoice(residentData)}
-                      className="bg-transparent border-0 p-1 text-purple-500 hover:text-purple-600 dark:text-purple-400 dark:hover:text-purple-300 transition-colors focus:outline-none"
+                      className="bg-transparent border-0 p-1 text-brand hover:opacity-80 transition-opacity focus:outline-none"
                     >
                       <Eye className="w-5 h-5" />
                     </button>

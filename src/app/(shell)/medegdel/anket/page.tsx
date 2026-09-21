@@ -266,20 +266,20 @@ function AnketiinZagvar({
         <div>{a.ner as string}</div>
         <div className="flex justify-end gap-2">
           <Button
-            className="bg-white text-theme hover:text-theme"
+            className="bg-white text-brand hover:text-brand"
             onClick={(e) => {
               e.stopPropagation();
               anketIlgeeye(a);
             }}
-            icon={<SendOutlined className="dark:text-theme" />}
+            icon={<SendOutlined className="dark:text-brand" />}
           />
           <Button
-            className="bg-white text-theme hover:text-theme"
+            className="bg-white text-brand hover:text-brand"
             onClick={(e) => {
               e.stopPropagation();
               setData({ ...a, khariultuud: undefined });
             }}
-            icon={<EyeOutlined className="dark:text-theme" />}
+            icon={<EyeOutlined className="dark:text-brand" />}
           />
           <Popconfirm
             placement="right"
@@ -364,7 +364,7 @@ function AnketiinZagvar({
             <div
               className={`absolute -bottom-1 right-2 transition-all ${
                 khariult.jagsaalt.length > 0
-                  ? " text-pink-500"
+                  ? " text-brand"
                   : "text-[color:var(--muted-text)]"
               }`}
             >

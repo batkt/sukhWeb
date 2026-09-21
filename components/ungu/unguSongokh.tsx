@@ -71,7 +71,7 @@ export default function ӨнгөнийЗагварСонгох({ buttonClassName
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={buttonClassName || "group relative inline-flex items-center justify-center h-10 w-10 neu-panel text-slate-700 hover:text-[#1e3a8a] hover:scale-105 duration-300 "}
+        className={buttonClassName || "group relative inline-flex items-center justify-center h-10 w-10 neu-panel text-[color:var(--panel-text)] hover:text-[#1e3a8a] hover:scale-105 duration-300 "}
         title="Өнгөний загварыг солих"
       >
         <div className="absolute inset-0 bg-gradient-to-br from-current/10 to-current/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -90,8 +90,8 @@ export default function ӨнгөнийЗагварСонгох({ buttonClassName
                   title={t.name}
                   className={`group relative h-9 w-9 rounded-full border transition-all duration-200 ease-out flex-none ${
                     currentTheme === t.id
-                      ? "ring-2 ring-blue-500 border-transparent"
-                      : "border-slate-200 hover:border-slate-300"
+                      ? "ring-2 ring-theme border-transparent"
+                      : "border-[color:var(--surface-border)] hover:border-[color:var(--surface-border)]"
                   } ${clickedTheme === t.id ? "scale-90" : "scale-90"}`}
                 >
                   <span className="sr-only">{t.name}</span>

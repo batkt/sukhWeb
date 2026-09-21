@@ -274,7 +274,7 @@ export default function TaskManagementSystem() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="relative">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-theme/20 via-purple-400 to-pink-400 text-white  text-lg shadow-md">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-theme/20 via-theme/20 to-theme/20 text-white  text-lg shadow-md">
                     {group.khariltsagchiinNer?.charAt(0)}
                   </div>
                   {hasMultiple && (

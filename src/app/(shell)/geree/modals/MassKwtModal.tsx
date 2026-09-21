@@ -584,11 +584,11 @@ export default function MassKwtModal({
                   <button
                     type="button"
                     onClick={() => setExcelMenuOpen((prev) => !prev)}
-                    className="px-3 py-1.5 text-xs text-theme dark:text-theme bg-theme/10 hover:bg-theme/20 !rounded-xl transition-colors flex items-center gap-1.5 border border-theme/30 shadow-xs cursor-pointer"
+                    className="px-3 py-1.5 text-xs text-brand bg-theme/10 hover:bg-theme/20 !rounded-xl transition-colors flex items-center gap-1.5 border border-theme/30 shadow-xs cursor-pointer"
                     style={{ borderRadius: "0.75rem" }}
                     title="Excel үйлдлүүд"
                   >
-                    <FileSpreadsheet className="w-4 h-4 text-theme dark:text-theme" />
+                    <FileSpreadsheet className="w-4 h-4 text-brand" />
                     <span>Excel</span>
                     <ChevronDown
                       className={`w-3.5 h-3.5 transition-transform duration-200 ${excelMenuOpen ? "rotate-180" : ""
@@ -612,10 +612,10 @@ export default function MassKwtModal({
                           setExcelMenuOpen(false);
                           handleExportToExcel();
                         }}
-                        className="w-full px-3 py-2 text-left text-xs text-[color:var(--panel-text)] hover:!bg-theme/10 hover:!text-theme dark:hover:!text-theme !rounded-xl flex items-center gap-2.5 transition-colors cursor-pointer"
+                        className="w-full px-3 py-2 text-left text-xs text-[color:var(--panel-text)] hover:!bg-theme/10 hover:!text-brand dark:hover:!text-brand !rounded-xl flex items-center gap-2.5 transition-colors cursor-pointer"
                         style={{ borderRadius: "0.75rem" }}
                       >
-                        <Download className="w-4 h-4 text-theme dark:text-theme shrink-0" />
+                        <Download className="w-4 h-4 text-brand shrink-0" />
                         <span>Excel татах</span>
                       </button>
 
@@ -625,10 +625,10 @@ export default function MassKwtModal({
                           setExcelMenuOpen(false);
                           fileInputRef.current?.click();
                         }}
-                        className="w-full px-3 py-2 text-left text-xs text-[color:var(--panel-text)] hover:!bg-theme/10 hover:!text-theme dark:hover:!text-theme !rounded-xl flex items-center gap-2.5 transition-colors cursor-pointer mt-0.5"
+                        className="w-full px-3 py-2 text-left text-xs text-[color:var(--panel-text)] hover:!bg-theme/10 hover:!text-brand dark:hover:!text-brand !rounded-xl flex items-center gap-2.5 transition-colors cursor-pointer mt-0.5"
                         style={{ borderRadius: "0.75rem" }}
                       >
-                        <Upload className="w-4 h-4 text-theme dark:text-theme shrink-0" />
+                        <Upload className="w-4 h-4 text-brand shrink-0" />
                         <span>Excel оруулах</span>
                       </button>
                     </div>

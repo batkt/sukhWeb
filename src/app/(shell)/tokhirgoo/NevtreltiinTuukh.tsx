@@ -139,7 +139,7 @@ export default function NevtreltiinTuukh({
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-[color:var(--surface-border)]">
           <div className="flex items-center gap-3">
-            <Clock className="w-5 h-5 text-theme dark:text-theme" />
+            <Clock className="w-5 h-5 text-brand" />
             <h2 className="text-xl text-[color:var(--panel-text)]">
               {t("Нэвтрэлтийн түүх")}
             </h2>

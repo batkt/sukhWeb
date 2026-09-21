@@ -105,7 +105,7 @@ function DansTile({ data, onEdit, onDelete, t }: DansTileProps) {
         <Tooltip label={t("Засах")} withArrow>
           <button
             onClick={() => onEdit(data)}
-            className="flex h-9 w-9 items-center justify-center rounded-xl bg-theme/10 dark:bg-theme/30 text-theme dark:text-theme hover:bg-theme hover:text-white transition-all duration-200"
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-theme/10 text-brand hover:bg-theme hover:text-white transition-all duration-200"
             aria-label={t("Засах")}
           >
             <span className="text-sm">✎</span>
@@ -258,8 +258,8 @@ function Dans() {
     setCorporateState: React.Dispatch<React.SetStateAction<Partial<DansItem>>>;
   }) => {
     const colors = bankKey === "khanbank" 
-      ? "from-theme/10 to-theme/5 border-theme/50 dark:border-theme/50 dark:shadow-theme/20 dark:hover:shadow-theme/30"
-      : "from-theme/10 to-theme/5 border-theme/50 dark:border-theme/50 dark:shadow-theme/20 dark:hover:shadow-theme/30";
+      ? "from-theme/10 to-theme/5 border-theme/50 dark:shadow-theme/20 dark:hover:shadow-theme/30"
+      : "from-theme/10 to-theme/5 border-theme/50 dark:shadow-theme/20 dark:hover:shadow-theme/30";
     
     return (
       <div className={`bg-gradient-to-br ${colors} shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl p-5 mb-6 border`}>

@@ -488,9 +488,9 @@ export function useGereeData(
               status === "");
 
           const statusClass = isCancelled
-            ? "badge-unpaid bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+            ? "badge-unpaid bg-danger/10 text-danger"
             : isActive
-              ? "badge-paid bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+              ? "badge-paid bg-success/10 text-success"
               : "badge-neutral";
 
           return React.createElement(
@@ -539,7 +539,7 @@ export function useGereeData(
             if (!isNaN(date.getTime())) {
               return React.createElement(
                 "span",
-                { className: "text-red-500 font-medium" },
+                { className: "text-danger font-medium" },
                 date.toLocaleDateString("mn-MN", {
                   year: "numeric",
                   month: "2-digit",

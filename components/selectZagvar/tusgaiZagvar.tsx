@@ -197,7 +197,7 @@ export default function TusgaiZagvar({
               }
             }}
             className={`w-full h-full px-2.5 bg-transparent border-none outline-none focus:ring-0 text-sm ${
-              tone === "neutral" ? "!text-slate-900" : "text-theme"
+              tone === "neutral" ? "!text-[color:var(--panel-text)]" : "text-theme"
             } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
           />
           <button
@@ -220,7 +220,7 @@ export default function TusgaiZagvar({
             <ChevronDown
               className={`w-4 h-4 transition-transform ${
                 isOpen ? "rotate-180" : ""
-              } ${tone === "neutral" ? "text-slate-500" : ""}`}
+              } ${tone === "neutral" ? "text-[color:var(--muted-text)]" : ""}`}
             />
           </button>
         </div>
@@ -241,14 +241,14 @@ export default function TusgaiZagvar({
           }}
           disabled={disabled}
           className={`btn-minimal w-full justify-between cursor-pointer flex items-center h-full ${
-            tone === "neutral" ? "!text-slate-900" : ""
+            tone === "neutral" ? "!text-[color:var(--panel-text)]" : ""
           } ${disabled ? "opacity-50 cursor-not-allowed" : ""} ${buttonClassName}`}
         >
           <span
             className={`block truncate text-left flex-1 min-w-0 ${
               buttonClassName.includes("font-normal") ? "!font-normal" : ""
             } ${
-              tone === "neutral" ? "!text-slate-900" : ""
+              tone === "neutral" ? "!text-[color:var(--panel-text)]" : ""
             }`}
           >
             {selectedOption?.label || placeholder}
@@ -256,7 +256,7 @@ export default function TusgaiZagvar({
           <ChevronDown
             className={`w-4 h-4 ml-2 flex-shrink-0 transition-transform ${
               isOpen ? "rotate-180" : ""
-            } ${tone === "neutral" ? "text-slate-500" : ""}`}
+            } ${tone === "neutral" ? "text-[color:var(--muted-text)]" : ""}`}
           />
         </button>
       )}
@@ -279,7 +279,7 @@ export default function TusgaiZagvar({
             <div
               className={`mt-2 w-full max-h-60 rounded-2xl overflow-hidden shadow-xl bg-[color:var(--surface-bg)] backdrop-blur-xl border border-white/10 isolate ${
                 tone === "neutral"
-                  ? "!bg-white !text-slate-900 !border !border-gray-200"
+                  ? "!bg-white !text-[color:var(--panel-text)] !border !border-[color:var(--surface-border)]"
                   : ""
               } ${dropdownClassName}`}
             >
@@ -296,8 +296,8 @@ export default function TusgaiZagvar({
                       }}
                       className={`w-full text-left px-4 py-2 text-sm transition-all truncate font-semibold ${
                         tone === "neutral"
-                          ? "text-blue-700 bg-blue-50 hover:bg-blue-100"
-                          : "text-blue-500 bg-blue-500/10 hover:bg-blue-500/20"
+                          ? "text-brand bg-theme/10 hover:bg-theme/10"
+                          : "text-brand bg-theme/10 hover:bg-theme/20"
                       }`}
                     >
                       {typedCustomEntry.label}
@@ -319,13 +319,13 @@ export default function TusgaiZagvar({
                       }}
                       className={`w-full text-left px-4 py-2 text-sm transition-all truncate ${
                         opt.disabled
-                          ? "opacity-50 cursor-not-allowed text-gray-400"
+                          ? "opacity-50 cursor-not-allowed text-[color:var(--muted-text)]"
                           : opt.isOccupied
-                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium hover:bg-emerald-500/20"
+                          ? "bg-theme/10 text-brand font-medium hover:bg-theme/20"
                           : tone === "neutral"
                           ? opt.value === value
-                            ? " text-slate-900 bg-gray-50"
-                            : "text-slate-700 hover:bg-gray-50"
+                            ? " text-[color:var(--panel-text)] bg-[color:var(--surface-hover)]"
+                            : "text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"
                           : opt.value === value
                           ? " text-theme"
                           : "text-theme hover:bg-black/8"

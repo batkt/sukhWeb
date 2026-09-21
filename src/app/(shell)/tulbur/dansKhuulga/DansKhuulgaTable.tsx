@@ -245,7 +245,7 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
               {isLinked ? (
                 <button
                   onClick={() => onUnlink?.(item)}
-                  className="flex items-center justify-center w-5 h-5 rounded-full bg-theme/10 dark:bg-theme/30 text-theme dark:text-theme border border-theme/30 dark:border-theme hover:bg-theme/10 dark:hover:bg-theme/30 hover:scale-105 active:scale-95 transition-all duration-200"
+                  className="flex items-center justify-center w-5 h-5 rounded-full bg-theme/10 text-brand border border-theme/30 hover:bg-theme/10 dark:hover:bg-theme/30 hover:scale-105 active:scale-95 transition-all duration-200"
                   title="Холболт салгах"
                 >
                   <CheckOutlined className="" />

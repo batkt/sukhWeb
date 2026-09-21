@@ -59,8 +59,8 @@ export default function Tailan() {
       <LocalStyles />
       {/* Background decorative elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-br from-theme/20 to-purple-600/20 rounded-full blur-xl animate-pulse"></div>
-        <div className="absolute top-40 right-20 w-24 h-24 bg-gradient-to-br from-pink-400/20 to-warning/20 rounded-full blur-lg animate-bounce"></div>
+        <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-br from-theme/20 to-theme/20 rounded-full blur-xl animate-pulse"></div>
+        <div className="absolute top-40 right-20 w-24 h-24 bg-gradient-to-br from-theme/20 to-warning/20 rounded-full blur-lg animate-bounce"></div>
         <div className="absolute bottom-20 left-1/4 w-40 h-40 bg-gradient-to-br from-success/20 to-theme/20 rounded-full blur-2xl animate-pulse delay-1000"></div>
         <div className="absolute bottom-40 right-1/3 w-28 h-28 bg-gradient-to-br from-warning/20 to-danger/20 rounded-full blur-xl animate-bounce delay-500"></div>
       </div>
@@ -74,9 +74,9 @@ export default function Tailan() {
         {/* Icon with animation */}
         <div className="relative">
           <div className="w-24 h-24 mx-auto mb-6 relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-theme/20 to-purple-600 rounded-full animate-spin-slow"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-theme/20 to-theme/20 rounded-full animate-spin-slow"></div>
             <div className="absolute inset-2 bg-white rounded-full flex items-center justify-center">
-              <Rocket className="w-10 h-10 text-theme animate-bounce" />
+              <Rocket className="w-10 h-10 text-brand animate-bounce" />
             </div>
             <div className="absolute -top-2 -right-2">
               <Sparkles className="w-6 h-6 text-warning animate-pulse" />
@@ -86,7 +86,7 @@ export default function Tailan() {
 
         {/* Main heading */}
         <div className="space-y-4">
-          <h1 className="text-6xl py-14 md:text-7xl font-black bg-gradient-to-r from-theme/20 via-purple-600 to-pink-600 bg-clip-text text-transparent animate-gradient-x">
+          <h1 className="text-6xl py-14 md:text-7xl font-black bg-gradient-to-r from-theme/20 via-theme/20 to-theme/20 bg-clip-text text-transparent animate-gradient-x">
             Тун удахгүй
           </h1>
           <p className="text-xl md:text-2xl text-[color:var(--muted-text)] ">
@@ -101,7 +101,7 @@ export default function Tailan() {
           </div>
           <div className="w-full bg-[color:var(--panel)] rounded-full h-3 overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-theme/20 to-purple-600 rounded-full animate-pulse"
+              className="h-full bg-gradient-to-r from-theme/20 to-theme/20 rounded-full animate-pulse"
               style={{ width: "65%" }}
             ></div>
           </div>

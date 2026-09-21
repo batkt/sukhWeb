@@ -835,7 +835,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
           <div className="flex flex-wrap items-center justify-between gap-4 px-6 pt-5 pb-5 border-b border-[color:var(--surface-border)]">
             {/* Left: Avatar & Resident details */}
             <div className="flex items-center gap-4 min-w-0">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-theme/10 text-theme dark:bg-theme/25 dark:text-theme">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-theme/10 text-brand/25">
                 <User className="h-7 w-7" />
               </div>
               <div className="min-w-0">
@@ -857,7 +857,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
 
             {/* Right: Status pill & Close button on the same line */}
             <div className="flex items-center gap-3 shrink-0">
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-theme/80 bg-theme/90 px-3 py-1 text-xs font-medium text-theme dark:border-theme/20 dark:bg-theme/10 dark:text-theme">
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-theme/80 bg-theme/90 px-3 py-1 text-xs font-medium text-brand/20">
                 <span className="h-1.5 w-1.5 rounded-full bg-theme animate-pulse shrink-0" />
                 <span>
                   {tekst(medeelel?.tuluv) === "—" || !medeelel?.tuluv
@@ -898,7 +898,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                   <div>
                     <div className="flex items-center justify-between pb-3.5 border-b border-[color:var(--surface-border)]">
                       <div className="flex items-center gap-2">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-theme/10 text-theme dark:bg-theme/25 dark:text-theme">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-theme/10 text-brand/25">
                           <User className="h-4 w-4" />
                         </div>
                         <h3 className="text-xs sm:text-sm font-semibold text-[color:var(--panel-text)] dark:text-white">
@@ -910,7 +910,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                         onClick={() =>
                           zasajBuiKhuvi ? setZasajBuiKhuvi(false) : khuviiZasya()
                         }
-                        className="rounded-lg px-2 py-1 text-[11px] font-medium text-theme transition hover:bg-theme/10 dark:text-theme dark:hover:bg-theme/20"
+                        className="rounded-lg px-2 py-1 text-[11px] font-medium text-theme transition hover:bg-theme/10 dark:hover:bg-theme/20"
                       >
                         {zasajBuiKhuvi ? "Болих" : "Засах"}
                       </button>
@@ -1089,7 +1089,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                   <div>
                     <div className="flex items-center justify-between pb-3.5 border-b border-[color:var(--surface-border)]">
                       <div className="flex items-center gap-2">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-theme/10 text-theme dark:bg-theme/25 dark:text-theme">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-theme/10 text-brand/25">
                           <Car className="h-4 w-4" />
                         </div>
                         <h3 className="text-xs sm:text-sm font-semibold text-[color:var(--panel-text)] dark:text-white">
@@ -1127,7 +1127,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                               ? "border-[color:var(--surface-border)] text-[color:var(--panel-text)] dark:text-white focus:ring-2 focus:ring-theme"
                               : !MASHINII_DUGAARIIN_ZAGVAR.test(shineMashiniiDugaar)
                                 ? "border-danger text-danger focus:ring-2 focus:ring-danger/20"
-                                : "border-success dark:border-success text-success dark:text-success focus:ring-2 focus:ring-success/20"
+                                : "border-success text-success focus:ring-2 focus:ring-success/20"
                               }`}
                           />
                         </div>
@@ -1186,7 +1186,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                             className="flex items-center justify-between rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] px-3.5 py-2.5"
                           >
                             <div className="flex items-center gap-3 min-w-0">
-                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-theme/15 text-theme dark:bg-theme/25 dark:text-theme">
+                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-theme/15 text-brand/25">
                                 <Car className="h-4 w-4" />
                               </div>
                               <div className="min-w-0">
@@ -1222,7 +1222,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                   <div>
                     <div className="flex items-center justify-between pb-3.5 border-b border-[color:var(--surface-border)]">
                       <div className="flex items-center gap-2">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-theme/10 text-theme dark:bg-theme/25 dark:text-theme">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-theme/10 text-brand/25">
                           <Warehouse className="h-4 w-4" />
                         </div>
                         <h3 className="text-xs sm:text-sm font-semibold text-[color:var(--panel-text)] dark:text-white">
@@ -1242,7 +1242,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                             }
                           }}
                           className={`flex items-center gap-1 rounded-xl border px-2.5 py-1 text-[11px] font-normal transition cursor-pointer ${zasajBuiToot
-                            ? "border-theme bg-theme/10 text-theme dark:bg-theme/20 dark:text-theme"
+                            ? "border-theme bg-theme/10 text-brand/20"
                             : "border-[color:var(--surface-border)] text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)]"
                             }`}
                         >
@@ -1394,7 +1394,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                 type="button"
                                 onClick={() => setOmchFilter(tab.key)}
                                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer shrink-0 ${isActive
-                                    ? "bg-theme/10 text-theme dark:bg-theme/20 dark:text-theme border border-theme/30"
+                                    ? "bg-theme/10 text-brand/20 border border-theme/30"
                                     : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] border border-transparent"
                                   }`}
                               >
@@ -1450,7 +1450,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                   >
                                     <div className="flex items-start justify-between">
                                       <div className="flex items-center gap-2.5">
-                                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-theme/10 text-theme dark:bg-theme/30 dark:text-theme font-bold text-xs">
+                                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-theme/10 text-brand/30 font-bold text-xs">
                                           {category === "Гараж" ? (
                                             isB1 && t.turul === "B1" ? (
                                               <span className="text-[10px] font-semibold">B1</span>
@@ -1549,7 +1549,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                   <div>
                     <div className="flex items-center justify-between pb-3.5 border-b border-[color:var(--surface-border)]">
                       <div className="flex items-center gap-2">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-theme/10 text-theme dark:bg-theme/25 dark:text-theme">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-theme/10 text-brand/25">
                           <Home className="h-4 w-4" />
                         </div>
                         <h3 className="text-xs sm:text-sm font-semibold text-[color:var(--panel-text)] dark:text-white">
@@ -1565,7 +1565,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                             setZasajBuiGishuun(null);
                             setGishuunNemejBaina((n) => !n);
                           }}
-                          className="rounded-lg px-2 py-1 text-[11px] font-medium text-theme transition hover:bg-theme/10 dark:text-theme dark:hover:bg-theme/20 cursor-pointer"
+                          className="rounded-lg px-2 py-1 text-[11px] font-medium text-theme transition hover:bg-theme/10 dark:hover:bg-theme/20 cursor-pointer"
                         >
                           {gishuunNemejBaina ? "Цуцлах" : "+ Гишүүн нэмэх"}
                         </button>
@@ -1583,7 +1583,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                       {gishuunNemejBaina ? (
                         /* Шууд нэмэх форм — үндсэн хайрцаг дотор харагдана */
                         <div className="h-full overflow-y-auto pr-1">
-                          <div className="rounded-xl border border-theme/30 bg-theme/5 p-3 dark:border-theme/25 dark:bg-theme/10 space-y-2.5">
+                          <div className="rounded-xl border border-theme/30 bg-theme/5 p-3/25/10 space-y-2.5">
                             <div className="grid grid-cols-2 gap-2">
                               <input
                                 placeholder="Овог"
@@ -1840,7 +1840,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                       )}
                                     </td>
                                     <td className="py-2.5 text-center">
-                                      <span className="inline-flex items-center gap-1 rounded-full bg-theme/10 px-2 py-0.5 text-[10px] font-medium text-theme dark:bg-theme/10 dark:text-theme">
+                                      <span className="inline-flex items-center gap-1 rounded-full bg-theme/10 px-2 py-0.5 text-[10px] font-medium text-brand">
                                         {tekst(g.gishuuniiTuluv) === "—"
                                           ? "Идэвхтэй"
                                           : tekst(g.gishuuniiTuluv)}

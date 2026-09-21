@@ -127,13 +127,13 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
       key: "khungulult",
       label: (
         <div className="flex justify-center w-full py-0.5">
-          <span className="leading-normal pb-0.5 font-medium text-theme dark:text-theme">Хөнгөлөлт</span>
+          <span className="leading-normal pb-0.5 font-medium text-brand">Хөнгөлөлт</span>
         </div>
       ),
       width: 90,
       align: "center" as const,
       render: (v: number) => (
-        <span className="text-theme dark:text-theme font-medium leading-normal">
+        <span className="text-brand font-medium leading-normal">
           {Number(v) > 0 ? formatNumber(v, 2) : "-"}
         </span>
       ),
@@ -248,7 +248,7 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
         </div>
         <div className="flex flex-col">
           <span className="text-[color:var(--muted-text)] uppercase tracking-wider">Нийт Хөнгөлөлт</span>
-          <span className="text-theme dark:text-theme font-medium">{formatNumber(finalTotals.khungulult || 0, 2)}₮</span>
+          <span className="text-brand font-medium">{formatNumber(finalTotals.khungulult || 0, 2)}₮</span>
         </div>
         <div className="flex flex-col">
           <span className="text-[color:var(--muted-text)] uppercase tracking-wider">Нийт Төлсөн</span>

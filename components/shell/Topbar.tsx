@@ -161,15 +161,16 @@ export default function Topbar({
                 title={`Лицензийн үлдсэн хугацаа: ${remainingDays} хоног`}
                 className={`h-9 flex items-center gap-1.5 px-3.5 rounded-xl text-xs border backdrop-blur-md transition shadow-2xs select-none ${
                   remainingDays <= 15
-                    ? "bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400"
-                    : "bg-emerald-500/10 border-emerald-500/25 text-emerald-700 dark:text-emerald-300"
+                    ? "bg-danger/10 border-danger/30 text-danger"
+                    : "bg-success/10 border-success/25 text-success"
                 }`}
               >
-                <CalendarClock className="h-4 w-4 text-emerald-500 shrink-0" />
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 leading-none">
+                {/* Өнгө нь контейнерээс өвлөнө — лиценз дуусах дөхөхөд улаан болно */}
+                <CalendarClock className="h-4 w-4 shrink-0" />
+                <span className="text-xs font-semibold text-[color:var(--muted-text)] leading-none">
                   Лиценз:
                 </span>
-                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 leading-none">
+                <span className="text-xs font-bold leading-none">
                   {remainingDays} хоног
                 </span>
               </div>
@@ -178,13 +179,13 @@ export default function Topbar({
             {storageLabel !== null && storageLabel !== undefined && (
               <div
                 title={`Ашигласан дата: ${storageLabel}`}
-                className="h-9 flex items-center gap-1.5 px-3.5 rounded-xl text-xs border border-sky-500/25 bg-sky-500/10 backdrop-blur-md transition shadow-2xs select-none"
+                className="h-9 flex items-center gap-1.5 px-3.5 rounded-xl text-xs border border-info/25 bg-info/10 text-info backdrop-blur-md transition shadow-2xs select-none"
               >
-                <Database className="h-4 w-4 text-sky-500 shrink-0" />
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 leading-none">
+                <Database className="h-4 w-4 shrink-0" />
+                <span className="text-xs font-semibold text-[color:var(--muted-text)] leading-none">
                   Дата:
                 </span>
-                <span className="text-xs font-bold text-sky-600 dark:text-sky-400 leading-none">
+                <span className="text-xs font-bold leading-none">
                   {storageLabel}
                 </span>
               </div>
@@ -315,7 +316,7 @@ export default function Topbar({
                   role="menuitem"
                   type="button"
                   onClick={handleLogout}
-                  className="shell-usermenu-item text-red-500"
+                  className="shell-usermenu-item text-danger"
                 >
                   <LogOut className="h-4 w-4" strokeWidth={ICON_STROKE} />
                   Гарах

@@ -73,10 +73,10 @@ function DoubleYearMonthPicker({
         type="button"
         disabled={disabled}
         onClick={() => setIsOpen((prev) => !prev)}
-        className="w-full px-3 py-2.5 border border-theme/30 bg-white text-theme rounded-2xl focus:outline-none focus:ring-2 focus:ring-theme/30 focus:border-theme transition-all text-sm font-medium flex items-center justify-between cursor-pointer dark:border-theme dark:text-theme"
+        className="w-full px-3 py-2.5 border border-theme/30 bg-white text-brand rounded-2xl focus:outline-none focus:ring-2 focus:ring-theme/30 focus:border-theme transition-all text-sm font-medium flex items-center justify-between cursor-pointer"
       >
         <span>{formattedDisplay}</span>
-        <Calendar className="w-4 h-4 text-theme dark:text-theme" />
+        <Calendar className="w-4 h-4 text-brand" />
       </button>
 
       <AnimatePresence>
@@ -86,7 +86,7 @@ function DoubleYearMonthPicker({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 6, scale: 0.98 }}
             transition={{ duration: 0.15 }}
-            className="absolute left-0 top-full mt-2 z-[13000] !bg-white !opacity-100 border border-[color:var(--surface-border)] rounded-2xl shadow-2xl p-4 w-[480px] sm:w-[520px] select-none text-[color:var(--panel-text)] shadow-slate-400/30"
+            className="absolute left-0 top-full mt-2 z-[13000] !bg-white !opacity-100 border border-[color:var(--surface-border)] rounded-2xl shadow-2xl p-4 w-[480px] sm:w-[520px] select-none text-[color:var(--panel-text)] shadow-[color:var(--surface-border)]/30"
           >
             {/* Top Navigation Bar: <<  2026                 2027  >> */}
             <div className="flex items-center justify-between pb-3 border-b border-[color:var(--surface-border)] mb-3 px-2">
@@ -131,7 +131,7 @@ function DoubleYearMonthPicker({
                         ${
                           isSelected
                             ? "bg-theme text-white font-bold shadow-sm"
-                            : "text-[color:var(--panel-text)] hover:bg-theme/10 dark:hover:bg-theme/40 hover:text-theme"
+                            : "text-[color:var(--panel-text)] hover:bg-theme/10 dark:hover:bg-theme/40 hover:text-brand"
                         }
                       `}
                     >
@@ -156,7 +156,7 @@ function DoubleYearMonthPicker({
                         ${
                           isSelected
                             ? "bg-theme text-white font-bold shadow-sm"
-                            : "text-[color:var(--panel-text)] hover:bg-theme/10 dark:hover:bg-theme/40 hover:text-theme"
+                            : "text-[color:var(--panel-text)] hover:bg-theme/10 dark:hover:bg-theme/40 hover:text-brand"
                         }
                       `}
                     >
@@ -263,14 +263,14 @@ const KhungulultiinMur = ({
   onts?: boolean;
 }) => (
   <div className="flex flex-col">
-    <span className="text-[10px] uppercase tracking-wider text-theme/70 dark:text-theme/70">
+    <span className="text-[10px] uppercase tracking-wider text-brand/70">
       {ner}
     </span>
     <span
       className={
         onts
-          ? "text-[13px] font-bold tabular-nums text-theme dark:text-theme"
-          : "text-[13px] font-semibold tabular-nums text-theme dark:text-theme"
+          ? "text-[13px] font-bold tabular-nums text-brand"
+          : "text-[13px] font-semibold tabular-nums text-brand"
       }
     >
       {utga}₮
@@ -944,10 +944,10 @@ export default function TransactionModal({
 
                 {/* Form Content */}
                 {transactionType === "khungulult" ? (
-                  <div className="bg-theme/70 border border-theme/30 text-theme rounded-2xl p-4 space-y-4 dark:bg-theme/30 dark:border-theme dark:text-theme">
+                  <div className="bg-theme/70 border border-theme/30 text-brand rounded-2xl p-4 space-y-4/30">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1.5">
-                        <label className="block text-xs font-semibold uppercase tracking-wider text-theme dark:text-theme">
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-brand">
                           ХӨНГӨЛӨХ САР
                         </label>
                         <DoubleYearMonthPicker
@@ -958,7 +958,7 @@ export default function TransactionModal({
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="block text-xs font-semibold uppercase tracking-wider text-theme dark:text-theme">
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-brand">
                           ХӨНГӨЛӨЛТИЙН ХЭЛБЭР
                         </label>
                         <select
@@ -968,7 +968,7 @@ export default function TransactionModal({
                             setDiscountValue("");
                           }}
                           disabled={isProcessing}
-                          className="w-full px-3 py-2.5 border border-theme/30 bg-white text-theme rounded-2xl focus:outline-none focus:ring-2 focus:ring-theme/30 focus:border-theme transition-all text-sm font-medium dark:border-theme dark:text-theme"
+                          className="w-full px-3 py-2.5 border border-theme/30 bg-white text-brand rounded-2xl focus:outline-none focus:ring-2 focus:ring-theme/30 focus:border-theme transition-all text-sm font-medium"
                         >
                           <option value="percent">Хувиар</option>
                           <option value="amount">Дүнгээр</option>
@@ -981,7 +981,7 @@ export default function TransactionModal({
                           өмнө нь "ХӨНГӨЛӨХ ДҮН / ХӨНГӨЛӨХ ХУВЬ" гэж хоёуланг
                           нь зэрэг бичдэг тул аль нь хүчинтэй нь ойлгомжгүй
                           байв. */}
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-theme dark:text-theme">
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-brand">
                         {discountType === "percent"
                           ? "ХӨНГӨЛӨХ ХУВЬ"
                           : "ХӨНГӨЛӨХ ДҮН"}
@@ -1001,9 +1001,9 @@ export default function TransactionModal({
                           }
                           placeholder={discountType === "percent" ? "0" : "0.00"}
                           disabled={isProcessing}
-                          className="w-full rounded-2xl border border-theme/30 bg-white py-3 pl-4 pr-12 text-right text-lg font-semibold tabular-nums tracking-wide text-theme transition-all focus:border-theme focus:outline-none focus:ring-2 focus:ring-theme/30 disabled:opacity-60 dark:border-theme dark:text-theme"
+                          className="w-full rounded-2xl border border-theme/30 bg-white py-3 pl-4 pr-12 text-right text-lg font-semibold tabular-nums tracking-wide text-brand transition-all focus:border-theme focus:outline-none focus:ring-2 focus:ring-theme/30 disabled:opacity-60"
                         />
-                        <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-base font-semibold text-theme/70 dark:text-theme/70">
+                        <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-base font-semibold text-brand/70">
                           {discountType === "percent" ? "%" : "₮"}
                         </span>
                       </div>

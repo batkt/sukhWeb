@@ -70,13 +70,13 @@ const TUROL_NER: Record<string, string> = {
 
 const TUROL_ANGI: Record<string, string> = {
   invoice:
-    "bg-theme/10 dark:bg-theme/60 text-theme dark:text-theme border-theme/30 dark:border-theme",
+    "bg-theme/10 text-brand border-theme/30",
   receivable:
     "bg-warning/10 text-warning border-warning/30",
   payment:
-    "bg-success/10 dark:bg-success/60 text-success dark:text-success border-success/30 dark:border-success",
+    "bg-success/10 text-success border-success/30",
   khungulult:
-    "bg-purple-100 dark:bg-purple-900/60 text-purple-900 dark:text-purple-200 border-purple-300 dark:border-purple-700",
+    "bg-theme/10 text-brand border-theme/30",
 };
 
 interface NekhemjlekhiinTuukhItem {
@@ -360,9 +360,9 @@ export default function NekhemjlekhiinTuukhPage() {
           <span
             className={
               item.type === "payment"
-                ? "font-medium text-theme dark:text-theme"
+                ? "font-medium text-brand"
                 : item.type === "khungulult"
-                  ? "font-medium text-theme dark:text-theme"
+                  ? "font-medium text-brand"
                   : undefined
             }
           >
@@ -376,7 +376,7 @@ export default function NekhemjlekhiinTuukhPage() {
         key: "khungulult",
         align: "right",
         render: (_: any, item: any) => (
-          <span className="font-medium text-theme dark:text-theme">
+          <span className="font-medium text-brand">
             {item.khungulult || item.type === "khungulult"
               ? `${formatNumber(item.khungulult || item.tulbur)}₮`
               : "—"}
@@ -436,7 +436,7 @@ export default function NekhemjlekhiinTuukhPage() {
         
         <div className="mt-6 border p-4 rounded bg-[color:var(--surface-hover)] flex justify-between items-center">
           <p className="font-semibold text-[color:var(--panel-text)]">НИЙТ ТӨЛБӨР:</p>
-          <p className="text-2xl font-bold text-theme">{formatNumber(totalTulbur)} </p>
+          <p className="text-2xl font-bold text-brand">{formatNumber(totalTulbur)} </p>
         </div>
       </div>
       <div className="flex justify-between items-center mb-3 no-print">
@@ -446,14 +446,14 @@ export default function NekhemjlekhiinTuukhPage() {
             onClick={exportToExcel}
             className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
           >
-            <FileSpreadsheet className="w-4 h-4 text-theme" />
+            <FileSpreadsheet className="w-4 h-4 text-brand" />
             Excel татах
           </button>
 {/* <button
             onClick={handlePrint}
             className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
           >
-            <Printer className="w-4 h-4 text-theme" />
+            <Printer className="w-4 h-4 text-brand" />
             Хэвлэх
           </button> */}
         </div>
@@ -602,19 +602,19 @@ export default function NekhemjlekhiinTuukhPage() {
             label: "Нийт нэхэмжилсэн",
             utga: dungiinKhuraangui.nekhemjilsen,
             tailbar: "Нэхэмжлэх + авлага",
-            angi: "text-theme dark:text-theme",
+            angi: "text-brand",
           },
           {
             label: "Нийт хөнгөлөлт",
             utga: dungiinKhuraangui.khungulult,
             tailbar: "Бүртгэгдсэн хөнгөлөлт",
-            angi: "text-theme dark:text-theme",
+            angi: "text-brand",
           },
           {
             label: "Төлсөн дүн",
             utga: dungiinKhuraangui.tulsun,
             tailbar: "Бүртгэгдсэн төлөлт",
-            angi: "text-theme dark:text-theme",
+            angi: "text-brand",
           },
           {
             label: "Нийт үлдэгдэл",
@@ -623,7 +623,7 @@ export default function NekhemjlekhiinTuukhPage() {
             angi:
               dungiinKhuraangui.uldegdel > 0
                 ? "text-danger"
-                : "text-success dark:text-success",
+                : "text-success",
           },
         ].map((k) => (
           <div
@@ -669,7 +669,7 @@ export default function NekhemjlekhiinTuukhPage() {
               </Table.Summary.Cell>
               <Table.Summary.Cell
                 align="right"
-                className="whitespace-nowrap text-theme dark:text-theme"
+                className="whitespace-nowrap text-brand"
               >
                 {formatNumber(dungiinKhuraangui.khungulult)}₮
               </Table.Summary.Cell>

@@ -777,7 +777,7 @@ const InvoiceModal = ({
                           <td className="py-2 px-3 text-[color:var(--panel-text)]">
                             {row.tailbar}
                           </td>
-                          <td className="py-2 px-3 text-right text-theme font-bold">
+                          <td className="py-2 px-3 text-right text-brand font-bold">
                             -{formatNumber(row.dun)}{" "}
                           </td>
                           <td className="py-2 px-3 text-right text-[color:var(--muted-text)]">
@@ -786,7 +786,7 @@ const InvoiceModal = ({
                         </tr>
                       ))}
                     </tbody>
-                    <tfoot className="bg-[color:var(--surface-hover)] border-t font-bold text-theme">
+                    <tfoot className="bg-[color:var(--surface-hover)] border-t font-bold text-brand">
                       <tr>
                         <td colSpan={2} className="py-2 px-3">
                           Төлсөн дүн (энэ удаа):
@@ -833,7 +833,7 @@ const InvoiceModal = ({
                   </div>
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-[color:var(--muted-text)]">Нийт төлсөн:</span>
-                    <span className="text-theme font-medium">
+                    <span className="text-brand font-medium">
                       -{formatCurrency(totalPaidFromApi || 0)}
                     </span>
                   </div>
@@ -1496,7 +1496,7 @@ export default function InvoicingZardluud() {
         key: "toot",
         align: "center" as const,
         render: (text: string) => (
-          <span className="inline-flex items-center px-3 py-0.5 rounded-full bg-theme/10 dark:bg-theme/40 text-theme dark:text-theme">
+          <span className="inline-flex items-center px-3 py-0.5 rounded-full bg-theme/10 text-brand">
             {text || "-"}
           </span>
         ),
@@ -1540,7 +1540,7 @@ export default function InvoicingZardluud() {
               : getPaymentStatusLabel(record);
           const cls =
             label === "Төлсөн"
-              ? "bg-success/10 text-success dark:bg-success/40 dark:text-success"
+              ? "bg-success/10 text-success/40"
               : label === "Төлөөгүй" || label === "Хугацаа хэтэрсэн"
                 ? "bg-warning/10 text-warning"
                 : "bg-[color:var(--surface-hover)] text-[color:var(--panel-text)]";
@@ -1563,7 +1563,7 @@ export default function InvoicingZardluud() {
           >
             <motion.button
               onClick={() => handleSendReminderSms(record)}
-              className="px-3 py-0.5 rounded-lg bg-theme hover:bg-theme dark:bg-theme dark:hover:bg-theme text-white transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
+              className="px-3 py-0.5 rounded-lg bg-theme hover:bg-theme dark:hover:bg-theme text-white transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               disabled={sendingSmsId === record._id}
@@ -1582,7 +1582,7 @@ export default function InvoicingZardluud() {
                 if (record.davkhar) params.set("davkhar", record.davkhar);
                 router.push(`/tulbur?${params.toString()}`);
               }}
-              className="px-4 py-0.5 rounded-lg bg-theme hover:bg-theme dark:bg-theme dark:hover:bg-theme text-white transition-colors"
+              className="px-4 py-0.5 rounded-lg bg-theme hover:bg-theme dark:hover:bg-theme text-white transition-colors"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               title="Төлбөр хуудас руу шилжих"
@@ -1608,7 +1608,7 @@ export default function InvoicingZardluud() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-theme/10 via-white to-purple-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-theme/10 via-white to-theme/10 p-6">
       <LocalStyles />
       {/* Hidden title for modal context */}
       <motion.h1
@@ -1665,7 +1665,7 @@ export default function InvoicingZardluud() {
               whileHover={{ scale: 1.08, rotateY: 5 }}
               transition={{ duration: 0.4, type: "spring", stiffness: 300 }}
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-theme/20 to-purple-500/20 rounded-3xl opacity-0 group-hover:opacity-40 blur-xl transition-all duration-500" />
+              <div className="absolute inset-0 bg-gradient-to-r from-theme/20 to-theme/20 rounded-3xl opacity-0 group-hover:opacity-40 blur-xl transition-all duration-500" />
               <div className="neu-panel relative rounded-3xl p-6 backdrop-blur-xl bg-white/80 hover:shadow-2xl transition-all duration-500 overflow-hidden border border-white/20">
                 <motion.div
                   className="absolute inset-0 pointer-events-none bg-gradient-to-r from-white/30 via-white/10 to-white/30 opacity-0"

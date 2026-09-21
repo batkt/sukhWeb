@@ -349,7 +349,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
               id={index === 0 ? "resident-view-btn" : undefined}
               title="Бүх мэдээлэл харах"
             >
-              <Eye className="w-4 h-4 text-theme dark:text-theme" />
+              <Eye className="w-4 h-4 text-brand" />
             </button>
             <button
               type="button"
@@ -358,7 +358,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
               id={index === 0 ? "resident-edit-btn" : undefined}
               title="Засах"
             >
-              <Edit className="w-4 h-4 text-theme dark:text-theme" />
+              <Edit className="w-4 h-4 text-brand" />
             </button>
             <button
               type="button"

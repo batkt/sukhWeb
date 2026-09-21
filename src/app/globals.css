@@ -298,8 +298,8 @@
   /* Use theme accent so button color follows current theme */
   background: linear-gradient(
     180deg,
-    color-mix(in oklch, var(--tab-accent, var(--primary, #10b981)), white 18%),
-    var(--tab-accent, var(--primary, #10b981))
+    color-mix(in oklch, var(--tab-accent, var(--primary, var(--theme))), white 18%),
+    var(--tab-accent, var(--primary, var(--theme)))
   );
   border: none;
   outline: none;
@@ -354,6 +354,12 @@
   --color-border: var(--border);
   --color-primary: var(--primary);
   --color-theme: var(--theme);
+  /* ЧУХАЛ: `--color-theme` нь `text-theme` утилити гаргадаг ч доор
+     ГАРААР бичсэн `.text-theme { color: var(--panel-text) !important }`
+     дүрэм түүнийг дардаг — энэ кодод `text-theme` нь эртнээс «сэдэвт
+     ТЕКСТ өнгө» (бараг хар) гэсэн утгатай, брэнд өнгө БИШ.
+     Иймд брэнд өнгөнд ялгаатай нэр: `text-brand`, `bg-brand` ... */
+  --color-brand: var(--theme);
   /* Семантик өнгө — `bg-success`, `text-danger`, `border-warning/30` зэрэг
      утилити эндээс автоматаар үүснэ (Tailwind v4).
 
@@ -579,6 +585,11 @@
      while this token stayed sky blue, so anything driven by --theme came out
      the wrong colour. One green, defined once. */
   --theme: #059669;
+  /* Өнгөний төний FALLBACK. Тодорхой сэдэв (dark-gray, dark-black...) нь
+     өөрийн төнөө зарлаагүй бол хүснэгтийн `--zt-*` нь хүчингүй HSL болж
+     эвдэрнэ — иймд :root дээр үндсэн утга байх ЗААВАЛ шаардлагатай. */
+  --theme-hue: 161;
+  --theme-sat: 94%;
 
   /* Хоёрдогч текст. Цайвар горимд ХААНА Ч тодорхойлогдоогүй байсан тул
      `text-[color:var(--muted-text)]` нь өнгөгүй гарч, зөвхөн харанхуйд
@@ -1672,7 +1683,7 @@ html[data-mode="dark"]:not([data-theme]),
 /* Optional: round dropdown surface by default */
 .menu-surface {
   background: var(--surface-bg, #fff) !important;
-  color: var(--panel-text, #0f172a) !important;
+  color: var(--panel-text, var(--panel-text)) !important;
   border: 1px solid var(--surface-border, rgba(15, 23, 42, 0.12)) !important;
   border-radius: 1rem;
   -webkit-backdrop-filter: blur(12px) saturate(140%);
@@ -1684,7 +1695,7 @@ html[data-mode="dark"]:not([data-theme]),
 
 .aimr-surface {
   background: var(--surface-bg, #fff) !important;
-  color: var(--panel-text, #0f172a) !important;
+  color: var(--panel-text, var(--panel-text)) !important;
   border: 1px solid var(--surface-border, rgba(15, 23, 42, 0.12)) !important;
   border-radius: 1rem;
   -webkit-backdrop-filter: blur(12px) saturate(140%);
@@ -1711,7 +1722,7 @@ html[data-mode="dark"]:not([data-theme]),
     var(--glass-tint),
     var(--glass-tint-2)
   ) !important;
-  color: var(--panel-text, #0f172a) !important;
+  color: var(--panel-text, var(--panel-text)) !important;
   border: 1px solid color-mix(in oklch, var(--glass-border), transparent 40%) !important;
   border-radius: 1.25rem;
   -webkit-backdrop-filter: blur(26px) saturate(170%);
@@ -1759,7 +1770,7 @@ html[data-mode="dark"]:not([data-theme]),
 }
 .badge-unpaid {
   background: rgba(239, 68, 68, 0.12) !important; /* red */
-  color: #7f1d1d !important; /* red-900 */
+  color: var(--danger) !important; /* red-900 */
   border-color: rgba(239, 68, 68, 0.25) !important;
 }
 .badge-unknown,
@@ -1781,7 +1792,7 @@ html[data-mode="dark"]:not([data-theme]),
 [data-mode="dark"] .badge-neutral,
 [data-mode="dark"] .badge-unknown {
   background: rgba(148, 163, 184, 0.25) !important;
-  color: #94a3b8 !important; /* slate-400 */
+  color: var(--muted-text) !important; /* slate-400 */
 }
 
 /* Ensure icons inside badges follow text color */
@@ -2057,7 +2068,7 @@ html[data-mode="dark"]:not([data-theme]),
 .mantine-Month-weekday,
 .mantine-Month-day {
   /* Fallback to a readable light color when portal can't see CSS vars */
-  color: var(--panel-text, #e5e7eb) !important;
+  color: var(--panel-text, var(--muted-text)) !important;
 }
 /* Avoid red weekends on dark-black; keep same text color */
 [data-theme="dark-black"] .mantine-Month-weekday[data-weekend],
@@ -2238,7 +2249,7 @@ html[data-mode="dark"]:not([data-theme]),
 /* Unscoped fallback for hover when portal content has no theme attrs */
 .mantine-Month-day:hover {
   background: rgba(0, 0, 0, 0.24) !important;
-  color: var(--panel-text, #e5e7eb) !important;
+  color: var(--panel-text, var(--muted-text)) !important;
 }
 
 /* Driver.js theming - make tour controls follow app theme and use Mongolian labels */
@@ -2292,22 +2303,24 @@ html[data-mode="dark"]:not([data-theme]),
 
 /* Unscoped popover fallback so dropdown text is white on dark even in portals */
 .mantine-Popover-dropdown {
-  background: var(--surface-bg, #0f172a) !important; /* dark surface fallback */
-  color: var(--panel-text, #e5e7eb) !important; /* light text fallback */
+  background: var(--surface-bg, var(--panel-text)) !important; /* dark surface fallback */
+  color: var(--panel-text, var(--muted-text)) !important; /* light text fallback */
   border: 1px solid var(--surface-border, rgba(255, 255, 255, 0.12)) !important;
 }
 .mantine-Popover-dropdown .mantine-Paper-root {
-  background: var(--surface-bg, #0f172a) !important;
-  color: var(--panel-text, #e5e7eb) !important;
+  background: var(--surface-bg, var(--panel-text)) !important;
+  color: var(--panel-text, var(--muted-text)) !important;
   border-color: var(--surface-border, rgba(255, 255, 255, 0.12)) !important;
 }
 .action-edit,
 .action-edit svg {
-  color: #2563eb !important;
-} /* tailwind blue-600 */
+  /* Засах нь мэдээллийн үйлдэл — устгахын `--danger`-аас ялгарах ёстой.
+     Өмнө нь #2563eb хатуу байсан тул сэдвээс хамаардаггүй байв. */
+  color: var(--info) !important;
+}
 .action-delete,
 .action-delete svg {
-  color: #dc2626 !important;
+  color: var(--danger) !important;
 } /* tailwind red-600 */
 
 /* Optional hover bg without changing text color */
@@ -2414,14 +2427,14 @@ html[data-mode="dark"]:not([data-theme]),
 .btn {
   background-color: var(--btn-bg);
   color: var(--btn-text);
-  border: 1px solid #e5e7eb; /* gray-200 */
+  border: 1px solid var(--surface-border); /* gray-200 */
 }
 
 /* Ensure table text is dark on white bg */
 .table-custom,
 .table-custom th,
 .table-custom td {
-  color: #0f172a !important; /* slate-900 */
+  color: var(--panel-text) !important; /* slate-900 */
 }
 
 /* Make sure generic 'icon' class doesn’t force white (if it exists) */
@@ -2713,7 +2726,7 @@ html[data-mode="dark"]:not([data-theme]),
     #ebf0fc,
     #dce5f8
   ); /* soft blue-gray gradient */
-  color: #0f172a; /* slate-900 for contrast */
+  color: var(--panel-text); /* slate-900 for contrast */
   border: 1px solid rgba(59, 130, 246, 0.12); /* subtle indigo rim */
   font-size: 0.95rem;
   font-weight: 500;
@@ -2747,7 +2760,7 @@ html[data-mode="dark"]:not([data-theme]),
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 
-  color: #0f172a;
+  color: var(--panel-text);
   border: 1px solid rgba(255, 255, 255, 0.5);
   font-size: 0.95rem;
   font-weight: 500;
@@ -3178,7 +3191,7 @@ textarea,
   --btn-bg: linear-gradient(145deg, #fef2f2, #fee2e2);
   --btn-bg-hover: #fee2e2;
   --btn-bg-active: #fecaca;
-  --btn-text: #7f1d1d;
+  --btn-text: var(--danger);
   --btn-border: rgba(239, 68, 68, 0.28);
 }
 .btn-print {
@@ -3186,11 +3199,11 @@ textarea,
   --btn-bg: linear-gradient(
     145deg,
     #1f2937,
-    #0f172a
+    var(--panel-text)
   ); /* slate-800 → slate-900 */
-  --btn-bg-hover: #0f172a; /* slate-900 */
+  --btn-bg-hover: var(--panel-text); /* slate-900 */
   --btn-bg-active: #020617; /* slate-950 */
-  --btn-text: #e5e7eb; /* slate-200 for contrast */
+  --btn-text: var(--surface-border); /* slate-200 for contrast */
   --btn-border: rgba(255, 255, 255, 0.16);
 }
 
@@ -3211,9 +3224,9 @@ textarea,
   --btn-border: rgba(59, 130, 246, 0.28);
 }
 .btn-back {
-  --btn-bg: linear-gradient(145deg, #f3f4f6, #e5e7eb); /* neutral gray */
-  --btn-bg-hover: #e5e7eb;
-  --btn-bg-active: #d1d5db;
+  --btn-bg: linear-gradient(145deg, var(--surface-border), var(--surface-border)); /* neutral gray */
+  --btn-bg-hover: var(--surface-border);
+  --btn-bg-active: var(--surface-border);
   --btn-text: #334155; /* slate-700 */
   --btn-border: rgba(100, 116, 139, 0.24);
 }
@@ -3223,12 +3236,15 @@ textarea,
   box-shadow: 0 0 0 4px var(--focus-ring);
 }
 
-/* Tabs – tokens (default colorful) */
+/* Tabs – tokens.
+   Өмнө нь хатуу ХӨХ байсан бөгөөд зөвхөн soft-sage өөрийнхийг зарладаг тул
+   Цэнхэр/Өнгөлөг сэдэв дээр таб, datepicker, switch нь сэдвийн өнгийг
+   үл хэрэгсдэг байв. Одоо `--theme`-ээс бүтнэ — сэдэв нэмэхэд мартагдахгүй. */
 :root {
-  --tab-active-from: #dbeafe; /* light blue */
-  --tab-active-to: #bfdbfe;
-  --tab-accent: #3b82f6; /* border underline */
-  --tab-active-text: #1e3a8a;
+  --tab-active-from: color-mix(in oklch, var(--theme), transparent 88%);
+  --tab-active-to: color-mix(in oklch, var(--theme), transparent 78%);
+  --tab-accent: var(--theme); /* border underline */
+  --tab-active-text: color-mix(in oklch, var(--theme), black 35%);
   --tab-inactive-text: rgba(15, 23, 42, 0.7);
   --tab-inactive-hover-text: rgba(15, 23, 42, 0.9);
   --tab-border: color-mix(in oklch, var(--glass-border), transparent 35%);
@@ -3403,7 +3419,7 @@ select,
 }
 
 .table-ui thead {
-  background: #0f172a;
+  background: var(--panel-text);
   position: sticky !important;
   top: 0;
   z-index: 10;
@@ -3419,7 +3435,7 @@ select,
   font-weight: 800 !important;
   text-transform: uppercase !important;
   letter-spacing: 0.1em !important;
-  color: #94a3b8 !important;
+  color: var(--muted-text) !important;
   text-align: left;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
 }
@@ -3753,7 +3769,8 @@ body .mantine-Month-weekday {
   /* Tabs (light) */
   --tab-active-from: #ecfdf5; /* emerald-50 */
   --tab-active-to: #d1fae5; /* emerald-100 */
-  --tab-accent: #34d399; /* emerald-400 */
+  /* `--tab-accent` нь `:root`-оос `var(--theme)`-ээр ирнэ — давхар
+     зарлах шаардлагагүй (emerald-400 нь харанхуйн `--theme` яг өөрөө). */
   --tab-active-text: #064e3b; /* emerald-900 */
   --tab-inactive-text: #475569; /* slate-600 */
   --tab-inactive-hover-text: #0f172a; /* slate-900 */
@@ -3784,7 +3801,7 @@ body .mantine-Month-weekday {
 /* Light mode current-month weekdays */
 :not([data-mode="dark"])
   .mantine-Month-day:not([data-outside]):not([data-weekend]) {
-  color: #0f172a !important; /* slate-900 */
+  color: var(--panel-text) !important; /* slate-900 */
 }
 /* Dark mode current-month weekdays */
 [data-mode="dark"] .mantine-Month-day:not([data-outside]):not([data-weekend]) {
@@ -3792,39 +3809,39 @@ body .mantine-Month-weekday {
 }
 /* Weekends (both modes, in-view) */
 .mantine-Month-weekday[data-weekend] {
-  color: #dc2626 !important; /* red-600 */
+  color: var(--danger) !important; /* red-600 */
   font-weight: 600 !important;
 }
 .mantine-Month-day[data-weekend]:not([data-outside]) {
-  color: #dc2626 !important; /* red-600 */
+  color: var(--danger) !important; /* red-600 */
 }
 /* Header labels: black on light, white on dark; weekend headers red */
 :not([data-mode="dark"]) .mantine-Month-weekday {
-  color: #0f172a !important;
+  color: var(--panel-text) !important;
 }
 [data-mode="dark"] .mantine-Month-weekday {
   color: #ffffff !important;
 }
 .mantine-Month-weekday[data-weekend] {
-  color: #dc2626 !important;
+  color: var(--danger) !important;
 }
 /* Out-of-month days */
 .mantine-Month-day[data-outside] {
-  color: #94a3b8 !important; /* slate-400 */
+  color: var(--muted-text) !important; /* slate-400 */
 }
 [data-mode="dark"] .mantine-Month-day[data-outside] {
-  color: #64748b !important; /* slate-500 on dark */
+  color: var(--muted-text) !important; /* slate-500 on dark */
 }
 
 /* Range selection visuals (use theme accent where available) */
 .mantine-Month-day[data-selected] {
-  background: var(--tab-accent, #34d399) !important;
+  background: var(--tab-accent, var(--theme)) !important;
   color: #ffffff !important;
 }
 .mantine-Month-day[data-in-range] {
   background: color-mix(
     in oklch,
-    var(--tab-accent, #34d399),
+    var(--tab-accent, var(--theme)),
     transparent 82%
   ) !important;
   color: inherit !important;
@@ -3833,10 +3850,10 @@ body .mantine-Month-weekday {
 .mantine-Month-day[data-last-in-range] {
   background: color-mix(
     in oklch,
-    var(--tab-accent, #34d399),
+    var(--tab-accent, var(--theme)),
     transparent 70%
   ) !important;
-  color: #0f172a !important;
+  color: var(--panel-text) !important;
 }
 [data-mode="dark"] .mantine-Month-day[data-first-in-range],
 [data-mode="dark"] .mantine-Month-day[data-last-in-range] {
@@ -3855,7 +3872,7 @@ body .mantine-Month-weekday {
 .mantine-Month-day:hover {
   background: color-mix(
     in oklch,
-    var(--tab-accent, #34d399),
+    var(--tab-accent, var(--theme)),
     transparent 92%
   ) !important;
 }
@@ -3883,10 +3900,10 @@ body .mantine-Month-weekday {
 }
 .ant-picker-cell-in-view.ant-picker-cell-disabled .ant-picker-cell-inner,
 .ant-picker-cell:not(.ant-picker-cell-in-view) .ant-picker-cell-inner {
-  color: #94a3b8 !important; /* gray for out-of-month */
+  color: var(--muted-text) !important; /* gray for out-of-month */
 }
 .ant-picker-cell-in-view.ant-picker-cell-week-end .ant-picker-cell-inner {
-  color: #dc2626 !important; /* weekend red */
+  color: var(--danger) !important; /* weekend red */
 }
 [data-mode="dark"] .ant-picker-cell-in-view .ant-picker-cell-inner,
 .dark .ant-picker-cell-in-view .ant-picker-cell-inner {
@@ -3911,13 +3928,13 @@ body .mantine-Month-weekday {
 .ant-picker-cell-in-view.ant-picker-cell-selected .ant-picker-cell-inner,
 .ant-picker-cell-in-view.ant-picker-cell-range-start .ant-picker-cell-inner,
 .ant-picker-cell-in-view.ant-picker-cell-range-end .ant-picker-cell-inner {
-  background: var(--tab-accent, #34d399) !important;
+  background: var(--tab-accent, var(--theme)) !important;
   color: #ffffff !important;
 }
 .ant-picker-cell-in-view.ant-picker-cell-in-range .ant-picker-cell-inner {
   background: color-mix(
     in oklch,
-    var(--tab-accent, #34d399),
+    var(--tab-accent, var(--theme)),
     transparent 82%
   ) !important;
 }
@@ -3977,7 +3994,7 @@ body .mantine-Month-weekday {
 
 [data-mode="dark"] .btn-cancel,
 [data-theme="soft-sage"][data-mode="dark"] .btn-cancel {
-  --btn-bg: linear-gradient(145deg, #7f1d1d, #5f0f0f) !important;
+  --btn-bg: linear-gradient(145deg, var(--danger), #5f0f0f) !important;
   --btn-bg-hover: #6f1414 !important;
   --btn-bg-active: #4f0b0b !important;
   --btn-text: #fff0f0 !important;
@@ -4066,7 +4083,7 @@ body .mantine-Month-weekday {
 
 /* Light mode: current month weekdays black */
 :not(.dark) .rdp-day_button:not(.rdp-day_outside) {
-  color: #0f172a !important;
+  color: var(--panel-text) !important;
 }
 
 /* Dark mode: all header and day text white by default */
@@ -4092,12 +4109,12 @@ body .mantine-Month-weekday {
 /* Weekends: red text (both light and dark) */
 .rdp-table tbody tr > td:nth-child(1) .rdp-day_button:not(.rdp-day_outside),
 .rdp-table tbody tr > td:nth-child(7) .rdp-day_button:not(.rdp-day_outside) {
-  color: #dc2626 !important;
+  color: var(--danger) !important;
 }
 
 /* Out-of-month days: gray */
 .rdp-day_outside .rdp-day_button {
-  color: #94a3b8 !important; /* slate-400 */
+  color: var(--muted-text) !important; /* slate-400 */
 }
 
 /* Dark mode out-of-month: lighter gray */
@@ -4109,13 +4126,13 @@ body .mantine-Month-weekday {
 /* Keep weekend red even for outside days */
 .rdp-table tbody tr > td:nth-child(1) .rdp-day_outside .rdp-day_button,
 .rdp-table tbody tr > td:nth-child(7) .rdp-day_outside .rdp-day_button {
-  color: #dc2626 !important;
+  color: var(--danger) !important;
 }
 
 /* Selected day: theme accent background, black text */
 .rdp-day_selected .rdp-day_button {
-  background-color: var(--tab-accent, #34d399) !important;
-  background: var(--tab-accent, #34d399) !important;
+  background-color: var(--tab-accent, var(--theme)) !important;
+  background: var(--tab-accent, var(--theme)) !important;
   color: #000000 !important;
 }
 
@@ -4125,7 +4142,7 @@ body .mantine-Month-weekday {
 .rdp-day_range_end .rdp-day_button {
   background-color: color-mix(
     in oklch,
-    var(--tab-accent, #34d399),
+    var(--tab-accent, var(--theme)),
     transparent 82%
   ) !important;
   color: var(--panel-text) !important;
@@ -4140,7 +4157,7 @@ body .mantine-Month-weekday {
 /* Range start/end: stronger accent, black text (like selected) */
 .rdp-day_range_start .rdp-day_button,
 .rdp-day_range_end .rdp-day_button {
-  background-color: var(--tab-accent, #34d399) !important;
+  background-color: var(--tab-accent, var(--theme)) !important;
   color: #000000 !important;
 }
 
@@ -4199,7 +4216,7 @@ body .mantine-Month-weekday {
 /* Checked state - slide and glow */
 .switch input:checked + .slider {
   /* active track uses theme accent color */
-  --accent: var(--tab-accent, var(--primary, #34d399));
+  --accent: var(--tab-accent, var(--primary, var(--theme)));
   background: linear-gradient(
     135deg,
     color-mix(in oklch, var(--accent), black 6%),
@@ -4215,20 +4232,20 @@ body .mantine-Month-weekday {
   background: linear-gradient(
     145deg,
     #ffffff 0%,
-    color-mix(in oklch, var(--accent, #34d399), white 70%) 100%
+    color-mix(in oklch, var(--accent, var(--theme)), white 70%) 100%
   );
   box-shadow:
     2px 2px 6px
-      color-mix(in srgb, var(--accent, #34d399) 22%, rgba(0, 0, 0, 0.18)),
+      color-mix(in srgb, var(--accent, var(--theme)) 22%, rgba(0, 0, 0, 0.18)),
     -2px -2px 4px rgba(255, 255, 255, 0.9),
-    0 0 8px color-mix(in srgb, var(--accent, #34d399) 30%, transparent);
+    0 0 8px color-mix(in srgb, var(--accent, var(--theme)) 30%, transparent);
   animation: bounce 0.36s ease;
 }
 
 /* Unchecked state animation */
 .switch input:not(:checked) + .slider:before {
   /* unchecked knob: neutral white with subtle shadow */
-  background: linear-gradient(145deg, #ffffff 0%, #f3f4f6 100%);
+  background: linear-gradient(145deg, #ffffff 0%, var(--panel) 100%);
   box-shadow:
     1px 1px 3px rgba(0, 0, 0, 0.12),
     -1px -1px 2px rgba(255, 255, 255, 0.9);
@@ -4321,21 +4338,21 @@ body .mantine-Month-weekday {
   box-shadow:
     -6px -6px 12px rgba(255, 255, 255, 0.03) inset,
     8px 8px 18px rgba(0, 0, 0, 0.6);
-  color: #d1d5db;
+  color: var(--muted-text);
 }
 
 /* Hover: subtle accent */
 .rdp-day_button:hover {
   background-color: color-mix(
     in oklch,
-    var(--tab-accent, #34d399),
+    var(--tab-accent, var(--theme)),
     transparent 92%
   ) !important;
 }
 
 /* Today indicator: ring */
 .rdp-day_today .rdp-day_button {
-  box-shadow: 0 0 0 2px var(--tab-accent, #34d399) !important;
+  box-shadow: 0 0 0 2px var(--tab-accent, var(--theme)) !important;
 }
 
 /* Disabled: muted */
@@ -4531,14 +4548,14 @@ a:active {
   font-size: 14px !important;
 }
 .ant-btn-primary {
-  background-color: #10b981 !important;
-  border-color: #10b981 !important;
+  background-color: var(--theme) !important;
+  border-color: var(--theme) !important;
   color: white !important;
   font-weight: 700 !important;
 }
 .ant-btn-primary:hover {
-  background-color: #34d399 !important;
-  border-color: #34d399 !important;
+  background-color: var(--theme) !important;
+  border-color: var(--theme) !important;
   transform: translateY(-1px);
   box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.2) !important;
 }
@@ -4549,7 +4566,7 @@ a:active {
 }
 .ant-btn-default:hover {
   background-color: rgba(16, 185, 129, 0.15) !important;
-  color: #059669 !important;
+  color: var(--theme) !important;
 }
 .dark .ant-btn-primary {
   background-color: #059669 !important;
@@ -4587,7 +4604,7 @@ a:active {
 
 /* Light mode selected row */
 .guilgee-table .ant-table-tbody > tr.ant-table-row-selected > td {
-  background-color: #e5e7eb !important; /* gray-200 */
+  background-color: var(--panel) !important; /* gray-200 */
 }
 
 /* ===== TABLE WRAPPER FOR STICKY HEADERS ===== */
@@ -4660,7 +4677,7 @@ a:active {
 
 /* Header style */
 .guilgee-table .ant-table-thead > tr > th {
-  background-color: #f3f4f6 !important; /* bg-gray-100 */
+  background-color: var(--panel) !important; /* bg-gray-100 */
   color: black !important;
   font-weight: 600 !important;
 }
@@ -4678,7 +4695,7 @@ a:active {
 /* Add bottom border to table rows - higher specificity to override compact-row */
 .guilgee-table .ant-table-tbody > tr > td,
 .guilgee-table .ant-table-tbody > tr.compact-row > td {
-  border-bottom: 1px solid #e5e7eb !important;
+  border-bottom: 1px solid var(--surface-border) !important;
 }
 
 .dark .guilgee-table .ant-table-tbody > tr > td,
@@ -4893,7 +4910,7 @@ a:active {
 /* AGGRESSIVE: Force table row borders - light mode */
 .guilgee-table .ant-table-tbody > tr > td,
 .guilgee-table .ant-table-tbody > tr > td.ant-table-cell {
-  border-bottom: 1px solid #d1d5db !important;
+  border-bottom: 1px solid var(--surface-border) !important;
 }
 
 /* AGGRESSIVE: Force table row borders - dark mode */
@@ -4930,7 +4947,7 @@ a:active {
 /* Onboarding Tour - Stop button */
 .driver-stop-tour-btn {
   font-size: 11px !important;
-  color: #94a3b8 !important;
+  color: var(--muted-text) !important;
   background: transparent !important;
   border: none !important;
   padding: 5px 8px !important;
@@ -4942,7 +4959,7 @@ a:active {
 }
 
 .driver-stop-tour-btn:hover {
-  color: #ef4444 !important;
+  color: var(--danger) !important;
   opacity: 1;
 }
 
@@ -4970,7 +4987,7 @@ a:active {
 }
 
 .driver-popover-progress-text {
-  color: #94a3b8 !important;
+  color: var(--muted-text) !important;
   font-size: 11px !important;
   font-weight: 500 !important;
   order: 2 !important;
@@ -5006,7 +5023,7 @@ a:active {
 .premium-driver-popover .driver-popover-title {
   font-size: 18px !important;
   font-weight: 700 !important;
-  color: #0f172a !important;
+  color: var(--panel-text) !important;
   margin-bottom: 8px !important;
 }
 
@@ -5044,7 +5061,7 @@ a:active {
 }
 
 .driver-popover-prev-btn {
-  background: #f1f5f9 !important;
+  background: var(--panel) !important;
   color: #475569 !important;
 }
 
@@ -5070,7 +5087,7 @@ a:active {
 .driver-stop-tour-btn {
   order: 1 !important;
   font-size: 11px !important;
-  color: #94a3b8 !important;
+  color: var(--muted-text) !important;
   background: none !important;
   border: none !important;
   padding: 8px 0 !important;
@@ -5080,13 +5097,13 @@ a:active {
 }
 
 .driver-stop-tour-btn:hover {
-  color: #ef4444 !important;
+  color: var(--danger) !important;
 }
 
 .driver-popover-progress-text {
   order: 2 !important;
   font-size: 11px !important;
-  color: #64748b !important;
+  color: var(--muted-text) !important;
   font-weight: 600 !important;
   letter-spacing: 0.05em !important;
   margin: 0 auto !important;
@@ -5138,9 +5155,9 @@ a:active {
   display: inline-block !important;
   white-space: nowrap !important;
   font-size: 11px !important;
-  color: #64748b !important;
+  color: var(--muted-text) !important;
   font-weight: 600 !important;
-  background: #f1f5f9 !important;
+  background: var(--panel) !important;
   padding: 4px 12px !important;
   border-radius: 99px !important;
   margin: 0 10px !important;
@@ -5156,7 +5173,7 @@ a:active {
 .driver-stop-tour-btn {
   order: 1 !important;
   font-size: 11px !important;
-  color: #94a3b8 !important;
+  color: var(--muted-text) !important;
   background: none !important;
   border: none !important;
   padding: 5px 0 !important;
@@ -5280,7 +5297,7 @@ body .premium-driver-popover .driver-popover-navigation-btns {
 /* Fix for the stop button spacing and style */
 body .premium-driver-popover .driver-stop-tour-btn {
   font-size: 11px !important;
-  color: #94a3b8 !important;
+  color: var(--muted-text) !important;
   text-decoration: underline !important;
   text-underline-offset: 2px !important;
   cursor: pointer !important;
@@ -5336,13 +5353,13 @@ body .premium-driver-popover .driver-stop-tour-btn {
   display: flex !important;
   align-items: center !important;
   gap: 4px !important;
-  color: #64748b !important;
+  color: var(--muted-text) !important;
   font-weight: 500 !important;
   text-decoration: none !important;
 }
 
 body .premium-driver-popover .driver-stop-tour-btn:hover {
-  color: #ef4444 !important;
+  color: var(--danger) !important;
   background: rgba(239, 68, 68, 0.05) !important;
   padding: 2px 8px !important;
   margin-left: -8px !important;
@@ -5634,7 +5651,7 @@ html[data-mode="dark"],
 }
 
 .shell-status-value.is-critical {
-  color: #ef4444;
+  color: var(--danger);
   animation: shell-status-pulse 2s ease-in-out infinite;
 }
 
@@ -6120,7 +6137,7 @@ html[data-sidebar="rail"] .shell-collapse-btn {
   height: 1rem;
   padding-inline: 0.25rem;
   border-radius: 999px;
-  background: #ef4444;
+  background: var(--danger);
   color: #fff;
   font-size: 10px;
   font-weight: 700;

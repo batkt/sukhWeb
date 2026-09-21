@@ -101,10 +101,10 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
               <button
                 type="button"
                 onClick={() => onManagePermissions?.(record)}
-                className="p-1.5 rounded-md action-primary hover-surface transition-colors hover:bg-purple-100 dark:hover:bg-purple-900/30"
+                className="p-1.5 rounded-md action-primary hover-surface transition-colors hover:bg-theme/10"
                 title="Эрх удирдлага"
               >
-                <Shield className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                <Shield className="w-4 h-4 text-brand" />
               </button>
             )}
             <button
@@ -122,7 +122,7 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
                 className="p-1.5 rounded-md action-edit hover-surface transition-colors hover:bg-theme/10 dark:hover:bg-theme/30"
                 title="Засах"
               >
-                <Edit className="w-4 h-4 text-theme dark:text-theme" />
+                <Edit className="w-4 h-4 text-brand" />
               </button>
             )}
             {canDelete && (

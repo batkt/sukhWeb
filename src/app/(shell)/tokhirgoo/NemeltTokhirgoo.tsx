@@ -1070,7 +1070,7 @@ export default function NemeltTokhirgoo() {
           {/* Invoice box */}
           <div id="nemelt-invoice-box" className="h-full">
             <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden h-full flex flex-col justify-between">
-              <div className="px-4 py-3 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20">
+              <div className="px-4 py-3 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-theme/10 to-theme/10">
                 <div className="flex items-center gap-2.5">
                   <div>
                     <h3 className="text-base text-theme">Нэхэмжлэх илгээх</h3>
@@ -1095,14 +1095,14 @@ export default function NemeltTokhirgoo() {
                       className="sr-only peer"
                       aria-label="Нэхэмжлэх идэвхжүүлэх"
                     />
-                    <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:peer-checked:bg-purple-600 peer-checked:bg-purple-600"></div>
+                    <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme dark:peer-focus:ring-theme rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-theme"></div>
                   </label>
                 </div>
               </div>
               {invoiceActive ? (
                 <div
                   id="nemelt-invoice-settings"
-                  className="p-3.5 px-4 bg-gradient-to-br from-purple-50/50 to-pink-50/50 dark:from-purple-950/10 dark:to-pink-950/10 flex-1 flex flex-col justify-between space-y-2.5"
+                  className="p-3.5 px-4 bg-gradient-to-br from-theme/50 to-theme/50 flex-1 flex flex-col justify-between space-y-2.5"
                 >
                   <div className="space-y-1.5">
                     <label className="text-xs text-theme block">
@@ -1134,7 +1134,7 @@ export default function NemeltTokhirgoo() {
                   </p>
                 </div>
               ) : (
-                <div className="p-3.5 px-4 bg-gradient-to-br from-purple-50/50 to-pink-50/50 dark:from-purple-950/10 dark:to-pink-950/10 flex-1 flex items-center">
+                <div className="p-3.5 px-4 bg-gradient-to-br from-theme/50 to-theme/50 flex-1 flex items-center">
                   <p className="text-xs text-[color:var(--muted-text)]">
                     Нэхэмжлэх автоматаар илгээх тохиргоо идэвхгүй байна.
                   </p>
@@ -1262,7 +1262,7 @@ export default function NemeltTokhirgoo() {
             </div>
 
             {guestConfigEnabled && (
-              <div className="p-3.5 px-4 bg-gradient-to-br from-theme/50 to-cyan-50/50 space-y-3">
+              <div className="p-3.5 px-4 bg-gradient-to-br from-theme/50 to-theme/50 space-y-3">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
                   <div className="space-y-1">
                     <label className="text-xs text-theme">Давтамж</label>
@@ -1392,7 +1392,7 @@ export default function NemeltTokhirgoo() {
               </p>
             </div>
 
-            <div className="p-3.5 px-4 bg-gradient-to-br from-theme/50 to-fuchsia-50/50 space-y-3">
+            <div className="p-3.5 px-4 bg-gradient-to-br from-theme/50 to-theme/50 space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
                 <div className="space-y-1">
                   <label className="text-xs text-theme">
@@ -1467,7 +1467,7 @@ export default function NemeltTokhirgoo() {
               </div>
             </div>
 
-            <div className="p-3.5 px-4 bg-gradient-to-br from-theme/50 to-cyan-50/50 space-y-1.5">
+            <div className="p-3.5 px-4 bg-gradient-to-br from-theme/50 to-theme/50 space-y-1.5">
               {zaaltaarBodokh ? (
                 <>
                   <p className="text-xs text-theme leading-relaxed">
@@ -1629,7 +1629,7 @@ export default function NemeltTokhirgoo() {
                           <button
                             onClick={() => setCalculationMethod("Хуанли")}
                             className={`px-3.5 py-1 rounded-md text-xs transition-all ${calculationMethod === "Хуанли"
-                              ? "bg-white shadow-xs text-theme"
+                              ? "bg-white shadow-xs text-brand"
                               : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
                               }`}
                           >
@@ -1638,7 +1638,7 @@ export default function NemeltTokhirgoo() {
                           <button
                             onClick={() => setCalculationMethod("Тогтмол")}
                             className={`px-3.5 py-1 rounded-md text-xs transition-all ${calculationMethod === "Тогтмол"
-                              ? "bg-white shadow-xs text-theme"
+                              ? "bg-white shadow-xs text-brand"
                               : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
                               }`}
                           >
@@ -1747,7 +1747,7 @@ export default function NemeltTokhirgoo() {
 
               {garagePaymentEnabled || storagePaymentEnabled ? (
                 <div className="p-3.5 px-4 bg-gradient-to-br from-theme/40 to-theme/40 space-y-3 animate-in fade-in zoom-in-95 duration-300">
-                  <div className="p-3 md:p-3.5 rounded-xl border border-theme/80 dark:border-theme/30 bg-white/90 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 md:gap-4 shadow-xs">
+                  <div className="p-3 md:p-3.5 rounded-xl border border-theme/80 bg-white/90 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 md:gap-4 shadow-xs">
                     {/* Left: Inputs with Plus */}
                     <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                       {/* Граш төлбөр */}
@@ -1811,7 +1811,7 @@ export default function NemeltTokhirgoo() {
                     </div>
 
                     {/* Right: Total display */}
-                    <div className="flex items-center justify-between gap-2.5 px-3.5 rounded-lg bg-theme/80 dark:bg-theme/50 border border-theme/70 dark:border-theme/40 shrink-0 self-center md:self-end md:mb-0.5 h-9 min-w-[180px]">
+                    <div className="flex items-center justify-between gap-2.5 px-3.5 rounded-lg bg-theme/80 border border-theme/70 shrink-0 self-center md:self-end md:mb-0.5 h-9 min-w-[180px]">
                       <span className="text-xs text-[color:var(--muted-text)] whitespace-nowrap">
                         Нийт төлбөр:
                       </span>

@@ -1030,10 +1030,10 @@ export default function KhariltsagchModal({
                       {garages.map((garage: any, gIdx: number) => {
                         const gFlatIdx = getGarageFlatIndex(gIdx);
                         return (
-                          <div key={`garage-${gIdx}`} className="rounded-lg border-l-4 border-l-emerald-500 border border-theme/30 dark:border-theme/40 bg-theme/30 dark:bg-theme/10 overflow-hidden">
-                            <div className="flex items-center justify-between px-3 py-2 border-b border-theme/30 dark:border-theme/40 bg-theme/60 dark:bg-theme/20">
+                          <div key={`garage-${gIdx}`} className="rounded-lg border-l-4 border-l-emerald-500 border border-theme/30 bg-theme/30 overflow-hidden">
+                            <div className="flex items-center justify-between px-3 py-2 border-b border-theme/30 bg-theme/60">
                               <div className="flex items-center gap-2">
-                                <h5 className="text-[10px] font-bold uppercase tracking-wider text-theme dark:text-theme">
+                                <h5 className="text-[10px] font-bold uppercase tracking-wider text-brand">
                                   Гараж {garages.length > 1 ? `#${gIdx + 1}` : ""}
                                 </h5>
                               </div>
@@ -1046,14 +1046,14 @@ export default function KhariltsagchModal({
                             </div>
                             <div className="p-3 grid grid-cols-2 gap-3">
                               <div>
-                                <label className="block text-[10px] uppercase tracking-wider font-bold text-theme dark:text-theme mb-1">Давхар</label>
+                                <label className="block text-[10px] uppercase tracking-wider font-bold text-brand mb-1">Давхар</label>
                                 <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${gFlatIdx}.davkhar`) ? "input-error" : ""}`}>
                                   <TusgaiZagvar value={garage.davkhar || ""} onChange={(val: string) => updateGarageField(gIdx, "davkhar", val)}
                                     options={additionalFloors.map((d) => ({ value: d, label: d }))} className="w-full h-full" placeholder="Давхар..." />
                                 </div>
                               </div>
                               <div>
-                                <label className="block text-[10px] uppercase tracking-wider font-bold text-theme dark:text-theme mb-1">Дугаар</label>
+                                <label className="block text-[10px] uppercase tracking-wider font-bold text-brand mb-1">Дугаар</label>
                                 {(() => {
                                   const opts = getTootOptions("1", garage.davkhar || "", "Зогсоол");
                                   return (
@@ -1073,10 +1073,10 @@ export default function KhariltsagchModal({
                       {storages.map((storage: any, sIdx: number) => {
                         const sFlatIdxNested = getStorageFlatIndex(sIdx);
                         return (
-                          <div key={`storage-${sIdx}`} className="rounded-lg border-l-4 border-l-indigo-500 border border-theme/30 dark:border-theme/40 bg-theme/30 dark:bg-theme/10 overflow-hidden">
-                            <div className="flex items-center justify-between px-3 py-2 border-b border-theme/30 dark:border-theme/40 bg-theme/60 dark:bg-theme/20">
+                          <div key={`storage-${sIdx}`} className="rounded-lg border-l-4 border-l-indigo-500 border border-theme/30 bg-theme/30 overflow-hidden">
+                            <div className="flex items-center justify-between px-3 py-2 border-b border-theme/30 bg-theme/60">
                               <div className="flex items-center gap-2">
-                                <h5 className="text-[10px] font-bold uppercase tracking-wider text-theme dark:text-theme">
+                                <h5 className="text-[10px] font-bold uppercase tracking-wider text-brand">
                                   Агуулах {storages.length > 1 ? `#${sIdx + 1}` : ""}
                                 </h5>
                               </div>
@@ -1089,14 +1089,14 @@ export default function KhariltsagchModal({
                             </div>
                             <div className="p-3 grid grid-cols-2 gap-3">
                               <div>
-                                <label className="block text-[10px] uppercase tracking-wider font-bold text-theme dark:text-theme mb-1">Давхар</label>
+                                <label className="block text-[10px] uppercase tracking-wider font-bold text-brand mb-1">Давхар</label>
                                 <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${sFlatIdxNested}.davkhar`) ? "input-error" : ""}`}>
                                   <TusgaiZagvar value={storage.davkhar || ""} onChange={(val: string) => updateStorageField(sIdx, "davkhar", val)}
                                     options={additionalFloors.map((d) => ({ value: d, label: d }))} className="w-full h-full" placeholder="Давхар..." />
                                 </div>
                               </div>
                               <div>
-                                <label className="block text-[10px] uppercase tracking-wider font-bold text-theme dark:text-theme mb-1">Дугаар</label>
+                                <label className="block text-[10px] uppercase tracking-wider font-bold text-brand mb-1">Дугаар</label>
                                 {(() => {
                                   const opts = getTootOptions("1", storage.davkhar || "", "Агуулах");
                                   return (
