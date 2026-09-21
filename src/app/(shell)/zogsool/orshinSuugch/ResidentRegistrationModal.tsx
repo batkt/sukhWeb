@@ -18,6 +18,10 @@ import {
   Hash,
   FileText,
   Save,
+  Pencil,
+  Trash2,
+  Plus,
+  Loader2,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import uilchilgee from "@/lib/uilchilgee";
@@ -439,10 +443,9 @@ export default function ResidentRegistrationModal({
           zochinUrikhEsekh: true,
         },
         mashinMedeelel: {
-          _id:
-            editData?._id && String(editData?._id) !== String(editData?.ezemshigchiinId)
-              ? editData._id
-              : undefined, // Actual Mashin ID only if it exists
+          // Модал дотроос сонгож засаж байгаа машины id. `null` бол
+          // шинэ машин — backend шинээр үүсгэнэ.
+          _id: zasajBuiMashiniiId || undefined,
           dugaar: plateToUse,
           ezemshigchiinNer: formData.name,
           ezemshigchiinRegister: formData.register || "00000000",
@@ -733,7 +736,7 @@ export default function ResidentRegistrationModal({
                         </label>
                       </div>
 
-                      {/* Эзэн дээр аль хэдийн бүртгэлтэй машинууд */}
+                      {/* Эзэн дээр бүртгэлтэй машинууд — тус бүрд засах/устгах */}
                       {baigaaMashinuud.length > 0 && (
                         <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.03] p-4">
                           <div className="flex items-center justify-between mb-2.5">
@@ -746,23 +749,87 @@ export default function ResidentRegistrationModal({
                               </span>
                             )}
                           </div>
-                          <div className="flex flex-wrap gap-2">
-                            {baigaaMashinuud.map((dugaar) => (
-                              <span
-                                key={dugaar}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-mono font-bold tracking-wider text-slate-800 dark:text-slate-100"
-                              >
-                                <Car className="w-3.5 h-3.5 text-slate-400" />
-                                {dugaar}
-                              </span>
-                            ))}
+
+                          <div className="flex flex-col gap-2">
+                            {baigaaMashinuud.map((mashin) => {
+                              const zasajBui =
+                                zasajBuiMashiniiId === mashin._id;
+                              const ustgaj = mashinUstgaj === mashin._id;
+
+                              return (
+                                <div
+                                  key={mashin._id}
+                                  className={`flex items-center gap-2 pl-3 pr-2 py-2 rounded-xl border transition-colors ${
+                                    zasajBui
+                                      ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10"
+                                      : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+                                  }`}
+                                >
+                                  <Car className="w-4 h-4 text-slate-400 shrink-0" />
+                                  <span className="flex-1 text-sm font-mono font-bold tracking-wider text-slate-800 dark:text-slate-100">
+                                    {mashin.mashiniiDugaar}
+                                  </span>
+
+                                  {zasajBui && (
+                                    <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                                      Засаж байна
+                                    </span>
+                                  )}
+
+                                  <button
+                                    type="button"
+                                    onClick={() => mashinZasaya(mashin)}
+                                    disabled={ustgaj}
+                                    title="Дугаарыг засах"
+                                    className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 disabled:opacity-40 transition-colors"
+                                  >
+                                    <Pencil className="w-4 h-4" />
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => mashinUstgaya(mashin)}
+                                    disabled={ustgaj}
+                                    title="Машины бүртгэлийг устгах"
+                                    className="p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-40 transition-colors"
+                                  >
+                                    {ustgaj ? (
+                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                      <Trash2 className="w-4 h-4" />
+                                    )}
+                                  </button>
+                                </div>
+                              );
+                            })}
                           </div>
-                          {khyazgaarDuurenEsekh && (
-                            <p className="mt-3 text-[11px] leading-relaxed text-amber-600 dark:text-amber-400">
-                              Хязгаар дүүрсэн байна. Шинэ машин нэмэхийн тулд
-                              Тохиргоо → Нэмэлт тохиргоо → «Машины бүртгэлийн
-                              хязгаар»-аас дээд тоог өсгөнө.
-                            </p>
+
+                          {/* Засах горимоос гарч шинэ машин нэмэх */}
+                          {zasajBuiMashiniiId ? (
+                            <button
+                              type="button"
+                              onClick={shineMashinNemey}
+                              disabled={
+                                mashiniiKhyazgaar > 0 &&
+                                baigaaMashinuud.length >= mashiniiKhyazgaar
+                              }
+                              className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                              Шинэ машин нэмэх
+                              {mashiniiKhyazgaar > 0 &&
+                                baigaaMashinuud.length >= mashiniiKhyazgaar &&
+                                " (хязгаар дүүрсэн)"}
+                            </button>
+                          ) : (
+                            khyazgaarDuurenEsekh && (
+                              <p className="mt-3 text-[11px] leading-relaxed text-amber-600 dark:text-amber-400">
+                                Хязгаар дүүрсэн байна. Шинэ машин нэмэхийн тулд
+                                дээрхээс нэгийг устгах, эсвэл Тохиргоо → Нэмэлт
+                                тохиргоо → «Машины бүртгэлийн хязгаар»-аас дээд
+                                тоог өсгөнө.
+                              </p>
+                            )
                           )}
                         </div>
                       )}
@@ -770,9 +837,11 @@ export default function ResidentRegistrationModal({
                       {/* License Plate Special Input */}
                       <div className="relative p-5 rounded-2xl bg-[#edf2f7] bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px] dark:bg-slate-900/50 flex flex-col justify-center items-center overflow-hidden group border border-slate-200/60 dark:border-white/10 shadow-inner">
                         <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2 uppercase tracking-wider">
-                          {baigaaMashinuud.length > 0 && !editData
-                            ? "Шинэ машины улсын дугаар"
-                            : "Улсын дугаар (4 тоо + 3 Монгол кирилл үсэг)"}
+                          {zasajBuiMashiniiId
+                            ? "Улсын дугаар засах (4 тоо + 3 кирилл үсэг)"
+                            : baigaaMashinuud.length > 0
+                              ? "ШИНЭ машины улсын дугаар"
+                              : "Улсын дугаар (4 тоо + 3 Монгол кирилл үсэг)"}
                         </label>
                         <div className="relative w-64 h-[68px] bg-white dark:bg-slate-900 rounded-xl border-2 border-slate-300 dark:border-slate-700 flex items-center shadow-md transform group-hover:scale-102 transition-transform duration-300">
                           <input
