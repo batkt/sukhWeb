@@ -26,6 +26,7 @@ import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import formatNumber from "../../../../../tools/function/formatNumber";
 import { ModalPortal } from "../../../../../components/shell/ModalPortal";
+import { useAuth } from "@/lib/useAuth";
 
 type Props = {
   show: boolean;
@@ -118,6 +119,32 @@ export const ResidentDetailModal: React.FC<Props> = ({
   /** Машины жагсаалт сүүлд татсанаасаа хойш өөрчлөгдсөн эсэх. */
   const [mashinOorchlogdson, setMashinOorchlogdson] = useState(false);
   const [mashinUnshijBaina, setMashinUnshijBaina] = useState(false);
+
+  const { baiguullaga } = useAuth();
+
+  /**
+   * Нэг оршин суугч дээр бүртгэж болох машины дээд тоо.
+   *
+   * Вебийн «Нэмэлт тохиргоо → Машины бүртгэлийн хязгаар»-аас тохируулна.
+   * Барилга → байгууллагын дарааллаар уншина; 0 бол тохируулаагүй тул
+   * хязгаарлахгүй (backend-ийн `mashiniiKhyazgaarOlya`-тай ижил дүрэм).
+   */
+  const mashiniiKhyazgaar = useMemo(() => {
+    const org = baiguullaga as any;
+    const barilga = org?.barilguud?.find(
+      (b: any) =>
+        String(b?._id || b?.id) === String(medeelel?.barilgiinId || ""),
+    );
+
+    const utga =
+      barilga?.tokhirgoo?.zochinTokhirgoo?.orshinSuugchMashiniiLimit ??
+      barilga?.zochinTokhirgoo?.orshinSuugchMashiniiLimit ??
+      org?.tokhirgoo?.zochinTokhirgoo?.orshinSuugchMashiniiLimit ??
+      org?.zochinTokhirgoo?.orshinSuugchMashiniiLimit;
+
+    const toon = Number(utga);
+    return Number.isFinite(toon) && toon > 0 ? Math.floor(toon) : 0;
+  }, [baiguullaga, medeelel?.barilgiinId]);
 
   /* Гэр бүлийн гишүүд цэс болон засах төлөв */
   const [tovchMenuGishuunId, setTovchMenuGishuunId] = useState<string | null>(null);
@@ -358,6 +385,15 @@ export const ResidentDetailModal: React.FC<Props> = ({
       )
     ) {
       openErrorOverlay("Энэ улсын дугаар аль хэдийн бүртгэгдсэн байна");
+      return;
+    }
+    // Тохиргооны хязгаар (Нэмэлт тохиргоо → Машины бүртгэлийн хязгаар).
+    // Backend ч мөн шалгадаг — энд шалгах нь хэрэглэгчид шалтгааныг товчийг
+    // дарахаас өмнө хэлэх зорилготой.
+    if (mashiniiKhyazgaar > 0 && mashinJagsaalt.length >= mashiniiKhyazgaar) {
+      openErrorOverlay(
+        `Нэг оршин суугч дээр хамгийн олон ${mashiniiKhyazgaar} машин бүртгэх боломжтой. Хязгаарыг Нэмэлт тохиргооноос өөрчилнө.`,
+      );
       return;
     }
     if (!token || !residentId) return;
@@ -1036,7 +1072,11 @@ export const ResidentDetailModal: React.FC<Props> = ({
                           <Car className="h-4 w-4" />
                         </div>
                         <h3 className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white">
-                          Машин ({mashinJagsaalt.length})
+                          Машин (
+                          {mashiniiKhyazgaar > 0
+                            ? `${mashinJagsaalt.length}/${mashiniiKhyazgaar}`
+                            : mashinJagsaalt.length}
+                          )
                         </h3>
                       </div>
                     </div>

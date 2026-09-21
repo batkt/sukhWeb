@@ -45,6 +45,9 @@ export default function NemeltTokhirgoo() {
   const [guestNotes, setGuestNotes] = useState<any[]>([]);
   const [guestLimit, setGuestLimit] = useState<number | string>("");
   const [guestFreeMinutes, setGuestFreeMinutes] = useState<number | string>("");
+  // Нэг оршин суугч/харилцагч дээр бүртгэж болох машины дээд тоо.
+  // Байгууллага/барилгын бүх оршин суугчид нэг ижил хамаарна.
+  const [residentCarLimit, setResidentCarLimit] = useState<number | string>(1);
   // Зочны зогсоолын төлбөрийг оршин суугчийн нэхэмжлэхэд бичих боломжтой
   // эсэх. Унтраалттай бол апп дээр "Би даана" сонголт харагдахгүй.
   const [guestInvoiceEnabled, setGuestInvoiceEnabled] =
@@ -377,6 +380,8 @@ export default function NemeltTokhirgoo() {
     setGuestConfigEnabled(isEnabled);
     setGuestLimit(find("zochinErkhiinToo", ""));
     setGuestFreeMinutes(find("zochinTusBurUneguiMinut", ""));
+    // Тохируулаагүй бол 1 — backend-ийн үндсэн зан төлөвтэй ижил.
+    setResidentCarLimit(find("orshinSuugchMashiniiLimit", 1));
     setGuestInvoiceEnabled(find("zochinNekhemjlekhEsekh", false) === true);
     setGuestNote(find("zochinTailbar", ""));
     setGuestFrequencyType(find("davtamjiinTurul", "saraar"));
@@ -405,10 +410,21 @@ export default function NemeltTokhirgoo() {
     await baiguullagaMutate();
   };
 
-  const saveGuestSettings = async (overrideEnabled?: boolean) => {
+  /**
+   * `zochinTokhirgoo`-ийн өгсөн талбаруудыг байгууллага (эсвэл сонгосон
+   * барилга) дээр хадгална.
+   *
+   * ЧУХАЛ: обьектыг бүхэлд нь дарж бичихгүй, байгаа тохиргоо дээрээ нэмнэ.
+   * Өмнө нь бүтнээр дарж бичдэг тул жишээ нь машины бүртгэлийн хязгаар
+   * (`orshinSuugchMashiniiLimit`) нь зочны тохиргоо хадгалах товч дарах
+   * бүрд чимээгүй тэглэгддэг байв.
+   */
+  const zochinTokhirgooKhadgalya = async (
+    shineTalbaruud: Record<string, any>,
+  ) => {
     if (!token || !ajiltan?.baiguullagiinId) {
       openErrorOverlay("Нэвтрэх шаардлагатай");
-      return;
+      return false;
     }
     showSpinner();
     try {
@@ -427,21 +443,6 @@ export default function NemeltTokhirgoo() {
         throw new Error("Байгууллагын мэдээлэл олдсонгүй");
       }
 
-      const isOverrideBool = typeof overrideEnabled === "boolean";
-      const isEnabled = isOverrideBool ? overrideEnabled : !!guestConfigEnabled;
-
-      // 2. Prepare schema-compliant configuration
-      const zochinTokhirgoo = {
-        zochinUrikhEsekh: isEnabled,
-        zochinTurul: "Оршин суугч",
-        zochinErkhiinToo: Number(guestLimit) || 0,
-        zochinTusBurUneguiMinut: Number(guestFreeMinutes) || 0,
-        zochinNekhemjlekhEsekh: !!guestInvoiceEnabled,
-        zochinTailbar: guestNote || "",
-        davtamjiinTurul: guestFrequencyType,
-        davtamjUtga: Number(guestFrequencyValue) || null,
-      };
-
       // Deep copy to prevent state mutation
       let payload: any = JSON.parse(JSON.stringify(freshOrg));
 
@@ -455,7 +456,10 @@ export default function NemeltTokhirgoo() {
               ...b,
               tokhirgoo: {
                 ...(b.tokhirgoo || {}),
-                zochinTokhirgoo: zochinTokhirgoo,
+                zochinTokhirgoo: {
+                  ...(b.tokhirgoo?.zochinTokhirgoo || {}),
+                  ...shineTalbaruud,
+                },
               },
             };
           }
@@ -471,7 +475,10 @@ export default function NemeltTokhirgoo() {
         // Organization level update
         payload.tokhirgoo = {
           ...(payload.tokhirgoo || {}),
-          zochinTokhirgoo: zochinTokhirgoo,
+          zochinTokhirgoo: {
+            ...(payload.tokhirgoo?.zochinTokhirgoo || {}),
+            ...shineTalbaruud,
+          },
         };
       }
 
@@ -479,21 +486,51 @@ export default function NemeltTokhirgoo() {
       // Organizations (baiguullaga) updates typically use POST specifically for these config paths
       const result = await updateMethod("baiguullaga", token, payload);
 
-      if (result?.data) {
-        const finalData = result.data.result || result.data;
-        // Optimistically update the cache
-        await baiguullagaMutate(finalData, false);
-        // Ensure a background sync is triggered to confirm server state
-        await baiguullagaMutate();
-        openSuccessOverlay("Амжилттай хадгаллаа");
-      } else {
+      if (!result?.data) {
         throw new Error("Хадгалахад алдаа гарлаа");
       }
+
+      const finalData = result.data.result || result.data;
+      // Optimistically update the cache
+      await baiguullagaMutate(finalData, false);
+      // Ensure a background sync is triggered to confirm server state
+      await baiguullagaMutate();
+      openSuccessOverlay("Амжилттай хадгаллаа");
+      return true;
     } catch (error: any) {
       openErrorOverlay(error?.message || "  хадгалахад алдаа гарлаа");
+      return false;
     } finally {
       hideSpinner();
     }
+  };
+
+  const saveGuestSettings = async (overrideEnabled?: boolean) => {
+    const isOverrideBool = typeof overrideEnabled === "boolean";
+    const isEnabled = isOverrideBool ? overrideEnabled : !!guestConfigEnabled;
+
+    await zochinTokhirgooKhadgalya({
+      zochinUrikhEsekh: isEnabled,
+      zochinTurul: "Оршин суугч",
+      zochinErkhiinToo: Number(guestLimit) || 0,
+      zochinTusBurUneguiMinut: Number(guestFreeMinutes) || 0,
+      zochinNekhemjlekhEsekh: !!guestInvoiceEnabled,
+      zochinTailbar: guestNote || "",
+      davtamjiinTurul: guestFrequencyType,
+      davtamjUtga: Number(guestFrequencyValue) || null,
+    });
+  };
+
+  /** Машины бүртгэлийн хязгаарыг хадгална (зочны тохиргооноос хамаарахгүй). */
+  const saveResidentCarLimit = async () => {
+    const utga = Number(residentCarLimit);
+    if (!Number.isFinite(utga) || utga < 1) {
+      openErrorOverlay("Машины хязгаар 1-ээс багагүй тоо байх ёстой");
+      return;
+    }
+    await zochinTokhirgooKhadgalya({
+      orshinSuugchMashiniiLimit: Math.floor(utga),
+    });
   };
 
   const saveGaragePaymentSettings = async (overrideEnabled?: boolean) => {
@@ -1265,6 +1302,58 @@ export default function NemeltTokhirgoo() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Машины бүртгэлийн хязгаар — зочны тохиргооноос хамааралгүй, бүх
+            оршин суугч/харилцагчид ижил хамаарна */}
+        <div id="nemelt-mashin-box">
+          <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden">
+            <div className="px-4 py-3 border-b border-[color:var(--surface-border)] bg-gradient-to-r from-violet-50 to-fuchsia-50 dark:from-violet-900/20 dark:to-fuchsia-900/20">
+              <h3 className="text-base text-theme">Машины бүртгэлийн хязгаар</h3>
+              <p className="text-xs text-[color:var(--muted-text)]">
+                Нэг оршин суугч / харилцагч дээр бүртгэж болох машины дээд тоо
+              </p>
+            </div>
+
+            <div className="p-3.5 px-4 bg-gradient-to-br from-violet-50/50 to-fuchsia-50/50 dark:from-violet-950/10 dark:to-fuchsia-950/10 space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
+                <div className="space-y-1">
+                  <label className="text-xs text-theme">
+                    Машины дээд тоо (оршин суугч тус бүрд)
+                  </label>
+                  <MNumberInput
+                    value={
+                      residentCarLimit === ""
+                        ? undefined
+                        : Number(residentCarLimit)
+                    }
+                    onChange={(val) =>
+                      setResidentCarLimit(val !== "" ? val : "")
+                    }
+                    placeholder="1"
+                    min={1}
+                    size="sm"
+                    className="w-full"
+                  />
+                  <p className="text-[11px] text-[color:var(--muted-text)]">
+                    Жишээ: 3 гэж тохируулбал оршин суугч аппаараа 3 машин
+                    бүртгэж, бүгдийг нь харна. Бүх оршин суугчид ижил хамаарна.
+                  </p>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button
+                    onClick={saveResidentCarLimit}
+                    variant="primary"
+                    size="sm"
+                    className="!rounded-xl px-4 py-1 text-xs"
+                  >
+                    Хадгалах
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
