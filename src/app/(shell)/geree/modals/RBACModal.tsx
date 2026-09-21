@@ -105,11 +105,11 @@ export default function RBACModal({ show, onClose, employee, onSave }: RBACModal
             {/* Header */}
             <div
               onPointerDown={(e) => dragControls.start(e)}
-              className="flex items-center justify-between p-6 border-b border-[color:var(--surface-border)] bg-gradient-to-r from-blue-500/10 to-purple-500/10 cursor-move select-none"
+              className="flex items-center justify-between p-6 border-b border-[color:var(--surface-border)] bg-gradient-to-r from-theme/10 to-purple-500/10 cursor-move select-none"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                  <Shield className="w-5 h-5 text-blue-500" />
+                <div className="w-10 h-10 rounded-full bg-theme/20 flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-theme" />
                 </div>
                 <div>
                   <h2 className="text-xl  text-theme">Эрхийн тохиргоо</h2>
@@ -135,8 +135,8 @@ export default function RBACModal({ show, onClose, employee, onSave }: RBACModal
                   <div
                     className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
                       allSelected
-                        ? "bg-blue-500 border-blue-500"
-                        : "border-[color:var(--surface-border)] group-hover:border-blue-400"
+                        ? "bg-theme border-theme"
+                        : "border-[color:var(--surface-border)] group-hover:border-theme"
                     }`}
                   >
                     {allSelected && <Check className="w-4 h-4 text-white" />}
@@ -162,8 +162,8 @@ export default function RBACModal({ show, onClose, employee, onSave }: RBACModal
                       whileTap={{ scale: 0.98 }}
                       className={`p-4 rounded-2xl border-2 transition-all cursor-pointer ${
                         isSelected
-                          ? "bg-blue-50 dark:bg-blue-900/20 border-blue-500"
-                          : "bg-[color:var(--surface-bg)] border-[color:var(--surface-border)] hover:border-blue-300"
+                          ? "bg-theme/10 dark:bg-theme/20 border-theme"
+                          : "bg-[color:var(--surface-bg)] border-[color:var(--surface-border)] hover:border-theme/30"
                       }`}
                       onClick={() => handleTogglePermission(item.id)}
                     >
@@ -171,7 +171,7 @@ export default function RBACModal({ show, onClose, employee, onSave }: RBACModal
                         <div
                           className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
                             isSelected
-                              ? "bg-blue-500 border-blue-500"
+                              ? "bg-theme border-theme"
                               : "border-[color:var(--surface-border)]"
                           }`}
                         >
@@ -194,8 +194,8 @@ export default function RBACModal({ show, onClose, employee, onSave }: RBACModal
               </div>
 
               {/* Permission Count */}
-              <div className="mt-4 p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-                <p className="text-sm text-blue-700 dark:text-blue-300 text-center">
+              <div className="mt-4 p-3 rounded-xl bg-theme/10 dark:bg-theme/20 border border-theme/30 dark:border-theme">
+                <p className="text-sm text-theme dark:text-theme text-center">
                   <span className="">{selectedPermissions.length}</span> / {MENU_ITEMS.length} цэс сонгогдсон
                 </p>
               </div>
@@ -212,7 +212,7 @@ export default function RBACModal({ show, onClose, employee, onSave }: RBACModal
               <button
                 onClick={handleSave}
                 disabled={isSaving}
-                className="px-6 py-2.5 rounded-xl  bg-blue-500 text-white hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-6 py-2.5 rounded-xl  bg-theme text-white hover:bg-theme transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {isSaving ? (
                   <>

@@ -138,12 +138,12 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
 
             if (allUnits.length === 0) {
               const rawVal = renderCellValue(record, "toot");
-              return <span className="text-gray-900 dark:text-white">{rawVal}</span>;
+              return <span className="text-[color:var(--panel-text)] dark:text-white">{rawVal}</span>;
             }
 
             if (allUnits.length === 1) {
               return (
-                <span className="text-gray-900 dark:text-white font-medium">
+                <span className="text-[color:var(--panel-text)] dark:text-white font-medium">
                   {allUnits[0].toot}
                 </span>
               );
@@ -166,9 +166,9 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
 
             return (
               <Tooltip title={tooltipContent} placement="top" color="#1e293b" trigger="hover">
-                <span className="inline-flex items-center gap-1.5 cursor-pointer px-2 py-0.5 rounded-lg bg-slate-50 dark:bg-slate-800 font-semibold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                <span className="inline-flex items-center gap-1.5 cursor-pointer px-2 py-0.5 rounded-lg bg-[color:var(--surface-hover)] font-semibold text-[color:var(--panel-text)] border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors">
                   {allUnits[0].toot}
-                  <span className="text-slate-500 font-bold">
+                  <span className="text-[color:var(--muted-text)] font-bold">
                     +{allUnits.length - 1}
                   </span>
                 </span>
@@ -179,7 +179,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
           return {
             title: (
               <span
-                className={`text-gray-900 dark:text-white ${alignClass === "center" ? "text-center block" : ""}`}
+                className={`text-[color:var(--panel-text)] dark:text-white ${alignClass === "center" ? "text-center block" : ""}`}
               >
                 {column?.label}
               </span>
@@ -215,7 +215,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
           return {
             title: (
               <span
-                className={`text-gray-900 dark:text-white ${alignClass === "center" || columnKey === "ner" || columnKey === "gereeniiDugaar" ? "text-center block" : ""}`}
+                className={`text-[color:var(--panel-text)] dark:text-white ${alignClass === "center" || columnKey === "ner" || columnKey === "gereeniiDugaar" ? "text-center block" : ""}`}
               >
                 {column?.label}
               </span>
@@ -232,7 +232,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
                   : "descend"
                 : null,
             render: (_: any, record: any) => (
-              <span className="text-gray-900 dark:text-white">
+              <span className="text-[color:var(--panel-text)] dark:text-white">
                 {renderCellValue(record, columnKey)}
               </span>
             ),
@@ -242,7 +242,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
         return {
           title: (
             <span
-              className={`text-gray-900 dark:text-white ${alignClass === "center" || columnKey === "ner" || columnKey === "gereeniiDugaar" ? "text-center block" : ""}`}
+              className={`text-[color:var(--panel-text)] dark:text-white ${alignClass === "center" || columnKey === "ner" || columnKey === "gereeniiDugaar" ? "text-center block" : ""}`}
             >
               {column?.label}
             </span>
@@ -252,7 +252,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
           align: alignClass as any,
           width: colWidth,
           render: (_: any, record: any) => (
-            <span className="text-gray-900 dark:text-white">
+            <span className="text-[color:var(--panel-text)] dark:text-white">
               {renderCellValue(record, columnKey)}
             </span>
           ),
@@ -286,30 +286,30 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
             <div className="flex gap-1 justify-center items-center">
               <button
                 onClick={() => handlePreviewContractTemplate(record)}
-                className="p-1.5 rounded-md hover-surface transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="p-1.5 rounded-md hover-surface transition-colors hover:bg-[color:var(--surface-hover)]"
                 title="Гэрээний загвар харах"
               >
-                <Eye className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+                <Eye className="w-4 h-4 text-[color:var(--muted-text)]" />
               </button>
               <button
                 onClick={() => handleEdit(record)}
-                className="p-1.5 rounded-md hover-surface transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                className="p-1.5 rounded-md hover-surface transition-colors hover:bg-theme/10 dark:hover:bg-theme/30"
                 id={index === 0 ? "geree-edit-btn" : undefined}
                 title="Засах"
               >
-                <Edit className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <Edit className="w-4 h-4 text-theme dark:text-theme" />
               </button>
               {isCancelled && isAdmin && handleAdminDelete && (
                 <button
                   onClick={() => handleAdminDelete(record)}
-                  className="p-1.5 rounded-md hover-surface transition-colors hover:bg-rose-100 dark:hover:bg-rose-900/30"
+                  className="p-1.5 rounded-md hover-surface transition-colors hover:bg-danger/10"
                   title={
                     cancelDate
                       ? `${cancelDate}-нд цуцлагдсан · Гэрээг авлагатай нь устгах`
                       : "Цуцлагдсан гэрээг авлагатай нь устгах"
                   }
                 >
-                  <Trash2 className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+                  <Trash2 className="w-4 h-4 text-danger" />
                 </button>
               )}
             </div>
@@ -344,7 +344,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
           scroll={{ x: "max-content" }}
           locale={{
             emptyText: (
-              <span className="text-gray-500 dark:text-gray-400">
+              <span className="text-[color:var(--muted-text)]">
                 Гэрээ олдсонгүй
               </span>
             ),

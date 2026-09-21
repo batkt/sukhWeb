@@ -324,23 +324,23 @@ export default function OrshinSuugch() {
                   setTurulFilter(stat.value);
                   setPage(1);
                 }}
-                className={`relative group rounded-2xl transition-all duration-300 cursor-pointer border bg-white dark:bg-slate-900 ${
+                className={`relative group rounded-2xl transition-all duration-300 cursor-pointer border bg-white ${
                   isActive
-                    ? "border-blue-500 shadow-md shadow-blue-500/10 scale-[1.02]"
-                    : "border-slate-200/60 dark:border-white/5 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/10"
+                    ? "border-theme shadow-md shadow-theme/10 scale-[1.02]"
+                    : "border-[color:var(--surface-border)] dark:border-white/5 shadow-sm hover:shadow-md hover:border-[color:var(--surface-border)] dark:hover:border-white/10"
                 }`}
               >
                 <div className="relative p-5 overflow-hidden flex flex-col h-full justify-between">
                   <div
                     className={`text-3xl font-sans mb-1 transition-colors ${
-                      isActive ? "text-blue-600 dark:text-blue-400 font-bold" : "text-slate-800 dark:text-slate-200"
+                      isActive ? "text-theme dark:text-theme font-bold" : "text-[color:var(--panel-text)]"
                     }`}
                   >
                     {stat.count || "0"}
                   </div>
                   <div
                     className={`text-[13px] font-sans leading-tight transition-colors ${
-                      isActive ? "text-blue-600/80 dark:text-blue-400/80 font-medium" : "text-slate-500 dark:text-slate-400"
+                      isActive ? "text-theme/80 dark:text-theme/80 font-medium" : "text-[color:var(--muted-text)]"
                     }`}
                   >
                     {stat.label}
@@ -357,7 +357,7 @@ export default function OrshinSuugch() {
             onClick={() => setShowExcelImport(true)}
             variant="ghost"
             leftIcon={<FileSpreadsheet className="w-4 h-4" />}
-            className="h-11 px-6 rounded-xl uppercase text-[10px] border border-slate-200 dark:border-white/10 font-sans"
+            className="h-11 px-6 rounded-xl uppercase text-[10px] border border-[color:var(--surface-border)] dark:border-white/10 font-sans"
           >
             Excel оруулах
           </Button>
@@ -366,7 +366,7 @@ export default function OrshinSuugch() {
             onClick={() => setShowRegistrationModal(true)}
             variant="primary"
             leftIcon={<Plus className="w-4 h-4" />}
-            className="h-11 px-8 rounded-xl uppercase text-[10px] shadow-lg shadow-blue-500/20 hover:scale-105 transition-transform font-sans"
+            className="h-11 px-8 rounded-xl uppercase text-[10px] shadow-lg shadow-theme/20 hover:scale-105 transition-transform font-sans"
           >
             Нэмэх
           </Button>
@@ -379,7 +379,7 @@ export default function OrshinSuugch() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+                className="absolute inset-0 bg-[color:var(--panel)] backdrop-blur-sm"
                 onClick={() => setShowDeleteModal(false)}
               />
               <motion.div
@@ -389,14 +389,14 @@ export default function OrshinSuugch() {
                 className="relative w-full max-w-sm bg-white dark:bg-[#0f1117] rounded-2xl shadow-2xl overflow-hidden border border-white/20 dark:border-white/5 p-8"
               >
                 <div className="flex flex-col items-center text-center">
-                  <div className="w-16 h-16 rounded-full bg-red-50 dark:bg-red-500/10 flex items-center justify-center mb-6">
-                    <Trash2 className="w-8 h-8 text-red-500" />
+                  <div className="w-16 h-16 rounded-full bg-danger/10 flex items-center justify-center mb-6">
+                    <Trash2 className="w-8 h-8 text-danger" />
                   </div>
-                  <h3 className="text-xl font-medium text-slate-800 dark:text-white mb-2">
+                  <h3 className="text-xl font-medium text-[color:var(--panel-text)] dark:text-white mb-2">
                     Устгахдаа итгэлтэй байна уу?
                   </h3>
-                  <p className="text-slate-500 dark:text-slate-400 mb-8 leading-relaxed">
-                    <span className="font-bold text-slate-900 dark:text-slate-100">
+                  <p className="text-[color:var(--muted-text)] mb-8 leading-relaxed">
+                    <span className="font-bold text-[color:var(--panel-text)]">
                       {itemToDelete.ner || itemToDelete.orshinSuugchNer || "Энэ хэрэглэгч"}
                     </span>{" "}
                     -ийн мэдээллийг устгахыг зөвшөөрч байна уу?
@@ -404,13 +404,13 @@ export default function OrshinSuugch() {
                   <div className="flex flex-col w-full gap-3">
                     <button
                       onClick={confirmDelete}
-                      className="w-full h-12 bg-red-500 hover:bg-red-600 text-white rounded-xl font-medium transition-all hover:scale-105 active:scale-95 shadow-lg shadow-red-500/20"
+                      className="w-full h-12 bg-danger hover:bg-danger text-white rounded-xl font-medium transition-all hover:scale-105 active:scale-95 shadow-lg shadow-danger/20"
                     >
                       Устгах
                     </button>
                     <button
                       onClick={() => setShowDeleteModal(false)}
-                      className="w-full h-12 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 rounded-xl font-medium transition-all"
+                      className="w-full h-12 bg-[color:var(--surface-hover)] dark:bg-white/5 hover:bg-[color:var(--panel)] dark:hover:bg-white/10 text-[color:var(--muted-text)] rounded-xl font-medium transition-all"
                     >
                       Цуцлах
                     </button>

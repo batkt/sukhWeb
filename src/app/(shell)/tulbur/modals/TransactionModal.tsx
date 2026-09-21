@@ -73,10 +73,10 @@ function DoubleYearMonthPicker({
         type="button"
         disabled={disabled}
         onClick={() => setIsOpen((prev) => !prev)}
-        className="w-full px-3 py-2.5 border border-emerald-300 bg-white text-emerald-950 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all text-sm font-medium flex items-center justify-between cursor-pointer dark:bg-slate-900 dark:border-emerald-800 dark:text-emerald-100"
+        className="w-full px-3 py-2.5 border border-theme/30 bg-white text-theme rounded-2xl focus:outline-none focus:ring-2 focus:ring-theme/30 focus:border-theme transition-all text-sm font-medium flex items-center justify-between cursor-pointer dark:border-theme dark:text-theme"
       >
         <span>{formattedDisplay}</span>
-        <Calendar className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+        <Calendar className="w-4 h-4 text-theme dark:text-theme" />
       </button>
 
       <AnimatePresence>
@@ -86,20 +86,20 @@ function DoubleYearMonthPicker({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 6, scale: 0.98 }}
             transition={{ duration: 0.15 }}
-            className="absolute left-0 top-full mt-2 z-[13000] !bg-white !opacity-100 border border-slate-200 rounded-2xl shadow-2xl p-4 w-[480px] sm:w-[520px] select-none text-slate-800 shadow-slate-400/30"
+            className="absolute left-0 top-full mt-2 z-[13000] !bg-white !opacity-100 border border-[color:var(--surface-border)] rounded-2xl shadow-2xl p-4 w-[480px] sm:w-[520px] select-none text-[color:var(--panel-text)] shadow-slate-400/30"
           >
             {/* Top Navigation Bar: <<  2026                 2027  >> */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-3 px-2">
+            <div className="flex items-center justify-between pb-3 border-b border-[color:var(--surface-border)] mb-3 px-2">
               <button
                 type="button"
                 onClick={() => setStartYear((prev) => prev - 2)}
-                className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors font-bold text-xs flex items-center gap-1"
+                className="p-1.5 rounded-lg hover:bg-[color:var(--surface-hover)] text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] transition-colors font-bold text-xs flex items-center gap-1"
                 title="Өмнөх 2 он"
               >
                 <ChevronsLeft className="w-4 h-4" />
               </button>
 
-              <div className="flex-1 grid grid-cols-2 text-center font-bold text-slate-800 dark:text-slate-100 text-sm">
+              <div className="flex-1 grid grid-cols-2 text-center font-bold text-[color:var(--panel-text)] text-sm">
                 <div>{startYear}</div>
                 <div>{startYear + 1}</div>
               </div>
@@ -107,7 +107,7 @@ function DoubleYearMonthPicker({
               <button
                 type="button"
                 onClick={() => setStartYear((prev) => prev + 2)}
-                className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors font-bold text-xs flex items-center gap-1"
+                className="p-1.5 rounded-lg hover:bg-[color:var(--surface-hover)] text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] transition-colors font-bold text-xs flex items-center gap-1"
                 title="Дараах 2 он"
               >
                 <ChevronsRight className="w-4 h-4" />
@@ -130,8 +130,8 @@ function DoubleYearMonthPicker({
                         py-2 px-1 text-center text-xs font-medium rounded-xl transition-all
                         ${
                           isSelected
-                            ? "bg-emerald-600 text-white font-bold shadow-sm"
-                            : "text-slate-700 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:text-emerald-700"
+                            ? "bg-theme text-white font-bold shadow-sm"
+                            : "text-[color:var(--panel-text)] hover:bg-theme/10 dark:hover:bg-theme/40 hover:text-theme"
                         }
                       `}
                     >
@@ -142,7 +142,7 @@ function DoubleYearMonthPicker({
               </div>
 
               {/* Year 2 Grid */}
-              <div className="grid grid-cols-3 gap-y-3 gap-x-2 border-l border-slate-100 dark:border-slate-800 pl-4">
+              <div className="grid grid-cols-3 gap-y-3 gap-x-2 border-l border-[color:var(--surface-border)] pl-4">
                 {months.map((m) => {
                   const monthVal = `${startYear + 1}-${String(m.num).padStart(2, "0")}`;
                   const isSelected = value === monthVal;
@@ -155,8 +155,8 @@ function DoubleYearMonthPicker({
                         py-2 px-1 text-center text-xs font-medium rounded-xl transition-all
                         ${
                           isSelected
-                            ? "bg-emerald-600 text-white font-bold shadow-sm"
-                            : "text-slate-700 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:text-emerald-700"
+                            ? "bg-theme text-white font-bold shadow-sm"
+                            : "text-[color:var(--panel-text)] hover:bg-theme/10 dark:hover:bg-theme/40 hover:text-theme"
                         }
                       `}
                     >
@@ -263,14 +263,14 @@ const KhungulultiinMur = ({
   onts?: boolean;
 }) => (
   <div className="flex flex-col">
-    <span className="text-[10px] uppercase tracking-wider text-emerald-700/70 dark:text-emerald-400/70">
+    <span className="text-[10px] uppercase tracking-wider text-theme/70 dark:text-theme/70">
       {ner}
     </span>
     <span
       className={
         onts
-          ? "text-[13px] font-bold tabular-nums text-emerald-900 dark:text-emerald-100"
-          : "text-[13px] font-semibold tabular-nums text-emerald-800 dark:text-emerald-300"
+          ? "text-[13px] font-bold tabular-nums text-theme dark:text-theme"
+          : "text-[13px] font-semibold tabular-nums text-theme dark:text-theme"
       }
     >
       {utga}₮
@@ -886,7 +886,7 @@ export default function TransactionModal({
                       ${
                         transactionType === option.value
                           ? option.value === "khungulult"
-                            ? "!bg-emerald-600 !text-white shadow-md scale-[1.02]"
+                            ? "!bg-theme !text-white shadow-md scale-[1.02]"
                             : "neu-panel-2 !text-white scale-[1.02]"
                           : "text-[color:var(--panel-text)] hover:bg-[color:var(--surface-bg)]/40"
                       }
@@ -930,11 +930,11 @@ export default function TransactionModal({
                         id="ekhniiUldegdel"
                         checked={ekhniiUldegdel}
                         onChange={(e) => setEkhniiUldegdel(e.target.checked)}
-                        className="w-4 h-4 rounded border-rose-300 text-rose-600 focus:ring-rose-500 cursor-pointer"
+                        className="w-4 h-4 rounded border-danger/30 text-danger focus:ring-danger cursor-pointer"
                       />
                       <label
                         htmlFor="ekhniiUldegdel"
-                        className="text-xs text-rose-700 cursor-pointer select-none"
+                        className="text-xs text-danger cursor-pointer select-none"
                       >
                         Эхний үлдэгдэл эсэх
                       </label>
@@ -944,10 +944,10 @@ export default function TransactionModal({
 
                 {/* Form Content */}
                 {transactionType === "khungulult" ? (
-                  <div className="bg-emerald-50/70 border border-emerald-200 text-emerald-900 rounded-2xl p-4 space-y-4 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-100">
+                  <div className="bg-theme/70 border border-theme/30 text-theme rounded-2xl p-4 space-y-4 dark:bg-theme/30 dark:border-theme dark:text-theme">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1.5">
-                        <label className="block text-xs font-semibold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-theme dark:text-theme">
                           ХӨНГӨЛӨХ САР
                         </label>
                         <DoubleYearMonthPicker
@@ -958,7 +958,7 @@ export default function TransactionModal({
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="block text-xs font-semibold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-theme dark:text-theme">
                           ХӨНГӨЛӨЛТИЙН ХЭЛБЭР
                         </label>
                         <select
@@ -968,7 +968,7 @@ export default function TransactionModal({
                             setDiscountValue("");
                           }}
                           disabled={isProcessing}
-                          className="w-full px-3 py-2.5 border border-emerald-300 bg-white text-emerald-950 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all text-sm font-medium dark:bg-slate-900 dark:border-emerald-800 dark:text-emerald-100"
+                          className="w-full px-3 py-2.5 border border-theme/30 bg-white text-theme rounded-2xl focus:outline-none focus:ring-2 focus:ring-theme/30 focus:border-theme transition-all text-sm font-medium dark:border-theme dark:text-theme"
                         >
                           <option value="percent">Хувиар</option>
                           <option value="amount">Дүнгээр</option>
@@ -981,7 +981,7 @@ export default function TransactionModal({
                           өмнө нь "ХӨНГӨЛӨХ ДҮН / ХӨНГӨЛӨХ ХУВЬ" гэж хоёуланг
                           нь зэрэг бичдэг тул аль нь хүчинтэй нь ойлгомжгүй
                           байв. */}
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-theme dark:text-theme">
                         {discountType === "percent"
                           ? "ХӨНГӨЛӨХ ХУВЬ"
                           : "ХӨНГӨЛӨХ ДҮН"}
@@ -1001,15 +1001,15 @@ export default function TransactionModal({
                           }
                           placeholder={discountType === "percent" ? "0" : "0.00"}
                           disabled={isProcessing}
-                          className="w-full rounded-2xl border border-emerald-300 bg-white py-3 pl-4 pr-12 text-right text-lg font-semibold tabular-nums tracking-wide text-emerald-950 transition-all focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 disabled:opacity-60 dark:border-emerald-800 dark:bg-slate-900 dark:text-emerald-100"
+                          className="w-full rounded-2xl border border-theme/30 bg-white py-3 pl-4 pr-12 text-right text-lg font-semibold tabular-nums tracking-wide text-theme transition-all focus:border-theme focus:outline-none focus:ring-2 focus:ring-theme/30 disabled:opacity-60 dark:border-theme dark:text-theme"
                         />
-                        <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-base font-semibold text-emerald-600/70 dark:text-emerald-400/70">
+                        <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-base font-semibold text-theme/70 dark:text-theme/70">
                           {discountType === "percent" ? "%" : "₮"}
                         </span>
                       </div>
 
                       {residentBalance !== null && (
-                        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 rounded-xl bg-white/70 px-3 py-2.5 dark:bg-slate-900/40">
+                        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 rounded-xl bg-white/70 px-3 py-2.5">
                           {/* Сүүлчийн үлдэгдэл нь гарчгийн хажуугаас ЭНД
                               шилжив: оролтод аль хэдийн форматтай дүн
                               харагдаж байгаа тул хуучин "Хөнгөлөх дүн: ..."
@@ -1068,7 +1068,7 @@ export default function TransactionModal({
                             placeholder="0.00"
                             className="w-full px-3 py-2.5 pr-[38px] border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-right tracking-wide text-lg font-semibold"
                           />
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-xs pointer-events-none select-none font-medium" />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[color:var(--muted-text)] text-xs pointer-events-none select-none font-medium" />
                         </div>
                       </div>
                     </div>
@@ -1133,8 +1133,8 @@ export default function TransactionModal({
                               title="Хоёр товшиж дүнг оруулах"
                               className={`text-[10px] font-bold px-2 py-0.5 rounded-2xl border cursor-pointer transition-all select-none ${
                                 isFetchingBalance
-                                  ? "bg-gray-100 text-gray-400 border-gray-200 animate-pulse"
-                                  : "bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100 active:scale-95"
+                                  ? "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)] border-[color:var(--surface-border)] animate-pulse"
+                                  : "bg-warning/10 text-warning border-warning/30 hover:bg-warning/10 active:scale-95"
                               }`}
                             >
                               Үлдэгдэл:{" "}
@@ -1165,7 +1165,7 @@ export default function TransactionModal({
                           placeholder="0.00"
                           className="w-full px-3 py-2.5 pr-[38px] border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-right tracking-wide text-lg font-semibold"
                         />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-xs pointer-events-none select-none font-medium"></span>
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[color:var(--muted-text)] text-xs pointer-events-none select-none font-medium"></span>
                       </div>
                     </div>
                   </div>

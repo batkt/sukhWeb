@@ -689,7 +689,7 @@ export default function ZogsoolTailanPage() {
   if (error) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-red-500">Алдаа: {error}</div>
+        <div className="text-danger">Алдаа: {error}</div>
       </div>
     );
   }
@@ -715,7 +715,7 @@ export default function ZogsoolTailanPage() {
             classNames={{
               root: "!h-full !w-full",
               input:
-                "text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
+                "text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
             }}
           />
         </div>
@@ -760,7 +760,7 @@ export default function ZogsoolTailanPage() {
           onClick={exportToExcel}
           className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm ml-auto"
         >
-          <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+          <FileSpreadsheet className="w-4 h-4 text-theme" />
           Excel татах
         </button>
       </div>
@@ -849,7 +849,7 @@ export default function ZogsoolTailanPage() {
             <span className="font-semibold">Зочдын дэлгэрэнгүй тайлан</span>
             {selectedResident && (
               <div className="flex items-center gap-3 text-xs text-theme/80 flex-wrap">
-                <span className="font-medium text-slate-800 dark:text-slate-100">
+                <span className="font-medium text-[color:var(--panel-text)]">
                   {selectedResident.ner}
                 </span>
                 {selectedResident.utas && (

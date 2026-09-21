@@ -97,7 +97,7 @@ const RealTimeDuration = ({
 
   if (!garsanTsag) {
     return (
-      <span className="text-[11px]  font-mono text-slate-800">
+      <span className="text-[11px]  font-mono text-[color:var(--panel-text)]">
         {String(hours).padStart(2, "0")} : {String(minutes).padStart(2, "0")} :{" "}
         {String(seconds).padStart(2, "0")}
       </span>
@@ -109,7 +109,7 @@ const RealTimeDuration = ({
   const h = Math.floor(khugatsaaMin / 60);
   const m = khugatsaaMin % 60;
   return (
-    <span className="text-[10px]  uppercase tracking-wide text-slate-800">
+    <span className="text-[10px]  uppercase tracking-wide text-[color:var(--panel-text)]">
       {h > 0 ? `${h} цаг ${m} мин` : `${m} мин`}
     </span>
   );
@@ -146,7 +146,7 @@ const FilterPopover = ({
       {open && createPortal(
         <div
           style={{ position: "fixed", top: pos.top, left: pos.left, transform: "translateX(-50%)", zIndex: 99999 }}
-          className="w-52 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.25)] p-1.5"
+          className="w-52 bg-white/95 backdrop-blur-xl border border-[color:var(--surface-border)] dark:border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.25)] p-1.5"
           onMouseEnter={() => setOpen(true)}
           onMouseLeave={() => setOpen(false)}
         >
@@ -156,16 +156,16 @@ const FilterPopover = ({
               <div
                 onClick={() => { onSelect(opt.value); setOpen(false); }}
                 className={`px-3 py-2.5 rounded-xl text-[11px] text-left flex items-center justify-between cursor-pointer transition-all border border-transparent ${current === opt.value
-                  ? "bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-white"
-                  : "hover:bg-slate-100 dark:hover:bg-white/5 text-slate-600 dark:text-white hover:text-slate-900"
+                  ? "bg-theme/10 text-theme dark:bg-theme/20 dark:text-white"
+                  : "hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/5 text-[color:var(--muted-text)] dark:text-white hover:text-[color:var(--panel-text)]"
                   }`}
               >
                 <span>{opt.label}</span>
                 {current === opt.value && (
-                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)] animate-pulse" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-theme shadow-[0_0_8px_rgba(59,130,246,0.5)] animate-pulse" />
                 )}
               </div>
-              {idx < arr.length - 1 && <div className="h-px bg-slate-200 dark:bg-white/10 mx-2 my-1" />}
+              {idx < arr.length - 1 && <div className="h-px bg-[color:var(--panel)] dark:bg-white/10 mx-2 my-1" />}
             </div>
           ))}
         </div>,
@@ -1416,10 +1416,10 @@ export default function Camera() {
       <span>{label}</span>
       {sortConfig?.col === id ? (
         <ArrowUpDown
-          className={`h-3.5 w-3.5 text-blue-500 ${sortConfig.dir === "desc" ? "rotate-180" : ""}`}
+          className={`h-3.5 w-3.5 text-theme ${sortConfig.dir === "desc" ? "rotate-180" : ""}`}
         />
       ) : (
-        <ArrowUpDown className="h-3.5 w-3.5 text-slate-400 opacity-40" />
+        <ArrowUpDown className="h-3.5 w-3.5 text-[color:var(--muted-text)] opacity-40" />
       )}
     </div>
   );
@@ -1437,7 +1437,7 @@ export default function Camera() {
       onSelect={onSelect}
     >
       <div className="flex h-full cursor-pointer items-center justify-center gap-2">
-        <Filter className="h-3.5 w-3.5 text-blue-500 dark:text-blue-400" />
+        <Filter className="h-3.5 w-3.5 text-theme dark:text-theme" />
         <span>{label}</span>
       </div>
     </FilterPopover>
@@ -1462,7 +1462,7 @@ export default function Camera() {
             {transaction.mashiniiDugaar || "-"}
           </span>
           <Copy
-            className="h-4 w-4 cursor-pointer text-slate-300 transition-colors hover:text-blue-500 dark:text-slate-600"
+            className="h-4 w-4 cursor-pointer text-[color:var(--muted-text)] transition-colors hover:text-theme"
             onClick={() => copyToClipboard(transaction.mashiniiDugaar)}
           />
         </div>
@@ -1528,18 +1528,18 @@ export default function Camera() {
         } = murNiiluulye(transaction);
         // Хугацааны өнгө нь Төлөв баганын өнгөтэй ЯГ ижил дарааллаар бодогдоно.
         const getStatusColor = () => {
-          if (tuluv === -2 || tuluv === -1) return "bg-red-500 border-red-600";
-          if (hasRemainingBalance) return "bg-amber-500 border-amber-600";
-          if (isFreeExit) return "bg-gray-500 border-gray-600";
+          if (tuluv === -2 || tuluv === -1) return "bg-danger border-danger";
+          if (hasRemainingBalance) return "bg-warning border-warning";
+          if (isFreeExit) return "bg-[color:var(--panel)] border-[color:var(--surface-border)]";
           if (tuluv === 1)
             return isCurrentlyIn && niitDun === 0
-              ? "bg-blue-500 border-blue-600"
-              : "bg-emerald-500 border-emerald-600";
+              ? "bg-theme border-theme"
+              : "bg-success border-success";
           if (!isCurrentlyIn && (niitDun > 0 || isDebt))
-            return "bg-amber-500 border-amber-600";
+            return "bg-warning border-warning";
           if (!isCurrentlyIn && niitDun === 0)
-            return "bg-gray-500 border-gray-600";
-          return "bg-blue-500 border-blue-600";
+            return "bg-[color:var(--panel)] border-[color:var(--surface-border)]";
+          return "bg-theme border-theme";
         };
         return (
           <div
@@ -1706,20 +1706,20 @@ export default function Camera() {
         );
 
         if (!showActionBtn) {
-          if (isFreeExit) return badge("bg-gray-500 border-gray-600", "Үнэгүй");
+          if (isFreeExit) return badge("bg-[color:var(--panel)] border-[color:var(--surface-border)]", "Үнэгүй");
           if (tuluv === 1)
             return isCurrentlyIn && niitDun === 0
-              ? badge("bg-blue-500 border-blue-600", "Идэвхтэй")
-              : badge("bg-emerald-500 border-emerald-600", "Төлсөн");
+              ? badge("bg-theme border-theme", "Идэвхтэй")
+              : badge("bg-success border-success", "Төлсөн");
           if (tuluv === -2 || tuluv === -1)
-            return badge("bg-red-500 border-red-600", "Зөрчилтэй");
+            return badge("bg-danger border-danger", "Зөрчилтэй");
           if (hasRemainingBalance)
-            return badge("bg-amber-500 border-amber-600", "Төлбөртэй");
+            return badge("bg-warning border-warning", "Төлбөртэй");
           if (!isCurrentlyIn && (niitDun > 0 || isDebt))
-            return badge("bg-amber-500 border-amber-600", "Төлбөртэй");
+            return badge("bg-warning border-warning", "Төлбөртэй");
           if (!isCurrentlyIn && niitDun === 0)
-            return badge("bg-gray-500 border-gray-600", "Үнэгүй");
-          return badge("bg-blue-500 border-blue-600", "Идэвхтэй");
+            return badge("bg-[color:var(--panel)] border-[color:var(--surface-border)]", "Үнэгүй");
+          return badge("bg-theme border-theme", "Идэвхтэй");
         }
 
         return (
@@ -1743,12 +1743,12 @@ export default function Camera() {
               }}
               className={`mx-auto flex w-[100px] max-w-[100px] min-w-[100px] cursor-pointer flex-nowrap items-center justify-center overflow-hidden rounded-[6px] border px-2 py-0.5 whitespace-nowrap uppercase ${
                 hasRemainingBalance
-                  ? "bg-amber-500 border-amber-600"
+                  ? "bg-warning border-warning"
                   : !isCurrentlyIn && isDebt
-                    ? "bg-amber-500 border-amber-600"
+                    ? "bg-warning border-warning"
                     : tuluv === -1 || tuluv === -2
-                      ? "bg-red-500 border-red-600"
-                      : "bg-blue-500 border-blue-600"
+                      ? "bg-danger border-danger"
+                      : "bg-theme border-theme"
               }`}
               style={{ color: "white" }}
             >
@@ -1770,7 +1770,7 @@ export default function Camera() {
               dropdownPos &&
               createPortal(
                 <div
-                  className="action-menu-container fixed z-[9999] min-w-[170px] rounded-md border border-slate-200/50 bg-white/95 p-1.5 text-left shadow-[0_20px_50px_rgba(0,0,0,0.15)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/95 dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)]"
+                  className="action-menu-container fixed z-[9999] min-w-[170px] rounded-md border border-[color:var(--surface-border)] bg-white/95 p-1.5 text-left shadow-[0_20px_50px_rgba(0,0,0,0.15)] backdrop-blur-xl dark:border-white/10 dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)]"
                   style={{ top: dropdownPos.top, right: dropdownPos.right }}
                 >
                   <div className="space-y-0">
@@ -1830,37 +1830,37 @@ export default function Camera() {
                       <div key={bi}>
                         <button
                           onClick={btn.action}
-                          className={`group/item flex w-full items-center justify-between rounded-md px-3 py-0.5 text-slate-700 transition-all duration-200 dark:text-slate-300 ${
+                          className={`group/item flex w-full items-center justify-between rounded-md px-3 py-0.5 text-[color:var(--panel-text)] transition-all duration-200 ${
                             btn.color === "amber"
-                              ? "hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-500/10"
+                              ? "hover:bg-warning/10 hover:text-warning"
                               : btn.color === "blue"
-                                ? "hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-500/10"
+                                ? "hover:bg-theme/10 hover:text-theme dark:hover:bg-theme/10"
                                 : btn.color === "emerald"
-                                  ? "hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-500/10"
+                                  ? "hover:bg-success/10 hover:text-success dark:hover:bg-success/10"
                                   : btn.color === "red"
-                                    ? "hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10"
-                                    : "hover:bg-slate-50 hover:text-slate-600 dark:hover:bg-slate-500/10"
+                                    ? "hover:bg-danger/10 hover:text-danger"
+                                    : "hover:bg-[color:var(--surface-hover)] hover:text-[color:var(--muted-text)]"
                           }`}
                         >
                           <div className="flex items-center gap-2">
                             <btn.icon
                               className={`h-4 w-4 transition-transform group-hover/item:scale-110 ${
                                 btn.color === "amber"
-                                  ? "text-amber-600 dark:text-amber-400"
+                                  ? "text-warning"
                                   : btn.color === "blue"
-                                    ? "text-blue-600 dark:text-blue-400"
+                                    ? "text-theme dark:text-theme"
                                     : btn.color === "emerald"
-                                      ? "text-emerald-600 dark:text-emerald-400"
+                                      ? "text-success dark:text-success"
                                       : btn.color === "red"
-                                        ? "text-red-600 dark:text-red-400"
-                                        : "text-slate-600 dark:text-slate-400"
+                                        ? "text-danger"
+                                        : "text-[color:var(--muted-text)]"
                               }`}
                             />
                             <span>{btn.label}</span>
                           </div>
                         </button>
                         {bi < arr.length - 1 && (
-                          <div className="mx-2 my-1 h-px bg-slate-200 dark:bg-white/10" />
+                          <div className="mx-2 my-1 h-px bg-[color:var(--panel)] dark:bg-white/10" />
                         )}
                       </div>
                     ))}
@@ -1879,7 +1879,7 @@ export default function Camera() {
       align: "center",
       ellipsis: true,
       render: (_: any, transaction: any) => (
-        <span className="italic text-gray-400">
+        <span className="italic text-[color:var(--muted-text)]">
           {transaction.tuukh?.[0]?.uneguiGarsan ||
             transaction.zurchil ||
             (transaction.tuukh?.[0] as any)?.zurchil ||
@@ -1900,11 +1900,11 @@ export default function Camera() {
             {entryCameras.length > 0 && (
               <div className="absolute top-4 right-4 z-40 flex flex-col items-end gap-2">
                 <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div>
+                  <div className="w-1.5 h-1.5 rounded-full bg-theme animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div>
                   <span className="text-[10px] font-black !text-white uppercase tracking-widest">
                     Орох Камер
                   </span>
-                  <span className="text-[9px] font-mono !text-slate-300 ml-1">
+                  <span className="text-[9px] font-mono !text-[color:var(--muted-text)] ml-1">
                     ({activeEntryIP || entryCameras[0]?.cameraIP || "-"})
                   </span>
                 </div>
@@ -1920,7 +1920,7 @@ export default function Camera() {
                         <option
                           key={cam.cameraIP}
                           value={cam.cameraIP}
-                          className="bg-zinc-900 text-white"
+                          className="bg-[color:var(--panel)] text-white"
                         >
                           {cam.cameraIP}
                         </option>
@@ -1934,9 +1934,9 @@ export default function Camera() {
 
             <div className="aspect-video relative">
               {entryCameras.length === 0 ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900 border border-white/5">
-                  <VideoOff className="w-12 h-12 text-zinc-700 mb-4" />
-                  <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-[color:var(--panel)] border border-white/5">
+                  <VideoOff className="w-12 h-12 text-[color:var(--panel-text)] mb-4" />
+                  <p className="text-[10px] font-black text-[color:var(--muted-text)] uppercase tracking-widest">
                     Тохиргоогүй байна
                   </p>
                 </div>
@@ -1981,11 +1981,11 @@ export default function Camera() {
             {exitCameras.length > 0 && (
               <div className="absolute top-4 right-4 z-40 flex flex-col items-end gap-2">
                 <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10">
-                  <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]"></div>
+                  <div className="w-1.5 h-1.5 rounded-full bg-danger animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]"></div>
                   <span className="text-[10px] font-black !text-white uppercase tracking-widest">
                     Гарах Камер
                   </span>
-                  <span className="text-[9px] font-mono !text-slate-300 ml-1">
+                  <span className="text-[9px] font-mono !text-[color:var(--muted-text)] ml-1">
                     ({activeExitIP || exitCameras[0]?.cameraIP || "-"})
                   </span>
                 </div>
@@ -2001,7 +2001,7 @@ export default function Camera() {
                         <option
                           key={cam.cameraIP}
                           value={cam.cameraIP}
-                          className="bg-zinc-900 text-white"
+                          className="bg-[color:var(--panel)] text-white"
                         >
                           {cam.cameraIP}
                         </option>
@@ -2015,9 +2015,9 @@ export default function Camera() {
 
             <div className="aspect-video relative">
               {exitCameras.length === 0 ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900 border border-white/5">
-                  <VideoOff className="w-12 h-12 text-zinc-700 mb-4" />
-                  <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-[color:var(--panel)] border border-white/5">
+                  <VideoOff className="w-12 h-12 text-[color:var(--panel-text)] mb-4" />
+                  <p className="text-[10px] font-black text-[color:var(--muted-text)] uppercase tracking-widest">
                     Тохиргоогүй байна
                   </p>
                 </div>
@@ -2061,19 +2061,19 @@ export default function Camera() {
         <div className="space-y-4">
           {/* ─── Top Bar ─── */}
           <div
-            className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-white/60 dark:bg-white/[0.02] backdrop-blur-xl border border-slate-200/30 dark:border-white/[0.04] shadow-sm"
+            className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-white/60 dark:bg-white/[0.02] backdrop-blur-xl border border-[color:var(--surface-border)] dark:border-white/[0.04] shadow-sm"
             style={{ zIndex: 1 }}
           >
             {/* Left: Title */}
             <div className="flex items-center gap-3">
               <div className="flex items-center justify-center w-9 h-9 rounded-xl ">
-                <Calendar className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                <Calendar className="w-4 h-4 text-[color:var(--muted-text)]" />
               </div>
               <div>
-                <h3 className="text-[13px] text-slate-700 dark:text-slate-300 tracking-tight leading-none">
+                <h3 className="text-[13px] text-[color:var(--panel-text)] tracking-tight leading-none">
                   Жагсаалт
                 </h3>
-                <p className="text-[10px]  text-slate-500 dark:text-slate-500 mt-0.5">
+                <p className="text-[10px]  text-[color:var(--muted-text)] mt-0.5">
                   Зогсоолын бүртгэл
                 </p>
               </div>
@@ -2093,7 +2093,7 @@ export default function Camera() {
                   format="YYYY-MM-DD"
                   classNames={{
                     input:
-                      "flex items-center gap-2 rounded-full bg-slate-100/60 dark:bg-white/[0.03] border border-slate-200/40 dark:border-white/[0.06] h-9 px-4 text-[11px] text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-blue-500/10 transition-all",
+                      "flex items-center gap-2 rounded-full bg-[color:var(--surface-hover)] dark:bg-white/[0.03] border border-[color:var(--surface-border)] dark:border-white/[0.06] h-9 px-4 text-[11px] text-[color:var(--muted-text)] focus:ring-2 focus:ring-theme/10 transition-all",
                   }}
                   allowClear
                 />
@@ -2183,20 +2183,20 @@ export default function Camera() {
             </div>
 
             {/* Pagination */}
-            <div className="p-4 border-t border-slate-200 dark:border-white/5 bg-white dark:bg-slate-900 rounded-b-2xl flex items-center justify-between gap-4 flex-wrap">
+            <div className="p-4 border-t border-[color:var(--surface-border)] dark:border-white/5 bg-white rounded-b-2xl flex items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-3">
                 <div className="relative" ref={pageSizeRef}>
                   <button
                     onClick={() => setIsPageSizeOpen(!isPageSizeOpen)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100/80 dark:bg-white/5 border border-slate-200/50 dark:border-white/10 text-xs text-slate-700 dark:text-slate-300  cursor-pointer hover:bg-slate-200/80 dark:hover:bg-white/10 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 shadow-sm"
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[color:var(--surface-hover)] dark:bg-white/5 border border-[color:var(--surface-border)] dark:border-white/10 text-xs text-[color:var(--panel-text)]  cursor-pointer hover:bg-[color:var(--panel)] dark:hover:bg-white/10 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-theme/30 focus:border-theme/50 shadow-sm"
                   >
                     <span>{pageSize}</span>
                     <ChevronDown
-                      className={`w-3.5 h-3.5 text-slate-500 dark:text-slate-400 transition-transform duration-200 ${isPageSizeOpen ? "rotate-180" : ""}`}
+                      className={`w-3.5 h-3.5 text-[color:var(--muted-text)] transition-transform duration-200 ${isPageSizeOpen ? "rotate-180" : ""}`}
                     />
                   </button>
                   {isPageSizeOpen && (
-                    <div className="absolute bottom-full left-0 mb-2 w-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] p-1.5 z-50">
+                    <div className="absolute bottom-full left-0 mb-2 w-20 bg-white/95 backdrop-blur-xl border border-[color:var(--surface-border)] dark:border-white/10 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] p-1.5 z-50">
                       {[10, 20, 50, 100, 500].map((size) => (
                         <button
                           key={size}
@@ -2206,8 +2206,8 @@ export default function Camera() {
                             setIsPageSizeOpen(false);
                           }}
                           className={`w-full px-3 py-2 rounded-lg text-xs  text-left transition-all duration-200 ${pageSize === size
-                            ? "bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400"
-                            : "hover:bg-slate-100 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+                            ? "bg-theme/10 text-theme dark:bg-theme/20 dark:text-theme"
+                            : "hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/5 text-[color:var(--panel-text)] hover:text-[color:var(--panel-text)] dark:hover:text-white"
                             }`}
                           style={{
                             borderRadius: "0.5rem",
@@ -2229,7 +2229,7 @@ export default function Camera() {
                     </div>
                   )}
                 </div>
-                <span className="text-xs text-slate-500 dark:text-slate-400">
+                <span className="text-xs text-[color:var(--muted-text)]">
                   Нийт {total} мөр
                 </span>
               </div>
@@ -2243,13 +2243,13 @@ export default function Camera() {
                   leftIcon={<ChevronLeft className="w-4 h-4" />}
                 />
                 <div className="flex items-center gap-1.5 px-2">
-                  <span className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-white/5 text-xs  text-slate-900 dark:text-white">
+                  <span className="px-3 py-1.5 rounded-xl bg-[color:var(--surface-hover)] dark:bg-white/5 text-xs  text-[color:var(--panel-text)] dark:text-white">
                     {page}
                   </span>
-                  <span className="text-slate-400 dark:text-slate-500 text-xs">
+                  <span className="text-[color:var(--muted-text)] text-xs">
                     /
                   </span>
-                  <span className="text-xs  text-slate-600 dark:text-slate-300">
+                  <span className="text-xs  text-[color:var(--muted-text)]">
                     {Math.ceil(total / pageSize)}
                   </span>
                 </div>
@@ -2279,7 +2279,7 @@ export default function Camera() {
                   {formatCurrency(stats.total)}
                 </p>
               </div>
-              <DollarSign className="w-5 h-5 text-green-500" />
+              <DollarSign className="w-5 h-5 text-theme" />
             </div>
           </div>
           <div className="neu-panel rounded-lg p-3">
@@ -2288,11 +2288,11 @@ export default function Camera() {
                 <p className="text-xs text-[color:var(--muted-text)] mb-1">
                   Төлсөн
                 </p>
-                <p className="text-lg  text-green-600">
+                <p className="text-lg  text-theme">
                   {formatCurrency(stats.paid)}
                 </p>
               </div>
-              <DollarSign className="w-5 h-5 text-green-500" />
+              <DollarSign className="w-5 h-5 text-theme" />
             </div>
           </div>
           <div className="neu-panel rounded-lg p-3">
@@ -2301,11 +2301,11 @@ export default function Camera() {
                 <p className="text-xs text-[color:var(--muted-text)] mb-1">
                   Төлөөгүй
                 </p>
-                <p className="text-lg  text-red-600">
+                <p className="text-lg  text-danger">
                   {formatCurrency(stats.unpaid)}
                 </p>
               </div>
-              <DollarSign className="w-5 h-5 text-red-500" />
+              <DollarSign className="w-5 h-5 text-danger" />
             </div>
           </div>
           <div className="neu-panel rounded-lg p-3">
@@ -2321,7 +2321,7 @@ export default function Camera() {
                   Төлсөн: {stats.paidCount}
                 </p>
               </div>
-              <Calendar className="w-5 h-5 text-blue-500" />
+              <Calendar className="w-5 h-5 text-theme" />
             </div>
           </div>
         </div> */}
@@ -2439,28 +2439,28 @@ export default function Camera() {
             onClick={() => setEbarimtResult(null)}
           >
             <div
-              className="relative w-[360px] max-w-full rounded-[28px] overflow-hidden shadow-2xl border bg-white dark:bg-slate-900 border-slate-200/40 dark:border-white/[0.08]"
+              className="relative w-[360px] max-w-full rounded-[28px] overflow-hidden shadow-2xl border bg-white border-[color:var(--surface-border)] dark:border-white/[0.08]"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Top gradient bar */}
-              <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-500" />
+              <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-theme/20 via-theme/20 to-theme/20" />
 
               <div className="px-6 pt-7 pb-6 flex flex-col items-center gap-4">
                 {/* Success icon */}
-                <div className="w-14 h-14 rounded-full bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center">
-                  <svg className="w-7 h-7 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <div className="w-14 h-14 rounded-full bg-theme/10 dark:bg-theme/10 flex items-center justify-center">
+                  <svg className="w-7 h-7 text-theme" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
 
                 <div className="text-center">
-                  <p className="text-[15px] font-bold text-slate-800 dark:text-white">И-Баримт амжилттай</p>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Цахим баримт үүсгэгдлээ</p>
+                  <p className="text-[15px] font-bold text-[color:var(--panel-text)] dark:text-white">И-Баримт амжилттай</p>
+                  <p className="text-[11px] text-[color:var(--muted-text)] mt-0.5">Цахим баримт үүсгэгдлээ</p>
                 </div>
 
                 {/* QR code */}
                 {ebarimtResult.qrData && ebarimtResult.qrData !== "FALSE" ? (
-                  <div className="p-3 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                  <div className="p-3 bg-white rounded-2xl border border-[color:var(--surface-border)] shadow-sm">
                     <QRCodeSVG
                       value={ebarimtResult.qrData}
                       size={176}
@@ -2470,26 +2470,26 @@ export default function Camera() {
                     />
                   </div>
                 ) : (
-                  <div className="w-44 h-44 rounded-2xl bg-slate-50 dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.08] flex flex-col items-center justify-center gap-2">
-                    <svg className="w-8 h-8 text-slate-300 dark:text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div className="w-44 h-44 rounded-2xl bg-[color:var(--surface-hover)] dark:bg-white/[0.04] border border-[color:var(--surface-border)] dark:border-white/[0.08] flex flex-col items-center justify-center gap-2">
+                    <svg className="w-8 h-8 text-[color:var(--muted-text)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                     </svg>
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500">QR байхгүй</span>
+                    <span className="text-[10px] text-[color:var(--muted-text)]">QR байхгүй</span>
                   </div>
                 )}
 
                 {/* Lottery + Receipt ID */}
                 <div className="w-full space-y-2">
                   {ebarimtResult.lottery && (
-                    <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20">
-                      <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider shrink-0">Сугалааны №</span>
-                      <span className="text-[13px] font-black text-amber-700 dark:text-amber-300 font-[family-name:var(--font-mono)] text-right">{ebarimtResult.lottery}</span>
+                    <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-2xl bg-warning/10 border border-warning/30">
+                      <span className="text-[10px] font-semibold text-warning uppercase tracking-wider shrink-0">Сугалааны №</span>
+                      <span className="text-[13px] font-black text-warning font-[family-name:var(--font-mono)] text-right">{ebarimtResult.lottery}</span>
                     </div>
                   )}
                   {(ebarimtResult.receiptId || ebarimtResult.id) && (
-                    <div className="px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08] space-y-1">
-                      <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Баримтын №</span>
-                      <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200 font-[family-name:var(--font-mono)] break-all block leading-relaxed">
+                    <div className="px-4 py-2.5 rounded-2xl bg-[color:var(--surface-hover)] dark:bg-white/[0.04] border border-[color:var(--surface-border)] dark:border-white/[0.08] space-y-1">
+                      <span className="text-[10px] font-semibold text-[color:var(--muted-text)] uppercase tracking-wider block">Баримтын №</span>
+                      <span className="text-[11px] font-bold text-[color:var(--panel-text)] font-[family-name:var(--font-mono)] break-all block leading-relaxed">
                         {ebarimtResult.receiptId || ebarimtResult.id}
                       </span>
                     </div>
@@ -2525,7 +2525,7 @@ export default function Camera() {
                         setTimeout(() => document.body.removeChild(iframe), 1000);
                       };
                     }}
-                    className="flex-1 h-10 rounded-2xl border border-slate-200 dark:border-white/[0.1] bg-white dark:bg-white/[0.04] text-slate-700 dark:text-slate-300 text-[13px] font-semibold hover:bg-slate-50 dark:hover:bg-white/[0.08] transition-colors flex items-center justify-center gap-1.5"
+                    className="flex-1 h-10 rounded-2xl border border-[color:var(--surface-border)] dark:border-white/[0.1] bg-white dark:bg-white/[0.04] text-[color:var(--panel-text)] text-[13px] font-semibold hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/[0.08] transition-colors flex items-center justify-center gap-1.5"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
@@ -2534,7 +2534,7 @@ export default function Camera() {
                   </button>
                   <button
                     onClick={() => setEbarimtResult(null)}
-                    className="flex-1 h-10 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white text-[13px] font-bold transition-colors"
+                    className="flex-1 h-10 rounded-2xl bg-theme hover:bg-theme text-white text-[13px] font-bold transition-colors"
                   >
                     Хаах
                   </button>
@@ -2556,26 +2556,26 @@ export default function Camera() {
             }}
           >
             <div
-              className="relative w-[380px] max-w-full rounded-[28px] overflow-hidden shadow-2xl border bg-white dark:bg-[#18181b] border-slate-200/40 dark:border-white/[0.06]"
+              className="relative w-[380px] max-w-full rounded-[28px] overflow-hidden shadow-2xl border bg-white dark:bg-[#18181b] border-[color:var(--surface-border)] dark:border-white/[0.06]"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="relative px-7 pt-6 pb-5 border-b border-slate-100 dark:border-white/[0.06]">
-                <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-amber-500 via-rose-500 to-pink-500 opacity-80" />
+              <div className="relative px-7 pt-6 pb-5 border-b border-[color:var(--surface-border)] dark:border-white/[0.06]">
+                <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-warning/20 via-danger/20 to-pink-500 opacity-80" />
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-slate-100 dark:bg-white/[0.06] border border-slate-200/50 dark:border-white/[0.06]">
-                      <Tag className="w-5 h-5 text-amber-500 dark:text-amber-400" />
+                    <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-[color:var(--surface-hover)] dark:bg-white/[0.06] border border-[color:var(--surface-border)] dark:border-white/[0.06]">
+                      <Tag className="w-5 h-5 text-warning" />
                     </div>
                     <div>
-                      <h2 className="text-[15px] text-slate-800 dark:text-white tracking-tight">
+                      <h2 className="text-[15px] text-[color:var(--panel-text)] dark:text-white tracking-tight">
                         Хөнгөлөх
                       </h2>
                     </div>
                   </div>
                   <button
                     onClick={() => setDiscountModalTransaction(null)}
-                    className="w-9 h-9 rounded-full bg-slate-100 dark:bg-white/[0.06] flex items-center justify-center text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors"
+                    className="w-9 h-9 rounded-full bg-[color:var(--surface-hover)] dark:bg-white/[0.06] flex items-center justify-center text-[color:var(--muted-text)] hover:text-[color:var(--muted-text)] transition-colors"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -2592,29 +2592,29 @@ export default function Camera() {
                     !((discountModalTransaction.tuukh?.[0]?.tulbur?.length ?? 0) > 0);
                   return isInFreePeriod;
                 })() ? (
-                  <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30">
-                    <span className="text-amber-500 mt-0.5 shrink-0">⚠</span>
-                    <p className="text-[12px] text-amber-700 dark:text-amber-400">
+                  <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl bg-warning/10 border border-warning/30">
+                    <span className="text-warning mt-0.5 shrink-0">⚠</span>
+                    <p className="text-[12px] text-warning">
                       Үнэгүй хугацаанд байгаа тул хөнгөлөлт оруулах боломжгүй. Машин гарсны дараа хөнгөлөх боломжтой.
                     </p>
                   </div>
                 ) : (
                   <>
                     <div>
-                      <label className="block text-[11px] text-slate-500 dark:text-white uppercase tracking-wider mb-1.5">
+                      <label className="block text-[11px] text-[color:var(--muted-text)] dark:text-white uppercase tracking-wider mb-1.5">
                         Хөнгөлөх дүн
                       </label>
                       <input
                         type="number"
                         value={discountAmount}
                         onChange={(e) => setDiscountAmount(e.target.value)}
-                        className="w-full h-11 px-4 rounded-xl bg-slate-50 dark:bg-white/[0.04] border border-slate-200/60 dark:border-white/[0.08] text-slate-800 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/50 transition-all"
+                        className="w-full h-11 px-4 rounded-xl bg-[color:var(--surface-hover)] dark:bg-white/[0.04] border border-[color:var(--surface-border)] dark:border-white/[0.08] text-[color:var(--panel-text)] dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-warning/20 focus:border-warning/50 transition-all"
                         placeholder="0"
                         autoFocus
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] text-slate-500 dark:text-white uppercase tracking-wider mb-1.5">
+                      <label className="block text-[11px] text-[color:var(--muted-text)] dark:text-white uppercase tracking-wider mb-1.5">
                         Хөнгөлөх минут
                       </label>
                       <input
@@ -2629,7 +2629,7 @@ export default function Camera() {
                             setDiscountAmount(value.toString());
                           }
                         }}
-                        className="w-full h-11 px-4 rounded-xl bg-slate-50 dark:bg-white/[0.04] border border-slate-200/60 dark:border-white/[0.08] text-slate-800 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/50 transition-all"
+                        className="w-full h-11 px-4 rounded-xl bg-[color:var(--surface-hover)] dark:bg-white/[0.04] border border-[color:var(--surface-border)] dark:border-white/[0.08] text-[color:var(--panel-text)] dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-warning/20 focus:border-warning/50 transition-all"
                         placeholder="0"
                       />
                     </div>
@@ -2641,7 +2641,7 @@ export default function Camera() {
               <div className="px-7 pb-6 pt-2 flex items-center justify-end gap-3">
                 <button
                   onClick={() => setDiscountModalTransaction(null)}
-                  className="h-10 px-5 rounded border border-slate-200 dark:border-white/[0.08] text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.06] text-sm font-medium active:scale-[0.97] transition-all"
+                  className="h-10 px-5 rounded border border-[color:var(--surface-border)] dark:border-white/[0.08] text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/[0.06] text-sm font-medium active:scale-[0.97] transition-all"
                 >
                   Хаах
                 </button>
@@ -2720,22 +2720,22 @@ export default function Camera() {
             onClick={() => setFreeExitModalTransaction(null)}
           >
             <div
-              className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-2xl border border-slate-200/50 dark:border-white/10 animate-in zoom-in-95 duration-200"
+              className="relative w-full max-w-lg bg-white rounded-2xl overflow-hidden shadow-2xl border border-[color:var(--surface-border)] dark:border-white/10 animate-in zoom-in-95 duration-200"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200/50 dark:border-white/10 bg-white dark:bg-slate-900">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-[color:var(--surface-border)] dark:border-white/10 bg-white">
                 <div>
-                  <h2 className="text-sm font-black text-slate-800 dark:text-white tracking-tight">
+                  <h2 className="text-sm font-black text-[color:var(--panel-text)] dark:text-white tracking-tight">
                     Үнэгүй үйлчлүүлэгчийн төрөл сонгох
                   </h2>
-                  <p className="text-[9px] text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-0.5">
+                  <p className="text-[9px] text-[color:var(--muted-text)] uppercase tracking-wider mt-0.5">
                     {freeExitModalTransaction.mashiniiDugaar}
                   </p>
                 </div>
                 <button
                   onClick={() => setFreeExitModalTransaction(null)}
-                  className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 hover:text-slate-600 dark:hover:text-slate-100 transition-all"
+                  className="p-1.5 rounded-lg hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/10 text-[color:var(--muted-text)] hover:text-[color:var(--muted-text)] transition-all"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -2754,9 +2754,9 @@ export default function Camera() {
                           value={reason}
                           checked={freeExitReason === reason}
                           onChange={() => { setFreeExitReason(reason); setCustomFreeExitReason(""); }}
-                          className="w-3.5 h-3.5 accent-emerald-500 cursor-pointer"
+                          className="w-3.5 h-3.5 accent-theme cursor-pointer"
                         />
-                        <span className="text-[12px] text-slate-600 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">{reason}</span>
+                        <span className="text-[12px] text-[color:var(--muted-text)] group-hover:text-[color:var(--panel-text)] dark:group-hover:text-white transition-colors">{reason}</span>
                       </label>
                     ))}
                   </div>
@@ -2770,16 +2770,16 @@ export default function Camera() {
                           value={reason}
                           checked={freeExitReason === reason}
                           onChange={() => { setFreeExitReason(reason); setCustomFreeExitReason(""); }}
-                          className="w-3.5 h-3.5 accent-emerald-500 cursor-pointer"
+                          className="w-3.5 h-3.5 accent-theme cursor-pointer"
                         />
-                        <span className="text-[12px] text-slate-600 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">{reason}</span>
+                        <span className="text-[12px] text-[color:var(--muted-text)] group-hover:text-[color:var(--panel-text)] dark:group-hover:text-white transition-colors">{reason}</span>
                       </label>
                     ))}
                   </div>
                 </div>
 
                 {/* Custom reason */}
-                <div className="flex items-center gap-3 pt-3 border-t border-slate-200/50 dark:border-white/10">
+                <div className="flex items-center gap-3 pt-3 border-t border-[color:var(--surface-border)] dark:border-white/10">
                   <label className="flex items-center gap-2.5 cursor-pointer select-none shrink-0">
                     <input
                       type="radio"
@@ -2787,25 +2787,25 @@ export default function Camera() {
                       value="Бусад"
                       checked={freeExitReason === "Бусад"}
                       onChange={() => setFreeExitReason("Бусад")}
-                      className="w-3.5 h-3.5 accent-emerald-500 cursor-pointer"
+                      className="w-3.5 h-3.5 accent-theme cursor-pointer"
                     />
-                    <span className="text-[12px] text-slate-600 dark:text-slate-300">Бусад</span>
+                    <span className="text-[12px] text-[color:var(--muted-text)]">Бусад</span>
                   </label>
                   <input
                     type="text"
                     value={customFreeExitReason}
                     onChange={(e) => { setCustomFreeExitReason(e.target.value); setFreeExitReason("Бусад"); }}
                     placeholder="Шалтгаан бичих..."
-                    className="flex-1 h-9 px-3 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white text-[12px] focus:outline-none focus:border-blue-400 dark:focus:border-blue-500 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                    className="flex-1 h-9 px-3 rounded-lg bg-[color:var(--surface-hover)] dark:bg-white/5 border border-[color:var(--surface-border)] dark:border-white/10 text-[color:var(--panel-text)] dark:text-white text-[12px] focus:outline-none focus:border-theme dark:focus:border-theme transition-all placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)]"
                   />
                 </div>
               </div>
 
               {/* Footer */}
-              <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-slate-200/50 dark:border-white/10">
+              <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-[color:var(--surface-border)] dark:border-white/10">
                 <button
                   onClick={() => setFreeExitModalTransaction(null)}
-                  className="h-9 px-5 rounded-lg border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 text-xs font-medium transition-all"
+                  className="h-9 px-5 rounded-lg border border-[color:var(--surface-border)] dark:border-white/10 text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/5 text-xs font-medium transition-all"
                 >
                   Хаах
                 </button>
@@ -2835,27 +2835,27 @@ export default function Camera() {
             onClick={() => setViolationModalTransaction(null)}
           >
             <div
-              className="relative w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-2xl border border-slate-200/50 dark:border-white/10 animate-in zoom-in-95 duration-200"
+              className="relative w-full max-w-sm bg-white rounded-2xl overflow-hidden shadow-2xl border border-[color:var(--surface-border)] dark:border-white/10 animate-in zoom-in-95 duration-200"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="relative px-6 pt-5 pb-4 border-b border-slate-100 dark:border-white/[0.06]">
-                <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-red-500 via-rose-500 to-red-600" />
+              <div className="relative px-6 pt-5 pb-4 border-b border-[color:var(--surface-border)] dark:border-white/[0.06]">
+                <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-danger/20 via-danger/20 to-danger/20" />
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200/60 dark:border-red-500/20 flex items-center justify-center">
-                      <AlertTriangle className="w-5 h-5 text-red-500" />
+                    <div className="w-10 h-10 rounded-xl bg-danger/10 border border-danger/60 flex items-center justify-center">
+                      <AlertTriangle className="w-5 h-5 text-danger" />
                     </div>
                     <div>
-                      <h2 className="text-sm font-semibold text-slate-800 dark:text-white">Зөрчил бүртгэх</h2>
-                      <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 font-mono uppercase tracking-wide">
+                      <h2 className="text-sm font-semibold text-[color:var(--panel-text)] dark:text-white">Зөрчил бүртгэх</h2>
+                      <p className="text-[10px] text-[color:var(--muted-text)] mt-0.5 font-mono uppercase tracking-wide">
                         {violationModalTransaction.mashiniiDugaar}
                       </p>
                     </div>
                   </div>
                   <button
                     onClick={() => setViolationModalTransaction(null)}
-                    className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/[0.06] flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors"
+                    className="w-8 h-8 rounded-full bg-[color:var(--surface-hover)] dark:bg-white/[0.06] flex items-center justify-center text-[color:var(--muted-text)] hover:text-[color:var(--muted-text)] transition-colors"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -2865,7 +2865,7 @@ export default function Camera() {
               {/* Body */}
               <div className="px-6 py-5 space-y-4">
                 <div>
-                  <label className="block text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-[11px] text-[color:var(--muted-text)] uppercase tracking-wider mb-1.5">
                     Зөрчлийн шалтгаан
                   </label>
                   <textarea
@@ -2874,7 +2874,7 @@ export default function Camera() {
                     onChange={(e) => setViolationReason(e.target.value)}
                     placeholder="Зөрчлийн тайлбар оруулна уу..."
                     autoFocus
-                    className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08] text-sm text-slate-800 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500/50 transition-all resize-none"
+                    className="w-full px-4 py-3 rounded-xl bg-[color:var(--surface-hover)] dark:bg-white/[0.04] border border-[color:var(--surface-border)] dark:border-white/[0.08] text-sm text-[color:var(--panel-text)] dark:text-white placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] focus:outline-none focus:ring-2 focus:ring-danger/20 focus:border-danger/50 transition-all resize-none"
                   />
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -2882,7 +2882,7 @@ export default function Camera() {
                     <button
                       key={preset}
                       onClick={() => setViolationReason(preset)}
-                      className={`px-3 py-1.5 rounded-full text-[11px] border transition-all ${violationReason === preset ? "bg-red-500 border-red-500 text-white" : "border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:border-red-300 hover:text-red-600"}`}
+                      className={`px-3 py-1.5 rounded-full text-[11px] border transition-all ${violationReason === preset ? "bg-danger border-danger text-white" : "border-[color:var(--surface-border)] dark:border-white/10 text-[color:var(--muted-text)] hover:border-danger/30 hover:text-danger"}`}
                     >
                       {preset}
                     </button>
@@ -2894,7 +2894,7 @@ export default function Camera() {
               <div className="px-6 pb-5 flex items-center justify-end gap-2">
                 <button
                   onClick={() => setViolationModalTransaction(null)}
-                  className="h-9 px-4 rounded-xl border border-slate-200 dark:border-white/[0.08] text-slate-600 dark:text-slate-300 text-sm hover:bg-slate-50 dark:hover:bg-white/[0.06] transition-all"
+                  className="h-9 px-4 rounded-xl border border-[color:var(--surface-border)] dark:border-white/[0.08] text-[color:var(--muted-text)] text-sm hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/[0.06] transition-all"
                 >
                   Цуцлах
                 </button>
@@ -2923,19 +2923,19 @@ export default function Camera() {
             onClick={() => setRevenueModalOpen(false)}
           >
             <div
-              className="relative w-[420px] max-w-full rounded-[28px] overflow-hidden shadow-2xl border bg-white dark:bg-[#18181b] border-slate-200/40 dark:border-white/[0.06]"
+              className="relative w-[420px] max-w-full rounded-[28px] overflow-hidden shadow-2xl border bg-white dark:bg-[#18181b] border-[color:var(--surface-border)] dark:border-white/[0.06]"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="relative px-7 pt-6 pb-5 border-b border-slate-100 dark:border-white/[0.06]">
-                <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-emerald-500 via-teal-500 to-green-500 opacity-80" />
+              <div className="relative px-7 pt-6 pb-5 border-b border-[color:var(--surface-border)] dark:border-white/[0.06]">
+                <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-theme/20 via-theme/20 to-theme/20 opacity-80" />
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-slate-100 dark:bg-white/[0.06] border border-slate-200/50 dark:border-white/[0.06]">
-                      <Receipt className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+                    <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-[color:var(--surface-hover)] dark:bg-white/[0.06] border border-[color:var(--surface-border)] dark:border-white/[0.06]">
+                      <Receipt className="w-5 h-5 text-theme dark:text-theme" />
                     </div>
                     <div>
-                      <h2 className="text-[15px] text-slate-800 dark:text-white tracking-tight">
+                      <h2 className="text-[15px] text-[color:var(--panel-text)] dark:text-white tracking-tight">
                         Орлого тайлан
                       </h2>
                       <div className="mt-1.5 min-w-[220px]">
@@ -2946,7 +2946,7 @@ export default function Camera() {
                             onChange={(_: any, dateStrings: [string, string]) => setRevenueDateRange(dateStrings)}
                             format="YYYY-MM-DD"
                             classNames={{
-                              input: "flex items-center gap-2 rounded-full bg-slate-100 dark:bg-white/[0.06] border border-slate-200/40 dark:border-white/[0.06] h-8 px-3 text-[11px] text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-blue-500/10 transition-all",
+                              input: "flex items-center gap-2 rounded-full bg-[color:var(--surface-hover)] dark:bg-white/[0.06] border border-[color:var(--surface-border)] dark:border-white/[0.06] h-8 px-3 text-[11px] text-[color:var(--muted-text)] focus:ring-2 focus:ring-theme/10 transition-all",
                             }}
                             allowClear
                             getPopupContainer={() => document.body}
@@ -2957,7 +2957,7 @@ export default function Camera() {
                   </div>
                   <button
                     onClick={() => setRevenueModalOpen(false)}
-                    className="w-9 h-9 rounded-full bg-slate-100 dark:bg-white/[0.06] flex items-center justify-center text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors"
+                    className="w-9 h-9 rounded-full bg-[color:var(--surface-hover)] dark:bg-white/[0.06] flex items-center justify-center text-[color:var(--muted-text)] hover:text-[color:var(--muted-text)] transition-colors"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -2966,16 +2966,16 @@ export default function Camera() {
 
               {/* Body */}
               <div className="p-5 space-y-2 max-h-[60vh] overflow-y-auto">
-                <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em] mb-1">
+                <p className="text-[10px] text-[color:var(--muted-text)] uppercase tracking-[0.15em] mb-1">
                   Төлбөрийн хэлбэр
                 </p>
                 {revenueLoading && (
-                  <div className="text-center py-8 text-[11px] text-slate-400">Уншиж байна...</div>
+                  <div className="text-center py-8 text-[11px] text-[color:var(--muted-text)]">Уншиж байна...</div>
                 )}
                 {!revenueLoading && revenueModalBreakdown.items.map((item) => (
                   <div
                     key={item.key}
-                    className="relative flex items-center gap-3 py-2.5 px-3 rounded-2xl border border-slate-100 dark:border-white/[0.06] bg-slate-50/50 dark:bg-white/[0.02] overflow-hidden"
+                    className="relative flex items-center gap-3 py-2.5 px-3 rounded-2xl border border-[color:var(--surface-border)] dark:border-white/[0.06] bg-[color:var(--surface-hover)] dark:bg-white/[0.02] overflow-hidden"
                   >
                     {/* Percentage fill background */}
                     <div
@@ -2985,27 +2985,27 @@ export default function Camera() {
                     <div
                       className={`w-1 h-8 rounded-full ${item.color} shrink-0 relative z-10`}
                     />
-                    <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-white/[0.06] flex items-center justify-center text-slate-500 dark:text-slate-400 shrink-0 relative z-10">
+                    <div className="w-8 h-8 rounded-xl bg-[color:var(--surface-hover)] dark:bg-white/[0.06] flex items-center justify-center text-[color:var(--muted-text)] shrink-0 relative z-10">
                       {item.icon}
                     </div>
                     <div className="flex-1 min-w-0 relative z-10">
-                      <span className="text-[12px] text-slate-700 dark:text-slate-200 block">
+                      <span className="text-[12px] text-[color:var(--panel-text)] block">
                         {item.name}
                       </span>
                     </div>
-                    <span className="text-[13px] font-black text-slate-800 dark:text-white font-[family-name:var(--font-mono)] shrink-0 relative z-10">
+                    <span className="text-[13px] font-black text-[color:var(--panel-text)] dark:text-white font-[family-name:var(--font-mono)] shrink-0 relative z-10">
                       {formatNumber(item.amount)}₮
                     </span>
-                    <span className="text-[11px] text-slate-400 dark:text-slate-500 font-[family-name:var(--font-mono)] w-6 text-center shrink-0 relative z-10">
+                    <span className="text-[11px] text-[color:var(--muted-text)] font-[family-name:var(--font-mono)] w-6 text-center shrink-0 relative z-10">
                       {item.count}
                     </span>
-                    <span className="text-[11px] text-slate-400 dark:text-slate-500 font-[family-name:var(--font-mono)] w-12 text-right shrink-0 relative z-10">
+                    <span className="text-[11px] text-[color:var(--muted-text)] font-[family-name:var(--font-mono)] w-12 text-right shrink-0 relative z-10">
                       {item.pct}%
                     </span>
                   </div>
                 ))}
                 {!revenueLoading && revenueModalBreakdown.items.length === 0 && (
-                  <p className="text-center text-[11px] text-slate-400 dark:text-slate-500 py-8">
+                  <p className="text-center text-[11px] text-[color:var(--muted-text)] py-8">
                     Төлбөрийн мэдээлэл олдсонгүй
                   </p>
                 )}
@@ -3013,11 +3013,11 @@ export default function Camera() {
 
               {/* Footer total */}
               <div className="px-7 pb-6 pt-2">
-                <div className="flex justify-between items-center py-3 px-4 rounded-2xl bg-emerald-50 dark:bg-emerald-500/[0.08] border border-emerald-200 dark:border-emerald-500/20">
-                  <span className="text-[11px] font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
+                <div className="flex justify-between items-center py-3 px-4 rounded-2xl bg-theme/10 dark:bg-theme/[0.08] border border-theme/30 dark:border-theme/20">
+                  <span className="text-[11px] font-black text-theme dark:text-theme uppercase tracking-wider">
                     Нийт орлого
                   </span>
-                  <span className="text-[14px] font-black text-emerald-700 dark:text-emerald-400 font-[family-name:var(--font-mono)]">
+                  <span className="text-[14px] font-black text-theme dark:text-theme font-[family-name:var(--font-mono)]">
                     {formatNumber(revenueModalBreakdown.totalAmount)}₮
                   </span>
                 </div>
@@ -3180,21 +3180,21 @@ const CameraStream = React.memo(
       return (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white">
           <div className="relative max-w-md px-4">
-            <div className="absolute inset-0 bg-red-500/20 rounded-full blur-2xl animate-pulse"></div>
-            <div className="relative p-6 rounded-3xl bg-gray-900/80 backdrop-blur-sm border border-red-500/30 space-y-3">
+            <div className="absolute inset-0 bg-danger/20 rounded-full blur-2xl animate-pulse"></div>
+            <div className="relative p-6 rounded-3xl bg-[color:var(--panel)] backdrop-blur-sm border border-danger/30 space-y-3">
               <VideoOff className="w-16 h-16 mb-2 mx-auto opacity-75 animate-pulse" />
               <p className="text-base text-center">Камер холбогдохгүй байна</p>
               <p className="text-[10px] opacity-50 text-center font-mono break-all">
                 {rtspUrl}
               </p>
               {connectionState && (
-                <div className="px-3 py-1.5 rounded-lg bg-red-500/20 border border-red-500/30">
+                <div className="px-3 py-1.5 rounded-lg bg-danger/20 border border-danger/30">
                   <p className="text-[10px] opacity-80 text-center">
                     Алдаа: {connectionState}
                   </p>
                 </div>
               )}
-              <p className="text-[10px] text-slate-400 text-center leading-relaxed">
+              <p className="text-[10px] text-[color:var(--muted-text)] text-center leading-relaxed">
                 Stream path (&quot;{root}&quot;) буруу байж магадгүй.
                 <br />
                 Камер тохиргооноос ROOT-г шалгана уу.
@@ -3248,13 +3248,13 @@ const CameraStream = React.memo(
             backdrop-blur-xl border-2
             shadow-[0_8px_32px_rgba(0,0,0,0.3)]
             ${cameraType === "entry"
-                ? "bg-emerald-500/20 border-emerald-500/40 text-white hover:bg-emerald-500 hover:border-emerald-400"
-                : "bg-rose-500/20 border-rose-500/40 text-white hover:bg-rose-500 hover:border-rose-400"
+                ? "bg-success/20 border-success/40 text-white hover:bg-success hover:border-success"
+                : "bg-danger/20 border-danger/40 text-white hover:bg-danger hover:border-danger"
               }
           `}
           >
             <div
-              className={`w-2 h-2 rounded-full animate-pulse ${cameraType === "entry" ? "bg-emerald-400" : "bg-rose-400"} group-hover:bg-white `}
+              className={`w-2 h-2 rounded-full animate-pulse ${cameraType === "entry" ? "bg-success" : "bg-danger"} group-hover:bg-white `}
             ></div>
             <span className="!text-white">Нээх</span>
             <div className="absolute inset-0 rounded-full bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -3286,7 +3286,7 @@ const CameraStream = React.memo(
           <div className="absolute top-3 left-3 z-30 px-3 py-2 rounded-lg bg-black/70 text-white">
             <div className="flex items-center gap-2">
               <div
-                className={`w-2 h-2 rounded-full ${cameraType === "entry" ? "bg-green-500" : "bg-red-500"} animate-pulse`}
+                className={`w-2 h-2 rounded-full ${cameraType === "entry" ? "bg-success" : "bg-danger"} animate-pulse`}
               ></div>
               <div>
                 <p className=" text-xs">{gateName || name}</p>

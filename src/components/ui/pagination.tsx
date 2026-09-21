@@ -43,8 +43,8 @@ const PaginationLink = ({
     className={cn(
       "inline-flex shrink-0 items-center justify-center gap-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all outline-none disabled:pointer-events-none disabled:opacity-50 h-10 w-10 cursor-pointer shadow-sm",
       isActive
-        ? "bg-emerald-500 text-white font-bold transform scale-105"
-        : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-gray-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20",
+        ? "bg-theme text-white font-bold transform scale-105"
+        : "bg-white border border-[color:var(--surface-border)] text-[color:var(--muted-text)] hover:bg-theme/10 dark:hover:bg-theme/20",
       className
     )}
     {...props}

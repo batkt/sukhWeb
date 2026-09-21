@@ -78,14 +78,14 @@ export default function PaymentModal({
                   type="button"
                   onPointerDown={(e) => e.stopPropagation()}
                   onClick={onClose}
-                  className="p-1.5 rounded-full hover:bg-slate-100 transition-colors"
+                  className="p-1.5 rounded-full hover:bg-[color:var(--surface-hover)] transition-colors"
                 >
-                  <X className="w-4 h-4 text-slate-400" />
+                  <X className="w-4 h-4 text-[color:var(--muted-text)]" />
                 </button>
               </div>
               <div className="flex items-center gap-3">
                 <div>
-                  <h3 className="text-base  text-slate-800">
+                  <h3 className="text-base  text-[color:var(--panel-text)]">
                     Гүйлгээ хийх
                   </h3>
                 </div>
@@ -93,13 +93,13 @@ export default function PaymentModal({
             </div>
 
             <div className="px-5 pb-4">
-              <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-2xl p-3 border border-slate-200/60">
+              <div className="bg-gradient-to-r from-theme/10 to-theme/5 rounded-2xl p-3 border border-[color:var(--surface-border)]">
                 <div className="flex items-center gap-2">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm  text-slate-700 truncate">
+                    <p className="text-sm  text-[color:var(--panel-text)] truncate">
                       {paymentResident?.ovog || ""} {paymentResident?.ner || ""}
                     </p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-[color:var(--muted-text)]">
                       Тоот: {paymentResident?.toot || "-"}
                     </p>
                   </div>
@@ -108,8 +108,8 @@ export default function PaymentModal({
             </div>
 
             <div className="flex-1 px-5 space-y-4">
-              <div className="flex items-center justify-between py-3 px-3 rounded-full border border-slate-200/50">
-                <span className="text-sm text-slate-700 ">
+              <div className="flex items-center justify-between py-3 px-3 rounded-full border border-[color:var(--surface-border)]">
+                <span className="text-sm text-[color:var(--panel-text)] ">
                   Эхний үлдэгдэл оруулах
                 </span>
                 <label className="relative inline-flex items-center cursor-pointer">
@@ -119,28 +119,28 @@ export default function PaymentModal({
                     onChange={(e) => setPaymentIncludeEkhniiUldegdel(e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-10 h-5 bg-slate-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:shadow-sm after:border-slate-200 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                  <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:shadow-sm after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-theme"></div>
                 </label>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs  text-slate-600">Тайлбар</label>
+                <label className="text-xs  text-[color:var(--muted-text)]">Тайлбар</label>
                 <textarea
                   value={paymentTailbar}
                   onChange={(e) => setPaymentTailbar(e.target.value)}
                   placeholder="Нэмэлт тайлбар оруулах..."
                   rows={3}
-                  className="rounded-2xl w-full px-3 py-2.5 border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400/50 focus:border-emerald-400 transition-all resize-none bg-white/50"
+                  className="rounded-2xl w-full px-3 py-2.5 border border-[color:var(--surface-border)] text-sm focus:outline-none focus:ring-2 focus:ring-theme/50 focus:border-theme transition-all resize-none bg-white/50"
                 />
               </div>
             </div>
 
-            <div className="px-5 py-4 mt-auto border-t border-slate-200/60">
+            <div className="px-5 py-4 mt-auto border-t border-[color:var(--surface-border)]">
               <div className="flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2 text-sm  bg-red-500 hover:bg-red-600 text-slate-200 hover:text-slate-800 rounded-full transition-colors disabled:opacity-50"
+                  className="px-4 py-2 text-sm  bg-danger hover:bg-danger text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] rounded-full transition-colors disabled:opacity-50"
                   disabled={isProcessingPayment}
                 >
                   Хаах
@@ -149,7 +149,7 @@ export default function PaymentModal({
                   type="button"
                   onClick={onSubmit}
                   disabled={isProcessingPayment}
-                  className="px-5 py-2 text-sm  text-white bg-slate-800 hover:bg-slate-900 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                  className="px-5 py-2 text-sm  text-white bg-[color:var(--panel)] hover:bg-[color:var(--panel)] rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
                   data-modal-primary
                 >
                   {isProcessingPayment ? (

@@ -50,14 +50,14 @@ const Button = React.forwardRef<HTMLElement, ButtonProps>(
     const baseStyles = "inline-flex items-center justify-center gap-2 transition-all duration-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed border-none";
 
     const variants = {
-      primary: "bg-emerald-500 hover:bg-emerald-400 !text-white shadow-sm dark:bg-emerald-600 dark:hover:bg-emerald-500",
-      secondary: "bg-slate-200/50 hover:bg-slate-200/80 !text-slate-700 dark:bg-slate-800 dark:!text-gray-400 dark:hover:bg-slate-700",
-      back: "!text-gray-400 !border !border-slate-200 dark:!border-white dark:!bg-gray-800 dark:!text-gray-400 hover:bg-slate-50 dark:hover:bg-slate-700",
-      text: "bg-transparent border-none !text-gray-600 hover:bg-emerald-500/10 hover:!text-emerald-600 dark:!text-gray-300 dark:hover:bg-white/5",
-      ghost: "bg-transparent border border-slate-200 !text-slate-600 hover:bg-slate-50 dark:!border-white/10 dark:!text-slate-400 dark:hover:bg-white/5",
-      danger: "bg-red-500 hover:bg-red-400 !text-white shadow-sm dark:bg-red-600 dark:hover:bg-red-500",
-      success: "bg-green-500 hover:bg-green-400 !text-white shadow-sm",
-      warning: "bg-yellow-500 hover:bg-yellow-400 !text-white shadow-sm",
+      primary: "bg-theme hover:bg-theme !text-white shadow-sm dark:bg-theme dark:hover:bg-theme",
+      secondary: "bg-[color:var(--panel)] hover:bg-[color:var(--panel)] !text-[color:var(--panel-text)] dark:!text-[color:var(--muted-text)]",
+      back: "!text-[color:var(--muted-text)] !border !border-[color:var(--surface-border)] dark:!border-white dark:!bg-[color:var(--panel)] dark:!text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)]",
+      text: "bg-transparent border-none !text-[color:var(--muted-text)] hover:bg-success/10 hover:!text-success dark:!text-[color:var(--muted-text)] dark:hover:bg-white/5",
+      ghost: "bg-transparent border border-[color:var(--surface-border)] !text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] dark:!border-white/10 dark:!text-[color:var(--muted-text)] dark:hover:bg-white/5",
+      danger: "bg-danger hover:bg-danger !text-white shadow-sm",
+      success: "bg-success hover:bg-success !text-white shadow-sm",
+      warning: "bg-warning hover:bg-warning !text-white shadow-sm",
     };
 
     // Size mapping

@@ -53,8 +53,8 @@ export default function DeleteConfirmModal({
               className="text-center cursor-move select-none"
               onPointerDown={(e) => dragControls.start(e)}
             >
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-                <Trash2 className="h-6 w-6 text-red-600" />
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-danger/10 mb-4">
+                <Trash2 className="h-6 w-6 text-danger" />
               </div>
               <h3 className="text-[11px] font-semibold mb-2">{title}</h3>
               <p className="text-[11px] mb-6 font-normal opacity-85">

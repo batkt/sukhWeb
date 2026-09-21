@@ -61,10 +61,10 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
         className="relative w-full max-w-4xl bg-[color:var(--surface-bg)] rounded-2xl shadow-2xl border border-[color:var(--surface-border)] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="px-6 py-5 border-b border-[color:var(--surface-border)] bg-gradient-to-r from-red-50/50 to-orange-50/50 dark:from-red-950/20 dark:to-orange-950/20">
+        <div className="px-6 py-5 border-b border-[color:var(--surface-border)] bg-gradient-to-r from-danger/50 to-warning/50">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
+              <AlertTriangle className="w-5 h-5 text-danger" />
               <div>
                 <h3 className="text-xl  text-[color:var(--panel-text)]">
                   Устгасан дэлгэрэнгүй
@@ -561,7 +561,7 @@ export default function UstsanTuukh({ token, baiguullaga, ajiltan }: Props) {
           {/* Header */}
           <div className="flex items-center justify-between pb-4 border-b border-[color:var(--surface-border)]">
             <div className="flex items-center gap-3">
-              <Trash2 className="w-5 h-5 text-red-600 dark:text-red-400" />
+              <Trash2 className="w-5 h-5 text-danger" />
               <h2 className="text-xl text-[color:var(--panel-text)]">
                 {t("Устгасан түүх")}
               </h2>
@@ -583,7 +583,7 @@ export default function UstsanTuukh({ token, baiguullaga, ajiltan }: Props) {
                 classNames={{
                   root: "!h-full !w-full",
                   input:
-                    "text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
+                    "text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
                 }}
               />
             </div>
@@ -671,10 +671,10 @@ export default function UstsanTuukh({ token, baiguullaga, ajiltan }: Props) {
                           e.stopPropagation();
                           handleViewDetails(record);
                         }}
-                        className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors relative z-10"
+                        className="p-2 hover:bg-theme/10 dark:hover:bg-theme/20 rounded-full transition-colors relative z-10"
                         title="Дэлгэрэнгүй үзэх"
                       >
-                        <Eye className="w-4 h-4 text-blue-600 pointer-events-none" />
+                        <Eye className="w-4 h-4 text-theme pointer-events-none" />
                       </button>
                     ),
                   },

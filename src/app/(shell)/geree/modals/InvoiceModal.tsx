@@ -1832,7 +1832,7 @@ export default function InvoiceModal({
             <button
               onPointerDown={(e) => e.stopPropagation()}
               onClick={onClose}
-              className="p-2 hover:bg-[color:var(--surface-hover)] dark:hover:bg-emerald-900/30 rounded-full transition-colors"
+              className="p-2 hover:bg-[color:var(--surface-hover)] dark:hover:bg-theme/30 rounded-full transition-colors"
             >
               <X className="w-6 h-6 text-[color:var(--panel-text)]" />
             </button>
@@ -1860,7 +1860,7 @@ export default function InvoiceModal({
                     placeholder="Хайх /Ажилтан/"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 text-sm bg-[color:var(--surface-hover)] dark:bg-gray-800 text-theme dark:text-white border-none rounded-lg focus:ring-2 focus:ring-[color:var(--theme)] transition-all"
+                    className="w-full pl-9 pr-4 py-2 text-sm bg-[color:var(--surface-hover)] text-theme dark:text-white border-none rounded-lg focus:ring-2 focus:ring-[color:var(--theme)] transition-all"
                   />
                 </div>
               </div>
@@ -1868,8 +1868,8 @@ export default function InvoiceModal({
               {/* Sidebar List */}
               <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
                 {loadingInvoices ? (
-                  <div className="flex flex-col items-center justify-center h-40 text-slate-400">
-                    <div className="w-6 h-6 border-2 border-sky-500 border-t-transparent rounded-full animate-spin mb-2" />
+                  <div className="flex flex-col items-center justify-center h-40 text-[color:var(--muted-text)]">
+                    <div className="w-6 h-6 border-2 border-theme border-t-transparent rounded-full animate-spin mb-2" />
                     <span className="text-xs">Уншиж байна...</span>
                   </div>
                 ) : filteredInvoices.length > 0 ? (
@@ -1912,7 +1912,7 @@ export default function InvoiceModal({
                     </button>
                   ))
                 ) : (
-                  <div className="text-center py-10 text-slate-400 text-sm">
+                  <div className="text-center py-10 text-[color:var(--muted-text)] text-sm">
                     Мэдээлэл олдсонгүй
                   </div>
                 )}
@@ -1965,7 +1965,7 @@ export default function InvoiceModal({
                   </div>
 
                   {/* PDF/Printable Content Area */}
-                  <div className="flex-1 overflow-y-auto p-10 custom-scrollbar bg-white dark:bg-gray-900 font-noto">
+                  <div className="flex-1 overflow-y-auto p-10 custom-scrollbar bg-white font-noto">
                     <div className="max-w-[1000px] mx-auto text-[11px] text-theme dark:text-white leading-tight">
                       {/* Top Labels */}
 
@@ -2093,7 +2093,7 @@ export default function InvoiceModal({
                               <td className="border-r border-[color:var(--surface-border)] py-2 px-1 w-16">
                                 Сүүлийн заалт
                               </td>
-                              {/* <td className="border-r border-slate-200 py-2 px-2 text-right w-24">Хөнгөлөлт</td> */}
+                              {/* <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right w-24">Хөнгөлөлт</td> */}
                               <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center w-24">
                                 Дүн
                               </td>
@@ -2132,7 +2132,7 @@ export default function InvoiceModal({
                                         : "";
                                     })()}
                                   </td>
-                                  {/* <td className="border-r border-slate-200 py-1.5 px-2 text-right">{discount > 0 ? formatNumber(discount, 2) : "0.00"}</td> */}
+                                  {/* <td className="border-r border-[color:var(--surface-border)] py-1.5 px-2 text-right">{discount > 0 ? formatNumber(discount, 2) : "0.00"}</td> */}
                                   <td className="border-r border-[color:var(--surface-border)] py-1.5 px-2 text-right font-medium">
                                     {formatNumber(total, 2)}
                                   </td>

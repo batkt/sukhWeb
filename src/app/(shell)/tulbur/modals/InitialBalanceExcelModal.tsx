@@ -137,7 +137,7 @@ export default function InitialBalanceExcelModal({
           dragControls={dragControls}
           dragConstraints={constraintsRef}
           dragMomentum={false}
-          className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-slate-900 rounded-[32px] shadow-2xl w-[min(560px,95vw)] overflow-hidden"
+          className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 bg-white rounded-[32px] shadow-2xl w-[min(560px,95vw)] overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="p-8">
@@ -146,7 +146,7 @@ export default function InitialBalanceExcelModal({
               onPointerDown={(e) => dragControls.start(e)}
               className="-mt-2 mb-6 px-1 py-1 flex items-center justify-between cursor-move select-none"
             >
-              <div className="text-sm font-semibold text-slate-800 dark:text-white">
+              <div className="text-sm font-semibold text-[color:var(--panel-text)] dark:text-white">
                 Эхний үлдэгдэл импорт (Excel)
               </div>
               <Button
@@ -155,7 +155,7 @@ export default function InitialBalanceExcelModal({
                 variant="ghost"
                 className="p-2 rounded-full"
               >
-                <X className="w-5 h-5 text-gray-500" />
+                <X className="w-5 h-5 text-[color:var(--muted-text)]" />
               </Button>
             </div>
             <div className="flex flex-col gap-2 mb-8">
@@ -165,11 +165,11 @@ export default function InitialBalanceExcelModal({
                     type="date"
                     value={selectedDate}
                     onChange={(e) => setSelectedDate(e.target.value)}
-                    className="px-4 py-2 border border-gray-200 dark:border-slate-700 bg-transparent rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                    className="px-4 py-2 border border-[color:var(--surface-border)] bg-transparent rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-theme/20"
                   />
                 </div>
               </div>
-              <p className="text-[10px] text-gray-500 dark:text-slate-400 italic">
+              <p className="text-[10px] text-[color:var(--muted-text)] italic">
                 * Сонгосон огноогоор эхний үлдэгдэл бүртгэгдэнэ.
               </p>
             </div>
@@ -182,8 +182,8 @@ export default function InitialBalanceExcelModal({
                 transition-all duration-300
                 ${
                   file
-                    ? "border-green-200 bg-green-50/50 dark:border-green-500/30 dark:bg-green-500/5"
-                    : "border-gray-200 bg-gray-50/50 dark:border-slate-700 dark:bg-slate-800/50 hover:border-blue-400 hover:bg-blue-50/30 dark:hover:border-blue-500/50"
+                    ? "border-theme/30 bg-theme/50 dark:border-theme/30 dark:bg-theme/5"
+                    : "border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] hover:border-theme hover:bg-theme/30 dark:hover:border-theme/50"
                 }
               `}
             >
@@ -199,19 +199,19 @@ export default function InitialBalanceExcelModal({
                 className={`
                 w-16 h-16 rounded-2xl flex items-center justify-center mb-2
                 transition-transform duration-300 group-hover:scale-110
-                ${file ? "bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-500" : "bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-500"}
+                ${file ? "bg-theme/10 text-theme dark:bg-theme/20 dark:text-theme" : "bg-theme/10 text-theme dark:bg-theme/20 dark:text-theme"}
               `}
               >
                 {file ? <FileSpreadsheet size={32} /> : <Upload size={32} />}
               </div>
 
               <div className="text-center">
-                <p className="text-lg  text-gray-800 dark:text-slate-200 mb-1">
+                <p className="text-lg  text-[color:var(--panel-text)] mb-1">
                   {file
                     ? file.name
                     : "Excel файл аа чирч оруулах эсвэл сонгоно уу"}
                 </p>
-                <p className="text-sm text-gray-500 dark:text-slate-400">
+                <p className="text-sm text-[color:var(--muted-text)]">
                   Эхний үлдэгдэл excel файл
                 </p>
               </div>

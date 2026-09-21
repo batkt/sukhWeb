@@ -3383,7 +3383,7 @@ export default function DansniiKhuulga() {
                 }}
                 className={`relative group rounded-2xl neu-panel transition-all cursor-pointer ${
                   isActive
-                    ? "ring-2 ring-blue-500 shadow-lg"
+                    ? "ring-2 ring-theme shadow-lg"
                     : "hover:bg-[color:var(--surface-hover)] hover:scale-105"
                 }`}
               >
@@ -3418,7 +3418,7 @@ export default function DansniiKhuulga() {
                   classNames={{
                     root: "!h-full !w-full",
                     input:
-                      "text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
+                      "text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
                   }}
                 />
               </div>
@@ -3433,7 +3433,7 @@ export default function DansniiKhuulga() {
                       type="text"
                       value={selectedOrtsFilter}
                       onChange={(e) => setSelectedOrtsFilter(e.target.value)}
-                      className="w-full h-[40px] px-3 rounded-2xl neu-panel text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 text-[13px] focus:outline-none transition-all"
+                      className="w-full h-[40px] px-3 rounded-2xl neu-panel text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] text-[13px] focus:outline-none transition-all"
                       placeholder="Бүгд"
                     />
                   </div>
@@ -3449,7 +3449,7 @@ export default function DansniiKhuulga() {
                       min={1}
                       value={selectedDavkharFilter}
                       onChange={(e) => setSelectedDavkharFilter(e.target.value)}
-                      className="w-full h-[40px] px-3 rounded-2xl neu-panel text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 text-[13px] focus:outline-none transition-all"
+                      className="w-full h-[40px] px-3 rounded-2xl neu-panel text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] text-[13px] focus:outline-none transition-all"
                       placeholder="Бүгд"
                     />
                   </div>
@@ -3463,7 +3463,7 @@ export default function DansniiKhuulga() {
                       type="text"
                       value={selectedTootFilter}
                       onChange={(e) => setSelectedTootFilter(e.target.value)}
-                      className="w-full h-[40px] px-3 rounded-2xl neu-panel text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 text-[13px] focus:outline-none transition-all"
+                      className="w-full h-[40px] px-3 rounded-2xl neu-panel text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] text-[13px] focus:outline-none transition-all"
                       placeholder="Бүгд"
                     />
                   </div>
@@ -3647,7 +3647,7 @@ export default function DansniiKhuulga() {
                     disabled={
                       isSendingInvoices || selectedGereeIds.length === 0
                     }
-                    className="w-[40px] h-[40px] !p-0 justify-center [&>span]:hidden bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
+                    className="w-[40px] h-[40px] !p-0 justify-center [&>span]:hidden bg-theme text-white hover:bg-theme disabled:opacity-50"
                   />
                 </motion.div>
               </Tooltip>
@@ -3739,7 +3739,7 @@ export default function DansniiKhuulga() {
               onClick={(e) => e.stopPropagation()}
               ref={khungulultRef}
             >
-              <div className="flex items-center justify-between p-3 border-b border-white/20 dark:border-slate-800">
+              <div className="flex items-center justify-between p-3 border-b border-white/20">
                 <div className=""></div>
                 <Button
                   onClick={() => setIsKhungulultOpen(false)}
@@ -3876,7 +3876,7 @@ export default function DansniiKhuulga() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[12000]"
+              className="fixed inset-0 bg-[color:var(--panel)] backdrop-blur-sm z-[12000]"
               onClick={() => setIsSmsHistoryOpen(false)}
             />
             <motion.div
@@ -3884,7 +3884,7 @@ export default function DansniiKhuulga() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[900px] max-h-[85vh] rounded-2xl overflow-hidden shadow-2xl bg-white dark:bg-slate-900 ring-1 ring-slate-200 dark:ring-slate-800 font-sans flex flex-col"
+              className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[900px] max-h-[85vh] rounded-2xl overflow-hidden shadow-2xl bg-white ring-1 ring-[color:var(--surface-border)] font-sans flex flex-col"
               onClick={(e) => e.stopPropagation()}
               onKeyDown={(e) => {
                 if (e.key === 'Escape') {
@@ -3895,7 +3895,7 @@ export default function DansniiKhuulga() {
               autoFocus
             >
               {/* Gradient Header - Green Theme */}
-              <div className="relative bg-gradient-to-r from-emerald-600 to-green-600 px-6 py-5">
+              <div className="relative bg-gradient-to-r from-theme/20 to-theme/20 px-6 py-5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl backdrop-blur-sm flex items-center justify-center">
@@ -3903,39 +3903,39 @@ export default function DansniiKhuulga() {
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold text-white">Илгээсэн SMS түүх</h3>
-                      <p className="text-sm text-emerald-100">Нийт {smsHistoryTotal} мессеж</p>
+                      <p className="text-sm text-theme">Нийт {smsHistoryTotal} мессеж</p>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Content Area */}
-              <div className="flex flex-col flex-1 min-h-0 bg-slate-50 dark:bg-slate-950">
+              <div className="flex flex-col flex-1 min-h-0 bg-[color:var(--surface-hover)]">
                 {isLoadingSmsHistory ? (
                   <div className="flex-1 flex items-center justify-center">
                     <div className="flex flex-col items-center gap-3">
-                      <div className="animate-spin rounded-full h-10 w-10 border-3 border-blue-500 border-t-transparent" />
-                      <span className="text-slate-500 dark:text-slate-400 text-sm">Ачаалж байна...</span>
+                      <div className="animate-spin rounded-full h-10 w-10 border-3 border-theme border-t-transparent" />
+                      <span className="text-[color:var(--muted-text)] text-sm">Ачаалж байна...</span>
                     </div>
                   </div>
                 ) : smsHistoryList.length === 0 ? (
                   <div className="flex-1 flex items-center justify-center">
                     <div className="flex flex-col items-center gap-4 text-center">
-                      <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                        <Mail className="w-8 h-8 text-slate-400" />
+                      <div className="w-16 h-16 rounded-2xl bg-[color:var(--surface-hover)] flex items-center justify-center">
+                        <Mail className="w-8 h-8 text-[color:var(--muted-text)]" />
                       </div>
                       <div>
-                        <p className="text-slate-600 dark:text-slate-300 font-medium">Илгээсэн SMS олдсонгүй</p>
-                        <p className="text-slate-400 dark:text-slate-500 text-sm mt-1">Мессеж илгээсэн түүх хоосон байна</p>
+                        <p className="text-[color:var(--muted-text)] font-medium">Илгээсэн SMS олдсонгүй</p>
+                        <p className="text-[color:var(--muted-text)] text-sm mt-1">Мессеж илгээсэн түүх хоосон байна</p>
                       </div>
                     </div>
                   </div>
                 ) : (
                   <>
                     {/* Date Filter & Stats Summary */}
-                    <div className="px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+                    <div className="px-4 py-3 bg-white border-b border-[color:var(--surface-border)]">
                       <div className="flex items-center gap-3">
-                        <div className="w-[50px] sm:w-40 lg:w-[280px] h-11 z-[12002] [&_.ant-picker-dropdown]:!z-[12003] [&_.ant-picker-input]:!bg-transparent [&_input]:!bg-transparent [&_.ant-picker-input-active]:!bg-transparent dark:[&_.ant-picker-suffix]:!text-white dark:[&_.ant-picker-suffix_svg]:!fill-white dark:[&_.ant-picker:hover]:!bg-slate-700 dark:[&_.ant-picker-focused]:!bg-slate-700 [&_.ant-picker-range-separator]:!text-slate-400 dark:[&_.ant-picker-range-separator]:!text-slate-400">
+                        <div className="w-[50px] sm:w-40 lg:w-[280px] h-11 z-[12002] [&_.ant-picker-dropdown]:!z-[12003] [&_.ant-picker-input]:!bg-transparent [&_input]:!bg-transparent [&_.ant-picker-input-active]:!bg-transparent dark:[&_.ant-picker-suffix]:!text-white dark:[&_.ant-picker-suffix_svg]:!fill-white dark:[&_.ant-picker:hover]:!bg-[color:var(--panel)] dark:[&_.ant-picker-focused]:!bg-[color:var(--panel)] [&_.ant-picker-range-separator]:!text-[color:var(--muted-text)] dark:[&_.ant-picker-range-separator]:!text-[color:var(--muted-text)]">
                           <StandardDatePicker
                             isRange={true}
                             value={smsDateRange}
@@ -3947,9 +3947,9 @@ export default function DansniiKhuulga() {
                         </div>
                       
                         <div className="flex items-center gap-2 text-sm ml-auto">
-                          <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                          <span className="text-slate-600 dark:text-slate-400">
-                            Амжилттай: <span className="font-semibold text-emerald-600 dark:text-emerald-400">{smsHistoryList.length}</span>
+                          <div className="w-2 h-2 rounded-full bg-theme" />
+                          <span className="text-[color:var(--muted-text)]">
+                            Амжилттай: <span className="font-semibold text-theme dark:text-theme">{smsHistoryList.length}</span>
                           </span>
                         </div>
                       </div>
@@ -3963,24 +3963,24 @@ export default function DansniiKhuulga() {
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: idx * 0.05 }}
-                          className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow"
+                          className="bg-white rounded-xl p-4 border border-[color:var(--surface-border)] shadow-sm hover:shadow-md transition-shadow"
                         >
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-2">
-                                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                                <span className="font-semibold text-[color:var(--panel-text)]">
                                   {Array.isArray(item.dugaar) ? item.dugaar.join(", ") : item.dugaar || "-"}
                                 </span>
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400">
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-theme/10 text-theme dark:bg-theme/20 dark:text-theme">
                                   Амжилттай
                                 </span>
                               </div>
-                              <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed break-words">
+                              <p className="text-[color:var(--muted-text)] text-sm leading-relaxed break-words">
                                 {item.msg || "-"}
                               </p>
                             </div>
                             <div className="text-right whitespace-nowrap">
-                              <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-xs">
+                              <div className="flex items-center gap-1.5 text-[color:var(--muted-text)] text-xs">
                                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
@@ -3994,9 +3994,9 @@ export default function DansniiKhuulga() {
 
                     {/* Pagination */}
                     {smsHistoryTotal > smsHistoryLimit && (
-                      <div className="px-4 py-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
+                      <div className="px-4 py-3 bg-white border-t border-[color:var(--surface-border)]">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-slate-500 dark:text-slate-400">
+                          <span className="text-sm text-[color:var(--muted-text)]">
                             Нийт {smsHistoryTotal} бичлэг
                           </span>
                           <StandardPagination
@@ -4011,10 +4011,10 @@ export default function DansniiKhuulga() {
                     )}
 
                     {/* Close Button */}
-                    <div className="px-4 py-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex justify-end">
+                    <div className="px-4 py-4 bg-white border-t border-[color:var(--surface-border)] flex justify-end">
                       <button
                         onClick={() => setIsSmsHistoryOpen(false)}
-                        className="py-2 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-2xl transition-colors"
+                        className="py-2 px-6 bg-theme hover:bg-theme text-white font-medium rounded-2xl transition-colors"
                       >
                         Хаах
                       </button>

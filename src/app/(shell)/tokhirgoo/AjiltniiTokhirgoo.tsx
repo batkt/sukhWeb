@@ -21,7 +21,7 @@ function AjiltniiTokhirgooTsonkh() {
   return (
     <div className="w-full space-y-4">
       <div className="flex items-center gap-2">
-        <Users className="w-5 h-5 text-blue-500" />
+        <Users className="w-5 h-5 text-theme" />
         <div>
           <h2 className="text-lg text-theme">Ажилтны тохиргоо</h2>
           <p className="text-xs text-subtle mt-0.5">

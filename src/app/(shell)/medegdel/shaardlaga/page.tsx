@@ -204,7 +204,7 @@ export default function SanalKhuselt() {
                 (dates || [null, null]) as [string | null, string | null]
               )
             }
-            className="!h-8 !bg-transparent !backdrop-blur-md !border !border-gray-300 !text-slate-900 rounded-xl"
+            className="!h-8 !bg-transparent !backdrop-blur-md !border !border-[color:var(--surface-border)] !text-[color:var(--panel-text)] rounded-xl"
           />
 
           <div className="flex-1 overflow-y-auto pr-2 mt-4 space-y-3">
@@ -224,15 +224,15 @@ export default function SanalKhuselt() {
                       : "bg-white/10 border border-white/20 hover:bg-white/20 hover:shadow-lg"
                   }`}
                 >
-                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 flex items-center justify-center text-white  text-lg shadow-md">
+                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-theme/20 via-purple-400 to-pink-400 flex items-center justify-center text-white  text-lg shadow-md">
                     {mur.ner[0]}
                   </div>
 
                   <div className="flex-1">
-                    <div className=" text-slate-900 text-sm">
+                    <div className=" text-[color:var(--panel-text)] text-sm">
                       {mur.ner}
                     </div>
-                    <div className="text-xs text-slate-500">{mur.utas}</div>
+                    <div className="text-xs text-[color:var(--muted-text)]">{mur.utas}</div>
                   </div>
                 </motion.div>
               );
@@ -262,13 +262,13 @@ export default function SanalKhuselt() {
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     whileHover={{ scale: 1.02 }}
-                    className="rounded-2xl bg-transparent backdrop-blur-xl p-4 border border-gray-200 shadow-xl flex justify-between items-center"
+                    className="rounded-2xl bg-transparent backdrop-blur-xl p-4 border border-[color:var(--surface-border)] shadow-xl flex justify-between items-center"
                   >
                     <div>
-                      <div className=" text-slate-900">
+                      <div className=" text-[color:var(--panel-text)]">
                         {item.message}
                       </div>
-                      <div className="text-xs text-slate-500">
+                      <div className="text-xs text-[color:var(--muted-text)]">
                         {moment(item.ognoo).format("YYYY-MM-DD")}
                       </div>
                     </div>
@@ -281,7 +281,7 @@ export default function SanalKhuselt() {
                     {item.tuluv === 0 && (
                       <button
                         onClick={() => sanalGomdolAvakh(item._id)}
-                        className="btn-minimal text-blue-600 underline"
+                        className="btn-minimal text-theme underline"
                       >
                         {t("Хүлээж авах")}
                       </button>
@@ -305,7 +305,7 @@ export default function SanalKhuselt() {
                   >
                     📋
                   </motion.div>
-                  <div className=" text-2xl text-slate-700 mb-3">
+                  <div className=" text-2xl text-[color:var(--panel-text)] mb-3">
                     {t("Та санал хүсэлт харах харилцагчаа сонгоно уу")}
                   </div>
                 </div>

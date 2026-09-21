@@ -53,7 +53,7 @@ const defaultCamera = (): CameraConfig => ({
 });
 
 const INPUT_CLS =
-  "w-full px-3 py-2 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] text-sm";
+  "w-full px-3 py-2 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] text-sm";
 
 /**
  * Нэг камерын засварын дэлгэц.
@@ -132,7 +132,7 @@ function CameraForm({
             type="checkbox"
             checked={cam.enabled}
             onChange={(e) => onChange({ ...cam, enabled: e.target.checked })}
-            className="w-4 h-4 accent-emerald-600 shrink-0"
+            className="w-4 h-4 accent-theme shrink-0"
           />
         </label>
 
@@ -152,7 +152,7 @@ function CameraForm({
             onChange={(e) =>
               onChange({ ...cam, residentVisible: e.target.checked })
             }
-            className="w-4 h-4 accent-blue-600 shrink-0"
+            className="w-4 h-4 accent-theme shrink-0"
           />
         </label>
       </div>
@@ -490,7 +490,7 @@ export default function KameriinTokhirgoo() {
         title: "RTSP зам",
         key: "rtsp",
         render: (_: any, cam: any) => (
-          <span className="inline-flex items-center break-all rounded-lg border border-slate-300 bg-slate-100 px-3 py-0.5 font-mono dark:border-slate-700 dark:bg-slate-800">
+          <span className="inline-flex items-center break-all rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] px-3 py-0.5 font-mono">
             rtsp://{cam.ip || cameraIp || "—"}:{cam.port || cameraPort}/
             {cam.root}
           </span>
@@ -513,8 +513,8 @@ export default function KameriinTokhirgoo() {
             title="Оршин суугчид харуулах эсэхийг сольно"
             className={`inline-flex items-center rounded-lg border px-3 py-0.5 transition-colors ${
               cam.residentVisible
-                ? "border-blue-300 bg-blue-100 text-blue-950 dark:border-blue-700 dark:bg-blue-900/60 dark:text-blue-100"
-                : "border-slate-300 bg-slate-100 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
+                ? "border-theme/30 bg-theme/10 text-theme dark:border-theme dark:bg-theme/60 dark:text-theme"
+                : "border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]"
             }`}
           >
             {cam.residentVisible ? "Харна" : "Харахгүй"}
@@ -533,8 +533,8 @@ export default function KameriinTokhirgoo() {
             title="Идэвхтэй эсэхийг сольно"
             className={`inline-flex items-center rounded-lg border px-3 py-0.5 transition-colors ${
               cam.enabled
-                ? "border-emerald-300 bg-emerald-100 text-emerald-950 dark:border-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-100"
-                : "border-slate-300 bg-slate-100 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
+                ? "border-theme/30 bg-theme/10 text-theme dark:border-theme dark:bg-theme/60 dark:text-theme"
+                : "border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]"
             }`}
           >
             {cam.enabled ? "Идэвхтэй" : "Идэвхгүй"}
@@ -553,14 +553,14 @@ export default function KameriinTokhirgoo() {
                 setEditingId(cam.id);
                 setView("form");
               }}
-              className="rounded-lg p-1.5 text-blue-600 transition-colors hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-500/10"
+              className="rounded-lg p-1.5 text-theme transition-colors hover:bg-theme/10 dark:text-theme dark:hover:bg-theme/10"
               title="Засах"
             >
               <Edit className="h-4 w-4" />
             </button>
             <button
               onClick={() => handleRemove(cam.id)}
-              className="rounded-lg p-1.5 text-rose-600 transition-colors hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10"
+              className="rounded-lg p-1.5 text-danger transition-colors hover:bg-danger/10"
               title="Устгах"
             >
               <Trash2 className="h-4 w-4" />
@@ -592,7 +592,7 @@ export default function KameriinTokhirgoo() {
                 variant="ghost"
                 size="sm"
                 style={{ borderRadius: "10px" }}
-                className="px-3 !text-rose-600 dark:!text-rose-400"
+                className="px-3 !text-danger dark:!text-danger"
               >
                 Устгах
               </Button>
@@ -639,7 +639,7 @@ export default function KameriinTokhirgoo() {
               </h2>
               <p className="text-xs text-[color:var(--muted-text)]">
                 Нийт{" "}
-                <span className="text-blue-600 dark:text-blue-400">
+                <span className="text-theme dark:text-theme">
                   {sohCameras.length}
                 </span>{" "}
                 камер тохируулагдсан
@@ -649,28 +649,28 @@ export default function KameriinTokhirgoo() {
             <div className="flex items-center gap-2 text-xs flex-wrap">
               <span
                 style={{ borderRadius: "10px" }}
-                className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 font-medium"
+                className="px-3 py-1 bg-[color:var(--surface-hover)] text-[color:var(--panel-text)] dark:text-white border border-[color:var(--surface-border)] font-medium"
               >
                 Нийт камер:{" "}
-                <span className="text-blue-700 dark:text-blue-400 font-semibold">
+                <span className="text-theme dark:text-theme font-semibold">
                   {sohCameras.length}
                 </span>
               </span>
               <span
                 style={{ borderRadius: "10px" }}
-                className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/60 text-emerald-950 dark:text-emerald-100 border border-emerald-300 dark:border-emerald-700 font-medium"
+                className="px-3 py-1 bg-theme/10 dark:bg-theme/60 text-theme dark:text-theme border border-theme/30 dark:border-theme font-medium"
               >
                 Идэвхтэй:{" "}
-                <span className="text-emerald-800 dark:text-emerald-300 font-semibold">
+                <span className="text-theme dark:text-theme font-semibold">
                   {sohCameras.filter((c) => c.enabled).length}
                 </span>
               </span>
               <span
                 style={{ borderRadius: "10px" }}
-                className="px-3 py-1 bg-blue-100 dark:bg-blue-900/60 text-blue-950 dark:text-blue-100 border border-blue-300 dark:border-blue-700 font-medium"
+                className="px-3 py-1 bg-theme/10 dark:bg-theme/60 text-theme dark:text-theme border border-theme/30 dark:border-theme font-medium"
               >
                 Оршин суугч харах:{" "}
-                <span className="text-blue-800 dark:text-blue-300 font-semibold">
+                <span className="text-theme dark:text-theme font-semibold">
                   {residentCameras.length}
                 </span>
               </span>
@@ -683,7 +683,7 @@ export default function KameriinTokhirgoo() {
               variant="ghost"
               size="sm"
               style={{ borderRadius: "10px" }}
-              className="px-3 border border-slate-200 dark:border-white/10"
+              className="px-3 border border-[color:var(--surface-border)] dark:border-white/10"
             >
               Олноор нэмэх
             </Button>
@@ -819,8 +819,8 @@ export default function KameriinTokhirgoo() {
                   style={{ borderRadius: "10px" }}
                   className={`px-3 py-1.5 text-xs border transition-colors ${
                     activeTab === key
-                      ? "bg-blue-100 dark:bg-blue-900/60 text-blue-950 dark:text-blue-100 border-blue-300 dark:border-blue-700 font-semibold"
-                      : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-200/70 dark:hover:bg-slate-700/60"
+                      ? "bg-theme/10 dark:bg-theme/60 text-theme dark:text-theme border-theme/30 dark:border-theme font-semibold"
+                      : "bg-[color:var(--surface-hover)] text-[color:var(--panel-text)] border-[color:var(--surface-border)] hover:bg-[color:var(--panel)]"
                   }`}
                 >
                   {key === "soh" ? "СӨХ-ийн харах камер" : "Оршин суугчдын харах камер"} ({count})
@@ -866,7 +866,7 @@ export default function KameriinTokhirgoo() {
                       variant="ghost"
                       size="sm"
                       onClick={() => setIsPageSizeOpen(!isPageSizeOpen)}
-                      className="!rounded-xl border border-slate-200 dark:border-white/10"
+                      className="!rounded-xl border border-[color:var(--surface-border)] dark:border-white/10"
                     >
                       {pageSize} / хуудас
                     </Button>
@@ -882,7 +882,7 @@ export default function KameriinTokhirgoo() {
                             }}
                             className={`w-full px-3 py-1.5 rounded-xl text-left text-xs transition-colors ${
                               pageSize === size
-                                ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                                ? "bg-theme/10 text-theme dark:text-theme"
                                 : "text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"
                             }`}
                           >
@@ -900,7 +900,7 @@ export default function KameriinTokhirgoo() {
                     size="sm"
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page === 1}
-                    className="!rounded-xl border border-slate-200 dark:border-white/10"
+                    className="!rounded-xl border border-[color:var(--surface-border)] dark:border-white/10"
                     leftIcon={<ChevronLeft className="w-4 h-4" />}
                   >
                     Өмнөх
@@ -913,7 +913,7 @@ export default function KameriinTokhirgoo() {
                     size="sm"
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page >= totalPages}
-                    className="!rounded-xl border border-slate-200 dark:border-white/10"
+                    className="!rounded-xl border border-[color:var(--surface-border)] dark:border-white/10"
                     rightIcon={<ChevronRight className="w-4 h-4" />}
                   >
                     Дараах

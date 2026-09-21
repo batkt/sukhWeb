@@ -413,7 +413,7 @@ export default function GereeHeader({
                   {onShowMassKwtModal && (
                     <button
                       onClick={onShowMassKwtModal}
-                      className="btn-minimal h-10 inline-flex items-center gap-2 text-amber-500 hover:text-amber-600"
+                      className="btn-minimal h-10 inline-flex items-center gap-2 text-warning hover:text-warning"
                       id="resident-mass-kwt-btn-top"
                       aria-label="кВт заалт"
                       title="кВт заалт олноор шинэчлэх"

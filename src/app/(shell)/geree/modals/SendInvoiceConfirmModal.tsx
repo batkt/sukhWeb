@@ -49,7 +49,7 @@ export default function SendInvoiceConfirmModal({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[12000] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm"
+          className="fixed inset-0 z-[12000] flex items-center justify-center bg-[color:var(--panel)] backdrop-blur-sm"
         >
           <div className="absolute inset-0" onClick={onClose} />
           <motion.div
@@ -62,19 +62,19 @@ export default function SendInvoiceConfirmModal({
             dragConstraints={constraintsRef}
             dragMomentum={false}
             onClick={(e) => e.stopPropagation()}
-            className="relative z-[12001] w-[90vw] max-w-[440px] bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl p-6 text-center select-none"
+            className="relative z-[12001] w-[90vw] max-w-[440px] bg-white rounded-3xl border border-[color:var(--surface-border)] shadow-2xl p-6 text-center select-none"
           >
             <div
               className="cursor-move pb-2"
               onPointerDown={(e) => dragControls.start(e)}
             >
-              <div className="mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-orange-50 dark:bg-orange-950/30 text-orange-500 mb-4 shadow-sm shadow-orange-500/10">
+              <div className="mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-warning/10 text-warning mb-4 shadow-sm shadow-warning/10">
                 <Send className="h-6 w-6" />
               </div>
-              <h3 className="text-base font-bold text-slate-800 dark:text-slate-100 mb-2">
+              <h3 className="text-base font-bold text-[color:var(--panel-text)] mb-2">
                 {title}
               </h3>
-              <p className="text-sm font-normal text-slate-500 dark:text-slate-400 mb-6 px-2 leading-relaxed">
+              <p className="text-sm font-normal text-[color:var(--muted-text)] mb-6 px-2 leading-relaxed">
                 {message}
               </p>
               <div className="flex justify-center gap-3">
@@ -82,7 +82,7 @@ export default function SendInvoiceConfirmModal({
                   type="button"
                   onClick={onClose}
                   disabled={isSubmitting}
-                  className="px-5 py-2.5 rounded-2xl text-sm font-semibold text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-850 border border-slate-200 dark:border-slate-800 transition-all duration-200 cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-2xl text-sm font-semibold text-[color:var(--muted-text)] bg-[color:var(--surface-hover)] hover:bg-[color:var(--surface-hover)] border border-[color:var(--surface-border)] transition-all duration-200 cursor-pointer disabled:opacity-50"
                 >
                   Үгүй, цуцлах
                 </button>
@@ -90,7 +90,7 @@ export default function SendInvoiceConfirmModal({
                   type="button"
                   onClick={handleConfirm}
                   disabled={isSubmitting}
-                  className="px-5 py-2.5 rounded-2xl text-sm font-semibold text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 shadow-md shadow-orange-500/10 hover:shadow-orange-500/20 transition-all duration-200 cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                  className="px-5 py-2.5 rounded-2xl text-sm font-semibold text-white bg-gradient-to-r from-warning/20 to-warning/20 hover:from-warning/20 hover:to-warning/20 shadow-md shadow-warning/10 hover:shadow-warning/20 transition-all duration-200 cursor-pointer disabled:opacity-50 flex items-center gap-2"
                   data-modal-primary
                 >
                   {isSubmitting ? (

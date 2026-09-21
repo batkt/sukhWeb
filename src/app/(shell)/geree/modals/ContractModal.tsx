@@ -78,19 +78,19 @@ export default function ContractModal({
               onPointerDown={(e) => dragControls.start(e)}
               className="flex items-center justify-between px-6 py-4 border-b cursor-move select-none"
             >
-              <h2 className="text-lg text-slate-900">
+              <h2 className="text-lg text-[color:var(--panel-text)]">
                 {editingContract ? "Гэрээ засах" : "Шинэ гэрээ байгуулах"}
               </h2>
               <button
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={onClose}
-                className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
+                className="p-2 hover:bg-[color:var(--surface-hover)] rounded-2xl transition-colors"
                 aria-label="Хаах"
                 title="Хаах"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 text-slate-700"
+                  className="h-6 w-6 text-[color:var(--panel-text)]"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -135,10 +135,10 @@ export default function ContractModal({
                           onClick={() => setCurrentStep(step)}
                           className={`h-9 w-9 rounded-full flex items-center justify-center text-sm  transition-colors ${
                             active
-                              ? "bg-sky-700 text-white"
+                              ? "bg-theme text-white"
                               : done
-                              ? "bg-blue-200 text-slate-800"
-                              : "bg-gray-200 text-slate-700"
+                              ? "bg-theme/20 text-[color:var(--panel-text)]"
+                              : "bg-[color:var(--panel)] text-[color:var(--panel-text)]"
                           }`}
                           aria-current={active ? "step" : undefined}
                           aria-label={`Алхам ${step}: ${label}`}
@@ -157,7 +157,7 @@ export default function ContractModal({
                 {currentStep === 1 && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm  text-slate-700 mb-1">
+                      <label className="block text-sm  text-[color:var(--panel-text)] mb-1">
                         Гэрээний төрөл
                       </label>
                       <TusgaiZagvar

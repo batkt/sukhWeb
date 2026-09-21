@@ -66,7 +66,7 @@ export default function TemplatesModal({
               onPointerDown={(e) => dragControls.start(e)}
               className="flex items-center justify-between mb-4 cursor-move select-none"
             >
-              <h3 className="text-xl  text-slate-900">Гэрээний Загвар</h3>
+              <h3 className="text-xl  text-[color:var(--panel-text)]">Гэрээний Загвар</h3>
               <div className="flex items-center gap-2">
                 <button onClick={onCreateNew} className="btn-minimal btn-save">
                   Шинэ загвар
@@ -74,13 +74,13 @@ export default function TemplatesModal({
                 <button
                   onPointerDown={(e) => e.stopPropagation()}
                   onClick={onClose}
-                  className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
+                  className="p-2 hover:bg-[color:var(--surface-hover)] rounded-2xl transition-colors"
                   aria-label="Хаах"
                   title="Хаах"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6 text-slate-700"
+                    className="h-6 w-6 text-[color:var(--panel-text)]"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -109,24 +109,24 @@ export default function TemplatesModal({
                   <div className="flex gap-2">
                     <button
                       onClick={() => onPreview(z._id)}
-                      className="p-2 text-blue-500 hover:bg-blue-100 rounded-2xl"
+                      className="p-2 text-theme hover:bg-theme/10 rounded-2xl"
                       title="Харах"
                     >
                       <Eye className="w-5 h-5" />
                     </button>
                     <button
                       onClick={() => onEdit(z._id)}
-                      className="p-2 hover:bg-blue-100 rounded-2xl"
+                      className="p-2 hover:bg-theme/10 rounded-2xl"
                       title="Засах"
                     >
                       <Edit className="w-5 h-5" />
                     </button>
                     <button
                       onClick={() => onDelete(z._id)}
-                      className="p-2 hover:bg-red-50 rounded-2xl action-delete"
+                      className="p-2 hover:bg-danger/10 rounded-2xl action-delete"
                       title="Устгах"
                     >
-                      <Trash2 className="w-5 h-5 text-red-500" />
+                      <Trash2 className="w-5 h-5 text-danger" />
                     </button>
                   </div>
                 </div>

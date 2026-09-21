@@ -1089,7 +1089,7 @@ export default function UnitsSection({
         key: "zogsoolDugaar",
         align: "center",
         render: (v: any) => (
-          <span className="font-bold text-emerald-600 dark:text-emerald-400">
+          <span className="font-bold text-theme dark:text-theme">
             {v}
           </span>
         ),
@@ -1116,10 +1116,10 @@ export default function UnitsSection({
           <span
             className={`inline-block rounded-full px-2.5 py-0.5 font-bold ${
               !row.isOccupied
-                ? "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500"
+                ? "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]"
                 : row.tolsenEsekh
-                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
-                  : "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
+                  ? "bg-success/10 text-success dark:bg-success/40 dark:text-success"
+                  : "bg-warning/10 text-warning"
             }`}
           >
             {row.isOccupied ? (row.tolsenEsekh ? "Төлсөн" : "Төлөөгүй") : "-"}
@@ -1139,7 +1139,7 @@ export default function UnitsSection({
                   onClick={() =>
                     handleSendSingleUnitInvoice(row.resident, row.id)
                   }
-                  className="cursor-pointer rounded-lg p-1.5 text-emerald-600 transition hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+                  className="cursor-pointer rounded-lg p-1.5 text-theme transition hover:bg-theme/10 dark:hover:bg-theme/30"
                   title="Нэхэмжлэх/авлага илгээх"
                 >
                   <Send className="h-4 w-4" />
@@ -1159,7 +1159,7 @@ export default function UnitsSection({
                       propertyTab,
                     );
                   }}
-                  className="cursor-pointer rounded-lg p-1.5 text-orange-500 transition hover:bg-orange-50 dark:hover:bg-orange-950/30"
+                  className="cursor-pointer rounded-lg p-1.5 text-warning transition hover:bg-warning/10"
                   title="Холбоос хасах"
                 >
                   <UserX className="h-4 w-4" />
@@ -1170,7 +1170,7 @@ export default function UnitsSection({
                 onClick={() =>
                   setQuickRegister({ unit: row.id, floor: selectedFloor || "" })
                 }
-                className="cursor-pointer rounded-lg p-1.5 text-blue-600 transition hover:bg-blue-50 dark:hover:bg-blue-950/30"
+                className="cursor-pointer rounded-lg p-1.5 text-theme transition hover:bg-theme/10 dark:hover:bg-theme/30"
                 title="Бүртгэх"
               >
                 <Plus className="h-4 w-4" />
@@ -1178,7 +1178,7 @@ export default function UnitsSection({
             )}
             <button
               onClick={() => onDeleteUnit(selectedFloor || "", row.id)}
-              className="cursor-pointer rounded-lg p-1.5 text-red-500 transition hover:bg-red-50 dark:hover:bg-red-950/30"
+              className="cursor-pointer rounded-lg p-1.5 text-danger transition hover:bg-danger/10"
               title="Устгах"
             >
               <Trash2 className="h-4 w-4" />
@@ -1193,7 +1193,7 @@ export default function UnitsSection({
 
   if (davkharOptions.length === 0) {
     return (
-      <div className="p-3 rounded-md border border-amber-300 text-amber-700 text-sm">
+      <div className="p-3 rounded-md border border-warning/30 text-warning text-sm">
         Давхарын тохиргоо хийгдээгүй байна. Эхлээд "Барилгын тохиргоо" дээрээс
         давхар оруулна уу.
       </div>
@@ -1204,13 +1204,13 @@ export default function UnitsSection({
     <div>
       <div className="flex items-center justify-between">
         {isSavingUnits && (
-          <div className="text-xs text-slate-500">Хадгалж байна…</div>
+          <div className="text-xs text-[color:var(--muted-text)]">Хадгалж байна…</div>
         )}
       </div>
 
       <div className="space-y-4">
         {ortsOptions.length === 0 && (
-          <div className="p-3 rounded-2xl border border-blue-300 text-blue-700 text-sm">
+          <div className="p-3 rounded-2xl border border-theme/30 text-theme text-sm">
             Орцын тохиргоо хийгдээгүй байна. "Барилгын тохиргоо" хэсгээс Орцын
             тоог оруулбал энд сонгох боломжтой болно.
           </div>
@@ -1249,16 +1249,16 @@ export default function UnitsSection({
                       <div key={ortsKey} className="w-full">
                         {hasMultipleOrts && (
                           <div className="flex items-center gap-3 mb-3">
-                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
-                              <span className="text-sm font-bold text-blue-700 dark:text-blue-300">
+                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-theme/10 dark:bg-theme/30 border border-theme/30 dark:border-theme">
+                              <span className="text-sm font-bold text-theme dark:text-theme">
                                 {ortsKey ? `${ortsKey}-р орц` : "Орцгүй"}
                               </span>
-                              <span className="text-xs text-blue-500 dark:text-blue-400 font-medium">
+                              <span className="text-xs text-theme dark:text-theme font-medium">
                                 ({groupItems.reduce((s, f) => s + f.units.length, 0)} тоот,{" "}
                                 {groupItems.reduce((s, f) => s + f.activeToots.size, 0)} бүртгэлтэй)
                               </span>
                             </div>
-                            <div className="flex-1 h-px bg-blue-100 dark:bg-blue-900/40" />
+                            <div className="flex-1 h-px bg-theme/10 dark:bg-theme/40" />
                           </div>
                         )}
                         <div className="allow-overflow no-scrollbar" id={`units-table-orts-${ortsKey}`}>
@@ -1302,66 +1302,70 @@ export default function UnitsSection({
               <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-4">
                 {/* Stats Cards */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {/* Stat картууд нь сэдвийн токеноос өнгөө уншина. Өмнө нь
+                      blue/orange/emerald/amber хатуу бичигдсэн тул сэдэв
+                      сольсон ч хөдөлдөггүй байв. «Нийт» нь брэндийн өнгө
+                      (`theme`), бусад нь семантик (warning/success/info). */}
                   <button
                     onClick={() => setUnitStatusFilter?.("all")}
-                    className={`text-center select-none cursor-pointer rounded-2xl p-4 shadow-xs border transition-all ${
+                    className={`text-center select-none cursor-pointer rounded-2xl p-4 shadow-xs border transition-all duration-200 active:scale-[0.98] ${
                       unitStatusFilter === "all"
-                        ? "bg-blue-50 dark:bg-blue-950/30 border-blue-300 dark:border-blue-700 ring-2 ring-blue-500/50 shadow-md"
-                        : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 opacity-70 hover:opacity-100"
+                        ? "bg-theme/10 border-theme/40 ring-2 ring-theme/40 shadow-md"
+                        : "bg-[color:var(--surface-bg)] border-[color:var(--surface-border)] opacity-70 hover:opacity-100"
                     }`}
                   >
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Нийт тоот</p>
-                    <p className="text-2xl font-bold text-slate-800 dark:text-slate-100">{stats.total}</p>
+                    <p className="text-xs text-[color:var(--muted-text)] mb-1">Нийт тоот</p>
+                    <p className="text-2xl font-bold text-[color:var(--panel-text)] tabular-nums">{stats.total}</p>
                   </button>
 
                   <button
                     onClick={() => setUnitStatusFilter?.("free")}
-                    className={`text-center select-none cursor-pointer rounded-2xl p-4 shadow-xs border transition-all ${
+                    className={`text-center select-none cursor-pointer rounded-2xl p-4 shadow-xs border transition-all duration-200 active:scale-[0.98] ${
                       unitStatusFilter === "free"
-                        ? "bg-orange-100 dark:bg-orange-950/40 border-orange-300 dark:border-orange-800 ring-2 ring-orange-500/50 shadow-md"
-                        : "bg-orange-50/40 dark:bg-orange-950/10 border-orange-100/60 dark:border-orange-900/10 opacity-70 hover:opacity-100"
+                        ? "bg-warning/15 border-warning/40 ring-2 ring-warning/40 shadow-md"
+                        : "bg-warning/5 border-warning/15 opacity-70 hover:opacity-100"
                     }`}
                   >
-                    <p className="text-xs mb-1 font-semibold text-orange-600 dark:text-orange-400">Чөлөөтэй</p>
-                    <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{stats.free}</p>
+                    <p className="text-xs mb-1 font-semibold text-warning">Чөлөөтэй</p>
+                    <p className="text-2xl font-bold text-warning tabular-nums">{stats.free}</p>
                   </button>
 
                   <button
                     onClick={() => setUnitStatusFilter?.("occupied")}
-                    className={`text-center select-none cursor-pointer rounded-2xl p-4 shadow-xs border transition-all ${
+                    className={`text-center select-none cursor-pointer rounded-2xl p-4 shadow-xs border transition-all duration-200 active:scale-[0.98] ${
                       unitStatusFilter === "occupied"
-                        ? "bg-emerald-100 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800 ring-2 ring-emerald-500/50 shadow-md"
-                        : "bg-emerald-50/40 dark:bg-emerald-950/10 border-emerald-100/60 dark:border-emerald-900/10 opacity-70 hover:opacity-100"
+                        ? "bg-success/15 border-success/40 ring-2 ring-success/40 shadow-md"
+                        : "bg-success/5 border-success/15 opacity-70 hover:opacity-100"
                     }`}
                   >
-                    <p className="text-xs mb-1 font-semibold text-emerald-600 dark:text-emerald-400">Бүртгэлтэй</p>
-                    <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{stats.occupied}</p>
+                    <p className="text-xs mb-1 font-semibold text-success">Бүртгэлтэй</p>
+                    <p className="text-2xl font-bold text-success tabular-nums">{stats.occupied}</p>
                   </button>
 
-                  <div className="bg-amber-50 dark:bg-amber-950/20 rounded-2xl border border-amber-100 dark:border-amber-900/30 p-4 shadow-xs text-center">
-                    <p className="text-xs text-amber-600 dark:text-amber-400 mb-1">Тухайн давхрын тоотууд</p>
-                    <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{selectedFloorData.filteredUnits.length}</p>
+                  <div className="bg-info/5 rounded-2xl border border-info/15 p-4 shadow-xs text-center">
+                    <p className="text-xs text-info mb-1">Тухайн давхрын тоотууд</p>
+                    <p className="text-2xl font-bold text-info tabular-nums">{selectedFloorData.filteredUnits.length}</p>
                   </div>
                 </div>
 
                 {/* Table Component Box */}
                 <div className="space-y-4">
                   {/* Header Bar */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-gray-100 dark:border-gray-800">
+                  <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[color:var(--surface-border)]">
                     <div className="flex items-center gap-2">
-                      <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">
+                      <h3 className="text-base font-bold text-[color:var(--panel-text)]">
                         {propertyTab === "Зогсоол" ? "Зогсоол давхрын тоотууд" : "Агуулах давхрын тоотууд"}
                       </h3>
                       {selectedFloor && (
                         <div className="flex items-center gap-1.5">
-                          <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400">
+                          <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-info/10 text-info">
                             {selectedFloor}-р давхар
                           </span>
                           <button
                             type="button"
                             onClick={() => onDeleteFloor?.(selectedFloor)}
                             title={`${selectedFloor}-р давхрын бүх тоотуудыг устгах`}
-                            className="p-1 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition cursor-pointer"
+                            className="p-1 rounded-lg text-[color:var(--muted-text)] hover:text-danger hover:bg-danger/10 transition cursor-pointer"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -1377,7 +1381,7 @@ export default function UnitsSection({
                           value={zogsoolSearch}
                           onChange={(e) => setZogsoolSearch(e.target.value)}
                           placeholder={propertyTab === "Зогсоол" ? "Хайх /зогсоолын дугаар/" : "Хайх /агуулахын дугаар/"}
-                          className="h-9 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none transition shadow-2xs"
+                          className="h-9 w-full rounded-xl border border-[color:var(--surface-border)] bg-white px-3 text-xs text-[color:var(--panel-text)] dark:text-white placeholder:text-[color:var(--muted-text)] focus:border-theme focus:outline-none transition shadow-2xs"
                         />
                       </div>
 
@@ -1396,7 +1400,7 @@ export default function UnitsSection({
                         variant="primary"
                         size="sm"
                         leftIcon={<Send className="w-3.5 h-3.5" />}
-                        className="rounded-xl font-semibold !bg-emerald-600 hover:!bg-emerald-700 cursor-pointer shrink-0"
+                        className="rounded-xl font-semibold !bg-theme hover:!bg-theme cursor-pointer shrink-0"
                       >
                         Илгээх ({checkedUnits.length})
                       </Button>
@@ -1407,7 +1411,7 @@ export default function UnitsSection({
                           variant="danger"
                           size="sm"
                           leftIcon={<Trash2 className="w-3.5 h-3.5" />}
-                          className="rounded-xl font-semibold !bg-red-600 hover:!bg-red-700 !text-white cursor-pointer shrink-0"
+                          className="rounded-xl font-semibold !bg-danger hover:!bg-danger !text-white cursor-pointer shrink-0"
                         >
                           Устгах ({checkedUnits.length})
                         </Button>
@@ -1435,9 +1439,9 @@ export default function UnitsSection({
                   />
 
                   {/* Summary Footer Row */}
-                  <div className="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-700 font-bold text-sm text-slate-900 dark:text-white">
+                  <div className="flex items-center justify-between pt-3 border-t border-[color:var(--surface-border)] font-bold text-sm text-[color:var(--panel-text)] dark:text-white">
                     <span>Нийт дүн:</span>
-                    <span className="text-emerald-600 dark:text-emerald-400 text-base font-extrabold">
+                    <span className="text-theme dark:text-theme text-base font-extrabold">
                       {totalZogsoolAmount.toLocaleString("mn-MN", { minimumFractionDigits: 2 })}₮
                     </span>
                   </div>
@@ -1509,26 +1513,26 @@ export default function UnitsSection({
             />
 
             {/* Modal */}
-            <div className="relative z-10 w-full max-w-md mx-4 bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="relative z-10 w-full max-w-md mx-4 bg-white rounded-3xl shadow-2xl border border-[color:var(--surface-border)] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
               {/* Header */}
-              <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100 dark:border-gray-800">
+              <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-[color:var(--surface-border)]">
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">
+                  <p className="text-[10px] font-bold text-[color:var(--muted-text)] uppercase tracking-wider mb-0.5">
                     {propertyTab} холбоос
                   </p>
-                  <h2 className="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
-                    <span className="px-2 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-sm font-bold">
+                  <h2 className="text-base font-bold text-[color:var(--panel-text)] flex items-center gap-1.5">
+                    <span className="px-2 py-0.5 rounded-lg bg-warning/10 text-warning text-sm font-bold">
                       {activeUnitDetails.floor}-р давхар
                     </span>
-                    <span className="text-slate-400 font-light">/</span>
-                    <span className="px-2 py-0.5 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-bold">
+                    <span className="text-[color:var(--muted-text)] font-light">/</span>
+                    <span className="px-2 py-0.5 rounded-lg bg-[color:var(--surface-hover)] text-[color:var(--panel-text)] text-sm font-bold">
                       {activeUnitDetails.unit}-р тоот
                     </span>
                   </h2>
                 </div>
                 <button
                   onClick={() => setActiveUnitDetails(null)}
-                  className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                  className="p-2 rounded-xl hover:bg-[color:var(--surface-hover)] text-[color:var(--muted-text)] hover:text-[color:var(--muted-text)] transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -1539,16 +1543,16 @@ export default function UnitsSection({
                 {activeUnitDetails.resident ? (
                   <div className="space-y-4">
                     {/* Resident Info Card */}
-                    <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800/80 space-y-3">
-                      <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">
+                    <div className="p-4 bg-[color:var(--surface-hover)] rounded-2xl border border-[color:var(--surface-border)] space-y-3">
+                      <p className="text-xs font-bold text-[color:var(--muted-text)] uppercase tracking-wide">
                         Бүртгэлтэй оршин суугч
                       </p>
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-950/40 flex items-center justify-center shrink-0">
-                          <User className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                        <div className="w-10 h-10 rounded-xl bg-warning/10 flex items-center justify-center shrink-0">
+                          <User className="w-5 h-5 text-warning" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-bold text-slate-800 dark:text-slate-200 truncate">
+                          <p className="text-sm font-bold text-[color:var(--panel-text)] truncate">
                             {[activeUnitDetails.resident.ovog, activeUnitDetails.resident.ner]
                               .filter(Boolean)
                               .join(" ") ||
@@ -1556,13 +1560,13 @@ export default function UnitsSection({
                               "Нэргүй"}
                           </p>
                           {activeUnitDetails.resident.utas && (
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1">
+                            <p className="text-xs text-[color:var(--muted-text)] mt-0.5 flex items-center gap-1">
                               <Phone className="w-3 h-3" />
                               {activeUnitDetails.resident.utas}
                             </p>
                           )}
                           {activeUnitDetails.resident.toot && (
-                            <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-2 flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 rounded-xl w-fit border border-slate-200 dark:border-slate-700/80 font-medium">
+                            <div className="text-[11px] text-[color:var(--muted-text)] mt-2 flex items-center gap-1 bg-[color:var(--surface-hover)] px-2.5 py-1 rounded-xl w-fit border border-[color:var(--surface-border)] font-medium">
                               <span className="text-xs">🏠</span>
                               <span>
                                 {[
@@ -1584,7 +1588,7 @@ export default function UnitsSection({
                       }}
                       variant="secondary"
                       fullWidth
-                      className="!bg-orange-500 hover:!bg-orange-600 !text-white rounded-2xl shadow-md shadow-orange-500/10 font-semibold"
+                      className="!bg-warning hover:!bg-warning !text-white rounded-2xl shadow-md shadow-warning/10 font-semibold"
                     >
                       {propertyTab === "Зогсоол"
                         ? "Зогсоолын нэхэмжлэх илгээх"
@@ -1613,13 +1617,13 @@ export default function UnitsSection({
                       }}
                       variant="ghost"
                       fullWidth
-                      className="border border-red-200 bg-red-50/50 hover:bg-red-100/80 dark:border-red-900/40 dark:bg-red-950/20 dark:hover:bg-red-950/30 !text-red-600 dark:!text-red-400 rounded-2xl mt-2"
+                      className="border border-danger/30 bg-danger/50 hover:bg-danger/80 !text-danger dark:!text-danger rounded-2xl mt-2"
                     >
                       Холбоос салгах
                     </Button>
                   </div>
                 ) : (
-                  <div className="text-center py-6 text-slate-400 dark:text-slate-500 italic text-sm">
+                  <div className="text-center py-6 text-[color:var(--muted-text)] italic text-sm">
                     Энэ тоотод бүртгэлтэй оршин суугч олдсонгүй.
                   </div>
                 )}

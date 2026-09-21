@@ -75,7 +75,7 @@ export function StandardDatePicker({
 
   // Combine passed className with standardized ones, removing the harsh default white background
   const combinedClassName =
-    `w-full rounded-2xl !border-slate-200 dark:!border-slate-800 hover:!border-slate-300 dark:hover:!border-slate-700 focus:!border-sky-500 transition-all font-inter h-full ${className} ${rootClassName}`.trim();
+    `w-full rounded-2xl !border-[color:var(--surface-border)] dark:!border-[color:var(--surface-border)] hover:!border-[color:var(--surface-border)] dark:hover:!border-[color:var(--surface-border)] focus:!border-theme transition-all font-inter h-full ${className} ${rootClassName}`.trim();
 
   // Monitor dark mode
   const [isDark, setIsDark] = React.useState(false);

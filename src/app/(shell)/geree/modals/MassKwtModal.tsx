@@ -544,12 +544,12 @@ export default function MassKwtModal({
           >
             {/* Header */}
             <div
-              className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-4 cursor-move select-none"
+              className="flex items-center justify-between border-b border-[color:var(--surface-border)] pb-4 cursor-move select-none"
               onPointerDown={(e) => dragControls.start(e)}
             >
               <div className="flex items-center gap-3">
                 <div>
-                  <h3 className="text-base text-gray-900 dark:text-white">
+                  <h3 className="text-base text-[color:var(--panel-text)] dark:text-white">
                     Цахилгааны (кВт) заалт шинэчлэх
                   </h3>
                 </div>
@@ -558,22 +558,22 @@ export default function MassKwtModal({
                 type="button"
                 onClick={onClose}
                 disabled={loading}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="text-[color:var(--muted-text)] hover:text-[color:var(--muted-text)] transition-colors p-1 rounded-lg hover:bg-[color:var(--surface-hover)]"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Quick Excel & Search Action Bar */}
-            <div className="py-3 flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 dark:border-gray-700">
+            <div className="py-3 flex flex-wrap items-center justify-between gap-3 border-b border-[color:var(--surface-border)]">
               <div className="relative flex-1 min-w-[200px]">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--muted-text)]" />
                 <input
                   type="text"
                   placeholder="Тоот, давхар эсвэл нэрээр хайх..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] dark:text-white focus:outline-none focus:ring-2 focus:ring-warning"
                 />
               </div>
 
@@ -584,11 +584,11 @@ export default function MassKwtModal({
                   <button
                     type="button"
                     onClick={() => setExcelMenuOpen((prev) => !prev)}
-                    className="px-3 py-1.5 text-xs text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 !rounded-xl transition-colors flex items-center gap-1.5 border border-emerald-500/30 shadow-xs cursor-pointer"
+                    className="px-3 py-1.5 text-xs text-theme dark:text-theme bg-theme/10 hover:bg-theme/20 !rounded-xl transition-colors flex items-center gap-1.5 border border-theme/30 shadow-xs cursor-pointer"
                     style={{ borderRadius: "0.75rem" }}
                     title="Excel үйлдлүүд"
                   >
-                    <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <FileSpreadsheet className="w-4 h-4 text-theme dark:text-theme" />
                     <span>Excel</span>
                     <ChevronDown
                       className={`w-3.5 h-3.5 transition-transform duration-200 ${excelMenuOpen ? "rotate-180" : ""
@@ -598,7 +598,7 @@ export default function MassKwtModal({
 
                   {excelMenuOpen && (
                     <div
-                      className="absolute right-0 top-full mt-2 z-50 min-w-[170px] dropdown-menu-surface !rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700/80 p-1.5 overflow-hidden"
+                      className="absolute right-0 top-full mt-2 z-50 min-w-[170px] dropdown-menu-surface !rounded-2xl shadow-2xl border border-[color:var(--surface-border)] p-1.5 overflow-hidden"
                       style={{
                         backgroundColor: "var(--surface-bg, #ffffff)",
                         borderRadius: "1rem",
@@ -612,10 +612,10 @@ export default function MassKwtModal({
                           setExcelMenuOpen(false);
                           handleExportToExcel();
                         }}
-                        className="w-full px-3 py-2 text-left text-xs text-gray-700 dark:text-gray-200 hover:!bg-emerald-500/10 hover:!text-emerald-700 dark:hover:!text-emerald-400 !rounded-xl flex items-center gap-2.5 transition-colors cursor-pointer"
+                        className="w-full px-3 py-2 text-left text-xs text-[color:var(--panel-text)] hover:!bg-theme/10 hover:!text-theme dark:hover:!text-theme !rounded-xl flex items-center gap-2.5 transition-colors cursor-pointer"
                         style={{ borderRadius: "0.75rem" }}
                       >
-                        <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        <Download className="w-4 h-4 text-theme dark:text-theme shrink-0" />
                         <span>Excel татах</span>
                       </button>
 
@@ -625,10 +625,10 @@ export default function MassKwtModal({
                           setExcelMenuOpen(false);
                           fileInputRef.current?.click();
                         }}
-                        className="w-full px-3 py-2 text-left text-xs text-gray-700 dark:text-gray-200 hover:!bg-blue-500/10 hover:!text-blue-700 dark:hover:!text-blue-400 !rounded-xl flex items-center gap-2.5 transition-colors cursor-pointer mt-0.5"
+                        className="w-full px-3 py-2 text-left text-xs text-[color:var(--panel-text)] hover:!bg-theme/10 hover:!text-theme dark:hover:!text-theme !rounded-xl flex items-center gap-2.5 transition-colors cursor-pointer mt-0.5"
                         style={{ borderRadius: "0.75rem" }}
                       >
-                        <Upload className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                        <Upload className="w-4 h-4 text-theme dark:text-theme shrink-0" />
                         <span>Excel оруулах</span>
                       </button>
                     </div>
@@ -643,7 +643,7 @@ export default function MassKwtModal({
                   onChange={handleExcelImport}
                 />
 
-                <div className="h-4 w-px bg-gray-300 dark:bg-gray-700 mx-0.5" />
+                <div className="h-4 w-px bg-[color:var(--panel)] mx-0.5" />
 
                 <div className="flex items-center gap-1.5">
                   <div className="relative w-28 md:w-32">
@@ -660,13 +660,13 @@ export default function MassKwtModal({
                           handleApplyBulkValue();
                         }
                       }}
-                      className="w-full px-2.5 py-1.5 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      className="w-full px-2.5 py-1.5 text-xs rounded-xl border border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] dark:text-white focus:outline-none focus:ring-2 focus:ring-warning"
                     />
                   </div>
                   <button
                     type="button"
                     onClick={handleApplyBulkValue}
-                    className="px-3 py-1.5 text-xs text-amber-800 dark:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 rounded-xl border border-amber-500/20 transition-colors cursor-pointer"
+                    className="px-3 py-1.5 text-xs text-warning bg-warning/10 hover:bg-warning/20 rounded-xl border border-warning/20 transition-colors cursor-pointer"
                     title="Бүх тоотод ижил утга оруулах"
                   >
                     <span>Бүгдэд</span>
@@ -676,14 +676,14 @@ export default function MassKwtModal({
             </div>
 
             {/* Resident List Table with Sticky Header and solid background */}
-            <div className="flex-1 overflow-y-auto min-h-[260px] max-h-[50vh] border border-gray-200 dark:border-gray-700 rounded-xl relative my-2 bg-white dark:bg-gray-900/40">
+            <div className="flex-1 overflow-y-auto min-h-[260px] max-h-[50vh] border border-[color:var(--surface-border)] rounded-xl relative my-2 bg-white">
               {fetching ? (
-                <div className="flex items-center justify-center h-48 text-gray-500 gap-2">
-                  <Loader2 className="w-5 h-5 animate-spin text-amber-500" />
+                <div className="flex items-center justify-center h-48 text-[color:var(--muted-text)] gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin text-warning" />
                   <span>Уншиж байна...</span>
                 </div>
               ) : filteredResidents.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-48 text-gray-400">
+                <div className="flex flex-col items-center justify-center h-48 text-[color:var(--muted-text)]">
                   <p>Орон сууцны тоот олдсонгүй.</p>
                 </div>
               ) : (
@@ -692,75 +692,75 @@ export default function MassKwtModal({
                     <tr>
                       <th
                         style={{ backgroundColor: "var(--surface-bg, #f1f5f9)" }}
-                        className="py-2.5 px-3 sticky top-0 z-20 text-gray-700 dark:text-gray-200 text-center w-[6%] border-b border-gray-200 dark:border-gray-700 first:rounded-tl-xl"
+                        className="py-2.5 px-3 sticky top-0 z-20 text-[color:var(--panel-text)] text-center w-[6%] border-b border-[color:var(--surface-border)] first:rounded-tl-xl"
                       >
                         №
                       </th>
                       <th
                         style={{ backgroundColor: "var(--surface-bg, #f1f5f9)" }}
-                        className="py-2.5 px-3 sticky top-0 z-20 text-gray-700 dark:text-gray-200 text-left w-[24%] border-b border-gray-200 dark:border-gray-700"
+                        className="py-2.5 px-3 sticky top-0 z-20 text-[color:var(--panel-text)] text-left w-[24%] border-b border-[color:var(--surface-border)]"
                       >
                         Нэр
                       </th>
                       <th
                         style={{ backgroundColor: "var(--surface-bg, #f1f5f9)" }}
-                        className="py-2.5 px-3 sticky top-0 z-20 text-gray-700 dark:text-gray-200 text-center w-[12%] border-b border-gray-200 dark:border-gray-700"
+                        className="py-2.5 px-3 sticky top-0 z-20 text-[color:var(--panel-text)] text-center w-[12%] border-b border-[color:var(--surface-border)]"
                       >
                         Тоот
                       </th>
                       <th
                         style={{ backgroundColor: "var(--surface-bg, #f1f5f9)" }}
-                        className="py-2.5 px-3 sticky top-0 z-20 text-gray-700 dark:text-gray-200 text-center w-[10%] border-b border-gray-200 dark:border-gray-700"
+                        className="py-2.5 px-3 sticky top-0 z-20 text-[color:var(--panel-text)] text-center w-[10%] border-b border-[color:var(--surface-border)]"
                       >
                         Давхар
                       </th>
                       <th
                         style={{ backgroundColor: "var(--surface-bg, #f1f5f9)" }}
-                        className="py-2.5 px-3 sticky top-0 z-20 text-gray-700 dark:text-gray-200 text-center w-[16%] border-b border-gray-200 dark:border-gray-700"
+                        className="py-2.5 px-3 sticky top-0 z-20 text-[color:var(--panel-text)] text-center w-[16%] border-b border-[color:var(--surface-border)]"
                       >
                         Дугаар
                       </th>
                       <th
                         style={{ backgroundColor: "var(--surface-bg, #f1f5f9)" }}
-                        className="py-2.5 px-3 sticky top-0 z-20 text-gray-700 dark:text-gray-200 text-right w-[16%] border-b border-gray-200 dark:border-gray-700"
+                        className="py-2.5 px-3 sticky top-0 z-20 text-[color:var(--panel-text)] text-right w-[16%] border-b border-[color:var(--surface-border)]"
                       >
                         Одоогийн кВт
                       </th>
                       <th
                         style={{ backgroundColor: "var(--surface-bg, #f1f5f9)" }}
-                        className="py-2.5 px-3 sticky top-0 z-20 text-gray-700 dark:text-gray-200 text-center w-[16%] border-b border-gray-200 dark:border-gray-700 last:rounded-tr-xl"
+                        className="py-2.5 px-3 sticky top-0 z-20 text-[color:var(--panel-text)] text-center w-[16%] border-b border-[color:var(--surface-border)] last:rounded-tr-xl"
                       >
                         Шинэ кВт заалт
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white dark:bg-gray-900/50">
+                  <tbody className="bg-white">
                     {filteredResidents.map((r, index) => (
                       <tr
                         key={r._id}
-                        className="hover:bg-amber-500/5 dark:hover:bg-amber-500/10 transition-colors"
+                        className="hover:bg-warning/5 transition-colors"
                       >
-                        <td className="py-2 px-3 text-center text-gray-400 dark:text-gray-500 font-mono text-[11px] border-b border-gray-100 dark:border-gray-800">
+                        <td className="py-2 px-3 text-center text-[color:var(--muted-text)] font-mono text-[11px] border-b border-[color:var(--surface-border)]">
                           {index + 1}
                         </td>
-                        <td className="py-2 px-3 text-left border-b border-gray-100 dark:border-gray-800 truncate">
-                          <span className="text-gray-900 dark:text-white">
+                        <td className="py-2 px-3 text-left border-b border-[color:var(--surface-border)] truncate">
+                          <span className="text-[color:var(--panel-text)] dark:text-white">
                             {r.ner}
                           </span>
                         </td>
-                        <td className="py-2 px-3 text-center text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-800 truncate">
+                        <td className="py-2 px-3 text-center text-[color:var(--panel-text)] dark:text-white border-b border-[color:var(--surface-border)] truncate">
                           {r.toot}
                         </td>
-                        <td className="py-2 px-3 text-center text-gray-600 dark:text-gray-300 border-b border-gray-100 dark:border-gray-800 truncate">
+                        <td className="py-2 px-3 text-center text-[color:var(--muted-text)] border-b border-[color:var(--surface-border)] truncate">
                           {r.davkhar || "-"}
                         </td>
-                        <td className="py-2 px-3 text-center text-gray-600 dark:text-gray-300 font-mono text-xs border-b border-gray-100 dark:border-gray-800 whitespace-nowrap">
+                        <td className="py-2 px-3 text-center text-[color:var(--muted-text)] font-mono text-xs border-b border-[color:var(--surface-border)] whitespace-nowrap">
                           {r.utas || "-"}
                         </td>
-                        <td className="py-2 px-3 text-right text-gray-500 dark:text-gray-400 font-mono border-b border-gray-100 dark:border-gray-800 whitespace-nowrap">
+                        <td className="py-2 px-3 text-right text-[color:var(--muted-text)] font-mono border-b border-[color:var(--surface-border)] whitespace-nowrap">
                           {r.currentKwt} кВт
                         </td>
-                        <td className="py-2 px-3 text-center border-b border-gray-100 dark:border-gray-800">
+                        <td className="py-2 px-3 text-center border-b border-[color:var(--surface-border)]">
                           <div className="relative inline-block w-full max-w-[120px]">
                             <input
                               data-kwt-index={index}
@@ -771,7 +771,7 @@ export default function MassKwtModal({
                               onChange={(e) => handleKwtChange(r._id, e.target.value)}
                               onKeyDown={(e) => handleKeyDown(e, index)}
                               placeholder="0"
-                              className="w-full px-2.5 py-1 text-center text-xs rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                              className="w-full px-2.5 py-1 text-center text-xs rounded-lg border border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] dark:text-white focus:outline-none focus:ring-2 focus:ring-theme"
                             />
                           </div>
                         </td>
@@ -783,8 +783,8 @@ export default function MassKwtModal({
             </div>
 
             {/* Footer Actions */}
-            <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700 mt-2">
-              <span className="text-xs text-gray-500 dark:text-gray-400">
+            <div className="flex items-center justify-between pt-4 border-t border-[color:var(--surface-border)] mt-2">
+              <span className="text-xs text-[color:var(--muted-text)]">
                 Нийт: {filteredResidents.length} тоот
               </span>
 
@@ -793,7 +793,7 @@ export default function MassKwtModal({
                   type="button"
                   onClick={onClose}
                   disabled={loading}
-                  className="px-4 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors cursor-pointer"
+                  className="px-4 py-2 text-xs text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] rounded-xl transition-colors cursor-pointer"
                 >
                   Цуцлах
                 </button>
@@ -801,7 +801,7 @@ export default function MassKwtModal({
                   type="button"
                   onClick={handleSubmit}
                   disabled={loading || fetching}
-                  className="px-5 py-2 text-xs !text-white bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 !rounded-xl transition-colors flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:opacity-50 cursor-pointer"
+                  className="px-5 py-2 text-xs !text-white bg-theme hover:bg-theme active:bg-theme !rounded-xl transition-colors flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:opacity-50 cursor-pointer"
                   style={{ color: "#ffffff", borderRadius: "0.75rem" }}
                 >
                   {loading && <Loader2 className="w-4 h-4 animate-spin text-white" />}

@@ -88,7 +88,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
               ? `${val?.ner || ""} ${val?.kod || ""}`.trim() || "-"
               : val || "-";
           return (
-            <span className="text-gray-900 dark:text-white whitespace-nowrap">
+            <span className="text-[color:var(--panel-text)] dark:text-white whitespace-nowrap">
               {name}
             </span>
           );
@@ -108,7 +108,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
             : null,
         align: "center",
         render: (_: any, record: ResidentItem) => (
-          <span className="text-gray-900 dark:text-white whitespace-nowrap">
+          <span className="text-[color:var(--panel-text)] dark:text-white whitespace-nowrap">
             {getResidentOrtsuud(record) || "-"}
           </span>
         ),
@@ -127,7 +127,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
             : null,
         align: "center",
         render: (_: any, record: ResidentItem) => (
-          <span className="text-gray-900 dark:text-white whitespace-nowrap">
+          <span className="text-[color:var(--panel-text)] dark:text-white whitespace-nowrap">
             {getResidentDavkhauraud(record) || "-"}
           </span>
         ),
@@ -197,7 +197,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
                           );
                         }
                       }}
-                      className="p-0.5 text-red-400 hover:text-red-500 rounded hover:bg-red-950/30 transition-colors"
+                      className="p-0.5 text-danger hover:text-danger rounded hover:bg-danger/30 transition-colors"
                       title="Хасах"
                     >
                       <X className="w-4 h-4" />
@@ -210,10 +210,10 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
 
           return (
             <Tooltip title={tooltipContent} placement="top" color="#1e293b" trigger="hover">
-              <span className="inline-flex items-center gap-1.5 cursor-pointer px-2.5 py-0.5 rounded-md bg-slate-50 dark:bg-slate-800 font-semibold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+              <span className="inline-flex items-center gap-1.5 cursor-pointer px-2.5 py-0.5 rounded-md bg-[color:var(--surface-hover)] font-semibold text-[color:var(--panel-text)] border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors">
                 {toots[0].toot}
                 {toots.length > 1 && (
-                  <span className="text-slate-500 font-bold">
+                  <span className="text-[color:var(--muted-text)] font-bold">
                     +{toots.length - 1}
                   </span>
                 )}
@@ -270,7 +270,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
                           );
                         }
                       }}
-                      className="p-0.5 text-red-400 hover:text-red-500 rounded hover:bg-red-950/30 transition-colors"
+                      className="p-0.5 text-danger hover:text-danger rounded hover:bg-danger/30 transition-colors"
                       title="Хасах"
                     >
                       <X className="w-4 h-4" />
@@ -283,10 +283,10 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
 
           return (
             <Tooltip title={tooltipContent} placement="top" color="#1e293b" trigger="hover">
-              <span className="inline-flex items-center gap-1.5 cursor-pointer px-2.5 py-0.5 rounded-md bg-slate-50 dark:bg-slate-800 font-semibold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+              <span className="inline-flex items-center gap-1.5 cursor-pointer px-2.5 py-0.5 rounded-md bg-[color:var(--surface-hover)] font-semibold text-[color:var(--panel-text)] border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors">
                 {toots[0].toot}
                 {toots.length > 1 && (
-                  <span className="text-slate-500 font-bold">
+                  <span className="text-[color:var(--muted-text)] font-bold">
                     +{toots.length - 1}
                   </span>
                 )}
@@ -309,7 +309,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
             : null,
         align: "center",
         render: (val: string) => (
-          <span className="text-gray-900 dark:text-white whitespace-nowrap">
+          <span className="text-[color:var(--panel-text)] dark:text-white whitespace-nowrap">
             {val || "-"}
           </span>
         ),
@@ -345,29 +345,29 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
             <button
               type="button"
               onClick={() => onView?.(record)}
-              className="p-1.5 rounded-md hover-surface transition-colors hover:bg-emerald-100 dark:hover:bg-emerald-900/30"
+              className="p-1.5 rounded-md hover-surface transition-colors hover:bg-theme/10 dark:hover:bg-theme/30"
               id={index === 0 ? "resident-view-btn" : undefined}
               title="Бүх мэдээлэл харах"
             >
-              <Eye className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <Eye className="w-4 h-4 text-theme dark:text-theme" />
             </button>
             <button
               type="button"
               onClick={() => onEdit?.(record)}
-              className="p-1.5 rounded-md action-edit hover-surface transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/30"
+              className="p-1.5 rounded-md action-edit hover-surface transition-colors hover:bg-theme/10 dark:hover:bg-theme/30"
               id={index === 0 ? "resident-edit-btn" : undefined}
               title="Засах"
             >
-              <Edit className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <Edit className="w-4 h-4 text-theme dark:text-theme" />
             </button>
             <button
               type="button"
               onClick={() => onDelete?.(record)}
-              className="p-1.5 rounded-md action-delete hover-surface transition-colors hover:bg-red-100 dark:hover:bg-red-900/30"
+              className="p-1.5 rounded-md action-delete hover-surface transition-colors hover:bg-danger/10"
               id={index === 0 ? "resident-delete-btn" : undefined}
               title="Устгах"
             >
-              <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
+              <Trash2 className="w-4 h-4 text-danger" />
             </button>
           </div>
         ),
@@ -402,7 +402,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
           scroll={{ x: "max-content" }}
           locale={{
             emptyText: (
-              <span className="text-gray-500 dark:text-gray-400">
+              <span className="text-[color:var(--muted-text)]">
                 Хайсан мэдээлэл алга байна
               </span>
             ),

@@ -295,7 +295,7 @@ export function NegtgelTailanTable({ data, loading, niitUldegdel }: NegtgelTaila
             label: (
               <div className="flex justify-center w-full py-0.5">
                 <Tooltip title={assessment.tailbar}>
-                  <span className={`block truncate max-w-[105px] text-center leading-normal pb-1 font-medium ${isKhungCol ? "text-emerald-600 dark:text-emerald-400" : ""}`}>
+                  <span className={`block truncate max-w-[105px] text-center leading-normal pb-1 font-medium ${isKhungCol ? "text-theme dark:text-theme" : ""}`}>
                     {assessment.tailbar}
                   </span>
                 </Tooltip>
@@ -343,7 +343,7 @@ export function NegtgelTailanTable({ data, loading, niitUldegdel }: NegtgelTaila
                       </div>
                     ))}
                     {entries.length > 1 && (
-                      <div className="font-semibold border-t border-gray-600 mt-1 pt-1">
+                      <div className="font-semibold border-t border-[color:var(--surface-border)] mt-1 pt-1">
                         Нийт: {formatNumber(totalParkingDun, 2)}₮
                       </div>
                     )}
@@ -356,7 +356,7 @@ export function NegtgelTailanTable({ data, loading, niitUldegdel }: NegtgelTaila
                       {entries.map(([pToot, pDun], idx) => (
                         <div key={idx} className="text-right whitespace-nowrap leading-normal">
                           {pToot ? (
-                            <span className="text-slate-500 dark:text-slate-400 mr-1 font-normal">
+                            <span className="text-[color:var(--muted-text)] mr-1 font-normal">
                               {pToot} тоот:
                             </span>
                           ) : null}
@@ -404,7 +404,7 @@ export function NegtgelTailanTable({ data, loading, niitUldegdel }: NegtgelTaila
 
               if (total <= 0) return "";
               return (
-                <span className={` leading-normal ${isKhungCol ? "text-emerald-600 dark:text-emerald-400 font-medium" : "text-black dark:text-white"}`}>
+                <span className={` leading-normal ${isKhungCol ? "text-theme dark:text-theme font-medium" : "text-black dark:text-white"}`}>
                   {formatNumber(total, 2)}
                 </span>
               );
@@ -452,7 +452,7 @@ export function NegtgelTailanTable({ data, loading, niitUldegdel }: NegtgelTaila
               });
             }
             return rowKhungulult > 0 ? (
-              <span className="text-emerald-600 dark:text-emerald-400 font-medium leading-normal">
+              <span className="text-theme dark:text-theme font-medium leading-normal">
                 {formatNumber(rowKhungulult, 2)}
               </span>
             ) : "-";
@@ -473,7 +473,7 @@ export function NegtgelTailanTable({ data, loading, niitUldegdel }: NegtgelTaila
           render: (_: any, record: NegtgelTailanItem) => {
             const bal = Number(record.niitUldegdel ?? record.globalUldegdel ?? record.niitTulukhDun ?? 0);
             return (
-              <span className="text-gray-900 dark:text-white font-medium leading-normal">
+              <span className="text-[color:var(--panel-text)] dark:text-white font-medium leading-normal">
                 {formatNumber(bal, 2)}
               </span>
             );
@@ -493,23 +493,23 @@ export function NegtgelTailanTable({ data, loading, niitUldegdel }: NegtgelTaila
       loading={loading}
       containerClassName="rounded-md"
       footer={
-        <div className="flex justify-end items-center gap-4 py-0.5 border-t border-gray-100 dark:border-gray-800">
+        <div className="flex justify-end items-center gap-4 py-0.5 border-t border-[color:var(--surface-border)]">
           {khuudasKhesegKhen && (
-            <span className="text-gray-400 dark:text-gray-500">
+            <span className="text-[color:var(--muted-text)]">
               Энэ хуудас: {formatNumber(localTotalUldegdel, 2)} ₮
             </span>
           )}
           {localTotalKhungulult > 0 && (
             <>
-              <span className="text-gray-500 dark:text-gray-400">Нийт хөнгөлөлт:</span>
-              <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+              <span className="text-[color:var(--muted-text)]">Нийт хөнгөлөлт:</span>
+              <span className="text-theme dark:text-theme font-medium">
                 {formatNumber(localTotalKhungulult, 2)} ₮
               </span>
-              <span className="text-gray-300 dark:text-gray-700">|</span>
+              <span className="text-[color:var(--muted-text)]">|</span>
             </>
           )}
-          <span className="text-gray-500 dark:text-gray-400">Нийт үлдэгдэл:</span>
-          <span className="text-emerald-500 font-medium">{formatNumber(totalUldegdel, 2)} ₮</span>
+          <span className="text-[color:var(--muted-text)]">Нийт үлдэгдэл:</span>
+          <span className="text-theme font-medium">{formatNumber(totalUldegdel, 2)} ₮</span>
         </div>
       }
     />

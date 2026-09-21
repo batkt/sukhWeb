@@ -591,7 +591,7 @@ export default function Ebarimt() {
                 }}
                 className={`relative group rounded-2xl neu-panel transition-all cursor-pointer select-none ${
                   activeStatFilter === idx
-                    ? "ring-2 ring-blue-500 shadow-lg"
+                    ? "ring-2 ring-theme shadow-lg"
                     : "hover:bg-[color:var(--surface-hover)] hover:scale-105"
                 }`}
               >
@@ -630,7 +630,7 @@ export default function Ebarimt() {
                     classNames={{
                       root: "!h-full !w-full",
                       input:
-                        "text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
+                        "text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
                     }}
                   />
                 </div>

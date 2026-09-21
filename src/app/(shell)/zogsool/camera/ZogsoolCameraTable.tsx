@@ -131,11 +131,11 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
         align: "center",
         render: (_: any, record: ParkingTransaction) => (
           <div className="flex items-center justify-center gap-1">
-            <span className="text-slate-700 dark:text-slate-300 font-mono">
+            <span className="text-[color:var(--panel-text)] font-mono">
               {record.mashiniiDugaar || "-"}
             </span>
             <Copy
-              className="w-4 h-4 text-slate-300 dark:text-slate-600 cursor-pointer hover:text-blue-500 transition-colors"
+              className="w-4 h-4 text-[color:var(--muted-text)] cursor-pointer hover:text-theme transition-colors"
               onClick={() => copyToClipboard(record.mashiniiDugaar)}
             />
           </div>
@@ -151,7 +151,7 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
           const tsag = mur?.tsagiinTuukh?.[0];
           const orsonTsag = tsag?.orsonTsag;
           return (
-            <span className="text-slate-600 dark:text-slate-400 font-mono">
+            <span className="text-[color:var(--muted-text)] font-mono">
               {orsonTsag ? moment(orsonTsag).format("MM-DD HH:mm:ss") : "-"}
             </span>
           );
@@ -167,7 +167,7 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
           const tsag = mur?.tsagiinTuukh?.[0];
           const garsanTsag = tsag?.garsanTsag;
           return (
-            <span className="text-slate-600 dark:text-slate-400 font-mono">
+            <span className="text-[color:var(--muted-text)] font-mono">
               {garsanTsag ? moment(garsanTsag).format("MM-DD HH:mm:ss") : ""}
             </span>
           );
@@ -196,23 +196,23 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
             "flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-0.5 rounded-[6px] overflow-hidden border !text-white uppercase whitespace-nowrap";
           const getStatusColor = () => {
             if (isFreeExit) {
-              return "bg-gray-500 border-gray-600";
+              return "bg-[color:var(--panel)] border-[color:var(--surface-border)]";
             }
             if (tuluv === 1) {
               return isCurrentlyIn && niitDun === 0
-                ? "bg-blue-500 border-blue-600"
-                : "bg-emerald-500 border-emerald-600";
+                ? "bg-theme border-theme"
+                : "bg-success border-success";
             }
             if (!isCurrentlyIn && (niitDun > 0 || isDebt)) {
-              return "bg-amber-500 border-amber-600";
+              return "bg-warning border-warning";
             }
             if (tuluv === -2 || tuluv === -1) {
-              return "bg-red-500 border-red-600";
+              return "bg-danger border-danger";
             }
             if (!isCurrentlyIn && niitDun === 0) {
-              return "bg-gray-500 border-gray-600";
+              return "bg-[color:var(--panel)] border-[color:var(--surface-border)]";
             }
-            return "bg-blue-500 border-blue-600";
+            return "bg-theme border-theme";
           };
 
           return (
@@ -237,7 +237,7 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
         render: (_: any, record: ParkingTransaction) => {
           const mur = record.tuukh?.[0];
           return (
-            <span className="text-slate-600 dark:text-slate-400">
+            <span className="text-[color:var(--muted-text)]">
               {record.turul || mur?.turul || "Үйлчлүүлэгч"}
             </span>
           );
@@ -252,7 +252,7 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
           const mur = record.tuukh?.[0];
           const disc = Number(mur?.khungulult || 0);
           return (
-            <span className="text-slate-600 dark:text-slate-400 font-mono">
+            <span className="text-[color:var(--muted-text)] font-mono">
               {formatNumber(disc, 2)}
             </span>
           );
@@ -264,7 +264,7 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
         width: 110,
         align: "right",
         render: (_: any, record: ParkingTransaction) => (
-          <span className="text-slate-700 dark:text-slate-300 font-mono">
+          <span className="text-[color:var(--panel-text)] font-mono">
             {formatNumber(record.niitDun || 0, 2)}
           </span>
         ),
@@ -294,10 +294,10 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
             );
             return (
               <div className="group/pay relative inline-block cursor-pointer">
-                <span className="text-slate-700 dark:text-slate-300 hover:text-blue-600 transition-colors border-b border-dashed border-slate-300 dark:border-slate-600 pb-0.5 font-mono">
+                <span className="text-[color:var(--panel-text)] hover:text-theme transition-colors border-b border-dashed border-[color:var(--surface-border)] pb-0.5 font-mono">
                   {formatNumber(totalPaid, 2)}
                   {payHistory.length > 1 && (
-                    <span className="ml-1 text-slate-400">
+                    <span className="ml-1 text-[color:var(--muted-text)]">
                       ({payHistory.length})
                     </span>
                   )}
@@ -307,7 +307,7 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
           }
 
           return (
-            <span className="font-mono text-slate-700 dark:text-slate-300">
+            <span className="font-mono text-[color:var(--panel-text)]">
               {formatNumber(tulsunDun || 0, 2)}
             </span>
           );
@@ -333,7 +333,7 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
 
           if (ebarimtId) {
             return (
-              <span className="text-slate-600 dark:text-slate-400 font-mono">
+              <span className="text-[color:var(--muted-text)] font-mono">
                 {ebarimtId}
               </span>
             );
@@ -343,14 +343,14 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
 
           if (ebDun > 0) {
             return (
-              <span className="text-emerald-600 dark:text-emerald-400 font-mono">
+              <span className="text-theme dark:text-theme font-mono">
                 {formatNumber(ebDun, 2)}
               </span>
             );
           }
 
           return (
-            <span className="text-slate-400 font-mono">-</span>
+            <span className="text-[color:var(--muted-text)] font-mono">-</span>
           );
         },
       },
@@ -375,12 +375,12 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
           if (showActionBtn) {
             const actionClass =
               isPaid && niitDun > 0
-                ? "bg-emerald-500 border-emerald-600"
+                ? "bg-success border-success"
                 : !isCurrentlyIn && isDebt
-                  ? "bg-amber-500 border-amber-600"
+                  ? "bg-warning border-warning"
                   : tuluv === -1 || tuluv === -2
-                    ? "bg-red-500 border-red-600"
-                    : "bg-blue-500 border-blue-600";
+                    ? "bg-danger border-danger"
+                    : "bg-theme border-theme";
             const actionText = !isCurrentlyIn
               ? isDebt
                 ? "Төлбөртэй"
@@ -413,7 +413,7 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
           if (tuluv === 1) {
             return (
               <div
-                className={`${badgeClass} ${isCurrentlyIn && niitDun === 0 ? "bg-blue-500 border-blue-600" : "bg-emerald-500 border-emerald-600"}`}
+                className={`${badgeClass} ${isCurrentlyIn && niitDun === 0 ? "bg-theme border-theme" : "bg-theme border-theme"}`}
                 style={{ color: "white" }}
               >
                 {isCurrentlyIn && niitDun === 0 ? "Идэвхтэй" : "Төлсөн"}
@@ -423,7 +423,7 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
           if (!isCurrentlyIn && (niitDun > 0 || isDebt)) {
             return (
               <div
-                className={`${badgeClass} bg-amber-500 border-amber-600`}
+                className={`${badgeClass} bg-warning border-warning`}
                 style={{ color: "white" }}
               >
                 Төлбөртэй
@@ -433,7 +433,7 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
           if (tuluv === -2 || tuluv === -1) {
             return (
               <div
-                className={`${badgeClass} bg-red-500 border-red-600`}
+                className={`${badgeClass} bg-danger border-danger`}
                 style={{ color: "white" }}
               >
                 Зөрчилтэй
@@ -443,7 +443,7 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
           if (!isCurrentlyIn && niitDun === 0) {
             return (
               <div
-                className={`${badgeClass} bg-gray-500 border-gray-600`}
+                className={`${badgeClass} bg-[color:var(--panel)] border-[color:var(--surface-border)]`}
                 style={{ color: "white" }}
               >
                 Үнэгүй
@@ -452,7 +452,7 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
           }
           return (
             <div
-              className={`${badgeClass} bg-blue-500 border-blue-600`}
+              className={`${badgeClass} bg-theme border-theme`}
               style={{ color: "white" }}
             >
               Идэвхтэй

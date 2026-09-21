@@ -60,7 +60,7 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
               ? `${val?.ner || ""} ${val?.kod || ""}`.trim() || "-"
               : val || "-";
           return (
-            <span className="text-gray-900 dark:text-white whitespace-nowrap">
+            <span className="text-[color:var(--panel-text)] dark:text-white whitespace-nowrap">
               {name}
             </span>
           );
@@ -72,7 +72,7 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
         key: "utas",
         align: "center",
         render: (val: string) => (
-          <span className="text-gray-900 dark:text-white whitespace-nowrap">
+          <span className="text-[color:var(--panel-text)] dark:text-white whitespace-nowrap">
             {val || "-"}
           </span>
         ),
@@ -83,7 +83,7 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
         key: "albanTushaal",
         align: "center",
         render: (val: string) => (
-          <span className="text-gray-900 dark:text-white whitespace-nowrap">
+          <span className="text-[color:var(--panel-text)] dark:text-white whitespace-nowrap">
             {val || "-"}
           </span>
         ),
@@ -110,29 +110,29 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
             <button
               type="button"
               onClick={() => onCredentialsUpdate?.(record)}
-              className="p-1.5 rounded-md action-secondary hover-surface transition-colors hover:bg-amber-100 dark:hover:bg-amber-900/30"
+              className="p-1.5 rounded-md action-secondary hover-surface transition-colors hover:bg-warning/10"
               title="Нэвтрэх эрх"
             >
-              <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              <Lock className="w-4 h-4 text-warning" />
             </button>
             {canEdit && (
               <button
                 type="button"
                 onClick={() => onEdit?.(record)}
-                className="p-1.5 rounded-md action-edit hover-surface transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                className="p-1.5 rounded-md action-edit hover-surface transition-colors hover:bg-theme/10 dark:hover:bg-theme/30"
                 title="Засах"
               >
-                <Edit className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <Edit className="w-4 h-4 text-theme dark:text-theme" />
               </button>
             )}
             {canDelete && (
               <button
                 type="button"
                 onClick={() => onDelete?.(record)}
-                className="p-1.5 rounded-md action-delete hover-surface transition-colors hover:bg-red-100 dark:hover:bg-red-900/30"
+                className="p-1.5 rounded-md action-delete hover-surface transition-colors hover:bg-danger/10"
                 title="Устгах"
               >
-                <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
+                <Trash2 className="w-4 h-4 text-danger" />
               </button>
             )}
           </div>
@@ -168,7 +168,7 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
           scroll={{ x: "max-content" }}
           locale={{
             emptyText: (
-              <span className="text-gray-500 dark:text-gray-400">
+              <span className="text-[color:var(--muted-text)]">
                 Хайсан мэдээлэл алга байна
               </span>
             ),

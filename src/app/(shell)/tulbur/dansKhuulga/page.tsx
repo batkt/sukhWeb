@@ -690,7 +690,7 @@ export default function DansniiKhuulga() {
                 onClick={() => { setActiveStatFilter(activeStatFilter === idx ? null : idx); setPage(1); }}
                 className={`relative group rounded-2xl neu-panel transition-all cursor-pointer select-none ${
                   activeStatFilter === idx
-                    ? "ring-2 ring-blue-500 shadow-lg"
+                    ? "ring-2 ring-theme shadow-lg"
                     : "hover:bg-[color:var(--surface-hover)] hover:scale-105"
                 }`}
               >
@@ -731,7 +731,7 @@ export default function DansniiKhuulga() {
                     onChange={(v) => setSelectedDansId(v || undefined)}
                     options={dansOptions}
                     placeholder={t("Данс")}
-                    className="h-full w-full rounded-2xl !border-slate-200 dark:!border-slate-800 !bg-white/50 dark:!bg-slate-900/50 hover:!border-slate-300 dark:hover:!border-slate-700 transition-all font-inter"
+                    className="h-full w-full rounded-2xl !border-[color:var(--surface-border)] dark:!border-[color:var(--surface-border)] !bg-white/50 dark:!bg-[color:var(--panel)] hover:!border-[color:var(--surface-border)] dark:hover:!border-[color:var(--surface-border)] transition-all font-inter"
                     buttonClassName="!font-normal text-[13px] !px-3 hover:!translate-y-0 hover:!shadow-none hover:!scale-100 !border-0 !bg-transparent"
                     optionClassName="!px-3 !py-1.5 text-[13px] !font-normal"
                   />
@@ -743,7 +743,7 @@ export default function DansniiKhuulga() {
                     ) : effectiveUldegdel !== null ? (
                       <span>
                         Үлдэгдэл:{" "}
-                        <strong className="font-semibold text-gray-900 dark:text-white">
+                        <strong className="font-semibold text-[color:var(--panel-text)] dark:text-white">
                           {formatNumber(effectiveUldegdel, 2)}₮
                         </strong>
                       </span>
@@ -801,7 +801,7 @@ export default function DansniiKhuulga() {
         centered
         withCloseButton={false}
         classNames={{
-          content: "dark:!bg-slate-900 dark:!text-white rounded-lg !p-6 border dark:border-slate-800",
+          content: "dark:!bg-[color:var(--panel)] dark:!text-white rounded-lg !p-6 border",
           body: "!p-0 font-inter",
         }}
       >
@@ -809,14 +809,14 @@ export default function DansniiKhuulga() {
           <div className="flex w-full flex-col space-y-2 min-h-[500px] justify-between">
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <span className="text-sm font-semibold dark:text-gray-100 lg:text-xl">
+                <span className="text-sm font-semibold lg:text-xl">
                   Гүйлгээний мэдээлэл
                 </span>
-                <span className="dark:text-gray-200 text-sm font-mono">
+                <span className=" text-sm font-mono">
                   {moment().format("YYYY-MM-DD")}
                 </span>
               </div>
-              <div className="box grid w-full grid-cols-4 rounded-md border border-gray-400 bg-gray-100 p-2 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 text-xs gap-1">
+              <div className="box grid w-full grid-cols-4 rounded-md border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] p-2 text-xs gap-1">
                 <div className="col-span-4 lg:col-span-1 truncate font-mono">
                   {selectedGuilgee.account || selectedGuilgee.raw?.accNum || selectedGuilgee.raw?.CtAcct || "-"}
                 </div>
@@ -826,18 +826,18 @@ export default function DansniiKhuulga() {
                 <div className="col-span-2 text-center lg:col-span-1">
                   {selectedGuilgee.date.split(" ")[0]}
                 </div>
-                <div className="col-span-2 text-right text-red-600 dark:text-red-400 font-semibold lg:col-span-1">
+                <div className="col-span-2 text-right text-danger font-semibold lg:col-span-1">
                   {formatNumber(selectedGuilgee.total)}
                 </div>
                 <div className="col-span-4 mt-2">
                   <input
-                    className="w-full rounded-md border border-gray-400 bg-gray-200/50 px-2 py-1 text-xs dark:bg-gray-750 dark:border-gray-700 dark:text-white"
+                    className="w-full rounded-md border border-[color:var(--surface-border)] bg-[color:var(--panel)] px-2 py-1 text-xs dark:text-white"
                     value={selectedGuilgee.action}
                     disabled
                   />
                 </div>
               </div>
-              <div className="font-medium dark:text-gray-200 lg:text-xl pt-2">
+              <div className="font-medium lg:text-xl pt-2">
                 Гүйлгээ холбох
               </div>
               <div className="relative w-full">
@@ -846,7 +846,7 @@ export default function DansniiKhuulga() {
                   id="baiguullagaSongokh"
                   onFocus={() => setShowDropdown(true)}
                   onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
-                  className="w-full rounded-md border border-gray-400 p-1.5 px-3 text-sm text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full rounded-md border border-[color:var(--surface-border)] p-1.5 px-3 text-sm text-[color:var(--panel-text)] focus:outline-none focus:ring-1 focus:ring-theme"
                   placeholder="Оршин суугч/Гэрээ сонгох"
                   value={searchContractQuery}
                   onChange={(e) => {
@@ -855,16 +855,16 @@ export default function DansniiKhuulga() {
                   }}
                 />
                 {showDropdown && (
-                  <div className="absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto rounded-md border border-gray-300 bg-white p-1 shadow-lg dark:bg-gray-900 dark:border-gray-700 text-xs">
+                  <div className="absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto rounded-md border border-[color:var(--surface-border)] bg-white p-1 shadow-lg text-xs">
                     {isSearchingContracts ? (
-                      <div className="p-3 text-center text-gray-500">Уншиж байна...</div>
+                      <div className="p-3 text-center text-[color:var(--muted-text)]">Уншиж байна...</div>
                     ) : contractsList.length === 0 ? (
-                      <div className="p-3 text-center text-gray-500">Үр дүн олдсонгүй</div>
+                      <div className="p-3 text-center text-[color:var(--muted-text)]">Үр дүн олдсонгүй</div>
                     ) : (
                       contractsList.map((geree: any) => (
                         <div
                           key={geree._id}
-                          className="grid cursor-pointer grid-cols-3 gap-2 rounded-md border border-transparent p-2 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-900 dark:text-gray-200"
+                          className="grid cursor-pointer grid-cols-3 gap-2 rounded-md border border-transparent p-2 hover:bg-[color:var(--surface-hover)] text-[color:var(--panel-text)]"
                           onMouseDown={() => {
                             setSelectedContract(geree);
                             setShowDropdown(false);
@@ -872,7 +872,7 @@ export default function DansniiKhuulga() {
                         >
                           <div className="font-semibold truncate">{geree.toot ? `${geree.toot} тоот` : "-"}</div>
                           <div className="truncate">{geree.ner || `${geree.ovog || ""} ${geree.ner || ""}`}</div>
-                          <div className="truncate text-gray-500">{geree.gereeniiDugaar || "-"}</div>
+                          <div className="truncate text-[color:var(--muted-text)]">{geree.gereeniiDugaar || "-"}</div>
                         </div>
                       ))
                     )}
@@ -883,15 +883,15 @@ export default function DansniiKhuulga() {
 
             <div className="space-y-2 px-2 pt-2">
               {selectedContract && (
-                <div className="space-y-2 rounded-md border border-gray-400 p-2 dark:border-gray-700">
-                  <div className="flex w-full justify-between items-center text-sm font-medium dark:text-gray-200">
+                <div className="space-y-2 rounded-md border border-[color:var(--surface-border)] p-2">
+                  <div className="flex w-full justify-between items-center text-sm font-medium">
                     <span>
                       {selectedContract.toot ? `${selectedContract.toot} тоот` : "-"} -- {selectedContract.ner || `${selectedContract.ovog || ""} ${selectedContract.ner || ""}`} -- {selectedContract.gereeniiDugaar || "-"}
                     </span>
                     <button
                       type="button"
                       onClick={() => setSelectedContract(null)}
-                      className="h-8 w-8 p-1 text-lg text-red-500 hover:text-red-700 transition-colors"
+                      className="h-8 w-8 p-1 text-lg text-danger hover:text-danger transition-colors"
                       title="Сонголт арилгах"
                     >
                       <CloseCircleOutlined />
@@ -899,17 +899,17 @@ export default function DansniiKhuulga() {
                   </div>
 
                   {/* Төлбөрийн үлдэгдэл box */}
-                  <div className="box grid w-full grid-cols-3 rounded-md border border-gray-400 bg-gray-100 p-2 dark:bg-gray-800 dark:border-gray-700 text-xs">
+                  <div className="box grid w-full grid-cols-3 rounded-md border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] p-2 text-xs">
                     <div className="col-span-3 font-semibold mb-1">Төлбөрийн үлдэгдэл</div>
-                    <div className="text-red-500 dark:text-red-400 font-medium">
+                    <div className="text-danger font-medium">
                       {formatNumber(selectedContract.uldegdel || 0, 2)}
                     </div>
-                    <div className="text-gray-500 dark:text-gray-400">
+                    <div className="text-[color:var(--muted-text)]">
                       {selectedContract.register || selectedContract.gereeniiDugaar || ""}
                     </div>
-                    <div className="text-right text-green-600 dark:text-green-400">
+                    <div className="text-right text-theme dark:text-theme">
                       <input
-                        className="w-full rounded-md border border-gray-400 bg-gray-200 px-2 py-0.5 text-right dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        className="w-full rounded-md border border-[color:var(--surface-border)] bg-[color:var(--panel)] px-2 py-0.5 text-right dark:text-white"
                         placeholder="Төлөх дүн"
                         value={formatNumber(selectedGuilgee.total)}
                         disabled
@@ -919,24 +919,24 @@ export default function DansniiKhuulga() {
                 </div>
               )}
 
-              <hr className="border-gray-300 dark:border-gray-700 my-3" />
+              <hr className="border-[color:var(--surface-border)] my-3" />
 
-              <div className="grid w-full grid-cols-2 divide-x-2 divide-gray-300 dark:divide-gray-700 px-2">
+              <div className="grid w-full grid-cols-2 divide-x-2 divide-[color:var(--surface-border)] px-2">
                 <div className="flex flex-col justify-between pr-2 lg:flex-row text-xs">
-                  <div className="dark:text-gray-200">Холбосон дүн:</div>
-                  <div className="text-right text-base font-bold text-green-600 dark:text-green-400">
+                  <div className="">Холбосон дүн:</div>
+                  <div className="text-right text-base font-bold text-theme dark:text-theme">
                     {formatNumber(selectedContract ? selectedGuilgee.total : 0)}
                   </div>
                 </div>
                 <div className="flex flex-col justify-between pl-2 lg:flex-row text-xs">
-                  <div className="dark:text-gray-200">Холбоогүй дүн:</div>
-                  <div className="text-right text-base font-bold text-red-600 dark:text-red-400">
+                  <div className="">Холбоогүй дүн:</div>
+                  <div className="text-right text-base font-bold text-danger">
                     {formatNumber(selectedContract ? 0 : selectedGuilgee.total)}
                   </div>
                 </div>
               </div>
 
-              <hr className="border-gray-300 dark:border-gray-700 my-3" />
+              <hr className="border-[color:var(--surface-border)] my-3" />
 
               <div className="flex justify-end gap-3 pt-2">
                 <Button

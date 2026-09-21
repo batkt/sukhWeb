@@ -167,25 +167,25 @@ export default function VehicleRegistrationModal({
         onClick={onClose}
       />
 
-      <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 backdrop-blur-xl rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 border border-slate-200/50 dark:border-white/10">
+      <div className="relative w-full max-w-lg bg-white backdrop-blur-xl rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 border border-[color:var(--surface-border)] dark:border-white/10">
         {/* Header */}
-        <div className="relative flex items-center justify-between px-5 py-4 border-b border-slate-200/50 bg-white dark:bg-slate-900">
+        <div className="relative flex items-center justify-between px-5 py-4 border-b border-[color:var(--surface-border)] bg-white">
           <div className="flex items-center gap-3">
-            <Keyboard className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+            <Keyboard className="w-5 h-5 text-[color:var(--muted-text)]" />
             <div>
-              <h2 className="text-lg font-black text-slate-800 dark:text-white tracking-tight">
+              <h2 className="text-lg font-black text-[color:var(--panel-text)] dark:text-white tracking-tight">
                 Машин бүртгэх
               </h2>
-              <p className="text-[9px]  text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-0.5">
+              <p className="text-[9px]  text-[color:var(--muted-text)] uppercase tracking-wider mt-0.5">
                 Зогсоолын системд гараар бүртгэх
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 hover:text-slate-600 dark:hover:text-slate-100 transition-all duration-200"
+            className="p-1.5 rounded-lg hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/10 text-[color:var(--muted-text)] hover:text-[color:var(--muted-text)] transition-all duration-200"
           >
-            <X className="w-5 h-5 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" />
+            <X className="w-5 h-5 text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] dark:hover:text-white" />
           </button>
         </div>
 
@@ -194,15 +194,15 @@ export default function VehicleRegistrationModal({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Input: Plate Number */}
             <div className="space-y-1.5 md:col-span-2">
-              <label className="text-[9px]  text-slate-600 dark:text-slate-400 uppercase tracking-wider ml-1">
+              <label className="text-[9px]  text-[color:var(--muted-text)] uppercase tracking-wider ml-1">
                 Улсын дугаар
               </label>
               <div className="relative group">
                 <div
-                  className="relative bg-white rounded-lg border-2 border-slate-200 overflow-hidden group-focus-within:border-blue-500 transition-all shadow-sm"
+                  className="relative bg-white rounded-lg border-2 border-[color:var(--surface-border)] overflow-hidden group-focus-within:border-theme transition-all shadow-sm"
                   style={{ borderRadius: "0.5rem" }}
                 >
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 dark:text-slate-500 select-none">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-[color:var(--muted-text)] select-none">
                     MNG
                   </span>
                   <input
@@ -237,13 +237,13 @@ export default function VehicleRegistrationModal({
                       }
                     }}
                     placeholder="0000 УБА"
-                    className="w-full h-12 pl-14 pr-11 bg-transparent border-none font-black text-xl text-slate-800 dark:text-white focus:ring-0 outline-none uppercase tracking-[0.2em] placeholder:text-slate-300 dark:placeholder:text-slate-600 placeholder:tracking-normal caret-blue-500"
+                    className="w-full h-12 pl-14 pr-11 bg-transparent border-none font-black text-xl text-[color:var(--panel-text)] dark:text-white focus:ring-0 outline-none uppercase tracking-[0.2em] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] placeholder:tracking-normal caret-theme"
                     autoFocus
                   />
                   {plate && (
                     <button
                       onClick={handleClear}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-slate-100 dark:bg-white/5 text-slate-400 hover:bg-rose-100 dark:hover:bg-rose-500/20 hover:text-rose-500 transition-all"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-[color:var(--surface-hover)] dark:bg-white/5 text-[color:var(--muted-text)] hover:bg-danger/10 hover:text-danger transition-all"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -255,14 +255,14 @@ export default function VehicleRegistrationModal({
 
             {/* Input: Camera Select */}
             <div className="space-y-1.5">
-              <label className="text-[9px]  text-slate-600 dark:text-slate-400 uppercase tracking-wider ml-1">
+              <label className="text-[9px]  text-[color:var(--muted-text)] uppercase tracking-wider ml-1">
                 Камер сонголт
               </label>
               <div className="relative group">
                 <select
                   value={selectedIP}
                   onChange={(e) => setSelectedIP(e.target.value)}
-                  className="w-full h-10 pl-3 pr-9 rounded-lg bg-slate-50 dark:bg-white/5 border-2 border-slate-200 dark:border-white/10  text-slate-700 dark:text-slate-300 text-xs appearance-none focus:bg-white dark:focus:bg-slate-800 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/10 transition-all outline-none cursor-pointer shadow-sm"
+                  className="w-full h-10 pl-3 pr-9 rounded-lg bg-[color:var(--surface-hover)] dark:bg-white/5 border-2 border-[color:var(--surface-border)] dark:border-white/10  text-[color:var(--panel-text)] text-xs appearance-none focus:bg-white focus:border-theme dark:focus:border-theme focus:ring-2 focus:ring-theme/10 transition-all outline-none cursor-pointer shadow-sm"
                   style={{ borderRadius: "0.5rem" }}
                 >
                   {entryCameras.map((cam) => (
@@ -271,7 +271,7 @@ export default function VehicleRegistrationModal({
                     </option>
                   ))}
                 </select>
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-500 group-hover:text-blue-500 transition-colors">
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[color:var(--muted-text)] group-hover:text-theme transition-colors">
                   <Camera className="w-3.5 h-3.5" />
                 </div>
               </div>
@@ -279,7 +279,7 @@ export default function VehicleRegistrationModal({
 
             {/* Input: Date Select */}
             <div className="space-y-1.5">
-              <label className="text-[9px] text-slate-600 dark:text-slate-400 uppercase tracking-wider ml-1">
+              <label className="text-[9px] text-[color:var(--muted-text)] uppercase tracking-wider ml-1">
                 Огноо сонголт
               </label>
               <input
@@ -287,14 +287,14 @@ export default function VehicleRegistrationModal({
                 value={regDate}
                 max={moment().format("YYYY-MM-DDTHH:mm")}
                 onChange={(e) => setRegDate(e.target.value)}
-                className="w-full h-10 px-3 rounded-lg bg-slate-50 dark:bg-white/5 border-2 border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 text-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 outline-none transition-all"
+                className="w-full h-10 px-3 rounded-lg bg-[color:var(--surface-hover)] dark:bg-white/5 border-2 border-[color:var(--surface-border)] dark:border-white/10 text-[color:var(--panel-text)] text-xs focus:border-theme focus:ring-2 focus:ring-theme/10 outline-none transition-all"
                 style={{ borderRadius: "0.5rem" }}
               />
             </div>
           </div>
 
           {/* Virtual Keyboard */}
-          <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 dark:from-slate-800/50 dark:to-slate-900/50 p-3 rounded-xl border border-slate-200/50 dark:border-white/10 shadow-lg">
+          <div className="bg-gradient-to-br from-theme/10 to-theme/5/50 p-3 rounded-xl border border-[color:var(--surface-border)] dark:border-white/10 shadow-lg">
             <div className="space-y-1">
               {keys.map((row, i) => (
                 <div key={i} className="flex justify-center flex-wrap gap-1">
@@ -304,11 +304,11 @@ export default function VehicleRegistrationModal({
                       onClick={() => handleKey(char)}
                       className="
                         relative w-8 h-8 rounded-lg
-                        bg-white dark:bg-slate-800 
-                        border-2 border-slate-200 dark:border-white/10
+                        bg-white 
+                        border-2 border-[color:var(--surface-border)] dark:border-white/10
                         active:scale-95 active:translate-y-0.5
- text-[11px] text-slate-700 dark:text-slate-300
-                        hover:bg-blue-50 dark:hover:bg-blue-500/20 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-300 dark:hover:border-blue-500/50
+ text-[11px] text-[color:var(--panel-text)]
+                        hover:bg-theme/10 dark:hover:bg-theme/20 hover:text-theme dark:hover:text-theme hover:border-theme/30 dark:hover:border-theme/50
                         transition-all duration-150
                         shadow-sm hover:shadow-md
                       "
@@ -321,11 +321,11 @@ export default function VehicleRegistrationModal({
                       onClick={handleBackspace}
                       className="
                         px-2.5 h-8 rounded-lg
-                        bg-gradient-to-br from-rose-50 to-rose-100 dark:from-rose-500/20 dark:to-rose-600/20
-                        border-2 border-rose-200 dark:border-rose-500/30
+                        bg-gradient-to-br from-theme/10 to-theme/5
+                        border-2 border-danger/30
                         active:scale-95 active:translate-y-0.5
-                        text-rose-600 dark:text-rose-400
-                        hover:bg-gradient-to-br hover:from-rose-500 hover:to-rose-600 hover:text-white hover:border-rose-600
+                        text-danger
+                        hover:bg-gradient-to-br hover:from-danger/20 hover:to-danger/20 hover:text-white hover:border-danger
                         transition-all duration-150
                         shadow-sm hover:shadow-md
                       "
@@ -339,7 +339,7 @@ export default function VehicleRegistrationModal({
           </div>
 
           {/* Footer Actions */}
-          <div className="flex items-center justify-end pt-2 border-t border-slate-200/50 dark:border-white/10">
+          <div className="flex items-center justify-end pt-2 border-t border-[color:var(--surface-border)] dark:border-white/10">
             <div className="flex gap-2">
               <Button onClick={onClose} size="sm">
                 Хаах

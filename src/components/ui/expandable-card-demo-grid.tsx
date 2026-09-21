@@ -66,7 +66,7 @@ export default function ExpandableCardDemo({ cards, onEdit, onDelete }: Expandab
             <motion.div
               layoutId={`card-${active._id}-${id}`}
               ref={ref}
-              className="w-full max-w-[1000px] h-full md:h-fit md:max-h-[90%] flex flex-col md:flex-row bg-white dark:bg-neutral-900 rounded-3xl overflow-hidden shadow-2xl border border-white/10"
+              className="w-full max-w-[1000px] h-full md:h-fit md:max-h-[90%] flex flex-col md:flex-row bg-white rounded-3xl overflow-hidden shadow-2xl border border-white/10"
             >
               {/* Left Side: Large Image */}
               <motion.div layoutId={`image-${active._id}-${id}`} className="relative w-full md:w-1/2 h-64 md:h-auto min-h-[300px]">
@@ -85,12 +85,12 @@ export default function ExpandableCardDemo({ cards, onEdit, onDelete }: Expandab
               </motion.div>
 
               {/* Right Side: Content Area */}
-              <div className="md:w-1/2 flex flex-col bg-white dark:bg-neutral-900 relative">
+              <div className="md:w-1/2 flex flex-col bg-white relative">
                 <div className="flex justify-between items-start p-6 md:p-8 pb-4">
                   <div className="flex-1">
                     <motion.h3
                       layoutId={`title-${active._id}-${id}`}
-                      className="font-black text-neutral-800 dark:text-neutral-100 text-2xl md:text-3xl mb-2 leading-tight"
+                      className="font-black text-[color:var(--panel-text)] text-2xl md:text-3xl mb-2 leading-tight"
                     >
                       {active.title}
                     </motion.h3>
@@ -106,8 +106,8 @@ export default function ExpandableCardDemo({ cards, onEdit, onDelete }: Expandab
                      onClick={() => setActive(null)}
                      variant="ghost"
                      size="sm"
-                     className="hidden md:flex !rounded-xl !p-2 !h-auto !bg-neutral-50 dark:!bg-neutral-800 hover:!bg-neutral-100 dark:hover:!bg-neutral-700 !border-none"
-                     icon={<X className="w-5 h-5 text-neutral-500" />}
+                     className="hidden md:flex !rounded-xl !p-2 !h-auto !bg-[color:var(--surface-hover)] dark:!bg-[color:var(--panel)] hover:!bg-[color:var(--surface-hover)] dark:hover:!bg-[color:var(--panel)] !border-none"
+                     icon={<X className="w-5 h-5 text-[color:var(--muted-text)]" />}
                   />
                 </div>
 
@@ -117,7 +117,7 @@ export default function ExpandableCardDemo({ cards, onEdit, onDelete }: Expandab
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="text-neutral-600 dark:text-neutral-300 text-sm md:text-base leading-relaxed"
+                    className="text-[color:var(--muted-text)] text-sm md:text-base leading-relaxed"
                   >
                     {typeof active.content === "function"
                       ? active.content()
@@ -136,7 +136,7 @@ export default function ExpandableCardDemo({ cards, onEdit, onDelete }: Expandab
             layoutId={`card-${card._id}-${id}`}
             key={card._id}
             onClick={() => setActive(card)}
-            className="group relative flex flex-col bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl cursor-pointer hover:shadow-xl dark:hover:shadow-neutral-900/50 transition-all duration-300 overflow-hidden"
+            className="group relative flex flex-col bg-white border border-[color:var(--surface-border)] rounded-2xl cursor-pointer hover:shadow-xl dark:hover:shadow-neutral-900/50 transition-all duration-300 overflow-hidden"
           >
             <div className="relative h-56 w-full overflow-hidden">
               <motion.div layoutId={`image-${card._id}-${id}`} className="h-full w-full">
@@ -149,16 +149,16 @@ export default function ExpandableCardDemo({ cards, onEdit, onDelete }: Expandab
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </div>
             
-            <div className="p-5 flex flex-col bg-white dark:bg-neutral-900 border-t border-neutral-100 dark:border-neutral-800">
+            <div className="p-5 flex flex-col bg-white border-t border-[color:var(--surface-border)]">
               <motion.h3
                 layoutId={`title-${card._id}-${id}`}
-                className="font-bold text-neutral-800 dark:text-neutral-100 text-base mb-1 line-clamp-1"
+                className="font-bold text-[color:var(--panel-text)] text-base mb-1 line-clamp-1"
               >
                 {card.title}
               </motion.h3>
               <motion.p
                 layoutId={`description-${card._id}-${id}`}
-                className="text-neutral-500 dark:text-neutral-400 text-xs line-clamp-2"
+                className="text-[color:var(--muted-text)] text-xs line-clamp-2"
               >
                 {card.description}
               </motion.p>

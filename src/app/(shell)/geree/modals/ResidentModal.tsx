@@ -901,11 +901,11 @@ export default function ResidentModal({
             >
               <div
                 onPointerDown={(e) => dragControls.start(e)}
-                className="flex items-center justify-between px-4 py-3 border-b border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-transparent via-white/5 to-transparent cursor-move select-none"
+                className="flex items-center justify-between px-4 py-3 border-b border-[color:var(--surface-border)] bg-gradient-to-r from-transparent via-white/5 to-transparent cursor-move select-none"
               >
                 <div className="flex items-center gap-3">
                   <svg
-                    className="w-5 h-5 text-slate-600 dark:text-slate-400"
+                    className="w-5 h-5 text-[color:var(--muted-text)]"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -917,7 +917,7 @@ export default function ResidentModal({
                       d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                     />
                   </svg>
-                  <h2 className="text-lg text-slate-900 dark:text-white">
+                  <h2 className="text-lg text-[color:var(--panel-text)] dark:text-white">
                     {editingResident
                       ? "Оршин суугчийн мэдээлэл засах"
                       : "Оршин суугч нэмэх"}
@@ -932,7 +932,7 @@ export default function ResidentModal({
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 text-slate-500 dark:text-slate-400"
+                    className="h-5 w-5 text-[color:var(--muted-text)]"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -957,11 +957,11 @@ export default function ResidentModal({
                     {/* Төрөл */}
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <label className="block text-xs text-slate-600 dark:text-slate-400 transition-colors">
+                        <label className="block text-xs text-[color:var(--muted-text)] transition-colors">
                           Төрөл
                         </label>
                         {newResident.turul === "Түр" && (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-200 dark:border-amber-800 animate-pulse">
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-warning/10 text-warning border border-warning/30 animate-pulse">
                             Түр гэрээ
                           </span>
                         )}
@@ -994,9 +994,9 @@ export default function ResidentModal({
                         animate={{ opacity: 1, x: 0 }}
                         className="relative"
                       >
-                        <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors flex items-center gap-1.5">
-                          <Calendar className="w-3.5 h-3.5 text-blue-500" />
-                          Гэрээ дуусах огноо <span className="text-red-500">*</span>
+                        <label className="block text-xs text-[color:var(--muted-text)] mb-1 transition-colors flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5 text-theme" />
+                          Гэрээ дуусах огноо <span className="text-danger">*</span>
                         </label>
                         <div className="h-8">
                           <StandardDatePicker
@@ -1005,7 +1005,7 @@ export default function ResidentModal({
                               setNewResident((p: any) => ({ ...p, duusakhOgnoo: dateString }))
                             }
                             placeholder="Дуусах огноо..."
-                            className={errors.includes("duusakhOgnoo") ? "border-red-500" : ""}
+                            className={errors.includes("duusakhOgnoo") ? "border-danger" : ""}
                             getPopupContainer={() => residentRef.current || document.body}
                             popupStyle={{ zIndex: 13010 }}
                           />
@@ -1015,7 +1015,7 @@ export default function ResidentModal({
 
                     {/* Овог */}
                     <div>
-                      <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors">
+                      <label className="block text-xs text-[color:var(--muted-text)] mb-1 transition-colors">
                         Овог
                       </label>
                       <input
@@ -1034,7 +1034,7 @@ export default function ResidentModal({
 
                     {/* Нэр */}
                     <div>
-                      <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors">
+                      <label className="block text-xs text-[color:var(--muted-text)] mb-1 transition-colors">
                         Нэр
                       </label>
                       <input
@@ -1053,7 +1053,7 @@ export default function ResidentModal({
 
                     {/* Утас */}
                     <div>
-                      <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors">
+                      <label className="block text-xs text-[color:var(--muted-text)] mb-1 transition-colors">
                         Утас
                       </label>
                       <input
@@ -1080,8 +1080,8 @@ export default function ResidentModal({
 
                     {/* Units Section */}
                     <div className="md:col-span-2 space-y-4 pt-2">
-                      <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-2">
-                        <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">Бүртгэлтэй тоотнууд</h3>
+                      <div className="flex items-center justify-between border-b border-[color:var(--surface-border)] pb-2">
+                        <h3 className="text-sm font-semibold text-[color:var(--panel-text)]">Бүртгэлтэй тоотнууд</h3>
                         <Button
                           type="button"
                           onClick={addMainUnitRow}
@@ -1096,21 +1096,21 @@ export default function ResidentModal({
                       {/* Main Units (Тоот) */}
                       {mainUnits.map((mainUnit, index) => {
                         return (
-                          <div key={index} className="relative rounded-xl border-l-4 border-l-blue-500 border border-slate-200/70 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900/60 overflow-hidden transition-all">
+                          <div key={index} className="relative rounded-xl border-l-4 border-l-blue-500 border border-[color:var(--surface-border)] shadow-sm bg-white overflow-hidden transition-all">
                             {/* Toot Header — clickable to collapse */}
                             <div
-                              className="flex items-center justify-between gap-2 px-4 py-2.5 bg-blue-50/50 dark:bg-blue-950/20 border-b border-blue-100 dark:border-blue-900/30"
+                              className="flex items-center justify-between gap-2 px-4 py-2.5 bg-theme/50 dark:bg-theme/20 border-b border-theme/30 dark:border-theme/30"
                             >
                               <button
                                 type="button"
                                 onClick={() => toggleMainCollapse(index)}
                                 className="flex-1 flex items-center gap-2 cursor-pointer text-left min-w-0"
                               >
-                                <span className="w-2 h-2 rounded-full bg-blue-500 shadow-sm shadow-blue-500/50 flex-shrink-0" />
-                                <h4 className="text-xs font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400 min-w-0 truncate">
+                                <span className="w-2 h-2 rounded-full bg-theme shadow-sm shadow-theme/50 flex-shrink-0" />
+                                <h4 className="text-xs font-bold uppercase tracking-wider text-theme dark:text-theme min-w-0 truncate">
                                   Тоот {mainUnits.length > 1 ? `#${index + 1}` : "(Үндсэн)"}
                                   {collapsedMains.includes(index) && mainUnit.toot && (
-                                    <span className="ml-2 font-normal text-blue-600 dark:text-blue-300 normal-case tracking-normal">
+                                    <span className="ml-2 font-normal text-theme dark:text-theme normal-case tracking-normal">
                                       — {mainUnit.orts && `${mainUnit.orts} орц, `}{mainUnit.davkhar && `${mainUnit.davkhar} давхар, `}{mainUnit.toot} тоот
                                     </span>
                                   )}
@@ -1120,7 +1120,7 @@ export default function ResidentModal({
                                 <button
                                   type="button"
                                   onClick={() => toggleMainCollapse(index)}
-                                  className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors cursor-pointer"
+                                  className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium text-theme dark:text-theme hover:bg-theme/10 dark:hover:bg-theme/40 transition-colors cursor-pointer"
                                 >
                                   <svg
                                     className={`w-3.5 h-3.5 transition-transform duration-200 ${collapsedMains.includes(index) ? "-rotate-90" : "rotate-0"}`}
@@ -1134,7 +1134,7 @@ export default function ResidentModal({
                                   <button
                                     type="button"
                                     onClick={() => removeMainUnitRow(index)}
-                                    className="p-1.5 text-rose-400 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:text-rose-600 transition-all"
+                                    className="p-1.5 text-danger rounded-lg hover:bg-danger/10 hover:text-danger transition-all"
                                   >
                                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -1147,7 +1147,7 @@ export default function ResidentModal({
                             {/* Toot Fields - collapsible */}
                             {!collapsedMains.includes(index) && (<div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-3">
                               <div>
-                                <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-400 mb-1">Орц</label>
+                                <label className="block text-[10px] uppercase tracking-wider font-bold text-[color:var(--muted-text)] mb-1">Орц</label>
                                 <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${getFlatIndex(index, "main")}.orts`) ? "input-error" : ""}`}>
                                   <TusgaiZagvar
                                     value={mainUnit.orts || ""}
@@ -1160,7 +1160,7 @@ export default function ResidentModal({
                               </div>
 
                               <div>
-                                <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-400 mb-1">Давхар</label>
+                                <label className="block text-[10px] uppercase tracking-wider font-bold text-[color:var(--muted-text)] mb-1">Давхар</label>
                                 <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${getFlatIndex(index, "main")}.davkhar`) ? "input-error" : ""}`}>
                                   <TusgaiZagvar
                                     value={mainUnit.davkhar || ""}
@@ -1173,7 +1173,7 @@ export default function ResidentModal({
                               </div>
 
                               <div>
-                                <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-400 mb-1">Тоот</label>
+                                <label className="block text-[10px] uppercase tracking-wider font-bold text-[color:var(--muted-text)] mb-1">Тоот</label>
                                 {(() => {
                                   const opts = getTootOptions(mainUnit.orts || "", mainUnit.davkhar || "", "Тоот");
                                   return (
@@ -1196,7 +1196,7 @@ export default function ResidentModal({
                               </div>
 
                               <div>
-                                <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-400 mb-1">Эхний үлдэгдэл</label>
+                                <label className="block text-[10px] uppercase tracking-wider font-bold text-[color:var(--muted-text)] mb-1">Эхний үлдэгдэл</label>
                                 <div className="relative group">
                                   <input
                                     id={`input-ekhniiUldegdel-${index}`}
@@ -1227,12 +1227,12 @@ export default function ResidentModal({
                                     placeholder="0.00"
                                     disabled={isEkhniiUldegdelDisabled && index === 0}
                                   />
-                                  <div className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">₮</div>
+                                  <div className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-[color:var(--muted-text)] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">₮</div>
                                 </div>
                               </div>
 
                               <div>
-                                <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-400 mb-1">Цахилгаан кВт</label>
+                                <label className="block text-[10px] uppercase tracking-wider font-bold text-[color:var(--muted-text)] mb-1">Цахилгаан кВт</label>
                                 <div className="relative group">
                                   <input
                                     id={`input-tsahilgaaniiZaalt-${index}`}
@@ -1262,7 +1262,7 @@ export default function ResidentModal({
                                     className="modern-input w-full text-right font-mono"
                                     placeholder="0.00"
                                   />
-                                  <div className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">кВт</div>
+                                  <div className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-[color:var(--muted-text)] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">кВт</div>
                                 </div>
                               </div>
 
@@ -1275,9 +1275,9 @@ export default function ResidentModal({
                                     onChange={(e) => updateMainUnitRow(index, "khonogoorBodokhEsekh", e.target.checked)}
                                     className="sr-only peer"
                                   />
-                                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                                  <div className="w-11 h-6 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme dark:peer-focus:ring-theme rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-theme"></div>
                                 </label>
-                                <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400">Ирээдүйд ашиглах хоног</span>
+                                <span className="text-[11px] font-medium text-[color:var(--muted-text)]">Ирээдүйд ашиглах хоног</span>
                                 {mainUnit.khonogoorBodokhEsekh && (
                                   <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200">
                                     <input
@@ -1289,38 +1289,38 @@ export default function ResidentModal({
                                       placeholder="Хоног"
                                       className="modern-input !w-16 !h-7 text-center !py-0"
                                     />
-                                    <span className="text-[11px] text-slate-500">хоногоор бодох</span>
+                                    <span className="text-[11px] text-[color:var(--muted-text)]">хоногоор бодох</span>
                                   </div>
                                 )}
                               </div>
                             </div>)}
 
                             {/* Per-Toot action buttons */}
-                            {!collapsedMains.includes(index) && (<div className="px-4 pb-3 flex items-center gap-3 border-t border-slate-100 dark:border-slate-800 pt-3">
+                            {!collapsedMains.includes(index) && (<div className="px-4 pb-3 flex items-center gap-3 border-t border-[color:var(--surface-border)] pt-3">
                               {/* Add Garage button */}
                               <button
                                 type="button"
                                 onClick={() => addGarageToUnit(index)}
-                                className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors px-2.5 py-1.5 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800"
+                                className="flex items-center gap-1.5 text-[11px] font-semibold text-theme dark:text-theme hover:text-theme dark:hover:text-theme transition-colors px-2.5 py-1.5 rounded-lg hover:bg-theme/10 dark:hover:bg-theme/20 border border-theme/30 dark:border-theme"
                               >
                                 Гараж нэмэх
                                 {(mainUnit.garages || []).length > 0 && (
-                                  <span className="ml-1 bg-emerald-500 text-white rounded-full px-1.5 py-0.5 text-[9px] font-bold">
+                                  <span className="ml-1 bg-theme text-white rounded-full px-1.5 py-0.5 text-[9px] font-bold">
                                     {(mainUnit.garages || []).length}
                                   </span>
                                 )}
                               </button>
 
-                              <div className="w-px h-4 bg-slate-200 dark:bg-slate-700" />
+                              <div className="w-px h-4 bg-[color:var(--panel)]" />
                             {/* Add Storage button */}
                               <button
                                 type="button"
                                 onClick={() => addStorageToUnit(index)}
-                                className="flex items-center gap-1.5 text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors px-2.5 py-1.5 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800"
+                                className="flex items-center gap-1.5 text-[11px] font-semibold text-theme dark:text-theme hover:text-theme dark:hover:text-theme transition-colors px-2.5 py-1.5 rounded-lg hover:bg-theme/10 dark:hover:bg-theme/20 border border-theme/30 dark:border-theme"
                               >
                                 Агуулах нэмэх
                                 {(mainUnit.storages || []).length > 0 && (
-                                  <span className="ml-1 bg-indigo-500 text-white rounded-full px-1.5 py-0.5 text-[9px] font-bold">
+                                  <span className="ml-1 bg-theme text-white rounded-full px-1.5 py-0.5 text-[9px] font-bold">
                                     {(mainUnit.storages || []).length}
                                   </span>
                                 )}
@@ -1332,15 +1332,15 @@ export default function ResidentModal({
                             {(mainUnit.garages || []).map((garage: any, gIdx: number) => {
                               const gFlatIdx = getGarageFlatIndex(index, gIdx);
                               return (
-                                <div key={gIdx} className="mx-4 mb-2 rounded-lg border-l-4 border-l-emerald-500 border border-emerald-100 dark:border-emerald-900/40 bg-emerald-50/30 dark:bg-emerald-950/10 overflow-hidden">
-                                  <div className="flex items-center justify-between px-3 py-2 border-b border-emerald-100 dark:border-emerald-900/40 bg-emerald-50/60 dark:bg-emerald-950/20">
+                                <div key={gIdx} className="mx-4 mb-2 rounded-lg border-l-4 border-l-emerald-500 border border-theme/30 dark:border-theme/40 bg-theme/30 dark:bg-theme/10 overflow-hidden">
+                                  <div className="flex items-center justify-between px-3 py-2 border-b border-theme/30 dark:border-theme/40 bg-theme/60 dark:bg-theme/20">
                                     <div className="flex items-center gap-2">
-                                      <h5 className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                                      <h5 className="text-[10px] font-bold uppercase tracking-wider text-theme dark:text-theme">
                                         Гараж {(mainUnit.garages || []).length > 1 ? `#${gIdx + 1}` : ""}
                                       </h5>
                                     </div>
                                     <button type="button" onClick={() => removeGarageFromUnit(index, gIdx)}
-                                      className="p-1 text-rose-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded transition-all">
+                                      className="p-1 text-danger hover:text-danger hover:bg-danger/10 rounded transition-all">
                                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                                       </svg>
@@ -1348,14 +1348,14 @@ export default function ResidentModal({
                                   </div>
                                   <div className="p-3 grid grid-cols-2 gap-3">
                                     <div>
-                                      <label className="block text-[10px] uppercase tracking-wider font-bold text-emerald-600 dark:text-emerald-500 mb-1">Давхар</label>
+                                      <label className="block text-[10px] uppercase tracking-wider font-bold text-theme dark:text-theme mb-1">Давхар</label>
                                       <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${gFlatIdx}.davkhar`) ? "input-error" : ""}`}>
                                         <TusgaiZagvar value={garage.davkhar || ""} onChange={(val: string) => updateGarageField(index, gIdx, "davkhar", val)}
                                           options={additionalFloors.map((d) => ({ value: d, label: d }))} className="w-full h-full" placeholder="Давхар..." />
                                       </div>
                                     </div>
                                     <div>
-                                      <label className="block text-[10px] uppercase tracking-wider font-bold text-emerald-600 dark:text-emerald-500 mb-1">Дугаар</label>
+                                      <label className="block text-[10px] uppercase tracking-wider font-bold text-theme dark:text-theme mb-1">Дугаар</label>
                                       {(() => {
                                         const opts = getTootOptions("1", garage.davkhar || "", "Зогсоол");
                                         return (
@@ -1375,15 +1375,15 @@ export default function ResidentModal({
                             {(mainUnit.storages || []).map((storage: any, sIdx: number) => {
                               const sFlatIdxNested = getStorageFlatIndex(index, sIdx);
                               return (
-                                <div key={sIdx} className="mx-4 mb-2 rounded-lg border-l-4 border-l-indigo-500 border border-indigo-100 dark:border-indigo-900/40 bg-indigo-50/30 dark:bg-indigo-950/10 overflow-hidden">
-                                  <div className="flex items-center justify-between px-3 py-2 border-b border-indigo-100 dark:border-indigo-900/40 bg-indigo-50/60 dark:bg-indigo-950/20">
+                                <div key={sIdx} className="mx-4 mb-2 rounded-lg border-l-4 border-l-indigo-500 border border-theme/30 dark:border-theme/40 bg-theme/30 dark:bg-theme/10 overflow-hidden">
+                                  <div className="flex items-center justify-between px-3 py-2 border-b border-theme/30 dark:border-theme/40 bg-theme/60 dark:bg-theme/20">
                                     <div className="flex items-center gap-2">
-                                      <h5 className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-400">
+                                      <h5 className="text-[10px] font-bold uppercase tracking-wider text-theme dark:text-theme">
                                         Агуулах {(mainUnit.storages || []).length > 1 ? `#${sIdx + 1}` : ""}
                                       </h5>
                                     </div>
                                     <button type="button" onClick={() => removeStorageFromUnit(index, sIdx)}
-                                      className="p-1 text-rose-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded transition-all">
+                                      className="p-1 text-danger hover:text-danger hover:bg-danger/10 rounded transition-all">
                                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                                       </svg>
@@ -1391,14 +1391,14 @@ export default function ResidentModal({
                                   </div>
                                   <div className="p-3 grid grid-cols-2 gap-3">
                                     <div>
-                                      <label className="block text-[10px] uppercase tracking-wider font-bold text-indigo-600 dark:text-indigo-500 mb-1">Давхар</label>
+                                      <label className="block text-[10px] uppercase tracking-wider font-bold text-theme dark:text-theme mb-1">Давхар</label>
                                       <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${sFlatIdxNested}.davkhar`) ? "input-error" : ""}`}>
                                         <TusgaiZagvar value={storage.davkhar || ""} onChange={(val: string) => updateStorageField(index, sIdx, "davkhar", val)}
                                           options={additionalFloors.map((d) => ({ value: d, label: d }))} className="w-full h-full" placeholder="Давхар..." />
                                       </div>
                                     </div>
                                     <div>
-                                      <label className="block text-[10px] uppercase tracking-wider font-bold text-indigo-600 dark:text-indigo-500 mb-1">Дугаар</label>
+                                      <label className="block text-[10px] uppercase tracking-wider font-bold text-theme dark:text-theme mb-1">Дугаар</label>
                                       {(() => {
                                         const opts = getTootOptions("1", storage.davkhar || "", "Агуулах");
                                         return (
@@ -1421,7 +1421,7 @@ export default function ResidentModal({
 
                     {/* Tailbar */}
                     <div className="md:col-span-2">
-                      <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors">
+                      <label className="block text-xs text-[color:var(--muted-text)] mb-1 transition-colors">
                         Тайлбар
                       </label>
                       <textarea
@@ -1441,7 +1441,7 @@ export default function ResidentModal({
                   </div>
                 </div>
 
-                <div className="flex justify-end px-4 py-3 border-t border-gray-200/50 dark:border-gray-700/50 gap-3 bg-gradient-to-r from-transparent via-white/5 to-transparent">
+                <div className="flex justify-end px-4 py-3 border-t border-[color:var(--surface-border)] gap-3 bg-gradient-to-r from-transparent via-white/5 to-transparent">
                   <Button
                     type="button"
                     onClick={requestClose}

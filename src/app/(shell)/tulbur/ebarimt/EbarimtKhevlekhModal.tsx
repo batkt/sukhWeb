@@ -140,34 +140,34 @@ export default function EbarimtKhevlekhModal({
 
       <div className="fixed inset-0 z-[13001] flex items-center justify-center p-4 pointer-events-none">
         <div
-          className="pointer-events-auto w-[360px] max-w-full max-h-[90vh] flex flex-col rounded-[20px] overflow-hidden shadow-2xl border bg-white dark:bg-[#18181b] border-slate-200/40 dark:border-white/[0.06]"
+          className="pointer-events-auto w-[360px] max-w-full max-h-[90vh] flex flex-col rounded-[20px] overflow-hidden shadow-2xl border bg-white dark:bg-[#18181b] border-[color:var(--surface-border)] dark:border-white/[0.06]"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Толгой */}
-          <div className="no-print px-5 py-3.5 border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between flex-shrink-0">
+          <div className="no-print px-5 py-3.5 border-b border-[color:var(--surface-border)] dark:border-white/[0.06] flex items-center justify-between flex-shrink-0">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-white/[0.06] flex items-center justify-center">
-                <Printer className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+              <div className="w-9 h-9 rounded-xl bg-[color:var(--surface-hover)] dark:bg-white/[0.06] flex items-center justify-center">
+                <Printer className="w-4 h-4 text-[color:var(--muted-text)]" />
               </div>
               <div>
-                <h3 className="text-[13px] font-semibold text-slate-800 dark:text-white">
+                <h3 className="text-[13px] font-semibold text-[color:var(--panel-text)] dark:text-white">
                   И-баримт дахин хэвлэх
                 </h3>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[11px] text-[color:var(--muted-text)]">
                   Хэвлэсэн хуулбар дээр «ДАХИН ХЭВЛЭСЭН» тэмдэглэгээ гарна
                 </p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+              className="w-8 h-8 rounded-full flex items-center justify-center text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/5 transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
 
           {/* Баримт */}
-          <div className="overflow-y-auto flex-1 min-h-0 bg-slate-50 dark:bg-slate-900/40 p-4">
+          <div className="overflow-y-auto flex-1 min-h-0 bg-[color:var(--surface-hover)] p-4">
             <div className="ebarimt-print bg-white text-black mx-auto w-full max-w-[300px] px-4 py-4 font-[family-name:var(--font-mono)] text-[11px] leading-[1.5]">
               <div className="text-center">
                 <p className="text-[12px] font-bold uppercase">
@@ -283,16 +283,16 @@ export default function EbarimtKhevlekhModal({
           </div>
 
           {/* Хөл */}
-          <div className="no-print px-5 py-3.5 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-end gap-2 flex-shrink-0">
+          <div className="no-print px-5 py-3.5 border-t border-[color:var(--surface-border)] dark:border-white/[0.06] flex items-center justify-end gap-2 flex-shrink-0">
             <button
               onClick={onClose}
-              className="h-9 px-4 rounded-[30px] border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-[11px] font-semibold hover:bg-slate-50 dark:hover:bg-white/5 transition-all"
+              className="h-9 px-4 rounded-[30px] border border-[color:var(--surface-border)] text-[color:var(--muted-text)] text-[11px] font-semibold hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/5 transition-all"
             >
               Хаах
             </button>
             <button
               onClick={() => window.print()}
-              className="h-9 px-4 rounded-[30px] bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white text-[11px] font-semibold shadow-sm transition-all inline-flex items-center gap-2"
+              className="h-9 px-4 rounded-[30px] bg-theme hover:bg-theme active:bg-theme text-white text-[11px] font-semibold shadow-sm transition-all inline-flex items-center gap-2"
             >
               <Printer className="w-3.5 h-3.5" />
               Хэвлэх

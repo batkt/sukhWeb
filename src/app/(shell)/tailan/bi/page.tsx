@@ -193,11 +193,11 @@ const Kpi: React.FC<{
           {icon}
         </div>
         <div className="flex min-w-0 flex-col">
-          <span className="truncate text-[10px] font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          <span className="truncate text-[10px] font-medium uppercase tracking-wider text-[color:var(--muted-text)]">
             {nert}
           </span>
           <span
-            className="truncate text-sm font-semibold text-slate-900 dark:text-white"
+            className="truncate text-sm font-semibold text-[color:var(--panel-text)] dark:text-white"
             title={utga}
           >
             {utga}
@@ -221,23 +221,23 @@ const Karti: React.FC<{
   delgets?: string;
 }> = ({ garchig, tailbar, icon, children, undur = 220, delgets }) => (
   <div
-    className={`group flex flex-col overflow-hidden rounded-[1.5rem] border border-slate-200/70 bg-white/90 shadow-sm transition-all duration-300 hover:shadow-md dark:border-white/10 dark:bg-slate-900/60 ${
+    className={`group flex flex-col overflow-hidden rounded-[1.5rem] border border-[color:var(--surface-border)] bg-white/90 shadow-sm transition-all duration-300 hover:shadow-md dark:border-white/10 ${
       delgets || ""
     }`}
   >
-    <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-4 py-3 dark:border-white/5">
+    <div className="flex items-center justify-between gap-2 border-b border-[color:var(--surface-border)] px-4 py-3 dark:border-white/5">
       <div className="flex min-w-0 items-center gap-2">
         {icon && (
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]">
             {icon}
           </div>
         )}
-        <span className="truncate text-[10px] font-medium uppercase tracking-wider text-slate-500">
+        <span className="truncate text-[10px] font-medium uppercase tracking-wider text-[color:var(--muted-text)]">
           {garchig}
         </span>
       </div>
       {tailbar && (
-        <span className="shrink-0 text-[10px] text-slate-400">{tailbar}</span>
+        <span className="shrink-0 text-[10px] text-[color:var(--muted-text)]">{tailbar}</span>
       )}
     </div>
     <div className="p-3 md:p-4" style={{ height: undur }}>
@@ -247,7 +247,7 @@ const Karti: React.FC<{
 );
 
 const Khooson = () => (
-  <div className="flex h-full items-center justify-center text-[11px] text-slate-400">
+  <div className="flex h-full items-center justify-center text-[11px] text-[color:var(--muted-text)]">
     Өгөгдөл байхгүй
   </div>
 );
@@ -601,8 +601,8 @@ export default function BiTailanPage() {
   if (error)
     return (
       <div className="flex h-96 flex-col items-center justify-center gap-2">
-        <AlertTriangle className="h-8 w-8 text-red-400" />
-        <p className="text-sm text-slate-500">Тайлан татахад алдаа гарлаа</p>
+        <AlertTriangle className="h-8 w-8 text-danger" />
+        <p className="text-sm text-[color:var(--muted-text)]">Тайлан татахад алдаа гарлаа</p>
       </div>
     );
 
@@ -627,10 +627,10 @@ export default function BiTailanPage() {
       {/* Толгой */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">
+          <h1 className="text-xl font-semibold text-[color:var(--panel-text)] dark:text-white">
             BI Тайлан
           </h1>
-          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+          <p className="mt-0.5 text-xs text-[color:var(--muted-text)]">
             {saruud.length > 0
               ? `${sarFormat(saruud[0])} — ${sarFormat(saruud[saruud.length - 1])}`
               : "Бүх үзүүлэлт нэг дэлгэцэнд"}
@@ -638,7 +638,7 @@ export default function BiTailanPage() {
         </div>
         <div className="flex items-center gap-2">
           {isLoading && (
-            <Loader2 className="h-4 w-4 animate-spin text-emerald-500" />
+            <Loader2 className="h-4 w-4 animate-spin text-theme" />
           )}
           <div className="h-10 w-full min-w-[260px] md:w-[300px]">
             <StandardDatePicker
@@ -652,7 +652,7 @@ export default function BiTailanPage() {
           <button
             onClick={csvTatya}
             title="Бүх үзүүлэлтийг CSV-ээр татах"
-            className="khevlekh-nuuh flex h-10 items-center gap-1.5 rounded-xl px-3 text-xs ring-1 ring-slate-200 transition-colors hover:bg-slate-50 dark:ring-white/10 dark:hover:bg-white/5"
+            className="khevlekh-nuuh flex h-10 items-center gap-1.5 rounded-xl px-3 text-xs ring-1 ring-[color:var(--surface-border)] transition-colors hover:bg-[color:var(--surface-hover)] dark:ring-white/10 dark:hover:bg-white/5"
           >
             <Download className="h-4 w-4" />
             <span className="hidden sm:inline">Excel</span>
@@ -660,7 +660,7 @@ export default function BiTailanPage() {
           <button
             onClick={khevleye}
             title="Тайланг хэвлэх"
-            className="khevlekh-nuuh flex h-10 items-center gap-1.5 rounded-xl px-3 text-xs ring-1 ring-slate-200 transition-colors hover:bg-slate-50 dark:ring-white/10 dark:hover:bg-white/5"
+            className="khevlekh-nuuh flex h-10 items-center gap-1.5 rounded-xl px-3 text-xs ring-1 ring-[color:var(--surface-border)] transition-colors hover:bg-[color:var(--surface-hover)] dark:ring-white/10 dark:hover:bg-white/5"
           >
             <Printer className="h-4 w-4" />
             <span className="hidden sm:inline">Хэвлэх</span>
@@ -821,10 +821,10 @@ export default function BiTailanPage() {
                   key={r.gereeniiId || i}
                   className="flex items-center justify-between gap-2 text-[11px]"
                 >
-                  <span className="truncate text-slate-600 dark:text-slate-300">
+                  <span className="truncate text-[color:var(--muted-text)]">
                     {i + 1}. {r.toot || r.gereeniiDugaar || "-"}
                   </span>
-                  <span className="shrink-0 font-medium text-red-500">
+                  <span className="shrink-0 font-medium text-danger">
                     {dunFormat(r.uldegdel)}
                   </span>
                 </div>
@@ -934,19 +934,19 @@ export default function BiTailanPage() {
               {data.medegdel.map((r: any) => (
                 <div key={r.turul}>
                   <div className="mb-1 flex items-baseline justify-between gap-2 text-[11px]">
-                    <span className="truncate text-slate-600 dark:text-slate-300">
+                    <span className="truncate text-[color:var(--muted-text)]">
                       {r.turul}
                     </span>
-                    <span className="shrink-0 text-slate-400">
+                    <span className="shrink-0 text-[color:var(--muted-text)]">
                       {tooFormat(r.too)}
                       {r.unshaagui > 0 && (
-                        <span className="ml-1 text-amber-500">
+                        <span className="ml-1 text-warning">
                           ({tooFormat(r.unshaagui)} уншаагүй)
                         </span>
                       )}
                     </span>
                   </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-white/10">
+                  <div className="h-1.5 overflow-hidden rounded-full bg-[color:var(--surface-hover)] dark:bg-white/10">
                     <div
                       className="h-full rounded-full"
                       style={{
@@ -966,9 +966,9 @@ export default function BiTailanPage() {
 
       {/* Зөрчилтэй машин — жижиг тэмдэглэл */}
       {(data?.zogsool?.zurchilteiToo ?? 0) > 0 && (
-        <p className="pb-4 text-center text-[11px] text-slate-400">
+        <p className="pb-4 text-center text-[11px] text-[color:var(--muted-text)]">
           Зогсоол дээр зөрчилтэй тэмдэглэгдсэн{" "}
-          <span className="font-medium text-amber-500">
+          <span className="font-medium text-warning">
             {tooFormat(data.zogsool.zurchilteiToo)}
           </span>{" "}
           хөдөлгөөн байна

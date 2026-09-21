@@ -42,7 +42,7 @@ export default function ReportsControls({
             classNames={{
               root: "!h-full !w-full",
               input:
-                "text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
+                "text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
             }}
           />
         </div>
@@ -51,28 +51,28 @@ export default function ReportsControls({
           placeholder="Байр"
           value={filters.bair ?? ""}
           onChange={(e) => setFilters({ ...filters, bair: e.target.value })}
-          className="rounded-2xl neu-panel px-3 py-2 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+          className="rounded-2xl neu-panel px-3 py-2 text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)]"
         />
 
         <input
           placeholder="Орц"
           value={filters.orts ?? ""}
           onChange={(e) => setFilters({ ...filters, orts: e.target.value })}
-          className="rounded-2xl neu-panel px-3 py-2 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+          className="rounded-2xl neu-panel px-3 py-2 text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)]"
         />
 
         <input
           placeholder="Давхар"
           value={filters.davkhar ?? ""}
           onChange={(e) => setFilters({ ...filters, davkhar: e.target.value })}
-          className="rounded-2xl neu-panel px-3 py-2 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+          className="rounded-2xl neu-panel px-3 py-2 text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)]"
         />
 
         <input
           placeholder="Тоот"
           value={filters.toot ?? ""}
           onChange={(e) => setFilters({ ...filters, toot: e.target.value })}
-          className="rounded-2xl neu-panel px-3 py-2 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+          className="rounded-2xl neu-panel px-3 py-2 text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)]"
         />
       </div>
     </div>

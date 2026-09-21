@@ -46,7 +46,7 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
   return (
     <>
       {isValidatingSuugch ? (
-        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+        <div className="text-center py-8 text-[color:var(--muted-text)]">
           Уншиж байна...
         </div>
       ) : (

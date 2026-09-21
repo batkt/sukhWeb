@@ -314,14 +314,14 @@ export default function ResidentChatPanel() {
   if (!songogdson) {
     return (
       <div className="flex h-full min-h-0 flex-col bg-white">
-        <div className="shrink-0 border-b border-slate-100 p-3">
+        <div className="shrink-0 border-b border-[color:var(--surface-border)] p-3">
           <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[color:var(--muted-text)]" />
             <input
               value={khailt}
               onChange={(e) => setKhailt(e.target.value)}
               placeholder="Нэр, тоот, утсаар хайх"
-              className="h-9 w-full rounded-xl bg-slate-100 pl-9 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="h-9 w-full rounded-xl bg-[color:var(--surface-hover)] pl-9 pr-3 text-xs text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] focus:outline-none focus:ring-2 focus:ring-theme"
             />
           </div>
         </div>
@@ -329,12 +329,12 @@ export default function ResidentChatPanel() {
         <div className="min-h-0 flex-1 overflow-y-auto">
           {achaalj && kharilstuud.length === 0 ? (
             <div className="flex h-full items-center justify-center">
-              <Loader2 className="h-5 w-5 animate-spin text-emerald-500" />
+              <Loader2 className="h-5 w-5 animate-spin text-theme" />
             </div>
           ) : shuusenJagsaalt.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
-              <MessageSquare className="h-8 w-8 text-slate-300" />
-              <p className="text-xs text-slate-400">
+              <MessageSquare className="h-8 w-8 text-[color:var(--muted-text)]" />
+              <p className="text-xs text-[color:var(--muted-text)]">
                 {khailt ? "Илэрц олдсонгүй" : "Одоогоор харилцаа байхгүй"}
               </p>
             </div>
@@ -345,22 +345,22 @@ export default function ResidentChatPanel() {
               <button
                 key={m._id}
                 onClick={() => setSongogdson(m)}
-                className="flex w-full items-start gap-3 border-b border-slate-50 px-4 py-3 text-left transition-colors hover:bg-slate-50"
+                className="flex w-full items-start gap-3 border-b border-[color:var(--surface-border)] px-4 py-3 text-left transition-colors hover:bg-[color:var(--surface-hover)]"
               >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-semibold text-emerald-700">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-theme/10 text-xs font-semibold text-theme">
                   {su.ner.trim().charAt(0).toUpperCase() || "?"}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline justify-between gap-2">
-                    <span className="truncate text-xs font-semibold text-slate-900">
+                    <span className="truncate text-xs font-semibold text-[color:var(--panel-text)]">
                       {su.ner}
                     </span>
-                    <span className="shrink-0 text-[10px] text-slate-400">
+                    <span className="shrink-0 text-[10px] text-[color:var(--muted-text)]">
                       {tsagFormat(m.updatedAt || m.createdAt)}
                     </span>
                   </div>
                   {(su.toot || su.utas) && (
-                    <div className="mt-0.5 flex items-center gap-2 text-[10px] text-slate-400">
+                    <div className="mt-0.5 flex items-center gap-2 text-[10px] text-[color:var(--muted-text)]">
                       {su.toot && (
                         <span className="inline-flex items-center gap-1">
                           <Home className="h-2.5 w-2.5" />
@@ -375,12 +375,12 @@ export default function ResidentChatPanel() {
                       )}
                     </div>
                   )}
-                  <p className="mt-0.5 truncate text-[11px] text-slate-500">
+                  <p className="mt-0.5 truncate text-[11px] text-[color:var(--muted-text)]">
                     {m.message || "—"}
                   </p>
                 </div>
                 {!m.kharsanEsekh && (
-                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-emerald-500" />
+                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-theme" />
                 )}
               </button>
               );
@@ -396,22 +396,22 @@ export default function ResidentChatPanel() {
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-white">
-      <div className="flex shrink-0 items-center gap-2 border-b border-slate-100 px-3 py-2.5">
+      <div className="flex shrink-0 items-center gap-2 border-b border-[color:var(--surface-border)] px-3 py-2.5">
         <button
           onClick={() => setSongogdson(null)}
           aria-label="Буцах"
-          className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-slate-100"
+          className="rounded-lg p-1.5 text-[color:var(--muted-text)] transition-colors hover:bg-[color:var(--surface-hover)]"
         >
           <ArrowLeft className="h-4 w-4" />
         </button>
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[11px] font-semibold text-emerald-700">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-theme/10 text-[11px] font-semibold text-theme">
           {idevkhteiSuugch.ner.trim().charAt(0).toUpperCase() || "?"}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-xs font-semibold text-slate-900">
+          <p className="truncate text-xs font-semibold text-[color:var(--panel-text)]">
             {idevkhteiSuugch.ner}
           </p>
-          <div className="flex items-center gap-2 text-[10px] text-slate-400">
+          <div className="flex items-center gap-2 text-[10px] text-[color:var(--muted-text)]">
             {idevkhteiSuugch.toot && (
               <span className="inline-flex items-center gap-1">
                 <Home className="h-2.5 w-2.5" />
@@ -421,7 +421,7 @@ export default function ResidentChatPanel() {
             {idevkhteiSuugch.utas && (
               <a
                 href={"tel:" + idevkhteiSuugch.utas}
-                className="inline-flex items-center gap-1 hover:text-emerald-600"
+                className="inline-flex items-center gap-1 hover:text-theme"
               >
                 <Phone className="h-2.5 w-2.5" />
                 {idevkhteiSuugch.utas}
@@ -434,10 +434,10 @@ export default function ResidentChatPanel() {
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto bg-slate-50 p-3">
+      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto bg-[color:var(--surface-hover)] p-3">
         {threadAchaalj ? (
           <div className="flex h-full items-center justify-center">
-            <Loader2 className="h-5 w-5 animate-spin text-emerald-500" />
+            <Loader2 className="h-5 w-5 animate-spin text-theme" />
           </div>
         ) : (
           messejuud.map((m) => {
@@ -450,8 +450,8 @@ export default function ResidentChatPanel() {
                 <div
                   className={`max-w-[80%] rounded-2xl px-3 py-2 ${
                     minii
-                      ? "bg-emerald-500 text-white"
-                      : "bg-white text-slate-800 ring-1 ring-slate-200"
+                      ? "bg-theme text-white"
+                      : "bg-white text-[color:var(--panel-text)] ring-1 ring-[color:var(--surface-border)]"
                   }`}
                 >
                   <p className="whitespace-pre-wrap break-words text-[11px] leading-relaxed">
@@ -459,7 +459,7 @@ export default function ResidentChatPanel() {
                   </p>
                   <p
                     className={`mt-1 text-right text-[9px] ${
-                      minii ? "text-emerald-100" : "text-slate-400"
+                      minii ? "text-theme" : "text-[color:var(--muted-text)]"
                     }`}
                   >
                     {tsagFormat(m.createdAt)}
@@ -472,7 +472,7 @@ export default function ResidentChatPanel() {
         <div ref={dooshRef} />
       </div>
 
-      <div className="flex shrink-0 items-end gap-2 border-t border-slate-100 p-2.5">
+      <div className="flex shrink-0 items-end gap-2 border-t border-[color:var(--surface-border)] p-2.5">
         <textarea
           value={bichvar}
           onChange={(e) => setBichvar(e.target.value)}
@@ -484,13 +484,13 @@ export default function ResidentChatPanel() {
           }}
           rows={1}
           placeholder="Хариу бичих..."
-          className="max-h-24 min-h-[36px] flex-1 resize-none rounded-xl bg-slate-100 px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          className="max-h-24 min-h-[36px] flex-1 resize-none rounded-xl bg-[color:var(--surface-hover)] px-3 py-2 text-xs text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] focus:outline-none focus:ring-2 focus:ring-theme"
         />
         <button
           onClick={ilgeeye}
           disabled={ilgeej || !bichvar.trim()}
           aria-label="Илгээх"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white transition-colors hover:bg-emerald-500 disabled:opacity-40"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-theme text-white transition-colors hover:bg-theme disabled:opacity-40"
         >
           {ilgeej ? (
             <Loader2 className="h-4 w-4 animate-spin" />

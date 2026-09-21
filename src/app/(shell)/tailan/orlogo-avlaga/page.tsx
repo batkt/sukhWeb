@@ -877,12 +877,12 @@ export default function OrlogoAvlagaPage() {
   }
 
   return (
-    <div className="p-6 print-container bg-white dark:bg-gray-900 min-h-full h-auto w-full">
+    <div className="p-6 print-container bg-white min-h-full h-auto w-full">
       <PrintStyles />
 
       {/* Print-only Header */}
       <div className="print-only mb-6">
-        <div className="flex justify-between items-start border-b-2 border-gray-800 pb-4">
+        <div className="flex justify-between items-start border-b-2 border-[color:var(--surface-border)] pb-4">
           <div>
             <h1 className="text-2xl font-bold uppercase">
               {activeTab === "tulult"
@@ -908,20 +908,20 @@ export default function OrlogoAvlagaPage() {
 
         <div className="grid grid-cols-2 gap-8 mt-6">
           <div className="border p-3 rounded">
-            <p className="text-xs text-gray-500 uppercase font-semibold">
+            <p className="text-xs text-[color:var(--muted-text)] uppercase font-semibold">
               Нийт орлого
             </p>
             {/* Хүснэгтийн хөлтэй ижил эх сурвалж — хайлт/шүүлт хийсэн үед
                 дээд, доод дүн зөрөхгүй байх ёстой */}
-            <p className="text-xl font-bold text-green-700">
+            <p className="text-xl font-bold text-theme">
               {formatNumber(localTotals.paid, 2)} ₮
             </p>
           </div>
           <div className="border p-3 rounded">
-            <p className="text-xs text-gray-500 uppercase font-semibold">
+            <p className="text-xs text-[color:var(--muted-text)] uppercase font-semibold">
               Нийт үлдэгдэл
             </p>
-            <p className="text-xl font-bold text-red-700">
+            <p className="text-xl font-bold text-danger">
               {formatNumber(localTotals.finalBalance, 2)} ₮
             </p>
           </div>
@@ -959,7 +959,7 @@ export default function OrlogoAvlagaPage() {
             onClick={exportToExcel}
             className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
           >
-            <FileSpreadsheet className="w-4 h-4 text-emerald-600" /> Excel татах
+            <FileSpreadsheet className="w-4 h-4 text-theme" /> Excel татах
           </button>
         </div>
       </div>
@@ -980,7 +980,7 @@ export default function OrlogoAvlagaPage() {
             classNames={{
               root: "!h-full !w-full",
               input:
-                "text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
+                "text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
             }}
           />
         </div>
@@ -1007,7 +1007,7 @@ export default function OrlogoAvlagaPage() {
                 onChange={(e) =>
                   setFilters((p) => ({ ...p, [key]: e.target.value }))
                 }
-                className="flex-1 px-3 rounded-lg neu-panel text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 !h-[40px]"
+                className="flex-1 px-3 rounded-lg neu-panel text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] !h-[40px]"
                 placeholder={placeholder}
               />
             </div>

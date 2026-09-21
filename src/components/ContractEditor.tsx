@@ -796,7 +796,7 @@ export default function ContractEditor({
         <div className="fixed right-6 bottom-6 z-[11000] pointer-events-auto">
           <button
             onClick={handleSave}
-            className="flex items-center gap-2 px-4 py-2 rounded-2xl border border-transparent bg-sky-600 !text-white hover:bg-sky-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg"
+            className="flex items-center gap-2 px-4 py-2 rounded-2xl border border-transparent bg-theme !text-white hover:bg-theme disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg"
             aria-label="Save template"
             title="Хадгалах"
           >

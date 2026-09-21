@@ -188,7 +188,7 @@ export default function GuilgeeTable({
                   .filter(Boolean)
                   .join(" ") || "-";
               return (
-                <span className="text-gray-900 dark:text-white">{ner}</span>
+                <span className="text-[color:var(--panel-text)] dark:text-white">{ner}</span>
               );
             },
           };
@@ -216,7 +216,7 @@ export default function GuilgeeTable({
                   : resident?.toot;
               const displayToot = ct?.toot || record?.toot || residentToot || "-";
               return (
-                <span className="text-center block text-gray-900 dark:text-white leading-tight">
+                <span className="text-center block text-[color:var(--panel-text)] dark:text-white leading-tight">
                   {displayToot}
                 </span>
               );
@@ -265,7 +265,7 @@ export default function GuilgeeTable({
                 return "-";
               })();
               return (
-                <span className="text-center block text-gray-900 dark:text-white">
+                <span className="text-center block text-[color:var(--panel-text)] dark:text-white">
                   {utas}
                 </span>
               );
@@ -294,7 +294,7 @@ export default function GuilgeeTable({
                   contractsByNumber[String(record.gereeniiDugaar)]) ||
                 undefined;
               return (
-                <span className="text-gray-900 dark:text-white">
+                <span className="text-[color:var(--panel-text)] dark:text-white">
                   {String(
                     ct?.orts ??
                     ct?.ortsDugaar ??
@@ -336,7 +336,7 @@ export default function GuilgeeTable({
                   contractsByNumber[String(record.gereeniiDugaar)]) ||
                 undefined;
               return (
-                <span className="text-gray-900 dark:text-white">
+                <span className="text-[color:var(--panel-text)] dark:text-white">
                   {String(ct?.davkhar ?? record?.davkhar ?? residentDavkhar ?? "-")}
                 </span>
               );
@@ -355,7 +355,7 @@ export default function GuilgeeTable({
                   contractsByNumber[String(record.gereeniiDugaar)]) ||
                 undefined;
               return (
-                <span className="text-center block text-gray-900 dark:text-white">
+                <span className="text-center block text-[color:var(--panel-text)] dark:text-white">
                   {String(record?.gereeniiDugaar || ct?.gereeniiDugaar || "-")}
                 </span>
               );
@@ -372,8 +372,8 @@ export default function GuilgeeTable({
                 <span
                   className={
                     amt <= 0
-                      ? "!text-emerald-600 dark:!text-emerald-400"
-                      : "!text-red-500 dark:!text-red-400"
+                      ? "!text-success dark:!text-success"
+                      : "!text-danger dark:!text-danger"
                   }
                 >
                   {formatNumber(amt, 2)}
@@ -392,7 +392,7 @@ export default function GuilgeeTable({
                 ? Number(monthPaidByGereeId[gid] ?? 0)
                 : 0;
               return (
-                <span className="text-gray-900 dark:text-white">
+                <span className="text-[color:var(--panel-text)] dark:text-white">
                   {formatNumber(paidDisplay, 2)}
                 </span>
               );
@@ -407,7 +407,7 @@ export default function GuilgeeTable({
               const gid = getGereeId(record);
               const discVal = gid && khungulultMap[gid] ? Number(khungulultMap[gid]) : 0;
               return (
-                <span className="text-gray-900 dark:text-white">
+                <span className="text-[color:var(--panel-text)] dark:text-white">
                   {formatNumber(discVal, 2)}
                 </span>
               );
@@ -434,7 +434,7 @@ export default function GuilgeeTable({
                   ? Number(monthSlice.billed ?? 0)
                   : Number(record?._totalTulbur ?? 0);
               return (
-                <span className="text-gray-900 dark:text-white">
+                <span className="text-[color:var(--panel-text)] dark:text-white">
                   {formatNumber(billedDisplay, 2)}
                 </span>
               );
@@ -452,8 +452,8 @@ export default function GuilgeeTable({
                 <span
                   className={
                     balance < 0.01
-                      ? "!text-emerald-600 dark:!text-emerald-400 font-medium"
-                      : "!text-red-500 dark:!text-red-400 font-medium"
+                      ? "!text-success dark:!text-success font-medium"
+                      : "!text-danger dark:!text-danger font-medium"
                   }
                 >
                   {formatNumber(balance, 2)}
@@ -473,7 +473,7 @@ export default function GuilgeeTable({
               const serverBalance = gid ? bestKnownBalances[gid] : null;
               if (serverBalance != null) {
                 return (
-                  <span className={serverBalance < 0.01 ? "!text-emerald-600 dark:!text-emerald-400 font-medium" : "!text-red-500 dark:!text-red-400 font-medium"}>
+                  <span className={serverBalance < 0.01 ? "!text-success dark:!text-success font-medium" : "!text-danger dark:!text-danger font-medium"}>
                     {formatNumber(serverBalance, 2)}
                   </span>
                 );
@@ -485,7 +485,7 @@ export default function GuilgeeTable({
               if (monthSlice != null) {
                 const b = Number(monthSlice.uldegdel ?? 0);
                 return (
-                  <span className={b < 0.01 ? "!text-emerald-600 dark:!text-emerald-400 font-medium" : "!text-red-500 dark:!text-red-400 font-medium"}>
+                  <span className={b < 0.01 ? "!text-success dark:!text-success font-medium" : "!text-danger dark:!text-danger font-medium"}>
                     {formatNumber(b, 2)}
                   </span>
                 );
@@ -494,7 +494,7 @@ export default function GuilgeeTable({
               // 3. Last resort: local aggregation
               const aggB = Number(record?._totalTulburMonth || 0) - Number(record?._totalTulsunMonth || 0);
               return (
-                <span className={aggB < 0.01 ? "!text-emerald-600 dark:!text-emerald-400 font-medium" : "!text-red-500 dark:!text-red-400 font-medium"}>
+                <span className={aggB < 0.01 ? "!text-success dark:!text-success font-medium" : "!text-danger dark:!text-danger font-medium"}>
                   {formatNumber(aggB, 2)}
                 </span>
               );
@@ -540,7 +540,7 @@ export default function GuilgeeTable({
                       (isPaid
                         ? "badge-paid"
                         : tuluvLabel === "Цуцалсан"
-                          ? "bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400"
+                          ? "bg-danger/10 text-danger"
                           : tuluvLabel === "Төлөөгүй" ||
                             tuluvLabel === "Хугацаа хэтэрсэн"
                             ? "badge-unpaid"
@@ -571,7 +571,7 @@ export default function GuilgeeTable({
                     ? `Илгээсэн • ${formatDate(sentAt)}`
                     : "-";
               return (
-                <span className="text-gray-900 dark:text-white">{lastLog}</span>
+                <span className="text-[color:var(--panel-text)] dark:text-white">{lastLog}</span>
               );
             },
           };
@@ -677,7 +677,7 @@ export default function GuilgeeTable({
                       <button
                         type="button"
                         onClick={() => onTransaction(residentData, remainingValue)}
-                        className="bg-transparent border-0 p-1 text-emerald-500 hover:text-emerald-600 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors focus:outline-none"
+                        className="bg-transparent border-0 p-1 text-theme hover:text-theme dark:text-theme dark:hover:text-theme transition-colors focus:outline-none"
                       >
                         <Banknote className="w-5 h-5" />
                       </button>
@@ -688,10 +688,10 @@ export default function GuilgeeTable({
                       type="button"
                       onClick={() => handleSendReminderSms(record)}
                       disabled={sendingSmsId === gid}
-                      className="bg-transparent border-0 p-1 text-amber-500 hover:text-amber-600 dark:text-amber-400 dark:hover:text-amber-300 transition-colors disabled:opacity-40 focus:outline-none"
+                      className="bg-transparent border-0 p-1 text-warning hover:text-warning transition-colors disabled:opacity-40 focus:outline-none"
                     >
                       {sendingSmsId === gid ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-amber-500"></div>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-warning"></div>
                       ) : (
                         <MessageSquare className="w-5 h-5" />
                       )}
@@ -701,7 +701,7 @@ export default function GuilgeeTable({
                     <button
                       type="button"
                       onClick={() => onViewHistory(residentData)}
-                      className="bg-transparent border-0 p-1 text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 transition-colors focus:outline-none"
+                      className="bg-transparent border-0 p-1 text-theme hover:text-theme dark:text-theme dark:hover:text-theme transition-colors focus:outline-none"
                     >
                       <History className="w-5 h-5" />
                     </button>
@@ -763,7 +763,7 @@ export default function GuilgeeTable({
 
     return (
       <Table.Summary fixed="bottom">
-        <Table.Summary.Row className="bg-gray-50 dark:bg-gray-800">
+        <Table.Summary.Row className="bg-[color:var(--surface-hover)]">
           {isCheckboxVisible && (
             <Table.Summary.Cell
               index={0}
@@ -781,7 +781,7 @@ export default function GuilgeeTable({
                 0,
               );
               content = (
-                <span className="font-bold text-slate-900 dark:!text-white">
+                <span className="font-bold text-[color:var(--panel-text)] dark:!text-white">
                   {formatNumber(total, 2)} ₮
                 </span>
               );
@@ -797,7 +797,7 @@ export default function GuilgeeTable({
                 0,
               );
               content = (
-                <span className="text-slate-900 dark:!text-white font-bold">
+                <span className="text-[color:var(--panel-text)] dark:!text-white font-bold">
                   {formatNumber(total, 2)} ₮
                 </span>
               );
@@ -811,7 +811,7 @@ export default function GuilgeeTable({
                 0,
               );
               content = (
-                <span className="text-slate-900 dark:!text-white font-bold">
+                <span className="text-[color:var(--panel-text)] dark:!text-white font-bold">
                   {formatNumber(total, 2)} ₮
                 </span>
               );
@@ -824,7 +824,7 @@ export default function GuilgeeTable({
                 0,
               );
               content = (
-                <span className="font-bold text-slate-900 dark:!text-white">
+                <span className="font-bold text-[color:var(--panel-text)] dark:!text-white">
                   {formatNumber(totalBalance, 2)} ₮
                 </span>
               );
@@ -843,7 +843,7 @@ export default function GuilgeeTable({
               }, 0);
 
               content = (
-                <span className="font-bold text-slate-900 dark:!text-white">
+                <span className="font-bold text-[color:var(--panel-text)] dark:!text-white">
                   {formatNumber(total, 2)} ₮
                 </span>
               );
@@ -909,7 +909,7 @@ export default function GuilgeeTable({
           scroll={{ x: "max-content" }}
           locale={{
             emptyText: (
-              <span className="text-gray-500 dark:text-gray-400">
+              <span className="text-[color:var(--muted-text)]">
                 Хайсан мэдээлэл алга байна
               </span>
             ),

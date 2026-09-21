@@ -63,35 +63,35 @@ const ValueRenderer: React.FC<{
   }, [value]);
 
   if (parsed === null || parsed === undefined || parsed === "") {
-    return <span className="text-gray-500 italic opacity-50">(хоосон)</span>;
+    return <span className="text-[color:var(--muted-text)] italic opacity-50">(хоосон)</span>;
   }
 
   // --- Specialized Rendering for Expenses (zardluud) ---
   if (field === "zardluud" && Array.isArray(parsed)) {
     return (
       <div className="overflow-x-auto my-1">
-        <table className="w-full text-[10px] border border-gray-700/30 rounded">
-          <thead className="bg-gray-800/30 text-gray-400">
+        <table className="w-full text-[10px] border border-[color:var(--surface-border)] rounded">
+          <thead className="bg-[color:var(--panel)] text-[color:var(--muted-text)]">
             <tr>
-              <th className="p-1 border-b border-gray-700/30 text-left">Нэр</th>
-              <th className="p-1 border-b border-gray-700/30 text-center">Төрөл</th>
-              <th className="p-1 border-b border-gray-700/30 text-right">Үнэ</th>
-              <th className="p-1 border-b border-gray-700/30 text-right">Төлөх дүн</th>
+              <th className="p-1 border-b border-[color:var(--surface-border)] text-left">Нэр</th>
+              <th className="p-1 border-b border-[color:var(--surface-border)] text-center">Төрөл</th>
+              <th className="p-1 border-b border-[color:var(--surface-border)] text-right">Үнэ</th>
+              <th className="p-1 border-b border-[color:var(--surface-border)] text-right">Төлөх дүн</th>
             </tr>
           </thead>
           <tbody>
             {parsed.map((item: any, idx) => (
-              <tr key={item._id || idx} className="hover:bg-blue-500/5">
-                <td className="p-1 border-b border-gray-700/10 text-left truncate max-w-[80px]">
+              <tr key={item._id || idx} className="hover:bg-theme/5">
+                <td className="p-1 border-b border-[color:var(--surface-border)] text-left truncate max-w-[80px]">
                   {item.ner || "-"}
                 </td>
-                <td className="p-1 border-b border-gray-700/10 text-center text-gray-500">
+                <td className="p-1 border-b border-[color:var(--surface-border)] text-center text-[color:var(--muted-text)]">
                   {item.turul || "-"}
                 </td>
-                <td className="p-1 border-b border-gray-700/10 text-right font-mono">
+                <td className="p-1 border-b border-[color:var(--surface-border)] text-right font-mono">
                   {formatNumber(item.turul === "Дурын" ? item.dun : item.tariff)}
                 </td>
-                <td className="p-1 border-b border-gray-700/10 text-right font-mono text-blue-400">
+                <td className="p-1 border-b border-[color:var(--surface-border)] text-right font-mono text-theme">
                   {formatNumber(item.tulukhDun)}
                 </td>
               </tr>
@@ -106,20 +106,20 @@ const ValueRenderer: React.FC<{
   if (field === "segmentuud" && Array.isArray(parsed)) {
     return (
       <div className="overflow-x-auto my-1">
-        <table className="w-full text-[10px] border border-gray-700/30 rounded">
-          <thead className="bg-gray-800/30 text-gray-400">
+        <table className="w-full text-[10px] border border-[color:var(--surface-border)] rounded">
+          <thead className="bg-[color:var(--panel)] text-[color:var(--muted-text)]">
             <tr>
-              <th className="p-1 border-b border-gray-700/30 text-left">Нэр</th>
-              <th className="p-1 border-b border-gray-700/30 text-center">Утга</th>
+              <th className="p-1 border-b border-[color:var(--surface-border)] text-left">Нэр</th>
+              <th className="p-1 border-b border-[color:var(--surface-border)] text-center">Утга</th>
             </tr>
           </thead>
           <tbody>
             {parsed.map((item: any, idx) => (
-              <tr key={item._id || idx} className="hover:bg-blue-500/5">
-                <td className="p-1 border-b border-gray-700/10 text-left text-gray-400">
+              <tr key={item._id || idx} className="hover:bg-theme/5">
+                <td className="p-1 border-b border-[color:var(--surface-border)] text-left text-[color:var(--muted-text)]">
                   {item.ner || "-"}
                 </td>
-                <td className="p-1 border-b border-gray-700/10 text-center font-medium">
+                <td className="p-1 border-b border-[color:var(--surface-border)] text-center font-medium">
                   {typeof item.utga === "number" ? formatNumber(item.utga) : String(item.utga || "-")}
                 </td>
               </tr>
@@ -134,24 +134,24 @@ const ValueRenderer: React.FC<{
   if (field === "khungulultuud" && Array.isArray(parsed)) {
     return (
       <div className="overflow-x-auto my-1">
-        <table className="w-full text-[10px] border border-gray-700/30 rounded">
-          <thead className="bg-gray-800/30 text-gray-400">
+        <table className="w-full text-[10px] border border-[color:var(--surface-border)] rounded">
+          <thead className="bg-[color:var(--panel)] text-[color:var(--muted-text)]">
             <tr>
-              <th className="p-1 border-b border-gray-700/30 text-center">Огноо</th>
-              <th className="p-1 border-b border-gray-700/30 text-center">%</th>
-              <th className="p-1 border-b border-gray-700/30 text-right">Дүн</th>
+              <th className="p-1 border-b border-[color:var(--surface-border)] text-center">Огноо</th>
+              <th className="p-1 border-b border-[color:var(--surface-border)] text-center">%</th>
+              <th className="p-1 border-b border-[color:var(--surface-border)] text-right">Дүн</th>
             </tr>
           </thead>
           <tbody>
             {parsed.map((item: any, idx) => (
-              <tr key={item._id || idx} className="hover:bg-blue-500/5">
-                <td className="p-1 border-b border-gray-700/10 text-center text-gray-400">
+              <tr key={item._id || idx} className="hover:bg-theme/5">
+                <td className="p-1 border-b border-[color:var(--surface-border)] text-center text-[color:var(--muted-text)]">
                   {item.ognoonuud ? `${moment(item.ognoonuud[0]).format("MM-DD")} ~ ${moment(item.ognoonuud[1]).format("MM-DD")}` : "-"}
                 </td>
-                <td className="p-1 border-b border-gray-700/10 text-center">
+                <td className="p-1 border-b border-[color:var(--surface-border)] text-center">
                   {item.khungulukhKhuvi}%
                 </td>
-                <td className="p-1 border-b border-gray-700/10 text-right font-mono text-green-400">
+                <td className="p-1 border-b border-[color:var(--surface-border)] text-right font-mono text-theme">
                   {formatNumber(item.khungulultiinDun)}
                 </td>
               </tr>
@@ -167,20 +167,20 @@ const ValueRenderer: React.FC<{
     if (Array.isArray(parsed)) {
       if (parsed.length === 0) return <span className="opacity-50">(хоосон жагсаалт)</span>;
       return (
-        <span className="text-[10px] bg-gray-800 px-1 rounded text-blue-400">
+        <span className="text-[10px] bg-[color:var(--panel)] px-1 rounded text-theme">
           [{parsed.length} мөр]
         </span>
       );
     }
-    return <span className="text-[10px] text-gray-500 italic break-all line-clamp-2">{JSON.stringify(parsed)}</span>;
+    return <span className="text-[10px] text-[color:var(--muted-text)] italic break-all line-clamp-2">{JSON.stringify(parsed)}</span>;
   }
 
   // Boolean
   if (typeof parsed === "boolean") {
     return parsed ? (
-      <span className="text-green-500 font-bold">Тийм</span>
+      <span className="text-success font-bold">Тийм</span>
     ) : (
-      <span className="text-red-500 font-bold">Үгүй</span>
+      <span className="text-danger font-bold">Үгүй</span>
     );
   }
 
@@ -286,48 +286,48 @@ const ZassanMedegdelModal: React.FC<Props> = ({ open, onClose, record }) => {
         onClick={onClose}
       />
       <div
-        className="relative w-full max-w-6xl bg-[#111111] text-gray-300 rounded-3xl shadow-2xl overflow-hidden border border-gray-800 font-sans animate-in fade-in zoom-in duration-200"
+        className="relative w-full max-w-6xl bg-[#111111] text-[color:var(--muted-text)] rounded-3xl shadow-2xl overflow-hidden border border-[color:var(--surface-border)] font-sans animate-in fade-in zoom-in duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-800/50 flex items-center justify-between bg-black/20">
+        <div className="px-6 py-4 border-b border-[color:var(--surface-border)] flex items-center justify-between bg-black/20">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
-              <span className="text-blue-500 font-bold">i</span>
+            <div className="w-10 h-10 rounded-2xl bg-theme/10 flex items-center justify-center border border-theme/20">
+              <span className="text-theme font-bold">i</span>
             </div>
             <div>
               <h3 className="text-lg font-bold text-white leading-tight">
                 Дэлгэрэнгүй Мэдээлэл
               </h3>
-              <p className="text-xs text-gray-500">Системийн өөрчлөлтийн түүх үзэх</p>
+              <p className="text-xs text-[color:var(--muted-text)]">Системийн өөрчлөлтийн түүх үзэх</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-10 h-10 flex items-center justify-center hover:bg-gray-800 rounded-2xl transition-all duration-200 text-gray-500 hover:text-white"
+            className="w-10 h-10 flex items-center justify-center hover:bg-[color:var(--panel)] rounded-2xl transition-all duration-200 text-[color:var(--muted-text)] hover:text-white"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Info Banner */}
-        <div className="px-8 py-5 bg-gradient-to-r from-blue-500/5 to-transparent flex flex-wrap gap-x-12 gap-y-3 text-sm border-b border-gray-800/30">
+        <div className="px-8 py-5 bg-gradient-to-r from-theme/5 to-transparent flex flex-wrap gap-x-12 gap-y-3 text-sm border-b border-[color:var(--surface-border)]">
           <div className="space-y-1">
-            <p className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Төрөл</p>
+            <p className="text-[10px] uppercase tracking-wider text-[color:var(--muted-text)] font-bold">Төрөл</p>
             <p className="text-white font-medium">
               {modelNames[record.modelName] || record.modelName}
             </p>
           </div>
           <div className="space-y-1">
-            <p className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Дугаар</p>
+            <p className="text-[10px] uppercase tracking-wider text-[color:var(--muted-text)] font-bold">Дугаар</p>
             <p className="text-white font-medium truncate max-w-[120px]">{record.documentId}</p>
           </div>
           <div className="space-y-1">
-            <p className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Зассан ажилтан</p>
-            <p className="text-blue-400 font-medium">{record.ajiltniiNer || "Систем"}</p>
+            <p className="text-[10px] uppercase tracking-wider text-[color:var(--muted-text)] font-bold">Зассан ажилтан</p>
+            <p className="text-theme font-medium">{record.ajiltniiNer || "Систем"}</p>
           </div>
           <div className="space-y-1">
-            <p className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Огноо</p>
+            <p className="text-[10px] uppercase tracking-wider text-[color:var(--muted-text)] font-bold">Огноо</p>
             <p className="text-white font-medium">
               {moment(record.createdAt || record.ognoo).format("YYYY-MM-DD HH:mm")}
             </p>
@@ -336,19 +336,19 @@ const ZassanMedegdelModal: React.FC<Props> = ({ open, onClose, record }) => {
 
         {/* Changes Table Wrapper */}
         <div className="max-h-[60vh] overflow-y-auto custom-scrollbar p-6">
-          <div className="rounded-2xl border border-gray-800 bg-black/20 overflow-hidden shadow-inner">
+          <div className="rounded-2xl border border-[color:var(--surface-border)] bg-black/20 overflow-hidden shadow-inner">
             <table className="w-full text-sm border-collapse">
-              <thead className="bg-[#1A1A1A] text-gray-400 uppercase text-[10px] tracking-widest font-bold">
+              <thead className="bg-[#1A1A1A] text-[color:var(--muted-text)] uppercase text-[10px] tracking-widest font-bold">
                 <tr>
                   <th className="py-4 px-6 text-left w-[20%]">Талбарын нэр</th>
-                  <th className="py-4 px-6 text-center w-[40%] bg-red-500/5">Өмнөх утга</th>
-                  <th className="py-4 px-6 text-center w-[40%] bg-green-500/5">Шинэ утга</th>
+                  <th className="py-4 px-6 text-center w-[40%] bg-danger/5">Өмнөх утга</th>
+                  <th className="py-4 px-6 text-center w-[40%] bg-success/5">Шинэ утга</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-800">
+              <tbody className="divide-y divide-[color:var(--surface-border)]">
                 {normalizedChanges.length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="py-12 text-center text-gray-600 italic">
+                    <td colSpan={3} className="py-12 text-center text-[color:var(--muted-text)] italic">
                       Өөрчлөлт олдсонгүй
                     </td>
                   </tr>
@@ -360,17 +360,17 @@ const ZassanMedegdelModal: React.FC<Props> = ({ open, onClose, record }) => {
 
                     return (
                       <tr key={change.id || index} className="group hover:bg-white/[0.02] transition-colors">
-                        <td className="py-4 px-6 font-semibold text-gray-400 border-r border-gray-800/50">
+                        <td className="py-4 px-6 font-semibold text-[color:var(--muted-text)] border-r border-[color:var(--surface-border)]">
                           {label}
                         </td>
-                        <td className="py-4 px-6 text-center align-top border-r border-gray-800/50 bg-red-500/[0.01]">
+                        <td className="py-4 px-6 text-center align-top border-r border-[color:var(--surface-border)] bg-danger/[0.01]">
                           <ValueRenderer 
                             field={change.field} 
                             value={change.oldValue} 
                             type={change.type}
                           />
                         </td>
-                        <td className="py-4 px-6 text-center align-top bg-green-500/[0.01]">
+                        <td className="py-4 px-6 text-center align-top bg-theme/[0.01]">
                           <ValueRenderer 
                             field={change.field} 
                             value={change.newValue} 
@@ -387,13 +387,13 @@ const ZassanMedegdelModal: React.FC<Props> = ({ open, onClose, record }) => {
         </div>
 
         {/* Footer */}
-        <div className="px-8 py-5 border-t border-gray-800/50 bg-black/20 flex items-center justify-between">
-          <p className="text-xs text-gray-500">
-            Нийт <span className="text-gray-300 font-bold">{normalizedChanges.length}</span> талбар өөрчлөгдсөн
+        <div className="px-8 py-5 border-t border-[color:var(--surface-border)] bg-black/20 flex items-center justify-between">
+          <p className="text-xs text-[color:var(--muted-text)]">
+            Нийт <span className="text-[color:var(--muted-text)] font-bold">{normalizedChanges.length}</span> талбар өөрчлөгдсөн
           </p>
           <button
             onClick={onClose}
-            className="px-8 py-2.5 bg-white hover:bg-gray-200 text-black font-bold text-sm rounded-xl shadow-lg transition-all active:scale-95"
+            className="px-8 py-2.5 bg-white hover:bg-[color:var(--panel)] text-black font-bold text-sm rounded-xl shadow-lg transition-all active:scale-95"
           >
             Хаах
           </button>

@@ -252,12 +252,12 @@ export default function BlogManagement() {
             id="niitlel-search"
             className="relative h-10 flex-1 sm:w-64 flex items-center neu-panel"
           >
-            <SearchIcon className="absolute left-3 w-4 h-4 text-slate-500 pointer-events-none" />
+            <SearchIcon className="absolute left-3 w-4 h-4 text-[color:var(--muted-text)] pointer-events-none" />
             <input
               placeholder="Нийтлэл хайх..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-full pl-10 pr-3 rounded-2xl bg-transparent border-0 text-sm text-theme placeholder:text-slate-500 focus:outline-none"
+              className="w-full h-full pl-10 pr-3 rounded-2xl bg-transparent border-0 text-sm text-theme placeholder:text-[color:var(--muted-text)] focus:outline-none"
             />
           </div>
           <Button
@@ -276,14 +276,14 @@ export default function BlogManagement() {
         {isValidating && !blogData ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <Loader2 className="w-8 h-8 text-theme animate-spin" />
-            <span className="text-sm text-slate-500">Уншиж байна...</span>
+            <span className="text-sm text-[color:var(--muted-text)]">Уншиж байна...</span>
           </div>
         ) : filteredBlogs.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="w-16 h-16 rounded-2xl neu-panel flex items-center justify-center mb-4">
-              <MessageSquare className="w-8 h-8 text-slate-400" />
+              <MessageSquare className="w-8 h-8 text-[color:var(--muted-text)]" />
             </div>
-            <h3 className="text-base  text-slate-700 dark:text-slate-200">
+            <h3 className="text-base  text-[color:var(--panel-text)]">
               Нийтлэл олдсонгүй
             </h3>
           </div>
@@ -291,16 +291,16 @@ export default function BlogManagement() {
           <div className="flex flex-col gap-6">
             <div
               id="niitlel-list"
-              className="table-surface rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 sm:p-5"
+              className="table-surface rounded-2xl border border-[color:var(--surface-border)] bg-white p-4 sm:p-5"
             >
               <div className="max-h-[calc(100vh-360px)] overflow-auto custom-scrollbar">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {paginatedBlogs.map((blog) => (
                     <article
                       key={blog._id}
-                      className="h-[380px] rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900 shadow-sm flex flex-col"
+                      className="h-[380px] rounded-2xl border border-[color:var(--surface-border)] overflow-hidden bg-white shadow-sm flex flex-col"
                     >
-                      <div className="h-1/2 bg-slate-100 dark:bg-slate-950/40 flex items-center justify-center overflow-hidden">
+                      <div className="h-1/2 bg-[color:var(--surface-hover)] flex items-center justify-center overflow-hidden">
                         <img
                           src={
                             blog.images && blog.images.length > 0
@@ -311,14 +311,14 @@ export default function BlogManagement() {
                           className="w-full h-full object-contain"
                         />
                       </div>
-                      <div className="h-1/2 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 p-4 flex flex-col">
-                        <h3 className="text-sm font-medium text-slate-900 dark:text-white line-clamp-1 mb-1">
+                      <div className="h-1/2 bg-white border-t border-[color:var(--surface-border)] p-4 flex flex-col">
+                        <h3 className="text-sm font-medium text-[color:var(--panel-text)] dark:text-white line-clamp-1 mb-1">
                           {blog.title}
                         </h3>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-2">
+                        <p className="text-[11px] text-[color:var(--muted-text)] mb-2">
                           {new Date(blog.createdAt).toLocaleString("mn-MN")}
                         </p>
-                        <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-3 flex-1">
+                        <p className="text-sm text-[color:var(--muted-text)] line-clamp-3 flex-1">
                           {blog.content}
                         </p>
                         {/* Reactions */}
@@ -327,7 +327,7 @@ export default function BlogManagement() {
                             {blog.reactions.map((reaction, idx) => (
                               <span
                                 key={idx}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300"
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[color:var(--surface-hover)] border border-[color:var(--surface-border)] text-xs text-[color:var(--muted-text)]"
                                 title={reaction.users?.join(", ") || ""}
                               >
                                 <span>{reaction.emoji}</span>
@@ -338,10 +338,10 @@ export default function BlogManagement() {
                             ))}
                           </div>
                         )}
-                        <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2">
+                        <div className="mt-3 pt-3 border-t border-[color:var(--surface-border)] flex items-center justify-end gap-2">
                           <button
                             onClick={() => handleOpenModal(blog)}
-                            className="h-8 px-3 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-950/50 dark:text-blue-400 dark:hover:bg-blue-900/50 transition-colors inline-flex items-center gap-1.5 text-xs font-medium"
+                            className="h-8 px-3 rounded-lg bg-theme/10 text-theme hover:bg-theme/10 dark:bg-theme/50 dark:text-theme dark:hover:bg-theme/50 transition-colors inline-flex items-center gap-1.5 text-xs font-medium"
                             title="Засах"
                           >
                             <Edit2 size={14} />
@@ -354,7 +354,7 @@ export default function BlogManagement() {
                             cancelText="Үгүй"
                           >
                             <button
-                              className="h-8 px-3 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-950/50 dark:text-red-400 dark:hover:bg-red-900/50 transition-colors inline-flex items-center gap-1.5 text-xs font-medium"
+                              className="h-8 px-3 rounded-lg bg-danger/10 text-danger hover:bg-danger/10 transition-colors inline-flex items-center gap-1.5 text-xs font-medium"
                               title="Устгах"
                             >
                               <Trash2 size={14} />
@@ -416,7 +416,7 @@ export default function BlogManagement() {
               placeholder="Гарчиг..."
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="h-10 rounded-xl bg-slate-50 dark:bg-white/5 border-0 focus:ring-2 focus:ring-theme/30"
+              className="h-10 rounded-xl bg-[color:var(--surface-hover)] dark:bg-white/5 border-0 focus:ring-2 focus:ring-theme/30"
             />
           </div>
 
@@ -427,7 +427,7 @@ export default function BlogManagement() {
               value={content}
               onChange={(e) => setContent(e.target.value)}
               rows={5}
-              className="rounded-xl bg-slate-50 dark:bg-white/5 border-0 focus:ring-2 focus:ring-theme/30 resize-none"
+              className="rounded-xl bg-[color:var(--surface-hover)] dark:bg-white/5 border-0 focus:ring-2 focus:ring-theme/30 resize-none"
             />
           </div>
 
@@ -442,13 +442,13 @@ export default function BlogManagement() {
                   <img
                     src={getImageUrl(url)}
                     alt=""
-                    className="w-full h-full object-cover rounded-xl border border-slate-200 dark:border-white/10"
+                    className="w-full h-full object-cover rounded-xl border border-[color:var(--surface-border)] dark:border-white/10"
                   />
                   <button
                     onClick={() =>
                       setExistingImages((p) => p.filter((_, i) => i !== idx))
                     }
-                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg"
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-danger text-white flex items-center justify-center shadow-lg"
                   >
                     <X size={12} />
                   </button>
@@ -460,7 +460,7 @@ export default function BlogManagement() {
                   <img
                     src={url}
                     alt=""
-                    className="w-full h-full object-cover rounded-xl border border-slate-200 dark:border-white/10"
+                    className="w-full h-full object-cover rounded-xl border border-[color:var(--surface-border)] dark:border-white/10"
                   />
                   <button
                     onClick={() => {
@@ -470,7 +470,7 @@ export default function BlogManagement() {
                       );
                       setAttachImages((p) => p.filter((_, i) => i !== idx));
                     }}
-                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg"
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-danger text-white flex items-center justify-center shadow-lg"
                   >
                     <X size={12} />
                   </button>
@@ -480,7 +480,7 @@ export default function BlogManagement() {
               <button
                 type="button"
                 onClick={() => attachInputRef.current?.click()}
-                className="w-16 h-16 rounded-xl border-2 border-dashed border-slate-200 dark:border-white/10 flex flex-col items-center justify-center gap-1 text-slate-400 hover:border-theme hover:text-theme transition-all"
+                className="w-16 h-16 rounded-xl border-2 border-dashed border-[color:var(--surface-border)] dark:border-white/10 flex flex-col items-center justify-center gap-1 text-[color:var(--muted-text)] hover:border-theme hover:text-theme transition-all"
               >
                 <Plus size={16} />
               </button>

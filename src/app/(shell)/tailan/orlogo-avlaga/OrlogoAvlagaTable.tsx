@@ -190,12 +190,12 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
     const totalTulsun = filteredLedger.reduce((s: number, row: any) => s + Number(row?.tulsunDun ?? 0), 0);
 
     return (
-      <div className="flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-2xl overflow-hidden">
-        <div onPointerDown={(e) => dragControls.start(e)} className="p-4 border-b border-gray-200 dark:border-gray-700 cursor-move select-none bg-gray-50 dark:bg-gray-800">
+      <div className="flex flex-col bg-white rounded-lg shadow-2xl overflow-hidden">
+        <div onPointerDown={(e) => dragControls.start(e)} className="p-4 border-b border-[color:var(--surface-border)] cursor-move select-none bg-[color:var(--surface-hover)]">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <h2 className="text-gray-900 dark:text-white">Дэлгэрэнгүй мэдээлэл</h2>
-              <p className="text-gray-500 dark:text-gray-400">{titleInfo || gd}</p>
+              <h2 className="text-[color:var(--panel-text)] dark:text-white">Дэлгэрэнгүй мэдээлэл</h2>
+              <p className="text-[color:var(--muted-text)]">{titleInfo || gd}</p>
             </div>
             <div
               onPointerDown={(e) => e.stopPropagation()}
@@ -222,11 +222,11 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
           </div>
         </div>
         {expandedLoading ? (
-          <div className="py-1 text-center text-gray-500 dark:text-gray-400">Уншиж байна...</div>
+          <div className="py-1 text-center text-[color:var(--muted-text)]">Уншиж байна...</div>
         ) : expandedError ? (
-          <div className="text-red-500 dark:text-red-400 py-0.5">Алдаа: {expandedError}</div>
+          <div className="text-danger py-0.5">Алдаа: {expandedError}</div>
         ) : filteredLedger.length === 0 ? (
-          <div className="py-1 text-center text-gray-500 dark:text-gray-400">Тэмдэглэл алга байна</div>
+          <div className="py-1 text-center text-[color:var(--muted-text)]">Тэмдэглэл алга байна</div>
         ) : (
           <Table
             dataSource={filteredLedger}
@@ -259,11 +259,11 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                   </Table.Summary.Cell>
                 </Table.Summary.Row>
                 {expandedGlobalUldegdel !== null && (
-                  <Table.Summary.Row className="bg-red-50 dark:bg-red-900/20">
+                  <Table.Summary.Row className="bg-danger/10">
                     <Table.Summary.Cell index={0} colSpan={6} align="right">
                       <div className="flex items-center justify-end gap-2 py-0.5 px-2">
-                        <span className="font-semibold text-red-600 dark:text-red-400">Нийт үлдэгдэл:</span>
-                        <span className="font-bold text-red-600 dark:text-red-400">{formatNumber(expandedGlobalUldegdel, 2)} ₮</span>
+                        <span className="font-semibold text-danger">Нийт үлдэгдэл:</span>
+                        <span className="font-bold text-danger">{formatNumber(expandedGlobalUldegdel, 2)} ₮</span>
                       </div>
                     </Table.Summary.Cell>
                   </Table.Summary.Row>
@@ -287,12 +287,12 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
           const value = getCellValue(record, col.key, index);
           if (col.key === "paid")
             return (
-              <span className="cursor-pointer text-emerald-600 underline underline-offset-2 dark:text-emerald-400">
+              <span className="cursor-pointer text-theme underline underline-offset-2 dark:text-theme">
                 {value}
               </span>
             );
           if (col.key === "finalBalance")
-            return <span className="text-red-600 dark:text-red-400">{value}</span>;
+            return <span className="text-danger">{value}</span>;
           return value ?? "-";
         },
       })),
@@ -330,9 +330,9 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                   align={col.align}
                   className={
                     col.key === "paid"
-                      ? "text-emerald-600 dark:text-emerald-400"
+                      ? "text-success dark:text-success"
                       : col.key === "finalBalance"
-                        ? "text-red-600 dark:text-red-400"
+                        ? "text-danger"
                         : undefined
                   }
                 >

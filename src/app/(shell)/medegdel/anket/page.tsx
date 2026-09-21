@@ -160,9 +160,9 @@ function AsuultOruulakh({
           />
         </Form.Item>
         {fields.length > 0 ? (
-          <div className="absolute -right-3 -top-11 rounded-full bg-white dark:bg-gray-900 lg:-right-5 lg:-top-10">
+          <div className="absolute -right-3 -top-11 rounded-full bg-white lg:-right-5 lg:-top-10">
             <CloseCircleOutlined
-              className="dynamic-delete-button text-2xl text-slate-900 text-opacity-60 transition-colors hover:text-red-400 dark:text-white dark:text-opacity-50"
+              className="dynamic-delete-button text-2xl text-[color:var(--panel-text)] text-opacity-60 transition-colors hover:text-danger dark:text-white dark:text-opacity-50"
               onClick={() => {
                 remove(name);
               }}
@@ -193,14 +193,14 @@ function AsuultOruulakh({
                         style={{ width: "100%" }}
                       />
                       <MinusCircleOutlined
-                        className="dynamic-delete-button absolute right-2 top-0 text-xl text-slate-900 text-opacity-50 dark:text-white dark:text-opacity-50"
+                        className="dynamic-delete-button absolute right-2 top-0 text-xl text-[color:var(--panel-text)] text-opacity-50 dark:text-white dark:text-opacity-50"
                         onClick={() => remove(field.name)}
                       />
                     </div>
                   </Form.Item>
                 ))}
                 <Button
-                  className="dark:bg-gray-800 dark:text-white"
+                  className=" dark:text-white"
                   style={{ width: "100%" }}
                   type={"default"}
                   onClick={() => add()}
@@ -261,25 +261,25 @@ function AnketiinZagvar({
     >
       <div
         key={a._id as string}
-        className="flex w-full cursor-pointer items-center justify-between rounded-xl  bg-secondary bg-opacity-5 p-2 shadow-lg dark:text-slate-200 md:block lg:flex"
+        className="flex w-full cursor-pointer items-center justify-between rounded-xl  bg-secondary bg-opacity-5 p-2 shadow-lg md:block lg:flex"
       >
         <div>{a.ner as string}</div>
         <div className="flex justify-end gap-2">
           <Button
-            className="bg-white text-green-400 hover:text-green-600 dark:bg-gray-900"
+            className="bg-white text-theme hover:text-theme"
             onClick={(e) => {
               e.stopPropagation();
               anketIlgeeye(a);
             }}
-            icon={<SendOutlined className="dark:text-green-400" />}
+            icon={<SendOutlined className="dark:text-theme" />}
           />
           <Button
-            className="bg-white text-blue-400 hover:text-blue-600 dark:bg-gray-900"
+            className="bg-white text-theme hover:text-theme"
             onClick={(e) => {
               e.stopPropagation();
               setData({ ...a, khariultuud: undefined });
             }}
-            icon={<EyeOutlined className="dark:text-blue-400" />}
+            icon={<EyeOutlined className="dark:text-theme" />}
           />
           <Popconfirm
             placement="right"
@@ -291,18 +291,18 @@ function AnketiinZagvar({
             cancelText={t("Үгүй")}
           >
             <Button
-              className="bg-white text-red-400 hover:text-red-600 dark:bg-gray-900"
+              className="bg-white text-danger hover:text-danger"
               onClick={(e) => {
                 e.stopPropagation();
               }}
-              icon={<DeleteOutlined className="dark:text-red-400" />}
+              icon={<DeleteOutlined className="" />}
             />
           </Popconfirm>
         </div>
       </div>
       <div className="flex w-full items-center justify-between px-5">
         <div
-          className={`flex w-full flex-col items-center justify-end overflow-hidden rounded-b-xl border border-t-0 border-border bg-secondary bg-opacity-5 p-1 shadow-lg transition-all dark:text-slate-900`}
+          className={`flex w-full flex-col items-center justify-end overflow-hidden rounded-b-xl border border-t-0 border-border bg-secondary bg-opacity-5 p-1 shadow-lg transition-all`}
           style={{
             height:
               kharakh === false
@@ -337,7 +337,7 @@ function AnketiinZagvar({
                       });
                     }}
                     className={`flex w-full cursor-pointer justify-between rounded-2xl border p-2 py-1 ${
-                      data?._id === b._id ? "bg-blue-200" : "bg-white"
+                      data?._id === b._id ? "bg-theme/20" : "bg-white"
                     } border-border`}
                     key={i}
                   >
@@ -365,7 +365,7 @@ function AnketiinZagvar({
               className={`absolute -bottom-1 right-2 transition-all ${
                 khariult.jagsaalt.length > 0
                   ? " text-pink-500"
-                  : "text-slate-400"
+                  : "text-[color:var(--muted-text)]"
               }`}
             >
               {khariult.jagsaalt.length}
@@ -455,7 +455,7 @@ export default function Page() {
   }, [data, formPreview]);
 
   return (
-    <div className="min-h-screen dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="min-h-screen">
       <motion.h1
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -468,13 +468,13 @@ export default function Page() {
         <div className="absolute right-3 top-3 z-50 hidden lg:flex"></div>
         <div className="flex grid-cols-12 flex-col-reverse gap-5 md:grid">
           <div
-            className="rounded-2xl relative col-span-12 p-4 bg-transparent/60 dark:bg-gray-800/50 py-5 shadow-md backdrop-blur-sm pt-3 md:col-span-4"
+            className="rounded-2xl relative col-span-12 p-4 bg-transparent/60 py-5 shadow-md backdrop-blur-sm pt-3 md:col-span-4"
             style={{ height: "calc( 100vh - 8rem)" }}
             data-aos="fade-right"
             data-aos-duration="1000"
             data-aos-delay="300"
           >
-            <span className=" dark:text-slate-100">
+            <span className="">
               {t("Анкетын загварууд")}
             </span>
             <div className="mt-5 w-full px-5">
@@ -512,13 +512,13 @@ export default function Page() {
           </div>
 
           <div
-            className="rounded-2xl relative col-span-12 overflow-auto p-1 pt-3 md:col-span-3 xl:col-span-3 bg-transparent/60 dark:bg-gray-800/50 py-5 shadow-md backdrop-blur-sm"
+            className="rounded-2xl relative col-span-12 overflow-auto p-1 pt-3 md:col-span-3 xl:col-span-3 bg-transparent/60 py-5 shadow-md backdrop-blur-sm"
             style={{ height: "calc( 100vh - 8rem)" }}
             data-aos="fade-left"
             data-aos-duration="1000"
             data-aos-delay="300"
           >
-            <span className=" dark:text-slate-100 lg:px-5">
+            <span className=" lg:px-5">
               {t("Анкетын загвар үүсгэх")}
             </span>
             <Form
@@ -573,7 +573,7 @@ export default function Page() {
                               behavior: "smooth",
                             });
                           }}
-                          className="dark:bg-gray-800 dark:text-white"
+                          className=" dark:text-white"
                           style={{ width: "100%" }}
                           icon={<PlusOutlined className="text-xs" />}
                         >
@@ -614,13 +614,13 @@ export default function Page() {
           </div>
 
           <div
-            className="relative col-span-5 block h-full overflow-y-auto rounded-2xl pt-3 dark:bg-gray-900 shadow-md backdrop-blur-sm"
+            className="relative col-span-5 block h-full overflow-y-auto rounded-2xl pt-3 shadow-md backdrop-blur-sm"
             style={{ height: "calc( 100vh - 8rem)" }}
           >
-            <header className="border-b border-gray-300 pb-5  dark:text-slate-100 lg:px-5">
+            <header className="border-b border-[color:var(--surface-border)] pb-5 lg:px-5">
               {t("Анкет харах хэсэг")}
             </header>
-            <header className="border-b border-gray-300 px-6 py-1 text-xl  uppercase text-slate-400 text-opacity-40 dark:text-white dark:text-opacity-40">
+            <header className="border-b border-[color:var(--surface-border)] px-6 py-1 text-xl  uppercase text-[color:var(--muted-text)] text-opacity-40 dark:text-white dark:text-opacity-40">
               {(data?.ner as string) || t("Анкетын загварын нэр")}
             </header>
             <Form
@@ -637,7 +637,7 @@ export default function Page() {
                     <div className="flex flex-col">
                       {fields.map(({ key, name, ...restField }) => (
                         <div
-                          className="px-6 pb-3 dark:text-slate-300"
+                          className="px-6 pb-3"
                           key={key}
                         >
                           <div className="flex gap-1 text-base">
@@ -645,7 +645,7 @@ export default function Page() {
                             {!!data?.asuultuud &&
                               (data.asuultuud as any)[name]?.asuult}
                           </div>
-                          <div className="flex flex-wrap gap-2 py-2 dark:text-slate-200 sm:px-10">
+                          <div className="flex flex-wrap gap-2 py-2 sm:px-10">
                             <Form.Item
                               {...restField}
                               hidden
@@ -682,7 +682,7 @@ export default function Page() {
                                         <Radio
                                           key={i}
                                           value={a}
-                                          className="dark:text-slate-200"
+                                          className=""
                                         >
                                           {a}
                                         </Radio>

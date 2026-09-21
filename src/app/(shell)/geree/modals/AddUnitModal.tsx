@@ -116,11 +116,11 @@ export default function AddUnitModal({
             <div className="text-center">
               <h3
                 onPointerDown={(e) => dragControls.start(e)}
-                className="text-lg text-slate-900 mb-2 cursor-move select-none"
+                className="text-lg text-[color:var(--panel-text)] mb-2 cursor-move select-none"
               >
                 Тоот нэмэх
               </h3>
-              <p className="text-sm text-slate-500 mb-4">
+              <p className="text-sm text-[color:var(--muted-text)] mb-4">
                 {floor ? `${floor}-р давхарт шинэ тоот нэмнэ үү.` : "Давхар сонгоогүй байна."}
               </p>
               <div className="mb-4">
@@ -132,7 +132,7 @@ export default function AddUnitModal({
                     const val = e.target.value.replace(/[^0-9A-Za-z,\-\s]/g, "");
                     setValue(val);
                   }}
-                  className="w-full px-3 py-2 rounded-2xl border border-gray-200 focus:outline-none focus:ring"
+                  className="w-full px-3 py-2 rounded-2xl border border-[color:var(--surface-border)] focus:outline-none focus:ring"
                   autoFocus
                 />
               </div>

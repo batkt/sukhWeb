@@ -210,7 +210,7 @@ function Tokhirgoo() {
                       {item.text}
                     </span>
                     {isSoon && (
-                      <span className="text-xs text-green-500 whitespace-nowrap flex-shrink-0 overflow-hidden text-ellipsis max-w-20">
+                      <span className="text-xs text-theme whitespace-nowrap flex-shrink-0 overflow-hidden text-ellipsis max-w-20">
                         Тун удахгүй
                       </span>
                     )}

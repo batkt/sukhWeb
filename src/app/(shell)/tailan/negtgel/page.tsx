@@ -173,7 +173,7 @@ export default function NegtgelTailanPage() {
             classNames={{
               root: "!h-full !w-full",
               input:
-                "text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
+                "text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
             }}
           />
         </div>
@@ -181,7 +181,7 @@ export default function NegtgelTailanPage() {
           onClick={exportToExcel}
           className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
         >
-          <FileSpreadsheet className="w-4 h-4 text-emerald-600" /> Excel татах
+          <FileSpreadsheet className="w-4 h-4 text-theme" /> Excel татах
         </button>
       </div>
 

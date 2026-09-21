@@ -860,11 +860,11 @@ export default function KhariltsagchModal({
             >
               <div
                 onPointerDown={(e) => dragControls.start(e)}
-                className="flex items-center justify-between px-4 py-3 border-b border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-transparent via-white/5 to-transparent cursor-move select-none"
+                className="flex items-center justify-between px-4 py-3 border-b border-[color:var(--surface-border)] bg-gradient-to-r from-transparent via-white/5 to-transparent cursor-move select-none"
               >
                 <div className="flex items-center gap-3">
                   <svg
-                    className="w-5 h-5 text-slate-600 dark:text-slate-400"
+                    className="w-5 h-5 text-[color:var(--muted-text)]"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -876,7 +876,7 @@ export default function KhariltsagchModal({
                       d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                     />
                   </svg>
-                  <h2 className="text-lg text-slate-900 dark:text-white">
+                  <h2 className="text-lg text-[color:var(--panel-text)] dark:text-white">
                     {editingClient
                       ? "Харилцагчийн мэдээлэл засах"
                       : "Харилцагч нэмэх"}
@@ -891,7 +891,7 @@ export default function KhariltsagchModal({
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 text-slate-500 dark:text-slate-400"
+                    className="h-5 w-5 text-[color:var(--muted-text)]"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -916,7 +916,7 @@ export default function KhariltsagchModal({
                     {/* Төрөл */}
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <label className="block text-xs text-slate-600 dark:text-slate-400 transition-colors">
+                        <label className="block text-xs text-[color:var(--muted-text)] transition-colors">
                           Төрөл
                         </label>
                       </div>
@@ -940,7 +940,7 @@ export default function KhariltsagchModal({
 
                     {/* Овог */}
                     <div>
-                      <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors">
+                      <label className="block text-xs text-[color:var(--muted-text)] mb-1 transition-colors">
                         Овог
                       </label>
                       <input
@@ -959,7 +959,7 @@ export default function KhariltsagchModal({
 
                     {/* Нэр */}
                     <div>
-                      <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors">
+                      <label className="block text-xs text-[color:var(--muted-text)] mb-1 transition-colors">
                         Нэр
                       </label>
                       <input
@@ -978,7 +978,7 @@ export default function KhariltsagchModal({
 
                     {/* Утас */}
                     <div>
-                      <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors">
+                      <label className="block text-xs text-[color:var(--muted-text)] mb-1 transition-colors">
                         Утас
                       </label>
                       <input
@@ -1002,8 +1002,8 @@ export default function KhariltsagchModal({
 
                     {/* Units Section */}
                     <div className="md:col-span-2 space-y-4 pt-2">
-                      <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-2">
-                        <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">Гараж / Агуулах</h3>
+                      <div className="flex items-center justify-between border-b border-[color:var(--surface-border)] pb-2">
+                        <h3 className="text-sm font-semibold text-[color:var(--panel-text)]">Гараж / Агуулах</h3>
                         <div className="flex gap-2">
                           <Button
                             type="button"
@@ -1030,15 +1030,15 @@ export default function KhariltsagchModal({
                       {garages.map((garage: any, gIdx: number) => {
                         const gFlatIdx = getGarageFlatIndex(gIdx);
                         return (
-                          <div key={`garage-${gIdx}`} className="rounded-lg border-l-4 border-l-emerald-500 border border-emerald-100 dark:border-emerald-900/40 bg-emerald-50/30 dark:bg-emerald-950/10 overflow-hidden">
-                            <div className="flex items-center justify-between px-3 py-2 border-b border-emerald-100 dark:border-emerald-900/40 bg-emerald-50/60 dark:bg-emerald-950/20">
+                          <div key={`garage-${gIdx}`} className="rounded-lg border-l-4 border-l-emerald-500 border border-theme/30 dark:border-theme/40 bg-theme/30 dark:bg-theme/10 overflow-hidden">
+                            <div className="flex items-center justify-between px-3 py-2 border-b border-theme/30 dark:border-theme/40 bg-theme/60 dark:bg-theme/20">
                               <div className="flex items-center gap-2">
-                                <h5 className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                                <h5 className="text-[10px] font-bold uppercase tracking-wider text-theme dark:text-theme">
                                   Гараж {garages.length > 1 ? `#${gIdx + 1}` : ""}
                                 </h5>
                               </div>
                               <button type="button" onClick={() => removeGarage(gIdx)}
-                                className="p-1 text-rose-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded transition-all">
+                                className="p-1 text-danger hover:text-danger hover:bg-danger/10 rounded transition-all">
                                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                                 </svg>
@@ -1046,14 +1046,14 @@ export default function KhariltsagchModal({
                             </div>
                             <div className="p-3 grid grid-cols-2 gap-3">
                               <div>
-                                <label className="block text-[10px] uppercase tracking-wider font-bold text-emerald-600 dark:text-emerald-500 mb-1">Давхар</label>
+                                <label className="block text-[10px] uppercase tracking-wider font-bold text-theme dark:text-theme mb-1">Давхар</label>
                                 <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${gFlatIdx}.davkhar`) ? "input-error" : ""}`}>
                                   <TusgaiZagvar value={garage.davkhar || ""} onChange={(val: string) => updateGarageField(gIdx, "davkhar", val)}
                                     options={additionalFloors.map((d) => ({ value: d, label: d }))} className="w-full h-full" placeholder="Давхар..." />
                                 </div>
                               </div>
                               <div>
-                                <label className="block text-[10px] uppercase tracking-wider font-bold text-emerald-600 dark:text-emerald-500 mb-1">Дугаар</label>
+                                <label className="block text-[10px] uppercase tracking-wider font-bold text-theme dark:text-theme mb-1">Дугаар</label>
                                 {(() => {
                                   const opts = getTootOptions("1", garage.davkhar || "", "Зогсоол");
                                   return (
@@ -1073,15 +1073,15 @@ export default function KhariltsagchModal({
                       {storages.map((storage: any, sIdx: number) => {
                         const sFlatIdxNested = getStorageFlatIndex(sIdx);
                         return (
-                          <div key={`storage-${sIdx}`} className="rounded-lg border-l-4 border-l-indigo-500 border border-indigo-100 dark:border-indigo-900/40 bg-indigo-50/30 dark:bg-indigo-950/10 overflow-hidden">
-                            <div className="flex items-center justify-between px-3 py-2 border-b border-indigo-100 dark:border-indigo-900/40 bg-indigo-50/60 dark:bg-indigo-950/20">
+                          <div key={`storage-${sIdx}`} className="rounded-lg border-l-4 border-l-indigo-500 border border-theme/30 dark:border-theme/40 bg-theme/30 dark:bg-theme/10 overflow-hidden">
+                            <div className="flex items-center justify-between px-3 py-2 border-b border-theme/30 dark:border-theme/40 bg-theme/60 dark:bg-theme/20">
                               <div className="flex items-center gap-2">
-                                <h5 className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-400">
+                                <h5 className="text-[10px] font-bold uppercase tracking-wider text-theme dark:text-theme">
                                   Агуулах {storages.length > 1 ? `#${sIdx + 1}` : ""}
                                 </h5>
                               </div>
                               <button type="button" onClick={() => removeStorage(sIdx)}
-                                className="p-1 text-rose-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded transition-all">
+                                className="p-1 text-danger hover:text-danger hover:bg-danger/10 rounded transition-all">
                                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                                 </svg>
@@ -1089,14 +1089,14 @@ export default function KhariltsagchModal({
                             </div>
                             <div className="p-3 grid grid-cols-2 gap-3">
                               <div>
-                                <label className="block text-[10px] uppercase tracking-wider font-bold text-indigo-600 dark:text-indigo-500 mb-1">Давхар</label>
+                                <label className="block text-[10px] uppercase tracking-wider font-bold text-theme dark:text-theme mb-1">Давхар</label>
                                 <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${sFlatIdxNested}.davkhar`) ? "input-error" : ""}`}>
                                   <TusgaiZagvar value={storage.davkhar || ""} onChange={(val: string) => updateStorageField(sIdx, "davkhar", val)}
                                     options={additionalFloors.map((d) => ({ value: d, label: d }))} className="w-full h-full" placeholder="Давхар..." />
                                 </div>
                               </div>
                               <div>
-                                <label className="block text-[10px] uppercase tracking-wider font-bold text-indigo-600 dark:text-indigo-500 mb-1">Дугаар</label>
+                                <label className="block text-[10px] uppercase tracking-wider font-bold text-theme dark:text-theme mb-1">Дугаар</label>
                                 {(() => {
                                   const opts = getTootOptions("1", storage.davkhar || "", "Агуулах");
                                   return (
@@ -1114,7 +1114,7 @@ export default function KhariltsagchModal({
                     </div>
                     {/* Tailbar */}
                     <div className="md:col-span-2">
-                      <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors">
+                      <label className="block text-xs text-[color:var(--muted-text)] mb-1 transition-colors">
                         Тайлбар
                       </label>
                       <textarea
@@ -1132,7 +1132,7 @@ export default function KhariltsagchModal({
                   </div>
                 </div>
 
-                <div className="flex justify-end px-4 py-3 border-t border-gray-200/50 dark:border-gray-700/50 gap-3 bg-gradient-to-r from-transparent via-white/5 to-transparent">
+                <div className="flex justify-end px-4 py-3 border-t border-[color:var(--surface-border)] gap-3 bg-gradient-to-r from-transparent via-white/5 to-transparent">
                   <Button
                     type="button"
                     onClick={requestClose}

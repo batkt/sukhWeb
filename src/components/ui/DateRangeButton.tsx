@@ -232,7 +232,7 @@ export default function DateRangeButton({
                         );
                         setStartDay(""); // Reset day when month changes
                       }}
-                      className="w-full px-3 py-2 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg text-sm text-[color:var(--panel-text)] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 appearance-none cursor-pointer"
+                      className="w-full px-3 py-2 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg text-sm text-[color:var(--panel-text)] focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme appearance-none cursor-pointer"
                       style={{ borderRadius: "0.5rem" }}
                     >
                       <option value="">Сар</option>
@@ -253,7 +253,7 @@ export default function DateRangeButton({
                         )
                       }
                       disabled={!startYear || !startMonth}
-                      className="w-full px-3 py-2 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg text-sm text-[color:var(--panel-text)] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full px-3 py-2 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg text-sm text-[color:var(--panel-text)] focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{ borderRadius: "0.5rem" }}
                     >
                       <option value="">Өдөр</option>
@@ -283,7 +283,7 @@ export default function DateRangeButton({
                         );
                         setEndDay(""); // Reset day when year/month changes
                       }}
-                      className="w-full px-3 py-2 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg text-sm text-[color:var(--panel-text)] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 appearance-none cursor-pointer"
+                      className="w-full px-3 py-2 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg text-sm text-[color:var(--panel-text)] focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme appearance-none cursor-pointer"
                       style={{ borderRadius: "0.5rem" }}
                     >
                       <option value="">Он</option>
@@ -304,7 +304,7 @@ export default function DateRangeButton({
                         );
                         setEndDay(""); // Reset day when month changes
                       }}
-                      className="w-full px-3 py-2 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg text-sm text-[color:var(--panel-text)] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 appearance-none cursor-pointer"
+                      className="w-full px-3 py-2 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg text-sm text-[color:var(--panel-text)] focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme appearance-none cursor-pointer"
                       style={{ borderRadius: "0.5rem" }}
                     >
                       <option value="">Сар</option>
@@ -325,7 +325,7 @@ export default function DateRangeButton({
                         )
                       }
                       disabled={!endYear || !endMonth}
-                      className="w-full px-3 py-2 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg text-sm text-[color:var(--panel-text)] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full px-3 py-2 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg text-sm text-[color:var(--panel-text)] focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{ borderRadius: "0.5rem" }}
                     >
                       <option value="">Өдөр</option>
@@ -361,7 +361,7 @@ export default function DateRangeButton({
                     !endMonth ||
                     !endDay
                   }
-                  className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="px-4 py-2 text-sm bg-theme text-white rounded-lg hover:bg-theme disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   style={{ borderRadius: "0.5rem" }}
                 >
                   Сонгох

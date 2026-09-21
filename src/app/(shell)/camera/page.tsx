@@ -54,7 +54,7 @@ const RealTimeClock = () => {
   }, []);
   return (
     <div className="text-right hidden md:block">
-      <p className="text-xs font-black text-slate-400 dark:text-slate-500 tracking-wide font-mono">
+      <p className="text-xs font-black text-[color:var(--muted-text)] tracking-wide font-mono">
         {time}
       </p>
     </div>
@@ -207,7 +207,7 @@ export default function CameraVideoWall() {
   }, [filteredCameras.length, cols]);
 
   return (
-    <div className={`h-full overflow-y-auto overflow-x-hidden custom-scrollbar bg-slate-950 text-white rounded-3xl relative ${isWallMode ? "p-2" : "p-4 md:p-6"}`}>
+    <div className={`h-full overflow-y-auto overflow-x-hidden custom-scrollbar bg-[color:var(--panel)] text-white rounded-3xl relative ${isWallMode ? "p-2" : "p-4 md:p-6"}`}>
       <div className="space-y-4">
 
         {/* Main Header Bar */}
@@ -219,7 +219,7 @@ export default function CameraVideoWall() {
                 <h1 className="text-xl  tracking-tight text-white flex items-center gap-2">
                   Хяналтын Камерууд
                 </h1>
-                <p className="text-[10px] text-slate-400 mt-0.5 font-medium uppercase tracking-wider">
+                <p className="text-[10px] text-[color:var(--muted-text)] mt-0.5 font-medium uppercase tracking-wider">
                   Амар СӨХ — Видео хяналтын систем
                 </p>
               </div>
@@ -229,7 +229,7 @@ export default function CameraVideoWall() {
               <RealTimeClock />
               <button
                 onClick={() => setIsConfigOpen(true)}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-slate-900 border border-white/10 hover:bg-slate-800 transition-all hover:scale-105 active:scale-95 text-xs  text-slate-200 shadow-md"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-[color:var(--panel)] border border-white/10 hover:bg-[color:var(--panel)] transition-all hover:scale-105 active:scale-95 text-xs  text-[color:var(--muted-text)] shadow-md"
                 title="Тохиргоо нээх"
               >
                 <Settings className="w-4 h-4 text-[color:var(--theme)]" />
@@ -240,59 +240,59 @@ export default function CameraVideoWall() {
         )}
 
         {/* Toolbar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-3xl bg-slate-900/60 border border-white/5 backdrop-blur-xl shadow-lg">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-3xl bg-[color:var(--panel)] border border-white/5 backdrop-blur-xl shadow-lg">
           {/* Filters */}
           <div className="flex items-center gap-3 flex-wrap">
             <div className="relative">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--muted-text)]" />
               <input
                 type="text"
                 placeholder="Камер, суваг хайх..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-56 pl-10 pr-4 h-9 rounded-full bg-slate-950 border border-white/10 text-xs text-white placeholder:text-slate-500 focus:border-theme/40 outline-none transition-all"
+                className="w-56 pl-10 pr-4 h-9 rounded-full bg-[color:var(--panel)] border border-white/10 text-xs text-white placeholder:text-[color:var(--muted-text)] focus:border-theme/40 outline-none transition-all"
               />
             </div>
-            <span className="px-3.5 py-1.5 rounded-full bg-slate-950 border border-white/5 text-[10px] text-slate-400  uppercase tracking-wider font-mono shadow-inner flex items-center gap-1.5">
-              Идэвхтэй: <span className="text-emerald-400">{filteredCameras.length}</span> / <span className="text-slate-300">{cameras.filter(c => c.enabled).length}</span>
+            <span className="px-3.5 py-1.5 rounded-full bg-[color:var(--panel)] border border-white/5 text-[10px] text-[color:var(--muted-text)]  uppercase tracking-wider font-mono shadow-inner flex items-center gap-1.5">
+              Идэвхтэй: <span className="text-theme">{filteredCameras.length}</span> / <span className="text-[color:var(--muted-text)]">{cameras.filter(c => c.enabled).length}</span>
             </span>
           </div>
 
           {/* Grid Layout controls */}
           <div className="flex items-center gap-3">
             {/* Grid selectors */}
-            <div className="flex items-center rounded-full bg-slate-950 p-1 border border-white/10 text-xs h-9">
+            <div className="flex items-center rounded-full bg-[color:var(--panel)] p-1 border border-white/10 text-xs h-9">
               <button
                 onClick={() => setCols(0)}
-                className={`px-2.5 py-1 rounded-full transition-colors ${cols === 0 ? "bg-slate-800 text-white " : "text-slate-400 hover:text-white"}`}
+                className={`px-2.5 py-1 rounded-full transition-colors ${cols === 0 ? "bg-[color:var(--panel)] text-white " : "text-[color:var(--muted-text)] hover:text-white"}`}
                 title="Автомат байршил"
               >
                 <Grid className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={() => setCols(1)}
-                className={`w-6 h-6 flex items-center justify-center rounded-full transition-colors ${cols === 1 ? "bg-slate-800 text-white " : "text-slate-400 hover:text-white"}`}
+                className={`w-6 h-6 flex items-center justify-center rounded-full transition-colors ${cols === 1 ? "bg-[color:var(--panel)] text-white " : "text-[color:var(--muted-text)] hover:text-white"}`}
                 title="1 багана (Том)"
               >
                 1
               </button>
               <button
                 onClick={() => setCols(2)}
-                className={`w-6 h-6 flex items-center justify-center rounded-full transition-colors ${cols === 2 ? "bg-slate-800 text-white " : "text-slate-400 hover:text-white"}`}
+                className={`w-6 h-6 flex items-center justify-center rounded-full transition-colors ${cols === 2 ? "bg-[color:var(--panel)] text-white " : "text-[color:var(--muted-text)] hover:text-white"}`}
                 title="2 багана"
               >
                 2
               </button>
               <button
                 onClick={() => setCols(3)}
-                className={`w-6 h-6 flex items-center justify-center rounded-full transition-colors ${cols === 3 ? "bg-slate-800 text-white " : "text-slate-400 hover:text-white"}`}
+                className={`w-6 h-6 flex items-center justify-center rounded-full transition-colors ${cols === 3 ? "bg-[color:var(--panel)] text-white " : "text-[color:var(--muted-text)] hover:text-white"}`}
                 title="3 багана"
               >
                 3
               </button>
               <button
                 onClick={() => setCols(4)}
-                className={`w-6 h-6 flex items-center justify-center rounded-full transition-colors ${cols === 4 ? "bg-slate-800 text-white " : "text-slate-400 hover:text-white"}`}
+                className={`w-6 h-6 flex items-center justify-center rounded-full transition-colors ${cols === 4 ? "bg-[color:var(--panel)] text-white " : "text-[color:var(--muted-text)] hover:text-white"}`}
                 title="4 багана"
               >
                 4
@@ -304,7 +304,7 @@ export default function CameraVideoWall() {
               onClick={() => setIsWallMode(!isWallMode)}
               className={`flex items-center gap-2 px-5 h-9 rounded-full border text-xs  transition-all ${isWallMode
                 ? "bg-theme border-theme text-white shadow-lg animate-pulse"
-                : "bg-slate-950 border-white/10 text-slate-300 hover:text-white"
+                : "bg-[color:var(--panel)] border-white/10 text-[color:var(--muted-text)] hover:text-white"
                 }`}
               title="Бүтэн дэлгэцээр хянах"
             >
@@ -315,7 +315,7 @@ export default function CameraVideoWall() {
             {isWallMode && (
               <button
                 onClick={() => setIsConfigOpen(true)}
-                className="w-9 h-9 flex items-center justify-center rounded-full bg-slate-900 border border-white/10 hover:bg-slate-800 transition-colors"
+                className="w-9 h-9 flex items-center justify-center rounded-full bg-[color:var(--panel)] border border-white/10 hover:bg-[color:var(--panel)] transition-colors"
                 title="Тохиргоо"
               >
                 <Settings className="w-4 h-4 text-[color:var(--theme)]" />
@@ -326,19 +326,19 @@ export default function CameraVideoWall() {
 
         {/* Live Camera Surveillance Grid */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center p-36 rounded-3xl bg-slate-900/40 border border-white/5 shadow-inner">
-            <RefreshCw className="w-14 h-14 text-slate-700 mb-4 animate-spin text-[color:var(--theme)]" />
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">
+          <div className="flex flex-col items-center justify-center p-36 rounded-3xl bg-[color:var(--panel)] border border-white/5 shadow-inner">
+            <RefreshCw className="w-14 h-14 text-[color:var(--panel-text)] mb-4 animate-spin text-[color:var(--theme)]" />
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-[color:var(--muted-text)]">
               Уншиж байна...
             </p>
           </div>
         ) : cameras.length === 0 ? (
-          <div className="flex flex-col items-center justify-center p-36 rounded-3xl bg-slate-900/40 border border-white/5 shadow-inner">
-            <VideoOff className="w-14 h-14 text-slate-700 mb-4 animate-pulse" />
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">
+          <div className="flex flex-col items-center justify-center p-36 rounded-3xl bg-[color:var(--panel)] border border-white/5 shadow-inner">
+            <VideoOff className="w-14 h-14 text-[color:var(--panel-text)] mb-4 animate-pulse" />
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-[color:var(--muted-text)]">
               СӨХ-ийн камер тохируулаагүй байна
             </p>
-            <p className="text-[10px] text-slate-600 mt-2 max-w-md text-center">
+            <p className="text-[10px] text-[color:var(--muted-text)] mt-2 max-w-md text-center">
               Барилгын хяналтын камер СӨХ-ийн тохиргоонд одоогоор тохируулагдаагүй байна. Тохиргоо цэс рүү орж камеруудыг тохируулна уу.
             </p>
             <Link
@@ -349,12 +349,12 @@ export default function CameraVideoWall() {
             </Link>
           </div>
         ) : filteredCameras.length === 0 ? (
-          <div className="flex flex-col items-center justify-center p-36 rounded-3xl bg-slate-900/40 border border-white/5 shadow-inner">
-            <VideoOff className="w-14 h-14 text-slate-700 mb-4 animate-pulse" />
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">
+          <div className="flex flex-col items-center justify-center p-36 rounded-3xl bg-[color:var(--panel)] border border-white/5 shadow-inner">
+            <VideoOff className="w-14 h-14 text-[color:var(--panel-text)] mb-4 animate-pulse" />
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-[color:var(--muted-text)]">
               Идэвхтэй камер олдсонгүй
             </p>
-            <p className="text-[10px] text-slate-600 mt-2 max-w-md text-center">
+            <p className="text-[10px] text-[color:var(--muted-text)] mt-2 max-w-md text-center">
               Бүх камеруудыг хаасан байна. Тохиргоо цэсний "Нийтийн удирдлага" хэсгээс камеруудыг идэвхжүүлнэ үү.
             </p>
           </div>
@@ -368,11 +368,11 @@ export default function CameraVideoWall() {
                 {/* Header Overlay */}
                 <div className="absolute top-3 left-3 right-3 z-40 flex items-center justify-between pointer-events-none">
                   <div className="flex items-center gap-2 bg-black/75 backdrop-blur-xl px-3 py-1.5 rounded-full border border-white/10 shadow-md">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse"></span>
-                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-200">
+                    <span className="w-1.5 h-1.5 rounded-full bg-theme shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse"></span>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-[color:var(--muted-text)]">
                       {camera.name}
                     </span>
-                    <span className="text-[9px] text-slate-400 font-mono border-l border-white/20 pl-2">
+                    <span className="text-[9px] text-[color:var(--muted-text)] font-mono border-l border-white/20 pl-2">
                       CH {camera.root?.replace("Streaming/Channels/", "") || ""}
                     </span>
                   </div>
@@ -408,7 +408,7 @@ export default function CameraVideoWall() {
             }}
           />
           {/* Drawer Body */}
-          <div className="relative w-full max-w-md h-full bg-slate-900 border-l border-white/10 shadow-2xl flex flex-col text-slate-200 z-10 animate-slideLeft rounded-l-3xl overflow-hidden">
+          <div className="relative w-full max-w-md h-full bg-[color:var(--panel)] border-l border-white/10 shadow-2xl flex flex-col text-[color:var(--muted-text)] z-10 animate-slideLeft rounded-l-3xl overflow-hidden">
 
             {/* Drawer Header */}
             <div className="p-4 border-b border-white/5 flex items-center justify-between">
@@ -420,7 +420,7 @@ export default function CameraVideoWall() {
                 onClick={() => {
                   setIsConfigOpen(false);
                 }}
-                className="p-1.5 rounded-full hover:bg-slate-800 transition-colors text-slate-400 hover:text-white"
+                className="p-1.5 rounded-full hover:bg-[color:var(--panel)] transition-colors text-[color:var(--muted-text)] hover:text-white"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -430,12 +430,12 @@ export default function CameraVideoWall() {
             <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
 
               {/* Stream Server URL */}
-              <div className="p-4 rounded-2xl bg-slate-950 border border-white/5 space-y-3">
-                <p className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">Стрим Сервер</p>
+              <div className="p-4 rounded-2xl bg-[color:var(--panel)] border border-white/5 space-y-3">
+                <p className="text-[10px] text-[color:var(--muted-text)] font-bold uppercase tracking-wider">Стрим Сервер</p>
                 <div className="flex gap-1.5">
                   <button
                     onClick={() => handleStreamServerUrlChange("http://127.0.0.1:8083")}
-                    className={`flex-1 px-3 py-2 rounded-xl text-[10px] font-bold border transition-colors ${streamServerUrl === "http://127.0.0.1:8083" ? "bg-theme border-theme !text-white" : "bg-slate-800 border-white/5 text-slate-300 hover:bg-slate-700"}`}
+                    className={`flex-1 px-3 py-2 rounded-xl text-[10px] font-bold border transition-colors ${streamServerUrl === "http://127.0.0.1:8083" ? "bg-theme border-theme !text-white" : "bg-[color:var(--panel)] border-white/5 text-[color:var(--muted-text)] hover:bg-[color:var(--panel)]"}`}
                   >
                     Локал
                   </button>
@@ -444,7 +444,7 @@ export default function CameraVideoWall() {
                       const relayUrl = `${apiUrl}/camera/stream/${effectiveBarilgiinId}`;
                       handleStreamServerUrlChange(relayUrl);
                     }}
-                    className={`flex-1 px-3 py-2 rounded-xl text-[10px] font-bold border transition-colors ${streamServerUrl !== "http://127.0.0.1:8083" ? "bg-theme border-theme !text-white" : "bg-slate-800 border-white/5 text-slate-300 hover:bg-slate-700"}`}
+                    className={`flex-1 px-3 py-2 rounded-xl text-[10px] font-bold border transition-colors ${streamServerUrl !== "http://127.0.0.1:8083" ? "bg-theme border-theme !text-white" : "bg-[color:var(--panel)] border-white/5 text-[color:var(--muted-text)] hover:bg-[color:var(--panel)]"}`}
                   >
                     Цахим (Relay)
                   </button>
@@ -453,23 +453,23 @@ export default function CameraVideoWall() {
                   type="text"
                   value={streamServerUrl}
                   onChange={(e) => handleStreamServerUrlChange(e.target.value)}
-                  className="w-full h-8 px-3 rounded-xl bg-slate-950 border border-white/10 !text-white font-mono text-[10px] outline-none focus:border-theme/40"
+                  className="w-full h-8 px-3 rounded-xl bg-[color:var(--panel)] border border-white/10 !text-white font-mono text-[10px] outline-none focus:border-theme/40"
                 />
               </div>
 
               {/* Quick controls */}
-              <div className="flex items-center justify-between bg-slate-950 p-4 rounded-2xl border border-white/5 text-xs font-bold">
+              <div className="flex items-center justify-between bg-[color:var(--panel)] p-4 rounded-2xl border border-white/5 text-xs font-bold">
                 <span className="text-white">Харагдац тохируулах:</span>
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleToggleAll(true)}
-                    className="px-3.5 py-1.5 rounded-full bg-slate-800 border border-white/5 hover:bg-slate-700 transition-colors text-white"
+                    className="px-3.5 py-1.5 rounded-full bg-[color:var(--panel)] border border-white/5 hover:bg-[color:var(--panel)] transition-colors text-white"
                   >
                     Бүгдийг нээх
                   </button>
                   <button
                     onClick={() => handleToggleAll(false)}
-                    className="px-3.5 py-1.5 rounded-full bg-slate-800 border border-white/5 hover:bg-slate-700 transition-colors text-white"
+                    className="px-3.5 py-1.5 rounded-full bg-[color:var(--panel)] border border-white/5 hover:bg-[color:var(--panel)] transition-colors text-white"
                   >
                     Бүгдийг хаах
                   </button>
@@ -483,8 +483,8 @@ export default function CameraVideoWall() {
                   return (
                     <div
                       key={cam.id}
-                      className={`p-3 rounded-2xl bg-slate-950/80 border transition-all ${cam.enabled
-                        ? "border-emerald-500/10 hover:border-emerald-500/20"
+                      className={`p-3 rounded-2xl bg-[color:var(--panel)] border transition-all ${cam.enabled
+                        ? "border-theme/10 hover:border-theme/20"
                         : "border-white/5 opacity-70"
                         }`}
                     >
@@ -492,7 +492,7 @@ export default function CameraVideoWall() {
                         <div className="min-w-0 flex-1 flex items-center gap-2">
                           <button
                             onClick={() => handleToggleEnabled(cam.id, !cam.enabled)}
-                            className={`w-7 h-4 rounded-full p-0.5 transition-all duration-300 shrink-0 ${cam.enabled ? "bg-emerald-500" : "bg-slate-800"}`}
+                            className={`w-7 h-4 rounded-full p-0.5 transition-all duration-300 shrink-0 ${cam.enabled ? "bg-theme" : "bg-[color:var(--panel)]"}`}
                           >
                             <div className={`w-3 h-3 rounded-full bg-white transition-all ${cam.enabled ? "translate-x-3" : "translate-x-0"}`}></div>
                           </button>
@@ -501,7 +501,7 @@ export default function CameraVideoWall() {
                             <span className="block text-xs font-bold text-white truncate">
                               {idx + 1}. {cam.name}
                             </span>
-                            <span className="block text-[9px] text-slate-400 font-mono truncate mt-0.5">
+                            <span className="block text-[9px] text-[color:var(--muted-text)] font-mono truncate mt-0.5">
                               {cam.ip}:{cam.port} / CH {channelCode}
                             </span>
                           </div>
@@ -514,7 +514,7 @@ export default function CameraVideoWall() {
             </div>
 
             {/* Drawer Footer */}
-            <div className="p-4 border-t border-white/5 bg-slate-950/50 flex">
+            <div className="p-4 border-t border-white/5 bg-[color:var(--panel)] flex">
               <button
                 onClick={() => {
                   setIsConfigOpen(false);
@@ -617,22 +617,22 @@ const CameraStream = React.memo(
 
     if (error) {
       return (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950 text-white p-4">
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[color:var(--panel)] text-white p-4">
           <div className="relative text-center max-w-sm">
-            <div className="absolute inset-0 bg-red-500/10 rounded-full blur-2xl animate-pulse"></div>
-            <div className="relative p-6 rounded-3xl bg-slate-900/90 border border-red-500/20">
-              <VideoOff className="w-10 h-10 mb-3 mx-auto opacity-75 text-red-500" />
+            <div className="absolute inset-0 bg-danger/10 rounded-full blur-2xl animate-pulse"></div>
+            <div className="relative p-6 rounded-3xl bg-[color:var(--panel)] border border-danger/20">
+              <VideoOff className="w-10 h-10 mb-3 mx-auto opacity-75 text-danger" />
               <p className="text-xs  mb-1">
                 Холболт амжилтгүй
               </p>
-              <p className="text-[9px] text-slate-500 font-mono mb-4">
+              <p className="text-[9px] text-[color:var(--muted-text)] font-mono mb-4">
                 {ip}:{port}
               </p>
 
               <div className="flex flex-col gap-2">
                 <button
                   onClick={() => setError(false)}
-                  className="px-5 py-2 rounded-full bg-slate-850 border border-white/10 hover:bg-slate-750 transition-colors text-[10px]  uppercase tracking-wider"
+                  className="px-5 py-2 rounded-full bg-[color:var(--panel)] border border-white/10 hover:bg-[color:var(--panel)] transition-colors text-[10px]  uppercase tracking-wider"
                 >
                   Дахин ачаалах
                 </button>
@@ -701,7 +701,7 @@ const CameraStream = React.memo(
         {isFullscreen && (
           <div className="absolute top-4 left-4 z-30 px-5 py-3 rounded-2xl bg-black/85 backdrop-blur-xl border border-white/10 text-white shadow-2xl">
             <div className="flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+              <div className="w-2 h-2 rounded-full bg-theme animate-pulse"></div>
               <div>
                 <p className="text-xs ">{name}</p>
                 <p className="text-[10px] opacity-75 font-mono mt-0.5">

@@ -141,7 +141,7 @@ const UtasBurtgel: ForwardRefRenderFunction<
                 </Form.Item>
                 <MinusCircleOutlined
                   onClick={() => remove(name)}
-                  className="cursor-pointer text-red-600"
+                  className="cursor-pointer text-danger"
                 />
               </Space>
             ))}

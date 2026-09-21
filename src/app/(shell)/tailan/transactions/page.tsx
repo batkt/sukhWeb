@@ -208,7 +208,7 @@ export default function TransactionsPage() {
         <div className="flex gap-3">
           <IconTextButton
             onClick={exportCsv}
-            icon={<Download className="w-4 h-4 text-emerald-600" />}
+            icon={<Download className="w-4 h-4 text-theme" />}
             label="CSV татах"
             className="neu-panel px-4 py-2 rounded-xl text-sm"
           />
@@ -216,7 +216,7 @@ export default function TransactionsPage() {
             onClick={handlePrint}
             className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
           >
-            <Printer className="w-4 h-4 text-blue-600" />
+            <Printer className="w-4 h-4 text-theme" />
             Хэвлэх
           </button> */}
         </div>

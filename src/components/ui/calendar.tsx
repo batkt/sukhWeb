@@ -63,7 +63,7 @@ export function Calendar({
           "bg-primary text-white dark:text-black",
           "hover:bg-primary/90 hover:text-white dark:hover:text-black"
         ),
-        day_outside: "text-neutral-400 dark:text-neutral-500",
+        day_outside: "text-[color:var(--muted-text)]",
         day_disabled: "opacity-40 cursor-not-allowed",
         ...classNames,
       }}
@@ -73,9 +73,9 @@ export function Calendar({
         ...modifiers,
       }}
       modifiersClassNames={{
-        weekend: "text-red-500 dark:text-red-400",
-        week: "dark:text-blue-500",       
-        outside: "text-neutral-400 dark:text-neutral-500",
+        weekend: "text-danger",
+        week: "dark:text-theme",       
+        outside: "text-[color:var(--muted-text)]",
         selected: "bg-primary text-white dark:text-black",
         range_start: "bg-primary text-white dark:text-black",
         range_end: "bg-primary text-white dark:text-black",

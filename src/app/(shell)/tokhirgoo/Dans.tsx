@@ -46,18 +46,18 @@ function DansTile({ data, onEdit, onDelete, t }: DansTileProps) {
   const [deleteOpened, setDeleteOpened] = useState(false);
 
   return (
-    <div className="flex items-center flex-col justify-between bg-white/50 dark:bg-gray-800/30 rounded-xl shadow-md hover:shadow-lg dark:shadow-gray-900/20 dark:hover:shadow-gray-900/40 p-4 mb-3 transition-all duration-300 border border-gray-200/50 dark:border-gray-700/50">
+    <div className="flex items-center flex-col justify-between bg-white/50 rounded-xl shadow-md hover:shadow-lg p-4 mb-3 transition-all duration-300 border border-[color:var(--surface-border)]">
       <div className="flex justify-between flex-col sm:flex-row w-full gap-3">
         <div>
           <div className=" text-theme dark:text-white text-sm mb-1">{t("Данс")}</div>
-          <div className="text-theme dark:text-gray-300 font-mono">{data.dugaar}</div>
+          <div className="text-theme font-mono">{data.dugaar}</div>
           {data.ibanDugaar && (
-            <div className="text-xs text-gray-400 dark:text-gray-500 font-mono mt-0.5">{data.ibanDugaar}</div>
+            <div className="text-xs text-[color:var(--muted-text)] font-mono mt-0.5">{data.ibanDugaar}</div>
           )}
         </div>
         <div className="sm:text-right">
           <div className=" text-theme dark:text-white text-sm mb-1">{t("Дансны нэр")}</div>
-          <div className="text-theme dark:text-gray-300 mb-3">{data.dansniiNer}</div>
+          <div className="text-theme mb-3">{data.dansniiNer}</div>
           <div className="flex justify-end gap-2">
             <Popover
               opened={deleteOpened}
@@ -69,7 +69,7 @@ function DansTile({ data, onEdit, onDelete, t }: DansTileProps) {
                 <Tooltip label={t("Устгах")} withArrow>
                    <button
                      onClick={() => setDeleteOpened(true)}
-                     className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 hover:bg-rose-600 hover:text-white transition-all duration-200"
+                     className="flex h-9 w-9 items-center justify-center rounded-xl bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all duration-200"
                      aria-label={t("Устгах")}
                    >
                      <span className="text-lg leading-none">×</span>
@@ -105,7 +105,7 @@ function DansTile({ data, onEdit, onDelete, t }: DansTileProps) {
         <Tooltip label={t("Засах")} withArrow>
           <button
             onClick={() => onEdit(data)}
-            className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white transition-all duration-200"
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-theme/10 dark:bg-theme/30 text-theme dark:text-theme hover:bg-theme hover:text-white transition-all duration-200"
             aria-label={t("Засах")}
           >
             <span className="text-sm">✎</span>
@@ -258,8 +258,8 @@ function Dans() {
     setCorporateState: React.Dispatch<React.SetStateAction<Partial<DansItem>>>;
   }) => {
     const colors = bankKey === "khanbank" 
-      ? "from-blue-50 to-cyan-50 dark:from-blue-900/30 dark:to-cyan-900/30 border-blue-200/50 dark:border-blue-600/50 dark:shadow-blue-900/20 dark:hover:shadow-blue-900/30"
-      : "from-emerald-50 to-teal-50 dark:from-emerald-900/30 dark:to-teal-900/30 border-emerald-200/50 dark:border-emerald-600/50 dark:shadow-emerald-900/20 dark:hover:shadow-emerald-900/30";
+      ? "from-theme/10 to-theme/5 border-theme/50 dark:border-theme/50 dark:shadow-theme/20 dark:hover:shadow-theme/30"
+      : "from-theme/10 to-theme/5 border-theme/50 dark:border-theme/50 dark:shadow-theme/20 dark:hover:shadow-theme/30";
     
     return (
       <div className={`bg-gradient-to-br ${colors} shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl p-5 mb-6 border`}>
@@ -275,7 +275,7 @@ function Dans() {
           </Button>
         </div>
 
-        <div className="flex items-center justify-between mb-4 p-3 bg-white/50 dark:bg-gray-800/30 rounded-xl">
+        <div className="flex items-center justify-between mb-4 p-3 bg-white/50 rounded-xl">
           <span className=" text-theme dark:text-white">{t("Corporate ашиглах эсэх")}</span>
           <Switch
             checked={corporateState.corporateAshiglakhEsekh || false}
@@ -289,7 +289,7 @@ function Dans() {
         </div>
 
         {corporateState.corporateAshiglakhEsekh && (
-          <div className="flex flex-col gap-3 mb-4 p-4 bg-white/50 dark:bg-gray-800/30 rounded-xl">
+          <div className="flex flex-col gap-3 mb-4 p-4 bg-white/50 rounded-xl">
             <TextInput
               label={t("Нэвтрэх нэр")}
               placeholder="CAdmin1"

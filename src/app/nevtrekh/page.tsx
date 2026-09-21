@@ -38,19 +38,19 @@ function Nevtrekh() {
   if (!aldaa)
     return (
       <div className="flex h-screen w-screen items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-green-600" />
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-[color:var(--surface-border)] border-t-green-600" />
       </div>
     );
 
   return (
     <div className="flex h-screen w-screen flex-col items-center justify-center gap-4 px-6 text-center">
-      <div className="text-lg font-medium text-red-500">{aldaa}</div>
-      <div className="text-sm text-gray-500">
+      <div className="text-lg font-medium text-danger">{aldaa}</div>
+      <div className="text-sm text-[color:var(--muted-text)]">
         ZevTabs удирдлагын системээс дахин оролдоно уу.
       </div>
       <button
         onClick={() => router.replace("/login")}
-        className="rounded-lg bg-green-600 px-5 py-2 text-white transition-colors hover:bg-green-700"
+        className="rounded-lg bg-theme px-5 py-2 text-white transition-colors hover:bg-theme"
       >
         Нэвтрэх хуудас руу
       </button>

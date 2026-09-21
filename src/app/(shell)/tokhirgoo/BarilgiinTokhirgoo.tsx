@@ -155,10 +155,10 @@ const EditBuildingModal: React.FC<{
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-6 py-5 border-b border-[color:var(--surface-border)] bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20">
+        <div className="px-6 py-5 border-b border-[color:var(--surface-border)] bg-gradient-to-r from-theme/50 to-theme/50 dark:from-theme/20 dark:to-theme/20">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Edit className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <Edit className="w-5 h-5 text-theme dark:text-theme" />
               <div>
                 <h3 className="text-xl  text-[color:var(--panel-text)]">
                   Барилга засах
@@ -183,7 +183,7 @@ const EditBuildingModal: React.FC<{
           {/* Building Name Section */}
           <div className="space-y-2">
             <label className="block text-sm  text-[color:var(--panel-text)]">
-              Барилгын нэр <span className="text-red-500">*</span>
+              Барилгын нэр <span className="text-danger">*</span>
             </label>
             <input
               id="barilgiin-edit-name"
@@ -195,14 +195,14 @@ const EditBuildingModal: React.FC<{
               }}
               onKeyDown={(e) => e.stopPropagation()}
               placeholder="Жишээ: А барилга, Б барилга..."
-              className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
+              className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
             />
           </div>
 
           {/* Location Section */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 pb-2 border-b border-[color:var(--surface-border)]">
-              <MapPin className="w-4 h-4 text-blue-500" />
+              <MapPin className="w-4 h-4 text-theme" />
               <h4 className="text-sm  text-[color:var(--panel-text)]">
                 Байршил
               </h4>
@@ -210,7 +210,7 @@ const EditBuildingModal: React.FC<{
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div id="barilgiin-duureg" className="space-y-2">
                 <label className="block text-sm  text-[color:var(--panel-text)]">
-                  Дүүрэг <span className="text-red-500">*</span>
+                  Дүүрэг <span className="text-danger">*</span>
                 </label>
                 <div className="relative">
                   <TusgaiZagvar
@@ -231,7 +231,7 @@ const EditBuildingModal: React.FC<{
 
               <div id="barilgiin-horoo" className="space-y-2">
                 <label className="block text-sm  text-[color:var(--panel-text)]">
-                  Хороо <span className="text-red-500">*</span>
+                  Хороо <span className="text-danger">*</span>
                 </label>
                 <div className="relative">
                   <TusgaiZagvar
@@ -266,7 +266,7 @@ const EditBuildingModal: React.FC<{
           {/* Building Details Section */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 pb-2 border-b border-[color:var(--surface-border)]">
-              <Home className="w-4 h-4 text-blue-500" />
+              <Home className="w-4 h-4 text-theme" />
               <h4 className="text-sm  text-[color:var(--panel-text)]">
                 Барилгын дэлгэрэнгүй
               </h4>
@@ -274,7 +274,7 @@ const EditBuildingModal: React.FC<{
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="block text-sm  text-[color:var(--panel-text)]">
-                  Нийт орцын тоо <span className="text-red-500">*</span>
+                  Нийт орцын тоо <span className="text-danger">*</span>
                 </label>
                 <input
                   type="number"
@@ -288,13 +288,13 @@ const EditBuildingModal: React.FC<{
                   }}
                   onKeyDown={(e) => e.stopPropagation()}
                   placeholder="0"
-                  className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
+                  className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
                 />
               </div>
 
               <div className="space-y-2">
                 <label className="block text-sm  text-[color:var(--panel-text)]">
-                  Нийт давхарын тоо <span className="text-red-500">*</span>
+                  Нийт давхарын тоо <span className="text-danger">*</span>
                 </label>
                 <input
                   type="number"
@@ -308,7 +308,7 @@ const EditBuildingModal: React.FC<{
                   }}
                   onKeyDown={(e) => e.stopPropagation()}
                   placeholder="0"
-                  className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
+                  className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
                 />
               </div>
 
@@ -329,10 +329,10 @@ const EditBuildingModal: React.FC<{
                   }}
                   onKeyDown={(e) => e.stopPropagation()}
                   placeholder="0"
-                  className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
+                  className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
                 />
                 {(editZogsoolDavkharCount && Number(editZogsoolDavkharCount) > 0) ? (
-                  <p className="text-xs text-blue-500 dark:text-blue-400 mt-1">
+                  <p className="text-xs text-theme dark:text-theme mt-1">
                     Үүсгэх давхар: {Array.from({ length: Number(editZogsoolDavkharCount) }, (_, i) => `B${i + 1}`).join(", ")}
                   </p>
                 ) : null}
@@ -465,10 +465,10 @@ const NewBuildingModal: React.FC<{
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-6 py-5 border-b border-[color:var(--surface-border)] bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20">
+        <div className="px-6 py-5 border-b border-[color:var(--surface-border)] bg-gradient-to-r from-theme/50 to-theme/50 dark:from-theme/20 dark:to-theme/20">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Building2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <Building2 className="w-5 h-5 text-theme dark:text-theme" />
               <div>
                 <h3 className="text-xl  text-[color:var(--panel-text)]">
                   Шинэ барилга нэмэх
@@ -493,7 +493,7 @@ const NewBuildingModal: React.FC<{
           {/* Building Name Section */}
           <div className="space-y-2">
             <label className="block text-sm  text-[color:var(--panel-text)]">
-              Барилгын нэр <span className="text-red-500">*</span>
+              Барилгын нэр <span className="text-danger">*</span>
             </label>
             <input
               type="text"
@@ -501,14 +501,14 @@ const NewBuildingModal: React.FC<{
               onChange={(e) => setNewBarilgaNer(e.target.value)}
               onKeyDown={(e) => e.stopPropagation()}
               placeholder="Жишээ: А барилга, Б барилга..."
-              className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
+              className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
             />
           </div>
 
           {/* Location Section */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 pb-2 border-b border-[color:var(--surface-border)]">
-              <MapPin className="w-4 h-4 text-blue-500" />
+              <MapPin className="w-4 h-4 text-theme" />
               <h4 className="text-sm  text-[color:var(--panel-text)]">
                 Байршил
               </h4>
@@ -516,7 +516,7 @@ const NewBuildingModal: React.FC<{
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div id="barilgiin-duureg" className="space-y-2">
                 <label className="block text-sm  text-[color:var(--panel-text)]">
-                  Дүүрэг <span className="text-red-500">*</span>
+                  Дүүрэг <span className="text-danger">*</span>
                 </label>
                 <div className="relative">
                   <TusgaiZagvar
@@ -537,7 +537,7 @@ const NewBuildingModal: React.FC<{
 
               <div id="barilgiin-horoo" className="space-y-2">
                 <label className="block text-sm  text-[color:var(--panel-text)]">
-                  Хороо <span className="text-red-500">*</span>
+                  Хороо <span className="text-danger">*</span>
                 </label>
                 <div className="relative">
                   <TusgaiZagvar
@@ -572,7 +572,7 @@ const NewBuildingModal: React.FC<{
           {/* Building Details Section */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 pb-2 border-b border-[color:var(--surface-border)]">
-              <Home className="w-4 h-4 text-blue-500" />
+              <Home className="w-4 h-4 text-theme" />
               <h4 className="text-sm  text-[color:var(--panel-text)]">
                 Барилгын дэлгэрэнгүй
               </h4>
@@ -580,7 +580,7 @@ const NewBuildingModal: React.FC<{
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="block text-sm  text-[color:var(--panel-text)]">
-                  Нийт орцын тоо <span className="text-red-500">*</span>
+                  Нийт орцын тоо <span className="text-danger">*</span>
                 </label>
                 <input
                   type="number"
@@ -593,13 +593,13 @@ const NewBuildingModal: React.FC<{
                   }
                   onKeyDown={(e) => e.stopPropagation()}
                   placeholder="0"
-                  className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
+                  className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
                 />
               </div>
 
               <div className="space-y-2">
                 <label className="block text-sm  text-[color:var(--panel-text)]">
-                  Нийт давхарын тоо <span className="text-red-500">*</span>
+                  Нийт давхарын тоо <span className="text-danger">*</span>
                 </label>
                 <input
                   type="number"
@@ -612,7 +612,7 @@ const NewBuildingModal: React.FC<{
                   }
                   onKeyDown={(e) => e.stopPropagation()}
                   placeholder="0"
-                  className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
+                  className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
                 />
               </div>
 
@@ -632,10 +632,10 @@ const NewBuildingModal: React.FC<{
                   }
                   onKeyDown={(e) => e.stopPropagation()}
                   placeholder="0"
-                  className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
+                  className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
                 />
                 {(zogsoolDavkharCount && Number(zogsoolDavkharCount) > 0) ? (
-                  <p className="text-xs text-blue-500 dark:text-blue-400 mt-1">
+                  <p className="text-xs text-theme dark:text-theme mt-1">
                     Үүсгэх давхар: {Array.from({ length: Number(zogsoolDavkharCount) }, (_, i) => `B${i + 1}`).join(", ")}
                   </p>
                 ) : null}
@@ -2162,7 +2162,7 @@ export default function BarilgiinTokhirgoo() {
         {/* Header Section */}
         <div className="space-y-4">
           <div className="flex items-center gap-3 pb-3 border-b border-[color:var(--surface-border)] rounded-t-lg">
-            <Building2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <Building2 className="w-5 h-5 text-theme dark:text-theme" />
             <h2 className="text-xl  text-[color:var(--panel-text)]">
               Барилгын тохиргоо
             </h2>
@@ -2179,7 +2179,7 @@ export default function BarilgiinTokhirgoo() {
               value={sohNer}
               onChange={(e) => setSohNer(e.target.value)}
               placeholder="СӨХ-ийн нэрийг оруулна уу"
-              className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] !rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] !rounded-lg focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] disabled:opacity-60 disabled:cursor-not-allowed"
               style={{ borderRadius: "0.5rem" }}
               disabled
             />
@@ -2188,7 +2188,7 @@ export default function BarilgiinTokhirgoo() {
           {/* Contact Information */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 pb-2 border-b border-[color:var(--surface-border)]">
-              <Users className="w-4 h-4 text-blue-500" />
+              <Users className="w-4 h-4 text-theme" />
               <h3 className="text-sm  text-[color:var(--panel-text)]">
                 Холбоо барих мэдээлэл
               </h3>
@@ -2212,7 +2212,7 @@ export default function BarilgiinTokhirgoo() {
                     setSukhDugaar(digits);
                   }}
                   placeholder="Утас дугаар оруулна уу"
-                  className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] !rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
+                  className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] !rounded-lg focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
                   style={{ borderRadius: "0.5rem" }}
                 />
               </div>
@@ -2225,7 +2225,7 @@ export default function BarilgiinTokhirgoo() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Имэйл хаяг оруулна уу"
-                  className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] !rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
+                  className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] !rounded-lg focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
                   style={{ borderRadius: "0.5rem" }}
                 />
               </div>
@@ -2238,7 +2238,7 @@ export default function BarilgiinTokhirgoo() {
                 type="text"
                 value={baiguullaga?.khayag || ""}
                 placeholder="Хаяг"
-                className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] !rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] !rounded-lg focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] disabled:opacity-60 disabled:cursor-not-allowed"
                 style={{ borderRadius: "0.5rem" }}
                 disabled
                 readOnly
@@ -2270,7 +2270,7 @@ export default function BarilgiinTokhirgoo() {
           <div className="space-y-4 pt-4 border-t border-[color:var(--surface-border)]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Home className="w-4 h-4 text-blue-500" />
+                <Home className="w-4 h-4 text-theme" />
                 <h3 className="text-lg  text-[color:var(--panel-text)]">
                   Бүртгэлтэй барилгууд (Байр)
                 </h3>
@@ -2309,7 +2309,7 @@ export default function BarilgiinTokhirgoo() {
                         e.stopPropagation();
                         setSelectedBuildingId(String(b._id));
                       }}
-                      className="flex-1 cursor-pointer text-[color:var(--panel-text)] hover:text-blue-600 dark:hover:text-blue-400 transition-colors  pointer-events-auto"
+                      className="flex-1 cursor-pointer text-[color:var(--panel-text)] hover:text-theme dark:hover:text-theme transition-colors  pointer-events-auto"
                     >
                       {b.ner || "-"}
                     </div>
@@ -2328,7 +2328,7 @@ export default function BarilgiinTokhirgoo() {
                           variant="ghost"
                           size="sm"
                           title="Шилжүүлэх"
-                          className="!rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:text-blue-600 dark:hover:text-blue-400"
+                          className="!rounded-lg hover:bg-theme/10 dark:hover:bg-theme/20 hover:text-theme dark:hover:text-theme"
                           style={{ borderRadius: "0.5rem" }}
                         >
                           <ArrowRight className="w-4 h-4" />
@@ -2366,7 +2366,7 @@ export default function BarilgiinTokhirgoo() {
 
         {/* No Building Message */}
         {!barilga && (
-          <div className="p-4 rounded-lg border border-blue-300 dark:border-blue-700 bg-blue-50/50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-300 text-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="p-4 rounded-lg border border-theme/30 dark:border-theme bg-theme/50 dark:bg-theme/20 text-theme dark:text-theme text-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-start gap-2">
               <Building2 className="w-5 h-5 mt-0.5 flex-shrink-0" />
               <div>
@@ -2505,12 +2505,12 @@ export default function BarilgiinTokhirgoo() {
                 <div className="p-4 rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]">
                   <label className="block text-sm  text-[color:var(--panel-text)] mb-2">
                     Шинэ байгууллага сонгох{" "}
-                    <span className="text-red-500">*</span>
+                    <span className="text-danger">*</span>
                   </label>
                   <select
                     value={targetOrgId}
                     onChange={(e) => setTargetOrgId(e.target.value)}
-                    className="w-full px-4 py-2 rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] focus:outline-none focus:ring-2 focus:ring-theme"
                     style={{ borderRadius: "0.5rem" }}
                   >
                     <option value="">Байгууллага сонгох...</option>

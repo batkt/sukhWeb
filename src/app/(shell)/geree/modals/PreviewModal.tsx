@@ -45,13 +45,13 @@ export default function PreviewModal({ show, onClose, template }: PreviewModalPr
               onPointerDown={(e) => dragControls.start(e)}
               className="flex items-center justify-between mb-4 cursor-move select-none"
             >
-              <h3 className="text-xl  text-slate-900">
+              <h3 className="text-xl  text-[color:var(--panel-text)]">
                 Загварын урьдчилсан харалт
               </h3>
               <button
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={onClose}
-                className="p-2 hover:bg-gray-300 rounded-2xl transition-colors"
+                className="p-2 hover:bg-[color:var(--panel)] rounded-2xl transition-colors"
                 aria-label="Хаах"
                 title="Хаах"
               >

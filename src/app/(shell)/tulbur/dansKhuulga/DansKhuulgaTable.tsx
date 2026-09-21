@@ -98,7 +98,7 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
         sortDirections: ["ascend", "descend"] as const,
         sortOrder: sortKey === "date" ? sortOrder : null,
         render: (val: string) => (
-          <span className="text-gray-900 dark:text-white whitespace-nowrap">
+          <span className="text-[color:var(--panel-text)] dark:text-white whitespace-nowrap">
             {val || "-"}
           </span>
         ),
@@ -112,7 +112,7 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
         sortDirections: ["ascend", "descend"] as const,
         sortOrder: sortKey === "action" ? sortOrder : null,
         render: (val: string, item: DansKhuulgaItem) => (
-          <span className="text-gray-900 dark:text-white" title={val}>
+          <span className="text-[color:var(--panel-text)] dark:text-white" title={val}>
             {item.action || item.raw?.uilchilgeeniiUtga || "-"}
           </span>
         ),
@@ -127,7 +127,7 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
         sortDirections: ["ascend", "descend"] as const,
         sortOrder: sortKey === "total" ? sortOrder : null,
         render: (val: number) => (
-          <span className="text-gray-900 dark:text-white whitespace-nowrap font-medium">
+          <span className="text-[color:var(--panel-text)] dark:text-white whitespace-nowrap font-medium">
             {formatNumber(val || 0, 2)}
           </span>
         ),
@@ -152,7 +152,7 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
           if (bal === null || bal === undefined || bal === "") return "-";
           const num = Number(bal);
           return (
-            <span className="text-gray-900 dark:text-white whitespace-nowrap font-medium">
+            <span className="text-[color:var(--panel-text)] dark:text-white whitespace-nowrap font-medium">
               {!isNaN(num) ? formatNumber(num, 2) : "-"}
             </span>
           );
@@ -168,7 +168,7 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
         sortDirections: ["ascend", "descend"] as const,
         sortOrder: sortKey === "account" ? sortOrder : null,
         render: (val: string, item: DansKhuulgaItem) => (
-          <span className="text-gray-900 dark:text-white whitespace-nowrap">
+          <span className="text-[color:var(--panel-text)] dark:text-white whitespace-nowrap">
             {item.account || item.raw?.bairlal || "-"}
           </span>
         ),
@@ -188,24 +188,24 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
           if (!geree) {
             // Холбоогүй мөр, эсвэл гэрээ нь татагдаж амжаагүй.
             return (
-              <span className="text-gray-400 dark:text-gray-500">-</span>
+              <span className="text-[color:var(--muted-text)]">-</span>
             );
           }
           const ner = gereeniiEzenNer(geree);
           const nemelt = (item.contracts?.length || 0) - 1;
           return (
             <span
-              className="text-gray-900 dark:text-white"
+              className="text-[color:var(--panel-text)] dark:text-white"
               title={item.contracts?.map(gereeniiTailbar).join("\n")}
             >
               {ner || "-"}
               {geree.toot ? (
-                <span className="text-gray-500 dark:text-gray-400">
+                <span className="text-[color:var(--muted-text)]">
                   {" "}· {geree.toot} тоот
                 </span>
               ) : null}
               {nemelt > 0 ? (
-                <span className="text-gray-400"> +{nemelt}</span>
+                <span className="text-[color:var(--muted-text)]"> +{nemelt}</span>
               ) : null}
             </span>
           );
@@ -245,7 +245,7 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
               {isLinked ? (
                 <button
                   onClick={() => onUnlink?.(item)}
-                  className="flex items-center justify-center w-5 h-5 rounded-full bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30 hover:scale-105 active:scale-95 transition-all duration-200"
+                  className="flex items-center justify-center w-5 h-5 rounded-full bg-theme/10 dark:bg-theme/30 text-theme dark:text-theme border border-theme/30 dark:border-theme hover:bg-theme/10 dark:hover:bg-theme/30 hover:scale-105 active:scale-95 transition-all duration-200"
                   title="Холболт салгах"
                 >
                   <CheckOutlined className="" />
@@ -253,7 +253,7 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
               ) : (
                 <button
                   onClick={() => onLink?.(item)}
-                  className="flex items-center justify-center w-5 h-5 rounded-full bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/30 hover:scale-105 active:scale-95 transition-all duration-200"
+                  className="flex items-center justify-center w-5 h-5 rounded-full bg-danger/10 text-danger border border-danger/30 hover:bg-danger/10 hover:scale-105 active:scale-95 transition-all duration-200"
                   title="Гүйлгээ холбох"
                 >
                   <ExclamationOutlined className="" />
@@ -317,60 +317,60 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
                     ? record.contractIds.join(", ")
                     : "-";
               return (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-3 p-4 bg-gray-50 dark:bg-gray-800/60 rounded-lg">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-3 p-4 bg-[color:var(--surface-hover)] rounded-lg">
                   <div>
-                    <div className="text-gray-500 dark:text-gray-400 mb-0.5">
+                    <div className="text-[color:var(--muted-text)] mb-0.5">
                       Гүйлгээний №
                     </div>
-                    <div className="font-medium text-gray-900 dark:text-white font-mono">
+                    <div className="font-medium text-[color:var(--panel-text)] dark:text-white font-mono">
                       {txnNo}
                     </div>
                   </div>
                   <div>
-                    <div className="text-gray-500 dark:text-gray-400 mb-0.5">
+                    <div className="text-[color:var(--muted-text)] mb-0.5">
                       Огноо, цаг
                     </div>
-                    <div className="font-medium text-gray-900 dark:text-white">
+                    <div className="font-medium text-[color:var(--panel-text)] dark:text-white">
                       {record.date || "-"}
                     </div>
                   </div>
                   <div>
-                    <div className="text-gray-500 dark:text-gray-400 mb-0.5">
+                    <div className="text-[color:var(--muted-text)] mb-0.5">
                       Төрөл
                     </div>
-                    <div className="font-medium text-gray-900 dark:text-white">
+                    <div className="font-medium text-[color:var(--panel-text)] dark:text-white">
                       {bankLabel}
                     </div>
                   </div>
                   <div>
-                    <div className="text-gray-500 dark:text-gray-400 mb-0.5">
+                    <div className="text-[color:var(--muted-text)] mb-0.5">
                       Дансны эзэмшигч
                     </div>
-                    <div className="font-medium text-gray-900 dark:text-white">
+                    <div className="font-medium text-[color:var(--panel-text)] dark:text-white">
                       {raw.accName || "-"}
                     </div>
                   </div>
                   <div className="sm:col-span-2">
-                    <div className="text-gray-500 dark:text-gray-400 mb-0.5">
+                    <div className="text-[color:var(--muted-text)] mb-0.5">
                       Тайлбар
                     </div>
-                    <div className="font-medium text-gray-900 dark:text-white break-words">
+                    <div className="font-medium text-[color:var(--panel-text)] dark:text-white break-words">
                       {record.action || "-"}
                     </div>
                   </div>
                   <div>
-                    <div className="text-gray-500 dark:text-gray-400 mb-0.5">
+                    <div className="text-[color:var(--muted-text)] mb-0.5">
                       Холбогдсон гэрээ
                     </div>
-                    <div className="font-medium text-gray-900 dark:text-white">
+                    <div className="font-medium text-[color:var(--panel-text)] dark:text-white">
                       {contractLabel}
                     </div>
                   </div>
                   <div>
-                    <div className="text-gray-500 dark:text-gray-400 mb-0.5">
+                    <div className="text-[color:var(--muted-text)] mb-0.5">
                       и-баримт
                     </div>
-                    <div className="font-medium text-gray-900 dark:text-white">
+                    <div className="font-medium text-[color:var(--panel-text)] dark:text-white">
                       {raw.ebarimtAvsanEsekh ? "Авсан" : "Аваагүй"}
                     </div>
                   </div>
@@ -380,8 +380,8 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
           }}
           locale={{
             emptyText: (
-              <div className="py-8 text-center bg-white dark:bg-gray-900">
-                <span className="text-gray-500 dark:text-gray-400">
+              <div className="py-8 text-center bg-white">
+                <span className="text-[color:var(--muted-text)]">
                   Гүйлгээний мэдээлэл олдсонгүй
                 </span>
               </div>
@@ -393,65 +393,65 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
               // мөр байсан тул урт жагсаалт дээр доош гүйлгэхэд алга болж,
               // сүүлийн мөртэй давхцаж харагддаг байв.
               <Table.Summary fixed>
-                <Table.Summary.Row className="bg-gray-50 dark:bg-gray-800">
+                <Table.Summary.Row className="bg-[color:var(--surface-hover)]">
                   <Table.Summary.Cell
                     index={0}
                     colSpan={2}
                     align="center"
-                    className="dark:border-gray-700"
+                    className=""
                   />
                   <Table.Summary.Cell
                     index={1}
                     align="right"
-                    className="dark:border-gray-700 pr-2"
+                    className=" pr-2"
                   >
-                    <span className="font-medium text-gray-900 dark:!text-white whitespace-nowrap">
+                    <span className="font-medium text-[color:var(--panel-text)] dark:!text-white whitespace-nowrap">
                       Нийт дүн:
                     </span>
                   </Table.Summary.Cell>
                   <Table.Summary.Cell
                     index={2}
                     align="right"
-                    className="dark:border-gray-700"
+                    className=""
                   >
-                    <span className="font-medium text-gray-900 dark:!text-white whitespace-nowrap">
+                    <span className="font-medium text-[color:var(--panel-text)] dark:!text-white whitespace-nowrap">
                       {formatNumber(totalSum, 2)}₮
                     </span>
                   </Table.Summary.Cell>
                   <Table.Summary.Cell
                     index={3}
                     align="center"
-                    className="dark:border-gray-700"
+                    className=""
                   >
-                    <span className="text-gray-500 dark:text-gray-400">-</span>
+                    <span className="text-[color:var(--muted-text)]">-</span>
                   </Table.Summary.Cell>
                   {/* Шилжүүлсэн данс */}
                   <Table.Summary.Cell
                     index={4}
                     align="center"
-                    className="dark:border-gray-700"
+                    className=""
                   >
-                    <span className="text-gray-500 dark:text-gray-400">-</span>
+                    <span className="text-[color:var(--muted-text)]">-</span>
                   </Table.Summary.Cell>
                   {/* Оршин суугч */}
                   <Table.Summary.Cell
                     index={5}
-                    className="dark:border-gray-700"
+                    className=""
                   />
                   {/* Холбосон огноо */}
                   <Table.Summary.Cell
                     index={6}
-                    className="dark:border-gray-700"
+                    className=""
                   />
                   {/* Төлөв */}
                   <Table.Summary.Cell
                     index={7}
-                    className="dark:border-gray-700"
+                    className=""
                   />
                   {/* Дэлгэрэнгүй */}
                   <Table.Summary.Cell
                     index={8}
-                    className="dark:border-gray-700"
+                    className=""
                   />
                 </Table.Summary.Row>
               </Table.Summary>

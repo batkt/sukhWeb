@@ -536,20 +536,20 @@ const InvoiceModal = ({
         aria-modal="true"
       >
         <div className="invoice-modal h-full flex flex-col">
-          <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 print-break no-print rounded-t-3xl">
+          <div className="p-6 border-b border-[color:var(--surface-border)] flex justify-between items-center bg-[color:var(--surface-hover)] print-break no-print rounded-t-3xl">
             <div className="flex items-center gap-4">
               <div>
-                <h2 className="text-xl  text-slate-800">
+                <h2 className="text-xl  text-[color:var(--panel-text)]">
                   Үйлчилгээний нэхэмжлэх
                 </h2>
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-[color:var(--muted-text)]">
                   Нэхэмжлэхийн дугаар:{" "}
                   {latestInvoice?.nekhemjlekhiinDugaar ||
                     nekhemjlekhData?.nekhemjlekhiinDugaar ||
                     latestInvoice?.nekhemjlekhiinDugaar ||
                     "-"}
                 </p>
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-[color:var(--muted-text)]">
                   Огноо:{" "}
                   {formatDate(
                     latestInvoice?.ognoo ||
@@ -562,13 +562,13 @@ const InvoiceModal = ({
             </div>
             <button
               onClick={() => onClose()}
-              className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
+              className="p-2 hover:bg-[color:var(--surface-hover)] rounded-2xl transition-colors"
               aria-label="Хаах"
               title="Хаах"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6 text-slate-700"
+                className="h-6 w-6 text-[color:var(--panel-text)]"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -587,10 +587,10 @@ const InvoiceModal = ({
           <div className="p-6 space-y-6 flex-1 overflow-y-auto overflow-x-auto overscroll-contain custom-scrollbar">
             <div className="grid grid-cols-2 gap-6 print-break">
               <div>
-                <h3 className="text-xl  text-slate-800 mb-3">
+                <h3 className="text-xl  text-[color:var(--panel-text)] mb-3">
                   {baiguullaga?.ner}
                 </h3>
-                <div className="space-y-2 text-sm text-slate-600">
+                <div className="space-y-2 text-sm text-[color:var(--muted-text)]">
                   <p className="flex items-center gap-2">
                     <span className="">Имэйл:</span>{" "}
                     {(() => {
@@ -636,7 +636,7 @@ const InvoiceModal = ({
               </div>
               <div className="space-y-2">
                 <div className="inline-block text-left bg-transparent p-3 rounded-xl">
-                  <p className="text-sm text-slate-600">
+                  <p className="text-sm text-[color:var(--muted-text)]">
                     <span className="">Огноо:</span>{" "}
                     {formatDate(
                       latestInvoice?.ognoo ||
@@ -648,7 +648,7 @@ const InvoiceModal = ({
 
                   {/* {cronData && (
                     <>
-                      <p className="text-sm text-slate-600">
+                      <p className="text-sm text-[color:var(--muted-text)]">
                         <span className="">
                           Нэхэмжлэх үүсгэх өдөр:
                         </span>{" "}
@@ -660,10 +660,10 @@ const InvoiceModal = ({
               </div>
             </div>
 
-            <div className="border border-blue-400 rounded-xl p-4 print-break">
+            <div className="border border-theme rounded-xl p-4 print-break">
               <div className="flex items-center gap-3 mb-3">
                 <div>
-                  <h3 className=" text-slate-800">
+                  <h3 className=" text-[color:var(--panel-text)]">
                     {resident?.ovog} {resident?.ner}
                   </h3>
                 </div>
@@ -671,17 +671,17 @@ const InvoiceModal = ({
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div className="space-y-1">
                   <p>
-                    <span className="text-slate-500">Тоот:</span>{" "}
+                    <span className="text-[color:var(--muted-text)]">Тоот:</span>{" "}
                     {resident?.toot}
                   </p>
                   <p>
-                    <span className="text-slate-500">Гэрээ №:</span>{" "}
+                    <span className="text-[color:var(--muted-text)]">Гэрээ №:</span>{" "}
                     {latestInvoice?.gereeniiDugaar || "-"}
                   </p>
                 </div>
                 <div className="space-y-1">
                   <p>
-                    <span className="text-slate-500">Утас:</span>{" "}
+                    <span className="text-[color:var(--muted-text)]">Утас:</span>{" "}
                     {resident?.utas}
                   </p>
                 </div>
@@ -690,49 +690,49 @@ const InvoiceModal = ({
 
             {/* Expenses Table */}
             <div>
-              <h4 className="font-bold mb-2 text-slate-700">
+              <h4 className="font-bold mb-2 text-[color:var(--panel-text)]">
                 Зардлын жагсаалт
               </h4>
-              <div className="border border-gray-100 rounded-xl overflow-hidden shadow-sm">
+              <div className="border border-[color:var(--surface-border)] rounded-xl overflow-hidden shadow-sm">
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-[color:var(--surface-hover)]">
                     <tr>
-                      <th className="py-2 px-3 text-left text-slate-600">
+                      <th className="py-2 px-3 text-left text-[color:var(--muted-text)]">
                         Зардал
                       </th>
-                      <th className="py-2 px-3 text-right text-slate-600">
+                      <th className="py-2 px-3 text-right text-[color:var(--muted-text)]">
                         Дүн
                       </th>
-                      <th className="py-2 px-3 text-right text-slate-600">
+                      <th className="py-2 px-3 text-right text-[color:var(--muted-text)]">
                         Тайлбар
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y divide-[color:var(--surface-border)]">
                     {expenseRows.map((row: any) => (
                       <tr
                         key={row._id}
-                        className="hover:bg-gray-50/50 transition-colors"
+                        className="hover:bg-[color:var(--surface-hover)] transition-colors"
                       >
-                        <td className="py-2 px-3 text-slate-700">{row.ner}</td>
-                        <td className="py-2 px-3 text-right text-slate-900 font-medium">
+                        <td className="py-2 px-3 text-[color:var(--panel-text)]">{row.ner}</td>
+                        <td className="py-2 px-3 text-right text-[color:var(--panel-text)] font-medium">
                           {formatCurrency(Number(row.dun))}
                         </td>
-                        <td className="py-2 px-3 text-right text-slate-500">
+                        <td className="py-2 px-3 text-right text-[color:var(--muted-text)]">
                           {row.tailbar}
                         </td>
                       </tr>
                     ))}
                   </tbody>
-                  <tfoot className="bg-gray-50 border-t border-gray-100">
+                  <tfoot className="bg-[color:var(--surface-hover)] border-t border-[color:var(--surface-border)]">
                     <tr>
                       <td
                         colSpan={2}
-                        className="py-2 px-3 text-slate-700 force-bold"
+                        className="py-2 px-3 text-[color:var(--panel-text)] force-bold"
                       >
                         Нийт дүн:
                       </td>
-                      <td className="py-2 px-3 text-right text-slate-900 force-bold">
+                      <td className="py-2 px-3 text-right text-[color:var(--panel-text)] force-bold">
                         {formatCurrency(totalSum)}
                       </td>
                     </tr>
@@ -744,49 +744,49 @@ const InvoiceModal = ({
             {/* Payments Table */}
             {paymentRows.length > 0 && (
               <div>
-                <h4 className="font-bold mb-2 text-slate-700">
+                <h4 className="font-bold mb-2 text-[color:var(--panel-text)]">
                   Төлөлтийн мэдээлэл
                 </h4>
-                <div className="border border-gray-100 rounded-xl overflow-hidden shadow-sm">
+                <div className="border border-[color:var(--surface-border)] rounded-xl overflow-hidden shadow-sm">
                   <table className="w-full text-sm">
-                    <thead className="bg-gray-50">
+                    <thead className="bg-[color:var(--surface-hover)]">
                       <tr>
-                        <th className="py-2 px-3 text-left text-slate-600">
+                        <th className="py-2 px-3 text-left text-[color:var(--muted-text)]">
                           Огноо
                         </th>
-                        <th className="py-2 px-3 text-left text-slate-600">
+                        <th className="py-2 px-3 text-left text-[color:var(--muted-text)]">
                           Тайлбар
                         </th>
-                        <th className="py-2 px-3 text-right text-slate-600">
+                        <th className="py-2 px-3 text-right text-[color:var(--muted-text)]">
                           Дүн
                         </th>
-                        <th className="py-2 px-3 text-right text-slate-600">
+                        <th className="py-2 px-3 text-right text-[color:var(--muted-text)]">
                           Төрөл
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-[color:var(--surface-border)]">
                       {paymentRows.map((row: any) => (
                         <tr
                           key={row._id}
-                          className="hover:bg-gray-50/50 transition-colors"
+                          className="hover:bg-[color:var(--surface-hover)] transition-colors"
                         >
-                          <td className="py-2 px-3 text-slate-600 whitespace-nowrap">
+                          <td className="py-2 px-3 text-[color:var(--muted-text)] whitespace-nowrap">
                             {formatDate(row.ognoo)}
                           </td>
-                          <td className="py-2 px-3 text-slate-700">
+                          <td className="py-2 px-3 text-[color:var(--panel-text)]">
                             {row.tailbar}
                           </td>
-                          <td className="py-2 px-3 text-right text-green-700 font-bold">
+                          <td className="py-2 px-3 text-right text-theme font-bold">
                             -{formatNumber(row.dun)}{" "}
                           </td>
-                          <td className="py-2 px-3 text-right text-slate-500">
+                          <td className="py-2 px-3 text-right text-[color:var(--muted-text)]">
                             {row.turul}
                           </td>
                         </tr>
                       ))}
                     </tbody>
-                    <tfoot className="bg-gray-50 border-t font-bold text-green-700">
+                    <tfoot className="bg-[color:var(--surface-hover)] border-t font-bold text-theme">
                       <tr>
                         <td colSpan={2} className="py-2 px-3">
                           Төлсөн дүн (энэ удаа):
@@ -807,17 +807,17 @@ const InvoiceModal = ({
               </div>
             )}
 
-            <div className="border-t border-gray-100 pt-6 mt-4">
+            <div className="border-t border-[color:var(--surface-border)] pt-6 mt-4">
               <div className="flex flex-col items-end gap-3">
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-slate-500 font-medium whitespace-nowrap">
+                  <span className="text-sm text-[color:var(--muted-text)] font-medium whitespace-nowrap">
                     Төлбөрийн төлөв:
                   </span>
                   <span
                     className={`px-4 py-1.5 rounded-full text-xs font-bold shadow-sm ${
                       paymentStatusLabel === "Төлсөн"
-                        ? "bg-green-100 text-green-700 border border-green-200"
-                        : "bg-red-100 text-red-700 border border-red-200"
+                        ? "bg-success/10 text-success border border-success/30"
+                        : "bg-danger/10 text-danger border border-danger/30"
                     }`}
                   >
                     {paymentStatusLabel}
@@ -826,23 +826,23 @@ const InvoiceModal = ({
 
                 <div className="w-full max-w-[300px] space-y-2 text-right">
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-slate-500">Нийт нэхэмжилсэн:</span>
-                    <span className="text-slate-900 font-medium">
+                    <span className="text-[color:var(--muted-text)]">Нийт нэхэмжилсэн:</span>
+                    <span className="text-[color:var(--panel-text)] font-medium">
                       {formatCurrency(totalSum)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-slate-500">Нийт төлсөн:</span>
-                    <span className="text-green-700 font-medium">
+                    <span className="text-[color:var(--muted-text)]">Нийт төлсөн:</span>
+                    <span className="text-theme font-medium">
                       -{formatCurrency(totalPaidFromApi || 0)}
                     </span>
                   </div>
-                  <div className="pt-2 border-t border-gray-200 flex justify-between items-center">
-                    <span className="text-base font-bold text-slate-800">
+                  <div className="pt-2 border-t border-[color:var(--surface-border)] flex justify-between items-center">
+                    <span className="text-base font-bold text-[color:var(--panel-text)]">
                       Үлдэгдэл дүн:
                     </span>
                     <span
-                      className={`text-lg font-bold ${uldegdelDun > 0 ? "text-red-600" : "text-slate-900"}`}
+                      className={`text-lg font-bold ${uldegdelDun > 0 ? "text-danger" : "text-[color:var(--panel-text)]"}`}
                     >
                       {formatCurrency(uldegdelDun)}
                     </span>
@@ -852,7 +852,7 @@ const InvoiceModal = ({
             </div>
           </div>
 
-          <div className="border-t border-gray-100 bg-gray-50 p-4 no-print rounded-b-3xl">
+          <div className="border-t border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] p-4 no-print rounded-b-3xl">
             <div className="flex justify-end gap-3">
               <button
                 onClick={onClose}
@@ -1483,7 +1483,7 @@ export default function InvoicingZardluud() {
         render: (text: string, record: any) => (
           <div className="flex items-center gap-3">
             <div className="min-w-0">
-              <div className="text-gray-900 dark:text-white truncate">
+              <div className="text-[color:var(--panel-text)] dark:text-white truncate">
                 {text}
               </div>
             </div>
@@ -1496,7 +1496,7 @@ export default function InvoicingZardluud() {
         key: "toot",
         align: "center" as const,
         render: (text: string) => (
-          <span className="inline-flex items-center px-3 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-400">
+          <span className="inline-flex items-center px-3 py-0.5 rounded-full bg-theme/10 dark:bg-theme/40 text-theme dark:text-theme">
             {text || "-"}
           </span>
         ),
@@ -1512,7 +1512,7 @@ export default function InvoicingZardluud() {
               ? `${record.duureg}, ${record.horoo}, ${record.davkhar}`
               : record.khayag || "Хаяг тодорхойгүй";
           return (
-            <span className="text-gray-700 dark:text-gray-300">{address}</span>
+            <span className="text-[color:var(--panel-text)]">{address}</span>
           );
         },
       },
@@ -1522,7 +1522,7 @@ export default function InvoicingZardluud() {
         key: "utas",
         align: "center" as const,
         render: (text: string) => (
-          <span className="text-gray-700 dark:text-gray-300 font-mono">
+          <span className="text-[color:var(--panel-text)] font-mono">
             {text || "-"}
           </span>
         ),
@@ -1540,10 +1540,10 @@ export default function InvoicingZardluud() {
               : getPaymentStatusLabel(record);
           const cls =
             label === "Төлсөн"
-              ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400"
+              ? "bg-success/10 text-success dark:bg-success/40 dark:text-success"
               : label === "Төлөөгүй" || label === "Хугацаа хэтэрсэн"
-                ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-400"
-                : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400";
+                ? "bg-warning/10 text-warning"
+                : "bg-[color:var(--surface-hover)] text-[color:var(--panel-text)]";
           return (
             <span className={`px-3 py-0.5 rounded-full ${cls}`}>
               {label}
@@ -1563,7 +1563,7 @@ export default function InvoicingZardluud() {
           >
             <motion.button
               onClick={() => handleSendReminderSms(record)}
-              className="px-3 py-0.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
+              className="px-3 py-0.5 rounded-lg bg-theme hover:bg-theme dark:bg-theme dark:hover:bg-theme text-white transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               disabled={sendingSmsId === record._id}
@@ -1582,7 +1582,7 @@ export default function InvoicingZardluud() {
                 if (record.davkhar) params.set("davkhar", record.davkhar);
                 router.push(`/tulbur?${params.toString()}`);
               }}
-              className="px-4 py-0.5 rounded-lg bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-500 text-white transition-colors"
+              className="px-4 py-0.5 rounded-lg bg-theme hover:bg-theme dark:bg-theme dark:hover:bg-theme text-white transition-colors"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               title="Төлбөр хуудас руу шилжих"
@@ -1600,15 +1600,15 @@ export default function InvoicingZardluud() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-slate-600">Мэдээлэл ачааллаж байна...</p>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-theme"></div>
+          <p className="mt-4 text-[color:var(--muted-text)]">Мэдээлэл ачааллаж байна...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-theme/10 via-white to-purple-50 p-6">
       <LocalStyles />
       {/* Hidden title for modal context */}
       <motion.h1
@@ -1665,7 +1665,7 @@ export default function InvoicingZardluud() {
               whileHover={{ scale: 1.08, rotateY: 5 }}
               transition={{ duration: 0.4, type: "spring", stiffness: 300 }}
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-3xl opacity-0 group-hover:opacity-40 blur-xl transition-all duration-500" />
+              <div className="absolute inset-0 bg-gradient-to-r from-theme/20 to-purple-500/20 rounded-3xl opacity-0 group-hover:opacity-40 blur-xl transition-all duration-500" />
               <div className="neu-panel relative rounded-3xl p-6 backdrop-blur-xl bg-white/80 hover:shadow-2xl transition-all duration-500 overflow-hidden border border-white/20">
                 <motion.div
                   className="absolute inset-0 pointer-events-none bg-gradient-to-r from-white/30 via-white/10 to-white/30 opacity-0"
@@ -1683,7 +1683,7 @@ export default function InvoicingZardluud() {
                       ? stat.value
                       : String(stat.value)}
                 </div>
-                <div className="text-sm text-gray-600  leading-tight">
+                <div className="text-sm text-[color:var(--muted-text)]  leading-tight">
                   {stat.title}
                 </div>
               </div>
@@ -1708,7 +1708,7 @@ export default function InvoicingZardluud() {
                 format="YYYY-MM-DD"
                 classNames={{
                   input:
-                    "text-slate-800 dark:text-slate-100 neu-panel placeholder:text-slate-400 dark:placeholder:text-slate-500 !h-[40px] !py-2 !w-[380px]",
+                    "text-[color:var(--panel-text)] neu-panel placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] !h-[40px] !py-2 !w-[380px]",
                 }}
               />
               <div className="flex items-center gap-2">
@@ -1729,7 +1729,7 @@ export default function InvoicingZardluud() {
                     if (selectedTurul) params.set("turul", selectedTurul);
                     router.push(`/tulbur?${params.toString()}`);
                   }}
-                  className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors text-sm  disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 rounded-lg bg-theme text-white hover:bg-theme transition-colors text-sm  disabled:opacity-50 disabled:cursor-not-allowed"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   disabled={!selectedTurul}
@@ -1768,7 +1768,7 @@ export default function InvoicingZardluud() {
                     if (selectedDavkhar) params.set("davkhar", selectedDavkhar);
                     router.push(`/tulbur?${params.toString()}`);
                   }}
-                  className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors text-sm  disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 rounded-lg bg-theme text-white hover:bg-theme transition-colors text-sm  disabled:opacity-50 disabled:cursor-not-allowed"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   disabled={!selectedDavkhar}
@@ -1815,7 +1815,7 @@ export default function InvoicingZardluud() {
                       : "Грашийн төлбөр нэмэх"
                   }
                   disabled={isAddingGarageCharges}
-                  className="bg-indigo-500 text-white hover:bg-indigo-600 disabled:opacity-50 px-6 py-3 rounded-xl h-[40px] flex items-center shadow-lg"
+                  className="bg-theme text-white hover:bg-theme disabled:opacity-50 px-6 py-3 rounded-xl h-[40px] flex items-center shadow-lg"
                 />
               </motion.div>
 
@@ -1835,7 +1835,7 @@ export default function InvoicingZardluud() {
                     isSendingInvoices ? "Илгээж байна..." : "Нэхэмжлэх илгээх"
                   }
                   disabled={isSendingInvoices || selectedExpenses.length === 0}
-                  className="bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50 px-6 py-3 rounded-xl h-[40px] flex items-center shadow-lg"
+                  className="bg-theme text-white hover:bg-theme disabled:opacity-50 px-6 py-3 rounded-xl h-[40px] flex items-center shadow-lg"
                 />
               </motion.div>
             </div>
@@ -1903,7 +1903,7 @@ export default function InvoicingZardluud() {
                 role="dialog"
                 aria-modal="true"
               >
-                <div className="p-5 border-b border-gray-100 flex items-center justify-between rounded-t-3xl">
+                <div className="p-5 border-b border-[color:var(--surface-border)] flex items-center justify-between rounded-t-3xl">
                   <div>
                     <h3 className="text-xl ">Түүх</h3>
                     {historyResident && (
@@ -2015,7 +2015,7 @@ export default function InvoicingZardluud() {
                                 {/* Always show initial balance (even when 0) */}
                                 <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
                                   <div>
-                                    <span className="text-slate-500">
+                                    <span className="text-[color:var(--muted-text)]">
                                       Эхний үлдэгдэл:
                                     </span>{" "}
                                     <span className="">
@@ -2029,7 +2029,7 @@ export default function InvoicingZardluud() {
                                     </span>
                                   </div>
                                   <div>
-                                    <span className="text-slate-500">
+                                    <span className="text-[color:var(--muted-text)]">
                                       Тайлбар:
                                     </span>{" "}
                                     <span className="">

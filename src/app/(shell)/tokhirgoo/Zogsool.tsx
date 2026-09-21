@@ -186,7 +186,7 @@ export default function Zogsool({
         width: 120,
         align: "center",
         render: (v: any) => (
-          <span className="inline-flex items-center rounded-lg border border-slate-300 bg-slate-100 px-3 py-0.5 dark:border-slate-700 dark:bg-slate-800">
+          <span className="inline-flex items-center rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] px-3 py-0.5">
             {v} <span className="ml-1 opacity-70">машин</span>
           </span>
         ),
@@ -198,7 +198,7 @@ export default function Zogsool({
         width: 150,
         align: "right",
         render: (v: any) => (
-          <span className="inline-flex items-center rounded-lg border border-emerald-300 bg-emerald-100 px-3 py-0.5 text-emerald-950 dark:border-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-100">
+          <span className="inline-flex items-center rounded-lg border border-theme/30 bg-theme/10 px-3 py-0.5 text-theme dark:border-theme dark:bg-theme/60 dark:text-theme">
             {formatNumber(v)} ₮
           </span>
         ),
@@ -213,7 +213,7 @@ export default function Zogsool({
               khaalga.map((gate: any, gateIdx: number) => (
                 <span
                   key={gateIdx}
-                  className="inline-flex items-center rounded-lg border border-blue-300 bg-blue-100 px-3 py-0.5 text-blue-950 dark:border-blue-700 dark:bg-blue-900/60 dark:text-blue-100"
+                  className="inline-flex items-center rounded-lg border border-theme/30 bg-theme/10 px-3 py-0.5 text-theme dark:border-theme dark:bg-theme/60 dark:text-theme"
                 >
                   {gate.ner}
                 </span>
@@ -233,7 +233,7 @@ export default function Zogsool({
           <div className="flex items-center justify-center gap-1">
             <button
               onClick={() => openEdit(record)}
-              className="rounded-lg p-1.5 text-blue-600 transition-colors hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-500/10"
+              className="rounded-lg p-1.5 text-theme transition-colors hover:bg-theme/10 dark:text-theme dark:hover:bg-theme/10"
               title="Засах"
             >
               <Edit className="h-4 w-4" />
@@ -241,7 +241,7 @@ export default function Zogsool({
             {record._id && (
               <button
                 onClick={() => deleteZogsool(record._id!)}
-                className="rounded-lg p-1.5 text-rose-600 transition-colors hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10"
+                className="rounded-lg p-1.5 text-danger transition-colors hover:bg-danger/10"
                 title="Устгах"
               >
                 <Trash2 className="h-4 w-4" />
@@ -319,20 +319,20 @@ export default function Zogsool({
                 Зогсоолын тохиргоо
               </h2>
               <p className="text-xs text-[color:var(--muted-text)]">
-                Нийт <span className="text-blue-600 dark:text-blue-400">{totalRecords}</span> талбай тохируулагдсан
+                Нийт <span className="text-theme dark:text-theme">{totalRecords}</span> талбай тохируулагдсан
               </p>
             </div>
             
             {/* Quick Metrics Pills */}
             <div className="flex items-center gap-2 text-xs">
-              <span style={{ borderRadius: '10px' }} className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 font-medium">
-                Нийт талбай: <span className="text-blue-700 dark:text-blue-400 font-semibold">{totalRecords}</span>
+              <span style={{ borderRadius: '10px' }} className="px-3 py-1 bg-[color:var(--surface-hover)] text-[color:var(--panel-text)] dark:text-white border border-[color:var(--surface-border)] font-medium">
+                Нийт талбай: <span className="text-theme dark:text-theme font-semibold">{totalRecords}</span>
               </span>
-              <span style={{ borderRadius: '10px' }} className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/60 text-emerald-950 dark:text-emerald-100 border border-emerald-300 dark:border-emerald-700 font-medium">
-                Багтаамж: <span className="text-emerald-800 dark:text-emerald-300 font-semibold">{totalCapacity} машин</span>
+              <span style={{ borderRadius: '10px' }} className="px-3 py-1 bg-theme/10 dark:bg-theme/60 text-theme dark:text-theme border border-theme/30 dark:border-theme font-medium">
+                Багтаамж: <span className="text-theme dark:text-theme font-semibold">{totalCapacity} машин</span>
               </span>
-              <span style={{ borderRadius: '10px' }} className="px-3 py-1 bg-blue-100 dark:bg-blue-900/60 text-blue-950 dark:text-blue-100 border border-blue-300 dark:border-blue-700 font-medium">
-                Хаалга: <span className="text-blue-800 dark:text-blue-300 font-semibold">{totalGates}</span>
+              <span style={{ borderRadius: '10px' }} className="px-3 py-1 bg-theme/10 dark:bg-theme/60 text-theme dark:text-theme border border-theme/30 dark:border-theme font-medium">
+                Хаалга: <span className="text-theme dark:text-theme font-semibold">{totalGates}</span>
               </span>
             </div>
           </div>
@@ -384,7 +384,7 @@ export default function Zogsool({
                       variant="ghost"
                       size="sm"
                       onClick={() => setIsPageSizeOpen(!isPageSizeOpen)}
-                      className="!rounded-xl border border-slate-200 dark:border-white/10"
+                      className="!rounded-xl border border-[color:var(--surface-border)] dark:border-white/10"
                     >
                       {pageSize} / хуудас
                     </Button>
@@ -400,7 +400,7 @@ export default function Zogsool({
                             }}
                             className={`w-full px-3 py-1.5 rounded-xl text-left text-xs transition-colors ${
                               pageSize === size
-                                ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                                ? "bg-theme/10 text-theme dark:text-theme"
                                 : "text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"
                             }`}
                           >
@@ -418,7 +418,7 @@ export default function Zogsool({
                     size="sm"
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page === 1}
-                    className="!rounded-xl border border-slate-200 dark:border-white/10"
+                    className="!rounded-xl border border-[color:var(--surface-border)] dark:border-white/10"
                     leftIcon={<ChevronLeft className="w-4 h-4" />}
                   >
                     Өмнөх
@@ -431,7 +431,7 @@ export default function Zogsool({
                     size="sm"
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page >= totalPages}
-                    className="!rounded-xl border border-slate-200 dark:border-white/10"
+                    className="!rounded-xl border border-[color:var(--surface-border)] dark:border-white/10"
                     rightIcon={<ChevronRight className="w-4 h-4" />}
                   >
                     Дараах

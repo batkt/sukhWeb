@@ -1095,7 +1095,7 @@ export default function NemeltTokhirgoo() {
                       className="sr-only peer"
                       aria-label="Нэхэмжлэх идэвхжүүлэх"
                     />
-                    <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 dark:peer-checked:bg-purple-600 peer-checked:bg-purple-600"></div>
+                    <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:peer-checked:bg-purple-600 peer-checked:bg-purple-600"></div>
                   </label>
                 </div>
               </div>
@@ -1146,7 +1146,7 @@ export default function NemeltTokhirgoo() {
           {/* Lift box */}
           <div id="nemelt-lift-settings" className="h-full">
             <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden h-full flex flex-col justify-between">
-              <div className="px-4 py-3 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20">
+              <div className="px-4 py-3 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-theme/10 to-theme/5">
                 <div className="flex items-center gap-2.5">
                   <div>
                     <h3 className="text-base text-theme">Лифт хөнгөлөлт</h3>
@@ -1173,13 +1173,13 @@ export default function NemeltTokhirgoo() {
                       className="sr-only peer"
                       aria-label="Лифт идэвхжүүлэх"
                     />
-                    <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-amber-300 dark:peer-focus:ring-amber-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-amber-600 dark:peer-checked:bg-amber-600"></div>
+                    <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-warning dark:peer-focus:ring-warning rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-warning"></div>
                   </label>
                 </div>
               </div>
 
               {liftEnabled ? (
-                <div className="p-3.5 px-4 bg-gradient-to-br from-amber-50/50 to-orange-50/50 dark:from-amber-900/20 dark:to-orange-900/20 space-y-2.5 flex-1 flex flex-col justify-between">
+                <div className="p-3.5 px-4 bg-gradient-to-br from-warning/50 to-warning/50 space-y-2.5 flex-1 flex flex-col justify-between">
                   <div className="space-y-1.5">
                     <label className="text-xs text-theme flex items-center gap-1.5">
                       <span>🔢</span>
@@ -1219,7 +1219,7 @@ export default function NemeltTokhirgoo() {
                   </p>
                 </div>
               ) : (
-                <div className="p-3.5 px-4 bg-gradient-to-br from-amber-50/50 to-orange-50/50 dark:from-amber-900/20 dark:to-orange-900/20 flex-1 flex items-center">
+                <div className="p-3.5 px-4 bg-gradient-to-br from-warning/50 to-warning/50 flex-1 flex items-center">
                   <p className="text-xs text-[color:var(--muted-text)]">
                     Лифт хөнгөлөлтийн тохиргоо идэвхгүй байна.
                   </p>
@@ -1232,7 +1232,7 @@ export default function NemeltTokhirgoo() {
         {/* Visitor Configuration Box */}
         <div id="nemelt-visitor-box">
           <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden">
-            <div className="px-4 py-3 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20">
+            <div className="px-4 py-3 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-theme/10 to-theme/5">
               <div className="flex items-center gap-2.5">
                 <div>
                   <h3 className="text-base text-theme">Зочны тохиргоо</h3>
@@ -1256,13 +1256,13 @@ export default function NemeltTokhirgoo() {
                     }}
                     className="sr-only peer"
                   />
-                  <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 dark:peer-checked:bg-blue-600 peer-checked:bg-blue-600"></div>
+                  <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme dark:peer-focus:ring-theme rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:peer-checked:bg-theme peer-checked:bg-theme"></div>
                 </label>
               </div>
             </div>
 
             {guestConfigEnabled && (
-              <div className="p-3.5 px-4 bg-gradient-to-br from-blue-50/50 to-cyan-50/50 dark:from-blue-950/10 dark:to-cyan-950/10 space-y-3">
+              <div className="p-3.5 px-4 bg-gradient-to-br from-theme/50 to-cyan-50/50 space-y-3">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
                   <div className="space-y-1">
                     <label className="text-xs text-theme">Давтамж</label>
@@ -1270,7 +1270,7 @@ export default function NemeltTokhirgoo() {
                       <select
                         value={guestFrequencyType}
                         onChange={(e) => setGuestFrequencyType(e.target.value)}
-                        className="w-full h-9 px-2.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-blue-500 dark:bg-gray-800 dark:border-gray-700"
+                        className="w-full h-9 px-2.5 rounded-lg border border-[color:var(--surface-border)] bg-white text-xs focus:outline-none focus:border-theme"
                       >
                         <option value="udruur">Өдөр бүр</option>
                         <option value="7khonogoor">Долоо хоног бүр</option>
@@ -1306,7 +1306,7 @@ export default function NemeltTokhirgoo() {
                       Нэхэмжлэх дээр нэмэх эсэх
                     </label>
                     <div
-                      className="h-9 px-3 flex items-center justify-between rounded-lg border border-gray-300 bg-white text-xs dark:bg-gray-800 dark:border-gray-700"
+                      className="h-9 px-3 flex items-center justify-between rounded-lg border border-[color:var(--surface-border)] bg-white text-xs"
                       title={
                         guestInvoiceEnabled
                           ? 'Оршин суугч зочин урихдаа "Би даана" сонгож, зогсоолын төлбөрийг өөрийн нэхэмжлэхэд бичүүлж болно.'
@@ -1327,7 +1327,7 @@ export default function NemeltTokhirgoo() {
                           }
                           className="sr-only peer"
                         />
-                        <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 dark:peer-checked:bg-blue-600 peer-checked:bg-blue-600"></div>
+                        <div className="w-9 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme dark:peer-focus:ring-theme rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:peer-checked:bg-theme peer-checked:bg-theme"></div>
                       </label>
                     </div>
                   </div>
@@ -1385,14 +1385,14 @@ export default function NemeltTokhirgoo() {
             оршин суугч/харилцагчид ижил хамаарна */}
         <div id="nemelt-mashin-box">
           <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden">
-            <div className="px-4 py-3 border-b border-[color:var(--surface-border)] bg-gradient-to-r from-violet-50 to-fuchsia-50 dark:from-violet-900/20 dark:to-fuchsia-900/20">
+            <div className="px-4 py-3 border-b border-[color:var(--surface-border)] bg-gradient-to-r from-theme/10 to-theme/5">
               <h3 className="text-base text-theme">Машины бүртгэлийн хязгаар</h3>
               <p className="text-xs text-[color:var(--muted-text)]">
                 Нэг оршин суугч / харилцагч дээр бүртгэж болох машины дээд тоо
               </p>
             </div>
 
-            <div className="p-3.5 px-4 bg-gradient-to-br from-violet-50/50 to-fuchsia-50/50 dark:from-violet-950/10 dark:to-fuchsia-950/10 space-y-3">
+            <div className="p-3.5 px-4 bg-gradient-to-br from-theme/50 to-fuchsia-50/50 space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
                 <div className="space-y-1">
                   <label className="text-xs text-theme">
@@ -1436,7 +1436,7 @@ export default function NemeltTokhirgoo() {
         {/* Цахилгаан бодох горим - Урт тайлбартай тохиргоо бүтэн мөрөөр байршина */}
         <div id="nemelt-tsakhilgaan-box">
           <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden">
-            <div className="px-4 py-3 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-sky-50 to-cyan-50 dark:from-sky-900/20 dark:to-cyan-900/20">
+            <div className="px-4 py-3 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-theme/10 to-theme/5">
               <div className="flex items-center gap-2.5">
                 <div>
                   <h3 className="text-base text-theme">
@@ -1462,12 +1462,12 @@ export default function NemeltTokhirgoo() {
                     className="sr-only peer"
                     aria-label="Заалтаар цахилгаан бодох"
                   />
-                  <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-sky-300 dark:peer-focus:ring-sky-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 dark:peer-checked:bg-sky-600 peer-checked:bg-sky-600"></div>
+                  <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme dark:peer-focus:ring-theme rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:peer-checked:bg-theme peer-checked:bg-theme"></div>
                 </label>
               </div>
             </div>
 
-            <div className="p-3.5 px-4 bg-gradient-to-br from-sky-50/50 to-cyan-50/50 dark:from-sky-950/10 dark:to-cyan-950/10 space-y-1.5">
+            <div className="p-3.5 px-4 bg-gradient-to-br from-theme/50 to-cyan-50/50 space-y-1.5">
               {zaaltaarBodokh ? (
                 <>
                   <p className="text-xs text-theme leading-relaxed">
@@ -1502,7 +1502,7 @@ export default function NemeltTokhirgoo() {
           {/* Row 1, Col 1: Resident Gate Open Permission Box */}
           <div id="nemelt-resident-gate-box" className="h-full">
             <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden h-full flex flex-col justify-between">
-              <div className="px-4 py-3 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-rose-50 to-red-50 dark:from-rose-900/20 dark:to-red-900/20">
+              <div className="px-4 py-3 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-theme/10 to-theme/5">
                 <div className="flex items-center gap-2.5">
                   <div>
                     <h3 className="text-base text-theme">
@@ -1529,11 +1529,11 @@ export default function NemeltTokhirgoo() {
                       className="sr-only peer"
                       aria-label="Хаалт нээх эрх идэвхжүүлэх"
                     />
-                    <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-red-300 dark:peer-focus:ring-red-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 dark:peer-checked:bg-rose-600 peer-checked:bg-rose-600"></div>
+                    <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-danger dark:peer-focus:ring-danger rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-danger"></div>
                   </label>
                 </div>
               </div>
-              <div className="p-3.5 px-4 bg-gradient-to-br from-rose-50/50 to-red-50/50 dark:from-rose-950/10 dark:to-red-950/10 flex-1 flex items-center">
+              <div className="p-3.5 px-4 bg-gradient-to-br from-danger/50 to-danger/50 flex-1 flex items-center">
                 <p className="text-xs text-[color:var(--muted-text)]">
                   {residentGateOpenEnabled
                     ? "Оршин суугчийн гар утасны аппликейшн дээр хаалт нээх товч идэвхтэй харагдана."
@@ -1546,7 +1546,7 @@ export default function NemeltTokhirgoo() {
           {/* Гэр бүлийн гишүүн урих боломж */}
           <div id="nemelt-gerbul-box" className="h-full">
             <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden h-full flex flex-col justify-between">
-              <div className="px-4 py-3 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20">
+              <div className="px-4 py-3 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-theme/10 to-theme/5">
                 <div className="flex items-center gap-2.5">
                   <div>
                     <h3 className="text-base text-theme">
@@ -1571,11 +1571,11 @@ export default function NemeltTokhirgoo() {
                       className="sr-only peer"
                       aria-label="Гэр бүлийн гишүүн урих боломж идэвхжүүлэх"
                     />
-                    <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 dark:peer-checked:bg-indigo-600 peer-checked:bg-indigo-600"></div>
+                    <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme dark:peer-focus:ring-theme rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:peer-checked:bg-theme peer-checked:bg-theme"></div>
                   </label>
                 </div>
               </div>
-              <div className="p-3.5 px-4 bg-gradient-to-br from-indigo-50/50 to-blue-50/50 dark:from-indigo-950/10 dark:to-blue-950/10 flex-1 flex items-center">
+              <div className="p-3.5 px-4 bg-gradient-to-br from-theme/50 to-theme/50 flex-1 flex items-center">
                 <p className="text-xs text-[color:var(--muted-text)]">
                   {gerBuliinGishuunEnabled
                     ? "Оршин суугч аппаараа гэр бүлийн гишүүн урьж, гишүүн нь тоот, нэхэмжлэх, төлбөрийг харна."
@@ -1588,7 +1588,7 @@ export default function NemeltTokhirgoo() {
           {/* Row 1, Col 2: Calculation Method Box */}
           <div id="nemelt-calculation-box" className="h-full">
             <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden h-full flex flex-col justify-between">
-              <div className="px-4 py-3 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20">
+              <div className="px-4 py-3 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-theme/10 to-theme/5">
                 <div className="flex items-center gap-2.5">
                   <div>
                     <h3 className="text-base text-theme">Төлбөр тооцох арга</h3>
@@ -1612,25 +1612,25 @@ export default function NemeltTokhirgoo() {
                       }}
                       className="sr-only peer"
                     />
-                    <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-green-300 dark:peer-focus:ring-green-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 dark:peer-checked:bg-green-600 peer-checked:bg-green-600"></div>
+                    <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme dark:peer-focus:ring-theme rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:peer-checked:bg-theme peer-checked:bg-theme"></div>
                   </label>
                 </div>
               </div>
 
               {calculationEnabled ? (
-                <div className="p-3.5 px-4 bg-gradient-to-br from-green-50/50 to-emerald-50/50 dark:from-green-950/10 dark:to-emerald-950/10 space-y-3 animate-in fade-in zoom-in-95 duration-300 flex-1 flex flex-col justify-between">
+                <div className="p-3.5 px-4 bg-gradient-to-br from-theme/50 to-theme/50 space-y-3 animate-in fade-in zoom-in-95 duration-300 flex-1 flex flex-col justify-between">
                   <div className="grid grid-cols-1 gap-2.5">
                     <div className="space-y-1.5">
                       <label className="text-xs text-theme">
                         Тооцоолох төрөл
                       </label>
                       <div className="flex items-center justify-between gap-3 flex-wrap">
-                        <div className="flex p-0.5 bg-gray-100 dark:bg-gray-800 rounded-lg w-fit shrink-0">
+                        <div className="flex p-0.5 bg-[color:var(--surface-hover)] rounded-lg w-fit shrink-0">
                           <button
                             onClick={() => setCalculationMethod("Хуанли")}
                             className={`px-3.5 py-1 rounded-md text-xs transition-all ${calculationMethod === "Хуанли"
-                              ? "bg-white dark:bg-gray-700 shadow-xs text-green-600"
-                              : "text-gray-500 hover:text-gray-700"
+                              ? "bg-white shadow-xs text-theme"
+                              : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
                               }`}
                           >
                             Хуанли
@@ -1638,8 +1638,8 @@ export default function NemeltTokhirgoo() {
                           <button
                             onClick={() => setCalculationMethod("Тогтмол")}
                             className={`px-3.5 py-1 rounded-md text-xs transition-all ${calculationMethod === "Тогтмол"
-                              ? "bg-white dark:bg-gray-700 shadow-xs text-green-600"
-                              : "text-gray-500 hover:text-gray-700"
+                              ? "bg-white shadow-xs text-theme"
+                              : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
                               }`}
                           >
                             Тогтмол
@@ -1697,7 +1697,7 @@ export default function NemeltTokhirgoo() {
                   </div>
                 </div>
               ) : (
-                <div className="p-3.5 px-4 bg-gradient-to-br from-green-50/50 to-emerald-50/50 dark:from-green-950/10 dark:to-emerald-950/10 flex-1 flex items-center">
+                <div className="p-3.5 px-4 bg-gradient-to-br from-theme/50 to-theme/50 flex-1 flex items-center">
                   <p className="text-xs text-[color:var(--muted-text)]">
                     Сарын төлбөрийг хоногоор хувааж тооцох тохиргоо идэвхгүй байна.
                   </p>
@@ -1709,7 +1709,7 @@ export default function NemeltTokhirgoo() {
           {/* Row 2: Unified Garage & Storage Payment Box */}
           <div id="nemelt-garage-storage-box" className="sm:col-span-2">
             <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden">
-              <div className="px-4 py-3 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+              <div className="px-4 py-3 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-theme/10 to-theme/5">
                 <div className="flex items-center gap-3">
 
                   <div>
@@ -1740,14 +1740,14 @@ export default function NemeltTokhirgoo() {
                       className="sr-only peer"
                       aria-label="Граж, агуулах төлбөр идэвхжүүлэх"
                     />
-                    <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 dark:peer-checked:bg-blue-600 peer-checked:bg-blue-600"></div>
+                    <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme dark:peer-focus:ring-theme rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:peer-checked:bg-theme peer-checked:bg-theme"></div>
                   </label>
                 </div>
               </div>
 
               {garagePaymentEnabled || storagePaymentEnabled ? (
-                <div className="p-3.5 px-4 bg-gradient-to-br from-blue-50/40 to-indigo-50/40 dark:from-blue-950/10 dark:to-indigo-950/10 space-y-3 animate-in fade-in zoom-in-95 duration-300">
-                  <div className="p-3 md:p-3.5 rounded-xl border border-blue-100/80 dark:border-blue-900/30 bg-white/90 dark:bg-gray-800/90 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 md:gap-4 shadow-xs">
+                <div className="p-3.5 px-4 bg-gradient-to-br from-theme/40 to-theme/40 space-y-3 animate-in fade-in zoom-in-95 duration-300">
+                  <div className="p-3 md:p-3.5 rounded-xl border border-theme/80 dark:border-theme/30 bg-white/90 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 md:gap-4 shadow-xs">
                     {/* Left: Inputs with Plus */}
                     <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                       {/* Граш төлбөр */}
@@ -1769,7 +1769,7 @@ export default function NemeltTokhirgoo() {
                           size="sm"
                           thousandSeparator=","
                           rightSection={
-                            <span className="text-xs text-gray-500 mr-1 select-none">
+                            <span className="text-xs text-[color:var(--muted-text)] mr-1 select-none">
                               ₮
                             </span>
                           }
@@ -1801,7 +1801,7 @@ export default function NemeltTokhirgoo() {
                           size="sm"
                           thousandSeparator=","
                           rightSection={
-                            <span className="text-xs text-gray-500 mr-1 select-none">
+                            <span className="text-xs text-[color:var(--muted-text)] mr-1 select-none">
                               ₮
                             </span>
                           }
@@ -1811,7 +1811,7 @@ export default function NemeltTokhirgoo() {
                     </div>
 
                     {/* Right: Total display */}
-                    <div className="flex items-center justify-between gap-2.5 px-3.5 rounded-lg bg-blue-50/80 dark:bg-blue-950/50 border border-blue-200/70 dark:border-blue-800/40 shrink-0 self-center md:self-end md:mb-0.5 h-9 min-w-[180px]">
+                    <div className="flex items-center justify-between gap-2.5 px-3.5 rounded-lg bg-theme/80 dark:bg-theme/50 border border-theme/70 dark:border-theme/40 shrink-0 self-center md:self-end md:mb-0.5 h-9 min-w-[180px]">
                       <span className="text-xs text-[color:var(--muted-text)] whitespace-nowrap">
                         Нийт төлбөр:
                       </span>
@@ -1837,7 +1837,7 @@ export default function NemeltTokhirgoo() {
                   </div>
                 </div>
               ) : (
-                <div className="p-3.5 px-4 bg-gradient-to-br from-blue-50/40 to-indigo-50/40 dark:from-blue-950/10 dark:to-indigo-950/10 flex-1 flex items-center">
+                <div className="p-3.5 px-4 bg-gradient-to-br from-theme/40 to-theme/40 flex-1 flex items-center">
                   <p className="text-xs text-[color:var(--muted-text)]">
                     Граж болон агуулахын төлбөр тооцоо идэвхгүй байна.
                   </p>

@@ -274,20 +274,20 @@ export default function TaskManagementSystem() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="relative">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 text-white  text-lg shadow-md">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-theme/20 via-purple-400 to-pink-400 text-white  text-lg shadow-md">
                     {group.khariltsagchiinNer?.charAt(0)}
                   </div>
                   {hasMultiple && (
-                    <div className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white text-[10px]  shadow-sm">
+                    <div className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-danger text-white text-[10px]  shadow-sm">
                       {group.duudlagaCount}
                     </div>
                   )}
                 </div>
                 <div>
-                  <div className=" text-slate-900 text-sm">
+                  <div className=" text-[color:var(--panel-text)] text-sm">
                     {group.khariltsagchiinNer}
                   </div>
-                  <div className="text-xs text-slate-500">
+                  <div className="text-xs text-[color:var(--muted-text)]">
                     {group.khariltsagchiinRegister}
                   </div>
                 </div>
@@ -320,7 +320,7 @@ export default function TaskManagementSystem() {
                       key={item._id}
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className="p-2 rounded-xl bg-transparent backdrop-blur-lg border border-gray-200 hover:bg-gray-50 transition-all cursor-pointer text-xs"
+                      className="p-2 rounded-xl bg-transparent backdrop-blur-lg border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-all cursor-pointer text-xs"
                       onClick={(e) => {
                         e.stopPropagation();
                         setDuudlaga(item);
@@ -333,7 +333,7 @@ export default function TaskManagementSystem() {
                         {getStatusInfo(item.tuluv).text}
                       </Tag>
                       {item.title && (
-                        <span className="ml-1 text-slate-900 text-xs">
+                        <span className="ml-1 text-[color:var(--panel-text)] text-xs">
                           {item.title}
                         </span>
                       )}
@@ -374,8 +374,8 @@ export default function TaskManagementSystem() {
                   whileTap={{ scale: 0.95 }}
                   className={`p-4 rounded-2xl cursor-pointer text-center transition-all duration-300 bg-transparent border ${
                     mur.status === tuluv
-                      ? "border-gray-300 shadow-xl"
-                      : "border-gray-200 hover:bg-transparent hover:shadow-lg"
+                      ? "border-[color:var(--surface-border)] shadow-xl"
+                      : "border-[color:var(--surface-border)] hover:bg-transparent hover:shadow-lg"
                   }`}
                   onClick={mur.onClick}
                 >
@@ -383,11 +383,11 @@ export default function TaskManagementSystem() {
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ delay: idx * 0.1, type: "spring" }}
-                    className="text-3xl  text-slate-900 mb-1 bg-transparent"
+                    className="text-3xl  text-[color:var(--panel-text)] mb-1 bg-transparent"
                   >
                     {mur.too}
                   </motion.div>
-                  <div className="text-xs text-slate-900  bg-transparent">
+                  <div className="text-xs text-[color:var(--panel-text)]  bg-transparent">
                     {mur.utga}
                   </div>
                 </motion.div>
@@ -405,14 +405,14 @@ export default function TaskManagementSystem() {
                 )
               }
               value={ekhlekhOgnoo ?? undefined}
-              className="!h-8 !bg-transparent !backdrop-blur-md !border !border-gray-300 !text-slate-900"
+              className="!h-8 !bg-transparent !backdrop-blur-md !border !border-[color:var(--surface-border)] !text-[color:var(--panel-text)]"
             />
             <Select
               popupClassName="tusgaiZagvar"
               placeholder="Төрөл"
               value={turulFilter}
               onChange={setTurulFilter}
-              className="!h-8 !bg-transparent !backdrop-blur-md  !text-slate-900"
+              className="!h-8 !bg-transparent !backdrop-blur-md  !text-[color:var(--panel-text)]"
             >
               <Option value="Бүгд">Бүгд</Option>
               <Option value="Сантехник">Сантехник</Option>
@@ -424,7 +424,7 @@ export default function TaskManagementSystem() {
           <Input
             placeholder="Хайх..."
             onChange={({ target }) => setSearchTerm(target.value)}
-            className="!h-10 !text-base !bg-transparent !backdrop-blur-md  !text-slate-900 placeholder:text-slate-500"
+            className="!h-10 !text-base !bg-transparent !backdrop-blur-md  !text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
           />
 
           <div className="flex-1 overflow-y-auto pr-2 mt-4">
@@ -434,8 +434,8 @@ export default function TaskManagementSystem() {
                 animate={{ opacity: 1 }}
                 className="flex items-center justify-center h-full"
               >
-                <div className="text-center p-8 rounded-2xl bg-transparent backdrop-blur-xl border border-gray-200">
-                  <div className="text-slate-900 text-lg">
+                <div className="text-center p-8 rounded-2xl bg-transparent backdrop-blur-xl border border-[color:var(--surface-border)]">
+                  <div className="text-[color:var(--panel-text)] text-lg">
                     Өгөгдөл олдсонгүй
                   </div>
                 </div>
@@ -457,12 +457,12 @@ export default function TaskManagementSystem() {
               <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="rounded-2xl bg-transparent backdrop-blur-xl p-6 border border-gray-200 shadow-xl"
+                className="rounded-2xl bg-transparent backdrop-blur-xl p-6 border border-[color:var(--surface-border)] shadow-xl"
               >
-                <div className=" text-2xl text-slate-900 mb-2">
+                <div className=" text-2xl text-[color:var(--panel-text)] mb-2">
                   {duudlaga.khariltsagchiinNer}
                 </div>
-                <div className="flex gap-4 text-slate-900">
+                <div className="flex gap-4 text-[color:var(--panel-text)]">
                   <span className="flex items-center gap-2">
                     {duudlaga.khariltsagchiinUtas}
                   </span>
@@ -519,23 +519,23 @@ export default function TaskManagementSystem() {
                             </Tag>
                           )}
                         </div>
-                        <div className="text-[10px] text-slate-600 font-mono bg-white/10 px-2 py-0.5 rounded-full">
+                        <div className="text-[10px] text-[color:var(--muted-text)] font-mono bg-white/10 px-2 py-0.5 rounded-full">
                           {moment(item.createdAt).format("MM-DD HH:mm")}
                         </div>
                       </div>
 
                       {item.title && (
-                        <div className=" text-slate-700 text-sm mb-1">
+                        <div className=" text-[color:var(--panel-text)] text-sm mb-1">
                           {item.title}
                         </div>
                       )}
                       {item.message && (
-                        <div className="text-xs text-slate-500 leading-relaxed">
+                        <div className="text-xs text-[color:var(--muted-text)] leading-relaxed">
                           {item.message}
                         </div>
                       )}
                       {item.tailbar && (
-                        <div className="mt-2 p-2 bg-red-500/20 backdrop-blur-sm rounded-2xl text-red-200 text-xs border border-red-400/30">
+                        <div className="mt-2 p-2 bg-danger/20 backdrop-blur-sm rounded-2xl text-danger text-xs border border-danger/30">
                           {item.tailbar}
                         </div>
                       )}
@@ -556,7 +556,7 @@ export default function TaskManagementSystem() {
                             <motion.div
                               whileHover={{ scale: 1.03 }}
                               whileTap={{ scale: 0.95 }}
-                              className="flex-1 px-3 py-2 rounded-xl bg-gradient-to-r from-green-400 to-emerald-500 text-white text-xs  cursor-pointer text-center"
+                              className="flex-1 px-3 py-2 rounded-xl bg-gradient-to-r from-theme/20 to-theme/20 text-white text-xs  cursor-pointer text-center"
                             >
                               Дуусгах
                             </motion.div>
@@ -564,7 +564,7 @@ export default function TaskManagementSystem() {
                           <motion.div
                             whileHover={{ scale: 1.03 }}
                             whileTap={{ scale: 0.95 }}
-                            className="flex-1 px-3 py-2 rounded-xl bg-gradient-to-r from-red-400 to-rose-500 text-white text-xs  cursor-pointer text-center"
+                            className="flex-1 px-3 py-2 rounded-xl bg-gradient-to-r from-danger/20 to-danger/20 text-white text-xs  cursor-pointer text-center"
                             onClick={() => {
                               const reason = prompt(
                                 "Цуцлах шалтгааныг бичнэ үү:"
@@ -602,10 +602,10 @@ export default function TaskManagementSystem() {
                 >
                   👋
                 </motion.div>
-                <div className=" text-3xl text-slate-700 mb-3">
+                <div className=" text-3xl text-[color:var(--panel-text)] mb-3">
                   Өдрийн мэнд
                 </div>
-                <div className="text-lg text-slate-500 max-w-md">
+                <div className="text-lg text-[color:var(--muted-text)] max-w-md">
                   Та харилцагч сонгож дэлгэрэнгүй мэдээлэл үзнэ үү
                 </div>
               </div>

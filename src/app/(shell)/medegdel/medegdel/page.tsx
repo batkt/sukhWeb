@@ -647,7 +647,7 @@ function MedegdelContent() {
           </div>
           <div>
             <h1 className="text-lg sm:text-xl  text-theme">Мэдэгдэл & Нийтлэл</h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Хариуцсан хэсгийн мэдээлэл удирдах</p>
+            <p className="text-xs text-[color:var(--muted-text)]">Хариуцсан хэсгийн мэдээлэл удирдах</p>
           </div>
         </div>
 
@@ -657,7 +657,7 @@ function MedegdelContent() {
             onClick={() => handleTabChange("medegdel")}
             className={`flex-1  sm:flex-none px-6 py-2 rounded-xl text-sm transition-all duration-200 ${activeTab === "medegdel"
               ? "bg-theme !text-white neu-panel-2 shadow-lg"
-              : "text-slate-500 hover:text-theme"
+              : "text-[color:var(--muted-text)] hover:text-theme"
               }`}
           >
             Мэдэгдэл
@@ -666,7 +666,7 @@ function MedegdelContent() {
             onClick={() => handleTabChange("tulult")}
             className={`flex-1 sm:flex-none px-6 py-2 rounded-xl text-sm transition-all duration-200 ${activeTab === "tulult"
               ? "bg-theme !text-white neu-panel-2 shadow-lg"
-              : "text-slate-500 hover:text-theme"
+              : "text-[color:var(--muted-text)] hover:text-theme"
               }`}
           >
             Төлөлтүүд
@@ -675,7 +675,7 @@ function MedegdelContent() {
             onClick={() => handleTabChange("niitlel")}
             className={`flex-1 sm:flex-none px-6 py-2 rounded-xl text-sm transition-all duration-200 ${activeTab === "niitlel"
               ? "bg-theme !text-white neu-panel-2 shadow-lg"
-              : "text-slate-500 hover:text-theme"
+              : "text-[color:var(--muted-text)] hover:text-theme"
               }`}
           >
             Нийтлэл
@@ -723,7 +723,7 @@ function MedegdelContent() {
               </div>
 
               <div id="medegdel-templates" className="flex items-center justify-between mt-2 mb-2">
-                <span className="text-xs  text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                <span className="text-xs  text-[color:var(--muted-text)] flex items-center gap-1.5">
                   <FileText className="w-3.5 h-3.5" />
                   Загвар
                 </span>
@@ -745,14 +745,14 @@ function MedegdelContent() {
                       key={t.id}
                       type="button"
                       onClick={() => handleApplyTemplate(t)}
-                      className="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-200 border-b border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-white/15 transition-all truncate"
+                      className="w-full text-left px-3 py-2 text-sm text-[color:var(--panel-text)] border-b border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/15 transition-all truncate"
                     >
                       {t.name}
                     </button>
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-slate-500 dark:text-slate-400 py-4">
+                <p className="text-xs text-[color:var(--muted-text)] py-4">
                   Загвар байхгүй. &quot;Нэмэх&quot; дарж нэмнэ үү.
                 </p>
               )}
@@ -769,7 +769,7 @@ function MedegdelContent() {
               >
                 <div className="flex flex-col gap-4 pt-2">
                   <div>
-                    <label className="block text-sm  text-slate-700 dark:text-slate-300 mb-1">Нэр</label>
+                    <label className="block text-sm  text-[color:var(--panel-text)] mb-1">Нэр</label>
                     <Input
                       placeholder="Загварын нэр"
                       value={templateName}
@@ -778,7 +778,7 @@ function MedegdelContent() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm  text-slate-700 dark:text-slate-300 mb-1">Гарчиг</label>
+                    <label className="block text-sm  text-[color:var(--panel-text)] mb-1">Гарчиг</label>
                     <Input
                       placeholder="Мэдэгдлийн гарчиг"
                       value={templateTitle}
@@ -787,7 +787,7 @@ function MedegdelContent() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm  text-slate-700 dark:text-slate-300 mb-1">Агуулга</label>
+                    <label className="block text-sm  text-[color:var(--panel-text)] mb-1">Агуулга</label>
                     <Input.TextArea
                       placeholder="Мэдэгдлийн агуулга"
                       value={templateBody}
@@ -797,7 +797,7 @@ function MedegdelContent() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm  text-slate-700 dark:text-slate-300 mb-1">Зураг (заавал биш)</label>
+                    <label className="block text-sm  text-[color:var(--panel-text)] mb-1">Зураг (заавал биш)</label>
                     <input
                       ref={templateImageInputRef}
                       type="file"
@@ -817,7 +817,7 @@ function MedegdelContent() {
                       <button
                         type="button"
                         onClick={() => templateImageInputRef.current?.click()}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs  border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-white/10"
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs  border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/10"
                       >
                         <ImagePlus className="w-4 h-4" />
                         Зураг сонгох
@@ -832,7 +832,7 @@ function MedegdelContent() {
                           <button
                             type="button"
                             onClick={() => setTemplateImageDataUrl(null)}
-                            className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center"
+                            className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-danger text-white flex items-center justify-center"
                             aria-label="Зураг хасах"
                           >
                             <X className="w-3.5 h-3.5" />
@@ -854,12 +854,12 @@ function MedegdelContent() {
               className="neu-panel p-4 sm:p-5 flex flex-col min-w-0 lg:flex-1"
             >
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm  flex items-center gap-2 text-slate-700 dark:text-white">
+                <h3 className="text-sm  flex items-center gap-2 text-[color:var(--panel-text)] dark:text-white">
                   <Users className="w-4 h-4 text-theme" />
                   Харилцагчид
                 </h3>
                 {orshinSuugchGaralt && (
-                  <span className="text-xs text-slate-500 bg-white/10 px-2 py-0.5 rounded-2xl">
+                  <span className="text-xs text-[color:var(--muted-text)] bg-white/10 px-2 py-0.5 rounded-2xl">
                     {orshinSuugchGaralt.niitMur || 0}
                   </span>
                 )}
@@ -876,7 +876,7 @@ function MedegdelContent() {
                     onChange={handleSelectAll}
                     className="w-4 h-4 rounded"
                   />
-                  <span className="text-slate-700 dark:text-slate-200">Бүгд сонгох</span>
+                  <span className="text-[color:var(--panel-text)]">Бүгд сонгох</span>
                 </label>
                 {songogdsonKhariltsagch.length > 0 && (
                   <span className="text-xs text-theme ">
@@ -886,23 +886,23 @@ function MedegdelContent() {
               </div>
 
               <div id="medegdel-contact-search" className="relative h-9 w-full neu-panel mb-3 flex items-center">
-                <SearchIcon className="absolute left-3 w-4 h-4 text-slate-500 pointer-events-none" />
+                <SearchIcon className="absolute left-3 w-4 h-4 text-[color:var(--muted-text)] pointer-events-none" />
                 <input
                   aria-label="Хайх"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-full pl-9 pr-3 rounded-2xl bg-transparent border-0 text-sm text-theme placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/50"
+                  className="w-full h-full pl-9 pr-3 rounded-2xl bg-transparent border-0 text-sm text-theme placeholder:text-[color:var(--muted-text)] focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/50"
                   placeholder="Нэр, утас хайх..."
                 />
               </div>
 
               <div id="medegdel-contact-list" className="flex-1 min-h-0 overflow-y-auto space-y-2 px-1 pr-1 custom-scrollbar">
                 {isValidating ? (
-                  <div className="text-center py-12 text-slate-500 text-sm">
+                  <div className="text-center py-12 text-[color:var(--muted-text)] text-sm">
                     Уншиж байна...
                   </div>
                 ) : filteredGeree.length === 0 ? (
-                  <div className="text-center py-12 text-slate-500 text-sm">
+                  <div className="text-center py-12 text-[color:var(--muted-text)] text-sm">
                     Оршин суугч олдсонгүй
                   </div>
                 ) : (
@@ -919,7 +919,7 @@ function MedegdelContent() {
                         animate={{ opacity: 1 }}
                         onClick={() => khariltsagchSongokh(mur)}
                         className={`flex items-center gap-3 py-2 px-3 rounded-2xl cursor-pointer transition-all duration-200 border-2 ${isActive
-                          ? "bg-blue-50 dark:bg-blue-500/20 border-blue-500"
+                          ? "bg-theme/10 dark:bg-theme/20 border-theme"
                           : "border-transparent hover:bg-white/10"
                           }`}
                       >
@@ -929,14 +929,14 @@ function MedegdelContent() {
                           readOnly
                           className="w-4 h-4 rounded shrink-0 pointer-events-none"
                         />
-                        <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 flex items-center justify-center text-white text-sm  shrink-0">
+                        <div className="h-9 w-9 rounded-full bg-gradient-to-br from-theme/20 via-purple-400 to-pink-400 flex items-center justify-center text-white text-sm  shrink-0">
                           {mur.ner?.[0] || "?"}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className=" text-sm text-slate-800 dark:text-white truncate">
+                          <div className=" text-sm text-[color:var(--panel-text)] dark:text-white truncate">
                             {mur.ner}
                           </div>
-                          <div className="text-xs text-slate-500 truncate">
+                          <div className="text-xs text-[color:var(--muted-text)] truncate">
                             {Array.isArray(mur.utas)
                               ? mur.utas.join(", ")
                               : mur.utas}
@@ -1028,7 +1028,7 @@ function MedegdelContent() {
                             <button
                               type="button"
                               onClick={() => setComposerTemplateImage(null)}
-                              className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow hover:bg-red-600"
+                              className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-danger text-white flex items-center justify-center shadow hover:bg-danger"
                               aria-label="Зураг хасах"
                             >
                               <X className="w-3.5 h-3.5" />
@@ -1050,7 +1050,7 @@ function MedegdelContent() {
                                 attachPreviewUrlsRef.current = attachPreviewUrlsRef.current.filter((_, i) => i !== idx);
                                 setAttachImages((prev) => prev.filter((_, i) => i !== idx));
                               }}
-                              className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow hover:bg-red-600"
+                              className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-danger text-white flex items-center justify-center shadow hover:bg-danger"
                               aria-label="Зураг хасах"
                             >
                               <X className="w-3.5 h-3.5" />
@@ -1064,7 +1064,7 @@ function MedegdelContent() {
                         onClick={send}
                         loading={loading}
                         disabled={!title || (!msj && attachImages.length === 0 && !composerTemplateImage)}
-                        className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 !text-white  border-0 shadow-lg hover:shadow-xl hover:opacity-95 transition-all"
+                        className="w-full h-11 rounded-xl bg-gradient-to-r from-theme/20 to-theme/20 !text-white  border-0 shadow-lg hover:shadow-xl hover:opacity-95 transition-all"
                       >
                         Илгээх
                       </Button>
@@ -1080,12 +1080,12 @@ function MedegdelContent() {
                   >
 
                     <div className="w-16 h-16 rounded-2xl neu-panel flex items-center justify-center mb-4">
-                      <MessageSquare className="w-8 h-8 text-slate-400" />
+                      <MessageSquare className="w-8 h-8 text-[color:var(--muted-text)]" />
                     </div>
-                    <h3 className="text-sm  text-slate-600 dark:text-slate-300 mb-1">
+                    <h3 className="text-sm  text-[color:var(--muted-text)] mb-1">
                       Харилцагч сонгоно уу
                     </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 max-w-[240px]">
+                    <p className="text-xs text-[color:var(--muted-text)] max-w-[240px]">
                       Зүүн талын жагсаалтаас мэдэгдэл илгээх хүмүүсийг сонгоод бичлэгээ үргэлжлүүлнэ үү.
                     </p>
                   </motion.div>
@@ -1105,23 +1105,23 @@ function MedegdelContent() {
             {/* Left side: List of notifications */}
             <div className="neu-panel p-4 sm:p-5 flex flex-col min-w-0 lg:w-[350px] shrink-0">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold flex items-center gap-2 text-slate-700 dark:text-white">
-                  <Bell className="w-4 h-4 text-emerald-500" />
+                <h3 className="text-sm font-semibold flex items-center gap-2 text-[color:var(--panel-text)] dark:text-white">
+                  <Bell className="w-4 h-4 text-theme" />
                   Төлөлтийн мэдэгдлүүд
                 </h3>
-                <span className="text-xs bg-slate-100 dark:bg-white/10 px-2 py-0.5 rounded-2xl text-slate-600 dark:text-slate-300">
+                <span className="text-xs bg-[color:var(--surface-hover)] dark:bg-white/10 px-2 py-0.5 rounded-2xl text-[color:var(--muted-text)]">
                   {filteredTulult.length}
                 </span>
               </div>
 
               {/* Search input */}
               <div className="relative h-9 w-full neu-panel mb-4 flex items-center">
-                <Search className="absolute left-3 w-4 h-4 text-slate-500 pointer-events-none" />
+                <Search className="absolute left-3 w-4 h-4 text-[color:var(--muted-text)] pointer-events-none" />
                 <input
                   aria-label="Хайх"
                   value={tulultSearch}
                   onChange={(e) => setTulultSearch(e.target.value)}
-                  className="w-full h-full pl-9 pr-3 rounded-2xl bg-transparent border-0 text-sm text-theme placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/50"
+                  className="w-full h-full pl-9 pr-3 rounded-2xl bg-transparent border-0 text-sm text-theme placeholder:text-[color:var(--muted-text)] focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/50"
                   placeholder="Нэр, тоот, утас хайх..."
                 />
               </div>
@@ -1129,9 +1129,9 @@ function MedegdelContent() {
               {/* List */}
               <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
                 {tulultLoading ? (
-                  <div className="text-center py-12 text-slate-500 text-sm">Уншиж байна...</div>
+                  <div className="text-center py-12 text-[color:var(--muted-text)] text-sm">Уншиж байна...</div>
                 ) : filteredTulult.length === 0 ? (
-                  <div className="text-center py-12 text-slate-500 text-sm">Төлөлтийн мэдэгдэл олдсонгүй</div>
+                  <div className="text-center py-12 text-[color:var(--muted-text)] text-sm">Төлөлтийн мэдэгдэл олдсонгүй</div>
                 ) : (
                   filteredTulult.map((item: any) => {
                     const isSelected = selectedTulult?._id === item._id;
@@ -1141,32 +1141,32 @@ function MedegdelContent() {
                         key={item._id}
                         onClick={() => setSelectedTulult(item)}
                         className={`p-2.5 rounded-xl cursor-pointer transition-all duration-200 border flex flex-col gap-1.5 relative ${isSelected
-                          ? "bg-emerald-500/10 dark:bg-emerald-500/20 border-emerald-500 shadow-sm"
+                          ? "bg-success/10 dark:bg-success/20 border-success shadow-sm"
                           : isUnread
-                            ? "border-orange-500/30 bg-orange-500/5 hover:bg-orange-500/10"
-                            : "border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/10"
+                            ? "border-warning/30 bg-warning/5 hover:bg-warning/10"
+                            : "border-theme/20 bg-theme/5 hover:bg-theme/10"
                           }`}
                       >
 
                         <div className="flex items-center justify-between w-full">
 
-                          <span className="text-[10px] text-slate-500">
+                          <span className="text-[10px] text-[color:var(--muted-text)]">
                             {ognooTsagBogino(item.createdAt || item.ognoo)}
                           </span>
                           {isUnread ? (
-                            <span className="px-1.5 py-0.5 rounded text-[9px] bg-orange-500/20 text-orange-700 dark:text-orange-300 border border-orange-400/50 shrink-0">
+                            <span className="px-1.5 py-0.5 rounded text-[9px] bg-warning/20 text-warning border border-warning/50 shrink-0">
                               Шинэ
                             </span>
                           ) : (
-                            <span className="px-1.5 py-0.5 rounded text-[9px] bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-400/50 shrink-0">
+                            <span className="px-1.5 py-0.5 rounded text-[9px] bg-theme/20 text-theme dark:text-theme border border-theme/50 shrink-0">
                               Уншсан
                             </span>
                           )}
                         </div>
-                        <h4 className="text-xs font-semibold text-slate-800 dark:text-white line-clamp-1">
+                        <h4 className="text-xs font-semibold text-[color:var(--panel-text)] dark:text-white line-clamp-1">
                           {item.title || "QPay төлөлт"}
                         </h4>
-                        <p className="text-[11px] text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
+                        <p className="text-[11px] text-[color:var(--muted-text)] line-clamp-2 leading-relaxed">
                           {item.message}
                         </p>
                       </div>
@@ -1180,12 +1180,12 @@ function MedegdelContent() {
             <div className="neu-panel p-4 sm:p-5 flex flex-col min-w-0 flex-1 relative">
               {selectedTulult ? (
                 <div className="flex flex-col gap-4 flex-1 min-h-0">
-                  <div className="flex items-center justify-between border-b border-slate-300 dark:border-slate-600 pb-3">
+                  <div className="flex items-center justify-between border-b border-[color:var(--surface-border)] pb-3">
                     <div>
-                      <h2 className="text-base font-bold text-slate-800 dark:text-white">
+                      <h2 className="text-base font-bold text-[color:var(--panel-text)] dark:text-white">
                         {selectedTulult.title || "QPay төлөлт"}
                       </h2>
-                      <span className="text-xs text-slate-500">
+                      <span className="text-xs text-[color:var(--muted-text)]">
                         {ognooTsagButen(selectedTulult.createdAt || selectedTulult.ognoo)}
                       </span>
                     </div>
@@ -1193,42 +1193,42 @@ function MedegdelContent() {
                   </div>
 
                   {/* Resident Info Box */}
-                  <div className="p-4 rounded-2xl bg-emerald-50/20 dark:bg-emerald-950/5 border border-emerald-500/10 flex flex-col gap-3">
+                  <div className="p-4 rounded-2xl bg-theme/20 dark:bg-theme/5 border border-theme/10 flex flex-col gap-3">
                     <div className="flex items-center gap-2">
-                      <User className="w-4 h-4 text-emerald-500 shrink-0" />
-                      <span className="text-xs text-slate-500 shrink-0">Нэр:</span>
-                      <span className="text-xs font-semibold text-slate-800 dark:text-white truncate">
+                      <User className="w-4 h-4 text-theme shrink-0" />
+                      <span className="text-xs text-[color:var(--muted-text)] shrink-0">Нэр:</span>
+                      <span className="text-xs font-semibold text-[color:var(--panel-text)] dark:text-white truncate">
                         {residentsMap[selectedTulult.orshinSuugchId]?.ner || selectedTulult.orshinSuugchNer || "..."}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Home className="w-4 h-4 text-emerald-500 shrink-0" />
-                      <span className="text-xs text-slate-500 shrink-0">Тоот:</span>
-                      <span className="text-xs font-semibold text-slate-800 dark:text-white">
+                      <Home className="w-4 h-4 text-theme shrink-0" />
+                      <span className="text-xs text-[color:var(--muted-text)] shrink-0">Тоот:</span>
+                      <span className="text-xs font-semibold text-[color:var(--panel-text)] dark:text-white">
                         {residentsMap[selectedTulult.orshinSuugchId]?.toot || selectedTulult.gereeniiDugaar || "..."}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-emerald-500 shrink-0" />
-                      <span className="text-xs text-slate-500 shrink-0">Утас:</span>
-                      <span className="text-xs font-semibold text-slate-800 dark:text-white">
+                      <Phone className="w-4 h-4 text-theme shrink-0" />
+                      <span className="text-xs text-[color:var(--muted-text)] shrink-0">Утас:</span>
+                      <span className="text-xs font-semibold text-[color:var(--panel-text)] dark:text-white">
                         {residentsMap[selectedTulult.orshinSuugchId]?.utas || selectedTulult.orshinSuugchUtas || "..."}
                       </span>
                     </div>
                   </div>
 
                   {/* Message body */}
-                  <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-white/5 rounded-2xl p-4 border border-slate-300 dark:border-slate-600 text-sm text-slate-700 dark:text-slate-200 leading-relaxed whitespace-pre-wrap">
+                  <div className="flex-1 overflow-y-auto bg-[color:var(--surface-hover)] dark:bg-white/5 rounded-2xl p-4 border border-[color:var(--surface-border)] text-sm text-[color:var(--panel-text)] leading-relaxed whitespace-pre-wrap">
                     {selectedTulult.message}
                   </div>
                 </div>
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center text-center py-12 px-4">
                   <div className="w-16 h-16 rounded-2xl neu-panel flex items-center justify-center mb-4">
-                    <Bell className="w-8 h-8 text-slate-400" />
+                    <Bell className="w-8 h-8 text-[color:var(--muted-text)]" />
                   </div>
-                  <h3 className="text-sm text-slate-600 dark:text-slate-300 mb-1">Мэдэгдэл сонгоно уу</h3>
-                  <p className="text-xs text-slate-500 max-w-[240px]">
+                  <h3 className="text-sm text-[color:var(--muted-text)] mb-1">Мэдэгдэл сонгоно уу</h3>
+                  <p className="text-xs text-[color:var(--muted-text)] max-w-[240px]">
                     Зүүн талын жагсаалтаас дэлгэрэнгүй харах мэдэгдэлийг сонгоно уу.
                   </p>
                 </div>
@@ -1256,17 +1256,17 @@ function MedegdelContent() {
         closable={false}
         centered
         width={400}
-        className="[&_.ant-modal-content]:!p-0 [&_.ant-modal-content]:!rounded-xl overflow-hidden [&_.ant-modal-content]:!bg-white dark:[&_.ant-modal-content]:!bg-slate-900 shadow-xl"
+        className="[&_.ant-modal-content]:!p-0 [&_.ant-modal-content]:!rounded-xl overflow-hidden [&_.ant-modal-content]:!bg-white dark:[&_.ant-modal-content]:!bg-[color:var(--panel)] shadow-xl"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200/80 dark:border-white/10">
-          <h3 className="text-sm font-semibold text-slate-800 dark:text-white m-0">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[color:var(--surface-border)] dark:border-white/10">
+          <h3 className="text-sm font-semibold text-[color:var(--panel-text)] dark:text-white m-0">
             {lastSendResult?.turul ? `${lastSendResult.turul} илгээлтийн дэлгэрэнгүй` : "Мэдэгдэл илгээлтийн дэлгэрэнгүй"}
           </h3>
           <button
             type="button"
             onClick={() => setResultModalOpen(false)}
-            className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+            className="w-6 h-6 rounded-md flex items-center justify-center text-[color:var(--muted-text)] hover:text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/10 transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -1275,20 +1275,20 @@ function MedegdelContent() {
         {/* Content Cards */}
         <div className="p-4">
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col items-center justify-center py-4 px-3 rounded-lg bg-[#f0fdf4] dark:bg-emerald-950/20 border border-[#86efac] dark:border-emerald-700/60">
-              <span className="text-2xl sm:text-3xl font-bold text-[#00875a] dark:text-emerald-400 mb-1">
+            <div className="flex flex-col items-center justify-center py-4 px-3 rounded-lg bg-[#f0fdf4] dark:bg-theme/20 border border-[#86efac] dark:border-theme/60">
+              <span className="text-2xl sm:text-3xl font-bold text-[#00875a] dark:text-theme mb-1">
                 {lastSendResult?.sent ?? 0}
               </span>
-              <span className="text-[11px] sm:text-xs font-medium text-slate-600 dark:text-slate-300 text-center">
+              <span className="text-[11px] sm:text-xs font-medium text-[color:var(--muted-text)] text-center">
                 Амжилттай илгээсэн
               </span>
             </div>
 
-            <div className="flex flex-col items-center justify-center py-4 px-3 rounded-lg bg-[#fef2f2] dark:bg-rose-950/20 border border-[#fca5a5] dark:border-rose-700/60">
-              <span className="text-2xl sm:text-3xl font-bold text-[#dc2626] dark:text-rose-400 mb-1">
+            <div className="flex flex-col items-center justify-center py-4 px-3 rounded-lg bg-[#fef2f2] border border-[#fca5a5]">
+              <span className="text-2xl sm:text-3xl font-bold text-[#dc2626] mb-1">
                 {lastSendResult?.failed ?? 0}
               </span>
-              <span className="text-[11px] sm:text-xs font-medium text-slate-600 dark:text-slate-300 text-center">
+              <span className="text-[11px] sm:text-xs font-medium text-[color:var(--muted-text)] text-center">
                 Амжилтгүй болсон
               </span>
             </div>
@@ -1296,20 +1296,20 @@ function MedegdelContent() {
 
           {/* Failed users detail if any */}
           {lastSendResult?.failedUsers && lastSendResult.failedUsers.length > 0 && (
-            <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-white/10">
-              <span className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 block mb-1.5">
+            <div className="mt-3 pt-2.5 border-t border-[color:var(--surface-border)] dark:border-white/10">
+              <span className="text-[11px] font-semibold text-danger block mb-1.5">
                 Амжилтгүй болсон шалтгаан ({lastSendResult.failedUsers.length}):
               </span>
               <div className="max-h-28 overflow-y-auto space-y-1 pr-1 text-[11px]">
                 {lastSendResult.failedUsers.map((u, i) => (
                   <div
                     key={i}
-                    className="flex items-center justify-between px-2.5 py-1 rounded-md bg-rose-50/70 dark:bg-rose-950/30 text-slate-700 dark:text-slate-300"
+                    className="flex items-center justify-between px-2.5 py-1 rounded-md bg-danger/70 text-[color:var(--panel-text)]"
                   >
                     <span className="font-medium truncate mr-2">
                       {u.ner} {u.toot ? `(${u.toot})` : ""}
                     </span>
-                    <span className="text-rose-500 dark:text-rose-400 text-[10px] shrink-0">
+                    <span className="text-danger text-[10px] shrink-0">
                       {u.shaltgaan || "Алдаа"}
                     </span>
                   </div>
@@ -1320,7 +1320,7 @@ function MedegdelContent() {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end px-4 py-2.5 border-t border-slate-200/80 dark:border-white/10">
+        <div className="flex items-center justify-end px-4 py-2.5 border-t border-[color:var(--surface-border)] dark:border-white/10">
           <button
             type="button"
             onClick={() => setResultModalOpen(false)}

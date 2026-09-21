@@ -279,7 +279,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
     return (
       <>
         <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/15 backdrop-blur-[2px] pointer-events-none transition-all duration-300">
-          <div className="flex flex-col items-center justify-center p-6 rounded-3xl bg-slate-900/80 border border-white/10 pointer-events-auto gap-3 shadow-2xl">
+          <div className="flex flex-col items-center justify-center p-6 rounded-3xl bg-[color:var(--panel)] border border-white/10 pointer-events-auto gap-3 shadow-2xl">
             <div className="relative w-12 h-12">
               <div className="absolute inset-0 rounded-full border-4 border-white/20"></div>
               <div className="absolute inset-0 rounded-full border-4 border-t-emerald-500 border-r-transparent border-b-transparent border-l-transparent animate-spin"></div>
@@ -313,7 +313,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
           {/* Explicit, app-driven loading overlay (not navigation) */}
           {spinnerLoading && (
             <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/15 backdrop-blur-[2px] pointer-events-none transition-all duration-300">
-              <div className="flex flex-col items-center justify-center p-6 rounded-3xl bg-slate-900/80 border border-white/10 pointer-events-auto gap-3 shadow-2xl">
+              <div className="flex flex-col items-center justify-center p-6 rounded-3xl bg-[color:var(--panel)] border border-white/10 pointer-events-auto gap-3 shadow-2xl">
                 <div className="relative w-12 h-12">
                   <div className="absolute inset-0 rounded-full border-4 border-white/20"></div>
                   <div className="absolute inset-0 rounded-full border-4 border-t-emerald-500 border-r-transparent border-b-transparent border-l-transparent animate-spin"></div>

@@ -824,33 +824,33 @@ export default function SanalKhuselt() {
       case "pending":
         return {
           label: t("Хүлээгдэж байна"),
-          color: "text-amber-600 dark:text-amber-400",
-          bg: "bg-amber-100 dark:bg-amber-900/30",
-          border: "border-amber-200 dark:border-amber-800",
+          color: "text-warning",
+          bg: "bg-warning/10",
+          border: "border-warning/30",
           icon: <Clock className="w-4 h-4" />,
         };
       case "done":
         return {
           label: t("Шийдэгдсэн"),
-          color: "text-emerald-600 dark:text-emerald-400",
-          bg: "bg-emerald-100 dark:bg-emerald-900/30",
-          border: "border-emerald-200 dark:border-emerald-800",
+          color: "text-theme dark:text-theme",
+          bg: "bg-theme/10 dark:bg-theme/30",
+          border: "border-theme/30 dark:border-theme",
           icon: <CheckCircle className="w-4 h-4" />,
         };
       case "rejected":
         return {
           label: t("Татгалзсан"),
-          color: "text-rose-600 dark:text-rose-400",
-          bg: "bg-rose-100 dark:bg-rose-900/30",
-          border: "border-rose-200 dark:border-rose-800",
+          color: "text-danger",
+          bg: "bg-danger/10",
+          border: "border-danger/30",
           icon: <XCircle className="w-4 h-4" />,
         };
       default:
         return {
           label: t("Тодорхойгүй"),
-          color: "text-slate-600 dark:text-slate-400",
-          bg: "bg-slate-100 dark:bg-slate-800",
-          border: "border-slate-200 dark:border-slate-700",
+          color: "text-[color:var(--muted-text)]",
+          bg: "bg-[color:var(--surface-hover)]",
+          border: "border-[color:var(--surface-border)]",
           icon: <AlertCircle className="w-4 h-4" />,
         };
     }
@@ -1034,7 +1034,7 @@ export default function SanalKhuselt() {
               type="button"
               onClick={() => setDashboardFilter("all")}
               className={`rounded-xl border p-2 text-center transition-all cursor-pointer ${dashboardActive.all
-                ? "border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                ? "border-theme bg-theme/10 text-theme dark:text-theme"
                 : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] hover:bg-[color:var(--surface-hover)] text-theme"
                 }`}
             >
@@ -1046,7 +1046,7 @@ export default function SanalKhuselt() {
               type="button"
               onClick={() => setDashboardFilter("shiidegdsen")}
               className={`rounded-xl border p-2 text-center transition-all cursor-pointer ${dashboardActive.shiidegdsen
-                ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                ? "border-theme bg-theme/10 text-theme dark:text-theme"
                 : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] hover:bg-[color:var(--surface-hover)] text-theme"
                 }`}
             >
@@ -1058,7 +1058,7 @@ export default function SanalKhuselt() {
               type="button"
               onClick={() => setDashboardFilter("gomdol")}
               className={`rounded-xl border p-2 text-center transition-all cursor-pointer ${dashboardActive.gomdol
-                ? "border-red-500 bg-red-500/10 text-red-600 dark:text-red-400"
+                ? "border-danger bg-danger/10 text-danger"
                 : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] hover:bg-[color:var(--surface-hover)] text-theme"
                 }`}
             >
@@ -1070,7 +1070,7 @@ export default function SanalKhuselt() {
               type="button"
               onClick={() => setDashboardFilter("sanal")}
               className={`rounded-xl border p-2 text-center transition-all cursor-pointer ${dashboardActive.sanal
-                ? "border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                ? "border-theme bg-theme/10 text-theme dark:text-theme"
                 : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] hover:bg-[color:var(--surface-hover)] text-theme"
                 }`}
             >
@@ -1082,13 +1082,13 @@ export default function SanalKhuselt() {
           {/* Search and Filters */}
           <div className="flex flex-col gap-2">
             <div id="feedback-search" className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[color:var(--muted-text)]" />
               <input
                 type="text"
                 placeholder={t("Хайх...")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 h-9 rounded-xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] text-slate-800 dark:text-slate-100 placeholder:text-slate-400 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all"
+                className="w-full pl-9 pr-3 h-9 rounded-xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] text-xs focus:outline-none focus:ring-1 focus:ring-theme transition-all"
               />
             </div>
             <div id="feedback-filters" className="grid grid-cols-2 gap-2">
@@ -1161,8 +1161,8 @@ export default function SanalKhuselt() {
                       setShowDetail(true);
                     }}
                     className={`group relative p-4 rounded-2xl border transition-all cursor-pointer ${isSelected
-                      ? "bg-blue-200 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 shadow-sm"
-                      : "bg-[color:var(--surface-bg)] border-[color:var(--surface-border)] hover:border-blue-300/50 hover:bg-[color:var(--surface-hover)]"
+                      ? "bg-theme/20 dark:bg-theme/20 border-theme/30 dark:border-theme shadow-sm"
+                      : "bg-[color:var(--surface-bg)] border-[color:var(--surface-border)] hover:border-theme/50 hover:bg-[color:var(--surface-hover)]"
                       }`}
                   >
                     <div className="flex justify-between items-start mb-2">
@@ -1171,8 +1171,8 @@ export default function SanalKhuselt() {
                           className={`inline-flex px-2 py-0.5 rounded-2xl text-[10px]  tracking-wide border ${(item.turul?.toLowerCase() || "").includes(
                             "sanal",
                           ) || (item.turul ?? "").includes("санал")
-                            ? "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-400/50"
-                            : "bg-red-500/15 text-red-700 dark:text-red-300 border-red-400/50"
+                            ? "bg-theme/15 text-theme dark:text-theme border-theme/50"
+                            : "bg-danger/15 text-danger border-danger/50"
                             }`}
                         >
                           {turulToLabel(item.turul)}
@@ -1188,35 +1188,35 @@ export default function SanalKhuselt() {
                       </span>
                     </div>
                     <h3
-                      className={`text-sm  mb-1 line-clamp-1 ${isSelected ? "text-blue-700 dark:text-blue-300" : "text-theme"}`}
+                      className={`text-sm  mb-1 line-clamp-1 ${isSelected ? "text-theme dark:text-theme" : "text-theme"}`}
                     >
                       {item.title}
                     </h3>
                     {item.orshinSuugchId &&
                       residentsMap[item.orshinSuugchId] && (
-                        <div className="mb-2 p-2 rounded-xl bg-blue-50/60 dark:bg-blue-950/10 border border-blue-100/60 dark:border-blue-900/20">
+                        <div className="mb-2 p-2 rounded-xl bg-theme/60 dark:bg-theme/10 border border-theme/60 dark:border-theme/20">
                           <div className="flex items-center gap-1.5 mb-1">
-                            <User className="w-3 h-3 text-blue-500 shrink-0" />
-                            <span className="text-[10px] text-blue-400 dark:text-blue-500 shrink-0">Нэр:</span>
-                            <span className="text-[11px] font-semibold text-blue-700 dark:text-blue-300 truncate">
+                            <User className="w-3 h-3 text-theme shrink-0" />
+                            <span className="text-[10px] text-theme dark:text-theme shrink-0">Нэр:</span>
+                            <span className="text-[11px] font-semibold text-theme dark:text-theme truncate">
                               {residentsMap[item.orshinSuugchId].ner}
                             </span>
                           </div>
                           <div className="flex items-center gap-3">
                             {residentsMap[item.orshinSuugchId].toot && (
                               <div className="flex items-center gap-1">
-                                <Home className="w-3 h-3 text-blue-400 shrink-0" />
-                                <span className="text-[10px] text-blue-400 dark:text-blue-500 shrink-0">Тоот:</span>
-                                <span className="text-[10px] text-blue-600 dark:text-blue-400">
+                                <Home className="w-3 h-3 text-theme shrink-0" />
+                                <span className="text-[10px] text-theme dark:text-theme shrink-0">Тоот:</span>
+                                <span className="text-[10px] text-theme dark:text-theme">
                                   {residentsMap[item.orshinSuugchId].toot}
                                 </span>
                               </div>
                             )}
                             {residentsMap[item.orshinSuugchId].utas && (
                               <div className="flex items-center gap-1">
-                                <Phone className="w-3 h-3 text-blue-400 shrink-0" />
-                                <span className="text-[10px] text-blue-400 dark:text-blue-500 shrink-0">Утас:</span>
-                                <span className="text-[10px] text-blue-600 dark:text-blue-400">
+                                <Phone className="w-3 h-3 text-theme shrink-0" />
+                                <span className="text-[10px] text-theme dark:text-theme shrink-0">Утас:</span>
+                                <span className="text-[10px] text-theme dark:text-theme">
                                   {residentsMap[item.orshinSuugchId].utas}
                                 </span>
                               </div>
@@ -1230,7 +1230,7 @@ export default function SanalKhuselt() {
 
                     {isSelected && (
                       <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <ChevronRight className="w-4 h-4 text-blue-500" />
+                        <ChevronRight className="w-4 h-4 text-theme" />
                       </div>
                     )}
                   </motion.div>
@@ -1265,14 +1265,14 @@ export default function SanalKhuselt() {
                     </button>
 
                     {/* Avatar Circle */}
-                    <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-500/20">
+                    <div className="w-9 h-9 rounded-xl bg-theme/10 text-theme dark:text-theme flex items-center justify-center shrink-0 border border-theme/20">
                       <User className="w-4 h-4" />
                     </div>
 
                     {/* Resident Info & Topic Title */}
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-100 truncate">
+                        <span className="text-xs sm:text-sm font-medium text-[color:var(--panel-text)] truncate">
                           {selectedMedegdel.orshinSuugchId &&
                           residentsMap[selectedMedegdel.orshinSuugchId]?.ner
                             ? residentsMap[selectedMedegdel.orshinSuugchId].ner
@@ -1280,7 +1280,7 @@ export default function SanalKhuselt() {
                         </span>
                         {selectedMedegdel.orshinSuugchId &&
                           residentsMap[selectedMedegdel.orshinSuugchId]?.toot && (
-                            <span className="px-1.5 py-0.2 rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-300 text-[10px] font-normal shrink-0 border border-blue-200/60 dark:border-blue-800/40">
+                            <span className="px-1.5 py-0.2 rounded-md bg-theme/10 dark:bg-theme/20 text-theme dark:text-theme text-[10px] font-normal shrink-0 border border-theme/60 dark:border-theme/40">
                               {residentsMap[selectedMedegdel.orshinSuugchId].toot} тоот
                             </span>
                           )}
@@ -1288,17 +1288,17 @@ export default function SanalKhuselt() {
                           residentsMap[selectedMedegdel.orshinSuugchId]?.utas && (
                             <a
                               href={`tel:${residentsMap[selectedMedegdel.orshinSuugchId].utas}`}
-                              className="hidden sm:inline-flex items-center gap-1 text-[11px] text-slate-500 hover:text-blue-600 transition-colors"
+                              className="hidden sm:inline-flex items-center gap-1 text-[11px] text-[color:var(--muted-text)] hover:text-theme transition-colors"
                             >
-                              <Phone className="w-3 h-3 text-slate-400" />
+                              <Phone className="w-3 h-3 text-[color:var(--muted-text)]" />
                               <span>{residentsMap[selectedMedegdel.orshinSuugchId].utas}</span>
                             </a>
                           )}
                         <span
                           className={`px-1.5 py-0.2 rounded-md text-[10px] font-normal border shrink-0 ${
                             isSanal(selectedMedegdel.turul)
-                              ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-400/40"
-                              : "bg-red-500/10 text-red-600 dark:text-red-400 border-red-400/40"
+                              ? "bg-theme/10 text-theme dark:text-theme border-theme/40"
+                              : "bg-danger/10 text-danger border-danger/40"
                           }`}
                         >
                           {turulToLabel(selectedMedegdel.turul)}
@@ -1306,14 +1306,14 @@ export default function SanalKhuselt() {
                       </div>
 
                       {/* Request title & timestamp */}
-                      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      <div className="flex items-center gap-2 text-xs text-[color:var(--muted-text)] mt-0.5">
                         <span
-                          className="truncate max-w-[220px] sm:max-w-[420px] font-normal text-slate-600 dark:text-slate-300"
+                          className="truncate max-w-[220px] sm:max-w-[420px] font-normal text-[color:var(--muted-text)]"
                           title={selectedMedegdel.title}
                         >
                           {selectedMedegdel.title}
                         </span>
-                        <span className="text-[10px] text-slate-400 shrink-0">
+                        <span className="text-[10px] text-[color:var(--muted-text)] shrink-0">
                           • {moment(selectedMedegdel.createdAt).format("YYYY-MM-DD HH:mm")}
                         </span>
                       </div>
@@ -1335,7 +1335,7 @@ export default function SanalKhuselt() {
                         {
                           value: "pending",
                           label: (
-                            <span className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 font-normal">
+                            <span className="flex items-center gap-1.5 text-xs text-warning font-normal">
                               <Clock className="w-3.5 h-3.5" />
                               <span>{t("Хүлээгдэж байна")}</span>
                             </span>
@@ -1344,7 +1344,7 @@ export default function SanalKhuselt() {
                         {
                           value: "done",
                           label: (
-                            <span className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-normal">
+                            <span className="flex items-center gap-1.5 text-xs text-theme dark:text-theme font-normal">
                               <CheckCircle className="w-3.5 h-3.5" />
                               <span>{t("Шийдэгдсэн")}</span>
                             </span>
@@ -1353,7 +1353,7 @@ export default function SanalKhuselt() {
                         {
                           value: "rejected",
                           label: (
-                            <span className="flex items-center gap-1.5 text-xs text-rose-600 dark:text-rose-400 font-normal">
+                            <span className="flex items-center gap-1.5 text-xs text-danger font-normal">
                               <XCircle className="w-3.5 h-3.5" />
                               <span>{t("Татгалзсан")}</span>
                             </span>
@@ -1373,7 +1373,7 @@ export default function SanalKhuselt() {
                       exit={{ opacity: 0, height: 0 }}
                       className="overflow-hidden pt-2 border-t border-[color:var(--surface-border)]"
                     >
-                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700">
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-[color:var(--surface-hover)] p-2.5 rounded-xl border border-[color:var(--surface-border)]">
                         <input
                           type="text"
                           value={tailbarText}
@@ -1383,13 +1383,13 @@ export default function SanalKhuselt() {
                               ? t("Шийдвэрийн тайлбар (хэрэглэгчид илгээгдэнэ)...")
                               : t("Татгалзсан шалтгаанаа бичнэ үү (хэрэглэгчид илгээгдэнэ)...")
                           }
-                          className="flex-1 h-8 px-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          className="flex-1 h-8 px-3 rounded-lg bg-white border border-[color:var(--surface-border)] text-xs text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] focus:outline-none focus:ring-1 focus:ring-theme"
                         />
                         <div className="flex items-center gap-1.5 shrink-0 justify-end">
                           <button
                             type="button"
                             onClick={confirmStatusChange}
-                            className="h-8 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-lg transition-colors font-normal shadow-xs cursor-pointer"
+                            className="h-8 px-3 bg-theme hover:bg-theme text-white text-xs rounded-lg transition-colors font-normal shadow-xs cursor-pointer"
                           >
                             {t("Батлах")}
                           </button>
@@ -1399,7 +1399,7 @@ export default function SanalKhuselt() {
                               setPendingStatusChange(null);
                               setTailbarText("");
                             }}
-                            className="h-8 px-3 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-xs rounded-lg transition-colors font-normal cursor-pointer"
+                            className="h-8 px-3 bg-[color:var(--panel)] hover:bg-[color:var(--panel)] text-[color:var(--panel-text)] text-xs rounded-lg transition-colors font-normal cursor-pointer"
                           >
                             {t("Хаах")}
                           </button>
@@ -1413,12 +1413,12 @@ export default function SanalKhuselt() {
               {/* Chat Messages Body - Scrollable */}
               <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2.5 custom-scrollbar bg-[color:var(--surface-bg)]">
                 {threadLoading && displayMessages.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 gap-2 text-slate-400">
-                    <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+                  <div className="flex flex-col items-center justify-center py-16 gap-2 text-[color:var(--muted-text)]">
+                    <Loader2 className="w-6 h-6 animate-spin text-theme" />
                     <span className="text-xs">{t("Уншиж байна...")}</span>
                   </div>
                 ) : displayMessages.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-center text-slate-400 gap-2">
+                  <div className="flex flex-col items-center justify-center py-16 text-center text-[color:var(--muted-text)] gap-2">
                     <MessageSquare className="w-8 h-8 opacity-40" />
                     <span className="text-xs">{t("Харилцаа байхгүй")}</span>
                   </div>
@@ -1440,14 +1440,14 @@ export default function SanalKhuselt() {
                           <div
                             className={`max-w-[85%] sm:max-w-[72%] rounded-2xl px-3.5 py-2.5 text-xs shadow-2xs ${
                               isUser
-                                ? "bg-blue-600 text-white rounded-br-xs"
-                                : "bg-slate-100 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 text-slate-800 dark:text-slate-100 rounded-bl-xs"
+                                ? "bg-theme text-white rounded-br-xs"
+                                : "bg-[color:var(--surface-hover)] border border-[color:var(--surface-border)] text-[color:var(--panel-text)] rounded-bl-xs"
                             }`}
                           >
                             {/* Sender label */}
                             <div
                               className={`flex items-center gap-1.5 mb-1 ${
-                                isUser ? "justify-end text-blue-200" : "justify-start text-blue-600 dark:text-blue-400"
+                                isUser ? "justify-end text-theme" : "justify-start text-theme dark:text-theme"
                               }`}
                             >
                               <span className="text-[10px] font-normal uppercase tracking-wider">
@@ -1514,12 +1514,12 @@ export default function SanalKhuselt() {
                             {/* Timestamp & Read Status */}
                             <div
                               className={`flex items-center gap-1 mt-1 text-[10px] ${
-                                isUser ? "justify-end text-blue-200" : "justify-end text-slate-400"
+                                isUser ? "justify-end text-theme" : "justify-end text-[color:var(--muted-text)]"
                               }`}
                             >
                               <span>{moment(msg.createdAt).format("HH:mm")}</span>
                               {isUser && msg.kharsanEsekh && (
-                                <CheckCheck className="w-3 h-3 text-blue-200" aria-hidden />
+                                <CheckCheck className="w-3 h-3 text-theme" aria-hidden />
                               )}
                             </div>
                           </div>
@@ -1531,8 +1531,8 @@ export default function SanalKhuselt() {
                     {selectedMedegdel.tailbar &&
                       !displayMessages.some((m) => m.message === selectedMedegdel.tailbar) && (
                         <div className="flex justify-end">
-                          <div className="max-w-[85%] sm:max-w-[72%] rounded-2xl rounded-br-xs px-3.5 py-2.5 bg-blue-600 text-white shadow-2xs text-xs">
-                            <div className="flex items-center justify-between gap-1.5 mb-1 text-blue-200">
+                          <div className="max-w-[85%] sm:max-w-[72%] rounded-2xl rounded-br-xs px-3.5 py-2.5 bg-theme text-white shadow-2xs text-xs">
+                            <div className="flex items-center justify-between gap-1.5 mb-1 text-theme">
                               <span className="text-[10px] font-normal uppercase tracking-wider">
                                 Хариу тайлбар (Админ)
                               </span>
@@ -1541,7 +1541,7 @@ export default function SanalKhuselt() {
                               {selectedMedegdel.tailbar}
                             </p>
                             {selectedMedegdel.repliedAt && (
-                              <div className="flex items-center justify-end gap-1 mt-1 text-[10px] text-blue-200">
+                              <div className="flex items-center justify-end gap-1 mt-1 text-[10px] text-theme">
                                 <CheckCircle className="w-3 h-3" />
                                 <span>{moment(selectedMedegdel.repliedAt).format("YYYY-MM-DD HH:mm")}</span>
                               </div>
@@ -1572,26 +1572,26 @@ export default function SanalKhuselt() {
                 {(replyImage || replyVoiceBlob) && (
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
                     {replyImage && (
-                      <span className="inline-flex items-center gap-1.5 rounded-xl bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 px-2.5 py-1 text-xs text-blue-700 dark:text-blue-300">
+                      <span className="inline-flex items-center gap-1.5 rounded-xl bg-theme/10 dark:bg-theme/30 border border-theme/30 dark:border-theme px-2.5 py-1 text-xs text-theme dark:text-theme">
                         <ImagePlus className="w-3.5 h-3.5" />
                         <span className="truncate max-w-[140px]">{replyImage.name}</span>
                         <button
                           type="button"
                           onClick={() => setReplyImage(null)}
-                          className="text-red-500 hover:text-red-700 ml-1 cursor-pointer"
+                          className="text-danger hover:text-danger ml-1 cursor-pointer"
                         >
                           ×
                         </button>
                       </span>
                     )}
                     {replyVoiceBlob && (
-                      <span className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 px-2.5 py-1 text-xs text-emerald-700 dark:text-emerald-300">
+                      <span className="inline-flex items-center gap-1.5 rounded-xl bg-theme/10 dark:bg-theme/30 border border-theme/30 dark:border-theme px-2.5 py-1 text-xs text-theme dark:text-theme">
                         <Mic className="w-3.5 h-3.5" />
                         <span>{t("Дуу")}</span>
                         <button
                           type="button"
                           onClick={() => setReplyVoiceBlob(null)}
-                          className="text-red-500 hover:text-red-700 ml-1 cursor-pointer"
+                          className="text-danger hover:text-danger ml-1 cursor-pointer"
                         >
                           ×
                         </button>
@@ -1606,7 +1606,7 @@ export default function SanalKhuselt() {
                     type="button"
                     onClick={() => replyImageInputRef.current?.click()}
                     disabled={replySending}
-                    className="h-9 w-9 rounded-xl border border-[color:var(--surface-border)] flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-[color:var(--surface-hover)] disabled:opacity-50 transition cursor-pointer shrink-0"
+                    className="h-9 w-9 rounded-xl border border-[color:var(--surface-border)] flex items-center justify-center text-[color:var(--muted-text)] hover:text-theme hover:bg-[color:var(--surface-hover)] disabled:opacity-50 transition cursor-pointer shrink-0"
                     title={t("Зураг хавсаргах")}
                   >
                     <ImagePlus className="w-4 h-4" />
@@ -1617,7 +1617,7 @@ export default function SanalKhuselt() {
                       type="button"
                       onClick={startRecording}
                       disabled={replySending}
-                      className="h-9 w-9 rounded-xl border border-[color:var(--surface-border)] flex items-center justify-center text-slate-500 hover:text-emerald-600 hover:bg-[color:var(--surface-hover)] disabled:opacity-50 transition cursor-pointer shrink-0"
+                      className="h-9 w-9 rounded-xl border border-[color:var(--surface-border)] flex items-center justify-center text-[color:var(--muted-text)] hover:text-theme hover:bg-[color:var(--surface-hover)] disabled:opacity-50 transition cursor-pointer shrink-0"
                       title={t("Дуу бичих")}
                     >
                       <Mic className="w-4 h-4" />
@@ -1626,7 +1626,7 @@ export default function SanalKhuselt() {
                     <button
                       type="button"
                       onClick={stopRecording}
-                      className="h-9 w-9 rounded-xl border border-red-400 bg-red-500/10 text-red-600 flex items-center justify-center transition animate-pulse cursor-pointer shrink-0"
+                      className="h-9 w-9 rounded-xl border border-danger bg-danger/10 text-danger flex items-center justify-center transition animate-pulse cursor-pointer shrink-0"
                       title={t("Зогсоох")}
                     >
                       <Square className="w-4 h-4" />
@@ -1644,7 +1644,7 @@ export default function SanalKhuselt() {
                         }
                       }}
                       placeholder={t("Хариу бичих...")}
-                      className="flex-1 h-9 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-3 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 transition"
+                      className="flex-1 h-9 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-3 text-xs text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] focus:outline-none focus:ring-1 focus:ring-theme transition"
                       disabled={replySending}
                     />
 
@@ -1655,7 +1655,7 @@ export default function SanalKhuselt() {
                         replySending ||
                         (!replyInput.trim() && !replyImage && !replyVoiceBlob)
                       }
-                      className="h-9 w-9 rounded-xl bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed transition shadow-xs cursor-pointer shrink-0 active:scale-95"
+                      className="h-9 w-9 rounded-xl bg-theme hover:bg-theme text-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed transition shadow-xs cursor-pointer shrink-0 active:scale-95"
                       title={t("Илгээх")}
                     >
                       <Send className="w-4 h-4" />

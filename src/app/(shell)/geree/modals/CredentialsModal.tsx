@@ -77,22 +77,22 @@ export default function CredentialsModal({
           >
             <div
               onPointerDown={(e) => dragControls.start(e)}
-              className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800 cursor-move select-none"
+              className="flex items-center justify-between px-6 py-4 border-b border-[color:var(--surface-border)] cursor-move select-none"
             >
-              <h2 className="text-xl  text-slate-900 dark:text-white">
+              <h2 className="text-xl  text-[color:var(--panel-text)] dark:text-white">
                 Нэвтрэх эрх солих
               </h2>
               <Button
                 variant="text"
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={onClose}
-                className="!h-10 !w-10 !min-w-[2.5rem] shrink-0 !rounded-full !p-0 hover:!bg-gray-100 dark:hover:!bg-gray-800"
+                className="!h-10 !w-10 !min-w-[2.5rem] shrink-0 !rounded-full !p-0 hover:!bg-[color:var(--surface-hover)] dark:hover:!bg-[color:var(--panel)]"
                 aria-label="Хаах"
                 title="Хаах"
                 icon={
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 text-gray-500 dark:text-slate-400"
+                    className="h-5 w-5 text-[color:var(--muted-text)]"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -110,33 +110,33 @@ export default function CredentialsModal({
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
-              <p className="text-sm text-gray-500 mb-2 px-1">
+              <p className="text-sm text-[color:var(--muted-text)] mb-2 px-1">
                 <b>{employee?.ovog}. {employee?.ner}</b> - ажилтны нэвтрэх нэр, нууц үгийг шинэчлэх.
               </p>
 
               <div className="space-y-2">
-                <label className="text-sm  text-slate-700 dark:text-slate-300 ml-1">
+                <label className="text-sm  text-[color:var(--panel-text)] ml-1">
                   Нэвтрэх нэр
                 </label>
                 <input
                   type="text"
                   value={nevtrekhNer}
                   onChange={(e) => setNevtrekhNer(e.target.value)}
-                  className="w-full px-5 py-3.5 bg-gray-100 dark:bg-slate-800 border-none rounded-3xl focus:ring-2 focus:ring-blue-500/50 transition-all  text-slate-900 dark:text-slate-100 placeholder:text-gray-400"
+                  className="w-full px-5 py-3.5 bg-[color:var(--surface-hover)] border-none rounded-3xl focus:ring-2 focus:ring-theme/50 transition-all  text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
                   placeholder="Нэвтрэх нэр"
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm  text-slate-700 dark:text-slate-300 ml-1">
+                <label className="text-sm  text-[color:var(--panel-text)] ml-1">
                   Шинэ нууц үг
                 </label>
                 <input
                   type="password"
                   value={nuutsUg}
                   onChange={(e) => setNuutsUg(e.target.value)}
-                  className="w-full px-5 py-3.5 bg-gray-100 dark:bg-slate-800 border-none rounded-3xl focus:ring-2 focus:ring-blue-500/50 transition-all  text-slate-900 dark:text-slate-100 placeholder:text-gray-400"
+                  className="w-full px-5 py-3.5 bg-[color:var(--surface-hover)] border-none rounded-3xl focus:ring-2 focus:ring-theme/50 transition-all  text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
                   placeholder="Байхгүй бол хоосон үлдээх"
                 />
               </div>

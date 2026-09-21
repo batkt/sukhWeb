@@ -48,7 +48,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
   const columns: ColumnsType<FloorItem> = useMemo(() => {
     const cols: ColumnsType<FloorItem> = [
       {
-        title: <span className="text-slate-900 dark:text-slate-200">№</span>,
+        title: <span className="text-[color:var(--panel-text)]">№</span>,
         key: "index",
         width: 40,
         align: "center",
@@ -57,7 +57,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
       },
       {
         title: (
-          <span className="text-slate-900 dark:text-slate-200">Нийт тоот</span>
+          <span className="text-[color:var(--panel-text)]">Нийт тоот</span>
         ),
         dataIndex: "units",
         key: "unitsCount",
@@ -72,13 +72,13 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
             : null,
         className: "font-medium",
         render: (units: string[]) => (
-          <span className="text-slate-900 dark:text-slate-200 whitespace-nowrap">
+          <span className="text-[color:var(--panel-text)] whitespace-nowrap">
             {units ? units.length : 0}
           </span>
         ),
       },
       {
-        title: <span className="text-slate-900 dark:text-slate-200">Орц</span>,
+        title: <span className="text-[color:var(--panel-text)]">Орц</span>,
         dataIndex: "orts",
         key: "orts",
         align: "center",
@@ -91,14 +91,14 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
               : "descend"
             : null,
         render: (val: string) => (
-          <span className="text-slate-900 dark:text-slate-200 whitespace-nowrap">
+          <span className="text-[color:var(--panel-text)] whitespace-nowrap">
             {val ? `${val}-р орц` : "-"}
           </span>
         ),
       },
       {
         title: (
-          <span className="text-slate-900 dark:text-slate-200">Давхар</span>
+          <span className="text-[color:var(--panel-text)]">Давхар</span>
         ),
         dataIndex: "floor",
         key: "floor",
@@ -112,7 +112,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
               : "descend"
             : null,
         render: (val: string) => (
-          <span className="text-slate-900 dark:text-slate-200 whitespace-nowrap">
+          <span className="text-[color:var(--panel-text)] whitespace-nowrap">
             {val}-р давхар
           </span>
         ),
@@ -130,7 +130,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
     cols.push({
       width: tootuudWidth,
       title: (
-        <span className="text-slate-900 dark:text-slate-200 text-center block font-semibold">
+        <span className="text-[color:var(--panel-text)] text-center block font-semibold">
           {propertyTab === "Зогсоол"
             ? "Зогсоолын дугаарууд"
             : propertyTab === "Агуулах"
@@ -144,7 +144,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
         render: (filteredUnits: string[], record: FloorItem) => {
           if (!filteredUnits || filteredUnits.length === 0) {
             return (
-              <span className="italic text-slate-400 dark:text-slate-500">
+              <span className="italic text-[color:var(--muted-text)]">
                 Хоосон
               </span>
             );
@@ -159,24 +159,24 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
                     key={unitStr}
                     className={`group relative flex items-center justify-center w-[48px] h-[28px] rounded-lg border transition-all duration-150 ${
                       hasActive
-                        ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-900/20 dark:border-emerald-600 shadow-sm ring-1 ring-emerald-500/10"
-                        : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 hover:border-blue-400 shadow-sm"
+                        ? "border-theme bg-theme/50 dark:bg-theme/20 dark:border-theme shadow-sm ring-1 ring-theme/10"
+                        : "border-[color:var(--surface-border)] bg-white hover:border-theme shadow-sm"
                     }`}
                   >
                     <span
                       className={`font-semibold ${
                         hasActive
-                          ? "text-emerald-700 dark:text-emerald-400"
-                          : "text-slate-600 dark:text-slate-300"
+                          ? "text-theme dark:text-theme"
+                          : "text-[color:var(--muted-text)]"
                       }`}
                     >
                       {unitStr}
                     </span>
                     {hasActive && (
-                      <div className="absolute top-1 left-1 w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+                      <div className="absolute top-1 left-1 w-1 h-1 rounded-full bg-success animate-pulse" />
                     )}
                     <button
-                      className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center rounded-full bg-slate-800 text-white opacity-0 group-hover:opacity-100 transition-all shadow-md hover:bg-red-600 z-20 scale-90 group-hover:scale-100"
+                      className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center rounded-full bg-[color:var(--panel)] text-white opacity-0 group-hover:opacity-100 transition-all shadow-md hover:bg-danger z-20 scale-90 group-hover:scale-100"
                       aria-label={`Устгах ${unitStr}`}
                       onClick={(e) => {
                         e.stopPropagation();
@@ -194,24 +194,24 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
       });
 
     cols.push({
-      title: <span className="text-slate-900 dark:text-slate-200">Үйлдэл</span>,
+      title: <span className="text-[color:var(--panel-text)]">Үйлдэл</span>,
       key: "action",
       align: "center",
       width: 96,
       render: (_: any, record: FloorItem) => (
         <div className="flex items-center justify-center gap-1">
           <button
-            className="p-1.5 rounded-md hover-surface transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/30"
+            className="p-1.5 rounded-md hover-surface transition-colors hover:bg-theme/10 dark:hover:bg-theme/30"
             title="Шинэ тоот нэмэх"
             onClick={(e) => {
               e.stopPropagation();
               onAddUnit?.(record.floor);
             }}
           >
-            <Plus className="w-4 h-4 text-blue-500 dark:text-blue-400" />
+            <Plus className="w-4 h-4 text-theme dark:text-theme" />
           </button>
           <button
-            className={`p-1.5 rounded-md action-delete hover-surface transition-colors hover:bg-red-100 dark:hover:bg-red-900/30 ${
+            className={`p-1.5 rounded-md action-delete hover-surface transition-colors hover:bg-danger/10 ${
               record.units.length === 0
                 ? "opacity-20 cursor-not-allowed grayscale"
                 : ""
@@ -229,7 +229,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
             }}
             disabled={record.units.length === 0}
           >
-            <Trash2 className="w-4 h-4 text-red-500 dark:text-red-400" />
+            <Trash2 className="w-4 h-4 text-danger" />
           </button>
         </div>
       ),
@@ -282,7 +282,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
         }
         locale={{
           emptyText: (
-            <span className="text-gray-500 dark:text-gray-400">
+            <span className="text-[color:var(--muted-text)]">
               Давхарын мэдээлэл алга
             </span>
           ),

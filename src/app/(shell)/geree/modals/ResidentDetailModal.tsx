@@ -828,27 +828,27 @@ export const ResidentDetailModal: React.FC<Props> = ({
         onClick={onClose}
       >
         <div
-          className="my-auto w-full max-w-6xl overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950 transition-all text-slate-800 dark:text-slate-100"
+          className="my-auto w-full max-w-6xl overflow-hidden rounded-3xl border border-[color:var(--surface-border)] bg-white shadow-2xl transition-all text-[color:var(--panel-text)]"
           onClick={(e) => e.stopPropagation()}
         >
           {/* ── Modal Header ── */}
-          <div className="flex flex-wrap items-center justify-between gap-4 px-6 pt-5 pb-5 border-b border-slate-100 dark:border-slate-800/80">
+          <div className="flex flex-wrap items-center justify-between gap-4 px-6 pt-5 pb-5 border-b border-[color:var(--surface-border)]">
             {/* Left: Avatar & Resident details */}
             <div className="flex items-center gap-4 min-w-0">
               <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-theme/10 text-theme dark:bg-theme/25 dark:text-theme">
                 <User className="h-7 w-7" />
               </div>
               <div className="min-w-0">
-                <h2 className="truncate text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
+                <h2 className="truncate text-lg sm:text-xl font-bold text-[color:var(--panel-text)] dark:text-white">
                   {tekst(medeelel?.ovog)} {tekst(medeelel?.ner)}
                 </h2>
-                <div className="mt-1 flex flex-wrap items-center gap-3 sm:gap-5 text-xs text-slate-500 dark:text-slate-400">
+                <div className="mt-1 flex flex-wrap items-center gap-3 sm:gap-5 text-xs text-[color:var(--muted-text)]">
                   <span className="flex items-center gap-1.5">
-                    <Phone className="h-3.5 w-3.5 text-slate-400" />
+                    <Phone className="h-3.5 w-3.5 text-[color:var(--muted-text)]" />
                     <span>{tekst(medeelel?.utas)}</span>
                   </span>
                   <span className="flex items-center gap-1.5">
-                    <Mail className="h-3.5 w-3.5 text-slate-400" />
+                    <Mail className="h-3.5 w-3.5 text-[color:var(--muted-text)]" />
                     <span>{tekst(medeelel?.mail)}</span>
                   </span>
                 </div>
@@ -857,8 +857,8 @@ export const ResidentDetailModal: React.FC<Props> = ({
 
             {/* Right: Status pill & Close button on the same line */}
             <div className="flex items-center gap-3 shrink-0">
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/80 bg-emerald-50/90 px-3 py-1 text-xs font-medium text-emerald-600 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-theme/80 bg-theme/90 px-3 py-1 text-xs font-medium text-theme dark:border-theme/20 dark:bg-theme/10 dark:text-theme">
+                <span className="h-1.5 w-1.5 rounded-full bg-theme animate-pulse shrink-0" />
                 <span>
                   {tekst(medeelel?.tuluv) === "—" || !medeelel?.tuluv
                     ? "Идэвхтэй"
@@ -868,7 +868,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:text-slate-200 dark:hover:bg-slate-800 transition cursor-pointer"
+                className="flex h-8 w-8 items-center justify-center rounded-full text-[color:var(--muted-text)] hover:text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] transition cursor-pointer"
                 title="Хаах"
               >
                 <X className="h-4 w-4" />
@@ -877,16 +877,16 @@ export const ResidentDetailModal: React.FC<Props> = ({
           </div>
 
           {/* ── Modal Body (Direct 2x2 Grid, No Tabs) ── */}
-          <div className="max-h-[76vh] overflow-y-auto p-5 sm:p-6 bg-slate-50/40 dark:bg-slate-950">
+          <div className="max-h-[76vh] overflow-y-auto p-5 sm:p-6 bg-[color:var(--surface-hover)]">
             {unshij && (
-              <div className="flex flex-col items-center justify-center gap-2 py-24 text-xs text-slate-400">
+              <div className="flex flex-col items-center justify-center gap-2 py-24 text-xs text-[color:var(--muted-text)]">
                 <Loader2 className="h-6 w-6 animate-spin text-theme" />
                 <span>Мэдээлэл уншиж байна...</span>
               </div>
             )}
 
             {!unshij && aldaa && (
-              <div className="py-20 text-center text-xs text-rose-500 font-medium">
+              <div className="py-20 text-center text-xs text-danger font-medium">
                 {aldaa}
               </div>
             )}
@@ -894,14 +894,14 @@ export const ResidentDetailModal: React.FC<Props> = ({
             {!unshij && !aldaa && medeelel && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
                 {/* 1. Хувийн мэдээлэл Card (Edit button removed) */}
-                <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 flex flex-col justify-between">
+                <div className="rounded-2xl border border-[color:var(--surface-border)] bg-white p-5 shadow-xs flex flex-col justify-between">
                   <div>
-                    <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-slate-800/80">
+                    <div className="flex items-center justify-between pb-3.5 border-b border-[color:var(--surface-border)]">
                       <div className="flex items-center gap-2">
                         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-theme/10 text-theme dark:bg-theme/25 dark:text-theme">
                           <User className="h-4 w-4" />
                         </div>
-                        <h3 className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white">
+                        <h3 className="text-xs sm:text-sm font-semibold text-[color:var(--panel-text)] dark:text-white">
                           Хувийн мэдээлэл
                         </h3>
                       </div>
@@ -922,7 +922,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                       <div className="pt-4">
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <p className="text-[11px] text-slate-400 mb-1">Овог</p>
+                            <p className="text-[11px] text-[color:var(--muted-text)] mb-1">Овог</p>
                             <input
                               value={khuviinMedeelel.ovog}
                               onChange={(e) =>
@@ -931,11 +931,11 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                   ovog: e.target.value,
                                 }))
                               }
-                              className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                              className="w-full rounded-lg border border-[color:var(--surface-border)] bg-white px-2.5 py-1.5 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme"
                             />
                           </div>
                           <div>
-                            <p className="text-[11px] text-slate-400 mb-1">Нэр</p>
+                            <p className="text-[11px] text-[color:var(--muted-text)] mb-1">Нэр</p>
                             <input
                               value={khuviinMedeelel.ner}
                               onChange={(e) =>
@@ -944,11 +944,11 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                   ner: e.target.value,
                                 }))
                               }
-                              className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                              className="w-full rounded-lg border border-[color:var(--surface-border)] bg-white px-2.5 py-1.5 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme"
                             />
                           </div>
                           <div>
-                            <p className="text-[11px] text-slate-400 mb-1">Утас</p>
+                            <p className="text-[11px] text-[color:var(--muted-text)] mb-1">Утас</p>
                             <input
                               inputMode="numeric"
                               value={khuviinMedeelel.utas}
@@ -958,11 +958,11 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                   utas: e.target.value,
                                 }))
                               }
-                              className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                              className="w-full rounded-lg border border-[color:var(--surface-border)] bg-white px-2.5 py-1.5 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme"
                             />
                           </div>
                           <div>
-                            <p className="text-[11px] text-slate-400 mb-1">E-mail</p>
+                            <p className="text-[11px] text-[color:var(--muted-text)] mb-1">E-mail</p>
                             <input
                               type="email"
                               value={khuviinMedeelel.mail}
@@ -972,11 +972,11 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                   mail: e.target.value,
                                 }))
                               }
-                              className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                              className="w-full rounded-lg border border-[color:var(--surface-border)] bg-white px-2.5 py-1.5 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme"
                             />
                           </div>
                           <div className="col-span-2">
-                            <p className="text-[11px] text-slate-400 mb-1">
+                            <p className="text-[11px] text-[color:var(--muted-text)] mb-1">
                               Тайлбар
                             </p>
                             <input
@@ -987,11 +987,11 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                   tailbar: e.target.value,
                                 }))
                               }
-                              className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                              className="w-full rounded-lg border border-[color:var(--surface-border)] bg-white px-2.5 py-1.5 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme"
                             />
                           </div>
                         </div>
-                        <p className="mt-2 text-[10px] text-slate-500 dark:text-slate-400">
+                        <p className="mt-2 text-[10px] text-[color:var(--muted-text)]">
                           Эрх, Бүртгэгдсэн огноо нь системээс
                           тодорхойлогддог тул эндээс өөрчлөгдөхгүй.
                         </p>
@@ -1003,47 +1003,47 @@ export const ResidentDetailModal: React.FC<Props> = ({
                         }`}
                     >
                       <div>
-                        <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                        <p className="text-[11px] text-[color:var(--muted-text)]">
                           Овог
                         </p>
-                        <p className="text-xs font-normal text-slate-800 dark:text-slate-200 mt-0.5">
+                        <p className="text-xs font-normal text-[color:var(--panel-text)] mt-0.5">
                           {tekst(medeelel.ovog)}
                         </p>
                       </div>
 
                       <div>
-                        <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                        <p className="text-[11px] text-[color:var(--muted-text)]">
                           Нэр
                         </p>
-                        <p className="text-xs font-normal text-slate-800 dark:text-slate-200 mt-0.5">
+                        <p className="text-xs font-normal text-[color:var(--panel-text)] mt-0.5">
                           {tekst(medeelel.ner)}
                         </p>
                       </div>
 
                       <div>
-                        <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                        <p className="text-[11px] text-[color:var(--muted-text)]">
                           Байр
                         </p>
-                        <p className="text-xs font-normal text-slate-800 dark:text-slate-200 mt-0.5">
+                        <p className="text-xs font-normal text-[color:var(--panel-text)] mt-0.5">
                           {tekst(bairNer)}
                         </p>
                       </div>
 
                       <div>
-                        <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                        <p className="text-[11px] text-[color:var(--muted-text)]">
                           Утас
                         </p>
-                        <p className="text-xs font-normal text-slate-800 dark:text-slate-200 mt-0.5">
+                        <p className="text-xs font-normal text-[color:var(--panel-text)] mt-0.5">
                           {tekst(medeelel.utas)}
                         </p>
                       </div>
 
                       <div>
-                        <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                        <p className="text-[11px] text-[color:var(--muted-text)]">
                           E-mail
                         </p>
                         <p
-                          className="text-xs font-normal text-slate-800 dark:text-slate-200 mt-0.5 truncate"
+                          className="text-xs font-normal text-[color:var(--panel-text)] mt-0.5 truncate"
                           title={tekst(medeelel.mail)}
                         >
                           {tekst(medeelel.mail)}
@@ -1051,10 +1051,10 @@ export const ResidentDetailModal: React.FC<Props> = ({
                       </div>
 
                       <div>
-                        <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                        <p className="text-[11px] text-[color:var(--muted-text)]">
                           Эрх
                         </p>
-                        <p className="text-xs font-normal text-slate-800 dark:text-slate-200 mt-0.5">
+                        <p className="text-xs font-normal text-[color:var(--panel-text)] mt-0.5">
                           {medeelel.erkh === "OrshinSuugch"
                             ? "Оршин суугч"
                             : tekst(medeelel.erkh)}
@@ -1062,20 +1062,20 @@ export const ResidentDetailModal: React.FC<Props> = ({
                       </div>
 
                       <div>
-                        <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                        <p className="text-[11px] text-[color:var(--muted-text)]">
                           Бүртгэгдсэн
                         </p>
-                        <p className="text-xs font-normal text-slate-800 dark:text-slate-200 mt-0.5">
+                        <p className="text-xs font-normal text-[color:var(--panel-text)] mt-0.5">
                           {ognooKharuul(medeelel.createdAt)}
                         </p>
                       </div>
 
                       {medeelel.tailbar && (
-                        <div className="col-span-2 sm:col-span-3 pt-2 border-t border-slate-100 dark:border-slate-800/60">
-                          <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                        <div className="col-span-2 sm:col-span-3 pt-2 border-t border-[color:var(--surface-border)]">
+                          <p className="text-[11px] text-[color:var(--muted-text)]">
                             Тайлбар
                           </p>
-                          <p className="text-xs font-normal text-slate-800 dark:text-slate-200 mt-0.5">
+                          <p className="text-xs font-normal text-[color:var(--panel-text)] mt-0.5">
                             {tekst(medeelel.tailbar)}
                           </p>
                         </div>
@@ -1085,14 +1085,14 @@ export const ResidentDetailModal: React.FC<Props> = ({
                 </div>
 
                 {/* 2. Машин Card (Direct Input) */}
-                <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 flex flex-col justify-between">
+                <div className="rounded-2xl border border-[color:var(--surface-border)] bg-white p-5 shadow-xs flex flex-col justify-between">
                   <div>
-                    <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-slate-800/80">
+                    <div className="flex items-center justify-between pb-3.5 border-b border-[color:var(--surface-border)]">
                       <div className="flex items-center gap-2">
                         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-theme/10 text-theme dark:bg-theme/25 dark:text-theme">
                           <Car className="h-4 w-4" />
                         </div>
-                        <h3 className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white">
+                        <h3 className="text-xs sm:text-sm font-semibold text-[color:var(--panel-text)] dark:text-white">
                           Машин (
                           {mashiniiKhyazgaar > 0
                             ? `${mashinJagsaalt.length}/${mashiniiKhyazgaar}`
@@ -1106,7 +1106,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                     <div className="pt-3 pb-2">
                       <div className="flex items-center gap-2">
                         <div className="relative flex-1">
-                          <Car className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                          <Car className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[color:var(--muted-text)]" />
                           <input
                             type="text"
                             value={shineMashiniiDugaar}
@@ -1123,11 +1123,11 @@ export const ResidentDetailModal: React.FC<Props> = ({
                               }
                             }}
                             placeholder="Улсын дугаар (жишээ: 1234УБА)..."
-                            className={`w-full h-9 pl-9 pr-3 rounded-xl border bg-white dark:bg-slate-800 text-xs font-mono font-semibold tracking-wider uppercase placeholder:text-slate-400 placeholder:font-normal placeholder:tracking-normal focus:outline-none transition shadow-2xs ${shineMashiniiDugaar.length === 0
-                              ? "border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-theme"
+                            className={`w-full h-9 pl-9 pr-3 rounded-xl border bg-white text-xs font-mono font-semibold tracking-wider uppercase placeholder:text-[color:var(--muted-text)] placeholder:font-normal placeholder:tracking-normal focus:outline-none transition shadow-2xs ${shineMashiniiDugaar.length === 0
+                              ? "border-[color:var(--surface-border)] text-[color:var(--panel-text)] dark:text-white focus:ring-2 focus:ring-theme"
                               : !MASHINII_DUGAARIIN_ZAGVAR.test(shineMashiniiDugaar)
-                                ? "border-rose-500 dark:border-rose-500 text-rose-600 dark:text-rose-400 focus:ring-2 focus:ring-rose-500/20"
-                                : "border-emerald-500 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
+                                ? "border-danger text-danger focus:ring-2 focus:ring-danger/20"
+                                : "border-success dark:border-success text-success dark:text-success focus:ring-2 focus:ring-success/20"
                               }`}
                           />
                         </div>
@@ -1136,7 +1136,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                             <select
                               value={shineMashinToot}
                               onChange={(e) => setShineMashinToot(e.target.value)}
-                              className="h-9 appearance-none pl-3 pr-8 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-theme transition shadow-2xs cursor-pointer"
+                              className="h-9 appearance-none pl-3 pr-8 rounded-xl border border-[color:var(--surface-border)] bg-white text-xs text-[color:var(--panel-text)] focus:outline-none focus:ring-2 focus:ring-theme transition shadow-2xs cursor-pointer"
                             >
                               {tootJagsaalt.map((t, i) => (
                                 <option key={i} value={t.toot}>
@@ -1144,7 +1144,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                 </option>
                               ))}
                             </select>
-                            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[color:var(--muted-text)]" />
                           </div>
                         )}
                         <button
@@ -1162,7 +1162,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                         </button>
                       </div>
                       {shineMashiniiDugaar.length > 0 && !MASHINII_DUGAARIIN_ZAGVAR.test(shineMashiniiDugaar) && (
-                        <p className="text-[11px] text-rose-500 dark:text-rose-400 mt-1.5 ml-1 flex items-center gap-1.5 font-medium animate-in fade-in duration-200">
+                        <p className="text-[11px] text-danger mt-1.5 ml-1 flex items-center gap-1.5 font-medium animate-in fade-in duration-200">
                           <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                           <span>
                             {shineMashiniiDugaar.length < 4
@@ -1176,25 +1176,25 @@ export const ResidentDetailModal: React.FC<Props> = ({
                     {/* Car List */}
                     <div className="space-y-2 pt-1 max-h-56 overflow-y-auto pr-1">
                       {mashinJagsaalt.length === 0 ? (
-                        <p className="py-5 text-center text-xs text-slate-400">
+                        <p className="py-5 text-center text-xs text-[color:var(--muted-text)]">
                           Бүртгэлтэй машин одоогоор алга байна.
                         </p>
                       ) : (
                         mashinJagsaalt.map((m: any, idx: number) => (
                           <div
                             key={m._id || idx}
-                            className="flex items-center justify-between rounded-xl border border-slate-100/90 bg-slate-50/70 px-3.5 py-2.5 dark:border-slate-800/60 dark:bg-slate-800/40"
+                            className="flex items-center justify-between rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] px-3.5 py-2.5"
                           >
                             <div className="flex items-center gap-3 min-w-0">
                               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-theme/15 text-theme dark:bg-theme/25 dark:text-theme">
                                 <Car className="h-4 w-4" />
                               </div>
                               <div className="min-w-0">
-                                <h4 className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white truncate">
+                                <h4 className="text-xs sm:text-sm font-semibold text-[color:var(--panel-text)] dark:text-white truncate">
                                   {tekst(m.mashiniiDugaar)}
                                 </h4>
                                 {m.ezenToot && (
-                                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                                  <p className="text-[11px] text-[color:var(--muted-text)]">
                                     Тоот: {m.ezenToot}
                                   </p>
                                 )}
@@ -1205,7 +1205,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                               type="button"
                               onClick={() => mashinUstgakh(idx)}
                               disabled={mashinUnshijBaina}
-                              className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                              className="flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--muted-text)] hover:text-danger transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                               title="Устгах"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
@@ -1218,14 +1218,14 @@ export const ResidentDetailModal: React.FC<Props> = ({
                 </div>
 
                 {/* 3. Гараж / B1 Card (Edit implemented) */}
-                <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 flex flex-col justify-between">
+                <div className="rounded-2xl border border-[color:var(--surface-border)] bg-white p-5 shadow-xs flex flex-col justify-between">
                   <div>
-                    <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-slate-800/80">
+                    <div className="flex items-center justify-between pb-3.5 border-b border-[color:var(--surface-border)]">
                       <div className="flex items-center gap-2">
                         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-theme/10 text-theme dark:bg-theme/25 dark:text-theme">
                           <Warehouse className="h-4 w-4" />
                         </div>
-                        <h3 className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white">
+                        <h3 className="text-xs sm:text-sm font-semibold text-[color:var(--panel-text)] dark:text-white">
                           Өмч бүртгэл
                         </h3>
                       </div>
@@ -1243,10 +1243,10 @@ export const ResidentDetailModal: React.FC<Props> = ({
                           }}
                           className={`flex items-center gap-1 rounded-xl border px-2.5 py-1 text-[11px] font-normal transition cursor-pointer ${zasajBuiToot
                             ? "border-theme bg-theme/10 text-theme dark:bg-theme/20 dark:text-theme"
-                            : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                            : "border-[color:var(--surface-border)] text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)]"
                             }`}
                         >
-                          <Pencil className="h-3 w-3 text-slate-500" />
+                          <Pencil className="h-3 w-3 text-[color:var(--muted-text)]" />
                           <span>{zasajBuiToot ? "Болих" : "Засах"}</span>
                         </button>
                       </div>
@@ -1256,23 +1256,23 @@ export const ResidentDetailModal: React.FC<Props> = ({
                     {zasajBuiToot ? (
                       <div className="pt-4 space-y-3">
                         {tootJagsaalt.length === 0 && (
-                          <p className="text-center text-xs text-slate-400 py-3">
+                          <p className="text-center text-xs text-[color:var(--muted-text)] py-3">
                             Одоогоор бүртгэлтэй тоот/граш алга.
                           </p>
                         )}
                         {tootJagsaalt.map((t, idx) => (
                           <div
                             key={idx}
-                            className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-800/40 space-y-2 text-xs"
+                            className="rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] p-3 space-y-2 text-xs"
                           >
                             <div className="flex items-center justify-between">
-                              <span className="text-[11px] font-medium text-slate-600 dark:text-slate-300">
+                              <span className="text-[11px] font-medium text-[color:var(--muted-text)]">
                                 Хаяг #{idx + 1}
                               </span>
                               <button
                                 type="button"
                                 onClick={() => tootUstgakh(idx)}
-                                className="text-rose-500 hover:text-rose-700 p-1 cursor-pointer"
+                                className="text-danger hover:text-danger p-1 cursor-pointer"
                                 title="Устгах"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
@@ -1280,7 +1280,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                             </div>
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                               <div>
-                                <label className="text-[10px] text-slate-400 block mb-0.5">
+                                <label className="text-[10px] text-[color:var(--muted-text)] block mb-0.5">
                                   Тоот
                                 </label>
                                 <input
@@ -1290,11 +1290,11 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                     tootFieldSolikh(idx, "toot", e.target.value)
                                   }
                                   placeholder="101"
-                                  className="w-full h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs"
+                                  className="w-full h-8 px-2 rounded-lg border border-[color:var(--surface-border)] bg-white text-xs"
                                 />
                               </div>
                               <div>
-                                <label className="text-[10px] text-slate-400 block mb-0.5">
+                                <label className="text-[10px] text-[color:var(--muted-text)] block mb-0.5">
                                   Төрөл
                                 </label>
                                 <div className="relative">
@@ -1303,7 +1303,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                     onChange={(e) =>
                                       tootFieldSolikh(idx, "turul", e.target.value)
                                     }
-                                    className="w-full h-8 appearance-none pl-2 pr-7 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs cursor-pointer"
+                                    className="w-full h-8 appearance-none pl-2 pr-7 rounded-lg border border-[color:var(--surface-border)] bg-white text-xs cursor-pointer"
                                   >
                                     <option value="Орон сууц">Орон сууц</option>
                                     <option value="Гараж">Гараж</option>
@@ -1311,11 +1311,11 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                     <option value="B1">B1</option>
                                     <option value="Агуулах">Агуулах</option>
                                   </select>
-                                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[color:var(--muted-text)]" />
                                 </div>
                               </div>
                               <div>
-                                <label className="text-[10px] text-slate-400 block mb-0.5">
+                                <label className="text-[10px] text-[color:var(--muted-text)] block mb-0.5">
                                   Давхар
                                 </label>
                                 <input
@@ -1325,12 +1325,12 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                     tootFieldSolikh(idx, "davkhar", e.target.value)
                                   }
                                   placeholder="1"
-                                  className="w-full h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs"
+                                  className="w-full h-8 px-2 rounded-lg border border-[color:var(--surface-border)] bg-white text-xs"
                                 />
                               </div>
                               {getTurulCategory(t) === "Орон сууц" && (
                                 <div>
-                                  <label className="text-[10px] text-slate-400 block mb-0.5">
+                                  <label className="text-[10px] text-[color:var(--muted-text)] block mb-0.5">
                                     Цахилгааны заалт
                                   </label>
                                   <input
@@ -1339,14 +1339,14 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                     onChange={(e) =>
                                       tootFieldSolikh(idx, "tsahilgaaniiZaalt", Number(e.target.value))
                                     }
-                                    className="w-full h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs"
+                                    className="w-full h-8 px-2 rounded-lg border border-[color:var(--surface-border)] bg-white text-xs"
                                   />
                                 </div>
                               )}
                             </div>
                             {getTurulCategory(t) !== "Орон сууц" && (
-                              <div className="pt-2 border-t border-slate-200/50 dark:border-slate-700/50">
-                                <label className="text-[10px] text-slate-400 block mb-0.5">
+                              <div className="pt-2 border-t border-[color:var(--surface-border)]">
+                                <label className="text-[10px] text-[color:var(--muted-text)] block mb-0.5">
                                   Холбоотой тоот (Орон сууц)
                                 </label>
                                 <input
@@ -1356,7 +1356,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                     tootFieldSolikh(idx, "linkedAptToot", e.target.value)
                                   }
                                   placeholder={getAssociatedAptToot(t) || "101"}
-                                  className="w-full max-w-xs h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs"
+                                  className="w-full max-w-xs h-8 px-2 rounded-lg border border-[color:var(--surface-border)] bg-white text-xs"
                                 />
                               </div>
                             )}
@@ -1395,14 +1395,14 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                 onClick={() => setOmchFilter(tab.key)}
                                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer shrink-0 ${isActive
                                     ? "bg-theme/10 text-theme dark:bg-theme/20 dark:text-theme border border-theme/30"
-                                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800/60 border border-transparent"
+                                    : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] border border-transparent"
                                   }`}
                               >
                                 <span>{tab.label}</span>
                                 <span
                                   className={`text-[10px] px-1.5 py-0.2 rounded-full ${isActive
                                       ? "bg-theme text-white"
-                                      : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                                      : "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]"
                                     }`}
                                 >
                                   {tab.count}
@@ -1413,9 +1413,9 @@ export const ResidentDetailModal: React.FC<Props> = ({
                         </div>
 
                         {tootJagsaalt.length === 0 ? (
-                          <div className="h-[175px] flex flex-col items-center justify-center text-xs text-slate-400">
-                            <Warehouse className="mx-auto mb-2 h-7 w-7 text-slate-300 dark:text-slate-600" />
-                            <p className="text-slate-500 dark:text-slate-400 font-medium">
+                          <div className="h-[175px] flex flex-col items-center justify-center text-xs text-[color:var(--muted-text)]">
+                            <Warehouse className="mx-auto mb-2 h-7 w-7 text-[color:var(--muted-text)]" />
+                            <p className="text-[color:var(--muted-text)] font-medium">
                               Өмч бүртгэлгүй байна
                             </p>
                             <button
@@ -1427,8 +1427,8 @@ export const ResidentDetailModal: React.FC<Props> = ({
                             </button>
                           </div>
                         ) : filteredTootJagsaalt.length === 0 ? (
-                          <div className="h-[175px] flex flex-col items-center justify-center text-xs text-slate-400">
-                            <p className="text-slate-500 dark:text-slate-400 font-medium">
+                          <div className="h-[175px] flex flex-col items-center justify-center text-xs text-[color:var(--muted-text)]">
+                            <p className="text-[color:var(--muted-text)] font-medium">
                               {omchFilter} бүртгэлгүй байна
                             </p>
                           </div>
@@ -1446,7 +1446,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                 return (
                                   <div
                                     key={t._id || i}
-                                    className="rounded-xl border border-slate-100 bg-slate-50/60 p-2.5 dark:border-slate-800 dark:bg-slate-800/30 flex flex-col justify-between space-y-2"
+                                    className="rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] p-2.5 flex flex-col justify-between space-y-2"
                                   >
                                     <div className="flex items-start justify-between">
                                       <div className="flex items-center gap-2.5">
@@ -1464,10 +1464,10 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                           )}
                                         </div>
                                         <div>
-                                          <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-tight">
+                                          <p className="text-[10px] text-[color:var(--muted-text)] leading-tight">
                                             {tekst(t.turul || "Орон сууц")}
                                           </p>
-                                          <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                                          <p className="text-sm font-bold text-[color:var(--panel-text)] dark:text-white leading-tight">
                                             {tekst(t.toot)}
                                           </p>
                                         </div>
@@ -1475,19 +1475,19 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                       <button
                                         type="button"
                                         onClick={() => (onEdit ? onEdit(medeelel) : setZasajBuiToot(true))}
-                                        className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer p-0.5"
+                                        className="text-[color:var(--muted-text)] hover:text-[color:var(--muted-text)] cursor-pointer p-0.5"
                                         title="Засах"
                                       >
                                         <Pencil className="h-3 w-3" />
                                       </button>
                                     </div>
 
-                                    <div className="pt-1.5 border-t border-slate-200/50 dark:border-slate-700/50 text-[10px] space-y-0.5">
+                                    <div className="pt-1.5 border-t border-[color:var(--surface-border)] text-[10px] space-y-0.5">
                                       {/* Гараж or Агуулах: rename Байр into Тоот and show associated Орон сууц тоот. For Орон сууц: remove it completely */}
                                       {category !== "Орон сууц" && (
                                         <div className="flex items-center justify-between">
-                                          <span className="text-slate-400">Тоот</span>
-                                          <span className="text-slate-700 dark:text-slate-200 font-medium">
+                                          <span className="text-[color:var(--muted-text)]">Тоот</span>
+                                          <span className="text-[color:var(--panel-text)] font-medium">
                                             {associatedToot
                                               ? associatedToot.toLowerCase().includes("тоот")
                                                 ? associatedToot
@@ -1499,10 +1499,10 @@ export const ResidentDetailModal: React.FC<Props> = ({
 
                                       {category === "Орон сууц" && (
                                         <div className="flex items-center justify-between">
-                                          <span className="text-slate-400">
+                                          <span className="text-[color:var(--muted-text)]">
                                             Цахилгааны заалт
                                           </span>
-                                          <span className="text-slate-700 dark:text-slate-200">
+                                          <span className="text-[color:var(--panel-text)]">
                                             {tekst(t.tsahilgaaniiZaalt ?? 0)}
                                           </span>
                                         </div>
@@ -1519,12 +1519,12 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                           Number(uldegdelVal) !== 0;
                                         return (
                                           <div className="flex items-center justify-between">
-                                            <span className="text-slate-400">Үлдэгдэл</span>
+                                            <span className="text-[color:var(--muted-text)]">Үлдэгдэл</span>
                                             <span
                                               className={
                                                 hasUldegdel
-                                                  ? "text-slate-700 dark:text-slate-200 font-medium"
-                                                  : "text-slate-400 dark:text-slate-500"
+                                                  ? "text-[color:var(--panel-text)] font-medium"
+                                                  : "text-[color:var(--muted-text)]"
                                               }
                                             >
                                               {hasUldegdel ? `${formatNumber(uldegdelVal)}₮` : "Байхгүй"}
@@ -1545,14 +1545,14 @@ export const ResidentDetailModal: React.FC<Props> = ({
                 </div>
 
                 {/* 4. Гэр бүлийн гишүүд / Нэмэлт хэрэглэгч Card (Edit button removed, Real data only) */}
-                <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 flex flex-col justify-between">
+                <div className="rounded-2xl border border-[color:var(--surface-border)] bg-white p-5 shadow-xs flex flex-col justify-between">
                   <div>
-                    <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-slate-800/80">
+                    <div className="flex items-center justify-between pb-3.5 border-b border-[color:var(--surface-border)]">
                       <div className="flex items-center gap-2">
                         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-theme/10 text-theme dark:bg-theme/25 dark:text-theme">
                           <Home className="h-4 w-4" />
                         </div>
-                        <h3 className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white">
+                        <h3 className="text-xs sm:text-sm font-semibold text-[color:var(--panel-text)] dark:text-white">
                           Гэр бүлийн гишүүд / Нэмэлт хэрэглэгч ({gerBuliinGishuud.length})
                         </h3>
                       </div>
@@ -1571,7 +1571,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                         </button>
                       ) : (
                         <span
-                          className="rounded-lg px-2 py-1 text-[11px] font-medium text-slate-400 dark:text-slate-500"
+                          className="rounded-lg px-2 py-1 text-[11px] font-medium text-[color:var(--muted-text)]"
                           title="Нэмэлт тохиргоо → «Гэр бүлийн гишүүн урих»-аас идэвхжүүлнэ"
                         >
                           Урих боломж хаалттай
@@ -1594,7 +1594,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                     ovog: e.target.value,
                                   }))
                                 }
-                                className="w-full h-8 rounded-lg border border-slate-200 bg-white px-2.5 text-xs text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                                className="w-full h-8 rounded-lg border border-[color:var(--surface-border)] bg-white px-2.5 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme"
                               />
                               <input
                                 placeholder="Нэр"
@@ -1605,7 +1605,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                     ner: e.target.value,
                                   }))
                                 }
-                                className="w-full h-8 rounded-lg border border-slate-200 bg-white px-2.5 text-xs text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                                className="w-full h-8 rounded-lg border border-[color:var(--surface-border)] bg-white px-2.5 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme"
                               />
                               <input
                                 placeholder="Утас *"
@@ -1619,7 +1619,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                     utas: num,
                                   }));
                                 }}
-                                className="w-full h-8 rounded-lg border border-slate-200 bg-white px-2.5 text-xs text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                                className="w-full h-8 rounded-lg border border-[color:var(--surface-border)] bg-white px-2.5 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme"
                               />
                               <div className="relative">
                                 <select
@@ -1630,7 +1630,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                       kholboo: e.target.value,
                                     }))
                                   }
-                                  className="w-full h-8 appearance-none rounded-lg border border-slate-200 bg-white pl-2.5 pr-7 text-xs text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 cursor-pointer"
+                                  className="w-full h-8 appearance-none rounded-lg border border-[color:var(--surface-border)] bg-white pl-2.5 pr-7 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme cursor-pointer"
                                 >
                                   <option value="Эхнэр/Нөхөр">Эхнэр/Нөхөр</option>
                                   <option value="Үр хүүхэд">Үр хүүхэд</option>
@@ -1639,7 +1639,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                   <option value="Түрээслэгч">Түрээслэгч</option>
                                   <option value="Бусад">Бусад</option>
                                 </select>
-                                <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                                <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[color:var(--muted-text)]" />
                               </div>
                               <div className="relative col-span-2">
                                 <select
@@ -1650,24 +1650,24 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                       erkh: e.target.value,
                                     }))
                                   }
-                                  className="w-full h-8 appearance-none rounded-lg border border-slate-200 bg-white pl-2.5 pr-7 text-xs text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 cursor-pointer"
+                                  className="w-full h-8 appearance-none rounded-lg border border-[color:var(--surface-border)] bg-white pl-2.5 pr-7 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme cursor-pointer"
                                 >
                                   <option value="Харах + Төлөх">Харах + Төлөх</option>
                                   <option value="Харах">Зөвхөн харах</option>
                                 </select>
-                                <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                                <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[color:var(--muted-text)]" />
                               </div>
                             </div>
 
                             <div className="flex items-center justify-between pt-1">
-                              <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                              <p className="text-[10px] text-[color:var(--muted-text)]">
                                 Баталгаажуулалт шаардахгүй.
                               </p>
                               <div className="flex items-center gap-1.5">
                                 <button
                                   type="button"
                                   onClick={() => setGishuunNemejBaina(false)}
-                                  className="px-2.5 py-1 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 text-xs transition cursor-pointer"
+                                  className="px-2.5 py-1 rounded-lg border border-[color:var(--surface-border)] text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] text-xs transition cursor-pointer"
                                 >
                                   Цуцлах
                                 </button>
@@ -1688,44 +1688,44 @@ export const ResidentDetailModal: React.FC<Props> = ({
                       ) : zasajBuiGishuun ? (
                         /* Гишүүн засах форм — үндсэн хайрцаг дотор */
                         <div className="h-full overflow-y-auto pr-1">
-                          <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-800/40 space-y-2">
-                            <div className="flex items-center justify-between pb-1.5 border-b border-slate-200/60 dark:border-slate-700/60">
-                              <h4 className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                          <div className="rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] p-3 space-y-2">
+                            <div className="flex items-center justify-between pb-1.5 border-b border-[color:var(--surface-border)]">
+                              <h4 className="text-xs font-semibold text-[color:var(--panel-text)]">
                                 Мэдээлэл засах
                               </h4>
                               <button
                                 type="button"
                                 onClick={() => setZasajBuiGishuun(null)}
-                                className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                                className="text-xs text-[color:var(--muted-text)] hover:text-[color:var(--muted-text)] cursor-pointer"
                               >
                                 Болих
                               </button>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                               <div>
-                                <label className="text-[10px] text-slate-400 block mb-0.5">Овог</label>
+                                <label className="text-[10px] text-[color:var(--muted-text)] block mb-0.5">Овог</label>
                                 <input
                                   placeholder="Овог"
                                   value={zasajBuiGishuun.ovog}
                                   onChange={(e) =>
                                     setZasajBuiGishuun((prev: any) => ({ ...prev, ovog: e.target.value }))
                                   }
-                                  className="w-full h-8 rounded-lg border border-slate-200 bg-white px-2.5 text-xs text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                                  className="w-full h-8 rounded-lg border border-[color:var(--surface-border)] bg-white px-2.5 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme"
                                 />
                               </div>
                               <div>
-                                <label className="text-[10px] text-slate-400 block mb-0.5">Нэр</label>
+                                <label className="text-[10px] text-[color:var(--muted-text)] block mb-0.5">Нэр</label>
                                 <input
                                   placeholder="Нэр"
                                   value={zasajBuiGishuun.ner}
                                   onChange={(e) =>
                                     setZasajBuiGishuun((prev: any) => ({ ...prev, ner: e.target.value }))
                                   }
-                                  className="w-full h-8 rounded-lg border border-slate-200 bg-white px-2.5 text-xs text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                                  className="w-full h-8 rounded-lg border border-[color:var(--surface-border)] bg-white px-2.5 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme"
                                 />
                               </div>
                               <div>
-                                <label className="text-[10px] text-slate-400 block mb-0.5">Утас *</label>
+                                <label className="text-[10px] text-[color:var(--muted-text)] block mb-0.5">Утас *</label>
                                 <input
                                   placeholder="Утас"
                                   inputMode="numeric"
@@ -1735,18 +1735,18 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                     const num = e.target.value.replace(/\D/g, "").slice(0, 8);
                                     setZasajBuiGishuun((prev: any) => ({ ...prev, utas: num }));
                                   }}
-                                  className="w-full h-8 rounded-lg border border-slate-200 bg-white px-2.5 text-xs text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                                  className="w-full h-8 rounded-lg border border-[color:var(--surface-border)] bg-white px-2.5 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme"
                                 />
                               </div>
                               <div>
-                                <label className="text-[10px] text-slate-400 block mb-0.5">Холбоо</label>
+                                <label className="text-[10px] text-[color:var(--muted-text)] block mb-0.5">Холбоо</label>
                                 <div className="relative">
                                   <select
                                     value={zasajBuiGishuun.kholboo}
                                     onChange={(e) =>
                                       setZasajBuiGishuun((prev: any) => ({ ...prev, kholboo: e.target.value }))
                                     }
-                                    className="w-full h-8 appearance-none rounded-lg border border-slate-200 bg-white pl-2.5 pr-7 text-xs text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 cursor-pointer"
+                                    className="w-full h-8 appearance-none rounded-lg border border-[color:var(--surface-border)] bg-white pl-2.5 pr-7 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme cursor-pointer"
                                   >
                                     <option value="Эхнэр/Нөхөр">Эхнэр/Нөхөр</option>
                                     <option value="Үр хүүхэд">Үр хүүхэд</option>
@@ -1755,33 +1755,33 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                     <option value="Түрээслэгч">Түрээслэгч</option>
                                     <option value="Бусад">Бусад</option>
                                   </select>
-                                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[color:var(--muted-text)]" />
                                 </div>
                               </div>
                               <div className="col-span-2">
-                                <label className="text-[10px] text-slate-400 block mb-0.5">Эрх</label>
+                                <label className="text-[10px] text-[color:var(--muted-text)] block mb-0.5">Эрх</label>
                                 <div className="relative">
                                   <select
                                     value={zasajBuiGishuun.erkh}
                                     onChange={(e) =>
                                       setZasajBuiGishuun((prev: any) => ({ ...prev, erkh: e.target.value }))
                                     }
-                                    className="w-full h-8 appearance-none rounded-lg border border-slate-200 bg-white pl-2.5 pr-7 text-xs text-slate-800 outline-none focus:border-theme dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 cursor-pointer"
+                                    className="w-full h-8 appearance-none rounded-lg border border-[color:var(--surface-border)] bg-white pl-2.5 pr-7 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme cursor-pointer"
                                   >
                                     <option value="Харах + Төлөх">Харах + Төлөх</option>
                                     <option value="Зөвхөн харах">Зөвхөн харах</option>
                                     <option value="Харах">Зөвхөн харах</option>
                                   </select>
-                                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[color:var(--muted-text)]" />
                                 </div>
                               </div>
                             </div>
 
-                            <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
+                            <div className="flex items-center justify-end gap-2 pt-1 border-t border-[color:var(--surface-border)]">
                               <button
                                 type="button"
                                 onClick={() => setZasajBuiGishuun(null)}
-                                className="px-2.5 py-1 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 text-xs transition cursor-pointer"
+                                className="px-2.5 py-1 rounded-lg border border-[color:var(--surface-border)] text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] text-xs transition cursor-pointer"
                               >
                                 Цуцлах
                               </button>
@@ -1800,14 +1800,14 @@ export const ResidentDetailModal: React.FC<Props> = ({
                         /* Table эсвэл хоосон төлөв — тогтмол өндөртэй */
                         <div className="h-full overflow-y-auto pr-1">
                           {gerBuliinGishuud.length === 0 ? (
-                            <div className="h-full flex flex-col items-center justify-center text-xs text-slate-400">
-                              <Users className="mx-auto mb-2 h-7 w-7 text-slate-300 dark:text-slate-600" />
+                            <div className="h-full flex flex-col items-center justify-center text-xs text-[color:var(--muted-text)]">
+                              <Users className="mx-auto mb-2 h-7 w-7 text-[color:var(--muted-text)]" />
                               <p>Бүртгэлтэй гэр бүлийн гишүүн байхгүй байна</p>
                             </div>
                           ) : (
                             <table className="w-full text-[11px] sm:text-xs">
                               <thead>
-                                <tr className="text-[10px] sm:text-[11px] text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800 sticky top-0 bg-white dark:bg-slate-900 z-10">
+                                <tr className="text-[10px] sm:text-[11px] text-[color:var(--muted-text)] border-b border-[color:var(--surface-border)] sticky top-0 bg-white z-10">
                                   <th className="pb-2 text-left font-normal w-6">№</th>
                                   <th className="pb-2 text-left font-normal">Овог нэр</th>
                                   <th className="pb-2 text-left font-normal">Утас</th>
@@ -1816,23 +1816,23 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                   <th className="pb-2 text-right font-normal">Үйлдэл</th>
                                 </tr>
                               </thead>
-                              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-slate-700 dark:text-slate-200">
+                              <tbody className="divide-y divide-[color:var(--surface-border)] text-[color:var(--panel-text)]">
                                 {gerBuliinGishuud.map((g: any, i: number) => (
                                   <tr
                                     key={g._id || i}
-                                    className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition"
+                                    className="hover:bg-[color:var(--surface-hover)] transition"
                                   >
-                                    <td className="py-2.5 font-normal text-slate-800 dark:text-slate-100">
+                                    <td className="py-2.5 font-normal text-[color:var(--panel-text)]">
                                       {i + 1}
                                     </td>
-                                    <td className="py-2.5 font-normal text-slate-800 dark:text-slate-100">
+                                    <td className="py-2.5 font-normal text-[color:var(--panel-text)]">
                                       {g.ovog ? `${g.ovog[0]}. ` : ""}
                                       {tekst(g.ner)}
                                     </td>
-                                    <td className="py-2.5 text-slate-600 dark:text-slate-300 font-normal">
+                                    <td className="py-2.5 text-[color:var(--muted-text)] font-normal">
                                       {tekst(g.utas)}
                                     </td>
-                                    <td className="py-2.5 text-slate-600 dark:text-slate-300 font-normal">
+                                    <td className="py-2.5 text-[color:var(--muted-text)] font-normal">
                                       {tekst(
                                         g.gishuuniiErkh ||
                                         g.gishuuniiKholboo ||
@@ -1840,7 +1840,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                       )}
                                     </td>
                                     <td className="py-2.5 text-center">
-                                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
+                                      <span className="inline-flex items-center gap-1 rounded-full bg-theme/10 px-2 py-0.5 text-[10px] font-medium text-theme dark:bg-theme/10 dark:text-theme">
                                         {tekst(g.gishuuniiTuluv) === "—"
                                           ? "Идэвхтэй"
                                           : tekst(g.gishuuniiTuluv)}
@@ -1855,7 +1855,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                             cur === (g._id || String(i)) ? null : (g._id || String(i))
                                           );
                                         }}
-                                        className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200 cursor-pointer transition"
+                                        className="rounded-lg p-1 text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] hover:text-[color:var(--muted-text)] cursor-pointer transition"
                                         title="Үйлдэл"
                                       >
                                         <MoreHorizontal className="h-4 w-4 inline" />
@@ -1864,7 +1864,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                       {tovchMenuGishuunId === (g._id || String(i)) && (
                                         <div
                                           onClick={(e) => e.stopPropagation()}
-                                          className="absolute right-0 top-8 z-30 w-44 rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900 text-left text-xs animate-in fade-in zoom-in-95 duration-150"
+                                          className="absolute right-0 top-8 z-30 w-44 rounded-xl border border-[color:var(--surface-border)] bg-white py-1 shadow-lg text-left text-xs animate-in fade-in zoom-in-95 duration-150"
                                         >
                                           <button
                                             type="button"
@@ -1876,7 +1876,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                                   : "Зөвхөн харах";
                                               gishuunErkhSoliyo(g._id, nextErkh);
                                             }}
-                                            className="flex w-full items-center gap-2 px-3 py-2 text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/70 transition cursor-pointer"
+                                            className="flex w-full items-center gap-2 px-3 py-2 text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] transition cursor-pointer"
                                           >
                                             <ShieldCheck className="h-3.5 w-3.5 text-theme" />
                                             <span>
@@ -1900,16 +1900,16 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                                 erkh: g.gishuuniiErkh || g.erkh || "Харах + Төлөх",
                                               });
                                             }}
-                                            className="flex w-full items-center gap-2 px-3 py-2 text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/70 transition cursor-pointer"
+                                            className="flex w-full items-center gap-2 px-3 py-2 text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] transition cursor-pointer"
                                           >
-                                            <Pencil className="h-3.5 w-3.5 text-slate-400" />
+                                            <Pencil className="h-3.5 w-3.5 text-[color:var(--muted-text)]" />
                                             <span>Мэдээлэл засах</span>
                                           </button>
-                                          <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+                                          <div className="my-1 border-t border-[color:var(--surface-border)]" />
                                           <button
                                             type="button"
                                             onClick={() => gishuunUstgaya(g)}
-                                            className="flex w-full items-center gap-2 px-3 py-2 text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/30 transition cursor-pointer"
+                                            className="flex w-full items-center gap-2 px-3 py-2 text-danger hover:bg-danger/10 transition cursor-pointer"
                                           >
                                             <Trash2 className="h-3.5 w-3.5" />
                                             <span>Гишүүн хасах</span>
@@ -1932,11 +1932,11 @@ export const ResidentDetailModal: React.FC<Props> = ({
           </div>
 
           {/* ── Modal Footer ── */}
-          <div className="flex items-center justify-end gap-2 px-6 py-3.5 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950">
+          <div className="flex items-center justify-end gap-2 px-6 py-3.5 border-t border-[color:var(--surface-border)] bg-white">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl border border-slate-200/90 bg-white px-6 py-1.5 text-xs font-normal text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 transition shadow-2xs active:scale-95 cursor-pointer"
+              className="rounded-xl border border-[color:var(--surface-border)] bg-white px-6 py-1.5 text-xs font-normal text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] transition shadow-2xs active:scale-95 cursor-pointer"
             >
               Хаах
             </button>

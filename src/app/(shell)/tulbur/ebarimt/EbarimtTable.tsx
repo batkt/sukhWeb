@@ -110,10 +110,10 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
           const isB2B = val === "B2B_RECEIPT";
           const label = isB2C ? "Иргэн" : isB2B ? "ААН" : val || "-";
           const badgeClass = isB2C
-            ? "bg-green-500/10 text-green-600 dark:bg-green-900/40 dark:text-green-400 border border-green-500/20 dark:border-green-500/30"
+            ? "bg-theme/10 text-theme dark:bg-theme/40 dark:text-theme border border-theme/20 dark:border-theme/30"
             : isB2B
-              ? "bg-blue-500/10 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400 border border-blue-500/20 dark:border-blue-500/30"
-              : "bg-gray-500/10 text-gray-600 dark:bg-gray-800 dark:text-gray-400 border border-gray-500/20 dark:border-gray-500/30";
+              ? "bg-theme/10 text-theme dark:bg-theme/40 dark:text-theme border border-theme/20 dark:border-theme/30"
+              : "bg-[color:var(--panel)] text-[color:var(--muted-text)] border border-[color:var(--surface-border)]";
           return (
             <span
               className={`px-2 py-0.5 rounded-full ${badgeClass}`}
@@ -202,7 +202,7 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
                       type="button"
                       aria-label="И-баримт дахин хэвлэх"
                       onClick={() => onKhevlekh(row)}
-                      className="flex h-7 w-7 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"
+                      className="flex h-7 w-7 items-center justify-center rounded-full text-[color:var(--muted-text)] transition-colors hover:bg-[color:var(--surface-hover)] hover:text-[color:var(--panel-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400 dark:hover:bg-white/10 dark:hover:text-white"
                     >
                       <Printer className="h-4 w-4" />
                     </button>
@@ -216,7 +216,7 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
                   if (butsaajBaigaa)
                     return (
                       <Loader2
-                        className="h-4 w-4 animate-spin text-red-500"
+                        className="h-4 w-4 animate-spin text-danger"
                         aria-label="Буцааж байна"
                       />
                     );
@@ -224,7 +224,7 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
                   if (!row._id)
                     return (
                       <Tooltip title="Баримтын _id байхгүй тул буцаах боломжгүй">
-                        <span className="text-gray-400 dark:text-gray-500">
+                        <span className="text-[color:var(--muted-text)]">
                           -
                         </span>
                       </Tooltip>
@@ -247,7 +247,7 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
                       <button
                         type="button"
                         aria-label="И-баримт буцаах"
-                        className="flex h-7 w-7 items-center justify-center rounded-full text-red-500 transition-colors hover:bg-red-50 hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 dark:hover:bg-red-950/40"
+                        className="flex h-7 w-7 items-center justify-center rounded-full text-danger transition-colors hover:bg-danger/10 hover:text-danger focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-danger"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -257,7 +257,7 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
 
                 if (!khevlekhTovch && !butsaakhTovch)
                   return (
-                    <span className="text-gray-400 dark:text-gray-500">-</span>
+                    <span className="text-[color:var(--muted-text)]">-</span>
                   );
 
                 return (
@@ -311,12 +311,12 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
           className="min-w-[1180px]"
           scroll={{ x: "max-content" }}
           rowClassName={(record, index) => `
-            ${butsaasanEsekh(record) ? "opacity-55 line-through decoration-red-400/70" : ""}
+            ${butsaasanEsekh(record) ? "opacity-55 line-through decoration-danger/70" : ""}
 `}
           locale={{
             emptyText: (
-              <div className="py-8 text-center bg-white dark:bg-gray-900">
-                <span className="text-gray-500 dark:text-gray-400">
+              <div className="py-8 text-center bg-white">
+                <span className="text-[color:var(--muted-text)]">
                   Хайсан мэдээлэл алга байна
                 </span>
               </div>
@@ -325,46 +325,46 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
           summary={() =>
             data.length > 0 ? (
               <Table.Summary fixed="bottom">
-                <Table.Summary.Row className="bg-gray-50 dark:bg-gray-800">
+                <Table.Summary.Row className="bg-[color:var(--surface-hover)]">
                   <Table.Summary.Cell
                     index={0}
                     colSpan={6}
                     align="right"
-                    className="bg-gray-50 dark:bg-gray-800 pr-3"
+                    className="bg-[color:var(--surface-hover)] pr-3"
                   >
-                    <span className="font-bold text-gray-900 dark:!text-white">
+                    <span className="font-bold text-[color:var(--panel-text)] dark:!text-white">
                       {butsaasanToo > 0 ? "Нийт (хүчинтэй):" : "Нийт:"}
                     </span>
                   </Table.Summary.Cell>
                   <Table.Summary.Cell
                     index={1}
                     align="right"
-                    className="bg-gray-50 dark:bg-gray-800"
+                    className="bg-[color:var(--surface-hover)]"
                   >
-                    <span className="font-bold text-gray-900 dark:!text-white whitespace-nowrap">
+                    <span className="font-bold text-[color:var(--panel-text)] dark:!text-white whitespace-nowrap">
                       {formatNumber(khuchinteiDun)}₮
                     </span>
                   </Table.Summary.Cell>
                   <Table.Summary.Cell
                     index={2}
                     align="center"
-                    className="bg-gray-50 dark:bg-gray-800"
+                    className="bg-[color:var(--surface-hover)]"
                   >
-                    <span className="text-gray-500 dark:text-gray-400">-</span>
+                    <span className="text-[color:var(--muted-text)]">-</span>
                   </Table.Summary.Cell>
                   {/* Төлөв + (байвал) Үйлдэл багана */}
                   <Table.Summary.Cell
                     index={3}
                     colSpan={onButsaakh ? 2 : 1}
                     align="center"
-                    className="bg-gray-50 dark:bg-gray-800"
+                    className="bg-[color:var(--surface-hover)]"
                   >
                     {butsaasanToo > 0 ? (
-                      <span className="whitespace-nowrap text-red-500 font-medium">
+                      <span className="whitespace-nowrap text-danger font-medium">
                         Буцаасан {butsaasanToo}: {formatNumber(butsaasanDun)}₮
                       </span>
                     ) : (
-                      <span className="text-gray-500 dark:text-gray-400">-</span>
+                      <span className="text-[color:var(--muted-text)]">-</span>
                     )}
                   </Table.Summary.Cell>
                 </Table.Summary.Row>

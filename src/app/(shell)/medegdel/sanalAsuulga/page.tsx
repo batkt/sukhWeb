@@ -91,11 +91,11 @@ interface DunAsuult {
 
 const TULUV_ANGI: Record<string, string> = {
   noots:
-    "bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
+    "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)] border border-[color:var(--surface-border)]",
   idevkhtei:
-    "bg-amber-50 text-amber-800 border border-amber-200/80 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30",
+    "bg-warning/10 text-warning border border-warning/80",
   duussan:
-    "bg-emerald-50 text-emerald-800 border border-emerald-200/80 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30",
+    "bg-success/10 text-success border border-success/80 dark:bg-success/15 dark:text-success dark:border-success/30",
 };
 const TULUV_NER: Record<string, string> = {
   noots: "Ноорог",
@@ -106,23 +106,23 @@ const TULUV_NER: Record<string, string> = {
 function StatusBadge({ tuluv }: { tuluv: "noots" | "idevkhtei" | "duussan" | string }) {
   if (tuluv === "idevkhtei") {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-normal bg-amber-50 text-amber-800 border border-amber-200/80 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30 shrink-0 shadow-2xs">
-        <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
+      <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-normal bg-warning/10 text-warning border border-warning/80 shrink-0 shadow-2xs">
+        <span className="h-1.5 w-1.5 rounded-full bg-warning animate-pulse shrink-0" />
         <span>Явагдаж байна</span>
       </span>
     );
   }
   if (tuluv === "duussan") {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-normal bg-emerald-50 text-emerald-800 border border-emerald-200/80 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30 shrink-0 shadow-2xs">
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
+      <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-normal bg-theme/10 text-theme border border-theme/80 dark:bg-theme/15 dark:text-theme dark:border-theme/30 shrink-0 shadow-2xs">
+        <span className="h-1.5 w-1.5 rounded-full bg-theme shrink-0" />
         <span>Дууссан</span>
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-normal bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 shrink-0">
-      <span className="h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+    <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-normal bg-[color:var(--surface-hover)] text-[color:var(--muted-text)] border border-[color:var(--surface-border)] shrink-0">
+      <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--panel)] shrink-0" />
       <span>Ноорог</span>
     </span>
   );
@@ -500,21 +500,21 @@ export default function SanalAsuulgaPage() {
     return (
       <div className="w-full space-y-6 p-4 sm:p-6 lg:p-8 text-[color:var(--panel-text)]">
         {/* Top Action Bar: Search Bar on left, "+ Шинэ асуулга үүсгэх" on right */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 dark:border-slate-800 pb-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[color:var(--surface-border)] pb-4">
           <div className="relative w-full sm:w-80">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[color:var(--muted-text)]" />
             <input
               type="text"
               value={hailtUg}
               onChange={(e) => setHailtUg(e.target.value)}
               placeholder="Санал асуулга хайх..."
-              className="w-full h-9.5 pl-9 pr-8 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition shadow-2xs"
+              className="w-full h-9.5 pl-9 pr-8 rounded-xl border border-[color:var(--surface-border)] bg-white text-xs text-[color:var(--panel-text)] dark:text-white placeholder:text-[color:var(--muted-text)] focus:outline-none focus:ring-2 focus:ring-theme transition shadow-2xs"
             />
             {hailtUg && (
               <button
                 type="button"
                 onClick={() => setHailtUg("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-[color:var(--muted-text)] hover:text-[color:var(--muted-text)] cursor-pointer"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -526,7 +526,7 @@ export default function SanalAsuulgaPage() {
               formTseverleye();
               setGorim("uusgekh");
             }}
-            className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-normal !text-white transition duration-200 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 active:scale-95 cursor-pointer shrink-0"
+            className="flex items-center gap-2 rounded-xl bg-theme px-4 py-2 text-xs font-normal !text-white transition duration-200 hover:bg-theme shadow-md shadow-theme/20 active:scale-95 cursor-pointer shrink-0"
           >
             <Plus className="h-4 w-4" />
             <span>Шинэ асуулга үүсгэх</span>
@@ -536,59 +536,59 @@ export default function SanalAsuulgaPage() {
         {/* ── Summary Stat KPI Cards ── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
           {/* Total Polls */}
-          <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-xs flex items-center justify-between">
+          <div className="rounded-2xl border border-[color:var(--surface-border)] bg-white p-4 shadow-xs flex items-center justify-between">
             <div className="space-y-1">
-              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              <p className="text-[11px] font-medium text-[color:var(--muted-text)] uppercase tracking-wider">
                 Нийт асуулга
               </p>
-              <p className="text-2xl font-medium text-slate-900 dark:text-white">
+              <p className="text-2xl font-medium text-[color:var(--panel-text)] dark:text-white">
                 {niitToo}
               </p>
             </div>
-            <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+            <div className="h-10 w-10 rounded-xl bg-theme/10 dark:bg-theme/10 text-theme dark:text-theme flex items-center justify-center shrink-0">
               <ClipboardList className="h-5 w-5" />
             </div>
           </div>
 
           {/* In Progress (Amber / Yellow) */}
-          <div className="rounded-2xl border border-amber-200/80 dark:border-amber-500/20 bg-amber-50/40 dark:bg-amber-500/5 p-4 shadow-xs flex items-center justify-between">
+          <div className="rounded-2xl border border-warning/80 bg-warning/40 p-4 shadow-xs flex items-center justify-between">
             <div className="space-y-1">
-              <p className="text-[11px] font-medium text-amber-800 dark:text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+              <p className="text-[11px] font-medium text-warning uppercase tracking-wider flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-warning animate-pulse shrink-0" />
                 Явагдаж байна
               </p>
-              <p className="text-2xl font-medium text-amber-900 dark:text-amber-200">
+              <p className="text-2xl font-medium text-warning">
                 {idevkhteiToo}
               </p>
             </div>
-            <div className="h-10 w-10 rounded-xl bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0">
+            <div className="h-10 w-10 rounded-xl bg-warning/10 text-warning flex items-center justify-center shrink-0">
               <Clock className="h-5 w-5" />
             </div>
           </div>
 
           {/* Completed (Emerald / Green) */}
-          <div className="rounded-2xl border border-emerald-200/80 dark:border-emerald-500/20 bg-emerald-50/40 dark:bg-emerald-500/5 p-4 shadow-xs flex items-center justify-between">
+          <div className="rounded-2xl border border-theme/80 dark:border-theme/20 bg-theme/40 dark:bg-theme/5 p-4 shadow-xs flex items-center justify-between">
             <div className="space-y-1">
-              <p className="text-[11px] font-medium text-emerald-800 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+              <p className="text-[11px] font-medium text-theme dark:text-theme uppercase tracking-wider flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-theme shrink-0" />
                 Дууссан
               </p>
-              <p className="text-2xl font-medium text-emerald-900 dark:text-emerald-200">
+              <p className="text-2xl font-medium text-theme dark:text-theme">
                 {duussanToo}
               </p>
             </div>
-            <div className="h-10 w-10 rounded-xl bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0">
+            <div className="h-10 w-10 rounded-xl bg-theme/10 dark:bg-theme/20 text-theme dark:text-theme flex items-center justify-center shrink-0">
               <CheckCircle2 className="h-5 w-5" />
             </div>
           </div>
 
           {/* Total Responses */}
-          <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-xs flex items-center justify-between">
+          <div className="rounded-2xl border border-[color:var(--surface-border)] bg-white p-4 shadow-xs flex items-center justify-between">
             <div className="space-y-1">
-              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              <p className="text-[11px] font-medium text-[color:var(--muted-text)] uppercase tracking-wider">
                 Нийт хариулт
               </p>
-              <p className="text-2xl font-medium text-slate-900 dark:text-white">
+              <p className="text-2xl font-medium text-[color:var(--panel-text)] dark:text-white">
                 {niitKhariultToo}
               </p>
             </div>
@@ -605,16 +605,16 @@ export default function SanalAsuulgaPage() {
             onClick={() => setFilterTuluv("bugd")}
             className={`px-3 py-1.5 text-xs font-normal rounded-xl transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
               filterTuluv === "bugd"
-                ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs"
-                : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"
+                ? "bg-[color:var(--panel)] text-white dark:bg-white shadow-xs"
+                : "bg-white text-[color:var(--muted-text)] border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)]"
             }`}
           >
             <span>Бүгд</span>
             <span
               className={`px-1.5 py-0.5 rounded-md text-[10px] ${
                 filterTuluv === "bugd"
-                  ? "bg-white/20 text-white dark:bg-slate-900/20 dark:text-slate-900"
-                  : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+                  ? "bg-white/20 text-white"
+                  : "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]"
               }`}
             >
               {niitToo}
@@ -626,13 +626,13 @@ export default function SanalAsuulgaPage() {
             onClick={() => setFilterTuluv("idevkhtei")}
             className={`px-3 py-1.5 text-xs font-normal rounded-xl transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
               filterTuluv === "idevkhtei"
-                ? "bg-amber-500 text-white shadow-xs"
-                : "bg-white dark:bg-slate-900 text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-500/30 hover:bg-amber-50 dark:hover:bg-amber-500/10"
+                ? "bg-warning text-white shadow-xs"
+                : "bg-white text-warning border border-warning/80 hover:bg-warning/10"
             }`}
           >
             <span
               className={`h-1.5 w-1.5 rounded-full ${
-                filterTuluv === "idevkhtei" ? "bg-white" : "bg-amber-500 animate-pulse"
+                filterTuluv === "idevkhtei" ? "bg-white" : "bg-warning animate-pulse"
               }`}
             />
             <span>Явагдаж байна</span>
@@ -640,7 +640,7 @@ export default function SanalAsuulgaPage() {
               className={`px-1.5 py-0.5 rounded-md text-[10px] ${
                 filterTuluv === "idevkhtei"
                   ? "bg-white/20 text-white"
-                  : "bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300"
+                  : "bg-warning/10 text-warning"
               }`}
             >
               {idevkhteiToo}
@@ -652,13 +652,13 @@ export default function SanalAsuulgaPage() {
             onClick={() => setFilterTuluv("duussan")}
             className={`px-3 py-1.5 text-xs font-normal rounded-xl transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
               filterTuluv === "duussan"
-                ? "bg-emerald-600 text-white shadow-xs"
-                : "bg-white dark:bg-slate-900 text-emerald-800 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-500/30 hover:bg-emerald-50 dark:hover:bg-emerald-500/10"
+                ? "bg-theme text-white shadow-xs"
+                : "bg-white text-theme dark:text-theme border border-theme/80 dark:border-theme/30 hover:bg-theme/10 dark:hover:bg-theme/10"
             }`}
           >
             <span
               className={`h-1.5 w-1.5 rounded-full ${
-                filterTuluv === "duussan" ? "bg-white" : "bg-emerald-500"
+                filterTuluv === "duussan" ? "bg-white" : "bg-theme"
               }`}
             />
             <span>Дууссан</span>
@@ -666,7 +666,7 @@ export default function SanalAsuulgaPage() {
               className={`px-1.5 py-0.5 rounded-md text-[10px] ${
                 filterTuluv === "duussan"
                   ? "bg-white/20 text-white"
-                  : "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300"
+                  : "bg-theme/10 dark:bg-theme/20 text-theme dark:text-theme"
               }`}
             >
               {duussanToo}
@@ -678,8 +678,8 @@ export default function SanalAsuulgaPage() {
             onClick={() => setFilterTuluv("noots")}
             className={`px-3 py-1.5 text-xs font-normal rounded-xl transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
               filterTuluv === "noots"
-                ? "bg-slate-600 text-white shadow-xs"
-                : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200/80 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"
+                ? "bg-[color:var(--panel)] text-white shadow-xs"
+                : "bg-white text-[color:var(--muted-text)] border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)]"
             }`}
           >
             <span>Ноорог</span>
@@ -687,7 +687,7 @@ export default function SanalAsuulgaPage() {
               className={`px-1.5 py-0.5 rounded-md text-[10px] ${
                 filterTuluv === "noots"
                   ? "bg-white/20 text-white"
-                  : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+                  : "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]"
               }`}
             >
               {nootsToo}
@@ -698,13 +698,13 @@ export default function SanalAsuulgaPage() {
         {/* ── Content Area: Loading / Empty / Grid Cards ── */}
         {achaalj ? (
           <div className="flex flex-col items-center justify-center py-24 gap-3">
-            <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
-            <p className="text-xs text-slate-400">Ачаалж байна...</p>
+            <Loader2 className="h-8 w-8 animate-spin text-theme" />
+            <p className="text-xs text-[color:var(--muted-text)]">Ачаалж байна...</p>
           </div>
         ) : shuugdsanJagsaalt.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 rounded-3xl bg-white py-20 border border-slate-200/80 shadow-xs dark:bg-slate-900 dark:border-slate-800">
-            <ClipboardList className="h-12 w-12 text-slate-300 dark:text-slate-600" />
-            <p className="text-sm font-normal text-slate-500 dark:text-slate-400">
+          <div className="flex flex-col items-center gap-3 rounded-3xl bg-white py-20 border border-[color:var(--surface-border)] shadow-xs">
+            <ClipboardList className="h-12 w-12 text-[color:var(--muted-text)]" />
+            <p className="text-sm font-normal text-[color:var(--muted-text)]">
               {hailtUg
                 ? "Хайлтад тохирох асуулга олдсонгүй"
                 : filterTuluv !== "bugd"
@@ -717,7 +717,7 @@ export default function SanalAsuulgaPage() {
                 formTseverleye();
                 setGorim("uusgekh");
               }}
-              className="mt-2 text-xs font-normal text-emerald-600 hover:underline cursor-pointer"
+              className="mt-2 text-xs font-normal text-theme hover:underline cursor-pointer"
             >
               + Шинэ санал асуулга үүсгэх
             </button>
@@ -727,28 +727,28 @@ export default function SanalAsuulgaPage() {
             {shuugdsanJagsaalt.map((a) => (
               <div
                 key={a._id}
-                className="flex flex-col rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md transition-all duration-200 overflow-hidden group"
+                className="flex flex-col rounded-2xl bg-white border border-[color:var(--surface-border)] shadow-xs hover:shadow-md transition-all duration-200 overflow-hidden group"
               >
                 {/* Header */}
                 <div className="p-5 pb-3 space-y-2">
                   <div className="flex items-start justify-between gap-2.5">
-                    <h3 className="min-w-0 flex-1 text-sm font-normal text-slate-900 dark:text-white line-clamp-2 leading-snug group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                    <h3 className="min-w-0 flex-1 text-sm font-normal text-[color:var(--panel-text)] dark:text-white line-clamp-2 leading-snug group-hover:text-theme dark:group-hover:text-theme transition-colors">
                       {a.garchig}
                     </h3>
                     <StatusBadge tuluv={a.tuluv} />
                   </div>
 
                   {a.tailbar && (
-                    <p className="line-clamp-2 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                    <p className="line-clamp-2 text-xs text-[color:var(--muted-text)] leading-relaxed">
                       {a.tailbar}
                     </p>
                   )}
                 </div>
 
                 {/* Metadata strip */}
-                <div className="px-5 py-2.5 bg-slate-50/70 dark:bg-slate-800/40 border-y border-slate-100 dark:border-slate-800/80 text-[11px] text-slate-500 dark:text-slate-400 flex flex-wrap items-center justify-between gap-2 mt-auto">
+                <div className="px-5 py-2.5 bg-[color:var(--surface-hover)] border-y border-[color:var(--surface-border)] text-[11px] text-[color:var(--muted-text)] flex flex-wrap items-center justify-between gap-2 mt-auto">
                   <div className="flex items-center gap-1.5">
-                    <Calendar className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                    <Calendar className="h-3.5 w-3.5 text-[color:var(--muted-text)] shrink-0" />
                     {a.ekhlekhOgnoo || a.duusakhOgnoo ? (
                       <span>
                         {ognooFormat(a.ekhlekhOgnoo)} — {ognooFormat(a.duusakhOgnoo)}
@@ -760,10 +760,10 @@ export default function SanalAsuulgaPage() {
 
                   <div className="flex items-center gap-3">
                     <span className="flex items-center gap-1">
-                      <ClipboardList className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                      <ClipboardList className="h-3.5 w-3.5 text-[color:var(--muted-text)] shrink-0" />
                       {a.asuultuud?.length || 0} асуулт
                     </span>
-                    <span className="inline-flex items-center gap-1 font-normal text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-md text-[10px]">
+                    <span className="inline-flex items-center gap-1 font-normal text-theme dark:text-theme bg-theme/10 dark:bg-theme/10 px-2 py-0.5 rounded-md text-[10px]">
                       <Users className="h-3 w-3 shrink-0" />
                       {a.khariultiinToo || 0} хариулт
                     </span>
@@ -775,9 +775,9 @@ export default function SanalAsuulgaPage() {
                   <button
                     type="button"
                     onClick={() => dungAvya(a)}
-                    className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3 py-2 text-xs font-normal text-slate-700 dark:text-slate-200 transition cursor-pointer"
+                    className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-[color:var(--surface-hover)] hover:bg-[color:var(--panel)] px-3 py-2 text-xs font-normal text-[color:var(--panel-text)] transition cursor-pointer"
                   >
-                    <BarChart3 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <BarChart3 className="h-3.5 w-3.5 text-theme dark:text-theme" />
                     <span>Үр дүн</span>
                   </button>
 
@@ -785,7 +785,7 @@ export default function SanalAsuulgaPage() {
                     <button
                       type="button"
                       onClick={() => tuluvSolyo(a, "idevkhtei")}
-                      className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3.5 py-2 text-xs font-normal !text-white transition cursor-pointer shadow-xs"
+                      className="flex items-center gap-1.5 rounded-xl bg-theme hover:bg-theme px-3.5 py-2 text-xs font-normal !text-white transition cursor-pointer shadow-xs"
                       title="Санал асуулгыг оршин суугчдад нийтлэх"
                     >
                       <Send className="h-3.5 w-3.5" />
@@ -797,10 +797,10 @@ export default function SanalAsuulgaPage() {
                     <button
                       type="button"
                       onClick={() => tuluvSolyo(a, "duussan")}
-                      className="flex items-center gap-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-800 dark:text-amber-200 px-3.5 py-2 text-xs font-normal transition cursor-pointer"
+                      className="flex items-center gap-1.5 rounded-xl bg-warning/15 hover:bg-warning/25 border border-warning/30 text-warning px-3.5 py-2 text-xs font-normal transition cursor-pointer"
                       title="Санал асуулгыг хааж дуусгах"
                     >
-                      <CheckCircle2 className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                      <CheckCircle2 className="h-3.5 w-3.5 text-warning" />
                       <span>Хаах</span>
                     </button>
                   )}
@@ -810,7 +810,7 @@ export default function SanalAsuulgaPage() {
                     onClick={() => ustgaya(a)}
                     aria-label="Устгах"
                     title="Устгах"
-                    className="rounded-xl p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 dark:hover:text-rose-400 transition cursor-pointer"
+                    className="rounded-xl p-2 text-[color:var(--muted-text)] hover:bg-danger/10 hover:text-danger transition cursor-pointer"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -832,17 +832,17 @@ export default function SanalAsuulgaPage() {
     return (
       <div className="w-full space-y-6 text-[color:var(--panel-text)]">
         {/* Top Header Bar for Create Mode */}
-        <div className="flex items-center justify-between gap-4 border-b border-slate-200/80 dark:border-slate-800 pb-4">
+        <div className="flex items-center justify-between gap-4 border-b border-[color:var(--surface-border)] pb-4">
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setGorim("jagsaalt")}
-              className="flex items-center justify-center h-9 w-9 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              className="flex items-center justify-center h-9 w-9 rounded-xl border border-[color:var(--surface-border)] bg-white text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] transition cursor-pointer"
               title="Буцах"
             >
               <ArrowLeft className="h-4 w-4" />
             </button>
-            <h1 className="text-lg font-normal text-slate-900 dark:text-white">
+            <h1 className="text-lg font-normal text-[color:var(--panel-text)] dark:text-white">
               Шинэ санал асуулга үүсгэх
             </h1>
           </div>
@@ -853,9 +853,9 @@ export default function SanalAsuulgaPage() {
           {/* ── Left Column: Form Controls (8 Cols) ── */}
           <div ref={leftColRef} className="lg:col-span-8 space-y-6">
             {/* Card 1: Санал асуулгын мэдээлэл */}
-            <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xs space-y-5">
-              <div className="flex flex-wrap items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 gap-3">
-                <h2 className="text-xs font-normal uppercase tracking-wider text-slate-700 dark:text-slate-300 shrink-0">
+            <div className="rounded-2xl border border-[color:var(--surface-border)] bg-white p-6 shadow-xs space-y-5">
+              <div className="flex flex-wrap items-center justify-between border-b border-[color:var(--surface-border)] pb-3 gap-3">
+                <h2 className="text-xs font-normal uppercase tracking-wider text-[color:var(--panel-text)] shrink-0">
                   Санал асуулгын мэдээлэл
                 </h2>
                 <div className="w-72 shrink-0">
@@ -875,10 +875,10 @@ export default function SanalAsuulgaPage() {
               {/* Title Input with character counter */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-normal text-slate-600 dark:text-slate-400">
-                    Гарчиг <span className="text-red-500">*</span>
+                  <label className="text-xs font-normal text-[color:var(--muted-text)]">
+                    Гарчиг <span className="text-danger">*</span>
                   </label>
-                  <span className="text-[11px] font-normal text-slate-400">
+                  <span className="text-[11px] font-normal text-[color:var(--muted-text)]">
                     {garchig.length}/100
                   </span>
                 </div>
@@ -887,17 +887,17 @@ export default function SanalAsuulgaPage() {
                   maxLength={100}
                   onChange={(e) => setGarchig(e.target.value)}
                   placeholder="Оршин суугчдын сэтгэл ханамж 2024 оны эхний хагас жил"
-                  className="h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none transition shadow-2xs"
+                  className="h-11 w-full rounded-xl border border-[color:var(--surface-border)] bg-white px-3.5 text-xs text-[color:var(--panel-text)] dark:text-white placeholder:text-[color:var(--muted-text)] focus:border-theme focus:outline-none transition shadow-2xs"
                 />
               </div>
 
               {/* Description Input with character counter */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-normal text-slate-600 dark:text-slate-400">
+                  <label className="text-xs font-normal text-[color:var(--muted-text)]">
                     Товч тайлбар
                   </label>
-                  <span className="text-[11px] font-normal text-slate-400">
+                  <span className="text-[11px] font-normal text-[color:var(--muted-text)]">
                     {tailbar.length}/200
                   </span>
                 </div>
@@ -907,16 +907,16 @@ export default function SanalAsuulgaPage() {
                   onChange={(e) => setTailbar(e.target.value)}
                   rows={3}
                   placeholder="Таны үнэлгээ, санал хүсэлт нь бидний үйлчилгээ, орчныг сайжруулахад чухал нөлөөтэй."
-                  className="w-full resize-none rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none transition shadow-2xs"
+                  className="w-full resize-none rounded-xl border border-[color:var(--surface-border)] bg-white p-3 text-xs text-[color:var(--panel-text)] dark:text-white placeholder:text-[color:var(--muted-text)] focus:border-theme focus:outline-none transition shadow-2xs"
                 />
               </div>
 
               {/* Building selector filter */}
               {barilguud.length > 0 && (
                 <div>
-                  <label className="mb-2 block text-xs font-normal text-slate-600 dark:text-slate-400">
+                  <label className="mb-2 block text-xs font-normal text-[color:var(--muted-text)]">
                     Хамаарах барилга{" "}
-                    <span className="font-normal text-slate-400">
+                    <span className="font-normal text-[color:var(--muted-text)]">
                       (Сонгохгүй бол бүх оршин суугчдад харагдана)
                     </span>
                   </label>
@@ -935,8 +935,8 @@ export default function SanalAsuulgaPage() {
                             )
                           }
                           className={`rounded-xl px-3 py-1.5 text-xs font-normal transition cursor-pointer ${isSelected
-                            ? "bg-emerald-600 text-white shadow-xs"
-                            : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                            ? "bg-theme text-white shadow-xs"
+                            : "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)] hover:bg-[color:var(--panel)]"
                             }`}
                         >
                           {b.ner}
@@ -949,8 +949,8 @@ export default function SanalAsuulgaPage() {
             </div>
 
             {/* Card 2: Асуулт & хариултууд */}
-            <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xs space-y-5">
-              <h2 className="text-xs font-normal uppercase tracking-wider text-slate-700 dark:text-slate-300 border-b border-slate-100 dark:border-slate-800 pb-3">
+            <div className="rounded-2xl border border-[color:var(--surface-border)] bg-white p-6 shadow-xs space-y-5">
+              <h2 className="text-xs font-normal uppercase tracking-wider text-[color:var(--panel-text)] border-b border-[color:var(--surface-border)] pb-3">
                 Асуулт & хариултууд
               </h2>
 
@@ -964,19 +964,19 @@ export default function SanalAsuulgaPage() {
                     onDrop={(e) => handleQuestionDrop(e, i)}
                     onDragEnd={() => setDraggedQuestionIndex(null)}
                     className={`p-5 rounded-2xl border transition-all ${draggedQuestionIndex === i
-                      ? "opacity-30 border-emerald-500 bg-emerald-50/20 scale-[0.99]"
-                      : "border-slate-200/80 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-800/30"
+                      ? "opacity-30 border-theme bg-theme/20 scale-[0.99]"
+                      : "border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]"
                       } space-y-4 relative group`}
                   >
                     {/* Question Header Row */}
                     <div className="flex items-center gap-2">
                       <div
-                        className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700/60 cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition shrink-0"
+                        className="p-1 rounded-lg hover:bg-[color:var(--panel)] cursor-grab active:cursor-grabbing text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] transition shrink-0"
                         title="Чирж байрлал солих"
                       >
                         <GripVertical className="h-4 w-4 shrink-0" />
                       </div>
-                      <span className="text-xs font-normal text-slate-800 dark:text-slate-200 shrink-0">
+                      <span className="text-xs font-normal text-[color:var(--panel-text)] shrink-0">
                         {i + 1}.
                       </span>
                       <input
@@ -985,7 +985,7 @@ export default function SanalAsuulgaPage() {
                           asuultZasya(i, { asuult: e.target.value })
                         }
                         placeholder="Асуултын текстаа энд бичнэ үү..."
-                        className="h-10 flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 text-xs font-normal text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none"
+                        className="h-10 flex-1 rounded-xl border border-[color:var(--surface-border)] bg-white px-3 text-xs font-normal text-[color:var(--panel-text)] dark:text-white focus:border-theme focus:outline-none"
                       />
                       {asuultuud.length > 1 && (
                         <button
@@ -995,7 +995,7 @@ export default function SanalAsuulgaPage() {
                               prev.filter((_, idx) => idx !== i)
                             )
                           }
-                          className="p-2 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition cursor-pointer"
+                          className="p-2 rounded-xl text-[color:var(--muted-text)] hover:text-danger hover:bg-danger/10 transition cursor-pointer"
                           title="Асуулт устгах"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -1012,7 +1012,7 @@ export default function SanalAsuulgaPage() {
                             turul: e.target.value as AsuultiinTurul,
                           })
                         }
-                        className="h-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 text-xs font-normal text-slate-700 dark:text-slate-300 focus:border-emerald-500 focus:outline-none cursor-pointer"
+                        className="h-9 rounded-xl border border-[color:var(--surface-border)] bg-white px-3 text-xs font-normal text-[color:var(--panel-text)] focus:border-theme focus:outline-none cursor-pointer"
                       >
                         <option value="songolt">
                           Сонголттой (нэг сонголт)
@@ -1032,14 +1032,14 @@ export default function SanalAsuulgaPage() {
                             key={si}
                             className="flex items-center gap-2.5"
                           >
-                            <Circle className="h-3.5 w-3.5 text-slate-300 shrink-0" />
+                            <Circle className="h-3.5 w-3.5 text-[color:var(--muted-text)] shrink-0" />
                             <input
                               value={s}
                               onChange={(e) =>
                                 songoltZasya(i, si, e.target.value)
                               }
                               placeholder={`Сонголт ${si + 1}`}
-                              className="h-9 flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 text-xs text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none"
+                              className="h-9 flex-1 rounded-xl border border-[color:var(--surface-border)] bg-white px-3 text-xs text-[color:var(--panel-text)] dark:text-white focus:border-theme focus:outline-none"
                             />
                             {a.songoltuud.length > 2 && (
                               <button
@@ -1051,7 +1051,7 @@ export default function SanalAsuulgaPage() {
                                     ),
                                   })
                                 }
-                                className="p-1 text-slate-400 hover:text-red-500 transition cursor-pointer"
+                                className="p-1 text-[color:var(--muted-text)] hover:text-danger transition cursor-pointer"
                               >
                                 <X className="h-4 w-4" />
                               </button>
@@ -1062,15 +1062,15 @@ export default function SanalAsuulgaPage() {
                         {/* Custom Writing Item Preview when busadTekst is checked */}
                         {a.busadTekst && (
                           <div className="flex items-center gap-2.5 pt-0.5">
-                            <Circle className="h-3.5 w-3.5 text-slate-300 shrink-0" />
-                            <div className="h-9 flex-1 flex items-center gap-2 rounded-xl border border-dashed border-emerald-400/60 dark:border-emerald-600/50 bg-emerald-50/40 dark:bg-emerald-950/30 px-3 text-xs text-emerald-800 dark:text-emerald-300">
+                            <Circle className="h-3.5 w-3.5 text-[color:var(--muted-text)] shrink-0" />
+                            <div className="h-9 flex-1 flex items-center gap-2 rounded-xl border border-dashed border-theme/60 dark:border-theme/50 bg-theme/40 dark:bg-theme/30 px-3 text-xs text-theme dark:text-theme">
                               <span className="font-normal shrink-0">Бусад:</span>
                               <input
                                 disabled
                                 readOnly
                                 value=""
                                 placeholder="Оршин суугч өөрийн хариултыг гараар бичих хэсэг..."
-                                className="w-full bg-transparent text-xs text-slate-500 placeholder:text-slate-400 focus:outline-none cursor-not-allowed italic"
+                                className="w-full bg-transparent text-xs text-[color:var(--muted-text)] placeholder:text-[color:var(--muted-text)] focus:outline-none cursor-not-allowed italic"
                               />
                             </div>
                           </div>
@@ -1085,12 +1085,12 @@ export default function SanalAsuulgaPage() {
                                 songoltuud: [...a.songoltuud, ""],
                               })
                             }
-                            className="text-xs font-normal text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+                            className="text-xs font-normal text-theme dark:text-theme hover:underline cursor-pointer"
                           >
                             + Сонголт нэмэх
                           </button>
 
-                          <label className="flex items-center gap-1.5 text-xs text-slate-500 cursor-pointer select-none">
+                          <label className="flex items-center gap-1.5 text-xs text-[color:var(--muted-text)] cursor-pointer select-none">
                             <input
                               type="checkbox"
                               checked={!!a.busadTekst}
@@ -1099,7 +1099,7 @@ export default function SanalAsuulgaPage() {
                                     busadTekst: e.target.checked,
                                 })
                               }
-                              className="h-3.5 w-3.5 accent-emerald-600 rounded"
+                              className="h-3.5 w-3.5 accent-theme rounded"
                             />
                             <span>Бусад (текст хариулт)</span>
                           </label>
@@ -1121,7 +1121,7 @@ export default function SanalAsuulgaPage() {
                     shineAsuult(),
                   ])
                 }
-                className="col-span-8 flex items-center justify-center gap-2 py-3.5 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-600 bg-slate-50/60 dark:bg-slate-800/40 text-xs font-normal text-slate-700 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-500 hover:bg-emerald-500/10 transition cursor-pointer shadow-2xs"
+                className="col-span-8 flex items-center justify-center gap-2 py-3.5 rounded-2xl border-2 border-dashed border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] text-xs font-normal text-[color:var(--panel-text)] hover:text-theme dark:hover:text-theme hover:border-theme hover:bg-theme/10 transition cursor-pointer shadow-2xs"
               >
                 <Plus className="h-4 w-4 shrink-0" />
                 <span>Асуулт нэмэх</span>
@@ -1131,7 +1131,7 @@ export default function SanalAsuulgaPage() {
                 type="button"
                 onClick={() => khadgalya(true)}
                 disabled={khadgalj}
-                className="col-span-2 flex items-center justify-center gap-1.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 px-3 py-3.5 text-xs font-normal text-white transition duration-150 shadow-lg shadow-emerald-600/25 disabled:opacity-50 cursor-pointer text-center whitespace-nowrap"
+                className="col-span-2 flex items-center justify-center gap-1.5 rounded-2xl bg-theme hover:bg-theme active:scale-95 px-3 py-3.5 text-xs font-normal text-white transition duration-150 shadow-lg shadow-theme/25 disabled:opacity-50 cursor-pointer text-center whitespace-nowrap"
               >
                 <span>Хадгалах</span>
                 <ChevronRight className="h-4 w-4 shrink-0" />
@@ -1151,20 +1151,20 @@ export default function SanalAsuulgaPage() {
             {/* Authentic iPhone 16 / 17 Device Container */}
             <div className="relative mx-auto w-full max-w-[320px]">
               {/* Main Phone Body with realistic 640px iPhone height */}
-              <div className="relative z-10 w-full h-[640px] rounded-[44px] border-[8px] border-slate-900 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 pt-7 pb-3 shadow-2xl flex flex-col justify-between overflow-hidden box-border">
+              <div className="relative z-10 w-full h-[640px] rounded-[44px] border-[8px] border-[color:var(--surface-border)] bg-white p-3.5 pt-7 pb-3 shadow-2xl flex flex-col justify-between overflow-hidden box-border">
                 {/* Top Dynamic Island / Pill Cutout */}
-                <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-24 h-4 bg-slate-900 rounded-full flex items-center justify-between px-2 z-30 shadow-xs">
-                  <div className="h-1.5 w-1.5 rounded-full bg-slate-800" />
-                  <div className="h-1.5 w-1.5 rounded-full bg-blue-900/80" />
+                <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-24 h-4 bg-[color:var(--panel)] rounded-full flex items-center justify-between px-2 z-30 shadow-xs">
+                  <div className="h-1.5 w-1.5 rounded-full bg-[color:var(--panel)]" />
+                  <div className="h-1.5 w-1.5 rounded-full bg-theme/80" />
                 </div>
 
                 {/* Phone Status Bar */}
-                <div className="flex items-center justify-between px-1 text-[9px] font-normal text-slate-400 pt-0.5 shrink-0">
+                <div className="flex items-center justify-between px-1 text-[9px] font-normal text-[color:var(--muted-text)] pt-0.5 shrink-0">
                   <span>09:41</span>
                   <div className="flex items-center gap-1">
                     <span>5G</span>
-                    <div className="w-3.5 h-1.5 rounded-xs border border-slate-400 flex items-center p-0.5">
-                      <div className="h-full w-1.5 bg-slate-400 rounded-xs" />
+                    <div className="w-3.5 h-1.5 rounded-xs border border-[color:var(--surface-border)] flex items-center p-0.5">
+                      <div className="h-full w-1.5 bg-[color:var(--panel)] rounded-xs" />
                     </div>
                   </div>
                 </div>
@@ -1173,10 +1173,10 @@ export default function SanalAsuulgaPage() {
                 <div className="flex-1 overflow-y-auto pr-0.5 space-y-3 scrollbar-none">
                   {/* Status Badges Row */}
                   <div className="flex items-center justify-between gap-1.5">
-                    <span className="px-2 py-0.5 text-[9px] font-normal rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300">
+                    <span className="px-2 py-0.5 text-[9px] font-normal rounded-full bg-warning/10 text-warning">
                       Явагдаж байна
                     </span>
-                    <span className="text-[9px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                    <span className="text-[9px] font-normal text-warning flex items-center gap-1">
                       <Clock className="h-2.5 w-2.5" />
                       Дуусахад 5 хоног үлдлээ
                     </span>
@@ -1184,38 +1184,38 @@ export default function SanalAsuulgaPage() {
 
                   {/* Live Title & Description */}
                   <div className="space-y-1">
-                    <h4 className="text-xs font-normal text-slate-900 dark:text-white leading-snug">
+                    <h4 className="text-xs font-normal text-[color:var(--panel-text)] dark:text-white leading-snug">
                       {garchig || "Оршин суугчдын сэтгэл ханамж 2024"}
                     </h4>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                    <p className="text-[11px] text-[color:var(--muted-text)] leading-relaxed">
                       {tailbar ||
                         "Таны үнэлгээ, санал хүсэлт нь бидний үйлчилгээ, орчныг сайжруулахад чухал нөлөөтэй."}
                     </p>
                   </div>
 
                   {/* Metadata Grid Cards */}
-                  <div className="grid grid-cols-2 gap-1.5 p-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 text-[10px]">
+                  <div className="grid grid-cols-2 gap-1.5 p-2 rounded-xl bg-[color:var(--surface-hover)] border border-[color:var(--surface-border)] text-[10px]">
                     <div>
-                      <span className="block text-[8px] font-normal text-slate-400 uppercase">
+                      <span className="block text-[8px] font-normal text-[color:var(--muted-text)] uppercase">
                         Эхлэх огноо
                       </span>
-                      <span className="font-normal text-slate-700 dark:text-slate-200">
+                      <span className="font-normal text-[color:var(--panel-text)]">
                         {ognooTsagFormat(ekhlekhOgnoo)}
                       </span>
                     </div>
                     <div>
-                      <span className="block text-[8px] font-normal text-slate-400 uppercase">
+                      <span className="block text-[8px] font-normal text-[color:var(--muted-text)] uppercase">
                         Дуусах огноо
                       </span>
-                      <span className="font-normal text-slate-700 dark:text-slate-200">
+                      <span className="font-normal text-[color:var(--panel-text)]">
                         {ognooTsagFormat(duusakhOgnoo)}
                       </span>
                     </div>
-                    <div className="col-span-2 pt-1 border-t border-slate-200/50 dark:border-slate-700/50 flex items-center justify-between">
-                      <span className="text-[9px] font-normal text-slate-500">
+                    <div className="col-span-2 pt-1 border-t border-[color:var(--surface-border)] flex items-center justify-between">
+                      <span className="text-[9px] font-normal text-[color:var(--muted-text)]">
                         👥 Оролцогч:
                       </span>
-                      <span className="font-normal text-emerald-600 dark:text-emerald-400">
+                      <span className="font-normal text-theme dark:text-theme">
                         {songogdsonBarilga.length > 0
                           ? `${songogdsonBarilga.length} барилга`
                           : "2,468 эрх (Бүгд)"}
@@ -1224,11 +1224,11 @@ export default function SanalAsuulgaPage() {
                   </div>
 
                   {/* Divider Line */}
-                  <div className="border-b border-slate-100 dark:border-slate-800" />
+                  <div className="border-b border-[color:var(--surface-border)]" />
 
                   {/* Live Interactive Question Render */}
                   <div className="space-y-2.5">
-                    <h5 className="text-[11px] font-normal text-slate-900 dark:text-white">
+                    <h5 className="text-[11px] font-normal text-[color:var(--panel-text)] dark:text-white">
                       {previewQuestionIndex + 1}.{" "}
                       {activeQuestion.asuult || "Асуултын текст..."}
                     </h5>
@@ -1248,14 +1248,14 @@ export default function SanalAsuulgaPage() {
                                 }))
                               }
                               className={`flex items-center gap-2 p-2 rounded-xl border text-[11px] font-normal cursor-pointer transition ${isSelected
-                                ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 font-normal"
-                                : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:border-slate-300"
+                                ? "border-theme bg-theme/50 dark:bg-theme/10 text-theme dark:text-theme font-normal"
+                                : "border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] hover:border-[color:var(--surface-border)]"
                                 }`}
                             >
                               <div
                                 className={`h-3.5 w-3.5 rounded-full border flex items-center justify-center shrink-0 ${isSelected
-                                  ? "border-emerald-600 bg-emerald-600 text-white"
-                                  : "border-slate-300 dark:border-slate-600"
+                                  ? "border-theme bg-theme text-white"
+                                  : "border-[color:var(--surface-border)]"
                                   }`}
                               >
                                 {isSelected && (
@@ -1280,16 +1280,16 @@ export default function SanalAsuulgaPage() {
                             }
                             className={`flex flex-col gap-1.5 p-2 rounded-xl border text-[11px] font-normal cursor-pointer transition ${
                               previewAnswers[previewQuestionIndex]?.startsWith("Бусад")
-                                ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 font-normal"
-                                : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:border-slate-300"
+                                ? "border-theme bg-theme/50 dark:bg-theme/10 text-theme dark:text-theme font-normal"
+                                : "border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] hover:border-[color:var(--surface-border)]"
                             }`}
                           >
                             <div className="flex items-center gap-2">
                               <div
                                 className={`h-3.5 w-3.5 rounded-full border flex items-center justify-center shrink-0 ${
                                   previewAnswers[previewQuestionIndex]?.startsWith("Бусад")
-                                    ? "border-emerald-600 bg-emerald-600 text-white"
-                                    : "border-slate-300 dark:border-slate-600"
+                                    ? "border-theme bg-theme text-white"
+                                    : "border-[color:var(--surface-border)]"
                                 }`}
                               >
                                 {previewAnswers[previewQuestionIndex]?.startsWith("Бусад") && (
@@ -1303,7 +1303,7 @@ export default function SanalAsuulgaPage() {
                                 type="text"
                                 placeholder="Хариултаа бичнэ үү..."
                                 onClick={(e) => e.stopPropagation()}
-                                className="w-full h-7 px-2 text-[10px] rounded-lg border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none"
+                                className="w-full h-7 px-2 text-[10px] rounded-lg border border-theme/30 dark:border-theme bg-white text-[color:var(--panel-text)] dark:text-white focus:outline-none"
                               />
                             )}
                           </div>
@@ -1313,14 +1313,14 @@ export default function SanalAsuulgaPage() {
                       <textarea
                         rows={2}
                         placeholder="Хариултаа энд бичнэ үү..."
-                        className="w-full rounded-xl border border-slate-200 dark:border-slate-800 p-2 text-[11px] bg-slate-50 dark:bg-slate-800/40 text-slate-900 dark:text-white"
+                        className="w-full rounded-xl border border-[color:var(--surface-border)] p-2 text-[11px] bg-[color:var(--surface-hover)] text-[color:var(--panel-text)] dark:text-white"
                       />
                     )}
 
                     {/* Mock Submit Button */}
                     <button
                       type="button"
-                      className="w-full py-2 rounded-xl bg-emerald-600 text-white font-normal text-[11px] shadow-sm shadow-emerald-600/20 active:scale-95 transition cursor-pointer"
+                      className="w-full py-2 rounded-xl bg-theme text-white font-normal text-[11px] shadow-sm shadow-theme/20 active:scale-95 transition cursor-pointer"
                     >
                       Илгээх
                     </button>
@@ -1328,14 +1328,14 @@ export default function SanalAsuulgaPage() {
 
                   {/* Pagination Switcher for Preview Questions */}
                   {asuultuud.length > 1 && (
-                    <div className="flex items-center justify-center gap-2 pt-1.5 border-t border-slate-100 dark:border-slate-800 text-[10px] font-normal text-slate-500">
+                    <div className="flex items-center justify-center gap-2 pt-1.5 border-t border-[color:var(--surface-border)] text-[10px] font-normal text-[color:var(--muted-text)]">
                       <button
                         type="button"
                         disabled={previewQuestionIndex === 0}
                         onClick={() =>
                           setPreviewQuestionIndex((prev) => Math.max(0, prev - 1))
                         }
-                        className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 cursor-pointer"
+                        className="p-1 rounded-lg hover:bg-[color:var(--surface-hover)] disabled:opacity-30 cursor-pointer"
                       >
                         <ChevronLeft className="h-4 w-4" />
                       </button>
@@ -1350,7 +1350,7 @@ export default function SanalAsuulgaPage() {
                             Math.min(asuultuud.length - 1, prev + 1)
                           )
                         }
-                        className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 cursor-pointer"
+                        className="p-1 rounded-lg hover:bg-[color:var(--surface-hover)] disabled:opacity-30 cursor-pointer"
                       >
                         <ChevronRight className="h-4 w-4" />
                       </button>
@@ -1359,7 +1359,7 @@ export default function SanalAsuulgaPage() {
                 </div>
 
                 {/* Bottom iOS Home Indicator Pill */}
-                <div className="w-28 h-1 bg-slate-900 dark:bg-slate-100 rounded-full mx-auto shrink-0 mt-1" />
+                <div className="w-28 h-1 bg-[color:var(--panel)] rounded-full mx-auto shrink-0 mt-1" />
               </div>
             </div>
           </div>
@@ -1373,25 +1373,25 @@ export default function SanalAsuulgaPage() {
   if (gorim === "dun") {
     return (
       <div className="w-full space-y-6 p-4 sm:p-6 lg:p-8 text-[color:var(--panel-text)]">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 dark:border-slate-800 pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[color:var(--surface-border)] pb-4">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setGorim("jagsaalt")}
               aria-label="Буцах"
-              className="rounded-xl p-2 text-slate-500 transition hover:bg-slate-100 dark:hover:bg-white/10 cursor-pointer"
+              className="rounded-xl p-2 text-[color:var(--muted-text)] transition hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/10 cursor-pointer"
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
             <div>
               <div className="flex items-center gap-2.5 flex-wrap">
-                <h1 className="text-xl font-normal tracking-tight text-slate-900 dark:text-white">
+                <h1 className="text-xl font-normal tracking-tight text-[color:var(--panel-text)] dark:text-white">
                   {songogdsonAsuulga?.garchig}
                 </h1>
                 {songogdsonAsuulga && (
                   <StatusBadge tuluv={songogdsonAsuulga.tuluv} />
                 )}
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              <p className="text-xs text-[color:var(--muted-text)] mt-1">
                 Нийт {dun?.niitKhariult || 0} оршин суугч хариулт өгсөн байна
               </p>
             </div>
@@ -1401,9 +1401,9 @@ export default function SanalAsuulgaPage() {
             <button
               type="button"
               onClick={() => songogdsonAsuulga && tuluvSolyo(songogdsonAsuulga, "duussan")}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-emerald-300 dark:border-emerald-700/60 bg-emerald-50 dark:bg-emerald-950/40 text-xs font-normal text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition cursor-pointer self-start sm:self-auto shadow-2xs"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-theme/30 dark:border-theme/60 bg-theme/10 dark:bg-theme/40 text-xs font-normal text-theme dark:text-theme hover:bg-theme/10 dark:hover:bg-theme/50 transition cursor-pointer self-start sm:self-auto shadow-2xs"
             >
-              <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              <CheckCircle2 className="h-4 w-4 text-theme dark:text-theme" />
               <span>Санал асуулга дуусгах</span>
             </button>
           )}
@@ -1411,7 +1411,7 @@ export default function SanalAsuulgaPage() {
 
         {dunAchaalj ? (
           <div className="flex justify-center py-24">
-            <Loader2 className="h-7 w-7 animate-spin text-emerald-500" />
+            <Loader2 className="h-7 w-7 animate-spin text-theme" />
           </div>
         ) : (
           <div className="grid gap-6 lg:grid-cols-12 items-start">
@@ -1420,9 +1420,9 @@ export default function SanalAsuulgaPage() {
               {dun?.asuultuud.map((a, i) => (
                 <div
                   key={a.asuultiinId}
-                  className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-4"
+                  className="rounded-2xl border border-[color:var(--surface-border)] bg-white p-5 shadow-xs space-y-4"
                 >
-                  <h3 className="text-sm font-normal text-slate-900 dark:text-white">
+                  <h3 className="text-sm font-normal text-[color:var(--panel-text)] dark:text-white">
                     {i + 1}. {a.asuult}
                   </h3>
 
@@ -1437,17 +1437,17 @@ export default function SanalAsuulgaPage() {
                         return (
                           <div key={opt} className="space-y-1">
                             <div className="flex items-center justify-between text-xs font-normal">
-                              <span className="text-slate-700 dark:text-slate-300">
+                              <span className="text-[color:var(--panel-text)]">
                                 {opt}
                               </span>
-                              <span className="text-emerald-600 dark:text-emerald-400">
+                              <span className="text-theme dark:text-theme">
                                 {count} ({pct}%)
                               </span>
                             </div>
-                            <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                            <div className="h-2 w-full rounded-full bg-[color:var(--surface-hover)] overflow-hidden">
                               <div
                                 style={{ width: `${pct}%` }}
-                                className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                                className="h-full rounded-full bg-theme transition-all duration-500"
                               />
                             </div>
                           </div>
@@ -1459,15 +1459,15 @@ export default function SanalAsuulgaPage() {
                       {a.tekstuud.map((t, idx) => (
                         <div
                           key={idx}
-                          className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 text-xs border border-slate-100 dark:border-slate-800"
+                          className="p-2.5 rounded-xl bg-[color:var(--surface-hover)] text-xs border border-[color:var(--surface-border)]"
                         >
-                          <div className="flex items-center justify-between font-normal text-slate-700 dark:text-slate-300 mb-1">
+                          <div className="flex items-center justify-between font-normal text-[color:var(--panel-text)] mb-1">
                             <span>{t.orshinSuugchNer}</span>
-                            <span className="text-[10px] text-slate-400">
+                            <span className="text-[10px] text-[color:var(--muted-text)]">
                               {t.toot} тоот
                             </span>
                           </div>
-                          <p className="text-slate-600 dark:text-slate-400">
+                          <p className="text-[color:var(--muted-text)]">
                             {t.tekst}
                           </p>
                         </div>
@@ -1479,23 +1479,23 @@ export default function SanalAsuulgaPage() {
             </div>
 
             {/* Right: Resident Responses List */}
-            <div className="lg:col-span-5 rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-4">
-              <h3 className="text-sm font-normal text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3">
+            <div className="lg:col-span-5 rounded-2xl border border-[color:var(--surface-border)] bg-white p-5 shadow-xs space-y-4">
+              <h3 className="text-sm font-normal text-[color:var(--panel-text)] dark:text-white border-b border-[color:var(--surface-border)] pb-3">
                 Хариулсан оршин суугчид ({khariultuud.length})
               </h3>
 
-              <div className="max-h-[500px] overflow-y-auto space-y-3 pr-1 divide-y divide-slate-100 dark:divide-slate-800 custom-scrollbar">
+              <div className="max-h-[500px] overflow-y-auto space-y-3 pr-1 divide-y divide-[color:var(--surface-border)] custom-scrollbar">
                 {khariultuud.map((k) => (
                   <div key={k._id} className="pt-3 first:pt-0 space-y-1.5">
-                    <div className="flex items-center justify-between text-xs font-normal text-slate-900 dark:text-white">
+                    <div className="flex items-center justify-between text-xs font-normal text-[color:var(--panel-text)] dark:text-white">
                       <span>{k.orshinSuugchNer || "Оршин суугч"}</span>
                       {k.toot && (
-                        <span className="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-[10px]">
+                        <span className="px-2 py-0.5 rounded-md bg-theme/10 dark:bg-theme/10 text-theme dark:text-theme text-[10px]">
                           {k.toot} тоот
                         </span>
                       )}
                     </div>
-                    <p className="text-[10px] text-slate-400">
+                    <p className="text-[10px] text-[color:var(--muted-text)]">
                       {k.createdAt ? new Date(k.createdAt).toLocaleString("mn-MN") : ""}
                     </p>
                   </div>

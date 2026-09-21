@@ -64,13 +64,13 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
             {/* Header – match Үйлчилгээний нэхэмжлэх style */}
             <div
               onPointerDown={(e) => dragControls.start(e)}
-              className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 print-break no-print rounded-t-3xl cursor-move select-none"
+              className="p-6 border-b border-[color:var(--surface-border)] flex justify-between items-center bg-[color:var(--surface-hover)] print-break no-print rounded-t-3xl cursor-move select-none"
             >
               <div>
-                <h3 className="text-xl  text-slate-800">
+                <h3 className="text-xl  text-[color:var(--panel-text)]">
                 Нэхэмжлэхийн урьдчилсан харалт
                 </h3>
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-[color:var(--muted-text)]">
                   {getMonthName(preview.ognoo)}
                 </p>
               </div>
@@ -78,13 +78,13 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
                 <button
                   onPointerDown={(e) => e.stopPropagation()}
                   onClick={onClose}
-                  className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
+                  className="p-2 hover:bg-[color:var(--surface-hover)] rounded-2xl transition-colors"
                   aria-label="Хаах"
                   title="Хаах"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6 text-slate-700"
+                    className="h-6 w-6 text-[color:var(--panel-text)]"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -107,64 +107,64 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
                 {/* Contract Info - match Үйлчилгээний нэхэмжлэх layout */}
                 <div className="grid grid-cols-2 gap-4 print-break">
                   {/* Left: Нэхэмжлэгч (Organization) */}
-                  <div className="rounded-2xl border border-emerald-200 bg-transparent p-4">
-                    <h3 className="text-sm  text-emerald-500 mb-3 flex items-center gap-2 border-b">
+                  <div className="rounded-2xl border border-theme/30 bg-transparent p-4">
+                    <h3 className="text-sm  text-theme mb-3 flex items-center gap-2 border-b">
                       <span className="text-theme" />
                       Нэхэмжлэгч
                     </h3>
-                    <div className="space-y-1.5 text-sm text-slate-600">
+                    <div className="space-y-1.5 text-sm text-[color:var(--muted-text)]">
                       <p>
-                        <span className=" text-slate-500">Нэхэмжлэгч:</span>{" "}
+                        <span className=" text-[color:var(--muted-text)]">Нэхэмжлэгч:</span>{" "}
                         {preview.baiguullagiinNer || preview.sohNer || "-"}
                       </p>
                       <p>
-                        <span className=" text-slate-500">Утас:</span>{" "}
+                        <span className=" text-[color:var(--muted-text)]">Утас:</span>{" "}
                         {preview.baiguullagiinUtas || "-"}
                       </p>
                       <p>
-                        <span className=" text-slate-500">Хаяг:</span>{" "}
+                        <span className=" text-[color:var(--muted-text)]">Хаяг:</span>{" "}
                         {preview.baiguullagiinKhayag || "-"}
                       </p>
                       <p>
-                        <span className=" text-slate-500">Данс:</span>{" "}
+                        <span className=" text-[color:var(--muted-text)]">Данс:</span>{" "}
                         {preview.dansniiMedeelel || "-"}
                       </p>
                     </div>
                   </div>
 
                   {/* Right: Төлөгч (Payer / Resident) */}
-                  <div className="rounded-2xl border border-gray-200 bg-transparent p-4">
-                    <h3 className="text-sm  text-slate-700 mb-3 flex items-center gap-2 border-b">
+                  <div className="rounded-2xl border border-[color:var(--surface-border)] bg-transparent p-4">
+                    <h3 className="text-sm  text-[color:var(--panel-text)] mb-3 flex items-center gap-2 border-b">
                       <span className="text-theme" />
                       Төлөгч
                     </h3>
-                    <div className="space-y-1.5 text-sm text-slate-600">
+                    <div className="space-y-1.5 text-sm text-[color:var(--muted-text)]">
                       <p>
-                        <span className=" text-slate-500">Төлөгч:</span>{" "}
+                        <span className=" text-[color:var(--muted-text)]">Төлөгч:</span>{" "}
                         {preview.ovog ? `${preview.ovog} ${preview.ner}` : preview.ner || "-"}
                       </p>
                       <p>
-                        <span className=" text-slate-500">Гэрээний дугаар:</span>{" "}
+                        <span className=" text-[color:var(--muted-text)]">Гэрээний дугаар:</span>{" "}
                         {preview.gereeniiDugaar || "-"}
                       </p>
                       <p>
-                        <span className=" text-slate-500">Байр:</span>{" "}
+                        <span className=" text-[color:var(--muted-text)]">Байр:</span>{" "}
                         {preview.davkhar || "-"}
                       </p>
                       <p>
-                        <span className=" text-slate-500">Орц:</span>{" "}
+                        <span className=" text-[color:var(--muted-text)]">Орц:</span>{" "}
                         {preview.orts || "-"}
                       </p>
                       <p>
-                        <span className=" text-slate-500">Тоот:</span>{" "}
+                        <span className=" text-[color:var(--muted-text)]">Тоот:</span>{" "}
                         {preview.toot || "-"}
                       </p>
                       <p>
-                        <span className=" text-slate-500">Оршин суугчийн нэр:</span>{" "}
+                        <span className=" text-[color:var(--muted-text)]">Оршин суугчийн нэр:</span>{" "}
                         {preview.ovog ? `${preview.ovog} ${preview.ner}` : preview.ner || "-"}
                       </p>
                       <p>
-                        <span className=" text-slate-500">Утас:</span>{" "}
+                        <span className=" text-[color:var(--muted-text)]">Утас:</span>{" "}
                         {Array.isArray(preview.utas) ? preview.utas.join(", ") : preview.utas || "-"}
                       </p>
                     </div>
@@ -173,34 +173,34 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
 
                 {/* Expenses Table */}
                 <div>
-                  <h4 className="text-sm  text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                  <h4 className="text-sm  text-[color:var(--panel-text)] mb-3 flex items-center gap-2">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                     </svg>
                     Зардлын жагсаалт
                   </h4>
-                  <div className="overflow-x-auto rounded-2xl border border-gray-100 bg-white">
+                  <div className="overflow-x-auto rounded-2xl border border-[color:var(--surface-border)] bg-white">
                     <table className="w-full text-sm">
-                      <thead className="bg-gray-50 border-b">
+                      <thead className="bg-[color:var(--surface-hover)] border-b">
                         <tr>
-                          <th className="px-4 py-3 text-left border-r  text-slate-700 dark:text-slate-300">№</th>
-                          <th className="px-4 py-3 text-center border-r  text-slate-700 dark:text-slate-300">Зардлын нэр</th>
-                          <th className="px-4 py-3 text-center border-r  text-slate-700 dark:text-slate-300">Төрөл</th>
-                          <th className="px-4 py-3 text-center border-r  text-slate-700 dark:text-slate-300">Тариф</th>
-                          <th className="px-4 py-3 text-center border-r  text-slate-700 dark:text-slate-300 w-24">Дүн</th>
+                          <th className="px-4 py-3 text-left border-r  text-[color:var(--panel-text)]">№</th>
+                          <th className="px-4 py-3 text-center border-r  text-[color:var(--panel-text)]">Зардлын нэр</th>
+                          <th className="px-4 py-3 text-center border-r  text-[color:var(--panel-text)]">Төрөл</th>
+                          <th className="px-4 py-3 text-center border-r  text-[color:var(--panel-text)]">Тариф</th>
+                          <th className="px-4 py-3 text-center border-r  text-[color:var(--panel-text)] w-24">Дүн</th>
                           <th className="px-4 py-3 text-center w-20"></th>
                         </tr>
                       </thead>
                       <tbody className="divide-y">
                         {preview.zardluud?.map((zardal: any, idx: number) => (
-                          <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-gray-800/50 transition-colors">
-                            <td className="px-4 py-3 border-r text-slate-900 dark:text-[var(--panel-text)]">{idx + 1}</td>
-                            <td className="px-4 py-3 border-r text-slate-900 dark:text-[var(--panel-text)] ">{zardal.ner || "-"}</td>
-                            <td className="px-4 py-3 border-r text-center text-slate-600 dark:text-slate-400">{zardal.turul || "-"}</td>
-                            <td className="px-4 py-3 border-r text-right text-slate-900 dark:text-[var(--panel-text)]">
+                          <tr key={idx} className="hover:bg-[color:var(--surface-hover)] transition-colors">
+                            <td className="px-4 py-3 border-r text-[color:var(--panel-text)] dark:text-[var(--panel-text)]">{idx + 1}</td>
+                            <td className="px-4 py-3 border-r text-[color:var(--panel-text)] dark:text-[var(--panel-text)] ">{zardal.ner || "-"}</td>
+                            <td className="px-4 py-3 border-r text-center text-[color:var(--muted-text)]">{zardal.turul || "-"}</td>
+                            <td className="px-4 py-3 border-r text-right text-[color:var(--panel-text)] dark:text-[var(--panel-text)]">
                               {formatNumber(zardal.tariff || 0)} {zardal.tariffUsgeer || ""}
                             </td>
-                            <td className="px-4 py-3 text-right border-r text-slate-900 dark:text-[var(--panel-text)]">
+                            <td className="px-4 py-3 text-right border-r text-[color:var(--panel-text)] dark:text-[var(--panel-text)]">
                               {formatNumber(zardal.dun || 0)} 
                             </td>
                             <td className="px-4 py-3"></td>
@@ -215,16 +215,16 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
                 <div className="rounded-xl p-5 bg-transparent">
                   <div className="space-y-3">
                     <div className="flex justify-between items-center text-sm">
-                      <span className="text-slate-700 dark:text-slate-300">Зардлын нийт дүн:</span>
-                      <span className=" text-slate-900 dark:text-[var(--panel-text)]">
+                      <span className="text-[color:var(--panel-text)]">Зардлын нийт дүн:</span>
+                      <span className=" text-[color:var(--panel-text)] dark:text-[var(--panel-text)]">
                         {formatNumber(preview.niitTulbur || preview.zardluud?.reduce((sum: number, z: any) => sum + (z.dun || 0), 0) || 0)} 
                       </span>
                     </div>
                    
-                    <div className="h-px bg-slate-300 dark:bg-slate-600"></div>
+                    <div className="h-px bg-[color:var(--panel)]"></div>
                     <div className="flex justify-between items-center">
-                      <span className="text-base  text-slate-800 dark:text-slate-200">Нийт төлбөр:</span>
-                      <span className="text-2xl  text-blue-600 dark:text-blue-400">
+                      <span className="text-base  text-[color:var(--panel-text)]">Нийт төлбөр:</span>
+                      <span className="text-2xl  text-theme dark:text-theme">
                         {formatNumber(preview.niitTulbur || preview.zardluud?.reduce((sum: number, z: any) => sum + (z.dun || 0), 0) || 0)} 
                       </span>
                     </div>
@@ -233,15 +233,15 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
 
                 {/* Dates */}
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="rounded-2xl p-4 border border-gray-200 bg-transparent">
-                    <span className="text-xs text-slate-600 dark:text-slate-400">Үүсгэсэн огноо</span>
-                    <p className="text-sm  text-slate-900 dark:text-[var(--panel-text)] mt-1">
+                  <div className="rounded-2xl p-4 border border-[color:var(--surface-border)] bg-transparent">
+                    <span className="text-xs text-[color:var(--muted-text)]">Үүсгэсэн огноо</span>
+                    <p className="text-sm  text-[color:var(--panel-text)] dark:text-[var(--panel-text)] mt-1">
                       {formatDate(preview.ognoo)}
                     </p>
                   </div>
-                  <div className="rounded-2xl p-4 border border-gray-200 bg-transparent">
-                    <span className="text-xs text-slate-600 dark:text-slate-400">Төлөх огноо</span>
-                    <p className="text-sm  text-slate-900 dark:text-[var(--panel-text)] mt-1">
+                  <div className="rounded-2xl p-4 border border-[color:var(--surface-border)] bg-transparent">
+                    <span className="text-xs text-[color:var(--muted-text)]">Төлөх огноо</span>
+                    <p className="text-sm  text-[color:var(--panel-text)] dark:text-[var(--panel-text)] mt-1">
                       {formatDate(preview.tulukhOgnoo)}
                     </p>
                   </div>
@@ -250,7 +250,7 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
             </div>
 
             {/* Footer */}
-            <div className="border-t border-gray-100 bg-gray-50 p-4 no-print rounded-b-3xl">
+            <div className="border-t border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] p-4 no-print rounded-b-3xl">
               <div className="flex justify-end gap-3">
                 <motion.button
                   type="button"

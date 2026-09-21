@@ -375,7 +375,7 @@ export default function LoginPage() {
                 >
                   <input
                     type="checkbox"
-                    className="accent-blue-600 w-4 h-4"
+                    className="accent-theme w-4 h-4"
                     checked={rememberMe}
                     onChange={(e) => namaigSana(e.target.checked)}
                     disabled={loading}

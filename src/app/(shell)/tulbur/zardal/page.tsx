@@ -59,10 +59,10 @@ export default function Tailan() {
       <LocalStyles />
       {/* Background decorative elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-br from-blue-400/20 to-purple-600/20 rounded-full blur-xl animate-pulse"></div>
-        <div className="absolute top-40 right-20 w-24 h-24 bg-gradient-to-br from-pink-400/20 to-orange-500/20 rounded-full blur-lg animate-bounce"></div>
-        <div className="absolute bottom-20 left-1/4 w-40 h-40 bg-gradient-to-br from-green-400/20 to-blue-500/20 rounded-full blur-2xl animate-pulse delay-1000"></div>
-        <div className="absolute bottom-40 right-1/3 w-28 h-28 bg-gradient-to-br from-yellow-400/20 to-red-500/20 rounded-full blur-xl animate-bounce delay-500"></div>
+        <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-br from-theme/20 to-purple-600/20 rounded-full blur-xl animate-pulse"></div>
+        <div className="absolute top-40 right-20 w-24 h-24 bg-gradient-to-br from-pink-400/20 to-warning/20 rounded-full blur-lg animate-bounce"></div>
+        <div className="absolute bottom-20 left-1/4 w-40 h-40 bg-gradient-to-br from-success/20 to-theme/20 rounded-full blur-2xl animate-pulse delay-1000"></div>
+        <div className="absolute bottom-40 right-1/3 w-28 h-28 bg-gradient-to-br from-warning/20 to-danger/20 rounded-full blur-xl animate-bounce delay-500"></div>
       </div>
 
       {/* Main content */}
@@ -74,34 +74,34 @@ export default function Tailan() {
         {/* Icon with animation */}
         <div className="relative">
           <div className="w-24 h-24 mx-auto mb-6 relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full animate-spin-slow"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-theme/20 to-purple-600 rounded-full animate-spin-slow"></div>
             <div className="absolute inset-2 bg-white rounded-full flex items-center justify-center">
-              <Rocket className="w-10 h-10 text-blue-600 animate-bounce" />
+              <Rocket className="w-10 h-10 text-theme animate-bounce" />
             </div>
             <div className="absolute -top-2 -right-2">
-              <Sparkles className="w-6 h-6 text-yellow-500 animate-pulse" />
+              <Sparkles className="w-6 h-6 text-warning animate-pulse" />
             </div>
           </div>
         </div>
 
         {/* Main heading */}
         <div className="space-y-4">
-          <h1 className="text-6xl py-14 md:text-7xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent animate-gradient-x">
+          <h1 className="text-6xl py-14 md:text-7xl font-black bg-gradient-to-r from-theme/20 via-purple-600 to-pink-600 bg-clip-text text-transparent animate-gradient-x">
             Тун удахгүй
           </h1>
-          <p className="text-xl md:text-2xl text-slate-600 ">
+          <p className="text-xl md:text-2xl text-[color:var(--muted-text)] ">
             Зардал авах
           </p>
         </div>
 
         <div className="mt-8 w-full max-w-md mx-auto">
-          <div className="flex items-center justify-between text-sm text-slate-600 mb-2">
+          <div className="flex items-center justify-between text-sm text-[color:var(--muted-text)] mb-2">
             <span>Хөгжүүлэлт</span>
             <span>65%</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+          <div className="w-full bg-[color:var(--panel)] rounded-full h-3 overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full animate-pulse"
+              className="h-full bg-gradient-to-r from-theme/20 to-purple-600 rounded-full animate-pulse"
               style={{ width: "65%" }}
             ></div>
           </div>
@@ -112,7 +112,7 @@ export default function Tailan() {
         {[...Array(20)].map((_, i) => (
           <div
             key={i}
-            className="absolute w-2 h-2 bg-blue-400/30 rounded-full animate-float"
+            className="absolute w-2 h-2 bg-theme/30 rounded-full animate-float"
             style={{
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,

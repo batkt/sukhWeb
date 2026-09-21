@@ -112,13 +112,13 @@ export default function PaymentLandingPage() {
         className="min-h-screen flex items-center justify-center p-4"
         style={{ background: "radial-gradient(circle at center, #1e293b 0%, #0f172a 100%)" }}
       >
-        <div className="w-full max-w-md p-8 rounded-3xl backdrop-blur-xl bg-slate-900/60 border border-red-500/20 shadow-2xl text-center space-y-6">
-          <div className="mx-auto w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center border border-red-500/20">
-            <AlertTriangle className="w-8 h-8 text-red-400" />
+        <div className="w-full max-w-md p-8 rounded-3xl backdrop-blur-xl bg-[color:var(--panel)] border border-danger/20 shadow-2xl text-center space-y-6">
+          <div className="mx-auto w-16 h-16 rounded-full bg-danger/10 flex items-center justify-center border border-danger/20">
+            <AlertTriangle className="w-8 h-8 text-danger" />
           </div>
           <div className="space-y-2">
             <h1 className="text-xl font-bold text-white">Алдаа гарлаа</h1>
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-[color:var(--muted-text)]">
               {error.message || "Нэхэмжлэх олоход алдаа гарлаа. Холбоос буруу эсвэл нэхэмжлэх устгагдсан байж магадгүй."}
             </p>
           </div>
@@ -141,24 +141,24 @@ export default function PaymentLandingPage() {
         style={{ background: "radial-gradient(circle at center, #1e293b 0%, #0f172a 100%)" }}
       >
         {/* Skeleton pulse loading */}
-        <div className="w-full max-w-lg rounded-3xl p-6 sm:p-8 backdrop-blur-xl bg-slate-900/60 border border-white/5 space-y-8 animate-pulse">
+        <div className="w-full max-w-lg rounded-3xl p-6 sm:p-8 backdrop-blur-xl bg-[color:var(--panel)] border border-white/5 space-y-8 animate-pulse">
           <div className="flex justify-between items-center">
-            <div className="h-6 w-28 bg-slate-800 rounded-lg" />
-            <div className="h-6 w-16 bg-slate-800 rounded-lg" />
+            <div className="h-6 w-28 bg-[color:var(--panel)] rounded-lg" />
+            <div className="h-6 w-16 bg-[color:var(--panel)] rounded-lg" />
           </div>
           <div className="space-y-4">
-            <div className="mx-auto h-12 w-48 bg-slate-800 rounded-xl" />
-            <div className="h-20 bg-slate-800/40 rounded-2xl" />
+            <div className="mx-auto h-12 w-48 bg-[color:var(--panel)] rounded-xl" />
+            <div className="h-20 bg-[color:var(--panel)] rounded-2xl" />
           </div>
           <div className="space-y-3">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="flex justify-between">
-                <div className="h-4 w-24 bg-slate-800 rounded" />
-                <div className="h-4 w-32 bg-slate-800 rounded" />
+                <div className="h-4 w-24 bg-[color:var(--panel)] rounded" />
+                <div className="h-4 w-32 bg-[color:var(--panel)] rounded" />
               </div>
             ))}
           </div>
-          <div className="h-24 bg-slate-800 rounded-2xl" />
+          <div className="h-24 bg-[color:var(--panel)] rounded-2xl" />
         </div>
       </div>
     );
@@ -166,11 +166,11 @@ export default function PaymentLandingPage() {
 
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-center p-4 font-sans selection:bg-blue-500/30 text-slate-100 relative overflow-x-hidden overflow-y-auto"
+      className="min-h-screen flex flex-col items-center justify-center p-4 font-sans selection:bg-theme/30 text-[color:var(--muted-text)] relative overflow-x-hidden overflow-y-auto"
       style={{ background: "radial-gradient(circle at top right, #1e1b4b 0%, #09090b 100%)" }}
     >
       {/* Dynamic background glow shapes (only rendered on desktop to avoid mobile rendering lag) */}
-      <span className="hidden sm:block pointer-events-none absolute -top-48 -left-48 w-96 h-96 rounded-full bg-blue-500/10 blur-[100px]" />
+      <span className="hidden sm:block pointer-events-none absolute -top-48 -left-48 w-96 h-96 rounded-full bg-theme/10 blur-[100px]" />
       <span className="hidden sm:block pointer-events-none absolute -bottom-48 -right-48 w-[450px] h-[450px] rounded-full bg-purple-500/10 blur-[120px]" />
 
       <div className="w-full max-w-lg relative z-10 my-8">
@@ -179,7 +179,7 @@ export default function PaymentLandingPage() {
         <div className="flex flex-col items-center gap-2 mb-6">
           <div className="flex items-center gap-2">
             <img src="/logo.png" alt="AMARHOME Logo" className="w-8 h-8 object-contain shrink-0" />
-            <span className="text-base text-slate-400 text-white">AMARHOME</span>
+            <span className="text-base text-[color:var(--muted-text)] text-white">AMARHOME</span>
           </div>
         </div>
 
@@ -191,22 +191,22 @@ export default function PaymentLandingPage() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="rounded-3xl p-6 sm:p-8 backdrop-blur-xl bg-slate-900/60 border border-emerald-500/20 shadow-2xl text-center space-y-6"
+              className="rounded-3xl p-6 sm:p-8 backdrop-blur-xl bg-[color:var(--panel)] border border-theme/20 shadow-2xl text-center space-y-6"
             >
-              <div className="mx-auto w-20 h-20 rounded-full bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 relative">
+              <div className="mx-auto w-20 h-20 rounded-full bg-theme/10 flex items-center justify-center border border-theme/20 relative">
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ delay: 0.15, type: "spring", stiffness: 200 }}
                 >
-                  <CheckCircle2 className="w-10 h-10 text-emerald-400" />
+                  <CheckCircle2 className="w-10 h-10 text-theme" />
                 </motion.div>
-                <span className="absolute inset-0 rounded-full bg-emerald-500/5 animate-ping" />
+                <span className="absolute inset-0 rounded-full bg-theme/5 animate-ping" />
               </div>
 
               <div className="space-y-2">
                 <h1 className="text-2xl font-bold text-white">Нэхэмжлэх төлөгдсөн</h1>
-                <p className="text-sm text-emerald-400 font-medium bg-emerald-500/10 px-3 py-1 rounded-full inline-block border border-emerald-500/15">
+                <p className="text-sm text-theme font-medium bg-theme/10 px-3 py-1 rounded-full inline-block border border-theme/15">
                   Төлбөр амжилттай баталгаажлаа
                 </p>
               </div>
@@ -214,31 +214,31 @@ export default function PaymentLandingPage() {
               {/* Receipt Summary */}
               <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 text-left space-y-3">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-4 text-sm py-1 border-b border-white/5">
-                  <span className="text-slate-400 shrink-0">Хүлээн авагч</span>
+                  <span className="text-[color:var(--muted-text)] shrink-0">Хүлээн авагч</span>
                   <span className="font-semibold text-white sm:text-right break-words sm:max-w-[65%]">
                     {invoice.baiguullagiinNer}
                   </span>
                 </div>
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-4 text-sm py-1 border-b border-white/5">
-                  <span className="text-slate-400 shrink-0">Төлөгч оршин суугч</span>
+                  <span className="text-[color:var(--muted-text)] shrink-0">Төлөгч оршин суугч</span>
                   <span className="font-semibold text-white sm:text-right break-words sm:max-w-[65%]">
                     {invoice.ner || "Тодорхойгүй"}
                   </span>
                 </div>
                 <div className="flex justify-between items-center gap-4 text-sm py-1 border-b border-white/5">
-                  <span className="text-slate-400 shrink-0">Тоот</span>
+                  <span className="text-[color:var(--muted-text)] shrink-0">Тоот</span>
                   <span className="font-semibold text-white text-right">
                     {invoice.toot ? `${invoice.toot} тоот` : "Тодорхойгүй"}
                   </span>
                 </div>
                 <div className="flex justify-between items-center gap-4 text-sm py-1 border-b border-white/5">
-                  <span className="text-slate-400 shrink-0">Нэхэмжлэхийн дугаар</span>
+                  <span className="text-[color:var(--muted-text)] shrink-0">Нэхэмжлэхийн дугаар</span>
                   <span className="font-semibold text-white text-right font-mono">
                     {invoice.nekhemjlekhiinDugaar}
                   </span>
                 </div>
                 <div className="flex justify-between items-center gap-4 text-sm py-1">
-                  <span className="text-slate-400 shrink-0">Төлсөн огноо</span>
+                  <span className="text-[color:var(--muted-text)] shrink-0">Төлсөн огноо</span>
                   <span className="font-semibold text-white text-right">
                     {formatDate(new Date().toISOString())}
                   </span>
@@ -246,15 +246,15 @@ export default function PaymentLandingPage() {
               </div>
 
               <div className="pt-2">
-                <div className="text-slate-500 text-xs py-2">
+                <div className="text-[color:var(--muted-text)] text-xs py-2">
                   Нийт төлсөн дүн:
                 </div>
-                <div className="text-3xl font-black text-white bg-slate-950/40 p-4 rounded-2xl border border-white/5">
+                <div className="text-3xl font-black text-white bg-[color:var(--panel)] p-4 rounded-2xl border border-white/5">
                   {formatAmount(Number(invoice.tulsunDun) || Number(invoice.niitTulbur))}
                 </div>
               </div>
 
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-[color:var(--muted-text)]">
                 Баримттай холбоотой лавлах зүйл байвал сөх-тэй холбогдоно уу.
               </p>
             </motion.div>
@@ -265,22 +265,22 @@ export default function PaymentLandingPage() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="rounded-3xl p-6 sm:p-8 backdrop-blur-xl bg-slate-900/60 border border-white/5 shadow-2xl space-y-6"
+              className="rounded-3xl p-6 sm:p-8 backdrop-blur-xl bg-[color:var(--panel)] border border-white/5 shadow-2xl space-y-6"
             >
               {/* Header section with amount */}
               <div className="text-center space-y-2 pb-2">
-                <span className="text-xs text-slate-400 uppercase tracking-widest">{actualIsPaid ? 'Төлсөн нийт дүн' : 'Төлөх нийт дүн'}</span>
+                <span className="text-xs text-[color:var(--muted-text)] uppercase tracking-widest">{actualIsPaid ? 'Төлсөн нийт дүн' : 'Төлөх нийт дүн'}</span>
                 <h2 className="text-4xl font-black text-white tracking-tight">
                   {formatAmount(displayAmount)}
                 </h2>
                 {actualIsPaid ? (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-theme/10 border border-theme/20 text-theme text-xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-theme" />
                     Төлбөр төлөгдсөн
                   </div>
                 ) : (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-warning/10 border border-warning/20 text-warning text-xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-warning animate-pulse" />
                     Төлбөр хүлээгдэж байна
                   </div>
                 )}
@@ -289,16 +289,16 @@ export default function PaymentLandingPage() {
               {/* Invoice breakdown details */}
               <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 text-xs sm:text-sm space-y-2.5">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-4">
-                  <span className="text-slate-400 flex items-center gap-1.5 shrink-0">
-                    <Building className="w-3.5 h-3.5 text-slate-500" /> СӨХ-ийн нэр
+                  <span className="text-[color:var(--muted-text)] flex items-center gap-1.5 shrink-0">
+                    <Building className="w-3.5 h-3.5 text-[color:var(--muted-text)]" /> СӨХ-ийн нэр
                   </span>
                   <span className="font-semibold text-white sm:text-right break-words sm:max-w-[65%]">
                     {invoice.baiguullagiinNer}
                   </span>
                 </div>
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-4">
-                  <span className="text-slate-400 flex items-center gap-1.5 shrink-0">
-                    <User className="w-3.5 h-3.5 text-slate-500" /> Оршин суугч
+                  <span className="text-[color:var(--muted-text)] flex items-center gap-1.5 shrink-0">
+                    <User className="w-3.5 h-3.5 text-[color:var(--muted-text)]" /> Оршин суугч
                   </span>
                   <span className="font-semibold text-white sm:text-right break-words sm:max-w-[65%]">
                     {invoice.ner || "Тодорхойгүй"}
@@ -306,8 +306,8 @@ export default function PaymentLandingPage() {
                 </div>
                 {invoice.toot && (
                   <div className="flex justify-between items-center gap-4">
-                    <span className="text-slate-400 flex items-center gap-1.5 shrink-0">
-                      <Hash className="w-3.5 h-3.5 text-slate-500" /> Тоот
+                    <span className="text-[color:var(--muted-text)] flex items-center gap-1.5 shrink-0">
+                      <Hash className="w-3.5 h-3.5 text-[color:var(--muted-text)]" /> Тоот
                     </span>
                     <span className="font-semibold text-white text-right">
                       {invoice.toot} тоот
@@ -315,8 +315,8 @@ export default function PaymentLandingPage() {
                   </div>
                 )}
                 <div className="flex justify-between items-center gap-4">
-                  <span className="text-slate-400 flex items-center gap-1.5 shrink-0">
-                    <Hash className="w-3.5 h-3.5 text-slate-500" /> Нэхэмжлэх №
+                  <span className="text-[color:var(--muted-text)] flex items-center gap-1.5 shrink-0">
+                    <Hash className="w-3.5 h-3.5 text-[color:var(--muted-text)]" /> Нэхэмжлэх №
                   </span>
                   <span className="font-semibold text-white text-right font-mono">
                     {invoice.nekhemjlekhiinDugaar}
@@ -324,8 +324,8 @@ export default function PaymentLandingPage() {
                 </div>
                 {invoice.ognoo && (
                   <div className="flex justify-between items-center gap-4">
-                    <span className="text-slate-400 flex items-center gap-1.5 shrink-0">
-                      <Calendar className="w-3.5 h-3.5 text-slate-500" /> Огноо
+                    <span className="text-[color:var(--muted-text)] flex items-center gap-1.5 shrink-0">
+                      <Calendar className="w-3.5 h-3.5 text-[color:var(--muted-text)]" /> Огноо
                     </span>
                     <span className="font-semibold text-white text-right">
                       {formatDate(invoice.ognoo)}
@@ -340,7 +340,7 @@ export default function PaymentLandingPage() {
                   onClick={() => setActiveTab("deeplink")}
                   className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 ${activeTab === "deeplink"
                     ? "bg-[#10b981] text-white shadow-lg shadow-[#10b981]/15"
-                    : "text-slate-400 hover:text-white"
+                    : "text-[color:var(--muted-text)] hover:text-white"
                     }`}
                 >
                   <Smartphone className="w-4 h-4" />
@@ -350,7 +350,7 @@ export default function PaymentLandingPage() {
                   onClick={() => setActiveTab("qrcode")}
                   className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 ${activeTab === "qrcode"
                     ? "bg-[#10b981] text-white shadow-lg shadow-[#10b981]/15"
-                    : "text-slate-400 hover:text-white"
+                    : "text-[color:var(--muted-text)] hover:text-white"
                     }`}
                 >
                   <QrCode className="w-4 h-4" />
@@ -363,7 +363,7 @@ export default function PaymentLandingPage() {
                 {activeTab === "deeplink" ? (
                   /* DEEP LINKS LIST (FOR MOBILE DIRECT LAUNCH) */
                   <div className="space-y-4">
-                    <div className="text-center py-1 text-slate-400 text-xs">
+                    <div className="text-center py-1 text-[color:var(--muted-text)] text-xs">
                       Та өөрийн ашигладаг банкны аппликейшнийг сонгон төлбөрөө төлнө үү.
                     </div>
                     {invoice.qpayUrls && invoice.qpayUrls.length > 0 ? (
@@ -374,7 +374,7 @@ export default function PaymentLandingPage() {
                             key={bank.name}
                             className="relative flex items-center gap-2.5 p-3 rounded-2xl bg-white/[0.02] hover:bg-white/[0.06] active:bg-white/[0.1] border border-white/5 hover:border-white/10 transition-all group overflow-hidden"
                           >
-                            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <div className="absolute inset-0 bg-gradient-to-r from-theme/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                             {bank.logo ? (
                               <img
                                 src={bank.logo}
@@ -385,26 +385,26 @@ export default function PaymentLandingPage() {
                                 }}
                               />
                             ) : (
-                              <div className="w-8 h-8 rounded-xl bg-slate-800 flex items-center justify-center font-bold text-xs shrink-0">
+                              <div className="w-8 h-8 rounded-xl bg-[color:var(--panel)] flex items-center justify-center font-bold text-xs shrink-0">
                                 {bank.name?.charAt(0)}
                               </div>
                             )}
                             <div className="flex-1 min-w-0">
-                              <div className="text-xs font-semibold text-white truncate group-hover:text-blue-400 transition-colors">
+                              <div className="text-xs font-semibold text-white truncate group-hover:text-theme transition-colors">
                                 {bank.description || bank.name}
                               </div>
-                              <span className="text-[9px] text-slate-500 block">
+                              <span className="text-[9px] text-[color:var(--muted-text)] block">
                                 Нээх
                               </span>
                             </div>
-                            <ArrowRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-white transition-colors" />
+                            <ArrowRight className="w-3.5 h-3.5 text-[color:var(--muted-text)] group-hover:text-white transition-colors" />
                           </a>
                         ))}
                       </div>
                     ) : (
                       <div className="flex flex-col items-center justify-center py-8 text-center space-y-2 bg-white/[0.02] border border-white/5 rounded-2xl">
-                        <AlertTriangle className="w-8 h-8 text-amber-400 opacity-60" />
-                        <div className="text-xs text-slate-400 px-4">
+                        <AlertTriangle className="w-8 h-8 text-warning opacity-60" />
+                        <div className="text-xs text-[color:var(--muted-text)] px-4">
                           Банкны апп холбоос олдсонгүй. Баруун талын &quot;QR Код&quot; сонголтыг ашиглан төлнө үү.
                         </div>
                       </div>
@@ -413,7 +413,7 @@ export default function PaymentLandingPage() {
                 ) : (
                   /* QR CODE DISPLAY (FOR SCANNING) */
                   <div className="flex flex-col items-center space-y-6 py-2">
-                    <div className="text-center text-slate-400 text-xs max-w-sm">
+                    <div className="text-center text-[color:var(--muted-text)] text-xs max-w-sm">
                       Гар утасныхаа банкны апп-ын QR уншуулагчаар доорх кодыг уншуулна уу.
                     </div>
 
@@ -449,9 +449,9 @@ export default function PaymentLandingPage() {
                         )}
                       </div>
                     ) : (
-                      <div className="w-44 h-44 rounded-3xl bg-slate-800/50 border border-slate-700/50 flex flex-col items-center justify-center gap-2">
-                        <AlertTriangle className="w-6 h-6 text-slate-500" />
-                        <span className="text-[10px] text-slate-400">QR код олдсонгүй</span>
+                      <div className="w-44 h-44 rounded-3xl bg-[color:var(--panel)] border border-[color:var(--surface-border)] flex flex-col items-center justify-center gap-2">
+                        <AlertTriangle className="w-6 h-6 text-[color:var(--muted-text)]" />
+                        <span className="text-[10px] text-[color:var(--muted-text)]">QR код олдсонгүй</span>
                       </div>
                     )}
                   </div>
@@ -459,16 +459,16 @@ export default function PaymentLandingPage() {
               </div>
 
               {/* Status footer spinner */}
-              <div className="flex items-center justify-center gap-2 text-[10px] text-slate-500 border-t border-white/5 pt-4">
-                <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping shrink-0" />
+              <div className="flex items-center justify-center gap-2 text-[10px] text-[color:var(--muted-text)] border-t border-white/5 pt-4">
+                <span className="w-2 h-2 rounded-full bg-theme animate-ping shrink-0" />
                 <span>Төлбөрийг автоматаар шалгаж байна...</span>
-                {isValidating && <RefreshCw className="w-3 h-3 animate-spin text-slate-600" />}
+                {isValidating && <RefreshCw className="w-3 h-3 animate-spin text-[color:var(--muted-text)]" />}
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        <p className="text-center text-[10px] text-slate-600 mt-6 tracking-wide">
+        <p className="text-center text-[10px] text-[color:var(--muted-text)] mt-6 tracking-wide">
           ЗЭВТАБС © Amarhome Төлбөрийн Систем
         </p>
       </div>

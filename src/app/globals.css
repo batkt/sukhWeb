@@ -354,6 +354,17 @@
   --color-border: var(--border);
   --color-primary: var(--primary);
   --color-theme: var(--theme);
+  /* Семантик өнгө — `bg-success`, `text-danger`, `border-warning/30` зэрэг
+     утилити эндээс автоматаар үүснэ (Tailwind v4).
+
+     Яагаад хэрэгтэй вэ: өмнө нь семантик токен БАЙХГҮЙ тул хуудсууд
+     `text-emerald-600`, `bg-amber-50` гэх мэт хатуу өнгө бичихээс өөр
+     аргагүй байв. Улмаар сэдэв сольсон ч тэдгээр нь хөдөлдөггүй, мөн
+     брэндийн ногоон ба «амжилттай» гэсэн ногоон хоёр ялгагдахгүй болсон. */
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
   --font-sans: "Segoe UI", sans-serif;
   --font-mono: "Segoe UI", sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
@@ -463,6 +474,13 @@
   --panel-text: #e9fff6;
 
   --muted-text: #8fbda9;
+
+  /* Семантик өнгө (харанхуй) — бараан гадаргуу дээр 600-шээ хэт бүдэг тул
+     400-шээ болгож тодруулна. */
+  --success: #34d399; /* emerald-400 */
+  --danger: #f87171; /* red-400 */
+  --warning: #fbbf24; /* amber-400 */
+  --info: #60a5fa; /* blue-400 */
 }
 @layer base {
   html {
@@ -561,8 +579,23 @@
      while this token stayed sky blue, so anything driven by --theme came out
      the wrong colour. One green, defined once. */
   --theme: #059669;
+
+  /* Хоёрдогч текст. Цайвар горимд ХААНА Ч тодорхойлогдоогүй байсан тул
+     `text-[color:var(--muted-text)]` нь өнгөгүй гарч, зөвхөн харанхуйд
+     ажилладаг байв. */
+  --muted-text: #64748b;
+
+  /* ── Семантик өнгө (цайвар) ──────────────────────────────────────────
+     Эдгээр нь сэдэвтэй ХАМТ хөдлөхгүй — зориуд. «Төлсөн» шошго нь
+     сэдвийг улаан болгосноос болж улаан болох ёсгүй. Брэнд (`--theme`)
+     ба семантик хоёрыг ялгаж барих нь гол зорилго. */
+  --success: #059669; /* emerald-600 */
+  --danger: #dc2626; /* red-600 */
+  --warning: #d97706; /* amber-600 */
+  --info: #2563eb; /* blue-600 */
+
   --panel-text: #0f172a;
-  --table-hover-bg: color-mix(in oklch, #027725, transparent 90%);
+  --table-hover-bg: color-mix(in oklch, var(--theme), transparent 90%);
 }
 
 /* White-gray */
@@ -631,7 +664,7 @@
   --surface-border: rgba(15, 23, 42, 0.1);
   --surface-hover: rgba(15, 23, 42, 0.05);
   --panel-text: #0f172a;
-  --table-hover-bg: color-mix(in oklch, #94a3b8, transparent 90%);
+  --table-hover-bg: color-mix(in oklch, var(--theme), transparent 90%);
 }
 
 /* Dark-gray */
@@ -701,7 +734,7 @@
   --surface-border: rgba(255, 255, 255, 0.12);
   --surface-hover: rgba(255, 255, 255, 0.06);
   --panel-text: #e5e7eb;
-  --table-hover-bg: color-mix(in oklch, #4a5568, transparent 90%);
+  --table-hover-bg: color-mix(in oklch, var(--theme), transparent 90%);
 }
 
 /* Dark-green */
@@ -773,7 +806,7 @@
   --glass-highlight: rgba(167, 243, 208, 0.18);
   --glass-shadow: rgba(6, 24, 18, 0.28);
   --panel-text: #e6fffa;
-  --table-hover-bg: color-mix(in oklch, #2f7c57, transparent 90%);
+  --table-hover-bg: color-mix(in oklch, var(--theme), transparent 90%);
 
   /* Өмнө нь гадаргууг тодорхойлдоггүй тул `.dark`-ийн navy-хар
      (#0f172a) уншигдаж, «ногоон» сэдэв ногоон биш харагддаг байв. */
@@ -1039,7 +1072,7 @@ textarea:-moz-autofill:focus {
   --glass-border: rgba(255, 255, 255, 0.16);
   --glass-highlight: rgba(255, 255, 255, 0.18);
   --glass-shadow: rgba(0, 0, 0, 0.35);
-  --table-hover-bg: color-mix(in oklch, #4b5563, transparent 90%);
+  --table-hover-bg: color-mix(in oklch, var(--theme), transparent 90%);
 }
 
 /* New theme: blue gradient */
@@ -1051,15 +1084,21 @@ textarea:-moz-autofill:focus {
     #799db4 60%,
     #a8daf9 100%
   );
+  --theme: #2563eb; /* blue-600 — ЦЭНХЭР сэдвийн брэнд өнгө */
+  --theme-hue: 221;
+  --theme-sat: 83%;
   --surface-bg: #ffffff; /* light surfaces */
+  --panel: #f5f8ff; /* картын градиентийн 2 дахь өнгө */
   --surface-border: rgba(15, 23, 42, 0.12);
+  --surface-hover: rgba(37, 99, 235, 0.06);
   --panel-text: #0f172a; /* slate-900 */
+  --muted-text: #64748b;
   --glass-tint: rgba(255, 255, 255, 0.9);
   --glass-tint-2: rgba(255, 255, 255, 0.82);
   --glass-border: rgba(15, 23, 42, 0.08);
   --glass-highlight: rgba(255, 255, 255, 0.6);
   --glass-shadow: rgba(14, 30, 60, 0.12);
-  --table-hover-bg: color-mix(in oklch, #3b82f6, transparent 90%);
+  --table-hover-bg: color-mix(in oklch, var(--theme), transparent 90%);
 }
 
 [data-theme="blue-gradient"][data-mode="dark"] {
@@ -1083,7 +1122,7 @@ textarea:-moz-autofill:focus {
   --glass-border: rgba(15, 23, 42, 0.08);
   --glass-highlight: rgba(255, 255, 255, 0.6);
   --glass-shadow: rgba(14, 30, 60, 0.08);
-  --table-hover-bg: color-mix(in oklch, #10b981, transparent 90%);
+  --table-hover-bg: color-mix(in oklch, var(--theme), transparent 90%);
 }
 
 /* Ensure page reads the variable background */
@@ -1190,9 +1229,13 @@ html[data-mode="dark"]:not([data-theme]),
 
 [data-theme="blue-gradient"][data-mode="dark"] {
   --gradient-bg: linear-gradient(135deg, #0b1220 0%, #0f1730 45%, #111a35 100%);
+  --theme: #60a5fa; /* blue-400 — бараан дэвсгэр дээр тод */
   --surface-bg: #0f1424;
+  --panel: #161d33;
   --surface-border: rgba(219, 234, 254, 0.18);
+  --surface-hover: rgba(96, 165, 250, 0.08);
   --panel-text: #e6efff;
+  --muted-text: #9db2d4;
   --glass-tint: rgba(9, 14, 28, 0.5);
   --glass-tint-2: rgba(12, 18, 34, 0.32);
   --glass-border: rgba(219, 234, 254, 0.22);
@@ -1200,7 +1243,30 @@ html[data-mode="dark"]:not([data-theme]),
   --glass-shadow: rgba(2, 6, 23, 0.42);
 }
 
+/* ── Өнгөлөг (colorful) ─────────────────────────────────────────────────
+   Цайвар горимд блок огт БАЙХГҮЙ байсан тул «Өнгөлөг» сонгоход `:root`-ийн
+   ногоон хэвээр үлдэж, сэдэв ямар ч нөлөө үзүүлдэггүй байв. Сонгогчийн
+   дүрсний эхний өнгө (#806bdf) нь энэ сэдвийн брэнд өнгө. */
+[data-theme="colorful"] {
+  --theme: #6d4fe0; /* violet — гадаргуу цагаан тул 500-гаас бараан */
+  --theme-hue: 252;
+  --theme-sat: 71%;
+  --surface-bg: #ffffff;
+  --panel: #faf8ff;
+  --surface-border: rgba(15, 23, 42, 0.12);
+  --surface-hover: rgba(109, 79, 224, 0.06);
+  --panel-text: #0f172a;
+  --muted-text: #6b7280;
+  --table-hover-bg: color-mix(in oklch, var(--theme), transparent 90%);
+}
+
 [data-theme="colorful"][data-mode="dark"] {
+  --theme: #a78bfa; /* violet-400 — бараан дэвсгэр дээр тод */
+  --panel: #1b1b3a;
+  --surface-hover: rgba(167, 139, 250, 0.08);
+  --muted-text: #a9a9d4;
+  --table-hover-bg: color-mix(in oklch, var(--theme), transparent 88%);
+
   /* Keep the same colorful character, but on a deep indigo base */
   --gradient-bg:
     radial-gradient(
@@ -3661,6 +3727,17 @@ body .mantine-Month-weekday {
     #9fd3c0 55%,
     #0f1730 100%
   );
+  /* Брэндийн өнгө — сэдэв тус бүр ӨӨРИЙНХИЙГ зарлана. Өмнө нь гурвуулаа
+     `:root`-ийн ногооныг өвлөдөг тул сэдэв солих нь товч/табны өнгийг
+     хөдөлгөдөггүй байв. */
+  --theme: #059669; /* emerald-600 */
+  /* Өнгөний ТӨН — хүснэгтийн HSL токенууд (`--zt-*`) эндээс бүтнэ.
+     `--theme` нь hex тул `hsl(...)`-д шууд тавигдахгүй, иймд hue/sat-ыг
+     тусад нь зарлана. Сэдэв тус бүр зөвхөн ЭНЭ хоёрыг дарж бичихэд
+     хүснэгт бүхэлдээ шинэ өнгөтэй болно. */
+  --theme-hue: 161;
+  --theme-sat: 94%;
+
   /* Light surfaces + readable dark text */
   --surface-bg: #ffffff; /* remove yellow tint */
   --panel: #f4faf7; /* картын градиентийн 2 дахь өнгө */
@@ -3852,6 +3929,8 @@ body .mantine-Month-weekday {
      мэдрэмж алга болдог байв. Мөн гадаргуу нь #0e1814 — ногоон хэлтэй ч
      бараг хар. Гурвуулангийг эмералд руу хазайсан бараан болгов. */
   --gradient-bg: linear-gradient(135deg, #061a13 0%, #092219 48%, #0c2a1f 100%);
+  /* Бараан гадаргуу дээр emerald-600 бүдгэрдэг тул 400-шээ болгоно. */
+  --theme: #34d399; /* emerald-400 */
   --surface-bg: #0b241a; /* карт/панелийн дэвсгэр — ногоон бараан */
   --panel: #0f3024; /* картын градиентийн 2 дахь өнгө (өргөгдсөн гадаргуу) */
   --surface-border: rgba(52, 211, 153, 0.18);
@@ -6563,28 +6642,32 @@ body,
 :root {
   --zt-card: 0 0% 100%;
   --zt-fg: 221 39% 11%;
-  --zt-muted: 152 20% 95%;
-  --zt-muted-fg: 158 8% 42%;
+  /* Доорх бүх өнгө сэдвийн төнөөс бүтнэ — өмнө нь ногоон руу хатуу
+     бичигдсэн тул сэдэв солиход хүснэгт ногоон хэвээр үлддэг байв. */
+  --zt-muted: var(--theme-hue) 20% 95%;
+  --zt-muted-fg: var(--theme-hue) 8% 42%;
   /* Картын хүрээ ГАНЦ болсон тул 89% гэрэлтэй өнгө цагаан дэвсгэр дээр бараг
      үл мэдэгдэх болов — нэг хүрээ тод харагдахаар бараандуулав. */
-  --zt-border: 150 12% 82%;
-  --zt-input: 152 15% 85%;
-  --zt-primary: 161 94% 30%; /* green-600 #059669 */
+  --zt-border: var(--theme-hue) 12% 82%;
+  --zt-input: var(--theme-hue) 15% 85%;
+  --zt-primary: var(--theme-hue) var(--theme-sat) 30%;
   --zt-primary-fg: 0 0% 100%;
-  --zt-accent: 152 60% 95%;
+  --zt-accent: var(--theme-hue) 60% 95%;
+  /* Устгах үйлдэл нь СЕМАНТИК — сэдвээс хамаарахгүй, улаан хэвээр. */
   --zt-destructive: 0 84% 60%;
 }
 
 .dark {
   --zt-card: 215 28% 17%; /* gray-800 #1f2937 */
   --zt-fg: 210 20% 98%;
-  --zt-muted: 217 19% 27%; /* gray-700 */
-  --zt-muted-fg: 218 11% 65%; /* gray-400 */
-  --zt-border: 217 19% 27%;
-  --zt-input: 217 19% 31%;
-  --zt-primary: 160 84% 39%; /* green-500 #10B981 */
+  --zt-muted: var(--theme-hue) 19% 27%;
+  --zt-muted-fg: var(--theme-hue) 11% 65%;
+  --zt-border: var(--theme-hue) 19% 27%;
+  --zt-input: var(--theme-hue) 19% 31%;
+  --zt-primary: var(--theme-hue) 84% 45%;
   --zt-primary-fg: 0 0% 100%;
-  --zt-accent: 160 45% 18%;
+  --zt-accent: var(--theme-hue) 45% 18%;
+  /* Устгах үйлдэл нь СЕМАНТИК — сэдвээс хамаарахгүй. */
   --zt-destructive: 0 72% 51%;
 }
 

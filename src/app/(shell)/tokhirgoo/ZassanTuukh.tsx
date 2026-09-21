@@ -81,7 +81,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
   const renderValue = (field: string, rawValue: any, type?: string) => {
     const value = getParsedValue(rawValue);
     if (value === null || value === undefined || value === "") {
-      return <span className="text-gray-500 italic opacity-50">(хоосон)</span>;
+      return <span className="text-[color:var(--muted-text)] italic opacity-50">(хоосон)</span>;
     }
 
     if (field === "zardluud" && Array.isArray(value)) {
@@ -98,11 +98,11 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
             </thead>
             <tbody>
               {value.map((item: any, idx) => (
-                <tr key={idx} className="hover:bg-blue-500/5">
+                <tr key={idx} className="hover:bg-theme/5">
                   <td className="p-1 border-b border-[color:var(--surface-border)] text-left truncate max-w-[80px]">{item.ner || "-"}</td>
                   <td className="p-1 border-b border-[color:var(--surface-border)] text-center">{item.turul || "-"}</td>
                   <td className="p-1 border-b border-[color:var(--surface-border)] text-right">{formatNumber(item.turul === "Дурын" ? item.dun : item.tariff)}</td>
-                  <td className="p-1 border-b border-[color:var(--surface-border)] text-right text-blue-500">{formatNumber(item.tulukhDun)}</td>
+                  <td className="p-1 border-b border-[color:var(--surface-border)] text-right text-theme">{formatNumber(item.tulukhDun)}</td>
                 </tr>
               ))}
             </tbody>
@@ -123,7 +123,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
             </thead>
             <tbody>
               {value.map((item: any, idx) => (
-                <tr key={idx} className="hover:bg-blue-500/5">
+                <tr key={idx} className="hover:bg-theme/5">
                   <td className="p-1 border-b border-[color:var(--surface-border)] text-left">{item.ner || "-"}</td>
                   <td className="p-1 border-b border-[color:var(--surface-border)] text-center">{typeof item.utga === "number" ? formatNumber(item.utga) : String(item.utga || "-")}</td>
                 </tr>
@@ -147,12 +147,12 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
             </thead>
             <tbody>
               {value.map((item: any, idx) => (
-                <tr key={idx} className="hover:bg-blue-500/5">
+                <tr key={idx} className="hover:bg-theme/5">
                   <td className="p-1 border-b border-[color:var(--surface-border)] text-center">
                     {item.ognoonuud ? `${moment(item.ognoonuud[0]).format("MM-DD")} ~ ${moment(item.ognoonuud[1]).format("MM-DD")}` : "-"}
                   </td>
                   <td className="p-1 border-b border-[color:var(--surface-border)] text-center">{item.khungulukhKhuvi}%</td>
-                  <td className="p-1 border-b border-[color:var(--surface-border)] text-right text-green-500">{formatNumber(item.khungulultiinDun)}</td>
+                  <td className="p-1 border-b border-[color:var(--surface-border)] text-right text-theme">{formatNumber(item.khungulultiinDun)}</td>
                 </tr>
               ))}
             </tbody>
@@ -298,7 +298,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                 </thead>
                 <tbody className="divide-y divide-[color:var(--surface-border)]">
                   {normalizedChanges.length === 0 ? (
-                    <tr><td colSpan={3} className="py-8 text-center text-gray-500 italic">Өөрчлөлт олдсонгүй</td></tr>
+                    <tr><td colSpan={3} className="py-8 text-center text-[color:var(--muted-text)] italic">Өөрчлөлт олдсонгүй</td></tr>
                   ) : (
                     normalizedChanges.map((change, idx) => (
                       <tr key={change.id || idx}>
@@ -320,7 +320,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
         </div>
 
         <div className="px-6 py-4 border-t border-[color:var(--surface-border)] flex items-center justify-end">
-           <button onClick={onClose} className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors shadow-sm text-sm">Хаах</button>
+           <button onClick={onClose} className="px-6 py-2 bg-theme hover:bg-theme text-white font-bold rounded-lg transition-colors shadow-sm text-sm">Хаах</button>
         </div>
       </div>
     </div>,
@@ -492,7 +492,7 @@ export default function ZassanTuukh({ token, baiguullaga }: Props) {
           {/* Header */}
           <div className="flex items-center justify-between pb-4 border-b border-[color:var(--surface-border)]">
             <div className="flex items-center gap-3">
-              <Edit className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <Edit className="w-5 h-5 text-theme dark:text-theme" />
               <h2 className="text-xl text-[color:var(--panel-text)]">
                 {t("Зассан түүх")}
               </h2>
@@ -514,7 +514,7 @@ export default function ZassanTuukh({ token, baiguullaga }: Props) {
                 classNames={{
                   root: "!h-full !w-full",
                   input:
-                    "text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
+                    "text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
                 }}
               />
             </div>
@@ -584,7 +584,7 @@ export default function ZassanTuukh({ token, baiguullaga }: Props) {
                     label: "Зассан ажилтан",
                     align: "center",
                     render: (value: any) => (
-                      <span className="text-gray-500 font-medium">{value}</span>
+                      <span className="text-[color:var(--muted-text)] font-medium">{value}</span>
                     )
                   },
                   {
@@ -607,10 +607,10 @@ export default function ZassanTuukh({ token, baiguullaga }: Props) {
                           e.stopPropagation();
                           handleViewDetails(record);
                         }}
-                        className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors relative z-10"
+                        className="p-2 hover:bg-theme/10 dark:hover:bg-theme/20 rounded-full transition-colors relative z-10"
                         title="Дэлгэрэнгүй үзэх"
                       >
-                        <Eye className="w-4 h-4 text-blue-600 pointer-events-none" />
+                        <Eye className="w-4 h-4 text-theme pointer-events-none" />
                       </button>
                     ),
                   },

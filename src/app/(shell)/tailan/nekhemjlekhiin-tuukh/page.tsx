@@ -70,11 +70,11 @@ const TUROL_NER: Record<string, string> = {
 
 const TUROL_ANGI: Record<string, string> = {
   invoice:
-    "bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 border-blue-300 dark:border-blue-700",
+    "bg-theme/10 dark:bg-theme/60 text-theme dark:text-theme border-theme/30 dark:border-theme",
   receivable:
-    "bg-amber-100 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 border-amber-300 dark:border-amber-700",
+    "bg-warning/10 text-warning border-warning/30",
   payment:
-    "bg-emerald-100 dark:bg-emerald-900/60 text-emerald-900 dark:text-emerald-200 border-emerald-300 dark:border-emerald-700",
+    "bg-success/10 dark:bg-success/60 text-success dark:text-success border-success/30 dark:border-success",
   khungulult:
     "bg-purple-100 dark:bg-purple-900/60 text-purple-900 dark:text-purple-200 border-purple-300 dark:border-purple-700",
 };
@@ -360,9 +360,9 @@ export default function NekhemjlekhiinTuukhPage() {
           <span
             className={
               item.type === "payment"
-                ? "font-medium text-teal-600 dark:text-teal-400"
+                ? "font-medium text-theme dark:text-theme"
                 : item.type === "khungulult"
-                  ? "font-medium text-emerald-600 dark:text-emerald-400"
+                  ? "font-medium text-theme dark:text-theme"
                   : undefined
             }
           >
@@ -376,7 +376,7 @@ export default function NekhemjlekhiinTuukhPage() {
         key: "khungulult",
         align: "right",
         render: (_: any, item: any) => (
-          <span className="font-medium text-emerald-600 dark:text-emerald-400">
+          <span className="font-medium text-theme dark:text-theme">
             {item.khungulult || item.type === "khungulult"
               ? `${formatNumber(item.khungulult || item.tulbur)}₮`
               : "—"}
@@ -402,7 +402,7 @@ export default function NekhemjlekhiinTuukhPage() {
                 ? "badge-paid"
                 : v === "Төлөөгүй"
                   ? "badge-unpaid"
-                  : "bg-yellow-100 text-yellow-800"
+                  : "bg-warning/10 text-warning"
             }`}
           >
             {v}
@@ -420,7 +420,7 @@ export default function NekhemjlekhiinTuukhPage() {
 
       {/* Print-only Header */}
       <div className="print-only mb-6">
-        <div className="flex justify-between items-start border-b-2 border-gray-800 pb-4">
+        <div className="flex justify-between items-start border-b-2 border-[color:var(--surface-border)] pb-4">
           <div>
             <h1 className="text-2xl font-bold uppercase">Нэхэмжлэхийн түүх тайлан</h1>
             <p className="text-sm mt-1">{baiguullaga?.ner || "Байгууллагын нэр"}</p>
@@ -434,9 +434,9 @@ export default function NekhemjlekhiinTuukhPage() {
           </div>
         </div>
         
-        <div className="mt-6 border p-4 rounded bg-gray-50 flex justify-between items-center">
-          <p className="font-semibold text-gray-700">НИЙТ ТӨЛБӨР:</p>
-          <p className="text-2xl font-bold text-blue-700">{formatNumber(totalTulbur)} </p>
+        <div className="mt-6 border p-4 rounded bg-[color:var(--surface-hover)] flex justify-between items-center">
+          <p className="font-semibold text-[color:var(--panel-text)]">НИЙТ ТӨЛБӨР:</p>
+          <p className="text-2xl font-bold text-theme">{formatNumber(totalTulbur)} </p>
         </div>
       </div>
       <div className="flex justify-between items-center mb-3 no-print">
@@ -446,14 +446,14 @@ export default function NekhemjlekhiinTuukhPage() {
             onClick={exportToExcel}
             className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
           >
-            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            <FileSpreadsheet className="w-4 h-4 text-theme" />
             Excel татах
           </button>
 {/* <button
             onClick={handlePrint}
             className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
           >
-            <Printer className="w-4 h-4 text-blue-600" />
+            <Printer className="w-4 h-4 text-theme" />
             Хэвлэх
           </button> */}
         </div>
@@ -593,7 +593,7 @@ export default function NekhemjlekhiinTuukhPage() {
         </div>
       </form>
 
-      {error && <div className="text-red-500 mb-4">Алдаа: {error}</div>}
+      {error && <div className="text-danger mb-4">Алдаа: {error}</div>}
 
       {/* Дүнгийн хураангуй */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
@@ -602,19 +602,19 @@ export default function NekhemjlekhiinTuukhPage() {
             label: "Нийт нэхэмжилсэн",
             utga: dungiinKhuraangui.nekhemjilsen,
             tailbar: "Нэхэмжлэх + авлага",
-            angi: "text-blue-600 dark:text-blue-400",
+            angi: "text-theme dark:text-theme",
           },
           {
             label: "Нийт хөнгөлөлт",
             utga: dungiinKhuraangui.khungulult,
             tailbar: "Бүртгэгдсэн хөнгөлөлт",
-            angi: "text-emerald-600 dark:text-emerald-400",
+            angi: "text-theme dark:text-theme",
           },
           {
             label: "Төлсөн дүн",
             utga: dungiinKhuraangui.tulsun,
             tailbar: "Бүртгэгдсэн төлөлт",
-            angi: "text-teal-600 dark:text-teal-400",
+            angi: "text-theme dark:text-theme",
           },
           {
             label: "Нийт үлдэгдэл",
@@ -622,8 +622,8 @@ export default function NekhemjlekhiinTuukhPage() {
             tailbar: "Нэхэмжилсэн − хөнгөлөлт − төлсөн",
             angi:
               dungiinKhuraangui.uldegdel > 0
-                ? "text-rose-600 dark:text-rose-400"
-                : "text-emerald-600 dark:text-emerald-400",
+                ? "text-danger"
+                : "text-success dark:text-success",
           },
         ].map((k) => (
           <div
@@ -669,13 +669,13 @@ export default function NekhemjlekhiinTuukhPage() {
               </Table.Summary.Cell>
               <Table.Summary.Cell
                 align="right"
-                className="whitespace-nowrap text-emerald-600 dark:text-emerald-400"
+                className="whitespace-nowrap text-theme dark:text-theme"
               >
                 {formatNumber(dungiinKhuraangui.khungulult)}₮
               </Table.Summary.Cell>
               <Table.Summary.Cell
                 align="right"
-                className="whitespace-nowrap text-rose-600 dark:text-rose-400"
+                className="whitespace-nowrap text-danger"
               >
                 {formatNumber(dungiinKhuraangui.uldegdel)}₮
               </Table.Summary.Cell>

@@ -23,8 +23,7 @@ import dayjs from "dayjs";
 import useModalHotkeys from "@/lib/useModalHotkeys";
 import uilchilgee from "@/lib/uilchilgee";
 import { useAuth } from "@/lib/useAuth";
-import { MonthPickerInput } from "@/components/ui/MonthPickerInput";
-import { DatePickerInput } from "@/components/ui/DatePickerInput";
+import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { toast } from "sonner";
 import Table from "@/components/ui/table";
 import type { ColumnsType } from "@/components/ui/table";
@@ -886,7 +885,7 @@ export default function HongololtTool({
         render: (v: any) => (
           <span
             className={`tabular-nums whitespace-nowrap ${
-              (v || 0) > 0 ? "text-red-500 dark:text-red-400" : "opacity-70"
+              (v || 0) > 0 ? "text-danger" : "opacity-70"
             }`}
           >
             {fmt(v || 0)}₮
@@ -903,7 +902,7 @@ export default function HongololtTool({
           const isTarget = selectMode === "all" || selectedIds.has(r._id);
           const discountDun = computeDiscount(r);
           return isTarget && discountDun > 0 ? (
-            <span className="font-medium tabular-nums whitespace-nowrap text-emerald-600 dark:text-emerald-400">
+            <span className="font-medium tabular-nums whitespace-nowrap text-theme dark:text-theme">
               -{fmt(discountDun)}₮
             </span>
           ) : (
@@ -962,7 +961,7 @@ export default function HongololtTool({
         width: 70,
         align: "center" as const,
         render: (v: any) => (
-          <span className="font-semibold text-slate-700 dark:text-slate-200">
+          <span className="font-semibold text-[color:var(--panel-text)]">
             {v || "—"}
           </span>
         ),
@@ -1006,7 +1005,7 @@ export default function HongololtTool({
         width: 110,
         align: "right" as const,
         render: (v: any) => (
-          <span className="tabular-nums whitespace-nowrap font-semibold text-emerald-600 dark:text-emerald-400">
+          <span className="tabular-nums whitespace-nowrap font-semibold text-theme dark:text-theme">
             {fmt2(Math.abs(v || 0))}
           </span>
         ),
@@ -1030,7 +1029,7 @@ export default function HongololtTool({
         width: 110,
         align: "center" as const,
         render: (v: any) => (
-          <span className="text-xs text-slate-600 dark:text-slate-300">
+          <span className="text-xs text-[color:var(--muted-text)]">
             {v || "CAdmin"}
           </span>
         ),
@@ -1042,7 +1041,7 @@ export default function HongololtTool({
         width: 90,
         align: "center" as const,
         render: (v: any) => (
-          <span className="text-xs text-slate-500 dark:text-slate-400">
+          <span className="text-xs text-[color:var(--muted-text)]">
             {v || "-"}
           </span>
         ),
@@ -1060,17 +1059,17 @@ export default function HongololtTool({
                 // TODO: Edit discount modal
                 toast.info("Засах функц удахгүй нэмэгдэнэ");
               }}
-              className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-blue-600 transition-colors hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/30"
+              className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-theme transition-colors hover:bg-theme/10 dark:text-theme dark:hover:bg-theme/30"
               title="Засах"
             >
               <Edit2 className="h-3.5 w-3.5" />
               Засах
             </button>
-            <span className="text-slate-300 dark:text-slate-600">|</span>
+            <span className="text-[color:var(--muted-text)]">|</span>
             <button
               type="button"
               onClick={() => handleDeleteDiscount(h)}
-              className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-red-500 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30"
+              className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-danger transition-colors hover:bg-danger/10"
               title="Устгах"
             >
               <Trash2 className="h-3.5 w-3.5" />
@@ -1105,8 +1104,8 @@ export default function HongololtTool({
             type="button"
             onClick={() => setActiveTab(id)}
             className={`flex items-center gap-1.5 px-4 py-1.5 text-xs font-medium rounded-xl transition-all ${activeTab === id
-              ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-              : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+              ? "bg-theme/15 text-theme dark:text-theme"
+              : "text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)]"
               }`}
           >
             <Icon className="w-3.5 h-3.5" />
@@ -1119,13 +1118,13 @@ export default function HongololtTool({
       {activeTab === "oruulakh" && (
         <div className="flex flex-1 min-h-0 overflow-hidden gap-4 lg:gap-6 pt-3 px-2">
           {/* Left panel */}
-          <div className="w-80 lg:w-[350px] xl:w-[380px] shrink-0 flex flex-col gap-4 p-5 rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/30 overflow-y-auto">
+          <div className="w-80 lg:w-[350px] xl:w-[380px] shrink-0 flex flex-col gap-4 p-5 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] overflow-y-auto">
             {/* Scope selector */}
             <div>
-              <label className="block text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
+              <label className="block text-[11px] font-medium text-[color:var(--muted-text)] uppercase tracking-wide mb-1.5">
                 Хамрах хүрээ
               </label>
-              <div className="flex rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+              <div className="flex rounded-xl overflow-hidden border border-[color:var(--surface-border)]">
                 {(
                   [
                     { v: "all", label: "Бүгд" },
@@ -1137,8 +1136,8 @@ export default function HongololtTool({
                     type="button"
                     onClick={() => setSelectMode(v)}
                     className={`flex-1 py-1.5 text-xs font-medium transition-all ${selectMode === v
-                      ? "bg-emerald-500 text-white"
-                      : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      ? "bg-theme text-white"
+                      : "text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)]"
                       }`}
                   >
                     {label}
@@ -1149,13 +1148,13 @@ export default function HongololtTool({
 
             {/* Орц — барилгын тохиргооноос */}
             <div className="flex items-center gap-2">
-              <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide shrink-0 w-16">
+              <label className="text-[11px] font-medium text-[color:var(--muted-text)] uppercase tracking-wide shrink-0 w-16">
                 Орц :
               </label>
               <select
                 value={orts}
                 onChange={(e) => setOrts(e.target.value)}
-                className="flex-1 px-3 py-1.5 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="flex-1 px-3 py-1.5 text-xs rounded-xl border border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] dark:text-white focus:outline-none focus:ring-2 focus:ring-theme"
               >
                 <option value="">Бүх орц</option>
                 {ortsSongoltuud.map((o: string) => (
@@ -1168,13 +1167,13 @@ export default function HongololtTool({
 
             {/* Давхар */}
             <div className="flex items-center gap-2">
-              <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide shrink-0 w-16">
+              <label className="text-[11px] font-medium text-[color:var(--muted-text)] uppercase tracking-wide shrink-0 w-16">
                 Давхар :
               </label>
               <select
                 value={davkhar}
                 onChange={(e) => setDavkhar(e.target.value)}
-                className="flex-1 px-3 py-1.5 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="flex-1 px-3 py-1.5 text-xs rounded-xl border border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] dark:text-white focus:outline-none focus:ring-2 focus:ring-theme"
               >
                 <option value="">Бүх давхар</option>
                 {davkharSongoltuud.map((d: string) => (
@@ -1187,34 +1186,46 @@ export default function HongololtTool({
 
             {/* Хөнгөлөх сар — муж. Апп даяар хэрэглэдэг сонгогч. */}
             <div>
-              <label className="block text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
+              <label className="block text-[11px] font-medium text-[color:var(--muted-text)] uppercase tracking-wide mb-1.5">
                 * Хөнгөлөх сар
               </label>
-              <MonthPickerInput
-                type="range"
-                value={[selectedMonth, duusakhSar]}
-                placeholder="Эхлэх сар → Дуусах сар"
-                onChange={(v: any) => {
-                  const [ekhlekh, duusakh] = Array.isArray(v)
-                    ? v
-                    : [null, null];
-                  if (ekhlekh) setSelectedMonth(ekhlekh);
-                  // Ганц сар сонгоход дуусахыг эхлэлтэй нь ижил болгоно
-                  setDuusakhSar(duusakh || ekhlekh || "");
-                }}
-                classNames={{ input: "w-full px-3 py-2 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500" }}
-              />
-
+              <div className="h-[38px] w-full">
+                <StandardDatePicker
+                  isRange
+                  picker="month"
+                  format="YYYY-MM"
+                  value={
+                    selectedMonth && duusakhSar
+                      ? [selectedMonth, duusakhSar]
+                      : selectedMonth
+                      ? [selectedMonth, selectedMonth]
+                      : undefined
+                  }
+                  onChange={(_: any, dateStrings: [string, string]) => {
+                    if (dateStrings && Array.isArray(dateStrings) && (dateStrings[0] || dateStrings[1])) {
+                      const [start, end] = dateStrings;
+                      setSelectedMonth(start || "");
+                      setDuusakhSar(end || start || "");
+                    } else {
+                      setSelectedMonth("");
+                      setDuusakhSar("");
+                    }
+                  }}
+                  placeholder={["Эхлэх сар", "Дуусах сар"]}
+                  className="w-full !rounded-xl text-xs"
+                  allowClear
+                />
+              </div>
             </div>
 
 
 
             {/* Discount type */}
             <div>
-              <label className="block text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
+              <label className="block text-[11px] font-medium text-[color:var(--muted-text)] uppercase tracking-wide mb-1.5">
                 Хөнгөлөлт төрөл
               </label>
-              <div className="flex rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+              <div className="flex rounded-xl overflow-hidden border border-[color:var(--surface-border)]">
                 {(
                   [
                     { v: "percent", label: "Хувь (%)" },
@@ -1226,8 +1237,8 @@ export default function HongololtTool({
                     type="button"
                     onClick={() => setHongololtTurul(v)}
                     className={`flex-1 py-1.5 text-xs font-medium transition-all ${hongololtTurul === v
-                      ? "bg-emerald-500 text-white"
-                      : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      ? "bg-theme text-white"
+                      : "text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)]"
                       }`}
                   >
                     {label}
@@ -1238,7 +1249,7 @@ export default function HongololtTool({
 
             {/* Discount value */}
             <div>
-              <label className="block text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
+              <label className="block text-[11px] font-medium text-[color:var(--muted-text)] uppercase tracking-wide mb-1.5">
                 * Хөнгөлөх {hongololtTurul === "percent" ? "хувь" : "дүн"}
               </label>
               <div className="relative">
@@ -1252,14 +1263,14 @@ export default function HongololtTool({
                   placeholder={hongololtTurul === "percent" ? "0 – 100" : "0"}
                   value={hongololtUtga}
                   onChange={(e) => setHongololtUtga(e.target.value)}
-                  className="w-full pl-3 pr-8 py-2 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full pl-3 pr-8 py-2 text-xs rounded-xl border border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] dark:text-white focus:outline-none focus:ring-2 focus:ring-theme"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[color:var(--muted-text)] pointer-events-none">
                   {hongololtTurul === "percent" ? "%" : "₮"}
                 </span>
               </div>
               {hongololtTurul === "percent" && deedKhuvi != null && (
-                <p className="mt-1 text-[10px] text-gray-500 dark:text-gray-400">
+                <p className="mt-1 text-[10px] text-[color:var(--muted-text)]">
                   Байгууллагын дээд хязгаар: {deedKhuvi}%
                 </p>
               )}
@@ -1267,7 +1278,7 @@ export default function HongololtTool({
 
             {/* Reason */}
             <div>
-              <label className="block text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
+              <label className="block text-[11px] font-medium text-[color:var(--muted-text)] uppercase tracking-wide mb-1.5">
                 Шалтгаан
               </label>
               <textarea
@@ -1275,16 +1286,16 @@ export default function HongololtTool({
                 placeholder="Шалтгаан"
                 value={shaltgaan}
                 onChange={(e) => setShaltgaan(e.target.value)}
-                className="w-full px-3 py-1.5 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+                className="w-full px-3 py-1.5 text-xs rounded-xl border border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] dark:text-white focus:outline-none focus:ring-2 focus:ring-theme resize-none"
               />
             </div>
 
             {/* Summary */}
-            <div className="mt-auto pt-3 border-t border-gray-200 dark:border-gray-700 space-y-2">
+            <div className="mt-auto pt-3 border-t border-[color:var(--surface-border)] space-y-2">
 
               <div className="flex justify-between text-xs">
-                <span className="text-gray-500 dark:text-gray-400">Нийт хөнгөлөгдсөн дүн :</span>
-                <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                <span className="text-[color:var(--muted-text)]">Нийт хөнгөлөгдсөн дүн :</span>
+                <span className="font-medium text-theme dark:text-theme">
                   {fmt(totalDun)}₮
                 </span>
               </div>
@@ -1296,7 +1307,7 @@ export default function HongololtTool({
                 type="button"
                 onClick={() => onClose?.()}
                 disabled={loading}
-                className="flex-1 py-2 text-xs font-medium rounded-xl border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="flex-1 py-2 text-xs font-medium rounded-xl border border-[color:var(--surface-border)] text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] transition-colors"
               >
                 Цуцлах
               </button>
@@ -1304,7 +1315,7 @@ export default function HongololtTool({
                 type="button"
                 onClick={handleSubmit}
                 disabled={loading || fetching}
-                className="flex-1 py-2 text-xs font-medium rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
+                className="flex-1 py-2 text-xs font-medium rounded-xl bg-theme hover:bg-theme text-white transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
               >
                 {loading && (
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -1317,22 +1328,22 @@ export default function HongololtTool({
           {/* Right panel: resident table */}
           <div className="flex-1 flex flex-col min-h-0">
             {/* Toolbar */}
-            <div className="flex items-center gap-3 px-5 py-3 border-b border-gray-200 dark:border-gray-700 shrink-0">
+            <div className="flex items-center gap-3 px-5 py-3 border-b border-[color:var(--surface-border)] shrink-0">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--muted-text)]" />
                 <input
                   type="text"
                   placeholder="Тоот, нэр эсвэл утасны дугаараар хайх..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] dark:text-white focus:outline-none focus:ring-2 focus:ring-theme"
                 />
               </div>
               <button
                 type="button"
                 onClick={loadResidents}
                 disabled={fetching}
-                className="p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition-colors"
+                className="p-1.5 rounded-xl hover:bg-[color:var(--surface-hover)] text-[color:var(--muted-text)] transition-colors"
                 title="Дахин ачааллах"
               >
                 <RefreshCw
@@ -1340,7 +1351,7 @@ export default function HongololtTool({
                 />
               </button>
               {selectMode === "selected" && (
-                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                <span className="text-xs text-theme dark:text-theme font-medium">
                   {selectedIds.size} сонгосон
                 </span>
               )}
@@ -1376,29 +1387,40 @@ export default function HongololtTool({
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden pt-3 px-2">
           <div className="flex-1 flex flex-col min-h-0">
             {/* Toolbar */}
-            <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-gray-200 dark:border-gray-700 shrink-0 bg-white dark:bg-gray-900/20 flex-wrap">
+            <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-[color:var(--surface-border)] shrink-0 bg-white flex-wrap">
               <div className="flex items-center gap-2.5 flex-wrap">
-                <div className="w-64">
-                  <DatePickerInput
-                    mode="range"
-                    value={histDateRange}
-                    onChange={(val) => {
-                      setHistDateRange(val as [string | null, string | null]);
+                <div className="w-64 h-[36px]">
+                  <StandardDatePicker
+                    isRange
+                    value={
+                      histDateRange[0] && histDateRange[1]
+                        ? [histDateRange[0], histDateRange[1]]
+                        : undefined
+                    }
+                    onChange={(_: any, dateStrings: [string, string]) => {
+                      if (dateStrings && Array.isArray(dateStrings) && (dateStrings[0] || dateStrings[1])) {
+                        setHistDateRange([dateStrings[0] || null, dateStrings[1] || null]);
+                      } else {
+                        setHistDateRange([null, null]);
+                      }
                       setHistPage(1);
                     }}
-                    placeholder="Огноо сонгох"
+                    format="YYYY-MM-DD"
+                    placeholder={["Эхлэх огноо", "Дуусах огноо"]}
+                    allowClear
+                    className="w-full !rounded-xl text-xs"
                   />
                 </div>
-                <div className="w-36">
+                <div className="w-40">
                   <input
                     type="text"
-                    placeholder="Бүгд"
+                    placeholder="Хайлт..."
                     value={histSearch}
                     onChange={(e) => {
                       setHistSearch(e.target.value);
                       setHistPage(1);
                     }}
-                    className="w-full px-3 py-1.5 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] dark:text-white placeholder-[color:var(--muted-text)] focus:outline-none focus:ring-2 focus:ring-theme h-[36px]"
                   />
                 </div>
                 <div className="w-28">
@@ -1408,7 +1430,7 @@ export default function HongololtTool({
                       setHistDavkhar(e.target.value);
                       setHistPage(1);
                     }}
-                    className="w-full px-2.5 py-1.5 text-xs rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-2.5 py-1.5 text-xs rounded-xl border border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] focus:outline-none focus:ring-2 focus:ring-theme"
                   >
                     <option value="">Давхар</option>
                     {davkharOptions.map((d) => (
@@ -1422,7 +1444,7 @@ export default function HongololtTool({
                   type="button"
                   onClick={loadHistory}
                   disabled={histFetching}
-                  className="p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition-colors border border-gray-200 dark:border-gray-700"
+                  className="p-1.5 rounded-xl hover:bg-[color:var(--surface-hover)] text-[color:var(--muted-text)] transition-colors border border-[color:var(--surface-border)]"
                   title="Дахин ачааллах"
                 >
                   <RefreshCw
@@ -1435,7 +1457,7 @@ export default function HongololtTool({
                 <button
                   type="button"
                   onClick={handleExportExcel}
-                  className="px-4 py-1.5 text-xs font-medium rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-xs cursor-pointer"
+                  className="px-4 py-1.5 text-xs font-medium rounded-xl border border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] transition-colors shadow-xs cursor-pointer"
                 >
                   Excel
                 </button>
@@ -1472,24 +1494,24 @@ export default function HongololtTool({
             </div>
 
             {/* Pagination Footer */}
-            <div className="flex items-center justify-end gap-3 px-4 py-2 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/30 text-xs text-gray-600 dark:text-gray-400 shrink-0">
+            <div className="flex items-center justify-end gap-3 px-4 py-2 border-t border-[color:var(--surface-border)] bg-white text-xs text-[color:var(--muted-text)] shrink-0">
               <div className="flex items-center gap-1">
                 <button
                   type="button"
                   onClick={() => setHistPage((p) => Math.max(1, p - 1))}
                   disabled={histPage <= 1}
-                  className="p-1 rounded border border-gray-200 dark:border-gray-700 disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                  className="p-1 rounded border border-[color:var(--surface-border)] disabled:opacity-30 hover:bg-[color:var(--surface-hover)] transition-colors cursor-pointer"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
-                <span className="min-w-[28px] text-center px-2 py-0.5 rounded border border-emerald-500 text-emerald-600 dark:text-emerald-400 font-medium bg-emerald-50 dark:bg-emerald-950/30">
+                <span className="min-w-[28px] text-center px-2 py-0.5 rounded border border-theme text-theme dark:text-theme font-medium bg-theme/10 dark:bg-theme/30">
                   {histPage}
                 </span>
                 <button
                   type="button"
                   onClick={() => setHistPage((p) => Math.min(totalPages, p + 1))}
                   disabled={histPage >= totalPages}
-                  className="p-1 rounded border border-gray-200 dark:border-gray-700 disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                  className="p-1 rounded border border-[color:var(--surface-border)] disabled:opacity-30 hover:bg-[color:var(--surface-hover)] transition-colors cursor-pointer"
                 >
                   <ChevronRight className="w-3.5 h-3.5" />
                 </button>
@@ -1500,7 +1522,7 @@ export default function HongololtTool({
                   setHistPageSize(Number(e.target.value));
                   setHistPage(1);
                 }}
-                className="px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                className="px-2 py-1 rounded border border-[color:var(--surface-border)] bg-white text-xs focus:outline-none focus:ring-1 focus:ring-theme"
               >
                 <option value={20}>20 / хуудас</option>
                 <option value={50}>50 / хуудас</option>
@@ -1546,18 +1568,18 @@ export default function HongololtTool({
           >
             {/* ── Header ── */}
             <div
-              className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-200 dark:border-gray-700 cursor-move select-none shrink-0"
+              className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-[color:var(--surface-border)] cursor-move select-none shrink-0"
               onPointerDown={(e) => dragControls.start(e)}
             >
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-emerald-500/15 flex items-center justify-center shrink-0">
-                  <Tag className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <div className="w-9 h-9 rounded-xl bg-theme/15 flex items-center justify-center shrink-0">
+                  <Tag className="w-4 h-4 text-theme dark:text-theme" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-base text-gray-900 dark:text-white leading-tight">
+                  <h3 className="font-semibold text-base text-[color:var(--panel-text)] dark:text-white leading-tight">
                     Хөнгөлөлт
                   </h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-[color:var(--muted-text)]">
                     Оршин суугчдад хөнгөлөлт бүртгэх
                   </p>
                 </div>
@@ -1566,7 +1588,7 @@ export default function HongololtTool({
                 type="button"
                 onClick={onClose}
                 disabled={loading}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="text-[color:var(--muted-text)] hover:text-[color:var(--muted-text)] transition-colors p-1.5 rounded-xl hover:bg-[color:var(--surface-hover)]"
               >
                 <X className="w-5 h-5" />
               </button>

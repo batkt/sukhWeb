@@ -63,21 +63,21 @@ export default function EmployeeModal({
           >
             <div
               onPointerDown={(e) => dragControls.start(e)}
-              className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 cursor-move select-none"
+              className="flex items-center justify-between px-6 py-4 border-b border-[color:var(--surface-border)] cursor-move select-none"
             >
-              <h2 className="text-lg text-slate-900 dark:text-white">
+              <h2 className="text-lg text-[color:var(--panel-text)] dark:text-white">
                 {editingEmployee ? "Ажилтан засах" : "Ажилтан нэмэх"}
               </h2>
               <button
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={onClose}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-2xl transition-colors"
+                className="p-2 hover:bg-[color:var(--surface-hover)] rounded-2xl transition-colors"
                 aria-label="Хаах"
                 title="Хаах"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 text-slate-700 dark:text-slate-400"
+                  className="h-6 w-6 text-[color:var(--panel-text)]"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -111,7 +111,7 @@ export default function EmployeeModal({
               )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-slate-700 dark:text-slate-400 mb-1">
+                  <label className="block text-sm text-[color:var(--panel-text)] mb-1">
                     Овог
                   </label>
                   <input
@@ -122,12 +122,12 @@ export default function EmployeeModal({
                       const value = e.target.value.replace(/[^a-zA-Zа-яА-ЯөүёӨҮЁ-]/g, "");
                       setNewEmployee((p: any) => ({ ...p, ovog: value }));
                     }}
-                    className="w-full p-3 rounded-2xl border border-gray-400 dark:border-gray-600 bg-white dark:bg-gray-800 text-slate-900 dark:text-white"
+                    className="w-full p-3 rounded-2xl border border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] dark:text-white"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-slate-700 dark:text-slate-400 mb-1">
+                  <label className="block text-sm text-[color:var(--panel-text)] mb-1">
                     Нэр
                   </label>
                   <input
@@ -138,12 +138,12 @@ export default function EmployeeModal({
                       const value = e.target.value.replace(/[^a-zA-Zа-яА-ЯөүёӨҮЁ-]/g, "");
                       setNewEmployee((p: any) => ({ ...p, ner: value }));
                     }}
-                    className="w-full p-3 rounded-2xl border border-gray-400 dark:border-gray-600 bg-white dark:bg-gray-800 text-slate-900 dark:text-white"
+                    className="w-full p-3 rounded-2xl border border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] dark:text-white"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-slate-700 dark:text-slate-400 mb-1">
+                  <label className="block text-sm text-[color:var(--panel-text)] mb-1">
                     Утас
                   </label>
                   <input
@@ -154,14 +154,14 @@ export default function EmployeeModal({
                       const value = e.target.value.replace(/[^0-9]/g, "").slice(0, 8);
                       setNewEmployee((p: any) => ({ ...p, utas: value }));
                     }}
-                    className="w-full p-3 rounded-2xl border border-gray-400 dark:border-gray-600 bg-white dark:bg-gray-800 text-slate-900 dark:text-white"
+                    className="w-full p-3 rounded-2xl border border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] dark:text-white"
                     maxLength={8}
                     pattern="[0-9]{8}"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-slate-700 dark:text-slate-400 mb-1">
+                  <label className="block text-sm text-[color:var(--panel-text)] mb-1">
                     И-мэйл
                   </label>
                   <input
@@ -169,11 +169,11 @@ export default function EmployeeModal({
                     name="email"
                     value={newEmployee.email}
                     onChange={(e) => setNewEmployee((p: any) => ({ ...p, email: e.target.value }))}
-                    className="w-full p-3 rounded-2xl border border-gray-400 dark:border-gray-600 bg-white dark:bg-gray-800 text-slate-900 dark:text-white"
+                    className="w-full p-3 rounded-2xl border border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] dark:text-white"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-slate-700 dark:text-slate-400 mb-1">
+                  <label className="block text-sm text-[color:var(--panel-text)] mb-1">
                     Албан тушаал
                   </label>
                   <input
@@ -183,12 +183,12 @@ export default function EmployeeModal({
                     onChange={(e) =>
                       setNewEmployee((p: any) => ({ ...p, albanTushaal: e.target.value }))
                     }
-                    className="w-full p-3 rounded-2xl border border-gray-400 dark:border-gray-600 bg-white dark:bg-gray-800 text-slate-900 dark:text-white"
+                    className="w-full p-3 rounded-2xl border border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] dark:text-white"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-slate-700 dark:text-slate-400 mb-1">
+                  <label className="block text-sm text-[color:var(--panel-text)] mb-1">
                     Ажилд орсон огноо
                   </label>
                   <StandardDatePicker
@@ -216,7 +216,7 @@ export default function EmployeeModal({
                     popupStyle={{ zIndex: 13010 }}
                     classNames={{
                       input:
-                        "text-slate-900 dark:text-white bg-white dark:bg-gray-800 neu-panel neu-calendar placeholder:text-slate-400 !h-[50px] !py-2 !w-[420px]",
+                        "text-[color:var(--panel-text)] dark:text-white bg-white neu-panel neu-calendar placeholder:text-[color:var(--muted-text)] !h-[50px] !py-2 !w-[420px]",
                     }}
                   />
                   <input type="hidden" name="ajildOrsonOgnoo" value={newEmployee.ajildOrsonOgnoo || ""} />
@@ -224,7 +224,7 @@ export default function EmployeeModal({
                 {!editingEmployee && (
                   <>
                     <div>
-                      <label className="block text-sm text-slate-700 dark:text-slate-400 mb-1">
+                      <label className="block text-sm text-[color:var(--panel-text)] mb-1">
                         Нэвтрэх нэр
                       </label>
                       <input
@@ -234,12 +234,12 @@ export default function EmployeeModal({
                         onChange={(e) =>
                           setNewEmployee((p: any) => ({ ...p, nevtrekhNer: e.target.value }))
                         }
-                        className="w-full p-3 rounded-2xl border border-gray-400 dark:border-gray-600 bg-white dark:bg-gray-800 text-slate-900 dark:text-white"
+                        className="w-full p-3 rounded-2xl border border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] dark:text-white"
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-sm text-slate-700 dark:text-slate-400 mb-1">
+                      <label className="block text-sm text-[color:var(--panel-text)] mb-1">
                         Нууц үг
                       </label>
                       <input
@@ -247,7 +247,7 @@ export default function EmployeeModal({
                         name="nuutsUg"
                         value={newEmployee.nuutsUg}
                         onChange={(e) => setNewEmployee((p: any) => ({ ...p, nuutsUg: e.target.value }))}
-                        className="w-full p-3 rounded-2xl border border-gray-400 dark:border-gray-600 bg-white dark:bg-gray-800 text-slate-900 dark:text-white"
+                        className="w-full p-3 rounded-2xl border border-[color:var(--surface-border)] bg-white text-[color:var(--panel-text)] dark:text-white"
                         required
                       />
                     </div>

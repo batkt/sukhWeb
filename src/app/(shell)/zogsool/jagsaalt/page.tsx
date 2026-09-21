@@ -239,17 +239,17 @@ function murNiiluulye(transaction: any) {
 
   // Төлвийн өнгө — Хугацаа болон Төлөв багана хоёулаа үүнийг хуваалцана.
   const getStatusColor = () => {
-    if (tuluv === -2 || tuluv === -1) return "bg-red-500 border-red-600";
-    if (hasRemainingBalance) return "bg-amber-500 border-amber-600";
-    if (isFreeExit) return "bg-gray-500 border-gray-600";
+    if (tuluv === -2 || tuluv === -1) return "bg-danger border-danger";
+    if (hasRemainingBalance) return "bg-warning border-warning";
+    if (isFreeExit) return "bg-[color:var(--panel)] border-[color:var(--surface-border)]";
     if (tuluv === 1)
       return isCurrentlyIn && niitDun === 0
-        ? "bg-blue-500 border-blue-600"
-        : "bg-emerald-500 border-emerald-600";
+        ? "bg-theme border-theme"
+        : "bg-success border-success";
     if (!isCurrentlyIn && (niitDun > 0 || isDebt))
-      return "bg-amber-500 border-amber-600";
-    if (!isCurrentlyIn && niitDun === 0) return "bg-gray-500 border-gray-600";
-    return "bg-blue-500 border-blue-600";
+      return "bg-warning border-warning";
+    if (!isCurrentlyIn && niitDun === 0) return "bg-[color:var(--panel)] border-[color:var(--surface-border)]";
+    return "bg-theme border-theme";
   };
 
   return {
@@ -968,20 +968,20 @@ export default function Jagsaalt() {
       <Filter
         className={`h-3 w-3 transition-colors ${
           current !== "all" && current !== undefined
-            ? "text-blue-400"
-            : "text-slate-500 group-hover/f:text-blue-400"
+            ? "text-theme"
+            : "text-[color:var(--muted-text)] group-hover/f:text-theme"
         }`}
       />
       {label}
       <div
-        className={`absolute top-full left-1/2 z-[100] mt-3 w-48 -translate-x-1/2 overflow-hidden rounded-2xl border border-white/5 bg-slate-900/98 p-2 text-white shadow-[0_20px_50px_rgba(0,0,0,0.5)] ring-1 ring-white/10 backdrop-blur-2xl transition-all duration-300 ${
+        className={`absolute top-full left-1/2 z-[100] mt-3 w-48 -translate-x-1/2 overflow-hidden rounded-2xl border border-white/5 bg-[color:var(--panel)] p-2 text-white shadow-[0_20px_50px_rgba(0,0,0,0.5)] ring-1 ring-white/10 backdrop-blur-2xl transition-all duration-300 ${
           openFilter === id
             ? "visible translate-y-0 opacity-100"
             : "invisible translate-y-3 opacity-0"
         }`}
       >
         <div className="relative z-10 flex flex-col gap-1">
-          <div className="mb-1 border-b border-white/5 px-3 py-1.5 text-[9px] tracking-widest text-slate-500 uppercase">
+          <div className="mb-1 border-b border-white/5 px-3 py-1.5 text-[9px] tracking-widest text-[color:var(--muted-text)] uppercase">
             Сонгох
           </div>
           {options.map((opt) => (
@@ -995,8 +995,8 @@ export default function Jagsaalt() {
               }}
               className={`flex cursor-pointer items-center justify-between rounded-xl px-4 py-2.5 text-left text-[10px] transition-all duration-200 ${
                 current === opt.value
-                  ? "bg-blue-500 text-white shadow-lg shadow-blue-500/40"
-                  : "text-slate-300 hover:bg-white/10 hover:text-white"
+                  ? "bg-theme text-white shadow-lg shadow-theme/40"
+                  : "text-[color:var(--muted-text)] hover:bg-white/10 hover:text-white"
               }`}
             >
               <span>{opt.label}</span>
@@ -1018,7 +1018,7 @@ export default function Jagsaalt() {
       render: (_: any, transaction: any, idx: number) => (
         <>
           {murNiiluulye(transaction).isCurrentlyIn && (
-            <span className="absolute top-1 bottom-1 left-0 w-1 rounded-r-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
+            <span className="absolute top-1 bottom-1 left-0 w-1 rounded-r-full bg-theme shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
           )}
           {(page - 1) * pageSize + idx + 1}
         </>
@@ -1068,13 +1068,13 @@ export default function Jagsaalt() {
                   : undefined
               }
               className={`rounded-full px-2.5 py-0.5 font-[family-name:var(--font-mono)] font-bold tracking-widest !text-white ${
-                blockRecord ? "bg-red-600" : "bg-blue-600"
+                blockRecord ? "bg-danger" : "bg-theme"
               }`}
             >
               {transaction.mashiniiDugaar || ""}
             </span>
             <Copy
-              className="h-4 w-4 scale-90 cursor-pointer text-slate-300 opacity-0 transition-all group-hover/copy:scale-100 group-hover/copy:opacity-100 hover:text-blue-500 dark:text-slate-600"
+              className="h-4 w-4 scale-90 cursor-pointer text-[color:var(--muted-text)] opacity-0 transition-all group-hover/copy:scale-100 group-hover/copy:opacity-100 hover:text-theme"
               onClick={() => copyToClipboard(transaction.mashiniiDugaar)}
             />
           </div>
@@ -1289,7 +1289,7 @@ export default function Jagsaalt() {
                 ? `Блокоос гаргах — ${blockRecord.tailbar}`
                 : "Блокоос гаргах"
             }
-            className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-sm transition-all hover:bg-red-400 active:bg-red-600"
+            className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-danger text-white shadow-sm transition-all hover:bg-danger active:bg-danger"
           >
             <ShieldCheck className="h-4 w-4" />
           </button>
@@ -1303,7 +1303,7 @@ export default function Jagsaalt() {
             }
             disabled={!transaction.mashiniiDugaar}
             title="Машиныг блоклох"
-            className="inline-flex h-6 w-6 items-center justify-center rounded-full text-slate-300 opacity-40 transition-all hover:bg-red-50 hover:text-red-500 focus:opacity-100 disabled:cursor-not-allowed disabled:opacity-30 dark:text-slate-600 dark:hover:bg-red-500/10"
+            className="inline-flex h-6 w-6 items-center justify-center rounded-full text-[color:var(--muted-text)] opacity-40 transition-all hover:bg-danger/10 hover:text-danger focus:opacity-100 disabled:cursor-not-allowed disabled:opacity-30"
           >
             <Ban className="h-4 w-4" />
           </button>
@@ -1319,7 +1319,7 @@ export default function Jagsaalt() {
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
             {/* Left: Date picker + Search */}
             <div className="flex items-center gap-4 shrink-0">
-              <div className="w-[50px] sm:w-40 lg:w-[300px] h-11 [&_.ant-picker-input]:!bg-transparent [&_input]:!bg-transparent [&_.ant-picker-input-active]:!bg-transparent dark:[&_.ant-picker-suffix]:!text-white dark:[&_.ant-picker-suffix_svg]:!fill-white dark:[&_.ant-picker:hover]:!bg-slate-700 dark:[&_.ant-picker-focused]:!bg-slate-700 [&_.ant-picker-range-separator]:!text-slate-400 dark:[&_.ant-picker-range-separator]:!text-slate-400">
+              <div className="w-[50px] sm:w-40 lg:w-[300px] h-11 [&_.ant-picker-input]:!bg-transparent [&_input]:!bg-transparent [&_.ant-picker-input-active]:!bg-transparent dark:[&_.ant-picker-suffix]:!text-white dark:[&_.ant-picker-suffix_svg]:!fill-white dark:[&_.ant-picker:hover]:!bg-[color:var(--panel)] dark:[&_.ant-picker-focused]:!bg-[color:var(--panel)] [&_.ant-picker-range-separator]:!text-[color:var(--muted-text)] dark:[&_.ant-picker-range-separator]:!text-[color:var(--muted-text)]">
                 <StandardDatePicker
                   isRange={true}
                   value={dateRange ?? undefined}
@@ -1328,9 +1328,9 @@ export default function Jagsaalt() {
                     setPage(1);
                   }}
                   format="YYYY-MM-DD"
-                  className="w-full !bg-white dark:!bg-slate-700 hover:!bg-white dark:hover:!bg-slate-700 !border-slate-200 dark:!border-slate-500 hover:!border-slate-300 dark:hover:!border-slate-500 shadow-sm"
+                  className="w-full !bg-white dark:!bg-[color:var(--panel)] hover:!bg-white dark:hover:!bg-[color:var(--panel)] !border-[color:var(--surface-border)] dark:!border-[color:var(--surface-border)] hover:!border-[color:var(--surface-border)] dark:hover:!border-[color:var(--surface-border)] shadow-sm"
                   classNames={{
-                    input: "!bg-transparent !border-0 !shadow-none text-[11px] !text-slate-700 dark:!text-slate-100 px-2",
+                    input: "!bg-transparent !border-0 !shadow-none text-[11px] !text-[color:var(--panel-text)] dark:!text-[color:var(--muted-text)] px-2",
                   }}
                   allowClear
                 />
@@ -1343,7 +1343,7 @@ export default function Jagsaalt() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setBlockModal({ dugaar: "", tailbar: "" })}
-                  className="flex items-center gap-2 h-11 px-5 rounded-[30px] bg-red-500 hover:bg-red-400 active:bg-red-600 text-white text-[11px] font-semibold shadow-sm transition-all whitespace-nowrap flex-shrink-0"
+                  className="flex items-center gap-2 h-11 px-5 rounded-[30px] bg-danger hover:bg-danger active:bg-danger text-white text-[11px] font-semibold shadow-sm transition-all whitespace-nowrap flex-shrink-0"
                 >
                   <Ban className="w-3.5 h-3.5" />
                   Блок
@@ -1355,14 +1355,14 @@ export default function Jagsaalt() {
                 </button>
                 <button
                   onClick={() => setRevenueModalOpen(true)}
-                  className="flex items-center gap-2 h-11 px-5 rounded-[30px] bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white text-[11px] font-semibold shadow-sm transition-all whitespace-nowrap flex-shrink-0"
+                  className="flex items-center gap-2 h-11 px-5 rounded-[30px] bg-theme hover:bg-theme active:bg-theme text-white text-[11px] font-semibold shadow-sm transition-all whitespace-nowrap flex-shrink-0"
                 >
                   <TrendingUp className="w-3.5 h-3.5" />
                   Орлого тайлан
                 </button>
                 <button
                   onClick={downloadExcel}
-                  className="flex items-center gap-2 h-11 px-5 rounded-[30px] bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white text-[11px] font-semibold shadow-sm transition-all whitespace-nowrap flex-shrink-0"
+                  className="flex items-center gap-2 h-11 px-5 rounded-[30px] bg-theme hover:bg-theme active:bg-theme text-white text-[11px] font-semibold shadow-sm transition-all whitespace-nowrap flex-shrink-0"
                 >
                   <Download className="w-3.5 h-3.5" />
                   Excel татах
@@ -1469,22 +1469,22 @@ export default function Jagsaalt() {
             }
           >
             <div
-              className={`relative ${excelMuruud.length > 0 ? "w-[780px]" : "w-[580px]"} max-w-full max-h-[85vh] flex flex-col rounded-[28px] overflow-hidden shadow-2xl border bg-white dark:bg-[#18181b] border-slate-200/40 dark:border-white/[0.06] transition-[width] duration-200`}
+              className={`relative ${excelMuruud.length > 0 ? "w-[780px]" : "w-[580px]"} max-w-full max-h-[85vh] flex flex-col rounded-[28px] overflow-hidden shadow-2xl border bg-white dark:bg-[#18181b] border-[color:var(--surface-border)] dark:border-white/[0.06] transition-[width] duration-200`}
               onClick={(e) => e.stopPropagation()}
             >
               {/* Толгой */}
-              <div className="relative px-7 pt-6 pb-5 border-b border-slate-100 dark:border-white/[0.06] flex-shrink-0">
-                <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-red-500 via-rose-500 to-orange-500 opacity-80" />
+              <div className="relative px-7 pt-6 pb-5 border-b border-[color:var(--surface-border)] dark:border-white/[0.06] flex-shrink-0">
+                <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-danger/20 via-danger/20 to-warning/20 opacity-80" />
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-2xl bg-red-500/10 flex items-center justify-center">
-                      <Ban className="w-5 h-5 text-red-500" />
+                    <div className="w-10 h-10 rounded-2xl bg-danger/10 flex items-center justify-center">
+                      <Ban className="w-5 h-5 text-danger" />
                     </div>
                     <div>
-                      <h3 className="text-[15px] font-semibold text-slate-900 dark:text-white">
+                      <h3 className="text-[15px] font-semibold text-[color:var(--panel-text)] dark:text-white">
                         Машин блоклох
                       </h3>
-                      <p className="text-[11px] text-slate-400">
+                      <p className="text-[11px] text-[color:var(--muted-text)]">
                         Блоклосон машиныг хаалга оруулахгүй
                       </p>
                     </div>
@@ -1492,7 +1492,7 @@ export default function Jagsaalt() {
                   <button
                     onClick={() => setBlockModal(null)}
                     disabled={blockSaving}
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all disabled:opacity-40"
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] dark:hover:text-white hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/5 transition-all disabled:opacity-40"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -1500,11 +1500,11 @@ export default function Jagsaalt() {
               </div>
 
               {/* Шинэ дугаар бүртгэх */}
-              <div className="px-7 py-5 border-b border-slate-100 dark:border-white/[0.06] flex-shrink-0">
+              <div className="px-7 py-5 border-b border-[color:var(--surface-border)] dark:border-white/[0.06] flex-shrink-0">
                 <div className="flex items-end gap-3">
                   <div className="w-[150px] flex-shrink-0 space-y-1.5">
-                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                      Улсын дугаар <span className="text-red-500">*</span>
+                    <label className="text-[10px] font-semibold text-[color:var(--muted-text)] uppercase tracking-wider">
+                      Улсын дугаар <span className="text-danger">*</span>
                     </label>
                     <input
                       autoFocus
@@ -1524,12 +1524,12 @@ export default function Jagsaalt() {
                       }}
                       placeholder="1234УБА"
                       maxLength={7}
-                      className="w-full h-10 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-4 text-[13px] font-bold tracking-widest text-center font-[family-name:var(--font-mono)] text-slate-800 dark:text-slate-100 placeholder:text-slate-300 dark:placeholder:text-slate-600 placeholder:font-normal placeholder:tracking-normal outline-none focus:border-red-400 transition-colors"
+                      className="w-full h-10 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] px-4 text-[13px] font-bold tracking-widest text-center font-[family-name:var(--font-mono)] text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] placeholder:font-normal placeholder:tracking-normal outline-none focus:border-danger transition-colors"
                     />
                   </div>
                   <div className="flex-1 space-y-1.5">
-                    <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                      Шалтгаан <span className="text-red-500">*</span>
+                    <label className="text-[10px] font-semibold text-[color:var(--muted-text)] uppercase tracking-wider">
+                      Шалтгаан <span className="text-danger">*</span>
                     </label>
                     <input
                       value={blockModal.tailbar}
@@ -1542,7 +1542,7 @@ export default function Jagsaalt() {
                         if (e.key === "Enter") blokloyo();
                       }}
                       placeholder="Төлбөрөө төлөөгүй"
-                      className="w-full h-10 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-4 text-[12px] text-slate-800 dark:text-slate-100 placeholder:text-slate-400 outline-none focus:border-red-400 transition-colors"
+                      className="w-full h-10 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] px-4 text-[12px] text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] outline-none focus:border-danger transition-colors"
                     />
                   </div>
                   <button
@@ -1552,7 +1552,7 @@ export default function Jagsaalt() {
                       !MASHINII_DUGAARIIN_ZAGVAR.test(blockModal.dugaar) ||
                       !blockModal.tailbar.trim()
                     }
-                    className="h-10 px-5 rounded-[30px] bg-red-500 hover:bg-red-400 active:bg-red-600 text-white text-[11px] font-semibold shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-2 flex-shrink-0"
+                    className="h-10 px-5 rounded-[30px] bg-danger hover:bg-danger active:bg-danger text-white text-[11px] font-semibold shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-2 flex-shrink-0"
                   >
                     {blockSaving ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1565,15 +1565,15 @@ export default function Jagsaalt() {
               </div>
 
               {/* Excel-ээр олноор бүртгэх */}
-              <div className="px-7 py-3.5 border-b border-slate-100 dark:border-white/[0.06] flex-shrink-0 flex items-center gap-3">
-                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">
+              <div className="px-7 py-3.5 border-b border-[color:var(--surface-border)] dark:border-white/[0.06] flex-shrink-0 flex items-center gap-3">
+                <span className="text-[10px] font-semibold text-[color:var(--muted-text)] uppercase tracking-wider whitespace-nowrap">
                   Excel-ээр машин бүртгэх
                 </span>
-                <div className="flex-1 h-px bg-slate-100 dark:bg-white/[0.06]" />
+                <div className="flex-1 h-px bg-[color:var(--surface-hover)] dark:bg-white/[0.06]" />
                 <button
                   onClick={excelZagvarTatya}
                   disabled={excelKhadgalj}
-                  className="h-8 px-3 rounded-2xl border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-300 hover:text-slate-700 dark:hover:text-slate-200 text-[11px] font-semibold transition-all inline-flex items-center gap-1.5 disabled:opacity-40"
+                  className="h-8 px-3 rounded-2xl border border-[color:var(--surface-border)] text-[color:var(--muted-text)] hover:border-[color:var(--surface-border)] hover:text-[color:var(--panel-text)] text-[11px] font-semibold transition-all inline-flex items-center gap-1.5 disabled:opacity-40"
                 >
                   <Download className="w-3.5 h-3.5" />
                   Загвар
@@ -1581,7 +1581,7 @@ export default function Jagsaalt() {
                 <button
                   onClick={() => excelFileRef.current?.click()}
                   disabled={excelUnshij || excelKhadgalj}
-                  className="h-8 px-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white text-[11px] font-semibold shadow-sm transition-all inline-flex items-center gap-1.5 disabled:opacity-40"
+                  className="h-8 px-3 rounded-2xl bg-theme hover:bg-theme active:bg-theme text-white text-[11px] font-semibold shadow-sm transition-all inline-flex items-center gap-1.5 disabled:opacity-40"
                 >
                   {excelUnshij ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1603,19 +1603,19 @@ export default function Jagsaalt() {
                 <>
                   {/* Урьдчилан харах — хэрэглэгч шалгасны дараа л хадгална */}
                   <div className="px-7 py-4 flex items-center justify-between gap-3 flex-shrink-0">
-                    <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">
+                    <span className="text-[11px] font-semibold text-[color:var(--muted-text)] uppercase tracking-wider whitespace-nowrap">
                       Урьдчилан харах
                     </span>
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="flex items-center gap-1.5 text-[11px] text-slate-400 min-w-0">
+                      <span className="flex items-center gap-1.5 text-[11px] text-[color:var(--muted-text)] min-w-0">
                         <FileSpreadsheet className="w-3.5 h-3.5 shrink-0" />
                         <span className="truncate">{excelFileNer}</span>
                       </span>
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[11px] font-semibold whitespace-nowrap">
+                      <span className="px-2 py-0.5 rounded-full bg-theme/10 dark:bg-theme/10 text-theme dark:text-theme text-[11px] font-semibold whitespace-nowrap">
                         Зөв: {excelZuvMuruud.length}
                       </span>
                       {excelMuruud.length - excelZuvMuruud.length > 0 && (
-                        <span className="px-2 py-0.5 rounded-full bg-red-50 dark:bg-red-500/10 text-red-500 text-[11px] font-semibold whitespace-nowrap">
+                        <span className="px-2 py-0.5 rounded-full bg-danger/10 text-danger text-[11px] font-semibold whitespace-nowrap">
                           Алдаатай: {excelMuruud.length - excelZuvMuruud.length}
                         </span>
                       )}
@@ -1623,10 +1623,10 @@ export default function Jagsaalt() {
                   </div>
 
                   <div className="px-7 overflow-y-auto flex-1 min-h-0">
-                    <div className="rounded-2xl border border-slate-100 dark:border-white/[0.06] overflow-hidden">
+                    <div className="rounded-2xl border border-[color:var(--surface-border)] dark:border-white/[0.06] overflow-hidden">
                       <table className="w-full border-collapse">
-                        <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900">
-                          <tr className="text-[11px] uppercase font-semibold text-slate-400">
+                        <thead className="sticky top-0 z-10 bg-[color:var(--surface-hover)]">
+                          <tr className="text-[11px] uppercase font-semibold text-[color:var(--muted-text)]">
                             <th className="py-2.5 px-3 w-14 text-center">Мөр</th>
                             <th className="py-2.5 px-3 text-center w-[130px]">
                               Улсын дугаар
@@ -1637,41 +1637,41 @@ export default function Jagsaalt() {
                             </th>
                           </tr>
                         </thead>
-                        <tbody className="text-[13px] divide-y divide-slate-100 dark:divide-white/[0.05]">
+                        <tbody className="text-[13px] divide-y divide-[color:var(--surface-border)] dark:divide-white/[0.05]">
                           {excelMuruud.map((mur) => (
                             <tr
                               key={mur.excelMur}
                               className={
                                 mur.aldaanuud.length > 0
-                                  ? "bg-red-50/60 dark:bg-red-950/20"
+                                  ? "bg-danger/60"
                                   : ""
                               }
                             >
-                              <td className="py-2.5 px-3 text-center text-[11px] text-slate-400">
+                              <td className="py-2.5 px-3 text-center text-[11px] text-[color:var(--muted-text)]">
                                 {mur.excelMur}
                               </td>
                               <td className="py-2.5 px-3 text-center">
                                 {mur.dugaar ? (
-                                  <span className="px-3 py-0.5 rounded-full bg-red-600 text-[11px] font-bold !text-white tracking-wider whitespace-nowrap font-[family-name:var(--font-mono)]">
+                                  <span className="px-3 py-0.5 rounded-full bg-danger text-[11px] font-bold !text-white tracking-wider whitespace-nowrap font-[family-name:var(--font-mono)]">
                                     {mur.dugaar}
                                   </span>
                                 ) : (
-                                  <span className="text-slate-300 dark:text-slate-600 italic">
+                                  <span className="text-[color:var(--muted-text)] italic">
                                     —
                                   </span>
                                 )}
                               </td>
-                              <td className="py-2.5 px-3 text-left text-slate-600 dark:text-slate-300">
+                              <td className="py-2.5 px-3 text-left text-[color:var(--muted-text)]">
                                 {mur.tailbar || "—"}
                               </td>
                               <td className="py-2.5 px-3 text-left">
                                 {mur.aldaanuud.length === 0 ? (
-                                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-theme dark:text-theme">
                                     <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
                                     Бэлэн
                                   </span>
                                 ) : (
-                                  <span className="inline-flex items-start gap-1 text-[11px] font-semibold text-red-500">
+                                  <span className="inline-flex items-start gap-1 text-[11px] font-semibold text-danger">
                                     <AlertTriangle className="w-3.5 h-3.5 mt-px shrink-0" />
                                     {mur.aldaanuud.join(", ")}
                                   </span>
@@ -1684,8 +1684,8 @@ export default function Jagsaalt() {
                     </div>
                   </div>
 
-                  <div className="px-7 py-4 mt-4 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between gap-3 flex-shrink-0">
-                    <p className="text-[11px] text-slate-400">
+                  <div className="px-7 py-4 mt-4 border-t border-[color:var(--surface-border)] dark:border-white/[0.06] flex items-center justify-between gap-3 flex-shrink-0">
+                    <p className="text-[11px] text-[color:var(--muted-text)]">
                       {excelKhadgalj
                         ? `Илгээж байна... ${excelYavts} / ${excelZuvMuruud.length}`
                         : `${excelZuvMuruud.length} машин блоклоход бэлэн`}
@@ -1694,14 +1694,14 @@ export default function Jagsaalt() {
                       <button
                         onClick={excelTsutslaya}
                         disabled={excelKhadgalj}
-                        className="h-10 px-5 rounded-[30px] border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-[11px] font-semibold hover:bg-slate-50 dark:hover:bg-white/5 transition-all disabled:opacity-40"
+                        className="h-10 px-5 rounded-[30px] border border-[color:var(--surface-border)] text-[color:var(--muted-text)] text-[11px] font-semibold hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/5 transition-all disabled:opacity-40"
                       >
                         Болих
                       </button>
                       <button
                         onClick={excelBlokloyo}
                         disabled={excelKhadgalj || excelZuvMuruud.length === 0}
-                        className="h-10 px-5 rounded-[30px] bg-red-500 hover:bg-red-400 active:bg-red-600 text-white text-[11px] font-semibold shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-2"
+                        className="h-10 px-5 rounded-[30px] bg-danger hover:bg-danger active:bg-danger text-white text-[11px] font-semibold shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-2"
                       >
                         {excelKhadgalj ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1717,18 +1717,18 @@ export default function Jagsaalt() {
                 <>
                 {/* Блоклсон машинууд */}
                 <div className="px-7 py-4 flex items-center justify-between gap-3 flex-shrink-0">
-                  <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">
-                    Блоклсон <span className="text-red-500">{blockedMap.size}</span>{" "}
+                  <span className="text-[11px] font-semibold text-[color:var(--muted-text)] uppercase tracking-wider whitespace-nowrap">
+                    Блоклсон <span className="text-danger">{blockedMap.size}</span>{" "}
                     машин
                   </span>
                   {blockedMap.size > 5 && (
                     <div className="relative flex-1 max-w-[200px]">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[color:var(--muted-text)]" />
                       <input
                         value={blockSearch}
                         onChange={(e) => setBlockSearch(e.target.value)}
                         placeholder="Хайх..."
-                        className="w-full h-9 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 pl-9 pr-3 text-[11px] text-slate-800 dark:text-slate-100 placeholder:text-slate-400 outline-none focus:border-red-400 transition-colors"
+                        className="w-full h-9 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] pl-9 pr-3 text-[11px] text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] outline-none focus:border-danger transition-colors"
                       />
                     </div>
                   )}
@@ -1736,7 +1736,7 @@ export default function Jagsaalt() {
 
                 <div className="px-7 pb-6 overflow-y-auto flex-1 min-h-0">
                   {blockList.length === 0 ? (
-                    <div className="py-10 flex flex-col items-center gap-2 text-slate-300 dark:text-slate-600">
+                    <div className="py-10 flex flex-col items-center gap-2 text-[color:var(--muted-text)]">
                       <ShieldCheck className="w-10 h-10" />
                       <p className="text-[11px]">
                         {blockSearch
@@ -1749,16 +1749,16 @@ export default function Jagsaalt() {
                       {blockList.map((b: any) => (
                         <div
                           key={b._id}
-                          className="flex items-center gap-3 px-3 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-white/[0.04]"
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-2xl bg-[color:var(--surface-hover)] border border-[color:var(--surface-border)] dark:border-white/[0.04]"
                         >
-                          <span className="px-3 py-0.5 rounded-full bg-red-600 text-[11px] font-bold !text-white tracking-wider whitespace-nowrap font-[family-name:var(--font-mono)] flex-shrink-0">
+                          <span className="px-3 py-0.5 rounded-full bg-danger text-[11px] font-bold !text-white tracking-wider whitespace-nowrap font-[family-name:var(--font-mono)] flex-shrink-0">
                             {b.dugaar}
                           </span>
                           <div className="flex-1 min-w-0">
-                            <p className="text-[11px] text-slate-600 dark:text-slate-300 truncate">
+                            <p className="text-[11px] text-[color:var(--muted-text)] truncate">
                               {b.tailbar || "—"}
                             </p>
-                            <p className="text-[10px] text-slate-400 truncate">
+                            <p className="text-[10px] text-[color:var(--muted-text)] truncate">
                               {[
                                 b.burtgesenAjiltaniiNer,
                                 b.createdAt
@@ -1772,7 +1772,7 @@ export default function Jagsaalt() {
                           <button
                             onClick={() => blockGargaya(b)}
                             title="Блокоос гаргах"
-                            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-500 transition-all flex-shrink-0"
+                            className="w-8 h-8 rounded-full flex items-center justify-center text-[color:var(--muted-text)] hover:bg-danger/10 hover:text-danger transition-all flex-shrink-0"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -1797,19 +1797,19 @@ export default function Jagsaalt() {
             onClick={() => setRevenueModalOpen(false)}
           >
             <div
-              className="relative w-[420px] max-w-full rounded-[28px] overflow-hidden shadow-2xl border bg-white dark:bg-[#18181b] border-slate-200/40 dark:border-white/[0.06]"
+              className="relative w-[420px] max-w-full rounded-[28px] overflow-hidden shadow-2xl border bg-white dark:bg-[#18181b] border-[color:var(--surface-border)] dark:border-white/[0.06]"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="relative px-7 pt-6 pb-5 border-b border-slate-100 dark:border-white/[0.06]">
-                <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-emerald-500 via-teal-500 to-green-500 opacity-80" />
+              <div className="relative px-7 pt-6 pb-5 border-b border-[color:var(--surface-border)] dark:border-white/[0.06]">
+                <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-theme/20 via-theme/20 to-theme/20 opacity-80" />
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-slate-100 dark:bg-white/[0.06] border border-slate-200/50 dark:border-white/[0.06]">
-                      <Receipt className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+                    <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-[color:var(--surface-hover)] dark:bg-white/[0.06] border border-[color:var(--surface-border)] dark:border-white/[0.06]">
+                      <Receipt className="w-5 h-5 text-theme dark:text-theme" />
                     </div>
                     <div>
-                      <h2 className="text-[15px] text-slate-800 dark:text-white tracking-tight">
+                      <h2 className="text-[15px] text-[color:var(--panel-text)] dark:text-white tracking-tight">
                         Орлого тайлан
                       </h2>
                       <div className="mt-1.5 min-w-[220px]">
@@ -1820,7 +1820,7 @@ export default function Jagsaalt() {
                             onChange={(_: any, dateStrings: [string, string]) => setRevenueDateRange(dateStrings)}
                             format="YYYY-MM-DD"
                             classNames={{
-                              input: "flex items-center gap-2 rounded-full border border-slate-200/40 dark:border-white/[0.06] h-8 px-3 text-[11px] text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-blue-500/10 transition-all",
+                              input: "flex items-center gap-2 rounded-full border border-[color:var(--surface-border)] dark:border-white/[0.06] h-8 px-3 text-[11px] text-[color:var(--muted-text)] focus:ring-2 focus:ring-theme/10 transition-all",
                             }}
                             allowClear
                             getPopupContainer={() => document.body}
@@ -1831,7 +1831,7 @@ export default function Jagsaalt() {
                   </div>
                   <button
                     onClick={() => setRevenueModalOpen(false)}
-                    className="w-9 h-9 rounded-full bg-slate-100 dark:bg-white/[0.06] flex items-center justify-center text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors"
+                    className="w-9 h-9 rounded-full bg-[color:var(--surface-hover)] dark:bg-white/[0.06] flex items-center justify-center text-[color:var(--muted-text)] hover:text-[color:var(--muted-text)] transition-colors"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -1840,16 +1840,16 @@ export default function Jagsaalt() {
 
               {/* Body */}
               <div className="p-5 space-y-2 max-h-[60vh] overflow-y-auto">
-                <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em] mb-1">
+                <p className="text-[10px] text-[color:var(--muted-text)] uppercase tracking-[0.15em] mb-1">
                   Төлбөрийн хэлбэр
                 </p>
                 {revenueLoading && (
-                  <div className="text-center py-8 text-[11px] text-slate-400">Уншиж байна...</div>
+                  <div className="text-center py-8 text-[11px] text-[color:var(--muted-text)]">Уншиж байна...</div>
                 )}
                 {!revenueLoading && revenueModalBreakdown.items.map((item) => (
                   <div
                     key={item.key}
-                    className="relative flex items-center gap-3 py-2.5 px-3 rounded-2xl border border-slate-100 dark:border-white/[0.06] bg-slate-50/50 dark:bg-white/[0.02] overflow-hidden"
+                    className="relative flex items-center gap-3 py-2.5 px-3 rounded-2xl border border-[color:var(--surface-border)] dark:border-white/[0.06] bg-[color:var(--surface-hover)] dark:bg-white/[0.02] overflow-hidden"
                   >
                     {/* Percentage fill background */}
                     <div
@@ -1859,27 +1859,27 @@ export default function Jagsaalt() {
                     <div
                       className={`w-1 h-8 rounded-full ${item.color} shrink-0 relative z-10`}
                     />
-                    <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-white/[0.06] flex items-center justify-center text-slate-500 dark:text-slate-400 shrink-0 relative z-10">
+                    <div className="w-8 h-8 rounded-xl bg-[color:var(--surface-hover)] dark:bg-white/[0.06] flex items-center justify-center text-[color:var(--muted-text)] shrink-0 relative z-10">
                       {item.icon}
                     </div>
                     <div className="flex-1 min-w-0 relative z-10">
-                      <span className="text-[12px] text-slate-700 dark:text-slate-200 block">
+                      <span className="text-[12px] text-[color:var(--panel-text)] block">
                         {item.name}
                       </span>
                     </div>
-                    <span className="text-[13px] font-black text-slate-800 dark:text-white font-[family-name:var(--font-mono)] shrink-0 relative z-10">
+                    <span className="text-[13px] font-black text-[color:var(--panel-text)] dark:text-white font-[family-name:var(--font-mono)] shrink-0 relative z-10">
                       {formatNumber(item.amount)}₮
                     </span>
-                    <span className="text-[11px] text-slate-400 dark:text-slate-500 font-[family-name:var(--font-mono)] w-6 text-center shrink-0 relative z-10">
+                    <span className="text-[11px] text-[color:var(--muted-text)] font-[family-name:var(--font-mono)] w-6 text-center shrink-0 relative z-10">
                       {item.count}
                     </span>
-                    <span className="text-[11px] text-slate-400 dark:text-slate-500 font-[family-name:var(--font-mono)] w-12 text-right shrink-0 relative z-10">
+                    <span className="text-[11px] text-[color:var(--muted-text)] font-[family-name:var(--font-mono)] w-12 text-right shrink-0 relative z-10">
                       {item.pct}%
                     </span>
                   </div>
                 ))}
                 {!revenueLoading && revenueModalBreakdown.items.length === 0 && (
-                  <p className="text-center text-[11px] text-slate-400 dark:text-slate-500 py-8">
+                  <p className="text-center text-[11px] text-[color:var(--muted-text)] py-8">
                     Төлбөрийн мэдээлэл олдсонгүй
                   </p>
                 )}
@@ -1887,11 +1887,11 @@ export default function Jagsaalt() {
 
               {/* Footer total */}
               <div className="px-7 pb-6 pt-2">
-                <div className="flex justify-between items-center py-3 px-4 rounded-2xl bg-emerald-50 dark:bg-emerald-500/[0.08] border border-emerald-200 dark:border-emerald-500/20">
-                  <span className="text-[11px] font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
+                <div className="flex justify-between items-center py-3 px-4 rounded-2xl bg-theme/10 dark:bg-theme/[0.08] border border-theme/30 dark:border-theme/20">
+                  <span className="text-[11px] font-black text-theme dark:text-theme uppercase tracking-wider">
                     Нийт орлого
                   </span>
-                  <span className="text-[14px] font-black text-emerald-700 dark:text-emerald-400 font-[family-name:var(--font-mono)]">
+                  <span className="text-[14px] font-black text-theme dark:text-theme font-[family-name:var(--font-mono)]">
                     {formatNumber(revenueModalBreakdown.totalAmount)}₮
                   </span>
                 </div>

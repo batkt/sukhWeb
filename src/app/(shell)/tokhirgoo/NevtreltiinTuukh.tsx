@@ -139,7 +139,7 @@ export default function NevtreltiinTuukh({
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-[color:var(--surface-border)]">
           <div className="flex items-center gap-3">
-            <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <Clock className="w-5 h-5 text-theme dark:text-theme" />
             <h2 className="text-xl text-[color:var(--panel-text)]">
               {t("Нэвтрэлтийн түүх")}
             </h2>
@@ -161,7 +161,7 @@ export default function NevtreltiinTuukh({
               classNames={{
                 root: "!h-full !w-full",
                 input:
-                  "text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
+                  "text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
               }}
             />
           </div>

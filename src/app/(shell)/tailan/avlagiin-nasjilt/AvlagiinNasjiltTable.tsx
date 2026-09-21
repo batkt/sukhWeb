@@ -127,13 +127,13 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
       key: "khungulult",
       label: (
         <div className="flex justify-center w-full py-0.5">
-          <span className="leading-normal pb-0.5 font-medium text-emerald-600 dark:text-emerald-400">Хөнгөлөлт</span>
+          <span className="leading-normal pb-0.5 font-medium text-theme dark:text-theme">Хөнгөлөлт</span>
         </div>
       ),
       width: 90,
       align: "center" as const,
       render: (v: number) => (
-        <span className="text-emerald-600 dark:text-emerald-400 font-medium leading-normal">
+        <span className="text-theme dark:text-theme font-medium leading-normal">
           {Number(v) > 0 ? formatNumber(v, 2) : "-"}
         </span>
       ),
@@ -241,46 +241,46 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
     const finalTotals = totals;
 
     return (
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-10 gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-md border border-slate-100 dark:border-slate-800 font-sans">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-10 gap-4 p-4 bg-[color:var(--surface-hover)] rounded-md border border-[color:var(--surface-border)] font-sans">
         <div className="flex flex-col">
-          <span className="text-slate-500 uppercase tracking-wider">Нийт Төлөх</span>
-          <span className="text-slate-900 dark:text-white font-medium">{formatNumber(finalTotals.undsenDun, 2)}₮</span>
+          <span className="text-[color:var(--muted-text)] uppercase tracking-wider">Нийт Төлөх</span>
+          <span className="text-[color:var(--panel-text)] dark:text-white font-medium">{formatNumber(finalTotals.undsenDun, 2)}₮</span>
         </div>
         <div className="flex flex-col">
-          <span className="text-slate-500 uppercase tracking-wider">Нийт Хөнгөлөлт</span>
-          <span className="text-emerald-600 dark:text-emerald-400 font-medium">{formatNumber(finalTotals.khungulult || 0, 2)}₮</span>
+          <span className="text-[color:var(--muted-text)] uppercase tracking-wider">Нийт Хөнгөлөлт</span>
+          <span className="text-theme dark:text-theme font-medium">{formatNumber(finalTotals.khungulult || 0, 2)}₮</span>
         </div>
         <div className="flex flex-col">
-          <span className="text-slate-500 uppercase tracking-wider">Нийт Төлсөн</span>
-          <span className="text-slate-900 dark:text-white font-medium">{formatNumber(finalTotals.tulsunDun, 2)}₮</span>
+          <span className="text-[color:var(--muted-text)] uppercase tracking-wider">Нийт Төлсөн</span>
+          <span className="text-[color:var(--panel-text)] dark:text-white font-medium">{formatNumber(finalTotals.tulsunDun, 2)}₮</span>
         </div>
         <div className="flex flex-col">
-          <span className="text-slate-500 uppercase tracking-wider">Нийт Үлдэгдэл</span>
-          <span className="text-slate-900 dark:text-white font-medium">{formatNumber(finalTotals.uldegdel, 2)}₮</span>
+          <span className="text-[color:var(--muted-text)] uppercase tracking-wider">Нийт Үлдэгдэл</span>
+          <span className="text-[color:var(--panel-text)] dark:text-white font-medium">{formatNumber(finalTotals.uldegdel, 2)}₮</span>
         </div>
         <div className="flex flex-col">
-          <span className="text-slate-500 uppercase tracking-wider">Хамгийн их хоног</span>
-          <span className="text-slate-900 dark:text-white font-medium">{finalTotals.avlagiinKhonog ?? 0}</span>
+          <span className="text-[color:var(--muted-text)] uppercase tracking-wider">Хамгийн их хоног</span>
+          <span className="text-[color:var(--panel-text)] dark:text-white font-medium">{finalTotals.avlagiinKhonog ?? 0}</span>
         </div>
         <div className="flex flex-col">
-          <span className="text-slate-500 uppercase tracking-wider">0-30</span>
-          <span className="text-slate-700 dark:text-slate-300">{formatNumber(finalTotals.p0_30, 2)}₮</span>
+          <span className="text-[color:var(--muted-text)] uppercase tracking-wider">0-30</span>
+          <span className="text-[color:var(--panel-text)]">{formatNumber(finalTotals.p0_30, 2)}₮</span>
         </div>
         <div className="flex flex-col">
-          <span className="text-slate-500 uppercase tracking-wider">31-60</span>
-          <span className="text-slate-700 dark:text-slate-300">{formatNumber(finalTotals.p31_60, 2)}₮</span>
+          <span className="text-[color:var(--muted-text)] uppercase tracking-wider">31-60</span>
+          <span className="text-[color:var(--panel-text)]">{formatNumber(finalTotals.p31_60, 2)}₮</span>
         </div>
         <div className="flex flex-col">
-          <span className="text-slate-500 uppercase tracking-wider">61-90</span>
-          <span className="text-slate-700 dark:text-slate-300">{formatNumber(finalTotals.p61_90, 2)}₮</span>
+          <span className="text-[color:var(--muted-text)] uppercase tracking-wider">61-90</span>
+          <span className="text-[color:var(--panel-text)]">{formatNumber(finalTotals.p61_90, 2)}₮</span>
         </div>
         <div className="flex flex-col">
-          <span className="text-slate-500 uppercase tracking-wider">91-120</span>
-          <span className="text-slate-700 dark:text-slate-300">{formatNumber(finalTotals.p91_120, 2)}₮</span>
+          <span className="text-[color:var(--muted-text)] uppercase tracking-wider">91-120</span>
+          <span className="text-[color:var(--panel-text)]">{formatNumber(finalTotals.p91_120, 2)}₮</span>
         </div>
         <div className="flex flex-col">
-          <span className="text-slate-500 uppercase tracking-wider">120+</span>
-          <span className="text-slate-700 dark:text-slate-300">{formatNumber(finalTotals.p120plus, 2)}₮</span>
+          <span className="text-[color:var(--muted-text)] uppercase tracking-wider">120+</span>
+          <span className="text-[color:var(--panel-text)]">{formatNumber(finalTotals.p120plus, 2)}₮</span>
         </div>
       </div>
     );

@@ -371,7 +371,7 @@ export default function AvlagiinNasjiltPage() {
               classNames={{
                 root: "!h-full !w-full",
                 input:
-                  "text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
+                  "text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
               }}
             />
           </div>
@@ -385,7 +385,7 @@ export default function AvlagiinNasjiltPage() {
             onClick={exportToExcel}
             className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
           >
-            <FileSpreadsheet className="w-4 h-4 text-emerald-600" /> Excel татах
+            <FileSpreadsheet className="w-4 h-4 text-theme" /> Excel татах
           </button>
         </div>
 
@@ -412,15 +412,15 @@ export default function AvlagiinNasjiltPage() {
               }}
               className="!h-10 !rounded-2xl"
             />
-            <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl">
+            <div className="flex items-center bg-[color:var(--surface-hover)] p-1 rounded-2xl">
               <button
                 disabled={currentPage <= 1}
                 onClick={() => setCurrentPage(currentPage - 1)}
-                className="px-4 py-1.5 rounded-2xl text-sm font-bold disabled:opacity-20 hover:bg-white dark:hover:bg-slate-700 transition-all text-slate-600 dark:text-slate-300"
+                className="px-4 py-1.5 rounded-2xl text-sm font-bold disabled:opacity-20 hover:bg-white transition-all text-[color:var(--muted-text)]"
               >
                 Өмнөх
               </button>
-              <div className="px-4 text-sm font-black text-emerald-600">
+              <div className="px-4 text-sm font-black text-theme">
                 {currentPage} /{" "}
                 {Math.max(
                   1,
@@ -430,7 +430,7 @@ export default function AvlagiinNasjiltPage() {
               <button
                 disabled={currentPage * pageSize >= (summary?.count || filteredData.length)}
                 onClick={() => setCurrentPage(currentPage + 1)}
-                className="px-4 py-1.5 rounded-2xl text-sm font-bold disabled:opacity-20 hover:bg-white dark:hover:bg-slate-700 transition-all text-slate-600 dark:text-slate-300"
+                className="px-4 py-1.5 rounded-2xl text-sm font-bold disabled:opacity-20 hover:bg-white transition-all text-[color:var(--muted-text)]"
               >
                 Дараах
               </button>
