@@ -922,80 +922,91 @@ export default function HongololtTool({
       {
         title: "Огноо",
         key: "ognoo",
-        align: "center",
-        render: (_: any, h: any) => fmtDateTime(h.createdAt || h.ognoo),
-      },
-      {
-        title: "Хөнгөлөлт",
-        key: "bichlegiinToo",
-        align: "center",
+        width: 160,
+        align: "center" as const,
         render: (_: any, h: any) => (
-          <span className="cursor-pointer text-blue-600 hover:underline dark:text-blue-400">
-            Олон ({h.bichlegiinToo || 3})
+          <span className="whitespace-nowrap tabular-nums text-xs">
+            {fmtDateTime(h.createdAt || h.ognoo)}
           </span>
         ),
       },
       {
-        title: "Гэрээнүүд",
+        title: "Гэрээний дугаар",
         dataIndex: "gereeniiDugaar",
         key: "gereeniiDugaar",
-        align: "center",
-        render: (v: any) => v || "—",
+        width: 130,
+        align: "center" as const,
+        render: (v: any) => (
+          <span className="font-medium whitespace-nowrap">{v || "—"}</span>
+        ),
       },
       {
-        title: "Талбай дугаар",
-        dataIndex: "toot",
-        key: "toot",
-        align: "center",
-        render: (v: any) => v || "—",
-      },
-      {
-        title: "Түрээслэгчид",
+        title: "Нэр",
         dataIndex: "ner",
         key: "ner",
+        width: 140,
+        render: (v: any) => <span className="font-medium">{v || "—"}</span>,
+      },
+      {
+        title: "Орц",
+        dataIndex: "orts",
+        key: "orts",
+        width: 60,
+        align: "center" as const,
         render: (v: any) => v || "—",
+      },
+      {
+        title: "Тоот",
+        dataIndex: "toot",
+        key: "toot",
+        width: 70,
+        align: "center" as const,
+        render: (v: any) => (
+          <span className="font-semibold text-slate-700 dark:text-slate-200">
+            {v || "—"}
+          </span>
+        ),
       },
       {
         title: "Эхлэх хугацаа",
         dataIndex: "ekhlekhOgnoo",
         key: "ekhlekhOgnoo",
-        align: "center",
-        render: (v: any) => v || "—",
+        width: 110,
+        align: "center" as const,
+        render: (v: any) => (
+          <span className="whitespace-nowrap tabular-nums">{v || "—"}</span>
+        ),
       },
       {
         title: "Дуусах хугацаа",
         dataIndex: "duusakhOgnoo",
         key: "duusakhOgnoo",
-        align: "center",
-        render: (v: any) => v || "—",
-      },
-      {
-        title: "Хөнгөлөх төрөл",
-        dataIndex: "khungulukhTurul",
-        key: "khungulukhTurul",
-        align: "center",
+        width: 110,
+        align: "center" as const,
         render: (v: any) => (
-          <span className="inline-block rounded-md bg-blue-500 px-3 py-0.5 text-white">
-            {v || "Гэрээнээс"}
-          </span>
+          <span className="whitespace-nowrap tabular-nums">{v || "—"}</span>
         ),
       },
       {
         title: "Төлөх дүн",
         dataIndex: "tulukhDun",
         key: "tulukhDun",
-        align: "right",
+        width: 110,
+        align: "right" as const,
         render: (v: any) => (
-          <span className="tabular-nums whitespace-nowrap">{fmt2(v || 0)}</span>
+          <span className="tabular-nums whitespace-nowrap font-medium">
+            {fmt2(v || 0)}
+          </span>
         ),
       },
       {
         title: "Хөнгөлөх дүн",
         dataIndex: "dun",
         key: "dun",
-        align: "right",
+        width: 110,
+        align: "right" as const,
         render: (v: any) => (
-          <span className="tabular-nums whitespace-nowrap">
+          <span className="tabular-nums whitespace-nowrap font-semibold text-emerald-600 dark:text-emerald-400">
             {fmt2(Math.abs(v || 0))}
           </span>
         ),
@@ -1004,55 +1015,68 @@ export default function HongololtTool({
         title: "Төлсөн дүн",
         dataIndex: "tulsunDun",
         key: "tulsunDun",
-        align: "right",
+        width: 110,
+        align: "right" as const,
         render: (v: any) => (
-          <span className="tabular-nums whitespace-nowrap">{fmt2(v || 0)}</span>
+          <span className="tabular-nums whitespace-nowrap font-medium">
+            {fmt2(v || 0)}
+          </span>
         ),
-      },
-      {
-        title: "Төрөл",
-        dataIndex: "turul",
-        key: "turul",
-        align: "center",
-        render: (v: any) => v || "Шаталсан",
-      },
-      {
-        title: "Шалтгаан",
-        dataIndex: "tailbar",
-        key: "tailbar",
-        width: 140,
-        ellipsis: true,
-        render: (v: any) => <span title={v || ""}>{v || "—"}</span>,
       },
       {
         title: "Ажилтан",
         dataIndex: "guilgeeKhiisenAjiltniiNer",
         key: "guilgeeKhiisenAjiltniiNer",
-        align: "center",
-        sorter: true,
-        render: (v: any) => v || "CAdmin",
+        width: 110,
+        align: "center" as const,
+        render: (v: any) => (
+          <span className="text-xs text-slate-600 dark:text-slate-300">
+            {v || "CAdmin"}
+          </span>
+        ),
       },
       {
         title: "Зассан",
         dataIndex: "zassan",
         key: "zassan",
-        align: "center",
-        render: (v: any) => v || "-",
+        width: 90,
+        align: "center" as const,
+        render: (v: any) => (
+          <span className="text-xs text-slate-500 dark:text-slate-400">
+            {v || "-"}
+          </span>
+        ),
       },
       {
         title: "Үйлдэл",
         key: "action",
-        width: 96,
-        align: "center",
+        width: 100,
+        align: "center" as const,
         render: (_: any, h: any) => (
-          <button
-            type="button"
-            onClick={() => handleDeleteDiscount(h)}
-            className="rounded p-1.5 transition-colors hover:text-red-500"
-            title="Устгах"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
+          <div className="flex items-center justify-center gap-1">
+            <button
+              type="button"
+              onClick={() => {
+                // TODO: Edit discount modal
+                toast.info("Засах функц удахгүй нэмэгдэнэ");
+              }}
+              className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-blue-600 transition-colors hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/30"
+              title="Засах"
+            >
+              <Edit2 className="h-3.5 w-3.5" />
+              Засах
+            </button>
+            <span className="text-slate-300 dark:text-slate-600">|</span>
+            <button
+              type="button"
+              onClick={() => handleDeleteDiscount(h)}
+              className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-red-500 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30"
+              title="Устгах"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Устгах
+            </button>
+          </div>
         ),
       },
     ],
