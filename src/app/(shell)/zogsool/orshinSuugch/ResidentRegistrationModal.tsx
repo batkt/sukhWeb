@@ -30,6 +30,7 @@ import useSWR from "swr";
 import Button from "@/components/ui/Button";
 import useModalHotkeys from "@/lib/useModalHotkeys";
 import { useAuth } from "@/lib/useAuth";
+import ModalPortal from "../../../../../components/shell/ModalPortal";
 
 interface ResidentRegistrationModalProps {
   onClose: () => void;
@@ -484,15 +485,16 @@ export default function ResidentRegistrationModal({
   });
 
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-          onClick={onClose}
-        />
+    <ModalPortal>
+      <AnimatePresence>
+        <div className="fixed inset-0 z-[12000] flex items-center justify-center p-4 sm:p-6">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            onClick={onClose}
+          />
 
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -912,6 +914,7 @@ export default function ResidentRegistrationModal({
         </motion.div>
       </div>
     </AnimatePresence>
+  </ModalPortal>
   );
 }
 

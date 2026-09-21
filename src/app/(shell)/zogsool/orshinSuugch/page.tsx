@@ -40,6 +40,7 @@ import { StandardPagination } from "@/components/ui/StandardTable";
 import TusgaiZagvar from "../../../../../components/selectZagvar/tusgaiZagvar";
 import { useTourSteps } from "@/lib/useTourSteps";
 import { useRegisterTourSteps } from "@/context/TourContext";
+import ModalPortal from "../../../../../components/shell/ModalPortal";
 
 const RealTimeClock = () => {
   const [time, setTime] = useState(moment());
@@ -372,50 +373,52 @@ export default function OrshinSuugch() {
         </div>
 
         {showDeleteModal && itemToDelete && (
-          <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 sm:p-6">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-              onClick={() => setShowDeleteModal(false)}
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-sm bg-white dark:bg-[#0f1117] rounded-2xl shadow-2xl overflow-hidden border border-white/20 dark:border-white/5 p-8"
-            >
-              <div className="flex flex-col items-center text-center">
-                <div className="w-16 h-16 rounded-full bg-red-50 dark:bg-red-500/10 flex items-center justify-center mb-6">
-                  <Trash2 className="w-8 h-8 text-red-500" />
+          <ModalPortal>
+            <div className="fixed inset-0 z-[12000] flex items-center justify-center p-4 sm:p-6">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+                onClick={() => setShowDeleteModal(false)}
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                className="relative w-full max-w-sm bg-white dark:bg-[#0f1117] rounded-2xl shadow-2xl overflow-hidden border border-white/20 dark:border-white/5 p-8"
+              >
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-16 h-16 rounded-full bg-red-50 dark:bg-red-500/10 flex items-center justify-center mb-6">
+                    <Trash2 className="w-8 h-8 text-red-500" />
+                  </div>
+                  <h3 className="text-xl font-medium text-slate-800 dark:text-white mb-2">
+                    Устгахдаа итгэлтэй байна уу?
+                  </h3>
+                  <p className="text-slate-500 dark:text-slate-400 mb-8 leading-relaxed">
+                    <span className="font-bold text-slate-900 dark:text-slate-100">
+                      {itemToDelete.ner || itemToDelete.orshinSuugchNer || "Энэ хэрэглэгч"}
+                    </span>{" "}
+                    -ийн мэдээллийг устгахыг зөвшөөрч байна уу?
+                  </p>
+                  <div className="flex flex-col w-full gap-3">
+                    <button
+                      onClick={confirmDelete}
+                      className="w-full h-12 bg-red-500 hover:bg-red-600 text-white rounded-xl font-medium transition-all hover:scale-105 active:scale-95 shadow-lg shadow-red-500/20"
+                    >
+                      Устгах
+                    </button>
+                    <button
+                      onClick={() => setShowDeleteModal(false)}
+                      className="w-full h-12 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 rounded-xl font-medium transition-all"
+                    >
+                      Цуцлах
+                    </button>
+                  </div>
                 </div>
-                <h3 className="text-xl font-medium text-slate-800 dark:text-white mb-2">
-                  Устгахдаа итгэлтэй байна уу?
-                </h3>
-                <p className="text-slate-500 dark:text-slate-400 mb-8 leading-relaxed">
-                  <span className="font-bold text-slate-900 dark:text-slate-100">
-                    {itemToDelete.ner || itemToDelete.orshinSuugchNer || "Энэ хэрэглэгч"}
-                  </span>{" "}
-                  -ийн мэдээллийг устгахыг зөвшөөрч байна уу?
-                </p>
-                <div className="flex flex-col w-full gap-3">
-                  <button
-                    onClick={confirmDelete}
-                    className="w-full h-12 bg-red-500 hover:bg-red-600 text-white rounded-xl font-medium transition-all hover:scale-105 active:scale-95 shadow-lg shadow-red-500/20"
-                  >
-                    Устгах
-                  </button>
-                  <button
-                    onClick={() => setShowDeleteModal(false)}
-                    className="w-full h-12 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 rounded-xl font-medium transition-all"
-                  >
-                    Цуцлах
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
+              </motion.div>
+            </div>
+          </ModalPortal>
         )}
 
         {showExcelImport && (

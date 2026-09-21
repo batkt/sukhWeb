@@ -61,6 +61,12 @@ export default function NemeltTokhirgoo() {
 
   // Resident Gate Open state
   const [residentGateOpenEnabled, setResidentGateOpenEnabled] = useState<boolean>(false);
+  /**
+   * Оршин суугч гэр бүлийн гишүүн урих боломжтой эсэх.
+   * Тохируулаагүй бол ЗӨВШӨӨРНӨ — backend-ийн үндсэн зан төлөвтэй ижил.
+   */
+  const [gerBuliinGishuunEnabled, setGerBuliinGishuunEnabled] =
+    useState<boolean>(true);
 
   // Цахилгааны тооцооны горим.
   // true  - тоолуурын заалт оруулж, систем кВт тарифаар бодно.
@@ -400,6 +406,7 @@ export default function NemeltTokhirgoo() {
     setStoragePaymentEnabled(!!find("aguulakhTolborEnabled", false));
 
     setResidentGateOpenEnabled(!!find("orshinSuugchKhaalgaNeehEsekh", false));
+    setGerBuliinGishuunEnabled(find("gerBuliinGishuunEsekh", true) !== false);
 
     // Тодорхойгүй бол хуучин зан төлөв — заалтаар бодно.
     setZaaltaarBodokh(find("zaaltaarTsakhilgaanBodokhEsekh", true) !== false);
@@ -830,6 +837,75 @@ export default function NemeltTokhirgoo() {
         openSuccessOverlay("Оршин суугч хаалга нээх эрхийн тохиргоо хадгалагдлаа");
       }
     } catch (error: any) {
+      openErrorOverlay(error?.message || "Хадгалахад алдаа гарлаа");
+    } finally {
+      hideSpinner();
+    }
+  };
+
+  /**
+   * Гэр бүлийн гишүүн урих боломжийг асаах/унтраах.
+   *
+   * Чек дарахад шууд хадгална (хаалт нээх эрхийн тохиргоотой ижил зан төлөв).
+   * Алдаа гарвал төлөвөө эргүүлж тавина — UI хуурамч байдалд орохгүй.
+   */
+  const saveGerBuliinGishuunSettings = async (utga: boolean) => {
+    if (!token || !ajiltan?.baiguullagiinId) {
+      openErrorOverlay("Нэвтрэх шаардлагатай");
+      return;
+    }
+
+    const umnukh = gerBuliinGishuunEnabled;
+    setGerBuliinGishuunEnabled(utga);
+    showSpinner();
+
+    try {
+      const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
+      const resp = await uilchilgee(token).get(
+        `/baiguullaga/${ajiltan.baiguullagiinId}`,
+        {
+          headers: { "X-Org-Only": "1" },
+        },
+      );
+
+      const freshOrg = resp.data;
+      if (!freshOrg || !freshOrg._id) {
+        throw new Error("Байгууллагын мэдээлэл олдсонгүй");
+      }
+
+      const payload: any = JSON.parse(JSON.stringify(freshOrg));
+      const gishuuniiData = { gerBuliinGishuunEsekh: utga };
+
+      if (effectiveBarilgiinId && payload.barilguud) {
+        payload.barilguud = payload.barilguud.map((b: any) => {
+          const bId = b._id || b.id;
+          if (String(bId).trim() === String(effectiveBarilgiinId).trim()) {
+            return {
+              ...b,
+              tokhirgoo: { ...(b.tokhirgoo || {}), ...gishuuniiData },
+            };
+          }
+          return b;
+        });
+      } else {
+        payload.tokhirgoo = {
+          ...(payload.tokhirgoo || {}),
+          ...gishuuniiData,
+        };
+      }
+
+      const result = await updateMethod("baiguullaga", token, payload);
+      if (!result?.data) throw new Error("Хадгалахад алдаа гарлаа");
+
+      await baiguullagaMutate(result.data.result || result.data, false);
+      await baiguullagaMutate();
+      openSuccessOverlay(
+        utga
+          ? "Гэр бүлийн гишүүн урих боломж идэвхжлээ"
+          : "Гэр бүлийн гишүүн урих боломж хаагдлаа",
+      );
+    } catch (error: any) {
+      setGerBuliinGishuunEnabled(umnukh);
       openErrorOverlay(error?.message || "Хадгалахад алдаа гарлаа");
     } finally {
       hideSpinner();
@@ -1462,6 +1538,48 @@ export default function NemeltTokhirgoo() {
                   {residentGateOpenEnabled
                     ? "Оршин суугчийн гар утасны аппликейшн дээр хаалт нээх товч идэвхтэй харагдана."
                     : "Оршин суугчийн гар утасны аппликейшн дээр хаалт нээх товч харагдахгүй."}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Гэр бүлийн гишүүн урих боломж */}
+          <div id="nemelt-gerbul-box" className="h-full">
+            <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden h-full flex flex-col justify-between">
+              <div className="px-4 py-3 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20">
+                <div className="flex items-center gap-2.5">
+                  <div>
+                    <h3 className="text-base text-theme">
+                      Гэр бүлийн гишүүн урих
+                    </h3>
+                    <p className="text-xs text-[color:var(--muted-text)]">
+                      Оршин суугч аппаараа гэр бүлийнхээ гишүүдийг урих эсэх
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <span className="text-xs text-theme">
+                    {gerBuliinGishuunEnabled ? "Идэвхтэй" : "Идэвхгүй"}
+                  </span>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={gerBuliinGishuunEnabled}
+                      onChange={(e) =>
+                        saveGerBuliinGishuunSettings(e.currentTarget.checked)
+                      }
+                      className="sr-only peer"
+                      aria-label="Гэр бүлийн гишүүн урих боломж идэвхжүүлэх"
+                    />
+                    <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 dark:peer-checked:bg-indigo-600 peer-checked:bg-indigo-600"></div>
+                  </label>
+                </div>
+              </div>
+              <div className="p-3.5 px-4 bg-gradient-to-br from-indigo-50/50 to-blue-50/50 dark:from-indigo-950/10 dark:to-blue-950/10 flex-1 flex items-center">
+                <p className="text-xs text-[color:var(--muted-text)]">
+                  {gerBuliinGishuunEnabled
+                    ? "Оршин суугч аппаараа гэр бүлийн гишүүн урьж, гишүүн нь тоот, нэхэмжлэх, төлбөрийг харна."
+                    : "Урих боломж хаагдсан. Шинэ урилга үүсэхгүй, хүлээгдэж байсан урилга ч баталгаажихгүй. Бүртгэлтэй гишүүд хэвээр байна."}
                 </p>
               </div>
             </div>

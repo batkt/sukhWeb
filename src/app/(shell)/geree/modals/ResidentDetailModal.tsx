@@ -146,6 +146,27 @@ export const ResidentDetailModal: React.FC<Props> = ({
     return Number.isFinite(toon) && toon > 0 ? Math.floor(toon) : 0;
   }, [baiguullaga, medeelel?.barilgiinId]);
 
+  /**
+   * Гэр бүлийн гишүүн урих боломжтой эсэх.
+   *
+   * Вебийн «Нэмэлт тохиргоо → Гэр бүлийн гишүүн урих» чекээс. Барилга →
+   * байгууллагын дарааллаар уншина; тохируулаагүй бол зөвшөөрнө
+   * (backend-ийн `gerBuliinGishuunZovshoorokhEsekh`-тэй ижил дүрэм).
+   */
+  const gerBuliinGishuunZovshoorson = useMemo(() => {
+    const org = baiguullaga as any;
+    const barilga = org?.barilguud?.find(
+      (b: any) =>
+        String(b?._id || b?.id) === String(medeelel?.barilgiinId || ""),
+    );
+
+    const utga =
+      barilga?.tokhirgoo?.gerBuliinGishuunEsekh ??
+      org?.tokhirgoo?.gerBuliinGishuunEsekh;
+
+    return utga === undefined || utga === null ? true : utga !== false;
+  }, [baiguullaga, medeelel?.barilgiinId]);
+
   /* Гэр бүлийн гишүүд цэс болон засах төлөв */
   const [tovchMenuGishuunId, setTovchMenuGishuunId] = useState<string | null>(null);
   const [zasajBuiGishuun, setZasajBuiGishuun] = useState<any | null>(null);
@@ -1535,16 +1556,27 @@ export const ResidentDetailModal: React.FC<Props> = ({
                           Гэр бүлийн гишүүд / Нэмэлт хэрэглэгч ({gerBuliinGishuud.length})
                         </h3>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setZasajBuiGishuun(null);
-                          setGishuunNemejBaina((n) => !n);
-                        }}
-                        className="rounded-lg px-2 py-1 text-[11px] font-medium text-theme transition hover:bg-theme/10 dark:text-theme dark:hover:bg-theme/20 cursor-pointer"
-                      >
-                        {gishuunNemejBaina ? "Цуцлах" : "+ Гишүүн нэмэх"}
-                      </button>
+                      {/* Байрын удирдлага урихыг хаасан бол нэмэх боломжгүй
+                          — backend ч татгалздаг тул товчийг харуулахгүй. */}
+                      {gerBuliinGishuunZovshoorson ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setZasajBuiGishuun(null);
+                            setGishuunNemejBaina((n) => !n);
+                          }}
+                          className="rounded-lg px-2 py-1 text-[11px] font-medium text-theme transition hover:bg-theme/10 dark:text-theme dark:hover:bg-theme/20 cursor-pointer"
+                        >
+                          {gishuunNemejBaina ? "Цуцлах" : "+ Гишүүн нэмэх"}
+                        </button>
+                      ) : (
+                        <span
+                          className="rounded-lg px-2 py-1 text-[11px] font-medium text-slate-400 dark:text-slate-500"
+                          title="Нэмэлт тохиргоо → «Гэр бүлийн гишүүн урих»-аас идэвхжүүлнэ"
+                        >
+                          Урих боломж хаалттай
+                        </span>
+                      )}
                     </div>
 
                     <div className="h-[215px] pt-3 overflow-hidden">

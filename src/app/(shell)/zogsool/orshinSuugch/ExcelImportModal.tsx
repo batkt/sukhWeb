@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import uilchilgee from "@/lib/uilchilgee";
 import Button from "@/components/ui/Button";
+import ModalPortal from "../../../../../components/shell/ModalPortal";
 
 /** Excel-ийн баганын гарчгууд — хэрэглэгчийн хүссэн дарааллаар: Овог, Нэр, Утас, Тоот, Төрөл, Улсын дугаар, Тайлбар */
 const COLUMNS = [
@@ -419,14 +420,15 @@ export default function ExcelImportModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 sm:p-6">
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-        onClick={importing ? undefined : onClose}
-      />
+    <ModalPortal>
+      <div className="fixed inset-0 z-[12000] flex items-center justify-center p-4 sm:p-6">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+          onClick={importing ? undefined : onClose}
+        />
 
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -691,5 +693,6 @@ export default function ExcelImportModal({
         </div>
       </motion.div>
     </div>
+    </ModalPortal>
   );
 }
