@@ -905,9 +905,8 @@ export default function KhariltsagchModal({
               >
                 <div className="flex-1 overflow-y-auto custom-scrollbar px-4 py-3">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {/* Овог — Төрөл хасагдсан тул хосгүй үлдэж, хажууд нь
-                        хоосон зай гарахаас сэргийлж бүтэн өргөн эзэлнэ. */}
-                    <div className="md:col-span-2">
+                    {/* Овог */}
+                    <div>
                       <label className="block text-xs text-[color:var(--muted-text)] mb-1 transition-colors">
                         Овог
                       </label>
@@ -925,8 +924,6 @@ export default function KhariltsagchModal({
                       />
                     </div>
 
-                    {/* Нэр · Утас · Машины дугаар — нэг мөрөнд */}
-                    <div className="md:col-span-2 grid grid-cols-1 gap-3 md:grid-cols-3">
                     {/* Нэр */}
                     <div>
                       <label className="block text-xs text-[color:var(--muted-text)] mb-1 transition-colors">
@@ -986,12 +983,49 @@ export default function KhariltsagchModal({
                           }))
                         }
                         className="modern-input w-full"
-                        placeholder="1234УБА"
+                        // `mashinuudBurtgeye` таслалаар олон дугаар уншдаг
+                        placeholder="1234УБА, 5678УНА"
                       />
                     </div>
+
+                    {/* ── Гадна зогсоол ────────────────────────────────────
+                        Тэмдэглэвэл гараж/агуулахын тоот бүртгэхгүйгээр
+                        хадгална. Тоотгүй бол `syncResidentContracts` гэрээ
+                        үүсгэхгүй — гадна зогсоолын төлбөр нь зогсоолын
+                        системээр бодогддог, сарын гэрээгээр биш. */}
+                    <div className="md:col-span-2">
+                      <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] px-3 py-2.5 transition-colors hover:border-theme/40">
+                        <input
+                          type="checkbox"
+                          checked={!!newClient.gadnaZogsoolEsekh}
+                          onChange={(e) => {
+                            const asaav = e.target.checked;
+                            setNewClient((p: any) => ({
+                              ...p,
+                              gadnaZogsoolEsekh: asaav,
+                            }));
+                            // Тэмдэглэхэд хагас бөглөсөн тоотууд үлдвэл
+                            // хадгалахад давхардлын шалгалтад унана.
+                            if (asaav) {
+                              setGarages([]);
+                              setStorages([]);
+                            }
+                          }}
+                          className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-[color:var(--theme)]"
+                        />
+                        <span className="min-w-0">
+                          <span className="block text-xs text-[color:var(--panel-text)]">
+                            Гадна зогсоол
+                          </span>
+                          <span className="mt-0.5 block text-[11px] text-[color:var(--muted-text)]">
+                            Гараж / агуулах бүртгэхгүйгээр хадгална
+                          </span>
+                        </span>
+                      </label>
                     </div>
 
-                    {/* Units Section */}
+                    {/* Units Section — гадна зогсоол бол шаардлагагүй */}
+                    {!newClient.gadnaZogsoolEsekh && (
                     <div className="md:col-span-2 space-y-4 pt-2">
                       <div className="flex items-center justify-between border-b border-[color:var(--surface-border)] pb-2">
                         <h3 className="text-sm font-semibold text-[color:var(--panel-text)]">Гараж / Агуулах</h3>
@@ -1103,6 +1137,7 @@ export default function KhariltsagchModal({
                         );
                       })}
                     </div>
+                    )}
                     {/* Tailbar */}
                     <div className="md:col-span-2">
                       <label className="block text-xs text-[color:var(--muted-text)] mb-1 transition-colors">
