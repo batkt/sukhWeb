@@ -8,7 +8,11 @@ import TusgaiZagvar from "../../../../../components/selectZagvar/tusgaiZagvar";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { ConfirmCloseDialog } from "@/components/ui/ConfirmCloseDialog";
 import Button from "@/components/ui/Button";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Minus } from "lucide-react";
+import {
+  mashiniiDugaarTseverle,
+  dugaarZuvEsekh,
+} from "@/lib/mashiniiDugaar";
 import uilchilgee from "@/lib/uilchilgee";
 import {
   getResidentToot,
@@ -179,21 +183,6 @@ export default function KhariltsagchModal({
     }
   };
 
-  /**
-   * Улсын дугаарын хэлбэр: 4 ТОО + 3 ҮСЭГ (жишээ `1234УБА`).
-   *
-   * Кирилл ба латин хоёуланг зөвшөөрнө — гараас латинаар бичих нь элбэг
-   * бөгөөд хаалганы камер ч хоёуланг уншдаг.
-   */
-  const DUGAARIIN_KHEV = /^[0-9]{4}[А-ЯӨҮЁA-Z]{3}$/;
-
-  /** Зөвхөн тоо, үсэг үлдээж том болгоно (4+3 = 7 тэмдэгт). */
-  const dugaarTseverle = (v: string) =>
-    v
-      .toUpperCase()
-      .replace(/[^0-9А-ЯӨҮЁA-Z]/g, "")
-      .slice(0, 7);
-
   const validate = () => {
     const newErrors: string[] = [];
     // Зөвхөн НЭР шаардлагатай. Харилцагч дээр утас, зогсоол/агуулахын тоот
@@ -204,7 +193,7 @@ export default function KhariltsagchModal({
     // тул шалгалтгүй — хэрэглэгч «+» дарж мөр нэмээд орхиж болно.
     mashinuud.forEach((d, i) => {
       const dugaar = (d || "").trim();
-      if (dugaar && !DUGAARIIN_KHEV.test(dugaar)) {
+      if (dugaar && !dugaarZuvEsekh(dugaar)) {
         newErrors.push(`mashin.${i}`);
       }
     });
@@ -986,7 +975,7 @@ export default function KhariltsagchModal({
                 className="flex-1 flex flex-col min-h-0 overflow-hidden"
               >
                 <div className="flex-1 overflow-y-auto custom-scrollbar px-4 py-3">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 items-start gap-3 md:grid-cols-2">
                     {/* Овог */}
                     <div>
                       <label className="block text-xs text-[color:var(--muted-text)] mb-1 transition-colors">
@@ -1049,37 +1038,32 @@ export default function KhariltsagchModal({
                       />
                     </div>
 
-                    {/* Машины дугаар — «+»-аар олныг нэмнэ */}
+                    {/* Машины дугаар — мөр тус бүрийн дэргэд товч:
+                        ЭХНИЙ мөрд «+» (нэмэх), нэмсэн мөрүүдэд «−» (хасах) */}
                     <div>
-                      <div className="mb-1 flex items-center justify-between">
-                        <label className="block text-xs text-[color:var(--muted-text)] transition-colors">
-                          Машины дугаар
-                        </label>
-                        <button
-                          type="button"
-                          onClick={() => setMashinuud((prev) => [...prev, ""])}
-                          className="flex items-center gap-1 rounded-lg border border-theme/30 bg-theme/10 px-2 py-0.5 text-[11px] text-brand transition-colors hover:bg-theme/20"
-                          title="Машин нэмэх"
-                        >
-                          <Plus className="h-3 w-3" />
-                          Нэмэх
-                        </button>
-                      </div>
+                      <label className="mb-1 block text-xs text-[color:var(--muted-text)] transition-colors">
+                        Машины дугаар
+                      </label>
                       <div className="space-y-1.5">
                         {mashinuud.map((dugaar, i) => (
-                          <div key={i} className="flex items-center gap-1.5">
+                          <div
+                            key={i}
+                            className="flex items-stretch gap-1.5"
+                          >
                             <input
                               type="text"
                               value={dugaar}
                               onChange={(e) => {
-                                const utga = dugaarTseverle(e.target.value);
+                                const utga = mashiniiDugaarTseverle(
+                                  e.target.value,
+                                );
                                 setMashinuud((prev) => {
                                   const shine = [...prev];
                                   shine[i] = utga;
                                   return shine;
                                 });
                               }}
-                              className={`modern-input w-full ${
+                              className={`modern-input min-w-0 flex-1 ${
                                 errors.includes(`mashin.${i}`)
                                   ? "input-error"
                                   : ""
@@ -1087,7 +1071,19 @@ export default function KhariltsagchModal({
                               placeholder="1234УБА"
                               maxLength={7}
                             />
-                            {mashinuud.length > 1 && (
+                            {i === 0 ? (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setMashinuud((prev) => [...prev, ""])
+                                }
+                                className="grid w-9 shrink-0 place-items-center rounded-lg border border-theme/30 bg-theme/10 text-brand transition-colors hover:bg-theme/20"
+                                title="Машин нэмэх"
+                                aria-label="Машин нэмэх"
+                              >
+                                <Plus className="h-4 w-4" />
+                              </button>
+                            ) : (
                               <button
                                 type="button"
                                 onClick={() =>
@@ -1095,10 +1091,11 @@ export default function KhariltsagchModal({
                                     prev.filter((_, j) => j !== i),
                                   )
                                 }
-                                className="shrink-0 rounded p-1 text-danger transition-all hover:bg-danger/10"
+                                className="grid w-9 shrink-0 place-items-center rounded-lg border border-danger/30 bg-danger/10 text-danger transition-colors hover:bg-danger/20"
                                 title="Хасах"
+                                aria-label="Хасах"
                               >
-                                <Trash2 className="h-3.5 w-3.5" />
+                                <Minus className="h-4 w-4" />
                               </button>
                             )}
                           </div>
