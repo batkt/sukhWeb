@@ -8,7 +8,7 @@ import TusgaiZagvar from "../../../../../components/selectZagvar/tusgaiZagvar";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { ConfirmCloseDialog } from "@/components/ui/ConfirmCloseDialog";
 import Button from "@/components/ui/Button";
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import uilchilgee from "@/lib/uilchilgee";
 import {
   getResidentToot,
@@ -179,11 +179,41 @@ export default function KhariltsagchModal({
     }
   };
 
+  /**
+   * Улсын дугаарын хэлбэр: 4 ТОО + 3 ҮСЭГ (жишээ `1234УБА`).
+   *
+   * Кирилл ба латин хоёуланг зөвшөөрнө — гараас латинаар бичих нь элбэг
+   * бөгөөд хаалганы камер ч хоёуланг уншдаг.
+   */
+  const DUGAARIIN_KHEV = /^[0-9]{4}[А-ЯӨҮЁA-Z]{3}$/;
+
+  /** Зөвхөн тоо, үсэг үлдээж том болгоно (4+3 = 7 тэмдэгт). */
+  const dugaarTseverle = (v: string) =>
+    v
+      .toUpperCase()
+      .replace(/[^0-9А-ЯӨҮЁA-Z]/g, "")
+      .slice(0, 7);
+
   const validate = () => {
     const newErrors: string[] = [];
     // Зөвхөн НЭР шаардлагатай. Харилцагч дээр утас, зогсоол/агуулахын тоот
     // байхгүй байх нь хэвийн тул тэднийг албадахгүй (Excel импорттой ижил).
     if (!newClient.ner?.trim()) newErrors.push("ner");
+
+    // Бөглөсөн дугаар бүр хэлбэрт таарах ёстой. Хоосон мөр нь «бөглөөгүй»
+    // тул шалгалтгүй — хэрэглэгч «+» дарж мөр нэмээд орхиж болно.
+    mashinuud.forEach((d, i) => {
+      const dugaar = (d || "").trim();
+      if (dugaar && !DUGAARIIN_KHEV.test(dugaar)) {
+        newErrors.push(`mashin.${i}`);
+      }
+    });
+
+    // Давхардсан дугаар
+    const bugleesen = mashinuud.map((d) => (d || "").trim()).filter(Boolean);
+    if (new Set(bugleesen).size !== bugleesen.length) {
+      newErrors.push("mashin.duplicate");
+    }
 
     // Гараж/агуулах БАЙХГҮЙ харилцагч бүртгэх нь хэвийн — дараа нь тоот
     // нэмж болно. Иймд `no_units` шалгалтыг хассан.
@@ -221,7 +251,26 @@ export default function KhariltsagchModal({
         duusakhOgnoo: "Гэрээ дуусах огноо",
       };
 
-      const missingFields = newErrors
+      // Дугаарын алдаа нь «бөглөөгүй» биш «ХЭЛБЭР буруу» тул тусад нь
+      // хэлнэ — «бөглөх шаардлагатай» гэдэг нь төөрөгдүүлнэ.
+      const mashiniiAldaa = newErrors
+        .filter((e) => e.startsWith("mashin."))
+        .map((e) =>
+          e === "mashin.duplicate"
+            ? "давхардсан дугаар"
+            : `${parseInt(e.split(".")[1]) + 1}-р дугаар`,
+        );
+
+      const busadAldaa = newErrors.filter((e) => !e.startsWith("mashin."));
+
+      if (mashiniiAldaa.length > 0 && busadAldaa.length === 0) {
+        openErrorOverlay(
+          `Машины дугаар буруу (${mashiniiAldaa.join(", ")}). Хэлбэр: 4 тоо + 3 үсэг, жишээ 1234УБА`,
+        );
+        return false;
+      }
+
+      const missingFields = busadAldaa
         .map((e) => {
           if (e.startsWith("units.")) {
             const parts = e.split(".");
@@ -235,7 +284,9 @@ export default function KhariltsagchModal({
         .join(", ");
 
       openErrorOverlay(
-        `Дараах талбарууд бөглөх шаардлагатай: ${missingFields}`,
+        mashiniiAldaa.length > 0
+          ? `Дараах талбарууд бөглөх шаардлагатай: ${missingFields}. Мөн машины дугаар буруу (${mashiniiAldaa.join(", ")})`
+          : `Дараах талбарууд бөглөх шаардлагатай: ${missingFields}`,
       );
       return false;
     }
@@ -410,6 +461,14 @@ export default function KhariltsagchModal({
   const [zaaltInput, setZaaltInput] = React.useState("");
   const [focusedInput, setFocusedInput] = React.useState<string | null>(null);
 
+  /**
+   * Улсын дугаарууд — «+»-аар мөр нэмнэ.
+   *
+   * Backend нь `mashiniiDugaar`-ыг таслалаар салгаж уншдаг
+   * (`utils/mashinBurtgel.js` → `dugaaruudSalgaya`) тул хадгалахдаа
+   * массивыг нэгтгэж дамжуулна.
+   */
+  const [mashinuud, setMashinuud] = React.useState<string[]>([""]);
   const [garages, setGarages] = React.useState<any[]>([]);
   const [storages, setStorages] = React.useState<any[]>([]);
 
@@ -516,12 +575,35 @@ export default function KhariltsagchModal({
 
       setGarages(allGarages.map((g: any) => ({ ...g })));
       setStorages(allStorages.map((s: any) => ({ ...s })));
+
+      // Жагсаалтын мөр нь `mashinuud` массив (backend-ийн join), эсвэл
+      // `mashiniiDugaar` таслалтай мөр байж болно — хоёуланг дэмжинэ.
+      const baigaa = Array.isArray(newClient.mashinuud)
+        ? newClient.mashinuud.map((m: any) => String(m || ""))
+        : String(newClient.mashiniiDugaar || "")
+            .split(",")
+            .map((s) => s.trim());
+      const tseverleesen = baigaa.filter(Boolean);
+      setMashinuud(tseverleesen.length > 0 ? tseverleesen : [""]);
       
       const primary = allGarages[0] || allStorages[0] || {};
       setUldegdelInput(formatWithCommas(primary.ekhniiUldegdel) || "0");
       setZaaltInput(formatWithCommas(primary.tsahilgaaniiZaalt) || "0");
     }
   }, [show]);
+
+  // Дугаарын массивыг эцэгт нэг мөр болгож дамжуулна — backend нь
+  // таслалаар салгаж уншдаг.
+  React.useEffect(() => {
+    if (!show) return;
+    const niiluulsen = mashinuud
+      .map((d) => (d || "").trim())
+      .filter(Boolean)
+      .join(", ");
+    setNewClient((p: any) =>
+      p.mashiniiDugaar === niiluulsen ? p : { ...p, mashiniiDugaar: niiluulsen },
+    );
+  }, [mashinuud, show, setNewClient]);
 
   // Sync to parent component's newClient state
   React.useEffect(() => {
@@ -967,25 +1049,64 @@ export default function KhariltsagchModal({
                       />
                     </div>
 
-                    {/* Машины дугаар */}
+                    {/* Машины дугаар — «+»-аар олныг нэмнэ */}
                     <div>
-                      <label className="block text-xs text-[color:var(--muted-text)] mb-1 transition-colors">
-                        Машины дугаар
-                      </label>
-                      <input
-                        type="text"
-                        value={newClient.mashiniiDugaar || ""}
-                        onChange={(e) =>
-                          setNewClient((p: any) => ({
-                            ...p,
-                            // Улсын дугаар нь том латин/кирилл ба тоо
-                            mashiniiDugaar: e.target.value.toUpperCase(),
-                          }))
-                        }
-                        className="modern-input w-full"
-                        // `mashinuudBurtgeye` таслалаар олон дугаар уншдаг
-                        placeholder="1234УБА, 5678УНА"
-                      />
+                      <div className="mb-1 flex items-center justify-between">
+                        <label className="block text-xs text-[color:var(--muted-text)] transition-colors">
+                          Машины дугаар
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setMashinuud((prev) => [...prev, ""])}
+                          className="flex items-center gap-1 rounded-lg border border-theme/30 bg-theme/10 px-2 py-0.5 text-[11px] text-brand transition-colors hover:bg-theme/20"
+                          title="Машин нэмэх"
+                        >
+                          <Plus className="h-3 w-3" />
+                          Нэмэх
+                        </button>
+                      </div>
+                      <div className="space-y-1.5">
+                        {mashinuud.map((dugaar, i) => (
+                          <div key={i} className="flex items-center gap-1.5">
+                            <input
+                              type="text"
+                              value={dugaar}
+                              onChange={(e) => {
+                                const utga = dugaarTseverle(e.target.value);
+                                setMashinuud((prev) => {
+                                  const shine = [...prev];
+                                  shine[i] = utga;
+                                  return shine;
+                                });
+                              }}
+                              className={`modern-input w-full ${
+                                errors.includes(`mashin.${i}`)
+                                  ? "input-error"
+                                  : ""
+                              }`}
+                              placeholder="1234УБА"
+                              maxLength={7}
+                            />
+                            {mashinuud.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setMashinuud((prev) =>
+                                    prev.filter((_, j) => j !== i),
+                                  )
+                                }
+                                className="shrink-0 rounded p-1 text-danger transition-all hover:bg-danger/10"
+                                title="Хасах"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <p className="mt-1 text-[11px] text-[color:var(--muted-text)]">
+                        4 тоо + 3 үсэг (жишээ: 1234УБА)
+                      </p>
                     </div>
 
                     {/* ── Гадна зогсоол ────────────────────────────────────
