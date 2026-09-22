@@ -181,39 +181,33 @@ export default function KhariltsagchModal({
 
   const validate = () => {
     const newErrors: string[] = [];
+    // Зөвхөн НЭР шаардлагатай. Харилцагч дээр утас, зогсоол/агуулахын тоот
+    // байхгүй байх нь хэвийн тул тэднийг албадахгүй (Excel импорттой ижил).
     if (!newClient.ner?.trim()) newErrors.push("ner");
-    if (
-      !newClient.utas ||
-      (Array.isArray(newClient.utas) && !newClient.utas[0]?.trim())
-    )
-      newErrors.push("utas");
 
-    // Кhariltsagch must have at least one garage or storage unit.
+    // Гараж/агуулах БАЙХГҮЙ харилцагч бүртгэх нь хэвийн — дараа нь тоот
+    // нэмж болно. Иймд `no_units` шалгалтыг хассан.
+    //
+    // Гэхдээ тоот БӨГЛӨСӨН мөрүүд дээр ДАВХАРДЛЫГ шалгасаар байна: хоосон
+    // тоотууд хоорондоо "давхардсан" болж мэдэхгүйн тул зөвхөн утгатайг
+    // тооцно.
     const units = Array.isArray(newClient.units) ? newClient.units : [];
-    if (units.length === 0) {
-      newErrors.push("no_units");
-    } else {
-      const uniqueUnitKeys = new Set();
-      units.forEach((unit: any, index: number) => {
-        const isGarageOrStorage =
-          unit.turul === "Гараж" || unit.turul === "Агуулах";
+    const uniqueUnitKeys = new Set();
+    units.forEach((unit: any, index: number) => {
+      const tootVal = unit.toot?.trim() || "";
+      if (!tootVal) return;
 
-        if (!isGarageOrStorage) {
-          if (!unit.orts?.trim()) newErrors.push(`units.${index}.orts`);
-          if (!unit.davkhar?.trim()) newErrors.push(`units.${index}.davkhar`);
-        }
-        if (!unit.toot?.trim()) newErrors.push(`units.${index}.toot`);
-
-        const ortsVal = isGarageOrStorage ? "1" : unit.orts?.trim() || "";
-        const davkharVal = isGarageOrStorage ? "" : unit.davkhar?.trim() || "";
-        const key = `${ortsVal}-${davkharVal}-${unit.toot?.trim()}`;
-        if (uniqueUnitKeys.has(key)) {
-          newErrors.push(`units.${index}.duplicate`);
-        } else {
-          uniqueUnitKeys.add(key);
-        }
-      });
-    }
+      const isGarageOrStorage =
+        unit.turul === "Гараж" || unit.turul === "Агуулах";
+      const ortsVal = isGarageOrStorage ? "1" : unit.orts?.trim() || "";
+      const davkharVal = isGarageOrStorage ? "" : unit.davkhar?.trim() || "";
+      const key = `${ortsVal}-${davkharVal}-${tootVal}`;
+      if (uniqueUnitKeys.has(key)) {
+        newErrors.push(`units.${index}.duplicate`);
+      } else {
+        uniqueUnitKeys.add(key);
+      }
+    });
 
 
     setErrors(newErrors);
@@ -221,12 +215,10 @@ export default function KhariltsagchModal({
     if (newErrors.length > 0) {
       const fieldNames: Record<string, string> = {
         ner: "Нэр",
-        utas: "Утас",
         orts: "Орц",
         davkhar: "Давхар",
         toot: "Тоот",
         duusakhOgnoo: "Гэрээ дуусах огноо",
-        no_units: "Гараж эсвэл Агуулах сонгоно уу",
       };
 
       const missingFields = newErrors

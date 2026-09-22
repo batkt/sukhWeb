@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import Button from "@/components/ui/Button";
 import { getDefaultDateRange } from "@/lib/utils";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
+import TusgaiZagvar from "../../../../../components/selectZagvar/tusgaiZagvar";
 import { EbarimtTable, EbarimtItem } from "./EbarimtTable";
 import EbarimtKhevlekhModal from "./EbarimtKhevlekhModal";
 import moment from "moment";
@@ -660,37 +661,20 @@ export default function Ebarimt() {
                   />
                 </div>
 
-                <div className="btn-minimal flex h-[40px] w-full items-center px-3 sm:w-[180px]">
-                  <select
+                <div className="w-full sm:w-[180px]">
+                  <TusgaiZagvar
                     value={uilchilgeeAvi ?? ""}
-                    onChange={(e) =>
-                      setUilchilgeeAvi(e.target.value || undefined)
+                    onChange={(v: string) =>
+                      setUilchilgeeAvi(v || undefined)
                     }
-                    aria-label="Үйлчилгээ"
-                    title="Үйлчилгээ"
-                    className="h-full w-full cursor-pointer bg-transparent text-sm text-[color:var(--panel-text)] focus:outline-none"
-                  >
-                    {/* Native `<option>` нь OS-ээр зурагддаг тул гадаргуу,
-                        текстийн өнгийг хоёуланг горимоос хамааруулна. */}
-                    <option
-                      value=""
-                      className="bg-[color:var(--panel)] text-[color:var(--panel-text)]"
-                    >
-                      Үйлчилгээ — бүгд
-                    </option>
-                    <option
-                      value="zogsool"
-                      className="bg-[color:var(--panel)] text-[color:var(--panel-text)]"
-                    >
-                      Зогсоол
-                    </option>
-                    <option
-                      value="sokh"
-                      className="bg-[color:var(--panel)] text-[color:var(--panel-text)]"
-                    >
-                      СӨХ
-                    </option>
-                  </select>
+                    options={[
+                      { value: "", label: "Үйлчилгээ — бүгд" },
+                      { value: "zogsool", label: "Зогсоол" },
+                      { value: "sokh", label: "СӨХ" },
+                    ]}
+                    placeholder="Үйлчилгээ"
+                    className="h-[40px] w-full"
+                  />
                 </div>
               </div>
               <div className="flex flex-row gap-3 w-full lg:w-auto justify-end">

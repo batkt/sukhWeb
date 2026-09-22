@@ -7066,22 +7066,25 @@ body,
   cursor: not-allowed;
 }
 
-.stg-btn-primary {
+/* `.neu-panel button { color: inherit }` (1665-р мөр) нь ангиас илүү
+   тодорхой (0,1,1) тул энд ХОЁР анги хэрэглэж түүнийг дарна. `!important`
+   хэрэггүй. */
+.stg-btn.stg-btn-primary {
   background: var(--theme);
   color: #fff;
 }
 
-.stg-btn-primary:not(:disabled):hover {
+.stg-btn.stg-btn-primary:not(:disabled):hover {
   background: color-mix(in oklch, var(--theme), black 12%);
 }
 
-.stg-btn-ghost {
+.stg-btn.stg-btn-ghost {
   border: 1px solid var(--surface-border);
   background: var(--surface-bg);
   color: var(--muted-text);
 }
 
-.stg-btn-ghost:hover {
+.stg-btn.stg-btn-ghost:hover {
   color: var(--panel-text);
   background: var(--surface-hover);
 }
@@ -7155,4 +7158,32 @@ body,
 /* Зөвхөн дүрстэй товч — дөрвөлжин */
 .stg-btn-icon {
   padding-inline: 0.625rem;
+}
+
+/* Мөр доторх дэд унтраалгын хайрцаг — CSS солих үед гээгдсэн байв */
+.stg-subrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  height: 2.25rem;
+  padding-inline: 0.75rem;
+  border: 1px solid var(--surface-border);
+  border-radius: 0.625rem;
+  background: var(--surface-bg);
+}
+
+.stg-subrow-text {
+  font-size: 0.8125rem;
+  color: var(--muted-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stg-unit {
+  margin-right: 0.25rem;
+  font-size: 0.8125rem;
+  color: var(--muted-text);
+  user-select: none;
 }
