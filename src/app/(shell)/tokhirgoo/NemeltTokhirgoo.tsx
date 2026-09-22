@@ -12,12 +12,28 @@ import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { fetchWithDomainFallback } from "@/lib/uilchilgee";
 import { useBuilding } from "@/context/BuildingContext";
 import { useSpinner } from "@/context/SpinnerContext";
-import { Trash2, Coins, CircleDollarSign } from "lucide-react";
+import {
+  Trash2,
+  Coins,
+  CircleDollarSign,
+  FileText,
+  Zap,
+  Calculator,
+  Building2,
+  Car,
+  Warehouse,
+} from "lucide-react";
 import uilchilgee from "@/lib/uilchilgee";
 import deleteMethod from "../../../../tools/function/deleteMethod";
 import createMethod from "../../../../tools/function/createMethod";
 import updateMethod from "../../../../tools/function/updateMethod";
 import Button from "@/components/ui/Button";
+import {
+  SettingsCard,
+  SettingsItem,
+  SettingsField,
+  Switch,
+} from "./SettingsRow";
 
 export default function NemeltTokhirgoo() {
   const { token, ajiltan, barilgiinId, baiguullaga, baiguullagaMutate } =
@@ -183,7 +199,7 @@ export default function NemeltTokhirgoo() {
         setInvoiceScheduleId(data._id);
       }
 
-      openSuccessOverlay("Нэхэмжлэх илгээх тохиргоог хадгаллаа");
+      amjilt("Нэхэмжлэх илгээх тохиргоог хадгаллаа");
       await fetchInvoiceSchedule();
     } catch (e) {
       openErrorOverlay("Нэхэмжлэх тохиргоо илгээхэд алдаа гарлаа");
@@ -290,9 +306,9 @@ export default function NemeltTokhirgoo() {
       await uilchilgee(token).post(`/liftShalgaya`, payload);
 
       if (floors.length > 0) {
-        openSuccessOverlay(`Лифт ${floors.join(",")} давхарт тохируулагдлаа`);
+        amjilt(`Лифт ${floors.join(",")} давхарт тохируулагдлаа`);
       } else {
-        openSuccessOverlay("Лифт хөнгөлөлтийг идэвхгүй болголоо");
+        amjilt("Лифт хөнгөлөлтийг идэвхгүй болголоо");
       }
 
       if (!skipFetch) {
@@ -502,7 +518,7 @@ export default function NemeltTokhirgoo() {
       await baiguullagaMutate(finalData, false);
       // Ensure a background sync is triggered to confirm server state
       await baiguullagaMutate();
-      openSuccessOverlay("Амжилттай хадгаллаа");
+      amjilt("Амжилттай хадгаллаа");
       return true;
     } catch (error: any) {
       openErrorOverlay(error?.message || "  хадгалахад алдаа гарлаа");
@@ -591,7 +607,7 @@ export default function NemeltTokhirgoo() {
       if (result?.data) {
         await baiguullagaMutate(result.data.result || result.data, false);
         await baiguullagaMutate();
-        openSuccessOverlay("Грашийн төлбөрийн тохиргоо хадгалагдлаа");
+        amjilt("Грашийн төлбөрийн тохиргоо хадгалагдлаа");
       }
     } catch (error: any) {
       openErrorOverlay(error?.message || "Хадгалахад алдаа гарлаа");
@@ -651,7 +667,7 @@ export default function NemeltTokhirgoo() {
       if (result?.data) {
         await baiguullagaMutate(result.data.result || result.data, false);
         await baiguullagaMutate();
-        openSuccessOverlay("Агуулахын төлбөрийн тохиргоо хадгалагдлаа");
+        amjilt("Агуулахын төлбөрийн тохиргоо хадгалагдлаа");
       }
     } catch (error: any) {
       openErrorOverlay(error?.message || "Хадгалахад алдаа гарлаа");
@@ -716,7 +732,7 @@ export default function NemeltTokhirgoo() {
       if (result?.data) {
         await baiguullagaMutate(result.data.result || result.data, false);
         await baiguullagaMutate();
-        openSuccessOverlay("Агуулах, гражийн төлбөрийн тохиргоо хадгалагдлаа");
+        amjilt("Агуулах, гражийн төлбөрийн тохиргоо хадгалагдлаа");
       }
     } catch (error: any) {
       openErrorOverlay(error?.message || "Хадгалахад алдаа гарлаа");
@@ -776,7 +792,7 @@ export default function NemeltTokhirgoo() {
       if (result?.data) {
         await baiguullagaMutate(result.data.result || result.data, false);
         await baiguullagaMutate();
-        openSuccessOverlay("Амжилттай хадгаллаа");
+        amjilt("Амжилттай хадгаллаа");
       }
     } catch (error: any) {
       openErrorOverlay(error?.message || "Хадгалахад алдаа гарлаа");
@@ -834,7 +850,7 @@ export default function NemeltTokhirgoo() {
       if (result?.data) {
         await baiguullagaMutate(result.data.result || result.data, false);
         await baiguullagaMutate();
-        openSuccessOverlay("Оршин суугч хаалга нээх эрхийн тохиргоо хадгалагдлаа");
+        amjilt("Оршин суугч хаалга нээх эрхийн тохиргоо хадгалагдлаа");
       }
     } catch (error: any) {
       openErrorOverlay(error?.message || "Хадгалахад алдаа гарлаа");
@@ -899,7 +915,7 @@ export default function NemeltTokhirgoo() {
 
       await baiguullagaMutate(result.data.result || result.data, false);
       await baiguullagaMutate();
-      openSuccessOverlay(
+      amjilt(
         utga
           ? "Гэр бүлийн гишүүн урих боломж идэвхжлээ"
           : "Гэр бүлийн гишүүн урих боломж хаагдлаа",
@@ -959,7 +975,7 @@ export default function NemeltTokhirgoo() {
           false,
         );
         await baiguullagaMutate();
-        openSuccessOverlay(
+        amjilt(
           utga
             ? "Цахилгааныг заалтаар бодохоор тохирууллаа"
             : "Цахилгааны дүнг гараар оруулахаар тохирууллаа",
@@ -1049,293 +1065,372 @@ export default function NemeltTokhirgoo() {
         await deleteMethod("liftShalgaya", token, originalLiftShalgayaId);
       }
       await saveLiftSettings(null, true);
-      openSuccessOverlay("Бүх лифт давхар устгагдлаа");
+      amjilt("Бүх лифт давхар устгагдлаа");
     } catch (e) {
       try {
         await saveLiftSettings(null, true);
       } catch (e2) {
         // ignore
       }
-      openSuccessOverlay("Бүх лифт давхар устгагдлаа");
+      amjilt("Бүх лифт давхар устгагдлаа");
     }
   };
 
+  // Нэг хэсэгт хэд хэдэн тохиргоо байвал хадгалахад амжилтын мэдэгдэл
+  // тус бүрд нь гарах ёсгүй — дуугүй горимоор дараалуулж, эцэст нь нэг удаа.
+  // Алдааны мэдэгдэл дуугүй болохгүй.
+  const chimeeguiRef = useRef(false);
+  const amjilt = (zurvas: string) => {
+    if (!chimeeguiRef.current) openSuccessOverlay(zurvas);
+  };
+
+  const [khadgalj, setKhadgalj] = useState(false);
+
+  const khesegKhadgalya = async (uildluud: Array<() => Promise<unknown>>) => {
+    if (uildluud.length === 0) return;
+    setKhadgalj(true);
+    chimeeguiRef.current = true;
+    try {
+      for (const uildel of uildluud) await uildel();
+    } finally {
+      chimeeguiRef.current = false;
+      setKhadgalj(false);
+    }
+    openSuccessOverlay("Тохиргоо хадгалагдлаа");
+  };
+
+  const nekhemjlekhKhesegKhadgalya = () =>
+    khesegKhadgalya([
+      ...(invoiceActive ? [() => saveInvoiceSchedule()] : []),
+      ...(calculationEnabled ? [() => saveCalculationSettings()] : []),
+    ]);
+
+  const bairKhesegKhadgalya = () =>
+    khesegKhadgalya(liftEnabled ? [handleSaveFloors] : []);
+
+  const zogsoolKhesegKhadgalya = () =>
+    khesegKhadgalya([
+      ...(guestConfigEnabled ? [() => saveGuestSettings()] : []),
+      saveResidentCarLimit,
+      ...(garagePaymentEnabled || storagePaymentEnabled
+        ? [() => saveCombinedPaymentSettings()]
+        : []),
+    ]);
+
   return (
-    <div
-      id="nemelt-panel"
-      className="w-full"
-    >
-      <div className="neu-panel allow-overflow p-4 md:p-5 pb-8 space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-stretch">
-          {/* Invoice box */}
-          <div id="nemelt-invoice-box" className="h-full">
-            <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden h-full flex flex-col justify-between">
-              <div className="px-4 py-3 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-theme/10 to-theme/10">
-                <div className="flex items-center gap-2.5">
-                  <div>
-                    <h3 className="text-base text-theme">Нэхэмжлэх илгээх</h3>
-                    <p className="text-xs text-[color:var(--muted-text)]">
-                      Сар бүрийн илгээх тохиргоо
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2.5">
-                  <span className="text-xs text-theme">
-                    {invoiceActive ? "Идэвхтэй" : "Идэвхгүй"}
-                  </span>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={invoiceActive}
-                      onChange={(e) => {
-                        const val = e.currentTarget.checked;
-                        setInvoiceActive(val);
-                        if (!val) saveInvoiceSchedule(false);
-                      }}
-                      className="sr-only peer"
-                      aria-label="Нэхэмжлэх идэвхжүүлэх"
+    <div id="nemelt-panel" className="w-full">
+      <div className="neu-panel allow-overflow p-4 md:p-6 pb-6">
+        <div className="stg-page">
+          {/* ── 1. Нэхэмжлэх ба тооцоолол ─────────────────────────────── */}
+          <SettingsCard
+            id="nemelt-invoice-box"
+            icon={<FileText />}
+            title="Нэхэмжлэх ба тооцоолол"
+            subtitle="Сар бүрийн төлбөрийн нэхэмжлэхтэй холбоотой тохиргоо"
+            onSave={nekhemjlekhKhesegKhadgalya}
+            saveId="nemelt-invoice-save"
+            saving={khadgalj}
+          >
+            <SettingsItem
+              id="nemelt-invoice-settings"
+              title="Нэхэмжлэх илгээх"
+              desc="Сар бүрийн хэдний өдөр нэхэмжлэх автоматаар илгээхийг тохируулна"
+              control={
+                <>
+                  {invoiceActive ? (
+                    <MNumberInput
+                      min={1}
+                      max={31}
+                      placeholder="1-31"
+                      value={invoiceDay ?? undefined}
+                      onChange={(v) => setInvoiceDay((v as number) ?? null)}
+                      size="sm"
+                      className="w-20"
                     />
-                    <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme dark:peer-focus:ring-theme rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-[color:var(--surface-bg)] after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-theme"></div>
-                  </label>
-                </div>
-              </div>
-              {invoiceActive ? (
-                <div
-                  id="nemelt-invoice-settings"
-                  className="p-3.5 px-4 bg-gradient-to-br from-theme/50 to-theme/50 flex-1 flex flex-col justify-between space-y-2.5"
-                >
-                  <div className="space-y-1.5">
-                    <label className="text-xs text-theme block">
-                      Илгээх өдөр (сар бүр)
-                    </label>
-                    <div className="flex items-center gap-2">
+                  ) : null}
+                  <Switch
+                    checked={invoiceActive}
+                    onChange={(e) => {
+                      const val = e.currentTarget.checked;
+                      setInvoiceActive(val);
+                      if (!val) saveInvoiceSchedule(false);
+                    }}
+                    label="Нэхэмжлэх идэвхжүүлэх"
+                  />
+                </>
+              }
+            />
+
+            <SettingsItem
+              id="nemelt-tsakhilgaan-box"
+              title="Заалтаар цахилгаан бодох"
+              desc={
+                zaaltaarBodokh
+                  ? "Өдөр, шөнө, өмнөх заалтыг Excel-ээр оруулахад зөрүүг нь кВт тарифаар үржүүлж систем өөрөө бодно."
+                  : "Систем цахилгааныг бодохгүй. Тоот тус бүрийн эцсийн дүнг Excel-д бичиж оруулна."
+              }
+              control={
+                <Switch
+                  checked={zaaltaarBodokh}
+                  onChange={(e) =>
+                    saveZaaltaarBodokhSettings(e.currentTarget.checked)
+                  }
+                  label="Заалтаар цахилгаан бодох"
+                />
+              }
+            />
+
+            <SettingsItem
+              id="nemelt-calculation-box"
+              title="Төлбөр тооцох арга"
+              desc="Сарын төлбөрийг хоногоор хувааж тооцох тохиргоо"
+              control={
+                <Switch
+                  checked={calculationEnabled}
+                  onChange={(e) => {
+                    const val = e.currentTarget.checked;
+                    setCalculationEnabled(val);
+                    if (!val) saveCalculationSettings(false);
+                  }}
+                  label="Төлбөр тооцох арга идэвхжүүлэх"
+                />
+              }
+            >
+              {calculationEnabled ? (
+                <>
+                  <div className="stg-editor">
+                    <div className="stg-segment">
+                      <button
+                        type="button"
+                        onClick={() => setCalculationMethod("Хуанли")}
+                        className={
+                          calculationMethod === "Хуанли"
+                            ? "stg-segment-item is-active"
+                            : "stg-segment-item"
+                        }
+                      >
+                        Хуанли
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCalculationMethod("Тогтмол")}
+                        className={
+                          calculationMethod === "Тогтмол"
+                            ? "stg-segment-item is-active"
+                            : "stg-segment-item"
+                        }
+                      >
+                        Тогтмол
+                      </button>
+                    </div>
+                    {calculationMethod === "Тогтмол" ? (
                       <MNumberInput
+                        value={
+                          fixedDayCount === ""
+                            ? undefined
+                            : Number(fixedDayCount)
+                        }
+                        onChange={(val) =>
+                          setFixedDayCount(val !== "" ? val : "")
+                        }
+                        placeholder="30"
                         min={1}
                         max={31}
-                        placeholder="1-31"
-                        value={invoiceDay ?? undefined}
-                        onChange={(v) => setInvoiceDay((v as number) ?? null)}
-                        className="flex-1"
                         size="sm"
+                        className="w-24"
                       />
-                      <Button
-                        id="nemelt-invoice-save"
-                        onClick={() => saveInvoiceSchedule()}
-                        variant="primary"
-                        size="sm"
-                        className="whitespace-nowrap !rounded-xl px-4 py-1.5 text-xs"
-                      >
-                        Хадгалах
-                      </Button>
-                    </div>
+                    ) : null}
                   </div>
-                  <p className="text-[11px] text-[color:var(--muted-text)]">
-                    Сар бүрийн хэдний өдөр нэхэмжлэх илгээх
+                  <p className="stg-note">
+                    {calculationMethod === "Хуанли"
+                      ? "Тухайн сарын нийт хоногт хувааж бодно (28, 30, 31)"
+                      : "Заасан хоногт тогтмол хувааж бодно"}
                   </p>
-                </div>
-              ) : (
-                <div className="p-3.5 px-4 bg-gradient-to-br from-theme/50 to-theme/50 flex-1 flex items-center">
-                  <p className="text-xs text-[color:var(--muted-text)]">
-                    Нэхэмжлэх автоматаар илгээх тохиргоо идэвхгүй байна.
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
+                </>
+              ) : null}
+            </SettingsItem>
+          </SettingsCard>
 
-          {/* Lift box */}
-          <div id="nemelt-lift-settings" className="h-full">
-            <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden h-full flex flex-col justify-between">
-              <div className="px-4 py-3 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-theme/10 to-theme/5">
-                <div className="flex items-center gap-2.5">
-                  <div>
-                    <h3 className="text-base text-theme">Лифт хөнгөлөлт</h3>
-                    <p className="text-xs text-[color:var(--muted-text)]">
-                      {liftFloors.length} давхар тохируулсан
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2.5">
-                  <span className="text-xs text-theme">
-                    {liftEnabled ? "Идэвхтэй" : "Идэвхгүй"}
-                  </span>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={liftEnabled}
-                      onChange={(event) => {
-                        const enabled = event.currentTarget.checked;
-                        setLiftEnabled(enabled);
-                        if (!enabled) {
-                          saveLiftSettings(null);
-                        }
-                      }}
-                      className="sr-only peer"
-                      aria-label="Лифт идэвхжүүлэх"
-                    />
-                    <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-warning dark:peer-focus:ring-warning rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-[color:var(--surface-bg)] after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-warning"></div>
-                  </label>
-                </div>
-              </div>
-
-              {liftEnabled ? (
-                <div className="p-3.5 px-4 bg-gradient-to-br from-warning/50 to-warning/50 space-y-2.5 flex-1 flex flex-col justify-between">
-                  <div className="space-y-1.5">
-                    <label className="text-xs text-theme flex items-center gap-1.5">
-                      <span>🔢</span>
-                      Давхар тохиргоо
-                    </label>
-
-                    <div className="flex items-center gap-2">
+          {/* ── 2. Байрны үйлчилгээ ───────────────────────────────────── */}
+          <SettingsCard
+            icon={<Building2 />}
+            title="Байрны үйлчилгээ"
+            subtitle="Лифт, хаалт, гэр бүлийн гишүүдтэй холбоотой тохиргоо"
+            onSave={liftEnabled ? bairKhesegKhadgalya : undefined}
+            saveId="nemelt-lift-save"
+            saving={khadgalj}
+          >
+            <SettingsItem
+              id="nemelt-lift-settings"
+              title="Лифт хөнгөлөлт"
+              desc={
+                liftEnabled
+                  ? `${liftFloors.length} давхар тохируулсан. Жишээ: 1-3, 5, 7 эсвэл 1, 2, 3`
+                  : `${liftFloors.length} давхар тохируулсан`
+              }
+              control={
+                <>
+                  {liftEnabled ? (
+                    <>
                       <MTextInput
-                        placeholder="1-3,5,7 эсвэл 1,2,3"
+                        placeholder="1-3,5,7"
                         value={liftBulkInput}
-                        onChange={(e) =>
-                          setLiftBulkInput(e.currentTarget.value)
-                        }
-                        className="flex-1"
+                        onChange={(e) => setLiftBulkInput(e.currentTarget.value)}
+                        className="w-28"
                       />
-                      <Button
-                        id="nemelt-lift-save"
-                        variant="primary"
-                        size="sm"
-                        onClick={handleSaveFloors}
-                        className="whitespace-nowrap !rounded-xl px-4 py-1.5 text-xs"
-                      >
-                        Хадгалах
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                      <button
+                        type="button"
+                        className="stg-btn stg-btn-ghost stg-btn-icon"
                         onClick={handleDeleteAllFloors}
                         title="Бүгдийг устгах"
                       >
                         <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  <p className="text-[11px] text-[color:var(--muted-text)]">
-                    Жишээ: 1-3, 5, 7 эсвэл 1, 2, 3
-                  </p>
-                </div>
-              ) : (
-                <div className="p-3.5 px-4 bg-gradient-to-br from-warning/50 to-warning/50 flex-1 flex items-center">
-                  <p className="text-xs text-[color:var(--muted-text)]">
-                    Лифт хөнгөлөлтийн тохиргоо идэвхгүй байна.
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Visitor Configuration Box */}
-        <div id="nemelt-visitor-box">
-          <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden">
-            <div className="px-4 py-3 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-theme/10 to-theme/5">
-              <div className="flex items-center gap-2.5">
-                <div>
-                  <h3 className="text-base text-theme">Зочны тохиргоо</h3>
-                  <p className="text-xs text-[color:var(--muted-text)]">
-                    Шинэ оршин суугчдад автоматаар оноогдох тохиргоо
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <span className="text-xs text-theme">
-                  {guestConfigEnabled ? "Идэвхтэй" : "Идэвхгүй"}
-                </span>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={guestConfigEnabled}
-                    onChange={(e) => {
-                      const val = e.currentTarget.checked;
-                      setGuestConfigEnabled(val);
-                      if (!val) saveGuestSettings(false);
+                      </button>
+                    </>
+                  ) : null}
+                  <Switch
+                    checked={liftEnabled}
+                    onChange={(event) => {
+                      const enabled = event.currentTarget.checked;
+                      setLiftEnabled(enabled);
+                      if (!enabled) {
+                        saveLiftSettings(null);
+                      }
                     }}
-                    className="sr-only peer"
+                    label="Лифт идэвхжүүлэх"
                   />
-                  <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme dark:peer-focus:ring-theme rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-[color:var(--surface-bg)] after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:peer-checked:bg-theme peer-checked:bg-theme"></div>
-                </label>
-              </div>
-            </div>
+                </>
+              }
+            />
 
-            {guestConfigEnabled && (
-              <div className="p-3.5 px-4 bg-gradient-to-br from-theme/50 to-theme/50 space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
-                  <div className="space-y-1">
-                    <label className="text-xs text-theme">Давтамж</label>
-                    <div className="flex gap-2">
-                      <select
-                        value={guestFrequencyType}
-                        onChange={(e) => setGuestFrequencyType(e.target.value)}
-                        className="w-full h-9 px-2.5 rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-xs focus:outline-none focus:border-theme"
-                      >
-                        <option value="udruur">Өдөр бүр</option>
-                        <option value="7khonogoor">Долоо хоног бүр</option>
-                        <option value="saraar">Сар бүр</option>
-                        <option value="jileer">Жил бүр</option>
-                      </select>
-                      {(guestFrequencyType === "saraar" ||
-                        guestFrequencyType === "jileer") && (
-                          <MNumberInput
-                            value={
-                              guestFrequencyValue === ""
-                                ? undefined
-                                : Number(guestFrequencyValue)
-                            }
-                            onChange={(val) =>
-                              setGuestFrequencyValue(val !== "" ? val : "")
-                            }
-                            placeholder={
-                              guestFrequencyType === "saraar" ? "1-31 өдөр" : "1-12 сар"
-                            }
-                            min={1}
-                            max={guestFrequencyType === "saraar" ? 31 : 12}
-                            size="sm"
-                            className="w-28 shrink-0"
-                          />
-                        )}
-                    </div>
-                  </div>
+            <SettingsItem
+              id="nemelt-resident-gate-box"
+              title="Оршин суугчийн хаалт нээх эрх"
+              desc={
+                residentGateOpenEnabled
+                  ? "Оршин суугчийн гар утасны аппликейшн дээр хаалт нээх товч харагдана."
+                  : "Оршин суугчийн гар утасны аппликейшн дээр хаалт нээх товч харагдахгүй."
+              }
+              control={
+                <Switch
+                  checked={residentGateOpenEnabled}
+                  onChange={(e) => {
+                    const val = e.currentTarget.checked;
+                    setResidentGateOpenEnabled(val);
+                    saveResidentGateOpenSettings(val);
+                  }}
+                  label="Хаалт нээх эрх идэвхжүүлэх"
+                />
+              }
+            />
 
-                  {/* Төлбөрийг эзэн даах боломжтой эсэх */}
-                  <div className="space-y-1">
-                    <label className="text-xs text-theme">
-                      Нэхэмжлэх дээр нэмэх эсэх
-                    </label>
-                    <div
-                      className="h-9 px-3 flex items-center justify-between rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-xs"
-                      title={
-                        guestInvoiceEnabled
-                          ? 'Оршин суугч зочин урихдаа "Би даана" сонгож, зогсоолын төлбөрийг өөрийн нэхэмжлэхэд бичүүлж болно.'
-                          : 'Унтраалттай — зочин зогсоолын төлбөрөө өөрөө төлнө. Апп дээр "Би даана" сонголт харагдахгүй.'
+            <SettingsItem
+              id="nemelt-gerbul-box"
+              title="Гэр бүлийн гишүүн урих"
+              desc={
+                gerBuliinGishuunEnabled
+                  ? "Оршин суугч аппаараа гэр бүлийн гишүүн урьж, гишүүн нь тоот, нэхэмжлэх, төлбөрийг харна."
+                  : "Урих боломж хаагдсан. Шинэ урилга үүсэхгүй, бүртгэлтэй гишүүд хэвээр байна."
+              }
+              control={
+                <Switch
+                  checked={gerBuliinGishuunEnabled}
+                  onChange={(e) =>
+                    saveGerBuliinGishuunSettings(e.currentTarget.checked)
+                  }
+                  label="Гэр бүлийн гишүүн урих боломж идэвхжүүлэх"
+                />
+              }
+            />
+          </SettingsCard>
+
+          {/* ── 3. Зогсоол болон зочин ────────────────────────────────── */}
+          <SettingsCard
+            id="nemelt-visitor-box"
+            icon={<Car />}
+            title="Зогсоол болон зочин"
+            subtitle="Зочны эрх, машины хязгаар, граш болон агуулахын төлбөр"
+            onSave={zogsoolKhesegKhadgalya}
+            saving={khadgalj}
+          >
+            <SettingsItem
+              title="Зочны тохиргоо"
+              desc="Шинэ оршин суугчдад автоматаар зогсоолын эрх үүсгэх"
+              control={
+                <Switch
+                  checked={guestConfigEnabled}
+                  onChange={(e) => {
+                    const val = e.currentTarget.checked;
+                    setGuestConfigEnabled(val);
+                    if (!val) saveGuestSettings(false);
+                  }}
+                  label="Зочны тохиргоо идэвхжүүлэх"
+                />
+              }
+            >
+              {guestConfigEnabled ? (
+                <div className="stg-grid">
+                  <SettingsField label="Давтамж">
+                    <select
+                      value={guestFrequencyType}
+                      onChange={(e) => setGuestFrequencyType(e.target.value)}
+                      className="stg-select"
+                    >
+                      <option value="udruur">Өдөр бүр</option>
+                      <option value="7khonogoor">Долоо хоног бүр</option>
+                      <option value="saraar">Сар бүр</option>
+                      <option value="jileer">Жил бүр</option>
+                    </select>
+                  </SettingsField>
+
+                  {guestFrequencyType === "saraar" ||
+                  guestFrequencyType === "jileer" ? (
+                    <SettingsField
+                      label={
+                        guestFrequencyType === "saraar"
+                          ? "Хэдний өдөр"
+                          : "Хэддүгээр сар"
                       }
                     >
-                      <span className="text-xs text-[color:var(--muted-text)] truncate mr-2">
+                      <MNumberInput
+                        value={
+                          guestFrequencyValue === ""
+                            ? undefined
+                            : Number(guestFrequencyValue)
+                        }
+                        onChange={(val) =>
+                          setGuestFrequencyValue(val !== "" ? val : "")
+                        }
+                        placeholder={
+                          guestFrequencyType === "saraar" ? "1-31" : "1-12"
+                        }
+                        min={1}
+                        max={guestFrequencyType === "saraar" ? 31 : 12}
+                        size="sm"
+                        className="w-full"
+                      />
+                    </SettingsField>
+                  ) : null}
+
+                  <SettingsField label="Нэхэмжлэх дээр нэмэх эсэх">
+                    <div className="stg-subrow">
+                      <span className="stg-subrow-text">
                         {guestInvoiceEnabled
                           ? 'Идэвхтэй ("Би даана")'
-                          : 'Зочин өөрөө төлнө'}
+                          : "Зочин өөрөө төлнө"}
                       </span>
-                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                        <input
-                          type="checkbox"
-                          checked={guestInvoiceEnabled}
-                          onChange={(e) =>
-                            setGuestInvoiceEnabled(e.currentTarget.checked)
-                          }
-                          className="sr-only peer"
-                        />
-                        <div className="w-9 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme dark:peer-focus:ring-theme rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-[color:var(--surface-bg)] after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:peer-checked:bg-theme peer-checked:bg-theme"></div>
-                      </label>
+                      <Switch
+                        checked={guestInvoiceEnabled}
+                        onChange={(e) =>
+                          setGuestInvoiceEnabled(e.currentTarget.checked)
+                        }
+                        label="Нэхэмжлэх дээр нэмэх"
+                        size="sm"
+                      />
                     </div>
-                  </div>
-                </div>
+                  </SettingsField>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-xs text-theme">Эрхийн тоо</label>
+                  <SettingsField label="Эрхийн тоо">
                     <MNumberInput
                       value={guestLimit === "" ? undefined : Number(guestLimit)}
                       onChange={(val) => setGuestLimit(val !== "" ? val : "")}
@@ -1344,11 +1439,9 @@ export default function NemeltTokhirgoo() {
                       size="sm"
                       className="w-full"
                     />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs text-theme">
-                      Үнэгүй минут (тус бүр)
-                    </label>
+                  </SettingsField>
+
+                  <SettingsField label="Үнэгүй минут (тус бүр)">
                     <MNumberInput
                       value={
                         guestFreeMinutes === ""
@@ -1363,490 +1456,106 @@ export default function NemeltTokhirgoo() {
                       size="sm"
                       className="w-full"
                     />
-                  </div>
+                  </SettingsField>
                 </div>
+              ) : null}
+            </SettingsItem>
 
-                <div className="pt-1 flex justify-end">
-                  <Button
-                    onClick={() => saveGuestSettings()}
-                    variant="primary"
-                    size="sm"
-                    className="!rounded-xl px-4 py-1 text-xs"
-                  >
-                    Хадгалах
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+            <SettingsItem
+              id="nemelt-mashin-box"
+              title="Машины бүртгэлийн хязгаар"
+              desc="Нэг оршин суугч / харилцагч дээр бүртгэж болох машины дээд тоо. Бүх оршин суугчид ижил хамаарна."
+              control={
+                <MNumberInput
+                  value={
+                    residentCarLimit === ""
+                      ? undefined
+                      : Number(residentCarLimit)
+                  }
+                  onChange={(val) => setResidentCarLimit(val !== "" ? val : "")}
+                  placeholder="1"
+                  min={1}
+                  size="sm"
+                  className="w-20"
+                />
+              }
+            />
 
-        {/* Машины бүртгэлийн хязгаар — зочны тохиргооноос хамааралгүй, бүх
-            оршин суугч/харилцагчид ижил хамаарна */}
-        <div id="nemelt-mashin-box">
-          <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden">
-            <div className="px-4 py-3 border-b border-[color:var(--surface-border)] bg-gradient-to-r from-theme/10 to-theme/5">
-              <h3 className="text-base text-theme">Машины бүртгэлийн хязгаар</h3>
-              <p className="text-xs text-[color:var(--muted-text)]">
-                Нэг оршин суугч / харилцагч дээр бүртгэж болох машины дээд тоо
-              </p>
-            </div>
-
-            <div className="p-3.5 px-4 bg-gradient-to-br from-theme/50 to-theme/50 space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
-                <div className="space-y-1">
-                  <label className="text-xs text-theme">
-                    Машины дээд тоо (оршин суугч тус бүрд)
-                  </label>
-                  <MNumberInput
-                    value={
-                      residentCarLimit === ""
-                        ? undefined
-                        : Number(residentCarLimit)
-                    }
-                    onChange={(val) =>
-                      setResidentCarLimit(val !== "" ? val : "")
-                    }
-                    placeholder="1"
-                    min={1}
-                    size="sm"
-                    className="w-full"
-                  />
-                  <p className="text-[11px] text-[color:var(--muted-text)]">
-                    Жишээ: 3 гэж тохируулбал оршин суугч аппаараа 3 машин
-                    бүртгэж, бүгдийг нь харна. Бүх оршин суугчид ижил хамаарна.
-                  </p>
-                </div>
-
-                <div className="flex justify-end">
-                  <Button
-                    onClick={saveResidentCarLimit}
-                    variant="primary"
-                    size="sm"
-                    className="!rounded-xl px-4 py-1 text-xs"
-                  >
-                    Хадгалах
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Цахилгаан бодох горим - Урт тайлбартай тохиргоо бүтэн мөрөөр байршина */}
-        <div id="nemelt-tsakhilgaan-box">
-          <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden">
-            <div className="px-4 py-3 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-theme/10 to-theme/5">
-              <div className="flex items-center gap-2.5">
-                <div>
-                  <h3 className="text-base text-theme">
-                    Заалтаар цахилгаан бодох
-                  </h3>
-                  <p className="text-xs text-[color:var(--muted-text)]">
-                    Цахилгааны төлбөрийг заалтаас бодох эсвэл дүнг нь шууд
-                    оруулах
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <span className="text-xs text-theme">
-                  {zaaltaarBodokh ? "Идэвхтэй" : "Идэвхгүй"}
-                </span>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={zaaltaarBodokh}
-                    onChange={(e) =>
-                      saveZaaltaarBodokhSettings(e.currentTarget.checked)
-                    }
-                    className="sr-only peer"
-                    aria-label="Заалтаар цахилгаан бодох"
-                  />
-                  <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme dark:peer-focus:ring-theme rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-[color:var(--surface-bg)] after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:peer-checked:bg-theme peer-checked:bg-theme"></div>
-                </label>
-              </div>
-            </div>
-
-            <div className="p-3.5 px-4 bg-gradient-to-br from-theme/50 to-theme/50 space-y-1.5">
-              {zaaltaarBodokh ? (
-                <>
-                  <p className="text-xs text-theme leading-relaxed">
-                    Тоолуурын Өдөр, Шөнө, Өмнөх заалтыг
-                    Excel-ээр оруулна. Зөрүүг кВт тарифаар үржүүлж систем өөрөө
-                    бодно.
-                  </p>
-                  <p className="text-[11px] text-[color:var(--muted-text)]">
-                    Гүйлгээний түүх хуудасны Заалт цэснээс «Заалт татах»,
-                    «Заалтын жагсаалт татах» боломжтой.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p className="text-xs text-theme leading-relaxed">
-                    Систем цахилгааныг бодохгүй. Та тоот тус бүрийн
-                    эцсийн дүнг Excel-д бичиж оруулах ба тэр дүн шууд{" "}
-                    Цахилгаан төлбөр болно.
-                  </p>
-                  <p className="text-[11px] text-[color:var(--muted-text)]">
-                    Гүйлгээний түүх хуудасны Цахилгаан цэснээс «Цахилгаан
-                    татах»-аар загварыг аваад, дүнг бөглөж буцаан оруулна.
-                  </p>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* 2x2 Grid: Хаалт нээх эрх, Төлбөр тооцох арга, Грашийн төлбөр, Агуулахын төлбөр */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Row 1, Col 1: Resident Gate Open Permission Box */}
-          <div id="nemelt-resident-gate-box" className="h-full">
-            <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden h-full flex flex-col justify-between">
-              <div className="px-4 py-3 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-theme/10 to-theme/5">
-                <div className="flex items-center gap-2.5">
-                  <div>
-                    <h3 className="text-base text-theme">
-                      Оршин суугчийн хаалт нээх эрх
-                    </h3>
-                    <p className="text-xs text-[color:var(--muted-text)]">
-                      Оршин суугчийн аппликейшн дээр хаалт нээх товч харуулах эсэх
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2.5">
-                  <span className="text-xs text-theme">
-                    {residentGateOpenEnabled ? "Идэвхтэй" : "Идэвхгүй"}
-                  </span>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={residentGateOpenEnabled}
-                      onChange={(e) => {
-                        const val = e.currentTarget.checked;
-                        setResidentGateOpenEnabled(val);
-                        saveResidentGateOpenSettings(val);
-                      }}
-                      className="sr-only peer"
-                      aria-label="Хаалт нээх эрх идэвхжүүлэх"
-                    />
-                    <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-danger dark:peer-focus:ring-danger rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-[color:var(--surface-bg)] after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-danger"></div>
-                  </label>
-                </div>
-              </div>
-              <div className="p-3.5 px-4 bg-gradient-to-br from-danger/50 to-danger/50 flex-1 flex items-center">
-                <p className="text-xs text-[color:var(--muted-text)]">
-                  {residentGateOpenEnabled
-                    ? "Оршин суугчийн гар утасны аппликейшн дээр хаалт нээх товч идэвхтэй харагдана."
-                    : "Оршин суугчийн гар утасны аппликейшн дээр хаалт нээх товч харагдахгүй."}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Гэр бүлийн гишүүн урих боломж */}
-          <div id="nemelt-gerbul-box" className="h-full">
-            <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden h-full flex flex-col justify-between">
-              <div className="px-4 py-3 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-theme/10 to-theme/5">
-                <div className="flex items-center gap-2.5">
-                  <div>
-                    <h3 className="text-base text-theme">
-                      Гэр бүлийн гишүүн урих
-                    </h3>
-                    <p className="text-xs text-[color:var(--muted-text)]">
-                      Оршин суугч аппаараа гэр бүлийнхээ гишүүдийг урих эсэх
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2.5">
-                  <span className="text-xs text-theme">
-                    {gerBuliinGishuunEnabled ? "Идэвхтэй" : "Идэвхгүй"}
-                  </span>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={gerBuliinGishuunEnabled}
-                      onChange={(e) =>
-                        saveGerBuliinGishuunSettings(e.currentTarget.checked)
-                      }
-                      className="sr-only peer"
-                      aria-label="Гэр бүлийн гишүүн урих боломж идэвхжүүлэх"
-                    />
-                    <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme dark:peer-focus:ring-theme rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-[color:var(--surface-bg)] after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:peer-checked:bg-theme peer-checked:bg-theme"></div>
-                  </label>
-                </div>
-              </div>
-              <div className="p-3.5 px-4 bg-gradient-to-br from-theme/50 to-theme/50 flex-1 flex items-center">
-                <p className="text-xs text-[color:var(--muted-text)]">
-                  {gerBuliinGishuunEnabled
-                    ? "Оршин суугч аппаараа гэр бүлийн гишүүн урьж, гишүүн нь тоот, нэхэмжлэх, төлбөрийг харна."
-                    : "Урих боломж хаагдсан. Шинэ урилга үүсэхгүй, хүлээгдэж байсан урилга ч баталгаажихгүй. Бүртгэлтэй гишүүд хэвээр байна."}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Row 1, Col 2: Calculation Method Box */}
-          <div id="nemelt-calculation-box" className="h-full">
-            <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden h-full flex flex-col justify-between">
-              <div className="px-4 py-3 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-theme/10 to-theme/5">
-                <div className="flex items-center gap-2.5">
-                  <div>
-                    <h3 className="text-base text-theme">Төлбөр тооцох арга</h3>
-                    <p className="text-xs text-[color:var(--muted-text)]">
-                      Сарын төлбөрийг хоногоор хувааж тооцох тохиргоо
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2.5">
-                  <span className="text-xs text-theme">
-                    {calculationEnabled ? "Идэвхтэй" : "Идэвхгүй"}
-                  </span>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={calculationEnabled}
-                      onChange={(e) => {
-                        const val = e.currentTarget.checked;
-                        setCalculationEnabled(val);
-                        if (!val) saveCalculationSettings(false);
-                      }}
-                      className="sr-only peer"
-                    />
-                    <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme dark:peer-focus:ring-theme rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-[color:var(--surface-bg)] after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:peer-checked:bg-theme peer-checked:bg-theme"></div>
-                  </label>
-                </div>
-              </div>
-
-              {calculationEnabled ? (
-                <div className="p-3.5 px-4 bg-gradient-to-br from-theme/50 to-theme/50 space-y-3 animate-in fade-in zoom-in-95 duration-300 flex-1 flex flex-col justify-between">
-                  <div className="grid grid-cols-1 gap-2.5">
-                    <div className="space-y-1.5">
-                      <label className="text-xs text-theme">
-                        Тооцоолох төрөл
-                      </label>
-                      <div className="flex items-center justify-between gap-3 flex-wrap">
-                        <div className="flex p-0.5 bg-[color:var(--surface-hover)] rounded-lg w-fit shrink-0">
-                          <button
-                            onClick={() => setCalculationMethod("Хуанли")}
-                            className={`px-3.5 py-1 rounded-md text-xs transition-all ${calculationMethod === "Хуанли"
-                              ? "bg-[color:var(--surface-bg)] shadow-xs text-brand"
-                              : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
-                              }`}
-                          >
-                            Хуанли
-                          </button>
-                          <button
-                            onClick={() => setCalculationMethod("Тогтмол")}
-                            className={`px-3.5 py-1 rounded-md text-xs transition-all ${calculationMethod === "Тогтмол"
-                              ? "bg-[color:var(--surface-bg)] shadow-xs text-brand"
-                              : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
-                              }`}
-                          >
-                            Тогтмол
-                          </button>
-                        </div>
-
-                        {calculationMethod === "Тогтмол" && (
-                          <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200">
-                            <span className="text-xs text-theme whitespace-nowrap">
-                              Сарын тогтмол хоног:
-                            </span>
-                            <MNumberInput
-                              value={
-                                fixedDayCount === ""
-                                  ? undefined
-                                  : Number(fixedDayCount)
-                              }
-                              onChange={(val) =>
-                                setFixedDayCount(val !== "" ? val : "")
-                              }
-                              placeholder="30"
-                              min={1}
-                              max={31}
-                              size="xs"
-                              className="w-28"
-                              styles={{
-                                input: {
-                                  height: 28,
-                                  minHeight: 28,
-                                  fontSize: "12px",
-                                },
-                              }}
-                            />
-                            <span className="text-xs text-[color:var(--muted-text)]">хоног</span>
-                          </div>
-                        )}
-                      </div>
-                      <p className="text-[11px] text-[color:var(--muted-text)]">
-                        {calculationMethod === "Хуанли"
-                          ? "Тухайн сарын нийт хоногт хувааж бодно (28, 30, 31)"
-                          : "Заасан хоногт тогтмол хувааж бодно"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="pt-2 flex justify-end border-t border-[color:var(--surface-border)]/50">
-                    <Button
-                      onClick={() => saveCalculationSettings()}
-                      variant="primary"
-                      size="sm"
-                      className="!rounded-xl px-5 py-1 text-xs"
-                    >
-                      Хадгалах
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="p-3.5 px-4 bg-gradient-to-br from-theme/50 to-theme/50 flex-1 flex items-center">
-                  <p className="text-xs text-[color:var(--muted-text)]">
-                    Сарын төлбөрийг хоногоор хувааж тооцох тохиргоо идэвхгүй байна.
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Row 2: Unified Garage & Storage Payment Box */}
-          <div id="nemelt-garage-storage-box" className="sm:col-span-2">
-            <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden">
-              <div className="px-4 py-3 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-theme/10 to-theme/5">
-                <div className="flex items-center gap-3">
-
-                  <div>
-                    <h3 className="text-base text-theme">
-                      Агуулах төлбөр бодох арга
-                    </h3>
-                    <p className="text-xs text-[color:var(--muted-text)]">
-                      Агуулах төлбөрийг граш болон агуулах нэгтгэсэн байдлаар тооцно.
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2.5">
-                  <span className="text-xs text-theme">
-                    {garagePaymentEnabled || storagePaymentEnabled
-                      ? "Идэвхтэй"
-                      : "Идэвхгүй"}
-                  </span>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={garagePaymentEnabled || storagePaymentEnabled}
-                      onChange={(e) => {
-                        const val = e.currentTarget.checked;
-                        setGaragePaymentEnabled(val);
-                        setStoragePaymentEnabled(val);
-                        if (!val) saveCombinedPaymentSettings(false);
-                      }}
-                      className="sr-only peer"
-                      aria-label="Граж, агуулах төлбөр идэвхжүүлэх"
-                    />
-                    <div className="w-10 h-5 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme dark:peer-focus:ring-theme rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-[color:var(--surface-bg)] after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:peer-checked:bg-theme peer-checked:bg-theme"></div>
-                  </label>
-                </div>
-              </div>
-
+            <SettingsItem
+              id="nemelt-garage-storage-box"
+              title="Агуулах төлбөр бодох арга"
+              desc="Граш болон агуулахын төлбөрийг нэгтгэсэн байдлаар тооцно"
+              control={
+                <Switch
+                  checked={garagePaymentEnabled || storagePaymentEnabled}
+                  onChange={(e) => {
+                    const val = e.currentTarget.checked;
+                    setGaragePaymentEnabled(val);
+                    setStoragePaymentEnabled(val);
+                    if (!val) saveCombinedPaymentSettings(false);
+                  }}
+                  label="Граж, агуулах төлбөр идэвхжүүлэх"
+                />
+              }
+            >
               {garagePaymentEnabled || storagePaymentEnabled ? (
-                <div className="p-3.5 px-4 bg-gradient-to-br from-theme/40 to-theme/40 space-y-3 animate-in fade-in zoom-in-95 duration-300">
-                  <div className="p-3 md:p-3.5 rounded-xl border border-theme/80 bg-white/90 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 md:gap-4 shadow-xs">
-                    {/* Left: Inputs with Plus */}
-                    <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                      {/* Граш төлбөр */}
-                      <div className="space-y-1 flex-1 min-w-[110px]">
-                        <label className="text-xs text-theme">
-                          Граш төлбөр
-                        </label>
-                        <MNumberInput
-                          value={
-                            garagePaymentValue === ""
-                              ? undefined
-                              : Number(garagePaymentValue)
-                          }
-                          onChange={(val) =>
-                            setGaragePaymentValue(val !== "" ? val : "")
-                          }
-                          placeholder="0"
-                          min={0}
-                          size="sm"
-                          thousandSeparator=","
-                          rightSection={
-                            <span className="text-xs text-[color:var(--muted-text)] mr-1 select-none">
-                              ₮
-                            </span>
-                          }
-                          className="w-full"
-                        />
-                      </div>
+                <>
+                  <div className="stg-grid">
+                    <SettingsField label="Граш төлбөр">
+                      <MNumberInput
+                        value={
+                          garagePaymentValue === ""
+                            ? undefined
+                            : Number(garagePaymentValue)
+                        }
+                        onChange={(val) =>
+                          setGaragePaymentValue(val !== "" ? val : "")
+                        }
+                        placeholder="0"
+                        min={0}
+                        size="sm"
+                        thousandSeparator=","
+                        rightSection={<span className="stg-unit">₮</span>}
+                        className="w-full"
+                      />
+                    </SettingsField>
 
-                      {/* + icon */}
-                      <div className="flex items-center justify-center pt-5 shrink-0">
-
-                      </div>
-
-                      {/* Агуулах төлбөр */}
-                      <div className="space-y-1 flex-1 min-w-[110px]">
-                        <label className="text-xs text-theme">
-                          Агуулах төлбөр
-                        </label>
-                        <MNumberInput
-                          value={
-                            storagePaymentValue === ""
-                              ? undefined
-                              : Number(storagePaymentValue)
-                          }
-                          onChange={(val) =>
-                            setStoragePaymentValue(val !== "" ? val : "")
-                          }
-                          placeholder="0"
-                          min={0}
-                          size="sm"
-                          thousandSeparator=","
-                          rightSection={
-                            <span className="text-xs text-[color:var(--muted-text)] mr-1 select-none">
-                              ₮
-                            </span>
-                          }
-                          className="w-full"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Right: Total display */}
-                    <div className="flex items-center justify-between gap-2.5 px-3.5 rounded-lg bg-theme/80 border border-theme/70 shrink-0 self-center md:self-end md:mb-0.5 h-9 min-w-[180px]">
-                      <span className="text-xs text-[color:var(--muted-text)] whitespace-nowrap">
-                        Нийт төлбөр:
-                      </span>
-                      <span className="text-xs text-theme whitespace-nowrap">
-                        {(
-                          (Number(garagePaymentValue) || 0) +
-                          (Number(storagePaymentValue) || 0)
-                        ).toLocaleString()}{" "}
-                        ₮
-                      </span>
-                    </div>
+                    <SettingsField label="Агуулах төлбөр">
+                      <MNumberInput
+                        value={
+                          storagePaymentValue === ""
+                            ? undefined
+                            : Number(storagePaymentValue)
+                        }
+                        onChange={(val) =>
+                          setStoragePaymentValue(val !== "" ? val : "")
+                        }
+                        placeholder="0"
+                        min={0}
+                        size="sm"
+                        thousandSeparator=","
+                        rightSection={<span className="stg-unit">₮</span>}
+                        className="w-full"
+                      />
+                    </SettingsField>
                   </div>
 
-                  <div className="pt-1 flex justify-end">
-                    <Button
-                      onClick={() => saveCombinedPaymentSettings()}
-                      variant="primary"
-                      size="sm"
-                      className="!rounded-xl px-5 py-1 text-xs"
-                    >
-                      Хадгалах
-                    </Button>
+                  <div className="stg-total">
+                    <span className="stg-total-label">Нийт төлбөр</span>
+                    <span className="stg-total-value">
+                      {(
+                        (Number(garagePaymentValue) || 0) +
+                        (Number(storagePaymentValue) || 0)
+                      ).toLocaleString()}{" "}
+                      ₮
+                    </span>
                   </div>
-                </div>
-              ) : (
-                <div className="p-3.5 px-4 bg-gradient-to-br from-theme/40 to-theme/40 flex-1 flex items-center">
-                  <p className="text-xs text-[color:var(--muted-text)]">
-                    Граж болон агуулахын төлбөр тооцоо идэвхгүй байна.
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
+                </>
+              ) : null}
+            </SettingsItem>
+          </SettingsCard>
         </div>
       </div>
-    </div >
+    </div>
   );
 }

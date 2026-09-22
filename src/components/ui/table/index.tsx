@@ -760,6 +760,13 @@ function Table<T extends object = any>({
       isGroup && col.children
         ? col.children.reduce((sum, c) => sum + (headerMinWidth(c) || 0), 0)
         : undefined;
+    const colWidth =
+      col.width !== undefined
+        ? typeof col.width === "number"
+          ? `${col.width}px`
+          : col.width
+        : undefined;
+
     return (
       <th
         key={key}
@@ -770,8 +777,8 @@ function Table<T extends object = any>({
           // table-layout:fixed зөвхөн жинхэнэ эхний мөрнөөс баганын өргөнийг
           // уншдаг; бүлгийн толгойн хүүхдүүд 2-р мөрөнд сууж байдаг тул
           // хүүхдүүдийн өргөний нийлбэрийг бүлгийн нүдэнд өгч засна.
-          width: isGroup ? groupWidth : headerMinWidth(col),
-          minWidth: isGroup ? groupWidth : headerMinWidth(col),
+          width: isGroup ? groupWidth : colWidth,
+          minWidth: isGroup ? groupWidth : (colWidth ?? headerMinWidth(col)),
           ...(fixed && { position: "sticky", ...fixed, zIndex: 2 }),
           ...(headerCellProps.style || {}),
         }}

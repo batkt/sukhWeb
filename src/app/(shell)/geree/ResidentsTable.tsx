@@ -296,7 +296,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
         },
       },
       {
-        title: "Холбоо барих",
+        title: "Утас",
         dataIndex: "utas",
         key: "utas",
         width: 140,

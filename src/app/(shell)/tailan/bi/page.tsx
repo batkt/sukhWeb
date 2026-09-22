@@ -221,7 +221,7 @@ const Karti: React.FC<{
   delgets?: string;
 }> = ({ garchig, tailbar, icon, children, undur = 220, delgets }) => (
   <div
-    className={`group flex flex-col overflow-hidden rounded-[1.5rem] border border-[color:var(--surface-border)] bg-white/90 shadow-sm transition-all duration-300 hover:shadow-md dark:border-white/10 ${
+    className={`group flex flex-col overflow-hidden rounded-[1.5rem] border border-[color:var(--surface-border)] bg-[color:var(--panel)]/90 shadow-sm transition-all duration-300 hover:shadow-md dark:border-white/10 ${
       delgets || ""
     }`}
   >

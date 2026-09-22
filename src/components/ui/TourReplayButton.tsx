@@ -119,12 +119,12 @@ export default function TourReplayButton() {
                   initial={{ opacity: 0, x: 20, scale: 0.8 }}
                   animate={{ opacity: 1, x: 0, scale: 1 }}
                   exit={{ opacity: 0, x: 20, scale: 0.8 }}
-                  className="absolute right-full mr-3 px-4 py-2 rounded-2xl bg-white/90 backdrop-blur-xl border border-white/20 shadow-2xl pointer-events-none whitespace-nowrap hidden md:block"
+                  className="absolute right-full mr-3 px-4 py-2 rounded-2xl bg-[color:var(--panel)]/90 backdrop-blur-xl border border-[color:var(--surface-border)] shadow-2xl pointer-events-none whitespace-nowrap hidden md:block"
                 >
                   <span className="text-sm font-medium text-[color:var(--panel-text)] dark:text-white flex items-center gap-2">
                     {currentTsonkh?.ner ? `${currentTsonkh.ner} тусламж хэрэгтэй юу?` : "Ерөнхий тусламж хэрэгтэй юу?"} <span className="text-brand">👋</span>
                   </span>
-                  <div className="absolute top-1/2 -right-1 -translate-y-1/2 w-2 h-2 rotate-45 bg-white/90 border-r border-t border-white/20" />
+                  <div className="absolute top-1/2 -right-1 -translate-y-1/2 w-2 h-2 rotate-45 bg-[color:var(--panel)]/90 border-r border-t border-[color:var(--surface-border)]" />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -156,7 +156,7 @@ export default function TourReplayButton() {
               initial={{ opacity: 0, y: 20, scale: 0.95, transformOrigin: "bottom right" }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20, scale: 0.95 }}
-              className="w-[280px] md:w-72 overflow-hidden rounded-3xl bg-white/95 backdrop-blur-2xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.2)]"
+              className="w-[280px] md:w-72 overflow-hidden rounded-3xl bg-[color:var(--panel)]/95 backdrop-blur-2xl border border-[color:var(--surface-border)] shadow-[0_20px_50px_rgba(0,0,0,0.2)]"
             >
               <div className="p-5 border-b border-[color:var(--surface-border)] dark:border-white/5">
                 <div className="flex items-center justify-between gap-3">

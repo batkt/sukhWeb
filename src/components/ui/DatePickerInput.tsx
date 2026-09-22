@@ -259,7 +259,7 @@ export function DatePickerInput(
                 <div className="absolute inset-0 bg-black/60 backdrop-blur-md" />
                 <div
                   onClick={(e) => e.stopPropagation()}
-                  className="relative bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl p-4 w-full max-w-sm border border-[color:var(--surface-border)] dark:border-white/10 animate-in slide-in-from-bottom-4 duration-300"
+                  className="relative bg-[color:var(--panel)]/90 backdrop-blur-xl rounded-3xl shadow-2xl p-4 w-full max-w-sm border border-[color:var(--surface-border)] dark:border-white/10 animate-in slide-in-from-bottom-4 duration-300"
                   style={{ maxHeight: "85vh", overflow: "auto" }}
                 >
                   <div className="w-12 h-1 bg-[color:var(--panel)] rounded-full mx-auto mb-6" />
@@ -287,7 +287,7 @@ export function DatePickerInput(
             : createPortal(
               <div
                 ref={dropdownRef}
-                className="fixed z-[9999] !w-150 rounded-2xl bg-white/90 backdrop-blur-xl border border-[color:var(--surface-border)] dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] p-3 animate-in fade-in zoom-in-95 duration-200"
+                className="fixed z-[9999] !w-150 rounded-2xl bg-[color:var(--panel)]/90 backdrop-blur-xl border border-[color:var(--surface-border)] dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] p-3 animate-in fade-in zoom-in-95 duration-200"
                 role="dialog"
                 aria-modal="true"
                 style={{

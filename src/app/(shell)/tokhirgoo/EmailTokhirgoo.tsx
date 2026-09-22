@@ -36,7 +36,7 @@ const FloatingInput = ({
       value={value}
       onChange={onChange}
       placeholder=" "
-      className="peer w-full rounded-xl border border-theme/30 bg-white/50 px-4 pt-5 pb-2 text-theme dark:text-white focus:border-theme dark:focus:border-theme focus:ring-2 focus:ring-theme/20 dark:focus:ring-theme/20 focus:outline-none transition-all duration-200"
+      className="peer w-full rounded-xl border border-theme/30 bg-[color:var(--panel)]/50 px-4 pt-5 pb-2 text-theme dark:text-white focus:border-theme dark:focus:border-theme focus:ring-2 focus:ring-theme/20 dark:focus:ring-theme/20 focus:outline-none transition-all duration-200"
     />
     <label
       className="absolute left-4 top-2 text-[color:var(--muted-text)] text-sm transition-all pointer-events-none

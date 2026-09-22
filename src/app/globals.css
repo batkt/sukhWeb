@@ -474,18 +474,16 @@
      Тодорхой data-theme (dark-gray, dark-black, blue-gradient) нь өөрийн
      гадаргууг тодорхойлдог тул энэ нь тэднийг хөндөхгүй; тодорхойлоогүй
      сэдвүүд (жишээ нь dark-green) л эндээс уншина. */
-  --surface-bg: #0b241a;
+  --surface-bg: var(--dark-bg);
   /* Картын градиентийн хоёр дахь өнгө. Хаана ч тодорхойлогдоогүй байсан
      тул `to-[color:var(--panel)]` бүхэн хүчингүй болж, картууд хавтгай
      нэг өнгөөр гардаг байв. */
-  --panel: #0f3024;
-  /* Хүрээ/hover-ийг цагаанаас ногоон болгосон нь өнгөний мэдрэмжийг
-     дэвсгэрээс ч илүү зөөлөн зөв болгодог. */
-  --surface-border: rgba(52, 211, 153, 0.16);
-  --surface-hover: rgba(52, 211, 153, 0.07);
-  --panel-text: #e9fff6;
+  --panel: var(--dark-panel);
+  --surface-border: var(--dark-border);
+  --surface-hover: var(--dark-hover);
+  --panel-text: var(--dark-text);
 
-  --muted-text: #8fbda9;
+  --muted-text: var(--dark-muted);
 
   /* Семантик өнгө (харанхуй) — бараан гадаргуу дээр 600-шээ хэт бүдэг тул
      400-шээ болгож тодруулна. */
@@ -613,6 +611,31 @@
   --info: #2563eb; /* blue-600 */
   --neutral: #64748b; /* slate-500 — цагаан текстэй 4.8:1 */
 
+  /* ── ХАРАНХУЙ ГОРИМЫН ДУНДЫН ПАЛИТР ───────────────────────────────────
+     Гурван сэдэв (soft-sage / blue-gradient / colorful) БҮГД үүнийг
+     хуваалцана. Өмнө нь тус бүр өөрийн хазайлттай бараантай байсан
+     (ногоон #0b241a, navy #0f1424, индиго) — сэдэв сольсон тохиолдолд
+     хуудас бүхэлдээ өнгө солигдож эвгүй харагддаг байв.
+
+     Утгууд нь `turees`-ийн `components/ui/tokens.css`-ээс: Tailwind
+     gray-900/800/700. Сэдвийн ялгаа нь зөвхөн БРЭНД өнгө (`--theme`) ба
+     радиал гэрэлтэлтээр илэрнэ — гадаргуу нь саарал, төвийг сахисан. */
+  --dark-bg: #111827; /* gray-900 — turees --background */
+  --dark-panel: #1f2937; /* gray-800 — turees --card */
+  --dark-border: #374151; /* gray-700 — turees --border */
+  --dark-hover: rgba(255, 255, 255, 0.06);
+  --dark-text: #f9fafb; /* gray-50 — turees --foreground */
+  --dark-muted: #9ca3af; /* gray-400 — turees --muted-foreground */
+  --dark-gradient: linear-gradient(
+    135deg,
+    #0d131c 0%,
+    #111827 48%,
+    #151d2a 100%
+  );
+  --dark-glass: rgba(17, 24, 39, 0.55);
+  --dark-glass-2: rgba(31, 41, 55, 0.34);
+  --dark-glass-border: rgba(255, 255, 255, 0.12);
+
   /* ── Видео хананы гадаргуу (үргэлж БАРААН) ──────────────────────────
      Камерын хана нь гэрэл горимд ч бараан байх ёстой — дэлгэц дээрх
      видеог цагаан хүрээ зөрүүлдэг. Өмнө нь `bg-slate-950/800` байсныг
@@ -620,10 +643,10 @@
      цагаан текст үл харагдах болсон.
 
      Гэхдээ сэдвийг ДАГАНА — `--theme-hue`-ээс өнгө авна. */
-  --wall-bg: hsl(var(--theme-hue) 30% 5%);
-  --wall-panel: hsl(var(--theme-hue) 22% 15%);
-  --wall-panel-hover: hsl(var(--theme-hue) 20% 21%);
-  --wall-muted: hsl(var(--theme-hue) 14% 66%);
+  --wall-bg: #0a0f16; /* gray-900-аас бараан — видеог тодруулна */
+  --wall-panel: var(--dark-panel);
+  --wall-panel-hover: var(--dark-border);
+  --wall-muted: var(--dark-muted);
 
   --panel-text: #0f172a;
   --table-hover-bg: color-mix(in oklch, var(--theme), transparent 90%);
@@ -1245,31 +1268,31 @@ html[data-mode="dark"]:not([data-theme]),
       rgba(92, 191, 155, 0.14) 0%,
       transparent 30%
     ),
-    linear-gradient(135deg, #0b1220 0%, #0f1730 45%, #111a35 100%);
-  --surface-bg: #0f1424; /* dark navy to match the base */
-  --surface-border: rgba(219, 234, 254, 0.18);
-  --surface-hover: rgba(219, 234, 254, 0.08);
-  --panel-text: #e6efff; /* soft ice for readability */
+    var(--dark-gradient);
+  --surface-bg: var(--dark-bg);
+  --surface-border: var(--dark-border);
+  --surface-hover: var(--dark-hover);
+  --panel-text: var(--dark-text);
   /* Glass tokens tuned for indigo/navy background */
-  --glass-tint: rgba(9, 14, 28, 0.5);
-  --glass-tint-2: rgba(12, 18, 34, 0.32);
-  --glass-border: rgba(219, 234, 254, 0.22);
+  --glass-tint: var(--dark-glass);
+  --glass-tint-2: var(--dark-glass-2);
+  --glass-border: var(--dark-glass-border);
   --glass-highlight: rgba(255, 255, 255, 0.2);
   --glass-shadow: rgba(2, 6, 23, 0.42);
 }
 
 [data-theme="blue-gradient"][data-mode="dark"] {
-  --gradient-bg: linear-gradient(135deg, #0b1220 0%, #0f1730 45%, #111a35 100%);
+  --gradient-bg: var(--dark-gradient);
   --theme: #60a5fa; /* blue-400 — бараан дэвсгэр дээр тод */
-  --surface-bg: #0f1424;
-  --panel: #161d33;
-  --surface-border: rgba(219, 234, 254, 0.18);
-  --surface-hover: rgba(96, 165, 250, 0.08);
-  --panel-text: #e6efff;
-  --muted-text: #9db2d4;
-  --glass-tint: rgba(9, 14, 28, 0.5);
-  --glass-tint-2: rgba(12, 18, 34, 0.32);
-  --glass-border: rgba(219, 234, 254, 0.22);
+  --surface-bg: var(--dark-bg);
+  --panel: var(--dark-panel);
+  --surface-border: var(--dark-border);
+  --surface-hover: var(--dark-hover);
+  --panel-text: var(--dark-text);
+  --muted-text: var(--dark-muted);
+  --glass-tint: var(--dark-glass);
+  --glass-tint-2: var(--dark-glass-2);
+  --glass-border: var(--dark-glass-border);
   --glass-highlight: rgba(255, 255, 255, 0.2);
   --glass-shadow: rgba(2, 6, 23, 0.42);
 }
@@ -1293,61 +1316,20 @@ html[data-mode="dark"]:not([data-theme]),
 
 [data-theme="colorful"][data-mode="dark"] {
   --theme: #a78bfa; /* violet-400 — бараан дэвсгэр дээр тод */
-  --panel: #1b1b3a;
-  --surface-hover: rgba(167, 139, 250, 0.08);
-  --muted-text: #a9a9d4;
+  --panel: var(--dark-panel);
+  --surface-hover: var(--dark-hover);
+  --muted-text: var(--dark-muted);
   --table-hover-bg: color-mix(in oklch, var(--theme), transparent 88%);
 
   /* Keep the same colorful character, but on a deep indigo base */
-  --gradient-bg:
-    radial-gradient(
-      ellipse at top right,
-      rgba(128, 107, 223, 0.28) 0%,
-      transparent 36%
-    ),
-    radial-gradient(
-      ellipse at right 40%,
-      rgba(246, 71, 112, 0.18) 0%,
-      transparent 24%
-    ),
-    radial-gradient(
-      ellipse at right 45%,
-      rgba(246, 187, 50, 0.16) 0%,
-      transparent 30%
-    ),
-    radial-gradient(
-      ellipse at 88% 30%,
-      rgba(92, 191, 155, 0.18) 0%,
-      transparent 26%
-    ),
-    radial-gradient(
-      ellipse at bottom left,
-      rgba(128, 107, 223, 0.22) 0%,
-      transparent 42%
-    ),
-    radial-gradient(
-      ellipse at 20% 80%,
-      rgba(246, 71, 112, 0.14) 0%,
-      transparent 24%
-    ),
-    radial-gradient(
-      ellipse at 36% 100%,
-      rgba(246, 187, 50, 0.12) 0%,
-      transparent 32%
-    ),
-    radial-gradient(
-      ellipse at 36% 100%,
-      rgba(92, 191, 155, 0.14) 0%,
-      transparent 30%
-    ),
-    linear-gradient(135deg, #0b1220 0%, #0f1730 45%, #111a35 100%);
-  --surface-bg: #0f1424; /* dark navy to match the base */
-  --surface-border: rgba(219, 234, 254, 0.18);
-  --panel-text: #e6efff; /* soft ice for readability */
+  --gradient-bg: var(--dark-gradient);
+  --surface-bg: var(--dark-bg);
+  --surface-border: var(--dark-border);
+  --panel-text: var(--dark-text);
   /* Glass tokens tuned for indigo/navy background */
-  --glass-tint: rgba(9, 14, 28, 0.5);
-  --glass-tint-2: rgba(12, 18, 34, 0.32);
-  --glass-border: rgba(219, 234, 254, 0.22);
+  --glass-tint: var(--dark-glass);
+  --glass-tint-2: var(--dark-glass-2);
+  --glass-border: var(--dark-glass-border);
   --glass-highlight: rgba(255, 255, 255, 0.2);
   --glass-shadow: rgba(2, 6, 23, 0.42);
 }
@@ -3965,18 +3947,18 @@ body .mantine-Month-weekday {
      (#0f1730) байсан тул дэлгэцийн доод/баруун тал хөх-хар болж, ногоон
      мэдрэмж алга болдог байв. Мөн гадаргуу нь #0e1814 — ногоон хэлтэй ч
      бараг хар. Гурвуулангийг эмералд руу хазайсан бараан болгов. */
-  --gradient-bg: linear-gradient(135deg, #061a13 0%, #092219 48%, #0c2a1f 100%);
+  --gradient-bg: var(--dark-gradient);
   /* Бараан гадаргуу дээр emerald-600 бүдгэрдэг тул 400-шээ болгоно. */
   --theme: #34d399; /* emerald-400 */
-  --surface-bg: #0b241a; /* карт/панелийн дэвсгэр — ногоон бараан */
-  --panel: #0f3024; /* картын градиентийн 2 дахь өнгө (өргөгдсөн гадаргуу) */
-  --surface-border: rgba(52, 211, 153, 0.18);
-  --surface-hover: rgba(52, 211, 153, 0.08);
-  --panel-text: #e6fff5; /* minty white */
-  --muted-text: #8fbda9; /* ногоон хазайлттай хоёрдогч текст */
-  --glass-tint: rgba(9, 34, 25, 0.55);
-  --glass-tint-2: rgba(12, 42, 31, 0.34);
-  --glass-border: rgba(52, 211, 153, 0.2);
+  --surface-bg: var(--dark-bg);
+  --panel: var(--dark-panel);
+  --surface-border: var(--dark-border);
+  --surface-hover: var(--dark-hover);
+  --panel-text: var(--dark-text);
+  --muted-text: var(--dark-muted);
+  --glass-tint: var(--dark-glass);
+  --glass-tint-2: var(--dark-glass-2);
+  --glass-border: var(--dark-glass-border);
   --glass-highlight: rgba(167, 243, 208, 0.16);
   --glass-shadow: rgba(2, 14, 10, 0.45);
 
@@ -6739,10 +6721,10 @@ body,
 .dark {
   --zt-card: 215 28% 17%; /* gray-800 #1f2937 */
   --zt-fg: 210 20% 98%;
-  --zt-muted: var(--theme-hue) 19% 27%;
-  --zt-muted-fg: var(--theme-hue) 11% 65%;
-  --zt-border: var(--theme-hue) 19% 27%;
-  --zt-input: var(--theme-hue) 19% 31%;
+  --zt-muted: 217 19% 27%; /* gray-700 — turees, төвийг сахисан */
+  --zt-muted-fg: 218 11% 65%; /* gray-400 */
+  --zt-border: 217 19% 27%; /* gray-700 */
+  --zt-input: 217 19% 31%;
   --zt-primary: var(--theme-hue) 84% 45%;
   --zt-primary-fg: 0 0% 100%;
   --zt-accent: var(--theme-hue) 45% 18%;
@@ -6817,4 +6799,360 @@ body,
 }
 .zt-popup-in {
   animation: zt-popup-in 120ms ease-out;
+}
+
+/* ── Тохиргооны картууд (Тохиргоо → Нэмэлт) ────────────────────────────
+   Хоёр багана, карт бүр өөрийн дүрс, гарчиг, дэд мөрүүдтэй. КАРТ бүрд
+   ХАМГИЙН ИХДЭЭ НЭГ «Хадгалах» — доод баруун буланд. Мөр болгонд товч
+   тавьдаг байсныг больсон. Хуудасны хамгийн доор бүгдийг нэг дор хадгалах
+   ерөнхий мөр. */
+.stg-page {
+  columns: 2;
+  column-gap: 1rem;
+}
+
+@media (max-width: 1024px) {
+  .stg-page {
+    columns: 1;
+  }
+}
+
+.stg-card {
+  break-inside: avoid;
+  margin-bottom: 1rem;
+  padding: 0.875rem 1rem 1rem;
+  border: 1px solid var(--surface-border);
+  border-radius: 1rem;
+  background: var(--surface-bg);
+}
+
+.stg-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+/* Брэнд өнгөний бүдэг дэвсгэртэй дүрсний хайрцаг */
+.stg-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.75rem;
+  background: color-mix(in oklch, var(--theme), transparent 88%);
+  color: var(--theme);
+}
+
+.stg-icon svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.stg-card-titles {
+  flex: 1;
+  min-width: 0;
+}
+
+.stg-card-title {
+  font-size: 0.9375rem;
+  /* Бүдүүн үсэг ХЭРЭГЛЭХГҮЙ — шатлалыг хэмжээ, өнгөөр гаргана */
+  font-weight: 400;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: var(--panel-text);
+}
+
+.stg-card-sub {
+  margin-top: 0.125rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--muted-text);
+  text-wrap: pretty;
+}
+
+.stg-card-toggle {
+  flex: none;
+  padding-top: 0.25rem;
+}
+
+.stg-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.stg-card-foot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.75rem;
+}
+
+/* ── Картын доторх нэг мөр ─────────────────────────────────────────── */
+.stg-item {
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.75rem;
+  background: color-mix(in oklch, var(--theme), transparent 95%);
+}
+
+.stg-item-main {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.stg-item-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 0.5rem;
+  background: var(--surface-bg);
+  color: var(--theme);
+}
+
+.stg-item-icon svg {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.stg-item-titles {
+  flex: 1;
+  min-width: 0;
+}
+
+.stg-item-title {
+  font-size: 0.8125rem;
+  font-weight: 400;
+  line-height: 1.35;
+  color: var(--panel-text);
+}
+
+.stg-item-desc {
+  margin-top: 0.0625rem;
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  color: var(--muted-text);
+  text-wrap: pretty;
+}
+
+.stg-item-control {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: none;
+}
+
+.stg-item-body {
+  margin-top: 0.625rem;
+}
+
+/* ── Талбарууд ─────────────────────────────────────────────────────── */
+.stg-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.625rem 0.75rem;
+}
+
+.stg-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.stg-field-label {
+  font-size: 0.6875rem;
+  color: var(--muted-text);
+}
+
+.stg-select {
+  height: 2.25rem;
+  padding-inline: 0.75rem;
+  border: 1px solid var(--surface-border);
+  border-radius: 0.625rem;
+  background: var(--surface-bg);
+  color: inherit;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.stg-select:focus {
+  outline: none;
+  border-color: var(--theme);
+}
+
+.stg-editor {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.stg-note {
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  color: var(--muted-text);
+  text-wrap: pretty;
+}
+
+.stg-total {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.stg-total-label {
+  font-size: 0.6875rem;
+  color: var(--muted-text);
+}
+
+.stg-total-value {
+  font-size: 1.125rem;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  color: var(--panel-text);
+}
+
+/* Сегмент сонголт */
+.stg-segment {
+  display: inline-flex;
+  gap: 0.375rem;
+}
+
+.stg-segment-item {
+  padding: 0.375rem 0.875rem;
+  border: 1px solid var(--surface-border);
+  border-radius: 0.625rem;
+  font-size: 0.8125rem;
+  color: var(--muted-text);
+  background: var(--surface-bg);
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease;
+}
+
+.stg-segment-item:hover {
+  color: var(--panel-text);
+}
+
+.stg-segment-item.is-active {
+  color: var(--theme);
+  border-color: var(--theme);
+  background: color-mix(in oklch, var(--theme), transparent 92%);
+}
+
+/* ── Товчнууд ──────────────────────────────────────────────────────── */
+.stg-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  height: 2.25rem;
+  padding-inline: 1.125rem;
+  border-radius: 0.625rem;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    opacity 150ms ease;
+}
+
+.stg-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.stg-btn-primary {
+  background: var(--theme);
+  color: #fff;
+}
+
+.stg-btn-primary:not(:disabled):hover {
+  background: color-mix(in oklch, var(--theme), black 12%);
+}
+
+.stg-btn-ghost {
+  border: 1px solid var(--surface-border);
+  background: var(--surface-bg);
+  color: var(--muted-text);
+}
+
+.stg-btn-ghost:hover {
+  color: var(--panel-text);
+  background: var(--surface-hover);
+}
+
+.stg-btn:focus-visible {
+  outline: 2px solid var(--theme);
+  outline-offset: 2px;
+}
+
+/* ── Унтраалга ─────────────────────────────────────────────────────── */
+.tokh-switch {
+  --sw-travel: 1.25rem;
+  position: relative;
+  display: inline-block;
+  width: 2.5rem;
+  height: 1.25rem;
+  flex: none;
+  border: 1px solid var(--surface-border);
+  border-radius: 9999px;
+  background: var(--panel);
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease;
+}
+
+.tokh-switch-sm {
+  --sw-travel: 1rem;
+  width: 2.25rem;
+}
+
+.tokh-switch::after {
+  content: "";
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 9999px;
+  background: var(--surface-bg);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.25);
+  transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.peer:checked + .tokh-switch {
+  background: var(--theme);
+  border-color: var(--theme);
+}
+
+.peer:checked + .tokh-switch::after {
+  transform: translateX(var(--sw-travel));
+}
+
+.peer:focus-visible + .tokh-switch {
+  outline: 2px solid var(--theme);
+  outline-offset: 2px;
+}
+
+.peer:active + .tokh-switch::after {
+  width: 1.15rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tokh-switch,
+  .tokh-switch::after,
+  .stg-segment-item,
+  .stg-btn {
+    transition: none;
+  }
+}
+
+/* Зөвхөн дүрстэй товч — дөрвөлжин */
+.stg-btn-icon {
+  padding-inline: 0.625rem;
 }

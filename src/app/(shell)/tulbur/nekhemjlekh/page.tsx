@@ -1692,7 +1692,7 @@ export default function InvoicingZardluud() {
         </div>
 
         <motion.div
-          className="rounded-3xl p-8 bg-white/90 backdrop-blur-xl shadow-xl border border-white/30"
+          className="rounded-3xl p-8 bg-[color:var(--panel)]/90 backdrop-blur-xl shadow-xl border border-[color:var(--surface-border)]"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}

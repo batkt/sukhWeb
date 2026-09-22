@@ -2109,6 +2109,13 @@ export function useGereeActions(
           delete updatePayload.nevtrekhNer;
           delete updatePayload.nuutsUg;
 
+          // `barilguud` нь дээр толгой дээрх СОНГОГДСОН барилгаас гарч
+          // ирсэн болохоос маягтын талбар БИШ. Засварт үүнийг явуулбал хэд хэдэн
+          // барилга хариуцдаг ажилтан ганц барилгатай болж хоцорно — утсаа
+          // зассан ч барилгуудаа алдана. Илгээхгүй орхивол backend хуучин
+          // утгыг нь хэвээр үлдээнэ (routes/ajiltanRoute.js).
+          delete (updatePayload as any).barilguud;
+
           await updateMethod("ajiltan", token, updatePayload);
           openSuccessOverlay("Ажилтны мэдээлэл засагдлаа");
         } else {

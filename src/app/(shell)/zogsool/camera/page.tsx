@@ -115,6 +115,26 @@ const RealTimeDuration = ({
   );
 };
 
+/**
+ * Баганын шүүлтүүрийн попап.
+ *
+ * Өмнөх хувилбарын гэмтэл:
+ *   • Гадаргуу `bg-white/95` тогтмол — ХАРАНХУЙ горимд цагаан панел дээр
+ *     `dark:text-white` текст үл харагдана.
+ *   • Сонгогдсон мөрийн `text-brand/20` — 20% тунгалаг брэнд өнгө, өөрөөр
+ *     хэлбэл текст бараг үзэгдэхгүй. (`dark:` хураахад орфан болсон alpha.)
+ *   • Тусгаарлагч `bg-[color:var(--panel)]` — цайвар горимд бараг цагаан
+ *     тул шугам харагдахгүй.
+ *   • Заагч цэгийн гэрэлтэлт хатуу ЦЭНХЭР, сэдвийн ногоонтой зөрдөг.
+ *   • Нэг л удаа байрлаж, ДАХИН тооцоологддоггүй — хүснэгтийн бие дотроо
+ *     гүйхэд попап тригерээсээ салж хоцордог.
+ *   • Escape ч, гадна дарах ч хаадаггүй; тригерийн хоорондох зай дээр
+ *     хулгана гарангуут анивчдаг.
+ *
+ * Байрлуулах логикийг `turees/components/ui/primitives/Popup.js`-аас
+ * хуулав: доор тохирохгүй бол ДЭЭШ эргэнэ, хөндлөнгөөр цонхонд багтана,
+ * scroll / resize / агуулгын өөрчлөлтөд дахин байрлана.
+ */
 const FilterPopover = ({
   label,
   options,
@@ -129,53 +149,174 @@ const FilterPopover = ({
   children: React.ReactNode;
 }) => {
   const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const [pos, setPos] = useState({ top: 0, left: 0, kharagdakh: false });
   const triggerRef = useRef<HTMLDivElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
+  const tsagKhemjigch = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const show = () => {
-    if (triggerRef.current) {
-      const r = triggerRef.current.getBoundingClientRect();
-      setPos({ top: r.bottom + 2, left: r.left + r.width / 2 });
-    }
-    setOpen(true);
+  /** Тригерийн хажууд байрлуулна; доор багтахгүй бол дээш эргэнэ. */
+  const baiirshuulya = useCallback(() => {
+    const tr = triggerRef.current;
+    const pp = popupRef.current;
+    if (!tr || !pp) return;
+    const r = tr.getBoundingClientRect();
+    const pw = pp.offsetWidth;
+    const ph = pp.offsetHeight;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    const doorBagtakh = r.bottom + 6 + ph <= vh;
+    const deerBagtakh = r.top - 6 - ph >= 0;
+    const deeshee = !doorBagtakh && deerBagtakh;
+    const top = deeshee ? r.top - ph - 6 : r.bottom + 6;
+
+    // Тригерийн хөндлөн ТӨВД, гэхдээ цонхны ирмэгээс 8px дотогш
+    let left = r.left + r.width / 2 - pw / 2;
+    left = Math.min(Math.max(left, 8), Math.max(8, vw - pw - 8));
+
+    setPos((khuuchin) =>
+      khuuchin.top === top && khuuchin.left === left && khuuchin.kharagdakh
+        ? khuuchin
+        : { top, left, kharagdakh: true },
+    );
+  }, []);
+
+  const neekh = () => {
+    if (tsagKhemjigch.current) clearTimeout(tsagKhemjigch.current);
+    tsagKhemjigch.current = setTimeout(() => setOpen(true), 90);
+  };
+  // Тригер ба попапын хооронд зай байгаа тул хулгана гарангуут хаавал
+  // анивчина — хойшлуулж хаана.
+  const khaakh = () => {
+    if (tsagKhemjigch.current) clearTimeout(tsagKhemjigch.current);
+    tsagKhemjigch.current = setTimeout(() => setOpen(false), 130);
   };
 
+  useEffect(() => {
+    if (!open) {
+      setPos((p) => (p.kharagdakh ? { ...p, kharagdakh: false } : p));
+      return;
+    }
+    baiirshuulya();
+
+    // Хүснэгтийн бие ДОТРОО гүйдэг тул `capture` шаардлагатай — эс
+    // тэгвээс зөвхөн цонхны гүйлт баригдана.
+    const dakhinBaiirshuulya = () => baiirshuulya();
+    window.addEventListener("scroll", dakhinBaiirshuulya, true);
+    window.addEventListener("resize", dakhinBaiirshuulya);
+
+    let ro: ResizeObserver | undefined;
+    if (typeof ResizeObserver !== "undefined" && popupRef.current) {
+      ro = new ResizeObserver(dakhinBaiirshuulya);
+      ro.observe(popupRef.current);
+    }
+
+    const tovchlolt = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    const gadnaDarsan = (e: MouseEvent) => {
+      const n = e.target as Node;
+      if (popupRef.current?.contains(n)) return;
+      if (triggerRef.current?.contains(n)) return;
+      setOpen(false);
+    };
+    document.addEventListener("keydown", tovchlolt);
+    document.addEventListener("mousedown", gadnaDarsan);
+
+    return () => {
+      window.removeEventListener("scroll", dakhinBaiirshuulya, true);
+      window.removeEventListener("resize", dakhinBaiirshuulya);
+      ro?.disconnect();
+      document.removeEventListener("keydown", tovchlolt);
+      document.removeEventListener("mousedown", gadnaDarsan);
+    };
+  }, [open, baiirshuulya]);
+
+  useEffect(
+    () => () => {
+      if (tsagKhemjigch.current) clearTimeout(tsagKhemjigch.current);
+    },
+    [],
+  );
+
   return (
-    <div ref={triggerRef} onMouseEnter={show} onMouseLeave={() => setOpen(false)} className="h-full">
+    <div
+      ref={triggerRef}
+      onMouseEnter={neekh}
+      onMouseLeave={khaakh}
+      onClick={() => {
+        if (tsagKhemjigch.current) clearTimeout(tsagKhemjigch.current);
+        setOpen((v) => !v);
+      }}
+      aria-haspopup="menu"
+      aria-expanded={open}
+      className="h-full"
+    >
       {children}
-      {open && createPortal(
-        <div
-          style={{ position: "fixed", top: pos.top, left: pos.left, transform: "translateX(-50%)", zIndex: 99999 }}
-          className="w-52 bg-white/95 backdrop-blur-xl border border-[color:var(--surface-border)] dark:border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.25)] p-1.5"
-          onMouseEnter={() => setOpen(true)}
-          onMouseLeave={() => setOpen(false)}
-        >
-          <div className="px-3 py-2 mb-1 text-[10px] text-black dark:text-white">{label} Сонгох</div>
-          {options.map((opt, idx, arr) => (
-            <div key={idx}>
-              <div
-                onClick={() => { onSelect(opt.value); setOpen(false); }}
-                className={`px-3 py-2.5 rounded-xl text-[11px] text-left flex items-center justify-between cursor-pointer transition-all border border-transparent ${current === opt.value
-                  ? "bg-theme/10 text-brand dark:text-white"
-                  : "hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/5 text-[color:var(--muted-text)] dark:text-white hover:text-[color:var(--panel-text)]"
-                  }`}
-              >
-                <span>{opt.label}</span>
-                {current === opt.value && (
-                  <div className="w-1.5 h-1.5 rounded-full bg-theme shadow-[0_0_8px_rgba(59,130,246,0.5)] animate-pulse" />
-                )}
-              </div>
-              {idx < arr.length - 1 && <div className="h-px bg-[color:var(--panel)] dark:bg-white/10 mx-2 my-1" />}
+      {open &&
+        createPortal(
+          <div
+            ref={popupRef}
+            role="menu"
+            style={{
+              position: "fixed",
+              top: pos.top,
+              left: pos.left,
+              zIndex: 99999,
+              visibility: pos.kharagdakh ? "visible" : "hidden",
+            }}
+            className="w-52 max-w-[calc(100vw-1rem)] overflow-hidden rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--panel)] p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.18)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.55)]"
+            onMouseEnter={neekh}
+            onMouseLeave={khaakh}
+          >
+            <div className="mb-1 px-3 py-2 text-[10px] tracking-wider text-[color:var(--muted-text)] uppercase">
+              {label} сонгох
             </div>
-          ))}
-        </div>,
-        document.body
-      )}
+            {options.map((opt, idx, arr) => {
+              const songogdson = current === opt.value;
+              return (
+                <div key={opt.value ?? idx}>
+                  <div
+                    role="menuitemradio"
+                    aria-checked={songogdson}
+                    tabIndex={0}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelect(opt.value);
+                      setOpen(false);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onSelect(opt.value);
+                        setOpen(false);
+                      }
+                    }}
+                    className={`flex cursor-pointer items-center justify-between rounded-xl px-3 py-2.5 text-left text-[11px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-theme/40 ${
+                      songogdson
+                        ? "bg-theme/10 font-medium text-brand"
+                        : "text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"
+                    }`}
+                  >
+                    <span>{opt.label}</span>
+                    {songogdson && (
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-theme ring-[3px] ring-theme/20" />
+                    )}
+                  </div>
+                  {idx < arr.length - 1 && (
+                    <div className="mx-2 my-1 h-px bg-[color:var(--surface-border)]" />
+                  )}
+                </div>
+              );
+            })}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 };
 
-/** Гүйлгээний БҮХ түүхээс төлбөрийн бичлэгүүдийг цуглуулна (хөнгөлөлтгүй). */
 function tulburuudiigTsugluulya(transaction: any): any[] {
   const payHistory: any[] = (transaction?.tuukh || []).flatMap((th: any) => {
     const raw = th?.tulbur;
@@ -1436,8 +1577,14 @@ export default function Camera() {
       current={current}
       onSelect={onSelect}
     >
-      <div className="flex h-full cursor-pointer items-center justify-center gap-2">
-        <Filter className="h-3.5 w-3.5 text-brand" />
+      <div className="group/f flex h-full cursor-pointer items-center justify-center gap-2">
+        <Filter
+          className={`h-3.5 w-3.5 transition-colors ${
+            current && current !== "all"
+              ? "text-brand"
+              : "text-[color:var(--muted-text)] group-hover/f:text-brand"
+          }`}
+        />
         <span>{label}</span>
       </div>
     </FilterPopover>
@@ -1770,7 +1917,7 @@ export default function Camera() {
               dropdownPos &&
               createPortal(
                 <div
-                  className="action-menu-container fixed z-[9999] min-w-[170px] rounded-md border border-[color:var(--surface-border)] bg-white/95 p-1.5 text-left shadow-[0_20px_50px_rgba(0,0,0,0.15)] backdrop-blur-xl dark:border-white/10 dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)]"
+                  className="action-menu-container fixed z-[9999] min-w-[170px] rounded-md border border-[color:var(--surface-border)] bg-[color:var(--panel)]/95 p-1.5 text-left shadow-[0_20px_50px_rgba(0,0,0,0.15)] backdrop-blur-xl dark:border-white/10 dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)]"
                   style={{ top: dropdownPos.top, right: dropdownPos.right }}
                 >
                   <div className="space-y-0">
@@ -2196,7 +2343,7 @@ export default function Camera() {
                     />
                   </button>
                   {isPageSizeOpen && (
-                    <div className="absolute bottom-full left-0 mb-2 w-20 bg-white/95 backdrop-blur-xl border border-[color:var(--surface-border)] dark:border-white/10 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] p-1.5 z-50">
+                    <div className="absolute bottom-full left-0 mb-2 w-20 bg-[color:var(--panel)]/95 backdrop-blur-xl border border-[color:var(--surface-border)] dark:border-white/10 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] p-1.5 z-50">
                       {[10, 20, 50, 100, 500].map((size) => (
                         <button
                           key={size}

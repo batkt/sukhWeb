@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useRef } from "react";
 import { useAuth } from "@/lib/useAuth";
-import updateMethod from "../../tools/function/updateMethod";
+import uilchilgee from "@/lib/uilchilgee";
 
 interface BuildingContextType {
   selectedBuildingId: string | null;
@@ -124,13 +124,17 @@ export const BuildingProvider = ({
         const updatedAjiltan = { ...ajiltan, defaultBarilga: id };
         ajiltanMutate(updatedAjiltan);
         
-        // Persist to backend so it survives page navigation (fire and forget)
-        updateMethod("ajiltan", token, {
-          _id: ajiltan._id,
-          defaultBarilga: id,
-        }).catch((error) => {
-          console.error("Failed to persist building selection:", error);
-        });
+        // Persist to backend so it survives page navigation (fire and forget).
+        //
+        // ЗААВАЛ энэ тусгай endpoint-оор. `PUT /ajiltan/:id` нь ирсэн биеэс
+        // бүтэн баримт үүсгэдэг тул зөвхөн `defaultBarilga` явуулахад тухайн
+        // ажилтны `barilguud`, `tsonkhniiErkhuud` нь `[]` болж арчигддаг
+        // байсан — барилга сэлгэх бүрд ажилтан эрхгүй үлддэг байв.
+        uilchilgee(token || undefined)
+          .post("/ajiltniiDefaultBarilgaZasya", { barilgiinId: id })
+          .catch((error) => {
+            console.error("Failed to persist building selection:", error);
+          });
       }
     } else {
       if (ajiltan && ajiltan.defaultBarilga) {
@@ -138,13 +142,13 @@ export const BuildingProvider = ({
         delete updatedAjiltan.defaultBarilga;
         ajiltanMutate(updatedAjiltan);
         
-        // Persist to backend (fire and forget)
-        updateMethod("ajiltan", token, {
-          _id: ajiltan._id,
-          defaultBarilga: null,
-        }).catch((error) => {
-          console.error("Failed to clear building selection:", error);
-        });
+        // Persist to backend (fire and forget) — дээрхтэй ижил шалтгаанаар
+        // тусгай endpoint ашиглана.
+        uilchilgee(token || undefined)
+          .post("/ajiltniiDefaultBarilgaZasya", { barilgiinId: null })
+          .catch((error) => {
+            console.error("Failed to clear building selection:", error);
+          });
       }
     }
   };

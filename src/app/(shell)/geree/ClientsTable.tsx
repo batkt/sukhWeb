@@ -192,7 +192,7 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
         },
       },
       {
-        title: "Холбоо барих",
+        title: "Утас",
         dataIndex: "utas",
         key: "utas",
         width: 140,

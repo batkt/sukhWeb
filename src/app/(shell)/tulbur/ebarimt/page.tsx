@@ -41,6 +41,31 @@ type TableItem = {
   [key: string]: any;
 };
 
+/**
+ * Баримтыг ҮЙЛЧИЛГЭЭГЭЭР ялгана.
+ *
+ * `models/ebarimt.js`-д «үйлчилгээ» гэсэн талбар БАЙХГҮЙ — гарал үүсэл нь
+ * зөвхөн холбоос талбаруудаар илэрдэг:
+ *   • `zogsooliinId` / `mashiniiDugaar`      → зогсоол
+ *   • `gereeniiDugaar` / `guilgeeniiId` / `tulultiinId` → СӨХ
+ *
+ * `togloomiinId`, `tasalbariinGuilgeeniiId` гэх мэт бусад гарал үүсэл ч
+ * байдаг тул тэднийг ХҮЧЭЭР СӨХ болгохгүй — «Бүгд» дор л харагдана.
+ */
+function zogsooliinBarimtEsekh(it: any): boolean {
+  return Boolean(it?.zogsooliinId || it?.mashiniiDugaar);
+}
+
+function sokhiinBarimtEsekh(it: any): boolean {
+  if (zogsooliinBarimtEsekh(it)) return false;
+  // Мөр бүтээхдээ `gereeniiDugaar`-ыг "-" гэж нөхдөг тул түүнийг хасна
+  const geree = it?.gereeniiDugaar;
+  return (
+    Boolean(geree && geree !== "-") ||
+    Boolean(it?.guilgeeniiId || it?.tulultiinId)
+  );
+}
+
 export default function Ebarimt() {
   const router = useRouter();
   const { token, ajiltan, barilgiinId } = useAuth();
@@ -166,7 +191,6 @@ export default function Ebarimt() {
         districtCode,
         toISO(s),
         toISO(e),
-        uilchilgeeAvi || null,
       ];
     }
     if (!token || !orgId) return null;
@@ -178,13 +202,11 @@ export default function Ebarimt() {
       barilgiinId || null,
       toISO(s),
       toISO(e),
-      uilchilgeeAvi || null,
     ];
   }, [
     merchantTin,
     districtCode,
     ekhlekhOgnoo,
-    uilchilgeeAvi,
     ajiltan?.baiguullagiinId,
     barilgiinId,
     token,
@@ -195,13 +217,12 @@ export default function Ebarimt() {
     async (args: any[]) => {
       const mode = args?.[0];
       if (mode === "ext") {
-        const [, tkn, url, tin, dCode, s, e, service] = args as [
+        const [, tkn, url, tin, dCode, s, e] = args as [
           string,
           string,
           string,
           string,
           string,
-          string | null,
           string | null,
           string | null,
         ];
@@ -211,18 +232,16 @@ export default function Ebarimt() {
             merchantTin: tin,
             districtCode: dCode,
             ...(s || e ? { ekhlekhOgnoo: s, duusakhOgnoo: e } : {}),
-            ...(service ? { uilchilgee: service } : {}),
           },
         });
         return resp.data;
       }
       // internal fallback via our API
-      const [, tkn, url, orgId, branch, s, e, service] = args as [
+      const [, tkn, url, orgId, branch, s, e] = args as [
         string,
         string,
         string,
         string,
-        string | null,
         string | null,
         string | null,
         string | null,
@@ -232,7 +251,6 @@ export default function Ebarimt() {
           baiguullagiinId: orgId,
           ...(branch ? { barilgiinId: branch } : {}),
           ...(s || e ? { ekhlekhOgnoo: s, duusakhOgnoo: e } : {}),
-          ...(service ? { uilchilgee: service } : {}),
         },
       });
       return resp.data;
@@ -430,6 +448,13 @@ export default function Ebarimt() {
   const displayedData: TableItem[] = useMemo(() => {
     let filtered = tableDataWithToot;
 
+    // Үйлчилгээгээр ялгах — зогсоол ↔ СӨХ
+    if (uilchilgeeAvi === "zogsool") {
+      filtered = filtered.filter(zogsooliinBarimtEsekh);
+    } else if (uilchilgeeAvi === "sokh") {
+      filtered = filtered.filter(sokhiinBarimtEsekh);
+    }
+
     // Filter by date range
     if (ekhlekhOgnoo && (ekhlekhOgnoo[0] || ekhlekhOgnoo[1])) {
       const [start, end] = ekhlekhOgnoo;
@@ -460,7 +485,7 @@ export default function Ebarimt() {
         .map((x) => String(x).toLowerCase());
       return fields.some((f) => f.includes(s));
     });
-  }, [tableData, searchTerm, ekhlekhOgnoo]);
+  }, [tableDataWithToot, searchTerm, ekhlekhOgnoo, uilchilgeeAvi]);
 
   const exceleerTatya = async () => {
     try {
@@ -633,6 +658,39 @@ export default function Ebarimt() {
                         "text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
                     }}
                   />
+                </div>
+
+                <div className="btn-minimal flex h-[40px] w-full items-center px-3 sm:w-[180px]">
+                  <select
+                    value={uilchilgeeAvi ?? ""}
+                    onChange={(e) =>
+                      setUilchilgeeAvi(e.target.value || undefined)
+                    }
+                    aria-label="Үйлчилгээ"
+                    title="Үйлчилгээ"
+                    className="h-full w-full cursor-pointer bg-transparent text-sm text-[color:var(--panel-text)] focus:outline-none"
+                  >
+                    {/* Native `<option>` нь OS-ээр зурагддаг тул гадаргуу,
+                        текстийн өнгийг хоёуланг горимоос хамааруулна. */}
+                    <option
+                      value=""
+                      className="bg-[color:var(--panel)] text-[color:var(--panel-text)]"
+                    >
+                      Үйлчилгээ — бүгд
+                    </option>
+                    <option
+                      value="zogsool"
+                      className="bg-[color:var(--panel)] text-[color:var(--panel-text)]"
+                    >
+                      Зогсоол
+                    </option>
+                    <option
+                      value="sokh"
+                      className="bg-[color:var(--panel)] text-[color:var(--panel-text)]"
+                    >
+                      СӨХ
+                    </option>
+                  </select>
                 </div>
               </div>
               <div className="flex flex-row gap-3 w-full lg:w-auto justify-end">
