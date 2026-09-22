@@ -20,6 +20,9 @@ export interface ClientItem {
   _id?: string;
   ner?: string | { ner?: string; kod?: string };
   utas?: string;
+  /** `mashin` коллекциос залгагдсан дугаар(ууд), олон бол таслалаар */
+  mashiniiDugaar?: string;
+  tailbar?: string;
   toot?: string;
   davkhar?: string;
   orts?: string;
@@ -99,6 +102,25 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
             </span>
           );
         },
+      },
+
+      {
+        title: "Машины дугаар",
+        dataIndex: "mashiniiDugaar",
+        key: "mashiniiDugaar",
+        width: 130,
+        align: "center",
+        // Дугаар нь `khariltsagch` дээр БИШ, `mashin` коллекцид байдаг —
+        // жагсаалтын route нь нэг query-ээр залгаж `mashiniiDugaar` (олон
+        // бол таслалаар) болгож буцаана.
+        render: (val: string) => (
+          <span
+            title={val || undefined}
+            className="block truncate text-[color:var(--panel-text)] dark:text-white"
+          >
+            {val || "-"}
+          </span>
+        ),
       },
 
       {
@@ -234,6 +256,21 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
             </div>
           );
         },
+      },
+      {
+        title: "Тайлбар",
+        dataIndex: "tailbar",
+        key: "tailbar",
+        width: 160,
+        align: "center",
+        render: (val: string) => (
+          <span
+            title={val || undefined}
+            className="block truncate text-[color:var(--muted-text)]"
+          >
+            {val || "-"}
+          </span>
+        ),
       },
       {
         title: "Үйлдэл",

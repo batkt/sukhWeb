@@ -905,33 +905,9 @@ export default function KhariltsagchModal({
               >
                 <div className="flex-1 overflow-y-auto custom-scrollbar px-4 py-3">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {/* Төрөл */}
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="block text-xs text-[color:var(--muted-text)] transition-colors">
-                          Төрөл
-                        </label>
-                      </div>
-                      <div className="tusgai-wrapper w-full flex items-center">
-                        <TusgaiZagvar
-                          value={newClient.turul || "Үндсэн"}
-                          onChange={(val: string) => {
-                            setNewClient((p: any) => ({
-                              ...p,
-                              turul: val,
-                            }));
-                          }}
-                          options={[
-                            { value: "Үндсэн", label: "Үндсэн" },
-                          ]}
-                          className="w-full h-full"
-                          placeholder="Төрөл сонгох..."
-                        />
-                      </div>
-                    </div>
-
-                    {/* Овог */}
-                    <div>
+                    {/* Овог — Төрөл хасагдсан тул хосгүй үлдэж, хажууд нь
+                        хоосон зай гарахаас сэргийлж бүтэн өргөн эзэлнэ. */}
+                    <div className="md:col-span-2">
                       <label className="block text-xs text-[color:var(--muted-text)] mb-1 transition-colors">
                         Овог
                       </label>
@@ -949,6 +925,8 @@ export default function KhariltsagchModal({
                       />
                     </div>
 
+                    {/* Нэр · Утас · Машины дугаар — нэг мөрөнд */}
+                    <div className="md:col-span-2 grid grid-cols-1 gap-3 md:grid-cols-3">
                     {/* Нэр */}
                     <div>
                       <label className="block text-xs text-[color:var(--muted-text)] mb-1 transition-colors">
@@ -990,6 +968,27 @@ export default function KhariltsagchModal({
                         placeholder="12345678"
                         maxLength={8}
                       />
+                    </div>
+
+                    {/* Машины дугаар */}
+                    <div>
+                      <label className="block text-xs text-[color:var(--muted-text)] mb-1 transition-colors">
+                        Машины дугаар
+                      </label>
+                      <input
+                        type="text"
+                        value={newClient.mashiniiDugaar || ""}
+                        onChange={(e) =>
+                          setNewClient((p: any) => ({
+                            ...p,
+                            // Улсын дугаар нь том латин/кирилл ба тоо
+                            mashiniiDugaar: e.target.value.toUpperCase(),
+                          }))
+                        }
+                        className="modern-input w-full"
+                        placeholder="1234УБА"
+                      />
+                    </div>
                     </div>
 
                     {/* Units Section */}

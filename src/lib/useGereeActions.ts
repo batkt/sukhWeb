@@ -2275,8 +2275,11 @@ export function useGereeActions(
         return false;
       }
 
-      if (!newClient.ner || !newClient.utas) {
-        openErrorOverlay("Нэр, утас заавал оруулна уу.");
+      // Зөвхөн НЭР шаардлагатай. Харилцагч дээр утас нь сул талбар —
+      // модалын `validate()`-аас хассан ч ЭНД хоёр дахь хаалт үлдсэн тул
+      // утасгүй харилцагч хадгалагдахгүй байв.
+      if (!newClient.ner) {
+        openErrorOverlay("Нэр заавал оруулна уу.");
         return false;
       }
 
