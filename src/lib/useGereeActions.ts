@@ -2292,15 +2292,24 @@ export function useGereeActions(
             ? newClient.utas[0] || ""
             : newClient.utas || "",
         };
-        if (editingClient?._id) {
-          await uilchilgee(token).put(
-            `/khariltsagch/${editingClient._id}`,
-            payload,
-          );
-          openSuccessOverlay("Амжилттай засагдлаа");
+        // Машины хязгаараар дугаар хасагдвал backend `mashiniiSanuulga`
+        // буцаана — үгүй бол хэрэглэгч машин орсон гэж бодно.
+        const resp = editingClient?._id
+          ? await uilchilgee(token).put(
+              `/khariltsagch/${editingClient._id}`,
+              payload,
+            )
+          : await uilchilgee(token).post("/khariltsagch", payload);
+
+        const sanuulga = resp?.data?.mashiniiSanuulga;
+        if (sanuulga) {
+          openErrorOverlay(String(sanuulga));
         } else {
-          await uilchilgee(token).post("/khariltsagch", payload);
-          openSuccessOverlay("Амжилттай бүртгэгдлээ");
+          openSuccessOverlay(
+            editingClient?._id
+              ? "Амжилттай засагдлаа"
+              : "Амжилттай бүртгэгдлээ",
+          );
         }
         mutate(
           (key: any) =>

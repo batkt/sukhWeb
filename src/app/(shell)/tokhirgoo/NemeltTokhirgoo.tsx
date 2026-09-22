@@ -64,6 +64,8 @@ export default function NemeltTokhirgoo() {
   // Нэг оршин суугч/харилцагч дээр бүртгэж болох машины дээд тоо.
   // Байгууллага/барилгын бүх оршин суугчид нэг ижил хамаарна.
   const [residentCarLimit, setResidentCarLimit] = useState<number | string>(1);
+  /** Харилцагчийн хязгаар — оршин суугчаас ТУСДАА. */
+  const [clientCarLimit, setClientCarLimit] = useState<number | string>(1);
   // Зочны зогсоолын төлбөрийг оршин суугчийн нэхэмжлэхэд бичих боломжтой
   // эсэх. Унтраалттай бол апп дээр "Би даана" сонголт харагдахгүй.
   const [guestInvoiceEnabled, setGuestInvoiceEnabled] =
@@ -404,6 +406,14 @@ export default function NemeltTokhirgoo() {
     setGuestFreeMinutes(find("zochinTusBurUneguiMinut", ""));
     // Тохируулаагүй бол 1 — backend-ийн үндсэн зан төлөвтэй ижил.
     setResidentCarLimit(find("orshinSuugchMashiniiLimit", 1));
+    // Харилцагчийнх тохируулаагүй бол оршин суугчийнхаар харуулна —
+    // backend ч ийм нөхөлт хийдэг тул дэлгэц нь үнэнийг харуулна.
+    setClientCarLimit(
+      find(
+        "khariltsagchMashiniiLimit",
+        find("orshinSuugchMashiniiLimit", 1),
+      ),
+    );
     setGuestInvoiceEnabled(find("zochinNekhemjlekhEsekh", false) === true);
     setGuestNote(find("zochinTailbar", ""));
     setGuestFrequencyType(find("davtamjiinTurul", "saraar"));
@@ -546,13 +556,21 @@ export default function NemeltTokhirgoo() {
 
   /** Машины бүртгэлийн хязгаарыг хадгална (зочны тохиргооноос хамаарахгүй). */
   const saveResidentCarLimit = async () => {
-    const utga = Number(residentCarLimit);
-    if (!Number.isFinite(utga) || utga < 1) {
-      openErrorOverlay("Машины хязгаар 1-ээс багагүй тоо байх ёстой");
+    const orshinSuugch = Number(residentCarLimit);
+    const khariltsagch = Number(clientCarLimit);
+
+    if (!Number.isFinite(orshinSuugch) || orshinSuugch < 1) {
+      openErrorOverlay("Оршин суугчийн машины хязгаар 1-ээс багагүй байх ёстой");
       return;
     }
+    if (!Number.isFinite(khariltsagch) || khariltsagch < 1) {
+      openErrorOverlay("Харилцагчийн машины хязгаар 1-ээс багагүй байх ёстой");
+      return;
+    }
+
     await zochinTokhirgooKhadgalya({
-      orshinSuugchMashiniiLimit: Math.floor(utga),
+      orshinSuugchMashiniiLimit: Math.floor(orshinSuugch),
+      khariltsagchMashiniiLimit: Math.floor(khariltsagch),
     });
   };
 
@@ -1464,22 +1482,42 @@ export default function NemeltTokhirgoo() {
             <SettingsItem
               id="nemelt-mashin-box"
               title="Машины бүртгэлийн хязгаар"
-              desc="Нэг оршин суугч / харилцагч дээр бүртгэж болох машины дээд тоо. Бүх оршин суугчид ижил хамаарна."
-              control={
-                <MNumberInput
-                  value={
-                    residentCarLimit === ""
-                      ? undefined
-                      : Number(residentCarLimit)
-                  }
-                  onChange={(val) => setResidentCarLimit(val !== "" ? val : "")}
-                  placeholder="1"
-                  min={1}
-                  size="sm"
-                  className="w-20"
-                />
-              }
-            />
+              desc="Нэг эзэн дээр бүртгэж болох машины дээд тоо. Оршин суугч, харилцагч тусдаа. Бүртгэх цонх, Excel импорт хоёулаа үүнийг дагана."
+            >
+              <div className="stg-grid">
+                <SettingsField label="Оршин суугч">
+                  <MNumberInput
+                    value={
+                      residentCarLimit === ""
+                        ? undefined
+                        : Number(residentCarLimit)
+                    }
+                    onChange={(val) =>
+                      setResidentCarLimit(val !== "" ? val : "")
+                    }
+                    placeholder="1"
+                    min={1}
+                    size="sm"
+                    rightSection={<span className="stg-unit">машин</span>}
+                    className="w-full"
+                  />
+                </SettingsField>
+
+                <SettingsField label="Харилцагч">
+                  <MNumberInput
+                    value={
+                      clientCarLimit === "" ? undefined : Number(clientCarLimit)
+                    }
+                    onChange={(val) => setClientCarLimit(val !== "" ? val : "")}
+                    placeholder="1"
+                    min={1}
+                    size="sm"
+                    rightSection={<span className="stg-unit">машин</span>}
+                    className="w-full"
+                  />
+                </SettingsField>
+              </div>
+            </SettingsItem>
 
             <SettingsItem
               id="nemelt-garage-storage-box"
