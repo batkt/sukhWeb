@@ -156,7 +156,7 @@ const FilterPopover = ({
               <div
                 onClick={() => { onSelect(opt.value); setOpen(false); }}
                 className={`px-3 py-2.5 rounded-xl text-[11px] text-left flex items-center justify-between cursor-pointer transition-all border border-transparent ${current === opt.value
-                  ? "bg-theme/10 text-brand/20 dark:text-white"
+                  ? "bg-theme/10 text-brand dark:text-white"
                   : "hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/5 text-[color:var(--muted-text)] dark:text-white hover:text-[color:var(--panel-text)]"
                   }`}
               >
@@ -1920,7 +1920,7 @@ export default function Camera() {
                         <option
                           key={cam.cameraIP}
                           value={cam.cameraIP}
-                          className="bg-[color:var(--panel)] text-white"
+                          className="bg-[color:var(--panel)] text-[color:var(--panel-text)]"
                         >
                           {cam.cameraIP}
                         </option>
@@ -2001,7 +2001,7 @@ export default function Camera() {
                         <option
                           key={cam.cameraIP}
                           value={cam.cameraIP}
-                          className="bg-[color:var(--panel)] text-white"
+                          className="bg-[color:var(--panel)] text-[color:var(--panel-text)]"
                         >
                           {cam.cameraIP}
                         </option>
@@ -2206,7 +2206,7 @@ export default function Camera() {
                             setIsPageSizeOpen(false);
                           }}
                           className={`w-full px-3 py-2 rounded-lg text-xs  text-left transition-all duration-200 ${pageSize === size
-                            ? "bg-theme/10 text-brand/20"
+                            ? "bg-theme/10 text-brand"
                             : "hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/5 text-[color:var(--panel-text)] hover:text-[color:var(--panel-text)] dark:hover:text-white"
                             }`}
                           style={{

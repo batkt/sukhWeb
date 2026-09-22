@@ -3971,7 +3971,7 @@ export default function DansniiKhuulga() {
                                 <span className="font-semibold text-[color:var(--panel-text)]">
                                   {Array.isArray(item.dugaar) ? item.dugaar.join(", ") : item.dugaar || "-"}
                                 </span>
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-theme/10 text-brand/20">
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-theme/10 text-brand">
                                   Амжилттай
                                 </span>
                               </div>

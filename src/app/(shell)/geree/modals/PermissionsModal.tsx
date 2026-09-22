@@ -228,7 +228,7 @@ export default function PermissionsModal({
           className={`w-8 text-[10px] text-center px-1 py-0.5 rounded border ${
             isFull 
               ? "bg-danger/10 border-danger/30 text-danger" 
-              : "bg-success/10 border-success/30 text-success/20"
+              : "bg-success/10 border-success/30 text-success"
           } focus:outline-none`} 
         />
       </div>

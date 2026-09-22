@@ -585,7 +585,7 @@ export default function ResidentRegistrationModal({
                   variant="primary"
                   size="md"
                   fullWidth
-                  className="h-12 bg-black dark:bg-white text-white dark:text-black hover:bg-[color:var(--panel)] transition-colors"
+                  className="h-12 bg-black dark:bg-white text-white dark:text-black hover:opacity-90 transition-opacity"
                   isLoading={searching}
                   data-modal-primary
                   rightIcon={
@@ -904,7 +904,7 @@ export default function ResidentRegistrationModal({
                   size="sm"
                   isLoading={loading}
                   data-modal-primary
-                  className="bg-black dark:bg-white text-white dark:text-black hover:bg-[color:var(--panel)] transition-colors"
+                  className="bg-black dark:bg-white text-white dark:text-black hover:opacity-90 transition-opacity"
                 >
                   Хадгалах
                 </Button>

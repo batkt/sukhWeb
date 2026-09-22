@@ -371,6 +371,12 @@
   --color-danger: var(--danger);
   --color-warning: var(--warning);
   --color-info: var(--info);
+  /* Төлөвгүй / «үнэгүй» шошгонд дүүрэн саарал хэрэгтэй. Өмнө нь
+     `bg-gray-500` байсныг `bg-[color:var(--panel)]` болгосон нь алдаа:
+     `--panel` нь ГАДАРГУУ (цайвар горимд бараг цагаан) тул дээрх цагаан
+     текст үл харагдах болов. `--neutral` нь ДҮҮРЭН өнгө — хоёр горимд
+     цагаан текстэй 4.7:1 ба 7.6:1 контрасттай. */
+  --color-neutral: var(--neutral);
   --font-sans: "Segoe UI", sans-serif;
   --font-mono: "Segoe UI", sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
@@ -487,6 +493,7 @@
   --danger: #f87171; /* red-400 */
   --warning: #fbbf24; /* amber-400 */
   --info: #60a5fa; /* blue-400 */
+  --neutral: #4b5563; /* gray-600 — цагаан текстэй 7.6:1 */
 }
 @layer base {
   html {
@@ -604,6 +611,19 @@
   --danger: #dc2626; /* red-600 */
   --warning: #d97706; /* amber-600 */
   --info: #2563eb; /* blue-600 */
+  --neutral: #64748b; /* slate-500 — цагаан текстэй 4.8:1 */
+
+  /* ── Видео хананы гадаргуу (үргэлж БАРААН) ──────────────────────────
+     Камерын хана нь гэрэл горимд ч бараан байх ёстой — дэлгэц дээрх
+     видеог цагаан хүрээ зөрүүлдэг. Өмнө нь `bg-slate-950/800` байсныг
+     `--panel` болгосон нь алдаа: цайвар горимд бараг цагаан болж, дээрх
+     цагаан текст үл харагдах болсон.
+
+     Гэхдээ сэдвийг ДАГАНА — `--theme-hue`-ээс өнгө авна. */
+  --wall-bg: hsl(var(--theme-hue) 30% 5%);
+  --wall-panel: hsl(var(--theme-hue) 22% 15%);
+  --wall-panel-hover: hsl(var(--theme-hue) 20% 21%);
+  --wall-muted: hsl(var(--theme-hue) 14% 66%);
 
   --panel-text: #0f172a;
   --table-hover-bg: color-mix(in oklch, var(--theme), transparent 90%);
@@ -4598,8 +4618,8 @@ a:active {
 /* Fix: Selected rows (when checkbox is marked) should have dark background in dark mode */
 .dark .guilgee-table .ant-table-tbody > tr.ant-table-row-selected > td,
 .dark .guilgee-table .ant-table-tbody > tr.ant-table-row-selected:hover > td {
-  background-color: #374151 !important; /* gray-700 */
-  color: #ffffff !important;
+  background-color: color-mix(in oklch, var(--theme), var(--panel) 72%) !important;
+  color: var(--panel-text) !important;
 }
 
 /* Light mode selected row */
@@ -4616,7 +4636,7 @@ a:active {
 
 /* Base table styling */
 .guilgee-table {
-  @apply bg-white dark:bg-gray-800;
+  background: var(--surface-bg);
   font-size: 11px;
 }
 
@@ -4654,6 +4674,47 @@ a:active {
   line-height: 1.35 !important;
 }
 
+/* ── Бүрэн өндөр эзлэх хүснэгт (`zt-fill-table`) ──────────────────────────
+   Асуудал: тогтмол өндөртэй хуудсанд `flex-1` нь ХҮСНЭГТИЙН САВЫГ татдаг ч
+   AntD хүснэгт нь өөрөө агуулгын өндрөөр л зогсдог. Улмаар хүснэгтийн
+   төгсгөл ба доорх хуудаслалтын хооронд ТОМ ХООСОН ЗАЙ гардаг.
+
+   Шийдэл: AntD-ийн бүрхүүл бүрийг flex багана болгож, БИЕ нь л үлдсэн
+   өндрийг эзэлж дотроо гүйлгэнэ. Иймд толгой дээр, нийт дүн доор
+   тогтож, хоосон зай үлдэхгүй.
+
+   `scroll={{ y: "100%" }}` шаардлагатай — үгүй бол AntD толгой/биеийг
+   тусад нь салгадаггүй. */
+.zt-fill-table,
+.zt-fill-table .ant-spin-nested-loading,
+.zt-fill-table .ant-spin-container,
+.zt-fill-table .ant-table,
+.zt-fill-table .ant-table-container {
+  display: flex;
+  flex-direction: column;
+  /* `height: 100%` БИШ: процент нь `flex-1` савны дотор тодорхойгүй
+     өндөрт шийдэгддэг (браузераас хамаарна). Flex-ээр өсгөх нь
+     хоёрдмол утгагүй. */
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* Толгой дээр, нийт дүн доор ТОГТОНО — зөвхөн бие өснө */
+.zt-fill-table .ant-table-header,
+.zt-fill-table .ant-table-summary {
+  flex: 0 0 auto;
+}
+
+.zt-fill-table .ant-table-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  /* AntD `scroll.y`-г inline `max-height` болгож тавьдаг — flex өндрийг
+     дарахаас сэргийлнэ */
+  max-height: none !important;
+  overflow-y: auto !important;
+}
+
+
 /* Keep Гэрээ/Оршин суугч table body heights identical */
 .geree-equal-height .ant-table-body {
   height: calc(100vh - 460px) !important;
@@ -4672,7 +4733,7 @@ a:active {
 
 /* Bordered table */
 .guilgee-table.ant-table-bordered .ant-table-cell {
-  @apply border-gray-900 dark:border-gray-900;
+  border-color: var(--surface-border);
 }
 
 /* Header style */
@@ -4742,12 +4803,13 @@ a:active {
 
 /* Summary/Footer row */
 .guilgee-table .ant-table-summary {
-  @apply bg-gray-100 dark:bg-gray-900 font-semibold;
+  background: var(--panel);
+  font-weight: 600;
 }
 
 /* Expanded (drilldown) row */
 .guilgee-table .ant-table-expanded-row > td {
-  @apply bg-gray-50 dark:bg-gray-800;
+  background: var(--panel);
 }
 
 /* Checkbox column */
@@ -4772,7 +4834,7 @@ a:active {
 }
 
 .guilgee-table .ant-table-body::-webkit-scrollbar-track {
-  @apply bg-transparent dark:bg-gray-800/30;
+  background: transparent;
 }
 
 /* Dark mode scrollbar */
@@ -4782,12 +4844,12 @@ a:active {
 
 /* Loading spinner color */
 .guilgee-table .ant-spin-dot-item {
-  @apply bg-blue-500;
+  background: var(--theme);
 }
 
 /* Empty state */
 .guilgee-table .ant-table-empty .ant-table-cell {
-  @apply text-gray-500 dark:text-gray-400;
+  color: var(--muted-text);
 }
 
 .dark .ant-table-placeholder,

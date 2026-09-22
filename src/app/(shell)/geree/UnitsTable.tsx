@@ -176,7 +176,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
                       <div className="absolute top-1 left-1 w-1 h-1 rounded-full bg-success animate-pulse" />
                     )}
                     <button
-                      className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center rounded-full bg-[color:var(--panel)] text-white opacity-0 group-hover:opacity-100 transition-all shadow-md hover:bg-danger z-20 scale-90 group-hover:scale-100"
+                      className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center rounded-full bg-neutral text-white opacity-0 group-hover:opacity-100 transition-all shadow-md hover:bg-danger z-20 scale-90 group-hover:scale-100"
                       aria-label={`Устгах ${unitStr}`}
                       onClick={(e) => {
                         e.stopPropagation();

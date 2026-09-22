@@ -206,7 +206,7 @@ export const ZogsoolJagsaaltTable: React.FC<ZogsoolJagsaaltTableProps> = ({
             <div
               className={`px-2.5 py-0.5 rounded-md text-center inline-block whitespace-nowrap border-2 transition-all ${
                 !garsanTsag
-                  ? "bg-theme/10 border-theme/30 text-brand/30 shadow-sm"
+                  ? "bg-theme/10 border-theme/30 text-brand shadow-sm"
                   : "bg-[color:var(--surface-hover)] border-[color:var(--surface-border)] text-[color:var(--muted-text)]"
               }`}
             >

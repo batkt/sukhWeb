@@ -199,7 +199,7 @@ export default function InitialBalanceExcelModal({
                 className={`
                 w-16 h-16 rounded-2xl flex items-center justify-center mb-2
                 transition-transform duration-300 group-hover:scale-110
-                ${file ? "bg-theme/10 text-brand/20" : "bg-theme/10 text-brand/20"}
+                ${file ? "bg-success/10 text-success" : "bg-info/10 text-info"}
               `}
               >
                 {file ? <FileSpreadsheet size={32} /> : <Upload size={32} />}

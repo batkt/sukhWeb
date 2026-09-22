@@ -241,14 +241,14 @@ function murNiiluulye(transaction: any) {
   const getStatusColor = () => {
     if (tuluv === -2 || tuluv === -1) return "bg-danger border-danger";
     if (hasRemainingBalance) return "bg-warning border-warning";
-    if (isFreeExit) return "bg-[color:var(--panel)] border-[color:var(--surface-border)]";
+    if (isFreeExit) return "bg-neutral border-neutral";
     if (tuluv === 1)
       return isCurrentlyIn && niitDun === 0
         ? "bg-theme border-theme"
         : "bg-success border-success";
     if (!isCurrentlyIn && (niitDun > 0 || isDebt))
       return "bg-warning border-warning";
-    if (!isCurrentlyIn && niitDun === 0) return "bg-[color:var(--panel)] border-[color:var(--surface-border)]";
+    if (!isCurrentlyIn && niitDun === 0) return "bg-neutral border-neutral";
     return "bg-theme border-theme";
   };
 
@@ -1026,7 +1026,7 @@ export default function Jagsaalt() {
       />
       {label}
       <div
-        className={`absolute top-full left-1/2 z-[100] mt-3 w-48 -translate-x-1/2 overflow-hidden rounded-2xl border border-white/5 bg-[color:var(--panel)] p-2 text-white shadow-[0_20px_50px_rgba(0,0,0,0.5)] ring-1 ring-white/10 backdrop-blur-2xl transition-all duration-300 ${openFilter === id
+        className={`absolute top-full left-1/2 z-[100] mt-3 w-48 -translate-x-1/2 overflow-hidden rounded-2xl border border-white/5 bg-[color:var(--wall-panel)] p-2 text-white shadow-[0_20px_50px_rgba(0,0,0,0.5)] ring-1 ring-white/10 backdrop-blur-2xl transition-all duration-300 ${openFilter === id
           ? "visible translate-y-0 opacity-100"
           : "invisible translate-y-3 opacity-0 pointer-events-none"
           }`}
@@ -1449,32 +1449,33 @@ return (
         {/* Active filter chips */}
 
       </div>
-      <div className="min-h-0 flex-1">
-        <div>
-          <Table<any>
-            columns={mashiniiColumns}
-            dataSource={displayVehicles}
-            rowKey={(t, idx) => t._id || idx}
-            pagination={false}
-            scroll={{ x: 1300 }}
-            locale={{
-              emptyText: (
-                <div className="flex flex-col items-center gap-2">
-                  <Car className="h-12 w-12 opacity-50" />
-                  <p>Машины мэдээлэл олдсонгүй</p>
-                </div>
-              ),
-            }}
-            summary={() => (
+      <div className="min-h-0 flex-1 flex flex-col">
+        <Table<any>
+          className="zt-fill-table"
+          columns={mashiniiColumns}
+          dataSource={displayVehicles}
+          rowKey={(t, idx) => t._id || idx}
+          pagination={false}
+          scroll={{ x: 1300, y: "100%" }}
+          locale={{
+            emptyText: (
+              <div className="flex flex-col items-center gap-2">
+                <Car className="h-12 w-12 opacity-50" />
+                <p>Машины мэдээлэл олдсонгүй</p>
+              </div>
+            ),
+          }}
+          summary={() => (
+            <Table.Summary fixed="bottom">
               <Table.Summary.Row>
                 <Table.Summary.Cell colSpan={6} align="right">
-                  <span className="text-[11px] font-semibold tracking-wider uppercase text-slate-700 dark:text-slate-300">
+                  <span className="font-semibold tracking-wider uppercase text-[color:var(--muted-text)]">
                     Нийт Дүн:
                   </span>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell
                   align="center"
-                  className="font-[family-name:var(--font-mono)] text-xs font-semibold whitespace-nowrap text-slate-800 dark:text-slate-200"
+                  className="font-[family-name:var(--font-mono)] font-semibold whitespace-nowrap text-[color:var(--panel-text)]"
                 >
                   {formatNumber(
                     displayVehicles.reduce(
@@ -1486,7 +1487,7 @@ return (
                 </Table.Summary.Cell>
                 <Table.Summary.Cell
                   align="center"
-                  className="font-[family-name:var(--font-mono)] text-xs font-semibold whitespace-nowrap text-slate-800 dark:text-slate-200"
+                  className="font-[family-name:var(--font-mono)] font-semibold whitespace-nowrap text-[color:var(--panel-text)]"
                 >
                   {formatNumber(
                     displayVehicles.reduce(
@@ -1503,7 +1504,7 @@ return (
                 </Table.Summary.Cell>
                 <Table.Summary.Cell
                   align="center"
-                  className="font-[family-name:var(--font-mono)] text-xs font-semibold whitespace-nowrap text-slate-800 dark:text-slate-200"
+                  className="font-[family-name:var(--font-mono)] font-semibold whitespace-nowrap text-[color:var(--panel-text)]"
                 >
                   {formatNumber(
                     displayVehicles.reduce(
@@ -1521,9 +1522,9 @@ return (
                 </Table.Summary.Cell>
                 <Table.Summary.Cell colSpan={5} />
               </Table.Summary.Row>
-            )}
-          />
-        </div>
+            </Table.Summary>
+          )}
+        />
       </div>
 
       <StandardPagination

@@ -149,7 +149,7 @@ export default function PaymentModal({
                   type="button"
                   onClick={onSubmit}
                   disabled={isProcessingPayment}
-                  className="px-5 py-2 text-sm  text-white bg-[color:var(--panel)] hover:bg-[color:var(--panel)] rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                  className="px-5 py-2 text-sm  text-white bg-neutral hover:bg-neutral/90 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
                   data-modal-primary
                 >
                   {isProcessingPayment ? (

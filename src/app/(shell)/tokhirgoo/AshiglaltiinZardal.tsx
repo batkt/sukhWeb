@@ -129,7 +129,7 @@ export default function AshiglaltiinZardluud() {
     tariffUsgeer: undefined,
     suuriKhuraamj: 0,
     nuatBodokhEsekh: false,
-    zardliinTurul: undefined,
+    zardliinTurul: "Энгийн",
     tailbar: "",
     zaalt: false,
     zaaltTariff: 0,
@@ -437,7 +437,7 @@ export default function AshiglaltiinZardluud() {
       tariffUsgeer: undefined,
       suuriKhuraamj: 0,
       nuatBodokhEsekh: false,
-      zardliinTurul: undefined,
+      zardliinTurul: "Энгийн",
       tailbar: "",
       zaalt: false,
       zaaltTariff: 0,
@@ -467,7 +467,7 @@ export default function AshiglaltiinZardluud() {
       tariffUsgeer: item.tariffUsgeer,
       suuriKhuraamj: item.suuriKhuraamj || 0,
       nuatBodokhEsekh: item.nuatBodokhEsekh || false,
-      zardliinTurul: item.zardliinTurul,
+      zardliinTurul: item.zardliinTurul || "Энгийн",
       tailbar: item.tailbar || "",
       zaalt: item.zaalt || false,
       zaaltTariff: item.zaaltTariff || 0,
@@ -1006,6 +1006,37 @@ export default function AshiglaltiinZardluud() {
 
                   {/* Талбарууд */}
                   <div className="px-5 py-4 space-y-3 overflow-y-auto custom-scrollbar">
+                    {/* Төрөл: Тогтмол / Хувьсах */}
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs font-medium text-[color:var(--panel-text)]">
+                        Төрөл <span className="text-danger">*</span>
+                      </label>
+                      <div className="grid grid-cols-2 gap-2 p-1 bg-[color:var(--surface-hover)] rounded-xl border border-[color:var(--surface-border)]">
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, turul: "Тогтмол" })}
+                          className={`py-2 text-xs font-medium rounded-lg transition-all cursor-pointer ${
+                            formData.turul === "Тогтмол"
+                              ? "bg-theme text-white shadow-sm font-semibold"
+                              : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+                          }`}
+                        >
+                          Тогтмол зардал
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, turul: "Дурын" })}
+                          className={`py-2 text-xs font-medium rounded-lg transition-all cursor-pointer ${
+                            formData.turul !== "Тогтмол"
+                              ? "bg-theme text-white shadow-sm font-semibold"
+                              : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+                          }`}
+                        >
+                          Хувьсах зардал
+                        </button>
+                      </div>
+                    </div>
+
                     <div className="flex flex-col gap-1">
                       <label className="text-xs font-medium text-[color:var(--panel-text)]">
                         Зардлын нэр <span className="text-danger">*</span>
@@ -1039,27 +1070,25 @@ export default function AshiglaltiinZardluud() {
                         <label className="text-xs font-medium text-[color:var(--panel-text)]">
                           Зардлын төрөл <span className="text-danger">*</span>
                         </label>
-                        <MSelect
-                          value={formData.zardliinTurul ?? undefined}
-                          onChange={(value) =>
-                            setFormData({
-                              ...formData,
-                              zardliinTurul: value as string,
-                            })
-                          }
-                          data={[
-                            { label: "Энгийн / Default", value: "Энгийн" },
-                            { label: "Лифт / Elevator", value: "Лифт" },
-                          ]}
-                          placeholder="Төрөл сонгох"
-                          searchable={false}
-                          classNames={{
-                            input: "rounded-xl h-10 text-sm",
-                          }}
-                          leftSection={
+                        <div className="relative">
+                          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--muted-text)] pointer-events-none">
                             <Layers className="w-3.5 h-3.5 text-theme opacity-50" />
-                          }
-                        />
+                          </div>
+                          <select
+                            value={formData.zardliinTurul || "Энгийн"}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                zardliinTurul: e.target.value,
+                              })
+                            }
+                            className="w-full h-10 pl-9 pr-9 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-xl text-sm text-[color:var(--panel-text)] shadow-sm focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all appearance-none cursor-pointer"
+                          >
+                            <option value="Энгийн">Энгийн / Default</option>
+                            <option value="Лифт">Лифт / Elevator</option>
+                          </select>
+                          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--muted-text)] pointer-events-none opacity-50" />
+                        </div>
                       </div>
                     )}
 

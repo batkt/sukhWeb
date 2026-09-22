@@ -110,9 +110,9 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
           const isB2B = val === "B2B_RECEIPT";
           const label = isB2C ? "Иргэн" : isB2B ? "ААН" : val || "-";
           const badgeClass = isB2C
-            ? "bg-theme/10 text-brand/40 border border-theme/20"
+            ? "bg-theme/10 text-brand border border-theme/20"
             : isB2B
-              ? "bg-theme/10 text-brand/40 border border-theme/20"
+              ? "bg-theme/10 text-brand border border-theme/20"
               : "bg-[color:var(--panel)] text-[color:var(--muted-text)] border border-[color:var(--surface-border)]";
           return (
             <span

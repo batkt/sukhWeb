@@ -1540,7 +1540,7 @@ export default function InvoicingZardluud() {
               : getPaymentStatusLabel(record);
           const cls =
             label === "Төлсөн"
-              ? "bg-success/10 text-success/40"
+              ? "bg-success/10 text-success"
               : label === "Төлөөгүй" || label === "Хугацаа хэтэрсэн"
                 ? "bg-warning/10 text-warning"
                 : "bg-[color:var(--surface-hover)] text-[color:var(--panel-text)]";

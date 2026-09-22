@@ -1118,7 +1118,7 @@ export default function UnitsSection({
               !row.isOccupied
                 ? "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]"
                 : row.tolsenEsekh
-                  ? "bg-success/10 text-success/40"
+                  ? "bg-success/10 text-success"
                   : "bg-warning/10 text-warning"
             }`}
           >

@@ -155,6 +155,8 @@ export default function ExcelImportModal({
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [failed, setFailed] = useState<{ row: ParsedRow; reason: string }[]>([]);
+  /** Загвар татаж буй төлөв */
+  const [downloadingTemplate, setDownloadingTemplate] = useState(false);
   /** Хэрэглэгч шалгаад хасахаар сонгосон Excel мөрүүд */
   const [orkhigduulsan, setOrkhigduulsan] = useState<Set<number>>(new Set());
 
@@ -175,9 +177,188 @@ export default function ExcelImportModal({
       return shine;
     });
 
-  /** Загвар татах — Төрөл баганад Excel dropdown Data Validation орсон байна. */
+  /** Загвар татах — машин бүртгэлгүй оршин суугч, харилцагчдыг татаж Excel загварт бэлдэнэ. */
   const handleDownloadTemplate = async () => {
+    setDownloadingTemplate(true);
     try {
+      // 1. Бүртгэлтэй машины утас, ID-нуудыг татах
+      const registeredPhones = new Set<string>();
+      const registeredResidentIds = new Set<string>();
+
+      const [parkingRes, residentsRes, khariltsagchRes] = await Promise.allSettled([
+        uilchilgee(token).get("/zochinJagsaalt", {
+          params: {
+            baiguullagiinId,
+            ...(barilgiinId ? { barilgiinId } : {}),
+            khuudasniiDugaar: 1,
+            khuudasniiKhemjee: 5000,
+          },
+        }),
+        uilchilgee(token).get("/orshinSuugch", {
+          params: {
+            baiguullagiinId,
+            ...(barilgiinId ? { barilgiinId } : {}),
+            khuudasniiDugaar: 1,
+            khuudasniiKhemjee: 5000,
+          },
+        }),
+        uilchilgee(token).get("/khariltsagch", {
+          params: {
+            baiguullagiinId,
+            ...(barilgiinId ? { barilgiinId } : {}),
+            khuudasniiDugaar: 1,
+            khuudasniiKhemjee: 5000,
+          },
+        }),
+      ]);
+
+      if (parkingRes.status === "fulfilled" && parkingRes.value?.data) {
+        const pList: any[] = Array.isArray(parkingRes.value.data.jagsaalt)
+          ? parkingRes.value.data.jagsaalt
+          : [];
+        pList.forEach((p) => {
+          const plate = String(p.dugaar || p.mashiniiDugaar || "").trim().toUpperCase();
+          const hasPlate = plate && plate !== "БҮРТГЭЛГҮЙ" && plate !== "-";
+          const carCount = Number(p.mashiniiToo || 0);
+          const hasCarsList = Array.isArray(p.ezniiMashinuud) && p.ezniiMashinuud.length > 0;
+
+          if (hasPlate || carCount > 0 || hasCarsList) {
+            const rawPhone = String(p.ezemshigchiinUtas || p.utas || "").replace(/\D/g, "");
+            if (rawPhone) registeredPhones.add(rawPhone);
+            if (p.ezemshigchiinId) registeredResidentIds.add(String(p.ezemshigchiinId));
+            if (p._id) registeredResidentIds.add(String(p._id));
+          }
+        });
+      }
+
+      const templateRows: Array<{
+        ovog: string;
+        ner: string;
+        utas: string;
+        toot: string;
+        turul: string;
+        plate: string;
+        tailbar: string;
+      }> = [];
+
+      const seenPhones = new Set<string>();
+
+      // 2. Оршин суугчдаас машингүйг нь шүүх
+      if (residentsRes.status === "fulfilled" && residentsRes.value?.data) {
+        const rList: any[] = Array.isArray(residentsRes.value.data.jagsaalt)
+          ? residentsRes.value.data.jagsaalt
+          : [];
+
+        rList.forEach((r) => {
+          const rId = String(r._id || "");
+          const rawPhone = Array.isArray(r.utas) ? r.utas[0] : r.utas;
+          const phone = String(rawPhone || "").replace(/\D/g, "");
+
+          const hasDirectCar =
+            (Array.isArray(r.mashinuud) && r.mashinuud.length > 0) ||
+            (r.mashiniiDugaar && r.mashiniiDugaar !== "БҮРТГЭЛГҮЙ" && r.mashiniiDugaar !== "-") ||
+            (r.dugaar && r.dugaar !== "БҮРТГЭЛГҮЙ" && r.dugaar !== "-");
+
+          const hasCar =
+            hasDirectCar ||
+            (phone && registeredPhones.has(phone)) ||
+            (rId && registeredResidentIds.has(rId));
+
+          if (!hasCar) {
+            if (phone && seenPhones.has(phone)) return;
+            if (phone) seenPhones.add(phone);
+
+            const toot = String(r.toot || (r.toots && r.toots[0]?.toot) || "").trim();
+            const ner = String(r.ner || "").trim();
+            const ovog = String(r.ovog || "").trim();
+
+            if (ner || phone || toot) {
+              templateRows.push({
+                ovog,
+                ner,
+                utas: phone,
+                toot,
+                turul: "Оршин суугч",
+                plate: "",
+                tailbar: "",
+              });
+            }
+          }
+        });
+      }
+
+      // 3. Харилцагчдаас машингүйг нь шүүх
+      if (khariltsagchRes.status === "fulfilled" && khariltsagchRes.value?.data) {
+        const kList: any[] = Array.isArray(khariltsagchRes.value.data.jagsaalt)
+          ? khariltsagchRes.value.data.jagsaalt
+          : [];
+
+        kList.forEach((k) => {
+          const kId = String(k._id || "");
+          const rawPhone = Array.isArray(k.utas) ? k.utas[0] : k.utas;
+          const phone = String(rawPhone || "").replace(/\D/g, "");
+
+          const hasDirectCar =
+            (Array.isArray(k.mashinuud) && k.mashinuud.length > 0) ||
+            (k.mashiniiDugaar && k.mashiniiDugaar !== "БҮРТГЭЛГҮЙ" && k.mashiniiDugaar !== "-") ||
+            (k.dugaar && k.dugaar !== "БҮРТГЭЛГҮЙ" && k.dugaar !== "-");
+
+          const hasCar =
+            hasDirectCar ||
+            (phone && registeredPhones.has(phone)) ||
+            (kId && registeredResidentIds.has(kId));
+
+          if (!hasCar) {
+            if (phone && seenPhones.has(phone)) return;
+            if (phone) seenPhones.add(phone);
+
+            const toot = String(k.toot || (k.toots && k.toots[0]?.toot) || "").trim();
+            const ner = String(k.ner || "").trim();
+            const ovog = String(k.ovog || "").trim();
+
+            if (ner || phone || toot) {
+              templateRows.push({
+                ovog,
+                ner,
+                utas: phone,
+                toot,
+                turul: "Харилцагч",
+                plate: "",
+                tailbar: "",
+              });
+            }
+          }
+        });
+      }
+
+      // Тоот болон нэрээр нь цэгцтэй эрэмбэлэх
+      templateRows.sort((a, b) => {
+        const numA = parseInt(a.toot, 10);
+        const numB = parseInt(b.toot, 10);
+        if (!isNaN(numA) && !isNaN(numB) && numA !== numB) {
+          return numA - numB;
+        }
+        if (a.toot && b.toot && a.toot !== b.toot) {
+          return a.toot.localeCompare(b.toot, "mn");
+        }
+        return a.ner.localeCompare(b.ner, "mn");
+      });
+
+      const rowsToWrite =
+        templateRows.length > 0
+          ? templateRows
+          : [
+              {
+                ovog: "Дорж",
+                ner: "Бат",
+                utas: "99112233",
+                toot: "106",
+                turul: "Оршин суугч",
+                plate: "1234УБА",
+                tailbar: "1-р орц",
+              },
+            ];
+
       const ExcelJS = (await import("exceljs")).default || (await import("exceljs"));
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet("Машин бүртгэл");
@@ -189,63 +370,63 @@ export default function ExcelImportModal({
         { header: "Тоот", key: "toot", width: 12 },
         { header: "Төрөл", key: "turul", width: 18 },
         { header: "Улсын дугаар", key: "plate", width: 16 },
-        { header: "Тайлбар", key: "tailbar", width: 22 },
+        { header: "Тайлбар", key: "tailbar", width: 24 },
       ];
 
       const headerRow = worksheet.getRow(1);
-      headerRow.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 11 };
-      headerRow.fill = {
-        type: "pattern",
-        pattern: "solid",
-        fgColor: { argb: "FF1E293B" },
-      };
-      headerRow.alignment = { vertical: "middle", horizontal: "center" };
-      headerRow.height = 26;
+      headerRow.height = 28;
 
-      const sampleRows = [
-        {
-          ovog: "Дорж",
-          ner: "Бат",
-          utas: "99112233",
-          toot: "106",
-          turul: "Оршин суугч",
-          plate: "1234УБА",
-          tailbar: "1-р орц",
-        },
-        {
-          ovog: "Цэцэг",
-          ner: "Болд",
-          utas: "88112233",
-          toot: "204",
-          turul: "Харилцагч",
-          plate: "5678УБВ",
-          tailbar: "Харилцагч / Түрээслэгч",
-        },
-        {
-          ovog: "Сүх",
-          ner: "Баяр",
-          utas: "91112233",
-          toot: "",
-          turul: "Ажилтан",
-          plate: "3456УБС",
-          tailbar: "Харуул",
-        },
-        {
-          ovog: "",
-          ner: "Гэрэл",
-          utas: "95112233",
-          toot: "",
-          turul: "Дотоод",
-          plate: "7890УБЕ",
-          tailbar: "Албаны машин",
-        },
-      ];
+      // Үндсэн стандарт өнгө: #059669 (ARGB: FF059669)
+      // ЗӨВХӨН 1-7 дугаар багануудын нүдийг будна — бүх баганад будагдах (empty column color) алдааг арилгасан
+      for (let col = 1; col <= 7; col++) {
+        const cell = headerRow.getCell(col);
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FF059669" },
+        };
+        cell.font = {
+          name: "Segoe UI",
+          bold: true,
+          color: { argb: "FFFFFFFF" },
+          size: 11,
+        };
+        cell.alignment = { vertical: "middle", horizontal: "center" };
+        cell.border = {
+          top: { style: "thin", color: { argb: "FF047857" } },
+          left: { style: "thin", color: { argb: "FF047857" } },
+          bottom: { style: "thin", color: { argb: "FF047857" } },
+          right: { style: "thin", color: { argb: "FF047857" } },
+        };
+      }
 
-      sampleRows.forEach((r) => worksheet.addRow(r));
+      // Өгөгдлийн мөрүүдийг нэмж загваржуулах
+      rowsToWrite.forEach((r) => {
+        const row = worksheet.addRow(r);
+        row.height = 22;
+        for (let col = 1; col <= 7; col++) {
+          const cell = row.getCell(col);
+          cell.font = { name: "Segoe UI", size: 10 };
+          cell.alignment = {
+            vertical: "middle",
+            horizontal: col === 3 || col === 4 || col === 5 || col === 6 ? "center" : "left",
+          };
+          cell.border = {
+            top: { style: "thin", color: { argb: "FFE2E8F0" } },
+            left: { style: "thin", color: { argb: "FFE2E8F0" } },
+            bottom: { style: "thin", color: { argb: "FFE2E8F0" } },
+            right: { style: "thin", color: { argb: "FFE2E8F0" } },
+          };
+          if (col === 3 && cell.value) {
+            cell.numFmt = "@";
+          }
+        }
+      });
 
-      // Төрөл баганад (E2:E1000) Excel dropdown Data Validation нэмэх
+      // Төрөл баганад Excel dropdown Data Validation нэмэх
       const dropdownList = TURUL_OPTIONS.join(",");
-      for (let i = 2; i <= 1000; i++) {
+      const maxValidationRow = Math.max(rowsToWrite.length + 100, 500);
+      for (let i = 2; i <= maxValidationRow; i++) {
         worksheet.getCell(`E${i}`).dataValidation = {
           type: "list",
           allowBlank: true,
@@ -266,8 +447,16 @@ export default function ExcelImportModal({
       anchor.download = "Машин_бүртгэл_загвар.xlsx";
       anchor.click();
       window.URL.revokeObjectURL(url);
+
+      if (templateRows.length > 0) {
+        toast.success(`Бүртгэлгүй ${templateRows.length} оршин суугч, харилцагчийг татлаа.`);
+      } else {
+        toast.success("Бүртгэлгүй оршин суугч олдсонгүй (загвар татагдлаа).");
+      }
     } catch (err: any) {
       toast.error("Загвар татахад алдаа гарлаа");
+    } finally {
+      setDownloadingTemplate(false);
     }
   };
 
@@ -477,16 +666,20 @@ export default function ExcelImportModal({
                 <Button
                   onClick={handleDownloadTemplate}
                   variant="ghost"
+                  isLoading={downloadingTemplate}
+                  disabled={importing || parsing || downloadingTemplate}
                   className="flex-1 h-11 rounded-xl border border-[color:var(--surface-border)] dark:border-white/10"
                   leftIcon={<Download className="w-4 h-4" />}
                 >
-                  Загвар татах
+                  {downloadingTemplate
+                    ? "Мэдээлэл татаж байна..."
+                    : "Загвар татах"}
                 </Button>
                 <Button
                   onClick={() => fileRef.current?.click()}
                   variant="primary"
                   isLoading={parsing}
-                  disabled={importing}
+                  disabled={importing || downloadingTemplate}
                   className="flex-1 h-11 rounded-xl"
                   leftIcon={<Upload className="w-4 h-4" />}
                 >
@@ -495,10 +688,10 @@ export default function ExcelImportModal({
               </div>
 
               <p className="text-xs text-[color:var(--muted-text)]">
-                Багана: {COLUMNS.join(" · ")}. Улсын дугаар хоосон бол{" "}
-                <span className="font-mono">БҮРТГЭЛГҮЙ</span> гэж бүртгэгдэнэ.
-                Улсын дугаар бөглөсөн бол 4 тоо + 3 монгол кирилл үсэг байх
-                ёстой. Төрөл хоосон бол «Оршин суугч» болно.
+                Багана: {COLUMNS.join(" · ")}. «Загвар татах» товч нь машин
+                бүртгэлгүй бүх оршин суугч, харилцагчдын нэр, утас, тоотыг бэлтгэж
+                татна. Улсын дугаарыг нь бөглөөд оруулна уу. Дугаар хоосон бол{" "}
+                <span className="font-mono">БҮРТГЭЛГҮЙ</span> гэж орно.
               </p>
             </>
           )}
