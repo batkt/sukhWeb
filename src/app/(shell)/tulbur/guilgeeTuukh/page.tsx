@@ -296,6 +296,7 @@ export default function DansniiKhuulga() {
   // Selection state for "Send Invoice"
   const [selectedGereeIds, setSelectedGereeIds] = useState<string[]>([]);
   const [isSendingInvoices, setIsSendingInvoices] = useState(false);
+  const [isSendingSms, setIsSendingSms] = useState(false);
 
   // SMS History modal state + date filter
   const [smsDateRange, setSmsDateRange] = useState<[string | null, string | null]>([null, null]);
@@ -2970,6 +2971,45 @@ export default function DansniiKhuulga() {
     }
   };
 
+  /**
+   * Сонгосон гэрээ БҮГДЭД төлбөр сануулах SMS — нэг хүсэлтээр.
+   *
+   * Өмнө нь зөвхөн мөр тус бүрийн товч байсан тул 50 оршин суугчид
+   * илгээхэд 50 удаа дарах шаардлагатай байв.
+   */
+  const handleSendReminderSmsBulk = async () => {
+    if (!token) return;
+    const iduud = Array.from(new Set(selectedGereeIds)).filter(Boolean);
+    if (iduud.length === 0) {
+      toast.error("Сонгосон гүйлгээнүүдэд холбогдох гэрээ олдсонгүй!");
+      return;
+    }
+
+    setIsSendingSms(true);
+    try {
+      const resp = await uilchilgee(token).post(
+        "/nekhemjlekh/send-reminder-sms-bulk",
+        { iduud },
+      );
+      const d = resp.data || {};
+      if (d.aldaatai?.length) {
+        // Хэсэгчлэн илгээгдсэн — аль нь унасныг хэлнэ
+        toast.error(d.message || "SMS хэсэгчлэн илгээгдлээ.");
+      } else {
+        toast.success(d.message || "SMS илгээгдлээ.");
+        setSelectedGereeIds([]);
+      }
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.message ||
+          error?.message ||
+          "SMS илгээхэд алдаа гарлаа.",
+      );
+    } finally {
+      setIsSendingSms(false);
+    }
+  };
+
   const handleExcelImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -3628,6 +3668,26 @@ export default function DansniiKhuulga() {
                   </div>
                 )}
               </div>
+              <Tooltip title="Төлбөр сануулах SMS илгээх">
+                <motion.div
+                  whileHover={{ scale: 1.03 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <IconTextButton
+                    onClick={handleSendReminderSmsBulk}
+                    icon={
+                      isSendingSms ? (
+                        <div className="h-5 w-5 animate-spin rounded-full border-b-2 border-[color:var(--surface-border)]"></div>
+                      ) : (
+                        <MessageSquare className="h-5 w-5" />
+                      )
+                    }
+                    label="SMS илгээх"
+                    disabled={isSendingSms || selectedGereeIds.length === 0}
+                    className="w-[40px] h-[40px] !p-0 justify-center [&>span]:hidden bg-warning text-white hover:bg-warning disabled:opacity-50"
+                  />
+                </motion.div>
+              </Tooltip>
               <Tooltip title="Нэхэмжлэх илгээх">
                 <motion.div
                   id="guilgee-nekhemjlekh-btn"

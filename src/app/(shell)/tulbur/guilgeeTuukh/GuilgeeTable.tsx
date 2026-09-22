@@ -4,9 +4,7 @@ import React, { useMemo } from "react";
 import { Spin, Tooltip } from "antd";
 import Table from "@/components/ui/table";
 import useSWR from "swr";
-import uilchilgee from "@/lib/uilchilgee";
-import { Eye, History, Banknote, MessageSquare } from "lucide-react";
-import toast from "react-hot-toast";
+import { Eye, History, Banknote } from "lucide-react";
 import formatNumber from "../../../../../tools/function/formatNumber";
 import { getPaymentStatusLabel } from "@/lib/utils";
 import { pickMonthSlice } from "./guilgeeMonthMatrix";
@@ -78,7 +76,6 @@ export default function GuilgeeTable({
   onViewHistory,
   onTransaction,
   canCreateTransaction = true,
-  token,
   ajiltan,
   effectiveBarilgiinId,
   ekhlekhOgnoo,
@@ -88,33 +85,9 @@ export default function GuilgeeTable({
     (col) => col.key === "checkbox",
   );
 
-  const [sendingSmsId, setSendingSmsId] = React.useState<string | null>(null);
-
-  const handleSendReminderSms = async (record: any) => {
-    if (!token) return;
-    const gid = getGereeId(record);
-    if (!gid) {
-      toast.error("Гэрээний ID олдсонгүй.");
-      return;
-    }
-    setSendingSmsId(gid);
-    try {
-      const res = await uilchilgee(token).post(`/nekhemjlekh/${gid}/send-reminder-sms`);
-      if (res.data?.success) {
-        toast.success(res.data.message || "Төлбөр сануулах SMS амжилттай илгээгдлээ.");
-      } else {
-        toast.error(res.data?.message || "SMS илгээхэд алдаа гарлаа.");
-      }
-    } catch (e: any) {
-      toast.error(
-        e?.response?.data?.message ||
-        e?.message ||
-        "SMS илгээхэд алдаа гарлаа."
-      );
-    } finally {
-      setSendingSmsId(null);
-    }
-  };
+  // Мөр тус бүрийн SMS товч хасагдсан — Төлбөрийн цонхны дээд талаас
+  // сонгосон бүх гэрээнд НЭГ дарахад илгээдэг болов
+  // (`/nekhemjlekh/send-reminder-sms-bulk`).
 
   // Build Ant Design columns from visibleColumns
   const columns = useMemo(() => {
@@ -683,20 +656,6 @@ export default function GuilgeeTable({
                       </button>
                     </Tooltip>
                   )}
-                  <Tooltip title="Төлбөр сануулах SMS">
-                    <button
-                      type="button"
-                      onClick={() => handleSendReminderSms(record)}
-                      disabled={sendingSmsId === gid}
-                      className="bg-transparent border-0 p-1 text-warning hover:opacity-80 transition-opacity disabled:opacity-40 focus:outline-none"
-                    >
-                      {sendingSmsId === gid ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-warning"></div>
-                      ) : (
-                        <MessageSquare className="w-5 h-5" />
-                      )}
-                    </button>
-                  </Tooltip>
                   <Tooltip title="Түүх харах">
                     <button
                       type="button"
@@ -739,8 +698,6 @@ export default function GuilgeeTable({
     matrixMonthKey,
     historyScopedByDate,
     canCreateTransaction,
-    sendingSmsId,
-    handleSendReminderSms,
   ]);
 
   // Handle table change (sorting)
