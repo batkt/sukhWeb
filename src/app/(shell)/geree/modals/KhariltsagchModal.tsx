@@ -12,6 +12,7 @@ import { Plus, Minus } from "lucide-react";
 import {
   mashiniiDugaarTseverle,
   dugaarZuvEsekh,
+  mashiniiKhyazgaarOlya,
 } from "@/lib/mashiniiDugaar";
 import uilchilgee from "@/lib/uilchilgee";
 import {
@@ -204,6 +205,12 @@ export default function KhariltsagchModal({
       newErrors.push("mashin.duplicate");
     }
 
+    // Хязгаар — «+» хаагдсан ч хуучин мөр үлдсэн, эсвэл засах үед
+    // хязгаар буурсан байж болно.
+    if (mashiniiKhyazgaar > 0 && bugleesen.length > mashiniiKhyazgaar) {
+      newErrors.push("mashin.khyazgaar");
+    }
+
     // Гараж/агуулах БАЙХГҮЙ харилцагч бүртгэх нь хэвийн — дараа нь тоот
     // нэмж болно. Иймд `no_units` шалгалтыг хассан.
     //
@@ -244,11 +251,12 @@ export default function KhariltsagchModal({
       // хэлнэ — «бөглөх шаардлагатай» гэдэг нь төөрөгдүүлнэ.
       const mashiniiAldaa = newErrors
         .filter((e) => e.startsWith("mashin."))
-        .map((e) =>
-          e === "mashin.duplicate"
-            ? "давхардсан дугаар"
-            : `${parseInt(e.split(".")[1]) + 1}-р дугаар`,
-        );
+        .map((e) => {
+          if (e === "mashin.duplicate") return "давхардсан дугаар";
+          if (e === "mashin.khyazgaar")
+            return `хязгаар ${mashiniiKhyazgaar} машин`;
+          return `${parseInt(e.split(".")[1]) + 1}-р дугаар`;
+        });
 
       const busadAldaa = newErrors.filter((e) => !e.startsWith("mashin."));
 
@@ -373,6 +381,18 @@ export default function KhariltsagchModal({
     }
   };
 
+  /**
+   * Харилцагч дээр бүртгэж болох машины дээд тоо.
+   *
+   * Backend-ийн хаалттай ИЖИЛ логикоор бодно — эс тэгвээс дэлгэц
+   * зөвшөөрөөд сервер хаяж, хэрэглэгч машин орсон гэж бодно.
+   * 0 бол тохируулаагүй → хязгаарлахгүй.
+   */
+  const mashiniiKhyazgaar = React.useMemo(
+    () => mashiniiKhyazgaarOlya(baiguullaga, selectedBarilga, "Khariltsagch"),
+    [baiguullaga, selectedBarilga],
+  );
+
   // Get sohNer from selectedBarilga or baiguullaga (must be before early return)
   const sohNer = React.useMemo(() => {
     if (selectedBarilga?.tokhirgoo?.sohNer) {
@@ -458,6 +478,9 @@ export default function KhariltsagchModal({
    * массивыг нэгтгэж дамжуулна.
    */
   const [mashinuud, setMashinuud] = React.useState<string[]>([""]);
+  /** Хязгаарт хүрсэн эсэх — «+» товчийг хаана. */
+  const khyazgaartKhurev =
+    mashiniiKhyazgaar > 0 && mashinuud.length >= mashiniiKhyazgaar;
   const [garages, setGarages] = React.useState<any[]>([]);
   const [storages, setStorages] = React.useState<any[]>([]);
 
@@ -1077,8 +1100,13 @@ export default function KhariltsagchModal({
                                 onClick={() =>
                                   setMashinuud((prev) => [...prev, ""])
                                 }
-                                className="grid w-9 shrink-0 place-items-center rounded-lg border border-theme/30 bg-theme/10 text-brand transition-colors hover:bg-theme/20"
-                                title="Машин нэмэх"
+                                disabled={khyazgaartKhurev}
+                                className="grid w-9 shrink-0 place-items-center rounded-lg border border-theme/30 bg-theme/10 text-brand transition-colors hover:bg-theme/20 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-theme/10"
+                                title={
+                                  khyazgaartKhurev
+                                    ? `Машины хязгаар ${mashiniiKhyazgaar}`
+                                    : "Машин нэмэх"
+                                }
                                 aria-label="Машин нэмэх"
                               >
                                 <Plus className="h-4 w-4" />
@@ -1103,6 +1131,9 @@ export default function KhariltsagchModal({
                       </div>
                       <p className="mt-1 text-[11px] text-[color:var(--muted-text)]">
                         4 тоо + 3 үсэг (жишээ: 1234УБА)
+                        {mashiniiKhyazgaar > 0
+                          ? ` · дээд тал ${mashiniiKhyazgaar}`
+                          : ""}
                       </p>
                     </div>
 

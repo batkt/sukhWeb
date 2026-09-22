@@ -66,3 +66,51 @@ export function mashiniiDugaarTseverle(orolt: string): string {
 export function dugaarZuvEsekh(dugaar: string): boolean {
   return MASHINII_DUGAARIIN_ZAGVAR.test(String(dugaar || "").trim());
 }
+
+/**
+ * Нэг эзэн дээр бүртгэж болох машины ДЭЭД тоо.
+ *
+ * Backend-ийн `utils/mashinBurtgel.js` → `mashiniiKhyazgaarOlya` -тай ЯГ
+ * ижил дарааллаар шийднэ. Хоёр тал салбал дэлгэц зөвшөөрөөд сервер
+ * хаях — хэрэглэгчид «алдаагүй мэт» харагдаад машин орохгүй байдалд
+ * хүргэнэ.
+ *
+ * Эрэмбэ: барилгын тохиргоо → байгууллагын тохиргоо, ТАЛБАР ТУС БҮРД.
+ * Харилцагчийнх тохируулаагүй бол оршин суугчийнх рүү нөхнө.
+ *
+ * @returns 0 бол тохируулаагүй — хязгаарлахгүй.
+ */
+export function mashiniiKhyazgaarOlya(
+  baiguullaga: any,
+  barilga: any,
+  ezemshigchiinTurul: "OrshinSuugch" | "Khariltsagch" = "OrshinSuugch",
+): number {
+  // Хуучин бичлэгүүд дээр `zochinTokhirgoo` нь барилгын үндсэн дээр ч
+  // хадгалагдсан байдаг тул дөрвүүлэнг шалгана — backend-тэй адил.
+  const bairshluud = [
+    barilga?.tokhirgoo?.zochinTokhirgoo,
+    barilga?.zochinTokhirgoo,
+    baiguullaga?.tokhirgoo?.zochinTokhirgoo,
+    baiguullaga?.zochinTokhirgoo,
+  ];
+
+  const unshiya = (talbar: string) => {
+    for (const b of bairshluud) {
+      const utga = b?.[talbar];
+      if (utga !== undefined && utga !== null && utga !== "") return Number(utga);
+    }
+    return NaN;
+  };
+
+  let utga = unshiya(
+    ezemshigchiinTurul === "Khariltsagch"
+      ? "khariltsagchMashiniiLimit"
+      : "orshinSuugchMashiniiLimit",
+  );
+
+  if (!(Number.isFinite(utga) && utga > 0) && ezemshigchiinTurul === "Khariltsagch") {
+    utga = unshiya("orshinSuugchMashiniiLimit");
+  }
+
+  return Number.isFinite(utga) && utga > 0 ? Math.floor(utga) : 0;
+}

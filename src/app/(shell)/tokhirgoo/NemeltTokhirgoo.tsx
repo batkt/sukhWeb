@@ -1498,7 +1498,6 @@ export default function NemeltTokhirgoo() {
                     placeholder="1"
                     min={1}
                     size="sm"
-                    rightSection={<span className="stg-unit">машин</span>}
                     className="w-full"
                   />
                 </SettingsField>
@@ -1512,7 +1511,6 @@ export default function NemeltTokhirgoo() {
                     placeholder="1"
                     min={1}
                     size="sm"
-                    rightSection={<span className="stg-unit">машин</span>}
                     className="w-full"
                   />
                 </SettingsField>
