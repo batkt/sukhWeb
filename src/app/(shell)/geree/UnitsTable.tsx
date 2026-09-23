@@ -71,7 +71,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
         dataIndex: "units",
         key: "unitsCount",
         align: "center",
-        width: 100,
+        width: 80,
         sorter: true,
         sortOrder:
           sortKey === "unitsCount" || sortKey === "units"
@@ -91,7 +91,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
         dataIndex: "orts",
         key: "orts",
         align: "center",
-        width: 100,
+        width: 75,
         sorter: true,
         sortOrder:
           sortKey === "orts"
@@ -112,7 +112,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
         dataIndex: "floor",
         key: "floor",
         align: "center",
-        width: 120,
+        width: 95,
         sorter: true,
         sortOrder:
           sortKey === "floor"
@@ -139,7 +139,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
     cols.push({
       width: tootuudWidth,
       title: (
-        <span className="text-[color:var(--panel-text)] text-center block font-semibold">
+        <span className={`text-[color:var(--panel-text)] text-center block ${propertyTab === "Зогсоол" ? "" : "font-semibold"}`}>
           {propertyTab === "Зогсоол"
             ? "Зогсоолын дугаарууд"
             : propertyTab === "Агуулах"
@@ -173,7 +173,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
                     }`}
                   >
                     <span
-                      className={`font-semibold ${
+                      className={`${propertyTab === "Зогсоол" ? "" : "font-semibold"} ${
                         hasActive
                           ? "text-brand"
                           : "text-[color:var(--muted-text)]"

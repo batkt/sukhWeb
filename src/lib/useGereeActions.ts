@@ -781,7 +781,13 @@ export function useGereeActions(
           string,
           any
         >;
-        const currentUnits = getUnitsAsArray(existing[key]);
+        const matchingKey =
+          existing[key] !== undefined
+            ? key
+            : existing[floor] !== undefined
+              ? floor
+              : key;
+        const currentUnits = getUnitsAsArray(existing[matchingKey]);
         const targetUnitsSet = new Set(units.map((u) => String(u).trim()));
 
         // Check active contracts among target units
@@ -846,7 +852,8 @@ export function useGereeActions(
               ...(b.tokhirgoo || {}),
               [propName]: {
                 ...existing,
-                [key]: updatedUnits,
+                [matchingKey]: updatedUnits,
+                ...(matchingKey !== key ? { [key]: updatedUnits } : {}),
               },
             },
           };
@@ -924,17 +931,39 @@ export function useGereeActions(
           string[]
         >;
 
-        if (
-          !existing[key] ||
-          (Array.isArray(existing[key]) && existing[key].length === 0)
-        ) {
+        const targetFloorLower = String(floor).trim().toLowerCase();
+
+        // 1. Find all matching keys in this map for this floor (across entrances or without entrance)
+        const matchingKeys = Object.keys(existing).filter((k) => {
+          const f = k.includes("::") ? k.split("::")[1] : k;
+          return String(f).trim().toLowerCase() === targetFloorLower;
+        });
+
+        // 2. Collect all units belonging to this floor across matching keys
+        const floorUnits: string[] = [];
+        matchingKeys.forEach((k) => {
+          const list = existing[k];
+          if (Array.isArray(list)) {
+            floorUnits.push(...list.map(String));
+          }
+        });
+
+        // 3. Check if floor exists in the map or in tokhirgoo.davkhar
+        const currentDavkhar = Array.isArray(barilga.tokhirgoo?.davkhar)
+          ? barilga.tokhirgoo.davkhar
+          : [];
+        const floorInDavkhar = currentDavkhar.some(
+          (d: any) =>
+            String(d?.davkhar ?? d).trim().toLowerCase() === targetFloorLower,
+        );
+
+        if (matchingKeys.length === 0 && !floorInDavkhar) {
           openErrorOverlay("Давхар олдсонгүй эсвэл хэдийнэ устгагдсан байна");
           return;
         }
 
         // Check if there are any active contracts on this floor
         if (contracts && Array.isArray(contracts)) {
-          const floorUnits = Array.isArray(existing[key]) ? existing[key] : [];
           const hasActiveContract = contracts.some((c: any) => {
             const isCancelled =
               String(c.tuluv || c.status || "")
@@ -948,15 +977,16 @@ export function useGereeActions(
 
             if (!isActive) return false;
 
-            const cFloor = String(c.davkhar || "").trim();
+            const cFloor = String(c.davkhar || "").trim().toLowerCase();
             const cOrts = String(c.orts || "").trim();
             const selOrts = String(selectedOrts || "").trim();
 
-            const floorMatch = cFloor === String(floor).trim();
-            const ortsMatch = !selOrts || cOrts === "" || cOrts === selOrts;
+            const floorMatch = cFloor === targetFloorLower;
+            const ortsMatch = !selOrts || !cOrts || cOrts === selOrts;
 
             if (floorMatch && ortsMatch) {
               const cToot = String(c.toot || "").trim();
+              if (floorUnits.length === 0) return true;
               return floorUnits.some((u) => String(u).trim() === cToot);
             }
             return false;
@@ -971,7 +1001,15 @@ export function useGereeActions(
         }
 
         const updated = { ...existing };
+        matchingKeys.forEach((k) => {
+          delete updated[k];
+        });
         delete updated[key];
+
+        const updatedDavkhar = currentDavkhar.filter(
+          (d: any) =>
+            String(d?.davkhar ?? d).trim().toLowerCase() !== targetFloorLower,
+        );
 
         const updatedBarilguud = org.barilguud.map((b: any) => {
           if (String(b._id || b.id) !== String(effectiveBarilgiinId)) return b;
@@ -980,7 +1018,17 @@ export function useGereeActions(
             tokhirgoo: {
               ...(b.tokhirgoo || {}),
               [propName]: updated,
+              davkhar: updatedDavkhar,
             },
+            ...(Array.isArray(b.davkharuud)
+              ? {
+                  davkharuud: b.davkharuud.filter(
+                    (d: any) =>
+                      String(d?.davkhar ?? d).trim().toLowerCase() !==
+                      targetFloorLower,
+                  ),
+                }
+              : {}),
           };
         });
 
@@ -991,7 +1039,7 @@ export function useGereeActions(
 
         await updateMethod("baiguullaga", token, payload);
         await baiguullagaMutate?.();
-        openSuccessOverlay("Давхрын тоотууд устгагдлаа");
+        openSuccessOverlay("Давхар амжилттай устгагдлаа");
       } catch (err) {
         openErrorOverlay(getErrorMessage(err));
       } finally {

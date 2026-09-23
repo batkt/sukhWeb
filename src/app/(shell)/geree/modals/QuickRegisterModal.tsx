@@ -245,15 +245,15 @@ export default function QuickRegisterModal({
               </button>
             )}
             <div>
-              <p className="text-[10px] font-bold text-[color:var(--muted-text)] uppercase tracking-wider mb-0.5">
+              <p className="text-[10px] text-[color:var(--muted-text)] uppercase tracking-wider mb-0.5">
                 {step === 3 ? "Гэрээ сонгох" : `${unitTypeLabel} холбох`}
               </p>
-              <h2 className="text-base font-bold text-[color:var(--panel-text)] flex items-center gap-1.5">
-                <span className="px-2 py-0.5 rounded-lg bg-warning/10 text-warning text-sm font-bold">
+              <h2 className="text-base text-[color:var(--panel-text)] flex items-center gap-1.5">
+                <span className="px-2 py-0.5 rounded-lg bg-warning/10 text-warning text-sm">
                   {floor}
                 </span>
                 <span className="text-[color:var(--muted-text)] font-light">/</span>
-                <span className="px-2 py-0.5 rounded-lg bg-[color:var(--surface-hover)] text-[color:var(--panel-text)] text-sm font-bold">
+                <span className="px-2 py-0.5 rounded-lg bg-[color:var(--surface-hover)] text-[color:var(--panel-text)] text-sm">
                   {unit}
                 </span>
               </h2>
@@ -282,7 +282,7 @@ export default function QuickRegisterModal({
                 <div className="w-12 h-12 rounded-2xl bg-theme/10 flex items-center justify-center group-hover:scale-110 transition-transform">
                   <UserCheck className="w-6 h-6 text-brand" />
                 </div>
-                <span className="text-sm font-bold text-brand text-center leading-tight">
+                <span className="text-sm text-brand text-center leading-tight">
                   Оршин суугч
                 </span>
               </button>
@@ -295,7 +295,7 @@ export default function QuickRegisterModal({
                 <div className="w-12 h-12 rounded-2xl bg-theme/10 flex items-center justify-center group-hover:scale-110 transition-transform">
                   <Building2 className="w-6 h-6 text-brand" />
                 </div>
-                <span className="text-sm font-bold text-brand text-center leading-tight">
+                <span className="text-sm text-brand text-center leading-tight">
                   Харилцагч
                 </span>
               </button>
@@ -395,7 +395,7 @@ export default function QuickRegisterModal({
 
                       {/* Right indicator: resident's own apartment toot number(s) */}
                       {tootLabel && (
-                        <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full bg-theme/10 text-brand border border-theme/30">
+                        <span className="shrink-0 text-[10px] px-2 py-0.5 rounded-full bg-theme/10 text-brand border border-theme/30">
                           {tootLabel}
                         </span>
                       )}
@@ -411,8 +411,8 @@ export default function QuickRegisterModal({
         {step === 3 && pendingPerson && (
           <div className="px-6 py-5">
             <div className="mb-4 p-3 rounded-2xl bg-warning/10 border border-warning/30">
-              <p className="text-xs font-semibold text-warning leading-snug">
-                <span className="font-bold">{[pendingPerson.person?.ovog, pendingPerson.person?.ner].filter(Boolean).join(" ")}</span>
+              <p className="text-xs text-warning leading-snug">
+                <span>{[pendingPerson.person?.ovog, pendingPerson.person?.ner].filter(Boolean).join(" ")}</span>
                 {" "}нь хэд хэдэн гэрээтэй байна. Энэ зогсоолын төлбөр аль гэрээнд бичигдэх вэ?
               </p>
             </div>
@@ -434,7 +434,7 @@ export default function QuickRegisterModal({
                         <FileText className="w-4 h-4 text-brand" />
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-[color:var(--panel-text)] group-hover:text-brand dark:group-hover:text-brand">
+                        <p className="text-sm text-[color:var(--panel-text)] group-hover:text-brand dark:group-hover:text-brand">
                           {dugaarStr}
                         </p>
                         <p className="text-xs text-[color:var(--muted-text)] mt-0.5">
@@ -442,7 +442,7 @@ export default function QuickRegisterModal({
                         </p>
                       </div>
                     </div>
-                    <span className="shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]">
+                    <span className="shrink-0 text-[10px] px-2.5 py-1 rounded-full bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]">
                       Сонгох
                     </span>
                   </button>

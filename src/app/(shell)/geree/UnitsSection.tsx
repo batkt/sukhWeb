@@ -14,6 +14,7 @@ import SendInvoiceConfirmModal from "./modals/SendInvoiceConfirmModal";
 import DeleteConfirmModal from "./modals/DeleteModal";
 import { ModalPortal } from "../../../../components/shell/ModalPortal";
 import useModalHotkeys from "@/lib/useModalHotkeys";
+import { isGarageFloor } from "@/lib/useGereeData";
 
 interface UnitsSectionProps {
   davkharOptions: string[];
@@ -145,8 +146,13 @@ export default function UnitsSection({
 
     const allFloorData: FloorItem[] = [];
 
+    const effectiveFloors =
+      propertyTab === "Зогсоол"
+        ? floorsList.filter((f) => isGarageFloor(f))
+        : floorsList;
+
     targetOrtsList.forEach((orts) => {
-      floorsList.forEach((floor) => {
+      effectiveFloors.forEach((floor) => {
         const key = composeKey(orts, floor);
         const units = getTootOptions(orts, floor, propertyTab);
         /** Тухайн давхарт БОДИТООР байгаа тоотууд — O(1) шалгалтад. */
@@ -182,12 +188,12 @@ export default function UnitsSection({
           if (!hasTootsArray) {
             const cTurul = String(c?.turul || "").trim();
             if (propertyTab === "Зогсоол") {
-              if (cTurul !== "Зогсоол") return;
+              if (cTurul !== "Зогсоол" && cTurul !== "Гараж") return;
             } else if (propertyTab === "Агуулах") {
               if (cTurul !== "Агуулах") return;
             } else {
               // "Тоот" tab
-              if (cTurul === "Зогсоол" || cTurul === "Агуулах") return;
+              if (cTurul === "Зогсоол" || cTurul === "Гараж" || cTurul === "Агуулах") return;
             }
           }
 
@@ -199,12 +205,12 @@ export default function UnitsSection({
             resident.toots.forEach((rt: any) => {
               const rtTurul = String(rt.turul || "Орон сууц").trim();
               if (propertyTab === "Зогсоол") {
-                if (rtTurul !== "Гараж") return;
+                if (rtTurul !== "Гараж" && rtTurul !== "Зогсоол") return;
               } else if (propertyTab === "Агуулах") {
                 if (rtTurul !== "Агуулах") return;
               } else {
                 // "Тоот" tab
-                if (rtTurul !== "Орон сууц") return;
+                if (rtTurul !== "Орон сууц" && rtTurul !== "Тоот") return;
               }
 
               const rOrts = String(rt.orts || "").trim();
@@ -349,7 +355,11 @@ export default function UnitsSection({
   ]);
 
   const uniqueSortedFloorOptions = useMemo(() => {
-    const uniqueFloors = Array.from(new Set(floorData.map((f) => f.floor)));
+    const relevantFloorData =
+      propertyTab === "Зогсоол"
+        ? floorData.filter((f) => isGarageFloor(f.floor))
+        : floorData;
+    const uniqueFloors = Array.from(new Set(relevantFloorData.map((f) => f.floor)));
 
     uniqueFloors.sort((a, b) => {
       const aIsB = /^b/i.test(a);
@@ -372,7 +382,7 @@ export default function UnitsSection({
       value: floor,
       label: floor,
     }));
-  }, [floorData]);
+  }, [floorData, propertyTab]);
 
   // Auto-select the first floor when data loads or activeTab/orts changes
   useEffect(() => {
@@ -395,7 +405,12 @@ export default function UnitsSection({
     let total = 0;
     let occupied = 0;
 
-    floorData.forEach((f) => {
+    const relevantFloorData =
+      propertyTab === "Зогсоол"
+        ? floorData.filter((f) => isGarageFloor(f.floor))
+        : floorData;
+
+    relevantFloorData.forEach((f) => {
       total += f.units.length;
       occupied += f.activeToots.size;
     });
@@ -405,7 +420,7 @@ export default function UnitsSection({
       occupied,
       free: total - occupied,
     };
-  }, [floorData]);
+  }, [floorData, propertyTab]);
 
   const handleSendCheckedInvoices = async () => {
     if (!selectedFloor || !selectedFloorData || checkedUnits.length === 0) return;
@@ -1089,18 +1104,39 @@ export default function UnitsSection({
         title: "Нэр",
         dataIndex: "ner",
         key: "ner",
-        render: (v: any) => <span className="font-semibold">{v}</span>,
+        render: (v: any) => <span>{v}</span>,
       },
-      { title: "Орц", dataIndex: "orts", key: "orts", align: "center" },
-      { title: "Тоот", dataIndex: "toot", key: "toot", align: "center" },
-      { title: "Дугаар", dataIndex: "dugaar", key: "dugaar" },
+      {
+        title: "Орц",
+        dataIndex: "orts",
+        key: "orts",
+        width: 60,
+        align: "center",
+        render: (v: any) => <span className="text-xs">{v || "-"}</span>,
+      },
+      {
+        title: "Тоот",
+        dataIndex: "toot",
+        key: "toot",
+        width: 65,
+        align: "center",
+        render: (v: any) => <span className="text-xs">{v || "-"}</span>,
+      },
+      {
+        title: "Дугаар",
+        dataIndex: "dugaar",
+        key: "dugaar",
+        width: 110,
+        align: "center",
+        render: (v: any) => <span className="text-xs text-center">{v || "-"}</span>,
+      },
       {
         title: propertyTab === "Зогсоол" ? "Зогсоол" : "Агуулах",
         dataIndex: "zogsoolDugaar",
         key: "zogsoolDugaar",
         align: "center",
         render: (v: any) => (
-          <span className="font-bold text-brand">
+          <span className="text-brand">
             {v}
           </span>
         ),
@@ -1111,7 +1147,7 @@ export default function UnitsSection({
         key: "tulbur",
         align: "right",
         render: (v: number) => (
-          <span className="font-bold">
+          <span>
             {Number(v || 0).toLocaleString("mn-MN", {
               minimumFractionDigits: 2,
             })}
@@ -1125,7 +1161,7 @@ export default function UnitsSection({
         align: "center",
         render: (_: any, row: any) => (
           <span
-            className={`inline-block rounded-full px-2.5 py-0.5 font-bold ${
+            className={`inline-block rounded-full px-2.5 py-0.5 ${
               !row.isOccupied
                 ? "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]"
                 : row.tolsenEsekh
@@ -1342,8 +1378,10 @@ export default function UnitsSection({
                         : "bg-[color:var(--surface-bg)] border-[color:var(--surface-border)] opacity-70 hover:opacity-100"
                     }`}
                   >
-                    <p className="text-xs text-[color:var(--muted-text)] mb-1">Нийт тоот</p>
-                    <p className="text-2xl font-bold text-[color:var(--panel-text)] tabular-nums">{stats.total}</p>
+                    <p className="text-xs text-[color:var(--muted-text)] mb-1">
+                      {propertyTab === "Зогсоол" ? "Грашийн нийт тоот" : "Нийт тоот"}
+                    </p>
+                    <p className="text-2xl text-[color:var(--panel-text)] tabular-nums">{stats.total}</p>
                   </button>
 
                   <button
@@ -1354,8 +1392,8 @@ export default function UnitsSection({
                         : "bg-warning/5 border-warning/15 opacity-70 hover:opacity-100"
                     }`}
                   >
-                    <p className="text-xs mb-1 font-semibold text-warning">Чөлөөтэй</p>
-                    <p className="text-2xl font-bold text-warning tabular-nums">{stats.free}</p>
+                    <p className="text-xs mb-1 text-warning">Чөлөөтэй</p>
+                    <p className="text-2xl text-warning tabular-nums">{stats.free}</p>
                   </button>
 
                   <button
@@ -1366,13 +1404,13 @@ export default function UnitsSection({
                         : "bg-success/5 border-success/15 opacity-70 hover:opacity-100"
                     }`}
                   >
-                    <p className="text-xs mb-1 font-semibold text-success">Бүртгэлтэй</p>
-                    <p className="text-2xl font-bold text-success tabular-nums">{stats.occupied}</p>
+                    <p className="text-xs mb-1 text-success">Бүртгэлтэй</p>
+                    <p className="text-2xl text-success tabular-nums">{stats.occupied}</p>
                   </button>
 
                   <div className="bg-info/5 rounded-2xl border border-info/15 p-4 shadow-xs text-center">
                     <p className="text-xs text-info mb-1">Тухайн давхрын тоотууд</p>
-                    <p className="text-2xl font-bold text-info tabular-nums">{selectedFloorData.filteredUnits.length}</p>
+                    <p className="text-2xl text-info tabular-nums">{selectedFloorData.filteredUnits.length}</p>
                   </div>
                 </div>
 
@@ -1381,22 +1419,35 @@ export default function UnitsSection({
                   {/* Header Bar */}
                   <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[color:var(--surface-border)]">
                     <div className="flex items-center gap-2">
-                      <h3 className="text-base font-bold text-[color:var(--panel-text)]">
+                      <h3 className="text-base text-[color:var(--panel-text)]">
                         {propertyTab === "Зогсоол" ? "Зогсоол давхрын тоотууд" : "Агуулах давхрын тоотууд"}
                       </h3>
-                      {selectedFloor && (
-                        <div className="flex items-center gap-1.5">
-                          <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-info/10 text-info">
-                            {selectedFloor}-р давхар
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => onDeleteFloor?.(selectedFloor)}
-                            title={`${selectedFloor}-р давхрын бүх тоотуудыг устгах`}
-                            className="p-1 rounded-lg text-[color:var(--muted-text)] hover:text-danger hover:bg-danger/10 transition cursor-pointer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                      {uniqueSortedFloorOptions.length > 0 && (
+                        <div className="flex items-center gap-1.5 ml-2">
+                          {uniqueSortedFloorOptions.map((opt) => (
+                            <button
+                              key={opt.value}
+                              type="button"
+                              onClick={() => setSelectedFloor(opt.value)}
+                              className={`px-2.5 py-1 rounded-lg text-xs transition cursor-pointer ${
+                                selectedFloor === opt.value
+                                  ? "bg-theme/20 text-brand border border-theme/40"
+                                  : "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] border border-transparent"
+                              }`}
+                            >
+                              {opt.label}-р давхар
+                            </button>
+                          ))}
+                          {selectedFloor && (
+                            <button
+                              type="button"
+                              onClick={() => onDeleteFloor?.(selectedFloor)}
+                              title={`${selectedFloor}-р давхрын бүх тоотуудыг устгах`}
+                              className="p-1 rounded-lg text-[color:var(--muted-text)] hover:text-danger hover:bg-danger/10 transition cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1418,7 +1469,7 @@ export default function UnitsSection({
                         variant="secondary"
                         size="sm"
                         leftIcon={<Plus className="w-3.5 h-3.5" />}
-                        className="rounded-xl font-semibold cursor-pointer shrink-0"
+                        className="rounded-xl cursor-pointer shrink-0"
                       >
                         Бүртгэх
                       </Button>
@@ -1428,7 +1479,7 @@ export default function UnitsSection({
                         variant="primary"
                         size="sm"
                         leftIcon={<Send className="w-3.5 h-3.5" />}
-                        className="rounded-xl font-semibold !bg-theme hover:!bg-theme cursor-pointer shrink-0"
+                        className="rounded-xl !bg-theme hover:!bg-theme cursor-pointer shrink-0"
                       >
                         Илгээх ({checkedUnits.length})
                       </Button>
@@ -1439,7 +1490,7 @@ export default function UnitsSection({
                           variant="danger"
                           size="sm"
                           leftIcon={<Trash2 className="w-3.5 h-3.5" />}
-                          className="rounded-xl font-semibold !bg-danger hover:!bg-danger !text-white cursor-pointer shrink-0"
+                          className="rounded-xl !bg-danger hover:!bg-danger !text-white cursor-pointer shrink-0"
                         >
                           Устгах ({checkedUnits.length})
                         </Button>
@@ -1467,9 +1518,9 @@ export default function UnitsSection({
                   />
 
                   {/* Summary Footer Row */}
-                  <div className="flex items-center justify-between pt-3 border-t border-[color:var(--surface-border)] font-bold text-sm text-[color:var(--panel-text)] dark:text-white">
+                  <div className="flex items-center justify-between pt-3 border-t border-[color:var(--surface-border)] text-sm text-[color:var(--panel-text)] dark:text-white">
                     <span>Нийт дүн:</span>
-                    <span className="text-brand text-base font-extrabold">
+                    <span className="text-brand text-base">
                       {totalZogsoolAmount.toLocaleString("mn-MN", { minimumFractionDigits: 2 })}₮
                     </span>
                   </div>
@@ -1545,15 +1596,15 @@ export default function UnitsSection({
               {/* Header */}
               <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-[color:var(--surface-border)]">
                 <div>
-                  <p className="text-[10px] font-bold text-[color:var(--muted-text)] uppercase tracking-wider mb-0.5">
+                  <p className="text-[10px] text-[color:var(--muted-text)] uppercase tracking-wider mb-0.5">
                     {propertyTab} холбоос
                   </p>
-                  <h2 className="text-base font-bold text-[color:var(--panel-text)] flex items-center gap-1.5">
-                    <span className="px-2 py-0.5 rounded-lg bg-warning/10 text-warning text-sm font-bold">
+                  <h2 className="text-base text-[color:var(--panel-text)] flex items-center gap-1.5">
+                    <span className="px-2 py-0.5 rounded-lg bg-warning/10 text-warning text-sm">
                       {activeUnitDetails.floor}-р давхар
                     </span>
                     <span className="text-[color:var(--muted-text)] font-light">/</span>
-                    <span className="px-2 py-0.5 rounded-lg bg-[color:var(--surface-hover)] text-[color:var(--panel-text)] text-sm font-bold">
+                    <span className="px-2 py-0.5 rounded-lg bg-[color:var(--surface-hover)] text-[color:var(--panel-text)] text-sm">
                       {activeUnitDetails.unit}-р тоот
                     </span>
                   </h2>
@@ -1572,7 +1623,7 @@ export default function UnitsSection({
                   <div className="space-y-4">
                     {/* Resident Info Card */}
                     <div className="p-4 bg-[color:var(--surface-hover)] rounded-2xl border border-[color:var(--surface-border)] space-y-3">
-                      <p className="text-xs font-bold text-[color:var(--muted-text)] uppercase tracking-wide">
+                      <p className="text-xs text-[color:var(--muted-text)] uppercase tracking-wide">
                         Бүртгэлтэй оршин суугч
                       </p>
                       <div className="flex items-center gap-3">
@@ -1580,7 +1631,7 @@ export default function UnitsSection({
                           <User className="w-5 h-5 text-warning" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-bold text-[color:var(--panel-text)] truncate">
+                          <p className="text-sm text-[color:var(--panel-text)] truncate">
                             {[activeUnitDetails.resident.ovog, activeUnitDetails.resident.ner]
                               .filter(Boolean)
                               .join(" ") ||
@@ -1616,7 +1667,7 @@ export default function UnitsSection({
                       }}
                       variant="secondary"
                       fullWidth
-                      className="!bg-warning hover:!bg-warning !text-white rounded-2xl shadow-md shadow-warning/10 font-semibold"
+                      className="!bg-warning hover:!bg-warning !text-white rounded-2xl shadow-md shadow-warning/10"
                     >
                       {propertyTab === "Зогсоол"
                         ? "Зогсоолын нэхэмжлэх илгээх"

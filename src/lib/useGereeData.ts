@@ -16,6 +16,15 @@ import {
   getResidentOrtsuud,
 } from "@/lib/residentDataHelper";
 
+export const isGarageFloor = (floor: string): boolean => {
+  const f = String(floor || "").trim().toLowerCase();
+  return (
+    /^b[-_]?\d+/i.test(f) ||
+    f.startsWith("b") ||
+    /^(граш|гараж|зогсоол|garage|parking)/i.test(f)
+  );
+};
+
 export function useGereeData(
   token: string | null,
   ajiltan: any,
@@ -209,7 +218,7 @@ export function useGereeData(
         // Only add if there are actual unit numbers
         if (floor && list.length > 0) {
           // Route basement/parking floors (B1, B2...) to Зогсоол map
-          const isBasement = /^B\d+$/i.test(floor);
+          const isBasement = isGarageFloor(floor);
           const target = isBasement ? outZogsool : outToot;
           if (!target[floor]) {
             target[floor] = list.map((x: any) => String(x));
@@ -967,57 +976,97 @@ export function useGereeData(
     const activeTab = propertyTab || "Тоот";
 
     if (activeTab === "Тоот") {
-      // Show non-basement floors from davkharOptions, and any floors from maps.outToot keys
+      // Show non-basement floors from davkharOptions, and fallback to maps.outToot keys if none configured
       const floorsSet = new Set<string>();
 
       // 1. Add configured non-basement floors from davkharOptions
       davkharOptions.forEach((d) => {
         const floorStr = String(d).trim();
-        const isBasement = floorStr.toLowerCase().startsWith("b");
-        if (floorStr && !isBasement) {
+        if (floorStr && !isGarageFloor(floorStr)) {
           floorsSet.add(floorStr);
         }
       });
 
-      // 2. Add existing floors from maps.outToot keys
-      Object.keys(maps.outToot).forEach((key) => {
-        let floorName = "";
-        if (key.includes("::")) {
-          const parts = key.split("::");
-          floorName = parts[1] || parts[0];
-        } else {
-          floorName = key;
-        }
-        const isBasement = String(floorName).trim().toLowerCase().startsWith("b");
-        if (floorName && !isBasement) {
-          floorsSet.add(floorName);
-        }
-      });
+      // 2. Only add from maps.outToot keys if davkharOptions has NO configured non-basement floors
+      if (floorsSet.size === 0) {
+        Object.keys(maps.outToot).forEach((key) => {
+          let floorName = "";
+          if (key.includes("::")) {
+            const parts = key.split("::");
+            floorName = parts[1] || parts[0];
+          } else {
+            floorName = key;
+          }
+          floorName = String(floorName).trim();
+          if (floorName && !isGarageFloor(floorName)) {
+            floorsSet.add(floorName);
+          }
+        });
+      }
       list = Array.from(floorsSet);
-    } else {
-      // For Зогсоол / Агуулах, extract unique floor names from the map keys
-      const activeMap =
-        activeTab === "Зогсоол" ? maps.outZogsool : maps.outAguulakh;
+    } else if (activeTab === "Зогсоол") {
+      // For Зогсоол, ONLY extract garage / basement floors (B1, B2, etc.)
+      const activeMap = maps.outZogsool;
       const floorsSet = new Set<string>();
 
-      // 1. Add configured basement floors from davkharOptions (floors starting with "B" or "b")
+      // 1. Add configured basement floors from davkharOptions
       davkharOptions.forEach((d) => {
         const floorStr = String(d).trim();
-        if (floorStr.toLowerCase().startsWith("b")) {
+        if (isGarageFloor(floorStr)) {
           floorsSet.add(floorStr);
         }
       });
 
-      // 2. Add existing floors from the map keys
-      Object.keys(activeMap).forEach((key) => {
-        // Keys are in format "orts::floor" or just "floor"
-        if (key.includes("::")) {
-          const parts = key.split("::");
-          floorsSet.add(parts[1] || parts[0]);
-        } else {
-          floorsSet.add(key);
+      // 2. Add existing floors from map keys ONLY if davkharOptions does not define basement floors
+      // If building configuration specifies basement floors (e.g., only B1), it is the authoritative source!
+      if (floorsSet.size === 0) {
+        Object.keys(activeMap).forEach((key) => {
+          let floorName = "";
+          if (key.includes("::")) {
+            const parts = key.split("::");
+            floorName = parts[1] || parts[0];
+          } else {
+            floorName = key;
+          }
+          floorName = String(floorName).trim();
+          if (isGarageFloor(floorName)) {
+            floorsSet.add(floorName);
+          }
+        });
+      }
+
+      // 3. Fallback: check contracts if still empty
+      if (floorsSet.size === 0 && Array.isArray(contracts)) {
+        contracts.forEach((c) => {
+          const cTurul = String(c?.turul || "").trim();
+          if (cTurul === "Зогсоол" || cTurul === "Гараж") {
+            const f = String(c?.davkhar || "").trim();
+            if (f && isGarageFloor(f)) floorsSet.add(f);
+          }
+        });
+      }
+
+      list = Array.from(floorsSet);
+    } else {
+      // Агуулах
+      const activeMap = maps.outAguulakh;
+      const floorsSet = new Set<string>();
+      davkharOptions.forEach((d) => {
+        const floorStr = String(d).trim();
+        if (floorStr.toLowerCase().startsWith("b") || floorStr.toLowerCase().includes("агуулах")) {
+          floorsSet.add(floorStr);
         }
       });
+      if (floorsSet.size === 0) {
+        Object.keys(activeMap).forEach((key) => {
+          if (key.includes("::")) {
+            const parts = key.split("::");
+            floorsSet.add(parts[1] || parts[0]);
+          } else {
+            floorsSet.add(key);
+          }
+        });
+      }
       list = Array.from(floorsSet);
     }
 

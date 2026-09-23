@@ -1397,6 +1397,52 @@ export default function BarilgiinTokhirgoo() {
       let updatedBarilguud: any[] = [...(freshOrg.barilguud || [])];
       updatedBarilguud = updatedBarilguud.map((b: any) => {
         if (String(b._id) !== String(editedBuildingId)) return b;
+
+        // Clean up any garage floor entries exceeding zogsoolCount (e.g., B2..B5 when changed to B1)
+        const oldZogsoolMap = (b.tokhirgoo?.davkhariinZogsoolnuud || {}) as Record<string, any>;
+        const cleanedZogsoolMap = { ...oldZogsoolMap };
+        Object.keys(cleanedZogsoolMap).forEach((k) => {
+          const f = k.includes("::") ? k.split("::")[1] : k;
+          const trimmedF = String(f).trim();
+          const match = trimmedF.match(/^b(\d+)$/i);
+          if (match) {
+            const bNum = parseInt(match[1], 10);
+            if (bNum > zogsoolCount) {
+              delete cleanedZogsoolMap[k];
+            }
+          }
+        });
+
+        // Clean up any normal floor entries exceeding count
+        const oldTootMap = (b.tokhirgoo?.davkhariinToonuud || {}) as Record<string, any>;
+        const cleanedTootMap = { ...oldTootMap };
+        Object.keys(cleanedTootMap).forEach((k) => {
+          const f = k.includes("::") ? k.split("::")[1] : k;
+          const trimmedF = String(f).trim();
+          const match = trimmedF.match(/^(\d+)$/);
+          if (match) {
+            const fNum = parseInt(match[1], 10);
+            if (fNum > count) {
+              delete cleanedTootMap[k];
+            }
+          }
+        });
+
+        const updatedDavkharuud = Array.isArray(b.davkharuud)
+          ? b.davkharuud.filter((d: any) => {
+              const fStr = String(d?.davkhar ?? d).trim();
+              const bMatch = fStr.match(/^b(\d+)$/i);
+              if (bMatch) {
+                return parseInt(bMatch[1], 10) <= zogsoolCount;
+              }
+              const numMatch = fStr.match(/^(\d+)$/);
+              if (numMatch) {
+                return parseInt(numMatch[1], 10) <= count;
+              }
+              return true;
+            })
+          : b.davkharuud;
+
         const tokhirgoo = {
           ...(b.tokhirgoo || {}),
           orts: String(ortsNum),
@@ -1404,6 +1450,8 @@ export default function BarilgiinTokhirgoo() {
             ...Array.from({ length: count }, (_, i) => String(i + 1)),
             ...Array.from({ length: zogsoolCount }, (_, i) => `B${i + 1}`),
           ],
+          davkhariinZogsoolnuud: cleanedZogsoolMap,
+          davkhariinToonuud: cleanedTootMap,
           ...(selectedDuureg && {
             duuregNer: selectedDuureg,
             districtCode: selectedDuureg + (selectedHoroo || ""),
@@ -1415,7 +1463,12 @@ export default function BarilgiinTokhirgoo() {
             },
           }),
         } as any;
-        return { ...b, ner: name, tokhirgoo };
+        return {
+          ...b,
+          ner: name,
+          tokhirgoo,
+          ...(updatedDavkharuud !== undefined ? { davkharuud: updatedDavkharuud } : {}),
+        };
       });
 
       const payload = {
