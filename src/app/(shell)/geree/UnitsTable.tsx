@@ -189,6 +189,12 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
                       aria-label={`Устгах ${unitStr}`}
                       onClick={(e) => {
                         e.stopPropagation();
+                        if (hasActive) {
+                          alert(
+                            `Тоот ${unitStr} дээр оршин суугч/харилцагч эсвэл идэвхтэй гэрээ холбогдсон байна. Эхлээд холбоосоо салгасны дараа устгана уу.`,
+                          );
+                          return;
+                        }
                         onDeleteUnit?.(record.floor, unitStr);
                       }}
                     >

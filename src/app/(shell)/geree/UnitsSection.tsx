@@ -15,6 +15,10 @@ import DeleteConfirmModal from "./modals/DeleteModal";
 import { ModalPortal } from "../../../../components/shell/ModalPortal";
 import useModalHotkeys from "@/lib/useModalHotkeys";
 import { isGarageFloor } from "@/lib/useGereeData";
+import useSWR from "swr";
+import { useAuth } from "@/lib/useAuth";
+import { useBuilding } from "@/context/BuildingContext";
+import uilchilgee from "@/lib/uilchilgee";
 
 interface UnitsSectionProps {
   davkharOptions: string[];
@@ -99,6 +103,58 @@ export default function UnitsSection({
   const [checkedUnits, setCheckedUnits] = useState<string[]>([]);
   const [selectionMode, setSelectionMode] = useState(false);
   const [zogsoolSearch, setZogsoolSearch] = useState("");
+
+  const { token, baiguullaga } = useAuth();
+  const { selectedBuildingId } = useBuilding();
+  const effectiveBid = selectedBuildingId || (selectedBarilga?._id ? String(selectedBarilga._id) : undefined);
+
+  // Fetch avlaga records to check if garage charges / invoices were added for this month
+  const { data: avlaguudData } = useSWR(
+    token && baiguullaga?._id && (propertyTab === "Зогсоол" || propertyTab === "Агуулах")
+      ? ["/guilgeeAvlaguud", token, effectiveBid || baiguullaga._id]
+      : null,
+    async () => {
+      try {
+        if (!baiguullaga?._id) return [];
+        const resp = await uilchilgee(token || undefined).get("/guilgeeAvlaguud", {
+          params: {
+            baiguullagiinId: baiguullaga._id,
+            barilgiinId: effectiveBid || undefined,
+            khuudasniiDugaar: 1,
+            khuudasniiKhemjee: 2000,
+          },
+        });
+        return resp.data?.data || resp.data?.jagsaalt || resp.data || [];
+      } catch {
+        return [];
+      }
+    },
+    { revalidateOnFocus: false, dedupingInterval: 15000 }
+  );
+
+  // Fetch invoice history records to check if invoices were sent this month
+  const { data: nekhemjlekhData } = useSWR(
+    token && baiguullaga?._id && (propertyTab === "Зогсоол" || propertyTab === "Агуулах")
+      ? ["/nekhemjlekhiinTuukh", token, effectiveBid || baiguullaga._id]
+      : null,
+    async () => {
+      try {
+        if (!baiguullaga?._id) return [];
+        const resp = await uilchilgee(token || undefined).get("/nekhemjlekhiinTuukh", {
+          params: {
+            baiguullagiinId: baiguullaga._id,
+            barilgiinId: effectiveBid || undefined,
+            khuudasniiDugaar: 1,
+            khuudasniiKhemjee: 2000,
+          },
+        });
+        return resp.data?.jagsaalt || resp.data || [];
+      } catch {
+        return [];
+      }
+    },
+    { revalidateOnFocus: false, dedupingInterval: 15000 }
+  );
 
   useEffect(() => {
     setCheckedUnits([]);
@@ -1032,20 +1088,91 @@ export default function UnitsSection({
 
       const amount = isOccupied
         ? (Number(
-            activeContract?.sariinTurees ||
-              activeContract?.sariinTulbur ||
-              activeContract?.tulburiinDun ||
-              activeContract?.dun ||
-              resident?.zogsoolTulbur ||
-              50000
-          ) || 0)
+          activeContract?.sariinTurees ||
+          activeContract?.sariinTulbur ||
+          activeContract?.tulburiinDun ||
+          activeContract?.dun ||
+          resident?.zogsoolTulbur ||
+          50000
+        ) || 0)
         : 0;
 
       const isPaid = Boolean(
         activeContract?.tulbarTulogdson ||
-          activeContract?.tulburTulogdson ||
-          activeContract?.tuluv === "Төлөгдсөн"
+        activeContract?.tulburTulogdson ||
+        activeContract?.tuluv === "Төлөгдсөн"
       );
+
+      // Check if this month's invoice / charge was sent to the user
+      let isInvoiceSent = false;
+      if (isOccupied) {
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth();
+
+        const isSameMonth = (dRaw: any) => {
+          if (!dRaw) return false;
+          const d = new Date(dRaw);
+          if (isNaN(d.getTime())) return false;
+          return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
+        };
+
+        // 1. Direct contract / resident fields
+        if (
+          activeContract?.nekhemjlekhIlgeesen === true ||
+          activeContract?.invoiceSent === true ||
+          activeContract?.isInvoiceSent === true ||
+          activeContract?.nekhemjlekhStatus === "Илгээгдсэн" ||
+          isSameMonth(activeContract?.nekhemjlekhiinOgnoo || activeContract?.suuldNekhemjlekhIlgeesenOgnoo || activeContract?.ilgeesenOgnoo)
+        ) {
+          isInvoiceSent = true;
+        }
+
+        // 2. If already paid, the invoice was naturally sent
+        if (!isInvoiceSent && isPaid) {
+          isInvoiceSent = true;
+        }
+
+        // 3. Check avlaguudData (charges added this month for this unit)
+        if (!isInvoiceSent && Array.isArray(avlaguudData) && avlaguudData.length > 0) {
+          const contractId = activeContract?._id ? String(activeContract._id) : "";
+          const resId = resident?._id ? String(resident._id) : "";
+          const hasAvlaga = avlaguudData.some((a: any) => {
+            if (!isSameMonth(a.ognoo || a.createdAt)) return false;
+            const aToot = String(a.toot || "").trim();
+            const aGId = String(a.gereeniiId || "").trim();
+            const aRId = String(a.orshinSuugchId || "").trim();
+
+            const tootMatch = aToot === unitStr || (tootStr !== "-" && aToot === tootStr);
+            const refMatch = (contractId && aGId === contractId) || (resId && aRId === resId);
+
+            return tootMatch || (refMatch && /зогсоол|гараж|агуулах/i.test(a.tailbar || ""));
+          });
+          if (hasAvlaga) {
+            isInvoiceSent = true;
+          }
+        }
+
+        // 4. Check nekhemjlekhData (invoices generated this month)
+        if (!isInvoiceSent && Array.isArray(nekhemjlekhData) && nekhemjlekhData.length > 0) {
+          const contractId = activeContract?._id ? String(activeContract._id) : "";
+          const resId = resident?._id ? String(resident._id) : "";
+          const hasInv = nekhemjlekhData.some((inv: any) => {
+            if (!isSameMonth(inv.ognoo || inv.createdAt || inv.nekhemjlekhiinOgnoo)) return false;
+            const iToot = String(inv.toot || "").trim();
+            const iGId = String(inv.gereeniiId || inv.gereeId || "").trim();
+            const iRId = String(inv.orshinSuugchId || "").trim();
+
+            const tootMatch = iToot === unitStr || (tootStr !== "-" && iToot === tootStr);
+            const refMatch = (contractId && iGId === contractId) || (resId && iRId === resId);
+
+            return (refMatch || tootMatch) && (inv.tuluv !== "Цуцалсан");
+          });
+          if (hasInv) {
+            isInvoiceSent = true;
+          }
+        }
+      }
 
       let dateStr = "-";
       const rawDate =
@@ -1058,7 +1185,7 @@ export default function UnitsSection({
               d.getDate()
             ).padStart(2, "0")}/${d.getFullYear()}`;
           }
-        } catch (e) {}
+        } catch (e) { }
       }
 
       return {
@@ -1072,6 +1199,7 @@ export default function UnitsSection({
         dugaar: phone,
         zogsoolDugaar: unitStr,
         tulbur: amount,
+        isInvoiceSent,
         tolsenEsekh: isPaid,
         isOccupied,
         resident,
@@ -1087,9 +1215,10 @@ export default function UnitsSection({
         r.ner.toLowerCase().includes(q) ||
         r.toot.toLowerCase().includes(q) ||
         (r.orts && r.orts.toLowerCase().includes(q)) ||
-        r.dugaar.toLowerCase().includes(q)
+        r.dugaar.toLowerCase().includes(q) ||
+        (r.isInvoiceSent ? "илгээгдсэн" : "илгээгдээгүй").includes(q)
     );
-  }, [selectedFloorData, contracts, zogsoolSearch]);
+  }, [selectedFloorData, contracts, zogsoolSearch, avlaguudData, nekhemjlekhData]);
 
   const totalZogsoolAmount = useMemo(() => {
     return zogsoolTableRows.reduce((sum, r) => sum + (r.tulbur || 0), 0);
@@ -1123,14 +1252,6 @@ export default function UnitsSection({
         render: (v: any) => <span className="text-xs">{v || "-"}</span>,
       },
       {
-        title: "Дугаар",
-        dataIndex: "dugaar",
-        key: "dugaar",
-        width: 110,
-        align: "center",
-        render: (v: any) => <span className="text-xs text-center">{v || "-"}</span>,
-      },
-      {
         title: propertyTab === "Зогсоол" ? "Зогсоол" : "Агуулах",
         dataIndex: "zogsoolDugaar",
         key: "zogsoolDugaar",
@@ -1140,6 +1261,14 @@ export default function UnitsSection({
             {v}
           </span>
         ),
+      },
+      {
+        title: "Дугаар",
+        dataIndex: "dugaar",
+        key: "dugaar",
+        width: 110,
+        align: "center",
+        render: (v: any) => <span className="text-xs text-center">{v || "-"}</span>,
       },
       {
         title: "Төлбөр",
@@ -1156,18 +1285,39 @@ export default function UnitsSection({
         ),
       },
       {
-        title: "Төлсөн эсэх",
+        title: "Нэхэмжлэх",
+        key: "isInvoiceSent",
+        width: 110,
+        align: "center",
+        render: (_: any, row: any) => (
+          <span
+            className={`inline-block rounded-full px-2.5 py-0.5 text-xs ${!row.isOccupied
+              ? "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]"
+              : row.isInvoiceSent
+                ? "bg-success/10 text-success"
+                : "bg-warning/10 text-warning"
+              }`}
+          >
+            {row.isOccupied
+              ? row.isInvoiceSent
+                ? "Илгээгдсэн"
+                : "Илгээгдээгүй"
+              : "-"}
+          </span>
+        ),
+      },
+      {
+        title: "Төлөв",
         key: "tolsenEsekh",
         align: "center",
         render: (_: any, row: any) => (
           <span
-            className={`inline-block rounded-full px-2.5 py-0.5 ${
-              !row.isOccupied
-                ? "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]"
-                : row.tolsenEsekh
-                  ? "bg-success/10 text-success"
-                  : "bg-warning/10 text-warning"
-            }`}
+            className={`inline-block rounded-full px-2.5 py-0.5 ${!row.isOccupied
+              ? "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]"
+              : row.tolsenEsekh
+                ? "bg-success/10 text-success"
+                : "bg-warning/10 text-warning"
+              }`}
           >
             {row.isOccupied ? (row.tolsenEsekh ? "Төлсөн" : "Төлөөгүй") : "-"}
           </span>
@@ -1224,7 +1374,15 @@ export default function UnitsSection({
               </button>
             )}
             <button
-              onClick={() => onDeleteUnit(selectedFloor || "", row.id)}
+              onClick={() => {
+                if (row.isOccupied) {
+                  alert(
+                    `Тоот ${row.zogsoolDugaar || row.id} дээр оршин суугч/харилцагч (${row.ner || "холбогдсон"}) бүртгэлтэй байна. Эхлээд холбоосоо салгасны дараа устгана уу.`,
+                  );
+                  return;
+                }
+                onDeleteUnit(selectedFloor || "", row.id);
+              }}
               className="cursor-pointer rounded-lg p-1.5 text-danger transition hover:bg-danger/10"
               title="Устгах"
             >
@@ -1234,7 +1392,7 @@ export default function UnitsSection({
         ),
       },
     ],
-     
+
     [propertyTab, selectedFloor],
   );
 
@@ -1372,11 +1530,10 @@ export default function UnitsSection({
                       (`theme`), бусад нь семантик (warning/success/info). */}
                   <button
                     onClick={() => setUnitStatusFilter?.("all")}
-                    className={`text-center select-none cursor-pointer rounded-2xl p-4 shadow-xs border transition-all duration-200 active:scale-[0.98] ${
-                      unitStatusFilter === "all"
-                        ? "bg-theme/10 border-theme/40 ring-2 ring-theme/40 shadow-md"
-                        : "bg-[color:var(--surface-bg)] border-[color:var(--surface-border)] opacity-70 hover:opacity-100"
-                    }`}
+                    className={`text-center select-none cursor-pointer rounded-2xl p-4 shadow-xs border transition-all duration-200 active:scale-[0.98] ${unitStatusFilter === "all"
+                      ? "bg-theme/10 border-theme/40 ring-2 ring-theme/40 shadow-md"
+                      : "bg-[color:var(--surface-bg)] border-[color:var(--surface-border)] opacity-70 hover:opacity-100"
+                      }`}
                   >
                     <p className="text-xs text-[color:var(--muted-text)] mb-1">
                       {propertyTab === "Зогсоол" ? "Грашийн нийт тоот" : "Нийт тоот"}
@@ -1386,11 +1543,10 @@ export default function UnitsSection({
 
                   <button
                     onClick={() => setUnitStatusFilter?.("free")}
-                    className={`text-center select-none cursor-pointer rounded-2xl p-4 shadow-xs border transition-all duration-200 active:scale-[0.98] ${
-                      unitStatusFilter === "free"
-                        ? "bg-warning/15 border-warning/40 ring-2 ring-warning/40 shadow-md"
-                        : "bg-warning/5 border-warning/15 opacity-70 hover:opacity-100"
-                    }`}
+                    className={`text-center select-none cursor-pointer rounded-2xl p-4 shadow-xs border transition-all duration-200 active:scale-[0.98] ${unitStatusFilter === "free"
+                      ? "bg-warning/15 border-warning/40 ring-2 ring-warning/40 shadow-md"
+                      : "bg-warning/5 border-warning/15 opacity-70 hover:opacity-100"
+                      }`}
                   >
                     <p className="text-xs mb-1 text-warning">Чөлөөтэй</p>
                     <p className="text-2xl text-warning tabular-nums">{stats.free}</p>
@@ -1398,11 +1554,10 @@ export default function UnitsSection({
 
                   <button
                     onClick={() => setUnitStatusFilter?.("occupied")}
-                    className={`text-center select-none cursor-pointer rounded-2xl p-4 shadow-xs border transition-all duration-200 active:scale-[0.98] ${
-                      unitStatusFilter === "occupied"
-                        ? "bg-success/15 border-success/40 ring-2 ring-success/40 shadow-md"
-                        : "bg-success/5 border-success/15 opacity-70 hover:opacity-100"
-                    }`}
+                    className={`text-center select-none cursor-pointer rounded-2xl p-4 shadow-xs border transition-all duration-200 active:scale-[0.98] ${unitStatusFilter === "occupied"
+                      ? "bg-success/15 border-success/40 ring-2 ring-success/40 shadow-md"
+                      : "bg-success/5 border-success/15 opacity-70 hover:opacity-100"
+                      }`}
                   >
                     <p className="text-xs mb-1 text-success">Бүртгэлтэй</p>
                     <p className="text-2xl text-success tabular-nums">{stats.occupied}</p>
@@ -1429,11 +1584,10 @@ export default function UnitsSection({
                               key={opt.value}
                               type="button"
                               onClick={() => setSelectedFloor(opt.value)}
-                              className={`px-2.5 py-1 rounded-lg text-xs transition cursor-pointer ${
-                                selectedFloor === opt.value
-                                  ? "bg-theme/20 text-brand border border-theme/40"
-                                  : "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] border border-transparent"
-                              }`}
+                              className={`px-2.5 py-1 rounded-lg text-xs transition cursor-pointer ${selectedFloor === opt.value
+                                ? "bg-theme/20 text-brand border border-theme/40"
+                                : "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] border border-transparent"
+                                }`}
                             >
                               {opt.label}-р давхар
                             </button>
@@ -1471,7 +1625,7 @@ export default function UnitsSection({
                         leftIcon={<Plus className="w-3.5 h-3.5" />}
                         className="rounded-xl cursor-pointer shrink-0"
                       >
-                        Бүртгэх
+                        Тоот
                       </Button>
 
                       <Button
