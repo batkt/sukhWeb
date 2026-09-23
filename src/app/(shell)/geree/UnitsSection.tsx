@@ -149,6 +149,8 @@ export default function UnitsSection({
       floorsList.forEach((floor) => {
         const key = composeKey(orts, floor);
         const units = getTootOptions(orts, floor, propertyTab);
+        /** Тухайн давхарт БОДИТООР байгаа тоотууд — O(1) шалгалтад. */
+        const unitsSet = new Set(units.map((u) => String(u).trim()));
 
         // Find active toots (units with active contracts) for this floor
         const activeToots = new Set<string>();
@@ -264,15 +266,24 @@ export default function UnitsSection({
 
           // Add to activeToots if they match the current orts and floor
           tootsList.forEach((tItem) => {
-            if (tItem.t) {
-              const matchOrts = tItem.o === orts || !tItem.o;
-              const matchFloor = tItem.f === floor || !tItem.f;
-              if (matchOrts && matchFloor) {
-                activeToots.add(tItem.t);
-                if (!unitToResident[tItem.t] && resident) {
-                  unitToResident[tItem.t] = resident;
-                }
-              }
+            if (!tItem.t) return;
+
+            const matchOrts = tItem.o === orts || !tItem.o;
+            const matchFloor = tItem.f === floor || !tItem.f;
+            if (!matchOrts || !matchFloor) return;
+
+            // ── ЧУХАЛ: тоот тухайн давхарт БАЙХ ёстой ──────────────────
+            // Орц/давхар нь хоосон бичлэг (`!tItem.o`, `!tItem.f`) нь
+            // БҮХ орц, БҮХ давхарт таардаг. Иймд «903» гэсэн тоот 1-р
+            // давхрын Set-д ч нэмэгдэж, толгойн «N бүртгэлтэй» тоо
+            // хөөрөгддөг байв — хайрцаг нь `units`-д байгаа тоотыг л
+            // зурдаг тул дэлгэцтэй зөрдөг.
+            const toot = String(tItem.t).trim();
+            if (!unitsSet.has(toot)) return;
+
+            activeToots.add(toot);
+            if (!unitToResident[toot] && resident) {
+              unitToResident[toot] = resident;
             }
           });
         });
@@ -1238,12 +1249,28 @@ export default function UnitsSection({
 
                   const hasMultipleOrts = groupKeys.length > 1;
 
-                  return groupKeys.map((ortsKey) => {
-                    const groupItems = ortsGroups[ortsKey];
-                    const paginatedItems = groupItems.slice(
+                  // Хуудаслалт нь БҮХ орцын мөрийг нийлүүлж тоолдог
+                  // («Нийт 30 мөр») тул зүсэлтийг ч нийлмэл жагсаалт дээр
+                  // хийнэ. Орц тус бүрийг ИЖИЛ цонхоор зүсэх нь нэг хуудсанд
+                  // pageSize × орц мөр гаргаад, сүүлийн хуудсуудыг хоосон
+                  // үлдээж, нийт тоотойгоо зөрдөг байв.
+                  const khuudasniiMuruud = new Set(
+                    floorData.slice(
                       (unitPage - 1) * unitPageSize,
                       unitPage * unitPageSize,
+                    ),
+                  );
+
+                  return groupKeys.map((ortsKey) => {
+                    const groupItems = ortsGroups[ortsKey];
+                    const paginatedItems = groupItems.filter((f) =>
+                      khuudasniiMuruud.has(f),
                     );
+
+                    // Энэ хуудсанд тухайн орцоос мөр огт байхгүй бол хоосон
+                    // хүснэгт харуулах нь зөвхөн чимээ шуугиан.
+                    if (hasMultipleOrts && paginatedItems.length === 0)
+                      return null;
 
                     return (
                       <div key={ortsKey} className="w-full">
@@ -1276,6 +1303,7 @@ export default function UnitsSection({
                             propertyTab={propertyTab}
                             selectedFloor={selectedFloor}
                             onSelectFloor={setSelectedFloor}
+                            bugdiigKharuulakh={hasMultipleOrts}
                           />
                         </div>
                       </div>

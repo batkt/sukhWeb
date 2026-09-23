@@ -8,6 +8,7 @@ import {
   Mail,
   MoreHorizontal,
   Pencil,
+  Check,
   Plus,
   Car,
   Warehouse,
@@ -116,6 +117,9 @@ export const ResidentDetailModal: React.FC<Props> = ({
   const [shineMashiniiDugaar, setShineMashiniiDugaar] = useState("");
   const [shineMashinToot, setShineMashinToot] = useState("");
   const [mashinJagsaalt, setMashinJagsaalt] = useState<any[]>([]);
+  /** Засаж байгаа машины индекс (null бол засаж байхгүй). */
+  const [zasajBaigaaMashin, setZasajBaigaaMashin] = useState<number | null>(null);
+  const [zasakhDugaar, setZasakhDugaar] = useState("");
   /** Машины жагсаалт сүүлд татсанаасаа хойш өөрчлөгдсөн эсэх. */
   const [mashinOorchlogdson, setMashinOorchlogdson] = useState(false);
   const [mashinUnshijBaina, setMashinUnshijBaina] = useState(false);
@@ -486,6 +490,93 @@ export const ResidentDetailModal: React.FC<Props> = ({
         err?.response?.data?.aldaa ||
         err?.response?.data?.message ||
         "Машин устгахад алдаа гарлаа",
+      );
+    } finally {
+      setMashinUnshijBaina(false);
+    }
+  };
+
+  // ── Машины дугаар ЗАСАХ ─────────────────────────────────────────────
+  // Хадгалах endpoint нь БҮТЭН жагсаалтыг авч дарж бичдэг тул засах нь
+  // нэг мөрийн дугаарыг сольж, жагсаалтыг бүтнээр илгээх л юм.
+  const mashinZasajEkhleye = (index: number) => {
+    setZasajBaigaaMashin(index);
+    setZasakhDugaar(
+      String(mashinJagsaalt[index]?.mashiniiDugaar || "").toUpperCase(),
+    );
+  };
+
+  const mashinZasvarBoliya = () => {
+    setZasajBaigaaMashin(null);
+    setZasakhDugaar("");
+  };
+
+  const mashinZasvarKhadgalya = async () => {
+    if (zasajBaigaaMashin === null) return;
+    const cleaned = mashiniiDugaarTseverle(zasakhDugaar);
+
+    if (!MASHINII_DUGAARIIN_ZAGVAR.test(cleaned)) {
+      openErrorOverlay(
+        "Улсын дугаар 4 тоо, 3 монгол кирилл үсэг байх ёстой (Жишээ: 1234УБА)",
+      );
+      return;
+    }
+
+    // Давхардлыг шалгахдаа ӨӨРИЙГӨӨ тооцохгүй — эс тэгвээс хөндөөгүй
+    // дугаараа хадгалахад «аль хэдийн бүртгэгдсэн» гэж хаана.
+    const davkhardsan = mashinJagsaalt.some(
+      (m, i) =>
+        i !== zasajBaigaaMashin &&
+        String(m.mashiniiDugaar || "").trim().toUpperCase() === cleaned,
+    );
+    if (davkhardsan) {
+      openErrorOverlay("Энэ улсын дугаар аль хэдийн бүртгэгдсэн байна");
+      return;
+    }
+
+    // Өөрчлөгдөөгүй бол сервер зовоохгүй
+    if (
+      cleaned ===
+      String(mashinJagsaalt[zasajBaigaaMashin]?.mashiniiDugaar || "")
+        .trim()
+        .toUpperCase()
+    ) {
+      mashinZasvarBoliya();
+      return;
+    }
+
+    if (!token || !residentId) return;
+
+    const jagsaalt = mashinJagsaalt.map((m: any, i: number) =>
+      i === zasajBaigaaMashin ? { ...m, mashiniiDugaar: cleaned } : m,
+    );
+
+    setMashinUnshijBaina(true);
+    try {
+      const resp = await uilchilgee(token).post(
+        "/orshinSuugchiinMashinKhadgalya",
+        {
+          orshinSuugchiinId: residentId,
+          baiguullagiinId,
+          mashinuud: jagsaalt.map((m: any) => ({
+            mashiniiDugaar: m.mashiniiDugaar,
+            ezenToot: m.ezenToot,
+          })),
+        },
+      );
+      const shineJagsaalt = Array.isArray(resp.data?.mashinuud)
+        ? resp.data.mashinuud
+        : jagsaalt;
+      setMashinJagsaalt(shineJagsaalt);
+      setMedeelel((prev: any) => ({ ...prev, mashinuud: shineJagsaalt }));
+      setMashinOorchlogdson(false);
+      mashinZasvarBoliya();
+      openSuccessOverlay("Машины дугаар шинэчлэгдлээ");
+    } catch (err: any) {
+      openErrorOverlay(
+        err?.response?.data?.aldaa ||
+        err?.response?.data?.message ||
+        "Машины дугаар засахад алдаа гарлаа",
       );
     } finally {
       setMashinUnshijBaina(false);
@@ -1180,38 +1271,119 @@ export const ResidentDetailModal: React.FC<Props> = ({
                           Бүртгэлтэй машин одоогоор алга байна.
                         </p>
                       ) : (
-                        mashinJagsaalt.map((m: any, idx: number) => (
+                        mashinJagsaalt.map((m: any, idx: number) => {
+                          const zasajBaina = zasajBaigaaMashin === idx;
+                          const zasvarZuv =
+                            MASHINII_DUGAARIIN_ZAGVAR.test(zasakhDugaar);
+                          return (
                           <div
                             key={m._id || idx}
                             className="flex items-center justify-between rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] px-3.5 py-2.5"
                           >
-                            <div className="flex items-center gap-3 min-w-0">
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
                               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-theme/15 text-brand">
                                 <Car className="h-4 w-4" />
                               </div>
-                              <div className="min-w-0">
-                                <h4 className="text-xs sm:text-sm font-semibold text-[color:var(--panel-text)] dark:text-white truncate">
-                                  {tekst(m.mashiniiDugaar)}
-                                </h4>
-                                {m.ezenToot && (
-                                  <p className="text-[11px] text-[color:var(--muted-text)]">
-                                    Тоот: {m.ezenToot}
-                                  </p>
-                                )}
-                              </div>
+                              {zasajBaina ? (
+                                <div className="min-w-0 flex-1">
+                                  <input
+                                    autoFocus
+                                    value={zasakhDugaar}
+                                    onChange={(e) =>
+                                      setZasakhDugaar(
+                                        mashiniiDugaarTseverle(e.target.value),
+                                      )
+                                    }
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") {
+                                        e.preventDefault();
+                                        mashinZasvarKhadgalya();
+                                      }
+                                      if (e.key === "Escape") {
+                                        e.preventDefault();
+                                        mashinZasvarBoliya();
+                                      }
+                                    }}
+                                    placeholder="1234УБА"
+                                    maxLength={7}
+                                    className={`h-8 w-full min-w-0 rounded-lg border bg-[color:var(--surface-bg)] px-2.5 text-xs font-semibold tracking-wide text-[color:var(--panel-text)] uppercase focus:outline-none ${
+                                      zasakhDugaar && !zasvarZuv
+                                        ? "border-danger focus:border-danger"
+                                        : "border-[color:var(--surface-border)] focus:border-theme"
+                                    }`}
+                                  />
+                                  {zasakhDugaar.length > 0 && !zasvarZuv && (
+                                    <p className="mt-1 text-[10px] text-danger">
+                                      4 тоо + 3 монгол кирилл үсэг
+                                    </p>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="min-w-0">
+                                  <h4 className="text-xs sm:text-sm font-semibold text-[color:var(--panel-text)] dark:text-white truncate">
+                                    {tekst(m.mashiniiDugaar)}
+                                  </h4>
+                                  {m.ezenToot && (
+                                    <p className="text-[11px] text-[color:var(--muted-text)]">
+                                      Тоот: {m.ezenToot}
+                                    </p>
+                                  )}
+                                </div>
+                              )}
                             </div>
 
-                            <button
-                              type="button"
-                              onClick={() => mashinUstgakh(idx)}
-                              disabled={mashinUnshijBaina}
-                              className="flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--muted-text)] hover:text-danger transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                              title="Устгах"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
+                            <div className="flex shrink-0 items-center gap-1">
+                              {zasajBaina ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={mashinZasvarKhadgalya}
+                                    disabled={!zasvarZuv || mashinUnshijBaina}
+                                    className="flex h-7 w-7 items-center justify-center rounded-lg text-brand transition cursor-pointer hover:bg-theme/10 disabled:cursor-not-allowed disabled:opacity-40"
+                                    title="Хадгалах"
+                                  >
+                                    {mashinUnshijBaina ? (
+                                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                    ) : (
+                                      <Check className="h-3.5 w-3.5" />
+                                    )}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={mashinZasvarBoliya}
+                                    disabled={mashinUnshijBaina}
+                                    className="flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--muted-text)] transition cursor-pointer hover:text-[color:var(--panel-text)] disabled:opacity-40"
+                                    title="Болих"
+                                  >
+                                    <X className="h-3.5 w-3.5" />
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => mashinZasajEkhleye(idx)}
+                                    disabled={mashinUnshijBaina}
+                                    className="flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--muted-text)] transition cursor-pointer hover:text-brand disabled:cursor-not-allowed disabled:opacity-40"
+                                    title="Засах"
+                                  >
+                                    <Pencil className="h-3.5 w-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => mashinUstgakh(idx)}
+                                    disabled={mashinUnshijBaina}
+                                    className="flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--muted-text)] hover:text-danger transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                                    title="Устгах"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </button>
+                                </>
+                              )}
+                            </div>
                           </div>
-                        ))
+                          );
+                        })
                       )}
                     </div>
                   </div>

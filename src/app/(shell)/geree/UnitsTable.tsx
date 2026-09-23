@@ -28,6 +28,14 @@ interface UnitsTableProps {
   propertyTab?: "Тоот" | "Зогсоол" | "Агуулах";
   selectedFloor?: string | null;
   onSelectFloor?: (floor: string) => void;
+  /**
+   * Хуудсанд орц бүрээр нь ОЛОН хүснэгт зэрэг байгаа эсэх.
+   *
+   * Тийм үед хүснэгт бүр цонхны үлдсэн өндрийг дүүргэх гэж оролдвол
+   * дээд нь өндөр, доод нь намхан болж хэмжээ таарахгүй — иймд дотоод
+   * гүйлтийг унтраана.
+   */
+  bugdiigKharuulakh?: boolean;
 }
 
 export const UnitsTable: React.FC<UnitsTableProps> = ({
@@ -44,6 +52,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
   propertyTab = "Тоот",
   selectedFloor = null,
   onSelectFloor,
+  bugdiigKharuulakh = false,
 }) => {
   const columns: ColumnsType<FloorItem> = useMemo(() => {
     const cols: ColumnsType<FloorItem> = [
@@ -272,7 +281,11 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
             }
           },
         })}
-        scroll={{ x: "max-content" }}
+        scroll={
+          bugdiigKharuulakh
+            ? { x: "max-content", y: "none" }
+            : { x: "max-content" }
+        }
         rowClassName={(record) =>
           // Ээлжлэх/hover өнгийг стандарт хүснэгт өөрөө хийнэ — энд зөвхөн
           // сонгосон давхарын онцлолт үлдэнэ.

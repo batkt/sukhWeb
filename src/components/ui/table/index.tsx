@@ -75,6 +75,7 @@ export interface TableProps<T = any> {
   loading?: boolean | { spinning?: boolean; tip?: React.ReactNode };
   pagination?: false | TablePaginationConfig;
   rowSelection?: RowSelection<T>;
+  /** `y: "none"` бол дотоод босоо гүйлт болон өндөр дүүргэлт хоёулаа унтарна. */
   scroll?: { x?: number | string | true; y?: number | string };
   summary?: (rows: readonly T[]) => React.ReactNode;
   expandable?: {
@@ -726,9 +727,17 @@ function Table<T extends object = any>({
   // `scroll.y` гараар өгөөгүй бол хүснэгт цонхны үлдсэн өндрийг дүүргэнэ.
   const rootRef = useRef<HTMLDivElement | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
-  const explicitY = scroll?.y;
+  // `y: "none"` — дотоод гүйлт ОГТ хэрэггүй гэдгийг ил хэлнэ.
+  //
+  // Цонхны үлдсэн өндрийг дүүргэх бодолт нь хүснэгт бүрийг ӨӨРИЙНХ нь
+  // дээд байрлалаас хэмждэг. Нэг хуудсанд хүснэгт ХЭД ХЭДЭН удаа дараалан
+  // байвал (ж: орц тус бүрийн тоот) дээд нь өндөр, доод нь намхан болж,
+  // хэмжээ нь таарахаа болино. Тийм үед дотоод гүйлтийг унтраагаад мөрүүдээ
+  // бүтнээр нь зурвал хүснэгтүүд ижил өндөртэй, ганц хуудасны гүйлттэй болно.
+  const yUntraalaa = scroll?.y === "none";
+  const explicitY = yUntraalaa ? undefined : scroll?.y;
   const autoMaxHeight = useFillViewportHeight(
-    explicitY == null,
+    !yUntraalaa && scroll?.y == null,
     rootRef,
     bodyRef,
     [dataSource.length, pageSize, current],

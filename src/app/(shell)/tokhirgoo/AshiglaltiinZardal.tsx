@@ -115,6 +115,30 @@ export default function AshiglaltiinZardluud() {
   const [view, setView] = useState<"list" | "form">("list");
   const dragControls = useDragControls();
   const formConstraintsRef = useRef<HTMLDivElement>(null);
+
+  /** Excel товчны цэс — татах/оруулах хоёр нэг товчинд нэгтгэгдсэн. */
+  const [excelMenuOpen, setExcelMenuOpen] = useState(false);
+  const excelMenuRef = useRef<HTMLDivElement>(null);
+
+  // Гадна дарах / Escape дарахад цэс хаагдана. Listener нь цэс НЭЭЛТТЭЙ
+  // үед л залгагдана — үргэлж сонсох нь дэмий.
+  useEffect(() => {
+    if (!excelMenuOpen) return;
+    const gadnaDarsan = (e: MouseEvent) => {
+      if (!excelMenuRef.current?.contains(e.target as Node)) {
+        setExcelMenuOpen(false);
+      }
+    };
+    const tovchlolt = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setExcelMenuOpen(false);
+    };
+    document.addEventListener("mousedown", gadnaDarsan);
+    document.addEventListener("keydown", tovchlolt);
+    return () => {
+      document.removeEventListener("mousedown", gadnaDarsan);
+      document.removeEventListener("keydown", tovchlolt);
+    };
+  }, [excelMenuOpen]);
   useModalHotkeys({ isOpen: view === "form", onClose: () => setView("list") });
 
   const [editingItem, setEditingItem] = useState<ZardalItem | null>(null);
@@ -762,7 +786,8 @@ export default function AshiglaltiinZardluud() {
           return (
             <div className="flex flex-col items-center gap-0.5">
               <div className="whitespace-nowrap">
-                {formatNumber(currentValue, 2)} {mur.tariffUsgeer || "₮"}
+                {formatNumber(currentValue, 2)}
+                {mur.tariffUsgeer ? ` ${mur.tariffUsgeer}` : ""}
               </div>
               {changed && (
                 <span className="whitespace-nowrap tracking-tighter text-warning uppercase">
@@ -823,14 +848,9 @@ export default function AshiglaltiinZardluud() {
               <CreditCard className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-lg sm:text-xl text-[color:var(--panel-text)] tracking-tight">
-                  Ашиглалтын зардал
-                </h2>
-                <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-[color:var(--surface-hover)] text-[color:var(--muted-text)] border border-[color:var(--surface-border)]">
-                  Нийт: {ashiglaltiinZardluud.length}
-                </span>
-              </div>
+              <h2 className="text-lg sm:text-xl text-[color:var(--panel-text)] tracking-tight">
+                Ашиглалтын зардал
+              </h2>
               <p className="text-xs text-[color:var(--muted-text)] mt-0.5">
                 Тогтмол болон тоолуур, заалтаар бодогдох хэрэглээний тарифууд
               </p>
@@ -859,24 +879,52 @@ export default function AshiglaltiinZardluud() {
               )}
             </div>
 
-            <button
-              id="zardal-excel-template-btn"
-              onClick={zardalExcelZagvarTatya}
-              className="px-3 py-2 text-xs rounded-xl bg-[color:var(--surface-hover)] text-[color:var(--panel-text)] border border-[color:var(--surface-border)] hover:bg-[color:var(--panel)] transition-all flex items-center gap-2 cursor-pointer shadow-xs"
-              title="Одоогийн зардлуудаар дүүргэсэн Excel татах"
-            >
-              <Download className="w-3.5 h-3.5 text-theme" />
-              <span>Excel загвар татах</span>
-            </button>
-            <button
-              id="zardal-excel-import-btn"
-              onClick={() => zardalExcelInputRef.current?.click()}
-              className="px-3 py-2 text-xs rounded-xl bg-[color:var(--surface-hover)] text-[color:var(--panel-text)] border border-[color:var(--surface-border)] hover:bg-[color:var(--panel)] transition-all flex items-center gap-2 cursor-pointer shadow-xs"
-              title="Excel-ээр зардал нэмэх, тарифыг бөөнөөр засах"
-            >
-              <Upload className="w-3.5 h-3.5 text-emerald-500" />
-              <span>Excel оруулах</span>
-            </button>
+            {/* Товчнууд — үргэлж БАРУУН ирмэгт */}
+            <div className="ml-auto flex items-center gap-2 flex-wrap justify-end">
+            {/* Excel — татах/оруулах хоёрыг НЭГ товчинд нэгтгэв */}
+            <div className="relative" ref={excelMenuRef}>
+              <button
+                id="zardal-excel-btn"
+                onClick={() => setExcelMenuOpen((v) => !v)}
+                className="px-3 py-2 text-xs rounded-xl bg-[color:var(--surface-hover)] text-[color:var(--panel-text)] border border-[color:var(--surface-border)] hover:bg-[color:var(--panel)] transition-all flex items-center gap-2 cursor-pointer shadow-xs"
+                title="Excel загвар татах, эсвэл Excel-ээр бөөнөөр оруулах"
+              >
+                <Download className="w-3.5 h-3.5 text-theme" />
+                <span>Excel</span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 transition-transform ${
+                    excelMenuOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              {excelMenuOpen && (
+                <div className="absolute right-0 top-full z-30 mt-1.5 w-52 overflow-hidden rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--panel)] p-1 shadow-lg">
+                  <button
+                    id="zardal-excel-template-btn"
+                    onClick={() => {
+                      setExcelMenuOpen(false);
+                      zardalExcelZagvarTatya();
+                    }}
+                    className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs text-[color:var(--panel-text)] transition-colors hover:bg-[color:var(--surface-hover)]"
+                  >
+                    <Download className="h-3.5 w-3.5 shrink-0 text-theme" />
+                    Загвар татах
+                  </button>
+                  <button
+                    id="zardal-excel-import-btn"
+                    onClick={() => {
+                      setExcelMenuOpen(false);
+                      zardalExcelInputRef.current?.click();
+                    }}
+                    className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs text-[color:var(--panel-text)] transition-colors hover:bg-[color:var(--surface-hover)]"
+                  >
+                    <Upload className="h-3.5 w-3.5 shrink-0 text-success" />
+                    Excel оруулах
+                  </button>
+                </div>
+              )}
+            </div>
             <input
               ref={zardalExcelInputRef}
               type="file"
@@ -916,6 +964,7 @@ export default function AshiglaltiinZardluud() {
                 <span>Барилгуудад хуулах</span>
               </button>
             )}
+            </div>
           </div>
         </div>
 
