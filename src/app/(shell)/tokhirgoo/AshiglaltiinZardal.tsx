@@ -39,6 +39,7 @@ import {
   Plus,
   CopyPlus,
 } from "lucide-react";
+import ExcelButton from "@/components/ui/ExcelButton";
 import uilchilgee from "@/lib/uilchilgee";
 import deleteMethod from "../../../../tools/function/deleteMethod";
 import Button from "@/components/ui/Button";
@@ -883,20 +884,17 @@ export default function AshiglaltiinZardluud() {
             <div className="ml-auto flex items-center gap-2 flex-wrap justify-end">
             {/* Excel — татах/оруулах хоёрыг НЭГ товчинд нэгтгэв */}
             <div className="relative" ref={excelMenuRef}>
-              <button
+              <ExcelButton
                 id="zardal-excel-btn"
-                onClick={() => setExcelMenuOpen((v) => !v)}
-                className="px-3 py-2 text-xs rounded-xl bg-[color:var(--surface-hover)] text-[color:var(--panel-text)] border border-[color:var(--surface-border)] hover:bg-[color:var(--panel)] transition-all flex items-center gap-2 cursor-pointer shadow-xs"
+                label="Excel"
                 title="Excel загвар татах, эсвэл Excel-ээр бөөнөөр оруулах"
-              >
-                <Download className="w-3.5 h-3.5 text-theme" />
-                <span>Excel</span>
-                <ChevronDown
-                  className={`w-3.5 h-3.5 transition-transform ${
-                    excelMenuOpen ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
+                onClick={() => setExcelMenuOpen((v) => !v)}
+                suffix={
+                  <ChevronDown
+                    className={`h-3.5 w-3.5 transition-transform ${excelMenuOpen ? "rotate-180" : ""}`}
+                  />
+                }
+              />
 
               {excelMenuOpen && (
                 <div className="absolute right-0 top-full z-30 mt-1.5 w-52 overflow-hidden rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--panel)] p-1 shadow-lg">

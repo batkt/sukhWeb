@@ -326,7 +326,12 @@ export default function QuickRegisterModal({
               <button
                 type="button"
                 onClick={() => {
-                  if (selectedType === "orshinSuugch") {
+                  // Тухайн хуудсан дээрээ бүртгэх цонхыг нээнэ (өөр хуудас руу үсрэхгүй)
+                  if (selectedType === "orshinSuugch" && onRegisterNewOrshinSuugch) {
+                    onRegisterNewOrshinSuugch();
+                  } else if (selectedType === "khariltsagch" && onRegisterNewKhariltsagch) {
+                    onRegisterNewKhariltsagch();
+                  } else if (selectedType === "orshinSuugch") {
                     router.push(`/geree/orshinSuugch?new=true&orts=${orts || ""}&davkhar=${floor || ""}&toot=${unit || ""}&turul=${unitTypeLabel}`);
                   } else {
                     router.push(`/geree/khariltsagch?new=true&orts=${orts || ""}&davkhar=${floor || ""}&toot=${unit || ""}&turul=${unitTypeLabel}`);

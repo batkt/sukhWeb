@@ -7,7 +7,7 @@ export type IconTextButtonProps =
     label: string;
     showLabelFrom?: "sm" | "md" | "lg" | "xl"; // breakpoint to reveal label
     size?: "sm" | "md" | "lg"; // optional sizing hook
-    variant?: "minimal" | "ghost"; // maps to .btn-minimal, .btn-minimal-ghost
+    variant?: "minimal" | "ghost" | "plain"; // .btn-minimal, .btn-minimal-ghost, эсвэл загваргүй
   };
 
 /**
@@ -31,7 +31,12 @@ export const IconTextButton = React.forwardRef<
     },
     ref
   ) => {
-    const base = variant === "ghost" ? "btn-minimal-ghost" : "btn-minimal";
+    const base =
+      variant === "plain"
+        ? ""
+        : variant === "ghost"
+          ? "btn-minimal-ghost"
+          : "btn-minimal";
     const sizeCls =
       size === "sm" ? "px-2 py-1 text-xs" : size === "lg" ? "h-11" : undefined;
 

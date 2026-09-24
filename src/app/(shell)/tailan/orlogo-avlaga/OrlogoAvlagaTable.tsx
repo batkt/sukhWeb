@@ -4,7 +4,7 @@ import React, { useMemo } from "react";
 import { Modal, ConfigProvider } from "antd";
 import Table from "@/components/ui/table";
 import type { ColumnsType } from "@/components/ui/table";
-import { X } from "lucide-react";
+import { X, FileText, Phone, Home, Hash } from "lucide-react";
 import { motion, useDragControls } from "framer-motion";
 import formatNumber from "../../../../../tools/function/formatNumber";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
@@ -156,7 +156,14 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
     const fullName = ovog && ner ? `${ovog} ${ner}` : ner || ovog || "";
     const toot = selectedRecord._toot || selectedRecord.toot || "";
     const utas = selectedRecord._utas || selectedRecord.utas || "";
-    const titleInfo = [fullName, toot, utas].filter(Boolean).join(" | ");
+    /** Огноо + цаг: 2026-09-18 14:05 */
+    const ognooTsag = (val?: string) => {
+      if (!val) return "-";
+      const d = new Date(val);
+      if (Number.isNaN(d.getTime())) return String(val);
+      const p2 = (n: number) => String(n).padStart(2, "0");
+      return `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())} ${p2(d.getHours())}:${p2(d.getMinutes())}`;
+    };
 
     const filteredLedger = (() => {
       if (!ledgerDateRange?.[0] && !ledgerDateRange?.[1]) return expandedLedger;
@@ -174,10 +181,12 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
 
     const ledgerColumns: ColumnsType<any> = [
       { title: "№", key: "index", width: 40, align: "center", render: (_: any, __: any, index: number) => (ledgerPage - 1) * 50 + index + 1 },
-      { title: "Огноо", dataIndex: "ognoo", key: "ognoo", width: 100,
-        render: (val: string) => <span className="whitespace-nowrap">{val ? new Date(val).toLocaleString("mn-MN", { year: "numeric", month: "2-digit", day: "2-digit"}) : "-"}</span> },
-      { title: "Тайлбар", dataIndex: "tailbar", key: "tailbar", width: 200,
-        render: (val: string, row: any) => <span className="max-w-[280px] truncate" title={val || row?.ner || "-"}>{val || row?.ner || row?.turul || "-"}</span> },
+      // Огноо зүүн тийш, цагтай
+      { title: "Огноо", dataIndex: "ognoo", key: "ognoo", width: 140, align: "left",
+        render: (val: string) => <span className="whitespace-nowrap tabular-nums">{ognooTsag(val)}</span> },
+      // Өргөнгүй — үлдсэн зайг авна
+      { title: "Тайлбар", dataIndex: "tailbar", key: "tailbar", align: "left",
+        render: (val: string, row: any) => <span className="block truncate" title={val || row?.ner || "-"}>{val || row?.ner || row?.turul || "-"}</span> },
       { title: "Төлөх дүн", dataIndex: "tulukhDun", key: "tulukhDun", width: 120, align: "right",
         render: (_: any, row: any) => { const v = Number(row?.tulukhDun ?? 0); return v > 0 ? <span className="">{formatNumber(v, 2)}</span> : <span className="">-</span>; } },
       { title: "Төлсөн дүн", dataIndex: "tulsunDun", key: "tulsunDun", width: 120, align: "right",
@@ -190,16 +199,43 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
     const totalTulsun = filteredLedger.reduce((s: number, row: any) => s + Number(row?.tulsunDun ?? 0), 0);
 
     return (
-      <div className="flex flex-col bg-[color:var(--surface-bg)] rounded-lg shadow-2xl overflow-hidden">
-        <div onPointerDown={(e) => dragControls.start(e)} className="p-4 border-b border-[color:var(--surface-border)] cursor-move select-none bg-[color:var(--surface-hover)]">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h2 className="text-[color:var(--panel-text)] dark:text-white">Дэлгэрэнгүй мэдээлэл</h2>
-              <p className="text-[color:var(--muted-text)]">{titleInfo || gd}</p>
+      <div className="flex flex-col overflow-hidden rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] shadow-2xl">
+        {/* ── Толгой: гарчиг + оршин суугчийн мэдээлэл + огноо ── */}
+        <div
+          onPointerDown={(e) => dragControls.start(e)}
+          className="cursor-move select-none border-b border-[color:var(--surface-border)] px-6 py-4 pr-14"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="flex min-w-0 items-start gap-3">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-theme/10 text-brand">
+                <FileText className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-base font-semibold text-[color:var(--panel-text)]">
+                  {fullName || "Дэлгэрэнгүй мэдээлэл"}
+                </h2>
+                <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs text-[color:var(--muted-text)]">
+                  {toot && (
+                    <span className="inline-flex items-center gap-1 rounded-md bg-[color:var(--surface-hover)] px-2 py-0.5">
+                      <Home className="h-3 w-3" /> {toot} тоот
+                    </span>
+                  )}
+                  {utas && (
+                    <span className="inline-flex items-center gap-1 rounded-md bg-[color:var(--surface-hover)] px-2 py-0.5">
+                      <Phone className="h-3 w-3" /> {utas}
+                    </span>
+                  )}
+                  {gd && (
+                    <span className="inline-flex items-center gap-1 rounded-md bg-[color:var(--surface-hover)] px-2 py-0.5">
+                      <Hash className="h-3 w-3" /> {gd}
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
             <div
               onPointerDown={(e) => e.stopPropagation()}
-              className="shrink-0 w-[240px]"
+              className="btn-minimal flex h-9 w-[260px] shrink-0 items-center px-3"
             >
               <ConfigProvider theme={{ token: { zIndexPopupBase: 9000 } }}>
                 <StandardDatePicker
@@ -216,17 +252,40 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                   allowClear
                   placeholder={["Эхлэх огноо", "Дуусах огноо"]}
                   getPopupContainer={() => document.body}
+                  className="!h-full text-[13px]"
                 />
               </ConfigProvider>
             </div>
           </div>
         </div>
+
+        {/* ── Хураангуй ── */}
+        <div className="grid grid-cols-2 gap-3 border-b border-[color:var(--surface-border)] px-6 py-3 md:grid-cols-4">
+          {[
+            { nershil: "Төлөх дүн", utga: totalTulukh, ungu: "text-[color:var(--panel-text)]" },
+            { nershil: "Төлсөн дүн", utga: totalTulsun, ungu: "text-success" },
+            {
+              nershil: "Үлдэгдэл (хугацаанд)",
+              utga: filteredLedger.length > 0 ? Number(filteredLedger[filteredLedger.length - 1]?.uldegdel ?? 0) : 0,
+              ungu: "text-[color:var(--panel-text)]",
+            },
+            ...(expandedGlobalUldegdel !== null
+              ? [{ nershil: "Нийт үлдэгдэл", utga: expandedGlobalUldegdel, ungu: "text-danger" }]
+              : []),
+          ].map((k) => (
+            <div key={k.nershil} className="rounded-xl border border-[color:var(--ctl-border)] px-4 py-2.5">
+              <div className={`text-lg font-semibold tabular-nums ${k.ungu}`}>{formatNumber(k.utga, 2)}</div>
+              <div className="text-[11px] text-[color:var(--muted-text)]">{k.nershil}</div>
+            </div>
+          ))}
+        </div>
+
         {expandedLoading ? (
-          <div className="py-1 text-center text-[color:var(--muted-text)]">Уншиж байна...</div>
+          <div className="py-10 text-center text-sm text-[color:var(--muted-text)]">Уншиж байна...</div>
         ) : expandedError ? (
-          <div className="text-danger py-0.5">Алдаа: {expandedError}</div>
+          <div className="px-6 py-6 text-sm text-danger">Алдаа: {expandedError}</div>
         ) : filteredLedger.length === 0 ? (
-          <div className="py-1 text-center text-[color:var(--muted-text)]">Тэмдэглэл алга байна</div>
+          <div className="py-10 text-center text-sm text-[color:var(--muted-text)]">Тэмдэглэл алга байна</div>
         ) : (
           <Table
             dataSource={filteredLedger}
@@ -258,16 +317,6 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                     </span>
                   </Table.Summary.Cell>
                 </Table.Summary.Row>
-                {expandedGlobalUldegdel !== null && (
-                  <Table.Summary.Row className="bg-danger/10">
-                    <Table.Summary.Cell index={0} colSpan={6} align="right">
-                      <div className="flex items-center justify-end gap-2 py-0.5 px-2">
-                        <span className="font-semibold text-danger">Нийт үлдэгдэл:</span>
-                        <span className="font-bold text-danger">{formatNumber(expandedGlobalUldegdel, 2)} ₮</span>
-                      </div>
-                    </Table.Summary.Cell>
-                  </Table.Summary.Row>
-                )}
               </Table.Summary>
             )}
           />
@@ -312,10 +361,8 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
           `row-${index}`
         }
         pagination={false}
-        scroll={{
-          x: activeTab === "tulult" ? 800 : 1200,
-          y: "calc(100vh - 320px)",
-        }}
+        // Бусад хуудастай ижил: өндрийг хүснэгт өөрөө цонхны үлдсэн зайгаар тооцно
+        scroll={{ x: activeTab === "tulult" ? 800 : 1200 }}
         locale={{ emptyText: "Мэдээлэл алга байна" }}
         onRow={(record) => ({
           onClick: () => onRowClick(record),
@@ -348,7 +395,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
         open={modalOpen}
         onCancel={onModalClose}
         footer={null}
-        width={1400}
+        width={1100}
         mask={true}
         maskStyle={{ backgroundColor: "rgba(0, 0, 0, 0.45)" }}
         wrapClassName="pointer-events-none"

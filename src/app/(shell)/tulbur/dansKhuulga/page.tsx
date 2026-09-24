@@ -1,6 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ChevronDown, FileDown, FileUp } from "lucide-react";
+import ExcelButton from "@/components/ui/ExcelButton";
+import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { Modal, TextInput, Loader } from "@mantine/core";
 import toast from "react-hot-toast";
 import moment from "moment";
@@ -30,6 +33,8 @@ type TableItem = {
   month: string;
   // numerical value in minor units (assumed) or main units depending on backend
   total: number;
+  /** Зарлагын гүйлгээ эсэх (total нь хасах) */
+  zarlagaEsekh?: boolean;
   balance?: number | null;
   // human readable description / purpose of transaction
   action: string;
@@ -71,6 +76,12 @@ export default function DansniiKhuulga() {
   const [isLoadingUldegdel, setIsLoadingUldegdel] = useState(false);
 
   const [activeStatFilter, setActiveStatFilter] = useState<number | null>(null);
+  // Орлого / Зарлагаар ялгах
+  const [turulShuult, setTurulShuult] = useState<"all" | "orlogo" | "zarlaga">("all");
+  const [excelNeelttei, setExcelNeelttei] = useState(false);
+  const [excelOruulj, setExcelOruulj] = useState(false);
+  const excelInputRef = useRef<HTMLInputElement | null>(null);
+  const excelMenuRef = useRef<HTMLDivElement | null>(null);
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(500);
   // Эрэмбэ. Хүснэгт рүү ЗӨВХӨН тухайн хуудсын мөр очдог тул эрэмбийг энд,
@@ -486,7 +497,18 @@ export default function DansniiKhuulga() {
         id: r._id || `bank-${idx}`,
         date: dateValFormatted,
         month: d ? d.toLocaleDateString("mn-MN", { year: "numeric", month: "2-digit" }) : r.sar || "",
-        total: Number(r.amount ?? r.Amt ?? r.tranAmount ?? r.income ?? r.kholbosonDun ?? 0) || 0,
+        // Зарлага нь банк бүрд өөр тэмдэглэгддэг: хасах дүн (khan/tdb/bogd),
+        // `drOrCr: "Debit"` (golomt), эсвэл `outcome` (trans). Нэг мөрөнд
+        // тэмдэгтэй дүн болгоно — хасах = зарлага.
+        ...(() => {
+          const tuukhii = Number(r.amount ?? r.Amt ?? r.tranAmount ?? r.income ?? r.kholbosonDun ?? 0) || 0;
+          const zarlagaEsekh =
+            tuukhii < 0 ||
+            r.drOrCr === "Debit" ||
+            (Number(r.outcome) > 0 && !(Number(r.income) > 0));
+          const dun = Math.abs(tuukhii) || (zarlagaEsekh ? Math.abs(Number(r.outcome) || 0) : 0);
+          return { total: zarlagaEsekh ? -dun : dun, zarlagaEsekh };
+        })(),
         balance: r.balance !== undefined && r.balance !== null && r.balance !== "" && !isNaN(Number(r.balance)) ? Number(r.balance) : (r.closingBalance ?? r.bal ?? null),
         action: r.description || r.TxAddInf || r.tranDesc || r.txnDesc || r.ner || "Банкны гүйлгээ",
         contractIds: Array.isArray(r.kholbosonGereeniiId) ? r.kholbosonGereeniiId : r.kholbosonGereeniiId ? [String(r.kholbosonGereeniiId)] : [],
@@ -630,8 +652,19 @@ export default function DansniiKhuulga() {
     return Number.isNaN(t) ? Number.NEGATIVE_INFINITY : t;
   };
 
+  const turulTooluur = useMemo(() => {
+    const zarlaga = statFiltered.filter((m) => m.zarlagaEsekh).length;
+    return { all: statFiltered.length, orlogo: statFiltered.length - zarlaga, zarlaga };
+  }, [statFiltered]);
+
   const erembelsen = useMemo(() => {
-    if (!sortKey || !sortOrder) return statFiltered;
+    const suuri =
+      turulShuult === "all"
+        ? statFiltered
+        : statFiltered.filter((m) =>
+            turulShuult === "zarlaga" ? m.zarlagaEsekh : !m.zarlagaEsekh,
+          );
+    if (!sortKey || !sortOrder) return suuri;
     const chig = sortOrder === "ascend" ? 1 : -1;
     const utgaAvya = (m: TableItem): string | number => {
       switch (sortKey) {
@@ -639,8 +672,10 @@ export default function DansniiKhuulga() {
           return tsagRuu(m.date);
         case "total":
           return Number(m.total) || 0;
-        case "balance":
-          return Number(m.balance ?? m.raw?.balance ?? m.raw?.closingBalance ?? m.raw?.bal) || 0;
+        case "ajiltan":
+          return String(m.raw?.kholbosonAjiltniiNer || "");
+        case "ebarimt":
+          return m.raw?.ebarimtAvsanEsekh ? 1 : 0;
         case "action":
           return String(m.action || m.raw?.uilchilgeeniiUtga || "");
         case "account":
@@ -661,14 +696,70 @@ export default function DansniiKhuulga() {
           return 0;
       }
     };
-    return [...statFiltered].sort((a, b) => {
+    return [...suuri].sort((a, b) => {
       const av = utgaAvya(a);
       const bv = utgaAvya(b);
       if (typeof av === "string" || typeof bv === "string")
         return String(av).localeCompare(String(bv), "mn") * chig;
       return (av - bv) * chig;
     });
-  }, [statFiltered, sortKey, sortOrder]);
+  }, [statFiltered, sortKey, sortOrder, turulShuult]);
+
+  // Excel цэс гадна дарахад хаагдана
+  useEffect(() => {
+    if (!excelNeelttei) return;
+    const onDown = (e: MouseEvent) => {
+      if (!excelMenuRef.current?.contains(e.target as Node)) setExcelNeelttei(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [excelNeelttei]);
+
+  const excelZagvarTatya = async () => {
+    setExcelNeelttei(false);
+    if (!token) return;
+    try {
+      const resp = await uilchilgee(token).post(
+        "/bankniiGuilgeeZagvarAvya",
+        {},
+        { responseType: "blob" },
+      );
+      const url = window.URL.createObjectURL(new Blob([resp.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `Банкны гүйлгээ загвар_${Date.now()}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      openErrorOverlay(getErrorMessage(e));
+    }
+  };
+
+  const excelOruulya = async (file: File) => {
+    if (!token || !ajiltan?.baiguullagiinId || !selectedDugaar) return;
+    setExcelOruulj(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("baiguullagiinId", String(ajiltan.baiguullagiinId));
+      const barilga = selectedBuildingId || barilgiinId;
+      if (barilga) formData.append("barilgiinId", String(barilga));
+      formData.append("dansniiDugaar", selectedDugaar);
+      if (selectedDans?.bank) formData.append("bank", String(selectedDans.bank));
+      const resp = await uilchilgee(token).post("/bankniiGuilgeeExcelOruulya", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      openSuccessOverlay(`${resp.data?.too ?? 0} гүйлгээ оруулагдлаа`);
+      await fetchBankTransfers();
+    } catch (e: any) {
+      openErrorOverlay(e?.response?.data?.aldaa || getErrorMessage(e));
+    } finally {
+      setExcelOruulj(false);
+      if (excelInputRef.current) excelInputRef.current.value = "";
+    }
+  };
 
   const totalPages = Math.max(1, Math.ceil(erembelsen.length / rowsPerPage));
   useEffect(() => {
@@ -706,53 +797,125 @@ export default function DansniiKhuulga() {
             ))}
           </div>
 
-          <div className="relative z-10 px-6 py-3 rounded-[32px] neu-panel shadow-sm">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto flex-wrap">
-                <div id="dans-date" className="h-10 w-full sm:w-[320px]">
-                  <StandardDatePicker
-                    isRange={true}
-                    value={ekhlekhOgnoo}
-                    onChange={(_dates, dateStrings) => {
-                      const [s, e] = (dateStrings || []) as [
-                        string | undefined,
-                        string | undefined,
-                      ];
-                      setEkhlekhOgnoo([s || null, e || null]);
-                    }}
-                    allowClear
-                    placeholder="Огноо сонгох"
-                    className="text-theme !px-3"
-                  />
-                </div>
-                <div id="dans-account" className="h-10 w-full sm:w-[200px]">
-                  <TusgaiZagvar
-                    value={selectedDansId || ""}
-                    onChange={(v) => setSelectedDansId(v || undefined)}
-                    options={dansOptions}
-                    placeholder={t("Данс")}
-                    className="h-full w-full rounded-2xl !border-[color:var(--surface-border)] dark:!border-[color:var(--surface-border)] !bg-white/50 dark:!bg-[color:var(--panel)] hover:!border-[color:var(--surface-border)] dark:hover:!border-[color:var(--surface-border)] transition-all font-inter"
-                    buttonClassName="!font-normal text-[13px] !px-3 hover:!translate-y-0 hover:!shadow-none hover:!scale-100 !border-0 !bg-transparent"
-                    optionClassName="!px-3 !py-1.5 text-[13px] !font-normal"
-                  />
-                </div>
-                {selectedDansId && (
-                  <div className="flex items-center h-10 px-4 rounded-2xl neu-panel text-sm text-theme whitespace-nowrap">
-                    {isLoadingUldegdel ? (
-                      <span className="opacity-60">Үлдэгдэл...</span>
-                    ) : effectiveUldegdel !== null ? (
-                      <span>
-                        Үлдэгдэл:{" "}
-                        <strong className="font-semibold text-[color:var(--panel-text)] dark:text-white">
-                          {formatNumber(effectiveUldegdel, 2)}₮
-                        </strong>
-                      </span>
-                    ) : (
-                      <span className="opacity-60">Үлдэгдэл тодорхойгүй</span>
-                    )}
-                  </div>
+          {/* Шүүлтүүр — нэгдсэн `.btn-minimal` загвар (globals.css); үлдэгдэл баруун талд */}
+          <div className="relative z-10 flex flex-wrap items-center gap-2">
+            <div id="dans-date" className="btn-minimal flex h-9 w-full items-center !px-2 sm:w-[260px]">
+              <StandardDatePicker
+                isRange={true}
+                value={ekhlekhOgnoo}
+                onChange={(_dates, dateStrings) => {
+                  const [s, e] = (dateStrings || []) as [
+                    string | undefined,
+                    string | undefined,
+                  ];
+                  setEkhlekhOgnoo([s || null, e || null]);
+                }}
+                allowClear
+                placeholder="Огноо сонгох"
+                className="!h-full !px-1 text-[13px]"
+              />
+            </div>
+            <div id="dans-account" className="h-9 w-full sm:w-[200px]">
+              <TusgaiZagvar
+                value={selectedDansId || ""}
+                onChange={(v) => setSelectedDansId(v || undefined)}
+                options={dansOptions}
+                placeholder={t("Данс")}
+                className="h-full w-full"
+                buttonClassName="!font-normal text-[13px] !px-3"
+                optionClassName="!px-3 !py-1.5 text-[13px] !font-normal"
+              />
+            </div>
+            {/* Орлого / Зарлага */}
+            <div className="inline-flex h-9 items-center gap-0.5 rounded-[10px] border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] p-0.5 shadow-[var(--ctl-shadow)]">
+              {([
+                ["all", "Бүгд"],
+                ["orlogo", "Орлого"],
+                ["zarlaga", "Зарлага"],
+              ] as const).map(([k, nershil]) => {
+                const idevkhtei = turulShuult === k;
+                return (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => { setTurulShuult(k); setPage(1); }}
+                    className={`inline-flex h-full items-center gap-1.5 rounded-[8px] px-3 text-[13px] transition-colors ${
+                      idevkhtei
+                        ? k === "zarlaga"
+                          ? "bg-danger/10 text-danger"
+                          : k === "orlogo"
+                            ? "bg-success/10 text-success"
+                            : "bg-theme/10 text-brand"
+                        : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+                    }`}
+                  >
+                    {nershil}
+                    <span className="text-[11px] opacity-70">{turulTooluur[k]}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="ml-auto flex items-center gap-2">
+            {selectedDansId && (
+              <div className="flex h-9 items-center gap-2 whitespace-nowrap rounded-[10px] border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] px-3 text-[13px] shadow-[var(--ctl-shadow)]">
+                {isLoadingUldegdel ? (
+                  <span className="text-[color:var(--muted-text)]">Үлдэгдэл...</span>
+                ) : effectiveUldegdel !== null ? (
+                  <>
+                    <span className="text-xs text-[color:var(--muted-text)]">Дансны үлдэгдэл</span>
+                    <strong className="font-semibold text-[color:var(--panel-text)]">
+                      {formatNumber(effectiveUldegdel, 2)}₮
+                    </strong>
+                  </>
+                ) : (
+                  <span className="text-[color:var(--muted-text)]">Үлдэгдэл тодорхойгүй</span>
                 )}
               </div>
+            )}
+            {/* Excel — гүйлгээг гараар оруулах (тест / API-гүй данс) */}
+            <div ref={excelMenuRef} className="relative">
+              <ExcelButton
+                id="dans-excel-btn"
+                label={excelOruulj ? "Оруулж байна..." : "Excel"}
+                title="Excel"
+                loading={excelOruulj}
+                onClick={() => setExcelNeelttei((v) => !v)}
+                suffix={<ChevronDown className={`h-3.5 w-3.5 transition-transform ${excelNeelttei ? "rotate-180" : ""}`} />}
+              />
+              {excelNeelttei && (
+                <div className="absolute right-0 top-full z-50 mt-1.5 min-w-[200px] overflow-hidden rounded-xl border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] py-1 shadow-lg">
+                  <button
+                    type="button"
+                    onClick={excelZagvarTatya}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"
+                  >
+                    <FileDown className="h-4 w-4 text-[color:var(--muted-text)]" />
+                    Загвар татах
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!selectedDugaar}
+                    onClick={() => { setExcelNeelttei(false); excelInputRef.current?.click(); }}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] disabled:cursor-not-allowed disabled:opacity-50"
+                    title={selectedDugaar ? undefined : "Эхлээд данс сонгоно уу"}
+                  >
+                    <FileUp className="h-4 w-4 text-[color:var(--muted-text)]" />
+                    Excel оруулах
+                  </button>
+                </div>
+              )}
+              <input
+                ref={excelInputRef}
+                type="file"
+                accept=".xlsx,.xls"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) excelOruulya(file);
+                }}
+              />
+            </div>
             </div>
           </div>
 

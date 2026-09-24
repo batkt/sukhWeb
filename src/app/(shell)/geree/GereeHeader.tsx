@@ -16,6 +16,7 @@ import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
 import { hasPermission } from "@/lib/permissionUtils";
 import { ALL_COLUMNS } from "./columns";
 import Link from "next/link";
+import ExcelButton from "@/components/ui/ExcelButton";
 
 interface GereeHeaderProps {
   activeTab: "contracts" | "residents" | "employees" | "units" | "clients";
@@ -423,21 +424,21 @@ export default function GereeHeader({
                     </button>
                   )}
                   <div ref={desktopExcelRef} className="relative">
-                    <button
-                      onClick={() => setIsDesktopExcelOpen(!isDesktopExcelOpen)}
-                      className="btn-minimal h-10 inline-flex items-center gap-2"
+                    <ExcelButton
+                      className="!h-10"
+                      label="Excel"
                       id="resident-excel-btn-top"
-                      aria-label="Excel"
                       title="Excel үйлдлүүд"
-                    >
-                      <Download className="w-5 h-5" />
-                      <span className="hidden sm:inline text-xs">Excel</span>
-                      <ChevronDown
-                        className={`w-4 h-4 transition-transform ${
-                          isDesktopExcelOpen ? "rotate-180" : ""
-                        }`}
-                      />
-                    </button>
+                      iconOnlyOnMobile
+                      onClick={() => setIsDesktopExcelOpen(!isDesktopExcelOpen)}
+                      suffix={
+                        <ChevronDown
+                          className={`h-3.5 w-3.5 transition-transform ${
+                            isDesktopExcelOpen ? "rotate-180" : ""
+                          }`}
+                        />
+                      }
+                    />
                     {isDesktopExcelOpen && (
                       <div className="absolute right-0 top-full mt-2 z-50 min-w-[180px] menu-surface rounded-xl shadow-lg overflow-hidden">
                         <button
@@ -541,23 +542,21 @@ export default function GereeHeader({
                   </button>
                   {onClientsExcelImportClick && onDownloadClientsTemplate && (
                     <div ref={desktopExcelRef} className="relative">
-                      <button
-                        onClick={() =>
-                          setIsDesktopExcelOpen(!isDesktopExcelOpen)
-                        }
-                        className="btn-minimal h-10 inline-flex items-center gap-2"
+                      <ExcelButton
+                      className="!h-10"
+                        label="Excel"
                         id="client-excel-btn-top"
-                        aria-label="Excel"
                         title="Excel үйлдлүүд"
-                      >
-                        <Download className="w-5 h-5" />
-                        <span className="hidden sm:inline text-xs">Excel</span>
-                        <ChevronDown
-                          className={`w-4 h-4 transition-transform ${
-                            isDesktopExcelOpen ? "rotate-180" : ""
-                          }`}
-                        />
-                      </button>
+                        iconOnlyOnMobile
+                        onClick={() => setIsDesktopExcelOpen(!isDesktopExcelOpen)}
+                        suffix={
+                          <ChevronDown
+                            className={`h-3.5 w-3.5 transition-transform ${
+                              isDesktopExcelOpen ? "rotate-180" : ""
+                            }`}
+                          />
+                        }
+                      />
                       {isDesktopExcelOpen && (
                         <div className="absolute right-0 top-full mt-2 z-50 min-w-[180px] menu-surface rounded-xl shadow-lg overflow-hidden">
                           <button
@@ -724,21 +723,21 @@ export default function GereeHeader({
                 </span>
               </button>
               <div ref={mobileExcelRef} className="relative">
-                <button
-                  onClick={() => setIsMobileExcelOpen(!isMobileExcelOpen)}
-                  className="btn-minimal h-10 inline-flex items-center gap-2"
+                <ExcelButton
+                      className="!h-10"
+                  label="Excel"
                   id="resident-excel-btn"
-                  aria-label="Excel"
                   title="Excel үйлдлүүд"
-                >
-                  <Download className="w-5 h-5" />
-                  <span className="hidden sm:inline text-xs">Excel</span>
-                  <ChevronDown
-                    className={`w-4 h-4 transition-transform ${
-                      isMobileExcelOpen ? "rotate-180" : ""
-                    }`}
-                  />
-                </button>
+                  iconOnlyOnMobile
+                  onClick={() => setIsMobileExcelOpen(!isMobileExcelOpen)}
+                  suffix={
+                    <ChevronDown
+                      className={`h-3.5 w-3.5 transition-transform ${
+                        isMobileExcelOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  }
+                />
                 {isMobileExcelOpen && (
                   <div className="absolute right-0 top-full mt-2 z-50 min-w-[180px] menu-surface rounded-xl shadow-lg overflow-hidden">
                     <button
@@ -838,21 +837,21 @@ export default function GereeHeader({
             </button>
             {onClientsExcelImportClick && onDownloadClientsTemplate && (
               <div ref={mobileExcelRef} className="relative">
-                <button
-                  onClick={() => setIsMobileExcelOpen(!isMobileExcelOpen)}
-                  className="btn-minimal h-10 inline-flex items-center gap-2"
+                <ExcelButton
+                      className="!h-10"
+                  label="Excel"
                   id="client-excel-btn"
-                  aria-label="Excel"
                   title="Excel үйлдлүүд"
-                >
-                  <Download className="w-5 h-5" />
-                  <span className="hidden sm:inline text-xs">Excel</span>
-                  <ChevronDown
-                    className={`w-4 h-4 transition-transform ${
-                      isMobileExcelOpen ? "rotate-180" : ""
-                    }`}
-                  />
-                </button>
+                  iconOnlyOnMobile
+                  onClick={() => setIsMobileExcelOpen(!isMobileExcelOpen)}
+                  suffix={
+                    <ChevronDown
+                      className={`h-3.5 w-3.5 transition-transform ${
+                        isMobileExcelOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  }
+                />
                 {isMobileExcelOpen && (
                   <div className="absolute right-0 top-full mt-2 z-50 min-w-[180px] menu-surface rounded-xl shadow-lg overflow-hidden">
                     <button

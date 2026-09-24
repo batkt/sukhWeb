@@ -37,8 +37,8 @@ import {
   DoorOpen,
   Loader2,
   Printer,
-  Download,
 } from "lucide-react";
+import ExcelButton from "@/components/ui/ExcelButton";
 import uilchilgee from "@/lib/uilchilgee";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
@@ -649,14 +649,12 @@ export default function BiTailanPage() {
               placeholder="Хугацаа (сүүлийн 12 сар)"
             />
           </div>
-          <button
+          <ExcelButton
             onClick={csvTatya}
             title="Бүх үзүүлэлтийг CSV-ээр татах"
-            className="khevlekh-nuuh flex h-10 items-center gap-1.5 rounded-xl px-3 text-xs ring-1 ring-[color:var(--surface-border)] transition-colors hover:bg-[color:var(--surface-hover)] dark:ring-white/10 dark:hover:bg-white/5"
-          >
-            <Download className="h-4 w-4" />
-            <span className="hidden sm:inline">Excel</span>
-          </button>
+            iconOnlyOnMobile
+            className="khevlekh-nuuh"
+          />
           <button
             onClick={khevleye}
             title="Тайланг хэвлэх"

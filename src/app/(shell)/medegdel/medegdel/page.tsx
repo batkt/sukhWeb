@@ -634,48 +634,39 @@ function MedegdelContent() {
   const channelIcons = { App: Smartphone, Мессеж: MessageSquare, Mail: Mail } as const;
 
   return (
-    <div className="min-h-0 flex flex-col p-3 sm:p-4 md:p-6">
+    <div className="flex min-h-0 flex-col gap-3 pb-14">
       {/* Header */}
       <motion.header
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 sm:mb-6"
+        className="flex flex-wrap items-center gap-2"
       >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl neu-panel flex items-center justify-center shrink-0">
-            <Bell className="w-5 h-5 sm:w-6 sm:h-6 text-theme" />
-          </div>
-          <div>
-            <h1 className="text-lg sm:text-xl  text-theme">Мэдэгдэл & Нийтлэл</h1>
-            <p className="text-xs text-[color:var(--muted-text)]">Хариуцсан хэсгийн мэдээлэл удирдах</p>
-          </div>
-        </div>
-
+        {/* Гарчиг толгой хэсэгт («… — Мэдэгдэл») байгаа тул давхарлахгүй */}
         {/* Tabs Control */}
-        <div id="medegdel-tab-switch" className="flex p-1  rounded-2xl neu-panel bg-white/5 backdrop-blur-sm self-stretch sm:self-auto">
+        <div id="medegdel-tab-switch" className="flex gap-1">
           <button
             onClick={() => handleTabChange("medegdel")}
-            className={`flex-1  sm:flex-none px-6 py-2 rounded-xl text-sm transition-all duration-200 ${activeTab === "medegdel"
-              ? "bg-theme !text-white neu-panel-2 shadow-lg"
-              : "text-[color:var(--muted-text)] hover:text-theme"
+            className={`h-9 rounded-[10px] px-4 text-[13px] transition-colors ${activeTab === "medegdel"
+              ? "bg-theme/15 font-medium text-brand"
+              : "text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] hover:text-[color:var(--panel-text)]"
               }`}
           >
             Мэдэгдэл
           </button>
           <button
             onClick={() => handleTabChange("tulult")}
-            className={`flex-1 sm:flex-none px-6 py-2 rounded-xl text-sm transition-all duration-200 ${activeTab === "tulult"
-              ? "bg-theme !text-white neu-panel-2 shadow-lg"
-              : "text-[color:var(--muted-text)] hover:text-theme"
+            className={`h-9 rounded-[10px] px-4 text-[13px] transition-colors ${activeTab === "tulult"
+              ? "bg-theme/15 font-medium text-brand"
+              : "text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] hover:text-[color:var(--panel-text)]"
               }`}
           >
             Төлөлтүүд
           </button>
           <button
             onClick={() => handleTabChange("niitlel")}
-            className={`flex-1 sm:flex-none px-6 py-2 rounded-xl text-sm transition-all duration-200 ${activeTab === "niitlel"
-              ? "bg-theme !text-white neu-panel-2 shadow-lg"
-              : "text-[color:var(--muted-text)] hover:text-theme"
+            className={`h-9 rounded-[10px] px-4 text-[13px] transition-colors ${activeTab === "niitlel"
+              ? "bg-theme/15 font-medium text-brand"
+              : "text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] hover:text-[color:var(--panel-text)]"
               }`}
           >
             Нийтлэл
@@ -691,49 +682,29 @@ function MedegdelContent() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.98 }}
             transition={{ duration: 0.2 }}
-            className="flex flex-col lg:flex-row gap-3 sm:gap-4 lg:gap-5 flex-1 min-h-0 lg:max-h-[calc(100vh-16rem)]"
+            className="grid flex-1 min-h-0 grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_260px] lg:h-[calc(100vh-13rem)]"
           >
             {/* Left: Channel & Templates */}
             <motion.section
               initial={{ opacity: 0, x: -16 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.35 }}
-              className="neu-panel p-4 sm:p-5 flex flex-col min-w-0 lg:flex-1"
+              className="rounded-2xl border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] p-4 shadow-[var(--ctl-shadow)] flex flex-col min-w-0 min-h-0 lg:order-3"
               id="medegdel-channels-section"
             >
 
-              <div id="medegdel-channels" className="grid grid-cols-3 gap-1.5 sm:gap-2 mb-4 min-w-0">
-                {(["App", "Мессеж", "Mail"] as const).map((m) => {
-                  const Icon = channelIcons[m];
-                  return (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => setTurul(m)}
-                      className={`min-w-0 flex items-center justify-center gap-1 py-2 px-1.5 sm:px-2 rounded-xl text-[11px] sm:text-xs  transition-all duration-200 truncate ${turul === m
-                        ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm"
-                        : "hover:bg-white/10"
-                        }`}
-                    >
-                      <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
-                      <span className="truncate">{m}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div id="medegdel-templates" className="flex items-center justify-between mt-2 mb-2">
-                <span className="text-xs  text-[color:var(--muted-text)] flex items-center gap-1.5">
-                  <FileText className="w-3.5 h-3.5" />
+              <div id="medegdel-templates" className="mb-3 flex items-center justify-between">
+                <span className="flex items-center gap-1.5 text-[13px] font-medium text-[color:var(--panel-text)]">
+                  <FileText className="h-4 w-4 text-[color:var(--muted-text)]" />
                   Загвар
                 </span>
                 <button
                   id="medegdel-template-add-btn"
                   type="button"
                   onClick={handleOpenTemplateModal}
-                  className="btn-minimal-sm btn-minimal inline-flex items-center gap-1.5 px-2 py-1 text-xs"
+                  className="btn-minimal inline-flex h-8 items-center gap-1 !px-2.5 text-xs"
                 >
-
+                  <Plus className="h-3.5 w-3.5" />
                   Нэмэх
                 </button>
               </div>
@@ -745,16 +716,22 @@ function MedegdelContent() {
                       key={t.id}
                       type="button"
                       onClick={() => handleApplyTemplate(t)}
-                      className="w-full text-left px-3 py-2 text-sm text-[color:var(--panel-text)] border-b border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/15 transition-all truncate"
+                      className="w-full rounded-lg px-3 py-2 text-left transition-colors hover:bg-[color:var(--surface-hover)]"
                     >
-                      {t.name}
+                      <div className="truncate text-[13px] text-[color:var(--panel-text)]">{t.name}</div>
+                      {t.title && (
+                        <div className="truncate text-[11px] text-[color:var(--muted-text)]">{t.title}</div>
+                      )}
                     </button>
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-[color:var(--muted-text)] py-4">
-                  Загвар байхгүй. &quot;Нэмэх&quot; дарж нэмнэ үү.
-                </p>
+                <div className="flex flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-[color:var(--ctl-border)] px-4 py-8 text-center">
+                  <FileText className="mb-2 h-6 w-6 text-[color:var(--muted-text)]" />
+                  <p className="text-xs text-[color:var(--muted-text)]">
+                    Загвар байхгүй. Байнга илгээдэг мэдэгдлээ загвар болгож хадгална уу.
+                  </p>
+                </div>
               )}
 
               <Modal
@@ -851,18 +828,18 @@ function MedegdelContent() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, delay: 0.05 }}
-              className="neu-panel p-4 sm:p-5 flex flex-col min-w-0 lg:flex-1"
+              className="rounded-2xl border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] p-4 shadow-[var(--ctl-shadow)] flex flex-col min-w-0 min-h-0 lg:order-1"
             >
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm  flex items-center gap-2 text-[color:var(--panel-text)] dark:text-white">
-                  <Users className="w-4 h-4 text-theme" />
-                  Харилцагчид
+                <h3 className="flex items-center gap-2 text-[13px] font-medium text-[color:var(--panel-text)]">
+                  <Users className="h-4 w-4 text-[color:var(--muted-text)]" />
+                  Хүлээн авагч
+                  {orshinSuugchGaralt && (
+                    <span className="rounded-full bg-[color:var(--surface-hover)] px-1.5 text-[11px] font-normal text-[color:var(--muted-text)]">
+                      {orshinSuugchGaralt.niitMur || 0}
+                    </span>
+                  )}
                 </h3>
-                {orshinSuugchGaralt && (
-                  <span className="text-xs text-[color:var(--muted-text)] bg-white/10 px-2 py-0.5 rounded-2xl">
-                    {orshinSuugchGaralt.niitMur || 0}
-                  </span>
-                )}
               </div>
 
               <div className="flex items-center gap-2 mb-3 flex-wrap">
@@ -885,18 +862,17 @@ function MedegdelContent() {
                 )}
               </div>
 
-              <div id="medegdel-contact-search" className="relative h-9 w-full neu-panel mb-3 flex items-center">
-                <SearchIcon className="absolute left-3 w-4 h-4 text-[color:var(--muted-text)] pointer-events-none" />
+              <label id="medegdel-contact-search" className="filter-field mb-3 w-full">
+                <SearchIcon className="h-4 w-4 shrink-0 text-[color:var(--muted-text)]" />
                 <input
                   aria-label="Хайх"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-full pl-9 pr-3 rounded-2xl bg-transparent border-0 text-sm text-theme placeholder:text-[color:var(--muted-text)] focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/50"
                   placeholder="Нэр, утас хайх..."
                 />
-              </div>
+              </label>
 
-              <div id="medegdel-contact-list" className="flex-1 min-h-0 overflow-y-auto space-y-2 px-1 pr-1 custom-scrollbar">
+              <div id="medegdel-contact-list" className="-mx-1 flex-1 min-h-0 space-y-0.5 overflow-y-auto px-1 custom-scrollbar">
                 {isValidating ? (
                   <div className="text-center py-12 text-[color:var(--muted-text)] text-sm">
                     Уншиж байна...
@@ -918,9 +894,9 @@ function MedegdelContent() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         onClick={() => khariltsagchSongokh(mur)}
-                        className={`flex items-center gap-3 py-2 px-3 rounded-2xl cursor-pointer transition-all duration-200 border-2 ${isActive
-                          ? "bg-theme/10 border-theme"
-                          : "border-transparent hover:bg-white/10"
+                        className={`flex cursor-pointer items-center gap-3 rounded-xl px-2.5 py-2 transition-colors ${isChecked || isActive
+                          ? "bg-theme/10"
+                          : "hover:bg-[color:var(--surface-hover)]"
                           }`}
                       >
                         <input
@@ -929,19 +905,31 @@ function MedegdelContent() {
                           readOnly
                           className="w-4 h-4 rounded shrink-0 pointer-events-none"
                         />
-                        <div className="h-9 w-9 rounded-full bg-gradient-to-br from-theme/20 via-theme/20 to-theme/20 flex items-center justify-center text-white text-sm  shrink-0">
-                          {mur.ner?.[0] || "?"}
+                        {/* Өмнө нь цайвар дэвсгэр дээр цагаан үсэг — харагдахгүй байв */}
+                        <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-theme/15 text-[13px] font-medium text-brand">
+                          {mur.ner?.[0]?.toUpperCase() || "?"}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className=" text-sm text-[color:var(--panel-text)] dark:text-white truncate">
                             {mur.ner}
                           </div>
-                          <div className="text-xs text-[color:var(--muted-text)] truncate">
+                          <div className="truncate text-xs text-[color:var(--muted-text)]">
+                            {mur.toot ? `${mur.toot} тоот · ` : ""}
                             {Array.isArray(mur.utas)
                               ? mur.utas.join(", ")
                               : mur.utas}
                           </div>
                         </div>
+                        {/* Сонгосон сувгаар хүрэх боломжгүй бол анхааруулна */}
+                        {((turul === "App" && !hasApp(mur)) ||
+                          (turul === "Mail" && !hasEmail(mur))) && (
+                          <span
+                            className="shrink-0 rounded-full bg-warning/10 px-1.5 py-0.5 text-[10px] text-warning"
+                            title={turul === "App" ? "Апп суулгаагүй — мэдэгдэл хүрэхгүй" : "И-мэйлгүй"}
+                          >
+                            {turul === "App" ? "Апп-гүй" : "Мэйлгүй"}
+                          </span>
+                        )}
                       </motion.div>
                     );
                   })
@@ -954,10 +942,10 @@ function MedegdelContent() {
               initial={{ opacity: 0, x: 16 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.35, delay: 0.1 }}
-              className="neu-panel p-4 sm:p-5 flex flex-col min-w-0 lg:flex-1"
+              className="rounded-2xl border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] p-4 shadow-[var(--ctl-shadow)] flex flex-col min-w-0 min-h-0 lg:order-2"
             >
               <AnimatePresence mode="wait">
-                {songogdsonKhariltsagch.length > 0 ? (
+                {(
                   <motion.div
                     key="composer"
                     initial={{ opacity: 0, y: 8 }}
@@ -968,20 +956,51 @@ function MedegdelContent() {
                   >
 
                     <div className="flex flex-col gap-3 flex-1 min-h-0">
+                      {/* Суваг */}
+                      <div id="medegdel-channels" className="grid h-9 grid-cols-3 gap-0.5 rounded-[10px] border border-[color:var(--ctl-border)] p-0.5">
+                        {(["App", "Мессеж", "Mail"] as const).map((m) => {
+                          const Icon = channelIcons[m];
+                          return (
+                            <button
+                              key={m}
+                              type="button"
+                              onClick={() => setTurul(m)}
+                              className={`inline-flex min-w-0 items-center justify-center gap-1.5 rounded-[8px] text-[13px] transition-colors ${turul === m
+                                ? "bg-theme !text-white"
+                                : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+                                }`}
+                            >
+                              <Icon className="h-4 w-4 shrink-0" />
+                              <span className="truncate">{m}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Хэнд илгээх */}
+                      <div className="flex items-center justify-between rounded-xl bg-[color:var(--surface-hover)] px-3 py-2 text-[13px]">
+                        <span className="text-[color:var(--muted-text)]">Хүлээн авагч</span>
+                        <span className={songogdsonKhariltsagch.length ? "font-medium text-brand" : "text-[color:var(--muted-text)]"}>
+                          {songogdsonKhariltsagch.length
+                            ? `${songogdsonKhariltsagch.length} сонгогдсон`
+                            : "Зүүн талын жагсаалтаас сонгоно уу"}
+                        </span>
+                      </div>
                       <Input
                         id="medegdel-title-input"
                         placeholder="Гарчиг"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        className="!rounded-xl !h-11 text-sm bg-white/20 dark:bg-white/10 border border-white/30"
+                        className="!h-10 !rounded-[10px] text-[13px]"
                       />
                       <Input.TextArea
                         id="medegdel-content-input"
-                        rows={6}
+                        rows={8}
+                        showCount={turul === "Мессеж" ? { formatter: ({ count }) => `${count} / 160 тэмдэгт` } : false}
                         placeholder="Мэдэгдлийн агуулга бичих..."
                         value={msj}
                         onChange={(e) => setMsj(e.target.value)}
-                        className="!rounded-xl text-sm bg-white/20 dark:bg-white/10 border border-white/30 !min-h-[100px] !resize-none"
+                        className="!min-h-[140px] !resize-none !rounded-[10px] text-[13px]"
                       />
                       <div className="flex items-center gap-2 flex-wrap">
                         <input
@@ -1013,7 +1032,7 @@ function MedegdelContent() {
                           id="medegdel-image-btn"
                           type="button"
                           onClick={() => attachInputRef.current?.click()}
-                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs  bg-white/20 dark:bg-white/10 border border-white/30 hover:bg-white/30 transition-colors"
+                          className="btn-minimal inline-flex h-9 items-center gap-1.5 !px-3 text-[13px]"
                         >
                           <ImagePlus className="w-4 h-4" />
                           Зураг нэмэх
@@ -1063,31 +1082,12 @@ function MedegdelContent() {
                         type="primary"
                         onClick={send}
                         loading={loading}
-                        disabled={!title || (!msj && attachImages.length === 0 && !composerTemplateImage)}
-                        className="w-full h-11 rounded-xl bg-gradient-to-r from-theme/20 to-theme/20 !text-white  border-0 shadow-lg hover:shadow-xl hover:opacity-95 transition-all"
+                        disabled={songogdsonKhariltsagch.length === 0 || !title || (!msj && attachImages.length === 0 && !composerTemplateImage)}
+                        className="mt-auto w-full !h-10 !rounded-[10px]"
                       >
                         Илгээх
                       </Button>
                     </div>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="empty"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="flex-1 flex flex-col items-center justify-center text-center py-6 px-4"
-                  >
-
-                    <div className="w-16 h-16 rounded-2xl neu-panel flex items-center justify-center mb-4">
-                      <MessageSquare className="w-8 h-8 text-[color:var(--muted-text)]" />
-                    </div>
-                    <h3 className="text-sm  text-[color:var(--muted-text)] mb-1">
-                      Харилцагч сонгоно уу
-                    </h3>
-                    <p className="text-xs text-[color:var(--muted-text)] max-w-[240px]">
-                      Зүүн талын жагсаалтаас мэдэгдэл илгээх хүмүүсийг сонгоод бичлэгээ үргэлжлүүлнэ үү.
-                    </p>
                   </motion.div>
                 )}
               </AnimatePresence>

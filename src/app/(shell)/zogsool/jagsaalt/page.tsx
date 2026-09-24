@@ -1,5 +1,6 @@
 "use client";
 
+import ExcelButton from "@/components/ui/ExcelButton";
 import React, {
   useState,
   useMemo,
@@ -1435,13 +1436,7 @@ return (
                 <TrendingUp className="w-3.5 h-3.5" />
                 Орлого тайлан
               </button>
-              <button
-                onClick={downloadExcel}
-                className="flex items-center justify-center gap-1.5 h-8.5 w-32 rounded-xl bg-theme hover:bg-theme/90 active:bg-theme text-white text-xs font-medium shadow-sm transition-all whitespace-nowrap flex-shrink-0"
-              >
-                <Download className="w-3.5 h-3.5" />
-                Excel татах
-              </button>
+              <ExcelButton onClick={downloadExcel} />
             </div>
           </div>
         </div>

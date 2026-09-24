@@ -1,5 +1,6 @@
 "use client";
 
+import ExcelButton from "@/components/ui/ExcelButton";
 import React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearch } from "@/context/SearchContext";
@@ -43,6 +44,7 @@ import formatNumber, {
 } from "../../../../../tools/function/formatNumber";
 import matchesSearch from "@/tools/function/matchesSearch";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
+import MonthRangePicker from "@/components/ui/MonthRangePicker";
 import {
   getPaymentStatusLabel,
   isPaidLike,
@@ -360,35 +362,35 @@ export default function DansniiKhuulga() {
         label: "Нэр",
         align: "start",
         sticky: true,
-        width: 180,
-        minWidth: 180,
+        width: 200,
+        minWidth: 200,
       },
       {
         key: "toot",
         label: "Тоот",
         align: "center",
         sticky: true,
-        width: 80,
-        minWidth: 80,
+        width: 72,
+        minWidth: 72,
       },
       {
         key: "gereeniiDugaar",
         label: "Гэрээний дугаар",
         align: "start",
         sticky: true,
-        width: 130,
-        minWidth: 130,
+        width: 124,
+        minWidth: 124,
       },
       {
         key: "utas",
         label: "Утас",
         align: "start",
         sticky: true,
-        width: 100,
-        minWidth: 100,
+        width: 96,
+        minWidth: 96,
       },
-      { key: "orts", label: "Орц", align: "center", minWidth: 80 },
-      { key: "davkhar", label: "Давхар", align: "center", minWidth: 80 },
+      { key: "orts", label: "Орц", align: "center", minWidth: 56 },
+      { key: "davkhar", label: "Давхар", align: "center", minWidth: 64 },
       {
         key: "ekhniiUldegdel",
         label: "Эхний үлдэгдэл",
@@ -403,15 +405,15 @@ export default function DansniiKhuulga() {
         minWidth: 110,
       },
       { key: "paid", label: "Гүйцэтгэл", align: "end", minWidth: 110 },
-      { key: "khungulult", label: "Хөнгөлөлт", align: "end", minWidth: 110 },
-      { key: "tuluv", label: "Төлөв", align: "start", minWidth: 110 },
+      { key: "khungulult", label: "Хөнгөлөлт", align: "end", minWidth: 100 },
+      { key: "tuluv", label: "Төлөв", align: "start", minWidth: 100 },
       {
         key: "lastLog",
         label: "Огноо",
         align: "start",
-        minWidth: 140,
+        minWidth: 120,
       },
-      { key: "action", label: "Үйлдэл", align: "center", minWidth: 160 },
+      { key: "action", label: "Үйлдэл", align: "center", minWidth: 104 },
     ],
     [],
   );
@@ -3441,102 +3443,69 @@ export default function DansniiKhuulga() {
         </div>
         <div className="rounded-2xl">
           <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
-            <div className="flex flex-col lg:flex-row gap-3 w-full xl:w-auto">
+            {/* Шүүлтүүр — нэгдсэн `.btn-minimal` / `.filter-field` загвар (globals.css) */}
+            <div className="flex w-full flex-wrap items-center gap-2 xl:w-auto">
               <div
                 id="guilgee-date"
-                className="btn-minimal h-[40px] w-[min(100%,320px)] sm:w-[320px] flex items-center px-3"
+                className={`btn-minimal flex h-9 w-[210px] items-center px-3 ${ekhlekhOgnoo?.[0] ? "!border-theme/45" : ""}`}
               >
-                <StandardDatePicker
-                  isRange
-                  picker="month"
-                  format="YYYY-MM"
+                <MonthRangePicker
                   value={ekhlekhOgnoo}
                   onChange={handleEkhlekhSarRangeChange}
-                  size="small"
-                  allowClear
-                  placeholder={["Эхний сар", "Сүүлийн сар"]}
-                  classNames={{
-                    root: "!h-full !w-full",
-                    input:
-                      "text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
-                  }}
+                  placeholder="Сар сонгох"
                 />
               </div>
-              <div className="flex flex-wrap gap-3">
-                {/* Орц filter */}
-                <div className="flex items-center gap-1.5">
-                  <label className="text-[13px] text-theme whitespace-nowrap  tracking-wider font-normal">
-                    Орц:
-                  </label>
-                  <div className="w-[100px]">
-                    <input
-                      type="text"
-                      value={selectedOrtsFilter}
-                      onChange={(e) => setSelectedOrtsFilter(e.target.value)}
-                      className="w-full h-[40px] px-3 rounded-2xl neu-panel text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] text-[13px] focus:outline-none transition-all"
-                      placeholder="Бүгд"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1.5">
-                  <label className="text-[11px] text-theme whitespace-nowrap text-[13px]  tracking-wider font-normal">
-                    Давхар:
-                  </label>
-                  <div className="w-[100px]">
-                    <input
-                      type="number"
-                      min={1}
-                      value={selectedDavkharFilter}
-                      onChange={(e) => setSelectedDavkharFilter(e.target.value)}
-                      className="w-full h-[40px] px-3 rounded-2xl neu-panel text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] text-[13px] focus:outline-none transition-all"
-                      placeholder="Бүгд"
-                    />
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <label className="text-[13px] text-theme whitespace-nowrap  tracking-wider font-normal">
-                    Тоот:
-                  </label>
-                  <div className="w-[100px]">
-                    <input
-                      type="text"
-                      value={selectedTootFilter}
-                      onChange={(e) => setSelectedTootFilter(e.target.value)}
-                      className="w-full h-[40px] px-3 rounded-2xl neu-panel text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] text-[13px] focus:outline-none transition-all"
-                      placeholder="Бүгд"
-                    />
-                  </div>
-                </div>
-
-                {/* Давхар filter */}
-              </div>
+              <label className={`filter-field w-[118px] ${selectedOrtsFilter ? "is-active" : ""}`}>
+                <span className="filter-field-label">Орц</span>
+                <input
+                  type="text"
+                  value={selectedOrtsFilter}
+                  onChange={(e) => setSelectedOrtsFilter(e.target.value)}
+                  placeholder="Бүгд"
+                />
+              </label>
+              <label className={`filter-field w-[118px] ${selectedDavkharFilter ? "is-active" : ""}`}>
+                <span className="filter-field-label">Давхар</span>
+                <input
+                  type="number"
+                  min={1}
+                  value={selectedDavkharFilter}
+                  onChange={(e) => setSelectedDavkharFilter(e.target.value)}
+                  placeholder="Бүгд"
+                />
+              </label>
+              <label className={`filter-field w-[118px] ${selectedTootFilter ? "is-active" : ""}`}>
+                <span className="filter-field-label">Тоот</span>
+                <input
+                  type="text"
+                  value={selectedTootFilter}
+                  onChange={(e) => setSelectedTootFilter(e.target.value)}
+                  placeholder="Бүгд"
+                />
+              </label>
             </div>
 
-            <div className="flex items-center gap-2">
+            {/* Хэрэгслийн товчнууд — бүгд `.btn-minimal` */}
+            <div className="flex flex-wrap items-center gap-2">
               <div ref={smsHistoryButtonRef} className="relative">
                 <Tooltip title="SMS илгээсэн түүх">
                   <motion.button
-                    whileHover={{ scale: 1.03 }}
-                    transition={{ duration: 0.3 }}
                     onClick={() => setIsSmsHistoryOpen(true)}
-                    className="btn-minimal inline-flex items-center gap-1 h-[40px] px-2"
+                    className="btn-minimal inline-flex h-9 min-w-9 items-center justify-center gap-1 !px-2 disabled:cursor-not-allowed disabled:opacity-40"
                     id="sms-history-btn"
                   >
-                    <Mail className="w-5 h-5" />
+                    <Mail className="h-4 w-4" />
                   </motion.button>
                 </Tooltip>
               </div>
               <div ref={zaaltButtonRef} className="relative">
                 <Tooltip title={zaaltaarBodokh ? "Заалт" : "Цахилгаан"}>
                   <motion.button
-                    whileHover={{ scale: 1.03 }}
-                    transition={{ duration: 0.3 }}
                     onClick={() => setIsZaaltDropdownOpen(!isZaaltDropdownOpen)}
-                    className="btn-minimal inline-flex items-center gap-1 h-[40px] px-2"
+                    className="btn-minimal inline-flex h-9 min-w-9 items-center justify-center gap-1 !px-2 disabled:cursor-not-allowed disabled:opacity-40"
                     id="zaalt-btn"
                   >
-                    <FileSpreadsheet className="w-5 h-5" />
+                    <FileSpreadsheet className="h-4 w-4" />
                     <span className="hidden">
                       {zaaltaarBodokh ? "Заалт" : "Цахилгаан"}
                     </span>
@@ -3591,14 +3560,12 @@ export default function DansniiKhuulga() {
               </div>
               <Tooltip title="Эхний үлдэгдэл">
                 <motion.div
-                  whileHover={{ scale: 1.03 }}
-                  transition={{ duration: 0.3 }}
                 >
                   <IconTextButton
                     onClick={() => setIsInitialBalanceModalOpen(true)}
-                    icon={<Upload className="w-5 h-5" />}
+                    icon={<Upload className="h-4 w-4" />}
                     label="Эхний үлдэгдэл"
-                    className="w-[40px] h-[40px] !p-0 justify-center [&>span]:hidden"
+                    className="btn-minimal inline-flex h-9 min-w-9 items-center justify-center gap-1 !px-2 disabled:cursor-not-allowed disabled:opacity-40 [&>span]:hidden"
                   />
                 </motion.div>
               </Tooltip>
@@ -3612,14 +3579,11 @@ export default function DansniiKhuulga() {
               <Tooltip title={t("Excel татах")}>
                 <motion.div
                   id="guilgee-excel-btn"
-                  whileHover={{ scale: 1.03 }}
-                  transition={{ duration: 0.3 }}
                 >
-                  <IconTextButton
+                  <ExcelButton
                     onClick={exceleerTatya}
-                    icon={<Download className="w-5 h-5" />}
                     label={t("Excel татах")}
-                    className="w-[40px] h-[40px] !p-0 justify-center [&>span]:hidden"
+                    iconOnlyOnMobile
                   />
                 </motion.div>
               </Tooltip>
@@ -3630,14 +3594,12 @@ export default function DansniiKhuulga() {
                 <Tooltip title="Багана">
                   <motion.div
                     id="guilgee-columns-btn"
-                    whileHover={{ scale: 1.03 }}
-                    transition={{ duration: 0.3 }}
                   >
                     <IconTextButton
                       onClick={() => setIsColumnModalOpen(!isColumnModalOpen)}
-                      icon={<Columns className="w-5 h-5" />}
+                      icon={<Columns className="h-4 w-4" />}
                       label="Багана"
-                      className="w-[40px] h-[40px] !p-0 justify-center [&>span]:hidden"
+                      className="btn-minimal inline-flex h-9 min-w-9 items-center justify-center gap-1 !px-2 disabled:cursor-not-allowed disabled:opacity-40 [&>span]:hidden"
                     />
                   </motion.div>
                 </Tooltip>
@@ -3670,44 +3632,41 @@ export default function DansniiKhuulga() {
               </div>
               <Tooltip title="Төлбөр сануулах SMS илгээх">
                 <motion.div
-                  whileHover={{ scale: 1.03 }}
-                  transition={{ duration: 0.3 }}
                 >
                   <IconTextButton
                     onClick={handleSendReminderSmsBulk}
                     icon={
                       isSendingSms ? (
-                        <div className="h-5 w-5 animate-spin rounded-full border-b-2 border-[color:var(--surface-border)]"></div>
+                        <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-[color:var(--surface-border)]"></div>
                       ) : (
-                        <MessageSquare className="h-5 w-5" />
+                        <MessageSquare className="h-4 w-4" />
                       )
                     }
                     label="SMS илгээх"
                     disabled={isSendingSms || selectedGereeIds.length === 0}
-                    className="w-[40px] h-[40px] !p-0 justify-center [&>span]:hidden bg-warning text-white hover:bg-warning disabled:opacity-50"
+                    className="btn-minimal inline-flex h-9 min-w-9 items-center justify-center gap-1 !px-2 disabled:cursor-not-allowed disabled:opacity-40 [&>span]:hidden [&>svg]:text-warning"
                   />
                 </motion.div>
               </Tooltip>
               <Tooltip title="Нэхэмжлэх илгээх">
                 <motion.div
                   id="guilgee-nekhemjlekh-btn"
-                  whileHover={{ scale: 1.03 }}
-                  transition={{ duration: 0.3 }}
                 >
                   <IconTextButton
                     onClick={handleSendInvoices}
                     icon={
                       isSendingInvoices ? (
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[color:var(--surface-border)]"></div>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[color:var(--surface-border)]"></div>
                       ) : (
-                        <Send className="w-5 h-5" />
+                        <Send className="h-4 w-4" />
                       )
                     }
                     label="Нэхэмжлэх илгээх"
                     disabled={
                       isSendingInvoices || selectedGereeIds.length === 0
                     }
-                    className="w-[40px] h-[40px] !p-0 justify-center [&>span]:hidden bg-theme text-white hover:bg-theme disabled:opacity-50"
+                    variant="plain"
+                    className="inline-flex h-9 min-w-9 items-center justify-center rounded-[10px] bg-theme px-2 text-white shadow-[var(--ctl-shadow)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 [&>span]:hidden"
                   />
                 </motion.div>
               </Tooltip>

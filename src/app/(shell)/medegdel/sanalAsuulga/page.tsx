@@ -27,12 +27,15 @@ import {
   Monitor,
   ChevronLeft,
   ChevronRight,
-  Circle,
   CheckCircle2,
   Clock,
-  ArrowRight,
   Check,
   Search,
+  Copy,
+  Building2,
+  ListChecks,
+  AlertCircle,
+  PartyPopper,
 } from "lucide-react";
 import uilchilgee from "@/lib/uilchilgee";
 import { useAuth } from "@/lib/useAuth";
@@ -89,50 +92,66 @@ interface DunAsuult {
   tekstuud: { orshinSuugchNer: string; toot: string; tekst: string }[];
 }
 
-const TULUV_ANGI: Record<string, string> = {
-  noots:
-    "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)] border border-[color:var(--surface-border)]",
-  idevkhtei:
-    "bg-warning/10 text-warning border border-warning/80",
-  duussan:
-    "bg-success/10 text-success border border-success/80",
-};
 const TULUV_NER: Record<string, string> = {
   noots: "Ноорог",
   idevkhtei: "Явагдаж байна",
   duussan: "Дууссан",
 };
 
+const TULUV_BADGE: Record<string, { cls: string; dot: string }> = {
+  idevkhtei: { cls: "bg-warning/10 text-warning", dot: "bg-warning" },
+  duussan: { cls: "bg-success/10 text-success", dot: "bg-success" },
+  noots: {
+    cls: "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]",
+    dot: "bg-[color:var(--muted-text)]",
+  },
+};
+
 function StatusBadge({ tuluv }: { tuluv: "noots" | "idevkhtei" | "duussan" | string }) {
-  if (tuluv === "idevkhtei") {
-    return (
-      <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-normal bg-warning/10 text-warning border border-warning/80 shrink-0 shadow-2xs">
-        <span className="h-1.5 w-1.5 rounded-full bg-warning animate-pulse shrink-0" />
-        <span>Явагдаж байна</span>
-      </span>
-    );
-  }
-  if (tuluv === "duussan") {
-    return (
-      <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-normal bg-theme/10 text-brand border border-theme/80 shrink-0 shadow-2xs">
-        <span className="h-1.5 w-1.5 rounded-full bg-theme shrink-0" />
-        <span>Дууссан</span>
-      </span>
-    );
-  }
+  const t = TULUV_BADGE[tuluv] || TULUV_BADGE.noots;
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-normal bg-[color:var(--surface-hover)] text-[color:var(--muted-text)] border border-[color:var(--surface-border)] shrink-0">
-      <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--panel)] shrink-0" />
-      <span>Ноорог</span>
+    <span
+      className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-medium ${t.cls}`}
+    >
+      <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${t.dot}`} />
+      {TULUV_NER[tuluv] || TULUV_NER.noots}
     </span>
   );
 }
 
-const TURLIIN_NER: Record<AsuultiinTurul, string> = {
-  songolt: "Сонголттой (нэг сонголт)",
-  olonSongolt: "Олон сонголттой",
-  tekst: "Бусад (текст хариулт)",
-};
+/** Жижиг асаах/унтраах товч (асуултын тохиргоонд). */
+function Toggle({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className="inline-flex cursor-pointer select-none items-center gap-2 text-[13px] text-[color:var(--panel-text)]"
+    >
+      <span
+        className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${
+          checked ? "bg-theme" : "bg-[color:var(--ctl-border-hover)]"
+        }`}
+      >
+        <span
+          className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
+            checked ? "translate-x-4" : ""
+          }`}
+        />
+      </span>
+      <span>{label}</span>
+    </button>
+  );
+}
 
 const ognooFormat = (iso?: string) => {
   if (!iso) return "-";
@@ -158,6 +177,53 @@ const ognooTsagFormat = (iso?: string) => {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}`;
 };
+
+const ognooParse = (iso?: string): Date | null => {
+  if (!iso) return null;
+  const str = String(iso).trim();
+  const m = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? null : d;
+};
+
+/** Дуусах огноо хүртэл үлдсэн хоног (өнөөдөр = 0, өнгөрсөн бол сөрөг). */
+const uldsenKhonog = (iso?: string): number | null => {
+  const d = ognooParse(iso);
+  if (!d) return null;
+  const unuudur = new Date();
+  unuudur.setHours(0, 0, 0, 0);
+  return Math.round((d.getTime() - unuudur.getTime()) / 86400000);
+};
+
+const uldsenTekst = (n: number | null) => {
+  if (n === null) return null;
+  if (n < 0) return "Хугацаа дууссан";
+  if (n === 0) return "Өнөөдөр дуусна";
+  return `Дуусахад ${n} хоног үлдлээ`;
+};
+
+/** Эхлэх–дуусах хугацааны хэдэн хувь өнгөрсөн (0–100). */
+const yavtsKhuvi = (ekh?: string, duus?: string): number | null => {
+  const a = ognooParse(ekh);
+  const b = ognooParse(duus);
+  if (!a || !b || b.getTime() < a.getTime()) return null;
+  const niit = b.getTime() - a.getTime() + 86400000;
+  const unguursun = Date.now() - a.getTime();
+  return Math.max(0, Math.min(100, Math.round((unguursun / niit) * 100)));
+};
+
+const inputCls =
+  "w-full rounded-[10px] border bg-[color:var(--surface-bg)] px-3 text-[13px] text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] transition focus:border-theme focus:outline-none focus:ring-2 focus:ring-theme/20";
+const cardCls =
+  "rounded-2xl border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] shadow-[var(--ctl-shadow)]";
+const btnSecondary =
+  "btn-minimal inline-flex h-9 items-center gap-2 !px-3 text-[13px] disabled:opacity-50";
+const btnPrimary =
+  "inline-flex h-9 items-center gap-2 rounded-[10px] bg-theme px-4 text-[13px] font-medium !text-white transition hover:opacity-90 disabled:opacity-50";
+
+/** Урьдчилсан харагдацын олон сонголтыг нэг мөрөнд хадгалах тусгаарлагч. */
+const PREVIEW_SEP = "\u0001";
 
 /**
  * Шинэ асуулт үргэлж хоосон эхэлнэ. Урьд нь эхний асуулт нь жишээ текст,
@@ -260,6 +326,11 @@ export default function SanalAsuulgaPage() {
 
     const handleScroll = () => {
       if (!leftColRef.current || !rightColRef.current) return;
+      // Жижиг дэлгэцэнд урьдчилсан харагдац формын доор байрлана — дагуулахгүй.
+      if (window.innerWidth < 1280) {
+        setPreviewTranslateY(0);
+        return;
+      }
       const leftRect = leftColRef.current.getBoundingClientRect();
       const rightHeight = rightColRef.current.offsetHeight;
 
@@ -304,9 +375,14 @@ export default function SanalAsuulgaPage() {
     [baiguullaga]
   );
 
-  // Auto-select active main building (e.g. "Их наяд") by default if no building is selected
+  // Auto-select active main building (e.g. "Их наяд") by default — зөвхөн анх
+  // ачаалахад. Дараа нь ажилтан бүх барилгыг болиулж "бүх оршин суугчид"
+  // сонголт хийх боломжтой байх ёстой (тайлбар текст ингэж амласан).
+  const barilgaAnkhSongoson = useRef(false);
   useEffect(() => {
+    if (barilgaAnkhSongoson.current) return;
     if (barilguud.length > 0 && songogdsonBarilga.length === 0) {
+      barilgaAnkhSongoson.current = true;
       const activeId =
         selectedBuildingId &&
           barilguud.some((b: any) => String(b._id) === String(selectedBuildingId))
@@ -484,6 +560,69 @@ export default function SanalAsuulgaPage() {
     }
   };
 
+  /* ── UI туслахууд (зөвхөн харагдац) ─────────────────────────────────── */
+
+  // Хадгалах гэж оролдсоны дараа л хоосон талбаруудыг улаанаар тодруулна.
+  const [oroldson, setOroldson] = useState(false);
+  // Чирэх зөвхөн бариулаас эхэлнэ — эс бөгөөс input доторх текст сонголт эвдэрнэ.
+  const [chirekhIdx, setChirekhIdx] = useState<number | null>(null);
+  const [previewIlgeesen, setPreviewIlgeesen] = useState(false);
+
+  const shineUusgeye = () => {
+    formTseverleye();
+    setOroldson(false);
+    setPreviewIlgeesen(false);
+    setGorim("uusgekh");
+  };
+
+  /** Байгаа асуулгаас хуулж шинэ ноорог эхлүүлэх (API-д шинээр үүснэ). */
+  const khuulakh = (a: Asuulga) => {
+    setGarchig(a.garchig || "");
+    setTailbar(a.tailbar || "");
+    setSongogdsonBarilga(
+      Array.isArray(a.barilguud) ? a.barilguud.map((x) => String(x)) : []
+    );
+    setEkhlekhOgnoo("");
+    setDuusakhOgnoo("");
+    setAsuultuud(
+      a.asuultuud?.length
+        ? a.asuultuud.map((q) => ({
+            asuult: q.asuult || "",
+            turul: q.turul,
+            songoltuud:
+              q.turul !== "tekst" && q.songoltuud?.length
+                ? [...q.songoltuud]
+                : ["", ""],
+            zaavalEsekh: q.zaavalEsekh ?? true,
+            busadTekst: !!q.busadTekst,
+          }))
+        : [shineAsuult()]
+    );
+    setPreviewQuestionIndex(0);
+    setPreviewAnswers({});
+    setOroldson(false);
+    setPreviewIlgeesen(false);
+    setGorim("uusgekh");
+  };
+
+  const asuultKhuulya = (i: number) =>
+    setAsuultuud((prev) => {
+      const c = prev[i];
+      if (!c) return prev;
+      const updated = [...prev];
+      updated.splice(i + 1, 0, {
+        ...c,
+        _id: undefined,
+        songoltuud: [...c.songoltuud],
+      });
+      return updated;
+    });
+
+  const asuultUstgaya = (i: number) => {
+    setAsuultuud((prev) => prev.filter((_, idx) => idx !== i));
+    setPreviewQuestionIndex((p) => Math.max(0, Math.min(p, asuultuud.length - 2)));
+  };
+
   /* ── Жагсаалт ─────────────────────────────────────────────────────── */
 
   if (gorim === "jagsaalt") {
@@ -497,429 +636,738 @@ export default function SanalAsuulgaPage() {
       );
     });
 
+    const kpiuud: {
+      label: string;
+      value: number;
+      shuult: "bugd" | "idevkhtei" | "duussan" | null;
+      dot?: string;
+    }[] = [
+      { label: "Нийт асуулга", value: niitToo, shuult: "bugd" },
+      { label: "Явагдаж байна", value: idevkhteiToo, shuult: "idevkhtei", dot: "bg-warning" },
+      { label: "Дууссан", value: duussanToo, shuult: "duussan", dot: "bg-success" },
+      { label: "Нийт хариулт", value: niitKhariultToo, shuult: null },
+    ];
+
+    const tabuud: { key: typeof filterTuluv; label: string; too: number }[] = [
+      { key: "bugd", label: "Бүгд", too: niitToo },
+      { key: "idevkhtei", label: "Явагдаж байна", too: idevkhteiToo },
+      { key: "duussan", label: "Дууссан", too: duussanToo },
+      { key: "noots", label: "Ноорог", too: nootsToo },
+    ];
+
     return (
-      <div className="w-full space-y-6 p-4 sm:p-6 lg:p-8 text-[color:var(--panel-text)]">
-        {/* Top Action Bar: Search Bar on left, "+ Шинэ асуулга үүсгэх" on right */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[color:var(--surface-border)] pb-4">
-          <div className="relative w-full sm:w-80">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[color:var(--muted-text)]" />
+      <div className="w-full space-y-4 p-4 text-[color:var(--panel-text)] sm:p-6">
+        {/* Toolbar */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <label className="filter-field w-full sm:w-[280px]">
+            <Search className="h-4 w-4 shrink-0 text-[color:var(--muted-text)]" />
             <input
-              type="text"
+              aria-label="Санал асуулга хайх"
               value={hailtUg}
               onChange={(e) => setHailtUg(e.target.value)}
               placeholder="Санал асуулга хайх..."
-              className="w-full h-9.5 pl-9 pr-8 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-xs text-[color:var(--panel-text)] dark:text-white placeholder:text-[color:var(--muted-text)] focus:outline-none focus:ring-2 focus:ring-theme transition shadow-2xs"
             />
             {hailtUg && (
               <button
                 type="button"
                 onClick={() => setHailtUg("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-[color:var(--muted-text)] hover:text-[color:var(--muted-text)] cursor-pointer"
+                aria-label="Хайлт цэвэрлэх"
+                className="shrink-0 rounded p-0.5 text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
             )}
-          </div>
+          </label>
 
-          <button
-            onClick={() => {
-              formTseverleye();
-              setGorim("uusgekh");
-            }}
-            className="flex items-center gap-2 rounded-xl bg-theme px-4 py-2 text-xs font-normal !text-white transition duration-200 hover:bg-theme shadow-md shadow-theme/20 active:scale-95 cursor-pointer shrink-0"
-          >
+          <button type="button" onClick={shineUusgeye} className={btnPrimary}>
             <Plus className="h-4 w-4" />
-            <span>Шинэ асуулга үүсгэх</span>
+            Шинэ асуулга үүсгэх
           </button>
         </div>
 
-        {/* ── Summary Stat KPI Cards ── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-          {/* Total Polls */}
-          <div className="rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-4 shadow-xs flex items-center justify-between">
-            <div className="space-y-1">
-              <p className="text-[11px] font-medium text-[color:var(--muted-text)] uppercase tracking-wider">
-                Нийт асуулга
-              </p>
-              <p className="text-2xl font-medium text-[color:var(--panel-text)] dark:text-white">
-                {niitToo}
-              </p>
-            </div>
-            <div className="h-10 w-10 rounded-xl bg-theme/10 text-brand flex items-center justify-center shrink-0">
-              <ClipboardList className="h-5 w-5" />
-            </div>
-          </div>
-
-          {/* In Progress (Amber / Yellow) */}
-          <div className="rounded-2xl border border-warning/80 bg-warning/40 p-4 shadow-xs flex items-center justify-between">
-            <div className="space-y-1">
-              <p className="text-[11px] font-medium text-warning uppercase tracking-wider flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-warning animate-pulse shrink-0" />
-                Явагдаж байна
-              </p>
-              <p className="text-2xl font-medium text-warning">
-                {idevkhteiToo}
-              </p>
-            </div>
-            <div className="h-10 w-10 rounded-xl bg-warning/10 text-warning flex items-center justify-center shrink-0">
-              <Clock className="h-5 w-5" />
-            </div>
-          </div>
-
-          {/* Completed (Emerald / Green) */}
-          <div className="rounded-2xl border border-theme/80 bg-theme/40 p-4 shadow-xs flex items-center justify-between">
-            <div className="space-y-1">
-              <p className="text-[11px] font-medium text-brand uppercase tracking-wider flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-theme shrink-0" />
-                Дууссан
-              </p>
-              <p className="text-2xl font-medium text-brand">
-                {duussanToo}
-              </p>
-            </div>
-            <div className="h-10 w-10 rounded-xl bg-theme/10 text-brand flex items-center justify-center shrink-0">
-              <CheckCircle2 className="h-5 w-5" />
-            </div>
-          </div>
-
-          {/* Total Responses */}
-          <div className="rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-4 shadow-xs flex items-center justify-between">
-            <div className="space-y-1">
-              <p className="text-[11px] font-medium text-[color:var(--muted-text)] uppercase tracking-wider">
-                Нийт хариулт
-              </p>
-              <p className="text-2xl font-medium text-[color:var(--panel-text)] dark:text-white">
-                {niitKhariultToo}
-              </p>
-            </div>
-            <div className="h-10 w-10 rounded-xl bg-theme/10 text-brand flex items-center justify-center shrink-0">
-              <Users className="h-5 w-5" />
-            </div>
-          </div>
+        {/* KPI */}
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {kpiuud.map((k) => {
+            const idevkhtei =
+              k.shuult !== null && k.shuult !== "bugd" && filterTuluv === k.shuult;
+            const Tag = k.shuult ? "button" : "div";
+            return (
+              <Tag
+                key={k.label}
+                {...(k.shuult
+                  ? {
+                      type: "button" as const,
+                      onClick: () =>
+                        setFilterTuluv(
+                          k.shuult === "bugd" || filterTuluv === k.shuult
+                            ? "bugd"
+                            : (k.shuult as typeof filterTuluv)
+                        ),
+                    }
+                  : {})}
+                className={`rounded-2xl border bg-[color:var(--surface-bg)] px-5 py-4 text-left shadow-[var(--ctl-shadow)] transition-colors ${
+                  idevkhtei
+                    ? "border-theme ring-2 ring-theme/20"
+                    : "border-[color:var(--ctl-border)]"
+                } ${k.shuult ? "cursor-pointer hover:border-[color:var(--ctl-border-hover)]" : ""}`}
+              >
+                <div className="text-2xl font-semibold leading-tight text-[color:var(--panel-text)]">
+                  {k.value}
+                </div>
+                <div className="mt-1 flex items-center gap-1.5 text-xs text-[color:var(--muted-text)]">
+                  {k.dot && <span className={`h-1.5 w-1.5 rounded-full ${k.dot}`} />}
+                  {k.label}
+                </div>
+              </Tag>
+            );
+          })}
         </div>
 
-        {/* ── Filter Tabs ── */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 pt-1">
-          <button
-            type="button"
-            onClick={() => setFilterTuluv("bugd")}
-            className={`px-3 py-1.5 text-xs font-normal rounded-xl transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
-              filterTuluv === "bugd"
-                ? "bg-[color:var(--panel)] text-white dark:bg-white shadow-xs"
-                : "bg-[color:var(--surface-bg)] text-[color:var(--muted-text)] border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)]"
-            }`}
-          >
-            <span>Бүгд</span>
-            <span
-              className={`px-1.5 py-0.5 rounded-md text-[10px] ${
-                filterTuluv === "bugd"
-                  ? "bg-white/20 text-white"
-                  : "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]"
-              }`}
-            >
-              {niitToo}
+        {/* Tabs */}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-1 overflow-x-auto">
+            {tabuud.map((t) => {
+              const idevkhtei = filterTuluv === t.key;
+              return (
+                <button
+                  key={t.key}
+                  type="button"
+                  onClick={() => setFilterTuluv(t.key)}
+                  className={`inline-flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-[10px] px-4 text-[13px] transition-colors ${
+                    idevkhtei
+                      ? "bg-theme/15 font-medium text-brand"
+                      : "text-[color:var(--muted-text)] hover:bg-[color:var(--ctl-hover-bg)] hover:text-[color:var(--panel-text)]"
+                  }`}
+                >
+                  {t.label}
+                  <span
+                    className={`rounded-md px-1.5 text-[11px] ${
+                      idevkhtei
+                        ? "bg-theme/15 text-brand"
+                        : "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]"
+                    }`}
+                  >
+                    {t.too}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          {!achaalj && (hailtUg || filterTuluv !== "bugd") && (
+            <span className="text-xs text-[color:var(--muted-text)]">
+              {shuugdsanJagsaalt.length} илэрц
             </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setFilterTuluv("idevkhtei")}
-            className={`px-3 py-1.5 text-xs font-normal rounded-xl transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
-              filterTuluv === "idevkhtei"
-                ? "bg-warning text-white shadow-xs"
-                : "bg-[color:var(--surface-bg)] text-warning border border-warning/80 hover:bg-warning/10"
-            }`}
-          >
-            <span
-              className={`h-1.5 w-1.5 rounded-full ${
-                filterTuluv === "idevkhtei" ? "bg-[color:var(--surface-bg)]" : "bg-warning animate-pulse"
-              }`}
-            />
-            <span>Явагдаж байна</span>
-            <span
-              className={`px-1.5 py-0.5 rounded-md text-[10px] ${
-                filterTuluv === "idevkhtei"
-                  ? "bg-white/20 text-white"
-                  : "bg-warning/10 text-warning"
-              }`}
-            >
-              {idevkhteiToo}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setFilterTuluv("duussan")}
-            className={`px-3 py-1.5 text-xs font-normal rounded-xl transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
-              filterTuluv === "duussan"
-                ? "bg-theme text-white shadow-xs"
-                : "bg-[color:var(--surface-bg)] text-brand border border-theme/80 hover:bg-theme/10 dark:hover:bg-theme/10"
-            }`}
-          >
-            <span
-              className={`h-1.5 w-1.5 rounded-full ${
-                filterTuluv === "duussan" ? "bg-[color:var(--surface-bg)]" : "bg-theme"
-              }`}
-            />
-            <span>Дууссан</span>
-            <span
-              className={`px-1.5 py-0.5 rounded-md text-[10px] ${
-                filterTuluv === "duussan"
-                  ? "bg-white/20 text-white"
-                  : "bg-theme/10 text-brand"
-              }`}
-            >
-              {duussanToo}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setFilterTuluv("noots")}
-            className={`px-3 py-1.5 text-xs font-normal rounded-xl transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
-              filterTuluv === "noots"
-                ? "bg-[color:var(--panel)] text-white shadow-xs"
-                : "bg-[color:var(--surface-bg)] text-[color:var(--muted-text)] border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)]"
-            }`}
-          >
-            <span>Ноорог</span>
-            <span
-              className={`px-1.5 py-0.5 rounded-md text-[10px] ${
-                filterTuluv === "noots"
-                  ? "bg-white/20 text-white"
-                  : "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]"
-              }`}
-            >
-              {nootsToo}
-            </span>
-          </button>
+          )}
         </div>
 
-        {/* ── Content Area: Loading / Empty / Grid Cards ── */}
+        {/* Content */}
         {achaalj ? (
-          <div className="flex flex-col items-center justify-center py-24 gap-3">
-            <Loader2 className="h-8 w-8 animate-spin text-brand" />
+          <div className="flex flex-col items-center justify-center gap-3 py-24">
+            <Loader2 className="h-7 w-7 animate-spin text-brand" />
             <p className="text-xs text-[color:var(--muted-text)]">Ачаалж байна...</p>
           </div>
         ) : shuugdsanJagsaalt.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 rounded-3xl bg-[color:var(--surface-bg)] py-20 border border-[color:var(--surface-border)] shadow-xs">
-            <ClipboardList className="h-12 w-12 text-[color:var(--muted-text)]" />
-            <p className="text-sm font-normal text-[color:var(--muted-text)]">
+          <div className={`${cardCls} flex flex-col items-center gap-2 px-6 py-16 text-center`}>
+            <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-theme/10 text-brand">
+              <ClipboardList className="h-6 w-6" />
+            </div>
+            <p className="text-[14px] font-medium text-[color:var(--panel-text)]">
               {hailtUg
                 ? "Хайлтад тохирох асуулга олдсонгүй"
                 : filterTuluv !== "bugd"
-                ? `"${TULUV_NER[filterTuluv]}" төлөвтэй асуулга олдсонгүй`
-                : "Одоогоор санал асуулга бүртгэгдээгүй байна"}
+                ? `"${TULUV_NER[filterTuluv]}" төлөвтэй асуулга алга`
+                : "Санал асуулга бүртгэгдээгүй байна"}
             </p>
-            <button
-              type="button"
-              onClick={() => {
-                formTseverleye();
-                setGorim("uusgekh");
-              }}
-              className="mt-2 text-xs font-normal text-brand hover:underline cursor-pointer"
-            >
-              + Шинэ санал асуулга үүсгэх
-            </button>
+            <p className="max-w-sm text-xs text-[color:var(--muted-text)]">
+              {hailtUg || filterTuluv !== "bugd"
+                ? "Хайлт эсвэл шүүлтүүрээ өөрчилж үзнэ үү."
+                : "Оршин суугчдын санал бодлыг цуглуулах анхны асуулгаа үүсгээрэй."}
+            </p>
+            <div className="mt-3 flex flex-wrap justify-center gap-2">
+              {(hailtUg || filterTuluv !== "bugd") && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHailtUg("");
+                    setFilterTuluv("bugd");
+                  }}
+                  className={btnSecondary}
+                >
+                  Шүүлтүүр цэвэрлэх
+                </button>
+              )}
+              <button type="button" onClick={shineUusgeye} className={btnPrimary}>
+                <Plus className="h-4 w-4" />
+                Шинэ асуулга үүсгэх
+              </button>
+            </div>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
-            {shuugdsanJagsaalt.map((a) => (
-              <div
-                key={a._id}
-                className="flex flex-col rounded-2xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] shadow-xs hover:shadow-md transition-all duration-200 overflow-hidden group"
-              >
-                {/* Header */}
-                <div className="p-5 pb-3 space-y-2">
-                  <div className="flex items-start justify-between gap-2.5">
-                    <h3 className="min-w-0 flex-1 text-sm font-normal text-[color:var(--panel-text)] dark:text-white line-clamp-2 leading-snug group-hover:text-brand dark:group-hover:text-brand transition-colors">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            {shuugdsanJagsaalt.map((a) => {
+              const uldsen = uldsenKhonog(a.duusakhOgnoo);
+              const yavts = yavtsKhuvi(a.ekhlekhOgnoo, a.duusakhOgnoo);
+              return (
+                <div
+                  key={a._id}
+                  className={`${cardCls} flex flex-col p-5 transition-colors hover:border-[color:var(--ctl-border-hover)]`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="line-clamp-2 min-w-0 flex-1 text-[14px] font-semibold leading-snug text-[color:var(--panel-text)]">
                       {a.garchig}
                     </h3>
                     <StatusBadge tuluv={a.tuluv} />
                   </div>
 
-                  {a.tailbar && (
-                    <p className="line-clamp-2 text-xs text-[color:var(--muted-text)] leading-relaxed">
-                      {a.tailbar}
-                    </p>
-                  )}
-                </div>
+                  <p
+                    className={`mt-1.5 line-clamp-2 min-h-[2.5rem] text-xs leading-5 ${
+                      a.tailbar
+                        ? "text-[color:var(--muted-text)]"
+                        : "italic text-[color:var(--muted-text)] opacity-70"
+                    }`}
+                  >
+                    {a.tailbar || "Тайлбар оруулаагүй"}
+                  </p>
 
-                {/* Metadata strip */}
-                <div className="px-5 py-2.5 bg-[color:var(--surface-hover)] border-y border-[color:var(--surface-border)] text-[11px] text-[color:var(--muted-text)] flex flex-wrap items-center justify-between gap-2 mt-auto">
-                  <div className="flex items-center gap-1.5">
-                    <Calendar className="h-3.5 w-3.5 text-[color:var(--muted-text)] shrink-0" />
-                    {a.ekhlekhOgnoo || a.duusakhOgnoo ? (
-                      <span>
-                        {ognooFormat(a.ekhlekhOgnoo)} — {ognooFormat(a.duusakhOgnoo)}
-                      </span>
-                    ) : (
-                      <span>{ognooFormat(a.createdAt)}</span>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <span className="flex items-center gap-1">
-                      <ClipboardList className="h-3.5 w-3.5 text-[color:var(--muted-text)] shrink-0" />
+                  <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-[color:var(--muted-text)]">
+                    <span className="inline-flex items-center gap-1.5">
+                      <Calendar className="h-3.5 w-3.5 shrink-0" />
+                      {a.ekhlekhOgnoo || a.duusakhOgnoo
+                        ? `${ognooFormat(a.ekhlekhOgnoo)} — ${ognooFormat(a.duusakhOgnoo)}`
+                        : ognooFormat(a.createdAt)}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <ListChecks className="h-3.5 w-3.5 shrink-0" />
                       {a.asuultuud?.length || 0} асуулт
                     </span>
-                    <span className="inline-flex items-center gap-1 font-normal text-brand bg-theme/10 px-2 py-0.5 rounded-md text-[10px]">
-                      <Users className="h-3 w-3 shrink-0" />
+                    <span className="inline-flex items-center gap-1.5">
+                      <Users className="h-3.5 w-3.5 shrink-0" />
                       {a.khariultiinToo || 0} хариулт
                     </span>
                   </div>
-                </div>
 
-                {/* Actions */}
-                <div className="p-4 pt-3 flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => dungAvya(a)}
-                    className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-[color:var(--surface-hover)] hover:bg-[color:var(--panel)] px-3 py-2 text-xs font-normal text-[color:var(--panel-text)] transition cursor-pointer"
-                  >
-                    <BarChart3 className="h-3.5 w-3.5 text-brand" />
-                    <span>Үр дүн</span>
-                  </button>
-
-                  {a.tuluv === "noots" && (
-                    <button
-                      type="button"
-                      onClick={() => tuluvSolyo(a, "idevkhtei")}
-                      className="flex items-center gap-1.5 rounded-xl bg-theme hover:bg-theme px-3.5 py-2 text-xs font-normal !text-white transition cursor-pointer shadow-xs"
-                      title="Санал асуулгыг оршин суугчдад нийтлэх"
-                    >
-                      <Send className="h-3.5 w-3.5" />
-                      <span>Илгээх</span>
-                    </button>
+                  {a.tuluv === "idevkhtei" && (yavts !== null || uldsen !== null) && (
+                    <div className="mt-3 space-y-1.5">
+                      {yavts !== null && (
+                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-[color:var(--surface-hover)]">
+                          <div
+                            className="h-full rounded-full bg-warning"
+                            style={{ width: `${yavts}%` }}
+                          />
+                        </div>
+                      )}
+                      {uldsen !== null && (
+                        <p
+                          className={`inline-flex items-center gap-1.5 text-xs ${
+                            uldsen <= 1 ? "text-danger" : "text-warning"
+                          }`}
+                        >
+                          <Clock className="h-3.5 w-3.5" />
+                          {uldsenTekst(uldsen)}
+                        </p>
+                      )}
+                    </div>
                   )}
 
-                  {a.tuluv === "idevkhtei" && (
+                  <div className="min-h-4 flex-1" />
+                  <div className="flex items-center gap-2 border-t border-[color:var(--ctl-border)] pt-4">
                     <button
                       type="button"
-                      onClick={() => tuluvSolyo(a, "duussan")}
-                      className="flex items-center gap-1.5 rounded-xl bg-warning/15 hover:bg-warning/25 border border-warning/30 text-warning px-3.5 py-2 text-xs font-normal transition cursor-pointer"
-                      title="Санал асуулгыг хааж дуусгах"
+                      onClick={() => dungAvya(a)}
+                      className={`${btnSecondary} flex-1 justify-center`}
                     >
-                      <CheckCircle2 className="h-3.5 w-3.5 text-warning" />
-                      <span>Хаах</span>
+                      <BarChart3 className="h-4 w-4 text-brand" />
+                      Үр дүн
                     </button>
-                  )}
 
-                  <button
-                    type="button"
-                    onClick={() => ustgaya(a)}
-                    aria-label="Устгах"
-                    title="Устгах"
-                    className="rounded-xl p-2 text-[color:var(--muted-text)] hover:bg-danger/10 hover:text-danger transition cursor-pointer"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                    {a.tuluv === "noots" && (
+                      <button
+                        type="button"
+                        onClick={() => tuluvSolyo(a, "idevkhtei")}
+                        className={btnPrimary}
+                        title="Санал асуулгыг оршин суугчдад нийтлэх"
+                      >
+                        <Send className="h-4 w-4" />
+                        Нийтлэх
+                      </button>
+                    )}
+
+                    {a.tuluv === "idevkhtei" && (
+                      <button
+                        type="button"
+                        onClick={() => tuluvSolyo(a, "duussan")}
+                        className={btnSecondary}
+                        title="Санал асуулгыг хааж дуусгах"
+                      >
+                        <CheckCircle2 className="h-4 w-4 text-success" />
+                        Хаах
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => khuulakh(a)}
+                      aria-label="Хуулж шинээр үүсгэх"
+                      title="Хуулж шинээр үүсгэх"
+                      className={`${btnSecondary} w-9 justify-center !px-0 text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]`}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => ustgaya(a)}
+                      aria-label="Устгах"
+                      title="Устгах"
+                      className={`${btnSecondary} w-9 justify-center !px-0 text-[color:var(--muted-text)] hover:!border-danger/40 hover:text-danger`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
     );
   }
 
-  /* ── Үүсгэх (Шинэ дизайн: Split 2-Column with Live Interactive Device Preview) ── */
+  /* ── Үүсгэх: 2 баганат форм + амьд урьдчилсан харагдац ───────────── */
 
   if (gorim === "uusgekh") {
-    const activeQuestion =
-      asuultuud[previewQuestionIndex] || asuultuud[0] || shineAsuult();
+    const pi = Math.min(previewQuestionIndex, Math.max(0, asuultuud.length - 1));
+    const activeQuestion = asuultuud[pi] || shineAsuult();
+    const previewUtga = previewAnswers[pi] || "";
+    const previewSongogdson = previewUtga.split(PREVIEW_SEP).filter(Boolean);
+    const previewKhariulsan =
+      activeQuestion.turul === "tekst"
+        ? previewUtga.trim().length > 0
+        : previewSongogdson.length > 0;
+    const suuliinAsuult = pi >= asuultuud.length - 1;
+    const uldsen = uldsenKhonog(duusakhOgnoo);
+    const mobile = previewDevice === "mobile";
+
+    const previewSongoltDarya = (utga: string) =>
+      setPreviewAnswers((prev) => {
+        const cur = (prev[pi] || "").split(PREVIEW_SEP).filter(Boolean);
+        const next =
+          activeQuestion.turul === "olonSongolt"
+            ? cur.includes(utga)
+              ? cur.filter((x) => x !== utga)
+              : [...cur, utga]
+            : [utga];
+        return { ...prev, [pi]: next.join(PREVIEW_SEP) };
+      });
+
+    const buglusunSongoltToo = (a: Asuult) =>
+      a.songoltuud.filter((s) => s.trim()).length;
+
+    const aldaatayToo = asuultuud.filter(
+      (a) => !a.asuult.trim() || (a.turul !== "tekst" && buglusunSongoltToo(a) < 2)
+    ).length;
+
+    const hadgalakh = (ilgeekh: boolean) => {
+      setOroldson(true);
+      khadgalya(ilgeekh);
+    };
+
+    const helperTekst =
+      activeQuestion.turul === "songolt"
+        ? "Нэг хариулт сонгоно уу"
+        : activeQuestion.turul === "olonSongolt"
+        ? "Хэд хэдэн хариулт сонгож болно"
+        : "Хариултаа чөлөөтэй бичнэ үү";
+
+    const previewScreen = previewIlgeesen ? (
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-success/10 text-success">
+          <PartyPopper className="h-7 w-7" />
+        </div>
+        <p className="text-[15px] font-semibold text-[color:var(--panel-text)]">
+          Баярлалаа!
+        </p>
+        <p className="text-xs leading-5 text-[color:var(--muted-text)]">
+          Таны хариулт амжилттай илгээгдлээ. (Урьдчилсан харагдац — жинхэнэ
+          хариулт хадгалагдахгүй.)
+        </p>
+        <button
+          type="button"
+          onClick={() => {
+            setPreviewIlgeesen(false);
+            setPreviewAnswers({});
+            setPreviewQuestionIndex(0);
+          }}
+          className={`${btnSecondary} mt-2`}
+        >
+          Дахин харах
+        </button>
+      </div>
+    ) : (
+      <>
+        {/* Scroll body */}
+        <div className="flex-1 space-y-4 overflow-y-auto px-4 pb-4 pt-3 scrollbar-none">
+          <div className="flex flex-wrap items-center gap-1.5">
+            {uldsen !== null ? (
+              <span
+                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                  uldsen <= 1 ? "bg-danger/10 text-danger" : "bg-warning/10 text-warning"
+                }`}
+              >
+                <Clock className="h-3 w-3" />
+                {uldsenTekst(uldsen)}
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--surface-hover)] px-2 py-0.5 text-[11px] text-[color:var(--muted-text)]">
+                <Clock className="h-3 w-3" />
+                Хугацаа заагаагүй
+              </span>
+            )}
+            <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--surface-hover)] px-2 py-0.5 text-[11px] text-[color:var(--muted-text)]">
+              <Building2 className="h-3 w-3" />
+              {songogdsonBarilga.length > 0
+                ? `${songogdsonBarilga.length} барилга`
+                : "Бүх оршин суугч"}
+            </span>
+          </div>
+
+          <div className="space-y-1">
+            <h4
+              className={`text-[15px] font-semibold leading-snug ${
+                garchig ? "text-[color:var(--panel-text)]" : "text-[color:var(--muted-text)]"
+              }`}
+            >
+              {garchig || "Санал асуулгын гарчиг"}
+            </h4>
+            <p className="text-xs leading-5 text-[color:var(--muted-text)]">
+              {tailbar || "Товч тайлбар энд харагдана."}
+            </p>
+            {duusakhOgnoo && (
+              <p className="text-[11px] text-[color:var(--muted-text)]">
+                Дуусах огноо: {ognooTsagFormat(duusakhOgnoo)}
+              </p>
+            )}
+          </div>
+
+          {/* Progress */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-[11px] text-[color:var(--muted-text)]">
+              <span>
+                Асуулт {pi + 1}/{asuultuud.length}
+              </span>
+              <span>{Math.round(((pi + 1) / Math.max(1, asuultuud.length)) * 100)}%</span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-[color:var(--surface-hover)]">
+              <div
+                className="h-full rounded-full bg-theme transition-all duration-300"
+                style={{ width: `${((pi + 1) / Math.max(1, asuultuud.length)) * 100}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Question */}
+          <div className="space-y-3">
+            <div>
+              <p
+                className={`text-[14px] font-medium leading-snug ${
+                  activeQuestion.asuult
+                    ? "text-[color:var(--panel-text)]"
+                    : "text-[color:var(--muted-text)]"
+                }`}
+              >
+                {activeQuestion.asuult || "Асуултын текст..."}
+                {activeQuestion.zaavalEsekh && <span className="ml-0.5 text-danger">*</span>}
+              </p>
+              <p className="mt-0.5 text-[11px] text-[color:var(--muted-text)]">{helperTekst}</p>
+            </div>
+
+            {activeQuestion.turul !== "tekst" ? (
+              <div className="space-y-2">
+                {activeQuestion.songoltuud.map((opt, optIdx) => {
+                  const key = `o${optIdx}`;
+                  const songogdson = previewSongogdson.includes(key);
+                  const olon = activeQuestion.turul === "olonSongolt";
+                  return (
+                    <button
+                      key={optIdx}
+                      type="button"
+                      onClick={() => previewSongoltDarya(key)}
+                      className={`flex min-h-11 w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left text-[13px] transition-colors ${
+                        songogdson
+                          ? "border-theme bg-theme/10 text-[color:var(--panel-text)]"
+                          : "border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] hover:border-[color:var(--ctl-border-hover)]"
+                      }`}
+                    >
+                      <span
+                        className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center border-2 transition-colors ${
+                          olon ? "rounded-[5px]" : "rounded-full"
+                        } ${
+                          songogdson
+                            ? "border-theme bg-theme !text-white"
+                            : "border-[color:var(--ctl-border-hover)]"
+                        }`}
+                      >
+                        {songogdson &&
+                          (olon ? (
+                            <Check className="h-3 w-3 stroke-[3]" />
+                          ) : (
+                            <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                          ))}
+                      </span>
+                      <span
+                        className={`min-w-0 flex-1 break-words ${
+                          opt ? "" : "text-[color:var(--muted-text)]"
+                        }`}
+                      >
+                        {opt || `Сонголт ${optIdx + 1}`}
+                      </span>
+                    </button>
+                  );
+                })}
+
+                {activeQuestion.busadTekst && (
+                  <div
+                    className={`rounded-xl border transition-colors ${
+                      previewSongogdson.includes("busad")
+                        ? "border-theme bg-theme/10"
+                        : "border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] hover:border-[color:var(--ctl-border-hover)]"
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => previewSongoltDarya("busad")}
+                      className="flex min-h-11 w-full items-center gap-3 px-3 py-2.5 text-left text-[13px] text-[color:var(--panel-text)]"
+                    >
+                      <span
+                        className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center border-2 ${
+                          activeQuestion.turul === "olonSongolt" ? "rounded-[5px]" : "rounded-full"
+                        } ${
+                          previewSongogdson.includes("busad")
+                            ? "border-theme bg-theme !text-white"
+                            : "border-[color:var(--ctl-border-hover)]"
+                        }`}
+                      >
+                        {previewSongogdson.includes("busad") &&
+                          (activeQuestion.turul === "olonSongolt" ? (
+                            <Check className="h-3 w-3 stroke-[3]" />
+                          ) : (
+                            <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                          ))}
+                      </span>
+                      Бусад
+                    </button>
+                    {previewSongogdson.includes("busad") && (
+                      <div className="px-3 pb-3">
+                        <input
+                          type="text"
+                          autoFocus
+                          placeholder="Өөрийн хариултыг бичнэ үү..."
+                          className={`${inputCls} h-9 border-[color:var(--ctl-border)]`}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <textarea
+                rows={4}
+                value={previewUtga}
+                onChange={(e) =>
+                  setPreviewAnswers((prev) => ({ ...prev, [pi]: e.target.value }))
+                }
+                placeholder="Хариултаа энд бичнэ үү..."
+                className={`${inputCls} resize-none border-[color:var(--ctl-border)] py-2.5`}
+              />
+            )}
+
+            {activeQuestion.zaavalEsekh && !previewKhariulsan && (
+              <p className="text-[11px] text-[color:var(--muted-text)]">
+                * Заавал хариулах асуулт
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Footer nav */}
+        <div className="flex shrink-0 items-center gap-2 border-t border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] px-4 py-3">
+          <button
+            type="button"
+            disabled={pi === 0}
+            onClick={() => setPreviewQuestionIndex(Math.max(0, pi - 1))}
+            aria-label="Өмнөх асуулт"
+            className={`${btnSecondary} w-10 justify-center !px-0 disabled:cursor-not-allowed`}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          {suuliinAsuult ? (
+            <button
+              type="button"
+              disabled={activeQuestion.zaavalEsekh && !previewKhariulsan}
+              onClick={() => setPreviewIlgeesen(true)}
+              className={`${btnPrimary} h-10 flex-1 justify-center disabled:cursor-not-allowed`}
+            >
+              <Send className="h-4 w-4" />
+              Илгээх
+            </button>
+          ) : (
+            <button
+              type="button"
+              disabled={activeQuestion.zaavalEsekh && !previewKhariulsan}
+              onClick={() => setPreviewQuestionIndex(Math.min(asuultuud.length - 1, pi + 1))}
+              className={`${btnPrimary} h-10 flex-1 justify-center disabled:cursor-not-allowed`}
+            >
+              Дараах
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      </>
+    );
 
     return (
-      <div className="w-full space-y-6 text-[color:var(--panel-text)]">
-        {/* Top Header Bar for Create Mode */}
-        <div className="flex items-center justify-between gap-4 border-b border-[color:var(--surface-border)] pb-4">
-          <div className="flex items-center gap-3">
+      <div className="w-full space-y-4 text-[color:var(--panel-text)]">
+        {/* Header */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
               onClick={() => setGorim("jagsaalt")}
-              className="flex items-center justify-center h-9 w-9 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] transition cursor-pointer"
+              className={`${btnSecondary} w-9 justify-center !px-0`}
+              aria-label="Буцах"
               title="Буцах"
             >
               <ArrowLeft className="h-4 w-4" />
             </button>
-            <h1 className="text-lg font-normal text-[color:var(--panel-text)] dark:text-white">
-              Шинэ санал асуулга үүсгэх
-            </h1>
+            <div className="min-w-0">
+              <h1 className="truncate text-[16px] font-semibold text-[color:var(--panel-text)]">
+                Шинэ санал асуулга үүсгэх
+              </h1>
+              <p className="text-xs text-[color:var(--muted-text)]">
+                Асуултаа бүрдүүлээд баруун талд оршин суугчид хэрхэн харахыг шалгаарай
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* ── Main Split Content Grid ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* ── Left Column: Form Controls (8 Cols) ── */}
-          <div ref={leftColRef} className="lg:col-span-8 space-y-6">
-            {/* Card 1: Санал асуулгын мэдээлэл */}
-            <div className="rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-6 shadow-xs space-y-5">
-              <div className="flex flex-wrap items-center justify-between border-b border-[color:var(--surface-border)] pb-3 gap-3">
-                <h2 className="text-xs font-normal uppercase tracking-wider text-[color:var(--panel-text)] shrink-0">
-                  Санал асуулгын мэдээлэл
+        <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-12">
+          {/* ── Left: form ── */}
+          <div ref={leftColRef} className="space-y-4 xl:col-span-8">
+            {/* Info card */}
+            <section className={`${cardCls} space-y-4 p-5`}>
+              <div>
+                <h2 className="text-[14px] font-semibold text-[color:var(--panel-text)]">
+                  Ерөнхий мэдээлэл
                 </h2>
-                <div className="w-72 shrink-0">
-                  <StandardDatePicker
-                    isRange
-                    value={[ekhlekhOgnoo, duusakhOgnoo]}
-                    onChange={(_dates, dateStrings) => {
-                      setEkhlekhOgnoo(dateStrings[0] || "");
-                      setDuusakhOgnoo(dateStrings[1] || "");
-                    }}
-                    placeholder={["Эхлэх огноо", "Дуусах огноо"]}
-                    className="w-full !h-9 !rounded-xl"
-                  />
-                </div>
+                <p className="mt-0.5 text-xs text-[color:var(--muted-text)]">
+                  Гарчиг, хугацаа болон хэнд харагдахыг тохируулна
+                </p>
               </div>
 
-              {/* Title Input with character counter */}
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-normal text-[color:var(--muted-text)]">
+                <div className="mb-1.5 flex items-center justify-between">
+                  <label
+                    htmlFor="sa-garchig"
+                    className="text-[13px] font-medium text-[color:var(--panel-text)]"
+                  >
                     Гарчиг <span className="text-danger">*</span>
                   </label>
-                  <span className="text-[11px] font-normal text-[color:var(--muted-text)]">
+                  <span className="text-xs tabular-nums text-[color:var(--muted-text)]">
                     {garchig.length}/100
                   </span>
                 </div>
                 <input
+                  id="sa-garchig"
                   value={garchig}
                   maxLength={100}
                   onChange={(e) => setGarchig(e.target.value)}
-                  placeholder="Оршин суугчдын сэтгэл ханамж 2024 оны эхний хагас жил"
-                  className="h-11 w-full rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-3.5 text-xs text-[color:var(--panel-text)] dark:text-white placeholder:text-[color:var(--muted-text)] focus:border-theme focus:outline-none transition shadow-2xs"
+                  placeholder="Жишээ: Оршин суугчдын сэтгэл ханамжийн судалгаа"
+                  className={`${inputCls} h-10 ${
+                    oroldson && !garchig.trim()
+                      ? "border-danger/60"
+                      : "border-[color:var(--ctl-border)]"
+                  }`}
                 />
+                {oroldson && !garchig.trim() && (
+                  <p className="mt-1 flex items-center gap-1 text-xs text-danger">
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    Гарчиг заавал оруулна
+                  </p>
+                )}
               </div>
 
-              {/* Description Input with character counter */}
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-normal text-[color:var(--muted-text)]">
+                <div className="mb-1.5 flex items-center justify-between">
+                  <label
+                    htmlFor="sa-tailbar"
+                    className="text-[13px] font-medium text-[color:var(--panel-text)]"
+                  >
                     Товч тайлбар
                   </label>
-                  <span className="text-[11px] font-normal text-[color:var(--muted-text)]">
+                  <span className="text-xs tabular-nums text-[color:var(--muted-text)]">
                     {tailbar.length}/200
                   </span>
                 </div>
                 <textarea
+                  id="sa-tailbar"
                   value={tailbar}
                   maxLength={200}
                   onChange={(e) => setTailbar(e.target.value)}
                   rows={3}
-                  placeholder="Таны үнэлгээ, санал хүсэлт нь бидний үйлчилгээ, орчныг сайжруулахад чухал нөлөөтэй."
-                  className="w-full resize-none rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-3 text-xs text-[color:var(--panel-text)] dark:text-white placeholder:text-[color:var(--muted-text)] focus:border-theme focus:outline-none transition shadow-2xs"
+                  placeholder="Асуулгын зорилгыг товч тайлбарлана уу. Жишээ: Таны санал үйлчилгээгээ сайжруулахад тусална."
+                  className={`${inputCls} resize-none border-[color:var(--ctl-border)] py-2.5`}
                 />
               </div>
 
-              {/* Building selector filter */}
+              <div>
+                <label className="mb-1.5 block text-[13px] font-medium text-[color:var(--panel-text)]">
+                  Хугацаа
+                </label>
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="w-full sm:w-80">
+                    <StandardDatePicker
+                      isRange
+                      value={[ekhlekhOgnoo, duusakhOgnoo]}
+                      onChange={(_dates, dateStrings) => {
+                        setEkhlekhOgnoo(dateStrings[0] || "");
+                        setDuusakhOgnoo(dateStrings[1] || "");
+                      }}
+                      placeholder={["Эхлэх огноо", "Дуусах огноо"]}
+                      className="w-full !h-10 !rounded-[10px]"
+                    />
+                  </div>
+                  <span className="text-xs text-[color:var(--muted-text)]">
+                    {uldsen !== null
+                      ? uldsenTekst(uldsen)
+                      : "Сонгохгүй бол хаах хүртэл нээлттэй байна"}
+                  </span>
+                </div>
+              </div>
+
               {barilguud.length > 0 && (
                 <div>
-                  <label className="mb-2 block text-xs font-normal text-[color:var(--muted-text)]">
-                    Хамаарах барилга{" "}
-                    <span className="font-normal text-[color:var(--muted-text)]">
-                      (Сонгохгүй бол бүх оршин суугчдад харагдана)
-                    </span>
-                  </label>
+                  <div className="mb-1.5 flex items-center justify-between gap-2">
+                    <label className="text-[13px] font-medium text-[color:var(--panel-text)]">
+                      Хамаарах барилга
+                    </label>
+                    {barilguud.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSongogdsonBarilga((prev) =>
+                            prev.length === barilguud.length
+                              ? []
+                              : barilguud.map((b: any) => b._id)
+                          )
+                        }
+                        className="text-xs text-brand hover:underline"
+                      >
+                        {songogdsonBarilga.length === barilguud.length
+                          ? "Бүгдийг болиулах"
+                          : "Бүгдийг сонгох"}
+                      </button>
+                    )}
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     {barilguud.map((b: any) => {
                       const isSelected = songogdsonBarilga.includes(b._id);
@@ -927,6 +1375,7 @@ export default function SanalAsuulgaPage() {
                         <button
                           key={b._id}
                           type="button"
+                          aria-pressed={isSelected}
                           onClick={() =>
                             setSongogdsonBarilga((prev) =>
                               prev.includes(b._id)
@@ -934,433 +1383,390 @@ export default function SanalAsuulgaPage() {
                                 : [...prev, b._id]
                             )
                           }
-                          className={`rounded-xl px-3 py-1.5 text-xs font-normal transition cursor-pointer ${isSelected
-                            ? "bg-theme text-white shadow-xs"
-                            : "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)] hover:bg-[color:var(--panel)]"
-                            }`}
+                          className={`inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[13px] transition-colors ${
+                            isSelected
+                              ? "border-theme/50 bg-theme/15 font-medium text-brand"
+                              : "border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] text-[color:var(--muted-text)] hover:border-[color:var(--ctl-border-hover)] hover:text-[color:var(--panel-text)]"
+                          }`}
                         >
+                          {isSelected ? (
+                            <Check className="h-3.5 w-3.5" />
+                          ) : (
+                            <Building2 className="h-3.5 w-3.5" />
+                          )}
                           {b.ner}
                         </button>
                       );
                     })}
                   </div>
+                  <p className="mt-1.5 text-xs text-[color:var(--muted-text)]">
+                    {songogdsonBarilga.length === 0
+                      ? "Барилга сонгоогүй тул бүх оршин суугчдад харагдана."
+                      : `Зөвхөн сонгосон ${songogdsonBarilga.length} барилгын оршин суугчдад харагдана.`}
+                  </p>
                 </div>
               )}
-            </div>
+            </section>
 
-            {/* Card 2: Асуулт & хариултууд */}
-            <div className="rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-6 shadow-xs space-y-5">
-              <h2 className="text-xs font-normal uppercase tracking-wider text-[color:var(--panel-text)] border-b border-[color:var(--surface-border)] pb-3">
-                Асуулт & хариултууд
-              </h2>
+            {/* Questions card */}
+            <section className={`${cardCls} space-y-4 p-5`}>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h2 className="text-[14px] font-semibold text-[color:var(--panel-text)]">
+                    Асуултууд
+                  </h2>
+                  <p className="mt-0.5 text-xs text-[color:var(--muted-text)]">
+                    {asuultuud.length} асуулт · бариулаас чирж дарааллыг өөрчилнө
+                  </p>
+                </div>
+                {oroldson && aldaatayToo > 0 && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-danger/10 px-2.5 py-0.5 text-xs text-danger">
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    {aldaatayToo} асуулт дутуу
+                  </span>
+                )}
+              </div>
 
-              <div className="space-y-4">
-                {asuultuud.map((a, i) => (
-                  <div
-                    key={i}
-                    draggable
-                    onDragStart={(e) => handleQuestionDragStart(e, i)}
-                    onDragOver={handleQuestionDragOver}
-                    onDrop={(e) => handleQuestionDrop(e, i)}
-                    onDragEnd={() => setDraggedQuestionIndex(null)}
-                    className={`p-5 rounded-2xl border transition-all ${draggedQuestionIndex === i
-                      ? "opacity-30 border-theme bg-theme/20 scale-[0.99]"
-                      : "border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]"
-                      } space-y-4 relative group`}
-                  >
-                    {/* Question Header Row */}
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="p-1 rounded-lg hover:bg-[color:var(--panel)] cursor-grab active:cursor-grabbing text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] transition shrink-0"
-                        title="Чирж байрлал солих"
-                      >
-                        <GripVertical className="h-4 w-4 shrink-0" />
-                      </div>
-                      <span className="text-xs font-normal text-[color:var(--panel-text)] shrink-0">
-                        {i + 1}.
-                      </span>
-                      <input
-                        value={a.asuult}
-                        onChange={(e) =>
-                          asuultZasya(i, { asuult: e.target.value })
-                        }
-                        placeholder="Асуултын текстаа энд бичнэ үү..."
-                        className="h-10 flex-1 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-3 text-xs font-normal text-[color:var(--panel-text)] dark:text-white focus:border-theme focus:outline-none"
-                      />
-                      {asuultuud.length > 1 && (
+              <div className="space-y-3">
+                {asuultuud.map((a, i) => {
+                  const asuultKhooson = oroldson && !a.asuult.trim();
+                  const songoltDutuu =
+                    oroldson && a.turul !== "tekst" && buglusunSongoltToo(a) < 2;
+                  const idevkhtei = pi === i;
+                  return (
+                    <div
+                      key={i}
+                      draggable={chirekhIdx === i}
+                      onDragStart={(e) => handleQuestionDragStart(e, i)}
+                      onDragOver={handleQuestionDragOver}
+                      onDrop={(e) => handleQuestionDrop(e, i)}
+                      onDragEnd={() => {
+                        setDraggedQuestionIndex(null);
+                        setChirekhIdx(null);
+                      }}
+                      onFocusCapture={() => setPreviewQuestionIndex(i)}
+                      onClick={() => setPreviewQuestionIndex(i)}
+                      className={`space-y-3 rounded-2xl border bg-[color:var(--surface-bg)] p-4 transition-colors ${
+                        draggedQuestionIndex === i
+                          ? "border-theme opacity-40"
+                          : asuultKhooson || songoltDutuu
+                          ? "border-danger/40"
+                          : idevkhtei
+                          ? "border-theme/50 ring-2 ring-theme/10"
+                          : "border-[color:var(--ctl-border)] hover:border-[color:var(--ctl-border-hover)]"
+                      }`}
+                    >
+                      {/* Header */}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          onMouseDown={() => setChirekhIdx(i)}
+                          onMouseUp={() => setChirekhIdx(null)}
+                          className="-ml-1 cursor-grab rounded-md p-1 text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] hover:text-[color:var(--panel-text)] active:cursor-grabbing"
+                          title="Чирж байрлал солих"
+                        >
+                          <GripVertical className="h-4 w-4" />
+                        </span>
+                        <span className="flex h-7 min-w-7 items-center justify-center rounded-lg bg-theme/15 px-1.5 text-xs font-semibold text-brand">
+                          {i + 1}
+                        </span>
+                        <select
+                          value={a.turul}
+                          onChange={(e) =>
+                            asuultZasya(i, { turul: e.target.value as AsuultiinTurul })
+                          }
+                          aria-label="Асуултын төрөл"
+                          className="ml-auto h-9 cursor-pointer rounded-[10px] border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] px-3 text-[13px] text-[color:var(--panel-text)] focus:border-theme focus:outline-none focus:ring-2 focus:ring-theme/20"
+                        >
+                          <option value="songolt">Нэг сонголттой</option>
+                          <option value="olonSongolt">Олон сонголттой</option>
+                          <option value="tekst">Чөлөөт текст хариулт</option>
+                        </select>
                         <button
                           type="button"
-                          onClick={() =>
-                            setAsuultuud((prev) =>
-                              prev.filter((_, idx) => idx !== i)
-                            )
-                          }
-                          className="p-2 rounded-xl text-[color:var(--muted-text)] hover:text-danger hover:bg-danger/10 transition cursor-pointer"
-                          title="Асуулт устгах"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            asuultKhuulya(i);
+                          }}
+                          className={`${btnSecondary} w-9 justify-center !px-0 text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]`}
+                          title="Асуулт хувилах"
+                          aria-label="Асуулт хувилах"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={asuultuud.length <= 1}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            asuultUstgaya(i);
+                          }}
+                          className={`${btnSecondary} w-9 justify-center !px-0 text-[color:var(--muted-text)] hover:text-danger disabled:cursor-not-allowed`}
+                          title={asuultuud.length <= 1 ? "Дор хаяж 1 асуулт шаардлагатай" : "Асуулт устгах"}
+                          aria-label="Асуулт устгах"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
-                      )}
-                    </div>
+                      </div>
 
-                    {/* Question Type Selector */}
-                    <div className="pl-6">
-                      <select
-                        value={a.turul}
-                        onChange={(e) =>
-                          asuultZasya(i, {
-                            turul: e.target.value as AsuultiinTurul,
-                          })
-                        }
-                        className="h-9 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-3 text-xs font-normal text-[color:var(--panel-text)] focus:border-theme focus:outline-none cursor-pointer"
-                      >
-                        <option value="songolt">
-                          Сонголттой (нэг сонголт)
-                        </option>
-                        <option value="olonSongolt">
-                          Олон сонголттой
-                        </option>
-                        <option value="tekst">Чөлөөт текст хариулт</option>
-                      </select>
-                    </div>
-
-                    {/* Options Row for Choices */}
-                    {a.turul !== "tekst" && (
-                      <div className="pl-6 space-y-2.5">
-                        {a.songoltuud.map((s, si) => (
-                          <div
-                            key={si}
-                            className="flex items-center gap-2.5"
-                          >
-                            <Circle className="h-3.5 w-3.5 text-[color:var(--muted-text)] shrink-0" />
-                            <input
-                              value={s}
-                              onChange={(e) =>
-                                songoltZasya(i, si, e.target.value)
-                              }
-                              placeholder={`Сонголт ${si + 1}`}
-                              className="h-9 flex-1 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-3 text-xs text-[color:var(--panel-text)] dark:text-white focus:border-theme focus:outline-none"
-                            />
-                            {a.songoltuud.length > 2 && (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  asuultZasya(i, {
-                                    songoltuud: a.songoltuud.filter(
-                                      (_, j) => j !== si
-                                    ),
-                                  })
-                                }
-                                className="p-1 text-[color:var(--muted-text)] hover:text-danger transition cursor-pointer"
-                              >
-                                <X className="h-4 w-4" />
-                              </button>
-                            )}
-                          </div>
-                        ))}
-
-                        {/* Custom Writing Item Preview when busadTekst is checked */}
-                        {a.busadTekst && (
-                          <div className="flex items-center gap-2.5 pt-0.5">
-                            <Circle className="h-3.5 w-3.5 text-[color:var(--muted-text)] shrink-0" />
-                            <div className="h-9 flex-1 flex items-center gap-2 rounded-xl border border-dashed border-theme/60 bg-theme/40 px-3 text-xs text-brand">
-                              <span className="font-normal shrink-0">Бусад:</span>
-                              <input
-                                disabled
-                                readOnly
-                                value=""
-                                placeholder="Оршин суугч өөрийн хариултыг гараар бичих хэсэг..."
-                                className="w-full bg-transparent text-xs text-[color:var(--muted-text)] placeholder:text-[color:var(--muted-text)] focus:outline-none cursor-not-allowed italic"
-                              />
-                            </div>
-                          </div>
+                      {/* Question text */}
+                      <div>
+                        <input
+                          value={a.asuult}
+                          onChange={(e) => asuultZasya(i, { asuult: e.target.value })}
+                          placeholder="Асуултын текстээ энд бичнэ үү..."
+                          aria-label={`Асуулт ${i + 1}`}
+                          className={`${inputCls} h-10 font-medium ${
+                            asuultKhooson ? "border-danger/60" : "border-[color:var(--ctl-border)]"
+                          }`}
+                        />
+                        {asuultKhooson && (
+                          <p className="mt-1 flex items-center gap-1 text-xs text-danger">
+                            <AlertCircle className="h-3.5 w-3.5" />
+                            Асуултын текст оруулна уу
+                          </p>
                         )}
+                      </div>
 
-                        {/* Option Actions */}
-                        <div className="flex flex-wrap items-center gap-3 pt-1">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              asuultZasya(i, {
-                                songoltuud: [...a.songoltuud, ""],
-                              })
-                            }
-                            className="text-xs font-normal text-brand hover:underline cursor-pointer"
-                          >
-                            + Сонголт нэмэх
-                          </button>
+                      {/* Options */}
+                      {a.turul !== "tekst" ? (
+                        <div className="space-y-2">
+                          {a.songoltuud.map((s, si) => {
+                            const khooson = songoltDutuu && !s.trim();
+                            return (
+                              <div key={si} className="group flex items-center gap-2">
+                                <span
+                                  className={`flex h-6 w-6 shrink-0 items-center justify-center text-[11px] font-medium text-[color:var(--muted-text)] ${
+                                    a.turul === "olonSongolt"
+                                      ? "rounded-md border border-[color:var(--ctl-border-hover)]"
+                                      : "rounded-full border border-[color:var(--ctl-border-hover)]"
+                                  }`}
+                                >
+                                  {si + 1}
+                                </span>
+                                <input
+                                  value={s}
+                                  onChange={(e) => songoltZasya(i, si, e.target.value)}
+                                  placeholder={`Сонголт ${si + 1}`}
+                                  className={`${inputCls} h-9 flex-1 ${
+                                    khooson ? "border-danger/60" : "border-[color:var(--ctl-border)]"
+                                  }`}
+                                />
+                                <button
+                                  type="button"
+                                  disabled={a.songoltuud.length <= 2}
+                                  onClick={() =>
+                                    asuultZasya(i, {
+                                      songoltuud: a.songoltuud.filter((_, j) => j !== si),
+                                    })
+                                  }
+                                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[color:var(--muted-text)] transition-colors hover:bg-danger/10 hover:text-danger disabled:pointer-events-none disabled:opacity-0"
+                                  aria-label="Сонголт устгах"
+                                  title="Сонголт устгах"
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
+                              </div>
+                            );
+                          })}
 
-                          <label className="flex items-center gap-1.5 text-xs text-[color:var(--muted-text)] cursor-pointer select-none">
-                            <input
-                              type="checkbox"
-                              checked={!!a.busadTekst}
-                              onChange={(e) =>
-                                asuultZasya(i, {
-                                    busadTekst: e.target.checked,
-                                })
+                          {a.busadTekst && (
+                            <div className="flex items-center gap-2">
+                              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-dashed border-[color:var(--ctl-border-hover)] text-[11px] text-[color:var(--muted-text)]">
+                                …
+                              </span>
+                              <div className="flex h-9 flex-1 items-center rounded-[10px] border border-dashed border-[color:var(--ctl-border-hover)] px-3 text-[13px] text-[color:var(--muted-text)]">
+                                Бусад: оршин суугч өөрөө бичнэ
+                              </div>
+                              <span className="h-8 w-8 shrink-0" />
+                            </div>
+                          )}
+
+                          {songoltDutuu && (
+                            <p className="flex items-center gap-1 text-xs text-danger">
+                              <AlertCircle className="h-3.5 w-3.5" />
+                              Дор хаяж 2 сонголт бөглөнө үү
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="flex h-16 items-start rounded-[10px] border border-dashed border-[color:var(--ctl-border-hover)] px-3 py-2.5 text-[13px] text-[color:var(--muted-text)]">
+                          Оршин суугч хариултаа чөлөөт текстээр бичнэ
+                        </div>
+                      )}
+
+                      {/* Footer */}
+                      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-[color:var(--ctl-border)] pt-3">
+                        {a.turul !== "tekst" && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                asuultZasya(i, { songoltuud: [...a.songoltuud, ""] })
                               }
-                              className="h-3.5 w-3.5 accent-theme rounded"
+                              className="inline-flex items-center gap-1 text-[13px] font-medium text-brand hover:underline"
+                            >
+                              <Plus className="h-4 w-4" />
+                              Сонголт нэмэх
+                            </button>
+                            <Toggle
+                              checked={!!a.busadTekst}
+                              onChange={(v) => asuultZasya(i, { busadTekst: v })}
+                              label="Бусад (текст хариулт)"
                             />
-                            <span>Бусад (текст хариулт)</span>
-                          </label>
+                          </>
+                        )}
+                        <div className="ml-auto">
+                          <Toggle
+                            checked={a.zaavalEsekh}
+                            onChange={(v) => asuultZasya(i, { zaavalEsekh: v })}
+                            label="Заавал хариулах"
+                          />
                         </div>
                       </div>
-                    )}
-                  </div>
-                ))}
+                    </div>
+                  );
+                })}
               </div>
-            </div>
-
-            {/* Bottom 80/20 Action Bar: Add Question (80%) & Save & Publish (20%) */}
-            <div className="grid grid-cols-10 gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() =>
-                  setAsuultuud((prev) => [
-                    ...prev,
-                    shineAsuult(),
-                  ])
-                }
-                className="col-span-8 flex items-center justify-center gap-2 py-3.5 rounded-2xl border-2 border-dashed border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] text-xs font-normal text-[color:var(--panel-text)] hover:text-brand dark:hover:text-brand hover:border-theme hover:bg-theme/10 transition cursor-pointer shadow-2xs"
-              >
-                <Plus className="h-4 w-4 shrink-0" />
-                <span>Асуулт нэмэх</span>
-              </button>
 
               <button
                 type="button"
-                onClick={() => khadgalya(true)}
-                disabled={khadgalj}
-                className="col-span-2 flex items-center justify-center gap-1.5 rounded-2xl bg-theme hover:bg-theme active:scale-95 px-3 py-3.5 text-xs font-normal text-white transition duration-150 shadow-lg shadow-theme/25 disabled:opacity-50 cursor-pointer text-center whitespace-nowrap"
+                onClick={() => {
+                  setAsuultuud((prev) => [...prev, shineAsuult()]);
+                  setPreviewQuestionIndex(asuultuud.length);
+                }}
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-[color:var(--ctl-border-hover)] text-[13px] font-medium text-[color:var(--muted-text)] transition-colors hover:border-theme hover:bg-theme/5 hover:text-brand"
               >
-                <span>Хадгалах</span>
-                <ChevronRight className="h-4 w-4 shrink-0" />
+                <Plus className="h-4 w-4" />
+                Асуулт нэмэх
               </button>
+            </section>
+
+            {/* Sticky action bar */}
+            <div
+              className={`${cardCls} sticky bottom-3 z-20 flex flex-wrap items-center gap-2 p-3`}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  setAsuultuud((prev) => [...prev, shineAsuult()]);
+                  setPreviewQuestionIndex(asuultuud.length);
+                }}
+                className={btnSecondary}
+              >
+                <Plus className="h-4 w-4" />
+                Асуулт нэмэх
+              </button>
+              <span className="hidden text-xs text-[color:var(--muted-text)] sm:inline">
+                {asuultuud.length} асуулт
+              </span>
+              <div className="ml-auto flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setGorim("jagsaalt")}
+                  className={`${btnSecondary} hidden md:inline-flex`}
+                >
+                  Болих
+                </button>
+                <button
+                  type="button"
+                  onClick={() => hadgalakh(false)}
+                  disabled={khadgalj}
+                  className={btnSecondary}
+                >
+                  Ноорог хадгалах
+                </button>
+                <button
+                  type="button"
+                  onClick={() => hadgalakh(true)}
+                  disabled={khadgalj}
+                  className={btnPrimary}
+                >
+                  {khadgalj ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                  Нийтлэх
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* ── Right Column: Live Interactive Device Preview Panel (4 Cols) ── */}
+          {/* ── Right: live preview ── */}
           <div
             ref={rightColRef}
-            style={{
-              transform: `translate3d(0, ${previewTranslateY}px, 0)`,
-            }}
-            className="lg:col-span-4 space-y-3 transition-transform duration-75 ease-out z-20"
+            style={{ transform: `translate3d(0, ${previewTranslateY}px, 0)` }}
+            className="z-10 transition-transform duration-75 ease-out xl:col-span-4"
           >
-
-            {/* Authentic iPhone 16 / 17 Device Container */}
-            <div className="relative mx-auto w-full max-w-[320px]">
-              {/* Main Phone Body with realistic 640px iPhone height */}
-              <div className="relative z-10 w-full h-[640px] rounded-[44px] border-[8px] border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-3.5 pt-7 pb-3 shadow-2xl flex flex-col justify-between overflow-hidden box-border">
-                {/* Top Dynamic Island / Pill Cutout */}
-                <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-24 h-4 bg-[color:var(--panel)] rounded-full flex items-center justify-between px-2 z-30 shadow-xs">
-                  <div className="h-1.5 w-1.5 rounded-full bg-[color:var(--panel)]" />
-                  <div className="h-1.5 w-1.5 rounded-full bg-theme/80" />
+            <div className={`${cardCls} space-y-4 p-4`}>
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <h2 className="text-[14px] font-semibold text-[color:var(--panel-text)]">
+                    Урьдчилан харах
+                  </h2>
+                  <p className="text-xs text-[color:var(--muted-text)]">
+                    Оршин суугчид ингэж харна
+                  </p>
                 </div>
-
-                {/* Phone Status Bar */}
-                <div className="flex items-center justify-between px-1 text-[9px] font-normal text-[color:var(--muted-text)] pt-0.5 shrink-0">
-                  <span>09:41</span>
-                  <div className="flex items-center gap-1">
-                    <span>5G</span>
-                    <div className="w-3.5 h-1.5 rounded-xs border border-[color:var(--surface-border)] flex items-center p-0.5">
-                      <div className="h-full w-1.5 bg-[color:var(--panel)] rounded-xs" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Scrollable Screen Body Area */}
-                <div className="flex-1 overflow-y-auto pr-0.5 space-y-3 scrollbar-none">
-                  {/* Status Badges Row */}
-                  <div className="flex items-center justify-between gap-1.5">
-                    <span className="px-2 py-0.5 text-[9px] font-normal rounded-full bg-warning/10 text-warning">
-                      Явагдаж байна
-                    </span>
-                    <span className="text-[9px] font-normal text-warning flex items-center gap-1">
-                      <Clock className="h-2.5 w-2.5" />
-                      Дуусахад 5 хоног үлдлээ
-                    </span>
-                  </div>
-
-                  {/* Live Title & Description */}
-                  <div className="space-y-1">
-                    <h4 className="text-xs font-normal text-[color:var(--panel-text)] dark:text-white leading-snug">
-                      {garchig || "Оршин суугчдын сэтгэл ханамж 2024"}
-                    </h4>
-                    <p className="text-[11px] text-[color:var(--muted-text)] leading-relaxed">
-                      {tailbar ||
-                        "Таны үнэлгээ, санал хүсэлт нь бидний үйлчилгээ, орчныг сайжруулахад чухал нөлөөтэй."}
-                    </p>
-                  </div>
-
-                  {/* Metadata Grid Cards */}
-                  <div className="grid grid-cols-2 gap-1.5 p-2 rounded-xl bg-[color:var(--surface-hover)] border border-[color:var(--surface-border)] text-[10px]">
-                    <div>
-                      <span className="block text-[8px] font-normal text-[color:var(--muted-text)] uppercase">
-                        Эхлэх огноо
-                      </span>
-                      <span className="font-normal text-[color:var(--panel-text)]">
-                        {ognooTsagFormat(ekhlekhOgnoo)}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="block text-[8px] font-normal text-[color:var(--muted-text)] uppercase">
-                        Дуусах огноо
-                      </span>
-                      <span className="font-normal text-[color:var(--panel-text)]">
-                        {ognooTsagFormat(duusakhOgnoo)}
-                      </span>
-                    </div>
-                    <div className="col-span-2 pt-1 border-t border-[color:var(--surface-border)] flex items-center justify-between">
-                      <span className="text-[9px] font-normal text-[color:var(--muted-text)]">
-                        👥 Оролцогч:
-                      </span>
-                      <span className="font-normal text-brand">
-                        {songogdsonBarilga.length > 0
-                          ? `${songogdsonBarilga.length} барилга`
-                          : "2,468 эрх (Бүгд)"}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Divider Line */}
-                  <div className="border-b border-[color:var(--surface-border)]" />
-
-                  {/* Live Interactive Question Render */}
-                  <div className="space-y-2.5">
-                    <h5 className="text-[11px] font-normal text-[color:var(--panel-text)] dark:text-white">
-                      {previewQuestionIndex + 1}.{" "}
-                      {activeQuestion.asuult || "Асуултын текст..."}
-                    </h5>
-
-                    {activeQuestion.turul !== "tekst" ? (
-                      <div className="space-y-1.5">
-                        {activeQuestion.songoltuud.map((opt, optIdx) => {
-                          const isSelected =
-                            previewAnswers[previewQuestionIndex] === opt;
-                          return (
-                            <div
-                              key={optIdx}
-                              onClick={() =>
-                                setPreviewAnswers((prev) => ({
-                                  ...prev,
-                                  [previewQuestionIndex]: opt,
-                                }))
-                              }
-                              className={`flex items-center gap-2 p-2 rounded-xl border text-[11px] font-normal cursor-pointer transition ${isSelected
-                                ? "border-theme bg-theme/50 text-brand font-normal"
-                                : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] hover:border-[color:var(--surface-border)]"
-                                }`}
-                            >
-                              <div
-                                className={`h-3.5 w-3.5 rounded-full border flex items-center justify-center shrink-0 ${isSelected
-                                  ? "border-theme bg-theme text-white"
-                                  : "border-[color:var(--surface-border)]"
-                                  }`}
-                              >
-                                {isSelected && (
-                                  <Check className="h-2 w-2 stroke-[3]" />
-                                )}
-                              </div>
-                              <span className="truncate">
-                                {opt || `Хувилбар ${optIdx + 1}`}
-                              </span>
-                            </div>
-                          );
-                        })}
-
-                        {/* Custom Writing Option Item in Phone Preview when busadTekst is enabled */}
-                        {activeQuestion.busadTekst && (
-                          <div
-                            onClick={() =>
-                              setPreviewAnswers((prev) => ({
-                                ...prev,
-                                [previewQuestionIndex]: "Бусад",
-                              }))
-                            }
-                            className={`flex flex-col gap-1.5 p-2 rounded-xl border text-[11px] font-normal cursor-pointer transition ${
-                              previewAnswers[previewQuestionIndex]?.startsWith("Бусад")
-                                ? "border-theme bg-theme/50 text-brand font-normal"
-                                : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] hover:border-[color:var(--surface-border)]"
-                            }`}
-                          >
-                            <div className="flex items-center gap-2">
-                              <div
-                                className={`h-3.5 w-3.5 rounded-full border flex items-center justify-center shrink-0 ${
-                                  previewAnswers[previewQuestionIndex]?.startsWith("Бусад")
-                                    ? "border-theme bg-theme text-white"
-                                    : "border-[color:var(--surface-border)]"
-                                }`}
-                              >
-                                {previewAnswers[previewQuestionIndex]?.startsWith("Бусад") && (
-                                  <Check className="h-2 w-2 stroke-[3]" />
-                                )}
-                              </div>
-                              <span>Бусад (бусад утга бичих)</span>
-                            </div>
-                            {previewAnswers[previewQuestionIndex]?.startsWith("Бусад") && (
-                              <input
-                                type="text"
-                                placeholder="Хариултаа бичнэ үү..."
-                                onClick={(e) => e.stopPropagation()}
-                                className="w-full h-7 px-2 text-[10px] rounded-lg border border-theme/30 bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] dark:text-white focus:outline-none"
-                              />
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <textarea
-                        rows={2}
-                        placeholder="Хариултаа энд бичнэ үү..."
-                        className="w-full rounded-xl border border-[color:var(--surface-border)] p-2 text-[11px] bg-[color:var(--surface-hover)] text-[color:var(--panel-text)] dark:text-white"
-                      />
-                    )}
-
-                    {/* Mock Submit Button */}
+                <div className="flex shrink-0 items-center rounded-[10px] border border-[color:var(--ctl-border)] p-0.5">
+                  {(
+                    [
+                      ["mobile", Smartphone, "Утас"],
+                      ["desktop", Monitor, "Дэлгэц"],
+                    ] as const
+                  ).map(([key, Icon, ner]) => (
                     <button
+                      key={key}
                       type="button"
-                      className="w-full py-2 rounded-xl bg-theme text-white font-normal text-[11px] shadow-sm shadow-theme/20 active:scale-95 transition cursor-pointer"
+                      onClick={() => setPreviewDevice(key)}
+                      aria-label={ner}
+                      title={ner}
+                      className={`flex h-7 w-8 items-center justify-center rounded-lg transition-colors ${
+                        previewDevice === key
+                          ? "bg-theme/15 text-brand"
+                          : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+                      }`}
                     >
-                      Илгээх
+                      <Icon className="h-4 w-4" />
                     </button>
-                  </div>
-
-                  {/* Pagination Switcher for Preview Questions */}
-                  {asuultuud.length > 1 && (
-                    <div className="flex items-center justify-center gap-2 pt-1.5 border-t border-[color:var(--surface-border)] text-[10px] font-normal text-[color:var(--muted-text)]">
-                      <button
-                        type="button"
-                        disabled={previewQuestionIndex === 0}
-                        onClick={() =>
-                          setPreviewQuestionIndex((prev) => Math.max(0, prev - 1))
-                        }
-                        className="p-1 rounded-lg hover:bg-[color:var(--surface-hover)] disabled:opacity-30 cursor-pointer"
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </button>
-                      <span>
-                        {previewQuestionIndex + 1} / {asuultuud.length}
-                      </span>
-                      <button
-                        type="button"
-                        disabled={previewQuestionIndex === asuultuud.length - 1}
-                        onClick={() =>
-                          setPreviewQuestionIndex((prev) =>
-                            Math.min(asuultuud.length - 1, prev + 1)
-                          )
-                        }
-                        className="p-1 rounded-lg hover:bg-[color:var(--surface-hover)] disabled:opacity-30 cursor-pointer"
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </button>
-                    </div>
-                  )}
+                  ))}
                 </div>
-
-                {/* Bottom iOS Home Indicator Pill */}
-                <div className="w-28 h-1 bg-[color:var(--panel)] rounded-full mx-auto shrink-0 mt-1" />
               </div>
+
+              {mobile ? (
+                <div className="relative mx-auto w-full max-w-[310px]">
+                  <div className="relative flex h-[620px] w-full flex-col overflow-hidden rounded-[42px] border-[7px] border-[color:var(--ctl-border-hover)] bg-[color:var(--surface-bg)] shadow-[var(--ctl-shadow)]">
+                    {/* Dynamic island */}
+                    <div className="absolute left-1/2 top-2 z-30 h-5 w-24 -translate-x-1/2 rounded-full bg-[color:var(--panel-text)] opacity-90" />
+                    {/* Status bar */}
+                    <div className="flex shrink-0 items-center justify-between px-6 pb-1 pt-2.5 text-[10px] font-medium text-[color:var(--panel-text)]">
+                      <span>09:41</span>
+                      <span>5G</span>
+                    </div>
+                    {/* App bar */}
+                    <div className="flex shrink-0 items-center gap-2 border-b border-[color:var(--ctl-border)] px-3 py-2.5">
+                      <ChevronLeft className="h-4 w-4 text-[color:var(--muted-text)]" />
+                      <span className="text-[13px] font-medium text-[color:var(--panel-text)]">
+                        Санал асуулга
+                      </span>
+                    </div>
+                    {previewScreen}
+                    <div className="mx-auto mb-2 mt-1 h-1 w-24 shrink-0 rounded-full bg-[color:var(--panel-text)] opacity-30" />
+                  </div>
+                </div>
+              ) : (
+                <div className="flex min-h-[520px] flex-col overflow-hidden rounded-xl border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)]">
+                  <div className="flex shrink-0 items-center gap-1.5 border-b border-[color:var(--ctl-border)] bg-[color:var(--surface-hover)] px-3 py-2">
+                    <span className="h-2.5 w-2.5 rounded-full bg-danger/60" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-warning/60" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-success/60" />
+                    <span className="ml-2 text-[11px] text-[color:var(--muted-text)]">
+                      Санал асуулга
+                    </span>
+                  </div>
+                  {previewScreen}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1371,137 +1777,266 @@ export default function SanalAsuulgaPage() {
   /* ── Үр дүн харах ─────────────────────────────────────────────────── */
 
   if (gorim === "dun") {
+    const uldsen = uldsenKhonog(songogdsonAsuulga?.duusakhOgnoo);
+    const dunKpi = [
+      { label: "Нийт хариулт", value: String(dun?.niitKhariult || 0) },
+      {
+        label: "Асуулт",
+        value: String(dun?.asuultuud?.length ?? songogdsonAsuulga?.asuultuud?.length ?? 0),
+      },
+      {
+        label: "Хугацаа",
+        value:
+          songogdsonAsuulga?.ekhlekhOgnoo || songogdsonAsuulga?.duusakhOgnoo
+            ? `${ognooFormat(songogdsonAsuulga?.ekhlekhOgnoo)} — ${ognooFormat(
+                songogdsonAsuulga?.duusakhOgnoo
+              )}`
+            : "Заагаагүй",
+        small: true,
+      },
+      {
+        label: "Үлдсэн хугацаа",
+        value:
+          songogdsonAsuulga?.tuluv === "duussan"
+            ? "Дууссан"
+            : uldsen === null
+            ? "—"
+            : uldsen < 0
+            ? "Дууссан"
+            : `${uldsen} хоног`,
+        small: true,
+      },
+    ];
+
     return (
-      <div className="w-full space-y-6 p-4 sm:p-6 lg:p-8 text-[color:var(--panel-text)]">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[color:var(--surface-border)] pb-4">
-          <div className="flex items-center gap-3">
+      <div className="w-full space-y-4 p-4 text-[color:var(--panel-text)] sm:p-6">
+        {/* Header */}
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex min-w-0 items-start gap-3">
             <button
+              type="button"
               onClick={() => setGorim("jagsaalt")}
               aria-label="Буцах"
-              className="rounded-xl p-2 text-[color:var(--muted-text)] transition hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/10 cursor-pointer"
+              title="Буцах"
+              className={`${btnSecondary} w-9 shrink-0 justify-center !px-0`}
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-4 w-4" />
             </button>
-            <div>
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <h1 className="text-xl font-normal tracking-tight text-[color:var(--panel-text)] dark:text-white">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-[16px] font-semibold text-[color:var(--panel-text)]">
                   {songogdsonAsuulga?.garchig}
                 </h1>
-                {songogdsonAsuulga && (
-                  <StatusBadge tuluv={songogdsonAsuulga.tuluv} />
-                )}
+                {songogdsonAsuulga && <StatusBadge tuluv={songogdsonAsuulga.tuluv} />}
               </div>
-              <p className="text-xs text-[color:var(--muted-text)] mt-1">
-                Нийт {dun?.niitKhariult || 0} оршин суугч хариулт өгсөн байна
-              </p>
+              {songogdsonAsuulga?.tailbar && (
+                <p className="mt-0.5 line-clamp-2 text-xs text-[color:var(--muted-text)]">
+                  {songogdsonAsuulga.tailbar}
+                </p>
+              )}
             </div>
           </div>
 
-          {songogdsonAsuulga?.tuluv === "idevkhtei" && (
-            <button
-              type="button"
-              onClick={() => songogdsonAsuulga && tuluvSolyo(songogdsonAsuulga, "duussan")}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-theme/30 bg-theme/10 text-xs font-normal text-brand hover:bg-theme/10 dark:hover:bg-theme/50 transition cursor-pointer self-start sm:self-auto shadow-2xs"
-            >
-              <CheckCircle2 className="h-4 w-4 text-brand" />
-              <span>Санал асуулга дуусгах</span>
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {songogdsonAsuulga?.tuluv === "noots" && (
+              <button
+                type="button"
+                onClick={() => tuluvSolyo(songogdsonAsuulga, "idevkhtei")}
+                className={btnPrimary}
+              >
+                <Send className="h-4 w-4" />
+                Нийтлэх
+              </button>
+            )}
+            {songogdsonAsuulga?.tuluv === "idevkhtei" && (
+              <button
+                type="button"
+                onClick={() => tuluvSolyo(songogdsonAsuulga, "duussan")}
+                className={btnSecondary}
+              >
+                <CheckCircle2 className="h-4 w-4 text-success" />
+                Санал асуулга дуусгах
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* KPI */}
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {dunKpi.map((k) => (
+            <div key={k.label} className={`${cardCls} px-5 py-4`}>
+              <div
+                className={`font-semibold leading-tight text-[color:var(--panel-text)] ${
+                  k.small ? "text-[15px] leading-8" : "text-2xl"
+                }`}
+              >
+                {k.value}
+              </div>
+              <div className="mt-1 text-xs text-[color:var(--muted-text)]">{k.label}</div>
+            </div>
+          ))}
         </div>
 
         {dunAchaalj ? (
           <div className="flex justify-center py-24">
             <Loader2 className="h-7 w-7 animate-spin text-brand" />
           </div>
+        ) : !dun || !dun.asuultuud?.length ? (
+          <div className={`${cardCls} flex flex-col items-center gap-2 px-6 py-16 text-center`}>
+            <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-theme/10 text-brand">
+              <BarChart3 className="h-6 w-6" />
+            </div>
+            <p className="text-[14px] font-medium">Үр дүн алга</p>
+            <p className="text-xs text-[color:var(--muted-text)]">
+              Оршин суугчид хариулт өгсний дараа энд нэгтгэл харагдана.
+            </p>
+          </div>
         ) : (
-          <div className="grid gap-6 lg:grid-cols-12 items-start">
-            {/* Left: Consolidated Questions Stats */}
-            <div className="lg:col-span-7 space-y-4">
-              {dun?.asuultuud.map((a, i) => (
-                <div
-                  key={a.asuultiinId}
-                  className="rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-5 shadow-xs space-y-4"
-                >
-                  <h3 className="text-sm font-normal text-[color:var(--panel-text)] dark:text-white">
-                    {i + 1}. {a.asuult}
-                  </h3>
-
-                  {a.turul !== "tekst" ? (
-                    <div className="space-y-3">
-                      {Object.entries(a.toolol || {}).map(([opt, count]) => {
-                        const pct =
-                          a.khariulsanToo > 0
-                            ? Math.round((count / a.khariulsanToo) * 100)
-                            : 0;
-
-                        return (
-                          <div key={opt} className="space-y-1">
-                            <div className="flex items-center justify-between text-xs font-normal">
-                              <span className="text-[color:var(--panel-text)]">
-                                {opt}
-                              </span>
-                              <span className="text-brand">
-                                {count} ({pct}%)
-                              </span>
-                            </div>
-                            <div className="h-2 w-full rounded-full bg-[color:var(--surface-hover)] overflow-hidden">
-                              <div
-                                style={{ width: `${pct}%` }}
-                                className="h-full rounded-full bg-theme transition-all duration-500"
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
+          <div className="grid items-start gap-4 lg:grid-cols-12">
+            {/* Per-question stats */}
+            <div className="space-y-3 lg:col-span-7 xl:col-span-8">
+              {dun.asuultuud.map((a, i) => {
+                const entries = Object.entries(a.toolol || {});
+                const maxToo = entries.reduce((m, [, c]) => Math.max(m, c), 0);
+                return (
+                  <section key={a.asuultiinId} className={`${cardCls} space-y-4 p-5`}>
+                    <div className="flex items-start gap-3">
+                      <span className="flex h-7 min-w-7 shrink-0 items-center justify-center rounded-lg bg-theme/15 px-1.5 text-xs font-semibold text-brand">
+                        {i + 1}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-[14px] font-medium leading-snug text-[color:var(--panel-text)]">
+                          {a.asuult}
+                        </h3>
+                        <p className="mt-0.5 text-xs text-[color:var(--muted-text)]">
+                          {a.turul === "songolt"
+                            ? "Нэг сонголттой"
+                            : a.turul === "olonSongolt"
+                            ? "Олон сонголттой"
+                            : "Чөлөөт текст"}{" "}
+                          · {a.khariulsanToo} хариулт
+                        </p>
+                      </div>
                     </div>
-                  ) : (
-                    <div className="max-h-48 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-                      {a.tekstuud.map((t, idx) => (
-                        <div
-                          key={idx}
-                          className="p-2.5 rounded-xl bg-[color:var(--surface-hover)] text-xs border border-[color:var(--surface-border)]"
-                        >
-                          <div className="flex items-center justify-between font-normal text-[color:var(--panel-text)] mb-1">
-                            <span>{t.orshinSuugchNer}</span>
-                            <span className="text-[10px] text-[color:var(--muted-text)]">
-                              {t.toot} тоот
-                            </span>
-                          </div>
-                          <p className="text-[color:var(--muted-text)]">
-                            {t.tekst}
-                          </p>
+
+                    {a.turul !== "tekst" ? (
+                      entries.length === 0 ? (
+                        <p className="text-xs text-[color:var(--muted-text)]">Хариулт алга</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {entries.map(([opt, count]) => {
+                            const pct =
+                              a.khariulsanToo > 0
+                                ? Math.round((count / a.khariulsanToo) * 100)
+                                : 0;
+                            const terguun = count > 0 && count === maxToo;
+                            return (
+                              <div key={opt} className="space-y-1.5">
+                                <div className="flex items-center justify-between gap-3 text-[13px]">
+                                  <span
+                                    className={`min-w-0 break-words ${
+                                      terguun ? "font-medium" : ""
+                                    } text-[color:var(--panel-text)]`}
+                                  >
+                                    {opt}
+                                  </span>
+                                  <span className="shrink-0 tabular-nums text-[color:var(--muted-text)]">
+                                    {count} ·{" "}
+                                    <span
+                                      className={
+                                        terguun
+                                          ? "font-medium text-brand"
+                                          : "text-[color:var(--panel-text)]"
+                                      }
+                                    >
+                                      {pct}%
+                                    </span>
+                                  </span>
+                                </div>
+                                <div className="h-2 w-full overflow-hidden rounded-full bg-[color:var(--surface-hover)]">
+                                  <div
+                                    style={{ width: `${pct}%` }}
+                                    className={`h-full rounded-full transition-all duration-500 ${
+                                      terguun ? "bg-theme" : "bg-theme/50"
+                                    }`}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
+                      )
+                    ) : a.tekstuud.length === 0 ? (
+                      <p className="text-xs text-[color:var(--muted-text)]">Хариулт алга</p>
+                    ) : (
+                      <div className="custom-scrollbar max-h-64 space-y-2 overflow-y-auto pr-1">
+                        {a.tekstuud.map((t, idx) => (
+                          <div
+                            key={idx}
+                            className="rounded-xl border border-[color:var(--ctl-border)] bg-[color:var(--surface-hover)] p-3"
+                          >
+                            <div className="mb-1 flex items-center justify-between gap-2 text-xs">
+                              <span className="font-medium text-[color:var(--panel-text)]">
+                                {t.orshinSuugchNer || "Оршин суугч"}
+                              </span>
+                              {t.toot && (
+                                <span className="text-[color:var(--muted-text)]">
+                                  {t.toot} тоот
+                                </span>
+                              )}
+                            </div>
+                            <p className="whitespace-pre-wrap text-[13px] text-[color:var(--panel-text)]">
+                              {t.tekst}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </section>
+                );
+              })}
             </div>
 
-            {/* Right: Resident Responses List */}
-            <div className="lg:col-span-5 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-5 shadow-xs space-y-4">
-              <h3 className="text-sm font-normal text-[color:var(--panel-text)] dark:text-white border-b border-[color:var(--surface-border)] pb-3">
-                Хариулсан оршин суугчид ({khariultuud.length})
-              </h3>
+            {/* Respondents */}
+            <section className={`${cardCls} p-5 lg:col-span-5 xl:col-span-4`}>
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-[14px] font-semibold text-[color:var(--panel-text)]">
+                  Хариулсан оршин суугчид
+                </h3>
+                <span className="rounded-md bg-[color:var(--surface-hover)] px-1.5 text-xs text-[color:var(--muted-text)]">
+                  {khariultuud.length}
+                </span>
+              </div>
 
-              <div className="max-h-[500px] overflow-y-auto space-y-3 pr-1 divide-y divide-[color:var(--surface-border)] custom-scrollbar">
-                {khariultuud.map((k) => (
-                  <div key={k._id} className="pt-3 first:pt-0 space-y-1.5">
-                    <div className="flex items-center justify-between text-xs font-normal text-[color:var(--panel-text)] dark:text-white">
-                      <span>{k.orshinSuugchNer || "Оршин суугч"}</span>
+              {khariultuud.length === 0 ? (
+                <p className="py-8 text-center text-xs text-[color:var(--muted-text)]">
+                  Одоогоор хариулт ирээгүй байна
+                </p>
+              ) : (
+                <div className="custom-scrollbar max-h-[560px] divide-y divide-[color:var(--ctl-border)] overflow-y-auto pr-1">
+                  {khariultuud.map((k) => (
+                    <div key={k._id} className="flex items-center gap-3 py-2.5">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-theme/15 text-xs font-semibold text-brand">
+                        {(k.orshinSuugchNer || "О").trim().charAt(0).toUpperCase()}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[13px] font-medium text-[color:var(--panel-text)]">
+                          {k.orshinSuugchNer || "Оршин суугч"}
+                        </p>
+                        <p className="text-xs text-[color:var(--muted-text)]">
+                          {k.createdAt ? new Date(k.createdAt).toLocaleString("mn-MN") : ""}
+                        </p>
+                      </div>
                       {k.toot && (
-                        <span className="px-2 py-0.5 rounded-md bg-theme/10 text-brand text-[10px]">
+                        <span className="shrink-0 rounded-md bg-theme/10 px-2 py-0.5 text-[11px] text-brand">
                           {k.toot} тоот
                         </span>
                       )}
                     </div>
-                    <p className="text-[10px] text-[color:var(--muted-text)]">
-                      {k.createdAt ? new Date(k.createdAt).toLocaleString("mn-MN") : ""}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
+                  ))}
+                </div>
+              )}
+            </section>
           </div>
         )}
       </div>

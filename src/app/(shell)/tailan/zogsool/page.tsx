@@ -8,7 +8,8 @@ import useBaiguullaga from "@/lib/useBaiguullaga";
 import uilchilgee from "@/lib/uilchilgee";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import formatNumber from "../../../../../tools/function/formatNumber";
-import { FileSpreadsheet, Printer } from "lucide-react";
+import { Printer, Search } from "lucide-react";
+import ExcelButton from "@/components/ui/ExcelButton";
 import { getDefaultDateRange } from "@/lib/utils";
 import { useSearch } from "@/context/SearchContext";
 
@@ -121,6 +122,15 @@ export default function ZogsoolTailanPage() {
   const [filters, setFilters] = useState({
     orshinSuugch: "",
   });
+  // Хайлтын талбар — 400мс хүлээж байж серверт илгээнэ
+  const [khaikh, setKhaikh] = useState("");
+  useEffect(() => {
+    const t = setTimeout(
+      () => setFilters((f) => (f.orshinSuugch === khaikh.trim() ? f : { ...f, orshinSuugch: khaikh.trim() })),
+      400,
+    );
+    return () => clearTimeout(t);
+  }, [khaikh]);
   const [apiResponse, setApiResponse] = useState<{
     residentSummary: ResidentSummaryRow[];
     niit: {
@@ -383,7 +393,7 @@ export default function ZogsoolTailanPage() {
         dataIndex: "ner",
         key: "ner",
         render: (text: string) => (
-          <span className="text-theme whitespace-nowrap text-[13px] font-medium">
+          <span className="whitespace-nowrap text-[13px] font-medium">
             {text || "-"}
           </span>
         ),
@@ -394,7 +404,7 @@ export default function ZogsoolTailanPage() {
         key: "utas",
         align: "center" as const,
         render: (text: string) => (
-          <span className="text-theme whitespace-nowrap text-[13px]">
+          <span className="whitespace-nowrap text-[13px]">
             {text || "-"}
           </span>
         ),
@@ -406,7 +416,7 @@ export default function ZogsoolTailanPage() {
         align: "center" as const,
         width: 70,
         render: (text: string) => (
-          <span className="text-theme whitespace-nowrap text-[13px]">
+          <span className="whitespace-nowrap text-[13px]">
             {text || "-"}
           </span>
         ),
@@ -418,7 +428,7 @@ export default function ZogsoolTailanPage() {
         align: "center" as const,
         width: 70,
         render: (text: string) => (
-          <span className="text-theme whitespace-nowrap text-[13px]">
+          <span className="whitespace-nowrap text-[13px]">
             {text || "-"}
           </span>
         ),
@@ -430,7 +440,7 @@ export default function ZogsoolTailanPage() {
         align: "center" as const,
         width: 70,
         render: (text: string) => (
-          <span className="text-theme whitespace-nowrap text-[13px] font-medium">
+          <span className="whitespace-nowrap text-[13px] font-medium">
             {text || "-"}
           </span>
         ),
@@ -441,7 +451,7 @@ export default function ZogsoolTailanPage() {
         key: "urisanMachinToo",
         align: "center" as const,
         render: (val: number) => (
-          <span className="text-theme whitespace-nowrap text-[13px]">
+          <span className="whitespace-nowrap text-[13px]">
             {val}
           </span>
         ),
@@ -452,18 +462,18 @@ export default function ZogsoolTailanPage() {
         key: "niitTulbur",
         align: "right" as const,
         render: (val: number) => (
-          <span className="text-theme whitespace-nowrap text-[13px]">
-            {formatNumber(val)}₮
+          <span className="whitespace-nowrap text-[13px]">
+            {Number(val) > 0 ? formatNumber(val) : <span className="text-[color:var(--muted-text)]">0</span>}
           </span>
         ),
       },
       {
-        title: "Хөнгөлөлт Минут",
+        title: "Хөнгөлсөн минут",
         dataIndex: "khungulultMinut",
         key: "khungulultMinut",
         align: "center" as const,
         render: (val: number) => (
-          <span className="text-theme whitespace-nowrap text-[13px]">
+          <span className="whitespace-nowrap text-[13px]">
             {val || "-"}
           </span>
         ),
@@ -474,8 +484,8 @@ export default function ZogsoolTailanPage() {
         key: "tulsunDun",
         align: "right" as const,
         render: (val: number) => (
-          <span className="text-theme whitespace-nowrap text-[13px]">
-            {formatNumber(val)}₮
+          <span className="whitespace-nowrap text-[13px]">
+            {Number(val) > 0 ? formatNumber(val) : <span className="text-[color:var(--muted-text)]">0</span>}
           </span>
         ),
       },
@@ -485,8 +495,8 @@ export default function ZogsoolTailanPage() {
         key: "uldegdelTulbur",
         align: "right" as const,
         render: (val: number) => (
-          <span className="text-theme whitespace-nowrap">
-            {formatNumber(val)}₮
+          <span className="whitespace-nowrap text-[13px]">
+            {Number(val) > 0 ? formatNumber(val) : <span className="text-[color:var(--muted-text)]">0</span>}
           </span>
         ),
       },
@@ -510,7 +520,7 @@ export default function ZogsoolTailanPage() {
         key: "ognoo",
         align: "center" as const,
         render: (val: any) => (
-          <span className="text-theme whitespace-nowrap text-[13px]">
+          <span className="whitespace-nowrap text-[13px]">
             {ognooKharuul(val)}
           </span>
         ),
@@ -521,7 +531,7 @@ export default function ZogsoolTailanPage() {
         key: "mashiniiDugaar",
         align: "center" as const,
         render: (text: string) => (
-          <span className="text-theme whitespace-nowrap text-[13px]">
+          <span className="whitespace-nowrap text-[13px]">
             {text || "-"}
           </span>
         ),
@@ -532,7 +542,7 @@ export default function ZogsoolTailanPage() {
         key: "zogssonMinut",
         align: "center" as const,
         render: (val: number) => (
-          <span className="text-theme whitespace-nowrap text-[13px]">
+          <span className="whitespace-nowrap text-[13px]">
             {val}
           </span>
         ),
@@ -543,7 +553,7 @@ export default function ZogsoolTailanPage() {
         key: "khungulsunMinut",
         align: "center" as const,
         render: (val: number) => (
-          <span className="text-theme whitespace-nowrap text-[13px]">
+          <span className="whitespace-nowrap text-[13px]">
             {val}
           </span>
         ),
@@ -554,7 +564,7 @@ export default function ZogsoolTailanPage() {
         key: "tulbur",
         align: "center" as const,
         render: (val: number) => (
-          <span className="text-theme whitespace-nowrap text-[13px]">
+          <span className="whitespace-nowrap text-[13px]">
             {val > 0 ? formatNumber(val) : "-"}
           </span>
         ),
@@ -565,7 +575,7 @@ export default function ZogsoolTailanPage() {
         key: "tuluv",
         align: "center" as const,
         render: (text: string) => (
-          <span className="text-theme whitespace-nowrap text-[13px]">
+          <span className="whitespace-nowrap text-[13px]">
             {text || "-"}
           </span>
         ),
@@ -590,7 +600,7 @@ export default function ZogsoolTailanPage() {
         key: "mashiniiDugaar",
         align: "center" as const,
         render: (text: string) => (
-          <span className="text-theme whitespace-nowrap text-[13px]">
+          <span className="whitespace-nowrap text-[13px]">
             {text || "-"}
           </span>
         ),
@@ -600,7 +610,7 @@ export default function ZogsoolTailanPage() {
         dataIndex: "orshinSuugchiinNer",
         key: "orshinSuugchiinNer",
         render: (text: string) => (
-          <span className="text-theme whitespace-nowrap text-[13px] font-medium">
+          <span className="whitespace-nowrap text-[13px] font-medium">
             {text || "-"}
           </span>
         ),
@@ -611,7 +621,7 @@ export default function ZogsoolTailanPage() {
         key: "utas",
         align: "center" as const,
         render: (text: string) => (
-          <span className="text-theme whitespace-nowrap text-[13px]">
+          <span className="whitespace-nowrap text-[13px]">
             {text || "-"}
           </span>
         ),
@@ -623,7 +633,7 @@ export default function ZogsoolTailanPage() {
         align: "center" as const,
         width: 70,
         render: (text: string) => (
-          <span className="text-theme whitespace-nowrap text-[13px]">
+          <span className="whitespace-nowrap text-[13px]">
             {text || "-"}
           </span>
         ),
@@ -635,7 +645,7 @@ export default function ZogsoolTailanPage() {
         align: "center" as const,
         width: 70,
         render: (text: string) => (
-          <span className="text-theme whitespace-nowrap text-[13px]">
+          <span className="whitespace-nowrap text-[13px]">
             {text || "-"}
           </span>
         ),
@@ -647,7 +657,7 @@ export default function ZogsoolTailanPage() {
         align: "center" as const,
         width: 70,
         render: (text: string) => (
-          <span className="text-theme whitespace-nowrap text-[13px] font-medium">
+          <span className="whitespace-nowrap text-[13px] font-medium">
             {text || "-"}
           </span>
         ),
@@ -658,7 +668,7 @@ export default function ZogsoolTailanPage() {
         key: "irsenToo",
         align: "center" as const,
         render: (val: number) => (
-          <span className="text-theme whitespace-nowrap text-[13px]">
+          <span className="whitespace-nowrap text-[13px]">
             {val || "-"}
           </span>
         ),
@@ -669,7 +679,7 @@ export default function ZogsoolTailanPage() {
         key: "suuliinIrsenOgnoo",
         align: "center" as const,
         render: (val: any) => (
-          <span className="text-theme whitespace-nowrap text-[13px]">
+          <span className="whitespace-nowrap text-[13px]">
             {ognooKharuul(val)}
           </span>
         ),
@@ -678,13 +688,8 @@ export default function ZogsoolTailanPage() {
     [],
   );
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg">Уншиж байна...</div>
-      </div>
-    );
-  }
+  // Ачаалж байхад бүх хуудсыг солихгүй — хайлтын талбар бичих явцад
+  // алга болж байв. Хүснэгтүүд `loading`-оор өөрсдөө харуулна.
 
   if (error) {
     return (
@@ -695,16 +700,14 @@ export default function ZogsoolTailanPage() {
   }
 
   return (
-    <div className="p-6 print-container h-full flex flex-col">
+    // Бусад хуудастай ижил бүрхүүл — нэмэлт `p-6`-гүй; гарчиг нь толгой хэсэгт («Тайлан — …») байгаа тул давхарлахгүй
+    <div className="print-container flex w-full flex-col gap-3 pb-14">
       <PrintStyles />
-      <div className="flex justify-between items-center mb-3 no-print">
-        <h1 className="text-2xl font-bold">Зогсоолын тайлан</h1>
-      </div>
 
-      <div className="flex flex-wrap items-center gap-3 mb-4 no-print">
+      <div className="flex flex-wrap items-center gap-2 no-print">
         <div
           id="zogsool-date"
-          className="btn-minimal h-[40px] w-full sm:w-[320px] flex items-center px-3"
+          className="btn-minimal flex h-9 w-full items-center px-3 sm:w-[280px]"
         >
           <StandardDatePicker
             isRange={true}
@@ -720,63 +723,84 @@ export default function ZogsoolTailanPage() {
           />
         </div>
 
-        <div className="flex gap-2 flex-wrap">
+        <label className={`filter-field w-full sm:w-[240px] ${khaikh ? "is-active" : ""}`}>
+          <Search className="h-4 w-4 shrink-0 text-[color:var(--muted-text)]" />
+          <input
+            type="text"
+            value={khaikh}
+            onChange={(e) => setKhaikh(e.target.value)}
+            placeholder="Оршин суугч, тоот хайх..."
+          />
+        </label>
+
+        <div className="flex flex-wrap gap-1">
           <button
             type="button"
             onClick={() => setActiveTab("residentSummary")}
-            className={`px-4 py-2 rounded-xl transition-all ${
+            className={`h-9 rounded-[10px] px-4 text-[13px] transition-colors ${
               activeTab === "residentSummary"
-                ? "neu-panel bg-white/20 border border-white/20"
-                : "hover:menu-surface"
+                ? "bg-theme/15 font-medium text-brand"
+                : "text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] hover:text-[color:var(--panel-text)]"
             }`}
           >
-            Оршин суугчдын урьсан зочдын машин
+            Оршин суугчаар
           </button>
           <button
             type="button"
             onClick={() => setActiveTab("guestDetail")}
-            className={`px-4 py-2 rounded-xl transition-all ${
+            className={`h-9 rounded-[10px] px-4 text-[13px] transition-colors ${
               activeTab === "guestDetail"
-                ? "neu-panel bg-white/20 border border-white/20"
-                : "hover:menu-surface"
+                ? "bg-theme/15 font-medium text-brand"
+                : "text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] hover:text-[color:var(--panel-text)]"
             }`}
           >
-            Зочдын дэлгэрэнгүй тайлан
+            Дэлгэрэнгүй
           </button>
           <button
             type="button"
             onClick={() => setActiveTab("guestCarList")}
-            className={`px-4 py-2 rounded-xl transition-all ${
+            className={`h-9 rounded-[10px] px-4 text-[13px] transition-colors ${
               activeTab === "guestCarList"
-                ? "neu-panel bg-white/20 border border-white/20"
-                : "hover:menu-surface"
+                ? "bg-theme/15 font-medium text-brand"
+                : "text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] hover:text-[color:var(--panel-text)]"
             }`}
           >
-            Зочдын машины жагсаалт
+            Машины жагсаалт
           </button>
         </div>
 
-        <button
-          onClick={exportToExcel}
-          className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm ml-auto"
-        >
-          <FileSpreadsheet className="w-4 h-4 text-theme" />
-          Excel татах
-        </button>
+        <ExcelButton onClick={exportToExcel} className="ml-auto" />
+      </div>
+
+      {/* ── Хураангуй ── */}
+      <div className="grid grid-cols-2 gap-3 no-print md:grid-cols-3 xl:grid-cols-5">
+        {[
+          { nershil: "Урьсан машин", utga: formatNumber(niit.urisanMachinToo, 0), ungu: "text-[color:var(--panel-text)]" },
+          { nershil: "Нийт төлөх", utga: formatNumber(niit.niitTulbur), ungu: "text-[color:var(--panel-text)]" },
+          { nershil: "Хөнгөлсөн минут", utga: formatNumber(niit.khungulultMinut, 0), ungu: "text-[color:var(--panel-text)]" },
+          { nershil: "Төлсөн дүн", utga: formatNumber(niit.tulsunDun), ungu: "text-success" },
+          { nershil: "Үлдэгдэл төлбөр", utga: formatNumber(niit.uldegdelTulbur), ungu: niit.uldegdelTulbur > 0 ? "text-danger" : "text-[color:var(--panel-text)]" },
+        ].map((k) => (
+          <div
+            key={k.nershil}
+            className="rounded-2xl border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] px-5 py-4 shadow-[var(--ctl-shadow)]"
+          >
+            <div className={`text-2xl font-semibold leading-tight tabular-nums ${k.ungu}`}>{k.utga}</div>
+            <div className="mt-1 text-xs text-[color:var(--muted-text)]">{k.nershil}</div>
+          </div>
+        ))}
       </div>
 
       {activeTab === "residentSummary" && (
         <div className="allow-overflow">
-          <h3 className="pb-3 text-theme">
-            Оршин суугчдын урьсан зочдын машин бүртгэлийн тайлан
-          </h3>
           <div>
             <Table
               dataSource={residentSummary}
               columns={residentSummaryColumns}
               rowKey="orshinSuugchiinId"
               pagination={false}
-              scroll={{ x: "max-content", y: 240 }}
+              loading={loading}
+              scroll={{ x: "max-content" }}
               locale={{ emptyText: "Мэдээлэл алга байна" }}
               onRow={(record) => ({
                 onClick: () => {
@@ -796,44 +820,44 @@ export default function ZogsoolTailanPage() {
                       index={0}
                       colSpan={6}
                       align="center"
-                      className="text-[13px] font-bold dark:!text-white force-bold text-theme"
+                      className="text-[13px] font-semibold"
                     >
                       <strong>Нийт</strong>
                     </Table.Summary.Cell>
                     <Table.Summary.Cell
                       index={1}
                       align="center"
-                      className="text-[13px] font-bold dark:!text-white force-bold text-theme"
+                      className="text-[13px] font-semibold"
                     >
                       {niit.urisanMachinToo}
                     </Table.Summary.Cell>
                     <Table.Summary.Cell
                       index={2}
                       align="right"
-                      className="text-[13px] font-bold dark:!text-white force-bold text-theme"
+                      className="text-[13px] font-semibold"
                     >
-                      {formatNumber(niit.niitTulbur)}₮
+                      {formatNumber(niit.niitTulbur)}
                     </Table.Summary.Cell>
                     <Table.Summary.Cell
                       index={3}
                       align="center"
-                      className="text-[13px] font-bold dark:!text-white force-bold text-theme"
+                      className="text-[13px] font-semibold"
                     >
                       {niit.khungulultMinut || "-"}
                     </Table.Summary.Cell>
                     <Table.Summary.Cell
                       index={4}
                       align="right"
-                      className="text-[13px] font-bold dark:!text-white force-bold text-theme"
+                      className="text-[13px] font-semibold"
                     >
-                      {formatNumber(niit.tulsunDun)}₮
+                      {formatNumber(niit.tulsunDun)}
                     </Table.Summary.Cell>
                     <Table.Summary.Cell
                       index={5}
                       align="right"
-                      className="text-[13px] font-bold dark:!text-white force-bold text-theme"
+                      className="text-[13px] font-semibold"
                     >
-                      {formatNumber(niit.uldegdelTulbur)}₮
+                      {formatNumber(niit.uldegdelTulbur)}
                     </Table.Summary.Cell>
                   </Table.Summary.Row>
                 ) : null
@@ -844,29 +868,35 @@ export default function ZogsoolTailanPage() {
       )}
 
       {activeTab === "guestDetail" && (
-        <div className="allow-overflow">
-          <h3 className="pb-3 text-theme flex items-center justify-between flex-wrap gap-2">
-            <span className="font-semibold">Зочдын дэлгэрэнгүй тайлан</span>
-            {selectedResident && (
-              <div className="flex items-center gap-3 text-xs text-brand/80 flex-wrap">
-                <span className="font-medium text-[color:var(--panel-text)]">
-                  {selectedResident.ner}
+        <div className="allow-overflow flex flex-col gap-2">
+          {/* Гарчиг нь таб дээр байгаа тул зөвхөн сонгосон оршин суугчийн мэдээллийг үлдээв */}
+          {selectedResident && (
+            <div className="flex flex-wrap items-center gap-3 text-[13px] text-brand/80">
+              <span className="font-medium text-[color:var(--panel-text)]">
+                {selectedResident.ner}
+              </span>
+              {selectedResident.utas && (
+                <span>
+                  Утас: <strong>{selectedResident.utas}</strong>
                 </span>
-                {selectedResident.utas && (
-                  <span>Утас: <strong>{selectedResident.utas}</strong></span>
-                )}
-                {selectedResident.orts && (
-                  <span>Орц: <strong>{selectedResident.orts}</strong></span>
-                )}
-                {selectedResident.davkhar && (
-                  <span>Давхар: <strong>{selectedResident.davkhar}</strong></span>
-                )}
-                {selectedResident.toot && (
-                  <span>Тоот: <strong>{selectedResident.toot}</strong></span>
-                )}
-              </div>
-            )}
-          </h3>
+              )}
+              {selectedResident.orts && (
+                <span>
+                  Орц: <strong>{selectedResident.orts}</strong>
+                </span>
+              )}
+              {selectedResident.davkhar && (
+                <span>
+                  Давхар: <strong>{selectedResident.davkhar}</strong>
+                </span>
+              )}
+              {selectedResident.toot && (
+                <span>
+                  Тоот: <strong>{selectedResident.toot}</strong>
+                </span>
+              )}
+            </div>
+          )}
           <div>
             <Table
               dataSource={displayDetail || []}
@@ -875,8 +905,8 @@ export default function ZogsoolTailanPage() {
               //   `${record.mashiniiDugaar}-${record._id || Math.random().toString()}`
               // }
               pagination={false}
-              scroll={{ x: "max-content", y: 240 }}
-              loading={detailLoading}
+              scroll={{ x: "max-content" }}
+              loading={loading || detailLoading}
               locale={{
                 emptyText: selectedResidentId
                   ? "Дэлгэрэнгүй мэдээлэл алга"
@@ -889,28 +919,28 @@ export default function ZogsoolTailanPage() {
                       index={0}
                       colSpan={3}
                       align="center"
-                      className="text-[13px] font-bold dark:!text-white force-bold text-theme"
+                      className="text-[13px] font-semibold"
                     >
                       <strong>Нийт</strong>
                     </Table.Summary.Cell>
                     <Table.Summary.Cell
                       index={1}
                       align="center"
-                      className="text-[13px] font-bold dark:!text-white force-bold text-theme"
+                      className="text-[13px] font-semibold"
                     >
                       {displayDetail.reduce((s, r) => s + r.zogssonMinut, 0)}
                     </Table.Summary.Cell>
                     <Table.Summary.Cell
                       index={2}
                       align="center"
-                      className="text-[13px] font-bold dark:!text-white force-bold text-theme"
+                      className="text-[13px] font-semibold"
                     >
                       {displayDetail.reduce((s, r) => s + r.khungulsunMinut, 0)}
                     </Table.Summary.Cell>
                     <Table.Summary.Cell
                       index={3}
                       align="center"
-                      className="text-[13px] font-bold dark:!text-white force-bold text-theme"
+                      className="text-[13px] font-semibold"
                     >
                       {formatNumber(
                         displayDetail.reduce((s, r) => s + r.tulbur, 0),
@@ -919,7 +949,7 @@ export default function ZogsoolTailanPage() {
                     <Table.Summary.Cell
                       index={4}
                       align="center"
-                      className="text-[13px] font-bold dark:!text-white force-bold text-theme"
+                      className="text-[13px] font-semibold"
                     >
                       -
                     </Table.Summary.Cell>
@@ -933,13 +963,13 @@ export default function ZogsoolTailanPage() {
 
       {activeTab === "guestCarList" && (
         <div className="allow-overflow">
-          <h3 className="pb-3 text-theme">Зочдын машины жагсаалт</h3>
           <div>
             <Table
               dataSource={guestCarList}
               columns={guestCarListColumns}
               pagination={false}
-              scroll={{ x: "max-content", y: 240 }}
+              loading={loading}
+              scroll={{ x: "max-content" }}
               locale={{ emptyText: "Мэдээлэл алга байна" }}
             />
           </div>

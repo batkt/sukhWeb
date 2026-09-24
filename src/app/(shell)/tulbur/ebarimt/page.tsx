@@ -1,5 +1,6 @@
 "use client";
 
+import ExcelButton from "@/components/ui/ExcelButton";
 import { useMemo, useState, useEffect, useCallback } from "react";
 import useSWR from "swr";
 import { Spin } from "antd";
@@ -7,7 +8,6 @@ import toast from "react-hot-toast";
 import Button from "@/components/ui/Button";
 import { getDefaultDateRange } from "@/lib/utils";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
-import TusgaiZagvar from "../../../../../components/selectZagvar/tusgaiZagvar";
 import { EbarimtTable, EbarimtItem } from "./EbarimtTable";
 import EbarimtKhevlekhModal from "./EbarimtKhevlekhModal";
 import moment from "moment";
@@ -19,8 +19,6 @@ import { useRegisterTourSteps } from "@/context/TourContext";
 import uilchilgee, { getApiUrl } from "@/lib/uilchilgee";
 import useBaiguullaga from "@/lib/useBaiguullaga";
 import formatNumber from "../../../../../tools/function/formatNumber";
-import { Download } from "lucide-react";
-import IconTextButton from "@/components/ui/IconTextButton";
 import { StandardPagination } from "@/components/ui/StandardTable";
 import { useSearch } from "@/context/SearchContext";
 
@@ -557,6 +555,13 @@ export default function Ebarimt() {
       toast.error("Excel татахад алдаа гарлаа");
     }
   };
+  // Сүүлд татварт илгээсэн огноо — backend `ebarimtIlgeeye` амжилттай бол хадгална
+  const [suuliinIlgeesen, setSuuliinIlgeesen] = useState<string | null>(null);
+  useEffect(() => {
+    const v = (baiguullaga as any)?.ebarimtSuuliinIlgeesenOgnoo;
+    if (v) setSuuliinIlgeesen(String(v));
+  }, [baiguullaga]);
+
   const ebarimtIlgeeye = async () => {
     if (!token || !ajiltan?.baiguullagiinId) {
       toast.error("Нэвтэрсэн эсэхээ шалгана уу");
@@ -564,10 +569,13 @@ export default function Ebarimt() {
     }
     setLoading(true);
     try {
-      await uilchilgee(token).post("/ebarimtIlgeeye", {
+      const resp = await uilchilgee(token).post("/ebarimtIlgeeye", {
         baiguullagiinId: ajiltan.baiguullagiinId,
         barilgiinId: barilgiinId || null,
       });
+      setSuuliinIlgeesen(
+        String(resp.data?.suuliinIlgeesenOgnoo || new Date().toISOString()),
+      );
       toast.success("Татварт амжилттай илгээлээ");
     } catch (e) {
       console.error(e);
@@ -578,29 +586,32 @@ export default function Ebarimt() {
   };
   const t = (text: string) => text;
 
-  const [activeStatFilter, setActiveStatFilter] = useState<number | null>(null);
-
-  // Calculate stats
+  // Dashboard: Баримт авах (бүх) / авсан (хүчинтэй) / буцаалт (буцаасан)
   const stats = useMemo(() => {
-    const validData = displayedData.filter((r) => !r.ustgasanOgnoo);
-    const total = validData.reduce((s, r) => s + (r.total || 0), 0);
-    const b2c = displayedData.filter((r) => r.type === "B2C_RECEIPT").length;
-    const b2b = displayedData.filter((r) => r.type === "B2B_RECEIPT").length;
+    const niilber = (rows: TableItem[]) =>
+      rows.reduce((sum, r) => sum + (Number(r.total) || 0), 0);
+    const khuchintei = displayedData.filter((r) => !r.ustgasanOgnoo);
+    const butsaasan = displayedData.filter((r) => !!r.ustgasanOgnoo);
     return [
-      { title: "Нийт баримт", value: displayedData.length },
-      { title: "Нийт дүн", value: `${formatNumber(total)}₮` },
-      { title: "Байгууллага", value: b2b },
-      { title: "Иргэн", value: b2c },
-    ];
+      { title: "Баримт авах тоо", value: formatNumber(displayedData.length, 0), shuult: "all" },
+      { title: "Баримт авах дүн", value: formatNumber(niilber(displayedData)), shuult: "all" },
+      { title: "Баримт авсан тоо", value: formatNumber(khuchintei.length, 0), shuult: "khuchintei" },
+      { title: "Баримт авсан дүн", value: formatNumber(niilber(khuchintei)), shuult: "khuchintei" },
+      { title: "Буцаалт хийгдсэн тоо", value: formatNumber(butsaasan.length, 0), shuult: "butsaasan", danger: true },
+      { title: "Буцаалт хийгдсэн дүн", value: formatNumber(niilber(butsaasan)), shuult: "butsaasan", danger: true },
+    ] as const;
   }, [displayedData]);
 
+  // Карт дарахад тухайн төлөвөөр шүүнэ (тоо/дүн хос карт ижил шүүлттэй)
+  const [activeStatFilter, setActiveStatFilter] = useState<
+    "all" | "khuchintei" | "butsaasan" | null
+  >(null);
+
   const statFilteredData = useMemo(() => {
-    if (activeStatFilter === null || activeStatFilter === 0 || activeStatFilter === 1)
-      return displayedData;
-    if (activeStatFilter === 2)
-      return displayedData.filter((r) => r.type === "B2B_RECEIPT");
-    if (activeStatFilter === 3)
-      return displayedData.filter((r) => r.type === "B2C_RECEIPT");
+    if (activeStatFilter === "khuchintei")
+      return displayedData.filter((r) => !r.ustgasanOgnoo);
+    if (activeStatFilter === "butsaasan")
+      return displayedData.filter((r) => !!r.ustgasanOgnoo);
     return displayedData;
   }, [displayedData, activeStatFilter]);
 
@@ -608,29 +619,39 @@ export default function Ebarimt() {
     <div className="flex flex-col pb-14">
         <div className="space-y-3">
           {/* Stats Cards */}
-          <div className="stat-cards-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-            {stats.map((stat, idx) => (
-              <div
-                key={idx}
-                onClick={() => {
-                  setActiveStatFilter(activeStatFilter === idx ? null : idx);
-                }}
-                className={`relative group rounded-2xl neu-panel transition-all cursor-pointer select-none ${
-                  activeStatFilter === idx
-                    ? "ring-2 ring-theme shadow-lg"
-                    : "hover:bg-[color:var(--surface-hover)] hover:scale-105"
-                }`}
-              >
-                <div className="stat-card">
-                  <div className="stat-card-value">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+            {stats.map((stat) => {
+              const idevkhtei = activeStatFilter === stat.shuult && stat.shuult !== "all";
+              return (
+                <button
+                  key={stat.title}
+                  type="button"
+                  onClick={() =>
+                    setActiveStatFilter(
+                      stat.shuult === "all" || activeStatFilter === stat.shuult
+                        ? null
+                        : stat.shuult,
+                    )
+                  }
+                  className={`rounded-2xl border bg-[color:var(--surface-bg)] px-5 py-4 text-left shadow-[var(--ctl-shadow)] transition-colors ${
+                    idevkhtei
+                      ? "border-theme ring-2 ring-theme/20"
+                      : "border-[color:var(--ctl-border)] hover:border-[color:var(--ctl-border-hover)]"
+                  }`}
+                >
+                  <div
+                    className={`text-2xl font-semibold leading-tight ${
+                      "danger" in stat && stat.danger ? "text-danger" : "text-[color:var(--panel-text)]"
+                    }`}
+                  >
                     {stat.value}
                   </div>
-                  <div className="stat-card-title">
+                  <div className="mt-1 text-xs text-[color:var(--muted-text)]">
                     {stat.title}
                   </div>
-                </div>
-              </div>
-            ))}
+                </button>
+              );
+            })}
           </div>
 
           {/* Filters Section */}
@@ -639,7 +660,7 @@ export default function Ebarimt() {
               <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
                 <div
                   id="ebarimt-date"
-                  className="btn-minimal h-[40px] w-full sm:w-[320px] flex items-center px-3"
+                  className="btn-minimal h-9 w-full sm:w-[300px] flex items-center px-3"
                 >
                   <StandardDatePicker
                     isRange={true}
@@ -661,37 +682,42 @@ export default function Ebarimt() {
                   />
                 </div>
 
-                <div className="w-full sm:w-[180px]">
-                  <TusgaiZagvar
+                <label className={`filter-field w-full sm:w-[200px] ${uilchilgeeAvi ? "is-active" : ""}`}>
+                  <span className="filter-field-label">Үйлчилгээ</span>
+                  <select
                     value={uilchilgeeAvi ?? ""}
-                    onChange={(v: string) =>
-                      setUilchilgeeAvi(v || undefined)
-                    }
-                    options={[
-                      { value: "", label: "Үйлчилгээ — бүгд" },
-                      { value: "zogsool", label: "Зогсоол" },
-                      { value: "sokh", label: "СӨХ" },
-                    ]}
-                    placeholder="Үйлчилгээ"
-                    className="h-[40px] w-full"
-                  />
-                </div>
+                    onChange={(e) => setUilchilgeeAvi(e.target.value || undefined)}
+                    className="min-w-0 flex-1 cursor-pointer bg-transparent text-[13px] font-medium text-[color:var(--panel-text)] focus:outline-none"
+                  >
+                    <option value="">Бүгд</option>
+                    <option value="zogsool">Зогсоол</option>
+                    <option value="sokh">СӨХ</option>
+                  </select>
+                </label>
               </div>
               <div className="flex flex-row gap-3 w-full lg:w-auto justify-end">
-                <IconTextButton
-                  id="ebarimt-excel-btn"
-                  onClick={exceleerTatya}
-                  icon={<Download className="w-4 h-4" />}
-                  label="Excel татах"
-                />
-                <Button
-                  onClick={ebarimtIlgeeye}
-                  isLoading={loading}
-                  variant="primary"
-                  className="rounded-xl"
-                >
-                  Татварт илгээх
-                </Button>
+                <ExcelButton id="ebarimt-excel-btn" onClick={exceleerTatya} />
+                <div className="flex items-center gap-2">
+                  <span
+                    className="whitespace-nowrap text-xs text-[color:var(--muted-text)]"
+                    title="Хамгийн сүүлд татварт илгээсэн огноо"
+                  >
+                    Сүүлд илгээсэн:{" "}
+                    <span className="font-medium text-[color:var(--panel-text)]">
+                      {suuliinIlgeesen
+                        ? moment(suuliinIlgeesen).format("YYYY-MM-DD HH:mm")
+                        : "—"}
+                    </span>
+                  </span>
+                  <Button
+                    onClick={ebarimtIlgeeye}
+                    isLoading={loading}
+                    variant="primary"
+                    className="rounded-xl"
+                  >
+                    Татварт илгээх
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

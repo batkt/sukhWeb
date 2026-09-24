@@ -16,7 +16,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, Loader2 } from "lucide-react";
+import { X, Check, ShieldCheck } from "lucide-react";
 import {
   ALL_PERMISSIONS,
   getAllPermissionIds,
@@ -29,6 +29,7 @@ import updateMethod from "../../../../tools/function/updateMethod";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { getErrorMessage } from "@/lib/uilchilgee";
+import Button from "@/components/ui/Button";
 
 interface Props {
   employee: any | null;
@@ -51,12 +52,12 @@ const utgaKharuulya = (v: any): string => {
   return s || "-";
 };
 
+/** Бүх түвшинд НЭГ хэмжээтэй шилжүүлэгч */
 const Shiljuurch: React.FC<{
   idevkhitei: boolean;
   onChange: () => void;
-  jijig?: boolean;
   ariaLabel: string;
-}> = ({ idevkhitei, onChange, jijig, ariaLabel }) => (
+}> = ({ idevkhitei, onChange, ariaLabel }) => (
   <button
     type="button"
     role="switch"
@@ -69,23 +70,13 @@ const Shiljuurch: React.FC<{
       e.stopPropagation();
       onChange();
     }}
-    className={`relative shrink-0 rounded-full transition-colors ${
-      jijig ? "h-5 w-9" : "h-6 w-11"
-    } ${
-      idevkhitei
-        ? "bg-theme"
-        : "bg-[color:var(--panel)]"
+    className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${
+      idevkhitei ? "bg-theme" : "bg-[color:var(--panel)]"
     }`}
   >
     <span
-      className={`absolute top-1/2 -translate-y-1/2 rounded-full bg-[color:var(--surface-bg)] shadow transition-all ${
-        jijig ? "h-4 w-4" : "h-5 w-5"
-      } ${
-        idevkhitei
-          ? jijig
-            ? "left-[18px]"
-            : "left-[22px]"
-          : "left-0.5"
+      className={`absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-[color:var(--surface-bg)] shadow transition-all ${
+        idevkhitei ? "left-[18px]" : "left-0.5"
       }`}
     />
   </button>
@@ -96,7 +87,7 @@ const Mur: React.FC<{ nert: string; utga: string }> = ({ nert, utga }) => (
     <span className="shrink-0 text-xs text-[color:var(--muted-text)]">
       {nert}
     </span>
-    <span className="min-w-0 break-words text-right text-xs font-medium text-[color:var(--panel-text)] dark:text-white">
+    <span className="min-w-0 break-words text-right text-xs text-[color:var(--panel-text)]">
       {utga}
     </span>
   </div>
@@ -226,10 +217,8 @@ export default function EmployeePermissionsModal({
       <div
         key={perm.id}
         onClick={() => erkhSolikh(perm.id)}
-        className={`flex cursor-pointer items-center gap-3 px-4 transition-colors ${
-          khuukhed
-            ? "py-2 pl-9 hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/5"
-            : "bg-[color:var(--surface-hover)] py-2.5 dark:bg-white/[0.03]"
+        className={`flex cursor-pointer items-center gap-3 px-4 transition-colors hover:bg-[color:var(--surface-hover)] ${
+          khuukhed ? "py-2 pl-9" : "bg-theme/5 py-2.5"
         }`}
       >
         {khuukhed ? (
@@ -247,7 +236,7 @@ export default function EmployeePermissionsModal({
           className={`min-w-0 flex-1 truncate ${
             khuukhed
               ? "text-xs text-[color:var(--muted-text)]"
-              : "text-[13px] font-medium text-[color:var(--panel-text)] dark:text-white"
+              : "text-[13px] font-medium text-[color:var(--panel-text)]"
           }`}
         >
           {perm.label}
@@ -260,7 +249,6 @@ export default function EmployeePermissionsModal({
         <Shiljuurch
           idevkhitei={songogdson}
           onChange={() => erkhSolikh(perm.id)}
-          jijig={khuukhed}
           ariaLabel={perm.label}
         />
       </div>
@@ -274,44 +262,46 @@ export default function EmployeePermissionsModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-[color:var(--surface-bg)] shadow-2xl ring-1 ring-[color:var(--surface-border)] dark:ring-white/10"
+        className="modal-surface flex max-h-[92vh] w-full max-w-3xl [--modal-max-w:48rem] flex-col overflow-hidden rounded-2xl shadow-2xl"
       >
-        {/* ── Толгой ── */}
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[color:var(--surface-border)] px-6 py-4 dark:border-white/10">
-          <div className="flex min-w-0 items-center gap-3">
-            <h2 className="truncate text-base font-semibold text-[color:var(--panel-text)] dark:text-white">
-              Хэрэглэгчийн эрхийн тохиргоо
+        {/* ── Толгой: дүрс + гарчиг + тайлбар ── */}
+        <div className="flex shrink-0 items-start gap-3.5 border-b border-[color:var(--surface-border)] px-6 py-5">
+          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-theme/10 text-brand">
+            <ShieldCheck className="h-5 w-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-lg font-semibold text-[color:var(--panel-text)]">
+              Эрхийн тохиргоо
             </h2>
-            {ner && (
-              <span className="shrink-0 rounded-md bg-[color:var(--surface-hover)] px-2 py-0.5 text-xs text-[color:var(--muted-text)] dark:bg-white/10">
-                {ner}
-              </span>
-            )}
+            <p className="mt-0.5 truncate text-xs text-[color:var(--muted-text)]">
+              {ner ? `${ner} — ` : ""}ажилтны салбар болон цонхны эрхийг тохируулна уу
+            </p>
           </div>
           <button
             onClick={onClose}
             aria-label="Хаах"
-            className="rounded-lg p-1.5 text-[color:var(--muted-text)] transition-colors hover:bg-[color:var(--surface-hover)] hover:text-[color:var(--panel-text)] dark:hover:bg-white/10 dark:hover:text-white"
+            title="Хаах"
+            className="-mt-1 rounded-xl p-2 text-[color:var(--muted-text)] transition-colors hover:bg-[color:var(--surface-hover)] hover:text-[color:var(--panel-text)]"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* ── Их бие ── */}
-        <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[300px_1fr]">
+        <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[260px_1fr]">
           {/* Зүүн: профайл + салбарын эрх */}
-          <div className="min-h-0 space-y-6 overflow-y-auto border-b border-[color:var(--surface-border)] p-6 md:border-b-0 md:border-r dark:border-white/10">
-            <section>
-              <h3 className="mb-3 text-xs font-semibold text-[color:var(--panel-text)] dark:text-white">
+          <div className="min-h-0 space-y-4 overflow-y-auto border-b border-[color:var(--surface-border)] p-5 md:border-b-0 md:border-r">
+            <section className="rounded-xl border border-[color:var(--surface-border)] px-4 py-3">
+              <h3 className="mb-1.5 text-xs font-semibold text-[color:var(--panel-text)]">
                 Профайл мэдээлэл
               </h3>
-              <div className="divide-y divide-[color:var(--surface-border)] dark:divide-white/5">
+              <div className="divide-y divide-[color:var(--surface-border)]">
                 <Mur nert="Нэр" utga={utgaKharuulya(ner)} />
                 <Mur nert="Албан тушаал" utga={utgaKharuulya(employee.albanTushaal)} />
                 <Mur nert="Утас" utga={utgaKharuulya(employee.utas)} />
                 <Mur
-                  nert="И-Мэйл"
-                  utga={utgaKharuulya(employee.imeil || employee.email)}
+                  nert="И-мэйл"
+                  utga={utgaKharuulya(employee.mail || employee.email || employee.imeil)}
                 />
                 <Mur
                   nert="Нэвтрэх нэр"
@@ -320,22 +310,22 @@ export default function EmployeePermissionsModal({
               </div>
             </section>
 
-            <section>
-              <h3 className="mb-3 text-xs font-semibold text-[color:var(--panel-text)] dark:text-white">
+            <section className="rounded-xl border border-[color:var(--surface-border)] px-4 py-3">
+              <h3 className="mb-1.5 text-xs font-semibold text-[color:var(--panel-text)]">
                 Салбарын эрх
                 <span className="ml-1.5 font-normal text-[color:var(--muted-text)]">
                   ({selectedBuildings.length})
                 </span>
               </h3>
               {buildings.length === 0 ? (
-                <p className="text-xs text-[color:var(--muted-text)]">Барилга олдсонгүй</p>
+                <p className="py-1.5 text-xs text-[color:var(--muted-text)]">Барилга олдсонгүй</p>
               ) : (
-                <div className="space-y-1">
+                <div className="divide-y divide-[color:var(--surface-border)]">
                   {buildings.map((b: any) => (
                     <div
                       key={b._id}
                       onClick={() => barilgaSolikh(b._id)}
-                      className="flex cursor-pointer items-center justify-between gap-3 rounded-lg py-1.5 pr-1 transition-colors hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/5"
+                      className="flex cursor-pointer items-center justify-between gap-3 py-2"
                     >
                       <span className="min-w-0 flex-1 truncate text-xs text-[color:var(--panel-text)]">
                         {b.ner}
@@ -354,14 +344,17 @@ export default function EmployeePermissionsModal({
 
           {/* Баруун: цонхны эрх */}
           <div className="flex min-h-0 flex-col">
-            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[color:var(--surface-border)] px-6 py-3 dark:border-white/10">
-              <h3 className="text-xs font-semibold text-[color:var(--panel-text)] dark:text-white">
+            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[color:var(--surface-border)] px-4 py-3">
+              <h3 className="text-xs font-semibold text-[color:var(--panel-text)]">
                 Цонхны эрх
                 <span className="ml-1.5 font-normal text-[color:var(--muted-text)]">
                   ({selectedPermissions.length})
                 </span>
               </h3>
-              <div className="flex items-center gap-2">
+              <div
+                onClick={bugdiigSolikh}
+                className="flex cursor-pointer items-center gap-3"
+              >
                 <span className="text-xs text-[color:var(--muted-text)]">
                   Бүгдийг сонгох
                 </span>
@@ -373,9 +366,12 @@ export default function EmployeePermissionsModal({
               </div>
             </div>
 
-            <div className="min-h-0 flex-1 divide-y divide-[color:var(--surface-border)] overflow-y-auto dark:divide-white/5">
+            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
               {ALL_PERMISSIONS.map((perm) => (
-                <div key={perm.id}>
+                <div
+                  key={perm.id}
+                  className="divide-y divide-[color:var(--surface-border)] overflow-hidden rounded-xl border border-[color:var(--surface-border)]"
+                >
                   {erkhMur(perm, false)}
                   {perm.children?.map((child) => erkhMur(child, true))}
                 </div>
@@ -385,22 +381,24 @@ export default function EmployeePermissionsModal({
         </div>
 
         {/* ── Хөл ── */}
-        <div className="flex shrink-0 items-center justify-end gap-2 border-t border-[color:var(--surface-border)] px-6 py-4 dark:border-white/10">
-          <button
+        <div className="flex shrink-0 items-center justify-end gap-2 border-t border-[color:var(--surface-border)] px-6 py-4">
+          <Button
             onClick={onClose}
+            variant="secondary"
+            className="min-w-[100px]"
             disabled={saving}
-            className="rounded-xl px-4 py-2 text-sm font-medium text-[color:var(--muted-text)] ring-1 ring-[color:var(--surface-border)] transition-colors hover:bg-[color:var(--surface-hover)] disabled:opacity-40 dark:ring-white/10 dark:hover:bg-white/5"
           >
-            Болих
-          </button>
-          <button
+            Хаах
+          </Button>
+          <Button
             onClick={khadgalya}
+            variant="primary"
+            className="min-w-[140px]"
             disabled={saving}
-            className="flex items-center gap-2 rounded-xl bg-theme px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-theme disabled:opacity-40"
+            icon={saving ? undefined : <Check className="h-4 w-4" />}
           >
-            {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-            {saving ? "Хадгалж байна..." : "Хадгалах"}
-          </button>
+            {saving ? "Түр хүлээнэ үү..." : "Хадгалах"}
+          </Button>
         </div>
       </div>
     </div>,

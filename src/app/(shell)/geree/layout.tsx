@@ -78,9 +78,16 @@ function GereeLayoutWrapper({ children }: { children: React.ReactNode }) {
       );
     };
 
+    // "+" товч: тухайн табын бүртгэх цонхыг нээнэ
+    const openers: Partial<Record<string, { isOpen: boolean; open: () => void }>> = {
+      residents: { isOpen: state.showResidentModal, open: handleOpenResidentModal },
+      clients: { isOpen: state.showClientModal, open: () => actions.handleShowClientModal() },
+      employees: { isOpen: state.showEmployeeModal, open: actions.handleShowEmployeeModal },
+    };
+
     const onKeyDown = (e: KeyboardEvent) => {
-      if (activeTab !== "residents") return;
-      if (state.showResidentModal) return;
+      const opener = openers[activeTab];
+      if (!opener || opener.isOpen) return;
       if (isTypingTarget(e.target)) return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
 
@@ -88,12 +95,20 @@ function GereeLayoutWrapper({ children }: { children: React.ReactNode }) {
       if (!isPlus) return;
 
       e.preventDefault();
-      handleOpenResidentModal();
+      opener.open();
     };
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [activeTab, state.showResidentModal, handleOpenResidentModal]);
+  }, [
+    activeTab,
+    state.showResidentModal,
+    state.showClientModal,
+    state.showEmployeeModal,
+    handleOpenResidentModal,
+    actions.handleShowClientModal,
+    actions.handleShowEmployeeModal,
+  ]);
 
   if (ajiltan && !hasGeree) {
     return null;

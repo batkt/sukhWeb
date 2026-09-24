@@ -61,7 +61,7 @@ function Talbar({
         {shaardlagatai && <span className="ml-1 text-danger">*</span>}
       </label>
       <div className="relative">
-        <Durs className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-brand" />
+        <Durs className="pointer-events-none absolute top-1/2 left-3.5 z-10 h-4 w-4 -translate-y-1/2 text-brand" />
         {children}
       </div>
     </div>
@@ -164,7 +164,7 @@ export default function EmployeeModal({
               )}
 
               <div className="grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2">
-                <Talbar shoshgo="Овог" shaardlagatai durs={UserRound}>
+                <Talbar shoshgo="Овог" durs={UserRound}>
                   <input
                     type="text"
                     name="ovog"
@@ -178,7 +178,6 @@ export default function EmployeeModal({
                     }}
                     placeholder="Овог"
                     className={OROLT}
-                    required
                   />
                 </Talbar>
 
@@ -286,15 +285,16 @@ export default function EmployeeModal({
                       }))
                     }
                     placeholder="Огноо сонгох"
-                    /* AntD-ийн `classNames.input` нь `.ant-picker-input`
-                       БҮРХҮҮЛД буудаг тул дотоод `<input>`-д зай нэмэхгүй —
-                       иймд зүүн дүрс текст дээр давхарлаж байв. Descendant
-                       сонгогчоор шууд `<input>`-д хүрнэ.
+                    /* Зүүн зайг `.ant-picker` бүрхүүлд (`pl-11`) өгч, дотоод
+                       `<input>`-ийн зайг 0 болгосноор текст бусад талбартай
+                       нэг эгнээнээс эхэлнэ. Баруун талын календарь дүрсийг
+                       (`suffixIcon`) нууж, зүүн дүрсийг ашиглана.
 
                        `!` шаардлагатай: AntD-ийн `.ant-picker .ant-picker-input
                        > input` нь (0,3,1) спецификтэй тул эрэмбээр дийлдэг. */
-                    className="!h-12 w-full !rounded-xl !bg-[color:var(--surface-bg)] [&_input]:!pl-11 [&_input]:!text-sm [&_input]:!text-[color:var(--panel-text)] [&_input::placeholder]:!text-[color:var(--muted-text)]"
+                    className="!h-12 w-full !rounded-xl !bg-[color:var(--surface-bg)] !pl-11 [&_input]:!pl-0 [&_input]:!text-sm [&_input]:!text-[color:var(--panel-text)] [&_input::placeholder]:!text-[color:var(--muted-text)]"
                     allowClear
+                    suffixIcon={null}
                     getPopupContainer={() => employeeRef.current || document.body}
                     popupStyle={{ zIndex: 13010 }}
                   />
@@ -305,8 +305,9 @@ export default function EmployeeModal({
                   />
                 </Talbar>
 
-                {!editingEmployee && (
-                  <>
+                {/* Нэвтрэх эрх: шинэ ажилтанд заавал, засах үед нууц үг
+                    хоосон бол хэвээр үлдэнэ. */}
+                <>
                     <Talbar shoshgo="Нэвтрэх нэр" shaardlagatai durs={UserRound}>
                       <input
                         type="text"
@@ -324,7 +325,11 @@ export default function EmployeeModal({
                       />
                     </Talbar>
 
-                    <Talbar shoshgo="Нууц үг" shaardlagatai durs={Lock}>
+                    <Talbar
+                      shoshgo={editingEmployee ? "Шинэ нууц үг" : "Нууц үг"}
+                      shaardlagatai={!editingEmployee}
+                      durs={Lock}
+                    >
                       <input
                         type={nuutsUgKharagdakh ? "text" : "password"}
                         name="nuutsUg"
@@ -335,9 +340,15 @@ export default function EmployeeModal({
                             nuutsUg: e.target.value,
                           }))
                         }
-                        placeholder="••••••••"
+                        placeholder={
+                          editingEmployee ? "Солихгүй бол хоосон үлдээнэ" : "••••••••"
+                        }
+                        autoComplete="new-password"
+                        minLength={4}
+                        maxLength={8}
+                        title="Нууц үг 4-8 тэмдэгт байна"
                         className={`${OROLT} !pr-11`}
-                        required
+                        required={!editingEmployee}
                       />
                       <button
                         type="button"
@@ -357,8 +368,7 @@ export default function EmployeeModal({
                         )}
                       </button>
                     </Talbar>
-                  </>
-                )}
+                </>
               </div>
 
               {/* Нэвтрэх эрх зөвхөн ШИНЭ ажилтан дээр үүсдэг тул засах үед

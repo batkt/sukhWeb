@@ -98,6 +98,12 @@ export interface TableProps<T = any> {
   locale?: { emptyText?: React.ReactNode; [k: string]: any };
   showHeader?: boolean;
   tableLayout?: "auto" | "fixed";
+  /**
+   * Хүснэгтийг агуулгын өргөнөөр (баганын өргөний нийлбэр) зурна — бүтэн
+   * өргөнд сунгахгүй. Өргөн дэлгэц дээр илүү зай баганууд дотор хуваагдаж
+   * хоосон зай үүсгэхээс сэргийлнэ.
+   */
+  fitContent?: boolean;
 }
 
 const useIsoLayoutEffect =
@@ -517,6 +523,7 @@ function Table<T extends object = any>({
   locale,
   showHeader = true,
   tableLayout,
+  fitContent = false,
 }: TableProps<T>) {
   const small = size === "small" || size === "middle";
   const isLoading =
@@ -853,7 +860,7 @@ function Table<T extends object = any>({
 
   const tableEl = (
     <table
-      className={cn("w-full border-collapse text-[11px]", scroll && scroll.x && "min-w-max")}
+      className={cn(fitContent ? "w-max" : "w-full", "border-collapse text-[11px]", scroll && scroll.x && "min-w-max")}
       style={{
         ...(scroll && typeof scroll.x === "number" ? { minWidth: scroll.x } : null),
         // fixed layout нь зарласан баганын өргөн (ба ellipsis тайралт) үнэхээр
@@ -1121,7 +1128,7 @@ function Table<T extends object = any>({
       <div
         ref={rootRef}
         style={style}
-        className={cn("zt-table w-full", className)}
+        className={cn("zt-table", fitContent ? "w-fit max-w-full" : "w-full", className)}
       >
         {title && <div className="px-1 pb-2 text-[11px] font-medium">{title(pageRows)}</div>}
         {/* Карт нь бүрдлийн ӨӨРИЙН нь хэсэг — дэлгэц бүр өөрийн хүрээ/радиусаа
@@ -1130,7 +1137,8 @@ function Table<T extends object = any>({
         <div
           ref={bodyRef}
           className={cn(
-            "w-full overflow-x-auto rounded-md border border-[hsl(var(--zt-border))] bg-[hsl(var(--zt-card))]",
+            fitContent ? "w-fit max-w-full" : "w-full",
+            "overflow-x-auto rounded-md border border-[hsl(var(--zt-border))] bg-[hsl(var(--zt-card))]",
             effectiveY != null && "overflow-y-auto",
           )}
           style={effectiveY != null ? { maxHeight: effectiveY } : undefined}

@@ -8,6 +8,8 @@ import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
 import useSWR from "swr";
 import uilchilgee from "@/lib/uilchilgee";
+import { useAuditTurluud, auditAngilalNer } from "@/lib/auditTurluud";
+import AngilalChips from "@/components/ui/AngilalChips";
 import { Loader } from "@mantine/core";
 import Button from "@/components/ui/Button";
 import { createPortal } from "react-dom";
@@ -106,21 +108,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                 Төрөл
               </label>
               <p className="text-sm text-[color:var(--panel-text)]">
-                {(() => {
-                  const modelNames: Record<string, string> = {
-                    ajiltan: "Ажилтан",
-                    geree: "Гэрээ",
-                    barilga: "Барилга",
-                    talbai: "Талбай",
-                    orshinSuugch: "Оршин суугч",
-                    nekhemjlekh: "Нэхэмжлэх",
-                    nekhemjlekhiinTuukh: "Нэхэмжлэлийн түүх",
-                    guilgee: "Гүйлгээ",
-                  };
-                  return (
-                    modelNames[record.modelName] || record.modelName || "-"
-                  );
-                })()}
+                {auditAngilalNer(record.modelName)}
               </p>
             </div>
           </div>
@@ -403,19 +391,13 @@ export default function UstsanTuukh({ token, baiguullaga, ajiltan }: Props) {
   );
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
-  // Common model names - Keep only necessary ones
-  const modelNames = useMemo(
-    () => [
-      { value: "geree", label: "Гэрээ" },
-      { value: "orshinSuugch", label: "Оршин суугч" },
-      { value: "talbai", label: "Талбай" },
-      { value: "nekhemjlekh", label: "Нэхэмжлэх" },
-      { value: "nekhemjlekhiinTuukh", label: "Нэхэмжлэлийн түүх" },
-      { value: "guilgee", label: "Гүйлгээ" },
-      { value: "ajiltan", label: "Ажилтан" },
-      { value: "barilga", label: "Барилга" },
-    ],
-    [],
+  // Ангилал нь бодит түүхээс (backend `/audit/turluud`) — бүх model хамрагдана
+  const { angilaluud, niit: angilalNiit, isLoading: angilalAchaalj } = useAuditTurluud(
+    token,
+    baiguullaga?._id,
+    "ustgasan",
+    dateRange?.[0],
+    dateRange?.[1],
   );
 
   // Fetch all employees for the filter
@@ -572,7 +554,7 @@ export default function UstsanTuukh({ token, baiguullaga, ajiltan }: Props) {
           <div className="flex flex-wrap items-center gap-3 mb-4">
             <div
               id="ustsan-date"
-              className="btn-minimal h-[40px] w-full sm:w-[320px] flex items-center px-3"
+              className="btn-minimal flex h-9 w-full items-center px-3 sm:w-[280px]"
             >
               <StandardDatePicker
                 isRange={true}
@@ -588,25 +570,19 @@ export default function UstsanTuukh({ token, baiguullaga, ajiltan }: Props) {
               />
             </div>
 
-            <div className="relative h-[40px] w-full sm:w-[200px] border border-[color:var(--surface-border)] rounded-lg bg-[color:var(--surface-bg)] flex items-center">
-              <select
-                value={selectedModel}
-                onChange={(e) => {
-                  setSelectedModel(e.target.value);
-                  setPage(1);
-                }}
-                className="w-full h-full px-4 pr-10 bg-transparent border-0 focus:outline-none text-[color:var(--panel-text)] appearance-none cursor-pointer text-sm"
-              >
-                <option value="">Бүгд</option>
-                {modelNames.map((m) => (
-                  <option key={m.value} value={m.value}>
-                    {m.label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--muted-text)] pointer-events-none" />
-            </div>
           </div>
+
+          {/* Ангилал — тоотой */}
+          <AngilalChips
+            angilaluud={angilaluud}
+            niit={angilalNiit}
+            songogdson={selectedModel}
+            onChange={(v) => {
+              setSelectedModel(v);
+              setPage(1);
+            }}
+            loading={angilalAchaalj}
+          />
 
           {/* Table */}
           {isLoading ? (
@@ -654,9 +630,7 @@ export default function UstsanTuukh({ token, baiguullaga, ajiltan }: Props) {
                     label: "Төрөл",
                     align: "center",
                     render: (value: any) =>
-                      modelNames.find((m) => m.value === value)?.label ||
-                      value ||
-                      "-",
+                      auditAngilalNer(value),
                   },
                   {
                     key: "action",

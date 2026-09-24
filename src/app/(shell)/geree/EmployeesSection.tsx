@@ -19,7 +19,6 @@ interface EmployeesSectionProps {
   onEdit: (employee: any) => void;
   onDelete: (employee: any) => void;
   onManagePermissions: (employee: any) => void;
-  onCredentialsUpdate: (employee: any) => void;
 }
 
 export default function EmployeesSection({
@@ -37,7 +36,6 @@ export default function EmployeesSection({
   onEdit,
   onDelete,
   onManagePermissions,
-  onCredentialsUpdate,
 }: EmployeesSectionProps) {
   if (isValidatingAjiltan) {
     return (
@@ -61,7 +59,6 @@ export default function EmployeesSection({
           onEdit={onEdit}
           onDelete={onDelete}
           onManagePermissions={onManagePermissions}
-          onCredentialsUpdate={onCredentialsUpdate}
         />
       </div>
       <div id="employees-pagination">

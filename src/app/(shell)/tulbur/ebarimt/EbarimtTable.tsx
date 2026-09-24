@@ -65,6 +65,7 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
         title: <span className="text-inherit">Огноо</span>,
         dataIndex: "date",
         key: "date",
+        sorter: (a: EbarimtItem, b: EbarimtItem) => String(a.date || "").localeCompare(String(b.date || "")),
         align: "center",
         width: 140,
         render: (val: string) => (
@@ -77,6 +78,8 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
         title: <span className="text-inherit">Тоот</span>,
         dataIndex: "toot",
         key: "toot",
+        sorter: (a: EbarimtItem, b: EbarimtItem) =>
+          String(a.toot || "").localeCompare(String(b.toot || ""), undefined, { numeric: true }),
         align: "center",
         width: 65,
         render: (val: string, item: EbarimtItem) => (
@@ -91,6 +94,8 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
         ),
         dataIndex: "gereeniiDugaar",
         key: "gereeniiDugaar",
+        sorter: (a: EbarimtItem, b: EbarimtItem) =>
+          String(a.gereeniiDugaar || "").localeCompare(String(b.gereeniiDugaar || ""), undefined, { numeric: true }),
         align: "center",
         width: 120,
         render: (val: string) => (
@@ -103,6 +108,7 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
         title: <span className="text-inherit">Төрөл</span>,
         dataIndex: "type",
         key: "type",
+        sorter: (a: EbarimtItem, b: EbarimtItem) => String(a.type || "").localeCompare(String(b.type || "")),
         align: "center",
         width: 80,
         render: (val: string) => {
@@ -139,12 +145,13 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
         title: <span className="text-inherit">Дүн</span>,
         dataIndex: "total",
         key: "total",
+        sorter: (a: EbarimtItem, b: EbarimtItem) => (Number(a.total) || 0) - (Number(b.total) || 0),
         align: "center",
         width: 120,
         onCell: () => ({ className: "!text-right" }),
         render: (val: number) => (
-          <span className="text-inherit whitespace-nowrap font-medium">
-            {formatNumber(val || 0)}₮
+          <span className="text-inherit whitespace-nowrap">
+            {formatNumber(val || 0)}
           </span>
         ),
       },
@@ -152,6 +159,7 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
         title: <span className="text-inherit">Үйлчилгээ</span>,
         dataIndex: "service",
         key: "service",
+        sorter: (a: EbarimtItem, b: EbarimtItem) => String(a.service || "").localeCompare(String(b.service || "")),
         align: "center",
         width: 130,
         render: (val: string) => (
@@ -163,6 +171,7 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
       {
         title: <span className="text-inherit">Төлөв</span>,
         key: "tuluv",
+        sorter: (a: EbarimtItem, b: EbarimtItem) => Number(butsaasanEsekh(a)) - Number(butsaasanEsekh(b)),
         align: "center",
         width: 85,
         render: (_: any, row: EbarimtItem) =>
@@ -342,7 +351,7 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
                     className="bg-[color:var(--surface-hover)]"
                   >
                     <span className="font-bold text-[color:var(--panel-text)] dark:!text-white whitespace-nowrap">
-                      {formatNumber(khuchinteiDun)}₮
+                      {formatNumber(khuchinteiDun)}
                     </span>
                   </Table.Summary.Cell>
                   <Table.Summary.Cell
@@ -361,7 +370,7 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
                   >
                     {butsaasanToo > 0 ? (
                       <span className="whitespace-nowrap text-danger font-medium">
-                        Буцаасан {butsaasanToo}: {formatNumber(butsaasanDun)}₮
+                        Буцаасан {butsaasanToo}: {formatNumber(butsaasanDun)}
                       </span>
                     ) : (
                       <span className="text-[color:var(--muted-text)]">-</span>

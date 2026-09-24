@@ -1,5 +1,6 @@
 "use client";
 
+import ExcelButton from "@/components/ui/ExcelButton";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import { ModalPortal } from "../../../../../components/shell/ModalPortal";
@@ -124,6 +125,39 @@ const fmtDate = (d: string) => {
 type HongololtTurul = "percent" | "amount";
 
 /* ─── Component ─────────────────────────────────────────────────────────── */
+
+/** Маягтын нэгдсэн талбарын загвар (globals.css-ийн `--ctl-*` токенууд) */
+const TALBAR =
+  "h-9 w-full rounded-[10px] border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] px-3 text-[13px] text-[color:var(--panel-text)] shadow-[var(--ctl-shadow)] placeholder:text-[color:var(--muted-text)] transition-colors hover:border-[color:var(--ctl-border-hover)] focus:border-theme focus:outline-none focus:ring-2 focus:ring-theme/20";
+
+/** «Шошго | талбар» нэг мөр */
+function Mur({
+  shoshgo,
+  shaardlagatai,
+  tailbar,
+  children,
+}: {
+  shoshgo: string;
+  shaardlagatai?: boolean;
+  tailbar?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="grid grid-cols-[112px_1fr] items-center gap-3">
+      <span className="text-[13px] text-[color:var(--muted-text)]">
+        {shaardlagatai && <span className="mr-0.5 text-danger">*</span>}
+        {shoshgo}
+        {shoshgo ? ":" : ""}
+      </span>
+      <div className="min-w-0">
+        {children}
+        {tailbar && (
+          <p className="mt-1 text-[11px] text-[color:var(--muted-text)]">{tailbar}</p>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function HongololtTool({
   show = false,
@@ -277,12 +311,37 @@ export default function HongololtTool({
     if (!token || !baiguullagiinId) return;
     try {
       setFetching(true);
-      const res = await uilchilgee(token).get("/orshinSuugch", {
-        params: {
-          baiguullagiinId,
-          barilgiinId: barilgiinId || undefined,
-          khuudasniiKhemjee: 2000,
-        },
+      // Тоот бүрийн гэрээг `/geree`-ээс олно: `orshinSuugch.toots[]` дээр
+      // `gereeniiId` байдаггүй тул өмнө нь олон тооттой айлын БҮХ тоот нэг
+      // `item.gereeniiId`-г авч, мөрүүд ижил `_id`-тай болдог байв — нэгийг
+      // сонгоход бүгд сонгогдож, хөнгөлөлт нэг гэрээнд давхар бичигддэг байв.
+      const [res, gereeRes] = await Promise.all([
+        uilchilgee(token).get("/orshinSuugch", {
+          params: {
+            baiguullagiinId,
+            barilgiinId: barilgiinId || undefined,
+            khuudasniiKhemjee: 2000,
+          },
+        }),
+        uilchilgee(token)
+          .get("/geree", {
+            params: {
+              baiguullagiinId,
+              barilgiinId: barilgiinId || undefined,
+              khuudasniiKhemjee: 5000,
+            },
+          })
+          .catch(() => ({ data: { jagsaalt: [] } })),
+      ]);
+      const gereeJagsaalt: any[] = Array.isArray(gereeRes.data?.jagsaalt)
+        ? gereeRes.data.jagsaalt
+        : [];
+      /** `${orshinSuugchId}|${toot}` → идэвхтэй гэрээний _id */
+      const tootiinGeree = new Map<string, string>();
+      gereeJagsaalt.forEach((g: any) => {
+        if (String(g.tuluv || "") === "Цуцалсан") return;
+        const key = `${String(g.orshinSuugchId || "")}|${String(g.toot || "").trim()}`;
+        if (!tootiinGeree.has(key)) tootiinGeree.set(key, String(g._id));
       });
       const raw = Array.isArray(res.data?.jagsaalt)
         ? res.data.jagsaalt
@@ -319,11 +378,15 @@ export default function HongololtTool({
           tootsList.forEach((t: any, idx: number) => {
             const tootStr = String(t.toot || "-");
             const gid = String(
-              t.gereeniiId || t.gereeId || item.gereeniiId || "",
+              t.gereeniiId ||
+                t.gereeId ||
+                tootiinGeree.get(`${resId}|${tootStr.trim()}`) ||
+                // Ганц тоот бол оршин суугчийн гэрээ нь л тэр
+                (tootsList.length === 1 ? item.gereeniiId : "") ||
+                "",
             );
-            const rowId = gid
-              ? `${resId}_${gid}`
-              : `${resId}_${tootStr}_${idx}`;
+            // Тоот бүр ТУСДАА мөр — гэрээ олдоогүй ч давхцахгүй.
+            const rowId = `${resId}_${gid || "x"}_${tootStr}_${idx}`;
 
             rows.push({
               _id: rowId,
@@ -683,22 +746,65 @@ export default function HongololtTool({
     return zuruu >= 0 ? zuruu + 1 : 1;
   }, [selectedMonth, duusakhSar]);
 
+  /**
+   * Хувиар хөнгөлөх СУУРЬ — сонгосон сар(ууд)-д гэрээнд БОДИТ нэхэмжилсэн
+   * төлбөр (зардал сонгосон бол зөвхөн тэр зардал). Өмнө нь
+   * `turesiinOrlogo`-оос бодож байсан ч энэ талбар sukh-д байхгүй тул хувь
+   * үргэлж 0₮ гарч «Хөнгөлөх дүн гарсан оршин суугч алга» алдаа заадаг байв.
+   */
+  const [suuriDun, setSuuriDun] = useState<Record<string, Record<string, number>>>({});
+  const [suuriAchaalj, setSuuriAchaalj] = useState(false);
+  React.useEffect(() => {
+    if (!token || !baiguullagiinId || !selectedMonth) return;
+    let khuchintei = true;
+    setSuuriAchaalj(true);
+    uilchilgee(token)
+      .post("/khungulultSuuriAvya", {
+        baiguullagiinId,
+        barilgiinId: barilgiinId || undefined,
+        ekhlekhSar: selectedMonth,
+        duusakhSar: duusakhSar || selectedMonth,
+        zardliinId: zardliinId || undefined,
+      })
+      .then((resp) => {
+        if (khuchintei) setSuuriDun(resp.data?.suuri || {});
+      })
+      .catch(() => {
+        if (khuchintei) setSuuriDun({});
+      })
+      .finally(() => {
+        if (khuchintei) setSuuriAchaalj(false);
+      });
+    return () => {
+      khuchintei = false;
+    };
+  }, [token, baiguullagiinId, barilgiinId, selectedMonth, duusakhSar, zardliinId]);
+
   const computeDiscount = (r: ResidentRow): number => {
     const val = parseFloat(hongololtUtga) || 0;
-    const suuri =
-      hongololtTurul === "percent"
-        ? ((r.turesiinOrlogo || 0) * val) / 100
-        : val;
+    if (val <= 0) return 0;
+    const khonog = parseFloat(khungulultKhonog) || 0;
 
-    // Хоногийн горимд сарын дүнг 30 хоногт хувааж, сонгосон хоногоор авна.
-    // Энэ горимд сарын үржүүлэгч хамаарахгүй — хугацаа нь хоногоор заагдана.
-    if (khonogTootsokh) {
-      const khonog = parseFloat(khungulultKhonog) || 0;
-      if (khonog <= 0) return 0;
-      return Math.round((suuri / 30) * khonog);
+    if (hongololtTurul === "percent") {
+      const saraar = (r.gereeniiId && suuriDun[r.gereeniiId]) || {};
+      // Хоногийн горимд эхний сарын төлбөрийг 30 хоногт хувааж авна.
+      if (khonogTootsokh) {
+        if (khonog <= 0) return 0;
+        const sar = saraar[selectedMonth] || 0;
+        return Math.round(((sar * val) / 100 / 30) * khonog);
+      }
+      // Сар бүрийн бодит төлбөрөөс хувь — нийлбэр нь сарын үржүүлэгчийг
+      // өөрөө агуулна.
+      const niit = Object.values(saraar).reduce((a, b) => a + (Number(b) || 0), 0);
+      return Math.round((niit * val) / 100);
     }
 
-    return Math.round(suuri) * sariinToo;
+    // Дүнгээр: сар бүрт ижил дүн.
+    if (khonogTootsokh) {
+      if (khonog <= 0) return 0;
+      return Math.round((val / 30) * khonog);
+    }
+    return Math.round(val) * sariinToo;
   };
 
   /* ── Summary ── */
@@ -771,7 +877,11 @@ export default function HongololtTool({
 
     if (ilgeekhGereenuud.length === 0) {
       setLoading(false);
-      toast.error("Хөнгөлөх дүн гарсан оршин суугч алга");
+      toast.error(
+        hongololtTurul === "percent"
+          ? "Сонгосон сард нэхэмжилсэн төлбөртэй гэрээ алга — хувиар хөнгөлөх суурь дүн 0₮"
+          : "Хөнгөлөх дүн гарсан оршин суугч алга",
+      );
       return;
     }
 
@@ -1091,8 +1201,8 @@ export default function HongololtTool({
    */
   const aguulga = (
     <>
-      {/* ── Tabs ── */}
-      <div className="flex gap-1 px-2 pt-1 pb-1 shrink-0">
+      {/* ── Tabs + хайлт нэг эгнээнд ── */}
+      <div className="flex flex-wrap items-center gap-1 px-2 pt-1 pb-1 shrink-0">
         {(
           [
             { id: "oruulakh", label: "Хөнгөлөлт оруулах", icon: Tag },
@@ -1112,214 +1222,238 @@ export default function HongololtTool({
             {label}
           </button>
         ))}
+        {activeTab === "oruulakh" && (
+          <div className="ml-auto flex items-center gap-2">
+            {selectMode === "selected" && (
+              <span className="text-xs font-medium text-brand">
+                {selectedIds.size} сонгосон
+              </span>
+            )}
+            <label className="filter-field w-[280px] max-w-full">
+              <Search className="h-4 w-4 shrink-0 text-[color:var(--muted-text)]" />
+              <input
+                type="text"
+                placeholder="Тоот, нэр, утсаар хайх..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </label>
+            <button
+              type="button"
+              onClick={loadResidents}
+              disabled={fetching}
+              className="btn-minimal inline-flex h-9 w-9 items-center justify-center !p-0"
+              title="Дахин ачааллах"
+            >
+              <RefreshCw className={`h-4 w-4 ${fetching ? "animate-spin" : ""}`} />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ══ TAB 1 — ОРУУЛАХ ══ */}
       {activeTab === "oruulakh" && (
         <div className="flex flex-1 min-h-0 overflow-hidden gap-4 lg:gap-6 pt-3 px-2">
-          {/* Left panel */}
-          <div className="w-80 lg:w-[350px] xl:w-[380px] shrink-0 flex flex-col gap-4 p-5 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] overflow-y-auto">
-            {/* Scope selector */}
-            <div>
-              <label className="block text-[11px] font-medium text-[color:var(--muted-text)] uppercase tracking-wide mb-1.5">
-                Хамрах хүрээ
-              </label>
-              <div className="flex rounded-xl overflow-hidden border border-[color:var(--surface-border)]">
-                {(
-                  [
-                    { v: "all", label: "Бүгд" },
-                    { v: "selected", label: "Сонгосон" },
-                  ] as const
-                ).map(({ v, label }) => (
-                  <button
-                    key={v}
-                    type="button"
-                    onClick={() => setSelectMode(v)}
-                    className={`flex-1 py-1.5 text-xs font-medium transition-all ${selectMode === v
-                      ? "bg-theme text-white"
-                      : "text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)]"
+          {/* Left panel — «шошго | талбар» мөрүүд (turees-ийн маягттай ижил) */}
+          <div className="w-80 lg:w-[380px] xl:w-[400px] shrink-0 flex flex-col rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] overflow-hidden">
+            <div className="flex-1 overflow-y-auto p-5 space-y-3">
+              <Mur shoshgo="Хамрах хүрээ">
+                <div className="grid h-9 grid-cols-2 gap-0.5 rounded-[10px] border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] p-0.5">
+                  {(
+                    [
+                      { v: "all", label: "Бүгд", too: filteredResidents.length },
+                      { v: "selected", label: "Сонгосон", too: selectedIds.size },
+                    ] as const
+                  ).map(({ v, label, too }) => (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => setSelectMode(v)}
+                      className={`inline-flex items-center justify-center gap-1.5 rounded-[8px] text-xs font-medium transition-colors ${
+                        selectMode === v
+                          ? "bg-theme !text-white"
+                          : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
                       }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
+                    >
+                      {label}
+                      <span className={`rounded-full px-1.5 text-[10px] ${selectMode === v ? "bg-white/20" : "bg-[color:var(--surface-hover)]"}`}>
+                        {too}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </Mur>
 
-            {/* Орц — барилгын тохиргооноос */}
-            <div className="flex items-center gap-2">
-              <label className="text-[11px] font-medium text-[color:var(--muted-text)] uppercase tracking-wide shrink-0 w-16">
-                Орц :
-              </label>
-              <select
-                value={orts}
-                onChange={(e) => setOrts(e.target.value)}
-                className="flex-1 px-3 py-1.5 text-xs rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] dark:text-white focus:outline-none focus:ring-2 focus:ring-theme"
-              >
-                <option value="">Бүх орц</option>
-                {ortsSongoltuud.map((o: string) => (
-                  <option key={o} value={o}>
-                    {o}
-                  </option>
-                ))}
-              </select>
-            </div>
+              <Mur shoshgo="Зардал">
+                <select
+                  value={zardliinId}
+                  onChange={(e) => setZardliinId(e.target.value)}
+                  className={TALBAR}
+                >
+                  <option value="">Бүх зардал</option>
+                  {zardluud.map((z) => (
+                    <option key={z._id} value={z._id}>
+                      {z.ner}
+                    </option>
+                  ))}
+                </select>
+              </Mur>
 
-            {/* Давхар */}
-            <div className="flex items-center gap-2">
-              <label className="text-[11px] font-medium text-[color:var(--muted-text)] uppercase tracking-wide shrink-0 w-16">
-                Давхар :
-              </label>
-              <select
-                value={davkhar}
-                onChange={(e) => setDavkhar(e.target.value)}
-                className="flex-1 px-3 py-1.5 text-xs rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] dark:text-white focus:outline-none focus:ring-2 focus:ring-theme"
-              >
-                <option value="">Бүх давхар</option>
-                {davkharSongoltuud.map((d: string) => (
-                  <option key={d} value={d}>
-                    {d}
-                  </option>
-                ))}
-              </select>
-            </div>
+              <Mur shoshgo="">
+                <label className="flex h-9 cursor-pointer items-center gap-2 text-[13px] text-[color:var(--panel-text)]">
+                  <input
+                    type="checkbox"
+                    checked={khonogTootsokh}
+                    onChange={(e) => setKhonogTootsokh(e.target.checked)}
+                    className="h-4 w-4 accent-[color:var(--theme)]"
+                  />
+                  Хоногийн хөнгөлөлт
+                </label>
+              </Mur>
 
-            {/* Хөнгөлөх сар — муж. Апп даяар хэрэглэдэг сонгогч. */}
-            <div>
-              <label className="block text-[11px] font-medium text-[color:var(--muted-text)] uppercase tracking-wide mb-1.5">
-                * Хөнгөлөх сар
-              </label>
-              <div className="h-[38px] w-full">
-                <StandardDatePicker
-                  isRange
-                  picker="month"
-                  format="YYYY-MM"
-                  value={
-                    selectedMonth && duusakhSar
-                      ? [selectedMonth, duusakhSar]
-                      : selectedMonth
-                      ? [selectedMonth, selectedMonth]
-                      : undefined
-                  }
-                  onChange={(_: any, dateStrings: [string, string]) => {
-                    if (dateStrings && Array.isArray(dateStrings) && (dateStrings[0] || dateStrings[1])) {
-                      const [start, end] = dateStrings;
-                      setSelectedMonth(start || "");
-                      setDuusakhSar(end || start || "");
-                    } else {
-                      setSelectedMonth("");
-                      setDuusakhSar("");
-                    }
-                  }}
-                  placeholder={["Эхлэх сар", "Дуусах сар"]}
-                  className="w-full !rounded-xl text-xs"
-                  allowClear
-                />
-              </div>
-            </div>
-
-
-
-            {/* Discount type */}
-            <div>
-              <label className="block text-[11px] font-medium text-[color:var(--muted-text)] uppercase tracking-wide mb-1.5">
-                Хөнгөлөлт төрөл
-              </label>
-              <div className="flex rounded-xl overflow-hidden border border-[color:var(--surface-border)]">
-                {(
-                  [
-                    { v: "percent", label: "Хувь (%)" },
-                    { v: "amount", label: "Дүн (₮)" },
-                  ] as const
-                ).map(({ v, label }) => (
-                  <button
-                    key={v}
-                    type="button"
-                    onClick={() => setHongololtTurul(v)}
-                    className={`flex-1 py-1.5 text-xs font-medium transition-all ${hongololtTurul === v
-                      ? "bg-theme text-white"
-                      : "text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)]"
-                      }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Discount value */}
-            <div>
-              <label className="block text-[11px] font-medium text-[color:var(--muted-text)] uppercase tracking-wide mb-1.5">
-                * Хөнгөлөх {hongololtTurul === "percent" ? "хувь" : "дүн"}
-              </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  step="any"
-                  min="0"
-                  max={
-                    hongololtTurul === "percent" ? deedKhuvi ?? 100 : undefined
-                  }
-                  placeholder={hongololtTurul === "percent" ? "0 – 100" : "0"}
-                  value={hongololtUtga}
-                  onChange={(e) => setHongololtUtga(e.target.value)}
-                  className="w-full pl-3 pr-8 py-2 text-xs rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] dark:text-white focus:outline-none focus:ring-2 focus:ring-theme"
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[color:var(--muted-text)] pointer-events-none">
-                  {hongololtTurul === "percent" ? "%" : "₮"}
-                </span>
-              </div>
-              {hongololtTurul === "percent" && deedKhuvi != null && (
-                <p className="mt-1 text-[10px] text-[color:var(--muted-text)]">
-                  Байгууллагын дээд хязгаар: {deedKhuvi}%
-                </p>
+              {khonogTootsokh && (
+                <Mur shoshgo="Хоног" shaardlagatai>
+                  <input
+                    type="number"
+                    min="1"
+                    max="31"
+                    placeholder="Хоног"
+                    value={khungulultKhonog}
+                    onChange={(e) => setKhungulultKhonog(e.target.value)}
+                    className={TALBAR}
+                  />
+                </Mur>
               )}
+
+              <Mur shoshgo="Хөнгөлөх сар" shaardlagatai>
+                <div className="btn-minimal flex h-9 w-full items-center !px-2">
+                  <StandardDatePicker
+                    isRange
+                    picker="month"
+                    format="YYYY-MM"
+                    value={
+                      selectedMonth && duusakhSar
+                        ? [selectedMonth, duusakhSar]
+                        : selectedMonth
+                        ? [selectedMonth, selectedMonth]
+                        : undefined
+                    }
+                    onChange={(_: any, dateStrings: [string, string]) => {
+                      if (dateStrings && Array.isArray(dateStrings) && (dateStrings[0] || dateStrings[1])) {
+                        const [start, end] = dateStrings;
+                        setSelectedMonth(start || "");
+                        setDuusakhSar(end || start || "");
+                      } else {
+                        setSelectedMonth("");
+                        setDuusakhSar("");
+                      }
+                    }}
+                    placeholder={["Эхлэх сар", "Дуусах сар"]}
+                    className="!h-full w-full text-[13px]"
+                    allowClear
+                  />
+                </div>
+              </Mur>
+
+              <Mur shoshgo="Орц">
+                <select value={orts} onChange={(e) => setOrts(e.target.value)} className={TALBAR}>
+                  <option value="">Бүх орц</option>
+                  {ortsSongoltuud.map((o: string) => (
+                    <option key={o} value={o}>
+                      {o}
+                    </option>
+                  ))}
+                </select>
+              </Mur>
+
+              <Mur shoshgo="Давхар">
+                <select value={davkhar} onChange={(e) => setDavkhar(e.target.value)} className={TALBAR}>
+                  <option value="">Бүх давхар</option>
+                  {davkharSongoltuud.map((d: string) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+              </Mur>
+
+              <Mur shoshgo="Хөнгөлөх төрөл">
+                <select
+                  value={hongololtTurul}
+                  onChange={(e) => setHongololtTurul(e.target.value as HongololtTurul)}
+                  className={TALBAR}
+                >
+                  <option value="percent">Хувь (%)</option>
+                  <option value="amount">Дүн (₮)</option>
+                </select>
+              </Mur>
+
+              <Mur
+                shoshgo={hongololtTurul === "percent" ? "Хөнгөлөх хувь" : "Хөнгөлөх дүн"}
+                shaardlagatai
+                tailbar={
+                  hongololtTurul === "percent" && deedKhuvi != null
+                    ? `Дээд хязгаар: ${deedKhuvi}%`
+                    : undefined
+                }
+              >
+                <div className="relative">
+                  <input
+                    type="number"
+                    step="any"
+                    min="0"
+                    max={hongololtTurul === "percent" ? deedKhuvi ?? 100 : undefined}
+                    placeholder={hongololtTurul === "percent" ? "Хөнгөлөх хувь" : "Хөнгөлөх дүн"}
+                    value={hongololtUtga}
+                    onChange={(e) => setHongololtUtga(e.target.value)}
+                    className={`${TALBAR} !pr-8`}
+                  />
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[color:var(--muted-text)]">
+                    {hongololtTurul === "percent" ? "%" : "₮"}
+                  </span>
+                </div>
+              </Mur>
+
+              <Mur shoshgo="Шалтгаан">
+                <input
+                  type="text"
+                  placeholder="Шалтгаан"
+                  value={shaltgaan}
+                  onChange={(e) => setShaltgaan(e.target.value)}
+                  className={TALBAR}
+                />
+              </Mur>
             </div>
 
-            {/* Reason */}
-            <div>
-              <label className="block text-[11px] font-medium text-[color:var(--muted-text)] uppercase tracking-wide mb-1.5">
-                Шалтгаан
-              </label>
-              <textarea
-                rows={1}
-                placeholder="Шалтгаан"
-                value={shaltgaan}
-                onChange={(e) => setShaltgaan(e.target.value)}
-                className="w-full px-3 py-1.5 text-xs rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] dark:text-white focus:outline-none focus:ring-2 focus:ring-theme resize-none"
-              />
-            </div>
-
-            {/* Summary */}
-            <div className="mt-auto pt-3 border-t border-[color:var(--surface-border)] space-y-2">
-
-              <div className="flex justify-between text-xs">
-                <span className="text-[color:var(--muted-text)]">Нийт хөнгөлөгдсөн дүн :</span>
-                <span className="font-medium text-brand">
-                  {fmt(totalDun)}₮
-                </span>
+            {/* Хураангуй */}
+            <div className="shrink-0 space-y-1.5 border-t border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] px-5 py-3 text-[13px]">
+              <div className="flex justify-between">
+                <span className="text-[color:var(--muted-text)]">Хөнгөлөгдөх о.суугч:</span>
+                <span className="font-medium text-[color:var(--panel-text)]">{summaryRows.length}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[color:var(--muted-text)]">Нийт хөнгөлөгдсөн дүн:</span>
+                <span className="font-semibold text-brand">{fmt(totalDun)}₮</span>
               </div>
             </div>
 
             {/* Actions */}
-            <div className="flex gap-2 shrink-0">
+            <div className="flex shrink-0 justify-between gap-2 border-t border-[color:var(--surface-border)] px-5 py-3">
               <button
                 type="button"
                 onClick={() => onClose?.()}
                 disabled={loading}
-                className="flex-1 py-2 text-xs font-medium rounded-xl border border-[color:var(--surface-border)] text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] transition-colors"
+                className="btn-minimal inline-flex h-9 min-w-[96px] items-center justify-center !px-4 text-[13px]"
               >
                 Цуцлах
               </button>
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={loading || fetching}
-                className="flex-1 py-2 text-xs font-medium rounded-xl bg-theme hover:bg-theme text-white transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
+                disabled={loading || fetching || (hongololtTurul === "percent" && suuriAchaalj)}
+                className="inline-flex h-9 min-w-[120px] items-center justify-center gap-1.5 rounded-[10px] bg-theme px-4 text-[13px] font-medium !text-white shadow-[var(--ctl-shadow)] transition-opacity hover:opacity-90 disabled:opacity-50"
               >
-                {loading && (
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                )}
+                {loading && <RefreshCw className="h-3.5 w-3.5 animate-spin" />}
                 Хадгалах
               </button>
             </div>
@@ -1327,36 +1461,6 @@ export default function HongololtTool({
 
           {/* Right panel: resident table */}
           <div className="flex-1 flex flex-col min-h-0">
-            {/* Toolbar */}
-            <div className="flex items-center gap-3 px-5 py-3 border-b border-[color:var(--surface-border)] shrink-0">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--muted-text)]" />
-                <input
-                  type="text"
-                  placeholder="Тоот, нэр эсвэл утасны дугаараар хайх..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] dark:text-white focus:outline-none focus:ring-2 focus:ring-theme"
-                />
-              </div>
-              <button
-                type="button"
-                onClick={loadResidents}
-                disabled={fetching}
-                className="p-1.5 rounded-xl hover:bg-[color:var(--surface-hover)] text-[color:var(--muted-text)] transition-colors"
-                title="Дахин ачааллах"
-              >
-                <RefreshCw
-                  className={`w-4 h-4 ${fetching ? "animate-spin" : ""}`}
-                />
-              </button>
-              {selectMode === "selected" && (
-                <span className="text-xs text-brand font-medium">
-                  {selectedIds.size} сонгосон
-                </span>
-              )}
-            </div>
-
             {/* Table — гүйлгэлтийг хүснэгт өөрөө хариуцна */}
             <div className="min-h-0 flex-1">
               <Table<any>
@@ -1369,11 +1473,21 @@ export default function HongololtTool({
                   pagination={false}
                   rowSelection={{
                     selectedRowKeys: Array.from(selectedIds),
-                    onChange: (keys) =>
-                      setSelectedIds(new Set(keys as string[])),
+                    onChange: (keys) => {
+                      setSelectedIds(new Set(keys as string[]));
+                      // Мөр сонговол «Сонгосон» горимд шилжинэ — «Бүгд» дээр
+                      // сонголт ямар ч нөлөөгүй байсан тул чек «сонин» санагддаг байв.
+                      if ((keys as string[]).length > 0) setSelectMode("selected");
+                    },
                   }}
                   onRow={(r) => ({
-                    onClick: () => toggleOne(r._id),
+                    onClick: (e: React.MouseEvent) => {
+                      // Checkbox-ийн даралт мөрийн onClick руу ч хөөрдөг тул
+                      // хоёр удаа сэлгэгдээд буцаад хэвэндээ ордог байв.
+                      if ((e.target as HTMLElement).closest("input,label,.zt-checkbox,[role=checkbox]")) return;
+                      toggleOne(r._id);
+                      setSelectMode("selected");
+                    },
                     className: "cursor-pointer",
                   })}
                 />
@@ -1454,13 +1568,7 @@ export default function HongololtTool({
               </div>
 
               <div>
-                <button
-                  type="button"
-                  onClick={handleExportExcel}
-                  className="px-4 py-1.5 text-xs font-medium rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] transition-colors shadow-xs cursor-pointer"
-                >
-                  Excel
-                </button>
+                <ExcelButton onClick={handleExportExcel} />
               </div>
             </div>
 

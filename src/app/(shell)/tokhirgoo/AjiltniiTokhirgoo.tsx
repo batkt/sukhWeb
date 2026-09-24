@@ -47,7 +47,6 @@ function AjiltniiTokhirgooTsonkh() {
         onEdit={() => {}}
         onDelete={() => {}}
         onManagePermissions={(employee: any) => setErkhAjiltan(employee)}
-        onCredentialsUpdate={() => {}}
       />
 
       <EmployeePermissionsModal

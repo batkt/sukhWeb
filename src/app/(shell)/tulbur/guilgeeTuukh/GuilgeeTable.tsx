@@ -553,7 +553,8 @@ export default function GuilgeeTable({
         if (col.key === "action") {
           return {
             ...baseColumn,
-            width: 160,
+            // 3 дүрс: 3 × 28px + 2 × 4px = 92px (+ нүдний зай)
+            width: 104,
             render: (_: any, record: any) => {
               const resident =
                 (record?.orshinSuugchId &&
@@ -644,15 +645,15 @@ export default function GuilgeeTable({
                 };
 
               return (
-                <div className="flex items-center justify-center gap-2 py-0">
+                <div className="flex items-center justify-center gap-1 py-0">
                   {canCreateTransaction && (
                     <Tooltip title="Гүйлгээ хийх">
                       <button
                         type="button"
                         onClick={() => onTransaction(residentData, remainingValue)}
-                        className="bg-transparent border-0 p-1 text-success hover:opacity-80 transition-opacity focus:outline-none"
+                        className="rounded-md border-0 bg-transparent p-1.5 text-success transition-colors hover:bg-[color:var(--surface-hover)] focus:outline-none"
                       >
-                        <Banknote className="w-5 h-5" />
+                        <Banknote className="h-4 w-4" />
                       </button>
                     </Tooltip>
                   )}
@@ -660,18 +661,18 @@ export default function GuilgeeTable({
                     <button
                       type="button"
                       onClick={() => onViewHistory(residentData)}
-                      className="bg-transparent border-0 p-1 text-info hover:opacity-80 transition-opacity focus:outline-none"
+                      className="rounded-md border-0 bg-transparent p-1.5 text-info transition-colors hover:bg-[color:var(--surface-hover)] focus:outline-none"
                     >
-                      <History className="w-5 h-5" />
+                      <History className="h-4 w-4" />
                     </button>
                   </Tooltip>
                   <Tooltip title="Нэхэмжлэх харах">
                     <button
                       type="button"
                       onClick={() => onViewInvoice(residentData)}
-                      className="bg-transparent border-0 p-1 text-brand hover:opacity-80 transition-opacity focus:outline-none"
+                      className="rounded-md border-0 bg-transparent p-1.5 text-brand transition-colors hover:bg-[color:var(--surface-hover)] focus:outline-none"
                     >
-                      <Eye className="w-5 h-5" />
+                      <Eye className="h-4 w-4" />
                     </button>
                   </Tooltip>
                 </div>
@@ -864,6 +865,9 @@ export default function GuilgeeTable({
           }
           onChange={handleTableChange}
           scroll={{ x: "max-content" }}
+          // Бүтэн өргөнд сунгахгүй — өргөн дэлгэц дээр илүү зай баганууд
+          // (эсвэл «Нэр») дотор хуримтлагдаж хоосон харагдаж байв.
+          fitContent
           locale={{
             emptyText: (
               <span className="text-[color:var(--muted-text)]">

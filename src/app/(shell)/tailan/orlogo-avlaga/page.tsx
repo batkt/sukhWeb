@@ -15,7 +15,8 @@ import { useSearch } from "@/context/SearchContext";
 import { getDefaultDateRange } from "@/lib/utils";
 import formatNumber from "../../../../../tools/function/formatNumber";
 import PageSongokh from "../../../../../components/selectZagvar/pageSongokh";
-import { FileSpreadsheet, Printer } from "lucide-react";
+import { Printer } from "lucide-react";
+import ExcelButton from "@/components/ui/ExcelButton";
 import { OrlogoAvlagaTable, OrlogoAvlagaItem } from "./OrlogoAvlagaTable";
 import toast from "react-hot-toast";
 
@@ -877,7 +878,8 @@ export default function OrlogoAvlagaPage() {
   }
 
   return (
-    <div className="p-6 print-container bg-[color:var(--surface-bg)] min-h-full h-auto w-full">
+    // Бусад хуудастай ижил бүрхүүл — нэмэлт `p-6`/цагаан дэвсгэргүй
+    <div className="print-container flex w-full flex-col gap-3 pb-14">
       <PrintStyles />
 
       {/* Print-only Header */}
@@ -928,10 +930,10 @@ export default function OrlogoAvlagaPage() {
         </div>
       </div>
 
-      <div className="flex justify-between items-center mb-3 no-print">
-        <div className="flex items-center gap-6">
-          <h1 className="text-2xl font-bold">Авлагын товчоо</h1>
-          <div className="flex gap-2">
+      {/* Гарчиг нь толгой хэсэгт («Тайлан — Авлагын товчоо») байгаа тул давхарлахгүй */}
+      <div className="flex flex-wrap items-center justify-between gap-2 no-print">
+        <div className="flex items-center gap-2">
+          <div className="flex gap-1">
             {(
               [
                 ["tulult", "Орлого"],
@@ -947,7 +949,7 @@ export default function OrlogoAvlagaPage() {
                   setExpandedLedger([]);
                   setCurrentPage(1);
                 }}
-                className={`px-4 py-2 rounded-xl transition-all duration-200 ${activeTab === tab ? "bg-theme/15 text-theme font-medium shadow-sm" : "text-theme hover:bg-theme/10 hover:text-theme"}`}
+                className={`h-9 rounded-[10px] px-4 text-[13px] transition-colors ${activeTab === tab ? "bg-theme/15 font-medium text-brand" : "text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] hover:text-[color:var(--panel-text)]"}`}
               >
                 {label}
               </button>
@@ -955,21 +957,16 @@ export default function OrlogoAvlagaPage() {
           </div>
         </div>
         <div className="flex gap-3">
-          <button
-            onClick={exportToExcel}
-            className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
-          >
-            <FileSpreadsheet className="w-4 h-4 text-theme" /> Excel татах
-          </button>
+          <ExcelButton onClick={exportToExcel} />
         </div>
       </div>
 
       {/* Dashboard Totals removed as requested */}
 
-      <div className="flex flex-wrap gap-4 items-center no-print mb-4">
+      <div className="flex flex-wrap items-center gap-2 no-print">
         <div
           id="orlogo-avlaga-date"
-          className="btn-minimal h-[40px] w-full sm:w-[320px] flex items-center px-3"
+          className="btn-minimal flex h-9 w-full items-center px-3 sm:w-[280px]"
         >
           <StandardDatePicker
             isRange={true}
@@ -989,29 +986,25 @@ export default function OrlogoAvlagaPage() {
             key: "orshinSuugch",
             label: "Оршин суугч",
             placeholder: "Овог, нэрээр хайх",
+            width: "sm:w-[260px]",
           },
-          { key: "toot", label: "Тоот", placeholder: "Тоот" },
-          { key: "davkhar", label: "Давхар", placeholder: "Давхар" },
-        ].map(({ key, label, placeholder }) => (
-          <div
+          { key: "toot", label: "Тоот", placeholder: "Бүгд", width: "sm:w-[130px]" },
+          { key: "davkhar", label: "Давхар", placeholder: "Бүгд", width: "sm:w-[130px]" },
+        ].map(({ key, label, placeholder, width }) => (
+          <label
             key={key}
-            className="rounded-xl h-[40px] w-full sm:w-[280px] flex items-center"
+            className={`filter-field w-full ${width} ${(filters as any)[key] ? "is-active" : ""}`}
           >
-            <div className="flex items-center gap-2 w-full min-w-0">
-              <label className="text-sm text-theme shrink-0 whitespace-nowrap w-[90px] text-right pr-2">
-                {label}
-              </label>
-              <input
-                type="text"
-                value={(filters as any)[key]}
-                onChange={(e) =>
-                  setFilters((p) => ({ ...p, [key]: e.target.value }))
-                }
-                className="flex-1 px-3 rounded-lg neu-panel text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] !h-[40px]"
-                placeholder={placeholder}
-              />
-            </div>
-          </div>
+            <span className="filter-field-label">{label}</span>
+            <input
+              type="text"
+              value={(filters as any)[key]}
+              onChange={(e) =>
+                setFilters((p) => ({ ...p, [key]: e.target.value }))
+              }
+              placeholder={placeholder}
+            />
+          </label>
         ))}
       </div>
 
@@ -1043,7 +1036,7 @@ export default function OrlogoAvlagaPage() {
           />
       </div>
 
-      <div className="flex items-center justify-between no-print mt-3">
+      <div className="flex items-center justify-between no-print">
         <StandardPagination
           current={currentPage}
           total={displayList.length}

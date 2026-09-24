@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { FileSpreadsheet, Printer } from "lucide-react";
+import { Printer } from "lucide-react";
+import ExcelButton from "@/components/ui/ExcelButton";
 import { useBuilding } from "@/context/BuildingContext";
 import { useAuth } from "@/lib/useAuth";
 import useBaiguullaga from "@/lib/useBaiguullaga";
@@ -13,7 +14,6 @@ import { ConfigProvider, theme as antdTheme } from "antd";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import toast from "react-hot-toast";
 import PageSongokh from "components/selectZagvar/pageSongokh";
-import formatNumber from "tools/function/formatNumber";
 import {
   AvlagiinNasjiltTable,
   AvlagiinNasjiltItem,
@@ -326,7 +326,8 @@ export default function AvlagiinNasjiltPage() {
         token: { borderRadius: 12, colorPrimary: "#10b981" },
       }}
     >
-      <div className="p-4 md:p-6 bg-[color:var(--surface-bg)] min-h-full h-auto flex flex-col gap-4 print-container overflow-hidden print:block print:h-auto print:overflow-visible print:p-0">
+      {/* Бусад хуудастай ижил бүрхүүл — нэмэлт `p-6`/цагаан дэвсгэргүй */}
+      <div className="print-container flex w-full flex-col gap-3 pb-14 print:block">
         <PrintStyles />
 
         {/* Print Only Header */}
@@ -343,24 +344,13 @@ export default function AvlagiinNasjiltPage() {
           </p>
         </div>
 
-        {/* Screen title */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 no-print flex-shrink-0">
-          <div className="flex flex-col gap-1">
-            <h1 className="text-2xl font-bold text-theme tracking-tight">
-              Насжилтын тайлан
-            </h1>
-            <p className="text-sm text-theme">
-              {summary?.count || 0} хэрэглэгчийн нийт {formatNumber(totals?.uldegdel || 0, 0)} ₮ авлага
-            </p>
-          </div>
-        </div>
-
+        {/* Гарчиг/дэд гарчиг нь толгой хэсэгт («Тайлан — …») байгаа тул давхарлахгүй */}
 
         {/* Controls */}
-        <div className="flex flex-wrap items-center gap-3 no-print flex-shrink-0">
+        <div className="flex flex-wrap items-center gap-2 no-print flex-shrink-0">
           <div
             id="nasjilt-date"
-            className="btn-minimal h-[40px] w-full md:w-[320px] flex items-center px-3"
+            className="btn-minimal flex h-9 w-full items-center px-3 sm:w-[280px]"
           >
             <StandardDatePicker
               isRange={true}
@@ -381,12 +371,7 @@ export default function AvlagiinNasjiltPage() {
           >
             <Printer className="w-4 h-4" /> Хэвлэх
           </button> */}
-          <button
-            onClick={exportToExcel}
-            className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
-          >
-            <FileSpreadsheet className="w-4 h-4 text-theme" /> Excel татах
-          </button>
+          <ExcelButton onClick={exportToExcel} />
         </div>
 
         {/* ── Table ───────────────────────────────────────────────── */}
@@ -401,7 +386,7 @@ export default function AvlagiinNasjiltPage() {
         </div>
 
         {/* Pagination */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 no-print flex-shrink-0">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-3 no-print flex-shrink-0">
           <div />
           <div className="flex items-center gap-4">
             <PageSongokh

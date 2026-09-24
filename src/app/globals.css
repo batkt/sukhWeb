@@ -1653,17 +1653,22 @@ html[data-mode="dark"]:not([data-theme]),
   letter-spacing: 0.2px;
 }
 
-/* Surfaces inherit themed text color so labels/icons follow the background */
-.neu-nav a,
-.neu-nav span,
-.neu-nav button,
-.menu-surface a,
-.menu-surface span,
-.menu-surface button,
-.neu-panel a,
-.neu-panel span,
-.neu-panel button {
-  color: inherit;
+/* Surfaces inherit themed text color so labels/icons follow the background.
+   `@layer base` дотор — layer-гүй бол Tailwind-ийн `text-white` зэрэг
+   utility-г (layer дотор) ДАРЖ, `bg-theme text-white` товчны текст бараан
+   харагддаг байв. */
+@layer base {
+  .neu-nav a,
+  .neu-nav span,
+  .neu-nav button,
+  .menu-surface a,
+  .menu-surface span,
+  .menu-surface button,
+  .neu-panel a,
+  .neu-panel span,
+  .neu-panel button {
+    color: inherit;
+  }
 }
 
 /* Themed focus rings for interactive surfaces */
@@ -1880,6 +1885,12 @@ html[data-mode="dark"]:not([data-theme]),
 .modal-surface th,
 .modal-surface td {
   color: var(--panel-text);
+}
+
+/* AntD товч текстээ <span>-д ороодог — дээрх дүрэм цагаан текстийг
+   дарахгүйн тулд товчны өнгийг өвлүүлнэ */
+.modal-surface .ant-btn span {
+  color: inherit;
 }
 
 /* Common borders inside modal should use themed border color */
@@ -7186,4 +7197,129 @@ body,
   font-size: 0.8125rem;
   color: var(--muted-text);
   user-select: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   НЭГДСЭН КОНТРОЛ — товч (.btn-minimal) ба шүүлтүүрийн талбар (.filter-field)
+   Бүх хуудсанд ИЖИЛ: цагаан дэвсгэр, нимгэн хүрээ, бага сүүдэр, blur/glass
+   ба hover-т дээш хөдлөх эффектгүй. Өмнөх олон давхар .btn-minimal
+   тодорхойлолтыг энд эцэслэн дарна.
+
+   Токенууд `:where()` дотор (0 specificity) — `.btn-save`, `.btn-cancel`
+   гэх мэт өнгөт хувилбарууд өөрсдийн `--btn-*`-ээ хэвээр дарна.
+   ═══════════════════════════════════════════════════════════════════════ */
+/* `[data-theme]`/`.dark` дээр ДАХИН зарлана — var() нь зарласан элемент дээрээ
+   тооцоологддог тул тухайн темийн --surface-bg/--panel-text-ийг авна. */
+:root,
+[data-theme],
+.dark {
+  --ctl-border: color-mix(in srgb, var(--panel-text) 12%, transparent);
+  --ctl-border-hover: color-mix(in srgb, var(--panel-text) 22%, transparent);
+  --ctl-hover-bg: color-mix(in srgb, var(--panel-text) 4%, var(--surface-bg));
+  --ctl-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --ctl-focus-ring: 0 0 0 3px color-mix(in srgb, var(--theme) 18%, transparent);
+  --ctl-radius: 10px;
+}
+[data-mode="dark"],
+.dark {
+  --ctl-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+:where(.btn-minimal, .btn-minimal-ghost) {
+  --btn-bg: var(--surface-bg);
+  --btn-bg-hover: var(--ctl-hover-bg);
+  --btn-bg-active: color-mix(in srgb, var(--panel-text) 8%, var(--surface-bg));
+  --btn-text: var(--panel-text);
+  --btn-border: var(--ctl-border);
+}
+
+.btn-minimal,
+.btn-minimal-ghost {
+  border-radius: var(--ctl-radius);
+  box-shadow: var(--ctl-shadow);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.btn-minimal:hover,
+.btn-minimal-ghost:hover {
+  transform: none !important;
+  box-shadow: var(--ctl-shadow);
+  border-color: var(--ctl-border-hover) !important;
+}
+.btn-minimal:active,
+.btn-minimal-ghost:active {
+  transform: none !important;
+}
+.btn-minimal:focus-visible,
+.btn-minimal-ghost:focus-visible,
+.btn-minimal:focus-within,
+.btn-minimal-ghost:focus-within {
+  outline: none;
+  border-color: var(--theme) !important;
+  box-shadow: var(--ctl-focus-ring) !important;
+}
+
+/* Шүүлтүүрийн талбар: <label class="filter-field"><span class="filter-field-label">Орц</span><input/></label> */
+.filter-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 36px;
+  padding: 0 0.75rem;
+  background: var(--surface-bg);
+  border: 1px solid var(--ctl-border);
+  border-radius: var(--ctl-radius);
+  box-shadow: var(--ctl-shadow);
+  cursor: text;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.filter-field:hover {
+  border-color: var(--ctl-border-hover);
+}
+.filter-field:focus-within {
+  border-color: var(--theme);
+  box-shadow: var(--ctl-focus-ring);
+}
+/* Утга оруулсан үед идэвхтэй шүүлтүүр гэдгийг тодруулна */
+.filter-field.is-active {
+  border-color: color-mix(in srgb, var(--theme) 45%, transparent);
+  background: color-mix(in srgb, var(--theme) 5%, var(--surface-bg));
+}
+.filter-field-label {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--muted-text);
+  white-space: nowrap;
+}
+.filter-field input {
+  min-width: 0;
+  flex: 1;
+  height: 100%;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--panel-text);
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+.filter-field input::-webkit-inner-spin-button,
+.filter-field input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.filter-field input::placeholder {
+  color: var(--muted-text);
+  font-weight: 400;
+}
+.filter-field input:focus-visible {
+  box-shadow: none;
 }

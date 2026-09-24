@@ -2153,9 +2153,14 @@ export function useGereeActions(
           // Prepare payload with _id for updateMethod (which will extract it for URL and strip it from body)
           const updatePayload = { ...payload, _id: id };
 
-          // Remove username/password for edit mode as requested
-          delete updatePayload.nevtrekhNer;
-          delete updatePayload.nuutsUg;
+          // Нэвтрэх эрх засах цонхонд нэгдсэн: нууц үг хоосон бол
+          // илгээхгүй — backend хуучныг нь хэвээр үлдээнэ.
+          if (!String(updatePayload.nevtrekhNer || "").trim()) {
+            delete updatePayload.nevtrekhNer;
+          }
+          if (!String(updatePayload.nuutsUg || "").trim()) {
+            delete updatePayload.nuutsUg;
+          }
 
           // `barilguud` нь дээр толгой дээрх СОНГОГДСОН барилгаас гарч
           // ирсэн болохоос маягтын талбар БИШ. Засварт үүнийг явуулбал хэд хэдэн

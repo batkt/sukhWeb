@@ -10,7 +10,8 @@ import { getDefaultDateRange } from "@/lib/utils";
 import uilchilgee from "@/lib/uilchilgee";
 import formatNumber from "../../../../../tools/function/formatNumber";
 import PageSongokh from "../../../../../components/selectZagvar/pageSongokh";
-import { FileSpreadsheet, Printer } from "lucide-react";
+import { Printer } from "lucide-react";
+import ExcelButton from "@/components/ui/ExcelButton";
 import Table from "@/components/ui/table";
 import type { ColumnsType } from "@/components/ui/table";
 
@@ -415,7 +416,8 @@ export default function NekhemjlekhiinTuukhPage() {
   );
 
   return (
-    <div className="p-6 print-container bg-[color:var(--surface-bg)] min-h-screen h-full flex flex-col">
+    // Бусад хуудастай ижил бүрхүүл — нэмэлт `p-6`/цагаан дэвсгэргүй
+    <div className="print-container flex w-full flex-col gap-3 pb-14">
       <PrintStyles />
 
       {/* Print-only Header */}
@@ -439,16 +441,10 @@ export default function NekhemjlekhiinTuukhPage() {
           <p className="text-2xl font-bold text-brand">{formatNumber(totalTulbur)} </p>
         </div>
       </div>
-      <div className="flex justify-between items-center mb-3 no-print">
-        <h1 className="text-2xl font-bold">Нэхэмжлэхийн түүх</h1>
+      {/* Гарчиг нь толгой хэсэгт («Тайлан — Нэхэмжлэхийн түүх») байгаа тул давхарлахгүй */}
+      <div className="flex flex-wrap items-center justify-end gap-2 no-print">
         <div className="flex gap-3">
-          <button
-            onClick={exportToExcel}
-            className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
-          >
-            <FileSpreadsheet className="w-4 h-4 text-brand" />
-            Excel татах
-          </button>
+          <ExcelButton onClick={exportToExcel} />
 {/* <button
             onClick={handlePrint}
             className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
@@ -459,9 +455,9 @@ export default function NekhemjlekhiinTuukhPage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4 mb-6 no-print">
-        <div className="flex flex-col md:flex-row flex-wrap gap-4 no-print items-end">
-          <div className="rounded-xl btn-minimal h-[40px] w-full md:w-[320px] flex items-center px-3">
+      <form onSubmit={handleSubmit} className="no-print">
+        <div className="flex flex-wrap items-center gap-2 no-print">
+          <div className="btn-minimal flex h-9 w-full items-center px-3 sm:w-[280px]">
             <StandardDatePicker
               isRange={true}
               value={dateRange}
@@ -471,7 +467,8 @@ export default function NekhemjlekhiinTuukhPage() {
               className="!h-full !w-full text-theme !px-0 flex items-center justify-center text-center border-0 shadow-none"
             />
           </div>
-          <div className="p-4 rounded-xl">
+          {/* TusgaiZagvar өөрөө хүрээтэй тул зөвхөн 36px өндөртэй бүрхүүл */}
+          <div className="h-9 w-full sm:w-[180px]">
             <TusgaiZagvar
               value={formData.tuluv}
               onChange={(v: string) => setFormData({ ...formData, tuluv: v })}
@@ -482,7 +479,9 @@ export default function NekhemjlekhiinTuukhPage() {
                 // { value: "Хэсэгчлэн төлсөн", label: "Хэсэгчлэн төлсөн" },
               ]}
               placeholder="Төлөв сонгох"
-              className="h-[40px] w-full"
+              className="h-full w-full"
+              buttonClassName="!font-normal text-[13px] !px-3"
+              optionClassName="!px-3 !py-1.5 text-[13px] !font-normal"
             />
           </div>
           {/* <div className="neu-panel p-4 rounded-xl">
@@ -593,10 +592,10 @@ export default function NekhemjlekhiinTuukhPage() {
         </div>
       </form>
 
-      {error && <div className="text-danger mb-4">Алдаа: {error}</div>}
+      {error && <div className="text-danger">Алдаа: {error}</div>}
 
       {/* Дүнгийн хураангуй */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           {
             label: "Нийт нэхэмжилсэн",

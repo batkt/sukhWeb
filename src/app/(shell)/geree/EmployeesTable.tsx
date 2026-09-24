@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import Table from "@/components/ui/table";
 import type { ColumnsType } from "@/components/ui/table";
-import { Edit, Trash2, Shield, Lock } from "lucide-react";
+import { Edit, Trash2, Shield } from "lucide-react";
 
 export interface EmployeeItem {
   _id?: string;
@@ -34,7 +34,6 @@ interface EmployeesTableProps {
   onEdit?: (employee: EmployeeItem) => void;
   onDelete?: (employee: EmployeeItem) => void;
   onManagePermissions?: (employee: EmployeeItem) => void;
-  onCredentialsUpdate?: (employee: EmployeeItem) => void;
 }
 
 export const EmployeesTable: React.FC<EmployeesTableProps> = ({
@@ -48,14 +47,13 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
   onEdit,
   onDelete,
   onManagePermissions,
-  onCredentialsUpdate,
 }) => {
   const columns: ColumnsType<EmployeeItem> = useMemo(
     () => [
       {
         title: "№",
         key: "index",
-        width: 32,
+        width: 40,
         align: "center",
         render: (_: any, __: any, index: number) =>
           (page - 1) * pageSize + index + 1,
@@ -64,7 +62,8 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
         title: "Овог",
         dataIndex: "ovog",
         key: "ovog",
-        width: 120,
+        width: 140,
+        align: "left",
         render: (val: string) => (
           <span
             title={val || undefined}
@@ -78,7 +77,8 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
         title: "Нэр",
         dataIndex: "ner",
         key: "ner",
-        width: 150,
+        width: 180,
+        align: "left",
         render: (val: string | { ner?: string; kod?: string }) => {
           const name =
             typeof val === "object"
@@ -100,6 +100,7 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
         title: "Утас",
         dataIndex: "utas",
         key: "utas",
+        width: 140,
         align: "center",
         render: (val: string) => (
           <span className="text-[color:var(--panel-text)] dark:text-white whitespace-nowrap">
@@ -110,6 +111,7 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
       {
         title: "Mail",
         key: "mail",
+        width: 220,
         align: "center",
         render: (_: any, record: EmployeeItem) => {
           const mail = record.mail || record.email || record.imeil || "";
@@ -127,9 +129,13 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
         title: "Албан тушаал",
         dataIndex: "albanTushaal",
         key: "albanTushaal",
+        width: 180,
         align: "center",
         render: (val: string) => (
-          <span className="text-[color:var(--panel-text)] dark:text-white whitespace-nowrap">
+          <span
+            title={val || undefined}
+            className="block truncate text-[color:var(--panel-text)] dark:text-white"
+          >
             {val || "-"}
           </span>
         ),
@@ -138,34 +144,28 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
         title: "Үйлдэл",
         key: "action",
         align: "center",
-        // 4 товч (эрх, нууц үг, засах, устгах). Товчны дотоод зайг
-        // `p-1.5` → `p-1` болгосноор 28px → 24px: 4 × 24 + 3 × 4 = 108px.
-        width: 112,
-        render: (_: any, record: EmployeeItem) => (
+        // 3 товч (эрх, засах, устгах). Нэвтрэх нэр / нууц үг солих нь
+        // "Засах" цонх руу нэгдсэн.
+        width: 120,
+        render: (_: any, record: EmployeeItem, index: number) => (
           <div className="flex gap-1 justify-center">
             {canManagePermissions && (
               <button
                 type="button"
                 onClick={() => onManagePermissions?.(record)}
-                className="p-1 rounded-md action-primary hover-surface transition-colors hover:bg-theme/10"
+                id={index === 0 ? "employee-permission-btn" : undefined}
+                className="p-1.5 rounded-md action-primary hover-surface transition-colors hover:bg-theme/10"
                 title="Эрх удирдлага"
               >
                 <Shield className="w-4 h-4 text-brand" />
               </button>
             )}
-            <button
-              type="button"
-              onClick={() => onCredentialsUpdate?.(record)}
-              className="p-1 rounded-md action-secondary hover-surface transition-colors hover:bg-warning/10"
-              title="Нэвтрэх эрх"
-            >
-              <Lock className="w-4 h-4 text-warning" />
-            </button>
             {canEdit && (
               <button
                 type="button"
                 onClick={() => onEdit?.(record)}
-                className="p-1 rounded-md action-edit hover-surface transition-colors hover:bg-theme/10 dark:hover:bg-theme/30"
+                id={index === 0 ? "employee-edit-btn" : undefined}
+                className="p-1.5 rounded-md action-edit hover-surface transition-colors hover:bg-theme/10 dark:hover:bg-theme/30"
                 title="Засах"
               >
                 <Edit className="w-4 h-4 text-brand" />
@@ -175,7 +175,8 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
               <button
                 type="button"
                 onClick={() => onDelete?.(record)}
-                className="p-1 rounded-md action-delete hover-surface transition-colors hover:bg-danger/10"
+                id={index === 0 ? "employee-delete-btn" : undefined}
+                className="p-1.5 rounded-md action-delete hover-surface transition-colors hover:bg-danger/10"
                 title="Устгах"
               >
                 <Trash2 className="w-4 h-4 text-danger" />
@@ -191,7 +192,6 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
       onEdit,
       onDelete,
       onManagePermissions,
-      onCredentialsUpdate,
       canEdit,
       canDelete,
       canManagePermissions,

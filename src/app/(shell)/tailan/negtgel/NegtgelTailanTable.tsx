@@ -92,8 +92,17 @@ interface NegtgelTailanTableProps {
    * Өгөөгүй тохиолдолд зөвхөн харагдаж буй хуудсаар нийлбэрлэнэ.
    */
   niitUldegdel?: number;
+  /**
+   * Сонгосон сарын хүрээ ("YYYY-MM" хэлбэрээр). Өгсөн бол зөвхөн энэ хүрээнд
+   * багтах сарын баганыг харуулна.
+   */
+  sarKhuree?: [string, string];
 }
-export function NegtgelTailanTable({ data, loading, niitUldegdel }: NegtgelTailanTableProps) {
+
+// Сар бүрийн сүүлийн багана болон «Нийт» бүлгийг тодруулах босоо зураас
+const SAR_ZAAGLAGCH = "!border-r-2 !border-r-slate-300 dark:!border-r-slate-600";
+
+export function NegtgelTailanTable({ data, loading, niitUldegdel, sarKhuree }: NegtgelTailanTableProps) {
   const { months, avlagaTypes } = useMemo(() => {
     const monthSet = new Set<string>();
     const avlagaMap = new Map<
@@ -105,6 +114,7 @@ export function NegtgelTailanTable({ data, loading, niitUldegdel }: NegtgelTaila
       (row.avlaga || []).forEach((b) => {
         const ym = b.ognoo ? b.ognoo.slice(0, 7) : "";
         if (!ym) return;
+        if (sarKhuree && (ym < sarKhuree[0] || ym > sarKhuree[1])) return;
         monthSet.add(ym);
 
         const zardluud =
@@ -161,7 +171,7 @@ export function NegtgelTailanTable({ data, loading, niitUldegdel }: NegtgelTaila
     });
 
     return { months, avlagaTypes };
-  }, [data]);
+  }, [data, sarKhuree?.[0], sarKhuree?.[1]]);
 
   // Хүснэгтийн "Нийт → Үлдэгдэл" баганатай ЯГ ижил талбараас нийлбэрлэнэ,
   // ингэснээр хөл нь мөрүүдтэйгээ таарна.
@@ -254,6 +264,22 @@ export function NegtgelTailanTable({ data, loading, niitUldegdel }: NegtgelTaila
         ),
       },
       {
+        key: "orts",
+        label: (
+          <div className="flex justify-center w-full py-0.5">
+            <span className="leading-normal pb-0.5 font-medium">Орц</span>
+          </div>
+        ),
+        width: 45,
+        align: "center",
+        fixed: "left",
+        render: (_: any, record: NegtgelTailanItem) => (
+          <span className="text-black dark:text-white leading-normal">
+            {record._id?.orts || record.orts || "-"}
+          </span>
+        ),
+      },
+      {
         key: "utas",
         label: (
           <div className="flex justify-center w-full py-0.5">
@@ -263,6 +289,7 @@ export function NegtgelTailanTable({ data, loading, niitUldegdel }: NegtgelTaila
         width: 90,
         align: "center",
         fixed: "left",
+        className: SAR_ZAAGLAGCH,
         render: (_: any, record: NegtgelTailanItem) => {
           const u = record._id?.utas || record.utas;
           return (
@@ -287,6 +314,7 @@ export function NegtgelTailanTable({ data, loading, niitUldegdel }: NegtgelTaila
           </div>
         ),
         align: "center",
+        className: SAR_ZAAGLAGCH,
         children: typesInMonth.map((assessment, subIdx) => {
           const isParkingCol = assessment.tailbar === "Зогсоол";
           const isKhungCol = assessment.tailbar === "Хөнгөлөлт";
@@ -303,12 +331,9 @@ export function NegtgelTailanTable({ data, loading, niitUldegdel }: NegtgelTaila
             ),
             width: isParkingCol ? 125 : isKhungCol ? 110 : 105,
             align: "right",
-            onCell: () => ({
-              className: subIdx === typesInMonth.length - 1 ? "!border-r-2 !border-r-slate-300 dark:!border-r-slate-800" : ""
-            }),
-            onHeaderCell: () => ({
-              className: subIdx === typesInMonth.length - 1 ? "!border-r-2 !border-r-slate-300 dark:!border-r-slate-800" : ""
-            }),
+            // StandardTable нь onCell/onHeaderCell-ийг дамжуулдаггүй тул
+            // `className` (th ба td хоёуланд) ашиглан сарын заагийг зурна
+            className: subIdx === typesInMonth.length - 1 ? SAR_ZAAGLAGCH : undefined,
             render: (_: any, record: NegtgelTailanItem) => {
               if (isParkingCol) {
                 const tootMap = new Map<string, number>();

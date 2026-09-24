@@ -1373,21 +1373,26 @@ export default function UnitsSection({
                 <Plus className="h-4 w-4" />
               </button>
             )}
-            <button
-              onClick={() => {
-                if (row.isOccupied) {
-                  alert(
-                    `Тоот ${row.zogsoolDugaar || row.id} дээр оршин суугч/харилцагч (${row.ner || "холбогдсон"}) бүртгэлтэй байна. Эхлээд холбоосоо салгасны дараа устгана уу.`,
-                  );
-                  return;
-                }
-                onDeleteUnit(selectedFloor || "", row.id);
-              }}
-              className="cursor-pointer rounded-lg p-1.5 text-danger transition hover:bg-danger/10"
-              title="Устгах"
+            {/* Холбогдсон тоотыг устгах боломжгүй — alert-ын оронд товчийг
+                идэвхгүй болгож шалтгааныг tooltip-ээр харуулна. `title` нь
+                disabled товч дээр ажилладаггүй тул span-д өгнө. */}
+            <span
+              title={
+                row.isOccupied
+                  ? `${row.ner || "Оршин суугч"} холбогдсон — эхлээд «Холбоос хасах»-аар салгана уу`
+                  : "Устгах"
+              }
             >
-              <Trash2 className="h-4 w-4" />
-            </button>
+              <button
+                type="button"
+                disabled={!!row.isOccupied}
+                onClick={() => onDeleteUnit(selectedFloor || "", row.id)}
+                className="rounded-lg p-1.5 text-danger transition hover:bg-danger/10 disabled:cursor-not-allowed disabled:text-[color:var(--muted-text)] disabled:opacity-40 disabled:hover:bg-transparent"
+                aria-label="Устгах"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </span>
           </div>
         ),
       },
