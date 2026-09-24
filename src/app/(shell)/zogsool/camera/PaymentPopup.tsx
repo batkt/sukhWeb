@@ -99,7 +99,7 @@ export const PaymentPopup = ({
     <>
       <div
         ref={triggerRef}
-        className="inline-flex flex-col items-center justify-center gap-0.5 cursor-pointer"
+        className="inline-flex w-full items-center justify-end gap-1.5 cursor-pointer whitespace-nowrap"
         onMouseEnter={show}
         onMouseLeave={() => setOpen(false)}
       >

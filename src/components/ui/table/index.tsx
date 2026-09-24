@@ -104,6 +104,11 @@ export interface TableProps<T = any> {
    * хоосон зай үүсгэхээс сэргийлнэ.
    */
   fitContent?: boolean;
+  /**
+   * Мөр цөөн байсан ч хүснэгтийн их бие цонхны ҮЛДСЭН өндрийг бүтнээр
+   * эзэлнэ (хуудаслалт нь ёроолд наалдана). Анхдагчаар зөвхөн дээд хязгаар.
+   */
+  fillHeight?: boolean;
 }
 
 const useIsoLayoutEffect =
@@ -537,6 +542,7 @@ function Table<T extends object = any>({
   showHeader = true,
   tableLayout,
   fitContent = false,
+  fillHeight = false,
 }: TableProps<T>) {
   const small = size === "small" || size === "middle";
   const isLoading =
@@ -1208,7 +1214,11 @@ function Table<T extends object = any>({
             "overflow-x-auto rounded-md border border-[hsl(var(--zt-border))] bg-[hsl(var(--zt-card))]",
             effectiveY != null && "overflow-y-auto",
           )}
-          style={effectiveY != null ? { maxHeight: effectiveY } : undefined}
+          style={
+            effectiveY != null
+              ? { maxHeight: effectiveY, ...(fillHeight ? { minHeight: effectiveY } : null) }
+              : undefined
+          }
         >
           {tableEl}
         </div>

@@ -1602,15 +1602,17 @@ export default function Camera() {
     {
       title: erembiinTolgoi("dugaar", "Дугаар"),
       key: "dugaar",
-      width: 110,
-      align: "center",
+      width: 120,
+      align: "left",
+      // Дугаар бүр өөр өргөнтэй тул голлуулахад «хөрөөний ир» шиг харагддаг —
+      // зүүн тийш тэгшилж, хуулах дүрсийг баруун захад тогтооно.
       render: (_: any, transaction: any) => (
-        <div className="flex items-center justify-center gap-1">
-          <span className="font-[family-name:var(--font-mono)]">
+        <div className="flex w-full items-center justify-between gap-1.5 pl-1">
+          <span className="truncate tabular-nums tracking-wide">
             {transaction.mashiniiDugaar || "-"}
           </span>
           <Copy
-            className="h-4 w-4 cursor-pointer text-[color:var(--muted-text)] transition-colors hover:text-brand"
+            className="h-3.5 w-3.5 shrink-0 cursor-pointer text-[color:var(--muted-text)] transition-colors hover:text-brand"
             onClick={() => copyToClipboard(transaction.mashiniiDugaar)}
           />
         </div>
@@ -1678,16 +1680,16 @@ export default function Camera() {
         const getStatusColor = () => {
           if (tuluv === -2 || tuluv === -1) return "bg-danger border-danger";
           if (hasRemainingBalance) return "bg-warning border-warning";
-          if (isFreeExit) return "bg-[color:var(--panel)] border-[color:var(--surface-border)]";
+          if (isFreeExit) return "bg-slate-400 border-slate-400";
           if (tuluv === 1)
             return isCurrentlyIn && niitDun === 0
-              ? "bg-theme border-theme"
+              ? "bg-sky-500 border-sky-500"
               : "bg-success border-success";
           if (!isCurrentlyIn && (niitDun > 0 || isDebt))
             return "bg-warning border-warning";
           if (!isCurrentlyIn && niitDun === 0)
-            return "bg-[color:var(--panel)] border-[color:var(--surface-border)]";
-          return "bg-theme border-theme";
+            return "bg-slate-400 border-slate-400";
+          return "bg-sky-500 border-sky-500";
         };
         return (
           <div
@@ -1738,9 +1740,11 @@ export default function Camera() {
     {
       title: erembiinTolgoi("payment", "Төлбөр"),
       key: "payment",
-      width: 90,
-      align: "center",
+      width: 120,
+      align: "right",
       render: (_: any, transaction: any) => {
+        // Гарах хүртэл төлбөр/хөнгөлөлт/и-баримт тодорхойгүй — хоосон
+        if (murNiiluulye(transaction).isCurrentlyIn) return "";
         const tulsunDun = transaction.tuukh?.[0]?.tulsunDun || 0;
         // Төрлийн шүүлтүүрээс үл хамааран бүх түүхээс төлбөрийг нэгтгэнэ.
         const payOnly = tulburuudiigTsugluulya(transaction);
@@ -1772,18 +1776,23 @@ export default function Camera() {
       key: "discount",
       width: 110,
       align: "right",
-      render: (_: any, transaction: any) => (
-        <span className="font-[family-name:var(--font-mono)]">
-          {formatNumber(murNiiluulye(transaction).discountTotal || 0, 2)}
-        </span>
-      ),
+      render: (_: any, transaction: any) => {
+        const { isCurrentlyIn, discountTotal } = murNiiluulye(transaction);
+        if (isCurrentlyIn) return "";
+        return (
+          <span className="font-[family-name:var(--font-mono)]">
+            {formatNumber(discountTotal || 0, 2)}
+          </span>
+        );
+      },
     },
     {
       title: erembiinTolgoi("ebarimt", "И-Баримт"),
       key: "ebarimt",
       width: 100,
-      align: "center",
+      align: "right",
       render: (_: any, transaction: any) => {
+        if (murNiiluulye(transaction).isCurrentlyIn) return "";
         const mur = transaction.tuukh?.[0] as any;
         const ebarimtId =
           mur?.ebarimtId ||
@@ -1854,10 +1863,10 @@ export default function Camera() {
         );
 
         if (!showActionBtn) {
-          if (isFreeExit) return badge("bg-[color:var(--panel)] border-[color:var(--surface-border)]", "Үнэгүй");
+          if (isFreeExit) return badge("bg-slate-400 border-slate-400", "Үнэгүй");
           if (tuluv === 1)
             return isCurrentlyIn && niitDun === 0
-              ? badge("bg-theme border-theme", "Идэвхтэй")
+              ? badge("bg-sky-500 border-sky-500", "Идэвхтэй")
               : badge("bg-success border-success", "Төлсөн");
           if (tuluv === -2 || tuluv === -1)
             return badge("bg-danger border-danger", "Зөрчилтэй");
@@ -1866,8 +1875,8 @@ export default function Camera() {
           if (!isCurrentlyIn && (niitDun > 0 || isDebt))
             return badge("bg-warning border-warning", "Төлбөртэй");
           if (!isCurrentlyIn && niitDun === 0)
-            return badge("bg-[color:var(--panel)] border-[color:var(--surface-border)]", "Үнэгүй");
-          return badge("bg-theme border-theme", "Идэвхтэй");
+            return badge("bg-slate-400 border-slate-400", "Үнэгүй");
+          return badge("bg-sky-500 border-sky-500", "Идэвхтэй");
         }
 
         return (
@@ -1896,7 +1905,7 @@ export default function Camera() {
                     ? "bg-warning border-warning"
                     : tuluv === -1 || tuluv === -2
                       ? "bg-danger border-danger"
-                      : "bg-theme border-theme"
+                      : "bg-sky-500 border-sky-500"
               }`}
               style={{ color: "white" }}
             >
@@ -2080,7 +2089,7 @@ export default function Camera() {
               </div>
             )}
 
-            <div className="aspect-video relative">
+            <div className="relative h-[clamp(170px,26vh,280px)]">
               {entryCameras.length === 0 ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-[color:var(--panel)] border border-white/5">
                   <VideoOff className="w-12 h-12 text-[color:var(--panel-text)] mb-4" />
@@ -2161,7 +2170,7 @@ export default function Camera() {
               </div>
             )}
 
-            <div className="aspect-video relative">
+            <div className="relative h-[clamp(170px,26vh,280px)]">
               {exitCameras.length === 0 ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-[color:var(--panel)] border border-white/5">
                   <VideoOff className="w-12 h-12 text-[color:var(--panel-text)] mb-4" />
@@ -2271,6 +2280,7 @@ export default function Camera() {
                 rowKey={(t, idx) => t._id || idx}
                 pagination={false}
                 scroll={{ x: 1300 }}
+                fillHeight
                 rowClassName={(t) => (murNiiluulye(t).isActive ? "zt-row-selected" : "")}
                 summary={() => (
                   <Table.Summary.Row className="font-[family-name:var(--font-mono)] text-[11px]">
@@ -2290,6 +2300,7 @@ export default function Camera() {
                     <Table.Summary.Cell align="right" className="font-medium whitespace-nowrap">
                       {formatNumber(
                         transactions.reduce((sum, t) => {
+                          if (murNiiluulye(t).isCurrentlyIn) return sum;
                           const payOnly = tulburuudiigTsugluulya(t);
                           if (payOnly.length > 0) {
                             return (
@@ -2307,6 +2318,7 @@ export default function Camera() {
                     <Table.Summary.Cell align="right" className="font-medium whitespace-nowrap">
                       {formatNumber(
                         transactions.reduce((sum, t) => {
+                          if (murNiiluulye(t).isCurrentlyIn) return sum;
                           const disc = murNiiluulye(t).discountTotal;
                           return (
                             sum +
@@ -2317,7 +2329,16 @@ export default function Camera() {
                         }, 0),
                       )}
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell colSpan={3} />
+                    <Table.Summary.Cell align="right" className="font-medium whitespace-nowrap">
+                      {formatNumber(
+                        transactions.reduce((sum, t) => {
+                          if (murNiiluulye(t).isCurrentlyIn) return sum;
+                          const m = t.tuukh?.[0] as any;
+                          return sum + (Number(m?.ebarimtAvsanDun ?? t?.ebarimtAvsanDun) || 0);
+                        }, 0),
+                      )}
+                    </Table.Summary.Cell>
+                    <Table.Summary.Cell colSpan={2} />
                   </Table.Summary.Row>
                 )}
               />
@@ -3376,15 +3397,15 @@ const CameraStream = React.memo(
         />
 
         {/* Manual Gate Control Button - Modernized */}
-        <div className="absolute bottom-6 left-6 z-40 transition-all duration-300 group-hover/stream:translate-y-0 translate-y-2 group-hover/stream:opacity-100 opacity-0 sm:opacity-100">
+        <div className="absolute bottom-3 left-3 z-40">
           <button
             onClick={(e) => {
               e.stopPropagation();
               onOpenGate?.(ip);
             }}
             className={`
-            relative flex items-center gap-3 px-8 py-3 rounded-full 
-            font-medium text-[11px]  
+            relative flex items-center gap-2 px-5 py-2 rounded-full
+            font-medium text-[12px]
             transition-all duration-300 active:scale-90
             backdrop-blur-xl border-2
             shadow-[0_8px_32px_rgba(0,0,0,0.3)]
