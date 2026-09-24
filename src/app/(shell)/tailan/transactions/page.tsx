@@ -218,7 +218,7 @@ export default function TransactionsPage() {
           id="reports-date"
           value={dateRange}
           onChange={setDateRange}
-          className="w-full sm:w-[260px]"
+          className="w-full sm:w-[284px]"
         />
 
         {locationFilters.map(({ key, label }) => (

@@ -1296,7 +1296,7 @@ export default function SanalAsuulgaPage() {
                       setDuusakhOgnoo(dateStrings[1] || "");
                     }}
                     placeholder={["Эхлэх огноо", "Дуусах огноо"]}
-                    className="w-full sm:w-[280px]"
+                    className="w-full sm:w-[284px]"
                   />
                   <span className="text-xs text-[color:var(--muted-text)]">
                     {uldsen !== null

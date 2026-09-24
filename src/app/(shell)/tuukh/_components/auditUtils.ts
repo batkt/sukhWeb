@@ -274,6 +274,14 @@ const ISO_OGNOO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
 function jsonZadlakh(v: unknown): unknown {
   if (typeof v !== "string") return v;
   const s = v.trim();
+  // Backend зарим утгыг JSON мөр болгож хадгалдаг: "\"2026-09-24T07:08:10Z\""
+  if (s.length >= 2 && s.startsWith('"') && s.endsWith('"')) {
+    try {
+      return JSON.parse(s);
+    } catch {
+      return s.slice(1, -1);
+    }
+  }
   if ((s.startsWith("[") && s.endsWith("]")) || (s.startsWith("{") && s.endsWith("}"))) {
     try {
       return JSON.parse(s);
@@ -303,6 +311,33 @@ const khoosonEsekh = (v: unknown) =>
   v === undefined ||
   (typeof v === "string" && (v.trim() === "" || v === "null" || v === "undefined"));
 
+/** Англи төлөв/төрлийн түлхүүр үгс → монгол */
+const UTGA_NER: Record<string, string> = {
+  pending: "Хүлээгдэж байна",
+  done: "Шийдэгдсэн",
+  rejected: "Татгалзсан",
+  active: "Идэвхтэй",
+  inactive: "Идэвхгүй",
+  cancelled: "Цуцалсан",
+  canceled: "Цуцалсан",
+  paid: "Төлсөн",
+  unpaid: "Төлөөгүй",
+  partiallypaid: "Хэсэгчлэн төлсөн",
+  overdue: "Хугацаа хэтэрсэн",
+  approved: "Батлагдсан",
+  draft: "Ноорог",
+  sent: "Илгээсэн",
+  failed: "Амжилтгүй",
+  success: "Амжилттай",
+  sanal: "Санал",
+  gomdol: "Гомдол",
+  income: "Орлого",
+  expense: "Зарлага",
+};
+
+/** 24 оронтой MongoDB ID */
+export const objectIdEsekh = (v: unknown) => typeof v === "string" && /^[a-f0-9]{24}$/i.test(v.trim());
+
 /**
  * Утгыг харуулах мөр болгоно. `null` бол «хоосон».
  * ISO огноо → YYYY-MM-DD HH:mm, массив/объект → нягт JSON.
@@ -313,6 +348,7 @@ export function utgaFormat(raw: unknown): string | null {
   if (typeof v === "boolean") return v ? "Тийм" : "Үгүй";
   if (v === "true") return "Тийм";
   if (v === "false") return "Үгүй";
+  if (typeof v === "string" && UTGA_NER[v.trim().toLowerCase()]) return UTGA_NER[v.trim().toLowerCase()];
   if (v instanceof Date) return dayjs(v).format("YYYY-MM-DD HH:mm");
   if (typeof v === "string" && ISO_OGNOO.test(v)) {
     const d = dayjs(v);
@@ -367,7 +403,7 @@ function nerDataaas(d: AnyRec | null | undefined): string {
 /** Нэр хадгалаагүй хуучин засварт өөрчлөлтийн утгуудаас нэр/дугаар хайна */
 function nerUurchlultaas(r: AnyRec): string {
   const raw: AnyRec[] = Array.isArray(r.uurchlult) ? r.uurchlult : [];
-  const TULKHUUR = ["mashiniiDugaar", "urisanMashiniiDugaar", "ner", "gereeniiDugaar", "toot", "dugaar"];
+  const TULKHUUR = ["mashiniiDugaar", "urisanMashiniiDugaar", "ner", "garchig", "title", "gereeniiDugaar", "toot", "dugaar"];
   for (const t of TULKHUUR) {
     const c = raw.find((x) => str(x.talbar) === t);
     const v = c ? str(c.shineUtga || c.umnukhUtga) : "";
@@ -403,10 +439,14 @@ function uurchlultuudAvya(r: AnyRec): { jagsaalt: AuditUurchlult[]; niit: number
     })
     .filter((c) => !nuukhTalbarEsekh(c.talbar))
     .filter((c) => utgaFormat(c.umnukh) !== utgaFormat(c.shine))
-    // Объектын зөвхөн ID/огноо/дараалал өөрчлөгдсөн бол утгагүй
+    // Объектын зөвхөн ID/огноо/дараалал өөрчлөгдсөн бол утгагүй. Мөн бүхэлдээ
+    // нэмэгдсэн/хасагдсан том объект (Түүх, Урьсан машин г.м.) нь засвар биш
+    // бүтцийн агшин зураг — зөвхөн утга нь зассан мөрүүдийг үлдээнэ.
     .filter((c) => {
       const ded = dedUurchlultuud(c.umnukh, c.shine);
-      return ded === null || ded.length > 0;
+      if (ded === null) return true;
+      if (ded.length === 0) return false;
+      return utgaFormat(c.umnukh) !== null && utgaFormat(c.shine) !== null;
     });
   return { jagsaalt, niit: raw.length };
 }

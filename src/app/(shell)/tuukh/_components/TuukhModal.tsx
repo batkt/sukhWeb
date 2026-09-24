@@ -9,6 +9,7 @@ import {
   type AuditMur,
   USTGASAN_NUUKH_TALBAR,
   dedUurchlultuud,
+  objectIdEsekh,
   ognooKharuulakh,
   talbariinNer,
   utgaFormat,
@@ -18,6 +19,8 @@ interface Props {
   mur: AuditMur | null;
   /** "zassan" бол өөрчлөлтүүд, "ustgasan" бол устгасан баримтын агшин зураг */
   turul: "zassan" | "ustgasan";
+  /** ID → хүний нэр (ажилтан г.м.) */
+  idNer?: Record<string, string>;
   onClose: () => void;
 }
 
@@ -37,7 +40,14 @@ const GOL_TALBAR = [
   "turul", "tuluv", "dun", "tulukhDun", "tulsunDun", "uldegdel", "ognoo", "tailbar",
 ];
 
-export default function TuukhModal({ mur, turul, onClose }: Props) {
+export default function TuukhModal({ mur, turul, idNer = {}, onClose }: Props) {
+  // Утга: огноо/төлөв хөрвүүлсэн мөр; ID бол ажилтны нэр эсвэл товч ID
+  const kharuul = (v: unknown): string | null => {
+    const u = typeof v === "string" && v.length === 24 ? v : utgaFormat(v);
+    if (u === null) return null;
+    if (objectIdEsekh(u)) return idNer[u] || `ID …${u.slice(-6)}`;
+    return u;
+  };
   useModalHotkeys({ isOpen: !!mur, onClose });
 
   const zassan = turul === "zassan";
@@ -55,10 +65,8 @@ export default function TuukhModal({ mur, turul, onClose }: Props) {
       .filter(([k]) => !k.startsWith("_") && !USTGASAN_NUUKH_TALBAR.has(k) && !/Id$/.test(k))
       .filter(([, v]) => utgaFormat(v) !== null)
       .map(([k, v]) => ({ talbar: k, label: talbariinNer(k), umnukh: v, shine: null as unknown }))
-      .filter((c) => {
-        const ded = dedUurchlultuud(c.umnukh, null);
-        return ded === null || ded.length > 0;
-      })
+      // Зөвхөн энгийн (гол) талбарууд — нийлмэл объект/массивыг харуулахгүй
+      .filter((c) => dedUurchlultuud(c.umnukh, null) === null)
       .sort((x, y) => erembe(x.talbar) - erembe(y.talbar));
   }, [mur, zassan]);
 
@@ -169,10 +177,10 @@ export default function TuukhModal({ mur, turul, onClose }: Props) {
                               >
                                 <span className="text-[color:var(--muted-text)] [overflow-wrap:anywhere]">{d.label}</span>
                                 <span className="text-danger">
-                                  <Utga utga={d.umnukh} className="line-through decoration-danger/60" />
+                                  <Utga utga={kharuul(d.umnukh)} className="line-through decoration-danger/60" />
                                 </span>
                                 <span className="text-success">
-                                  {zassan ? <Utga utga={d.shine} /> : <Ustsan />}
+                                  {zassan ? <Utga utga={kharuul(d.shine)} /> : <Ustsan />}
                                 </span>
                               </div>
                             ))}
@@ -181,7 +189,7 @@ export default function TuukhModal({ mur, turul, onClose }: Props) {
                       ) : (
                         <div className="grid grid-cols-1 items-stretch gap-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
                           <div className="min-w-0 rounded-lg bg-danger/10 px-3 py-2 text-[13px] text-danger">
-                            <Utga utga={utgaFormat(c.umnukh)} className="line-through decoration-danger/60" />
+                            <Utga utga={kharuul(c.umnukh)} className="line-through decoration-danger/60" />
                           </div>
                           <ArrowRight className="hidden h-4 w-4 self-center text-[color:var(--muted-text)] sm:block" />
                           <div
@@ -189,7 +197,7 @@ export default function TuukhModal({ mur, turul, onClose }: Props) {
                               zassan ? "bg-success/10 text-success" : "bg-[color:var(--surface-hover)]"
                             }`}
                           >
-                            {zassan ? <Utga utga={utgaFormat(c.shine)} /> : <Ustsan />}
+                            {zassan ? <Utga utga={kharuul(c.shine)} /> : <Ustsan />}
                           </div>
                         </div>
                       )}

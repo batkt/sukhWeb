@@ -88,7 +88,7 @@ export default function FilterDatePicker(props: FilterDatePickerProps) {
     ? ""
     : props.single
       ? "w-[150px]"
-      : "w-[210px]";
+      : "w-[284px]";
 
   const burkhuul = `btn-minimal flex h-9 items-center px-3 ${urgun} ${className ?? ""} ${
     utgatai ? "!border-theme/45" : ""

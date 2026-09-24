@@ -152,7 +152,7 @@ export default function NevtreltiinTuukh({
             id="nevtrel-date"
             value={dateRange}
             onChange={handleDateChange}
-            className="w-full sm:w-[260px]"
+            className="w-full sm:w-[284px]"
           />
 
           <label className={`filter-field w-full sm:w-[220px] ${searchTerm ? "is-active" : ""}`}>

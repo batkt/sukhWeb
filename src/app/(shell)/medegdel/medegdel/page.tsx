@@ -6,7 +6,7 @@ import { Input, Modal, notification, Card, Popconfirm, Tooltip } from "antd";
 import Button from "@/components/ui/Button";
 import Aos from "aos";
 import { motion, AnimatePresence } from "framer-motion";
-import { SearchIcon, Bell, Users, Mail, MessageSquare, Smartphone, FileText, Plus, ImagePlus, X, Home, Phone, User, Check, Search } from "lucide-react";
+import { SearchIcon, Bell, Users, Mail, MessageSquare, Smartphone, FileText, Plus, ImagePlus, X, Home, Phone, User, Check, Search, Trash2 } from "lucide-react";
 import uilchilgee, { getApiUrl } from "@/lib/uilchilgee";
 import { useAuth } from "@/lib/useAuth";
 import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
@@ -322,6 +322,30 @@ function MedegdelContent() {
 
   const attachPreviewUrlsRef = useRef<string[]>([]);
 
+  // Том дэлгэцэд гурван багана цонхны ҮЛДСЭН өндрийг бүтнээр эзэлнэ.
+  // `100vh - 13rem` гэх мэт тогтмол тооцоо нь толгой/томруулалтаас хамаарч
+  // доор нь хоосон зай үлдээдэг байв — дээд байрлалыг хэмжиж бодно.
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [gridUndur, setGridUndur] = useState<number | null>(null);
+  useEffect(() => {
+    const bodyo = () => {
+      const el = gridRef.current;
+      if (!el || window.innerWidth < 1024) {
+        setGridUndur(null);
+        return;
+      }
+      const top = el.getBoundingClientRect().top;
+      setGridUndur(Math.max(420, Math.floor(window.innerHeight - top - 24)));
+    };
+    bodyo();
+    const t = setTimeout(bodyo, 150);
+    window.addEventListener("resize", bodyo);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("resize", bodyo);
+    };
+  }, []);
+
   const { orshinSuugchGaralt, isValidating, setOrshinSuugchKhuudaslalt } =
     useOrshinSuugchJagsaalt(
       token || "",
@@ -384,6 +408,23 @@ function MedegdelContent() {
     setTemplateModalOpen(false);
     setTemplateImageDataUrl(null);
     notification.success({ message: "Загвар амжилттай хадгалагдлаа", style: { zIndex: 99999 } });
+  };
+
+  const handleDeleteTemplate = (t: MedegdelTemplate) => {
+    if (!baiguullagiinId) return;
+    Modal.confirm({
+      title: "Загвар устгах уу?",
+      content: `«${t.name}» загварыг устгана.`,
+      okText: "Устгах",
+      cancelText: "Болих",
+      okButtonProps: { danger: true },
+      zIndex: 99999,
+      onOk: () => {
+        const updated = loadTemplates(baiguullagiinId, turul).filter((x) => x.id !== t.id);
+        saveTemplates(baiguullagiinId, turul, updated);
+        setTemplates(updated);
+      },
+    });
   };
 
   const handleApplyTemplate = (t: MedegdelTemplate) => {
@@ -682,7 +723,9 @@ function MedegdelContent() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.98 }}
             transition={{ duration: 0.2 }}
-            className="grid flex-1 min-h-0 grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_260px] lg:h-[calc(100vh-13rem)]"
+            ref={gridRef}
+            style={gridUndur ? { height: gridUndur } : undefined}
+            className="grid flex-1 min-h-0 grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_minmax(280px,0.75fr)]"
           >
             {/* Left: Channel & Templates */}
             <motion.section
@@ -712,17 +755,34 @@ function MedegdelContent() {
               {templates.length > 0 ? (
                 <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar">
                   {templates.map((t) => (
-                    <button
+                    <div
                       key={t.id}
-                      type="button"
-                      onClick={() => handleApplyTemplate(t)}
-                      className="w-full rounded-lg px-3 py-2 text-left transition-colors hover:bg-[color:var(--surface-hover)]"
+                      className="group flex items-start gap-1 rounded-lg transition-colors hover:bg-[color:var(--surface-hover)]"
                     >
-                      <div className="truncate text-[13px] text-[color:var(--panel-text)]">{t.name}</div>
-                      {t.title && (
-                        <div className="truncate text-[11px] text-[color:var(--muted-text)]">{t.title}</div>
-                      )}
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => handleApplyTemplate(t)}
+                        className="min-w-0 flex-1 px-3 py-2 text-left"
+                        title="Загварыг ашиглах"
+                      >
+                        <div className="truncate text-[13px] text-[color:var(--panel-text)]">{t.name}</div>
+                        {t.title && (
+                          <div className="truncate text-[11px] text-[color:var(--muted-text)]">{t.title}</div>
+                        )}
+                        {t.body && (
+                          <div className="mt-0.5 line-clamp-2 text-[11px] text-[color:var(--muted-text)]">{t.body}</div>
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteTemplate(t)}
+                        className="mr-1 mt-1.5 shrink-0 rounded-md p-1.5 text-[color:var(--muted-text)] transition-colors hover:bg-danger/10 hover:text-danger"
+                        title="Загвар устгах"
+                        aria-label={`${t.name} загвар устгах`}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   ))}
                 </div>
               ) : (
@@ -842,6 +902,15 @@ function MedegdelContent() {
                 </h3>
               </div>
 
+              <label id="medegdel-contact-search" className="filter-field mb-3 w-full">
+                <SearchIcon className="h-4 w-4 shrink-0 text-[color:var(--muted-text)]" />
+                <input
+                  aria-label="Хайх"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Нэр, утас хайх..."
+                />
+              </label>
               <div className="flex items-center gap-2 mb-3 flex-wrap">
                 <label id="medegdel-select-all" className="flex items-center gap-2 cursor-pointer text-sm">
                   <input
@@ -862,15 +931,6 @@ function MedegdelContent() {
                 )}
               </div>
 
-              <label id="medegdel-contact-search" className="filter-field mb-3 w-full">
-                <SearchIcon className="h-4 w-4 shrink-0 text-[color:var(--muted-text)]" />
-                <input
-                  aria-label="Хайх"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Нэр, утас хайх..."
-                />
-              </label>
 
               <div id="medegdel-contact-list" className="-mx-1 flex-1 min-h-0 space-y-0.5 overflow-y-auto px-1 custom-scrollbar">
                 {isValidating ? (

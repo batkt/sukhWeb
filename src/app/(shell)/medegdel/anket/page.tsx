@@ -480,7 +480,7 @@ export default function Page() {
             <div className="mt-5 w-full px-5">
               <div onClick={(e: React.MouseEvent) => e.stopPropagation()}>
                 <FilterDatePicker
-                  className="w-full sm:w-[260px]"
+                  className="w-full sm:w-[284px]"
                   value={ognoo}
                   onChange={(dates) => {
                     setOgnoo(

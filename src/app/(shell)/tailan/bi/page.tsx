@@ -643,7 +643,7 @@ export default function BiTailanPage() {
           <FilterDatePicker
             value={dateRange}
             onChange={setDateRange}
-            className="w-full sm:w-[260px]"
+            className="w-full sm:w-[284px]"
           />
           <ExcelButton
             onClick={csvTatya}

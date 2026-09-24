@@ -711,7 +711,7 @@ export default function ZogsoolTailanPage() {
           value={dateRange}
           onChange={setDateRange}
           placeholder="Огноо сонгох"
-          className="w-full sm:w-[260px]"
+          className="w-full sm:w-[284px]"
         />
 
         <label className={`filter-field w-full sm:w-[240px] ${khaikh ? "is-active" : ""}`}>

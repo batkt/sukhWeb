@@ -461,7 +461,7 @@ export default function NekhemjlekhiinTuukhPage() {
           <FilterDatePicker
             value={dateRange}
             onChange={setDateRange}
-            className="w-full sm:w-[260px]"
+            className="w-full sm:w-[284px]"
           />
           <div>
             <FilterSelect

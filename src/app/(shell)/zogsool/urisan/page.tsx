@@ -970,7 +970,7 @@ export default function UrisanTuukh() {
                     setPage(1);
                   }}
                 format="YYYY-MM-DD"
-                className="w-full sm:w-[260px]"
+                className="w-full sm:w-[284px]"
               />
             </div>
           </div>

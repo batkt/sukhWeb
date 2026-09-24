@@ -1520,7 +1520,7 @@ export default function HongololtTool({
                     }}
                   format="YYYY-MM-DD"
                   placeholder={["Эхлэх огноо", "Дуусах огноо"]}
-                  className="w-full sm:w-[260px]"
+                  className="w-full sm:w-[284px]"
                 />
                 <div className="w-40">
                   <input

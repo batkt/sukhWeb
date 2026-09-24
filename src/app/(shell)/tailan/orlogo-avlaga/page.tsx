@@ -987,7 +987,7 @@ export default function OrlogoAvlagaPage() {
           id="orlogo-avlaga-date"
           value={dateRange}
           onChange={setDateRange}
-          className="w-full sm:w-[260px]"
+          className="w-full sm:w-[284px]"
         />
         <label
           className={`filter-field w-full sm:w-[260px] ${filters.orshinSuugch ? "is-active" : ""}`}

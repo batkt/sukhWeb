@@ -813,7 +813,7 @@ export default function DansniiKhuulga() {
                   setEkhlekhOgnoo([s || null, e || null]);
                 }}
               placeholder="Огноо сонгох"
-              className="w-full sm:w-[260px]"
+              className="w-full sm:w-[284px]"
             />
             <div id="dans-account">
               <FilterSelect

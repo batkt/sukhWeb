@@ -178,7 +178,9 @@ export function titleForPath(pathname: string, items: NavItem[]): string {
     const sub = item.submenu?.find((s) =>
       pathname.startsWith(subHrefFor(item, s)),
     );
-    return sub ? `${item.label} — ${sub.label}` : item.label;
+    // «Мэдэгдэл — Мэдэгдэл» шиг давхардахгүй
+    if (!sub || sub.label === item.label) return item.label;
+    return `${item.label} — ${sub.label}`;
   }
   return "Амар Сөх";
 }

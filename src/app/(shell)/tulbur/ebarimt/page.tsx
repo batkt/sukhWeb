@@ -670,7 +670,7 @@ export default function Ebarimt() {
                       ]);
                     }}
                   placeholder="Огноо сонгох"
-                  className="w-full sm:w-[260px]"
+                  className="w-full sm:w-[284px]"
                 />
 
                 <FilterSelect

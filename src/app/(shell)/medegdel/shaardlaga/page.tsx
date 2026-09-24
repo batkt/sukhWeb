@@ -202,7 +202,7 @@ export default function SanalKhuselt() {
                 (dates || [null, null]) as [string | null, string | null]
               )
             }
-            className="w-full sm:w-[260px]"
+            className="w-full sm:w-[284px]"
           />
 
           <div className="flex-1 overflow-y-auto pr-2 mt-4 space-y-3">

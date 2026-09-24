@@ -403,7 +403,7 @@ export default function TaskManagementSystem() {
                 )
               }
               value={ekhlekhOgnoo ?? undefined}
-              className="w-full sm:w-[260px]"
+              className="w-full sm:w-[284px]"
             />
             <Select
               popupClassName="tusgaiZagvar"

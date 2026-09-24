@@ -7306,7 +7306,7 @@ body,
   border: 0;
   outline: 0;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 400;
   color: var(--panel-text);
   appearance: textfield;
   -moz-appearance: textfield;
@@ -7398,4 +7398,72 @@ table tfoot td,
 }
 .negtgel-table tr > :last-child:not(.ng-niit) {
   box-shadow: none;
+}
+
+/* Хуучин `.btn-minimal` (15px / 500) нь давхаргагүй CSS тул Tailwind-ийн
+   `text-[13px]`-ийг дардаг байв — Excel зэрэг товчны бичвэр бусад бичвэрээс
+   том/бүдүүн харагдаж байв. Нэгдсэн хэмжээ: 13px, ердийн жин. */
+.btn-minimal,
+.btn-minimal-ghost,
+.filter-field,
+.filter-field input,
+.filter-field select {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: normal;
+  line-height: 1.25;
+}
+/* Шошго нь утгаасаа бага зэрэг жижиг, саарал — бусад нь бүгд ижил */
+.filter-field .filter-field-label {
+  font-size: 12px;
+}
+
+/* `.btn-minimal`-ийн хуучин padding нарийн (дүрстэй) товчинд дүрсийг агшаадаг
+   байв — дүрс хэзээ ч агшихгүй. */
+.btn-minimal > svg,
+.btn-minimal-ghost > svg {
+  flex-shrink: 0;
+}
+
+/* ── Фокусын хүрээ ─────────────────────────────────────────────────────
+   Глобал `input:focus-visible { box-shadow: 0 0 0 3px }` нь бүрхүүл
+   (.filter-field, чатын талбар, antd picker г.м.) доторх хүрээгүй талбарт ч
+   тусаж, гадна бүрхүүлийн хүрээтэй давхар «дотоод хайрцаг» зурдаг байв.
+   Бүрхүүл өөрөө `focus-within`-ээр тодордог тул дотоод талбар юу ч зурахгүй. */
+:is(.filter-field, .btn-minimal, .ant-picker, .ant-select, .ant-input-affix-wrapper, [class*="focus-within:"])
+  :is(input, textarea, select):focus,
+:is(.filter-field, .btn-minimal, .ant-picker, .ant-select, .ant-input-affix-wrapper, [class*="focus-within:"])
+  :is(input, textarea, select):focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+/* Бие даасан талбар: нэг нимгэн өнгөт хүрээ + зөөлөн цагираг */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+  border-color: var(--theme);
+  box-shadow: var(--ctl-focus-ring, 0 0 0 3px var(--focus-ring));
+}
+/* Огнооны хүрээ: хоёр талбар бүтэн харагдана (сүүлийн цифр тасрахгүй) */
+.btn-minimal .ant-picker-range .ant-picker-range-separator {
+  padding: 0 6px;
+}
+.btn-minimal .ant-picker-range .ant-picker-input > input {
+  min-width: 0;
+  text-overflow: clip;
+  font-variant-numeric: tabular-nums;
+}
+/* Хүрээгүй / тунгалаг дэвсгэртэй талбар (ихэвчлэн өөр бүрхүүл дотор) нь
+   фокусын цагираг зурахгүй — бүрхүүл нь тодорно. `outline-none`, `border-0`,
+   `bg-transparent` класс нь «фокусыг би өөрөө зохицуулна» гэсэн дохио. */
+:is(input, textarea, select):is(
+    [class*="outline-none"],
+    [class*="border-0"],
+    [class*="border-none"],
+    [class*="bg-transparent"]
+  ):is(:focus, :focus-visible) {
+  outline: none !important;
+  box-shadow: none !important;
 }

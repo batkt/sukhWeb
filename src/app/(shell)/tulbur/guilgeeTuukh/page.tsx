@@ -1,6 +1,7 @@
 "use client";
 
 import ExcelButton from "@/components/ui/ExcelButton";
+import FilterDatePicker from "@/components/ui/FilterDatePicker";
 import FilterSelect from "@/components/ui/FilterSelect";
 import React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -45,7 +46,6 @@ import formatNumber, {
 } from "../../../../../tools/function/formatNumber";
 import matchesSearch from "@/tools/function/matchesSearch";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
-import MonthRangePicker from "@/components/ui/MonthRangePicker";
 import {
   getPaymentStatusLabel,
   isPaidLike,
@@ -87,25 +87,6 @@ const toMonthKey = (v?: string | null) => {
   const m = s.match(/^(\d{4})-(\d{2})/);
   return m ? `${m[1]}-${m[2]}` : "";
 };
-
-/** Сарын Dayjs → тухайн сарын [эхний өдөр, сүүлийн өдөр] + YYYY-MM түлхүүр */
-function monthPickToStartEnd(
-  d: {
-    isValid?: () => boolean;
-    format?: (f: string) => string;
-  } | null,
-): { start: string; end: string; ym: string } | null {
-  if (!d || typeof d.format !== "function") return null;
-  if (typeof d.isValid === "function" && !d.isValid()) return null;
-  const ym = d.format("YYYY-MM");
-  const [y, m] = ym.split("-").map((x) => Number(x));
-  if (!Number.isFinite(y) || !Number.isFinite(m) || m < 1 || m > 12)
-    return null;
-  const start = `${y}-${String(m).padStart(2, "0")}-01`;
-  const lastDay = new Date(y, m, 0).getDate();
-  const end = `${y}-${String(m).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
-  return { start, end, ym };
-}
 
 // Pure utility moved outside to prevent hoisting issues
 function getGereeIdPure(it: any, contractsByNumber: Record<string, any>) {
@@ -610,36 +591,6 @@ export default function DansniiKhuulga() {
 
   /** Жагсаалтын SWR түлхүүрүүдийг шууд revalidate — global mutate заримдаа бүрэн ажиллахгүй (тусгайлбал ашиглалт) */
   /** Сарын хязгаар: эхний сарын 1-ний өдрөөс сүүлийн сарын сүүлийн өдөр хүртэл (YYYY-MM-DD). */
-  const handleEkhlekhSarRangeChange = useCallback((dates: unknown) => {
-    if (dates == null) {
-      setEkhlekhOgnoo([null, null]);
-      return;
-    }
-    if (!Array.isArray(dates)) {
-      setEkhlekhOgnoo([null, null]);
-      return;
-    }
-    const [raw0, raw1] = dates as [unknown, unknown];
-    if (raw0 == null && raw1 == null) {
-      setEkhlekhOgnoo([null, null]);
-      return;
-    }
-    if (raw0 != null && raw1 == null) {
-      const one = monthPickToStartEnd(raw0 as any);
-      if (one) setEkhlekhOgnoo([one.start, one.end]);
-      return;
-    }
-    if (raw0 == null || raw1 == null) return;
-    const a = monthPickToStartEnd(raw0 as any);
-    const b = monthPickToStartEnd(raw1 as any);
-    if (!a || !b) {
-      setEkhlekhOgnoo([null, null]);
-      return;
-    }
-    const [first, last] = a.ym <= b.ym ? [a, b] : [b, a];
-    setEkhlekhOgnoo([first.start, last.end]);
-  }, []);
-
   const revalidateTulburCaches = useCallback(async () => {
     await Promise.all([
       mutateHistory?.(),
@@ -3466,16 +3417,16 @@ export default function DansniiKhuulga() {
           <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
             {/* Шүүлтүүр — нэгдсэн `.btn-minimal` / `.filter-field` загвар (globals.css) */}
             <div className="flex w-full flex-wrap items-center gap-2 xl:w-auto">
-              <div
+              <FilterDatePicker
                 id="guilgee-date"
-                className={`btn-minimal flex h-9 w-[210px] items-center px-3 ${ekhlekhOgnoo?.[0] ? "!border-theme/45" : ""}`}
-              >
-                <MonthRangePicker
-                  value={ekhlekhOgnoo}
-                  onChange={handleEkhlekhSarRangeChange}
-                  placeholder="Сар сонгох"
-                />
-              </div>
+                value={ekhlekhOgnoo}
+                onChange={(_dates, dateStrings) => {
+                  const [st, en] = (dateStrings || []) as [string | undefined, string | undefined];
+                  setEkhlekhOgnoo([st || null, en || null]);
+                }}
+                placeholder="Огноо сонгох"
+                className="w-full sm:w-[284px]"
+              />
               <FilterSelect
                 label="Орц"
                 value={selectedOrtsFilter}
@@ -3598,7 +3549,8 @@ export default function DansniiKhuulga() {
                 >
                   <ExcelButton
                     onClick={exceleerTatya}
-                    iconOnlyOnMobile
+                    label="Excel татах"
+                    iconOnly
                   />
                 </motion.div>
               </Tooltip>

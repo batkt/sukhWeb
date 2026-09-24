@@ -1129,34 +1129,21 @@ export default function SanalKhuselt() {
         : "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]";
 
   const iconBtn =
-    "btn-minimal inline-flex h-9 w-9 shrink-0 items-center justify-center text-[color:var(--muted-text)] hover:text-brand disabled:opacity-50";
+    "btn-minimal inline-flex h-9 w-9 shrink-0 items-center justify-center !p-0 text-[color:var(--muted-text)] hover:text-brand disabled:opacity-50";
 
   return (
     <>
     <div className="flex w-full flex-col gap-3 pb-14 text-[color:var(--panel-text)]">
       {/* Toolbar */}
       <div className={`flex-wrap items-center gap-2 ${showDetail ? "hidden md:flex" : "flex"}`}>
-        <label id="feedback-search" className="filter-field w-full sm:w-[280px]">
-          <Search className="h-4 w-4 shrink-0 text-[color:var(--muted-text)]" />
-          <input
-            type="text"
-            aria-label={t("Хайх")}
-            placeholder={t("Гарчиг, нэр, тоот, утас...")}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          {searchTerm && (
-            <button
-              type="button"
-              onClick={() => setSearchTerm("")}
-              aria-label={t("Хайлт цэвэрлэх")}
-              className="shrink-0 rounded p-0.5 text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </label>
         <div id="feedback-filters" className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+          <FilterDatePicker
+            value={dateRange}
+            onChange={(_dates, strs) =>
+              setDateRange(strs && strs[0] && strs[1] ? [strs[0], strs[1]] : null)
+            }
+            className="w-full sm:w-[284px]"
+          />
           <FilterSelect
             id="feedback-filter-type-select"
             label={t("Төрөл")}
@@ -1179,13 +1166,6 @@ export default function SanalKhuselt() {
               { value: "rejected", label: t("Татгалзсан") },
             ]}
             className="max-w-[240px]"
-          />
-          <FilterDatePicker
-            value={dateRange}
-            onChange={(_dates, strs) =>
-              setDateRange(strs && strs[0] && strs[1] ? [strs[0], strs[1]] : null)
-            }
-            className="w-full sm:w-[260px]"
           />
         </div>
         <div className="ml-auto flex items-center gap-2">
@@ -1264,9 +1244,32 @@ export default function SanalKhuselt() {
         <div
           className={`w-full md:w-[340px] lg:w-[380px] shrink-0 flex-col overflow-hidden rounded-2xl border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] shadow-[var(--ctl-shadow)] ${showDetail ? "hidden md:flex" : "flex"}`}
         >
-          <div className="flex h-11 shrink-0 items-center justify-between border-b border-[color:var(--ctl-border)] px-4">
-            <span className="text-[13px] font-medium">{t("Хүсэлтүүд")}</span>
-            <span className="text-xs tabular-nums text-[color:var(--muted-text)]">
+          {/* Хайлт — жагсаалтын дээр */}
+          <div className="flex shrink-0 items-center gap-2 border-b border-[color:var(--ctl-border)] px-3 py-2.5">
+            <label id="feedback-search" className="filter-field h-9 min-w-0 flex-1">
+              <Search className="h-4 w-4 shrink-0 text-[color:var(--muted-text)]" />
+              <input
+                type="text"
+                aria-label={t("Хайх")}
+                placeholder={t("Гарчиг, нэр, тоот, утас...")}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm("")}
+                  aria-label={t("Хайлт цэвэрлэх")}
+                  className="shrink-0 rounded p-0.5 text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </label>
+            <span
+              className="shrink-0 text-xs tabular-nums text-[color:var(--muted-text)]"
+              title={t("Хүсэлтүүд")}
+            >
               {filteredList.length}
               {hasActiveFilters ? ` / ${dashboardCounts.all}` : ""}
             </span>
@@ -1419,23 +1422,32 @@ export default function SanalKhuselt() {
                           {turulToLabel(selectedMedegdel.turul)}
                         </span>
                       </div>
-                      <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-[color:var(--muted-text)]">
-                        {selectedResident?.toot && (
-                          <span className="inline-flex items-center gap-1">
-                            <Home className="h-3 w-3" />
-                            {selectedResident.toot} {t("тоот")}
-                          </span>
-                        )}
+                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[12px] text-[color:var(--muted-text)]">
+                        {/* Олон тоот («903, 78, 40») — тоот бүр тусдаа шошго */}
+                        {selectedResident?.toot &&
+                          String(selectedResident.toot)
+                            .split(/[,;]+/)
+                            .map((x) => x.trim())
+                            .filter(Boolean)
+                            .map((toot) => (
+                              <span
+                                key={toot}
+                                className="inline-flex items-center gap-1 rounded-md bg-[color:var(--surface-hover)] px-2 py-0.5 text-[color:var(--panel-text)]"
+                              >
+                                <Home className="h-3 w-3 text-[color:var(--muted-text)]" />
+                                {toot}
+                              </span>
+                            ))}
                         {selectedResident?.utas && (
                           <a
                             href={`tel:${selectedResident.utas}`}
-                            className="inline-flex items-center gap-1 hover:text-brand"
+                            className="inline-flex items-center gap-1 rounded-md bg-[color:var(--surface-hover)] px-2 py-0.5 tabular-nums text-[color:var(--panel-text)] hover:text-brand"
                           >
-                            <Phone className="h-3 w-3" />
+                            <Phone className="h-3 w-3 text-[color:var(--muted-text)]" />
                             {selectedResident.utas}
                           </a>
                         )}
-                        <span className="inline-flex items-center gap-1">
+                        <span className="inline-flex items-center gap-1 px-1 tabular-nums">
                           <Calendar className="h-3 w-3" />
                           {moment(selectedMedegdel.createdAt).format("YYYY-MM-DD HH:mm")}
                         </span>
@@ -1561,7 +1573,7 @@ export default function SanalKhuselt() {
                     <span className="text-xs">{t("Харилцаа байхгүй")}</span>
                   </div>
                 ) : (
-                  <div className="mx-auto flex max-w-3xl flex-col gap-2.5">
+                  <div className="flex w-full flex-col gap-2.5">
                     {displayMessages.map((msg, idx) => {
                       const turul = (msg.turul || "").toLowerCase();
                       const isAdminReply =
@@ -1753,7 +1765,7 @@ export default function SanalKhuselt() {
                     className={iconBtn}
                     title={t("Зураг хавсаргах")}
                   >
-                    <ImagePlus className="h-4 w-4" />
+                    <ImagePlus className="h-[18px] w-[18px] shrink-0" />
                   </button>
 
                   {!recording ? (
@@ -1764,7 +1776,7 @@ export default function SanalKhuselt() {
                       className={iconBtn}
                       title={t("Дуу бичих")}
                     >
-                      <Mic className="h-4 w-4" />
+                      <Mic className="h-[18px] w-[18px] shrink-0" />
                     </button>
                   ) : (
                     <button

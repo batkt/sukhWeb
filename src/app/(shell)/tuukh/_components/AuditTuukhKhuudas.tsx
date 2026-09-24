@@ -92,6 +92,12 @@ function AuditTuukhAgguulga({ turul }: { turul: TuukhTurul }) {
       .sort((a, b) => textEremb(a.label, b.label));
   }, [ajiltnuudData]);
 
+  // ID → ажилтны нэр (repliedBy, ajiltniiId г.м. утгыг нэрээр харуулна)
+  const ajiltanIdNer = useMemo(
+    () => Object.fromEntries(ajiltanOptions.map((o) => [o.value, o.label])),
+    [ajiltanOptions],
+  );
+
   const { data, isLoading } = useSWR(
     token && orgId
       ? [tokhirgoo.url, token, orgId, dateRange[0] || "", dateRange[1] || "", model, ajiltniiId]
@@ -290,7 +296,7 @@ function AuditTuukhAgguulga({ turul }: { turul: TuukhTurul }) {
             else setDateRange([null, null]);
             shineerEkhlekh();
           }}
-          className="w-full sm:w-[260px]"
+          className="w-full sm:w-[284px]"
         />
         <FilterSelect
           label="Ажилтан"
@@ -342,6 +348,7 @@ function AuditTuukhAgguulga({ turul }: { turul: TuukhTurul }) {
         <TuukhModal
           mur={songogdson}
           turul={turul === "ustgasan" ? "ustgasan" : "zassan"}
+          idNer={ajiltanIdNer}
           onClose={() => setSongogdson(null)}
         />
       )}

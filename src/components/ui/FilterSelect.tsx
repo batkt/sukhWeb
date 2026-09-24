@@ -176,7 +176,7 @@ export default function FilterSelect({
             className="rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-1.5 shadow-xl"
           >
             {searchable && (
-              <div className="mb-1 flex h-8 items-center gap-2 rounded-lg border border-[color:var(--ctl-border)] px-2.5">
+              <div className="mb-1 flex h-8 items-center gap-2 rounded-lg border border-[color:var(--ctl-border)] px-2.5 transition-colors focus-within:border-theme">
                 <Search className="h-3.5 w-3.5 shrink-0 text-[color:var(--muted-text)]" />
                 <input
                   ref={searchRef}

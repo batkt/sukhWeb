@@ -352,7 +352,7 @@ export default function AvlagiinNasjiltPage() {
             id="nasjilt-date"
             value={dateRange}
             onChange={setDateRange}
-            className="w-full sm:w-[260px]"
+            className="w-full sm:w-[284px]"
           />
           {/* <button
             onClick={() => window.print()}

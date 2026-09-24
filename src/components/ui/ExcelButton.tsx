@@ -19,6 +19,8 @@ export interface ExcelButtonProps
   loading?: boolean;
   /** Жижиг дэлгэцэд зөвхөн дүрс үлдээх */
   iconOnlyOnMobile?: boolean;
+  /** Үргэлж зөвхөн дүрс (бусад дүрстэй товчны мөрөнд) — бичвэр нь tooltip/aria-д */
+  iconOnly?: boolean;
   /** Баруун талд нэмэлт элемент (жишээ нь dropdown-ын сум) */
   suffix?: React.ReactNode;
 }
@@ -29,6 +31,7 @@ export const ExcelButton = React.forwardRef<HTMLButtonElement, ExcelButtonProps>
       label = "Excel",
       loading = false,
       iconOnlyOnMobile = false,
+      iconOnly = false,
       suffix,
       className = "",
       disabled,
@@ -44,7 +47,9 @@ export const ExcelButton = React.forwardRef<HTMLButtonElement, ExcelButtonProps>
       disabled={disabled || loading}
       title={title ?? label}
       aria-label={label}
-      className={`btn-minimal inline-flex h-9 shrink-0 items-center gap-2 !px-3 text-[13px] disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+      className={`btn-minimal inline-flex h-9 shrink-0 items-center gap-2 text-[13px] disabled:cursor-not-allowed disabled:opacity-50 ${
+        iconOnly ? "min-w-9 justify-center !px-2" : "!px-3"
+      } ${className}`}
       {...props}
     >
       {loading ? (
@@ -52,9 +57,11 @@ export const ExcelButton = React.forwardRef<HTMLButtonElement, ExcelButtonProps>
       ) : (
         <FileSpreadsheet className="h-4 w-4" />
       )}
-      <span className={iconOnlyOnMobile ? "hidden sm:inline" : undefined}>
-        {label}
-      </span>
+      {!iconOnly && (
+        <span className={iconOnlyOnMobile ? "hidden sm:inline" : undefined}>
+          {label}
+        </span>
+      )}
       {suffix}
     </button>
   ),
