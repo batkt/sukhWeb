@@ -117,6 +117,39 @@ export const TALBARIIN_NER: Record<string, string> = {
   walletUserId: "Wallet ID",
   createdAt: "Бүртгэсэн огноо",
   updatedAt: "Шинэчилсэн огноо",
+  // Зогсоол / зочин
+  tuukh: "Түүх",
+  tsagiinTuukh: "Цагийн түүх",
+  orsonTsag: "Орсон цаг",
+  garsanTsag: "Гарсан цаг",
+  orsonKhaalga: "Орсон хаалга",
+  garsanKhaalga: "Гарсан хаалга",
+  niitKhugatsaa: "Нийт хугацаа (мин)",
+  undsenUne: "Үндсэн үнэ",
+  urisanMashin: "Урьсан машин",
+  urisanMashiniiDugaar: "Урьсан машины дугаар",
+  davtamjiinTurul: "Давтамжийн төрөл",
+  ezemshigchiinNer: "Эзэмшигчийн нэр",
+  ezemshigchiinRegister: "Эзэмшигчийн регистр",
+  ezemshigchiinUtas: "Эзэмшигчийн утас",
+  khungulult: "Хөнгөлөлт",
+  khungulultMinut: "Хөнгөлөлт (мин)",
+  tulsunEsekh: "Төлсөн эсэх",
+  uneguiMinut: "Үнэгүй минут",
+  zochinTurul: "Зочны төрөл",
+  mashin: "Машин",
+  mashinuud: "Машинууд",
+  zogsool: "Зогсоол",
+  garsanEsekh: "Гарсан эсэх",
+  idevkhtei: "Идэвхтэй",
+  idevkhteiEsekh: "Идэвхтэй эсэх",
+  units: "Тоотууд",
+  gereeniiZagvar: "Гэрээний загвар",
+  sariinTulbur: "Сарын төлбөр",
+  niitTulukhDun: "Нийт төлөх дүн",
+  khariult: "Хариулт",
+  garchig: "Гарчиг",
+  aguulga: "Агуулга",
 };
 
 /** Засварын жагсаалтад харуулахгүй техникийн талбарууд (жижиг үсгээр) */
@@ -143,12 +176,95 @@ export function nuukhTalbarEsekh(talbar: string): boolean {
   return NUUKH_TALBAR.has(suuliinKheseg(talbar).toLowerCase());
 }
 
+/** camelCase → «Niit khugatsaa» (толь бичигт байхгүй үед ядаж уншигдахуйц) */
+const camelUgNer = (t: string) => {
+  const ug = t.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/[_.]+/g, " ").trim().toLowerCase();
+  return ug.charAt(0).toUpperCase() + ug.slice(1);
+};
+
 export function talbariinNer(talbar: string, talbarNer?: string | null): string {
-  const tsever = (talbarNer || "").trim();
-  // Backend заримдаа talbarNer-т техникийн нэрийг л давтаж өгдөг
-  if (tsever && tsever !== talbar && tsever.toUpperCase() !== tsever) return tsever;
   const suul = suuliinKheseg(talbar);
-  return TALBARIIN_NER[talbar] || TALBARIIN_NER[suul] || tsever || talbar;
+  const toli = TALBARIIN_NER[talbar] || TALBARIIN_NER[suul];
+  if (toli) return toli;
+  // Backend-ийн talbarNer нь ихэвчлэн «Niit Khugatsaa» гэх мэт латин — зөвхөн
+  // кирилл агуулсан бол ашиглана
+  const tsever = (talbarNer || "").trim();
+  if (tsever && /[А-Яа-яӨөҮүЁё]/.test(tsever)) return tsever;
+  return camelUgNer(suul);
+}
+
+/** Объектын ID талбар (харуулах шаардлагагүй): baiguullagiinId, zogsooliinId… */
+const idTalbarEsekh = (k: string, v: unknown) =>
+  /(^id$|Id$|^_)/.test(k) && (typeof v !== "object" || v === null);
+
+export interface DedUurchlult {
+  zam: string;
+  label: string;
+  umnukh: string | null;
+  shine: string | null;
+}
+
+/** Объект/массивыг «a.b.0.c» зам → энгийн утга болгон задлана */
+function khavtgailakh(v: unknown, zam = "", out: Record<string, unknown> = {}, gun = 0) {
+  if (gun > 4) {
+    out[zam] = v;
+    return out;
+  }
+  if (Array.isArray(v)) {
+    if (v.length === 0) out[zam] = null;
+    else if (v.every((x) => typeof x !== "object" || x === null)) out[zam] = v;
+    else v.forEach((x, i) => khavtgailakh(x, zam ? `${zam}.${i}` : String(i), out, gun + 1));
+    return out;
+  }
+  if (v && typeof v === "object" && !(v instanceof Date)) {
+    Object.entries(v as Record<string, unknown>).forEach(([k, val]) => {
+      if (NUUKH_TALBAR.has(k.toLowerCase()) || idTalbarEsekh(k, val)) return;
+      khavtgailakh(val, zam ? `${zam}.${k}` : k, out, gun + 1);
+    });
+    return out;
+  }
+  out[zam] = v;
+  return out;
+}
+
+/** «tsagiinTuukh.0.orsonTsag» → «Цагийн түүх 1 · Орсон цаг» */
+const zamiinNer = (zam: string) =>
+  zam
+    .split(".")
+    .map((p) => (/^\d+$/.test(p) ? String(Number(p) + 1) : talbariinNer(p)))
+    .join(" · ")
+    .replace(/ · (\d+) · /g, " $1 · ");
+
+/** Объект/массив утгыг «шошго: утга» мөрүүд болгоно (энгийн утга бол null) */
+export function objectMurnuud(raw: unknown): { label: string; utga: string }[] | null {
+  const v = jsonZadlakh(raw);
+  if (v === null || typeof v !== "object" || v instanceof Date) return null;
+  if (Array.isArray(v) && v.every((x) => typeof x !== "object" || x === null)) return null;
+  return Object.entries(khavtgailakh(v))
+    .map(([zam, u]) => ({ label: zamiinNer(zam) || "Утга", utga: utgaFormat(u) }))
+    .filter((m): m is { label: string; utga: string } => m.utga !== null);
+}
+
+/**
+ * Хоёр утгын аль нэг нь объект/массив бол зөвхөн өөрчлөгдсөн дэд талбаруудыг
+ * буцаана. Энгийн утга бол `null` (энгийн өмнө → одоо харуулна).
+ */
+export function dedUurchlultuud(umnukhRaw: unknown, shineRaw: unknown): DedUurchlult[] | null {
+  const umnukh = jsonZadlakh(umnukhRaw);
+  const shine = jsonZadlakh(shineRaw);
+  const obj = (v: unknown) => v !== null && typeof v === "object" && !(v instanceof Date);
+  if (!obj(umnukh) && !obj(shine)) return null;
+  const a = obj(umnukh) ? khavtgailakh(umnukh) : {};
+  const b = obj(shine) ? khavtgailakh(shine) : {};
+  const zamuud = Array.from(new Set([...Object.keys(a), ...Object.keys(b)]));
+  return zamuud
+    .map((zam) => ({
+      zam,
+      label: zamiinNer(zam) || "Утга",
+      umnukh: utgaFormat(a[zam]),
+      shine: utgaFormat(b[zam]),
+    }))
+    .filter((d) => d.umnukh !== d.shine);
 }
 
 /* ------------------------------- утгууд ------------------------------- */
@@ -248,6 +364,27 @@ function nerDataaas(d: AnyRec | null | undefined): string {
   );
 }
 
+/** Нэр хадгалаагүй хуучин засварт өөрчлөлтийн утгуудаас нэр/дугаар хайна */
+function nerUurchlultaas(r: AnyRec): string {
+  const raw: AnyRec[] = Array.isArray(r.uurchlult) ? r.uurchlult : [];
+  const TULKHUUR = ["mashiniiDugaar", "urisanMashiniiDugaar", "ner", "gereeniiDugaar", "toot", "dugaar"];
+  for (const t of TULKHUUR) {
+    const c = raw.find((x) => str(x.talbar) === t);
+    const v = c ? str(c.shineUtga || c.umnukhUtga) : "";
+    if (v) return v;
+  }
+  for (const c of raw) {
+    for (const v of [c.shineUtga, c.umnukhUtga]) {
+      const o = jsonZadlakh(v);
+      if (o && typeof o === "object" && !Array.isArray(o)) {
+        const rec = o as AnyRec;
+        for (const t of TULKHUUR) if (str(rec[t])) return str(rec[t]);
+      }
+    }
+  }
+  return "";
+}
+
 function uurchlultuudAvya(r: AnyRec): { jagsaalt: AuditUurchlult[]; niit: number } {
   const raw: AnyRec[] = Array.isArray(r.uurchlult)
     ? r.uurchlult
@@ -265,7 +402,12 @@ function uurchlultuudAvya(r: AnyRec): { jagsaalt: AuditUurchlult[]; niit: number
       };
     })
     .filter((c) => !nuukhTalbarEsekh(c.talbar))
-    .filter((c) => utgaFormat(c.umnukh) !== utgaFormat(c.shine));
+    .filter((c) => utgaFormat(c.umnukh) !== utgaFormat(c.shine))
+    // Объектын зөвхөн ID/огноо/дараалал өөрчлөгдсөн бол утгагүй
+    .filter((c) => {
+      const ded = dedUurchlultuud(c.umnukh, c.shine);
+      return ded === null || ded.length > 0;
+    });
   return { jagsaalt, niit: raw.length };
 }
 
@@ -274,7 +416,7 @@ export function murKhevjuulekh(r: AnyRec): AuditMur {
     (r.deletedData || r.deletedDocument || null) as Record<string, unknown> | null;
   const { jagsaalt, niit } = uurchlultuudAvya(r);
   const dugaar = str(r.classDugaar);
-  const ner = str(r.classNer) || nerDataaas(deletedData);
+  const ner = str(r.classNer) || nerDataaas(deletedData) || nerUurchlultaas(r);
   return {
     _id: str(r._id),
     turul: str(r.classType || r.modelName || r.className),
