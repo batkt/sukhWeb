@@ -93,7 +93,7 @@ const RealTimeDuration = ({
   const h = Math.floor(khugatsaaMin / 60);
   const m = khugatsaaMin % 60;
   return (
-    <span className="uppercase tracking-wide">
+    <span className="">
       {h > 0 ? `${h} цаг ${m} мин` : `${m} мин`}
     </span>
   );
@@ -193,7 +193,7 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
             (tuluv === -4 || (tuluv === 0 && niitDun > 0 && !isCurrentlyIn));
 
           const badgeClass =
-            "flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-0.5 rounded-[6px] overflow-hidden border !text-white uppercase whitespace-nowrap";
+            "flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-0.5 rounded-[6px] overflow-hidden border !text-white whitespace-nowrap";
           const getStatusColor = () => {
             if (isFreeExit) {
               return "bg-[color:var(--panel)] border-[color:var(--surface-border)]";
@@ -370,7 +370,7 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
             tuluv === -4 || (tuluv === 0 && niitDun > 0 && !isCurrentlyIn);
           const showActionBtn = isCurrentlyIn || isDebt;
           const badgeClass =
-            "flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-0.5 rounded-[6px] overflow-hidden border !text-white uppercase whitespace-nowrap";
+            "flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-0.5 rounded-[6px] overflow-hidden border !text-white whitespace-nowrap";
 
           if (showActionBtn) {
             const actionClass =

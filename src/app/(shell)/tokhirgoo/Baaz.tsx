@@ -72,10 +72,10 @@ function Baaz({ token, ajiltan }: BaazProps) {
                 <div className="flex items-center gap-4">
                   <HardDrive className="w-10 h-10 text-brand flex-shrink-0" />
                   <div>
-                    <div className="text-3xl font-semibold text-brand">
+                    <div className="text-3xl font-medium text-brand">
                       {fmtBytes(storageInfo.total.dataSize)}
                     </div>
-                    <div className="text-xs text-theme opacity-60 mt-1 uppercase tracking-wide">
+                    <div className="text-xs text-theme opacity-60 mt-1 ">
                       Нийт ашиглаж буй өгөгдөл
                     </div>
                   </div>

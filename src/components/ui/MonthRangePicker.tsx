@@ -172,7 +172,7 @@ export default function MonthRangePicker({
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
-              <span className="text-sm font-semibold text-[color:var(--panel-text)]">
+              <span className="text-sm font-medium text-[color:var(--panel-text)]">
                 {jil} он
               </span>
               <button

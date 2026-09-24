@@ -1,14 +1,15 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import FilterDatePicker from "@/components/ui/FilterDatePicker";
 import Table from "@/components/ui/table";
 import { useBuilding } from "@/context/BuildingContext";
 import { useAuth } from "@/lib/useAuth";
 import useBaiguullaga from "@/lib/useBaiguullaga";
 import uilchilgee from "@/lib/uilchilgee";
-import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import formatNumber from "../../../../../tools/function/formatNumber";
-import { Printer, Search } from "lucide-react";
+import { Car, Hash, Home, Phone, Printer, Search, X } from "lucide-react";
+import { Modal } from "antd";
 import ExcelButton from "@/components/ui/ExcelButton";
 import { getDefaultDateRange } from "@/lib/utils";
 import { useSearch } from "@/context/SearchContext";
@@ -145,9 +146,10 @@ export default function ZogsoolTailanPage() {
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<
-    "residentSummary" | "guestDetail" | "guestCarList"
-  >("residentSummary");
+  // «Дэлгэрэнгүй» нь таб биш — оршин суугч дээр дарахад modal-аар нээгдэнэ
+  const [activeTab, setActiveTab] = useState<"residentSummary" | "guestCarList">(
+    "residentSummary",
+  );
   const [selectedResidentId, setSelectedResidentId] = useState<string | null>(
     null,
   );
@@ -172,7 +174,7 @@ export default function ZogsoolTailanPage() {
         );
         setApiResponse(response.data);
         setSelectedResidentId(null);
-        setActiveTab("residentSummary");
+        setIsModalOpen(false);
       } catch (err: any) {
         setError(
           err?.response?.data?.aldaa ||
@@ -200,14 +202,10 @@ export default function ZogsoolTailanPage() {
   const selectedDetail = apiResponse?.selectedDetail || null;
 
   const handleResidentClick = async (orshinSuugchiinId: string) => {
-    if (selectedResidentId === orshinSuugchiinId) {
-      setSelectedResidentId(null);
-      setApiResponse((prev) =>
-        prev ? { ...prev, selectedDetail: null } : null,
-      );
-      return;
-    }
     setSelectedResidentId(orshinSuugchiinId);
+    setIsModalOpen(true);
+    if (selectedResidentId === orshinSuugchiinId && selectedDetail) return;
+    setApiResponse((prev) => (prev ? { ...prev, selectedDetail: null } : null));
     const resident = residentSummary.find(
       (r) => r.orshinSuugchiinId === orshinSuugchiinId,
     );
@@ -231,6 +229,7 @@ export default function ZogsoolTailanPage() {
       );
     } catch {
       setSelectedResidentId(null);
+      setIsModalOpen(false);
     } finally {
       setDetailLoading(false);
     }
@@ -246,12 +245,14 @@ export default function ZogsoolTailanPage() {
     (r) => r.orshinSuugchiinId === selectedResidentId,
   );
 
-  const exportToExcel = () => {
+  const exportToExcel = (
+    turul: "residentSummary" | "guestDetail" | "guestCarList" = activeTab,
+  ) => {
     let headers: string[] = [];
     let dataToExport: any[] = [];
     let fileName = "";
 
-    if (activeTab === "residentSummary") {
+    if (turul === "residentSummary") {
       headers = [
         "№",
         "Оршин суугч",
@@ -293,7 +294,7 @@ export default function ZogsoolTailanPage() {
         niit.uldegdelTulbur,
       ]);
       fileName = "Зогсоолын_оршин_суугчдын_нэгтгэл";
-    } else if (activeTab === "guestDetail") {
+    } else if (turul === "guestDetail") {
       headers = [
         "№",
         "Огноо",
@@ -327,7 +328,7 @@ export default function ZogsoolTailanPage() {
         totalTulbur,
         '""',
       ]);
-      fileName = "Зогсоолын_зочдын_дэлгэрэнгүй";
+      fileName = `Зогсоолын_зочдын_дэлгэрэнгүй${selectedResident?.ner ? `_${selectedResident.ner}` : ""}`;
     } else {
       headers = [
         "№",
@@ -705,23 +706,13 @@ export default function ZogsoolTailanPage() {
       <PrintStyles />
 
       <div className="flex flex-wrap items-center gap-2 no-print">
-        <div
+        <FilterDatePicker
           id="zogsool-date"
-          className="btn-minimal flex h-9 w-full items-center px-3 sm:w-[280px]"
-        >
-          <StandardDatePicker
-            isRange={true}
-            value={dateRange}
-            onChange={setDateRange}
-            allowClear
-            placeholder="Огноо сонгох"
-            classNames={{
-              root: "!h-full !w-full",
-              input:
-                "text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
-            }}
-          />
-        </div>
+          value={dateRange}
+          onChange={setDateRange}
+          placeholder="Огноо сонгох"
+          className="w-full sm:w-[260px]"
+        />
 
         <label className={`filter-field w-full sm:w-[240px] ${khaikh ? "is-active" : ""}`}>
           <Search className="h-4 w-4 shrink-0 text-[color:var(--muted-text)]" />
@@ -747,17 +738,6 @@ export default function ZogsoolTailanPage() {
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab("guestDetail")}
-            className={`h-9 rounded-[10px] px-4 text-[13px] transition-colors ${
-              activeTab === "guestDetail"
-                ? "bg-theme/15 font-medium text-brand"
-                : "text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] hover:text-[color:var(--panel-text)]"
-            }`}
-          >
-            Дэлгэрэнгүй
-          </button>
-          <button
-            type="button"
             onClick={() => setActiveTab("guestCarList")}
             className={`h-9 rounded-[10px] px-4 text-[13px] transition-colors ${
               activeTab === "guestCarList"
@@ -769,7 +749,7 @@ export default function ZogsoolTailanPage() {
           </button>
         </div>
 
-        <ExcelButton onClick={exportToExcel} className="ml-auto" />
+        <ExcelButton onClick={() => exportToExcel()} className="ml-auto" />
       </div>
 
       {/* ── Хураангуй ── */}
@@ -785,7 +765,7 @@ export default function ZogsoolTailanPage() {
             key={k.nershil}
             className="rounded-2xl border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] px-5 py-4 shadow-[var(--ctl-shadow)]"
           >
-            <div className={`text-2xl font-semibold leading-tight tabular-nums ${k.ungu}`}>{k.utga}</div>
+            <div className={`text-2xl font-medium leading-tight tabular-nums ${k.ungu}`}>{k.utga}</div>
             <div className="mt-1 text-xs text-[color:var(--muted-text)]">{k.nershil}</div>
           </div>
         ))}
@@ -803,10 +783,7 @@ export default function ZogsoolTailanPage() {
               scroll={{ x: "max-content" }}
               locale={{ emptyText: "Мэдээлэл алга байна" }}
               onRow={(record) => ({
-                onClick: () => {
-                  handleResidentClick(record.orshinSuugchiinId);
-                  setActiveTab("guestDetail");
-                },
+                onClick: () => handleResidentClick(record.orshinSuugchiinId),
                 className: `cursor-pointer${
                   selectedResidentId === record.orshinSuugchiinId
                     ? " zt-row-selected"
@@ -820,138 +797,44 @@ export default function ZogsoolTailanPage() {
                       index={0}
                       colSpan={6}
                       align="center"
-                      className="text-[13px] font-semibold"
+                      className="text-[13px] font-medium"
                     >
-                      <strong>Нийт</strong>
+                      Нийт
                     </Table.Summary.Cell>
                     <Table.Summary.Cell
                       index={1}
                       align="center"
-                      className="text-[13px] font-semibold"
+                      className="text-[13px] font-medium"
                     >
                       {niit.urisanMachinToo}
                     </Table.Summary.Cell>
                     <Table.Summary.Cell
                       index={2}
                       align="right"
-                      className="text-[13px] font-semibold"
+                      className="text-[13px] font-medium"
                     >
                       {formatNumber(niit.niitTulbur)}
                     </Table.Summary.Cell>
                     <Table.Summary.Cell
                       index={3}
                       align="center"
-                      className="text-[13px] font-semibold"
+                      className="text-[13px] font-medium"
                     >
                       {niit.khungulultMinut || "-"}
                     </Table.Summary.Cell>
                     <Table.Summary.Cell
                       index={4}
                       align="right"
-                      className="text-[13px] font-semibold"
+                      className="text-[13px] font-medium"
                     >
                       {formatNumber(niit.tulsunDun)}
                     </Table.Summary.Cell>
                     <Table.Summary.Cell
                       index={5}
                       align="right"
-                      className="text-[13px] font-semibold"
+                      className="text-[13px] font-medium"
                     >
                       {formatNumber(niit.uldegdelTulbur)}
-                    </Table.Summary.Cell>
-                  </Table.Summary.Row>
-                ) : null
-              }
-            />
-          </div>
-        </div>
-      )}
-
-      {activeTab === "guestDetail" && (
-        <div className="allow-overflow flex flex-col gap-2">
-          {/* Гарчиг нь таб дээр байгаа тул зөвхөн сонгосон оршин суугчийн мэдээллийг үлдээв */}
-          {selectedResident && (
-            <div className="flex flex-wrap items-center gap-3 text-[13px] text-brand/80">
-              <span className="font-medium text-[color:var(--panel-text)]">
-                {selectedResident.ner}
-              </span>
-              {selectedResident.utas && (
-                <span>
-                  Утас: <strong>{selectedResident.utas}</strong>
-                </span>
-              )}
-              {selectedResident.orts && (
-                <span>
-                  Орц: <strong>{selectedResident.orts}</strong>
-                </span>
-              )}
-              {selectedResident.davkhar && (
-                <span>
-                  Давхар: <strong>{selectedResident.davkhar}</strong>
-                </span>
-              )}
-              {selectedResident.toot && (
-                <span>
-                  Тоот: <strong>{selectedResident.toot}</strong>
-                </span>
-              )}
-            </div>
-          )}
-          <div>
-            <Table
-              dataSource={displayDetail || []}
-              columns={guestDetailColumns}
-              // rowKey={(record) =>
-              //   `${record.mashiniiDugaar}-${record._id || Math.random().toString()}`
-              // }
-              pagination={false}
-              scroll={{ x: "max-content" }}
-              loading={loading || detailLoading}
-              locale={{
-                emptyText: selectedResidentId
-                  ? "Дэлгэрэнгүй мэдээлэл алга"
-                  : "Эхний таб дээр оршин суугч сонгоно уу",
-              }}
-              summary={() =>
-                displayDetail && displayDetail.length > 0 ? (
-                  <Table.Summary.Row className="bg-theme/5">
-                    <Table.Summary.Cell
-                      index={0}
-                      colSpan={3}
-                      align="center"
-                      className="text-[13px] font-semibold"
-                    >
-                      <strong>Нийт</strong>
-                    </Table.Summary.Cell>
-                    <Table.Summary.Cell
-                      index={1}
-                      align="center"
-                      className="text-[13px] font-semibold"
-                    >
-                      {displayDetail.reduce((s, r) => s + r.zogssonMinut, 0)}
-                    </Table.Summary.Cell>
-                    <Table.Summary.Cell
-                      index={2}
-                      align="center"
-                      className="text-[13px] font-semibold"
-                    >
-                      {displayDetail.reduce((s, r) => s + r.khungulsunMinut, 0)}
-                    </Table.Summary.Cell>
-                    <Table.Summary.Cell
-                      index={3}
-                      align="center"
-                      className="text-[13px] font-semibold"
-                    >
-                      {formatNumber(
-                        displayDetail.reduce((s, r) => s + r.tulbur, 0),
-                      )}
-                    </Table.Summary.Cell>
-                    <Table.Summary.Cell
-                      index={4}
-                      align="center"
-                      className="text-[13px] font-semibold"
-                    >
-                      -
                     </Table.Summary.Cell>
                   </Table.Summary.Row>
                 ) : null
@@ -975,6 +858,134 @@ export default function ZogsoolTailanPage() {
           </div>
         </div>
       )}
+      {/* ── Дэлгэрэнгүй (drill) — оршин суугч дээр дарахад нээгдэнэ ── */}
+      <Modal
+        open={isModalOpen && !!selectedResident}
+        onCancel={() => setIsModalOpen(false)}
+        footer={null}
+        width={960}
+        centered
+        destroyOnClose
+        closeIcon={<X className="h-4 w-4" />}
+        styles={{ content: { padding: 0, overflow: "hidden", borderRadius: 16 } }}
+      >
+        {selectedResident && (
+          <div className="flex max-h-[85vh] flex-col bg-[color:var(--surface-bg)]">
+            {/* Толгой */}
+            <div className="border-b border-[color:var(--surface-border)] px-6 py-4 pr-14">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="flex min-w-0 items-start gap-3">
+                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-theme/10 text-brand">
+                    <Car className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <h2 className="text-base font-medium text-[color:var(--panel-text)]">
+                      {selectedResident.ner || "Дэлгэрэнгүй"}
+                    </h2>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs text-[color:var(--muted-text)]">
+                      {[
+                        selectedResident.utas && { icon: <Phone className="h-3 w-3" />, t: selectedResident.utas },
+                        selectedResident.orts && { icon: <Home className="h-3 w-3" />, t: `${selectedResident.orts} орц` },
+                        selectedResident.davkhar && { icon: <Home className="h-3 w-3" />, t: `${selectedResident.davkhar} давхар` },
+                        selectedResident.toot && { icon: <Hash className="h-3 w-3" />, t: `${selectedResident.toot} тоот` },
+                      ]
+                        .filter(Boolean)
+                        .map((c: any) => (
+                          <span
+                            key={c.t}
+                            className="inline-flex items-center gap-1 rounded-md bg-[color:var(--surface-hover)] px-2 py-0.5"
+                          >
+                            {c.icon} {c.t}
+                          </span>
+                        ))}
+                    </div>
+                  </div>
+                </div>
+                <ExcelButton
+                  onClick={() => exportToExcel("guestDetail")}
+                  disabled={detailLoading || !displayDetail?.length}
+                />
+              </div>
+            </div>
+
+            {/* Хураангуй */}
+            <div className="grid grid-cols-2 gap-3 px-6 pt-4 md:grid-cols-5">
+              {[
+                { nershil: "Урьсан машин", utga: formatNumber(selectedResident.urisanMachinToo || 0, 0), ungu: "text-[color:var(--panel-text)]" },
+                { nershil: "Нийт төлөх", utga: formatNumber(selectedResident.niitTulbur || 0), ungu: "text-[color:var(--panel-text)]" },
+                { nershil: "Хөнгөлсөн минут", utga: formatNumber(selectedResident.khungulultMinut || 0, 0), ungu: "text-[color:var(--panel-text)]" },
+                { nershil: "Төлсөн дүн", utga: formatNumber(selectedResident.tulsunDun || 0), ungu: "text-success" },
+                { nershil: "Үлдэгдэл", utga: formatNumber(selectedResident.uldegdelTulbur || 0), ungu: (selectedResident.uldegdelTulbur || 0) > 0 ? "text-danger" : "text-[color:var(--panel-text)]" },
+              ].map((k) => (
+                <div
+                  key={k.nershil}
+                  className="rounded-xl border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] px-4 py-3 shadow-[var(--ctl-shadow)]"
+                >
+                  <div className={`text-lg font-medium leading-tight tabular-nums ${k.ungu}`}>{k.utga}</div>
+                  <div className="mt-0.5 text-xs text-[color:var(--muted-text)]">{k.nershil}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Зочдын дэлгэрэнгүй */}
+            <div className="min-h-0 flex-1 overflow-auto px-6 pb-6 pt-4">
+                  <Table
+                    dataSource={displayDetail || []}
+                    columns={guestDetailColumns}
+                    pagination={false}
+                    scroll={{ x: "max-content" }}
+                    loading={detailLoading}
+                    locale={{ emptyText: "Дэлгэрэнгүй мэдээлэл алга" }}
+                    summary={() =>
+                      displayDetail && displayDetail.length > 0 ? (
+                        <Table.Summary.Row className="bg-theme/5">
+                          <Table.Summary.Cell
+                            index={0}
+                            colSpan={3}
+                            align="center"
+                            className="text-[13px] font-medium"
+                          >
+                            Нийт
+                          </Table.Summary.Cell>
+                          <Table.Summary.Cell
+                            index={1}
+                            align="center"
+                            className="text-[13px] font-medium"
+                          >
+                            {displayDetail.reduce((s, r) => s + r.zogssonMinut, 0)}
+                          </Table.Summary.Cell>
+                          <Table.Summary.Cell
+                            index={2}
+                            align="center"
+                            className="text-[13px] font-medium"
+                          >
+                            {displayDetail.reduce((s, r) => s + r.khungulsunMinut, 0)}
+                          </Table.Summary.Cell>
+                          <Table.Summary.Cell
+                            index={3}
+                            align="center"
+                            className="text-[13px] font-medium"
+                          >
+                            {formatNumber(
+                              displayDetail.reduce((s, r) => s + r.tulbur, 0),
+                            )}
+                          </Table.Summary.Cell>
+                          <Table.Summary.Cell
+                            index={4}
+                            align="center"
+                            className="text-[13px] font-medium"
+                          >
+                            -
+                          </Table.Summary.Cell>
+                        </Table.Summary.Row>
+                      ) : null
+                    }
+                  />
+            </div>
+          </div>
+        )}
+      </Modal>
+
     </div>
   );
 }

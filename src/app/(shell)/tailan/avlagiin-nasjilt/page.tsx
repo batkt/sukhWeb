@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import FilterDatePicker from "@/components/ui/FilterDatePicker";
 import { Printer } from "lucide-react";
+import { StandardPagination } from "@/components/ui/StandardTable";
 import ExcelButton from "@/components/ui/ExcelButton";
 import { useBuilding } from "@/context/BuildingContext";
 import { useAuth } from "@/lib/useAuth";
@@ -11,9 +13,7 @@ import dayjs from "dayjs";
 import "dayjs/locale/mn";
 import { useSearch } from "@/context/SearchContext";
 import { ConfigProvider, theme as antdTheme } from "antd";
-import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import toast from "react-hot-toast";
-import PageSongokh from "components/selectZagvar/pageSongokh";
 import {
   AvlagiinNasjiltTable,
   AvlagiinNasjiltItem,
@@ -332,10 +332,10 @@ export default function AvlagiinNasjiltPage() {
 
         {/* Print Only Header */}
         <div className="print-only text-center text-black">
-          <h1 className="text-3xl font-black uppercase tracking-tight">
+          <h1 className="text-3xl font-medium tracking-tight">
             Насжилтын тайлан
           </h1>
-          <p className="mt-2 text-xl font-bold">{baiguullaga?.ner}</p>
+          <p className="mt-2 text-xl font-medium">{baiguullaga?.ner}</p>
           <p className="text-sm mt-1">
             Огноо:{" "}
             {dateRange?.[0] && dateRange?.[1]
@@ -348,30 +348,19 @@ export default function AvlagiinNasjiltPage() {
 
         {/* Controls */}
         <div className="flex flex-wrap items-center gap-2 no-print flex-shrink-0">
-          <div
+          <FilterDatePicker
             id="nasjilt-date"
-            className="btn-minimal flex h-9 w-full items-center px-3 sm:w-[280px]"
-          >
-            <StandardDatePicker
-              isRange={true}
-              value={dateRange}
-              onChange={setDateRange}
-              allowClear
-              placeholder="Огноо сонгох"
-              classNames={{
-                root: "!h-full !w-full",
-                input:
-                  "text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
-              }}
-            />
-          </div>
+            value={dateRange}
+            onChange={setDateRange}
+            className="w-full sm:w-[260px]"
+          />
           {/* <button
             onClick={() => window.print()}
-            className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
+            className="btn-minimal inline-flex h-9 shrink-0 items-center gap-2 !px-3 text-[13px]"
           >
             <Printer className="w-4 h-4" /> Хэвлэх
           </button> */}
-          <ExcelButton onClick={exportToExcel} />
+          <ExcelButton onClick={exportToExcel} className="ml-auto" />
         </div>
 
         {/* ── Table ───────────────────────────────────────────────── */}
@@ -385,42 +374,18 @@ export default function AvlagiinNasjiltPage() {
           />
         </div>
 
-        {/* Pagination */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-3 no-print flex-shrink-0">
-          <div />
-          <div className="flex items-center gap-4">
-            <PageSongokh
-              value={pageSize}
-              onChange={(v) => {
-                setPageSize(v);
-                setCurrentPage(1);
-              }}
-              className="!h-10 !rounded-2xl"
-            />
-            <div className="flex items-center bg-[color:var(--surface-hover)] p-1 rounded-2xl">
-              <button
-                disabled={currentPage <= 1}
-                onClick={() => setCurrentPage(currentPage - 1)}
-                className="px-4 py-1.5 rounded-2xl text-sm font-bold disabled:opacity-20 hover:bg-[color:var(--surface-bg)] transition-all text-[color:var(--muted-text)]"
-              >
-                Өмнөх
-              </button>
-              <div className="px-4 text-sm font-black text-theme">
-                {currentPage} /{" "}
-                {Math.max(
-                  1,
-                  Math.ceil((summary?.count || filteredData.length) / pageSize),
-                )}
-              </div>
-              <button
-                disabled={currentPage * pageSize >= (summary?.count || filteredData.length)}
-                onClick={() => setCurrentPage(currentPage + 1)}
-                className="px-4 py-1.5 rounded-2xl text-sm font-bold disabled:opacity-20 hover:bg-[color:var(--surface-bg)] transition-all text-[color:var(--muted-text)]"
-              >
-                Дараах
-              </button>
-            </div>
-          </div>
+        {/* Хуудаслалт — бусад тайлантай ижил */}
+        <div className="no-print flex-shrink-0">
+          <StandardPagination
+            current={currentPage}
+            total={summary?.count || filteredData.length}
+            pageSize={pageSize}
+            onChange={setCurrentPage}
+            onPageSizeChange={(v) => {
+              setPageSize(v);
+              setCurrentPage(1);
+            }}
+          />
         </div>
       </div>
     </ConfigProvider>

@@ -791,7 +791,7 @@ export default function AshiglaltiinZardluud() {
                 {mur.tariffUsgeer ? ` ${mur.tariffUsgeer}` : ""}
               </div>
               {changed && (
-                <span className="whitespace-nowrap tracking-tighter text-warning uppercase">
+                <span className="whitespace-nowrap tracking-tighter text-warning ">
                   Өөрчлөгдсөн
                 </span>
               )}
@@ -1218,7 +1218,7 @@ export default function AshiglaltiinZardluud() {
                       <div className="space-y-5">
                         {/* 1. Зардлын ангилал: Тогтмол / Хувьсах */}
                         <div>
-                          <label className="block text-xs text-[color:var(--panel-text)] mb-2 uppercase tracking-wider">
+                          <label className="block text-xs text-[color:var(--panel-text)] mb-2 ">
                             Зардлын ангилал <span className="text-danger">*</span>
                           </label>
                           <div className="grid grid-cols-2 gap-2.5">
@@ -1285,7 +1285,7 @@ export default function AshiglaltiinZardluud() {
                         {/* 2. Зардлын нэр + Шуурхай сонголтууд */}
                         <div>
                           <div className="flex items-center justify-between mb-1.5">
-                            <label className="text-xs text-[color:var(--panel-text)] uppercase tracking-wider">
+                            <label className="text-xs text-[color:var(--panel-text)] ">
                               Зардлын нэр <span className="text-danger">*</span>
                             </label>
                             <span className="text-[11px] text-[color:var(--muted-text)]">
@@ -1368,7 +1368,7 @@ export default function AshiglaltiinZardluud() {
                           !formData.ner.toLowerCase().includes("өмчлөл")
                         ) && (
                             <div>
-                              <label className="block text-xs text-[color:var(--panel-text)] mb-2 uppercase tracking-wider">
+                              <label className="block text-xs text-[color:var(--panel-text)] mb-2 ">
                                 Зардлын төрөл <span className="text-danger">*</span>
                               </label>
                               <div className="grid grid-cols-2 gap-2.5">
@@ -1446,7 +1446,7 @@ export default function AshiglaltiinZardluud() {
                             !formData.ner.toLowerCase().includes("өмчлөл") ? (
                             <>
                               <div className="flex items-center justify-between">
-                                <label className="text-xs text-[color:var(--panel-text)] uppercase tracking-wider">
+                                <label className="text-xs text-[color:var(--panel-text)] ">
                                   Суурь хураамж (₮) <span className="text-danger">*</span>
                                 </label>
                                 <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] text-[color:var(--muted-text)]">
@@ -1482,7 +1482,7 @@ export default function AshiglaltiinZardluud() {
                           ) : (
                             <>
                               <div className="flex items-center justify-between">
-                                <label className="text-xs text-[color:var(--panel-text)] uppercase tracking-wider">
+                                <label className="text-xs text-[color:var(--panel-text)] ">
                                   Тарифын дүн (₮) <span className="text-danger">*</span>
                                 </label>
                                 <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] text-[color:var(--muted-text)]">
@@ -1523,7 +1523,7 @@ export default function AshiglaltiinZardluud() {
                         {/* 5. Тайлбар */}
                         <div>
                           <div className="flex items-center justify-between mb-1.5">
-                            <label className="text-xs text-[color:var(--panel-text)] uppercase tracking-wider flex items-center gap-1">
+                            <label className="text-xs text-[color:var(--panel-text)] flex items-center gap-1">
                               <FileText className="w-3.5 h-3.5 text-[color:var(--muted-text)]" />
                               Тайлбар
                             </label>
@@ -1558,7 +1558,7 @@ export default function AshiglaltiinZardluud() {
                                 {formData.ner.trim() || "Зардлын нэр"}
                               </div>
                               <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                                <span className="text-[10px] px-2 py-0.5 rounded-md bg-[color:var(--surface-hover)] text-[color:var(--panel-text)] font-medium">
+                                <span className="text-[11px] px-2 py-0.5 rounded-md bg-[color:var(--surface-hover)] text-[color:var(--panel-text)] font-medium">
                                   {formData.turul === "Тогтмол" ? "Тогтмол" : "Хувьсах"}
                                 </span>
                                 {!(
@@ -1566,12 +1566,12 @@ export default function AshiglaltiinZardluud() {
                                   !formData.ner.toLowerCase().includes("дундын") &&
                                   !formData.ner.toLowerCase().includes("өмчлөл")
                                 ) && (
-                                    <span className="text-[10px] px-2 py-0.5 rounded-md bg-theme/10 text-theme font-medium">
+                                    <span className="text-[11px] px-2 py-0.5 rounded-md bg-theme/10 text-theme font-medium">
                                       {formData.zardliinTurul || "Энгийн"}
                                     </span>
                                   )}
                                 {formData.nuatBodokhEsekh && (
-                                  <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium">
+                                  <span className="text-[11px] px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium">
                                     +10% НӨАТ
                                   </span>
                                 )}
@@ -1585,7 +1585,7 @@ export default function AshiglaltiinZardluud() {
                                   ? `${suuriKhuraamjInput || "0.00"} ₮`
                                   : `${tariffInputValue || "0.00"} ₮`}
                               </div>
-                              <div className="text-[10px] text-[color:var(--muted-text)]">
+                              <div className="text-[11px] text-[color:var(--muted-text)]">
                                 {formData.ner.toLowerCase().includes("цахилгаан") &&
                                   !formData.ner.toLowerCase().includes("дундын") &&
                                   !formData.ner.toLowerCase().includes("өмчлөл")
@@ -1607,7 +1607,7 @@ export default function AshiglaltiinZardluud() {
                       className="px-4 py-2 text-xs rounded-xl border border-[color:var(--surface-border)] text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] transition-all cursor-pointer flex items-center gap-1.5"
                     >
                       <span>Цуцлах</span>
-                      <kbd className="hidden sm:inline-block text-[10px] px-1.5 py-0.5 rounded bg-[color:var(--surface-border)] text-[color:var(--muted-text)]">
+                      <kbd className="hidden sm:inline-block text-[11px] px-1.5 py-0.5 rounded bg-[color:var(--surface-border)] text-[color:var(--muted-text)]">
                         Esc
                       </kbd>
                     </button>
@@ -1619,7 +1619,7 @@ export default function AshiglaltiinZardluud() {
                     >
                       <Check className="w-4 h-4" />
                       <span>{editingItem ? "Өөрчлөлт хадгалах" : "Зардал бүртгэх"}</span>
-                      <kbd className="hidden sm:inline-block text-[10px] px-1.5 py-0.5 rounded bg-white/20 text-white font-mono">
+                      <kbd className="hidden sm:inline-block text-[11px] px-1.5 py-0.5 rounded bg-white/20 text-white font-mono">
                         Enter
                       </kbd>
                     </button>

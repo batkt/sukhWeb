@@ -7323,3 +7323,79 @@ body,
 .filter-field input:focus-visible {
   box-shadow: none;
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   БҮДҮҮН ҮСЭГГҮЙ — хуудас, хүснэгтийн бичвэрт bold/semibold хэрэглэхгүй.
+   Хүснэгтийн мөр ердийн (400), гарчиг/онцлох бичвэр дээд тал нь 500.
+   ═══════════════════════════════════════════════════════════════════ */
+strong,
+b,
+th,
+.force-bold,
+.badge-status,
+.btn-neu-lg,
+.btn-minimal-lg,
+.table-ui th,
+.guilgee-table .ant-table-thead > tr > th,
+.guilgee-table .ant-table-summary,
+.stat-card-value,
+.shell-title,
+.shell-badge,
+.shell-status-value,
+.shell-flyout-title,
+.ant-btn-primary,
+.ant-table-thead > tr > th,
+.ant-table-summary,
+.ant-modal-title,
+.ant-drawer-title,
+.ant-tabs-tab-active .ant-tabs-tab-btn,
+.ant-segmented-item-selected,
+.ant-select-item-option-selected,
+.ant-statistic-content,
+.mantine-Modal-title,
+.mantine-Month-weekday[data-weekend] {
+  font-weight: 500 !important;
+}
+table td,
+table td *:not(svg):not(path),
+table tfoot td,
+.ant-table-tbody > tr > td,
+.ant-table-summary td {
+  font-weight: 400 !important;
+}
+
+/* ── Нэгтгэл тайлангийн хүснэгт — босоо зураас ─────────────────────────
+   border-collapse-ийн хүрээ sticky нүдэн дээр хамт гүйдэггүй, зузаан
+   хүрээ нь толгой/их биеийн нүдийг өөр шилжүүлж зураас таарахгүй болгодог.
+   Тиймээс БҮХ зураасыг inset сүүдрээр (байршил хөдлөхгүй) ганц удаа зурна. */
+.negtgel-table th,
+.negtgel-table td {
+  box-shadow: inset -1px 0 0 hsl(var(--zt-border));
+}
+.negtgel-table th.ng-zaag,
+.negtgel-table td.ng-zaag {
+  box-shadow: inset -1px 0 0 #b6c2d1;
+}
+.negtgel-table th.ng-zaaggui,
+.negtgel-table td.ng-zaaggui {
+  box-shadow: none;
+}
+.negtgel-table th.ng-niit,
+.negtgel-table td.ng-niit {
+  box-shadow:
+    inset 1px 0 0 #b6c2d1,
+    inset -1px 0 0 hsl(var(--zt-border));
+}
+.dark .negtgel-table th.ng-zaag,
+.dark .negtgel-table td.ng-zaag {
+  box-shadow: inset -1px 0 0 #475569;
+}
+.dark .negtgel-table th.ng-niit,
+.dark .negtgel-table td.ng-niit {
+  box-shadow:
+    inset 1px 0 0 #475569,
+    inset -1px 0 0 hsl(var(--zt-border));
+}
+.negtgel-table tr > :last-child:not(.ng-niit) {
+  box-shadow: none;
+}

@@ -90,13 +90,13 @@ export default function ExpandableCardDemo({ cards, onEdit, onDelete }: Expandab
                   <div className="flex-1">
                     <motion.h3
                       layoutId={`title-${active._id}-${id}`}
-                      className="font-black text-[color:var(--panel-text)] text-2xl md:text-3xl mb-2 leading-tight"
+                      className="font-medium text-[color:var(--panel-text)] text-2xl md:text-3xl mb-2 leading-tight"
                     >
                       {active.title}
                     </motion.h3>
                     <motion.p
                       layoutId={`description-${active._id}-${id}`}
-                      className="text-theme font-bold text-xs tracking-widest uppercase"
+                      className="text-theme font-medium text-xs "
                     >
                       {active.description}
                     </motion.p>
@@ -152,7 +152,7 @@ export default function ExpandableCardDemo({ cards, onEdit, onDelete }: Expandab
             <div className="p-5 flex flex-col bg-[color:var(--surface-bg)] border-t border-[color:var(--surface-border)]">
               <motion.h3
                 layoutId={`title-${card._id}-${id}`}
-                className="font-bold text-[color:var(--panel-text)] text-base mb-1 line-clamp-1"
+                className="font-medium text-[color:var(--panel-text)] text-base mb-1 line-clamp-1"
               >
                 {card.title}
               </motion.h3>

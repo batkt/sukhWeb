@@ -7,6 +7,7 @@ import React, {
   useEffect,
   useCallback,
 } from "react";
+import FilterDatePicker from "@/components/ui/FilterDatePicker";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -20,7 +21,6 @@ import {
 } from "antd";
 import Button from "@/components/ui/Button";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
-import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { getDefaultDateRange } from "@/lib/utils";
 import {
   CloseCircleOutlined,
@@ -478,18 +478,17 @@ export default function Page() {
               {t("Анкетын загварууд")}
             </span>
             <div className="mt-5 w-full px-5">
-              <StandardDatePicker
-                isRange={true}
-                onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                className="flex w-full rounded-2xl md:w-auto"
-                placeholder={"Огноо"}
-                value={ognoo}
-                onChange={(dates) => {
-                  setOgnoo(
-                    (dates || [null, null]) as [Date | null, Date | null]
-                  );
-                }}
-              />
+              <div onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+                <FilterDatePicker
+                  className="w-full sm:w-[260px]"
+                  value={ognoo}
+                  onChange={(dates) => {
+                    setOgnoo(
+                      (dates || [null, null]) as [Date | null, Date | null]
+                    );
+                  }}
+                />
+              </div>
             </div>
             <div
               className="mt-5 flex flex-col gap-5 overflow-y-auto pb-10"
@@ -620,7 +619,7 @@ export default function Page() {
             <header className="border-b border-[color:var(--surface-border)] pb-5 lg:px-5">
               {t("Анкет харах хэсэг")}
             </header>
-            <header className="border-b border-[color:var(--surface-border)] px-6 py-1 text-xl  uppercase text-[color:var(--muted-text)] text-opacity-40 dark:text-white dark:text-opacity-40">
+            <header className="border-b border-[color:var(--surface-border)] px-6 py-1 text-xl text-[color:var(--muted-text)] text-opacity-40 dark:text-white dark:text-opacity-40">
               {(data?.ner as string) || t("Анкетын загварын нэр")}
             </header>
             <Form

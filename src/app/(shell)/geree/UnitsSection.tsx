@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState, useEffect } from "react";
+import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { Plus, Trash2, Info, User, Phone, X, Send, UserX } from "lucide-react";
 import { Tooltip } from "antd";
 import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
@@ -160,6 +161,23 @@ export default function UnitsSection({
     setCheckedUnits([]);
     setSelectionMode(false);
   }, [selectedFloor, selectedOrts, propertyTab]);
+  // Холбогдсон тоотыг устгах — холбоосыг салгаад устгахыг нэг алхамд санал болгоно
+  const [holbootoiUstgakh, setHolbootoiUstgakh] = useState<{
+    floor: string;
+    unit: string;
+    ner: string;
+    resident: any;
+  } | null>(null);
+  const holbootoiUstgakhBatlakh = async () => {
+    if (!holbootoiUstgakh) return;
+    const { floor, unit, resident } = holbootoiUstgakh;
+    const salgasan = await actions.handleUnlinkFromUnit(resident, unit, propertyTab);
+    if (salgasan && actions.deleteUnit) {
+      await actions.deleteUnit(floor, unit, propertyTab);
+    }
+    setHolbootoiUstgakh(null);
+  };
+
   const [deleteUnitsConfirm, setDeleteUnitsConfirm] = useState<{
     show: boolean;
     units: string[];
@@ -616,8 +634,8 @@ export default function UnitsSection({
     );
 
     if (freeList.length === 0) {
-      alert(
-        `Сонгосон бүх (${occupiedList.length}) тоот дээр идэвхтэй гэрээ/эзэмшигч холбогдсон тул устгах боломжгүй. Эхлээд холбоосоо салгана уу.`,
+      openErrorOverlay(
+        `Сонгосон бүх (${occupiedList.length}) тоот дээр оршин суугч холбогдсон байна. Холбогдсон тоотыг жагсаалтын устгах товчоор нэг бүрчлэн салгаад устгана уу.`,
       );
       return;
     }
@@ -1373,26 +1391,26 @@ export default function UnitsSection({
                 <Plus className="h-4 w-4" />
               </button>
             )}
-            {/* Холбогдсон тоотыг устгах боломжгүй — alert-ын оронд товчийг
-                идэвхгүй болгож шалтгааныг tooltip-ээр харуулна. `title` нь
-                disabled товч дээр ажилладаггүй тул span-д өгнө. */}
-            <span
-              title={
-                row.isOccupied
-                  ? `${row.ner || "Оршин суугч"} холбогдсон — эхлээд «Холбоос хасах»-аар салгана уу`
-                  : "Устгах"
+            {/* Холбогдсон тоот: шууд устгахгүй — «холбоосыг салгаад устгах уу?»
+                гэж асууж, батлавал хоёуланг нь дараалан хийнэ. */}
+            <button
+              type="button"
+              onClick={() =>
+                row.isOccupied && row.resident
+                  ? setHolbootoiUstgakh({
+                      floor: selectedFloor || "",
+                      unit: row.id,
+                      ner: row.ner || "Оршин суугч",
+                      resident: row.resident,
+                    })
+                  : onDeleteUnit(selectedFloor || "", row.id)
               }
+              className="cursor-pointer rounded-lg p-1.5 text-danger transition hover:bg-danger/10"
+              title={row.isOccupied ? `${row.ner || "Оршин суугч"} холбогдсон — салгаад устгана` : "Устгах"}
+              aria-label="Устгах"
             >
-              <button
-                type="button"
-                disabled={!!row.isOccupied}
-                onClick={() => onDeleteUnit(selectedFloor || "", row.id)}
-                className="rounded-lg p-1.5 text-danger transition hover:bg-danger/10 disabled:cursor-not-allowed disabled:text-[color:var(--muted-text)] disabled:opacity-40 disabled:hover:bg-transparent"
-                aria-label="Устгах"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </span>
+              <Trash2 className="h-4 w-4" />
+            </button>
           </div>
         ),
       },
@@ -1476,7 +1494,7 @@ export default function UnitsSection({
                         {hasMultipleOrts && (
                           <div className="flex items-center gap-3 mb-3">
                             <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-theme/10 border border-theme/30">
-                              <span className="text-sm font-bold text-brand">
+                              <span className="text-sm font-medium text-brand">
                                 {ortsKey ? `${ortsKey}-р орц` : "Орцгүй"}
                               </span>
                               <span className="text-xs text-brand font-medium">
@@ -1755,7 +1773,7 @@ export default function UnitsSection({
               {/* Header */}
               <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-[color:var(--surface-border)]">
                 <div>
-                  <p className="text-[10px] text-[color:var(--muted-text)] uppercase tracking-wider mb-0.5">
+                  <p className="text-[11px] text-[color:var(--muted-text)] mb-0.5">
                     {propertyTab} холбоос
                   </p>
                   <h2 className="text-base text-[color:var(--panel-text)] flex items-center gap-1.5">
@@ -1782,7 +1800,7 @@ export default function UnitsSection({
                   <div className="space-y-4">
                     {/* Resident Info Card */}
                     <div className="p-4 bg-[color:var(--surface-hover)] rounded-2xl border border-[color:var(--surface-border)] space-y-3">
-                      <p className="text-xs text-[color:var(--muted-text)] uppercase tracking-wide">
+                      <p className="text-xs text-[color:var(--muted-text)] ">
                         Бүртгэлтэй оршин суугч
                       </p>
                       <div className="flex items-center gap-3">
@@ -1876,6 +1894,17 @@ export default function UnitsSection({
         title={confirmModal.title}
         message={confirmModal.message}
         onConfirm={confirmModal.onConfirm}
+      />
+      <DeleteConfirmModal
+        show={!!holbootoiUstgakh}
+        onClose={() => setHolbootoiUstgakh(null)}
+        title="Холбоосыг салгаад устгах уу?"
+        message={
+          holbootoiUstgakh
+            ? `${holbootoiUstgakh.unit} дугаар дээр «${holbootoiUstgakh.ner}» холбогдсон байна. Батлавал эхлээд холбоосыг салгаж, дараа нь ${holbootoiUstgakh.unit}-г устгана. Энэ үйлдлийг буцаах боломжгүй.`
+            : ""
+        }
+        onConfirm={holbootoiUstgakhBatlakh}
       />
       <DeleteConfirmModal
         show={deleteUnitsConfirm.show}

@@ -71,7 +71,7 @@ export default function SendInvoiceConfirmModal({
               <div className="mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-warning/10 text-warning mb-4 shadow-sm shadow-warning/10">
                 <Send className="h-6 w-6" />
               </div>
-              <h3 className="text-base font-bold text-[color:var(--panel-text)] mb-2">
+              <h3 className="text-base font-medium text-[color:var(--panel-text)] mb-2">
                 {title}
               </h3>
               <p className="text-sm font-normal text-[color:var(--muted-text)] mb-6 px-2 leading-relaxed">
@@ -82,7 +82,7 @@ export default function SendInvoiceConfirmModal({
                   type="button"
                   onClick={onClose}
                   disabled={isSubmitting}
-                  className="px-5 py-2.5 rounded-2xl text-sm font-semibold text-[color:var(--muted-text)] bg-[color:var(--surface-hover)] hover:bg-[color:var(--surface-hover)] border border-[color:var(--surface-border)] transition-all duration-200 cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-2xl text-sm font-medium text-[color:var(--muted-text)] bg-[color:var(--surface-hover)] hover:bg-[color:var(--surface-hover)] border border-[color:var(--surface-border)] transition-all duration-200 cursor-pointer disabled:opacity-50"
                 >
                   Үгүй, цуцлах
                 </button>
@@ -90,7 +90,7 @@ export default function SendInvoiceConfirmModal({
                   type="button"
                   onClick={handleConfirm}
                   disabled={isSubmitting}
-                  className="px-5 py-2.5 rounded-2xl text-sm font-semibold text-white bg-gradient-to-r from-warning/20 to-warning/20 hover:from-warning/20 hover:to-warning/20 shadow-md shadow-warning/10 hover:shadow-warning/20 transition-all duration-200 cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                  className="px-5 py-2.5 rounded-2xl text-sm font-medium text-white bg-gradient-to-r from-warning/20 to-warning/20 hover:from-warning/20 hover:to-warning/20 shadow-md shadow-warning/10 hover:shadow-warning/20 transition-all duration-200 cursor-pointer disabled:opacity-50 flex items-center gap-2"
                   data-modal-primary
                 >
                   {isSubmitting ? (

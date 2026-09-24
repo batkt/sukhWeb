@@ -580,11 +580,11 @@ export default function PaymentModal({
             <div className="flex items-center gap-4">
               <Wallet className="w-5 h-5 text-[color:var(--muted-text)] shrink-0" />
               <div>
-                <h2 className="text-[15px] font-bold text-[color:var(--panel-text)] dark:text-white tracking-tight">
+                <h2 className="text-[15px] font-medium text-[color:var(--panel-text)] dark:text-white tracking-tight">
                   Тооцоо хийх
                 </h2>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="px-2.5 py-0.5 rounded-full bg-theme text-[11px] font-bold !text-white tracking-widest font-[family-name:var(--font-mono)]">
+                  <span className="px-2.5 py-0.5 rounded-full bg-theme text-[11px] font-medium !text-white tracking-widest font-[family-name:var(--font-mono)]">
                     {transaction.mashiniiDugaar}
                   </span>
                   {duration && (
@@ -607,8 +607,8 @@ export default function PaymentModal({
 
           {/* Progress bar + stats */}
           <div className="mt-4 flex items-center gap-3">
-            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[color:var(--surface-hover)] dark:bg-white/[0.06] text-[10px] font-semibold text-[color:var(--muted-text)] uppercase tracking-wider whitespace-nowrap">
-              Оруулсан: <span className="font-black text-[color:var(--panel-text)] font-[family-name:var(--font-mono)]">{formatNumber(paidSoFar)}₮</span>
+            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[color:var(--surface-hover)] dark:bg-white/[0.06] text-[11px] font-medium text-[color:var(--muted-text)] whitespace-nowrap">
+              Оруулсан: <span className="font-medium text-[color:var(--panel-text)] font-[family-name:var(--font-mono)]">{formatNumber(paidSoFar)}₮</span>
             </span>
             <div className="flex-1 h-2 rounded-full bg-[color:var(--surface-hover)] dark:bg-white/[0.06] overflow-hidden">
               <div
@@ -621,7 +621,7 @@ export default function PaymentModal({
                 }}
               />
             </div>
-            <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider whitespace-nowrap font-[family-name:var(--font-mono)] ${tulukhDun > 0 ? "bg-danger/10 text-danger" : "bg-success/10 text-success"}`}>
+            <span className={`px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap font-[family-name:var(--font-mono)] ${tulukhDun > 0 ? "bg-danger/10 text-danger" : "bg-success/10 text-success"}`}>
               {tulukhDun > 0 ? `Дутуу: ${formatNumber(tulukhDun)}₮` : "Бүрэн ✓"}
             </span>
           </div>
@@ -634,7 +634,7 @@ export default function PaymentModal({
             <div className="lg:col-span-3 p-6 space-y-5 border-r-0 lg:border-r border-[color:var(--surface-border)] dark:border-white/[0.06]">
               {/* Payment methods */}
               <div>
-                <p className="text-[10px]  text-[color:var(--muted-text)] uppercase tracking-[0.15em] mb-3">
+                <p className="text-[11px] text-[color:var(--muted-text)] mb-3">
                   Төлбөрийн хэлбэр
                 </p>
                 <div className="flex gap-3">
@@ -656,7 +656,7 @@ export default function PaymentModal({
                         >
                           {isLoading ? <Loader2 className="w-4.5 h-4.5 animate-spin shrink-0" /> : <span className="shrink-0">{method.icon}</span>}
                           <div className="flex-1 text-left min-w-0">
-                            <span className="text-[13px] font-semibold block leading-tight">{method.label}</span>
+                            <span className="text-[13px] font-medium block leading-tight">{method.label}</span>
                             {isActive && (
                               <span className="text-[11px] opacity-80 block mt-0.5">{formatNumber(value[method.id])}</span>
                             )}
@@ -690,7 +690,7 @@ export default function PaymentModal({
                         className={`relative flex flex-col items-center justify-center gap-2 w-[110px] shrink-0 rounded-2xl border transition-all duration-200 ${ac.container} ${isProcessing ? "opacity-50 cursor-not-allowed" : "cursor-pointer active:scale-[0.97]"}`}
                       >
                         {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : method.icon}
-                        <span className="text-[13px] font-semibold leading-tight">{method.label}</span>
+                        <span className="text-[13px] font-medium leading-tight">{method.label}</span>
                         {isActive && (
                           <>
                             <span className="text-[11px] opacity-80">{formatNumber(value[method.id])}</span>
@@ -708,7 +708,7 @@ export default function PaymentModal({
               {/* Discount Reason Input */}
               {activeMethod === "khungulult" && (
                 <div className="rounded-2xl border border-danger/30 bg-danger/[0.05] p-4 space-y-2.5 animate-in fade-in slide-in-from-top-2 duration-200">
-                  <span className="text-[10px]  text-danger uppercase tracking-[0.15em]">
+                  <span className="text-[11px] text-danger ">
                     Хөнгөлөлтийн тайлбар
                   </span>
                   <input
@@ -725,7 +725,7 @@ export default function PaymentModal({
               {tulbur.length > 0 && (
                 <div className="rounded-2xl border border-[color:var(--surface-border)] dark:border-white/[0.06] bg-[color:var(--surface-hover)] dark:bg-white/[0.02] overflow-hidden">
                   <div className="px-4 py-2.5 bg-[color:var(--surface-hover)] dark:bg-white/[0.03] border-b border-[color:var(--surface-border)] dark:border-white/[0.06]">
-                    <span className="text-[10px]  text-[color:var(--muted-text)] uppercase tracking-[0.15em]">
+                    <span className="text-[11px] text-[color:var(--muted-text)] ">
                       Хуваарилалт
                     </span>
                   </div>
@@ -783,7 +783,7 @@ export default function PaymentModal({
 
               {/* Quick cash */}
               <div>
-                <p className="text-[10px]  text-[color:var(--muted-text)] uppercase tracking-[0.15em] mb-2.5">
+                <p className="text-[11px] text-[color:var(--muted-text)] mb-2.5">
                   Бэлэн мөнгө нэмэх
                 </p>
                 <div className="flex gap-2 flex-wrap">
@@ -803,7 +803,7 @@ export default function PaymentModal({
               {/* E-Barimt */}
               <div className="rounded-2xl border border-[color:var(--surface-border)] dark:border-white/[0.06] bg-[color:var(--surface-hover)] dark:bg-white/[0.02] p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px]  text-[color:var(--muted-text)] uppercase tracking-[0.15em]">
+                  <span className="text-[11px] text-[color:var(--muted-text)] ">
                     И-Баримт
                   </span>
                   <div className="flex p-[3px] rounded-2xl bg-[color:var(--panel)] dark:bg-white/[0.06]">
@@ -864,7 +864,7 @@ export default function PaymentModal({
                     alt="QPay QR"
                     className="w-36 h-36 mb-3 rounded-xl shadow-lg bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)]"
                   />
-                  <p className="text-[10px]  text-brand uppercase tracking-widest animate-pulse text-center leading-relaxed">
+                  <p className="text-[11px] text-brand animate-pulse text-center leading-relaxed">
                     Утсаараа уншуулж төлнө үү
                   </p>
                 </div>
@@ -876,15 +876,15 @@ export default function PaymentModal({
               {/* Amount display */}
               <div className="text-center py-3 px-4 rounded-2xl bg-white dark:bg-white/[0.04] border border-[color:var(--surface-border)] dark:border-white/[0.06] shadow-sm">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-[10px] text-[color:var(--muted-text)] uppercase tracking-wider">
+                  <p className="text-[11px] text-[color:var(--muted-text)] ">
                     Оруулах дүн
                   </p>
                 </div>
-                <div className="text-3xl font-black tracking-tight text-[color:var(--panel-text)] dark:text-white">
+                <div className="text-3xl font-medium tracking-tight text-[color:var(--panel-text)] dark:text-white">
                   {formatNumber(tuljBuiDun)}
                 </div>
                 {tulukhDun !== tuljBuiDun && tulukhDun > 0 && (
-                  <p className="text-[10px] mt-1 text-[color:var(--muted-text)]">
+                  <p className="text-[11px] mt-1 text-[color:var(--muted-text)]">
                     Үлдэгдэл: {formatNumber(tulukhDun)}
                   </p>
                 )}
@@ -932,18 +932,18 @@ export default function PaymentModal({
                   disabled={isProcessing}
                   className="w-full px-4 py-2.5 flex justify-between text-[11px] border-b border-[color:var(--surface-border)] dark:border-white/[0.04] hover:bg-theme/10 dark:hover:bg-theme/5 transition-colors disabled:opacity-40 text-left"
                 >
-                  <span className="font-black text-[color:var(--muted-text)] uppercase">
+                  <span className="font-medium text-[color:var(--muted-text)] ">
                     Бодогдсон дүн
                   </span>
-                  <span className="font-black text-brand">
+                  <span className="font-medium text-brand">
                     {formatNumber(effectiveNiitDun)}
                     {discountInDB > 0 && (
-                      <span className="ml-1 text-[9px] text-danger font-normal">(-{formatNumber(discountInDB)})</span>
+                      <span className="ml-1 text-[11px] text-danger font-normal">(-{formatNumber(discountInDB)})</span>
                     )}
                   </span>
                 </button>
                 <div className="px-4 py-2.5 flex justify-between text-[11px] border-b border-[color:var(--surface-border)] dark:border-white/[0.04]">
-                  <span className=" text-[color:var(--muted-text)] uppercase">
+                  <span className="text-[color:var(--muted-text)] ">
                     Оруулсан
                   </span>
                   <span className=" text-brand">
@@ -954,7 +954,7 @@ export default function PaymentModal({
                   className={`px-4 py-2.5 flex justify-between text-[12px] ${tulukhDun > 0 ? "bg-danger/[0.05]" : "bg-success/[0.05]"}`}
                 >
                   <span
-                    className={` uppercase ${tulukhDun > 0 ? "text-danger" : "text-success"}`}
+                    className={` ${tulukhDun > 0 ? "text-danger" : "text-success"}`}
                   >
                     Дутуу
                   </span>
@@ -984,14 +984,14 @@ export default function PaymentModal({
                       });
                   }}
                   disabled={isProcessing}
-                  className="py-3 rounded-2xl border border-warning/30 text-warning  uppercase text-[10px] tracking-wider hover:bg-warning/[0.08] active:scale-[0.97] transition-all disabled:opacity-40"
+                  className="h-9 rounded-[10px] border border-warning/30 text-warning text-[13px] hover:bg-warning/[0.08] active:scale-[0.97] transition-all disabled:opacity-40"
                 >
                   Үнэгүй [F7]
                 </button>
                 <button
                   onClick={f4Darsan}
                   disabled={isProcessing}
-                  className="py-3 rounded-2xl  uppercase text-[10px] tracking-wider active:scale-[0.97] transition-all disabled:opacity-40 flex items-center justify-center gap-2 text-white shadow-lg"
+                  className="h-9 rounded-[10px] text-[13px] active:scale-[0.97] transition-all disabled:opacity-40 flex items-center justify-center gap-2 text-white shadow-lg"
                   style={{
                     background: "linear-gradient(135deg, #10b981, #059669)",
                     boxShadow: "0 6px 20px rgba(16, 185, 129, 0.3)",

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useMemo } from "react";
+import FilterSelect from "@/components/ui/FilterSelect";
 import { useGereeContext } from "./GereeContext";
 import {
   Download,
@@ -12,7 +13,6 @@ import {
   ChevronDown,
   Zap,
 } from "lucide-react";
-import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
 import { hasPermission } from "@/lib/permissionUtils";
 import { ALL_COLUMNS } from "./columns";
 import Link from "next/link";
@@ -199,66 +199,60 @@ export default function GereeHeader({
           <div className="flex items-center justify-between gap-3">
             {/* Шүүлтүүрүүд — гарчиг авагдсан тул үйлдлийн товчтой нэг мөрөнд */}
             {(activeTab === "contracts" || activeTab === "units") && (
-              <div className="hidden md:flex items-center gap-6 flex-wrap min-w-0">
+              <div className="hidden md:flex items-center gap-2 flex-wrap min-w-0">
                   {activeTab === "contracts" && (
                     <>
                       {ortsOptions.length > 0 && (
                         <div className="flex items-center gap-1.5">
-                          <div className="w-28">
-                            <TusgaiZagvar
-                              value={selectedOrtsForContracts}
+                          <div>
+                            <FilterSelect
+                              label="Орц"
+                              value={selectedOrtsForContracts || ""}
                               onChange={(val) => setSelectedOrtsForContracts(val)}
                               options={[
-                                { value: "", label: "Орц" },
                                 ...ortsOptions.map((o) => ({
                                   value: o,
                                   label: o,
                                 })),
                               ]}
-                              className="w-full z-50 text-sm"
-                              placeholder="Сонгох..."
-                              buttonClassName="!h-10 !py-0 px-3 !text-xs"
+                              className="max-w-[200px]"
                             />
                           </div>
                         </div>
                       )}
                       {davkharOptions.length > 0 && (
                         <div className="flex items-center gap-1.5">
-                          <div className="w-28">
-                            <TusgaiZagvar
-                              value={selectedDawkhar}
+                          <div>
+                            <FilterSelect
+                              label="Давхар"
+                              value={selectedDawkhar || ""}
                               onChange={(val) => setSelectedDawkhar(val)}
                               options={[
-                                { value: "", label: "Давхар" },
                                 ...davkharOptions.map((d) => ({
                                   value: d,
                                   label: d,
                                 })),
                               ]}
-                              className="w-full z-50 text-sm"
-                              placeholder="Сонгох..."
-                              buttonClassName="!h-10 !py-0 px-3 !text-xs"
+                              className="max-w-[200px]"
                             />
                           </div>
                         </div>
                       )}
                       <div className="flex items-center gap-1.5">
-                        <div className="w-32">
-                          <TusgaiZagvar
-                            value={statusFilter}
+                        <div>
+                          <FilterSelect
+                            label="Төлөв"
+                            value={statusFilter === "all" ? "" : statusFilter}
                             onChange={(val) =>
                               setStatusFilter(
-                                val as "all" | "active" | "cancelled",
+                                (val || "all") as "all" | "active" | "cancelled",
                               )
                             }
                             options={[
-                              { value: "all", label: "Төлөв" },
                               { value: "active", label: "Идэвхтэй" },
                               { value: "cancelled", label: "Цуцлагдсан" },
                             ]}
-                            className="w-full z-50 text-sm"
-                            placeholder="Сонгох..."
-                            buttonClassName="!h-10 !py-0 px-3 !text-xs"
+                            className="max-w-[200px]"
                           />
                         </div>
                       </div>
@@ -268,58 +262,52 @@ export default function GereeHeader({
                   {activeTab === "units" && (
                     <>
                       <div className="flex items-center gap-1.5">
-                        <div className="w-28">
-                          <TusgaiZagvar
-                            value={selectedOrts}
+                        <div>
+                          <FilterSelect
+                            label="Орц"
+                            value={selectedOrts || ""}
                             onChange={(val) => setSelectedOrts(val)}
                             options={[
-                              { value: "", label: "Орц" },
                               ...ortsOptions.map((o) => ({
                                 value: o,
                                 label: o,
                               })),
                             ]}
-                            className="w-full z-50 text-sm rounded-2xl"
-                            placeholder="Сонгох..."
-                            buttonClassName="!h-10 !py-0 px-3 !text-xs"
+                            className="max-w-[200px]"
                           />
                         </div>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <div className="w-28">
-                          <TusgaiZagvar
-                            value={selectedDawkhar}
+                        <div>
+                          <FilterSelect
+                            label="Давхар"
+                            value={selectedDawkhar || ""}
                             onChange={(val) => setSelectedDawkhar(val)}
                             options={[
-                              { value: "", label: "Давхар" },
                               ...davkharOptions.map((d) => ({
                                 value: String(d),
                                 label: String(d),
                               })),
                             ]}
-                            className="w-full z-50 text-sm rounded-2xl"
-                            placeholder="Сонгох..."
-                            buttonClassName="!h-10 !py-0 px-3 !text-xs"
+                            className="max-w-[200px]"
                           />
                         </div>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <div className="w-32">
-                          <TusgaiZagvar
-                            value={unitStatusFilter}
+                        <div>
+                          <FilterSelect
+                            label="Төлөв"
+                            value={unitStatusFilter === "all" ? "" : unitStatusFilter}
                             onChange={(val) =>
                               setUnitStatusFilter(
-                                (val as "all" | "occupied" | "free") || "all",
+                                ((val || "all") as "all" | "occupied" | "free") || "all",
                               )
                             }
                             options={[
-                              { value: "all", label: "Төлөв" },
                               { value: "occupied", label: "Идэвхтэй" },
                               { value: "free", label: "Идэвхгүй" },
                             ]}
-                            className="w-full z-50 text-sm rounded-2xl"
-                            placeholder="Төлөв..."
-                            buttonClassName="!h-10 !py-0 px-3 !text-xs"
+                            className="max-w-[200px]"
                           />
                         </div>
                       </div>
@@ -425,7 +413,6 @@ export default function GereeHeader({
                   )}
                   <div ref={desktopExcelRef} className="relative">
                     <ExcelButton
-                      className="!h-10"
                       label="Excel"
                       id="resident-excel-btn-top"
                       title="Excel үйлдлүүд"
@@ -543,7 +530,6 @@ export default function GereeHeader({
                   {onClientsExcelImportClick && onDownloadClientsTemplate && (
                     <div ref={desktopExcelRef} className="relative">
                       <ExcelButton
-                      className="!h-10"
                         label="Excel"
                         id="client-excel-btn-top"
                         title="Excel үйлдлүүд"
@@ -601,48 +587,42 @@ export default function GereeHeader({
               <>
                 {ortsOptions.length > 0 && (
                   <div className="flex flex-col gap-1">
-                    <TusgaiZagvar
-                      value={selectedOrtsForContracts}
+                    <FilterSelect
+                      label="Орц"
+                      value={selectedOrtsForContracts || ""}
                       onChange={(val) => setSelectedOrtsForContracts(val)}
                       options={[
-                        { value: "", label: "Орц" },
                         ...ortsOptions.map((o) => ({ value: o, label: o })),
                       ]}
-                      className="w-full z-50 text-xs"
-                      placeholder="Сонгох..."
-                      buttonClassName="!h-10 !py-0 px-3 !text-xs"
+                      className="w-full"
                     />
                   </div>
                 )}
                 {davkharOptions.length > 0 && (
                   <div className="flex flex-col gap-1">
-                    <TusgaiZagvar
-                      value={selectedDawkhar}
+                    <FilterSelect
+                      label="Давхар"
+                      value={selectedDawkhar || ""}
                       onChange={(val) => setSelectedDawkhar(val)}
                       options={[
-                        { value: "", label: "Давхар" },
                         ...davkharOptions.map((d) => ({ value: d, label: d })),
                       ]}
-                      className="w-full z-50 text-xs"
-                      placeholder="Сонгох..."
-                      buttonClassName="!h-10 !py-0 px-3 !text-xs"
+                      className="w-full"
                     />
                   </div>
                 )}
                 <div className="flex flex-col gap-1 col-span-2">
-                  <TusgaiZagvar
-                    value={statusFilter}
+                  <FilterSelect
+                    label="Төлөв"
+                    value={statusFilter === "all" ? "" : statusFilter}
                     onChange={(val) =>
-                      setStatusFilter(val as "all" | "active" | "cancelled")
+                      setStatusFilter((val || "all") as "all" | "active" | "cancelled")
                     }
                     options={[
-                      { value: "all", label: "Төлөв" },
                       { value: "active", label: "Идэвхтэй" },
                       { value: "cancelled", label: "Цуцлагдсан" },
                     ]}
-                    className="w-full z-50 text-xs"
-                    placeholder="Сонгох..."
-                    buttonClassName="!h-10 !py-0 px-3 !text-xs"
+                    className="w-full"
                   />
                 </div>
               </>
@@ -651,53 +631,47 @@ export default function GereeHeader({
             {activeTab === "units" && (
               <>
                 <div className="flex flex-col gap-1">
-                  <TusgaiZagvar
-                    value={selectedOrts}
+                  <FilterSelect
+                    label="Орц"
+                    value={selectedOrts || ""}
                     onChange={(val) => setSelectedOrts(val)}
                     options={[
-                      { value: "", label: "Орц" },
                       ...ortsOptions.map((o) => ({
                         value: o,
                         label: o,
                       })),
                     ]}
-                    className="w-full z-50 text-xs"
-                    placeholder="Сонгох..."
-                    buttonClassName="!h-10 !py-0 px-3 !text-xs"
+                    className="w-full"
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <TusgaiZagvar
-                    value={selectedDawkhar}
+                  <FilterSelect
+                    label="Давхар"
+                    value={selectedDawkhar || ""}
                     onChange={(val) => setSelectedDawkhar(val)}
                     options={[
-                      { value: "", label: "Давхар" },
                       ...davkharOptions.map((o) => ({
                         value: String(o),
                         label: String(o),
                       })),
                     ]}
-                    className="w-full z-50 text-xs"
-                    placeholder="Сонгох..."
-                    buttonClassName="!h-10 !py-0 px-3 !text-xs"
+                    className="w-full"
                   />
                 </div>
                 <div className="flex flex-col gap-1 col-span-2">
-                  <TusgaiZagvar
-                    value={unitStatusFilter}
+                  <FilterSelect
+                    label="Төлөв"
+                    value={unitStatusFilter === "all" ? "" : unitStatusFilter}
                     onChange={(val) =>
                       setUnitStatusFilter(
-                        (val as "all" | "occupied" | "free") || "all",
+                        ((val || "all") as "all" | "occupied" | "free") || "all",
                       )
                     }
                     options={[
-                      { value: "all", label: "Төлөв" },
                       { value: "occupied", label: "Идэвхтэй" },
                       { value: "free", label: "Идэвхгүй" },
                     ]}
-                    className="w-full z-50 text-xs"
-                    placeholder="Төлөв..."
-                    buttonClassName="!h-10 !py-0 px-3 !text-xs"
+                    className="w-full"
                   />
                 </div>
               </>
@@ -724,7 +698,6 @@ export default function GereeHeader({
               </button>
               <div ref={mobileExcelRef} className="relative">
                 <ExcelButton
-                      className="!h-10"
                   label="Excel"
                   id="resident-excel-btn"
                   title="Excel үйлдлүүд"
@@ -838,7 +811,6 @@ export default function GereeHeader({
             {onClientsExcelImportClick && onDownloadClientsTemplate && (
               <div ref={mobileExcelRef} className="relative">
                 <ExcelButton
-                      className="!h-10"
                   label="Excel"
                   id="client-excel-btn"
                   title="Excel үйлдлүүд"

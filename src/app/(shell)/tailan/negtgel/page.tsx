@@ -5,13 +5,14 @@ import { useBuilding } from "@/context/BuildingContext";
 import { useAuth } from "@/lib/useAuth";
 import useBaiguullaga from "@/lib/useBaiguullaga";
 import { StandardPagination } from "@/components/ui/StandardTable";
-import MonthRangePicker from "@/components/ui/MonthRangePicker";
 import { ExcelButton } from "@/components/ui/ExcelButton";
 import dayjs, { Dayjs } from "dayjs";
 import useSWR from "swr";
 import uilchilgee from "@/lib/uilchilgee";
 import { useSearch } from "@/context/SearchContext";
 import { NegtgelTailanTable, NegtgelTailanItem } from "./NegtgelTailanTable";
+import FilterDatePicker from "@/components/ui/FilterDatePicker";
+import FilterSelect from "@/components/ui/FilterSelect";
 
 /** Сарын хүрээг [эхний сарын 1, сүүлийн сарын сүүлийн өдөр] болгоно */
 const sarKhureeruu = (a: Dayjs, b: Dayjs): [string, string] => [
@@ -49,18 +50,17 @@ export default function NegtgelTailanPage() {
   // Анхдагч: зөвхөн тухайн сар
   const [dateRange, setDateRange] = useState<[string, string]>(odooginSar);
   // Оршин суугч (нэр, утас, тоот...) — бичих үед 400ms хүлээж хайна
-  const [orshinSuugchInput, setOrshinSuugchInput] = useState("");
+  // Оршин суугчийн dropdown-оос сонгосон утга (утас эсвэл нэр) — сервер хайлтад явна
   const [searchText, setSearchText] = useState("");
+  const [orshinSuugchSongolt, setOrshinSuugchSongolt] = useState<
+    { value: string; label: string; tailbar?: string }[]
+  >([]);
   const [orts, setOrts] = useState("");
   const { searchTerm } = useSearch();
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(500);
   const [exporting, setExporting] = useState(false);
 
-  useEffect(() => {
-    const t = setTimeout(() => setSearchText(orshinSuugchInput.trim()), 400);
-    return () => clearTimeout(t);
-  }, [orshinSuugchInput]);
 
   // Шүүлт өөрчлөгдөхөд эхний хуудас руу
   useEffect(() => {
@@ -155,6 +155,31 @@ export default function NegtgelTailanPage() {
   // мөрүүдтэй огт таарахгүй байв.
   const niitUldegdel = rawData?.niitDun?.niitUldegdel ?? 0;
 
+  // ── Оршин суугчийн сонголтууд ────────────────────────────────────────
+  // Шүүлтгүй ирсэн мөрүүдээс цуглуулна (оршин суугч сонгосны дараа жагсаалт
+  // багасахгүйн тулд хадгалж үлдээнэ). Барилга/орц/сар солигдоход шинэчлэгдэнэ.
+  useEffect(() => {
+    if (searchText || !rawData) return;
+    const map = new Map<string, { value: string; label: string; tailbar?: string }>();
+    (rawData.data || []).forEach((r: any) => {
+      const ner = String(r._id?.ner || r.ner || "").trim();
+      if (!ner) return;
+      const ovog = String(r._id?.ovog || r.ovog || "").trim();
+      const utas = String(r._id?.utas || r.utas || "").trim();
+      const toot = String(r._id?.toot || r.toot || "").trim();
+      const value = utas || ner;
+      if (map.has(value)) return;
+      map.set(value, {
+        value,
+        label: [ovog ? `${ovog.charAt(0)}.` : "", ner].filter(Boolean).join(" "),
+        tailbar: toot ? `${toot} тоот` : utas || undefined,
+      });
+    });
+    setOrshinSuugchSongolt(
+      Array.from(map.values()).sort((x, y) => x.label.localeCompare(y.label)),
+    );
+  }, [rawData, searchText]);
+
   // ── Орцын сонголтууд ───────────────────────────────────────────────────
   // Барилгын тохиргооноос; тохиргоогүй бол ирсэн мөрүүдээс цуглуулна
   const ortsOptions = useMemo(() => {
@@ -217,42 +242,34 @@ export default function NegtgelTailanPage() {
     <div className="flex w-full flex-col gap-3 pb-14">
       {/* ── Filters ─────────────────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-2 no-print">
-        <div
+        <FilterDatePicker
           id="negtgel-date"
-          className="btn-minimal flex h-9 items-center px-3 w-[220px]"
-        >
-          <MonthRangePicker
-            value={dateRange}
-            onChange={(v) => setDateRange(v ? sarKhureeruu(v[0], v[1]) : odooginSar())}
-            placeholder="Сар сонгох"
-          />
-        </div>
-        <label
-          className={`filter-field w-[220px] ${orshinSuugchInput ? "is-active" : ""}`}
-        >
-          <span className="filter-field-label">Оршин суугч</span>
-          <input
-            type="text"
-            value={orshinSuugchInput}
-            onChange={(e) => setOrshinSuugchInput(e.target.value)}
-            placeholder="Нэр, утас, тоот..."
-          />
-        </label>
-        <label className={`filter-field w-[140px] ${orts ? "is-active" : ""}`}>
-          <span className="filter-field-label">Орц</span>
-          <select
-            value={orts}
-            onChange={(e) => setOrts(e.target.value)}
-            className="h-full min-w-0 flex-1 cursor-pointer border-0 bg-transparent text-[13px] font-medium text-[color:var(--panel-text)] outline-none"
-          >
-            <option value="">Бүгд</option>
-            {ortsOptions.map((o) => (
-              <option key={o} value={o}>
-                {o}
-              </option>
-            ))}
-          </select>
-        </label>
+          picker="month"
+          value={dateRange}
+          onChange={(v: [Dayjs, Dayjs] | null) =>
+            setDateRange(v ? sarKhureeruu(v[0], v[1]) : odooginSar())
+          }
+          placeholder="Сар сонгох"
+          className="w-[220px]"
+        />
+        <FilterSelect
+          id="negtgel-orshinSuugch"
+          label="Оршин суугч"
+          value={searchText}
+          onChange={setSearchText}
+          options={orshinSuugchSongolt}
+          searchable
+          searchPlaceholder="Нэр, утас, тоот..."
+          className="max-w-[280px]"
+        />
+        <FilterSelect
+          id="negtgel-orts"
+          label="Орц"
+          value={orts}
+          onChange={setOrts}
+          options={ortsOptions.map((o) => ({ value: o, label: o }))}
+          className="max-w-[200px]"
+        />
         <ExcelButton
           className="ml-auto"
           onClick={exportToExcel}

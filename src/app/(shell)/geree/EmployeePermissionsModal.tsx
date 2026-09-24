@@ -20,6 +20,7 @@ import { X, Check, ShieldCheck } from "lucide-react";
 import {
   ALL_PERMISSIONS,
   getAllPermissionIds,
+  migratePermissionIds,
   getChildPermissionIds,
   getAncestorPermissionIds,
   type PermissionItem,
@@ -121,7 +122,8 @@ export default function EmployeePermissionsModal({
     const mapped = (employee.tsonkhniiErkhuud || []).map((p: string) =>
       p.startsWith("/") ? p.substring(1).replace(/\//g, ".") : p,
     );
-    setSelectedPermissions(mapped);
+    // Хуучин «tokhirgoo.zassanTuukh» мэт ID-г шинэ «tuukh.*» болгож харуулна
+    setSelectedPermissions(migratePermissionIds(mapped));
     setSelectedBuildings(employee.barilguud || []);
   }, [open, employee]);
 
@@ -242,7 +244,7 @@ export default function EmployeePermissionsModal({
           {perm.label}
         </span>
         {khuukhdiinToo !== null && (
-          <span className="shrink-0 rounded-md bg-[color:var(--surface-hover)] px-1.5 py-0.5 font-mono text-[10px] text-[color:var(--muted-text)] dark:bg-white/10">
+          <span className="shrink-0 rounded-md bg-[color:var(--surface-hover)] px-1.5 py-0.5 font-mono text-[11px] text-[color:var(--muted-text)] dark:bg-white/10">
             {khuukhdiinToo}
           </span>
         )}
@@ -270,7 +272,7 @@ export default function EmployeePermissionsModal({
             <ShieldCheck className="h-5 w-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="text-lg font-semibold text-[color:var(--panel-text)]">
+            <h2 className="text-lg font-medium text-[color:var(--panel-text)]">
               Эрхийн тохиргоо
             </h2>
             <p className="mt-0.5 truncate text-xs text-[color:var(--muted-text)]">
@@ -292,7 +294,7 @@ export default function EmployeePermissionsModal({
           {/* Зүүн: профайл + салбарын эрх */}
           <div className="min-h-0 space-y-4 overflow-y-auto border-b border-[color:var(--surface-border)] p-5 md:border-b-0 md:border-r">
             <section className="rounded-xl border border-[color:var(--surface-border)] px-4 py-3">
-              <h3 className="mb-1.5 text-xs font-semibold text-[color:var(--panel-text)]">
+              <h3 className="mb-1.5 text-xs font-medium text-[color:var(--panel-text)]">
                 Профайл мэдээлэл
               </h3>
               <div className="divide-y divide-[color:var(--surface-border)]">
@@ -311,7 +313,7 @@ export default function EmployeePermissionsModal({
             </section>
 
             <section className="rounded-xl border border-[color:var(--surface-border)] px-4 py-3">
-              <h3 className="mb-1.5 text-xs font-semibold text-[color:var(--panel-text)]">
+              <h3 className="mb-1.5 text-xs font-medium text-[color:var(--panel-text)]">
                 Салбарын эрх
                 <span className="ml-1.5 font-normal text-[color:var(--muted-text)]">
                   ({selectedBuildings.length})
@@ -345,7 +347,7 @@ export default function EmployeePermissionsModal({
           {/* Баруун: цонхны эрх */}
           <div className="flex min-h-0 flex-col">
             <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[color:var(--surface-border)] px-4 py-3">
-              <h3 className="text-xs font-semibold text-[color:var(--panel-text)]">
+              <h3 className="text-xs font-medium text-[color:var(--panel-text)]">
                 Цонхны эрх
                 <span className="ml-1.5 font-normal text-[color:var(--muted-text)]">
                   ({selectedPermissions.length})

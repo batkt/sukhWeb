@@ -12,6 +12,7 @@
  */
 
 import React, { useMemo, useState } from "react";
+import FilterDatePicker from "@/components/ui/FilterDatePicker";
 import useSWR from "swr";
 import { Line, Bar, Doughnut } from "react-chartjs-2";
 import {
@@ -42,7 +43,6 @@ import ExcelButton from "@/components/ui/ExcelButton";
 import uilchilgee from "@/lib/uilchilgee";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
-import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 
 ChartJS.register(
   CategoryScale,
@@ -193,11 +193,11 @@ const Kpi: React.FC<{
           {icon}
         </div>
         <div className="flex min-w-0 flex-col">
-          <span className="truncate text-[10px] font-medium uppercase tracking-wider text-[color:var(--muted-text)]">
+          <span className="truncate text-[11px] font-medium text-[color:var(--muted-text)]">
             {nert}
           </span>
           <span
-            className="truncate text-sm font-semibold text-[color:var(--panel-text)] dark:text-white"
+            className="truncate text-sm font-medium text-[color:var(--panel-text)] dark:text-white"
             title={utga}
           >
             {utga}
@@ -232,12 +232,12 @@ const Karti: React.FC<{
             {icon}
           </div>
         )}
-        <span className="truncate text-[10px] font-medium uppercase tracking-wider text-[color:var(--muted-text)]">
+        <span className="truncate text-[11px] font-medium text-[color:var(--muted-text)]">
           {garchig}
         </span>
       </div>
       {tailbar && (
-        <span className="shrink-0 text-[10px] text-[color:var(--muted-text)]">{tailbar}</span>
+        <span className="shrink-0 text-[11px] text-[color:var(--muted-text)]">{tailbar}</span>
       )}
     </div>
     <div className="p-3 md:p-4" style={{ height: undur }}>
@@ -627,7 +627,7 @@ export default function BiTailanPage() {
       {/* Толгой */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-[color:var(--panel-text)] dark:text-white">
+          <h1 className="text-xl font-medium text-[color:var(--panel-text)] dark:text-white">
             BI Тайлан
           </h1>
           <p className="mt-0.5 text-xs text-[color:var(--muted-text)]">
@@ -640,15 +640,11 @@ export default function BiTailanPage() {
           {isLoading && (
             <Loader2 className="h-4 w-4 animate-spin text-theme" />
           )}
-          <div className="h-10 w-full min-w-[260px] md:w-[300px]">
-            <StandardDatePicker
-              isRange
-              value={dateRange}
-              onChange={setDateRange}
-              allowClear
-              placeholder="Хугацаа (сүүлийн 12 сар)"
-            />
-          </div>
+          <FilterDatePicker
+            value={dateRange}
+            onChange={setDateRange}
+            className="w-full sm:w-[260px]"
+          />
           <ExcelButton
             onClick={csvTatya}
             title="Бүх үзүүлэлтийг CSV-ээр татах"

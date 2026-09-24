@@ -933,10 +933,14 @@ export function useGereeActions(
 
         const targetFloorLower = String(floor).trim().toLowerCase();
 
-        // 1. Find all matching keys in this map for this floor (across entrances or without entrance)
+        // 1. Find all matching keys in this map for this floor. Орц сонгосон бол
+        //    зөвхөн тухайн орцын түлхүүр — бусад орцын тоотыг хөндөхгүй.
+        const selOrtsKey = String(selectedOrts || "").trim();
         const matchingKeys = Object.keys(existing).filter((k) => {
           const f = k.includes("::") ? k.split("::")[1] : k;
-          return String(f).trim().toLowerCase() === targetFloorLower;
+          if (String(f).trim().toLowerCase() !== targetFloorLower) return false;
+          if (selOrtsKey && k.includes("::")) return k === key;
+          return true;
         });
 
         // 2. Collect all units belonging to this floor across matching keys
@@ -959,6 +963,10 @@ export function useGereeActions(
 
         if (matchingKeys.length === 0 && !floorInDavkhar) {
           openErrorOverlay("Давхар олдсонгүй эсвэл хэдийнэ устгагдсан байна");
+          return;
+        }
+        if (floorUnits.length === 0) {
+          openErrorOverlay("Энэ давхарт устгах тоот алга");
           return;
         }
 
@@ -1000,16 +1008,14 @@ export function useGereeActions(
           }
         }
 
+        // ЗӨВХӨН тоотуудыг хоослоно — давхар өөрөө (tokhirgoo.davkhar,
+        // davkharuud) үлдэнэ. Өмнө нь давхрыг ч жагсаалтаас хасдаг байсан тул
+        // давхрын тоотыг устгахад давхар бүхэлдээ алга болж байв (давхрын
+        // жагсаалт тоот/зогсоол/агуулахад нийтлэг тул бусад табаас ч алга болно).
         const updated = { ...existing };
         matchingKeys.forEach((k) => {
-          delete updated[k];
+          updated[k] = [];
         });
-        delete updated[key];
-
-        const updatedDavkhar = currentDavkhar.filter(
-          (d: any) =>
-            String(d?.davkhar ?? d).trim().toLowerCase() !== targetFloorLower,
-        );
 
         const updatedBarilguud = org.barilguud.map((b: any) => {
           if (String(b._id || b.id) !== String(effectiveBarilgiinId)) return b;
@@ -1018,17 +1024,7 @@ export function useGereeActions(
             tokhirgoo: {
               ...(b.tokhirgoo || {}),
               [propName]: updated,
-              davkhar: updatedDavkhar,
             },
-            ...(Array.isArray(b.davkharuud)
-              ? {
-                  davkharuud: b.davkharuud.filter(
-                    (d: any) =>
-                      String(d?.davkhar ?? d).trim().toLowerCase() !==
-                      targetFloorLower,
-                  ),
-                }
-              : {}),
           };
         });
 
@@ -1039,7 +1035,7 @@ export function useGereeActions(
 
         await updateMethod("baiguullaga", token, payload);
         await baiguullagaMutate?.();
-        openSuccessOverlay("Давхар амжилттай устгагдлаа");
+        openSuccessOverlay(`${floor}-р давхрын ${turul.toLowerCase()}ууд устгагдлаа`);
       } catch (err) {
         openErrorOverlay(getErrorMessage(err));
       } finally {

@@ -1,9 +1,10 @@
 "use client";
 import { motion, AnimatePresence } from "framer-motion";
+import FilterSelect from "@/components/ui/FilterSelect";
+import FilterDatePicker from "@/components/ui/FilterDatePicker";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import Table from "@/components/ui/table";
-import TusgaiZagvar from "../../../../../components/selectZagvar/tusgaiZagvar";
 import {
   Calendar,
   Eye,
@@ -36,7 +37,6 @@ import formatNumber, {
 
 import { url as API_URL } from "@/lib/uilchilgee";
 import uilchilgee from "@/lib/uilchilgee";
-import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { getErrorMessage } from "@/lib/uilchilgee";
 import { useRouter } from "next/navigation";
@@ -690,7 +690,7 @@ const InvoiceModal = ({
 
             {/* Expenses Table */}
             <div>
-              <h4 className="font-bold mb-2 text-[color:var(--panel-text)]">
+              <h4 className="font-medium mb-2 text-[color:var(--panel-text)]">
                 Зардлын жагсаалт
               </h4>
               <div className="border border-[color:var(--surface-border)] rounded-xl overflow-hidden shadow-sm">
@@ -744,7 +744,7 @@ const InvoiceModal = ({
             {/* Payments Table */}
             {paymentRows.length > 0 && (
               <div>
-                <h4 className="font-bold mb-2 text-[color:var(--panel-text)]">
+                <h4 className="font-medium mb-2 text-[color:var(--panel-text)]">
                   Төлөлтийн мэдээлэл
                 </h4>
                 <div className="border border-[color:var(--surface-border)] rounded-xl overflow-hidden shadow-sm">
@@ -777,7 +777,7 @@ const InvoiceModal = ({
                           <td className="py-2 px-3 text-[color:var(--panel-text)]">
                             {row.tailbar}
                           </td>
-                          <td className="py-2 px-3 text-right text-brand font-bold">
+                          <td className="py-2 px-3 text-right text-brand font-medium">
                             -{formatNumber(row.dun)}{" "}
                           </td>
                           <td className="py-2 px-3 text-right text-[color:var(--muted-text)]">
@@ -786,7 +786,7 @@ const InvoiceModal = ({
                         </tr>
                       ))}
                     </tbody>
-                    <tfoot className="bg-[color:var(--surface-hover)] border-t font-bold text-brand">
+                    <tfoot className="bg-[color:var(--surface-hover)] border-t font-medium text-brand">
                       <tr>
                         <td colSpan={2} className="py-2 px-3">
                           Төлсөн дүн (энэ удаа):
@@ -814,7 +814,7 @@ const InvoiceModal = ({
                     Төлбөрийн төлөв:
                   </span>
                   <span
-                    className={`px-4 py-1.5 rounded-full text-xs font-bold shadow-sm ${
+                    className={`px-4 py-1.5 rounded-full text-xs font-medium shadow-sm ${
                       paymentStatusLabel === "Төлсөн"
                         ? "bg-success/10 text-success border border-success/30"
                         : "bg-danger/10 text-danger border border-danger/30"
@@ -838,11 +838,11 @@ const InvoiceModal = ({
                     </span>
                   </div>
                   <div className="pt-2 border-t border-[color:var(--surface-border)] flex justify-between items-center">
-                    <span className="text-base font-bold text-[color:var(--panel-text)]">
+                    <span className="text-base font-medium text-[color:var(--panel-text)]">
                       Үлдэгдэл дүн:
                     </span>
                     <span
-                      className={`text-lg font-bold ${uldegdelDun > 0 ? "text-danger" : "text-[color:var(--panel-text)]"}`}
+                      className={`text-lg font-medium ${uldegdelDun > 0 ? "text-danger" : "text-[color:var(--panel-text)]"}`}
                     >
                       {formatCurrency(uldegdelDun)}
                     </span>
@@ -1699,29 +1699,23 @@ export default function InvoicingZardluud() {
         >
           <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
             <div className="flex flex-col lg:flex-row gap-4 w-full xl:w-auto">
-              <StandardDatePicker
+              <FilterDatePicker
+                single
                 value={selectedDate}
                 onChange={(v: string | null) => setSelectedDate(v)}
                 placeholder="Огноо сонгох"
-                className="!w-[360px]"
-                allowClear
                 format="YYYY-MM-DD"
-                classNames={{
-                  input:
-                    "text-[color:var(--panel-text)] neu-panel placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] !h-[40px] !py-2 !w-[380px]",
-                }}
+                className="w-full sm:w-[160px]"
               />
               <div className="flex items-center gap-2">
-                <TusgaiZagvar
-                  value={selectedTurul}
+                <FilterSelect
+                  label="Гэрээний төрөл"
+                  value={selectedTurul || ""}
                   onChange={setSelectedTurul}
                   options={[
-                    { value: "", label: "Гэрээний төрөл" },
                     ...turulList.map((t) => ({ value: t, label: t })),
                   ]}
-                  placeholder="Гэрээний төрөл"
-                  className="h-[40px] w-[180px]"
-                  tone="theme"
+                  className="max-w-[220px]"
                 />
                 <motion.button
                   onClick={() => {
@@ -1738,29 +1732,26 @@ export default function InvoicingZardluud() {
                   →
                 </motion.button>
               </div>
-              <TusgaiZagvar
-                value={selectedTuluv}
+              <FilterSelect
+                label="Төлөв"
+                value={selectedTuluv || ""}
                 onChange={setSelectedTuluv}
                 options={[
-                  { value: "", label: "Бүх төлөв" },
                   { value: "Төлсөн", label: "Төлсөн" },
                   { value: "Хугацаа хэтэрсэн", label: "Хугацаа хэтэрсэн" },
                   { value: "Төлөөгүй", label: "Төлөөгүй" },
                 ]}
-                placeholder="Бүх төлөв"
-                className="h-[40px] w-[140px]"
-                tone="theme"
+                className="max-w-[220px]"
               />
               <div className="flex items-center gap-2">
-                <TusgaiZagvar
-                  value={selectedDavkhar}
+                <FilterSelect
+                  label="Давхар"
+                  value={selectedDavkhar || ""}
                   onChange={setSelectedDavkhar}
                   options={[
                     ...davkharList.map((d) => ({ value: d, label: d })),
                   ]}
-                  placeholder="Давхар"
-                  className="h-[40px] w-[120px]"
-                  tone="theme"
+                  className="max-w-[220px]"
                 />
                 <motion.button
                   onClick={() => {
@@ -1777,8 +1768,9 @@ export default function InvoicingZardluud() {
                   →
                 </motion.button>
               </div>
-              <TusgaiZagvar
-                value={selectedBarilga}
+              <FilterSelect
+                label="Барилга"
+                value={selectedBarilga || ""}
                 onChange={(v: string) => {
                   // Allow clearing the selection to show all buildings
                   setSelectedBarilga(v || "");
@@ -1786,13 +1778,7 @@ export default function InvoicingZardluud() {
                 options={[
                   ...barilgaList.map((b) => ({ value: b._id, label: b.ner })),
                 ]}
-                placeholder={
-                  selectedBarilga
-                    ? barilgaList.find((b) => b._id === selectedBarilga)?.ner
-                    : "Бүх барилга"
-                }
-                className="h-[40px] w-[250px]"
-                tone="theme"
+                className="max-w-[220px]"
               />
             </div>
 
@@ -1815,7 +1801,7 @@ export default function InvoicingZardluud() {
                       : "Грашийн төлбөр нэмэх"
                   }
                   disabled={isAddingGarageCharges}
-                  className="bg-theme text-white hover:bg-theme disabled:opacity-50 px-6 py-3 rounded-xl h-[40px] flex items-center shadow-lg"
+                  className="bg-theme text-white hover:bg-theme disabled:opacity-50 px-4 rounded-[10px] h-9 text-[13px] flex items-center"
                 />
               </motion.div>
 
@@ -1835,7 +1821,7 @@ export default function InvoicingZardluud() {
                     isSendingInvoices ? "Илгээж байна..." : "Нэхэмжлэх илгээх"
                   }
                   disabled={isSendingInvoices || selectedExpenses.length === 0}
-                  className="bg-theme text-white hover:bg-theme disabled:opacity-50 px-6 py-3 rounded-xl h-[40px] flex items-center shadow-lg"
+                  className="bg-theme text-white hover:bg-theme disabled:opacity-50 px-4 rounded-[10px] h-9 text-[13px] flex items-center"
                 />
               </motion.div>
             </div>

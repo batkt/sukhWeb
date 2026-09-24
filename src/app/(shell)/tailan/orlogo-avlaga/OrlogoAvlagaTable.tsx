@@ -211,7 +211,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                 <FileText className="h-5 w-5" />
               </div>
               <div className="min-w-0">
-                <h2 className="text-base font-semibold text-[color:var(--panel-text)]">
+                <h2 className="text-base font-medium text-[color:var(--panel-text)]">
                   {fullName || "Дэлгэрэнгүй мэдээлэл"}
                 </h2>
                 <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs text-[color:var(--muted-text)]">
@@ -274,7 +274,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
               : []),
           ].map((k) => (
             <div key={k.nershil} className="rounded-xl border border-[color:var(--ctl-border)] px-4 py-2.5">
-              <div className={`text-lg font-semibold tabular-nums ${k.ungu}`}>{formatNumber(k.utga, 2)}</div>
+              <div className={`text-lg font-medium tabular-nums ${k.ungu}`}>{formatNumber(k.utga, 2)}</div>
               <div className="text-[11px] text-[color:var(--muted-text)]">{k.nershil}</div>
             </div>
           ))}

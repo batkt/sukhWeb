@@ -139,7 +139,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
     cols.push({
       width: tootuudWidth,
       title: (
-        <span className={`text-[color:var(--panel-text)] text-center block ${propertyTab === "Зогсоол" ? "" : "font-semibold"}`}>
+        <span className={`text-[color:var(--panel-text)] text-center block ${propertyTab === "Зогсоол" ? "" : "font-medium"}`}>
           {propertyTab === "Зогсоол"
             ? "Зогсоолын дугаарууд"
             : propertyTab === "Агуулах"
@@ -173,7 +173,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
                     }`}
                   >
                     <span
-                      className={`${propertyTab === "Зогсоол" ? "" : "font-semibold"} ${
+                      className={`${propertyTab === "Зогсоол" ? "" : "font-medium"} ${
                         hasActive
                           ? "text-brand"
                           : "text-[color:var(--muted-text)]"
@@ -295,7 +295,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
           // Ээлжлэх/hover өнгийг стандарт хүснэгт өөрөө хийнэ — энд зөвхөн
           // сонгосон давхарын онцлолт үлдэнэ.
           `cursor-pointer${
-            selectedFloor === record.floor ? " zt-row-selected font-semibold" : ""
+            selectedFloor === record.floor ? " zt-row-selected font-medium" : ""
           }`
         }
         locale={{

@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
+import FilterDatePicker from "@/components/ui/FilterDatePicker";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
 import { useSearch } from "@/context/SearchContext";
 import { Search, X, User, BarChart2, Users, Key, Monitor, Filter, ParkingCircle, Car, Wallet } from "lucide-react";
-import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import moment from "moment";
 import useSWR from "swr";
 import uilchilgee from "@/lib/uilchilgee";
@@ -113,7 +113,7 @@ function ParkEaseMur({
 }) {
   return (
     <div className="flex flex-col">
-      <span className="text-[11px] uppercase tracking-wider text-[color:var(--muted-text)]">
+      <span className="text-[11px] text-[color:var(--muted-text)]">
         {garchig}
       </span>
       <span className="text-[13px] text-[color:var(--panel-text)] font-medium font-[family-name:var(--font-mono)]">
@@ -161,7 +161,7 @@ function ParkEaseNudu({ tuukh }: { tuukh?: ParkEaseTuukh }) {
 
       {dun > 0 ? (
         <span
-          className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${
+          className={`inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium ${
             ezenTulsun
               ? "bg-warning text-black"
               : "bg-[color:var(--surface-hover)] dark:bg-white/[0.06] text-[color:var(--muted-text)] border border-[color:var(--surface-border)] dark:border-white/[0.06]"
@@ -170,7 +170,7 @@ function ParkEaseNudu({ tuukh }: { tuukh?: ParkEaseTuukh }) {
           {dunFormat(dun)}
         </span>
       ) : (tuukh.uneguiMinutUldsen ?? 0) > 0 ? (
-        <span className="text-[10px] text-[color:var(--muted-text)] opacity-75">
+        <span className="text-[11px] text-[color:var(--muted-text)] opacity-75">
           ({tuukh.uneguiMinutUldsen}м)
         </span>
       ) : null}
@@ -317,7 +317,7 @@ function UserHistoryModal({
 
               <div className="border border-[color:var(--surface-border)] dark:border-white/[0.05] rounded-2xl overflow-hidden bg-[color:var(--surface-hover)] dark:bg-white/[0.02]">
                 <table className="w-full border-collapse">
-                  <thead className="bg-[color:var(--surface-hover)] dark:bg-white/[0.04] text-[11px] uppercase font-medium text-[color:var(--muted-text)]">
+                  <thead className="bg-[color:var(--surface-hover)] dark:bg-white/[0.04] text-[11px] font-medium text-[color:var(--muted-text)]">
                     <tr>
                       <th className="py-2.5 px-4 text-left">Урьсан огноо</th>
                       <th className="py-2.5 px-4 text-center">Улсын дугаар</th>
@@ -482,7 +482,7 @@ function UserHistoryModal({
           ) : (
             <div className="border border-[color:var(--surface-border)] dark:border-white/[0.05] rounded-2xl overflow-hidden bg-[color:var(--surface-hover)] dark:bg-white/[0.02]">
               <table className="w-full border-collapse">
-                <thead className="bg-[color:var(--surface-hover)] dark:bg-white/[0.04] text-[11px] uppercase font-medium text-[color:var(--muted-text)]">
+                <thead className="bg-[color:var(--surface-hover)] dark:bg-white/[0.04] text-[11px] font-medium text-[color:var(--muted-text)]">
                   <tr>
                     <th className="py-2.5 px-4 text-center">№</th>
                     <th className="py-2.5 px-4 text-left">Огноо</th>
@@ -938,7 +938,7 @@ export default function UrisanTuukh() {
             <span className="font-medium text-warning">
               {avl.dun.toLocaleString("mn-MN")}₮
             </span>
-            <span className="text-[10px] opacity-60">({avl.too})</span>
+            <span className="text-[11px] opacity-60">({avl.too})</span>
           </span>
         );
       },
@@ -960,31 +960,24 @@ export default function UrisanTuukh() {
     <div className="h-full overflow-y-auto custom-scrollbar">
       <div className="flex-1 flex flex-col gap-4 px-4 py-4 max-w-[1700px] mx-auto w-full pb-8">
         {/* Filter bar */}
-        <div className="relative z-10 px-5 py-3 rounded-2xl bg-white dark:bg-[color:var(--panel)] border border-[color:var(--surface-border)] shadow-sm">
+        <div className="relative z-30 px-5 py-3 rounded-2xl bg-white dark:bg-[color:var(--panel)] border border-[color:var(--surface-border)] shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4 shrink-0">
-              <div className="w-[50px] sm:w-40 lg:w-[300px] h-10 [&_.ant-picker-input]:!bg-transparent [&_input]:!bg-transparent [&_.ant-picker-input-active]:!bg-transparent dark:[&_.ant-picker-suffix]:!text-white dark:[&_.ant-picker-suffix_svg]:!fill-white dark:[&_.ant-picker:hover]:!bg-[color:var(--panel)] dark:[&_.ant-picker-focused]:!bg-[color:var(--panel)] [&_.ant-picker-range-separator]:!text-[color:var(--muted-text)] dark:[&_.ant-picker-range-separator]:!text-[color:var(--muted-text)]">
-                <StandardDatePicker
-                  isRange={true}
-                  value={dateRange ?? undefined}
-                  onChange={(_: any, dateString: [string, string]) => {
+              <FilterDatePicker
+                value={dateRange ?? undefined}
+                onChange={(_: any, dateString: [string, string]) => {
                     setDateRange(dateString);
                     setPage(1);
                   }}
-                  format="YYYY-MM-DD"
-                  className="w-full !bg-[color:var(--surface-bg)] dark:!bg-[color:var(--panel)] hover:!bg-[color:var(--surface-bg)] dark:hover:!bg-[color:var(--panel)] !border-[color:var(--surface-border)] dark:!border-[color:var(--surface-border)] hover:!border-[color:var(--surface-border)] dark:hover:!border-[color:var(--surface-border)] shadow-sm"
-                  classNames={{
-                    input: "!bg-transparent !border-0 !shadow-none text-[12px] !text-[color:var(--panel-text)] dark:!text-[color:var(--muted-text)] px-2",
-                  }}
-                  allowClear
-                />
-              </div>
+                format="YYYY-MM-DD"
+                className="w-full sm:w-[260px]"
+              />
             </div>
           </div>
 
           {statusFilter !== "all" && (
             <div className="flex flex-wrap items-center gap-2 mt-2.5 pt-2.5 border-t border-[color:var(--surface-border)]">
-              <span className="text-[11px] text-[color:var(--muted-text)] uppercase tracking-wider">Шүүлт:</span>
+              <span className="text-[11px] text-[color:var(--muted-text)] ">Шүүлт:</span>
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-theme/10 text-brand text-[11px] rounded-full border border-theme/30">
                 Төлөв: {
                   { urisan: "Урьсан", neesen: "Нээсэн" }[statusFilter] || statusFilter
@@ -1007,8 +1000,8 @@ export default function UrisanTuukh() {
               <BarChart2 className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] text-[color:var(--muted-text)] uppercase tracking-wider font-medium truncate">Нийт хандалт</p>
-              <p className="text-base font-semibold text-[color:var(--panel-text)] dark:text-white leading-tight mt-0.5">{counts.total}</p>
+              <p className="text-[11px] text-[color:var(--muted-text)] font-medium truncate">Нийт хандалт</p>
+              <p className="text-base font-medium text-[color:var(--panel-text)] dark:text-white leading-tight mt-0.5">{counts.total}</p>
             </div>
           </div>
           
@@ -1017,8 +1010,8 @@ export default function UrisanTuukh() {
               <Users className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] text-[color:var(--muted-text)] uppercase tracking-wider font-medium truncate">Урьсан</p>
-              <p className="text-base font-semibold text-[color:var(--panel-text)] dark:text-white leading-tight mt-0.5">{counts.urisan}</p>
+              <p className="text-[11px] text-[color:var(--muted-text)] font-medium truncate">Урьсан</p>
+              <p className="text-base font-medium text-[color:var(--panel-text)] dark:text-white leading-tight mt-0.5">{counts.urisan}</p>
             </div>
           </div>
 
@@ -1027,8 +1020,8 @@ export default function UrisanTuukh() {
               <Key className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] text-[color:var(--muted-text)] uppercase tracking-wider font-medium truncate">Нээсэн</p>
-              <p className="text-base font-semibold text-[color:var(--panel-text)] dark:text-white leading-tight mt-0.5">{counts.neesen}</p>
+              <p className="text-[11px] text-[color:var(--muted-text)] font-medium truncate">Нээсэн</p>
+              <p className="text-base font-medium text-[color:var(--panel-text)] dark:text-white leading-tight mt-0.5">{counts.neesen}</p>
             </div>
           </div>
 
@@ -1037,8 +1030,8 @@ export default function UrisanTuukh() {
               <Monitor className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] text-[color:var(--muted-text)] uppercase tracking-wider font-medium truncate">Идэвхтэй камер</p>
-              <p className="text-base font-semibold text-[color:var(--panel-text)] dark:text-white leading-tight mt-0.5">{topGates.length}</p>
+              <p className="text-[11px] text-[color:var(--muted-text)] font-medium truncate">Идэвхтэй камер</p>
+              <p className="text-base font-medium text-[color:var(--panel-text)] dark:text-white leading-tight mt-0.5">{topGates.length}</p>
             </div>
           </div>
 
@@ -1047,13 +1040,13 @@ export default function UrisanTuukh() {
               <Wallet className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] text-[color:var(--muted-text)] uppercase tracking-wider font-medium truncate">Хуримтлагдсан авлага</p>
+              <p className="text-[11px] text-[color:var(--muted-text)] font-medium truncate">Хуримтлагдсан авлага</p>
               <div className="flex items-baseline gap-1 mt-0.5">
-                <p className="text-base font-semibold text-warning leading-tight truncate">
+                <p className="text-base font-medium text-warning leading-tight truncate">
                   {avlagaNiit.dun.toLocaleString("mn-MN")}₮
                 </p>
                 {avlagaNiit.too > 0 && (
-                  <span className="text-[10px] text-[color:var(--muted-text)] whitespace-nowrap">
+                  <span className="text-[11px] text-[color:var(--muted-text)] whitespace-nowrap">
                     ({avlagaNiit.too})
                   </span>
                 )}
@@ -1066,8 +1059,8 @@ export default function UrisanTuukh() {
               <ParkingCircle className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] text-[color:var(--muted-text)] uppercase tracking-wider font-medium truncate">ParkEase зогсоол</p>
-              <p className="text-base font-semibold text-[color:var(--panel-text)] dark:text-white leading-tight mt-0.5">{parkEaseNiit}</p>
+              <p className="text-[11px] text-[color:var(--muted-text)] font-medium truncate">ParkEase зогсоол</p>
+              <p className="text-base font-medium text-[color:var(--panel-text)] dark:text-white leading-tight mt-0.5">{parkEaseNiit}</p>
             </div>
           </div>
         </div>

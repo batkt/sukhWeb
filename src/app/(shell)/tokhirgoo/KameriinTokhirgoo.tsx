@@ -73,7 +73,7 @@ function CameraForm({
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-1">
-          <label className="block text-xs font-semibold text-[color:var(--muted-text)] uppercase tracking-wide">
+          <label className="block text-xs font-medium text-[color:var(--muted-text)] ">
             Нэр
           </label>
           <input
@@ -86,7 +86,7 @@ function CameraForm({
         </div>
 
         <div className="space-y-1">
-          <label className="block text-xs font-semibold text-[color:var(--muted-text)] uppercase tracking-wide">
+          <label className="block text-xs font-medium text-[color:var(--muted-text)] ">
             ID
           </label>
           <input
@@ -99,7 +99,7 @@ function CameraForm({
         </div>
 
         <div className="space-y-1 md:col-span-2">
-          <label className="block text-xs font-semibold text-[color:var(--muted-text)] uppercase tracking-wide">
+          <label className="block text-xs font-medium text-[color:var(--muted-text)] ">
             RTSP зам (root)
           </label>
           <input
@@ -652,7 +652,7 @@ export default function KameriinTokhirgoo() {
                 className="px-3 py-1 bg-[color:var(--surface-hover)] text-[color:var(--panel-text)] dark:text-white border border-[color:var(--surface-border)] font-medium"
               >
                 Нийт камер:{" "}
-                <span className="text-brand font-semibold">
+                <span className="text-brand font-medium">
                   {sohCameras.length}
                 </span>
               </span>
@@ -661,7 +661,7 @@ export default function KameriinTokhirgoo() {
                 className="px-3 py-1 bg-theme/10 text-brand border border-theme/30 font-medium"
               >
                 Идэвхтэй:{" "}
-                <span className="text-brand font-semibold">
+                <span className="text-brand font-medium">
                   {sohCameras.filter((c) => c.enabled).length}
                 </span>
               </span>
@@ -670,7 +670,7 @@ export default function KameriinTokhirgoo() {
                 className="px-3 py-1 bg-theme/10 text-brand border border-theme/30 font-medium"
               >
                 Оршин суугч харах:{" "}
-                <span className="text-brand font-semibold">
+                <span className="text-brand font-medium">
                   {residentCameras.length}
                 </span>
               </span>
@@ -702,7 +702,7 @@ export default function KameriinTokhirgoo() {
         {/* ── Барилга ──────────────────────────────────────────────────── */}
         {buildings.length > 1 ? (
           <div className="space-y-1.5">
-            <label className="block text-xs font-semibold text-[color:var(--muted-text)] uppercase tracking-wide">
+            <label className="block text-xs font-medium text-[color:var(--muted-text)] ">
               Барилга
             </label>
             <select
@@ -759,7 +759,7 @@ export default function KameriinTokhirgoo() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                 <div className="space-y-1">
-                  <label className="block text-xs font-semibold text-[color:var(--muted-text)] uppercase tracking-wide">
+                  <label className="block text-xs font-medium text-[color:var(--muted-text)] ">
                     IP хаяг
                   </label>
                   <input
@@ -771,7 +771,7 @@ export default function KameriinTokhirgoo() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="block text-xs font-semibold text-[color:var(--muted-text)] uppercase tracking-wide">
+                  <label className="block text-xs font-medium text-[color:var(--muted-text)] ">
                     RTSP порт
                   </label>
                   <input
@@ -783,7 +783,7 @@ export default function KameriinTokhirgoo() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="block text-xs font-semibold text-[color:var(--muted-text)] uppercase tracking-wide">
+                  <label className="block text-xs font-medium text-[color:var(--muted-text)] ">
                     Нэвтрэх нэр
                   </label>
                   <input
@@ -795,7 +795,7 @@ export default function KameriinTokhirgoo() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="block text-xs font-semibold text-[color:var(--muted-text)] uppercase tracking-wide">
+                  <label className="block text-xs font-medium text-[color:var(--muted-text)] ">
                     Нууц үг
                   </label>
                   <input
@@ -819,7 +819,7 @@ export default function KameriinTokhirgoo() {
                   style={{ borderRadius: "10px" }}
                   className={`px-3 py-1.5 text-xs border transition-colors ${
                     activeTab === key
-                      ? "bg-theme/10 text-brand border-theme/30 font-semibold"
+                      ? "bg-theme/10 text-brand border-theme/30 font-medium"
                       : "bg-[color:var(--surface-hover)] text-[color:var(--panel-text)] border-[color:var(--surface-border)] hover:bg-[color:var(--panel)]"
                   }`}
                 >
@@ -953,7 +953,7 @@ export default function KameriinTokhirgoo() {
               >
                 {/* Header */}
                 <div className="px-6 py-4 border-b border-[color:var(--surface-border)] flex items-center justify-between bg-[color:var(--surface-bg)]">
-                  <h3 className="font-bold text-sm text-[color:var(--panel-text)] uppercase tracking-wider">
+                  <h3 className="font-medium text-sm text-[color:var(--panel-text)] ">
                     Олноор камер нэмэх
                   </h3>
                   <button
@@ -969,7 +969,7 @@ export default function KameriinTokhirgoo() {
                 <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="col-span-2 space-y-1.5">
-                      <label className="block text-xs font-semibold text-[color:var(--muted-text)] uppercase tracking-wide">
+                      <label className="block text-xs font-medium text-[color:var(--muted-text)] ">
                         Угтвар зам (Prefix)
                       </label>
                       <input
@@ -982,7 +982,7 @@ export default function KameriinTokhirgoo() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold text-[color:var(--muted-text)] uppercase tracking-wide">
+                      <label className="block text-xs font-medium text-[color:var(--muted-text)] ">
                         Эхлэх суваг / дугаар
                       </label>
                       <input
@@ -994,7 +994,7 @@ export default function KameriinTokhirgoo() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold text-[color:var(--muted-text)] uppercase tracking-wide">
+                      <label className="block text-xs font-medium text-[color:var(--muted-text)] ">
                         Дуусах суваг / дугаар
                       </label>
                       <input
@@ -1006,7 +1006,7 @@ export default function KameriinTokhirgoo() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold text-[color:var(--muted-text)] uppercase tracking-wide">
+                      <label className="block text-xs font-medium text-[color:var(--muted-text)] ">
                         Алхам (Step)
                       </label>
                       <input
@@ -1018,7 +1018,7 @@ export default function KameriinTokhirgoo() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold text-[color:var(--muted-text)] uppercase tracking-wide">
+                      <label className="block text-xs font-medium text-[color:var(--muted-text)] ">
                         Нэрний угтвар
                       </label>
                       <input
@@ -1030,7 +1030,7 @@ export default function KameriinTokhirgoo() {
                     </div>
 
                     <div className="col-span-2 space-y-1.5">
-                      <label className="block text-xs font-semibold text-[color:var(--muted-text)] uppercase tracking-wide">
+                      <label className="block text-xs font-medium text-[color:var(--muted-text)] ">
                         Нэрлэх хэлбэр (Naming style)
                       </label>
                       <select
@@ -1046,16 +1046,16 @@ export default function KameriinTokhirgoo() {
 
                   {/* Preview */}
                   <div className="space-y-2">
-                    <p className="text-xs font-semibold text-[color:var(--panel-text)]">
+                    <p className="text-xs font-medium text-[color:var(--panel-text)]">
                       Үүсэх камеруудын жагсаалт ({previewCameras.length} камер)
                     </p>
-                    <div className="max-h-40 overflow-y-auto p-3 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] space-y-1.5 custom-scrollbar font-mono text-[10px]">
+                    <div className="max-h-40 overflow-y-auto p-3 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] space-y-1.5 custom-scrollbar font-mono text-[11px]">
                       {previewCameras.length === 0 ? (
                         <p className="text-center text-[color:var(--muted-text)] py-4">Эхлэх/дуусах дугааруудыг зөв оруулна уу</p>
                       ) : (
                         previewCameras.map((p, idx) => (
                           <div key={idx} className="flex justify-between items-center py-1 border-b border-[color:var(--surface-border)]/50 last:border-b-0">
-                            <span className="text-[color:var(--panel-text)] font-semibold">{p.name}</span>
+                            <span className="text-[color:var(--panel-text)] font-medium">{p.name}</span>
                             <span className="text-[color:var(--muted-text)]">{p.root}</span>
                           </div>
                         ))
@@ -1069,7 +1069,7 @@ export default function KameriinTokhirgoo() {
                   <button
                     type="button"
                     onClick={() => setIsMassAddOpen(false)}
-                    className="px-5 py-2 rounded-full border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors text-xs font-semibold text-[color:var(--panel-text)]"
+                    className="px-5 py-2 rounded-full border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors text-xs font-medium text-[color:var(--panel-text)]"
                   >
                     Цуцлах
                   </button>

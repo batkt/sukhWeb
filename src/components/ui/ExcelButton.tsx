@@ -13,7 +13,7 @@ import { FileSpreadsheet, Loader2 } from "lucide-react";
  */
 export interface ExcelButtonProps
   extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
-  /** Товчны бичвэр. Анхдагч: «Excel татах» */
+  /** Товчны бичвэр. Анхдагч: «Excel» */
   label?: string;
   /** Татаж байх үед эргэлдэх дүрс харуулж, товчийг идэвхгүй болгоно */
   loading?: boolean;
@@ -26,7 +26,7 @@ export interface ExcelButtonProps
 export const ExcelButton = React.forwardRef<HTMLButtonElement, ExcelButtonProps>(
   (
     {
-      label = "Excel татах",
+      label = "Excel",
       loading = false,
       iconOnlyOnMobile = false,
       suffix,

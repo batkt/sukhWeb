@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useSearchParams } from "next/navigation";
-import { notification, Select } from "antd";
+import { notification } from "antd";
 import { mutate } from "swr";
 import moment from "moment";
 import { motion, AnimatePresence } from "framer-motion";
@@ -23,6 +23,8 @@ import {
   ChevronRight,
   Search,
   ArrowLeft,
+  X,
+  RefreshCw,
   Send,
   ImagePlus,
   Mic,
@@ -34,6 +36,8 @@ import {
 } from "lucide-react";
 import { useTourSteps } from "@/lib/useTourSteps";
 import { useRegisterTourSteps } from "@/context/TourContext";
+import FilterSelect from "@/components/ui/FilterSelect";
+import FilterDatePicker from "@/components/ui/FilterDatePicker";
 
 /** Normalize zurag/duu to API path "baiguullagiinId/filename". Handles full server paths (e.g. /root/sukhBack/public/medegdel/.../file.jpg) and relative paths. */
 function normalizeMedegdelAssetPath(p: string | null | undefined): string {
@@ -97,6 +101,8 @@ export default function SanalKhuselt() {
   const [showDetail, setShowDetail] = useState(false);
   const [filterType, setFilterType] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  /** Client-side createdAt range filter (YYYY-MM-DD, inclusive). */
+  const [dateRange, setDateRange] = useState<[string, string] | null>(null);
   const [residentsMap, setResidentsMap] = useState<
     Record<string, { ner: string; toot: string; utas: string }>
   >({});
@@ -824,34 +830,30 @@ export default function SanalKhuselt() {
       case "pending":
         return {
           label: t("Хүлээгдэж байна"),
-          color: "text-warning",
-          bg: "bg-warning/10",
-          border: "border-warning/30",
-          icon: <Clock className="w-4 h-4" />,
+          pill: "bg-warning/10 text-warning",
+          dot: "bg-warning",
+          icon: <Clock className="h-3.5 w-3.5" />,
         };
       case "done":
         return {
           label: t("Шийдэгдсэн"),
-          color: "text-brand",
-          bg: "bg-theme/10",
-          border: "border-theme/30",
-          icon: <CheckCircle className="w-4 h-4" />,
+          pill: "bg-success/10 text-success",
+          dot: "bg-success",
+          icon: <CheckCircle className="h-3.5 w-3.5" />,
         };
       case "rejected":
         return {
           label: t("Татгалзсан"),
-          color: "text-danger",
-          bg: "bg-danger/10",
-          border: "border-danger/30",
-          icon: <XCircle className="w-4 h-4" />,
+          pill: "bg-danger/10 text-danger",
+          dot: "bg-danger",
+          icon: <XCircle className="h-3.5 w-3.5" />,
         };
       default:
         return {
           label: t("Тодорхойгүй"),
-          color: "text-[color:var(--muted-text)]",
-          bg: "bg-[color:var(--surface-hover)]",
-          border: "border-[color:var(--surface-border)]",
-          icon: <AlertCircle className="w-4 h-4" />,
+          pill: "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]",
+          dot: "bg-[color:var(--muted-text)]",
+          icon: <AlertCircle className="h-3.5 w-3.5" />,
         };
     }
   };
@@ -953,52 +955,90 @@ export default function SanalKhuselt() {
   const rootList = medegdelList.filter(
     (item) => (item.turul ?? "").toLowerCase() !== "user_reply",
   );
+  const statusOf = (i: MedegdelItem) => i.status || "pending";
   const dashboardCounts = {
     all: rootList.length,
-    shiidegdsen: rootList.filter((i) => (i.status || "pending") === "done")
+    pending: rootList.filter((i) => statusOf(i) === "pending").length,
+    unread: rootList.filter((i) => statusOf(i) === "pending" && !i.kharsanEsekh)
       .length,
+    done: rootList.filter((i) => statusOf(i) === "done").length,
+    rejected: rootList.filter((i) => statusOf(i) === "rejected").length,
     gomdol: rootList.filter((i) => isGomdol(i.turul)).length,
     sanal: rootList.filter((i) => isSanal(i.turul)).length,
   };
-  const dashboardActive = {
-    all: filterType === "all" && filterStatus === "all",
-    shiidegdsen: filterStatus === "done" && filterType === "all",
-    gomdol: filterType === "gomdol" && filterStatus === "all",
-    sanal: filterType === "sanal" && filterStatus === "all",
-  };
-  const setDashboardFilter = (
-    key: "all" | "shiidegdsen" | "gomdol" | "sanal",
-  ) => {
+
+  const kpiCards: {
+    id: string;
+    key: "all" | "pending" | "done" | "rejected";
+    label: string;
+    value: number;
+    sub?: string;
+    dot?: string;
+  }[] = [
+    {
+      id: "feedback-filter-all",
+      key: "all",
+      label: t("Нийт хүсэлт"),
+      value: dashboardCounts.all,
+      sub: `${t("Санал")} ${dashboardCounts.sanal} · ${t("Гомдол")} ${dashboardCounts.gomdol}`,
+    },
+    {
+      id: "feedback-filter-pending",
+      key: "pending",
+      label: t("Хүлээгдэж байна"),
+      value: dashboardCounts.pending,
+      sub:
+        dashboardCounts.unread > 0
+          ? `${dashboardCounts.unread} ${t("шинэ")}`
+          : undefined,
+      dot: "bg-warning",
+    },
+    {
+      id: "feedback-filter-done",
+      key: "done",
+      label: t("Шийдэгдсэн"),
+      value: dashboardCounts.done,
+      dot: "bg-success",
+    },
+    {
+      id: "feedback-filter-rejected",
+      key: "rejected",
+      label: t("Татгалзсан"),
+      value: dashboardCounts.rejected,
+      dot: "bg-danger",
+    },
+  ];
+
+  const setDashboardFilter = (key: "all" | "pending" | "done" | "rejected") => {
     if (key === "all") {
       setFilterType("all");
       setFilterStatus("all");
       return;
     }
-    if (key === "shiidegdsen") {
-      setFilterStatus("done");
-      setFilterType("all");
-      return;
-    }
-    if (key === "gomdol") {
-      setFilterType("gomdol");
-      setFilterStatus("all");
-      return;
-    }
-    if (key === "sanal") {
-      setFilterType("sanal");
-      setFilterStatus("all");
-      return;
-    }
+    setFilterStatus((prev) => (prev === key ? "all" : key));
   };
+
+  const residentOf = (item: MedegdelItem | null | undefined) =>
+    item?.orshinSuugchId ? residentsMap[item.orshinSuugchId] : undefined;
+
+  const hasActiveFilters =
+    searchTerm.trim() !== "" ||
+    filterType !== "all" ||
+    filterStatus !== "all" ||
+    !!dateRange;
 
   const filteredList = medegdelList.filter((item) => {
     // Don't show user_reply as separate list rows (they appear in thread view)
     const type = item.turul?.toLowerCase() || "";
     if (type === "user_reply") return false;
 
-    const matchesSearch = item.title
-      ?.toLowerCase()
-      .includes(searchTerm.toLowerCase());
+    const q = searchTerm.trim().toLowerCase();
+    const res = residentOf(item);
+    const matchesSearch =
+      !q ||
+      [item.title, item.message, res?.ner, res?.toot, res?.utas].some((v) =>
+        (v || "").toLowerCase().includes(q),
+      );
 
     // Type Filter
     const matchesType =
@@ -1013,396 +1053,494 @@ export default function SanalKhuselt() {
     const matchesStatus =
       filterStatus === "all" ? true : status === filterStatus;
 
-    return matchesSearch && matchesType && matchesStatus;
+    // Date Filter (createdAt, inclusive)
+    let matchesDate = true;
+    if (dateRange) {
+      const created = moment(item.createdAt);
+      matchesDate =
+        !created.isBefore(moment(dateRange[0]).startOf("day")) &&
+        !created.isAfter(moment(dateRange[1]).endOf("day"));
+    }
+
+    return matchesSearch && matchesType && matchesStatus && matchesDate;
   });
+
+  const resetFilters = () => {
+    setSearchTerm("");
+    setFilterType("all");
+    setFilterStatus("all");
+    setDateRange(null);
+  };
+
+  const initialsOf = (name?: string) => {
+    const n = (name || "").trim();
+    if (!n) return "";
+    const parts = n.split(/\s+/);
+    return (parts.length > 1 ? parts[parts.length - 1][0] : n[0]).toUpperCase();
+  };
+
+  const formatListTime = (d: string) => {
+    const m = moment(d);
+    if (m.isSame(moment(), "day")) return m.format("HH:mm");
+    if (m.isSame(moment(), "year")) return m.format("MM/DD");
+    return m.format("YYYY-MM-DD");
+  };
+
+  const formatDayLabel = (d: string) => {
+    const m = moment(d);
+    if (m.isSame(moment(), "day")) return t("Өнөөдөр");
+    if (m.isSame(moment().subtract(1, "day"), "day")) return t("Өчигдөр");
+    return m.format("YYYY-MM-DD");
+  };
+
+  const statusOptions: { value: string; label: string; icon: React.ReactNode; active: string }[] = [
+    {
+      value: "pending",
+      label: t("Хүлээгдэж байна"),
+      icon: <Clock className="h-3.5 w-3.5" />,
+      active: "bg-warning/10 text-warning",
+    },
+    {
+      value: "done",
+      label: t("Шийдэгдсэн"),
+      icon: <CheckCircle className="h-3.5 w-3.5" />,
+      active: "bg-success/10 text-success",
+    },
+    {
+      value: "rejected",
+      label: t("Татгалзсан"),
+      icon: <XCircle className="h-3.5 w-3.5" />,
+      active: "bg-danger/10 text-danger",
+    },
+  ];
+
+  const selectedResident = residentOf(selectedMedegdel);
+  const currentStatusValue = selectedMedegdel
+    ? pendingStatusChange?.id === selectedMedegdel._id
+      ? pendingStatusChange.newStatus
+      : selectedMedegdel.status || "pending"
+    : "pending";
+
+  const typePill = (turul: string | undefined) =>
+    isSanal(turul)
+      ? "bg-theme/10 text-brand"
+      : isGomdol(turul)
+        ? "bg-danger/10 text-danger"
+        : "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]";
+
+  const iconBtn =
+    "btn-minimal inline-flex h-9 w-9 shrink-0 items-center justify-center text-[color:var(--muted-text)] hover:text-brand disabled:opacity-50";
 
   return (
     <>
-    <div className="h-[calc(100vh-64px)] p-3 sm:p-4 md:p-5 flex flex-col gap-3 overflow-hidden relative">
-      <div className="flex-1 flex gap-3.5 min-h-0 relative">
-        {/* Left Panel: List */}
-        <motion.div
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.1 }}
-          className={`w-full md:w-[360px] lg:w-[400px] flex-col gap-3 shrink-0 ${showDetail ? "hidden md:flex" : "flex"}`}
+    <div className="flex w-full flex-col gap-3 pb-14 text-[color:var(--panel-text)]">
+      {/* Toolbar */}
+      <div className={`flex-wrap items-center gap-2 ${showDetail ? "hidden md:flex" : "flex"}`}>
+        <label id="feedback-search" className="filter-field w-full sm:w-[280px]">
+          <Search className="h-4 w-4 shrink-0 text-[color:var(--muted-text)]" />
+          <input
+            type="text"
+            aria-label={t("Хайх")}
+            placeholder={t("Гарчиг, нэр, тоот, утас...")}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => setSearchTerm("")}
+              aria-label={t("Хайлт цэвэрлэх")}
+              className="shrink-0 rounded p-0.5 text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </label>
+        <div id="feedback-filters" className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+          <FilterSelect
+            id="feedback-filter-type-select"
+            label={t("Төрөл")}
+            value={filterType === "all" ? "" : filterType}
+            onChange={(v) => setFilterType(v || "all")}
+            options={[
+              { value: "sanal", label: t("Санал") },
+              { value: "gomdol", label: t("Гомдол") },
+            ]}
+            className="max-w-[220px]"
+          />
+          <FilterSelect
+            id="feedback-filter-status-select"
+            label={t("Төлөв")}
+            value={filterStatus === "all" ? "" : filterStatus}
+            onChange={(v) => setFilterStatus(v || "all")}
+            options={[
+              { value: "pending", label: t("Хүлээгдэж байна") },
+              { value: "done", label: t("Шийдэгдсэн") },
+              { value: "rejected", label: t("Татгалзсан") },
+            ]}
+            className="max-w-[240px]"
+          />
+          <FilterDatePicker
+            value={dateRange}
+            onChange={(_dates, strs) =>
+              setDateRange(strs && strs[0] && strs[1] ? [strs[0], strs[1]] : null)
+            }
+            className="w-full sm:w-[260px]"
+          />
+        </div>
+        <div className="ml-auto flex items-center gap-2">
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="btn-minimal inline-flex h-9 items-center gap-1.5 !px-3 text-[13px]"
+            >
+              <X className="h-3.5 w-3.5" />
+              {t("Цэвэрлэх")}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() =>
+              ajiltan?.baiguullagiinId &&
+              fetchMedegdelData(ajiltan.baiguullagiinId, { keepSelection: true })
+            }
+            disabled={loading}
+            className="btn-minimal inline-flex h-9 items-center gap-1.5 !px-3 text-[13px] disabled:opacity-50"
+            title={t("Шинэчлэх")}
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+            <span className="hidden sm:inline">{t("Шинэчлэх")}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* KPI cards: click to filter by status */}
+      <div
+        id="feedback-stats"
+        className={`grid-cols-2 gap-3 lg:grid-cols-4 ${showDetail ? "hidden md:grid" : "grid"}`}
+      >
+        {kpiCards.map((k) => {
+          const active =
+            k.key === "all"
+              ? filterStatus === "all" && filterType === "all"
+              : filterStatus === k.key;
+          return (
+            <button
+              key={k.key}
+              id={k.id}
+              type="button"
+              onClick={() => setDashboardFilter(k.key)}
+              className={`rounded-2xl border bg-[color:var(--surface-bg)] px-5 py-4 text-left shadow-[var(--ctl-shadow)] transition-colors cursor-pointer ${
+                active && k.key !== "all"
+                  ? "border-theme ring-2 ring-theme/20"
+                  : "border-[color:var(--ctl-border)] hover:border-[color:var(--ctl-border-hover)]"
+              }`}
+            >
+              <div className="text-2xl font-medium leading-tight tabular-nums text-[color:var(--panel-text)]">
+                {loading && medegdelList.length === 0 ? (
+                  <span className="inline-block h-7 w-10 animate-pulse rounded-md bg-[color:var(--surface-hover)]" />
+                ) : (
+                  k.value
+                )}
+              </div>
+              <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-[color:var(--muted-text)]">
+                {k.dot && <span className={`h-1.5 w-1.5 rounded-full ${k.dot}`} />}
+                <span>{k.label}</span>
+                {k.sub && (
+                  <span className="text-[11px] text-[color:var(--muted-text)] opacity-80">
+                    · {k.sub}
+                  </span>
+                )}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Master / detail */}
+      <div className="flex min-h-0 gap-3 md:h-[calc(100vh-17rem)] md:min-h-[520px]">
+        {/* List */}
+        <div
+          className={`w-full md:w-[340px] lg:w-[380px] shrink-0 flex-col overflow-hidden rounded-2xl border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] shadow-[var(--ctl-shadow)] ${showDetail ? "hidden md:flex" : "flex"}`}
         >
-          {/* Dashboard: counts, click to filter list */}
-          <div id="feedback-stats" className="grid grid-cols-4 gap-1.5 shrink-0">
-            <button
-              id="feedback-filter-all"
-              type="button"
-              onClick={() => setDashboardFilter("all")}
-              className={`rounded-xl border p-2 text-center transition-all cursor-pointer ${dashboardActive.all
-                ? "border-theme bg-theme/10 text-brand"
-                : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] hover:bg-[color:var(--surface-hover)] text-theme"
-                }`}
-            >
-              <div className="text-base font-normal">{dashboardCounts.all}</div>
-              <div className="text-[10px] opacity-80">{t("Бүгд")}</div>
-            </button>
-            <button
-              id="feedback-filter-done"
-              type="button"
-              onClick={() => setDashboardFilter("shiidegdsen")}
-              className={`rounded-xl border p-2 text-center transition-all cursor-pointer ${dashboardActive.shiidegdsen
-                ? "border-theme bg-theme/10 text-brand"
-                : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] hover:bg-[color:var(--surface-hover)] text-theme"
-                }`}
-            >
-              <div className="text-base font-normal">{dashboardCounts.shiidegdsen}</div>
-              <div className="text-[10px] opacity-80">{t("Шийдэгдсэн")}</div>
-            </button>
-            <button
-              id="feedback-filter-gomdol"
-              type="button"
-              onClick={() => setDashboardFilter("gomdol")}
-              className={`rounded-xl border p-2 text-center transition-all cursor-pointer ${dashboardActive.gomdol
-                ? "border-danger bg-danger/10 text-danger"
-                : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] hover:bg-[color:var(--surface-hover)] text-theme"
-                }`}
-            >
-              <div className="text-base font-normal">{dashboardCounts.gomdol}</div>
-              <div className="text-[10px] opacity-80">{t("Гомдол")}</div>
-            </button>
-            <button
-              id="feedback-filter-sanal"
-              type="button"
-              onClick={() => setDashboardFilter("sanal")}
-              className={`rounded-xl border p-2 text-center transition-all cursor-pointer ${dashboardActive.sanal
-                ? "border-theme bg-theme/10 text-brand"
-                : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] hover:bg-[color:var(--surface-hover)] text-theme"
-                }`}
-            >
-              <div className="text-base font-normal">{dashboardCounts.sanal}</div>
-              <div className="text-[10px] opacity-80">{t("Санал")}</div>
-            </button>
+          <div className="flex h-11 shrink-0 items-center justify-between border-b border-[color:var(--ctl-border)] px-4">
+            <span className="text-[13px] font-medium">{t("Хүсэлтүүд")}</span>
+            <span className="text-xs tabular-nums text-[color:var(--muted-text)]">
+              {filteredList.length}
+              {hasActiveFilters ? ` / ${dashboardCounts.all}` : ""}
+            </span>
           </div>
-
-          {/* Search and Filters */}
-          <div className="flex flex-col gap-2">
-            <div id="feedback-search" className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[color:var(--muted-text)]" />
-              <input
-                type="text"
-                placeholder={t("Хайх...")}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 h-9 rounded-xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] text-xs focus:outline-none focus:ring-1 focus:ring-theme transition-all"
-              />
-            </div>
-            <div id="feedback-filters" className="grid grid-cols-2 gap-2">
-              <Select
-                id="feedback-filter-type-select"
-                value={filterType}
-                onChange={setFilterType}
-                className="w-full"
-                size="middle"
-                classNames={{
-                  popup: {
-                    root: "rounded-xl border border-[color:var(--surface-border)] shadow-xl",
-                  },
-                }}
-                options={[
-                  { value: "all", label: t("Бүгд") },
-                  { value: "sanal", label: t("Санал") },
-                  { value: "gomdol", label: t("Гомдол") },
-                ]}
-              />
-              <Select
-                id="feedback-filter-status-select"
-                value={filterStatus}
-                onChange={setFilterStatus}
-                className="w-full"
-                size="middle"
-                classNames={{
-                  popup: {
-                    root: "rounded-xl border border-[color:var(--surface-border)] shadow-xl",
-                  },
-                }}
-                options={[
-                  { value: "all", label: t("Бүх төлөв") },
-                  { value: "pending", label: t("Хүлээгдэж байна") },
-                  { value: "done", label: t("Шийдэгдсэн") },
-                  { value: "rejected", label: t("Татгалзсан") },
-                ]}
-              />
-            </div>
-          </div>
-
           <div
             id="sanal-list"
-            className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-3"
+            className="custom-scrollbar flex-1 overflow-y-auto md:min-h-0"
           >
-            {loading ? (
-              <div className="py-10 text-center text-theme text-sm">
-                {t("Уншиж байна...")}
+            {loading && medegdelList.length === 0 ? (
+              <div className="divide-y divide-[color:var(--ctl-border)]">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="flex gap-3 px-4 py-3.5">
+                    <div className="h-9 w-9 shrink-0 animate-pulse rounded-full bg-[color:var(--surface-hover)]" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-3 w-1/2 animate-pulse rounded bg-[color:var(--surface-hover)]" />
+                      <div className="h-3 w-4/5 animate-pulse rounded bg-[color:var(--surface-hover)]" />
+                      <div className="h-3 w-1/3 animate-pulse rounded bg-[color:var(--surface-hover)]" />
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : filteredList.length === 0 ? (
-              <div className="py-10 text-center flex flex-col items-center gap-3 opacity-60">
-                <div className="w-12 h-12 rounded-full bg-[color:var(--surface-hover)] flex items-center justify-center">
-                  <MessageSquare className="w-6 h-6 text-theme" />
+              <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[color:var(--surface-hover)]">
+                  <MessageSquare className="h-5 w-5 text-[color:var(--muted-text)]" />
                 </div>
-                <div className="text-theme text-sm">
-                  {t("Илэрц олдсонгүй")}
+                <div className="text-[13px] text-[color:var(--muted-text)]">
+                  {hasActiveFilters ? t("Илэрц олдсонгүй") : t("Санал хүсэлт ирээгүй байна")}
                 </div>
+                {hasActiveFilters && (
+                  <button
+                    type="button"
+                    onClick={resetFilters}
+                    className="btn-minimal h-9 !px-3 text-[13px]"
+                  >
+                    {t("Шүүлтүүр цэвэрлэх")}
+                  </button>
+                )}
               </div>
             ) : (
-              filteredList.map((item) => {
-                const status = getStatusInfo(item.status);
-                const isSelected = selectedMedegdel?._id === item._id;
-
-                return (
-                  <motion.div
-                    key={item._id}
-                    layoutId={item._id}
-                    onClick={() => {
-                      setSelectedMedegdel(item);
-                      setShowDetail(true);
-                    }}
-                    className={`group relative p-4 rounded-2xl border transition-all cursor-pointer ${isSelected
-                      ? "bg-theme/20 border-theme/30 shadow-sm"
-                      : "bg-[color:var(--surface-bg)] border-[color:var(--surface-border)] hover:border-theme/50 hover:bg-[color:var(--surface-hover)]"
-                      }`}
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span
-                          className={`inline-flex px-2 py-0.5 rounded-2xl text-[10px]  tracking-wide border ${(item.turul?.toLowerCase() || "").includes(
-                            "sanal",
-                          ) || (item.turul ?? "").includes("санал")
-                            ? "bg-theme/15 text-brand border-theme/50"
-                            : "bg-danger/15 text-danger border-danger/50"
-                            }`}
+              <ul className="divide-y divide-[color:var(--ctl-border)]">
+                {filteredList.map((item) => {
+                  const status = getStatusInfo(item.status);
+                  const isSelected = selectedMedegdel?._id === item._id;
+                  const res = residentOf(item);
+                  const isNew = statusOf(item) === "pending" && !item.kharsanEsekh;
+                  return (
+                    <li key={item._id}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedMedegdel(item);
+                          setShowDetail(true);
+                        }}
+                        className={`relative flex w-full gap-3 px-4 py-3.5 text-left transition-colors cursor-pointer ${
+                          isSelected
+                            ? "bg-theme/10"
+                            : "hover:bg-[color:var(--surface-hover)]"
+                        }`}
+                      >
+                        {isSelected && (
+                          <span className="absolute inset-y-2 left-0 w-[3px] rounded-r bg-theme" />
+                        )}
+                        <div
+                          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[13px] font-medium ${
+                            isGomdol(item.turul) ? "bg-danger/10 text-danger" : "bg-theme/10 text-brand"
+                          }`}
                         >
-                          {turulToLabel(item.turul)}
-                        </span>
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-2xl text-[10px]  tracking-wide border ${status.bg} ${status.color} ${status.border} bg-opacity-50`}
-                        >
-                          {status.label}
-                        </span>
-                      </div>
-                      <span className="text-[10px] text-theme ">
-                        {moment(item.createdAt).fromNow()}
-                      </span>
-                    </div>
-                    <h3
-                      className={`text-sm  mb-1 line-clamp-1 ${isSelected ? "text-brand" : "text-brand"}`}
-                    >
-                      {item.title}
-                    </h3>
-                    {item.orshinSuugchId &&
-                      residentsMap[item.orshinSuugchId] && (
-                        <div className="mb-2 p-2 rounded-xl bg-theme/60 border border-theme/60">
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <User className="w-3 h-3 text-brand shrink-0" />
-                            <span className="text-[10px] text-brand shrink-0">Нэр:</span>
-                            <span className="text-[11px] font-semibold text-brand truncate">
-                              {residentsMap[item.orshinSuugchId].ner}
+                          {initialsOf(res?.ner) || <User className="h-4 w-4" />}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className={`min-w-0 flex-1 truncate text-[13px] ${isNew ? "font-medium" : ""} text-[color:var(--panel-text)]`}>
+                              {res?.ner || t("Оршин суугч")}
+                              {res?.toot && (
+                                <span className="ml-1.5 text-xs font-normal text-[color:var(--muted-text)]">
+                                  {res.toot} {t("тоот")}
+                                </span>
+                              )}
+                            </span>
+                            <span className="shrink-0 text-[11px] tabular-nums text-[color:var(--muted-text)]">
+                              {formatListTime(item.updatedAt || item.createdAt)}
                             </span>
                           </div>
-                          <div className="flex items-center gap-3">
-                            {residentsMap[item.orshinSuugchId].toot && (
-                              <div className="flex items-center gap-1">
-                                <Home className="w-3 h-3 text-brand shrink-0" />
-                                <span className="text-[10px] text-brand shrink-0">Тоот:</span>
-                                <span className="text-[10px] text-brand">
-                                  {residentsMap[item.orshinSuugchId].toot}
-                                </span>
-                              </div>
-                            )}
-                            {residentsMap[item.orshinSuugchId].utas && (
-                              <div className="flex items-center gap-1">
-                                <Phone className="w-3 h-3 text-brand shrink-0" />
-                                <span className="text-[10px] text-brand shrink-0">Утас:</span>
-                                <span className="text-[10px] text-brand">
-                                  {residentsMap[item.orshinSuugchId].utas}
-                                </span>
-                              </div>
+                          <div className="mt-0.5 truncate text-[13px] text-[color:var(--panel-text)]">
+                            {item.title}
+                          </div>
+                          {item.message && (
+                            <div className="mt-0.5 line-clamp-1 text-xs text-[color:var(--muted-text)]">
+                              {item.message}
+                            </div>
+                          )}
+                          <div className="mt-2 flex items-center gap-1.5">
+                            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] ${typePill(item.turul)}`}>
+                              {turulToLabel(item.turul)}
+                            </span>
+                            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] ${status.pill}`}>
+                              <span className={`h-1.5 w-1.5 rounded-full ${status.dot}`} />
+                              {status.label}
+                            </span>
+                            {isNew && (
+                              <span className="ml-auto h-2 w-2 rounded-full bg-theme" aria-label={t("Шинэ")} />
                             )}
                           </div>
                         </div>
-                      )}
-                    <p className="text-xs text-theme line-clamp-2 leading-relaxed">
-                      {item.message}
-                    </p>
-
-                    {isSelected && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <ChevronRight className="w-4 h-4 text-brand" />
-                      </div>
-                    )}
-                  </motion.div>
-                );
-              })
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
             )}
           </div>
-        </motion.div>
+        </div>
 
-        {/* Right Panel: Detail */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className={`flex-1 bg-transparent border-[color:var(--surface-border)] border rounded-3xl shadow-sm overflow-hidden flex flex-col ${showDetail ? "fixed inset-0 z-50 m-0 rounded-none md:static md:z-auto md:m-0 md:rounded-3xl" : "hidden md:flex"}`}
+        {/* Detail */}
+        <div
+          className={`min-w-0 flex-1 flex-col overflow-hidden bg-[color:var(--surface-bg)] ${
+            showDetail
+              ? "fixed inset-0 z-50 flex md:static md:z-auto md:rounded-2xl md:border md:border-[color:var(--ctl-border)] md:shadow-[var(--ctl-shadow)]"
+              : "hidden md:flex md:rounded-2xl md:border md:border-[color:var(--ctl-border)] md:shadow-[var(--ctl-shadow)]"
+          }`}
         >
           {selectedMedegdel ? (
             <>
-              {/* Detail Header - Sleek, Compact & High-Density */}
-              <div className="px-4 py-2.5 sm:py-3 border-b border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] shrink-0 flex flex-col gap-2">
-                <div className="flex items-center justify-between gap-3">
-                  {/* Left: Mobile back button + Avatar + Resident Info + Subject */}
-                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    {/* Mobile Back Button */}
+              {/* Detail header */}
+              <div className="shrink-0 border-b border-[color:var(--ctl-border)] px-4 py-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
                     <button
                       type="button"
                       onClick={() => setShowDetail(false)}
-                      className="flex md:hidden p-1.5 -ml-1 rounded-xl hover:bg-[color:var(--surface-hover)] text-theme shrink-0"
-                      aria-label="Буцах"
+                      className="-ml-1 flex shrink-0 rounded-[10px] p-1.5 text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] md:hidden"
+                      aria-label={t("Буцах")}
                     >
-                      <ArrowLeft className="w-5 h-5" />
+                      <ArrowLeft className="h-5 w-5" />
                     </button>
-
-                    {/* Avatar Circle */}
-                    <div className="w-9 h-9 rounded-xl bg-theme/10 text-brand flex items-center justify-center shrink-0 border border-theme/20">
-                      <User className="w-4 h-4" />
+                    <div
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-medium ${
+                        isGomdol(selectedMedegdel.turul) ? "bg-danger/10 text-danger" : "bg-theme/10 text-brand"
+                      }`}
+                    >
+                      {initialsOf(selectedResident?.ner) || <User className="h-4 w-4" />}
                     </div>
-
-                    {/* Resident Info & Topic Title */}
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs sm:text-sm font-medium text-[color:var(--panel-text)] truncate">
-                          {selectedMedegdel.orshinSuugchId &&
-                          residentsMap[selectedMedegdel.orshinSuugchId]?.ner
-                            ? residentsMap[selectedMedegdel.orshinSuugchId].ner
-                            : "Оршин суугч"}
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                        <span className="truncate text-sm font-medium">
+                          {selectedResident?.ner || t("Оршин суугч")}
                         </span>
-                        {selectedMedegdel.orshinSuugchId &&
-                          residentsMap[selectedMedegdel.orshinSuugchId]?.toot && (
-                            <span className="px-1.5 py-0.2 rounded-md bg-theme/10 text-brand text-[10px] font-normal shrink-0 border border-theme/60">
-                              {residentsMap[selectedMedegdel.orshinSuugchId].toot} тоот
-                            </span>
-                          )}
-                        {selectedMedegdel.orshinSuugchId &&
-                          residentsMap[selectedMedegdel.orshinSuugchId]?.utas && (
-                            <a
-                              href={`tel:${residentsMap[selectedMedegdel.orshinSuugchId].utas}`}
-                              className="hidden sm:inline-flex items-center gap-1 text-[11px] text-[color:var(--muted-text)] hover:text-brand transition-colors"
-                            >
-                              <Phone className="w-3 h-3 text-[color:var(--muted-text)]" />
-                              <span>{residentsMap[selectedMedegdel.orshinSuugchId].utas}</span>
-                            </a>
-                          )}
-                        <span
-                          className={`px-1.5 py-0.2 rounded-md text-[10px] font-normal border shrink-0 ${
-                            isSanal(selectedMedegdel.turul)
-                              ? "bg-theme/10 text-brand border-theme/40"
-                              : "bg-danger/10 text-danger border-danger/40"
-                          }`}
-                        >
+                        <span className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[11px] ${typePill(selectedMedegdel.turul)}`}>
                           {turulToLabel(selectedMedegdel.turul)}
                         </span>
                       </div>
-
-                      {/* Request title & timestamp */}
-                      <div className="flex items-center gap-2 text-xs text-[color:var(--muted-text)] mt-0.5">
-                        <span
-                          className="truncate max-w-[220px] sm:max-w-[420px] font-normal text-[color:var(--muted-text)]"
-                          title={selectedMedegdel.title}
-                        >
-                          {selectedMedegdel.title}
-                        </span>
-                        <span className="text-[10px] text-[color:var(--muted-text)] shrink-0">
-                          • {moment(selectedMedegdel.createdAt).format("YYYY-MM-DD HH:mm")}
+                      <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-[color:var(--muted-text)]">
+                        {selectedResident?.toot && (
+                          <span className="inline-flex items-center gap-1">
+                            <Home className="h-3 w-3" />
+                            {selectedResident.toot} {t("тоот")}
+                          </span>
+                        )}
+                        {selectedResident?.utas && (
+                          <a
+                            href={`tel:${selectedResident.utas}`}
+                            className="inline-flex items-center gap-1 hover:text-brand"
+                          >
+                            <Phone className="h-3 w-3" />
+                            {selectedResident.utas}
+                          </a>
+                        )}
+                        <span className="inline-flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {moment(selectedMedegdel.createdAt).format("YYYY-MM-DD HH:mm")}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Right: Status Dropdown */}
-                  <div className="shrink-0 flex items-center gap-2">
-                    <Select
-                      value={
-                        pendingStatusChange?.id === selectedMedegdel._id
-                          ? pendingStatusChange.newStatus
-                          : selectedMedegdel.status || "pending"
-                      }
-                      onChange={handleStatusChange}
-                      className="w-[135px] sm:w-[155px]"
-                      size="middle"
-                      options={[
-                        {
-                          value: "pending",
-                          label: (
-                            <span className="flex items-center gap-1.5 text-xs text-warning font-normal">
-                              <Clock className="w-3.5 h-3.5" />
-                              <span>{t("Хүлээгдэж байна")}</span>
-                            </span>
-                          ),
-                        },
-                        {
-                          value: "done",
-                          label: (
-                            <span className="flex items-center gap-1.5 text-xs text-brand font-normal">
-                              <CheckCircle className="w-3.5 h-3.5" />
-                              <span>{t("Шийдэгдсэн")}</span>
-                            </span>
-                          ),
-                        },
-                        {
-                          value: "rejected",
-                          label: (
-                            <span className="flex items-center gap-1.5 text-xs text-danger font-normal">
-                              <XCircle className="w-3.5 h-3.5" />
-                              <span>{t("Татгалзсан")}</span>
-                            </span>
-                          ),
-                        },
-                      ]}
-                    />
+                  {/* Status segmented control */}
+                  <div
+                    role="radiogroup"
+                    aria-label={t("Төлөв")}
+                    className="flex w-full shrink-0 items-center gap-0.5 rounded-[10px] border border-[color:var(--ctl-border)] p-0.5 sm:w-auto"
+                  >
+                    {statusOptions.map((o) => {
+                      const active = currentStatusValue === o.value;
+                      return (
+                        <button
+                          key={o.value}
+                          type="button"
+                          role="radio"
+                          aria-checked={active}
+                          onClick={() => {
+                            if (o.value === (selectedMedegdel.status || "pending")) {
+                              setPendingStatusChange(null);
+                              setTailbarText("");
+                              return;
+                            }
+                            handleStatusChange(o.value);
+                          }}
+                          className={`inline-flex h-8 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 text-xs transition-colors cursor-pointer sm:flex-none ${
+                            active
+                              ? `${o.active} font-medium`
+                              : "text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] hover:text-[color:var(--panel-text)]"
+                          }`}
+                        >
+                          {o.icon}
+                          {o.label}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
-                {/* Inline banner for Pending Status Change Decision Explanation */}
+                {selectedMedegdel.title && (
+                  <div className="mt-2.5 text-[13px] text-[color:var(--panel-text)]">
+                    {selectedMedegdel.title}
+                  </div>
+                )}
+
+                {/* Pending status change: explanation + confirm */}
                 <AnimatePresence>
                   {pendingStatusChange?.id === selectedMedegdel._id && (
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
-                      className="overflow-hidden pt-2 border-t border-[color:var(--surface-border)]"
+                      className="overflow-hidden"
                     >
-                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-[color:var(--surface-hover)] p-2.5 rounded-xl border border-[color:var(--surface-border)]">
-                        <input
-                          type="text"
-                          value={tailbarText}
-                          onChange={(e) => setTailbarText(e.target.value)}
-                          placeholder={
-                            pendingStatusChange.newStatus === "done"
-                              ? t("Шийдвэрийн тайлбар (хэрэглэгчид илгээгдэнэ)...")
-                              : t("Татгалзсан шалтгаанаа бичнэ үү (хэрэглэгчид илгээгдэнэ)...")
-                          }
-                          className="flex-1 h-8 px-3 rounded-lg bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] text-xs text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] focus:outline-none focus:ring-1 focus:ring-theme"
-                        />
-                        <div className="flex items-center gap-1.5 shrink-0 justify-end">
-                          <button
-                            type="button"
-                            onClick={confirmStatusChange}
-                            className="h-8 px-3 bg-theme hover:bg-theme text-white text-xs rounded-lg transition-colors font-normal shadow-xs cursor-pointer"
-                          >
-                            {t("Батлах")}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setPendingStatusChange(null);
-                              setTailbarText("");
-                            }}
-                            className="h-8 px-3 bg-[color:var(--panel)] hover:bg-[color:var(--panel)] text-[color:var(--panel-text)] text-xs rounded-lg transition-colors font-normal cursor-pointer"
-                          >
-                            {t("Хаах")}
-                          </button>
+                      <div className="mt-3 rounded-xl border border-[color:var(--ctl-border)] bg-[color:var(--surface-hover)] p-3">
+                        <div className="mb-2 flex items-center gap-1.5 text-xs text-[color:var(--muted-text)]">
+                          <span>{getStatusInfo(pendingStatusChange.oldStatus).label}</span>
+                          <ChevronRight className="h-3 w-3" />
+                          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] ${getStatusInfo(pendingStatusChange.newStatus).pill}`}>
+                            {getStatusInfo(pendingStatusChange.newStatus).label}
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                          <label className="filter-field min-w-0 flex-1">
+                            <input
+                              type="text"
+                              value={tailbarText}
+                              onChange={(e) => setTailbarText(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  confirmStatusChange();
+                                }
+                              }}
+                              placeholder={
+                                pendingStatusChange.newStatus === "done"
+                                  ? t("Шийдвэрийн тайлбар (хэрэглэгчид илгээгдэнэ)...")
+                                  : t("Татгалзсан шалтгаанаа бичнэ үү (хэрэглэгчид илгээгдэнэ)...")
+                              }
+                              autoFocus
+                            />
+                          </label>
+                          <div className="flex shrink-0 items-center justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPendingStatusChange(null);
+                                setTailbarText("");
+                              }}
+                              className="btn-minimal h-9 !px-3 text-[13px]"
+                            >
+                              {t("Болих")}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={confirmStatusChange}
+                              className="inline-flex h-9 items-center rounded-[10px] bg-theme px-4 text-[13px] font-medium !text-white transition hover:opacity-90 cursor-pointer"
+                            >
+                              {t("Батлах")}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </motion.div>
@@ -1410,20 +1548,20 @@ export default function SanalKhuselt() {
                 </AnimatePresence>
               </div>
 
-              {/* Chat Messages Body - Scrollable */}
-              <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2.5 custom-scrollbar bg-[color:var(--surface-bg)]">
+              {/* Thread */}
+              <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto bg-[color:var(--surface-hover)]/40 px-4 py-4">
                 {threadLoading && displayMessages.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 gap-2 text-[color:var(--muted-text)]">
-                    <Loader2 className="w-6 h-6 animate-spin text-brand" />
+                  <div className="flex flex-col items-center justify-center gap-2 py-16 text-[color:var(--muted-text)]">
+                    <Loader2 className="h-5 w-5 animate-spin text-brand" />
                     <span className="text-xs">{t("Уншиж байна...")}</span>
                   </div>
                 ) : displayMessages.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-center text-[color:var(--muted-text)] gap-2">
-                    <MessageSquare className="w-8 h-8 opacity-40" />
+                  <div className="flex flex-col items-center justify-center gap-2 py-16 text-center text-[color:var(--muted-text)]">
+                    <MessageSquare className="h-7 w-7 opacity-40" />
                     <span className="text-xs">{t("Харилцаа байхгүй")}</span>
                   </div>
                 ) : (
-                  <>
+                  <div className="mx-auto flex max-w-3xl flex-col gap-2.5">
                     {displayMessages.map((msg, idx) => {
                       const turul = (msg.turul || "").toLowerCase();
                       const isAdminReply =
@@ -1431,131 +1569,131 @@ export default function SanalKhuselt() {
                         turul === "hariu" ||
                         turul === "хариу";
                       const isUser = isAdminReply;
+                      const prev = idx > 0 ? displayMessages[idx - 1] : null;
+                      const showDay =
+                        !prev || !moment(prev.createdAt).isSame(moment(msg.createdAt), "day");
 
                       return (
-                        <div
-                          key={msg._id || `msg-${idx}`}
-                          className={`flex ${isUser ? "justify-end" : "justify-start"}`}
-                        >
-                          <div
-                            className={`max-w-[85%] sm:max-w-[72%] rounded-2xl px-3.5 py-2.5 text-xs shadow-2xs ${
-                              isUser
-                                ? "bg-theme text-white rounded-br-xs"
-                                : "bg-[color:var(--surface-hover)] border border-[color:var(--surface-border)] text-[color:var(--panel-text)] rounded-bl-xs"
-                            }`}
-                          >
-                            {/* Sender label */}
-                            <div
-                              className={`flex items-center gap-1.5 mb-1 ${
-                                isUser ? "justify-end text-brand" : "justify-start text-brand"
-                              }`}
-                            >
-                              <span className="text-[10px] font-normal uppercase tracking-wider">
-                                {isUser
-                                  ? "Админ"
-                                  : msg.orshinSuugchId && residentsMap[msg.orshinSuugchId]
-                                  ? residentsMap[msg.orshinSuugchId].ner
-                                  : "Оршин суугч"}
+                        <React.Fragment key={msg._id || `msg-${idx}`}>
+                          {showDay && (
+                            <div className="my-1 flex justify-center">
+                              <span className="rounded-full bg-[color:var(--surface-bg)] px-2.5 py-0.5 text-[11px] text-[color:var(--muted-text)] shadow-[var(--ctl-shadow)]">
+                                {formatDayLabel(msg.createdAt)}
                               </span>
                             </div>
-
-                            {/* Attached Images */}
-                            {msg.zurag &&
-                              (() => {
-                                const paths = String(msg.zurag)
-                                  .split(",")
-                                  .map((p) => normalizeMedegdelAssetPath(p.trim()))
-                                  .filter(Boolean);
-                                const base = getApiUrl().replace(/\/$/, "");
-                                return paths.length ? (
-                                  <div className="flex flex-wrap gap-1.5 my-1.5">
-                                    {paths.map((path, i) => {
-                                      const url = `${base}/medegdel/${path}`;
-                                      return (
-                                        <button
-                                          key={i}
-                                          type="button"
-                                          onClick={() => setImagePreviewUrl(url)}
-                                          className="block rounded-xl overflow-hidden max-w-[140px] cursor-zoom-in hover:opacity-90 transition-opacity border border-white/20"
-                                        >
-                                          <img
-                                            src={url}
-                                            alt=""
-                                            className="w-full h-auto object-cover max-h-36"
-                                          />
-                                        </button>
-                                      );
-                                    })}
-                                  </div>
-                                ) : null;
-                              })()}
-
-                            {/* Attached Voice Note */}
-                            {msg.duu &&
-                              (() => {
-                                const path = normalizeMedegdelAssetPath(msg.duu);
-                                const audioUrl = path
-                                  ? `${getApiUrl().replace(/\/$/, "")}/medegdel/${path}`
-                                  : "";
-                                return audioUrl ? (
-                                  <div className="my-1.5">
-                                    <audio controls src={audioUrl} className="max-w-full h-8" />
-                                  </div>
-                                ) : null;
-                              })()}
-
-                            {/* Text Message */}
-                            {msg.message ? (
-                              <p className="whitespace-pre-wrap leading-relaxed text-xs">
-                                {msg.message}
-                              </p>
-                            ) : null}
-
-                            {/* Timestamp & Read Status */}
+                          )}
+                          <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
                             <div
-                              className={`flex items-center gap-1 mt-1 text-[10px] ${
-                                isUser ? "justify-end text-brand" : "justify-end text-[color:var(--muted-text)]"
+                              className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[13px] sm:max-w-[70%] ${
+                                isUser
+                                  ? "rounded-br-md bg-theme text-white"
+                                  : "rounded-bl-md border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)]"
                               }`}
                             >
-                              <span>{moment(msg.createdAt).format("HH:mm")}</span>
-                              {isUser && msg.kharsanEsekh && (
-                                <CheckCheck className="w-3 h-3 text-brand" aria-hidden />
-                              )}
+                              <div
+                                className={`mb-0.5 text-[11px] ${
+                                  isUser ? "text-white/75" : "text-brand"
+                                }`}
+                              >
+                                {isUser
+                                  ? t("Админ")
+                                  : msg.orshinSuugchId && residentsMap[msg.orshinSuugchId]
+                                  ? residentsMap[msg.orshinSuugchId].ner
+                                  : t("Оршин суугч")}
+                              </div>
+
+                              {msg.zurag &&
+                                (() => {
+                                  const paths = String(msg.zurag)
+                                    .split(",")
+                                    .map((p) => normalizeMedegdelAssetPath(p.trim()))
+                                    .filter(Boolean);
+                                  const base = getApiUrl().replace(/\/$/, "");
+                                  return paths.length ? (
+                                    <div className="my-1.5 flex flex-wrap gap-1.5">
+                                      {paths.map((path, i) => {
+                                        const url = `${base}/medegdel/${path}`;
+                                        return (
+                                          <button
+                                            key={i}
+                                            type="button"
+                                            onClick={() => setImagePreviewUrl(url)}
+                                            className="block max-w-[160px] cursor-zoom-in overflow-hidden rounded-xl transition-opacity hover:opacity-90"
+                                          >
+                                            <img
+                                              src={url}
+                                              alt=""
+                                              className="h-auto max-h-40 w-full object-cover"
+                                            />
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  ) : null;
+                                })()}
+
+                              {msg.duu &&
+                                (() => {
+                                  const path = normalizeMedegdelAssetPath(msg.duu);
+                                  const audioUrl = path
+                                    ? `${getApiUrl().replace(/\/$/, "")}/medegdel/${path}`
+                                    : "";
+                                  return audioUrl ? (
+                                    <div className="my-1.5">
+                                      <audio controls src={audioUrl} className="h-8 max-w-full" />
+                                    </div>
+                                  ) : null;
+                                })()}
+
+                              {msg.message ? (
+                                <p className="whitespace-pre-wrap break-words leading-relaxed">
+                                  {msg.message}
+                                </p>
+                              ) : null}
+
+                              <div
+                                className={`mt-1 flex items-center justify-end gap-1 text-[11px] tabular-nums ${
+                                  isUser ? "text-white/75" : "text-[color:var(--muted-text)]"
+                                }`}
+                              >
+                                <span>{moment(msg.createdAt).format("HH:mm")}</span>
+                                {isUser && msg.kharsanEsekh && (
+                                  <CheckCheck className="h-3 w-3" aria-hidden />
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
+                        </React.Fragment>
                       );
                     })}
 
-                    {/* Legacy Admin Tailbar (if present and not already in displayMessages) */}
+                    {/* Legacy admin tailbar (if present and not already in displayMessages) */}
                     {selectedMedegdel.tailbar &&
                       !displayMessages.some((m) => m.message === selectedMedegdel.tailbar) && (
                         <div className="flex justify-end">
-                          <div className="max-w-[85%] sm:max-w-[72%] rounded-2xl rounded-br-xs px-3.5 py-2.5 bg-theme text-white shadow-2xs text-xs">
-                            <div className="flex items-center justify-between gap-1.5 mb-1 text-brand">
-                              <span className="text-[10px] font-normal uppercase tracking-wider">
-                                Хариу тайлбар (Админ)
-                              </span>
+                          <div className="max-w-[85%] rounded-2xl rounded-br-md bg-theme px-3.5 py-2.5 text-[13px] text-white sm:max-w-[70%]">
+                            <div className="mb-0.5 text-[11px] text-white/75">
+                              {t("Хариу тайлбар (Админ)")}
                             </div>
-                            <p className="whitespace-pre-wrap leading-relaxed text-xs">
+                            <p className="whitespace-pre-wrap break-words leading-relaxed">
                               {selectedMedegdel.tailbar}
                             </p>
                             {selectedMedegdel.repliedAt && (
-                              <div className="flex items-center justify-end gap-1 mt-1 text-[10px] text-brand">
-                                <CheckCircle className="w-3 h-3" />
+                              <div className="mt-1 flex items-center justify-end gap-1 text-[11px] text-white/75">
+                                <CheckCircle className="h-3 w-3" />
                                 <span>{moment(selectedMedegdel.repliedAt).format("YYYY-MM-DD HH:mm")}</span>
                               </div>
                             )}
                           </div>
                         </div>
                       )}
-                  </>
+                  </div>
                 )}
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Chat Input Bar - DOCKED STICKY AT BOTTOM */}
-              <div className="shrink-0 p-2.5 sm:p-3 border-t border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]">
+              {/* Composer (sticky bottom) */}
+              <div className="shrink-0 border-t border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
                 <input
                   ref={replyImageInputRef}
                   type="file"
@@ -1568,48 +1706,54 @@ export default function SanalKhuselt() {
                   }}
                 />
 
-                {/* Previews for attached image or voice note */}
-                {(replyImage || replyVoiceBlob) && (
-                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                {(replyImage || replyVoiceBlob || recording) && (
+                  <div className="mb-2 flex flex-wrap items-center gap-2">
                     {replyImage && (
-                      <span className="inline-flex items-center gap-1.5 rounded-xl bg-theme/10 border border-theme/30 px-2.5 py-1 text-xs text-brand">
-                        <ImagePlus className="w-3.5 h-3.5" />
-                        <span className="truncate max-w-[140px]">{replyImage.name}</span>
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-theme/10 py-1 pl-2.5 pr-1 text-xs text-brand">
+                        <ImagePlus className="h-3.5 w-3.5" />
+                        <span className="max-w-[160px] truncate">{replyImage.name}</span>
                         <button
                           type="button"
                           onClick={() => setReplyImage(null)}
-                          className="text-danger hover:text-danger ml-1 cursor-pointer"
+                          className="rounded-full p-0.5 hover:bg-theme/15 cursor-pointer"
+                          aria-label={t("Хасах")}
                         >
-                          ×
+                          <X className="h-3 w-3" />
                         </button>
                       </span>
                     )}
                     {replyVoiceBlob && (
-                      <span className="inline-flex items-center gap-1.5 rounded-xl bg-theme/10 border border-theme/30 px-2.5 py-1 text-xs text-brand">
-                        <Mic className="w-3.5 h-3.5" />
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-theme/10 py-1 pl-2.5 pr-1 text-xs text-brand">
+                        <Mic className="h-3.5 w-3.5" />
                         <span>{t("Дуу")}</span>
                         <button
                           type="button"
                           onClick={() => setReplyVoiceBlob(null)}
-                          className="text-danger hover:text-danger ml-1 cursor-pointer"
+                          className="rounded-full p-0.5 hover:bg-theme/15 cursor-pointer"
+                          aria-label={t("Хасах")}
                         >
-                          ×
+                          <X className="h-3 w-3" />
                         </button>
+                      </span>
+                    )}
+                    {recording && (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-danger/10 px-2.5 py-1 text-xs text-danger">
+                        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-danger" />
+                        {t("Бичиж байна...")}
                       </span>
                     )}
                   </div>
                 )}
 
-                {/* Input Controls Row */}
-                <div className="flex gap-2 items-center">
+                <div className="flex items-end gap-2">
                   <button
                     type="button"
                     onClick={() => replyImageInputRef.current?.click()}
                     disabled={replySending}
-                    className="h-9 w-9 rounded-xl border border-[color:var(--surface-border)] flex items-center justify-center text-[color:var(--muted-text)] hover:text-brand hover:bg-[color:var(--surface-hover)] disabled:opacity-50 transition cursor-pointer shrink-0"
+                    className={iconBtn}
                     title={t("Зураг хавсаргах")}
                   >
-                    <ImagePlus className="w-4 h-4" />
+                    <ImagePlus className="h-4 w-4" />
                   </button>
 
                   {!recording ? (
@@ -1617,26 +1761,32 @@ export default function SanalKhuselt() {
                       type="button"
                       onClick={startRecording}
                       disabled={replySending}
-                      className="h-9 w-9 rounded-xl border border-[color:var(--surface-border)] flex items-center justify-center text-[color:var(--muted-text)] hover:text-brand hover:bg-[color:var(--surface-hover)] disabled:opacity-50 transition cursor-pointer shrink-0"
+                      className={iconBtn}
                       title={t("Дуу бичих")}
                     >
-                      <Mic className="w-4 h-4" />
+                      <Mic className="h-4 w-4" />
                     </button>
                   ) : (
                     <button
                       type="button"
                       onClick={stopRecording}
-                      className="h-9 w-9 rounded-xl border border-danger bg-danger/10 text-danger flex items-center justify-center transition animate-pulse cursor-pointer shrink-0"
+                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-danger/40 bg-danger/10 text-danger cursor-pointer"
                       title={t("Зогсоох")}
                     >
-                      <Square className="w-4 h-4" />
+                      <Square className="h-3.5 w-3.5" />
                     </button>
                   )}
 
-                    <input
-                      type="text"
+                  <div className="flex min-h-9 flex-1 items-center rounded-[10px] border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] px-3 shadow-[var(--ctl-shadow)] transition focus-within:border-theme focus-within:shadow-[var(--ctl-focus-ring)]">
+                    <textarea
+                      rows={1}
                       value={replyInput}
-                      onChange={(e) => setReplyInput(e.target.value)}
+                      onChange={(e) => {
+                        setReplyInput(e.target.value);
+                        const el = e.currentTarget;
+                        el.style.height = "auto";
+                        el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+                      }}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && !e.shiftKey) {
                           e.preventDefault();
@@ -1644,34 +1794,40 @@ export default function SanalKhuselt() {
                         }
                       }}
                       placeholder={t("Хариу бичих...")}
-                      className="flex-1 h-9 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-3 text-xs text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] focus:outline-none focus:ring-1 focus:ring-theme transition"
+                      className="block max-h-[120px] w-full resize-none bg-transparent py-2 text-[13px] leading-5 text-[color:var(--panel-text)] outline-none placeholder:text-[color:var(--muted-text)]"
                       disabled={replySending}
                     />
-
-                    <button
-                      type="button"
-                      onClick={sendAdminReply}
-                      disabled={
-                        replySending ||
-                        (!replyInput.trim() && !replyImage && !replyVoiceBlob)
-                      }
-                      className="h-9 w-9 rounded-xl bg-theme hover:bg-theme text-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed transition shadow-xs cursor-pointer shrink-0 active:scale-95"
-                      title={t("Илгээх")}
-                    >
-                      <Send className="w-4 h-4" />
-                    </button>
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={sendAdminReply}
+                    disabled={
+                      replySending ||
+                      (!replyInput.trim() && !replyImage && !replyVoiceBlob)
+                    }
+                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-theme !text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer sm:w-auto sm:gap-1.5 sm:px-4 sm:text-[13px] sm:font-medium"
+                    title={t("Илгээх")}
+                  >
+                    {replySending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                    <span className="hidden sm:inline">{t("Илгээх")}</span>
+                  </button>
                 </div>
-              </>
-            ) : (
-            <div className="flex-1 flex flex-col items-center justify-center text-theme gap-4">
-              <div className="w-20 h-20 bg-[color:var(--surface-hover)] rounded-full flex items-center justify-center">
-                <MessageSquare className="w-10 h-10 opacity-50" />
               </div>
-              <p>{t("Дэлгэрэнгүй харах мэдээллийг сонгоно уу")}</p>
+            </>
+          ) : (
+            <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center text-[color:var(--muted-text)]">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[color:var(--surface-hover)]">
+                <MessageSquare className="h-6 w-6 opacity-60" />
+              </div>
+              <p className="text-[13px]">{t("Дэлгэрэнгүй харах мэдээллийг сонгоно уу")}</p>
             </div>
           )}
-        </motion.div>
+        </div>
       </div>
     </div>
 
@@ -1681,21 +1837,21 @@ export default function SanalKhuselt() {
         onClick={() => setImagePreviewUrl(null)}
       >
         <div
-          className="relative max-w-[90vw] max-h-[90vh] flex items-center justify-center"
+          className="relative flex max-h-[90vh] max-w-[90vw] items-center justify-center"
           onClick={(e) => e.stopPropagation()}
         >
           <img
             src={imagePreviewUrl}
             alt="Зураг"
-            className="max-w-full max-h-[85vh] rounded-2xl shadow-2xl object-contain"
+            className="max-h-[85vh] max-w-full rounded-2xl object-contain shadow-2xl"
           />
           <button
             type="button"
             onClick={() => setImagePreviewUrl(null)}
-            className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full w-8 h-8 flex items-center justify-center transition-colors"
+            className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white transition-colors hover:bg-black/70"
             aria-label="Хаах"
           >
-            ✕
+            <X className="h-4 w-4" />
           </button>
         </div>
       </div>,

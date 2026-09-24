@@ -4,6 +4,7 @@ import React, { useMemo } from "react";
 import formatNumber from "tools/function/formatNumber";
 import { StandardTable } from "@/components/ui/StandardTable";
 import { Tooltip } from "antd";
+import Table from "@/components/ui/table";
 
 export interface AvlagiinNasjiltItem {
   _id: string;
@@ -236,55 +237,35 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
     },
   ], [page, pageSize]);
 
-  const footer = useMemo(() => {
+  // Хүснэгтийн доорх тусдаа dashboard-ын оронд баганатайгаа зэрэгцсэн хөл мөр
+  const summary = () => {
     if (!totals || data.length === 0) return null;
-    const finalTotals = totals;
-
+    const dun = (v?: number) => (Number(v) ? formatNumber(Number(v), 2) : "");
+    const nuduud: { key: string; utga: React.ReactNode; cls?: string }[] = [
+      { key: "undsenDun", utga: dun(totals.undsenDun) },
+      { key: "khungulult", utga: dun(totals.khungulult) || "-", cls: "text-brand" },
+      { key: "tulsunDun", utga: dun(totals.tulsunDun) },
+      { key: "uldegdel", utga: dun(totals.uldegdel), cls: totals.uldegdel > 0 ? "text-danger" : "" },
+      { key: "avlagiinKhonog", utga: totals.avlagiinKhonog ? `${totals.avlagiinKhonog} (их)` : "" },
+      { key: "p0_30", utga: dun(totals.p0_30) },
+      { key: "p31_60", utga: dun(totals.p31_60) },
+      { key: "p61_90", utga: dun(totals.p61_90) },
+      { key: "p91_120", utga: dun(totals.p91_120) },
+      { key: "p120plus", utga: dun(totals.p120plus) },
+    ];
     return (
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-10 gap-4 p-4 bg-[color:var(--surface-hover)] rounded-md border border-[color:var(--surface-border)] font-sans">
-        <div className="flex flex-col">
-          <span className="text-[color:var(--muted-text)] uppercase tracking-wider">Нийт Төлөх</span>
-          <span className="text-[color:var(--panel-text)] dark:text-white font-medium">{formatNumber(finalTotals.undsenDun, 2)}₮</span>
-        </div>
-        <div className="flex flex-col">
-          <span className="text-[color:var(--muted-text)] uppercase tracking-wider">Нийт Хөнгөлөлт</span>
-          <span className="text-brand font-medium">{formatNumber(finalTotals.khungulult || 0, 2)}₮</span>
-        </div>
-        <div className="flex flex-col">
-          <span className="text-[color:var(--muted-text)] uppercase tracking-wider">Нийт Төлсөн</span>
-          <span className="text-[color:var(--panel-text)] dark:text-white font-medium">{formatNumber(finalTotals.tulsunDun, 2)}₮</span>
-        </div>
-        <div className="flex flex-col">
-          <span className="text-[color:var(--muted-text)] uppercase tracking-wider">Нийт Үлдэгдэл</span>
-          <span className="text-[color:var(--panel-text)] dark:text-white font-medium">{formatNumber(finalTotals.uldegdel, 2)}₮</span>
-        </div>
-        <div className="flex flex-col">
-          <span className="text-[color:var(--muted-text)] uppercase tracking-wider">Хамгийн их хоног</span>
-          <span className="text-[color:var(--panel-text)] dark:text-white font-medium">{finalTotals.avlagiinKhonog ?? 0}</span>
-        </div>
-        <div className="flex flex-col">
-          <span className="text-[color:var(--muted-text)] uppercase tracking-wider">0-30</span>
-          <span className="text-[color:var(--panel-text)]">{formatNumber(finalTotals.p0_30, 2)}₮</span>
-        </div>
-        <div className="flex flex-col">
-          <span className="text-[color:var(--muted-text)] uppercase tracking-wider">31-60</span>
-          <span className="text-[color:var(--panel-text)]">{formatNumber(finalTotals.p31_60, 2)}₮</span>
-        </div>
-        <div className="flex flex-col">
-          <span className="text-[color:var(--muted-text)] uppercase tracking-wider">61-90</span>
-          <span className="text-[color:var(--panel-text)]">{formatNumber(finalTotals.p61_90, 2)}₮</span>
-        </div>
-        <div className="flex flex-col">
-          <span className="text-[color:var(--muted-text)] uppercase tracking-wider">91-120</span>
-          <span className="text-[color:var(--panel-text)]">{formatNumber(finalTotals.p91_120, 2)}₮</span>
-        </div>
-        <div className="flex flex-col">
-          <span className="text-[color:var(--muted-text)] uppercase tracking-wider">120+</span>
-          <span className="text-[color:var(--panel-text)]">{formatNumber(finalTotals.p120plus, 2)}₮</span>
-        </div>
-      </div>
+      <Table.Summary.Row>
+        <Table.Summary.Cell index={0} colSpan={3} fixed="left" className="text-[12px]">
+          Нийт {data.length} мөр
+        </Table.Summary.Cell>
+        {nuduud.map((n, i) => (
+          <Table.Summary.Cell key={n.key} index={i + 1} align="center" className={`tabular-nums ${n.cls || ""}`}>
+            {n.utga}
+          </Table.Summary.Cell>
+        ))}
+      </Table.Summary.Row>
     );
-  }, [totals, data.length]);
+  };
 
   return (
     <>
@@ -303,7 +284,7 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
             }
           : false
       }
-      footer={footer}
+      summary={summary}
     />
     </>
   );

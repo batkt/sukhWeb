@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
-import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
+import FilterDatePicker from "@/components/ui/FilterDatePicker";
 import { Tag, notification } from "antd";
 import { getDefaultDateRange } from "@/lib/utils";
 import Aos from "aos";
@@ -194,17 +194,15 @@ export default function SanalKhuselt() {
           transition={{ duration: 0.5 }}
           className="flex w-1/3 flex-col space-y-4 bg-transparent"
         >
-          <StandardDatePicker
-            isRange={true}
+          <FilterDatePicker
             format="YYYY-MM-DD"
-            placeholder={`${t("Эхлэх")} – ${t("Дуусах")}`}
             value={ekhlekhOgnoo}
             onChange={(dates) =>
               setEkhlekhOgnoo(
                 (dates || [null, null]) as [string | null, string | null]
               )
             }
-            className="!h-8 !bg-transparent !backdrop-blur-md !border !border-[color:var(--surface-border)] !text-[color:var(--panel-text)] rounded-xl"
+            className="w-full sm:w-[260px]"
           />
 
           <div className="flex-1 overflow-y-auto pr-2 mt-4 space-y-3">

@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import FilterSelect from "@/components/ui/FilterSelect";
+import FilterDatePicker from "@/components/ui/FilterDatePicker";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useBuilding } from "@/context/BuildingContext";
 import { useAuth } from "@/lib/useAuth";
@@ -9,7 +11,6 @@ import { useGereeJagsaalt } from "@/lib/useGeree";
 import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
 import uilchilgee from "@/lib/uilchilgee";
 import useSWR from "swr";
-import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { StandardPagination } from "@/components/ui/StandardTable";
 import { useSearch } from "@/context/SearchContext";
 import { getDefaultDateRange } from "@/lib/utils";
@@ -599,11 +600,12 @@ export default function OrlogoAvlagaPage() {
       const toot = String(
         it?._toot || it?.toot || it?.medeelel?.toot || "",
       ).toLowerCase();
-      if (!toot.includes(f.toot.toLowerCase())) return false;
+      // Dropdown-оос сонгодог тул яг таарахыг шалгана («1» нь «10»-г барихгүй)
+      if (toot !== f.toot.toLowerCase()) return false;
     }
     if (f.davkhar) {
       const dv = String(it?._davkhar || it?.davkhar || "").toLowerCase();
-      if (!dv.includes(f.davkhar.toLowerCase())) return false;
+      if (dv !== f.davkhar.toLowerCase()) return false;
     }
     if (f.gereeniiDugaar) {
       const gd = String(
@@ -648,6 +650,23 @@ export default function OrlogoAvlagaPage() {
     () => deduplicatedResidents.filter(matchesFilters),
     [deduplicatedResidents, debouncedFilters, searchTerm],
   );
+
+  // Тоот / давхрын dropdown сонголтууд — ачаалсан оршин суугчдаас
+  const { tootSongolt, davkharSongolt } = useMemo(() => {
+    const tootSet = new Set<string>();
+    const davkharSet = new Set<string>();
+    deduplicatedResidents.forEach((it: any) => {
+      const toot = String(it?._toot || it?.toot || it?.medeelel?.toot || "").trim();
+      const dv = String(it?._davkhar || it?.davkhar || "").trim();
+      if (toot) tootSet.add(toot);
+      if (dv) davkharSet.add(dv);
+    });
+    const erembe = (a: string, b: string) => a.localeCompare(b, undefined, { numeric: true });
+    return {
+      tootSongolt: Array.from(tootSet).sort(erembe).map((v) => ({ value: v, label: v })),
+      davkharSongolt: Array.from(davkharSet).sort(erembe).map((v) => ({ value: v, label: v })),
+    };
+  }, [deduplicatedResidents]);
 
   const displayList = useMemo(() => {
     if (activeTab === "tulult") return paidList;
@@ -886,7 +905,7 @@ export default function OrlogoAvlagaPage() {
       <div className="print-only mb-6">
         <div className="flex justify-between items-start border-b-2 border-[color:var(--surface-border)] pb-4">
           <div>
-            <h1 className="text-2xl font-bold uppercase">
+            <h1 className="text-2xl font-medium ">
               {activeTab === "tulult"
                 ? "Орлогын товчоо тайлан"
                 : activeTab === "avlaga"
@@ -910,20 +929,20 @@ export default function OrlogoAvlagaPage() {
 
         <div className="grid grid-cols-2 gap-8 mt-6">
           <div className="border p-3 rounded">
-            <p className="text-xs text-[color:var(--muted-text)] uppercase font-semibold">
+            <p className="text-xs text-[color:var(--muted-text)] font-medium">
               Нийт орлого
             </p>
             {/* Хүснэгтийн хөлтэй ижил эх сурвалж — хайлт/шүүлт хийсэн үед
                 дээд, доод дүн зөрөхгүй байх ёстой */}
-            <p className="text-xl font-bold text-theme">
+            <p className="text-xl font-medium text-theme">
               {formatNumber(localTotals.paid, 2)} ₮
             </p>
           </div>
           <div className="border p-3 rounded">
-            <p className="text-xs text-[color:var(--muted-text)] uppercase font-semibold">
+            <p className="text-xs text-[color:var(--muted-text)] font-medium">
               Нийт үлдэгдэл
             </p>
-            <p className="text-xl font-bold text-danger">
+            <p className="text-xl font-medium text-danger">
               {formatNumber(localTotals.finalBalance, 2)} ₮
             </p>
           </div>
@@ -964,48 +983,39 @@ export default function OrlogoAvlagaPage() {
       {/* Dashboard Totals removed as requested */}
 
       <div className="flex flex-wrap items-center gap-2 no-print">
-        <div
+        <FilterDatePicker
           id="orlogo-avlaga-date"
-          className="btn-minimal flex h-9 w-full items-center px-3 sm:w-[280px]"
+          value={dateRange}
+          onChange={setDateRange}
+          className="w-full sm:w-[260px]"
+        />
+        <label
+          className={`filter-field w-full sm:w-[260px] ${filters.orshinSuugch ? "is-active" : ""}`}
         >
-          <StandardDatePicker
-            isRange={true}
-            value={dateRange}
-            onChange={setDateRange}
-            allowClear
-            placeholder="Огноо сонгох"
-            classNames={{
-              root: "!h-full !w-full",
-              input:
-                "text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
-            }}
+          <span className="filter-field-label">Оршин суугч</span>
+          <input
+            type="text"
+            value={filters.orshinSuugch}
+            onChange={(e) => setFilters((p) => ({ ...p, orshinSuugch: e.target.value }))}
+            placeholder="Овог, нэрээр хайх"
           />
-        </div>
-        {[
-          {
-            key: "orshinSuugch",
-            label: "Оршин суугч",
-            placeholder: "Овог, нэрээр хайх",
-            width: "sm:w-[260px]",
-          },
-          { key: "toot", label: "Тоот", placeholder: "Бүгд", width: "sm:w-[130px]" },
-          { key: "davkhar", label: "Давхар", placeholder: "Бүгд", width: "sm:w-[130px]" },
-        ].map(({ key, label, placeholder, width }) => (
-          <label
-            key={key}
-            className={`filter-field w-full ${width} ${(filters as any)[key] ? "is-active" : ""}`}
-          >
-            <span className="filter-field-label">{label}</span>
-            <input
-              type="text"
-              value={(filters as any)[key]}
-              onChange={(e) =>
-                setFilters((p) => ({ ...p, [key]: e.target.value }))
-              }
-              placeholder={placeholder}
-            />
-          </label>
-        ))}
+        </label>
+        <FilterSelect
+          label="Тоот"
+          value={filters.toot}
+          onChange={(v) => setFilters((p) => ({ ...p, toot: v }))}
+          options={tootSongolt}
+          searchable
+          searchPlaceholder="Тоот хайх..."
+          className="max-w-[200px]"
+        />
+        <FilterSelect
+          label="Давхар"
+          value={filters.davkhar}
+          onChange={(v) => setFilters((p) => ({ ...p, davkhar: v }))}
+          options={davkharSongolt}
+          className="max-w-[200px]"
+        />
       </div>
 
       {/* ── Table ───────────────────────────────────────────────── */}

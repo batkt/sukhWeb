@@ -150,7 +150,7 @@ export default function EbarimtKhevlekhModal({
                 <Printer className="w-4 h-4 text-[color:var(--muted-text)]" />
               </div>
               <div>
-                <h3 className="text-[13px] font-semibold text-[color:var(--panel-text)] dark:text-white">
+                <h3 className="text-[13px] font-medium text-[color:var(--panel-text)] dark:text-white">
                   И-баримт дахин хэвлэх
                 </h3>
                 <p className="text-[11px] text-[color:var(--muted-text)]">
@@ -170,7 +170,7 @@ export default function EbarimtKhevlekhModal({
           <div className="overflow-y-auto flex-1 min-h-0 bg-[color:var(--surface-hover)] p-4">
             <div className="ebarimt-print bg-[color:var(--surface-bg)] text-black mx-auto w-full max-w-[300px] px-4 py-4 font-[family-name:var(--font-mono)] text-[11px] leading-[1.5]">
               <div className="text-center">
-                <p className="text-[12px] font-bold uppercase">
+                <p className="text-[12px] font-medium ">
                   {baiguullagiinNer || "-"}
                 </p>
                 {b.merchantTin ? <p>ТТД: {b.merchantTin}</p> : null}
@@ -178,14 +178,14 @@ export default function EbarimtKhevlekhModal({
 
               <div className="my-2 border-t border-dashed border-black" />
 
-              <p className="text-center text-[12px] font-bold">
+              <p className="text-center text-[12px] font-medium">
                 ТӨЛБӨРИЙН БАРИМТ
               </p>
-              <p className="text-center font-bold tracking-wider">
+              <p className="text-center font-medium tracking-wider">
                 *** ДАХИН ХЭВЛЭСЭН ***
               </p>
               {butsaasan ? (
-                <p className="text-center font-bold tracking-wider">
+                <p className="text-center font-medium tracking-wider">
                   *** БУЦААГДСАН БАРИМТ ***
                 </p>
               ) : null}
@@ -238,7 +238,7 @@ export default function EbarimtKhevlekhModal({
 
               <div className="my-2 border-t border-dashed border-black" />
 
-              <div className="flex justify-between font-bold">
+              <div className="flex justify-between font-medium">
                 <span>НИЙТ ДҮН:</span>
                 <span>{formatNumber(niitDun, 2)}</span>
               </div>
@@ -256,13 +256,13 @@ export default function EbarimtKhevlekhModal({
               {ddtd ? (
                 <div className="break-all">
                   <p>ДДТД:</p>
-                  <p className="font-bold">{ddtd}</p>
+                  <p className="font-medium">{ddtd}</p>
                 </div>
               ) : null}
               {lottery ? (
                 <div className="mt-1">
                   <p>Сугалааны дугаар:</p>
-                  <p className="text-[14px] font-bold tracking-widest">
+                  <p className="text-[14px] font-medium tracking-widest">
                     {lottery}
                   </p>
                 </div>
@@ -286,13 +286,13 @@ export default function EbarimtKhevlekhModal({
           <div className="no-print px-5 py-3.5 border-t border-[color:var(--surface-border)] dark:border-white/[0.06] flex items-center justify-end gap-2 flex-shrink-0">
             <button
               onClick={onClose}
-              className="h-9 px-4 rounded-[30px] border border-[color:var(--surface-border)] text-[color:var(--muted-text)] text-[11px] font-semibold hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/5 transition-all"
+              className="h-9 px-4 rounded-[30px] border border-[color:var(--surface-border)] text-[color:var(--muted-text)] text-[11px] font-medium hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/5 transition-all"
             >
               Хаах
             </button>
             <button
               onClick={() => window.print()}
-              className="h-9 px-4 rounded-[30px] bg-theme hover:bg-theme active:bg-theme text-white text-[11px] font-semibold shadow-sm transition-all inline-flex items-center gap-2"
+              className="h-9 px-4 rounded-[30px] bg-theme hover:bg-theme active:bg-theme text-white text-[11px] font-medium shadow-sm transition-all inline-flex items-center gap-2"
             >
               <Printer className="w-3.5 h-3.5" />
               Хэвлэх

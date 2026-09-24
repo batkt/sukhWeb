@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import FilterSelect from "@/components/ui/FilterSelect";
+import FilterDatePicker from "@/components/ui/FilterDatePicker";
 import { useAuth } from "@/lib/useAuth";
 import * as tailanApi from "@/lib/useTailan";
-import TusgaiZagvar from "components/selectZagvar/tusgaiZagvar";
 import PageSongokh from "components/selectZagvar/pageSongokh";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { getErrorMessage } from "@/lib/uilchilgee";
-import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { useBuilding } from "@/context/BuildingContext";
 import IconTextButton from "@/components/ui/IconTextButton";
 import { getDefaultDateRange } from "@/lib/utils";
@@ -214,23 +214,12 @@ export default function TransactionsPage() {
       <PrintStyles />
       {/* Гарчиг нь толгой хэсэгт («Тайлан — …») байгаа тул давхарлахгүй */}
       <div className="flex flex-wrap items-center gap-2 no-print">
-        <div
+        <FilterDatePicker
           id="reports-date"
-          className="btn-minimal flex h-9 w-full items-center px-3 sm:w-[280px]"
-        >
-          <StandardDatePicker
-            isRange={true}
-            value={dateRange}
-            onChange={setDateRange}
-            allowClear
-            placeholder="Огноо сонгох"
-            classNames={{
-              root: "!h-full !w-full",
-              input:
-                "text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
-            }}
-          />
-        </div>
+          value={dateRange}
+          onChange={setDateRange}
+          className="w-full sm:w-[260px]"
+        />
 
         {locationFilters.map(({ key, label }) => (
           <label
@@ -244,31 +233,30 @@ export default function TransactionsPage() {
               onChange={(e) =>
                 setFilters({ ...filters, [key]: e.target.value })
               }
-              placeholder="Бүгд"
+             
             />
           </label>
         ))}
 
-        {/* TusgaiZagvar өөрөө `.btn-minimal` зурдаг тул зөвхөн өндөр/өргөнийг нь өгнө */}
-        <TusgaiZagvar
-          className="h-9 w-[150px] text-[13px]"
+        <FilterSelect
+          label="Төрөл"
           value={type}
           onChange={setType}
           options={[
-            { value: "", label: "Бүх төрөл" },
             { value: "income", label: "Орлого" },
             { value: "expense", label: "Зарлага" },
           ]}
+          className="max-w-[220px]"
         />
-        <TusgaiZagvar
-          className="h-9 w-[160px] text-[13px]"
+        <FilterSelect
+          label="Төлөв"
           value={status}
           onChange={setStatus}
           options={[
-            { value: "", label: "Бүх төлөв" },
             { value: "approved", label: "Батлагдсан" },
             { value: "pending", label: "Хүлээгдэж буй" },
           ]}
+          className="max-w-[220px]"
         />
 
         <label
@@ -312,7 +300,6 @@ export default function TransactionsPage() {
             type="text"
             value={bank}
             onChange={(e) => setBank(e.target.value)}
-            placeholder="Бүгд"
           />
         </label>
 
@@ -335,10 +322,10 @@ export default function TransactionsPage() {
               setPage(1);
             }}
           />
-          <ExcelButton label="CSV татах" onClick={exportCsv} />
+          <ExcelButton onClick={exportCsv} />
           {/* <button
             onClick={handlePrint}
-            className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
+            className="btn-minimal inline-flex h-9 shrink-0 items-center gap-2 !px-3 text-[13px]"
           >
             <Printer className="w-4 h-4 text-theme" />
             Хэвлэх

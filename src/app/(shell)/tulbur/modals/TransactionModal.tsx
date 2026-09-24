@@ -93,13 +93,13 @@ function DoubleYearMonthPicker({
               <button
                 type="button"
                 onClick={() => setStartYear((prev) => prev - 2)}
-                className="p-1.5 rounded-lg hover:bg-[color:var(--surface-hover)] text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] transition-colors font-bold text-xs flex items-center gap-1"
+                className="p-1.5 rounded-lg hover:bg-[color:var(--surface-hover)] text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] transition-colors font-medium text-xs flex items-center gap-1"
                 title="Өмнөх 2 он"
               >
                 <ChevronsLeft className="w-4 h-4" />
               </button>
 
-              <div className="flex-1 grid grid-cols-2 text-center font-bold text-[color:var(--panel-text)] text-sm">
+              <div className="flex-1 grid grid-cols-2 text-center font-medium text-[color:var(--panel-text)] text-sm">
                 <div>{startYear}</div>
                 <div>{startYear + 1}</div>
               </div>
@@ -107,7 +107,7 @@ function DoubleYearMonthPicker({
               <button
                 type="button"
                 onClick={() => setStartYear((prev) => prev + 2)}
-                className="p-1.5 rounded-lg hover:bg-[color:var(--surface-hover)] text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] transition-colors font-bold text-xs flex items-center gap-1"
+                className="p-1.5 rounded-lg hover:bg-[color:var(--surface-hover)] text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] transition-colors font-medium text-xs flex items-center gap-1"
                 title="Дараах 2 он"
               >
                 <ChevronsRight className="w-4 h-4" />
@@ -130,7 +130,7 @@ function DoubleYearMonthPicker({
                         py-2 px-1 text-center text-xs font-medium rounded-xl transition-all
                         ${
                           isSelected
-                            ? "bg-theme text-white font-bold shadow-sm"
+                            ? "bg-theme text-white font-medium shadow-sm"
                             : "text-[color:var(--panel-text)] hover:bg-theme/10 dark:hover:bg-theme/40 hover:text-brand"
                         }
                       `}
@@ -155,7 +155,7 @@ function DoubleYearMonthPicker({
                         py-2 px-1 text-center text-xs font-medium rounded-xl transition-all
                         ${
                           isSelected
-                            ? "bg-theme text-white font-bold shadow-sm"
+                            ? "bg-theme text-white font-medium shadow-sm"
                             : "text-[color:var(--panel-text)] hover:bg-theme/10 dark:hover:bg-theme/40 hover:text-brand"
                         }
                       `}
@@ -263,14 +263,14 @@ const KhungulultiinMur = ({
   onts?: boolean;
 }) => (
   <div className="flex flex-col">
-    <span className="text-[10px] uppercase tracking-wider text-brand/70">
+    <span className="text-[11px] text-brand/70">
       {ner}
     </span>
     <span
       className={
         onts
-          ? "text-[13px] font-bold tabular-nums text-brand"
-          : "text-[13px] font-semibold tabular-nums text-brand"
+          ? "text-[13px] font-medium tabular-nums text-brand"
+          : "text-[13px] font-medium tabular-nums text-brand"
       }
     >
       {utga}₮
@@ -805,7 +805,7 @@ export default function TransactionModal({
                 onPointerDown={(e) => dragControls.start(e)}
                 className="px-6 py-3 border-b border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] flex items-center justify-between cursor-move select-none"
               >
-                <div className="text-sm font-semibold text-[color:var(--panel-text)]">
+                <div className="text-sm font-medium text-[color:var(--panel-text)]">
                   Гүйлгээ хийх
                 </div>
                 <button
@@ -823,11 +823,11 @@ export default function TransactionModal({
                 {/* Resident Info Card */}
                 {resident && (
                   <div className="bg-[color:var(--surface-hover)]/50 rounded-2xl p-3 border border-[color:var(--surface-border)] flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[color:var(--theme)]/10 flex items-center justify-center text-[color:var(--theme)] text-sm font-bold">
+                    <div className="w-10 h-10 rounded-full bg-[color:var(--theme)]/10 flex items-center justify-center text-[color:var(--theme)] text-sm font-medium">
                       {resident?.toot || "?"}
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-[color:var(--panel-text)]">
+                      <p className="text-sm font-medium text-[color:var(--panel-text)]">
                         {resident?.ovog || ""} {resident?.ner}
                       </p>
                       <p className="text-xs text-[color:var(--muted-text)]">
@@ -840,7 +840,7 @@ export default function TransactionModal({
                 {/* Transaction Type Segmented Control */}
                 <div>
                   <label className="block text-xs font-medium text-[color:var(--panel-text)] mb-1.5">
-                    ГҮЙЛГЭЭНИЙ ТӨРӨЛ
+                    Гүйлгээний төрөл
                   </label>
                   <div
                     className={`grid ${
@@ -882,7 +882,7 @@ export default function TransactionModal({
                         }}
                         disabled={isProcessing}
                         className={`
-                      relative py-1.5 px-2 text-xs font-semibold rounded-2xl transition-all duration-200
+                      relative py-1.5 px-2 text-xs font-medium rounded-2xl transition-all duration-200
                       ${
                         transactionType === option.value
                           ? option.value === "khungulult"
@@ -901,7 +901,7 @@ export default function TransactionModal({
                       жагсаалт нь өсөх учир эхнээсээ сонгогч хэлбэрээр. */}
                   {transactionType === "busad" && (
                     <div className="mt-2">
-                      <label className="block text-[11px] font-medium text-[color:var(--muted-text)] mb-1">
+                      <label className="block text-xs font-medium text-[color:var(--muted-text)] mb-1">
                         Дэд төрөл
                       </label>
                       <select
@@ -947,8 +947,8 @@ export default function TransactionModal({
                   <div className="bg-theme/70 border border-theme/30 text-brand rounded-2xl p-4 space-y-4/30">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1.5">
-                        <label className="block text-xs font-semibold uppercase tracking-wider text-brand">
-                          ХӨНГӨЛӨХ САР
+                        <label className="block text-xs font-medium text-brand">
+                          Хөнгөлөх сар
                         </label>
                         <DoubleYearMonthPicker
                           value={discountMonth}
@@ -958,8 +958,8 @@ export default function TransactionModal({
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="block text-xs font-semibold uppercase tracking-wider text-brand">
-                          ХӨНГӨЛӨЛТИЙН ХЭЛБЭР
+                        <label className="block text-xs font-medium text-brand">
+                          Хөнгөлөлтийн хэлбэр
                         </label>
                         <select
                           value={discountType}
@@ -981,7 +981,7 @@ export default function TransactionModal({
                           өмнө нь "ХӨНГӨЛӨХ ДҮН / ХӨНГӨЛӨХ ХУВЬ" гэж хоёуланг
                           нь зэрэг бичдэг тул аль нь хүчинтэй нь ойлгомжгүй
                           байв. */}
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-brand">
+                      <label className="block text-xs font-medium text-brand">
                         {discountType === "percent"
                           ? "ХӨНГӨЛӨХ ХУВЬ"
                           : "ХӨНГӨЛӨХ ДҮН"}
@@ -1001,9 +1001,9 @@ export default function TransactionModal({
                           }
                           placeholder={discountType === "percent" ? "0" : "0.00"}
                           disabled={isProcessing}
-                          className="w-full rounded-2xl border border-theme/30 bg-[color:var(--surface-bg)] py-3 pl-4 pr-12 text-right text-lg font-semibold tabular-nums tracking-wide text-brand transition-all focus:border-theme focus:outline-none focus:ring-2 focus:ring-theme/30 disabled:opacity-60"
+                          className="w-full rounded-2xl border border-theme/30 bg-[color:var(--surface-bg)] py-3 pl-4 pr-12 text-right text-lg font-medium tabular-nums tracking-wide text-brand transition-all focus:border-theme focus:outline-none focus:ring-2 focus:ring-theme/30 disabled:opacity-60"
                         />
-                        <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-base font-semibold text-brand/70">
+                        <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-base font-medium text-brand/70">
                           {discountType === "percent" ? "%" : "₮"}
                         </span>
                       </div>
@@ -1066,7 +1066,7 @@ export default function TransactionModal({
                             }}
                             disabled={isProcessing}
                             placeholder="0.00"
-                            className="w-full px-3 py-2.5 pr-[38px] border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-right tracking-wide text-lg font-semibold"
+                            className="w-full px-3 py-2.5 pr-[38px] border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-right tracking-wide text-lg font-medium"
                           />
                           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[color:var(--muted-text)] text-xs pointer-events-none select-none font-medium" />
                         </div>
@@ -1131,7 +1131,7 @@ export default function TransactionModal({
                               animate={{ opacity: 1, x: 0 }}
                               onDoubleClick={fillAmountWithBalance}
                               title="Хоёр товшиж дүнг оруулах"
-                              className={`text-[10px] font-bold px-2 py-0.5 rounded-2xl border cursor-pointer transition-all select-none ${
+                              className={`text-[11px] font-medium px-2 py-0.5 rounded-2xl border cursor-pointer transition-all select-none ${
                                 isFetchingBalance
                                   ? "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)] border-[color:var(--surface-border)] animate-pulse"
                                   : "bg-warning/10 text-warning border-warning/30 hover:bg-warning/10 active:scale-95"
@@ -1163,7 +1163,7 @@ export default function TransactionModal({
                           }}
                           disabled={isProcessing}
                           placeholder="0.00"
-                          className="w-full px-3 py-2.5 pr-[38px] border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-right tracking-wide text-lg font-semibold"
+                          className="w-full px-3 py-2.5 pr-[38px] border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-right tracking-wide text-lg font-medium"
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[color:var(--muted-text)] text-xs pointer-events-none select-none font-medium"></span>
                       </div>

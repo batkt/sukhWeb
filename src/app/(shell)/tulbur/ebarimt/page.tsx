@@ -1,13 +1,14 @@
 "use client";
 
 import ExcelButton from "@/components/ui/ExcelButton";
+import FilterSelect from "@/components/ui/FilterSelect";
+import FilterDatePicker from "@/components/ui/FilterDatePicker";
 import { useMemo, useState, useEffect, useCallback } from "react";
 import useSWR from "swr";
 import { Spin } from "antd";
 import toast from "react-hot-toast";
 import Button from "@/components/ui/Button";
 import { getDefaultDateRange } from "@/lib/utils";
-import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { EbarimtTable, EbarimtItem } from "./EbarimtTable";
 import EbarimtKhevlekhModal from "./EbarimtKhevlekhModal";
 import moment from "moment";
@@ -640,7 +641,7 @@ export default function Ebarimt() {
                   }`}
                 >
                   <div
-                    className={`text-2xl font-semibold leading-tight ${
+                    className={`text-2xl font-medium leading-tight ${
                       "danger" in stat && stat.danger ? "text-danger" : "text-[color:var(--panel-text)]"
                     }`}
                   >
@@ -658,42 +659,30 @@ export default function Ebarimt() {
           <div className="rounded-2xl">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                <div
+                <FilterDatePicker
                   id="ebarimt-date"
-                  className="btn-minimal h-9 w-full sm:w-[300px] flex items-center px-3"
-                >
-                  <StandardDatePicker
-                    isRange={true}
-                    value={ekhlekhOgnoo ?? undefined}
-                    onChange={(v) => {
+                  value={ekhlekhOgnoo ?? undefined}
+                  onChange={(v) => {
                       const [s, e] = (v || [null, null]) as [any, any];
                       setEkhlekhOgnoo([
                         s ? new Date(s.valueOf()) : null,
                         e ? new Date(e.valueOf()) : null,
                       ]);
                     }}
-                    allowClear
-                    placeholder="Огноо сонгох"
-                    classNames={{
-                      root: "!h-full !w-full",
-                      input:
-                        "text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
-                    }}
-                  />
-                </div>
+                  placeholder="Огноо сонгох"
+                  className="w-full sm:w-[260px]"
+                />
 
-                <label className={`filter-field w-full sm:w-[200px] ${uilchilgeeAvi ? "is-active" : ""}`}>
-                  <span className="filter-field-label">Үйлчилгээ</span>
-                  <select
-                    value={uilchilgeeAvi ?? ""}
-                    onChange={(e) => setUilchilgeeAvi(e.target.value || undefined)}
-                    className="min-w-0 flex-1 cursor-pointer bg-transparent text-[13px] font-medium text-[color:var(--panel-text)] focus:outline-none"
-                  >
-                    <option value="">Бүгд</option>
-                    <option value="zogsool">Зогсоол</option>
-                    <option value="sokh">СӨХ</option>
-                  </select>
-                </label>
+                <FilterSelect
+                  label="Үйлчилгээ"
+                  value={uilchilgeeAvi ?? ""}
+                  onChange={(v) => setUilchilgeeAvi(v || undefined)}
+                  options={[
+                    { value: "zogsool", label: "Зогсоол" },
+                    { value: "sokh", label: "СӨХ" },
+                  ]}
+                  className="max-w-[240px]"
+                />
               </div>
               <div className="flex flex-row gap-3 w-full lg:w-auto justify-end">
                 <ExcelButton id="ebarimt-excel-btn" onClick={exceleerTatya} />

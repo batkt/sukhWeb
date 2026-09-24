@@ -10,7 +10,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
+import FilterDatePicker from "@/components/ui/FilterDatePicker";
 import {
   Plus,
   Trash2,
@@ -639,54 +639,21 @@ export default function SanalAsuulgaPage() {
     const kpiuud: {
       label: string;
       value: number;
-      shuult: "bugd" | "idevkhtei" | "duussan" | null;
+      shuult: typeof filterTuluv | null;
       dot?: string;
     }[] = [
+      // Картууд нь шүүлтүүр болно — тусдаа таб хэрэггүй
       { label: "Нийт асуулга", value: niitToo, shuult: "bugd" },
       { label: "Явагдаж байна", value: idevkhteiToo, shuult: "idevkhtei", dot: "bg-warning" },
       { label: "Дууссан", value: duussanToo, shuult: "duussan", dot: "bg-success" },
+      { label: "Ноорог", value: nootsToo, shuult: "noots", dot: "bg-[color:var(--muted-text)]" },
       { label: "Нийт хариулт", value: niitKhariultToo, shuult: null },
     ];
 
-    const tabuud: { key: typeof filterTuluv; label: string; too: number }[] = [
-      { key: "bugd", label: "Бүгд", too: niitToo },
-      { key: "idevkhtei", label: "Явагдаж байна", too: idevkhteiToo },
-      { key: "duussan", label: "Дууссан", too: duussanToo },
-      { key: "noots", label: "Ноорог", too: nootsToo },
-    ];
-
     return (
-      <div className="w-full space-y-4 p-4 text-[color:var(--panel-text)] sm:p-6">
-        {/* Toolbar */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <label className="filter-field w-full sm:w-[280px]">
-            <Search className="h-4 w-4 shrink-0 text-[color:var(--muted-text)]" />
-            <input
-              aria-label="Санал асуулга хайх"
-              value={hailtUg}
-              onChange={(e) => setHailtUg(e.target.value)}
-              placeholder="Санал асуулга хайх..."
-            />
-            {hailtUg && (
-              <button
-                type="button"
-                onClick={() => setHailtUg("")}
-                aria-label="Хайлт цэвэрлэх"
-                className="shrink-0 rounded p-0.5 text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </label>
-
-          <button type="button" onClick={shineUusgeye} className={btnPrimary}>
-            <Plus className="h-4 w-4" />
-            Шинэ асуулга үүсгэх
-          </button>
-        </div>
-
+      <div className="flex w-full flex-col gap-3 pb-14 text-[color:var(--panel-text)]">
         {/* KPI */}
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
           {kpiuud.map((k) => {
             const idevkhtei =
               k.shuult !== null && k.shuult !== "bugd" && filterTuluv === k.shuult;
@@ -711,7 +678,7 @@ export default function SanalAsuulgaPage() {
                     : "border-[color:var(--ctl-border)]"
                 } ${k.shuult ? "cursor-pointer hover:border-[color:var(--ctl-border-hover)]" : ""}`}
               >
-                <div className="text-2xl font-semibold leading-tight text-[color:var(--panel-text)]">
+                <div className="text-2xl font-medium leading-tight text-[color:var(--panel-text)]">
                   {k.value}
                 </div>
                 <div className="mt-1 flex items-center gap-1.5 text-xs text-[color:var(--muted-text)]">
@@ -723,41 +690,39 @@ export default function SanalAsuulgaPage() {
           })}
         </div>
 
-        {/* Tabs */}
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-1 overflow-x-auto">
-            {tabuud.map((t) => {
-              const idevkhtei = filterTuluv === t.key;
-              return (
-                <button
-                  key={t.key}
-                  type="button"
-                  onClick={() => setFilterTuluv(t.key)}
-                  className={`inline-flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-[10px] px-4 text-[13px] transition-colors ${
-                    idevkhtei
-                      ? "bg-theme/15 font-medium text-brand"
-                      : "text-[color:var(--muted-text)] hover:bg-[color:var(--ctl-hover-bg)] hover:text-[color:var(--panel-text)]"
-                  }`}
-                >
-                  {t.label}
-                  <span
-                    className={`rounded-md px-1.5 text-[11px] ${
-                      idevkhtei
-                        ? "bg-theme/15 text-brand"
-                        : "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]"
-                    }`}
-                  >
-                    {t.too}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+        {/* Toolbar */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <label className="filter-field w-full sm:w-[280px]">
+            <Search className="h-4 w-4 shrink-0 text-[color:var(--muted-text)]" />
+            <input
+              aria-label="Санал асуулга хайх"
+              value={hailtUg}
+              onChange={(e) => setHailtUg(e.target.value)}
+              placeholder="Санал асуулга хайх..."
+            />
+            {hailtUg && (
+              <button
+                type="button"
+                onClick={() => setHailtUg("")}
+                aria-label="Хайлт цэвэрлэх"
+                className="shrink-0 rounded p-0.5 text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </label>
+
+          <div className="ml-auto flex items-center gap-3">
           {!achaalj && (hailtUg || filterTuluv !== "bugd") && (
             <span className="text-xs text-[color:var(--muted-text)]">
               {shuugdsanJagsaalt.length} илэрц
             </span>
           )}
+          <button type="button" onClick={shineUusgeye} className={btnPrimary}>
+            <Plus className="h-4 w-4" />
+            Шинэ асуулга үүсгэх
+          </button>
+          </div>
         </div>
 
         {/* Content */}
@@ -813,7 +778,7 @@ export default function SanalAsuulgaPage() {
                   className={`${cardCls} flex flex-col p-5 transition-colors hover:border-[color:var(--ctl-border-hover)]`}
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <h3 className="line-clamp-2 min-w-0 flex-1 text-[14px] font-semibold leading-snug text-[color:var(--panel-text)]">
+                    <h3 className="line-clamp-2 min-w-0 flex-1 text-[14px] font-medium leading-snug text-[color:var(--panel-text)]">
                       {a.garchig}
                     </h3>
                     <StatusBadge tuluv={a.tuluv} />
@@ -984,7 +949,7 @@ export default function SanalAsuulgaPage() {
         <div className="flex h-14 w-14 items-center justify-center rounded-full bg-success/10 text-success">
           <PartyPopper className="h-7 w-7" />
         </div>
-        <p className="text-[15px] font-semibold text-[color:var(--panel-text)]">
+        <p className="text-[15px] font-medium text-[color:var(--panel-text)]">
           Баярлалаа!
         </p>
         <p className="text-xs leading-5 text-[color:var(--muted-text)]">
@@ -1033,7 +998,7 @@ export default function SanalAsuulgaPage() {
 
           <div className="space-y-1">
             <h4
-              className={`text-[15px] font-semibold leading-snug ${
+              className={`text-[15px] font-medium leading-snug ${
                 garchig ? "text-[color:var(--panel-text)]" : "text-[color:var(--muted-text)]"
               }`}
             >
@@ -1240,7 +1205,7 @@ export default function SanalAsuulgaPage() {
               <ArrowLeft className="h-4 w-4" />
             </button>
             <div className="min-w-0">
-              <h1 className="truncate text-[16px] font-semibold text-[color:var(--panel-text)]">
+              <h1 className="truncate text-[16px] font-medium text-[color:var(--panel-text)]">
                 Шинэ санал асуулга үүсгэх
               </h1>
               <p className="text-xs text-[color:var(--muted-text)]">
@@ -1256,7 +1221,7 @@ export default function SanalAsuulgaPage() {
             {/* Info card */}
             <section className={`${cardCls} space-y-4 p-5`}>
               <div>
-                <h2 className="text-[14px] font-semibold text-[color:var(--panel-text)]">
+                <h2 className="text-[14px] font-medium text-[color:var(--panel-text)]">
                   Ерөнхий мэдээлэл
                 </h2>
                 <p className="mt-0.5 text-xs text-[color:var(--muted-text)]">
@@ -1324,18 +1289,15 @@ export default function SanalAsuulgaPage() {
                   Хугацаа
                 </label>
                 <div className="flex flex-wrap items-center gap-3">
-                  <div className="w-full sm:w-80">
-                    <StandardDatePicker
-                      isRange
-                      value={[ekhlekhOgnoo, duusakhOgnoo]}
-                      onChange={(_dates, dateStrings) => {
-                        setEkhlekhOgnoo(dateStrings[0] || "");
-                        setDuusakhOgnoo(dateStrings[1] || "");
-                      }}
-                      placeholder={["Эхлэх огноо", "Дуусах огноо"]}
-                      className="w-full !h-10 !rounded-[10px]"
-                    />
-                  </div>
+                  <FilterDatePicker
+                    value={[ekhlekhOgnoo || null, duusakhOgnoo || null]}
+                    onChange={(_dates, dateStrings) => {
+                      setEkhlekhOgnoo(dateStrings[0] || "");
+                      setDuusakhOgnoo(dateStrings[1] || "");
+                    }}
+                    placeholder={["Эхлэх огноо", "Дуусах огноо"]}
+                    className="w-full sm:w-[280px]"
+                  />
                   <span className="text-xs text-[color:var(--muted-text)]">
                     {uldsen !== null
                       ? uldsenTekst(uldsen)
@@ -1412,7 +1374,7 @@ export default function SanalAsuulgaPage() {
             <section className={`${cardCls} space-y-4 p-5`}>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <h2 className="text-[14px] font-semibold text-[color:var(--panel-text)]">
+                  <h2 className="text-[14px] font-medium text-[color:var(--panel-text)]">
                     Асуултууд
                   </h2>
                   <p className="mt-0.5 text-xs text-[color:var(--muted-text)]">
@@ -1466,21 +1428,41 @@ export default function SanalAsuulgaPage() {
                         >
                           <GripVertical className="h-4 w-4" />
                         </span>
-                        <span className="flex h-7 min-w-7 items-center justify-center rounded-lg bg-theme/15 px-1.5 text-xs font-semibold text-brand">
+                        <span className="flex h-7 min-w-7 items-center justify-center rounded-lg bg-theme/15 px-1.5 text-xs font-medium text-brand">
                           {i + 1}
                         </span>
-                        <select
-                          value={a.turul}
-                          onChange={(e) =>
-                            asuultZasya(i, { turul: e.target.value as AsuultiinTurul })
-                          }
+                        {/* Асуултын төрөл — 3 сонголт тул dropdown биш шууд товч */}
+                        <div
+                          role="radiogroup"
                           aria-label="Асуултын төрөл"
-                          className="ml-auto h-9 cursor-pointer rounded-[10px] border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] px-3 text-[13px] text-[color:var(--panel-text)] focus:border-theme focus:outline-none focus:ring-2 focus:ring-theme/20"
+                          className="ml-auto inline-flex h-9 items-center gap-0.5 rounded-[10px] border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] p-0.5"
                         >
-                          <option value="songolt">Нэг сонголттой</option>
-                          <option value="olonSongolt">Олон сонголттой</option>
-                          <option value="tekst">Чөлөөт текст хариулт</option>
-                        </select>
+                          {(
+                            [
+                              ["songolt", "Нэг сонголт"],
+                              ["olonSongolt", "Олон сонголт"],
+                              ["tekst", "Текст"],
+                            ] as [AsuultiinTurul, string][]
+                          ).map(([v, lbl]) => (
+                            <button
+                              key={v}
+                              type="button"
+                              role="radio"
+                              aria-checked={a.turul === v}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                asuultZasya(i, { turul: v });
+                              }}
+                              className={`h-full rounded-lg px-2.5 text-[12px] transition-colors ${
+                                a.turul === v
+                                  ? "bg-theme/15 text-brand"
+                                  : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+                              }`}
+                            >
+                              {lbl}
+                            </button>
+                          ))}
+                        </div>
                         <button
                           type="button"
                           onClick={(e) => {
@@ -1701,7 +1683,7 @@ export default function SanalAsuulgaPage() {
             <div className={`${cardCls} space-y-4 p-4`}>
               <div className="flex items-center justify-between gap-2">
                 <div>
-                  <h2 className="text-[14px] font-semibold text-[color:var(--panel-text)]">
+                  <h2 className="text-[14px] font-medium text-[color:var(--panel-text)]">
                     Урьдчилан харах
                   </h2>
                   <p className="text-xs text-[color:var(--muted-text)]">
@@ -1739,7 +1721,7 @@ export default function SanalAsuulgaPage() {
                     {/* Dynamic island */}
                     <div className="absolute left-1/2 top-2 z-30 h-5 w-24 -translate-x-1/2 rounded-full bg-[color:var(--panel-text)] opacity-90" />
                     {/* Status bar */}
-                    <div className="flex shrink-0 items-center justify-between px-6 pb-1 pt-2.5 text-[10px] font-medium text-[color:var(--panel-text)]">
+                    <div className="flex shrink-0 items-center justify-between px-6 pb-1 pt-2.5 text-[11px] font-medium text-[color:var(--panel-text)]">
                       <span>09:41</span>
                       <span>5G</span>
                     </div>
@@ -1824,7 +1806,7 @@ export default function SanalAsuulgaPage() {
             </button>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-[16px] font-semibold text-[color:var(--panel-text)]">
+                <h1 className="text-[16px] font-medium text-[color:var(--panel-text)]">
                   {songogdsonAsuulga?.garchig}
                 </h1>
                 {songogdsonAsuulga && <StatusBadge tuluv={songogdsonAsuulga.tuluv} />}
@@ -1866,7 +1848,7 @@ export default function SanalAsuulgaPage() {
           {dunKpi.map((k) => (
             <div key={k.label} className={`${cardCls} px-5 py-4`}>
               <div
-                className={`font-semibold leading-tight text-[color:var(--panel-text)] ${
+                className={`font-medium leading-tight text-[color:var(--panel-text)] ${
                   k.small ? "text-[15px] leading-8" : "text-2xl"
                 }`}
               >
@@ -1901,7 +1883,7 @@ export default function SanalAsuulgaPage() {
                 return (
                   <section key={a.asuultiinId} className={`${cardCls} space-y-4 p-5`}>
                     <div className="flex items-start gap-3">
-                      <span className="flex h-7 min-w-7 shrink-0 items-center justify-center rounded-lg bg-theme/15 px-1.5 text-xs font-semibold text-brand">
+                      <span className="flex h-7 min-w-7 shrink-0 items-center justify-center rounded-lg bg-theme/15 px-1.5 text-xs font-medium text-brand">
                         {i + 1}
                       </span>
                       <div className="min-w-0 flex-1">
@@ -2000,7 +1982,7 @@ export default function SanalAsuulgaPage() {
             {/* Respondents */}
             <section className={`${cardCls} p-5 lg:col-span-5 xl:col-span-4`}>
               <div className="mb-3 flex items-center justify-between">
-                <h3 className="text-[14px] font-semibold text-[color:var(--panel-text)]">
+                <h3 className="text-[14px] font-medium text-[color:var(--panel-text)]">
                   Хариулсан оршин суугчид
                 </h3>
                 <span className="rounded-md bg-[color:var(--surface-hover)] px-1.5 text-xs text-[color:var(--muted-text)]">
@@ -2016,7 +1998,7 @@ export default function SanalAsuulgaPage() {
                 <div className="custom-scrollbar max-h-[560px] divide-y divide-[color:var(--ctl-border)] overflow-y-auto pr-1">
                   {khariultuud.map((k) => (
                     <div key={k._id} className="flex items-center gap-3 py-2.5">
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-theme/15 text-xs font-semibold text-brand">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-theme/15 text-xs font-medium text-brand">
                         {(k.orshinSuugchNer || "О").trim().charAt(0).toUpperCase()}
                       </span>
                       <div className="min-w-0 flex-1">

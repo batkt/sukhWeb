@@ -7,6 +7,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import FilterDatePicker from "@/components/ui/FilterDatePicker";
 import { StandardPagination } from "@/components/ui/StandardTable";
 import Table from "@/components/ui/table";
 import type { ColumnsType } from "@/components/ui/table";
@@ -52,7 +53,6 @@ import {
   Eye,
   Copy,
 } from "lucide-react";
-import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { useBuilding } from "@/context/BuildingContext";
 import {
   Chart as ChartJS,
@@ -1549,7 +1549,7 @@ export default function Khynalt() {
           const dun =
             typeof item.dun === "number" ? item.dun : medegdelDun(item.message);
           return (
-            <span className="font-semibold whitespace-nowrap text-brand">
+            <span className="font-medium whitespace-nowrap text-brand">
               {dun !== null && dun !== undefined
                 ? `${dun.toLocaleString()}₮`
                 : "—"}
@@ -1599,27 +1599,17 @@ export default function Khynalt() {
           <div className="flex flex-row items-center justify-between gap-4 mb-6 pr-4 flex-shrink-0 relative z-30">
             <div className="flex flex-row items-center gap-3 shrink-0">
               {/* Огноо сонгох */}
-              <div
+              <FilterDatePicker
                 id="khynalt-date"
-                className="btn-minimal h-[40px] w-[280px] sm:w-[300px] shrink-0 flex items-center px-3"
-              >
-                <StandardDatePicker
-                  isRange={true}
-                  value={dateRange}
-                  onChange={(_dates: any, dateStrings: any) => {
+                value={dateRange}
+                onChange={(_dates: any, dateStrings: any) => {
                     const [s, e] = (dateStrings ?? []) as [string?, string?];
                     setDateRange(s || e ? [s || null, e || null] : undefined);
                   }}
-                  format="YYYY-MM-DD"
-                  allowClear
-                  placeholder="Огноо сонгох"
-                  classNames={{
-                    root: "!h-full !w-full",
-                    input:
-                      "text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
-                  }}
-                />
-              </div>
+                format="YYYY-MM-DD"
+                placeholder="Огноо сонгох"
+                className="w-full sm:w-[260px]"
+              />
 
               {/* Барилгаар харьцуулах / сонгох Input */}
               {allBuildings.length > 0 && (
@@ -1628,7 +1618,7 @@ export default function Khynalt() {
                     type="button"
                     id="khynalt-building-compare"
                     onClick={() => setBuildingDropdownOpen((v) => !v)}
-                    className={`btn-minimal h-[40px] px-3.5 flex items-center gap-2 text-xs font-medium rounded-2xl transition-all border shrink-0 ${buildingFilterMode === "compare"
+                    className={`btn-minimal h-9 px-3 flex items-center gap-2 text-[13px] transition-all border shrink-0 ${buildingFilterMode === "compare"
                         ? "border-theme/40 bg-theme/10 text-brand shadow-sm"
                         : "border-[color:var(--panel-text)]/15 text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]/60"
                       }`}
@@ -1658,7 +1648,7 @@ export default function Khynalt() {
                       }`}
                     >
                       <div className="flex items-center justify-between pb-2 mb-2 border-b border-[color:var(--panel-text)]/10">
-                        <div className="flex items-center gap-1.5 text-xs font-semibold text-[color:var(--panel-text)]">
+                        <div className="flex items-center gap-1.5 text-xs font-medium text-[color:var(--panel-text)]">
                           <SlidersHorizontal className="w-3.5 h-3.5 text-brand" />
                           <span>Барилгын шүүлт & Харьцуулалт</span>
                         </div>
@@ -1677,7 +1667,7 @@ export default function Khynalt() {
                           type="button"
                           onClick={() => setBuildingFilterMode("single")}
                           className={`py-1 px-1.5 rounded-lg transition-all text-center truncate ${buildingFilterMode === "single"
-                              ? "bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] font-semibold shadow-sm"
+                              ? "bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] font-medium shadow-sm"
                               : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
                             }`}
                         >
@@ -1692,7 +1682,7 @@ export default function Khynalt() {
                             }
                           }}
                           className={`py-1 px-1.5 rounded-lg transition-all text-center truncate flex items-center justify-center gap-1 ${buildingFilterMode === "compare"
-                              ? "bg-theme text-white font-semibold shadow-sm"
+                              ? "bg-theme text-white font-medium shadow-sm"
                               : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
                             }`}
                         >
@@ -1703,7 +1693,7 @@ export default function Khynalt() {
                           type="button"
                           onClick={() => setBuildingFilterMode("all")}
                           className={`py-1 px-1.5 rounded-lg transition-all text-center truncate ${buildingFilterMode === "all"
-                              ? "bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] font-semibold shadow-sm"
+                              ? "bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] font-medium shadow-sm"
                               : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
                             }`}
                         >
@@ -1787,7 +1777,7 @@ export default function Khynalt() {
                                     <span className="truncate">{b.ner}</span>
                                   </div>
                                   {b.tootToo != null && (
-                                    <span className="text-[10px] text-[color:var(--muted-text)] shrink-0 ml-2">
+                                    <span className="text-[11px] text-[color:var(--muted-text)] shrink-0 ml-2">
                                       {b.tootToo} тоот
                                     </span>
                                   )}
@@ -1805,7 +1795,7 @@ export default function Khynalt() {
                                   setBuildingDropdownOpen(false);
                                 }}
                                 className={`w-full flex items-center justify-between p-2 rounded-xl text-xs transition-colors text-left ${isSingleSelected
-                                    ? "bg-theme/10 border border-theme/30 text-brand font-semibold"
+                                    ? "bg-theme/10 border border-theme/30 text-brand font-medium"
                                     : "hover:bg-[color:var(--surface-hover)]/60 text-[color:var(--panel-text)]"
                                   }`}
                               >
@@ -1829,10 +1819,10 @@ export default function Khynalt() {
                         compareBuildingIds.length > 0 && (
                           <div className="pt-2 mt-2 border-t border-[color:var(--panel-text)]/10">
                             <div className="flex items-center justify-between mb-1.5">
-                              <span className="text-[10px] font-medium uppercase tracking-wider text-[color:var(--muted-text)]">
+                              <span className="text-[11px] font-medium text-[color:var(--muted-text)]">
                                 Харьцуулалт
                               </span>
-                              <div className="flex items-center gap-2 text-[9px] text-[color:var(--muted-text)]">
+                              <div className="flex items-center gap-2 text-[11px] text-[color:var(--muted-text)]">
                                 <span className="flex items-center gap-1">
                                   <span className="w-2 h-2 rounded-sm bg-theme/70 inline-block" />
                                   Нэхэмж.
@@ -1932,7 +1922,7 @@ export default function Khynalt() {
               )}
             </div>
 
-            <h1 className="text-2xl font-bold text-[color:var(--panel-text)] leading-tight">
+            <h1 className="text-2xl font-medium text-[color:var(--panel-text)] leading-tight">
               Сайн байна уу{ajiltan?.ner ? `, ${ajiltan.ner}` : ""}
             </h1>
           </div>
@@ -2271,7 +2261,7 @@ export default function Khynalt() {
 
                   <div className="flex items-center gap-2">
                     {paymentTotal !== null && (
-                      <span className="text-xs px-2.5 py-1 rounded-2xl bg-theme/10 text-brand border border-theme/20 font-semibold whitespace-nowrap">
+                      <span className="text-xs px-2.5 py-1 rounded-2xl bg-theme/10 text-brand border border-theme/20 font-medium whitespace-nowrap">
                         {paymentTotal.toLocaleString()}₮
                       </span>
                     )}

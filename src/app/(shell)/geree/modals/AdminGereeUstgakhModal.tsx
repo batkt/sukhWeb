@@ -151,7 +151,7 @@ export default function AdminGereeUstgakhModal({
             <>
               <p className="text-sm text-[color:var(--muted-text)] leading-relaxed">
                 Дараах бичлэгүүд{" "}
-                <span className="font-semibold text-danger">
+                <span className="font-medium text-danger">
                   бүрмөсөн устана
                 </span>
                 . Энэ үйлдлийг буцаах боломжгүй.
@@ -176,7 +176,7 @@ export default function AdminGereeUstgakhModal({
                     className="rounded-xl border border-[color:var(--surface-border)] dark:border-white/10 p-3 text-center"
                   >
                     <Icon className="w-4 h-4 mx-auto text-[color:var(--muted-text)] mb-1.5" />
-                    <p className="text-lg font-semibold text-[color:var(--panel-text)] dark:text-white leading-none">
+                    <p className="text-lg font-medium text-[color:var(--panel-text)] dark:text-white leading-none">
                       {value}
                     </p>
                     <p className="text-[11px] text-[color:var(--muted-text)] mt-1">
@@ -188,7 +188,7 @@ export default function AdminGereeUstgakhModal({
 
               <div className="rounded-xl border border-theme/30 bg-theme/60 p-3">
                 <p className="text-xs text-brand leading-relaxed">
-                  <span className="font-semibold">{ezemshigch}</span> болон түүний
+                  <span className="font-medium">{ezemshigch}</span> болон түүний
                   бусад гэрээнд хүрэхгүй — зөвхөн энэ нэг цуцлагдсан гэрээ
                   устана. Устгасан бичлэг бүр «Устгасан түүх» рүү хуулбараар
                   бичигдэнэ.
@@ -196,7 +196,7 @@ export default function AdminGereeUstgakhModal({
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-[color:var(--muted-text)]">
+                <label className="block text-xs font-medium text-[color:var(--muted-text)]">
                   Баталгаажуулахын тулд{" "}
                   <span className="font-mono text-danger">
                     {BATALGAA}
@@ -220,7 +220,7 @@ export default function AdminGereeUstgakhModal({
             onClick={onClose}
             variant="ghost"
             disabled={ustgaj}
-            className="h-11 px-5 rounded-xl border border-[color:var(--surface-border)] dark:border-white/10"
+            className="h-9 px-4 rounded-[10px] text-[13px] border border-[color:var(--surface-border)] dark:border-white/10"
           >
             Болих
           </Button>
@@ -229,7 +229,7 @@ export default function AdminGereeUstgakhModal({
             variant="primary"
             isLoading={ustgaj}
             disabled={!bolomjtoi || batalgaa.trim().toUpperCase() !== BATALGAA}
-            className="h-11 px-6 rounded-xl !bg-danger hover:!bg-danger"
+            className="h-9 px-4 rounded-[10px] text-[13px] !bg-danger hover:!bg-danger"
           >
             Гэрээг устгах
           </Button>

@@ -1826,7 +1826,7 @@ export default function InvoiceModal({
             onPointerDown={(e) => dragControls.start(e)}
             className="px-6 py-4 flex justify-between items-center bg-[color:var(--surface-bg)] border-b border-[color:var(--surface-border)] no-print cursor-move select-none"
           >
-            <h2 className="text-xl font-bold text-theme dark:text-white">
+            <h2 className="text-xl font-medium text-theme dark:text-white">
               Нэхэмжлэлийн түүх
             </h2>
             <button
@@ -1884,7 +1884,7 @@ export default function InvoiceModal({
                       }`}
                     >
                       <div className="mb-1">
-                        <span className="text-sm font-bold text-theme dark:text-white block">
+                        <span className="text-sm font-medium text-theme dark:text-white block">
                           {inv.zagvar ||
                             inv.nekhemjlekhiinTurul ||
                             "Үндсэн загвар"}
@@ -1902,7 +1902,7 @@ export default function InvoiceModal({
                             {formatInvoiceOgnooMn(inv)}
                           </div>
                         </div>
-                        <span className="text-[11px] text-[color:var(--theme)] font-semibold shrink-0 text-right max-w-[50%] truncate">
+                        <span className="text-[11px] text-[color:var(--theme)] font-medium shrink-0 text-right max-w-[50%] truncate">
                           {nekhemjlekhiinTuukhSidebarAjiltanDisplay(
                             inv,
                             resident,
@@ -1971,7 +1971,7 @@ export default function InvoiceModal({
 
                       {/* Invoice Title */}
                       <div className="text-center mb-6">
-                        <h2 className="text-sm font-bold uppercase">
+                        <h2 className="text-sm font-medium ">
                           №{" "}
                           {selectedInvoice?.nekhemjlekhiinDugaar ||
                             invNumber(selectedInvoice)}
@@ -1982,7 +1982,7 @@ export default function InvoiceModal({
                       <div className="grid grid-cols-2 gap-12 mb-8">
                         {/* Sender (Нэхэмжлэгч) */}
                         <div className="space-y-1">
-                          <div className="font-bold text-[12px] mb-2 text-center  pb-1">
+                          <div className="font-medium text-[12px] mb-2 text-center  pb-1">
                             Нэхэмжлэгч:
                           </div>
                           <div className="grid grid-cols-[120px_1fr] gap-x-2">
@@ -2039,7 +2039,7 @@ export default function InvoiceModal({
 
                         {/* Payer (Төлөгч) */}
                         <div className="space-y-1">
-                          <div className="font-bold text-[12px] mb-2 text-center  pb-1">
+                          <div className="font-medium text-[12px] mb-2 text-center  pb-1">
                             Төлөгч:
                           </div>
                           <div className="grid grid-cols-[120px_1fr] gap-x-2">
@@ -2080,7 +2080,7 @@ export default function InvoiceModal({
                       <div className="border border-[color:var(--surface-border)] overflow-hidden mb-4">
                         <table className="w-full border-collapse">
                           <thead>
-                            <tr className="bg-[color:var(--surface-hover)]/50 border-b border-[color:var(--surface-border)] font-bold text-center">
+                            <tr className="bg-[color:var(--surface-hover)]/50 border-b border-[color:var(--surface-border)] font-medium text-center">
                               <td className="border-r border-[color:var(--surface-border)] py-2 px-1 w-8">
                                 №
                               </td>
@@ -2171,7 +2171,7 @@ export default function InvoiceModal({
                                       >
                                         Төлөх дүн
                                       </td>
-                                      <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right font-semibold text-theme dark:text-white">
+                                      <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right font-medium text-theme dark:text-white">
                                         {formatNumber(
                                           invoiceLedgerBreakdown.monthUldegdel,
                                           2,
@@ -2185,7 +2185,7 @@ export default function InvoiceModal({
                                       >
                                         Төлсөн дүн
                                       </td>
-                                      <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right font-semibold text-theme dark:text-white">
+                                      <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right font-medium text-theme dark:text-white">
                                         {formatNumber(
                                           invoiceLedgerBreakdown.monthTulsun,
                                           2,
@@ -2201,7 +2201,7 @@ export default function InvoiceModal({
                                         >
                                           Үлдэгдэл
                                         </td>
-                                        <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right font-semibold text-theme dark:text-white">
+                                        <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right font-medium text-theme dark:text-white">
                                           {formatNumber(
                                             invoiceLedgerBreakdown.balEndMonth,
                                             2,
@@ -2224,7 +2224,7 @@ export default function InvoiceModal({
                             <span className="w-24 text-[color:var(--panel-text)] ">
                               Хүлээн авсан:
                             </span>
-                            <span className="font-bold text-theme dark:text-white border-b border-[color:var(--surface-border)] min-w-[150px] inline-block text-center">
+                            <span className="font-medium text-theme dark:text-white border-b border-[color:var(--surface-border)] min-w-[150px] inline-block text-center">
                               /{resident?.ovog?.charAt(0)}. {resident?.ner}/
                             </span>
                           </div>
@@ -2232,7 +2232,7 @@ export default function InvoiceModal({
                             <span className="w-24 text-[color:var(--panel-text)] ">
                               Нэхэмжлэл бичсэн:
                             </span>
-                            <span className="font-bold text-theme dark:text-white border-b border-[color:var(--surface-border)] min-w-[150px] inline-block text-center">
+                            <span className="font-medium text-theme dark:text-white border-b border-[color:var(--surface-border)] min-w-[150px] inline-block text-center">
                               {nekhemjlekhiinBichsenDisplay(
                                 selectedInvoice as Record<string, unknown>,
                                 resident,

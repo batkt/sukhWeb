@@ -454,25 +454,38 @@ function SummaryRow({
   );
 }
 
+/** Нийлбэр мөрийн түгжсэн нүд хүснэгтийн баганатай ЯГ ижил зайд наалдахын тулд */
+const FixedOffsetsContext = React.createContext<
+  Record<number, { left?: string; right?: string }>
+>({});
+
 function SummaryCell({
   colSpan,
   align,
   className,
   children,
   fixed,
+  style,
+  leafIndex,
 }: {
+  /** Өгвөл тухайн навч баганын бодит sticky зайг хүснэгтээс авна */
+  leafIndex?: number;
   index?: number;
   colSpan?: number;
   align?: "left" | "right" | "center";
   className?: string;
   children?: React.ReactNode;
   fixed?: "left" | "right" | boolean;
+  /** Хэд хэдэн хөлдөөсөн нийлбэр нүдэнд `right`/`left` зайг гараар өгнө */
+  style?: React.CSSProperties;
 }) {
+  const offsets = React.useContext(FixedOffsetsContext);
   const side = fixed === true ? "left" : fixed || undefined;
+  const zai = leafIndex != null ? offsets[leafIndex] : undefined;
   return (
     <td
       colSpan={colSpan}
-      style={side ? { position: "sticky", [side]: 0, zIndex: 1 } : undefined}
+      style={side ? { position: "sticky", [side]: 0, zIndex: 1, ...zai, ...style } : style}
       className={cn(
         "px-2 py-1 text-[11px] leading-tight",
         align === "right" && "text-right",
@@ -538,8 +551,9 @@ function Table<T extends object = any>({
     const top = columns.map((c) => {
       if (c && c.children && c.children.length) {
         const colSpan = c.children.length;
+        const __groupStart = leafIndex;
         leafIndex += colSpan;
-        return { ...c, colSpan, rowSpan: 1 };
+        return { ...c, colSpan, rowSpan: 1, __groupStart, __groupEnd: leafIndex - 1 };
       }
       return { ...c, colSpan: 1, rowSpan: 2, __leafIndex: leafIndex++ };
     });
@@ -705,15 +719,46 @@ function Table<T extends object = any>({
     const minW = headerMinWidth(c);
     return minW != null ? `${minW}px` : widthCss(c.width);
   };
+  // Баганын БОДИТ өргөн (px). Хүснэгт савнаасаа нарийн үед хөтөч илүү зайг
+  // багануудад тараадаг тул зарласан өргөн бодит өргөнтэй таарахгүй — түгжсэн
+  // баганын `left/right` зайг зарласан өргөнөөр тооцвол нүднүүд хооронд
+  // зай/давхцал үүсч зураас хоёрдоно. Иймд навч толгойн нүдийг хэмжинэ.
+  const theadRef = useRef<HTMLTableSectionElement | null>(null);
+  const [boditUrgun, setBoditUrgun] = useState<number[] | null>(null);
+  const tugjsenBaganatai = leafColumns.some((c) => c.fixed);
+  useIsoLayoutEffect(() => {
+    const thead = theadRef.current;
+    if (!thead || !tugjsenBaganatai || typeof ResizeObserver === "undefined") return;
+    const khemjikh = () => {
+      const urgun: number[] = [];
+      thead.querySelectorAll<HTMLTableCellElement>("th[data-leaf]").forEach((th) => {
+        urgun[Number(th.dataset.leaf)] = th.getBoundingClientRect().width;
+      });
+      setBoditUrgun((umnukh) =>
+        umnukh &&
+        umnukh.length === urgun.length &&
+        umnukh.every((w, i) => Math.abs(w - (urgun[i] ?? 0)) < 0.5)
+          ? umnukh
+          : urgun,
+      );
+    };
+    khemjikh();
+    const ro = new ResizeObserver(khemjikh);
+    ro.observe(thead);
+    return () => ro.disconnect();
+  }, [leafColumns, tugjsenBaganatai]);
+
   const fixedOffsets = useMemo(() => {
     const offsets: Record<number, { left?: string; right?: string }> = {};
+    const urgunAvya = (c: ColumnType<T>, i: number) =>
+      boditUrgun && boditUrgun[i] ? `${boditUrgun[i]}px` : effectiveWidthCss(c);
     const leftParts: string[] = [];
     leafColumns.forEach((c, i) => {
       if (c.fixed === "left" || c.fixed === true) {
         offsets[i] = {
           left: leftParts.length ? `calc(${leftParts.join(" + ")})` : "0px",
         };
-        leftParts.push(effectiveWidthCss(c));
+        leftParts.push(urgunAvya(c, i));
       }
     });
     const rightParts: string[] = [];
@@ -723,11 +768,12 @@ function Table<T extends object = any>({
         offsets[i] = {
           right: rightParts.length ? `calc(${rightParts.join(" + ")})` : "0px",
         };
-        rightParts.push(effectiveWidthCss(c));
+        rightParts.push(urgunAvya(c, i));
       }
     }
     return offsets;
-  }, [leafColumns]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [leafColumns, boditUrgun]);
 
   // Нягт өндөр — өгөгдөл олон харагдах нь эрхэм. Мөрийн өндрийг нүдний
   // дотоод элемент (товч/шошго) тодорхойлохоос сэргийлж leading-tight өгнө.
@@ -764,12 +810,27 @@ function Table<T extends object = any>({
   const renderHeaderCell = (
     col: ColumnType<T>,
     i: number,
-    extra: { colSpan?: number; rowSpan?: number; leafIndex?: number } = {},
+    extra: {
+      colSpan?: number;
+      rowSpan?: number;
+      leafIndex?: number;
+      groupStart?: number;
+      groupEnd?: number;
+    } = {},
   ) => {
     const leafIndex = extra.leafIndex != null ? extra.leafIndex : i;
     const key = colKey(col, leafIndex);
     const sorted = shownOrder(col, leafIndex);
-    const fixed = fixedOffsets[leafIndex];
+    // Бүлгийн толгой (ж: «Нийт») нь навчны индексгүй — түгжих байрлалыг
+    // хүүхдүүдээс нь авна: баруун → сүүлийн хүүхэд, зүүн → эхний хүүхэд.
+    const fixed =
+      extra.groupStart != null && extra.groupEnd != null
+        ? col.fixed === "right"
+          ? fixedOffsets[extra.groupEnd]
+          : col.fixed
+            ? fixedOffsets[extra.groupStart]
+            : undefined
+        : fixedOffsets[leafIndex];
     const isGroup = (extra.colSpan || 0) > 1;
     const headerCellProps = col.onHeaderCell ? col.onHeaderCell(col) || {} : {};
     const groupWidth =
@@ -786,6 +847,7 @@ function Table<T extends object = any>({
     return (
       <th
         key={key}
+        data-leaf={isGroup || extra.leafIndex == null && headerRows ? undefined : leafIndex}
         colSpan={extra.colSpan}
         rowSpan={extra.rowSpan}
         onClick={col.sorter ? () => cycleSort(col, leafIndex) : undefined}
@@ -799,7 +861,7 @@ function Table<T extends object = any>({
           ...(headerCellProps.style || {}),
         }}
         className={cn(
-          "whitespace-nowrap bg-[hsl(var(--zt-muted))] text-center text-[11px] font-semibold text-[hsl(var(--zt-muted-fg))]",
+          "whitespace-nowrap bg-[hsl(var(--zt-muted))] text-center text-[11px] font-medium text-[hsl(var(--zt-muted-fg))]",
           headPad,
           col.sorter && "cursor-pointer select-none hover:text-[hsl(var(--zt-fg))]",
           bordered && "border-r border-[hsl(var(--zt-border))] last:border-r-0",
@@ -870,6 +932,7 @@ function Table<T extends object = any>({
     >
       {showHeader && (
         <thead
+          ref={theadRef}
           className={cn(
             "bg-[hsl(var(--zt-muted))]",
             effectiveY != null && "sticky top-0 z-10",
@@ -901,6 +964,8 @@ function Table<T extends object = any>({
                     colSpan: col.colSpan > 1 ? col.colSpan : undefined,
                     rowSpan: col.children ? undefined : 2,
                     leafIndex: col.__leafIndex,
+                    groupStart: col.__groupStart,
+                    groupEnd: col.__groupEnd,
                   }),
                 )}
               </tr>
@@ -1117,7 +1182,9 @@ function Table<T extends object = any>({
               "sticky bottom-0 z-10 bg-[hsl(var(--zt-card))]",
           )}
         >
-          {summary(pageRows)}
+          <FixedOffsetsContext.Provider value={fixedOffsets}>
+            {summary(pageRows)}
+          </FixedOffsetsContext.Provider>
         </tfoot>
       )}
     </table>

@@ -35,6 +35,7 @@ import ExcelImportModal from "./ExcelImportModal";
 import deleteMethod from "../../../../../tools/function/deleteMethod";
 import { getResidentToot } from "@/lib/residentDataHelper";
 import Button from "@/components/ui/Button";
+import ExcelButton from "@/components/ui/ExcelButton";
 import ZogsoolOrshinSuugchTable from "./ZogsoolOrshinSuugchTable";
 import { StandardPagination } from "@/components/ui/StandardTable";
 import TusgaiZagvar from "../../../../../components/selectZagvar/tusgaiZagvar";
@@ -53,7 +54,7 @@ const RealTimeClock = () => {
       <p className="text-[11px] font-normal text-black dark:text-white leading-none">
         {time.format("YYYY-MM-DD")}
       </p>
-      <p className="text-[9px] text-black dark:text-white uppercase mt-1.5 ">
+      <p className="text-[11px] text-black dark:text-white mt-1.5 ">
         {time.format("HH:mm:ss")}
       </p>
     </div>
@@ -333,7 +334,7 @@ export default function OrshinSuugch() {
                 <div className="relative p-5 overflow-hidden flex flex-col h-full justify-between">
                   <div
                     className={`text-3xl font-sans mb-1 transition-colors ${
-                      isActive ? "text-brand font-bold" : "text-[color:var(--panel-text)]"
+                      isActive ? "text-brand font-medium" : "text-[color:var(--panel-text)]"
                     }`}
                   >
                     {stat.count || "0"}
@@ -353,20 +354,17 @@ export default function OrshinSuugch() {
 
         {/* Table Actions */}
         <div className="flex items-center justify-end gap-3 px-1">
-          <Button
+          <ExcelButton
+            label="Excel"
+            title="Excel-ээр машин бүртгэх"
             onClick={() => setShowExcelImport(true)}
-            variant="ghost"
-            leftIcon={<FileSpreadsheet className="w-4 h-4" />}
-            className="h-11 px-6 rounded-xl uppercase text-[10px] border border-[color:var(--surface-border)] dark:border-white/10 font-sans"
-          >
-            Excel оруулах
-          </Button>
+          />
           <Button
             id="resident-new-btn"
             onClick={() => setShowRegistrationModal(true)}
             variant="primary"
             leftIcon={<Plus className="w-4 h-4" />}
-            className="h-11 px-8 rounded-xl uppercase text-[10px] shadow-lg shadow-theme/20 hover:scale-105 transition-transform font-sans"
+            className="h-9 px-4 rounded-[10px] text-[13px]"
           >
             Нэмэх
           </Button>
@@ -396,7 +394,7 @@ export default function OrshinSuugch() {
                     Устгахдаа итгэлтэй байна уу?
                   </h3>
                   <p className="text-[color:var(--muted-text)] mb-8 leading-relaxed">
-                    <span className="font-bold text-[color:var(--panel-text)]">
+                    <span className="font-medium text-[color:var(--panel-text)]">
                       {itemToDelete.ner || itemToDelete.orshinSuugchNer || "Энэ хэрэглэгч"}
                     </span>{" "}
                     -ийн мэдээллийг устгахыг зөвшөөрч байна уу?

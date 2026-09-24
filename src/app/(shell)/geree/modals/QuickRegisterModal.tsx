@@ -245,7 +245,7 @@ export default function QuickRegisterModal({
               </button>
             )}
             <div>
-              <p className="text-[10px] text-[color:var(--muted-text)] uppercase tracking-wider mb-0.5">
+              <p className="text-[11px] text-[color:var(--muted-text)] mb-0.5">
                 {step === 3 ? "Гэрээ сонгох" : `${unitTypeLabel} холбох`}
               </p>
               <h2 className="text-base text-[color:var(--panel-text)] flex items-center gap-1.5">
@@ -338,7 +338,7 @@ export default function QuickRegisterModal({
                   }
                   onClose();
                 }}
-                className="w-full py-2 px-4 rounded-xl border border-dashed border-theme/30 bg-theme/30 text-brand hover:bg-theme/10 dark:hover:bg-theme/20 font-semibold text-xs transition-all flex items-center justify-center gap-1.5"
+                className="w-full py-2 px-4 rounded-xl border border-dashed border-theme/30 bg-theme/30 text-brand hover:bg-theme/10 dark:hover:bg-theme/20 font-medium text-xs transition-all flex items-center justify-center gap-1.5"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Шинэ {selectedType === "orshinSuugch" ? "оршин суугч" : "харилцагч"} бүртгэх
@@ -384,7 +384,7 @@ export default function QuickRegisterModal({
                       className="w-full text-left p-3.5 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] hover:bg-[color:var(--surface-hover)] hover:border-[color:var(--surface-border)] transition-all flex items-center justify-between group disabled:opacity-50"
                     >
                       <div className="min-w-0 pr-3">
-                        <p className="text-sm font-semibold text-[color:var(--panel-text)] truncate group-hover:text-brand dark:group-hover:text-brand">
+                        <p className="text-sm font-medium text-[color:var(--panel-text)] truncate group-hover:text-brand dark:group-hover:text-brand">
                           {fullName}
                         </p>
                         <div className="flex flex-wrap items-center gap-x-3 mt-1.5 text-xs text-[color:var(--muted-text)]">
@@ -400,7 +400,7 @@ export default function QuickRegisterModal({
 
                       {/* Right indicator: resident's own apartment toot number(s) */}
                       {tootLabel && (
-                        <span className="shrink-0 text-[10px] px-2 py-0.5 rounded-full bg-theme/10 text-brand border border-theme/30">
+                        <span className="shrink-0 text-[11px] px-2 py-0.5 rounded-full bg-theme/10 text-brand border border-theme/30">
                           {tootLabel}
                         </span>
                       )}
@@ -447,7 +447,7 @@ export default function QuickRegisterModal({
                         </p>
                       </div>
                     </div>
-                    <span className="shrink-0 text-[10px] px-2.5 py-1 rounded-full bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]">
+                    <span className="shrink-0 text-[11px] px-2.5 py-1 rounded-full bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]">
                       Сонгох
                     </span>
                   </button>

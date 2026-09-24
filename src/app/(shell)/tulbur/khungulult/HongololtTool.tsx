@@ -1,6 +1,7 @@
 "use client";
 
 import ExcelButton from "@/components/ui/ExcelButton";
+import FilterDatePicker from "@/components/ui/FilterDatePicker";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import { ModalPortal } from "../../../../../components/shell/ModalPortal";
@@ -1071,7 +1072,7 @@ export default function HongololtTool({
         width: 70,
         align: "center" as const,
         render: (v: any) => (
-          <span className="font-semibold text-[color:var(--panel-text)]">
+          <span className="font-medium text-[color:var(--panel-text)]">
             {v || "—"}
           </span>
         ),
@@ -1115,7 +1116,7 @@ export default function HongololtTool({
         width: 110,
         align: "right" as const,
         render: (v: any) => (
-          <span className="tabular-nums whitespace-nowrap font-semibold text-brand">
+          <span className="tabular-nums whitespace-nowrap font-medium text-brand">
             {fmt2(Math.abs(v || 0))}
           </span>
         ),
@@ -1276,7 +1277,7 @@ export default function HongololtTool({
                       }`}
                     >
                       {label}
-                      <span className={`rounded-full px-1.5 text-[10px] ${selectMode === v ? "bg-white/20" : "bg-[color:var(--surface-hover)]"}`}>
+                      <span className={`rounded-full px-1.5 text-[11px] ${selectMode === v ? "bg-white/20" : "bg-[color:var(--surface-hover)]"}`}>
                         {too}
                       </span>
                     </button>
@@ -1433,7 +1434,7 @@ export default function HongololtTool({
               </div>
               <div className="flex justify-between">
                 <span className="text-[color:var(--muted-text)]">Нийт хөнгөлөгдсөн дүн:</span>
-                <span className="font-semibold text-brand">{fmt(totalDun)}₮</span>
+                <span className="font-medium text-brand">{fmt(totalDun)}₮</span>
               </div>
             </div>
 
@@ -1503,15 +1504,13 @@ export default function HongololtTool({
             {/* Toolbar */}
             <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-[color:var(--surface-border)] shrink-0 bg-[color:var(--surface-bg)] flex-wrap">
               <div className="flex items-center gap-2.5 flex-wrap">
-                <div className="w-64 h-[36px]">
-                  <StandardDatePicker
-                    isRange
-                    value={
+                <FilterDatePicker
+                  value={
                       histDateRange[0] && histDateRange[1]
                         ? [histDateRange[0], histDateRange[1]]
                         : undefined
                     }
-                    onChange={(_: any, dateStrings: [string, string]) => {
+                  onChange={(_: any, dateStrings: [string, string]) => {
                       if (dateStrings && Array.isArray(dateStrings) && (dateStrings[0] || dateStrings[1])) {
                         setHistDateRange([dateStrings[0] || null, dateStrings[1] || null]);
                       } else {
@@ -1519,12 +1518,10 @@ export default function HongololtTool({
                       }
                       setHistPage(1);
                     }}
-                    format="YYYY-MM-DD"
-                    placeholder={["Эхлэх огноо", "Дуусах огноо"]}
-                    allowClear
-                    className="w-full !rounded-xl text-xs"
-                  />
-                </div>
+                  format="YYYY-MM-DD"
+                  placeholder={["Эхлэх огноо", "Дуусах огноо"]}
+                  className="w-full sm:w-[260px]"
+                />
                 <div className="w-40">
                   <input
                     type="text"
@@ -1684,7 +1681,7 @@ export default function HongololtTool({
                   <Tag className="w-4 h-4 text-brand" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-base text-[color:var(--panel-text)] dark:text-white leading-tight">
+                  <h3 className="font-medium text-base text-[color:var(--panel-text)] dark:text-white leading-tight">
                     Хөнгөлөлт
                   </h3>
                   <p className="text-xs text-[color:var(--muted-text)]">

@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import FilterSelect from "@/components/ui/FilterSelect";
+import FilterDatePicker from "@/components/ui/FilterDatePicker";
 import { ChevronDown, FileDown, FileUp } from "lucide-react";
 import ExcelButton from "@/components/ui/ExcelButton";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
@@ -12,10 +14,8 @@ import Button from "@/components/ui/Button";
 import { useSocket } from "@/context/SocketContext";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useSearch } from "@/context/SearchContext";
-import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { useAuth } from "@/lib/useAuth";
 import { DANS_ENDPOINT } from "@/lib/endpoints";
-import TusgaiZagvar from "../../../../../components/selectZagvar/tusgaiZagvar";
 import useJagsaalt from "@/lib/useJagsaalt";
 import uilchilgee from "@/lib/uilchilgee";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
@@ -61,6 +61,9 @@ export default function DansniiKhuulga() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { token, ajiltan, barilgiinId } = useAuth();
+  // Гүйлгээг Excel-ээр тестээр оруулах — зөвхөн тусгай хэрэглэгчид
+  // (backend-ийн BANK_EXCEL_TEST_KHEREGLEGCHID-тай ижил)
+  const excelTestErkhtei = String((ajiltan as any)?.nevtrekhNer || "") === "0707007";
   const socket = useSocket();
 
   useEffect(() => {
@@ -798,32 +801,27 @@ export default function DansniiKhuulga() {
           </div>
 
           {/* Шүүлтүүр — нэгдсэн `.btn-minimal` загвар (globals.css); үлдэгдэл баруун талд */}
-          <div className="relative z-10 flex flex-wrap items-center gap-2">
-            <div id="dans-date" className="btn-minimal flex h-9 w-full items-center !px-2 sm:w-[260px]">
-              <StandardDatePicker
-                isRange={true}
-                value={ekhlekhOgnoo}
-                onChange={(_dates, dateStrings) => {
+          <div className="relative z-30 flex flex-wrap items-center gap-2">
+            <FilterDatePicker
+              id="dans-date"
+              value={ekhlekhOgnoo}
+              onChange={(_dates, dateStrings) => {
                   const [s, e] = (dateStrings || []) as [
                     string | undefined,
                     string | undefined,
                   ];
                   setEkhlekhOgnoo([s || null, e || null]);
                 }}
-                allowClear
-                placeholder="Огноо сонгох"
-                className="!h-full !px-1 text-[13px]"
-              />
-            </div>
-            <div id="dans-account" className="h-9 w-full sm:w-[200px]">
-              <TusgaiZagvar
+              placeholder="Огноо сонгох"
+              className="w-full sm:w-[260px]"
+            />
+            <div id="dans-account">
+              <FilterSelect
+                label={t("Данс")}
                 value={selectedDansId || ""}
                 onChange={(v) => setSelectedDansId(v || undefined)}
                 options={dansOptions}
-                placeholder={t("Данс")}
-                className="h-full w-full"
-                buttonClassName="!font-normal text-[13px] !px-3"
-                optionClassName="!px-3 !py-1.5 text-[13px] !font-normal"
+                className="max-w-[220px]"
               />
             </div>
             {/* Орлого / Зарлага */}
@@ -864,7 +862,7 @@ export default function DansniiKhuulga() {
                 ) : effectiveUldegdel !== null ? (
                   <>
                     <span className="text-xs text-[color:var(--muted-text)]">Дансны үлдэгдэл</span>
-                    <strong className="font-semibold text-[color:var(--panel-text)]">
+                    <strong className="font-medium text-[color:var(--panel-text)]">
                       {formatNumber(effectiveUldegdel, 2)}₮
                     </strong>
                   </>
@@ -874,6 +872,7 @@ export default function DansniiKhuulga() {
               </div>
             )}
             {/* Excel — гүйлгээг гараар оруулах (тест / API-гүй данс) */}
+            {excelTestErkhtei && (
             <div ref={excelMenuRef} className="relative">
               <ExcelButton
                 id="dans-excel-btn"
@@ -916,6 +915,7 @@ export default function DansniiKhuulga() {
                 }}
               />
             </div>
+            )}
             </div>
           </div>
 
@@ -972,7 +972,7 @@ export default function DansniiKhuulga() {
           <div className="flex w-full flex-col space-y-2 min-h-[500px] justify-between">
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <span className="text-sm font-semibold lg:text-xl">
+                <span className="text-sm font-medium lg:text-xl">
                   Гүйлгээний мэдээлэл
                 </span>
                 <span className=" text-sm font-mono">
@@ -989,7 +989,7 @@ export default function DansniiKhuulga() {
                 <div className="col-span-2 text-center lg:col-span-1">
                   {selectedGuilgee.date.split(" ")[0]}
                 </div>
-                <div className="col-span-2 text-right text-danger font-semibold lg:col-span-1">
+                <div className="col-span-2 text-right text-danger font-medium lg:col-span-1">
                   {formatNumber(selectedGuilgee.total)}
                 </div>
                 <div className="col-span-4 mt-2">
@@ -1033,7 +1033,7 @@ export default function DansniiKhuulga() {
                             setShowDropdown(false);
                           }}
                         >
-                          <div className="font-semibold truncate">{geree.toot ? `${geree.toot} тоот` : "-"}</div>
+                          <div className="font-medium truncate">{geree.toot ? `${geree.toot} тоот` : "-"}</div>
                           <div className="truncate">{geree.ner || `${geree.ovog || ""} ${geree.ner || ""}`}</div>
                           <div className="truncate text-[color:var(--muted-text)]">{geree.gereeniiDugaar || "-"}</div>
                         </div>
@@ -1063,7 +1063,7 @@ export default function DansniiKhuulga() {
 
                   {/* Төлбөрийн үлдэгдэл box */}
                   <div className="box grid w-full grid-cols-3 rounded-md border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] p-2 text-xs">
-                    <div className="col-span-3 font-semibold mb-1">Төлбөрийн үлдэгдэл</div>
+                    <div className="col-span-3 font-medium mb-1">Төлбөрийн үлдэгдэл</div>
                     <div className="text-danger font-medium">
                       {formatNumber(selectedContract.uldegdel || 0, 2)}
                     </div>
@@ -1087,13 +1087,13 @@ export default function DansniiKhuulga() {
               <div className="grid w-full grid-cols-2 divide-x-2 divide-[color:var(--surface-border)] px-2">
                 <div className="flex flex-col justify-between pr-2 lg:flex-row text-xs">
                   <div className="">Холбосон дүн:</div>
-                  <div className="text-right text-base font-bold text-brand">
+                  <div className="text-right text-base font-medium text-brand">
                     {formatNumber(selectedContract ? selectedGuilgee.total : 0)}
                   </div>
                 </div>
                 <div className="flex flex-col justify-between pl-2 lg:flex-row text-xs">
                   <div className="">Холбоогүй дүн:</div>
-                  <div className="text-right text-base font-bold text-danger">
+                  <div className="text-right text-base font-medium text-danger">
                     {formatNumber(selectedContract ? 0 : selectedGuilgee.total)}
                   </div>
                 </div>
@@ -1109,7 +1109,7 @@ export default function DansniiKhuulga() {
                     setSelectedContract(null);
                   }}
                   variant="secondary"
-                  className="rounded-md h-9 px-4 text-xs font-semibold"
+                  className="rounded-md h-9 px-4 text-xs font-medium"
                 >
                   Хаах
                 </Button>
@@ -1117,7 +1117,7 @@ export default function DansniiKhuulga() {
                   onClick={() => selectedContract && handleLinkTransaction(selectedContract._id)}
                   disabled={!selectedContract}
                   variant="primary"
-                  className="rounded-md h-9 px-4 text-xs font-semibold"
+                  className="rounded-md h-9 px-4 text-xs font-medium"
                 >
                   Хадгалах
                 </Button>

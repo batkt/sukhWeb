@@ -326,13 +326,13 @@ export default function Zogsool({
             {/* Quick Metrics Pills */}
             <div className="flex items-center gap-2 text-xs">
               <span style={{ borderRadius: '10px' }} className="px-3 py-1 bg-[color:var(--surface-hover)] text-[color:var(--panel-text)] dark:text-white border border-[color:var(--surface-border)] font-medium">
-                Нийт талбай: <span className="text-brand font-semibold">{totalRecords}</span>
+                Нийт талбай: <span className="text-brand font-medium">{totalRecords}</span>
               </span>
               <span style={{ borderRadius: '10px' }} className="px-3 py-1 bg-theme/10 text-brand border border-theme/30 font-medium">
-                Багтаамж: <span className="text-brand font-semibold">{totalCapacity} машин</span>
+                Багтаамж: <span className="text-brand font-medium">{totalCapacity} машин</span>
               </span>
               <span style={{ borderRadius: '10px' }} className="px-3 py-1 bg-theme/10 text-brand border border-theme/30 font-medium">
-                Хаалга: <span className="text-brand font-semibold">{totalGates}</span>
+                Хаалга: <span className="text-brand font-medium">{totalGates}</span>
               </span>
             </div>
           </div>

@@ -739,7 +739,7 @@ export default function GuilgeeTable({
                 0,
               );
               content = (
-                <span className="font-bold text-[color:var(--panel-text)] dark:!text-white">
+                <span className="font-medium text-[color:var(--panel-text)] dark:!text-white">
                   {formatNumber(total, 2)} ₮
                 </span>
               );
@@ -755,7 +755,7 @@ export default function GuilgeeTable({
                 0,
               );
               content = (
-                <span className="text-[color:var(--panel-text)] dark:!text-white font-bold">
+                <span className="text-[color:var(--panel-text)] dark:!text-white font-medium">
                   {formatNumber(total, 2)} ₮
                 </span>
               );
@@ -769,7 +769,7 @@ export default function GuilgeeTable({
                 0,
               );
               content = (
-                <span className="text-[color:var(--panel-text)] dark:!text-white font-bold">
+                <span className="text-[color:var(--panel-text)] dark:!text-white font-medium">
                   {formatNumber(total, 2)} ₮
                 </span>
               );
@@ -782,7 +782,7 @@ export default function GuilgeeTable({
                 0,
               );
               content = (
-                <span className="font-bold text-[color:var(--panel-text)] dark:!text-white">
+                <span className="font-medium text-[color:var(--panel-text)] dark:!text-white">
                   {formatNumber(totalBalance, 2)} ₮
                 </span>
               );
@@ -801,7 +801,7 @@ export default function GuilgeeTable({
               }, 0);
 
               content = (
-                <span className="font-bold text-[color:var(--panel-text)] dark:!text-white">
+                <span className="font-medium text-[color:var(--panel-text)] dark:!text-white">
                   {formatNumber(total, 2)} ₮
                 </span>
               );

@@ -173,10 +173,10 @@ export default function VehicleRegistrationModal({
           <div className="flex items-center gap-3">
             <Keyboard className="w-5 h-5 text-[color:var(--muted-text)]" />
             <div>
-              <h2 className="text-lg font-black text-[color:var(--panel-text)] dark:text-white tracking-tight">
+              <h2 className="text-lg font-medium text-[color:var(--panel-text)] dark:text-white tracking-tight">
                 Машин бүртгэх
               </h2>
-              <p className="text-[9px]  text-[color:var(--muted-text)] uppercase tracking-wider mt-0.5">
+              <p className="text-[11px] text-[color:var(--muted-text)] mt-0.5">
                 Зогсоолын системд гараар бүртгэх
               </p>
             </div>
@@ -194,7 +194,7 @@ export default function VehicleRegistrationModal({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Input: Plate Number */}
             <div className="space-y-1.5 md:col-span-2">
-              <label className="text-[9px]  text-[color:var(--muted-text)] uppercase tracking-wider ml-1">
+              <label className="text-xs text-[color:var(--muted-text)] ml-1">
                 Улсын дугаар
               </label>
               <div className="relative group">
@@ -202,7 +202,7 @@ export default function VehicleRegistrationModal({
                   className="relative bg-[color:var(--surface-bg)] rounded-lg border-2 border-[color:var(--surface-border)] overflow-hidden group-focus-within:border-theme transition-all shadow-sm"
                   style={{ borderRadius: "0.5rem" }}
                 >
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-[color:var(--muted-text)] select-none">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[11px] font-medium text-[color:var(--muted-text)] select-none">
                     MNG
                   </span>
                   <input
@@ -237,7 +237,7 @@ export default function VehicleRegistrationModal({
                       }
                     }}
                     placeholder="0000 УБА"
-                    className="w-full h-12 pl-14 pr-11 bg-transparent border-none font-black text-xl text-[color:var(--panel-text)] dark:text-white focus:ring-0 outline-none uppercase tracking-[0.2em] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] placeholder:tracking-normal caret-theme"
+                    className="w-full h-12 pl-14 pr-11 bg-transparent border-none font-medium text-xl text-[color:var(--panel-text)] dark:text-white focus:ring-0 outline-none uppercase tracking-[0.2em] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] placeholder:tracking-normal caret-theme"
                     autoFocus
                   />
                   {plate && (
@@ -255,7 +255,7 @@ export default function VehicleRegistrationModal({
 
             {/* Input: Camera Select */}
             <div className="space-y-1.5">
-              <label className="text-[9px]  text-[color:var(--muted-text)] uppercase tracking-wider ml-1">
+              <label className="text-xs text-[color:var(--muted-text)] ml-1">
                 Камер сонголт
               </label>
               <div className="relative group">
@@ -279,7 +279,7 @@ export default function VehicleRegistrationModal({
 
             {/* Input: Date Select */}
             <div className="space-y-1.5">
-              <label className="text-[9px] text-[color:var(--muted-text)] uppercase tracking-wider ml-1">
+              <label className="text-xs text-[color:var(--muted-text)] ml-1">
                 Огноо сонголт
               </label>
               <input
@@ -310,8 +310,7 @@ export default function VehicleRegistrationModal({
  text-[11px] text-[color:var(--panel-text)]
                         hover:bg-theme/10 dark:hover:bg-theme/20 hover:text-theme dark:hover:text-theme hover:border-theme/30 dark:hover:border-theme/50
                         transition-all duration-150
-                        shadow-sm hover:shadow-md
-                      "
+                        shadow-sm hover:shadow-md"
                     >
                       {char}
                     </button>
@@ -327,8 +326,7 @@ export default function VehicleRegistrationModal({
                         text-danger
                         hover:bg-gradient-to-br hover:from-danger/20 hover:to-danger/20 hover:text-white hover:border-danger
                         transition-all duration-150
-                        shadow-sm hover:shadow-md
-                      "
+                        shadow-sm hover:shadow-md"
                     >
                       <Delete className="w-3 h-3" />
                     </button>

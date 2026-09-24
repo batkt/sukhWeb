@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import FilterSelect from "@/components/ui/FilterSelect";
+import FilterDatePicker from "@/components/ui/FilterDatePicker";
 import { useBuilding } from "@/context/BuildingContext";
 import { useAuth } from "@/lib/useAuth";
 import useBaiguullaga from "@/lib/useBaiguullaga";
 import TusgaiZagvar from "../../../../../components/selectZagvar/tusgaiZagvar";
-import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { getDefaultDateRange } from "@/lib/utils";
 import uilchilgee from "@/lib/uilchilgee";
 import formatNumber from "../../../../../tools/function/formatNumber";
@@ -424,7 +425,7 @@ export default function NekhemjlekhiinTuukhPage() {
       <div className="print-only mb-6">
         <div className="flex justify-between items-start border-b-2 border-[color:var(--surface-border)] pb-4">
           <div>
-            <h1 className="text-2xl font-bold uppercase">Нэхэмжлэхийн түүх тайлан</h1>
+            <h1 className="text-2xl font-medium ">Нэхэмжлэхийн түүх тайлан</h1>
             <p className="text-sm mt-1">{baiguullaga?.ner || "Байгууллагын нэр"}</p>
           </div>
           <div className="text-right text-sm">
@@ -437,8 +438,8 @@ export default function NekhemjlekhiinTuukhPage() {
         </div>
         
         <div className="mt-6 border p-4 rounded bg-[color:var(--surface-hover)] flex justify-between items-center">
-          <p className="font-semibold text-[color:var(--panel-text)]">НИЙТ ТӨЛБӨР:</p>
-          <p className="text-2xl font-bold text-brand">{formatNumber(totalTulbur)} </p>
+          <p className="font-medium text-[color:var(--panel-text)]">Нийт төлбөр:</p>
+          <p className="text-2xl font-medium text-brand">{formatNumber(totalTulbur)} </p>
         </div>
       </div>
       {/* Гарчиг нь толгой хэсэгт («Тайлан — Нэхэмжлэхийн түүх») байгаа тул давхарлахгүй */}
@@ -447,7 +448,7 @@ export default function NekhemjlekhiinTuukhPage() {
           <ExcelButton onClick={exportToExcel} />
 {/* <button
             onClick={handlePrint}
-            className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
+            className="btn-minimal inline-flex h-9 shrink-0 items-center gap-2 !px-3 text-[13px]"
           >
             <Printer className="w-4 h-4 text-brand" />
             Хэвлэх
@@ -457,20 +458,15 @@ export default function NekhemjlekhiinTuukhPage() {
 
       <form onSubmit={handleSubmit} className="no-print">
         <div className="flex flex-wrap items-center gap-2 no-print">
-          <div className="btn-minimal flex h-9 w-full items-center px-3 sm:w-[280px]">
-            <StandardDatePicker
-              isRange={true}
-              value={dateRange}
-              onChange={setDateRange}
-              allowClear
-              placeholder="Огноо сонгох"
-              className="!h-full !w-full text-theme !px-0 flex items-center justify-center text-center border-0 shadow-none"
-            />
-          </div>
-          {/* TusgaiZagvar өөрөө хүрээтэй тул зөвхөн 36px өндөртэй бүрхүүл */}
-          <div className="h-9 w-full sm:w-[180px]">
-            <TusgaiZagvar
-              value={formData.tuluv}
+          <FilterDatePicker
+            value={dateRange}
+            onChange={setDateRange}
+            className="w-full sm:w-[260px]"
+          />
+          <div>
+            <FilterSelect
+              label="Төлөв"
+              value={formData.tuluv || ""}
               onChange={(v: string) => setFormData({ ...formData, tuluv: v })}
               options={[
                 { value: "Төлсөн", label: "Төлсөн" },
@@ -478,10 +474,7 @@ export default function NekhemjlekhiinTuukhPage() {
 
                 // { value: "Хэсэгчлэн төлсөн", label: "Хэсэгчлэн төлсөн" },
               ]}
-              placeholder="Төлөв сонгох"
-              className="h-full w-full"
-              buttonClassName="!font-normal text-[13px] !px-3"
-              optionClassName="!px-3 !py-1.5 text-[13px] !font-normal"
+              className="max-w-[220px]"
             />
           </div>
           {/* <div className="neu-panel p-4 rounded-xl">
@@ -509,7 +502,7 @@ export default function NekhemjlekhiinTuukhPage() {
                 })),
               ]}
               placeholder="Байрны нэр сонгох"
-              className="h-[40px] w-full"
+              className="h-9 w-full"
             />
           </div> */}
           {/* <div className="neu-panel p-4 rounded-xl">
@@ -527,7 +520,7 @@ export default function NekhemjlekhiinTuukhPage() {
                 label: b.ner,
               }))}
               placeholder="Барилга сонгох"
-              className="h-[40px] w-full"
+              className="h-9 w-full"
             />
           </div> */}
           {/* <div className="neu-panel p-4 rounded-xl">
@@ -586,7 +579,7 @@ export default function NekhemjlekhiinTuukhPage() {
                 setFormData({ ...formData, khuudasniiKhemjee: v })
               }
               options={[20, 50, 100]}
-              className="h-[40px] w-full"
+              className="h-9 w-full"
             />
           </div> */}
         </div>
@@ -630,7 +623,7 @@ export default function NekhemjlekhiinTuukhPage() {
             className="neu-panel rounded-2xl p-4 flex flex-col gap-1"
           >
             <span className="text-xs text-theme opacity-70 leading-normal">{k.label}</span>
-            <span className={`text-xl font-semibold ${k.angi} leading-normal`}>
+            <span className={`text-xl font-medium ${k.angi} leading-normal`}>
               {formatNumber(k.utga)}₮
             </span>
             <span className="text-[11px] text-theme opacity-50 leading-normal">

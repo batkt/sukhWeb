@@ -121,7 +121,7 @@ export const PaymentPopup = ({
         ) : (
           <>
             {uniqueTypes.map((type) => (
-              <span key={type} className={`text-[9px] px-1.5 py-0.5 rounded border ${PAY_COLOR[type] || "bg-[color:var(--surface-hover)] !text-[color:var(--panel-text)] border-[color:var(--surface-border)]"}`}>
+              <span key={type} className={`text-[11px] px-1.5 py-0.5 rounded border ${PAY_COLOR[type] || "bg-[color:var(--surface-hover)] !text-[color:var(--panel-text)] border-[color:var(--surface-border)]"}`}>
                 {PAY_LABELS[type] || type}
               </span>
             ))}
@@ -139,7 +139,7 @@ export const PaymentPopup = ({
           onMouseLeave={() => setOpen(false)}
         >
           <div className="px-4 py-3 border-b border-[color:var(--surface-border)] dark:border-white/5 flex items-center justify-between">
-            <span className="text-[10px] font-black text-[color:var(--muted-text)] uppercase tracking-widest">
+            <span className="text-[11px] font-medium text-[color:var(--muted-text)] ">
               Төлбөрийн дэлгэрэнгүй
             </span>
           </div>
@@ -163,13 +163,13 @@ export const PaymentPopup = ({
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className={`text-[11px] font-semibold ${PAY_TEXT_COLOR[type] || "text-[color:var(--muted-text)]"}`}>
+                      <span className={`text-[11px] font-medium ${PAY_TEXT_COLOR[type] || "text-[color:var(--muted-text)]"}`}>
                         {PAY_LABELS[type] || type}
                         {count > 1 && (
-                          <span className="ml-1 text-[9px] font-normal opacity-60">×{count}</span>
+                          <span className="ml-1 text-[11px] font-normal opacity-60">×{count}</span>
                         )}
                       </span>
-                      <span className="text-[11px] font-semibold text-[color:var(--panel-text)] font-[family-name:var(--font-mono)]">
+                      <span className="text-[11px] font-medium text-[color:var(--panel-text)] font-[family-name:var(--font-mono)]">
                         {formatNumber(amount)}
                       </span>
                     </div>
@@ -180,7 +180,7 @@ export const PaymentPopup = ({
                           style={{ width: `${pct}%` }}
                         />
                       </div>
-                      <span className="text-[9px] text-[color:var(--muted-text)] w-7 text-right">{pct}%</span>
+                      <span className="text-[11px] text-[color:var(--muted-text)] w-7 text-right">{pct}%</span>
                     </div>
                   </div>
                 </div>
@@ -188,8 +188,8 @@ export const PaymentPopup = ({
             })}
           </div>
           <div className="px-4 py-3 border-t border-[color:var(--surface-border)] dark:border-white/5 flex justify-between items-center bg-[color:var(--surface-hover)] dark:bg-white/[0.02]">
-            <span className="text-[10px] font-black text-[color:var(--muted-text)] uppercase tracking-wider">НИЙТ</span>
-            <span className="text-[13px] font-black text-brand font-[family-name:var(--font-mono)]">{formatNumber(totalPaid)}</span>
+            <span className="text-[11px] font-medium text-[color:var(--muted-text)] ">Нийт</span>
+            <span className="text-[13px] font-medium text-brand font-[family-name:var(--font-mono)]">{formatNumber(totalPaid)}</span>
           </div>
         </div>,
         document.body

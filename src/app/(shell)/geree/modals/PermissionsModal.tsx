@@ -225,7 +225,7 @@ export default function PermissionsModal({
           type="text" 
           value={remaining}
           readOnly
-          className={`w-8 text-[10px] text-center px-1 py-0.5 rounded border ${
+          className={`w-8 text-[11px] text-center px-1 py-0.5 rounded border ${
             isFull 
               ? "bg-danger/10 border-danger/30 text-danger" 
               : "bg-success/10 border-success/30 text-success"
@@ -348,7 +348,7 @@ export default function PermissionsModal({
                   <h2 className="text-sm sm:text-base  text-theme truncate">
                     Эрх тохируулах
                   </h2>
-                  <p className="text-[10px] sm:text-xs text-subtle truncate">
+                  <p className="text-[11px] sm:text-xs text-subtle truncate">
                     {employee?.ner || employee?.nevtrekhNer} - {employee?.albanTushaal}
                   </p>
                 </div>
@@ -374,21 +374,21 @@ export default function PermissionsModal({
 
             {/* Quick Actions */}
             <div className="px-3 sm:px-4 py-1.5 sm:py-2 bg-[color:var(--surface-bg)] dark:bg-[color:var(--surface-bg-dark)] border-b border-[color:var(--surface-border)] flex items-center justify-between gap-2">
-              <div className="text-[10px] sm:text-xs text-subtle">
+              <div className="text-[11px] sm:text-xs text-subtle">
                 <span className=" text-brand">{selectedPermissions.length}</span> эрх
               </div>
               <div className="flex gap-1.5">
                 <button
                   type="button"
                   onClick={selectAll}
-                  className="px-2 py-1 text-[10px] sm:text-xs  text-brand hover:bg-theme/10 dark:hover:bg-theme/20 rounded transition-colors"
+                  className="px-2 py-1 text-[11px] sm:text-xs text-brand hover:bg-theme/10 dark:hover:bg-theme/20 rounded transition-colors"
                 >
                   Бүгд
                 </button>
                 <button
                   type="button"
                   onClick={deselectAll}
-                  className="px-2 py-1 text-[10px] sm:text-xs  text-subtle hover:bg-[color:var(--hover-bg)] rounded transition-colors"
+                  className="px-2 py-1 text-[11px] sm:text-xs text-subtle hover:bg-[color:var(--hover-bg)] rounded transition-colors"
                 >
                   Цэвэрлэх
                 </button>
@@ -510,7 +510,7 @@ export default function PermissionsModal({
                               </div>
                               
                               <div className="flex-1 min-w-0 flex items-center justify-between">
-                                <div className="text-[10px] sm:text-xs  text-theme truncate mr-2">
+                                <div className="text-[11px] sm:text-xs text-theme truncate mr-2">
                                   {child.label}
                                 </div>
                                 {renderLimitBadge(child.id)}

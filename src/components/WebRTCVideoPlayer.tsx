@@ -452,7 +452,7 @@ export default function WebRTCVideoPlayer({
           {(status === "connecting" || status === "retrying") && (
             <>
               <div className="w-6 h-6 border-2 border-white/30 border-t-white/80 rounded-full animate-spin" />
-              <span className="text-[10px] font-mono">
+              <span className="text-[11px] font-mono">
                 {status === "retrying"
                   ? `Дахин холбогдож байна... (${retryCountRef.current})`
                   : "Холбогдож байна..."}
@@ -465,12 +465,12 @@ export default function WebRTCVideoPlayer({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                   d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
               </svg>
-              <span className="text-[9px] font-mono text-center px-2 text-danger line-clamp-2">
+              <span className="text-[11px] font-mono text-center px-2 text-danger line-clamp-2">
                 {errorMsg || "Холболт амжилтгүй"}
               </span>
               <button
                 onClick={connect}
-                className="mt-1 px-4 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-[10px] transition-colors"
+                className="mt-1 px-4 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-[11px] transition-colors"
               >
                 Дахин оролдох
               </button>

@@ -341,7 +341,7 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
                     align="right"
                     className="bg-[color:var(--surface-hover)] pr-3"
                   >
-                    <span className="font-bold text-[color:var(--panel-text)] dark:!text-white">
+                    <span className="font-medium text-[color:var(--panel-text)] dark:!text-white">
                       {butsaasanToo > 0 ? "Нийт (хүчинтэй):" : "Нийт:"}
                     </span>
                   </Table.Summary.Cell>
@@ -350,7 +350,7 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
                     align="right"
                     className="bg-[color:var(--surface-hover)]"
                   >
-                    <span className="font-bold text-[color:var(--panel-text)] dark:!text-white whitespace-nowrap">
+                    <span className="font-medium text-[color:var(--panel-text)] dark:!text-white whitespace-nowrap">
                       {formatNumber(khuchinteiDun)}
                     </span>
                   </Table.Summary.Cell>

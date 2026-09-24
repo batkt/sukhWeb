@@ -214,7 +214,7 @@ function ZogsoolBurtgekh(
           }`}
         >
           <span>Хаалга & Камер</span>
-          <span className={`inline-flex items-center justify-center min-w-[20px] px-2 py-0.5 text-[11px] font-bold rounded-full transition-colors ${
+          <span className={`inline-flex items-center justify-center min-w-[20px] px-2 py-0.5 text-[11px] font-medium rounded-full transition-colors ${
             activeTab === "gates"
               ? "bg-theme/80 text-brand border border-theme/60"
               : "bg-[color:var(--panel)] text-[color:var(--panel-text)] border border-[color:var(--surface-border)]"
@@ -234,7 +234,7 @@ function ZogsoolBurtgekh(
           }`}
         >
           <span>Шатлалт тариф</span>
-          <span className={`inline-flex items-center justify-center min-w-[20px] px-2 py-0.5 text-[11px] font-bold rounded-full transition-colors ${
+          <span className={`inline-flex items-center justify-center min-w-[20px] px-2 py-0.5 text-[11px] font-medium rounded-full transition-colors ${
             activeTab === "tariffs"
               ? "bg-theme/80 text-brand border border-theme/60"
               : "bg-[color:var(--panel)] text-[color:var(--panel-text)] border border-[color:var(--surface-border)]"
@@ -681,7 +681,7 @@ function ZogsoolBurtgekh(
                     <div key={camIndex} style={{ borderRadius: '10px' }} className="p-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] space-y-3">
                       <div className="flex justify-between items-center pb-2 border-b border-[color:var(--surface-border)]">
                         <div className="flex items-center gap-1.5">
-                          <span className="w-5 h-5 rounded-full bg-theme/10 flex items-center justify-center text-[10px] text-brand font-semibold">#{camIndex + 1}</span>
+                          <span className="w-5 h-5 rounded-full bg-theme/10 flex items-center justify-center text-[11px] text-brand font-medium">#{camIndex + 1}</span>
                           <span className="text-xs font-medium text-[color:var(--panel-text)]">Камер #{camIndex + 1}</span>
                         </div>
                         <button
@@ -699,7 +699,7 @@ function ZogsoolBurtgekh(
 
                       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
                         <div className="space-y-1">
-                          <label className="block text-[11px] text-[color:var(--muted-text)]">Камерын нэр</label>
+                          <label className="block text-xs text-[color:var(--muted-text)]">Камерын нэр</label>
                           <MTextInput
                             value={cam.cameraName || ""}
                             onChange={(e) => {
@@ -713,7 +713,7 @@ function ZogsoolBurtgekh(
                           />
                         </div>
                         <div className="space-y-1">
-                          <label className="block text-[11px] text-[color:var(--muted-text)]">IP төрөл</label>
+                          <label className="block text-xs text-[color:var(--muted-text)]">IP төрөл</label>
                           <MSelect
                             value={cam.cameraType || (gate.turul === "Орох" ? "entry" : "exit")}
                             onChange={(val) => {
@@ -727,7 +727,7 @@ function ZogsoolBurtgekh(
                           />
                         </div>
                         <div className="space-y-1">
-                          <label className="block text-[11px] text-[color:var(--muted-text)]">IP хаяг (V4)</label>
+                          <label className="block text-xs text-[color:var(--muted-text)]">IP хаяг (V4)</label>
                           <MTextInput
                             value={cam.cameraIP || ""}
                             onChange={(e) => {
@@ -741,7 +741,7 @@ function ZogsoolBurtgekh(
                           />
                         </div>
                         <div className="space-y-1">
-                          <label className="block text-[11px] text-[color:var(--muted-text)]">TCP порт</label>
+                          <label className="block text-xs text-[color:var(--muted-text)]">TCP порт</label>
                           <MNumberInput
                             value={cam.cameraPort || 80}
                             onChange={(val) => {
@@ -763,7 +763,7 @@ function ZogsoolBurtgekh(
                         </div>
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
                           <div className="space-y-1">
-                            <label className="block text-[10px] text-[color:var(--muted-text)]">USERNAME</label>
+                            <label className="block text-xs text-[color:var(--muted-text)]">Username</label>
                             <MTextInput
                               value={cam.tokhirgoo?.USER || ""}
                               onChange={(e) => {
@@ -777,7 +777,7 @@ function ZogsoolBurtgekh(
                             />
                           </div>
                           <div className="space-y-1">
-                            <label className="block text-[10px] text-[color:var(--muted-text)]">PASSWORD</label>
+                            <label className="block text-xs text-[color:var(--muted-text)]">Password</label>
                             <MTextInput
                               type="password"
                               value={cam.tokhirgoo?.PASSWD || ""}
@@ -792,7 +792,7 @@ function ZogsoolBurtgekh(
                             />
                           </div>
                           <div className="space-y-1">
-                            <label className="block text-[10px] text-[color:var(--muted-text)]">ROOT STREAM</label>
+                            <label className="block text-xs text-[color:var(--muted-text)]">Root stream</label>
                             <MTextInput
                               value={cam.tokhirgoo?.ROOT || ""}
                               onChange={(e) => {
@@ -806,7 +806,7 @@ function ZogsoolBurtgekh(
                             />
                           </div>
                           <div className="space-y-1">
-                            <label className="block text-[10px] text-[color:var(--muted-text)]">HTTP PORT</label>
+                            <label className="block text-xs text-[color:var(--muted-text)]">HTTP port</label>
                             <MNumberInput
                               value={cam.tokhirgoo?.PORT ? Number(cam.tokhirgoo.PORT) : undefined}
                               onChange={(val) => {

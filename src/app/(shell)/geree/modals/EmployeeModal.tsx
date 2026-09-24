@@ -123,7 +123,7 @@ export default function EmployeeModal({
                 <UserRound className="h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1">
-                <h2 className="text-lg font-semibold text-[color:var(--panel-text)]">
+                <h2 className="text-lg font-medium text-[color:var(--panel-text)]">
                   {editingEmployee ? "Ажилтан засах" : "Ажилтан нэмэх"}
                 </h2>
                 <p className="mt-0.5 text-xs text-[color:var(--muted-text)]">

@@ -1,6 +1,7 @@
 "use client";
 
 import ExcelButton from "@/components/ui/ExcelButton";
+import FilterSelect from "@/components/ui/FilterSelect";
 import React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearch } from "@/context/SearchContext";
@@ -791,6 +792,26 @@ export default function DansniiKhuulga() {
     return map;
   }, [gereeGaralt?.jagsaalt]);
 
+  // Орц / Давхар / Тоотын dropdown сонголтууд — гэрээнүүдээс
+  const { ortsSongolt, davkharSongolt, tootSongolt } = useMemo(() => {
+    const orts = new Set<string>();
+    const davkhar = new Set<string>();
+    const toot = new Set<string>();
+    ((gereeGaralt?.jagsaalt || []) as any[]).forEach((g) => {
+      const o = String(g?.orts ?? g?.ortsDugaar ?? g?.ortsNer ?? "").trim();
+      const d = String(g?.davkhar ?? "").trim();
+      const t = String(g?.toot ?? "").trim();
+      if (o) orts.add(o);
+      if (d) davkhar.add(d);
+      if (t) toot.add(t);
+    });
+    const jagsaalt = (set: Set<string>) =>
+      Array.from(set)
+        .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+        .map((v) => ({ value: v, label: v }));
+    return { ortsSongolt: jagsaalt(orts), davkharSongolt: jagsaalt(davkhar), tootSongolt: jagsaalt(toot) };
+  }, [gereeGaralt]);
+
   const residentsById = useMemo(() => {
     const list = (orshinSuugchGaralt?.jagsaalt || []) as any[];
     const map: Record<string, any> = {};
@@ -946,20 +967,20 @@ export default function DansniiKhuulga() {
         if (selectedOrtsFilter) {
           const filterVal = toStr(selectedOrtsFilter).toLowerCase();
           const targetOrts = orts.toLowerCase();
-          if (targetOrts !== filterVal && !targetOrts.includes(filterVal))
+          if (targetOrts !== filterVal)
             return false;
         }
         if (selectedDavkharFilter) {
           const filterVal = toStr(selectedDavkharFilter).toLowerCase();
           const targetDavkhar = davkhar.toLowerCase();
-          if (targetDavkhar !== filterVal && !targetDavkhar.includes(filterVal))
+          if (targetDavkhar !== filterVal)
             return false;
         }
         if (selectedTootFilter) {
           // Robust case-insensitive partial matching for toot
           const filterVal = toStr(selectedTootFilter).toLowerCase();
           const targetToot = currentToot.toLowerCase();
-          if (targetToot !== filterVal && !targetToot.includes(filterVal))
+          if (targetToot !== filterVal)
             return false;
         }
       }
@@ -1108,7 +1129,7 @@ export default function DansniiKhuulga() {
         if (selectedTootFilter) {
           const filterVal = toStr(selectedTootFilter).toLowerCase();
           const targetToot = currentToot.toLowerCase();
-          if (targetToot !== filterVal && !targetToot.includes(filterVal))
+          if (targetToot !== filterVal)
             return false;
         }
       }
@@ -1206,18 +1227,18 @@ export default function DansniiKhuulga() {
       if (selectedOrtsFilter) {
         const filterVal = toStr(selectedOrtsFilter).toLowerCase();
         const targetOrts = orts.toLowerCase();
-        if (targetOrts !== filterVal && !targetOrts.includes(filterVal)) return;
+        if (targetOrts !== filterVal) return;
       }
       if (selectedDavkharFilter) {
         const filterVal = toStr(selectedDavkharFilter).toLowerCase();
         const targetDavkhar = davkhar.toLowerCase();
-        if (targetDavkhar !== filterVal && !targetDavkhar.includes(filterVal))
+        if (targetDavkhar !== filterVal)
           return;
       }
       if (selectedTootFilter) {
         const filterVal = toStr(selectedTootFilter).toLowerCase();
         const targetToot = currentToot.toLowerCase();
-        if (targetToot !== filterVal && !targetToot.includes(filterVal)) return;
+        if (targetToot !== filterVal) return;
       }
       if (searchTerm) {
         const augmented = {
@@ -1585,18 +1606,18 @@ export default function DansniiKhuulga() {
       if (selectedOrtsFilter) {
         const filterVal = toStr(selectedOrtsFilter).toLowerCase();
         const targetOrts = orts.toLowerCase();
-        if (targetOrts !== filterVal && !targetOrts.includes(filterVal)) return;
+        if (targetOrts !== filterVal) return;
       }
       if (selectedDavkharFilter) {
         const filterVal = toStr(selectedDavkharFilter).toLowerCase();
         const targetDavkhar = davkhar.toLowerCase();
-        if (targetDavkhar !== filterVal && !targetDavkhar.includes(filterVal))
+        if (targetDavkhar !== filterVal)
           return;
       }
       if (selectedTootFilter) {
         const filterVal = toStr(selectedTootFilter).toLowerCase();
         const targetToot = currentToot.toLowerCase();
-        if (targetToot !== filterVal && !targetToot.includes(filterVal)) return;
+        if (targetToot !== filterVal) return;
       }
       if (searchTerm) {
         const augmented = {
@@ -3441,7 +3462,7 @@ export default function DansniiKhuulga() {
             );
           })}
         </div>
-        <div className="rounded-2xl">
+        <div className="relative z-30 rounded-2xl">
           <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
             {/* Шүүлтүүр — нэгдсэн `.btn-minimal` / `.filter-field` загвар (globals.css) */}
             <div className="flex w-full flex-wrap items-center gap-2 xl:w-auto">
@@ -3455,34 +3476,29 @@ export default function DansniiKhuulga() {
                   placeholder="Сар сонгох"
                 />
               </div>
-              <label className={`filter-field w-[118px] ${selectedOrtsFilter ? "is-active" : ""}`}>
-                <span className="filter-field-label">Орц</span>
-                <input
-                  type="text"
-                  value={selectedOrtsFilter}
-                  onChange={(e) => setSelectedOrtsFilter(e.target.value)}
-                  placeholder="Бүгд"
-                />
-              </label>
-              <label className={`filter-field w-[118px] ${selectedDavkharFilter ? "is-active" : ""}`}>
-                <span className="filter-field-label">Давхар</span>
-                <input
-                  type="number"
-                  min={1}
-                  value={selectedDavkharFilter}
-                  onChange={(e) => setSelectedDavkharFilter(e.target.value)}
-                  placeholder="Бүгд"
-                />
-              </label>
-              <label className={`filter-field w-[118px] ${selectedTootFilter ? "is-active" : ""}`}>
-                <span className="filter-field-label">Тоот</span>
-                <input
-                  type="text"
-                  value={selectedTootFilter}
-                  onChange={(e) => setSelectedTootFilter(e.target.value)}
-                  placeholder="Бүгд"
-                />
-              </label>
+              <FilterSelect
+                label="Орц"
+                value={selectedOrtsFilter}
+                onChange={setSelectedOrtsFilter}
+                options={ortsSongolt}
+                className="max-w-[180px]"
+              />
+              <FilterSelect
+                label="Давхар"
+                value={selectedDavkharFilter}
+                onChange={setSelectedDavkharFilter}
+                options={davkharSongolt}
+                className="max-w-[180px]"
+              />
+              <FilterSelect
+                label="Тоот"
+                value={selectedTootFilter}
+                onChange={setSelectedTootFilter}
+                options={tootSongolt}
+                searchable
+                searchPlaceholder="Тоот хайх..."
+                className="max-w-[180px]"
+              />
             </div>
 
             {/* Хэрэгслийн товчнууд — бүгд `.btn-minimal` */}
@@ -3582,7 +3598,6 @@ export default function DansniiKhuulga() {
                 >
                   <ExcelButton
                     onClick={exceleerTatya}
-                    label={t("Excel татах")}
                     iconOnlyOnMobile
                   />
                 </motion.div>
@@ -3921,7 +3936,7 @@ export default function DansniiKhuulga() {
                       <Mail className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-white">Илгээсэн SMS түүх</h3>
+                      <h3 className="text-lg font-medium text-white">Илгээсэн SMS түүх</h3>
                       <p className="text-sm text-brand">Нийт {smsHistoryTotal} мессеж</p>
                     </div>
                   </div>
@@ -3968,7 +3983,7 @@ export default function DansniiKhuulga() {
                         <div className="flex items-center gap-2 text-sm ml-auto">
                           <div className="w-2 h-2 rounded-full bg-theme" />
                           <span className="text-[color:var(--muted-text)]">
-                            Амжилттай: <span className="font-semibold text-brand">{smsHistoryList.length}</span>
+                            Амжилттай: <span className="font-medium text-brand">{smsHistoryList.length}</span>
                           </span>
                         </div>
                       </div>
@@ -3987,10 +4002,10 @@ export default function DansniiKhuulga() {
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-2">
-                                <span className="font-semibold text-[color:var(--panel-text)]">
+                                <span className="font-medium text-[color:var(--panel-text)]">
                                   {Array.isArray(item.dugaar) ? item.dugaar.join(", ") : item.dugaar || "-"}
                                 </span>
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-theme/10 text-brand">
+                                <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-theme/10 text-brand">
                                   Амжилттай
                                 </span>
                               </div>

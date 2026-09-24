@@ -607,7 +607,7 @@ export default function ResidentRegistrationModal({
                       <span className="p-1.5 rounded-lg bg-[color:var(--surface-hover)] dark:bg-white/10 text-black dark:text-white">
                         <User className="w-4 h-4" />
                       </span>
-                      <h3 className="text-xs uppercase tracking-widest text-[color:var(--muted-text)]">
+                      <h3 className="text-xs text-[color:var(--muted-text)]">
                         Хувийн мэдээлэл
                       </h3>
                     </div>
@@ -689,7 +689,7 @@ export default function ResidentRegistrationModal({
                             <option value="Түр оршин суугч">Түр оршин суугч</option>
                           </select>
                           <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--muted-text)] pointer-events-none" />
-                          <label className="absolute -top-2 left-3 px-1 bg-white dark:bg-[color:var(--panel)] text-[10px]  text-[color:var(--muted-text)] uppercase tracking-wider">
+                          <label className="absolute -top-2 left-3 px-1 bg-white dark:bg-[color:var(--panel)] text-[11px] text-[color:var(--muted-text)]">
                             Төрөл
                           </label>
                         </div>
@@ -703,7 +703,7 @@ export default function ResidentRegistrationModal({
                       <span className="p-1.5 rounded-lg bg-[color:var(--surface-hover)] dark:bg-white/10 text-black dark:text-white">
                         <Car className="w-4 h-4" />
                       </span>
-                      <h3 className="text-xs uppercase tracking-widest text-[color:var(--muted-text)]">
+                      <h3 className="text-xs text-[color:var(--muted-text)]">
                         Тээврийн хэрэгсэл & Тохиргоо
                       </h3>
                     </div>
@@ -742,11 +742,11 @@ export default function ResidentRegistrationModal({
                       {baigaaMashinuud.length > 0 && (
                         <div className="rounded-2xl border border-[color:var(--surface-border)] dark:border-white/10 bg-[color:var(--surface-hover)] dark:bg-white/[0.03] p-4">
                           <div className="flex items-center justify-between mb-2.5">
-                            <span className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--muted-text)]">
+                            <span className="text-[11px] font-medium text-[color:var(--muted-text)]">
                               Бүртгэлтэй машин
                             </span>
                             {mashiniiKhyazgaar > 0 && (
-                              <span className="text-[11px] font-semibold text-[color:var(--muted-text)]">
+                              <span className="text-[11px] font-medium text-[color:var(--muted-text)]">
                                 {baigaaMashinuud.length}/{mashiniiKhyazgaar}
                               </span>
                             )}
@@ -768,12 +768,12 @@ export default function ResidentRegistrationModal({
                                   }`}
                                 >
                                   <Car className="w-4 h-4 text-[color:var(--muted-text)] shrink-0" />
-                                  <span className="flex-1 text-sm font-mono font-bold tracking-wider text-[color:var(--panel-text)]">
+                                  <span className="flex-1 text-sm font-mono font-medium tracking-wider text-[color:var(--panel-text)]">
                                     {mashin.mashiniiDugaar}
                                   </span>
 
                                   {zasajBui && (
-                                    <span className="text-[10px] font-semibold uppercase tracking-wider text-brand">
+                                    <span className="text-[11px] font-medium text-brand">
                                       Засаж байна
                                     </span>
                                   )}
@@ -815,7 +815,7 @@ export default function ResidentRegistrationModal({
                                 mashiniiKhyazgaar > 0 &&
                                 baigaaMashinuud.length >= mashiniiKhyazgaar
                               }
-                              className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-brand hover:underline disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
+                              className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-brand hover:underline disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
                             >
                               <Plus className="w-3.5 h-3.5" />
                               Шинэ машин нэмэх
@@ -838,7 +838,7 @@ export default function ResidentRegistrationModal({
 
                       {/* License Plate Special Input */}
                       <div className="relative p-5 rounded-2xl bg-[color:var(--panel)] bg-[radial-gradient(var(--surface-border)_1px,transparent_1px)] [background-size:16px_16px] flex flex-col justify-center items-center overflow-hidden group border border-[color:var(--surface-border)] dark:border-white/10 shadow-inner">
-                        <label className="text-xs font-semibold text-[color:var(--muted-text)] mb-2 uppercase tracking-wider">
+                        <label className="text-xs font-medium text-[color:var(--muted-text)] mb-2">
                           {zasajBuiMashiniiId
                             ? "Улсын дугаар засах (4 тоо + 3 кирилл үсэг)"
                             : baigaaMashinuud.length > 0
@@ -873,7 +873,7 @@ export default function ResidentRegistrationModal({
                                 setFormData({ ...formData, plate: fullPlate });
                               }
                             }}
-                            className="w-full h-full text-center text-3xl font-bold uppercase tracking-[0.15em] outline-none font-mono focus:ring-0 text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)]"
+                            className="w-full h-full text-center text-3xl font-medium uppercase tracking-[0.15em] outline-none font-mono focus:ring-0 text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)]"
                             placeholder="1234УБҮ"
                           />
                         </div>

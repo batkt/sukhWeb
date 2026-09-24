@@ -1,7 +1,8 @@
 import React, { useMemo } from "react";
 import { Tooltip } from "antd";
 import formatNumber from "tools/function/formatNumber";
-import { StandardTable } from "@/components/ui/StandardTable";
+import Table from "@/components/ui/table";
+import type { ColumnsType } from "@/components/ui/table";
 
 export interface ZardalItem {
   ner?: string;
@@ -99,444 +100,470 @@ interface NegtgelTailanTableProps {
   sarKhuree?: [string, string];
 }
 
-// Сар бүрийн сүүлийн багана болон «Нийт» бүлгийг тодруулах босоо зураас
-const SAR_ZAAGLAGCH = "!border-r-2 !border-r-slate-300 dark:!border-r-slate-600";
+/* ── Загвар ───────────────────────────────────────────────────────────────
+   Зааглах зураасыг border биш inset сүүдрээр зурна: border-collapse дээр
+   зузаан хүрээ толгой/их биеийн нүдийг өөр өөрөөр шилжүүлж зураас таарахгүй
+   болгодог, sticky нүдэн дээр ч хамт гүйдэггүй. Сүүдэр байршлыг хөдөлгөхгүй. */
+// Класс нь globals.css-ийн `.negtgel-table` хэсэгт: нүд бүр 1px саарал
+// босоо зураастай, сарын зааг тодхон, «Нийт»-ийн өмнө ганц зураас.
+const BARUUN_ZAAG = "ng-zaag";
+const ZUUN_ZAAG = "ng-niit";
+const ZAAGGUI = "ng-zaaggui";
+
+// Баруун талд түгжигдсэн «Нийт» бүлгийн баганууд (өргөн нь нийлбэр мөрийн
+// sticky зайг тооцоход хэрэгтэй)
+const NIIT_URGUN = { bodogdson: 110, khungulult: 100, uldegdel: 115 } as const;
+
+const tooKharuul = (v: number) => (v > 0 ? formatNumber(v, 2) : "");
+
+/** "2026-09" → "2026 · 9-р сар" */
+const sarNer = (ym: string) => {
+  const [y, m] = ym.split("-");
+  return `${y} · ${Number(m)}-р сар`;
+};
+
+const ognooSar = (b: AvlagaItem) => (b.ognoo ? b.ognoo.slice(0, 7) : "");
+
+const khuvilbar = (b: AvlagaItem): ZardalItem[] =>
+  Array.isArray(b.zardluud) && b.zardluud.length > 0
+    ? b.zardluud
+    : [{ ner: b.tailbar, dun: b.tulukhDun, turul: "Бусад", toot: b.toot }];
+
+/** Баганын толгойд гаргахгүй ерөнхий/хог нэрс */
+const khogNerEsekh = (n: string) =>
+  !n ||
+  n === "Бусад" ||
+  n === "Бусад зардал" ||
+  n === "Нэхэмжлэх" ||
+  n === "Авлага" ||
+  n === "Авлага (Нэхэмжлэхгүй)" ||
+  n === "Найрамдал" ||
+  n.length > 50;
+
+interface MurniiDun {
+  /** `${ym}|${tailbar}` → дүн */
+  nud: Map<string, number>;
+  /** `${ym}` → зогсоолын тоот бүрийн дүн */
+  zogsool: Map<string, [string, number][]>;
+  /** `${ym}` → тухайн сарын нийт (хөнгөлөлтгүй) */
+  sar: Map<string, number>;
+  bodogdson: number;
+  khungulult: number;
+  uldegdel: number;
+}
+
+function murniiDunBodyo(
+  record: NegtgelTailanItem,
+  turluud: { tailbar: string; ognoo: string }[],
+): MurniiDun {
+  const nud = new Map<string, number>();
+  const zogsool = new Map<string, Map<string, number>>();
+  const sar = new Map<string, number>();
+  const baganuud = new Set(turluud.map((t) => `${t.ognoo}|${t.tailbar}`));
+  const nemekh = (m: Map<string, number>, k: string, v: number) => m.set(k, (m.get(k) || 0) + v);
+
+  let khungulult = 0;
+  (record.avlaga || []).forEach((b) => {
+    const ym = ognooSar(b);
+    const sarTai = turluud.some((t) => t.ognoo === ym);
+    khuvilbar(b).forEach((z) => {
+      const dun = Number(z.dun || 0);
+      const zName = (z.ner || "").trim();
+      if (zName === "Хөнгөлөлт" || z.turul === "Хөнгөлөлт") khungulult += Math.abs(dun);
+      if (!sarTai || dun <= 0) return;
+      if (isParkingCharge(zName, z.turul)) {
+        const toot = extractParkingToot(z, b.toot);
+        const m = zogsool.get(ym) || new Map<string, number>();
+        nemekh(m, toot, dun);
+        zogsool.set(ym, m);
+        nemekh(nud, `${ym}|Зогсоол`, dun);
+        nemekh(sar, ym, dun);
+        return;
+      }
+      const key = `${ym}|${zName}`;
+      if (!baganuud.has(key)) return;
+      nemekh(nud, key, dun);
+      if (zName !== "Хөнгөлөлт") nemekh(sar, ym, dun);
+    });
+    (b.khungulultuud || []).forEach((k: any) => {
+      const v = Number(k.dun || k.khungulultiinDun || 0);
+      khungulult += v;
+      if (sarTai) nemekh(nud, `${ym}|Хөнгөлөлт`, v);
+    });
+  });
+
+  const serveriinKhungulult = Number((record as any).niitKhungulult || 0);
+  return {
+    nud,
+    zogsool: new Map(Array.from(zogsool.entries()).map(([k, m]) => [k, Array.from(m.entries())])),
+    sar,
+    bodogdson: Array.from(sar.values()).reduce((s, v) => s + v, 0),
+    khungulult: serveriinKhungulult > 0 ? serveriinKhungulult : khungulult,
+    uldegdel: Number(record.niitUldegdel ?? record.globalUldegdel ?? record.niitTulukhDun ?? 0),
+  };
+}
+
+const TolgoiBichver = ({ children, title }: { children: React.ReactNode; title?: string }) => (
+  <span className="block truncate" title={title}>
+    {children}
+  </span>
+);
 
 export function NegtgelTailanTable({ data, loading, niitUldegdel, sarKhuree }: NegtgelTailanTableProps) {
+  const murnuud = useMemo(() => (Array.isArray(data) ? data : []), [data]);
+
+  // ── Сар, зардлын төрлүүд (баганууд) ────────────────────────────────────
   const { months, avlagaTypes } = useMemo(() => {
     const monthSet = new Set<string>();
-    const avlagaMap = new Map<
-      string,
-      { tailbar: string; ognoo: string; index: number }
-    >();
+    const avlagaMap = new Map<string, { tailbar: string; ognoo: string }>();
 
-    (Array.isArray(data) ? data : []).forEach((row) => {
+    murnuud.forEach((row) => {
       (row.avlaga || []).forEach((b) => {
-        const ym = b.ognoo ? b.ognoo.slice(0, 7) : "";
+        const ym = ognooSar(b);
         if (!ym) return;
         if (sarKhuree && (ym < sarKhuree[0] || ym > sarKhuree[1])) return;
-        monthSet.add(ym);
-
-        const zardluud =
-          Array.isArray(b.zardluud) && b.zardluud.length > 0
-            ? b.zardluud
-            : [{ ner: b.tailbar, dun: b.tulukhDun, turul: "Бусад" }];
-
-        zardluud.forEach((z) => {
-          if (z.dun <= 0) return;
+        khuvilbar(b).forEach((z) => {
+          if (Number(z.dun) <= 0) return;
           let zName = (z.ner || "").trim();
-          
-          // Filter out generic, junk, or organizational names
-          const isJunk = !zName || 
-                        zName === "Бусад" ||
-                        zName === "Бусад зардал" ||
-                        zName === "Нэхэмжлэх" || 
-                        zName === "Авлага" || 
-                        zName === "Авлага (Нэхэмжлэхгүй)" ||
-                        zName === "Найрамдал" || // Specific organizational label filter
-                        zName.length > 50; // Stricter length limit for headers
-          
-          if (isJunk) return; // Skip these completely as requested
-
-          // ЗОГСООЛ-ын төлбөрийг тоот бүрээр багана үүсгэхгүй, нэг "Зогсоол" баганад нэгтгэнэ
-          if (isParkingCharge(zName, z.turul)) {
-            zName = "Зогсоол";
-          }
-
+          if (khogNerEsekh(zName)) return;
+          if (isParkingCharge(zName, z.turul)) zName = "Зогсоол";
+          monthSet.add(ym);
           const key = `${ym}|${zName}`;
-          if (!avlagaMap.has(key)) {
-            avlagaMap.set(key, {
-              tailbar: zName,
-              ognoo: ym,
-              index: Number(ym.split("-")[1]),
-            });
-          }
+          if (!avlagaMap.has(key)) avlagaMap.set(key, { tailbar: zName, ognoo: ym });
         });
+        if ((b.khungulultuud || []).length > 0) {
+          monthSet.add(ym);
+          const key = `${ym}|Хөнгөлөлт`;
+          if (!avlagaMap.has(key)) avlagaMap.set(key, { tailbar: "Хөнгөлөлт", ognoo: ym });
+        }
       });
     });
 
-    const months = Array.from(monthSet).sort();
+    // Эрэмбэ: Эхний үлдэгдэл → бусад (цагаан толгойгоор) → Зогсоол → Хөнгөлөлт
+    const jin = (t: string) =>
+      t.includes("Эхний үлдэгдэл") ? 0 : t === "Хөнгөлөлт" ? 3 : t === "Зогсоол" ? 2 : 1;
     const avlagaTypes = Array.from(avlagaMap.values()).sort((a, b) => {
       if (a.ognoo !== b.ognoo) return a.ognoo.localeCompare(b.ognoo);
-      
-      const isEkhA = a.tailbar.includes("Эхний үлдэгдэл") ? 0 : 1;
-      const isEkhB = b.tailbar.includes("Эхний үлдэгдэл") ? 0 : 1;
-      if (isEkhA !== isEkhB) return isEkhA - isEkhB;
-
-      const isKhungA = a.tailbar === "Хөнгөлөлт" ? 1 : 0;
-      const isKhungB = b.tailbar === "Хөнгөлөлт" ? 1 : 0;
-      if (isKhungA !== isKhungB) return isKhungA - isKhungB;
-      
-      return a.index - b.index;
+      if (jin(a.tailbar) !== jin(b.tailbar)) return jin(a.tailbar) - jin(b.tailbar);
+      return a.tailbar.localeCompare(b.tailbar);
     });
+    return { months: Array.from(monthSet).sort(), avlagaTypes };
+  }, [murnuud, sarKhuree?.[0], sarKhuree?.[1]]);
 
-    return { months, avlagaTypes };
-  }, [data, sarKhuree?.[0], sarKhuree?.[1]]);
+  // ── Мөр бүрийн дүнг НЭГ удаа бодно (нүд, нийлбэр мөр хоёулаа ашиглана) ──
+  const dunMap = useMemo(() => {
+    const m = new WeakMap<NegtgelTailanItem, MurniiDun>();
+    murnuud.forEach((r) => m.set(r, murniiDunBodyo(r, avlagaTypes)));
+    return m;
+  }, [murnuud, avlagaTypes]);
+  const dunAvya = (r: NegtgelTailanItem) => dunMap.get(r) || murniiDunBodyo(r, avlagaTypes);
 
-  // Хүснэгтийн "Нийт → Үлдэгдэл" баганатай ЯГ ижил талбараас нийлбэрлэнэ,
-  // ингэснээр хөл нь мөрүүдтэйгээ таарна.
-  const localTotalUldegdel = useMemo(() => {
-    return (Array.isArray(data) ? data : []).reduce(
-      (s, record) => s + Number(record.niitUldegdel ?? record.globalUldegdel ?? record.niitTulukhDun ?? 0), 0
-    );
-  }, [data]);
+  const olonSar = months.length > 1;
 
-  const localTotalKhungulult = useMemo(() => {
-    return (Array.isArray(data) ? data : []).reduce((sum, record) => {
-      let rowKhungulult = Number((record as any).niitKhungulult || 0);
-      if (rowKhungulult <= 0) {
-        (record.avlaga || []).forEach((b) => {
-          (b.zardluud || []).forEach((z) => {
-            if (z.ner === "Хөнгөлөлт" || z.turul === "Хөнгөлөлт") {
-              rowKhungulult += Number(z.dun || 0);
-            }
-          });
-          (b.khungulultuud || []).forEach((k: any) => {
-            rowKhungulult += Number(k.dun || k.khungulultiinDun || 0);
-          });
-        });
-      }
-      return sum + rowKhungulult;
-    }, 0);
-  }, [data]);
-
-  // Сервер бүх хуудсыг хамарсан дүн өгсөн бол түүнийг, эс бөгөөс энэ хуудсыг
-  const totalUldegdel =
-    typeof niitUldegdel === "number" && Number.isFinite(niitUldegdel)
-      ? niitUldegdel
-      : localTotalUldegdel;
-
-  // Хуудаслалттай үед хөл нь юуг хамарч байгааг тодорхой хэлнэ
-  const khuudasKhesegKhen =
-    typeof niitUldegdel === "number" &&
-    Math.abs(niitUldegdel - localTotalUldegdel) >= 0.01;
-
-  const columns = useMemo(() => {
-    const cols: any[] = [
+  const columns = useMemo<ColumnsType<NegtgelTailanItem>>(() => {
+    const cols: ColumnsType<NegtgelTailanItem> = [
       {
         key: "index",
-        label: "№",
-        width: 40,
+        title: "№",
+        width: 44,
         align: "center",
         fixed: "left",
         render: (_: any, __: any, index: number) => (
-          <span className="text-black dark:text-white leading-normal">{index + 1}</span>
+          <span className="tabular-nums text-[hsl(var(--zt-muted-fg))]">{index + 1}</span>
         ),
       },
       {
         key: "ner",
-        label: (
-          <div className="flex justify-start w-full py-0.5">
-            <span className="leading-normal pb-0.5 font-medium">Нэр</span>
-          </div>
-        ),
-        width: 130,
+        title: <TolgoiBichver>Оршин суугч</TolgoiBichver>,
+        width: 150,
         align: "left",
         fixed: "left",
-        render: (_: any, record: NegtgelTailanItem) => {
+        render: (_: any, record) => {
           const ovog = String(record._id?.ovog || record.ovog || "").trim();
           const ner = String(record._id?.ner || record.ner || "").trim();
-          const abbreviated = ovog ? `${ovog.charAt(0)}.` : "";
-          const buten = [abbreviated, ner].filter(Boolean).join(" ") || "-";
+          const buten = [ovog ? `${ovog.charAt(0)}.` : "", ner].filter(Boolean).join(" ") || "-";
           return (
-            <Tooltip title={buten}>
-              <div className="text-left text-black dark:text-white truncate py-0.5 leading-normal">
-                {buten}
-              </div>
-            </Tooltip>
+            <span className="block truncate" title={[ovog, ner].filter(Boolean).join(" ")}>
+              {buten}
+            </span>
           );
         },
       },
       {
         key: "toot",
-        label: (
-          <div className="flex justify-center w-full py-0.5">
-            <span className="leading-normal pb-0.5 font-medium">Тоот</span>
-          </div>
-        ),
-        width: 50,
+        title: "Тоот",
+        width: 60,
         align: "center",
         fixed: "left",
-        render: (_: any, record: NegtgelTailanItem) => (
-          <span className="text-black dark:text-white leading-normal">
-            {record._id?.toot || record.toot || "-"}
-          </span>
-        ),
+        render: (_: any, record) => record._id?.toot || record.toot || "-",
       },
       {
         key: "orts",
-        label: (
-          <div className="flex justify-center w-full py-0.5">
-            <span className="leading-normal pb-0.5 font-medium">Орц</span>
-          </div>
-        ),
-        width: 45,
+        title: "Орц",
+        width: 50,
         align: "center",
         fixed: "left",
-        render: (_: any, record: NegtgelTailanItem) => (
-          <span className="text-black dark:text-white leading-normal">
-            {record._id?.orts || record.orts || "-"}
-          </span>
-        ),
+        render: (_: any, record) => record._id?.orts || record.orts || "-",
       },
       {
         key: "utas",
-        label: (
-          <div className="flex justify-center w-full py-0.5">
-            <span className="leading-normal pb-0.5 font-medium">Утас</span>
-          </div>
-        ),
+        title: "Утас",
         width: 90,
         align: "center",
         fixed: "left",
-        className: SAR_ZAAGLAGCH,
-        render: (_: any, record: NegtgelTailanItem) => {
+        className: BARUUN_ZAAG,
+        render: (_: any, record) => {
           const u = record._id?.utas || record.utas;
-          return (
-            <span className="text-black dark:text-white leading-normal">
-              {Array.isArray(u) ? u[0] || "-" : u || "-"}
-            </span>
-          );
+          return <span className="tabular-nums">{(Array.isArray(u) ? u[0] : u) || "-"}</span>;
         },
       },
     ];
 
-    // Dynamic month groups
     months.forEach((ym) => {
-      const typesInMonth = avlagaTypes.filter((v) => v.ognoo === ym);
-      if (typesInMonth.length === 0) return;
+      const turluud = avlagaTypes.filter((v) => v.ognoo === ym);
+      if (turluud.length === 0) return;
 
-      cols.push({
-        key: `group-${ym}`,
-        label: (
-          <div className="py-0.5">
-            <span className="leading-normal pb-0.5 font-semibold">{ym}</span>
-          </div>
-        ),
-        align: "center",
-        className: SAR_ZAAGLAGCH,
-        children: typesInMonth.map((assessment, subIdx) => {
-          const isParkingCol = assessment.tailbar === "Зогсоол";
-          const isKhungCol = assessment.tailbar === "Хөнгөлөлт";
-          return {
-            key: `${ym}|${assessment.tailbar}`,
-            label: (
-              <div className="flex justify-center w-full py-0.5">
-                <Tooltip title={assessment.tailbar}>
-                  <span className={`block truncate max-w-[105px] text-center leading-normal pb-1 font-medium ${isKhungCol ? "text-brand" : ""}`}>
-                    {assessment.tailbar}
-                  </span>
-                </Tooltip>
-              </div>
-            ),
-            width: isParkingCol ? 125 : isKhungCol ? 110 : 105,
-            align: "right",
-            // StandardTable нь onCell/onHeaderCell-ийг дамжуулдаггүй тул
-            // `className` (th ба td хоёуланд) ашиглан сарын заагийг зурна
-            className: subIdx === typesInMonth.length - 1 ? SAR_ZAAGLAGCH : undefined,
-            render: (_: any, record: NegtgelTailanItem) => {
-              if (isParkingCol) {
-                const tootMap = new Map<string, number>();
-
-                (record.avlaga || []).forEach((b) => {
-                  if (b.ognoo?.slice(0, 7) === ym) {
-                    const zardluud = Array.isArray(b.zardluud) && b.zardluud.length > 0
-                      ? b.zardluud
-                      : [{ ner: b.tailbar, dun: b.tulukhDun, toot: b.toot }];
-
-                    zardluud.forEach((z) => {
-                      if (z.dun <= 0) return;
-                      const zName = (z.ner || "").trim();
-                      if (isParkingCharge(zName, z.turul)) {
-                        const pToot = extractParkingToot(z, b.toot);
-                        tootMap.set(pToot, (tootMap.get(pToot) || 0) + z.dun);
-                      }
-                    });
-                  }
-                });
-
-                if (tootMap.size === 0) return "";
-
-                const entries = Array.from(tootMap.entries());
-                const totalParkingDun = entries.reduce((s, [, d]) => s + d, 0);
-
-                const tooltipContent = (
-                  <div className="space-y-0.5">
-                    {entries.map(([pToot, pDun], idx) => (
-                      <div key={idx}>
-                        {pToot ? `${pToot} тоот: ` : "Зогсоол: "}{formatNumber(pDun, 2)}₮
-                      </div>
-                    ))}
-                    {entries.length > 1 && (
-                      <div className="font-semibold border-t border-[color:var(--surface-border)] mt-1 pt-1">
-                        Нийт: {formatNumber(totalParkingDun, 2)}₮
-                      </div>
-                    )}
-                  </div>
-                );
-
-                return (
-                  <Tooltip title={tooltipContent}>
-                    <div className="flex flex-col items-end gap-0.5 w-full py-0.5">
-                      {entries.map(([pToot, pDun], idx) => (
-                        <div key={idx} className="text-right whitespace-nowrap leading-normal">
-                          {pToot ? (
-                            <span className="text-[color:var(--muted-text)] mr-1 font-normal">
-                              {pToot} тоот:
-                            </span>
-                          ) : null}
-                          <span className="text-black dark:text-white font-medium">
-                            {formatNumber(pDun, 2)}
-                          </span>
+      const khuukhed: ColumnsType<NegtgelTailanItem> = turluud.map((t) => {
+        const zogsoolEsekh = t.tailbar === "Зогсоол";
+        const khungEsekh = t.tailbar === "Хөнгөлөлт";
+        return {
+          key: `${ym}|${t.tailbar}`,
+          title: <TolgoiBichver title={t.tailbar}>{t.tailbar}</TolgoiBichver>,
+          width: zogsoolEsekh ? 115 : 105,
+          align: "right" as const,
+          render: (_: any, record: NegtgelTailanItem) => {
+            const d = dunAvya(record);
+            const dun = d.nud.get(`${ym}|${t.tailbar}`) || 0;
+            if (dun <= 0) return "";
+            if (zogsoolEsekh) {
+              const entries = d.zogsool.get(ym) || [];
+              return (
+                <Tooltip
+                  title={
+                    <div className="space-y-0.5 text-xs">
+                      {entries.map(([toot, v]) => (
+                        <div key={toot || "_"} className="flex justify-between gap-4">
+                          <span>{toot ? `${toot} тоот` : "Зогсоол"}</span>
+                          <span className="tabular-nums">{formatNumber(v, 2)}</span>
                         </div>
                       ))}
                     </div>
-                  </Tooltip>
-                );
-              }
-
-              let total = 0;
-              (record.avlaga || []).forEach((b) => {
-                if (b.ognoo?.slice(0, 7) === ym) {
-                  const zardluud = Array.isArray(b.zardluud) && b.zardluud.length > 0
-                    ? b.zardluud
-                    : [{ ner: b.tailbar, dun: b.tulukhDun }];
-
-                  zardluud.forEach((z) => {
-                    if (z.dun <= 0) return;
-                    let zName = (z.ner || "").trim();
-                    const isJunk = !zName || 
-                                  zName === "Нэхэмжлэх" || 
-                                  zName === "Авлага" || 
-                                  zName === "Авлага (Нэхэмжлэхгүй)" ||
-                                  zName.length > 100;
-                    
-                    if (isJunk) zName = "Бусад";
-                    
-                    // Do not accumulate parking charges into regular columns
-                    if (isParkingCharge(zName, z.turul)) return;
-
-                    if (zName === assessment.tailbar) total += z.dun;
-                  });
-
-                  if (assessment.tailbar === "Хөнгөлөлт") {
-                    (b.khungulultuud || []).forEach((k: any) => {
-                      total += Number(k.dun || k.khungulultiinDun || 0);
-                    });
                   }
-                }
-              });
-
-              if (total <= 0) return "";
-              return (
-                <span className={` leading-normal ${isKhungCol ? "text-brand font-medium" : "text-black dark:text-white"}`}>
-                  {formatNumber(total, 2)}
-                </span>
+                >
+                  <span className="inline-flex items-center justify-end gap-1.5 tabular-nums">
+                    {entries.length > 1 && (
+                      <span className="rounded bg-[hsl(var(--zt-muted))] px-1 text-[10px] text-[hsl(var(--zt-muted-fg))]">
+                        {entries.length}
+                      </span>
+                    )}
+                    {formatNumber(dun, 2)}
+                  </span>
+                </Tooltip>
               );
-            },
-          };
-        }),
+            }
+            return (
+              <span className={`tabular-nums ${khungEsekh ? "text-brand" : ""}`}>
+                {khungEsekh ? "−" : ""}
+                {formatNumber(dun, 2)}
+              </span>
+            );
+          },
+        };
+      });
+
+      // Олон сар сонгосон үед сар бүрийн дэд дүн
+      if (olonSar) {
+        khuukhed.push({
+          key: `${ym}|__sar`,
+          title: "Сарын дүн",
+          width: 110,
+          align: "right",
+          render: (_: any, record: NegtgelTailanItem) => (
+            <span className="tabular-nums text-[hsl(var(--zt-muted-fg))]">
+              {tooKharuul(dunAvya(record).sar.get(ym) || 0)}
+            </span>
+          ),
+        });
+      }
+      // Сарын сүүлийн баганад зааг; хамгийн сүүлийн сард «Нийт»-ийн зүүн
+      // зураастай давхардахгүйн тулд зураасгүй
+      const suuliinSarEsekh = ym === months[months.length - 1];
+      const suuliin = khuukhed[khuukhed.length - 1] as any;
+      suuliin.className = suuliinSarEsekh ? ZAAGGUI : BARUUN_ZAAG;
+
+      cols.push({
+        key: `group-${ym}`,
+        title: sarNer(ym),
+        align: "center",
+        className: ym === months[months.length - 1] ? ZAAGGUI : BARUUN_ZAAG,
+        children: khuukhed,
       });
     });
 
-    // Final Total Balance Column
     cols.push({
-      key: "balance",
-      label: (
-        <div className="py-0.5">
-          <span className="leading-normal pb-0.5 font-semibold">Нийт</span>
-        </div>
-      ),
+      key: "niit",
+      title: "Нийт",
       align: "center",
       fixed: "right",
+      className: ZUUN_ZAAG,
       children: [
         {
-          key: "niitKhungulult",
-          label: (
-            <div className="flex justify-center w-full py-0.5">
-              <span className="block truncate max-w-[100px] text-center leading-normal pb-1 font-medium">
-                Хөнгөлөлт
-              </span>
-            </div>
-          ),
-          width: 105,
+          key: "niitBodogdson",
+          title: "Бодогдсон",
+          width: NIIT_URGUN.bodogdson,
           align: "right",
           fixed: "right",
-          render: (_: any, record: NegtgelTailanItem) => {
-            let rowKhungulult = Number((record as any).niitKhungulult || 0);
-            if (rowKhungulult <= 0) {
-              (record.avlaga || []).forEach((b) => {
-                (b.zardluud || []).forEach((z) => {
-                  if (z.ner === "Хөнгөлөлт" || z.turul === "Хөнгөлөлт") {
-                    rowKhungulult += Number(z.dun || 0);
-                  }
-                });
-                (b.khungulultuud || []).forEach((k: any) => {
-                  rowKhungulult += Number(k.dun || k.khungulultiinDun || 0);
-                });
-              });
-            }
-            return rowKhungulult > 0 ? (
-              <span className="text-brand font-medium leading-normal">
-                {formatNumber(rowKhungulult, 2)}
-              </span>
-            ) : "-";
+          className: ZUUN_ZAAG,
+          render: (_: any, record) => (
+            <span className="tabular-nums">{tooKharuul(dunAvya(record).bodogdson) || "-"}</span>
+          ),
+        },
+        {
+          key: "niitKhungulult",
+          title: "Хөнгөлөлт",
+          width: NIIT_URGUN.khungulult,
+          align: "right",
+          fixed: "right",
+          render: (_: any, record) => {
+            const v = dunAvya(record).khungulult;
+            return v > 0 ? (
+              <span className="tabular-nums text-brand">−{formatNumber(v, 2)}</span>
+            ) : (
+              <span className="text-[hsl(var(--zt-muted-fg))]">-</span>
+            );
           },
         },
         {
           key: "niitUldegdel",
-          label: (
-            <div className="flex justify-center w-full py-0.5">
-              <span className="block truncate max-w-[100px] text-center leading-normal pb-1 font-medium">
-                Үлдэгдэл
-              </span>
-            </div>
-          ),
-          width: 110,
+          title: "Үлдэгдэл",
+          width: NIIT_URGUN.uldegdel,
           align: "right",
           fixed: "right",
-          render: (_: any, record: NegtgelTailanItem) => {
-            const bal = Number(record.niitUldegdel ?? record.globalUldegdel ?? record.niitTulukhDun ?? 0);
+          render: (_: any, record) => {
+            const v = dunAvya(record).uldegdel;
             return (
-              <span className="text-[color:var(--panel-text)] dark:text-white font-medium leading-normal">
-                {formatNumber(bal, 2)}
+              <span
+                className={`tabular-nums ${
+                  v > 0 ? "text-danger" : v < 0 ? "text-success" : "text-[hsl(var(--zt-muted-fg))]"
+                }`}
+              >
+                {formatNumber(v, 2)}
               </span>
             );
           },
-        }
-      ]
+        },
+      ],
     });
 
     return cols;
-  }, [months, avlagaTypes]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- dunAvya нь dunMap-аас хамаарна
+  }, [months, avlagaTypes, dunMap, olonSar]);
+
+  // ── Нийлбэр мөр ───────────────────────────────────────────────────────
+  const niilber = useMemo(() => {
+    const nud = new Map<string, number>();
+    const sar = new Map<string, number>();
+    let bodogdson = 0;
+    let khungulult = 0;
+    let uldegdel = 0;
+    murnuud.forEach((r) => {
+      const d = dunAvya(r);
+      d.nud.forEach((v, k) => nud.set(k, (nud.get(k) || 0) + v));
+      d.sar.forEach((v, k) => sar.set(k, (sar.get(k) || 0) + v));
+      bodogdson += d.bodogdson;
+      khungulult += d.khungulult;
+      uldegdel += d.uldegdel;
+    });
+    return { nud, sar, bodogdson, khungulult, uldegdel };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [murnuud, dunMap]);
+
+  // Сервер бүх хуудсыг хамарсан үлдэгдэл өгсөн бол түүнийг
+  const niitUldegdelKharuulakh =
+    typeof niitUldegdel === "number" && Number.isFinite(niitUldegdel) ? niitUldegdel : niilber.uldegdel;
+  const khuudasKhesegKhen = Math.abs(niitUldegdelKharuulakh - niilber.uldegdel) >= 0.01;
+
+  const summary = () => {
+    const cells: React.ReactNode[] = [];
+    // «Нийт» бүлгийн 3 навч багана хамгийн сүүлд — индексээр бодит зайг авна
+    const navchToo =
+      5 +
+      months.reduce((s, ym) => {
+        const n = avlagaTypes.filter((v) => v.ognoo === ym).length;
+        return s + (n ? n + (olonSar ? 1 : 0) : 0);
+      }, 0);
+    let i = 0;
+    cells.push(
+      <Table.Summary.Cell key="lbl" index={i++} colSpan={5} fixed="left" className={`text-[12px] ${BARUUN_ZAAG}`}>
+        Нийт {murnuud.length} мөр
+      </Table.Summary.Cell>,
+    );
+    months.forEach((ym) => {
+      const turluud = avlagaTypes.filter((v) => v.ognoo === ym);
+      if (turluud.length === 0) return;
+      const keys = turluud.map((t) => `${ym}|${t.tailbar}`);
+      if (olonSar) keys.push(`${ym}|__sar`);
+      keys.forEach((k, idx) => {
+        const v = k.endsWith("|__sar") ? niilber.sar.get(ym) || 0 : niilber.nud.get(k) || 0;
+        const khung = k.endsWith("|Хөнгөлөлт");
+        cells.push(
+          <Table.Summary.Cell
+            key={k}
+            index={i++}
+            align="right"
+            className={`tabular-nums ${khung ? "text-brand" : ""} ${
+              idx === keys.length - 1 ? (ym === months[months.length - 1] ? ZAAGGUI : BARUUN_ZAAG) : ""
+            }`}
+          >
+            {v > 0 ? `${khung ? "−" : ""}${formatNumber(v, 2)}` : ""}
+          </Table.Summary.Cell>,
+        );
+      });
+    });
+    cells.push(
+      <Table.Summary.Cell
+        key="bod"
+        index={i++}
+        align="right"
+        fixed="right"
+        leafIndex={navchToo}
+        className={`tabular-nums ${ZUUN_ZAAG}`}
+      >
+        {formatNumber(niilber.bodogdson, 2)}
+      </Table.Summary.Cell>,
+      <Table.Summary.Cell
+        key="khung"
+        index={i++}
+        align="right"
+        fixed="right"
+        leafIndex={navchToo + 1}
+        className="tabular-nums text-brand"
+      >
+        {niilber.khungulult > 0 ? `−${formatNumber(niilber.khungulult, 2)}` : "-"}
+      </Table.Summary.Cell>,
+      <Table.Summary.Cell key="uld" index={i++} align="right" fixed="right" leafIndex={navchToo + 2} className="tabular-nums">
+        <Tooltip title={khuudasKhesegKhen ? `Энэ хуудас: ${formatNumber(niilber.uldegdel, 2)}` : undefined}>
+          <span className={niitUldegdelKharuulakh > 0 ? "text-danger" : ""}>
+            {formatNumber(niitUldegdelKharuulakh, 2)}
+          </span>
+        </Tooltip>
+      </Table.Summary.Cell>,
+    );
+    return <Table.Summary.Row>{cells}</Table.Summary.Row>;
+  };
 
   return (
-    <StandardTable
-      className="compact-table"
+    <Table<NegtgelTailanItem>
+      className="negtgel-table"
       columns={columns}
-      data={data || []}
+      dataSource={murnuud}
+      rowKey={(r, i) => `${r.gereeniiId || r._id?.gereeniiId || r.gereeniiDugaar || ""}-${i}`}
       loading={loading}
-      containerClassName="rounded-md"
-      footer={
-        <div className="flex justify-end items-center gap-4 py-0.5 border-t border-[color:var(--surface-border)]">
-          {khuudasKhesegKhen && (
-            <span className="text-[color:var(--muted-text)]">
-              Энэ хуудас: {formatNumber(localTotalUldegdel, 2)} ₮
-            </span>
-          )}
-          {localTotalKhungulult > 0 && (
-            <>
-              <span className="text-[color:var(--muted-text)]">Нийт хөнгөлөлт:</span>
-              <span className="text-brand font-medium">
-                {formatNumber(localTotalKhungulult, 2)} ₮
-              </span>
-              <span className="text-[color:var(--muted-text)]">|</span>
-            </>
-          )}
-          <span className="text-[color:var(--muted-text)]">Нийт үлдэгдэл:</span>
-          <span className="text-brand font-medium">{formatNumber(totalUldegdel, 2)} ₮</span>
-        </div>
-      }
+      pagination={false}
+      size="small"
+      scroll={{ x: "max-content" }}
+      summary={summary}
+      locale={{ emptyText: "Сонгосон хугацаанд мэдээлэл алга" }}
     />
   );
 }

@@ -16,8 +16,6 @@ const EmailTokhirgoo = lazy(() => import("./EmailTokhirgoo"));
 const Medegdel = lazy(() => import("./Medegdel"));
 const NevtreltiinTuukh = lazy(() => import("./NevtreltiinTuukh"));
 const Zogsool = lazy(() => import("./Zogsool"));
-const UstgasanTuukh = lazy(() => import("./UstsanTuukh"));
-const ZassanTuukh = lazy(() => import("./ZassanTuukh"));
 const BarilgiinTokhirgoo = lazy(() => import("./BarilgiinTokhirgoo"));
 const NemeltTokhirgoo = lazy(() => import("./NemeltTokhirgoo"));
 const TuslamjTokhirgoo = lazy(() => import("./TuslamjTokhirgoo"));
@@ -141,8 +139,6 @@ function Tokhirgoo() {
       { perm: "tokhirgoo.dans", text: "Данс", tsonkh: Dans, comingSoon: false },
       { perm: "tokhirgoo.zogsool", text: "Зогсоол", tsonkh: Zogsool, comingSoon: false },
       { perm: "tokhirgoo.nevtreltiinTuukh", text: "Нэвтрэлтийн түүх", tsonkh: NevtreltiinTuukh, comingSoon: false },
-      { perm: "tokhirgoo.ustsanTuukh", text: "Устгасан түүх", tsonkh: UstgasanTuukh, comingSoon: false },
-      { perm: "tokhirgoo.zassanTuukh", text: "Зассан түүх", tsonkh: ZassanTuukh, comingSoon: false },
       { perm: "tokhirgoo.tuslamj", text: "Ерөнхий тусламж", tsonkh: TuslamjTokhirgoo, comingSoon: false },
       { perm: "tokhirgoo.kamer", text: "Камерийн тохиргоо", tsonkh: KameriinTokhirgoo, comingSoon: false },
       { perm: "tokhirgoo.baaz", text: "Бааз", tsonkh: Baaz, comingSoon: false },

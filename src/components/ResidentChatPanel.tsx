@@ -347,20 +347,20 @@ export default function ResidentChatPanel() {
                 onClick={() => setSongogdson(m)}
                 className="flex w-full items-start gap-3 border-b border-[color:var(--surface-border)] px-4 py-3 text-left transition-colors hover:bg-[color:var(--surface-hover)]"
               >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-theme/10 text-xs font-semibold text-theme">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-theme/10 text-xs font-medium text-theme">
                   {su.ner.trim().charAt(0).toUpperCase() || "?"}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline justify-between gap-2">
-                    <span className="truncate text-xs font-semibold text-[color:var(--panel-text)]">
+                    <span className="truncate text-xs font-medium text-[color:var(--panel-text)]">
                       {su.ner}
                     </span>
-                    <span className="shrink-0 text-[10px] text-[color:var(--muted-text)]">
+                    <span className="shrink-0 text-[11px] text-[color:var(--muted-text)]">
                       {tsagFormat(m.updatedAt || m.createdAt)}
                     </span>
                   </div>
                   {(su.toot || su.utas) && (
-                    <div className="mt-0.5 flex items-center gap-2 text-[10px] text-[color:var(--muted-text)]">
+                    <div className="mt-0.5 flex items-center gap-2 text-[11px] text-[color:var(--muted-text)]">
                       {su.toot && (
                         <span className="inline-flex items-center gap-1">
                           <Home className="h-2.5 w-2.5" />
@@ -404,14 +404,14 @@ export default function ResidentChatPanel() {
         >
           <ArrowLeft className="h-4 w-4" />
         </button>
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-theme/10 text-[11px] font-semibold text-theme">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-theme/10 text-[11px] font-medium text-theme">
           {idevkhteiSuugch.ner.trim().charAt(0).toUpperCase() || "?"}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-xs font-semibold text-[color:var(--panel-text)]">
+          <p className="truncate text-xs font-medium text-[color:var(--panel-text)]">
             {idevkhteiSuugch.ner}
           </p>
-          <div className="flex items-center gap-2 text-[10px] text-[color:var(--muted-text)]">
+          <div className="flex items-center gap-2 text-[11px] text-[color:var(--muted-text)]">
             {idevkhteiSuugch.toot && (
               <span className="inline-flex items-center gap-1">
                 <Home className="h-2.5 w-2.5" />
@@ -458,7 +458,7 @@ export default function ResidentChatPanel() {
                     {m.message || m.title || ""}
                   </p>
                   <p
-                    className={`mt-1 text-right text-[9px] ${
+                    className={`mt-1 text-right text-[11px] ${
                       minii ? "text-theme" : "text-[color:var(--muted-text)]"
                     }`}
                   >

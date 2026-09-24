@@ -329,7 +329,7 @@ export default function ZogsoolQrPage() {
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-danger/10 ring-1 ring-danger">
             <AlertTriangle className="h-8 w-8 text-danger" />
           </div>
-          <h1 className="text-lg font-bold text-[color:var(--panel-text)] dark:text-white">
+          <h1 className="text-lg font-medium text-[color:var(--panel-text)] dark:text-white">
             {ekhniiAldaa}
           </h1>
           <p className="text-sm text-[color:var(--muted-text)]">
@@ -359,7 +359,7 @@ export default function ZogsoolQrPage() {
       <div className="mb-6 flex flex-col items-center gap-3 text-center">
         <ThemedLogo size={52} withBg={false} alt="AmarHome" />
         <div>
-          <h1 className="text-lg font-bold tracking-tight text-[color:var(--panel-text)] dark:text-white">
+          <h1 className="text-lg font-medium tracking-tight text-[color:var(--panel-text)] dark:text-white">
             {tokhirgoo.ner || "Зогсоол"}
           </h1>
           <p className="mt-1 text-xs text-[color:var(--muted-text)]">
@@ -408,7 +408,7 @@ export default function ZogsoolQrPage() {
             maxLength={7}
             autoComplete="off"
             spellCheck={false}
-            className="h-16 w-full rounded-2xl bg-[color:var(--surface-hover)] px-4 text-center text-2xl font-bold tracking-[0.2em] text-[color:var(--panel-text)] ring-1 ring-[color:var(--surface-border)] transition-shadow placeholder:font-normal placeholder:tracking-normal placeholder:text-[color:var(--muted-text)] focus:ring-2 focus:ring-theme focus:outline-none dark:bg-white/5 dark:text-white dark:ring-white/10 dark:placeholder:text-[color:var(--muted-text)]"
+            className="h-16 w-full rounded-2xl bg-[color:var(--surface-hover)] px-4 text-center text-2xl font-medium tracking-[0.2em] text-[color:var(--panel-text)] ring-1 ring-[color:var(--surface-border)] transition-shadow placeholder:font-normal placeholder:tracking-normal placeholder:text-[color:var(--muted-text)] focus:ring-2 focus:ring-theme focus:outline-none dark:bg-white/5 dark:text-white dark:ring-white/10 dark:placeholder:text-[color:var(--muted-text)]"
           />
           <Tovch
             onClick={mashinKhaiya}
@@ -442,11 +442,11 @@ export default function ZogsoolQrPage() {
             <p className="text-xs text-[color:var(--muted-text)]">
               Төлөх дүн
             </p>
-            <p className="text-3xl font-bold text-[color:var(--panel-text)] dark:text-white">
+            <p className="text-3xl font-medium text-[color:var(--panel-text)] dark:text-white">
               {dunFormat(mashin.pay_amount)}
             </p>
             <p
-              className={`mt-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-mono text-xs font-semibold ${
+              className={`mt-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-mono text-xs font-medium ${
                 tsagDuusch
                   ? "animate-pulse bg-danger/10 text-danger ring-1 ring-danger"
                   : "bg-warning/10 text-warning ring-1 ring-warning"
@@ -512,10 +512,10 @@ export default function ZogsoolQrPage() {
             <CheckCircle2 className="h-10 w-10 text-brand" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-[color:var(--panel-text)] dark:text-white">
+            <h2 className="text-xl font-medium text-[color:var(--panel-text)] dark:text-white">
               Төлбөр бүртгэгдлээ
             </h2>
-            <p className="mt-1 text-2xl font-bold text-brand">
+            <p className="mt-1 text-2xl font-medium text-brand">
               {dunFormat(tulsunDun)}
             </p>
             <p className="mt-2 text-xs text-[color:var(--muted-text)]">
@@ -554,7 +554,7 @@ const Tovch: React.FC<{
   <button
     onClick={onClick}
     disabled={ajillaj}
-    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-theme py-4 text-sm font-semibold text-white transition-colors hover:bg-theme disabled:opacity-40 dark:hover:bg-theme"
+    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-theme py-4 text-sm font-medium text-white transition-colors hover:bg-theme disabled:opacity-40 dark:hover:bg-theme"
   >
     {ajillaj ? <Loader2 className="h-4 w-4 animate-spin" /> : icon}
     {children}
@@ -581,7 +581,7 @@ const Mur: React.FC<{ nert: string; utga: string; tom?: boolean }> = ({
     <span
       className={
         tom
-          ? "text-lg font-bold text-brand"
+          ? "text-lg font-medium text-brand"
           : "text-sm font-medium text-[color:var(--panel-text)] dark:text-white"
       }
     >
@@ -596,7 +596,7 @@ const MashiniiKhuudas: React.FC<{ mashin: MashiniiMedeelel }> = ({
   <div className="space-y-3 rounded-3xl bg-[color:var(--surface-hover)] p-4 ring-1 ring-[color:var(--surface-border)] dark:bg-white/5 dark:ring-white/10">
     <div className="flex items-center gap-2">
       <CarFront className="h-4 w-4 shrink-0 text-brand" />
-      <span className="text-base font-bold tracking-wider text-[color:var(--panel-text)] dark:text-white">
+      <span className="text-base font-medium tracking-wider text-[color:var(--panel-text)] dark:text-white">
         {mashin.plate_number}
       </span>
     </div>

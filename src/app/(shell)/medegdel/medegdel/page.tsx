@@ -924,7 +924,7 @@ function MedegdelContent() {
                         {((turul === "App" && !hasApp(mur)) ||
                           (turul === "Mail" && !hasEmail(mur))) && (
                           <span
-                            className="shrink-0 rounded-full bg-warning/10 px-1.5 py-0.5 text-[10px] text-warning"
+                            className="shrink-0 rounded-full bg-warning/10 px-1.5 py-0.5 text-[11px] text-warning"
                             title={turul === "App" ? "Апп суулгаагүй — мэдэгдэл хүрэхгүй" : "И-мэйлгүй"}
                           >
                             {turul === "App" ? "Апп-гүй" : "Мэйлгүй"}
@@ -1105,7 +1105,7 @@ function MedegdelContent() {
             {/* Left side: List of notifications */}
             <div className="neu-panel p-4 sm:p-5 flex flex-col min-w-0 lg:w-[350px] shrink-0">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold flex items-center gap-2 text-[color:var(--panel-text)] dark:text-white">
+                <h3 className="text-sm font-medium flex items-center gap-2 text-[color:var(--panel-text)] dark:text-white">
                   <Bell className="w-4 h-4 text-brand" />
                   Төлөлтийн мэдэгдлүүд
                 </h3>
@@ -1150,20 +1150,20 @@ function MedegdelContent() {
 
                         <div className="flex items-center justify-between w-full">
 
-                          <span className="text-[10px] text-[color:var(--muted-text)]">
+                          <span className="text-[11px] text-[color:var(--muted-text)]">
                             {ognooTsagBogino(item.createdAt || item.ognoo)}
                           </span>
                           {isUnread ? (
-                            <span className="px-1.5 py-0.5 rounded text-[9px] bg-warning/20 text-warning border border-warning/50 shrink-0">
+                            <span className="px-1.5 py-0.5 rounded text-[11px] bg-warning/20 text-warning border border-warning/50 shrink-0">
                               Шинэ
                             </span>
                           ) : (
-                            <span className="px-1.5 py-0.5 rounded text-[9px] bg-theme/20 text-brand border border-theme/50 shrink-0">
+                            <span className="px-1.5 py-0.5 rounded text-[11px] bg-theme/20 text-brand border border-theme/50 shrink-0">
                               Уншсан
                             </span>
                           )}
                         </div>
-                        <h4 className="text-xs font-semibold text-[color:var(--panel-text)] dark:text-white line-clamp-1">
+                        <h4 className="text-xs font-medium text-[color:var(--panel-text)] dark:text-white line-clamp-1">
                           {item.title || "QPay төлөлт"}
                         </h4>
                         <p className="text-[11px] text-[color:var(--muted-text)] line-clamp-2 leading-relaxed">
@@ -1182,7 +1182,7 @@ function MedegdelContent() {
                 <div className="flex flex-col gap-4 flex-1 min-h-0">
                   <div className="flex items-center justify-between border-b border-[color:var(--surface-border)] pb-3">
                     <div>
-                      <h2 className="text-base font-bold text-[color:var(--panel-text)] dark:text-white">
+                      <h2 className="text-base font-medium text-[color:var(--panel-text)] dark:text-white">
                         {selectedTulult.title || "QPay төлөлт"}
                       </h2>
                       <span className="text-xs text-[color:var(--muted-text)]">
@@ -1197,21 +1197,21 @@ function MedegdelContent() {
                     <div className="flex items-center gap-2">
                       <User className="w-4 h-4 text-brand shrink-0" />
                       <span className="text-xs text-[color:var(--muted-text)] shrink-0">Нэр:</span>
-                      <span className="text-xs font-semibold text-[color:var(--panel-text)] dark:text-white truncate">
+                      <span className="text-xs font-medium text-[color:var(--panel-text)] dark:text-white truncate">
                         {residentsMap[selectedTulult.orshinSuugchId]?.ner || selectedTulult.orshinSuugchNer || "..."}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Home className="w-4 h-4 text-brand shrink-0" />
                       <span className="text-xs text-[color:var(--muted-text)] shrink-0">Тоот:</span>
-                      <span className="text-xs font-semibold text-[color:var(--panel-text)] dark:text-white">
+                      <span className="text-xs font-medium text-[color:var(--panel-text)] dark:text-white">
                         {residentsMap[selectedTulult.orshinSuugchId]?.toot || selectedTulult.gereeniiDugaar || "..."}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Phone className="w-4 h-4 text-brand shrink-0" />
                       <span className="text-xs text-[color:var(--muted-text)] shrink-0">Утас:</span>
-                      <span className="text-xs font-semibold text-[color:var(--panel-text)] dark:text-white">
+                      <span className="text-xs font-medium text-[color:var(--panel-text)] dark:text-white">
                         {residentsMap[selectedTulult.orshinSuugchId]?.utas || selectedTulult.orshinSuugchUtas || "..."}
                       </span>
                     </div>
@@ -1260,7 +1260,7 @@ function MedegdelContent() {
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-[color:var(--surface-border)] dark:border-white/10">
-          <h3 className="text-sm font-semibold text-[color:var(--panel-text)] dark:text-white m-0">
+          <h3 className="text-sm font-medium text-[color:var(--panel-text)] dark:text-white m-0">
             {lastSendResult?.turul ? `${lastSendResult.turul} илгээлтийн дэлгэрэнгүй` : "Мэдэгдэл илгээлтийн дэлгэрэнгүй"}
           </h3>
           <button
@@ -1276,7 +1276,7 @@ function MedegdelContent() {
         <div className="p-4">
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col items-center justify-center py-4 px-3 rounded-lg bg-success/10 dark:bg-theme/20 border border-[#86efac] dark:border-theme/60">
-              <span className="text-2xl sm:text-3xl font-bold text-[#00875a] dark:text-brand mb-1">
+              <span className="text-2xl sm:text-3xl font-medium text-[#00875a] dark:text-brand mb-1">
                 {lastSendResult?.sent ?? 0}
               </span>
               <span className="text-[11px] sm:text-xs font-medium text-[color:var(--muted-text)] text-center">
@@ -1285,7 +1285,7 @@ function MedegdelContent() {
             </div>
 
             <div className="flex flex-col items-center justify-center py-4 px-3 rounded-lg bg-danger/10 border border-[#fca5a5]">
-              <span className="text-2xl sm:text-3xl font-bold text-[#dc2626] mb-1">
+              <span className="text-2xl sm:text-3xl font-medium text-[#dc2626] mb-1">
                 {lastSendResult?.failed ?? 0}
               </span>
               <span className="text-[11px] sm:text-xs font-medium text-[color:var(--muted-text)] text-center">
@@ -1297,7 +1297,7 @@ function MedegdelContent() {
           {/* Failed users detail if any */}
           {lastSendResult?.failedUsers && lastSendResult.failedUsers.length > 0 && (
             <div className="mt-3 pt-2.5 border-t border-[color:var(--surface-border)] dark:border-white/10">
-              <span className="text-[11px] font-semibold text-danger block mb-1.5">
+              <span className="text-[11px] font-medium text-danger block mb-1.5">
                 Амжилтгүй болсон шалтгаан ({lastSendResult.failedUsers.length}):
               </span>
               <div className="max-h-28 overflow-y-auto space-y-1 pr-1 text-[11px]">
@@ -1309,7 +1309,7 @@ function MedegdelContent() {
                     <span className="font-medium truncate mr-2">
                       {u.ner} {u.toot ? `(${u.toot})` : ""}
                     </span>
-                    <span className="text-danger text-[10px] shrink-0">
+                    <span className="text-danger text-[11px] shrink-0">
                       {u.shaltgaan || "Алдаа"}
                     </span>
                   </div>

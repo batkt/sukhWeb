@@ -7,6 +7,7 @@ import React, {
   useRef,
   useCallback,
 } from "react";
+import FilterDatePicker from "@/components/ui/FilterDatePicker";
 import { createPortal } from "react-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { useAuth } from "@/lib/useAuth";
@@ -109,7 +110,7 @@ const RealTimeDuration = ({
   const h = Math.floor(khugatsaaMin / 60);
   const m = khugatsaaMin % 60;
   return (
-    <span className="text-[10px]  uppercase tracking-wide text-[color:var(--panel-text)]">
+    <span className="text-[11px] text-[color:var(--panel-text)]">
       {h > 0 ? `${h} цаг ${m} мин` : `${m} мин`}
     </span>
   );
@@ -269,7 +270,7 @@ const FilterPopover = ({
             onMouseEnter={neekh}
             onMouseLeave={khaakh}
           >
-            <div className="mb-1 px-3 py-2 text-[10px] tracking-wider text-[color:var(--muted-text)] uppercase">
+            <div className="mb-1 px-3 py-2 text-[11px] text-[color:var(--muted-text)]">
               {label} сонгох
             </div>
             {options.map((opt, idx, arr) => {
@@ -1846,7 +1847,7 @@ export default function Camera() {
             className={`${badgeClass} ${color}`}
             style={{ borderRadius: "6px", color: "white" }}
           >
-            <span className="whitespace-nowrap uppercase">
+            <span className="whitespace-nowrap">
               {text}
             </span>
           </div>
@@ -1888,7 +1889,7 @@ export default function Camera() {
                   setConfirmExitId(transaction._id ?? null);
                 }
               }}
-              className={`mx-auto flex w-[100px] max-w-[100px] min-w-[100px] cursor-pointer flex-nowrap items-center justify-center overflow-hidden rounded-[6px] border px-2 py-0.5 whitespace-nowrap uppercase ${
+              className={`mx-auto flex w-[100px] max-w-[100px] min-w-[100px] cursor-pointer flex-nowrap items-center justify-center overflow-hidden rounded-[6px] border px-2 py-0.5 whitespace-nowrap ${
                 hasRemainingBalance
                   ? "bg-warning border-warning"
                   : !isCurrentlyIn && isDebt
@@ -2048,10 +2049,10 @@ export default function Camera() {
               <div className="absolute top-4 right-4 z-40 flex flex-col items-end gap-2">
                 <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10">
                   <div className="w-1.5 h-1.5 rounded-full bg-theme animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div>
-                  <span className="text-[10px] font-black !text-white uppercase tracking-widest">
+                  <span className="text-[11px] font-medium !text-white">
                     Орох Камер
                   </span>
-                  <span className="text-[9px] font-mono !text-[color:var(--muted-text)] ml-1">
+                  <span className="text-[11px] font-mono !text-[color:var(--muted-text)] ml-1">
                     ({activeEntryIP || entryCameras[0]?.cameraIP || "-"})
                   </span>
                 </div>
@@ -2061,7 +2062,7 @@ export default function Camera() {
                     <select
                       value={activeEntryIP}
                       onChange={(e) => setActiveEntryIP(e.target.value)}
-                      className="appearance-none bg-black/60 backdrop-blur-xl border border-white/20 rounded-full px-5 py-2 pr-10 text-[10px] font-black !text-white uppercase tracking-widest cursor-pointer hover:bg-black/80 transition-all outline-none"
+                      className="appearance-none bg-black/60 backdrop-blur-xl border border-white/20 rounded-full px-5 py-2 pr-10 text-[11px] font-medium !text-white cursor-pointer hover:bg-black/80 transition-all outline-none"
                     >
                       {entryCameras.map((cam) => (
                         <option
@@ -2083,7 +2084,7 @@ export default function Camera() {
               {entryCameras.length === 0 ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-[color:var(--panel)] border border-white/5">
                   <VideoOff className="w-12 h-12 text-[color:var(--panel-text)] mb-4" />
-                  <p className="text-[10px] font-black text-[color:var(--muted-text)] uppercase tracking-widest">
+                  <p className="text-[11px] font-medium text-[color:var(--muted-text)]">
                     Тохиргоогүй байна
                   </p>
                 </div>
@@ -2129,10 +2130,10 @@ export default function Camera() {
               <div className="absolute top-4 right-4 z-40 flex flex-col items-end gap-2">
                 <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10">
                   <div className="w-1.5 h-1.5 rounded-full bg-danger animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]"></div>
-                  <span className="text-[10px] font-black !text-white uppercase tracking-widest">
+                  <span className="text-[11px] font-medium !text-white">
                     Гарах Камер
                   </span>
-                  <span className="text-[9px] font-mono !text-[color:var(--muted-text)] ml-1">
+                  <span className="text-[11px] font-mono !text-[color:var(--muted-text)] ml-1">
                     ({activeExitIP || exitCameras[0]?.cameraIP || "-"})
                   </span>
                 </div>
@@ -2142,7 +2143,7 @@ export default function Camera() {
                     <select
                       value={activeExitIP}
                       onChange={(e) => setActiveExitIP(e.target.value)}
-                      className="appearance-none bg-black/60 backdrop-blur-xl border border-white/20 rounded-full px-5 py-2 pr-10 text-[10px] font-black !text-white uppercase tracking-widest cursor-pointer hover:bg-black/80 transition-all outline-none"
+                      className="appearance-none bg-black/60 backdrop-blur-xl border border-white/20 rounded-full px-5 py-2 pr-10 text-[11px] font-medium !text-white cursor-pointer hover:bg-black/80 transition-all outline-none"
                     >
                       {exitCameras.map((cam) => (
                         <option
@@ -2164,7 +2165,7 @@ export default function Camera() {
               {exitCameras.length === 0 ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-[color:var(--panel)] border border-white/5">
                   <VideoOff className="w-12 h-12 text-[color:var(--panel-text)] mb-4" />
-                  <p className="text-[10px] font-black text-[color:var(--muted-text)] uppercase tracking-widest">
+                  <p className="text-[11px] font-medium text-[color:var(--muted-text)]">
                     Тохиргоогүй байна
                   </p>
                 </div>
@@ -2213,14 +2214,14 @@ export default function Camera() {
           >
             {/* Left: Title */}
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-9 h-9 rounded-xl ">
+              <div className="flex items-center justify-center w-9 h-9 rounded-xl">
                 <Calendar className="w-4 h-4 text-[color:var(--muted-text)]" />
               </div>
               <div>
                 <h3 className="text-[13px] text-[color:var(--panel-text)] tracking-tight leading-none">
                   Жагсаалт
                 </h3>
-                <p className="text-[10px]  text-[color:var(--muted-text)] mt-0.5">
+                <p className="text-[11px] text-[color:var(--muted-text)] mt-0.5">
                   Зогсоолын бүртгэл
                 </p>
               </div>
@@ -2229,29 +2230,22 @@ export default function Camera() {
             {/* Right: Register + DatePicker */}
             <div className="flex items-center gap-2.5 flex-wrap">
               {/* Date picker */}
-              <div className="min-w-[220px] h-9">
-                <StandardDatePicker
-                  isRange={true}
-                  value={dateRange}
-                  onChange={(_: any, dateStrings: [string, string]) => {
+              <FilterDatePicker
+                value={dateRange}
+                onChange={(_: any, dateStrings: [string, string]) => {
                     setDateRange(dateStrings);
                     setPage(1);
                   }}
-                  format="YYYY-MM-DD"
-                  classNames={{
-                    input:
-                      "flex items-center gap-2 rounded-full bg-[color:var(--surface-hover)] dark:bg-white/[0.03] border border-[color:var(--surface-border)] dark:border-white/[0.06] h-9 px-4 text-[11px] text-[color:var(--muted-text)] focus:ring-2 focus:ring-theme/10 transition-all",
-                  }}
-                  allowClear
-                />
-              </div>
+                format="YYYY-MM-DD"
+                className="w-full sm:w-[260px]"
+              />
 
               {/* Revenue report button */}
               <Button
                 onClick={() => { const today = moment().format("YYYY-MM-DD"); setRevenueDateRange([today, today]); setRevenueModalOpen(true); }}
                 variant="primary"
                 size="sm"
-                className="rounded-lg h-8 px-4 text-[9px] shadow-sm"
+                className="rounded-lg h-8 px-4 text-[11px] shadow-sm"
               >
                 <Receipt className="w-3.5 h-3.5 mr-1.5" />
                 Орлого тайлан
@@ -2262,7 +2256,7 @@ export default function Camera() {
                 onClick={() => setIsRegModalOpen(true)}
                 variant="primary"
                 size="sm"
-                className="rounded-lg h-8 px-4 text-[9px] shadow-sm"
+                className="rounded-lg h-8 px-4 text-[11px] shadow-sm"
               >
                 Машин бүртгэх
               </Button>
@@ -2281,11 +2275,11 @@ export default function Camera() {
                 summary={() => (
                   <Table.Summary.Row className="font-[family-name:var(--font-mono)] text-[11px]">
                     <Table.Summary.Cell colSpan={6} align="right">
-                      <span className="font-bold tracking-wider uppercase">
+                      <span className="font-medium">
                         Нийт Дүн:
                       </span>
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell align="right" className="font-bold whitespace-nowrap">
+                    <Table.Summary.Cell align="right" className="font-medium whitespace-nowrap">
                       {formatNumber(
                         transactions.reduce(
                           (sum, t) => sum + (Number(t.niitDun) || 0),
@@ -2293,7 +2287,7 @@ export default function Camera() {
                         ),
                       )}
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell align="right" className="font-bold whitespace-nowrap">
+                    <Table.Summary.Cell align="right" className="font-medium whitespace-nowrap">
                       {formatNumber(
                         transactions.reduce((sum, t) => {
                           const payOnly = tulburuudiigTsugluulya(t);
@@ -2310,7 +2304,7 @@ export default function Camera() {
                         }, 0),
                       )}
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell align="right" className="font-bold whitespace-nowrap">
+                    <Table.Summary.Cell align="right" className="font-medium whitespace-nowrap">
                       {formatNumber(
                         transactions.reduce((sum, t) => {
                           const disc = murNiiluulye(t).discountTotal;
@@ -2601,7 +2595,7 @@ export default function Camera() {
                 </div>
 
                 <div className="text-center">
-                  <p className="text-[15px] font-bold text-[color:var(--panel-text)] dark:text-white">И-Баримт амжилттай</p>
+                  <p className="text-[15px] font-medium text-[color:var(--panel-text)] dark:text-white">И-Баримт амжилттай</p>
                   <p className="text-[11px] text-[color:var(--muted-text)] mt-0.5">Цахим баримт үүсгэгдлээ</p>
                 </div>
 
@@ -2621,7 +2615,7 @@ export default function Camera() {
                     <svg className="w-8 h-8 text-[color:var(--muted-text)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                     </svg>
-                    <span className="text-[10px] text-[color:var(--muted-text)]">QR байхгүй</span>
+                    <span className="text-[11px] text-[color:var(--muted-text)]">QR байхгүй</span>
                   </div>
                 )}
 
@@ -2629,14 +2623,14 @@ export default function Camera() {
                 <div className="w-full space-y-2">
                   {ebarimtResult.lottery && (
                     <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-2xl bg-warning/10 border border-warning/30">
-                      <span className="text-[10px] font-semibold text-warning uppercase tracking-wider shrink-0">Сугалааны №</span>
-                      <span className="text-[13px] font-black text-warning font-[family-name:var(--font-mono)] text-right">{ebarimtResult.lottery}</span>
+                      <span className="text-[11px] font-medium text-warning shrink-0">Сугалааны №</span>
+                      <span className="text-[13px] font-medium text-warning font-[family-name:var(--font-mono)] text-right">{ebarimtResult.lottery}</span>
                     </div>
                   )}
                   {(ebarimtResult.receiptId || ebarimtResult.id) && (
                     <div className="px-4 py-2.5 rounded-2xl bg-[color:var(--surface-hover)] dark:bg-white/[0.04] border border-[color:var(--surface-border)] dark:border-white/[0.08] space-y-1">
-                      <span className="text-[10px] font-semibold text-[color:var(--muted-text)] uppercase tracking-wider block">Баримтын №</span>
-                      <span className="text-[11px] font-bold text-[color:var(--panel-text)] font-[family-name:var(--font-mono)] break-all block leading-relaxed">
+                      <span className="text-[11px] font-medium text-[color:var(--muted-text)] block">Баримтын №</span>
+                      <span className="text-[11px] font-medium text-[color:var(--panel-text)] font-[family-name:var(--font-mono)] break-all block leading-relaxed">
                         {ebarimtResult.receiptId || ebarimtResult.id}
                       </span>
                     </div>
@@ -2672,7 +2666,7 @@ export default function Camera() {
                         setTimeout(() => document.body.removeChild(iframe), 1000);
                       };
                     }}
-                    className="flex-1 h-10 rounded-2xl border border-[color:var(--surface-border)] dark:border-white/[0.1] bg-white dark:bg-white/[0.04] text-[color:var(--panel-text)] text-[13px] font-semibold hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/[0.08] transition-colors flex items-center justify-center gap-1.5"
+                    className="flex-1 h-10 rounded-2xl border border-[color:var(--surface-border)] dark:border-white/[0.1] bg-white dark:bg-white/[0.04] text-[color:var(--panel-text)] text-[13px] font-medium hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/[0.08] transition-colors flex items-center justify-center gap-1.5"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
@@ -2681,7 +2675,7 @@ export default function Camera() {
                   </button>
                   <button
                     onClick={() => setEbarimtResult(null)}
-                    className="flex-1 h-10 rounded-2xl bg-theme hover:bg-theme text-white text-[13px] font-bold transition-colors"
+                    className="flex-1 h-10 rounded-2xl bg-theme hover:bg-theme text-white text-[13px] font-medium transition-colors"
                   >
                     Хаах
                   </button>
@@ -2748,7 +2742,7 @@ export default function Camera() {
                 ) : (
                   <>
                     <div>
-                      <label className="block text-[11px] text-[color:var(--muted-text)] dark:text-white uppercase tracking-wider mb-1.5">
+                      <label className="block text-xs text-[color:var(--muted-text)] dark:text-white mb-1.5">
                         Хөнгөлөх дүн
                       </label>
                       <input
@@ -2761,7 +2755,7 @@ export default function Camera() {
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] text-[color:var(--muted-text)] dark:text-white uppercase tracking-wider mb-1.5">
+                      <label className="block text-xs text-[color:var(--muted-text)] dark:text-white mb-1.5">
                         Хөнгөлөх минут
                       </label>
                       <input
@@ -2873,10 +2867,10 @@ export default function Camera() {
               {/* Header */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-[color:var(--surface-border)] dark:border-white/10 bg-[color:var(--surface-bg)]">
                 <div>
-                  <h2 className="text-sm font-black text-[color:var(--panel-text)] dark:text-white tracking-tight">
+                  <h2 className="text-sm font-medium text-[color:var(--panel-text)] dark:text-white tracking-tight">
                     Үнэгүй үйлчлүүлэгчийн төрөл сонгох
                   </h2>
-                  <p className="text-[9px] text-[color:var(--muted-text)] uppercase tracking-wider mt-0.5">
+                  <p className="text-[11px] text-[color:var(--muted-text)] mt-0.5">
                     {freeExitModalTransaction.mashiniiDugaar}
                   </p>
                 </div>
@@ -2994,8 +2988,8 @@ export default function Camera() {
                       <AlertTriangle className="w-5 h-5 text-danger" />
                     </div>
                     <div>
-                      <h2 className="text-sm font-semibold text-[color:var(--panel-text)] dark:text-white">Зөрчил бүртгэх</h2>
-                      <p className="text-[10px] text-[color:var(--muted-text)] mt-0.5 font-mono uppercase tracking-wide">
+                      <h2 className="text-sm font-medium text-[color:var(--panel-text)] dark:text-white">Зөрчил бүртгэх</h2>
+                      <p className="text-[11px] text-[color:var(--muted-text)] mt-0.5 font-mono uppercase tracking-wide">
                         {violationModalTransaction.mashiniiDugaar}
                       </p>
                     </div>
@@ -3012,7 +3006,7 @@ export default function Camera() {
               {/* Body */}
               <div className="px-6 py-5 space-y-4">
                 <div>
-                  <label className="block text-[11px] text-[color:var(--muted-text)] uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs text-[color:var(--muted-text)] mb-1.5">
                     Зөрчлийн шалтгаан
                   </label>
                   <textarea
@@ -3113,7 +3107,7 @@ export default function Camera() {
 
               {/* Body */}
               <div className="p-5 space-y-2 max-h-[60vh] overflow-y-auto">
-                <p className="text-[10px] text-[color:var(--muted-text)] uppercase tracking-[0.15em] mb-1">
+                <p className="text-[11px] text-[color:var(--muted-text)] mb-1">
                   Төлбөрийн хэлбэр
                 </p>
                 {revenueLoading && (
@@ -3140,7 +3134,7 @@ export default function Camera() {
                         {item.name}
                       </span>
                     </div>
-                    <span className="text-[13px] font-black text-[color:var(--panel-text)] dark:text-white font-[family-name:var(--font-mono)] shrink-0 relative z-10">
+                    <span className="text-[13px] font-medium text-[color:var(--panel-text)] dark:text-white font-[family-name:var(--font-mono)] shrink-0 relative z-10">
                       {formatNumber(item.amount)}₮
                     </span>
                     <span className="text-[11px] text-[color:var(--muted-text)] font-[family-name:var(--font-mono)] w-6 text-center shrink-0 relative z-10">
@@ -3161,10 +3155,10 @@ export default function Camera() {
               {/* Footer total */}
               <div className="px-7 pb-6 pt-2">
                 <div className="flex justify-between items-center py-3 px-4 rounded-2xl bg-theme/[0.08] border border-theme/30">
-                  <span className="text-[11px] font-black text-brand uppercase tracking-wider">
+                  <span className="text-[11px] font-medium text-brand">
                     Нийт орлого
                   </span>
-                  <span className="text-[14px] font-black text-brand font-[family-name:var(--font-mono)]">
+                  <span className="text-[14px] font-medium text-brand font-[family-name:var(--font-mono)]">
                     {formatNumber(revenueModalBreakdown.totalAmount)}₮
                   </span>
                 </div>
@@ -3331,17 +3325,17 @@ const CameraStream = React.memo(
             <div className="relative p-6 rounded-3xl bg-[color:var(--panel)] backdrop-blur-sm border border-danger/30 space-y-3">
               <VideoOff className="w-16 h-16 mb-2 mx-auto opacity-75 animate-pulse" />
               <p className="text-base text-center">Камер холбогдохгүй байна</p>
-              <p className="text-[10px] opacity-50 text-center font-mono break-all">
+              <p className="text-[11px] opacity-50 text-center font-mono break-all">
                 {rtspUrl}
               </p>
               {connectionState && (
                 <div className="px-3 py-1.5 rounded-lg bg-danger/20 border border-danger/30">
-                  <p className="text-[10px] opacity-80 text-center">
+                  <p className="text-[11px] opacity-80 text-center">
                     Алдаа: {connectionState}
                   </p>
                 </div>
               )}
-              <p className="text-[10px] text-[color:var(--muted-text)] text-center leading-relaxed">
+              <p className="text-[11px] text-[color:var(--muted-text)] text-center leading-relaxed">
                 Stream path (&quot;{root}&quot;) буруу байж магадгүй.
                 <br />
                 Камер тохиргооноос ROOT-г шалгана уу.
@@ -3390,7 +3384,7 @@ const CameraStream = React.memo(
             }}
             className={`
             relative flex items-center gap-3 px-8 py-3 rounded-full 
-            font-black text-[11px] uppercase tracking-[0.2em]
+            font-medium text-[11px]  
             transition-all duration-300 active:scale-90
             backdrop-blur-xl border-2
             shadow-[0_8px_32px_rgba(0,0,0,0.3)]

@@ -201,10 +201,10 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
 
           return (
             <Tooltip title={tooltipContent} placement="top" color="#1e293b" trigger="hover">
-              <span className="inline-flex items-center gap-1.5 cursor-pointer px-2.5 py-0.5 rounded-md bg-[color:var(--surface-hover)] font-semibold text-[color:var(--panel-text)] border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors">
+              <span className="inline-flex items-center gap-1.5 cursor-pointer px-2.5 py-0.5 rounded-md bg-[color:var(--surface-hover)] font-medium text-[color:var(--panel-text)] border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors">
                 {toots[0].toot}
                 {toots.length > 1 && (
-                  <span className="text-[color:var(--muted-text)] font-bold">
+                  <span className="text-[color:var(--muted-text)] font-medium">
                     +{toots.length - 1}
                   </span>
                 )}

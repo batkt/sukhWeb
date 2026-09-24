@@ -8,7 +8,9 @@ import {
   Clock,
   Contact,
   FileSpreadsheet,
+  FilePen,
   FileText,
+  FileX,
   Gauge,
   History,
   Landmark,
@@ -95,6 +97,15 @@ export const NAV_ITEMS: NavItem[] = [
       { label: "Мэдэгдэл", path: "medegdel", icon: Bell },
       { label: "Санал хүсэлт", path: "sanalKhuselt", icon: MessageSquare },
       { label: "Санал асуулга", path: "sanalAsuulga", icon: Vote },
+    ],
+  },
+  {
+    label: "Түүх",
+    path: "tuukh",
+    icon: History,
+    submenu: [
+      { label: "Зассан түүх", path: "zassan", icon: FilePen },
+      { label: "Устгасан түүх", path: "ustgasan", icon: FileX },
     ],
   },
   {

@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import FilterDatePicker from "@/components/ui/FilterDatePicker";
 import matchesSearch from "../../../../tools/function/matchesSearch";
 import { Tag, Input, Popconfirm, Card, Select } from "antd";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import moment from "moment";
 import { motion, AnimatePresence } from "framer-motion";
-import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import formatNumber from "../../../../../tools/function/formatNumber";
 import { getDefaultDateRange } from "@/lib/utils";
 
@@ -278,7 +278,7 @@ export default function TaskManagementSystem() {
                     {group.khariltsagchiinNer?.charAt(0)}
                   </div>
                   {hasMultiple && (
-                    <div className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-danger text-white text-[10px]  shadow-sm">
+                    <div className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-danger text-white text-[11px] shadow-sm">
                       {group.duudlagaCount}
                     </div>
                   )}
@@ -328,7 +328,7 @@ export default function TaskManagementSystem() {
                     >
                       <Tag
                         color={getStatusInfo(item.tuluv).color}
-                        className="!rounded-full !px-2 !py-0.5 !text-[10px]"
+                        className="!rounded-full !px-2 !py-0.5 !text-[11px]"
                       >
                         {getStatusInfo(item.tuluv).text}
                       </Tag>
@@ -396,16 +396,14 @@ export default function TaskManagementSystem() {
           </Card>
 
           <div className="grid grid-cols-2 gap-3 bg-transparent">
-            <StandardDatePicker
-              isRange={true}
-              placeholder={"Огноо"}
+            <FilterDatePicker
               onChange={(dates) =>
                 setEkhlekhOgnoo(
                   (dates || [null, null]) as [Date | null, Date | null]
                 )
               }
               value={ekhlekhOgnoo ?? undefined}
-              className="!h-8 !bg-transparent !backdrop-blur-md !border !border-[color:var(--surface-border)] !text-[color:var(--panel-text)]"
+              className="w-full sm:w-[260px]"
             />
             <Select
               popupClassName="tusgaiZagvar"
@@ -519,7 +517,7 @@ export default function TaskManagementSystem() {
                             </Tag>
                           )}
                         </div>
-                        <div className="text-[10px] text-[color:var(--muted-text)] font-mono bg-white/10 px-2 py-0.5 rounded-full">
+                        <div className="text-[11px] text-[color:var(--muted-text)] font-mono bg-white/10 px-2 py-0.5 rounded-full">
                           {moment(item.createdAt).format("MM-DD HH:mm")}
                         </div>
                       </div>
