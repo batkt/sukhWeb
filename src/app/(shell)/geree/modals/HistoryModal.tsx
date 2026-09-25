@@ -14,7 +14,7 @@ import uilchilgee from "@/lib/uilchilgee";
 import formatNumber, {
   formatCurrency,
 } from "../../../../../tools/function/formatNumber";
-import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
+import FilterDatePicker from "@/components/ui/FilterDatePicker";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import InvoiceModal from "./InvoiceModal";
 import { ModalPortal } from "../../../../../components/shell/ModalPortal";
@@ -2340,23 +2340,17 @@ export default function HistoryModal({
                       className="w-full sm:w-[220px]"
                       onPointerDown={(e) => e.stopPropagation()}
                     >
-                      <StandardDatePicker
-                        isRange={true}
+                      <FilterDatePicker
                         value={dateRange}
-                        getPopupContainer={() => document.body}
-                        popupStyle={{ zIndex: 10000050 }}
+                        allowClear={false}
                         onChange={(date: any, dateString: any) => {
                           setModalDateFilterFromUser(true);
                           if (Array.isArray(date)) {
                             setDateRange([
-                              date[0]?.isValid?.()
-                                ? date[0].format("YYYY-MM-DD")
-                                : null,
-                              date[1]?.isValid?.()
-                                ? date[1].format("YYYY-MM-DD")
-                                : null,
+                              date[0]?.isValid?.() ? date[0].format("YYYY-MM-DD") : null,
+                              date[1]?.isValid?.() ? date[1].format("YYYY-MM-DD") : null,
                             ]);
-                          } else if (Array.isArray(dateString)) {
+                          } else if (Array.isArray(dateString) && (dateString[0] || dateString[1])) {
                             setDateRange([
                               dateString[0] ? String(dateString[0]) : null,
                               dateString[1] ? String(dateString[1]) : null,
@@ -2365,12 +2359,8 @@ export default function HistoryModal({
                             setDateRange([null, null]);
                           }
                         }}
-                        size="small"
                         placeholder="Огноо"
-                        classNames={{
-                          input: "border-none h-8 text-[13px]",
-                        }}
-                        className="dark:text-white"
+                        className="w-full"
                       />
                     </div>
                     {(dateRange?.[0] || dateRange?.[1]) && (

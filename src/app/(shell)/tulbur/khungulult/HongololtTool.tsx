@@ -2,6 +2,7 @@
 
 import ExcelButton from "@/components/ui/ExcelButton";
 import FilterDatePicker from "@/components/ui/FilterDatePicker";
+import FilterSelect from "@/components/ui/FilterSelect";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import { ModalPortal } from "../../../../../components/shell/ModalPortal";
@@ -25,7 +26,6 @@ import dayjs from "dayjs";
 import useModalHotkeys from "@/lib/useModalHotkeys";
 import uilchilgee from "@/lib/uilchilgee";
 import { useAuth } from "@/lib/useAuth";
-import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { toast } from "sonner";
 import Table from "@/components/ui/table";
 import type { ColumnsType } from "@/components/ui/table";
@@ -277,18 +277,18 @@ export default function HongololtTool({
   const [hongololtTurul, setHongololtTurul] = useState<HongololtTurul>("percent");
   const [hongololtUtga, setHongololtUtga] = useState("");
   const [shaltgaan, setShaltgaan] = useState("");
-  /** Тодорхой зардлыг хөнгөлөх бол түүний ID. Хоосон = нийт төлбөрөөс. */
-  const [zardliinId, setZardliinId] = useState("");
-  /** Хоногоор тооцох эсэх — сарын дүнг хоногт хувааж, сонгосон хоногоор. */
-  const [khonogTootsokh, setKhonogTootsokh] = useState(false);
-  const [khungulultKhonog, setKhungulultKhonog] = useState("");
+  /** Зардал/хоногоор хөнгөлөх сонголтыг маягтаас хассан — нийт төлбөрөөс, сараар. */
+  const zardliinId = "";
+  const khonogTootsokh = false;
+  const khungulultKhonog = "";
 
   /* Right-panel data */
   const [fetching, setFetching] = useState(false);
   const [residents, setResidents] = useState<ResidentRow[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [selectMode, setSelectMode] = useState<"all" | "selected">("all");
+  // Мөр сонгосон бол зөвхөн тэд, эс бөгөөс шүүгдсэн бүх оршин суугч
+  const selectMode: "all" | "selected" = selectedIds.size > 0 ? "selected" : "all";
 
   /* History tab */
   const [histFetching, setHistFetching] = useState(false);
@@ -754,6 +754,8 @@ export default function HongololtTool({
    * үргэлж 0₮ гарч «Хөнгөлөх дүн гарсан оршин суугч алга» алдаа заадаг байв.
    */
   const [suuriDun, setSuuriDun] = useState<Record<string, Record<string, number>>>({});
+  /** Гэрээ бүрийн бодит үлдэгдэл (авлагын дэвтрээс) — `/khungulultSuuriAvya` */
+  const [boditUldegdel, setBoditUldegdel] = useState<Record<string, number> | null>(null);
   const [suuriAchaalj, setSuuriAchaalj] = useState(false);
   React.useEffect(() => {
     if (!token || !baiguullagiinId || !selectedMonth) return;
@@ -768,7 +770,10 @@ export default function HongololtTool({
         zardliinId: zardliinId || undefined,
       })
       .then((resp) => {
-        if (khuchintei) setSuuriDun(resp.data?.suuri || {});
+        if (khuchintei) {
+          setSuuriDun(resp.data?.suuri || {});
+          setBoditUldegdel(resp.data?.uldegdel || null);
+        }
       })
       .catch(() => {
         if (khuchintei) setSuuriDun({});
@@ -780,6 +785,37 @@ export default function HongololtTool({
       khuchintei = false;
     };
   }, [token, baiguullagiinId, barilgiinId, selectedMonth, duusakhSar, zardliinId]);
+
+  /** Сонгосон сарууд ("YYYY-MM") */
+  const saruud = React.useMemo(() => {
+    const [ey, em] = (selectedMonth || "").split("-").map(Number);
+    if (!ey || !em) return [] as string[];
+    return Array.from({ length: sariinToo }, (_, i) => {
+      const d = new Date(ey, em - 1 + i, 1);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    });
+  }, [selectedMonth, sariinToo]);
+
+  /** Сар бүрийн хөнгөлөх дүн — сервер тэр сарын нэхэмжлэх дээр суулгана */
+  const sarBureer = (r: ResidentRow): Record<string, number> => {
+    const val = parseFloat(hongololtUtga) || 0;
+    const out: Record<string, number> = {};
+    if (val <= 0) return out;
+    const saraar = (r.gereeniiId && suuriDun[r.gereeniiId]) || {};
+    saruud.forEach((sar) => {
+      out[sar] =
+        hongololtTurul === "percent"
+          ? Math.round(((Number(saraar[sar]) || 0) * val) / 100)
+          : Math.round(val);
+    });
+    return out;
+  };
+
+  /** Мөрийн үлдэгдэл — бодит дэвтрийн үлдэгдэл байвал тэр */
+  const murUldegdel = (r: ResidentRow): number =>
+    boditUldegdel && r.gereeniiId
+      ? Number(boditUldegdel[r.gereeniiId]) || 0
+      : Number(r.uldegdel) || 0;
 
   const computeDiscount = (r: ResidentRow): number => {
     const val = parseFloat(hongololtUtga) || 0;
@@ -796,8 +832,7 @@ export default function HongololtTool({
       }
       // Сар бүрийн бодит төлбөрөөс хувь — нийлбэр нь сарын үржүүлэгчийг
       // өөрөө агуулна.
-      const niit = Object.values(saraar).reduce((a, b) => a + (Number(b) || 0), 0);
-      return Math.round((niit * val) / 100);
+      return Object.values(sarBureer(r)).reduce((a, b) => a + b, 0);
     }
 
     // Дүнгээр: сар бүрт ижил дүн.
@@ -814,6 +849,11 @@ export default function HongololtTool({
       ? filteredResidents
       : filteredResidents.filter((r) => selectedIds.has(r._id));
   const totalDun = summaryRows.reduce((s, r) => s + computeDiscount(r), 0);
+  /** Сонгосон оршин суугчдын үлдэгдлээс хөнгөлөлтийг хассан дүн */
+  const niitUldegdel = summaryRows.reduce(
+    (s, r) => s + murUldegdel(r) - computeDiscount(r),
+    0,
+  );
 
   /* ── Submit ── */
   const handleSubmit = async () => {
@@ -873,6 +913,7 @@ export default function HongololtTool({
         gereeniiId: r.gereeniiId,
         toot: r.toot,
         dun: computeDiscount(r),
+        saraar: sarBureer(r),
       }))
       .filter((x) => x.dun > 0);
 
@@ -993,15 +1034,18 @@ export default function HongololtTool({
         key: "uldegdel",
         width: 110,
         align: "right",
-        render: (v: any) => (
-          <span
-            className={`tabular-nums whitespace-nowrap ${
-              (v || 0) > 0 ? "text-danger" : "opacity-70"
-            }`}
-          >
-            {fmt(v || 0)}₮
-          </span>
-        ),
+        render: (_: any, r: any) => {
+          const v = murUldegdel(r);
+          return (
+            <span
+              className={`tabular-nums whitespace-nowrap ${
+                v > 0 ? "text-danger" : "opacity-70"
+              }`}
+            >
+              {fmt(v)}₮
+            </span>
+          );
+        },
       },
       {
         title: "Хөнгөлөгдөх дүн",
@@ -1023,7 +1067,7 @@ export default function HongololtTool({
       },
     ],
      
-    [selectMode, selectedIds, computeDiscount],
+    [selectMode, selectedIds, computeDiscount, murUldegdel],
   );
 
   // Хөнгөлөлтийн түүхийн хүснэгтийн багана.
@@ -1226,9 +1270,15 @@ export default function HongololtTool({
         {activeTab === "oruulakh" && (
           <div className="ml-auto flex items-center gap-2">
             {selectMode === "selected" && (
-              <span className="text-xs font-medium text-brand">
+              <button
+                type="button"
+                onClick={() => setSelectedIds(new Set())}
+                title="Сонголтыг цуцлах — шүүгдсэн бүх оршин суугчид хөнгөлөлт сууна"
+                className="inline-flex items-center gap-1 rounded-lg bg-theme/10 px-2 py-1 text-xs text-brand hover:bg-theme/15"
+              >
                 {selectedIds.size} сонгосон
-              </span>
+                <X className="h-3 w-3" />
+              </button>
             )}
             <label className="filter-field w-[280px] max-w-full">
               <Search className="h-4 w-4 shrink-0 text-[color:var(--muted-text)]" />
@@ -1258,135 +1308,62 @@ export default function HongololtTool({
           {/* Left panel — «шошго | талбар» мөрүүд (turees-ийн маягттай ижил) */}
           <div className="w-80 lg:w-[380px] xl:w-[400px] shrink-0 flex flex-col rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] overflow-hidden">
             <div className="flex-1 overflow-y-auto p-5 space-y-3">
-              <Mur shoshgo="Хамрах хүрээ">
-                <div className="grid h-9 grid-cols-2 gap-0.5 rounded-[10px] border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] p-0.5">
-                  {(
-                    [
-                      { v: "all", label: "Бүгд", too: filteredResidents.length },
-                      { v: "selected", label: "Сонгосон", too: selectedIds.size },
-                    ] as const
-                  ).map(({ v, label, too }) => (
-                    <button
-                      key={v}
-                      type="button"
-                      onClick={() => setSelectMode(v)}
-                      className={`inline-flex items-center justify-center gap-1.5 rounded-[8px] text-xs font-medium transition-colors ${
-                        selectMode === v
-                          ? "bg-theme !text-white"
-                          : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
-                      }`}
-                    >
-                      {label}
-                      <span className={`rounded-full px-1.5 text-[11px] ${selectMode === v ? "bg-white/20" : "bg-[color:var(--surface-hover)]"}`}>
-                        {too}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </Mur>
-
-              <Mur shoshgo="Зардал">
-                <select
-                  value={zardliinId}
-                  onChange={(e) => setZardliinId(e.target.value)}
-                  className={TALBAR}
-                >
-                  <option value="">Бүх зардал</option>
-                  {zardluud.map((z) => (
-                    <option key={z._id} value={z._id}>
-                      {z.ner}
-                    </option>
-                  ))}
-                </select>
-              </Mur>
-
-              <Mur shoshgo="">
-                <label className="flex h-9 cursor-pointer items-center gap-2 text-[13px] text-[color:var(--panel-text)]">
-                  <input
-                    type="checkbox"
-                    checked={khonogTootsokh}
-                    onChange={(e) => setKhonogTootsokh(e.target.checked)}
-                    className="h-4 w-4 accent-[color:var(--theme)]"
-                  />
-                  Хоногийн хөнгөлөлт
-                </label>
-              </Mur>
-
-              {khonogTootsokh && (
-                <Mur shoshgo="Хоног" shaardlagatai>
-                  <input
-                    type="number"
-                    min="1"
-                    max="31"
-                    placeholder="Хоног"
-                    value={khungulultKhonog}
-                    onChange={(e) => setKhungulultKhonog(e.target.value)}
-                    className={TALBAR}
-                  />
-                </Mur>
-              )}
-
-              <Mur shoshgo="Хөнгөлөх сар" shaardlagatai>
-                <div className="btn-minimal flex h-9 w-full items-center !px-2">
-                  <StandardDatePicker
-                    isRange
-                    picker="month"
-                    format="YYYY-MM"
-                    value={
-                      selectedMonth && duusakhSar
-                        ? [selectedMonth, duusakhSar]
-                        : selectedMonth
-                        ? [selectedMonth, selectedMonth]
-                        : undefined
-                    }
-                    onChange={(_: any, dateStrings: [string, string]) => {
-                      if (dateStrings && Array.isArray(dateStrings) && (dateStrings[0] || dateStrings[1])) {
-                        const [start, end] = dateStrings;
-                        setSelectedMonth(start || "");
-                        setDuusakhSar(end || start || "");
-                      } else {
-                        setSelectedMonth("");
-                        setDuusakhSar("");
-                      }
-                    }}
-                    placeholder={["Эхлэх сар", "Дуусах сар"]}
-                    className="!h-full w-full text-[13px]"
-                    allowClear
-                  />
-                </div>
-              </Mur>
+              <h3 className="text-[13px] font-medium text-[color:var(--panel-text)]">
+                Хамрах хүрээ
+              </h3>
 
               <Mur shoshgo="Орц">
-                <select value={orts} onChange={(e) => setOrts(e.target.value)} className={TALBAR}>
-                  <option value="">Бүх орц</option>
-                  {ortsSongoltuud.map((o: string) => (
-                    <option key={o} value={o}>
-                      {o}
-                    </option>
-                  ))}
-                </select>
+                <FilterSelect
+                  value={orts}
+                  onChange={setOrts}
+                  options={ortsSongoltuud.map((o: string) => ({ value: o, label: o }))}
+                  placeholder="Бүх орц"
+                  bugdLabel="Бүх орц"
+                  className="w-full"
+                />
               </Mur>
 
               <Mur shoshgo="Давхар">
-                <select value={davkhar} onChange={(e) => setDavkhar(e.target.value)} className={TALBAR}>
-                  <option value="">Бүх давхар</option>
-                  {davkharSongoltuud.map((d: string) => (
-                    <option key={d} value={d}>
-                      {d}
-                    </option>
-                  ))}
-                </select>
+                <FilterSelect
+                  value={davkhar}
+                  onChange={setDavkhar}
+                  options={davkharSongoltuud.map((d: string) => ({ value: d, label: d }))}
+                  placeholder="Бүх давхар"
+                  bugdLabel="Бүх давхар"
+                  searchable={davkharSongoltuud.length > 8}
+                  className="w-full"
+                />
+              </Mur>
+
+              <Mur shoshgo="Огноо" shaardlagatai>
+                <FilterDatePicker
+                  picker="month"
+                  value={
+                    selectedMonth
+                      ? [selectedMonth, duusakhSar || selectedMonth]
+                      : null
+                  }
+                  onChange={(_, [start, end]) => {
+                    setSelectedMonth(start || "");
+                    setDuusakhSar(end || start || "");
+                  }}
+                  placeholder="Эхлэх сар → Дуусах сар"
+                  className="w-full"
+                />
               </Mur>
 
               <Mur shoshgo="Хөнгөлөх төрөл">
-                <select
+                <FilterSelect
                   value={hongololtTurul}
-                  onChange={(e) => setHongololtTurul(e.target.value as HongololtTurul)}
-                  className={TALBAR}
-                >
-                  <option value="percent">Хувь (%)</option>
-                  <option value="amount">Дүн (₮)</option>
-                </select>
+                  onChange={(v) => setHongololtTurul(v as HongololtTurul)}
+                  options={[
+                    { value: "percent", label: "Хувь (%)" },
+                    { value: "amount", label: "Дүн (₮)" },
+                  ]}
+                  bugdLabel={null}
+                  allowClear={false}
+                  className="w-full"
+                />
               </Mur>
 
               <Mur
@@ -1415,26 +1392,35 @@ export default function HongololtTool({
                 </div>
               </Mur>
 
-              <Mur shoshgo="Шалтгаан">
-                <input
-                  type="text"
-                  placeholder="Шалтгаан"
+              <div className="space-y-1.5">
+                <span className="text-[13px] text-[color:var(--muted-text)]">
+                  <span className="mr-0.5 text-danger">*</span>Шалтгаан:
+                </span>
+                <textarea
+                  rows={6}
+                  placeholder="Хөнгөлөлт олгох шалтгаанаа бичнэ үү"
                   value={shaltgaan}
                   onChange={(e) => setShaltgaan(e.target.value)}
-                  className={TALBAR}
+                  className={`${TALBAR} !h-auto min-h-[140px] resize-y py-2 leading-relaxed`}
                 />
-              </Mur>
+              </div>
             </div>
 
             {/* Хураангуй */}
             <div className="shrink-0 space-y-1.5 border-t border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] px-5 py-3 text-[13px]">
               <div className="flex justify-between">
-                <span className="text-[color:var(--muted-text)]">Хөнгөлөгдөх о.суугч:</span>
-                <span className="font-medium text-[color:var(--panel-text)]">{summaryRows.length}</span>
+                <span className="text-[color:var(--muted-text)]">Нийт хөнгөлөх тоо:</span>
+                <span className="font-medium tabular-nums text-[color:var(--panel-text)]">{summaryRows.length}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[color:var(--muted-text)]">Нийт хөнгөлөгдсөн дүн:</span>
-                <span className="font-medium text-brand">{fmt(totalDun)}₮</span>
+                <span className="text-[color:var(--muted-text)]">Нийт хөнгөлсөн дүн:</span>
+                <span className="font-medium tabular-nums text-brand">{fmt(totalDun)}₮</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[color:var(--muted-text)]">Нийт үлдэгдэл:</span>
+                <span className={`font-medium tabular-nums ${niitUldegdel > 0 ? "text-danger" : "text-[color:var(--panel-text)]"}`}>
+                  {fmt(niitUldegdel)}₮
+                </span>
               </div>
             </div>
 
@@ -1465,6 +1451,7 @@ export default function HongololtTool({
             {/* Table — гүйлгэлтийг хүснэгт өөрөө хариуцна */}
             <div className="min-h-0 flex-1">
               <Table<any>
+                  fillHeight={inline}
                   className="[&_td]:!py-2 [&_th]:!py-2.5"
                   columns={khungulultColumns}
                   dataSource={filteredResidents}
@@ -1476,9 +1463,7 @@ export default function HongololtTool({
                     selectedRowKeys: Array.from(selectedIds),
                     onChange: (keys) => {
                       setSelectedIds(new Set(keys as string[]));
-                      // Мөр сонговол «Сонгосон» горимд шилжинэ — «Бүгд» дээр
-                      // сонголт ямар ч нөлөөгүй байсан тул чек «сонин» санагддаг байв.
-                      if ((keys as string[]).length > 0) setSelectMode("selected");
+                      // Сонгосон мөр байвал зөвхөн тэдэнд хөнгөлөлт сууна (selectMode)
                     },
                   }}
                   onRow={(r) => ({
@@ -1487,7 +1472,6 @@ export default function HongololtTool({
                       // хоёр удаа сэлгэгдээд буцаад хэвэндээ ордог байв.
                       if ((e.target as HTMLElement).closest("input,label,.zt-checkbox,[role=checkbox]")) return;
                       toggleOne(r._id);
-                      setSelectMode("selected");
                     },
                     className: "cursor-pointer",
                   })}

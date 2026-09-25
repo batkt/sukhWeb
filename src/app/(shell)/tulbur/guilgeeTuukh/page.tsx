@@ -45,7 +45,6 @@ import formatNumber, {
   formatCurrency,
 } from "../../../../../tools/function/formatNumber";
 import matchesSearch from "@/tools/function/matchesSearch";
-import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import {
   getPaymentStatusLabel,
   isPaidLike,
@@ -3419,12 +3418,20 @@ export default function DansniiKhuulga() {
             <div className="flex w-full flex-wrap items-center gap-2 xl:w-auto">
               <FilterDatePicker
                 id="guilgee-date"
+                picker="month"
                 value={ekhlekhOgnoo}
-                onChange={(_dates, dateStrings) => {
-                  const [st, en] = (dateStrings || []) as [string | undefined, string | undefined];
-                  setEkhlekhOgnoo([st || null, en || null]);
+                onChange={(dates) => {
+                  // Сараар шүүнэ: эхлэх сарын 1 → дуусах сарын сүүлийн өдөр
+                  const [a, b] = (dates || []) as [any, any];
+                  setEkhlekhOgnoo(
+                    a && b
+                      ? [
+                          a.startOf("month").format("YYYY-MM-DD"),
+                          b.endOf("month").format("YYYY-MM-DD"),
+                        ]
+                      : [null, null],
+                  );
                 }}
-                placeholder="Огноо сонгох"
                 className="w-full sm:w-[284px]"
               />
               <FilterSelect
@@ -3921,16 +3928,11 @@ export default function DansniiKhuulga() {
                     {/* Date Filter & Stats Summary */}
                     <div className="px-4 py-3 bg-[color:var(--surface-bg)] border-b border-[color:var(--surface-border)]">
                       <div className="flex items-center gap-3">
-                        <div className="w-[50px] sm:w-40 lg:w-[280px] h-11 z-[12002] [&_.ant-picker-dropdown]:!z-[12003] [&_.ant-picker-input]:!bg-transparent [&_input]:!bg-transparent [&_.ant-picker-input-active]:!bg-transparent dark:[&_.ant-picker-suffix]:!text-white dark:[&_.ant-picker-suffix_svg]:!fill-white dark:[&_.ant-picker:hover]:!bg-[color:var(--panel)] dark:[&_.ant-picker-focused]:!bg-[color:var(--panel)] [&_.ant-picker-range-separator]:!text-[color:var(--muted-text)] dark:[&_.ant-picker-range-separator]:!text-[color:var(--muted-text)]">
-                          <StandardDatePicker
-                            isRange={true}
-                            value={smsDateRange}
-                            onChange={(_, dateString) => setSmsDateRange(dateString)}
-                            className="w-full"
-                            format="YYYY-MM-DD"
-                            popupClassName="!z-[12003]"
-                          />
-                        </div>
+                        <FilterDatePicker
+                          value={smsDateRange}
+                          onChange={(_, dateString) => setSmsDateRange([dateString[0] || null, dateString[1] || null])}
+                          className="w-full sm:w-[284px]"
+                        />
                       
                         <div className="flex items-center gap-2 text-sm ml-auto">
                           <div className="w-2 h-2 rounded-full bg-theme" />

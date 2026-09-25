@@ -7,6 +7,11 @@ import type { ColumnsType } from "@/components/ui/table";
 import { Edit, Trash2, ChevronUp, ChevronDown, X } from "lucide-react";
 import { ConfirmCloseDialog } from "@/components/ui/ConfirmCloseDialog";
 import { getPaymentStatusLabel } from "@/lib/utils";
+import useSWR from "swr";
+import dayjs from "dayjs";
+import { useAuth } from "@/lib/useAuth";
+import { useBuilding } from "@/context/BuildingContext";
+import uilchilgee from "@/lib/uilchilgee";
 import {
   getResidentToot,
   getResidentDavkhar,
@@ -67,6 +72,52 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
     label: string;
   } | null>(null);
 
+  /**
+   * Энэ сард үүссэн нэхэмжлэхүүд — Зогсоол/Агуулахын тоот бүрд энэ сарын
+   * нэхэмжлэх илгээгдсэн эсэхийг харуулна. Гэрээний ID-аар, эс бөгөөс
+   * тоотоор таарууна.
+   */
+  const { token, baiguullaga } = useAuth();
+  const { selectedBuildingId } = useBuilding();
+  const baiguullagiinId = currentBaiguullagiinId || (baiguullaga?._id ? String(baiguullaga._id) : "");
+  const { data: sariinNekhemjlekh } = useSWR(
+    token && baiguullagiinId
+      ? ["/nekhemjlekhiinTuukh", "khariltsagch-sar", token, baiguullagiinId, selectedBuildingId || "", dayjs().format("YYYY-MM")]
+      : null,
+    async () => {
+      const ekhlel = dayjs().startOf("month").toISOString();
+      const tugsgul = dayjs().endOf("month").toISOString();
+      const resp = await uilchilgee(token || undefined).get("/nekhemjlekhiinTuukh", {
+        params: {
+          baiguullagiinId,
+          ...(selectedBuildingId ? { barilgiinId: selectedBuildingId } : {}),
+          khuudasniiDugaar: 1,
+          khuudasniiKhemjee: 5000,
+          query: JSON.stringify({
+            baiguullagiinId,
+            ...(selectedBuildingId ? { barilgiinId: selectedBuildingId } : {}),
+            ognoo: { $gte: ekhlel, $lte: tugsgul },
+          }),
+        },
+      });
+      const jagsaalt: any[] = resp.data?.jagsaalt || (Array.isArray(resp.data) ? resp.data : []);
+      const gereenuud = new Set<string>();
+      const tootuud = new Set<string>();
+      jagsaalt.forEach((n) => {
+        if (n?.gereeniiId) gereenuud.add(String(n.gereeniiId));
+        if (n?.toot) tootuud.add(String(n.toot).trim());
+      });
+      return { gereenuud, tootuud };
+    },
+    { revalidateOnFocus: false, dedupingInterval: 30000 },
+  );
+  const ilgeesenEsekh = (t: any): boolean => {
+    if (!sariinNekhemjlekh) return false;
+    const gid = String(t?.gereeniiId || t?.gereeId || "");
+    if (gid && sariinNekhemjlekh.gereenuud.has(gid)) return true;
+    return !!t?.toot && sariinNekhemjlekh.tootuud.has(String(t.toot).trim());
+  };
+
   const columns: ColumnsType<ClientItem> = useMemo(
     () => [
       // ... (index and ner columns omitted for brevity, keeping them as they are)
@@ -126,7 +177,7 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
       {
         title: "Зогсоол / Агуулах",
         key: "garage_storage",
-        width: 140,
+        width: 210,
         sorter: true,
         sortOrder:
           sortKey === "garage_storage"
@@ -175,7 +226,12 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
                 const label = t.turul === "Гараж" ? "Зогсоол" : "Агуулах";
                 return (
                   <div key={idx} className="flex items-center justify-between gap-3 py-0.5">
-                    <span className="text-white font-medium">Тоот {t.toot} {label}</span>
+                    <span className="text-white font-medium">
+                      Тоот {t.toot} {label}
+                      <span className={`ml-1.5 text-[11px] ${ilgeesenEsekh(t) ? "text-emerald-300" : "text-slate-400"}`}>
+                        · {ilgeesenEsekh(t) ? "нэхэмжлэх илгээсэн" : "илгээгээгүй"}
+                      </span>
+                    </span>
                     <button
                       type="button"
                       onClick={(e) => {
@@ -199,17 +255,38 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
             </div>
           );
 
+          const ilgeesenToo = toots.filter(ilgeesenEsekh).length;
+          const bugudIlgeesen = ilgeesenToo === toots.length;
+
           return (
-            <Tooltip title={tooltipContent} placement="top" color="#1e293b" trigger="hover">
-              <span className="inline-flex items-center gap-1.5 cursor-pointer px-2.5 py-0.5 rounded-md bg-[color:var(--surface-hover)] font-medium text-[color:var(--panel-text)] border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors">
-                {toots[0].toot}
-                {toots.length > 1 && (
-                  <span className="text-[color:var(--muted-text)] font-medium">
-                    +{toots.length - 1}
-                  </span>
-                )}
+            <div className="inline-flex items-center gap-1.5">
+              <Tooltip title={tooltipContent} placement="top" color="#1e293b" trigger="hover">
+                <span className="inline-flex items-center gap-1.5 cursor-pointer px-2.5 py-0.5 rounded-md bg-[color:var(--surface-hover)] font-medium text-[color:var(--panel-text)] border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors">
+                  {toots[0].toot}
+                  {toots.length > 1 && (
+                    <span className="text-[color:var(--muted-text)] font-medium">
+                      +{toots.length - 1}
+                    </span>
+                  )}
+                </span>
+              </Tooltip>
+              <span
+                title={`Энэ сарын нэхэмжлэх: ${ilgeesenToo}/${toots.length} илгээсэн`}
+                className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] ${
+                  bugudIlgeesen
+                    ? "bg-success/10 text-success"
+                    : ilgeesenToo > 0
+                      ? "bg-warning/10 text-warning"
+                      : "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]"
+                }`}
+              >
+                {bugudIlgeesen
+                  ? "Илгээсэн"
+                  : ilgeesenToo > 0
+                    ? `${ilgeesenToo}/${toots.length} илгээсэн`
+                    : "Илгээгээгүй"}
               </span>
-            </Tooltip>
+            </div>
           );
         },
       },
@@ -311,6 +388,8 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
       onRemoveToot,
       onSort,
       setPendingTootRemove,
+      currentBaiguullagiinId,
+      sariinNekhemjlekh,
     ],
   );
 

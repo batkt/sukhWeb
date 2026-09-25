@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
+import FilterDatePicker from "@/components/ui/FilterDatePicker";
 import { useBuilding } from "@/context/BuildingContext";
 
 interface Props {
@@ -29,23 +29,12 @@ export default function ReportsControls({
   return (
     <div className="mb-4">
       <div className="flex flex-wrap gap-3 items-center">
-        <div
+        <FilterDatePicker
           id="reports-date"
-          className="btn-minimal h-[40px] w-[320px] flex items-center px-3"
-        >
-          <StandardDatePicker
-            isRange={true}
-            value={dateRange}
-            onChange={setDateRange}
-            allowClear
-            placeholder="Огноо сонгох"
-            classNames={{
-              root: "!h-full !w-full",
-              input:
-                "text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
-            }}
-          />
-        </div>
+          value={dateRange}
+          onChange={(_, s) => setDateRange([s[0] || null, s[1] || null])}
+          className="w-[284px]"
+        />
 
         <input
           placeholder="Байр"

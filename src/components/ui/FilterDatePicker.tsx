@@ -8,6 +8,7 @@
  * утгатай үед баруун талд цэвэрлэх X товч (MonthRangePicker-тэй адил).
  *
  * - `picker="month"` + range → MonthRangePicker (нэг самбартай)
+ * - өдрийн хүрээ → DayRangePicker (нэг самбартай)
  * - бусад тохиолдолд AntD DatePicker/RangePicker (borderless, suffix-гүй, mn locale)
  *
  * onChange нь AntD-ийн `(утга, мөр)` дарааллыг хадгална — одоогийн дуудагчдын
@@ -21,6 +22,7 @@ import { Calendar, X } from "lucide-react";
 import dayjs, { Dayjs } from "dayjs";
 import StandardDatePicker from "./StandardDatePicker";
 import MonthRangePicker from "./MonthRangePicker";
+import DayRangePicker from "./DayRangePicker";
 
 export type FilterDateLike = string | Date | Dayjs | null | undefined;
 
@@ -42,6 +44,8 @@ interface BaseProps {
 
 export interface FilterDateRangeProps extends BaseProps {
   single?: false;
+  /** Өдрийн хүрээг НЭГ сарын самбартай гаргах (DayRangePicker). Анхдагч: true */
+  singlePanel?: boolean;
   value?: [FilterDateLike, FilterDateLike] | null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- AntD Dayjs утгыг дуудагчид өөр төрлөөр хадгалдаг
   onChange?: (dates: any, dateStrings: [string, string]) => void;
@@ -105,6 +109,25 @@ export default function FilterDatePicker(props: FilterDatePickerProps) {
             onChange?.(v, v ? [v[0].format(format), v[1].format(format)] : ["", ""])
           }
           placeholder={typeof placeholder === "string" ? placeholder : "Сар сонгох"}
+        />
+      </div>
+    );
+  }
+
+  // Нэг самбартай өдрийн хүрээ
+  if (!props.single && picker === "date" && props.singlePanel !== false) {
+    const onChange = props.onChange;
+    return (
+      <div id={id} className={burkhuul}>
+        <DayRangePicker
+          value={props.value ? [muruu(props.value[0]), muruu(props.value[1])] : undefined}
+          onChange={(v) =>
+            onChange?.(v, v ? [v[0].format(format), v[1].format(format)] : ["", ""])
+          }
+          format={format}
+          disabledDate={disabledDate}
+          allowClear={allowClear}
+          placeholder={Array.isArray(placeholder) ? placeholder : undefined}
         />
       </div>
     );

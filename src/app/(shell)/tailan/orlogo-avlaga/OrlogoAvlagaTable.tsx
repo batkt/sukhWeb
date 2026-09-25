@@ -7,7 +7,7 @@ import type { ColumnsType } from "@/components/ui/table";
 import { X, FileText, Phone, Home, Hash } from "lucide-react";
 import { motion, useDragControls } from "framer-motion";
 import formatNumber from "../../../../../tools/function/formatNumber";
-import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
+import FilterDatePicker from "@/components/ui/FilterDatePicker";
 
 export interface OrlogoAvlagaItem {
   _id?: string;
@@ -233,28 +233,15 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                 </div>
               </div>
             </div>
-            <div
-              onPointerDown={(e) => e.stopPropagation()}
-              className="btn-minimal flex h-9 w-[260px] shrink-0 items-center px-3"
-            >
-              <ConfigProvider theme={{ token: { zIndexPopupBase: 9000 } }}>
-                <StandardDatePicker
-                  isRange={true}
-                  value={ledgerDateRange ?? undefined}
-                  onChange={(_, dateStr: any) => {
-                    if (!dateStr || (!dateStr[0] && !dateStr[1])) {
-                      setLedgerDateRange(null);
-                    } else {
-                      setLedgerDateRange([dateStr[0] || null, dateStr[1] || null]);
-                    }
-                    setLedgerPage(1);
-                  }}
-                  allowClear
-                  placeholder={["Эхлэх огноо", "Дуусах огноо"]}
-                  getPopupContainer={() => document.body}
-                  className="!h-full text-[13px]"
-                />
-              </ConfigProvider>
+            <div onPointerDown={(e) => e.stopPropagation()} className="shrink-0">
+              <FilterDatePicker
+                value={ledgerDateRange ?? undefined}
+                onChange={(_, dateStr) => {
+                  if (!dateStr[0] && !dateStr[1]) setLedgerDateRange(null);
+                  else setLedgerDateRange([dateStr[0] || null, dateStr[1] || null]);
+                  setLedgerPage(1);
+                }}
+              />
             </div>
           </div>
         </div>

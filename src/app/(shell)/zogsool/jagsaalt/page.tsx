@@ -42,7 +42,6 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { ConfigProvider } from "antd";
-import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import moment from "moment";
 import useSWR from "swr";
 import uilchilgee from "@/lib/uilchilgee";
@@ -1878,19 +1877,11 @@ return (
                       Орлого тайлан
                     </h2>
                     <div className="mt-1.5 min-w-[220px]">
-                      <ConfigProvider theme={{ token: { zIndexPopupBase: 10000 } }}>
-                        <StandardDatePicker
-                          isRange={true}
-                          value={revenueDateRange}
-                          onChange={(_: any, dateStrings: [string, string]) => setRevenueDateRange(dateStrings)}
-                          format="YYYY-MM-DD"
-                          classNames={{
-                            input: "flex items-center gap-2 rounded-full border border-[color:var(--surface-border)] dark:border-white/[0.06] h-8 px-3 text-[11px] text-[color:var(--muted-text)] focus:ring-2 focus:ring-theme/10 transition-all",
-                          }}
-                          allowClear
-                          getPopupContainer={() => document.body}
-                        />
-                      </ConfigProvider>
+                      <FilterDatePicker
+                        value={revenueDateRange}
+                        onChange={(_, dateStrings) => setRevenueDateRange(dateStrings)}
+                        className="w-[260px]"
+                      />
                     </div>
                   </div>
                 </div>

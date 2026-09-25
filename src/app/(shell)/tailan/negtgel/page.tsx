@@ -237,8 +237,7 @@ export default function NegtgelTailanPage() {
   };
 
   return (
-    // Бусад хуудастай ижил бүрхүүл — нэмэлт `p-6`/цагаан дэвсгэргүй.
-    // Гарчиг нь толгой хэсэгт («Тайлан — Нэгтгэл») байгаа тул давхарлахгүй
+   
     <div className="flex w-full flex-col gap-3 pb-14">
       {/* ── Filters ─────────────────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-2 no-print">
@@ -277,7 +276,7 @@ export default function NegtgelTailanPage() {
         />
       </div>
 
-      {/* ── Table ───────────────────────────────────────────────── */}
+     
       <div className="w-full no-print">
         <NegtgelTailanTable
           data={pagedData}
@@ -287,7 +286,7 @@ export default function NegtgelTailanPage() {
         />
       </div>
 
-      {/* ── Pagination ──────────────────────────────────────────── */}
+      
       <div className="flex items-center justify-between no-print">
         <StandardPagination
           current={currentPage}

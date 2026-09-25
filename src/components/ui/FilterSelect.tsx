@@ -21,14 +21,17 @@ export interface FilterSelectOption {
 }
 
 interface FilterSelectProps {
-  label: string;
+  /** Талбар доторх шошго. Хоосон бол (маягтад шошго гадна байх үед) харуулахгүй */
+  label?: string;
   value: string;
   onChange: (value: string) => void;
   options: FilterSelectOption[];
   /** Сонгоогүй үеийн бичвэр. Анхдагч: хоосон — зөвхөн шошго харагдана */
   placeholder?: string;
-  /** Жагсаалтын эхэнд сонголтыг цэвэрлэх мөрийн бичвэр */
-  bugdLabel?: string;
+  /** Жагсаалтын эхэнд сонголтыг цэвэрлэх мөрийн бичвэр. `null` бол мөр гарахгүй */
+  bugdLabel?: string | null;
+  /** Утгатай үед цэвэрлэх × товч. Анхдагч: true */
+  allowClear?: boolean;
   /** Жагсаалт дотор хайх талбар */
   searchable?: boolean;
   searchPlaceholder?: string;
@@ -37,12 +40,13 @@ interface FilterSelectProps {
 }
 
 export default function FilterSelect({
-  label,
+  label = "",
   value,
   onChange,
   options,
   placeholder = "",
   bugdLabel = "Бүгд",
+  allowClear = true,
   searchable = false,
   searchPlaceholder = "Хайх...",
   className = "",
@@ -136,17 +140,17 @@ export default function FilterSelect({
         id={id}
         type="button"
         onClick={() => (neelttei ? khaakh() : setNeelttei(true))}
-        className={`filter-field cursor-pointer text-left ${value ? "is-active" : ""} ${className}`}
+        className={`filter-field cursor-pointer text-left ${value && allowClear ? "is-active" : ""} ${className}`}
       >
-        <span className="filter-field-label">{label}</span>
+        {label && <span className="filter-field-label">{label}</span>}
         <span
-          className={`min-w-0 truncate text-[13px] ${
+          className={`min-w-0 truncate text-[13px] ${label ? "" : "flex-1"} ${
             songogdson ? "text-[color:var(--panel-text)]" : "text-[color:var(--muted-text)]"
           }`}
         >
           {songogdson?.label || placeholder}
         </span>
-        {value ? (
+        {value && allowClear ? (
           <span
             role="button"
             aria-label="Цэвэрлэх"
@@ -188,7 +192,7 @@ export default function FilterSelect({
               </div>
             )}
             <div className="max-h-64 overflow-y-auto">
-              {!khaikh && mur("", bugdLabel)}
+              {!khaikh && bugdLabel !== null && mur("", bugdLabel)}
               {shuugdsen.map((o) => mur(o.value, o.label, o.tailbar))}
               {shuugdsen.length === 0 && (
                 <div className="px-2.5 py-3 text-center text-xs text-[color:var(--muted-text)]">

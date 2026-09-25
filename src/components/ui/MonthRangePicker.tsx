@@ -28,7 +28,6 @@ const tulkhuur = (d: Dayjs) => d.year() * 12 + d.month();
 export default function MonthRangePicker({
   value,
   onChange,
-  placeholder = "Сар сонгох",
   className = "",
 }: MonthRangePickerProps) {
   const ekhlel = value?.[0] ? dayjs(value[0]) : null;
@@ -66,8 +65,17 @@ export default function MonthRangePicker({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") khaakh();
     };
-    // Байрлал `fixed` тул гүйлгэх/хэмжээ өөрчлөгдөхөд хаана
-    const onMove = () => khaakh();
+    // Байрлал `fixed` — гүйлгэх/хэмжээ өөрчлөгдөхөд хаахгүй, товчоо дагаж
+    // шилжинэ. Хуудас доторх ямар нэг гүйлгэлт (хүснэгт, sticky толгой)
+    // scroll үйл явдал цацахад нээгдмэгц хаагдаж, «нээгдэхгүй» мэт болдог байв.
+    const onMove = (e: Event) => {
+      if (popoverRef.current?.contains(e.target as Node)) return;
+      const r = triggerRef.current?.getBoundingClientRect();
+      if (!r) return khaakh();
+      const top = r.bottom + 6;
+      const left = Math.max(8, Math.min(r.left, window.innerWidth - 272 - 8));
+      setBairlal((p) => (p && p.top === top && p.left === left ? p : { top, left }));
+    };
     document.addEventListener("mousedown", onDown);
     document.addEventListener("keydown", onKey);
     window.addEventListener("resize", onMove);
@@ -108,12 +116,7 @@ export default function MonthRangePicker({
     return [null, null];
   })();
 
-  const tekst =
-    ekhlel && tugsgul
-      ? tulkhuur(ekhlel) === tulkhuur(tugsgul)
-        ? ekhlel.format("YYYY-MM")
-        : `${ekhlel.format("YYYY-MM")} → ${tugsgul.format("YYYY-MM")}`
-      : "";
+  const tekst = ekhlel && tugsgul;
 
   return (
     <>
@@ -131,12 +134,14 @@ export default function MonthRangePicker({
         className={`group flex h-full w-full cursor-pointer items-center gap-2 text-[13px] ${className}`}
       >
         <Calendar className="h-4 w-4 shrink-0 text-[color:var(--muted-text)]" />
-        <span
-          className={`min-w-0 flex-1 truncate text-left ${
-            tekst ? "text-[color:var(--panel-text)]" : "text-[color:var(--muted-text)]"
-          }`}
-        >
-          {tekst || placeholder}
+        <span className="flex min-w-0 flex-1 items-center gap-2 tabular-nums">
+          <span className={`min-w-0 flex-1 truncate text-center ${ekhlel ? "text-[color:var(--panel-text)]" : "text-[color:var(--muted-text)]"}`}>
+            {ekhlel ? ekhlel.format("YYYY-MM") : "Эхлэх сар"}
+          </span>
+          <span className="shrink-0 text-[color:var(--muted-text)]">→</span>
+          <span className={`min-w-0 flex-1 truncate text-center ${tugsgul ? "text-[color:var(--panel-text)]" : "text-[color:var(--muted-text)]"}`}>
+            {tugsgul ? tugsgul.format("YYYY-MM") : "Дуусах сар"}
+          </span>
         </span>
         {tekst && (
           <button

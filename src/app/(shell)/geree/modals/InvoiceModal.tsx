@@ -16,7 +16,7 @@ import { DANS_ENDPOINT } from "@/lib/endpoints";
 import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
 import { ledgerFilterYmdKey } from "@/app/(shell)/tulbur/guilgeeTuukh/ledgerRunningBalances";
 import { Search, Calendar, Printer, X, Eye } from "lucide-react";
-import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
+import FilterDatePicker from "@/components/ui/FilterDatePicker";
 import Button from "@/components/ui/Button";
 
 /** .env: NEXT_PUBLIC_NEKHEMJLEKHIIN_DAVLAL_20_BAIGUULLAGIIN_IDS=id1,id2 */
@@ -1844,12 +1844,11 @@ export default function InvoiceModal({
               {/* Sidebar Filters */}
               <div className="p-4 space-y-3 bg-[color:var(--surface-bg)] border-b border-[color:var(--surface-border)]">
                 <div className="flex gap-2">
-                  <StandardDatePicker
-                    isRange={true}
+                  <FilterDatePicker
                     value={dateRange}
-                    onChange={setDateRange}
-                    placeholder="Эхлэх огноо ... Дуусах огноо"
-                    className="w-full text-xs"
+                    onChange={(_, s) => setDateRange([s[0] || null, s[1] || null])}
+                    placeholder="Огноо сонгох"
+                    className="w-full"
                   />
                 </div>
 
