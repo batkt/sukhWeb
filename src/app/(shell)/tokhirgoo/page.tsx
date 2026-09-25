@@ -1,10 +1,10 @@
 "use client";
 
 import { useMemo, useState, useEffect, lazy, Suspense, Component, ReactNode } from "react";
+import { Menu, Pin, PinOff } from "lucide-react";
 import { useAuth } from "@/lib/useAuth";
 import {
   Building2,
-  Camera,
   Car,
   Database,
   Landmark,
@@ -14,7 +14,6 @@ import {
   Receipt,
   Settings,
   SlidersHorizontal,
-  UserCog,
 } from "lucide-react";
 import { hasPermission } from "@/lib/permissionUtils";
 import Button from "@/components/ui/Button";
@@ -28,12 +27,10 @@ const Dans = lazy(() => import("./Dans"));
 const EmailTokhirgoo = lazy(() => import("./EmailTokhirgoo"));
 const Medegdel = lazy(() => import("./Medegdel"));
 const NevtreltiinTuukh = lazy(() => import("./NevtreltiinTuukh"));
-const Zogsool = lazy(() => import("./Zogsool"));
+const ZogsoolTokhirgoo = lazy(() => import("./ZogsoolTokhirgoo"));
 const BarilgiinTokhirgoo = lazy(() => import("./BarilgiinTokhirgoo"));
 const NemeltTokhirgoo = lazy(() => import("./NemeltTokhirgoo"));
 const TuslamjTokhirgoo = lazy(() => import("./TuslamjTokhirgoo"));
-const KameriinTokhirgoo = lazy(() => import("./KameriinTokhirgoo"));
-const AjiltniiTokhirgoo = lazy(() => import("./AjiltniiTokhirgoo"));
 
 // Error boundary for chunk loading errors
 class ChunkErrorBoundary extends Component<
@@ -127,6 +124,34 @@ function Tokhirgoo() {
     }
   };
 
+  /**
+   * Талбарт ажиллаж эхлэхэд (focus) цэс бүрэн нуугдаж, агуулга бүтэн
+   * өргөнтэй болно. Оронд нь «Тохиргооны цэс» товч + одоогийн табын нэр
+   * гарна — дарж буцааж нээнэ. Hover-оор нээх нь санамсаргүй үсэрдэг,
+   * ахмад хэрэглэгчдэд олдохгүй байсан тул тодорхой товч болгов.
+   * «Нуухгүй» (pin) сонгосон бол цэс үргэлж харагдана.
+   */
+  const PIN_KEY = "tokhirgoo_nav_pin";
+  const [tsesTogtmol, setTsesTogtmol] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(PIN_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+  const [khumigdsan, setKhumigdsan] = useState(false);
+  const tsesNuugdsan = khumigdsan && !tsesTogtmol;
+  const togtmolSolikh = () => {
+    const v = !tsesTogtmol;
+    setTsesTogtmol(v);
+    if (v) setKhumigdsan(false);
+    try {
+      localStorage.setItem(PIN_KEY, v ? "1" : "0");
+    } catch {
+      /* хадгалах боломжгүй */
+    }
+  };
+
   const tokhirgoo = useMemo(() => {
     const isAdmin = ajiltan?.erkh === "Admin" || ajiltan?.erkh === "admin";
     const has = (path: string) => hasPermission(ajiltan, path);
@@ -135,6 +160,8 @@ function Tokhirgoo() {
     // таб өөрөө гарчиг зурдаггүй (шинэ загварт шилжсэн) тул бүрхүүл зурна.
     const allTabs: {
       perm: string;
+      /** Өөр эрхээр ч харагдана (нэгтгэсэн таб) */
+      perm2?: string;
       text: string;
       tailbar: string;
       buleg: Buleg;
@@ -145,18 +172,16 @@ function Tokhirgoo() {
     }[] = [
       { perm: "tokhirgoo.barilga", text: "Барилгын тохиргоо", tailbar: "СӨХ-ийн мэдээлэл, барилга, орц, давхар", buleg: "Байгууллага", Icon: Building2, tsonkh: BarilgiinTokhirgoo, tolgoi: true, comingSoon: false },
       { perm: "tokhirgoo.nemelt", text: "Нэмэлт тохиргоо", tailbar: "Нэхэмжлэх, алданги, мэдэгдэл, машины хязгаар", buleg: "Байгууллага", Icon: SlidersHorizontal, tsonkh: NemeltTokhirgoo, tolgoi: true, comingSoon: false },
-      { perm: "tokhirgoo.ajiltan", text: "Ажилтны тохиргоо", tailbar: "Ажилтны эрх, хандалт", buleg: "Байгууллага", Icon: UserCog, tsonkh: AjiltniiTokhirgoo, tolgoi: true, comingSoon: false },
       { perm: "tokhirgoo.ashiglaltiinZardal", text: "Ашиглалтын зардал", tailbar: "Сар бүр бодогдох зардлууд", buleg: "Төлбөр", Icon: ListChecks, tsonkh: AshiglaltiinZardal, tolgoi: true, comingSoon: false },
       { perm: "tokhirgoo.dans", text: "Данс", tailbar: "Төлбөр хүлээн авах данс", buleg: "Төлбөр", Icon: Landmark, tsonkh: Dans, tolgoi: true, comingSoon: false },
       { perm: "tokhirgoo.ebarimt", text: "И-Баримт", tailbar: "Татварын баримтын тохиргоо", buleg: "Төлбөр", Icon: Receipt, tsonkh: EbarimtTokhirgoo, tolgoi: true, comingSoon: false },
-      { perm: "tokhirgoo.zogsool", text: "Зогсоол", tailbar: "Зогсоол, тариф, хаалга", buleg: "Зогсоол", Icon: Car, tsonkh: Zogsool, tolgoi: true, comingSoon: false },
-      { perm: "tokhirgoo.kamer", text: "Камерийн тохиргоо", tailbar: "Орох, гарах камерууд", buleg: "Зогсоол", Icon: Camera, tsonkh: KameriinTokhirgoo, tolgoi: true, comingSoon: false },
+      { perm: "tokhirgoo.zogsool", perm2: "tokhirgoo.kamer", text: "Зогсоол", tailbar: "Зогсоол, тариф, хаалга, камер", buleg: "Зогсоол", Icon: Car, tsonkh: ZogsoolTokhirgoo, tolgoi: true, comingSoon: false },
       { perm: "tokhirgoo.nevtreltiinTuukh", text: "Нэвтрэлтийн түүх", tailbar: "Хэн, хэзээ нэвтэрсэн", buleg: "Систем", Icon: LogIn, tsonkh: NevtreltiinTuukh, tolgoi: true, comingSoon: false },
       { perm: "tokhirgoo.baaz", text: "Бааз", tailbar: "Өгөгдлийн сангийн хэмжээ", buleg: "Систем", Icon: Database, tsonkh: Baaz, tolgoi: true, comingSoon: false },
       { perm: "tokhirgoo.tuslamj", text: "Ерөнхий тусламж", tailbar: "Тусламжийн агуулга", buleg: "Систем", Icon: LifeBuoy, tsonkh: TuslamjTokhirgoo, tolgoi: true, comingSoon: false },
     ];
 
-    return (isAdmin ? allTabs : allTabs.filter((t) => has(t.perm))).map((t) => ({
+    return (isAdmin ? allTabs : allTabs.filter((t) => has(t.perm) || (!!t.perm2 && has(t.perm2)))).map((t) => ({
       ...t,
       icon: <t.Icon className="h-4 w-4 shrink-0" />,
     }));
@@ -180,7 +205,11 @@ function Tokhirgoo() {
   return (
     <AdminLayout>
       {tokhirgoo.length > 0 && (
-        <aside className="w-full shrink-0 lg:sticky lg:top-[calc(var(--shell-topbar-h,56px)+1rem)] lg:w-[232px]">
+        <aside
+          className={`relative w-full shrink-0 lg:sticky lg:top-[calc(var(--shell-topbar-h,56px)+1rem)] lg:w-[232px] ${
+            tsesNuugdsan ? "lg:hidden" : ""
+          }`}
+        >
           <nav
             aria-label="Тохиргоо"
             className="flex gap-1 overflow-x-auto rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-2 lg:max-h-[calc(100dvh-var(--shell-topbar-h,56px)-2.5rem)] lg:flex-col lg:overflow-y-auto custom-scrollbar"
@@ -191,7 +220,7 @@ function Tokhirgoo() {
               return (
                 <div key={item.text} className="contents">
                   {shineBuleg && (
-                    <div className={`hidden px-2.5 pb-1 text-[11px] text-[color:var(--muted-text)] lg:block ${i === 0 ? "pt-1" : "pt-3"}`}>
+                    <div className={`hidden px-2.5 pb-1 text-[12px] text-[color:var(--muted-text)] lg:block ${i === 0 ? "pt-1" : "pt-3"}`}>
                       {item.buleg}
                     </div>
                   )}
@@ -199,7 +228,7 @@ function Tokhirgoo() {
                     type="button"
                     onClick={() => setSelectedIndex(i)}
                     aria-current={isActive ? "page" : undefined}
-                    className={`relative flex shrink-0 items-center gap-2.5 whitespace-nowrap rounded-[10px] px-2.5 py-2 text-left text-[13px] transition-colors ${
+                    className={`relative flex min-h-10 shrink-0 items-center gap-2.5 whitespace-nowrap rounded-[10px] px-2.5 py-2 text-left text-[14px] transition-colors ${
                       isActive
                         ? "bg-theme/10 text-brand"
                         : "text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"
@@ -211,11 +240,46 @@ function Tokhirgoo() {
                 </div>
               );
             })}
+            <button
+              type="button"
+              onClick={togtmolSolikh}
+              title={tsesTogtmol ? "Талбарт ажиллах үед цэсийг нуух" : "Цэсийг хэзээ ч нуухгүй"}
+              aria-pressed={tsesTogtmol}
+              className="mt-auto hidden min-h-10 items-center gap-2.5 border-t border-[color:var(--surface-border)] px-2.5 pb-1 pt-3 text-[13px] text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] lg:flex"
+            >
+              {tsesTogtmol ? <PinOff className="h-4 w-4 shrink-0" /> : <Pin className="h-4 w-4 shrink-0" />}
+              {tsesTogtmol ? "Ажиллах үед нуух" : "Цэсийг нуухгүй"}
+            </button>
           </nav>
         </aside>
       )}
 
-      <div className="min-w-0 flex-1 text-theme">
+      <div
+        className="min-w-0 flex-1 text-theme"
+        // Агуулга дээр ажиллаж эхэлмэгц цэсийг хумина (зөвхөн том дэлгэцэнд)
+        onFocusCapture={(e) => {
+          // Зөвхөн талбарт бичих/сонгох үед (товч дарахад биш)
+          const t = e.target as HTMLElement;
+          if (!tsesTogtmol && t.matches("input, textarea, select, [contenteditable='true']"))
+            setKhumigdsan(true);
+        }}
+      >
+        {tsesNuugdsan && tokhirgoo[selectedIndexInternal] && (
+          <div className="mb-3 hidden items-center gap-3 lg:flex">
+            <button
+              type="button"
+              onClick={() => setKhumigdsan(false)}
+              className="btn-minimal inline-flex h-10 items-center gap-2 !px-3.5 text-[14px]"
+            >
+              <Menu className="h-4 w-4" />
+              Тохиргооны цэс
+            </button>
+            <span className="inline-flex items-center gap-2 text-[14px] text-[color:var(--muted-text)]">
+              {tokhirgoo[selectedIndexInternal].icon}
+              {tokhirgoo[selectedIndexInternal].text}
+            </span>
+          </div>
+        )}
         {tokhirgoo.length === 0 && ajiltan && (
           <div className="flex flex-col items-center justify-center p-12 text-theme">
             <Settings className="w-16 h-16 mb-4 opacity-50" />

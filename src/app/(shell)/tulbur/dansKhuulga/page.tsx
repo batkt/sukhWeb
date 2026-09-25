@@ -1,11 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import FilterSelect from "@/components/ui/FilterSelect";
 import FilterDatePicker from "@/components/ui/FilterDatePicker";
-import { ChevronDown, FileDown, FileUp } from "lucide-react";
 import ExcelButton from "@/components/ui/ExcelButton";
-import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { Modal, TextInput, Loader } from "@mantine/core";
 import toast from "react-hot-toast";
 import moment from "moment";
@@ -61,9 +59,6 @@ export default function DansniiKhuulga() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { token, ajiltan, barilgiinId } = useAuth();
-  // Гүйлгээг Excel-ээр тестээр оруулах — зөвхөн тусгай хэрэглэгчид
-  // (backend-ийн BANK_EXCEL_TEST_KHEREGLEGCHID-тай ижил)
-  const excelTestErkhtei = String((ajiltan as any)?.nevtrekhNer || "") === "0707007";
   const socket = useSocket();
 
   useEffect(() => {
@@ -81,10 +76,6 @@ export default function DansniiKhuulga() {
   const [activeStatFilter, setActiveStatFilter] = useState<number | null>(null);
   // Орлого / Зарлагаар ялгах
   const [turulShuult, setTurulShuult] = useState<"all" | "orlogo" | "zarlaga">("all");
-  const [excelNeelttei, setExcelNeelttei] = useState(false);
-  const [excelOruulj, setExcelOruulj] = useState(false);
-  const excelInputRef = useRef<HTMLInputElement | null>(null);
-  const excelMenuRef = useRef<HTMLDivElement | null>(null);
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(500);
   // Эрэмбэ. Хүснэгт рүү ЗӨВХӨН тухайн хуудсын мөр очдог тул эрэмбийг энд,
@@ -708,59 +699,53 @@ export default function DansniiKhuulga() {
     });
   }, [statFiltered, sortKey, sortOrder, turulShuult]);
 
-  // Excel цэс гадна дарахад хаагдана
-  useEffect(() => {
-    if (!excelNeelttei) return;
-    const onDown = (e: MouseEvent) => {
-      if (!excelMenuRef.current?.contains(e.target as Node)) setExcelNeelttei(false);
-    };
-    document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
-  }, [excelNeelttei]);
 
-  const excelZagvarTatya = async () => {
-    setExcelNeelttei(false);
-    if (!token) return;
-    try {
-      const resp = await uilchilgee(token).post(
-        "/bankniiGuilgeeZagvarAvya",
-        {},
-        { responseType: "blob" },
-      );
-      const url = window.URL.createObjectURL(new Blob([resp.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `Банкны гүйлгээ загвар_${Date.now()}.xlsx`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (e) {
-      openErrorOverlay(getErrorMessage(e));
+  const [excelTatajBaina, setExcelTatajBaina] = useState(false);
+  /** Одоогийн шүүлт, эрэмбээр хуулгыг Excel болгож татна */
+  const khuulgaExcelTatya = async () => {
+    if (erembelsen.length === 0) {
+      toast.error("Татах гүйлгээ алга");
+      return;
     }
-  };
-
-  const excelOruulya = async (file: File) => {
-    if (!token || !ajiltan?.baiguullagiinId || !selectedDugaar) return;
-    setExcelOruulj(true);
+    setExcelTatajBaina(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("baiguullagiinId", String(ajiltan.baiguullagiinId));
-      const barilga = selectedBuildingId || barilgiinId;
-      if (barilga) formData.append("barilgiinId", String(barilga));
-      formData.append("dansniiDugaar", selectedDugaar);
-      if (selectedDans?.bank) formData.append("bank", String(selectedDans.bank));
-      const resp = await uilchilgee(token).post("/bankniiGuilgeeExcelOruulya", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+      const XLSX = await import("xlsx");
+      const pad = (n: number) => String(n).padStart(2, "0");
+      const ognooMur = (v: any) => {
+        if (!v) return "";
+        const d = new Date(v);
+        return isNaN(d.getTime())
+          ? String(v)
+          : `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      };
+      const murnuud = erembelsen.map((m: any, i: number) => {
+        const geree = m.contracts?.[0];
+        const ezen = geree ? `${geree.ovog || ""} ${geree.ner || ""}`.trim() : "";
+        return {
+          "№": i + 1,
+          "Огноо": ognooMur(m.date),
+          "Гүйлгээний утга": m.action || "",
+          "Гүйлгээний дүн": Number(m.total) || 0,
+          "Шилжүүлсэн данс": m.account || "",
+          "Оршин суугч": ezen,
+          "Тоот": geree?.toot || "",
+          "Ажилтан": m.raw?.kholbosonAjiltniiNer || "",
+          "Холбосон огноо": (m.contractIds?.length || 0) > 0 ? ognooMur(m.raw?.updatedAt) : "",
+          "НӨАТУС": m.raw?.ebarimtAvsanEsekh ? "Илгээсэн" : "Илгээгээгүй",
+          "Төлөв": (m.contractIds?.length || 0) > 0 ? "Холбогдсон" : "Холбогдоогүй",
+        };
       });
-      openSuccessOverlay(`${resp.data?.too ?? 0} гүйлгээ оруулагдлаа`);
-      await fetchBankTransfers();
-    } catch (e: any) {
-      openErrorOverlay(e?.response?.data?.aldaa || getErrorMessage(e));
+      const ws = XLSX.utils.json_to_sheet(murnuud);
+      ws["!cols"] = [6, 18, 40, 16, 22, 24, 10, 18, 18, 12, 14].map((wch) => ({ wch }));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Дансны хуулга");
+      const [ekh, tug] = (ekhlekhOgnoo || []) as any[];
+      const khugatsaa = ekh && tug ? `_${String(ekh).slice(0, 10)}_${String(tug).slice(0, 10)}` : "";
+      XLSX.writeFile(wb, `Дансны хуулга${selectedDugaar ? "_" + selectedDugaar : ""}${khugatsaa}.xlsx`);
+    } catch {
+      toast.error("Excel татахад алдаа гарлаа");
     } finally {
-      setExcelOruulj(false);
-      if (excelInputRef.current) excelInputRef.current.value = "";
+      setExcelTatajBaina(false);
     }
   };
 
@@ -871,51 +856,14 @@ export default function DansniiKhuulga() {
                 )}
               </div>
             )}
-            {/* Excel — гүйлгээг гараар оруулах (тест / API-гүй данс) */}
-            {excelTestErkhtei && (
-            <div ref={excelMenuRef} className="relative">
-              <ExcelButton
-                id="dans-excel-btn"
-                label={excelOruulj ? "Оруулж байна..." : "Excel"}
-                title="Excel"
-                loading={excelOruulj}
-                onClick={() => setExcelNeelttei((v) => !v)}
-                suffix={<ChevronDown className={`h-3.5 w-3.5 transition-transform ${excelNeelttei ? "rotate-180" : ""}`} />}
-              />
-              {excelNeelttei && (
-                <div className="absolute right-0 top-full z-50 mt-1.5 min-w-[200px] overflow-hidden rounded-xl border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] py-1 shadow-lg">
-                  <button
-                    type="button"
-                    onClick={excelZagvarTatya}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"
-                  >
-                    <FileDown className="h-4 w-4 text-[color:var(--muted-text)]" />
-                    Загвар татах
-                  </button>
-                  <button
-                    type="button"
-                    disabled={!selectedDugaar}
-                    onClick={() => { setExcelNeelttei(false); excelInputRef.current?.click(); }}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] disabled:cursor-not-allowed disabled:opacity-50"
-                    title={selectedDugaar ? undefined : "Эхлээд данс сонгоно уу"}
-                  >
-                    <FileUp className="h-4 w-4 text-[color:var(--muted-text)]" />
-                    Excel оруулах
-                  </button>
-                </div>
-              )}
-              <input
-                ref={excelInputRef}
-                type="file"
-                accept=".xlsx,.xls"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) excelOruulya(file);
-                }}
-              />
-            </div>
-            )}
+            {/* Excel — зөвхөн ТАТНА: шүүсэн, эрэмбэлсэн бүх мөр (хуудаслалтаас үл хамаарна) */}
+            <ExcelButton
+              id="dans-excel-btn"
+              label={excelTatajBaina ? "Татаж байна..." : "Excel"}
+              title="Дансны хуулгыг Excel-ээр татах"
+              loading={excelTatajBaina}
+              onClick={khuulgaExcelTatya}
+            />
             </div>
           </div>
 

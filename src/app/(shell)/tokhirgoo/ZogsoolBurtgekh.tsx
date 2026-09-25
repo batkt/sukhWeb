@@ -188,6 +188,8 @@ function ZogsoolBurtgekh(
   return (
     <div className="space-y-5">
       {/* Navigation Tabs */}
+      {/* Дараалал: эхлээд үндсэн мэдээлэл, дараа нь үнэ, сүүлд тоног төхөөрөмж.
+          «Системийн тохиргоо» нь үндсэнтэй ижил зорилготой тул нэгтгэв. */}
       <div className="stg-segment flex-wrap">
         <button
           type="button"
@@ -196,24 +198,7 @@ function ZogsoolBurtgekh(
             activeTab === "general" ? "is-active" : ""
           }`}
         >
-          <span>Ерөнхий & Санхүү</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab("gates")}
-          className={`stg-segment-item inline-flex min-h-10 items-center gap-2 whitespace-nowrap ${
-            activeTab === "gates" ? "is-active" : ""
-          }`}
-        >
-          <span>Хаалга & Камер</span>
-          <span className={`inline-flex items-center justify-center min-w-[22px] px-1.5 text-xs rounded-full ${
-            activeTab === "gates"
-              ? "bg-theme/15 text-brand"
-              : "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]"
-          }`}>
-            {formData.khaalga?.length || 0}
-          </span>
+          <span>Үндсэн тохиргоо</span>
         </button>
 
         <button
@@ -235,12 +220,19 @@ function ZogsoolBurtgekh(
 
         <button
           type="button"
-          onClick={() => setActiveTab("switches")}
+          onClick={() => setActiveTab("gates")}
           className={`stg-segment-item inline-flex min-h-10 items-center gap-2 whitespace-nowrap ${
-            activeTab === "switches" ? "is-active" : ""
+            activeTab === "gates" ? "is-active" : ""
           }`}
         >
-          <span>Системийн тохиргоо</span>
+          <span>Хаалга & Камер</span>
+          <span className={`inline-flex items-center justify-center min-w-[22px] px-1.5 text-xs rounded-full ${
+            activeTab === "gates"
+              ? "bg-theme/15 text-brand"
+              : "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]"
+          }`}>
+            {formData.khaalga?.length || 0}
+          </span>
         </button>
       </div>
 
@@ -381,8 +373,8 @@ function ZogsoolBurtgekh(
         </div>
       )}
 
-      {/* Tab 2: System Switches */}
-      {activeTab === "switches" && (
+      {/* Системийн хязгаарлалт — «Үндсэн тохиргоо» дотор, доод хэсэгт */}
+      {(activeTab === "general" || activeTab === "switches") && (
         <section className="rounded-xl border border-[color:var(--surface-border)] p-4 sm:p-5">
           <SectionHeader icon={ShieldCheck} title="Системийн хязгаарлалт" description="Нэмэлт тохиргоонууд" colorClass="bg-theme/10 text-brand" />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
