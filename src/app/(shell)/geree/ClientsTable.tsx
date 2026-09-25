@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { Tooltip } from "antd";
 import Table from "@/components/ui/table";
 import type { ColumnsType } from "@/components/ui/table";
 import { Edit, Trash2, ChevronUp, ChevronDown, X } from "lucide-react";
@@ -111,6 +110,20 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
     },
     { revalidateOnFocus: false, dedupingInterval: 30000 },
   );
+  /** Харилцагчийн Зогсоол/Агуулахын тоотууд (давхардалгүй) */
+  const zogsoolAguulakh = (record: ClientItem): any[] => {
+    let toots: any[] = Array.isArray(record.toots) ? record.toots : [];
+    if (currentBaiguullagiinId)
+      toots = toots.filter((t: any) => String(t.baiguullagiinId) === String(currentBaiguullagiinId));
+    const seen = new Set<string>();
+    return toots.filter((t: any) => {
+      if (t.turul !== "Гараж" && t.turul !== "Агуулах") return false;
+      const k = `${t.toot}_${t.barilgiinId || ""}_${t.turul}`;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+  };
   const ilgeesenEsekh = (t: any): boolean => {
     if (!sariinNekhemjlekh) return false;
     const gid = String(t?.gereeniiId || t?.gereeId || "");
@@ -177,7 +190,7 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
       {
         title: "Зогсоол / Агуулах",
         key: "garage_storage",
-        width: 210,
+        width: 220,
         sorter: true,
         sortOrder:
           sortKey === "garage_storage"
@@ -185,7 +198,7 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
               ? "ascend"
               : "descend"
             : null,
-        align: "center",
+        align: "left",
         render: (_: any, record: ClientItem) => {
           let toots =
             Array.isArray(record.toots) && record.toots.length > 0
@@ -220,18 +233,20 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
 
 
 
-          const tooltipContent = (
-            <div className="space-y-1.5 p-1.5 max-w-[220px]">
+          // Бүх тоот нэг мөрөнд — hover хийх шаардлагагүй. Хасах × нь
+          // шошгон дээр очиход л гарна.
+          return (
+            <div className="flex items-center gap-1 overflow-hidden whitespace-nowrap">
               {toots.map((t: any, idx: number) => {
                 const label = t.turul === "Гараж" ? "Зогсоол" : "Агуулах";
                 return (
-                  <div key={idx} className="flex items-center justify-between gap-3 py-0.5">
-                    <span className="text-white font-medium">
-                      Тоот {t.toot} {label}
-                      <span className={`ml-1.5 text-[11px] ${ilgeesenEsekh(t) ? "text-emerald-300" : "text-slate-400"}`}>
-                        · {ilgeesenEsekh(t) ? "нэхэмжлэх илгээсэн" : "илгээгээгүй"}
-                      </span>
-                    </span>
+                  <span
+                    key={idx}
+                    title={`Тоот ${t.toot} · ${label}`}
+                    className="group inline-flex shrink-0 items-center gap-1 rounded-md border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] px-2 py-0.5 text-[color:var(--panel-text)]"
+                  >
+                    <span className="tabular-nums">{t.toot}</span>
+                    <span className="text-[10px] text-[color:var(--muted-text)]">{label}</span>
                     <button
                       type="button"
                       onClick={(e) => {
@@ -241,52 +256,45 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
                           baiguullagiinId: t.baiguullagiinId,
                           barilgiinId: t.barilgiinId,
                           toot: t.toot,
-                          label: `${t.toot} (${t.turul === "Гараж" ? "Зогсоол" : "Агуулах"})`,
+                          label: `${t.toot} (${label})`,
                         });
                       }}
-                      className="p-0.5 text-danger hover:text-danger rounded hover:bg-danger/30 transition-colors"
+                      className="-mr-1 inline-flex rounded p-0.5 text-danger opacity-0 transition-opacity hover:bg-danger/10 focus:opacity-100 group-hover:opacity-100"
                       title="Хасах"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="h-3 w-3" />
                     </button>
-                  </div>
+                  </span>
                 );
               })}
             </div>
           );
-
-          const ilgeesenToo = toots.filter(ilgeesenEsekh).length;
-          const bugudIlgeesen = ilgeesenToo === toots.length;
-
+        },
+      },
+      {
+        title: "Нэхэмжлэх",
+        key: "nekhemjlekh",
+        width: 120,
+        align: "left",
+        // Энэ сард Зогсоол/Агуулахын нэхэмжлэх илгээгдсэн эсэх
+        render: (_: any, record: ClientItem) => {
+          const toots = zogsoolAguulakh(record);
+          if (toots.length === 0) return "-";
+          const too = toots.filter(ilgeesenEsekh).length;
+          const ungu =
+            too === toots.length ? "bg-success" : too > 0 ? "bg-warning" : "bg-[color:var(--muted-text)]/40";
+          const tekst =
+            too === toots.length ? "Илгээсэн" : too > 0 ? `${too}/${toots.length}` : "Илгээгээгүй";
           return (
-            <div className="inline-flex items-center gap-1.5">
-              <Tooltip title={tooltipContent} placement="top" color="#1e293b" trigger="hover">
-                <span className="inline-flex items-center gap-1.5 cursor-pointer px-2.5 py-0.5 rounded-md bg-[color:var(--surface-hover)] font-medium text-[color:var(--panel-text)] border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors">
-                  {toots[0].toot}
-                  {toots.length > 1 && (
-                    <span className="text-[color:var(--muted-text)] font-medium">
-                      +{toots.length - 1}
-                    </span>
-                  )}
-                </span>
-              </Tooltip>
-              <span
-                title={`Энэ сарын нэхэмжлэх: ${ilgeesenToo}/${toots.length} илгээсэн`}
-                className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] ${
-                  bugudIlgeesen
-                    ? "bg-success/10 text-success"
-                    : ilgeesenToo > 0
-                      ? "bg-warning/10 text-warning"
-                      : "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]"
-                }`}
-              >
-                {bugudIlgeesen
-                  ? "Илгээсэн"
-                  : ilgeesenToo > 0
-                    ? `${ilgeesenToo}/${toots.length} илгээсэн`
-                    : "Илгээгээгүй"}
-              </span>
-            </div>
+            <span
+              title={`Энэ сарын нэхэмжлэх: ${too}/${toots.length} илгээсэн`}
+              className={`inline-flex items-center gap-1.5 whitespace-nowrap ${
+                too > 0 ? "text-[color:var(--panel-text)]" : "text-[color:var(--muted-text)]"
+              }`}
+            >
+              <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${ungu}`} />
+              {tekst}
+            </span>
           );
         },
       },
