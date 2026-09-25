@@ -40,6 +40,7 @@ import {
   ChevronRight,
 
   Receipt,
+  CalendarCheck,
   AlertTriangle,
 } from "lucide-react";
 import { ConfigProvider } from "antd";
@@ -64,6 +65,7 @@ import type { ColumnsType } from "@/components/ui/table";
 import { toast } from "react-hot-toast";
 import Button from "@/components/ui/Button";
 import { tulburiinZadargaaBodyo } from "@/lib/tulburiinZadargaa";
+import UdriinKhaaltModal from "./UdriinKhaaltModal";
 
 const RealTimeDuration = ({
   orsonTsag,
@@ -370,6 +372,14 @@ function murNiiluulye(transaction: any) {
     )
     .reduce((sum: number, pay: any) => sum + Math.abs(pay?.dun ?? 0), 0);
   const effectiveOwed = Math.max(0, niitDun - discountTotal);
+  // Бүрэн хөнгөлсөн: хөнгөлөлт нь нийт дүнг бүрэн нөхөж, бодит төлбөр 0 —
+  // төлөв нь «Үнэгүй», и-баримт гарахгүй.
+  const boditTulsun = tulburuudiigTsugluulya(transaction).reduce(
+    (s: number, t: any) => s + (Number(t?.dun) || 0),
+    0,
+  );
+  const bureenKhungulsun =
+    !isCurrentlyIn && niitDun > 0 && discountTotal >= niitDun && boditTulsun <= 0;
   const hasRemainingBalance =
     tuluv === 1 &&
     effectiveOwed > 0 &&
@@ -382,7 +392,8 @@ function murNiiluulye(transaction: any) {
     tuluv,
     niitDun,
     isCurrentlyIn,
-    isFreeExit,
+    isFreeExit: isFreeExit || bureenKhungulsun,
+    bureenKhungulsun,
     isPaid,
     isDebt,
     discountTotal,
@@ -432,6 +443,7 @@ export default function Camera() {
   const [discountAmount, setDiscountAmount] = useState("");
   const [discountMinutes, setDiscountMinutes] = useState("");
   const [revenueModalOpen, setRevenueModalOpen] = useState(false);
+  const [khaaltOpen, setKhaaltOpen] = useState(false);
   const [revenueDateRange, setRevenueDateRange] = useState<[string | null, string | null] | undefined>(undefined);
   const [revenueListData, setRevenueListData] = useState<any>(null);
   const [revenueLoading, setRevenueLoading] = useState(false);
@@ -473,6 +485,16 @@ export default function Camera() {
       revalidateOnReconnect: false,
     },
   );
+
+  /** Зогсоолын нийт багтаамж — `parking.too`-ийн нийлбэр */
+  const zogsooliinBagtaamj = useMemo(() => {
+    const list = Array.isArray(parkingConfigData?.jagsaalt)
+      ? parkingConfigData.jagsaalt
+      : Array.isArray(parkingConfigData)
+        ? parkingConfigData
+        : [];
+    return list.reduce((s: number, p: any) => s + (Number(p?.too) || 0), 0);
+  }, [parkingConfigData]);
 
   // Extract cameras from parking configuration
   const cameras = useMemo(() => {
@@ -619,6 +641,29 @@ export default function Camera() {
     niitMur: 0,
   });
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+
+  /** Одоо зогсоолд байгаа (гараагүй) машины тоо — огнооны шүүлтээс үл хамаарна */
+  const { data: idevkhteiToo = 0 } = useSWR(
+    shouldFetch
+      ? ["idevkhteiMashin", token, ajiltan?.baiguullagiinId, effectiveBarilgiinId, listData?.niitMur]
+      : null,
+    async () => {
+      const resp = await uilchilgee(token || "").get("/zogsoolUilchluulegchJagsaalt", {
+        params: {
+          khuudasniiDugaar: 1,
+          khuudasniiKhemjee: 1,
+          query: JSON.stringify({
+            baiguullagiinId: ajiltan?.baiguullagiinId,
+            ...(effectiveBarilgiinId ? { barilgiinId: effectiveBarilgiinId } : {}),
+            "tuukh.garsanKhaalga": { $exists: false },
+            "tuukh.tsagiinTuukh.garsanTsag": { $exists: false },
+          }),
+        },
+      });
+      return Number(resp.data?.niitMur) || 0;
+    },
+    { refreshInterval: 30000, revalidateOnFocus: false },
+  );
 
   // Helper to fetch list via REST (as a fallback or for filters)
   const fetchList = useCallback(async () => {
@@ -1279,6 +1324,7 @@ export default function Camera() {
         }
         if (statusFilter === "paid") {
           // Төлсөн: Payment completed (tuluv === 1 and not currently in, or tuluv === 2)
+          if (murNiiluulye(t).bureenKhungulsun) return false;
           return (tuluv === 1 && !isCurrentlyIn) || tuluv === 2;
         }
         if (statusFilter === "unpaid") {
@@ -1287,6 +1333,7 @@ export default function Camera() {
         }
         if (statusFilter === "free") {
           // Үнэгүй: Exited with no payment, excluding violations
+          if (murNiiluulye(t).bureenKhungulsun) return true;
           return !isCurrentlyIn && niitDun === 0 && tuluv !== -2 && tuluv !== -1;
         }
         return true;
@@ -1791,7 +1838,9 @@ export default function Camera() {
       width: 100,
       align: "right",
       render: (_: any, transaction: any) => {
-        if (murNiiluulye(transaction).isCurrentlyIn) return "";
+        const { isCurrentlyIn, bureenKhungulsun } = murNiiluulye(transaction);
+        if (isCurrentlyIn) return "";
+        if (bureenKhungulsun) return "-";
         const mur = transaction.tuukh?.[0] as any;
         const ebarimtId =
           mur?.ebarimtId ||
@@ -2047,7 +2096,7 @@ export default function Camera() {
 
   return (
     <div className="w-full bg-[color:var(--surface-bg)]">
-      <div className="px-4 pt-3 pb-4 lg:px-6 lg:pb-6 space-y-4">
+      <div className="px-4 pt-3 pb-2 lg:px-6 lg:pb-2 space-y-4">
         {/* Camera Streaming Sections */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           {/* Entry Camera Stream */}
@@ -2215,59 +2264,42 @@ export default function Camera() {
 
         {/* Transactions Table Section */}
         <div className="space-y-4">
-          {/* ─── Top Bar ─── */}
-          <div
-            className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-white/60 dark:bg-white/[0.02] backdrop-blur-xl border border-[color:var(--surface-border)] dark:border-white/[0.04] shadow-sm"
-            style={{ zIndex: 1 }}
-          >
-            {/* Left: Title */}
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-9 h-9 rounded-xl">
-                <Calendar className="w-4 h-4 text-[color:var(--muted-text)]" />
-              </div>
-              <div>
-                <h3 className="text-[13px] text-[color:var(--panel-text)] tracking-tight leading-none">
-                  Жагсаалт
-                </h3>
-                <p className="text-[11px] text-[color:var(--muted-text)] mt-0.5">
-                  Зогсоолын бүртгэл
-                </p>
-              </div>
-            </div>
-
-            {/* Right: Register + DatePicker */}
-            <div className="flex items-center gap-2.5 flex-wrap">
-              {/* Date picker */}
-              <FilterDatePicker
-                value={dateRange}
-                onChange={(_: any, dateStrings: [string, string]) => {
-                    setDateRange(dateStrings);
-                    setPage(1);
-                  }}
-                format="YYYY-MM-DD"
-                className="w-full sm:w-[284px]"
-              />
-
-              {/* Revenue report button */}
-              <Button
+          {/* ─── Top Bar: зүүн талд огноо, баруун талд үйлдлүүд ─── */}
+          <div className="relative z-30 flex flex-wrap items-center justify-between gap-2">
+            <FilterDatePicker
+              value={dateRange}
+              onChange={(_: any, dateStrings: [string, string]) => {
+                setDateRange(dateStrings);
+                setPage(1);
+              }}
+              format="YYYY-MM-DD"
+              className="w-full sm:w-[284px]"
+            />
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setKhaaltOpen(true)}
+                className="btn-minimal inline-flex h-9 items-center gap-1.5 !px-3"
+              >
+                <CalendarCheck className="h-4 w-4" />
+                Өдрийн хаалт
+              </button>
+              <button
+                type="button"
                 onClick={() => { const today = moment().format("YYYY-MM-DD"); setRevenueDateRange([today, today]); setRevenueModalOpen(true); }}
-                variant="primary"
-                size="sm"
-                className="rounded-lg h-8 px-4 text-[11px] shadow-sm"
+                className="btn-minimal inline-flex h-9 items-center gap-1.5 !px-3"
               >
-                <Receipt className="w-3.5 h-3.5 mr-1.5" />
+                <Receipt className="h-4 w-4" />
                 Орлого тайлан
-              </Button>
-
-              {/* Register button */}
-              <Button
+              </button>
+              <button
+                type="button"
                 onClick={() => setIsRegModalOpen(true)}
-                variant="primary"
-                size="sm"
-                className="rounded-lg h-8 px-4 text-[11px] shadow-sm"
+                className="inline-flex h-9 items-center gap-1.5 rounded-[10px] bg-theme px-3 text-[13px] !text-white shadow-[var(--ctl-shadow)] hover:opacity-90"
               >
-                Машин бүртгэх
-              </Button>
+                <Plus className="h-4 w-4" />
+                Машин
+              </button>
             </div>
           </div>
 
@@ -2331,7 +2363,8 @@ export default function Camera() {
                     <Table.Summary.Cell align="right" className="font-medium whitespace-nowrap">
                       {formatNumber(
                         transactions.reduce((sum, t) => {
-                          if (murNiiluulye(t).isCurrentlyIn) return sum;
+                          const { isCurrentlyIn, bureenKhungulsun } = murNiiluulye(t);
+                          if (isCurrentlyIn || bureenKhungulsun) return sum;
                           const m = t.tuukh?.[0] as any;
                           return sum + (Number(m?.ebarimtAvsanDun ?? t?.ebarimtAvsanDun) || 0);
                         }, 0),
@@ -2343,9 +2376,26 @@ export default function Camera() {
               />
             </div>
 
-            {/* Pagination */}
-            <div className="p-4 border-t border-[color:var(--surface-border)] dark:border-white/5 bg-[color:var(--surface-bg)] rounded-b-2xl flex items-center justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-3">
+            {/* Хуудаслалт — нэг эгнээнд. Зүүн талд идэвхтэй / сул зогсоол */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--surface-border)] px-1 py-2.5">
+              <div className="flex items-center gap-4 text-[13px]">
+                <span className="inline-flex items-center gap-1.5" title="Одоо зогсоолд байгаа машин">
+                  <span className="h-2 w-2 rounded-full bg-sky-500" />
+                  <span className="text-[color:var(--muted-text)]">Идэвхтэй</span>
+                  <span className="tabular-nums text-sky-600 dark:text-sky-400">{idevkhteiToo}</span>
+                </span>
+                {zogsooliinBagtaamj > 0 && (
+                  <span className="inline-flex items-center gap-1.5" title={`Нийт ${zogsooliinBagtaamj} зогсоол`}>
+                    <span className="h-2 w-2 rounded-full bg-amber-400" />
+                    <span className="text-[color:var(--muted-text)]">Сул</span>
+                    <span className="tabular-nums text-amber-600 dark:text-amber-400">
+                      {Math.max(0, zogsooliinBagtaamj - idevkhteiToo)}
+                    </span>
+                  </span>
+                )}
+                <span className="text-xs text-[color:var(--muted-text)]">Нийт {total} мөр</span>
+              </div>
+              <div className="flex items-center gap-2">
                 <div className="relative" ref={pageSizeRef}>
                   <button
                     onClick={() => setIsPageSizeOpen(!isPageSizeOpen)}
@@ -2390,11 +2440,6 @@ export default function Camera() {
                     </div>
                   )}
                 </div>
-                <span className="text-xs text-[color:var(--muted-text)]">
-                  Нийт {total} мөр
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
                 <Button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
@@ -2542,7 +2587,16 @@ export default function Camera() {
                   toast.success("Төлбөр амжилттай бүртгэгдлээ");
 
                   // E-Barimt (payment.md section 3)
-                  if (extraData?.ebarimt) {
+                  // Бодит төлсөн дүн 0 (бүрэн хөнгөлсөн/үнэгүй) бол и-баримт гаргахгүй
+                  const boditTulsunDun = newEntries.reduce(
+                    (s: number, t: any) =>
+                      s +
+                      (Number(t?.dun) > 0 && !["khungulult", "discount", "Хөнгөлөлт"].includes(t?.turul)
+                        ? Number(t.dun)
+                        : 0),
+                    0,
+                  );
+                  if (extraData?.ebarimt && boditTulsunDun > 0) {
                     try {
                       const ebResp = await uilchilgee(token || "").post(
                         "/ebarimtShivye",
@@ -3178,6 +3232,15 @@ export default function Camera() {
             </div>
           </div>,
           document.body
+        )}
+
+        {khaaltOpen && (
+          <UdriinKhaaltModal
+            token={token || ""}
+            baiguullagiinId={ajiltan?.baiguullagiinId}
+            barilgiinId={effectiveBarilgiinId}
+            onClose={() => setKhaaltOpen(false)}
+          />
         )}
 
         {isRegModalOpen && createPortal(

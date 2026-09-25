@@ -988,6 +988,7 @@ export default function HongololtTool({
     () => [
       {
         title: "Нэр",
+        sorter: (a: any, b: any) => String(a.ner || "").localeCompare(String(b.ner || "")),
         key: "ner",
         width: 220,
         render: (_: any, r: any) => (
@@ -998,6 +999,7 @@ export default function HongololtTool({
       },
       {
         title: "Дугаар",
+        sorter: (a: any, b: any) => String(a.utas || "").localeCompare(String(b.utas || "")),
         dataIndex: "utas",
         key: "utas",
         width: 110,
@@ -1006,6 +1008,8 @@ export default function HongololtTool({
       },
       {
         title: "Орц",
+        sorter: (a: any, b: any) =>
+          String(a.orts || "").localeCompare(String(b.orts || ""), undefined, { numeric: true }),
         dataIndex: "orts",
         key: "orts",
         width: 60,
@@ -1014,6 +1018,8 @@ export default function HongololtTool({
       },
       {
         title: "Давхар",
+        sorter: (a: any, b: any) =>
+          String(a.davkhar || "").localeCompare(String(b.davkhar || ""), undefined, { numeric: true }),
         dataIndex: "davkhar",
         key: "davkhar",
         width: 65,
@@ -1022,6 +1028,8 @@ export default function HongololtTool({
       },
       {
         title: "Тоот",
+        sorter: (a: any, b: any) =>
+          String(a.toot || "").localeCompare(String(b.toot || ""), undefined, { numeric: true }),
         dataIndex: "toot",
         key: "toot",
         width: 70,
@@ -1030,6 +1038,7 @@ export default function HongololtTool({
       },
       {
         title: "Үлдэгдэл",
+        sorter: (a: any, b: any) => murUldegdel(a) - murUldegdel(b),
         dataIndex: "uldegdel",
         key: "uldegdel",
         width: 110,
@@ -1049,6 +1058,7 @@ export default function HongololtTool({
       },
       {
         title: "Хөнгөлөгдөх дүн",
+        sorter: (a: any, b: any) => computeDiscount(a) - computeDiscount(b),
         key: "khungulult",
         width: 130,
         align: "right",
@@ -1369,22 +1379,36 @@ export default function HongololtTool({
               <Mur
                 shoshgo={hongololtTurul === "percent" ? "Хөнгөлөх хувь" : "Хөнгөлөх дүн"}
                 shaardlagatai
-                tailbar={
-                  hongololtTurul === "percent" && deedKhuvi != null
-                    ? `Дээд хязгаар: ${deedKhuvi}%`
-                    : undefined
-                }
               >
                 <div className="relative">
+                  {/* Дүнг мянгатын таслалтай харуулна, төлөвт цэвэр тоо хадгална.
+                      Дээд хязгаарыг доор нь биш placeholder-т — мөрүүд нэг
+                      эгнээндээ үлдэнэ. */}
                   <input
-                    type="number"
-                    step="any"
-                    min="0"
-                    max={hongololtTurul === "percent" ? deedKhuvi ?? 100 : undefined}
-                    placeholder={hongololtTurul === "percent" ? "Хөнгөлөх хувь" : "Хөнгөлөх дүн"}
-                    value={hongololtUtga}
-                    onChange={(e) => setHongololtUtga(e.target.value)}
-                    className={`${TALBAR} !pr-8`}
+                    type="text"
+                    inputMode="decimal"
+                    placeholder={
+                      hongololtTurul === "percent"
+                        ? `0 – ${deedKhuvi ?? 100}`
+                        : "0"
+                    }
+                    value={
+                      hongololtTurul === "amount" && hongololtUtga
+                        ? (() => {
+                            const [bukhel, butarkhai] = hongololtUtga.split(".");
+                            const f = Number(bukhel || 0).toLocaleString("en-US");
+                            return butarkhai !== undefined ? `${f}.${butarkhai}` : f;
+                          })()
+                        : hongololtUtga
+                    }
+                    onChange={(e) => {
+                      // Зөвхөн тоо ба нэг цэг үлдээнэ
+                      let v = e.target.value.replace(/[^0-9.]/g, "");
+                      const i = v.indexOf(".");
+                      if (i >= 0) v = v.slice(0, i + 1) + v.slice(i + 1).replace(/\./g, "");
+                      setHongololtUtga(v);
+                    }}
+                    className={`${TALBAR} !pr-8 tabular-nums`}
                   />
                   <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[color:var(--muted-text)]">
                     {hongololtTurul === "percent" ? "%" : "₮"}

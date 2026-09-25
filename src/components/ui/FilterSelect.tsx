@@ -9,7 +9,7 @@
  * sticky толгой (z-index) popover-ыг дарахгүй.
  */
 
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Check, ChevronDown, Search, X } from "lucide-react";
 
@@ -55,9 +55,10 @@ export default function FilterSelect({
   const [neelttei, setNeelttei] = useState(false);
   const [khaikh, setKhaikh] = useState("");
   const [bairlal, setBairlal] = useState<{ top: number; left: number; width: number } | null>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  const jagsaaltId = useId();
 
   const songogdson = options.find((o) => o.value === value);
 
@@ -135,21 +136,52 @@ export default function FilterSelect({
 
   return (
     <>
-      <button
+      {/* Хайлттай үед нээгдмэгц талбар дотроо шууд бичнэ — тусдаа хайлтын
+          нүд гаргахгүй (combobox). */}
+      <div
         ref={triggerRef}
         id={id}
-        type="button"
-        onClick={() => (neelttei ? khaakh() : setNeelttei(true))}
+        role="combobox"
+        aria-expanded={neelttei}
+        aria-controls={jagsaaltId}
+        tabIndex={searchable && neelttei ? -1 : 0}
+        onClick={() => {
+          if (!neelttei) setNeelttei(true);
+          else if (!searchable) khaakh();
+        }}
+        onKeyDown={(e) => {
+          if (!neelttei && (e.key === "Enter" || e.key === " " || e.key === "ArrowDown")) {
+            e.preventDefault();
+            setNeelttei(true);
+          }
+        }}
         className={`filter-field cursor-pointer text-left ${value && allowClear ? "is-active" : ""} ${className}`}
       >
         {label && <span className="filter-field-label">{label}</span>}
-        <span
-          className={`min-w-0 truncate text-[13px] ${label ? "" : "flex-1"} ${
-            songogdson ? "text-[color:var(--panel-text)]" : "text-[color:var(--muted-text)]"
-          }`}
-        >
-          {songogdson?.label || placeholder}
-        </span>
+        {searchable && neelttei ? (
+          <input
+            ref={searchRef}
+            value={khaikh}
+            onChange={(e) => setKhaikh(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                const ekhnii = shuugdsen[0];
+                if (ekhnii) songokh(ekhnii.value);
+              }
+            }}
+            placeholder={songogdson?.label || searchPlaceholder}
+            className="min-w-0 flex-1 cursor-text"
+          />
+        ) : (
+          <span
+            className={`min-w-0 truncate text-[13px] ${label ? "" : "flex-1"} ${
+              songogdson ? "text-[color:var(--panel-text)]" : "text-[color:var(--muted-text)]"
+            }`}
+          >
+            {songogdson?.label || placeholder}
+          </span>
+        )}
         {value && allowClear ? (
           <span
             role="button"
@@ -162,35 +194,33 @@ export default function FilterSelect({
           >
             <X className="h-3.5 w-3.5" />
           </span>
+        ) : searchable && neelttei ? (
+          <Search className="h-3.5 w-3.5 shrink-0 text-[color:var(--muted-text)]" />
         ) : (
           <ChevronDown
+            onClick={(e) => {
+              if (neelttei) {
+                e.stopPropagation();
+                khaakh();
+              }
+            }}
             className={`h-4 w-4 shrink-0 text-[color:var(--muted-text)] transition-transform ${
               neelttei ? "rotate-180" : ""
             }`}
           />
         )}
-      </button>
+      </div>
 
       {neelttei &&
         bairlal &&
         createPortal(
           <div
             ref={popoverRef}
+            id={jagsaaltId}
+            role="listbox"
             style={{ position: "fixed", top: bairlal.top, left: bairlal.left, width: bairlal.width, zIndex: 9999 }}
             className="rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-1.5 shadow-xl"
           >
-            {searchable && (
-              <div className="mb-1 flex h-8 items-center gap-2 rounded-lg border border-[color:var(--ctl-border)] px-2.5 transition-colors focus-within:border-theme">
-                <Search className="h-3.5 w-3.5 shrink-0 text-[color:var(--muted-text)]" />
-                <input
-                  ref={searchRef}
-                  value={khaikh}
-                  onChange={(e) => setKhaikh(e.target.value)}
-                  placeholder={searchPlaceholder}
-                  className="h-full min-w-0 flex-1 border-0 bg-transparent text-[13px] text-[color:var(--panel-text)] outline-none placeholder:text-[color:var(--muted-text)]"
-                />
-              </div>
-            )}
             <div className="max-h-64 overflow-y-auto">
               {!khaikh && bugdLabel !== null && mur("", bugdLabel)}
               {shuugdsen.map((o) => mur(o.value, o.label, o.tailbar))}
