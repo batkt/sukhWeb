@@ -7692,3 +7692,23 @@ label:hover > .peer:not(:checked) + .tokh-switch {
   max-width: 100%;
   min-width: 0;
 }
+
+/* ── turees-ийн хүснэгттэй ижил хэмжээ (antd v4 size="small") ─────────────
+   Нүд: 8px × 8px, 14px, line-height 1.5715 (≈38px мөр).
+   Толгой: 6px × 8px. Туслах бичвэр 12px. */
+.zt-table table { font-size: 14px; }
+.zt-table thead th {
+  padding: 6px 8px;
+  font-size: 13px;
+  line-height: 1.5715;
+}
+.zt-table tbody td,
+.zt-table tfoot td {
+  padding: 8px 8px;
+  font-size: 14px;
+  line-height: 1.5715;
+}
+.zt-table :is(tbody, tfoot) td :is(.text-xs, .text-sm, .text-base, .text-lg,
+  [class*="text-[13px]"], [class*="text-[14px]"], [class*="text-[15px]"]) {
+  font-size: 14px;
+}

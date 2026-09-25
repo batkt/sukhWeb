@@ -2829,14 +2829,21 @@ export default function HistoryModal({
                                 ? "ok"
                                 : "due"
                             }
-                            className={`no-print rounded-2xl px-4 py-3 border border-[color:var(--surface-border)] ${
+                            className={`no-print rounded-2xl border border-l-4 px-5 py-4 ${
                               (ledgerDetailSelection.row.uldegdel ?? 0) < 0.01
-                                ? "bg-success/80"
-                                : "bg-danger/80"
+                                ? "border-success/25 border-l-success bg-success/[0.06]"
+                                : "border-danger/25 border-l-danger bg-danger/[0.05]"
                             }`}
                           >
-                            <div className="text-[11px] text-[color:var(--muted-text)] mb-1">
+                            <div className="mb-1.5 flex items-center gap-2 text-[13px] text-[color:var(--muted-text)]">
                               Үлдэгдэл дүн
+                              <span
+                                className={`rounded-full px-2 py-0.5 text-[12px] ${
+                                  (ledgerDetailSelection.row.uldegdel ?? 0) < 0.01 ? "bg-success/15 text-success" : "bg-danger/10 text-danger"
+                                }`}
+                              >
+                                {(ledgerDetailSelection.row.uldegdel ?? 0) < 0.01 ? "Төлөгдсөн" : "Төлөх"}
+                              </span>
                             </div>
                             <div
                               data-print-balance={
@@ -2844,7 +2851,7 @@ export default function HistoryModal({
                                   ? "ok"
                                   : "due"
                               }
-                              className={`text-xl sm:text-2xl font-medium tabular-nums ${
+                              className={`text-[26px] leading-tight tabular-nums ${
                                 (ledgerDetailSelection.row.uldegdel ?? 0) < 0.01
                                   ? "text-success"
                                   : "text-danger"
@@ -2869,14 +2876,21 @@ export default function HistoryModal({
                                 ? "ok"
                                 : "due"
                             }
-                            className={`no-print rounded-2xl px-4 py-3 border border-[color:var(--surface-border)] ${
+                            className={`no-print rounded-2xl border border-l-4 px-5 py-4 ${
                               ledgerDetailSelection.balance < 0.01
-                                ? "bg-success/80"
-                                : "bg-danger/80"
+                                ? "border-success/25 border-l-success bg-success/[0.06]"
+                                : "border-danger/25 border-l-danger bg-danger/[0.05]"
                             }`}
                           >
-                            <div className="text-[11px] text-[color:var(--muted-text)] mb-1">
+                            <div className="mb-1.5 flex items-center gap-2 text-[13px] text-[color:var(--muted-text)]">
                               Үлдэгдэл (хамгийн сүүлийн мөр)
+                              <span
+                                className={`rounded-full px-2 py-0.5 text-[12px] ${
+                                  ledgerDetailSelection.balance < 0.01 ? "bg-success/15 text-success" : "bg-danger/10 text-danger"
+                                }`}
+                              >
+                                {ledgerDetailSelection.balance < 0.01 ? "Төлөгдсөн" : "Төлөх"}
+                              </span>
                             </div>
                             <div
                               data-print-balance={
@@ -2884,7 +2898,7 @@ export default function HistoryModal({
                                   ? "ok"
                                   : "due"
                               }
-                              className={`text-xl sm:text-2xl font-medium tabular-nums ${
+                              className={`text-[26px] leading-tight tabular-nums ${
                                 ledgerDetailSelection.balance < 0.01
                                   ? "text-success"
                                   : "text-danger"
