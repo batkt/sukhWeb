@@ -51,6 +51,8 @@ interface ResidentRow {
   gereeniiId?: string;
   uldegdel?: number;
   turesiinOrlogo?: number;
+  /** "Орон сууц" | "Агуулах" | "Зогсоол" — тоотын төрөл */
+  turul?: string;
 }
 
 interface DiscountHistoryRow {
@@ -297,8 +299,9 @@ export default function HongololtTool({
   const [residents, setResidents] = useState<ResidentRow[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  // Мөр сонгосон бол зөвхөн тэд, эс бөгөөс шүүгдсэн бүх оршин суугч
-  const selectMode: "all" | "selected" = selectedIds.size > 0 ? "selected" : "all";
+  // Хөнгөлөлт зөвхөн СОНГОСОН мөрүүдэд сууна — хураангуй ч зөвхөн тэднийг
+  // тоолно. Бүгдийг хөнгөлөх бол толгойн checkbox-оор бүгдийг сонгоно.
+  const selectMode = "selected" as "all" | "selected";
 
   /* History tab */
   const [histFetching, setHistFetching] = useState(false);
@@ -399,8 +402,16 @@ export default function HongololtTool({
             // Тоот бүр ТУСДАА мөр — гэрээ олдоогүй ч давхцахгүй.
             const rowId = `${resId}_${gid || "x"}_${tootStr}_${idx}`;
 
+            const tRaw = String(t.turul || "").trim();
+            const turul =
+              tRaw === "Агуулах"
+                ? "Агуулах"
+                : tRaw === "Гараж" || tRaw === "Зогсоол"
+                  ? "Зогсоол"
+                  : "Орон сууц";
             rows.push({
               _id: rowId,
+              turul,
               ner,
               ovog,
               utas,
@@ -438,6 +449,7 @@ export default function HongololtTool({
           );
           const gid = String(item.gereeniiId || "");
           rows.push({
+            turul: "Орон сууц",
             _id: gid ? `${resId}_${gid}` : resId,
             ner,
             ovog,
@@ -581,9 +593,22 @@ export default function HongololtTool({
   }, [show, activeTab]);
 
   /* ── Filtered list ── */
+  /** Орон сууц / Агуулах / Зогсоол — тусад нь харуулна (холилдохгүй) */
+  const [tootTurul, setTootTurul] = useState<string>("Орон сууц");
+  const tootTurulToo = useMemo(() => {
+    const m: Record<string, number> = {};
+    residents.forEach((r) => {
+      const k = r.turul || "Орон сууц";
+      m[k] = (m[k] || 0) + 1;
+    });
+    return m;
+  }, [residents]);
+  const tootTurluud = ["Орон сууц", "Агуулах", "Зогсоол"].filter((k) => tootTurulToo[k]);
+
   const filteredResidents = useMemo(() => {
     const q = searchTerm.toLowerCase();
     return residents.filter((r) => {
+      if ((r.turul || "Орон сууц") !== tootTurul && tootTurluud.length > 1) return false;
       if (orts && String(r.orts || "") !== orts) return false;
       if (davkhar && String(r.davkhar || "") !== davkhar) return false;
       return (
@@ -594,7 +619,7 @@ export default function HongololtTool({
         (r.ovog || "").toLowerCase().includes(q)
       );
     });
-  }, [residents, searchTerm, orts, davkhar]);
+  }, [residents, searchTerm, orts, davkhar, tootTurul]);
 
   const davkharOptions = useMemo(() => {
     const set = new Set<string>();
@@ -879,10 +904,8 @@ export default function HongololtTool({
   };
 
   /* ── Summary ── */
-  const summaryRows =
-    selectMode === "all"
-      ? filteredResidents
-      : filteredResidents.filter((r) => selectedIds.has(r._id));
+  // Хайлт/шүүлтээр нуугдсан ч сонгосон мөр тооцоонд орно
+  const summaryRows = residents.filter((r) => selectedIds.has(r._id));
   const totalDun = summaryRows.reduce((s, r) => s + computeDiscount(r), 0);
   /** Сонгосон оршин суугчдын үлдэгдлээс хөнгөлөлтийг хассан дүн */
   const niitUldegdel = summaryRows.reduce(
@@ -897,7 +920,7 @@ export default function HongololtTool({
       toast.error("Хөнгөлөх утгаа оруулна уу");
       return;
     }
-    if (selectMode === "selected" && selectedIds.size === 0) {
+    if (selectedIds.size === 0) {
       toast.error("Оршин суугч сонгоно уу");
       return;
     }
@@ -913,10 +936,7 @@ export default function HongololtTool({
       return;
     }
 
-    const applyTo =
-      selectMode === "all"
-        ? filteredResidents
-        : filteredResidents.filter((r) => selectedIds.has(r._id));
+    const applyTo = residents.filter((r) => selectedIds.has(r._id));
 
     if (applyTo.length === 0) {
       toast.error("Хөнгөлөлт оруулах оршин суугч олдсонгүй");
@@ -1121,7 +1141,7 @@ export default function HongololtTool({
         align: "right",
         render: (_: any, r: any) => {
           // "Бүгд" горимд сонголтоос үл хамааран бүх мөр хөнгөлөгдөнө.
-          const isTarget = selectMode === "all" || selectedIds.has(r._id);
+          const isTarget = selectedIds.has(r._id);
           const discountDun = computeDiscount(r);
           return isTarget && discountDun > 0 ? (
             <span className="font-medium tabular-nums whitespace-nowrap text-brand">
@@ -1294,7 +1314,7 @@ export default function HongololtTool({
         ))}
         {activeTab === "oruulakh" && (
           <div className="ml-auto flex items-center gap-2">
-            {selectMode === "selected" && (
+            {selectedIds.size > 0 && (
               <button
                 type="button"
                 onClick={() => setSelectedIds(new Set())}
@@ -1449,18 +1469,27 @@ export default function HongololtTool({
             <div className="shrink-0 space-y-1.5 border-t border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] px-5 py-3 text-[13px]">
               <div className="flex justify-between">
                 <span className="text-[color:var(--muted-text)]">Нийт хөнгөлөх тоо:</span>
-                <span className="font-medium tabular-nums text-[color:var(--panel-text)]">{summaryRows.length}</span>
+                <span className="font-medium tabular-nums text-[color:var(--panel-text)]">
+                  {summaryRows.length || "—"}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-[color:var(--muted-text)]">Нийт хөнгөлсөн дүн:</span>
-                <span className="font-medium tabular-nums text-brand">{fmt(totalDun)}₮</span>
+                <span className="font-medium tabular-nums text-brand">
+                  {summaryRows.length ? `${fmt(totalDun)}₮` : "—"}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-[color:var(--muted-text)]">Нийт үлдэгдэл:</span>
-                <span className={`font-medium tabular-nums ${niitUldegdel > 0 ? "text-danger" : "text-[color:var(--panel-text)]"}`}>
-                  {fmt(niitUldegdel)}₮
+                <span className={`font-medium tabular-nums ${summaryRows.length && niitUldegdel > 0 ? "text-danger" : "text-[color:var(--panel-text)]"}`}>
+                  {summaryRows.length ? `${fmt(niitUldegdel)}₮` : "—"}
                 </span>
               </div>
+              {summaryRows.length === 0 && (
+                <p className="pt-1 text-[12px] text-[color:var(--muted-text)]">
+                  Хүснэгтээс хөнгөлөх оршин суугчаа сонгоно уу. Бүгдийг сонгох бол толгойн checkbox-ыг дарна.
+                </p>
+              )}
             </div>
 
             {/* Actions */}
@@ -1487,6 +1516,29 @@ export default function HongololtTool({
 
           {/* Right panel: resident table */}
           <div className="flex-1 flex flex-col min-h-0">
+            {/* Тоотын төрөл — орон сууц, агуулах, зогсоолыг тусад нь */}
+            {tootTurluud.length > 1 && (
+              <div className="stg-segment mb-3 self-start" role="tablist" aria-label="Тоотын төрөл">
+                {tootTurluud.map((k) => (
+                  <button
+                    key={k}
+                    type="button"
+                    role="tab"
+                    aria-selected={tootTurul === k}
+                    onClick={() => {
+                      setTootTurul(k);
+                      setSelectedIds(new Set());
+                    }}
+                    className={`stg-segment-item inline-flex min-h-9 items-center gap-2 ${tootTurul === k ? "is-active" : ""}`}
+                  >
+                    {k}
+                    <span className="rounded-full bg-[color:var(--surface-hover)] px-1.5 text-[12px] tabular-nums text-[color:var(--muted-text)]">
+                      {tootTurulToo[k]}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
             {/* Table — гүйлгэлтийг хүснэгт өөрөө хариуцна */}
             <div className="min-h-0 flex-1">
               <Table<any>
