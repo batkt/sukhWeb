@@ -226,22 +226,17 @@ export default function SanalAsuulgaTracker() {
         aria-expanded={isOpen}
         aria-label="Санал асуулгын хяналт"
         title="Санал асуулгын хяналт"
-        className={`group relative flex items-center gap-2 h-9 px-3 rounded-xl font-normal text-xs transition-all duration-300 cursor-pointer select-none ${
+        className={`group relative flex h-9 cursor-pointer select-none items-center gap-2 rounded-[10px] border px-3 text-[13px] transition-colors ${
           hasActive
-            ? "bg-gradient-to-r from-warning/15 via-warning/15 to-warning/15 border border-warning/40 text-warning shadow-[0_0_15px_rgba(245,158,11,0.35)] hover:shadow-[0_0_20px_rgba(245,158,11,0.5)]"
-            : "bg-[color:var(--surface-hover)] dark:bg-white/10 hover:bg-[color:var(--panel)] dark:hover:bg-white/15 border border-[color:var(--surface-border)]/80 dark:border-white/10 text-[color:var(--panel-text)]/80 hover:text-[color:var(--panel-text)]"
+            ? "border-[color:var(--shell-line,var(--surface-border))] bg-transparent text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"
+            : "border-[color:var(--surface-border)] bg-transparent text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"
         }`}
       >
-        {/* Glow pulsing ring overlay when active */}
-        {hasActive && (
-          <span className="absolute -inset-0.5 rounded-xl bg-gradient-to-r from-warning/20 to-warning/20 opacity-30 blur-sm group-hover:opacity-60 transition duration-300 animate-pulse pointer-events-none" />
-        )}
 
         <div className="relative flex items-center gap-1.5">
           {hasActive ? (
             <span className="relative flex h-2.5 w-2.5 items-center justify-center">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-warning opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-warning" />
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-warning" />
             </span>
           ) : (
             <Vote className="h-4 w-4 opacity-70" strokeWidth={ICON_STROKE} />
@@ -253,7 +248,7 @@ export default function SanalAsuulgaTracker() {
 
           {/* Active Polls Count Badge */}
           {hasActive ? (
-            <span className="ml-0.5 px-1.5 py-0.2 rounded-full text-[11px] font-normal bg-warning text-white shadow-sm">
+            <span className="ml-0.5 min-w-[20px] rounded-full bg-warning/15 px-1.5 text-center text-[12px] tabular-nums text-warning">
               {activePolls.length}
             </span>
           ) : polls.length > 0 ? (

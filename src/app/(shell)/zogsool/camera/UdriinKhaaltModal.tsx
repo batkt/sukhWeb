@@ -8,7 +8,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import dayjs from "dayjs";
-import { Printer, X } from "lucide-react";
+import { CheckCircle2, Lock, Printer, X } from "lucide-react";
+import { toast } from "react-hot-toast";
 import uilchilgee from "@/lib/uilchilgee";
 import FilterDatePicker from "@/components/ui/FilterDatePicker";
 import { tulburiinZadargaaBodyo } from "@/lib/tulburiinZadargaa";
@@ -27,6 +28,24 @@ export default function UdriinKhaaltModal({ token, baiguullagiinId, barilgiinId,
   const [udur, setUdur] = useState(() => dayjs().format("YYYY-MM-DD"));
   const [jagsaalt, setJagsaalt] = useState<any[]>([]);
   const [achaalj, setAchaalj] = useState(false);
+  /** Тухайн өдрийн хадгалсан хаалт — байвал дахин хаахгүй */
+  const [khaalt, setKhaalt] = useState<any | null>(null);
+  const [khaaj, setKhaaj] = useState(false);
+  const [batalgaa, setBatalgaa] = useState(false);
+
+  useEffect(() => {
+    if (!token || !udur) return;
+    let khuchintei = true;
+    setKhaalt(null);
+    setBatalgaa(false);
+    uilchilgee(token)
+      .get("/udriinKhaalt", { params: { barilgiinId: barilgiinId || undefined, udur } })
+      .then((r) => khuchintei && setKhaalt(r.data?.khaalt || null))
+      .catch(() => khuchintei && setKhaalt(null));
+    return () => {
+      khuchintei = false;
+    };
+  }, [token, barilgiinId, udur]);
 
   useEffect(() => {
     if (!token || !baiguullagiinId || !udur) return;
@@ -104,6 +123,39 @@ export default function UdriinKhaaltModal({ token, baiguullagiinId, barilgiinId,
     };
   }, [jagsaalt]);
 
+  const udurKhaakh = async () => {
+    setKhaaj(true);
+    try {
+      const r = await uilchilgee(token).post("/udriinKhaaltKhiiye", {
+        barilgiinId: barilgiinId || undefined,
+        udur,
+        mashin: {
+          niit: dun.niit,
+          garsan: dun.garsan,
+          dotor: dun.dotor,
+          unegui: dun.unegui,
+          turluud: dun.turluud.map(([ner, too]) => ({ ner, too })),
+        },
+        dun: {
+          bodogdson: dun.bodogdson,
+          khungulult: dun.khungulult,
+          tulsun: dun.tulsun,
+          tulugdugui: dun.tulugdugui,
+          ebarimt: dun.ebarimt,
+        },
+        khelber: dun.khelber.map((i) => ({ ner: i.name, too: i.count, dun: i.amount })),
+      });
+      setKhaalt(r.data?.khaalt || null);
+      toast.success(`${udur}-ны өдрийг хаалаа`);
+    } catch (e: any) {
+      if (e?.response?.status === 409) setKhaalt(e.response.data?.khaalt || null);
+      toast.error(e?.response?.data?.message || "Өдрийг хаахад алдаа гарлаа");
+    } finally {
+      setKhaaj(false);
+      setBatalgaa(false);
+    }
+  };
+
   const khevlekh = () => {
     const w = window.open("", "_blank", "width=420,height=640");
     if (!w) return;
@@ -162,6 +214,18 @@ export default function UdriinKhaaltModal({ token, baiguullagiinId, barilgiinId,
         </div>
 
         <div className="max-h-[65vh] space-y-4 overflow-y-auto px-5 py-4">
+          {khaalt && (
+            <div className="flex items-start gap-2.5 rounded-xl bg-success/10 px-3.5 py-2.5 text-[13px] text-[color:var(--panel-text)]">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
+              <div>
+                Энэ өдрийг {khaalt.ajiltniiNer || "ажилтан"}{" "}
+                {dayjs(khaalt.createdAt).format("MM-DD HH:mm")}-д хаасан.
+                <span className="block text-[12px] text-[color:var(--muted-text)]">
+                  Хаах үеийн орлого: {mnt(Number(khaalt.dun?.tulsun) || 0)}
+                </span>
+              </div>
+            </div>
+          )}
           {achaalj ? (
             <p className="py-10 text-center text-[12px] text-[color:var(--muted-text)]">Уншиж байна...</p>
           ) : (
@@ -213,15 +277,44 @@ export default function UdriinKhaaltModal({ token, baiguullagiinId, barilgiinId,
             <div className="text-[11px] text-[color:var(--muted-text)]">Нийт орлого</div>
             <div className="text-[17px] tabular-nums text-brand">{mnt(dun.tulsun)}</div>
           </div>
-          <button
-            type="button"
-            onClick={khevlekh}
-            disabled={achaalj}
-            className="inline-flex h-9 items-center gap-1.5 rounded-[10px] bg-theme px-4 text-[13px] !text-white disabled:opacity-50"
-          >
-            <Printer className="h-4 w-4" />
-            Хэвлэх
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={khevlekh}
+              disabled={achaalj}
+              className="btn-minimal inline-flex h-10 items-center gap-1.5 !px-4"
+            >
+              <Printer className="h-4 w-4" />
+              Хэвлэх
+            </button>
+            {khaalt ? (
+              <span className="inline-flex h-10 items-center gap-1.5 rounded-[10px] bg-success/10 px-4 text-[14px] text-success">
+                <Lock className="h-4 w-4" />
+                Хаагдсан
+              </span>
+            ) : batalgaa ? (
+              <button
+                type="button"
+                onClick={udurKhaakh}
+                disabled={khaaj}
+                className="inline-flex h-10 items-center gap-1.5 rounded-[10px] bg-theme px-4 text-[14px] !text-white disabled:opacity-50"
+              >
+                <Lock className="h-4 w-4" />
+                {khaaj ? "Хааж байна..." : "Тийм, хаах"}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setBatalgaa(true)}
+                disabled={achaalj || dun.niit === 0}
+                title={dun.niit === 0 ? "Энэ өдөр машин ороогүй" : "Өдрийн дүнг хадгалж хаана"}
+                className="inline-flex h-10 items-center gap-1.5 rounded-[10px] bg-theme px-4 text-[14px] !text-white disabled:opacity-50"
+              >
+                <Lock className="h-4 w-4" />
+                Өдөр хаах
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>,

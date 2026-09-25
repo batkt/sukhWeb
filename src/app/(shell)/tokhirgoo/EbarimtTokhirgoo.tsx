@@ -3,7 +3,8 @@
 import { useMemo, useState, useEffect } from "react";
 import useSWR from "swr";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
-import Button from "@/components/ui/Button";
+import { Receipt } from "lucide-react";
+import { SettingsCard, SettingsField, SettingsItem } from "./SettingsRow";
 import { getDefaultDateRange } from "@/lib/utils";
 import { useAuth } from "@/lib/useAuth";
 import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
@@ -461,22 +462,161 @@ export default function EbarimtTokhirgoo() {
 
   const t = (s: string) => s;
 
+  const khadgalakh = async () => {
+    if (!token) return openErrorOverlay("Нэвтрэх токен байхгүй");
+    if (!baiguullaga?._id)
+      return openErrorOverlay("Байгууллага олдсонгүй");
+    showSpinner();
+    try {
+      // Build payload that persists eBarimt settings primarily to the
+      // currently selected building's `tokhirgoo`. If no building is
+      // selected, fall back to updating the org-level `tokhirgoo`.
+      const payload: any = {
+        ...(baiguullaga || {}),
+        _id: baiguullaga._id,
+        baiguullagiinId: String(baiguullaga._id),
+      };
+
+      const effBarilgaId =
+        selectedBuildingId || barilgiinId || null;
+
+      if (effBarilgaId && Array.isArray(baiguullaga?.barilguud)) {
+        // Update only the selected branch's tokhirgoo
+        payload.barilguud = baiguullaga.barilguud.map(
+          (b: any) => {
+            if (String(b?._id || "") !== String(effBarilgaId))
+              return b;
+            const shouldUpdateTin =
+              merchantTin && merchantTin.trim() !== "";
+            return {
+              ...b,
+              tokhirgoo: {
+                ...(b?.tokhirgoo || {}),
+                ...(shouldUpdateTin ? { merchantTin } : {}),
+                ...(duuregNer
+                  ? { EbarimtDuuregNer: duuregNer }
+                  : {}),
+                ...(districtCode
+                  ? { EbarimtDistrictCode: districtCode }
+                  : {}),
+                ...(horooNer || horooKod
+                  ? {
+                      EbarimtDHoroo: {
+                        ner: horooNer || "",
+                        kod: horooKod || "",
+                      },
+                    }
+                  : {}),
+                // Save ebarimt flags at branch level
+                eBarimtAshiglakhEsekh: ebAshiglakh,
+                eBarimtShine: ebShine,
+                eBarimtAutomataarIlgeekh: ebAutoSend,
+                ...(typeof ebNuat === "boolean"
+                  ? { nuatTulukhEsekh: ebNuat }
+                  : {}),
+              },
+            };
+          }
+        );
+      } else {
+        // No branch selected: persist at org level
+        payload.eBarimtAutomataarIlgeekh = ebAutoSend;
+        payload.nuatTulukhEsekh = ebNuat;
+        payload.eBarimtAshiglakhEsekh = ebAshiglakh;
+        payload.eBarimtShine = ebShine;
+        if (merchantTin && merchantTin.trim() !== "")
+          payload.merchantTin = merchantTin;
+        payload.duureg = duuregNer;
+        payload.horoo = {
+          ner: horooNer || "",
+          kod: horooKod || "",
+        };
+        payload.tokhirgoo = {
+          ...(baiguullaga?.tokhirgoo || {}),
+          merchantTin:
+            merchantTin ||
+            baiguullaga?.tokhirgoo?.merchantTin ||
+            "",
+          ...(duuregNer ? { EbarimtDuuregNer: duuregNer } : {}),
+          ...(districtCode
+            ? { EbarimtDistrictCode: districtCode }
+            : {}),
+          ...(horooNer || horooKod
+            ? {
+                EbarimtDHoroo: {
+                  ner: horooNer || "",
+                  kod: horooKod || "",
+                },
+              }
+            : {}),
+        };
+      }
+
+      const updated = await updateMethod(
+        "baiguullaga",
+        token,
+        payload
+      );
+      if (updated?.data) {
+        const finalData = updated.data.result || updated.data;
+        await baiguullagaMutate(finalData, false);
+        
+        // Reflect saved UI state directly from current form values
+        setEbAutoSend(ebAutoSend);
+        setEbNuat(ebNuat);
+        setEbAshiglakh(ebAshiglakh);
+        setEbShine(ebShine);
+        setMerchantTin(merchantTin);
+        openSuccessOverlay("Хадгалагдлаа");
+      }
+      // Removed localStorage persistence for API-backed data
+    } catch (err) {
+      openErrorOverlay("Хадгалахдаа алдаа гарлаа");
+    } finally {
+      hideSpinner();
+    }
+  };
+
   return (
-    <div id="ebarimt-panel" className="bg-gradient-to-br from-theme/10 to-theme/5 shadow-lg dark:shadow-theme/20 rounded-2xl border border-theme/50">
-      <div className="p-6 h-full">
+    <div id="ebarimt-panel" className="w-full">
+      <SettingsCard
+        icon={<Receipt className="h-4 w-4" />}
+        title="И-Баримт"
+        subtitle="Төлбөрийн баримтыг И-Баримт системд бүртгэх тохиргоо"
+        onSave={isLoading ? undefined : khadgalakh}
+        saveId="ebarimt-save-btn"
+      >
         {isLoading ? (
-          <div className="p-8 text-center text-theme dark:text-white ">
+          <p className="py-8 text-center text-[14px] text-[color:var(--muted-text)]">
             {t("Ачааллаж байна…")}
-          </div>
+          </p>
         ) : (
-          <div className="space-y-6 overflow-visible">
+          <>
+            <SettingsItem
+              title="И-Баримт ашиглах эсэх"
+              desc={
+                ebAshiglakh
+                  ? "Асаалттай. Доорх мэдээллийг бөглөөд хадгална уу."
+                  : "Унтраалттай байна. Асаавал татвар төлөгчийн дугаар, дүүрэг, хороо оруулах талбар гарна."
+              }
+              control={
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={ebAshiglakh}
+                    onChange={(e) => setEbAshiglakh(e.target.checked)}
+                    aria-label="И-Баримт ашиглах эсэх"
+                    className="sr-only peer"
+                  />
+                  <span className="tokh-switch" />
+                </label>
+              }
+            />
+
             {/* Merchant TIN and district/horoo are only editable when И-Баримт ашиглах эсэх is enabled */}
             {ebAshiglakh && (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm  text-theme mb-1">
-                    Татвар төлөгчийн дугаар (TIN)
-                  </label>
+              <div className="flex flex-col gap-3 pt-1">
+                <SettingsField label="Татвар төлөгчийн дугаар (TIN)">
                   <input
                     id="ebarimt-tin"
                     type="text"
@@ -485,17 +625,14 @@ export default function EbarimtTokhirgoo() {
                     value={merchantTin}
                     onChange={(e) => setMerchantTin(e.target.value.trim())}
                     placeholder="Татварын бүртгэлийн дугаар"
-                    className="w-full rounded-xl border border-theme/30 px-4 py-2.5 text-theme dark:text-white bg-[color:var(--surface-bg)] focus:outline-none focus:ring-2 focus:ring-theme dark:focus:ring-theme transition-all duration-200"
+                    className="stg-input tabular-nums"
                     disabled={isLoading}
                   />
-                </div>
+                </SettingsField>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label
-                      className="block text-sm  text-theme mb-1"
-                      id="ebarimt-duureg"
-                    >
+                <div className="stg-grid">
+                  <div className="stg-field">
+                    <label className="stg-field-label" id="ebarimt-duureg">
                       Дүүрэг
                     </label>
                     <TusgaiZagvar
@@ -520,11 +657,8 @@ export default function EbarimtTokhirgoo() {
                     />
                   </div>
 
-                  <div>
-                    <label
-                      className="block text-sm  text-theme mb-1"
-                      id="ebarimt-horoo"
-                    >
+                  <div className="stg-field">
+                    <label className="stg-field-label" id="ebarimt-horoo">
                       Хороо
                     </label>
                     <TusgaiZagvar
@@ -549,203 +683,32 @@ export default function EbarimtTokhirgoo() {
                     />
                   </div>
                 </div>
+                {!duuregNer && (
+                  <p className="stg-note">Хороо сонгохын өмнө дүүргээ сонгоно уу.</p>
+                )}
               </div>
             )}
-            <div className="flex items-center p-4  rounded-xl shadow-sm border-l-2 border-l-blue-500">
-              <div>
-                <div className="text-sm  text-theme">
-                  И-Баримт ашиглах эсэх
-                </div>
-              </div>
-              <div className="ml-auto">
-                <label className="switch">
-                  <input
-                    type="checkbox"
-                    checked={ebAshiglakh}
-                    onChange={(e) => setEbAshiglakh(e.target.checked)}
-                    aria-label="И-Баримт ашиглах эсэх"
-                  />
-                  <span className="slider" />
-                </label>
-              </div>
-            </div>
 
-            {/* <div className="flex items-center p-4   rounded-xl shadow-sm border-l-2 border-l-blue-500">
-              <div>
-                <div className="text-sm  text-theme">
-                  И-Баримт 3.0 эсэх
-                </div>
-              </div>
-              <div className="ml-auto">
-                <Switch
-                  checked={ebShine}
-                  onChange={(e) => setEbShine(e.target.checked)}
-                  aria-label="И-Баримт 3.0 эсэх"
-                />
-              </div>
-            </div> */}
-
-            <div className="flex items-center p-4   rounded-xl shadow-sm border-l-2 border-l-blue-500">
-              <div>
-                <div className="text-sm  text-theme">
-                  И-Баримт автоматаар илгээх эсэх
-                </div>
-              </div>
-              <div className="ml-auto">
-                <label className="switch">
+            <SettingsItem
+              title="И-Баримт автоматаар илгээх эсэх"
+              desc="Асаавал баримтыг хүн бүрийн нэрийн өмнөөс автоматаар илгээнэ."
+              control={
+                <label className="relative inline-flex items-center cursor-pointer">
                   <input
                     id="ebarimt-autosend"
                     type="checkbox"
                     checked={ebAutoSend}
                     onChange={(e) => setEbAutoSend(e.target.checked)}
                     aria-label="И-Баримт автоматаар илгээх эсэх"
+                    className="sr-only peer"
                   />
-                  <span className="slider" />
+                  <span className="tokh-switch" />
                 </label>
-              </div>
-            </div>
-
-            {/* <div className="flex items-center p-4   rounded-xl shadow-sm border-l-2 border-l-blue-500">
-              <div>
-                <div className="text-sm  text-theme">
-                  И-Баримт нөат эсэх
-                </div>
-              </div>
-              <div className="ml-auto">
-                <Switch
-                  checked={ebNuat}
-                  onChange={(e) => setEbNuat(e.target.checked)}
-                  aria-label="И-Баримт нөат эсэх"
-                />
-              </div>
-            </div> */}
-
-            <div className="flex justify-end">
-              <Button
-                onClick={async () => {
-                  if (!token) return openErrorOverlay("Нэвтрэх токен байхгүй");
-                  if (!baiguullaga?._id)
-                    return openErrorOverlay("Байгууллага олдсонгүй");
-                  showSpinner();
-                  try {
-                    // Build payload that persists eBarimt settings primarily to the
-                    // currently selected building's `tokhirgoo`. If no building is
-                    // selected, fall back to updating the org-level `tokhirgoo`.
-                    const payload: any = {
-                      ...(baiguullaga || {}),
-                      _id: baiguullaga._id,
-                      baiguullagiinId: String(baiguullaga._id),
-                    };
-
-                    const effBarilgaId =
-                      selectedBuildingId || barilgiinId || null;
-
-                    if (effBarilgaId && Array.isArray(baiguullaga?.barilguud)) {
-                      // Update only the selected branch's tokhirgoo
-                      payload.barilguud = baiguullaga.barilguud.map(
-                        (b: any) => {
-                          if (String(b?._id || "") !== String(effBarilgaId))
-                            return b;
-                          const shouldUpdateTin =
-                            merchantTin && merchantTin.trim() !== "";
-                          return {
-                            ...b,
-                            tokhirgoo: {
-                              ...(b?.tokhirgoo || {}),
-                              ...(shouldUpdateTin ? { merchantTin } : {}),
-                              ...(duuregNer
-                                ? { EbarimtDuuregNer: duuregNer }
-                                : {}),
-                              ...(districtCode
-                                ? { EbarimtDistrictCode: districtCode }
-                                : {}),
-                              ...(horooNer || horooKod
-                                ? {
-                                    EbarimtDHoroo: {
-                                      ner: horooNer || "",
-                                      kod: horooKod || "",
-                                    },
-                                  }
-                                : {}),
-                              // Save ebarimt flags at branch level
-                              eBarimtAshiglakhEsekh: ebAshiglakh,
-                              eBarimtShine: ebShine,
-                              eBarimtAutomataarIlgeekh: ebAutoSend,
-                              ...(typeof ebNuat === "boolean"
-                                ? { nuatTulukhEsekh: ebNuat }
-                                : {}),
-                            },
-                          };
-                        }
-                      );
-                    } else {
-                      // No branch selected: persist at org level
-                      payload.eBarimtAutomataarIlgeekh = ebAutoSend;
-                      payload.nuatTulukhEsekh = ebNuat;
-                      payload.eBarimtAshiglakhEsekh = ebAshiglakh;
-                      payload.eBarimtShine = ebShine;
-                      if (merchantTin && merchantTin.trim() !== "")
-                        payload.merchantTin = merchantTin;
-                      payload.duureg = duuregNer;
-                      payload.horoo = {
-                        ner: horooNer || "",
-                        kod: horooKod || "",
-                      };
-                      payload.tokhirgoo = {
-                        ...(baiguullaga?.tokhirgoo || {}),
-                        merchantTin:
-                          merchantTin ||
-                          baiguullaga?.tokhirgoo?.merchantTin ||
-                          "",
-                        ...(duuregNer ? { EbarimtDuuregNer: duuregNer } : {}),
-                        ...(districtCode
-                          ? { EbarimtDistrictCode: districtCode }
-                          : {}),
-                        ...(horooNer || horooKod
-                          ? {
-                              EbarimtDHoroo: {
-                                ner: horooNer || "",
-                                kod: horooKod || "",
-                              },
-                            }
-                          : {}),
-                      };
-                    }
-
-                    const updated = await updateMethod(
-                      "baiguullaga",
-                      token,
-                      payload
-                    );
-                    if (updated?.data) {
-                      const finalData = updated.data.result || updated.data;
-                      await baiguullagaMutate(finalData, false);
-                      
-                      // Reflect saved UI state directly from current form values
-                      setEbAutoSend(ebAutoSend);
-                      setEbNuat(ebNuat);
-                      setEbAshiglakh(ebAshiglakh);
-                      setEbShine(ebShine);
-                      setMerchantTin(merchantTin);
-                      openSuccessOverlay("Хадгалагдлаа");
-                    }
-                    // Removed localStorage persistence for API-backed data
-                  } catch (err) {
-                    openErrorOverlay("Хадгалахдаа алдаа гарлаа");
-                  } finally {
-                    hideSpinner();
-                  }
-                }}
-                id="ebarimt-save-btn"
-                variant="primary"
-                size="sm"
-              >
-                {t("Хадгалах")}
-              </Button>
-            </div>
-          </div>
+              }
+            />
+          </>
         )}
-      </div>
+      </SettingsCard>
     </div>
   );
 }

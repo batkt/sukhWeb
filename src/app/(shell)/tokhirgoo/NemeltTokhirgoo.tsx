@@ -1137,7 +1137,7 @@ export default function NemeltTokhirgoo() {
 
   return (
     <div id="nemelt-panel" className="w-full">
-      <div className="neu-panel allow-overflow p-4 md:p-6 pb-6">
+      <div className="allow-overflow">
         <div className="stg-page">
           {/* ── 1. Нэхэмжлэх ба тооцоолол ─────────────────────────────── */}
           <SettingsCard

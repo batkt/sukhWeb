@@ -108,7 +108,7 @@ export default function Sidebar({
     >
       {/* ── Brand ─────────────────────────────────────────────── */}
       <div className="shell-sidebar-head">
-        <ThemedLogo size={railMode ? 32 : 44} radius={10} padding={4} />
+        <ThemedLogo size={34} radius={9} padding={3} />
         {/* Салбар сонгох нь логоны хажууд байрлана. Rail горимд зай
             байхгүй тул доорх икон болж хумигдаж, идэвхтэй салбарын нэр
             топ баарын үндсэн гарчиг болж гарна. */}

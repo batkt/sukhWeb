@@ -27,7 +27,6 @@ import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import createMethod from "../../../../tools/function/createMethod";
 import updateMethod from "../../../../tools/function/updateMethod";
-import Button from "@/components/ui/Button";
 
 interface ZogsoolBurtgekhProps {
   data?: any;
@@ -175,29 +174,26 @@ function ZogsoolBurtgekh(
   };
 
   const SectionHeader = ({ icon: Icon, title, description, colorClass }: any) => (
-    <div className="flex items-center gap-3 mb-4 pb-3 border-b border-[color:var(--surface-border)]">
-      <div className={`p-2 rounded-lg ${colorClass || 'bg-theme/10 text-brand'}`}>
+    <div className="flex items-center gap-3 mb-4">
+      <div className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${colorClass || 'bg-theme/10 text-brand'}`}>
         <Icon className="w-4 h-4" />
       </div>
       <div>
-        <h3 className="text-base  text-[color:var(--panel-text)]">{title}</h3>
-        {description && <p className="text-xs text-[color:var(--muted-text)] mt-0.5">{description}</p>}
+        <h3 className="text-[15px] text-[color:var(--panel-text)]">{title}</h3>
+        {description && <p className="text-[13px] text-[color:var(--muted-text)] mt-0.5">{description}</p>}
       </div>
     </div>
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-[color:var(--surface-border)] pb-3 overflow-x-auto text-xs">
+      <div className="stg-segment flex-wrap">
         <button
           type="button"
           onClick={() => setActiveTab("general")}
-          style={{ borderRadius: '10px' }}
-          className={`flex items-center gap-1.5 px-3.5 py-1.5 transition-all whitespace-nowrap font-medium ${
-            activeTab === "general"
-              ? "bg-theme/10 text-brand border border-theme/30 shadow-xs"
-              : "text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] border border-transparent"
+          className={`stg-segment-item inline-flex min-h-10 items-center gap-2 whitespace-nowrap ${
+            activeTab === "general" ? "is-active" : ""
           }`}
         >
           <span>Ерөнхий & Санхүү</span>
@@ -206,18 +202,15 @@ function ZogsoolBurtgekh(
         <button
           type="button"
           onClick={() => setActiveTab("gates")}
-          style={{ borderRadius: '10px' }}
-          className={`flex items-center gap-1.5 px-3.5 py-1.5 transition-all whitespace-nowrap font-medium ${
-            activeTab === "gates"
-              ? "bg-theme/10 text-brand border border-theme/30 shadow-xs"
-              : "text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] border border-transparent"
+          className={`stg-segment-item inline-flex min-h-10 items-center gap-2 whitespace-nowrap ${
+            activeTab === "gates" ? "is-active" : ""
           }`}
         >
           <span>Хаалга & Камер</span>
-          <span className={`inline-flex items-center justify-center min-w-[20px] px-2 py-0.5 text-[11px] font-medium rounded-full transition-colors ${
+          <span className={`inline-flex items-center justify-center min-w-[22px] px-1.5 text-xs rounded-full ${
             activeTab === "gates"
-              ? "bg-theme/80 text-brand border border-theme/60"
-              : "bg-[color:var(--panel)] text-[color:var(--panel-text)] border border-[color:var(--surface-border)]"
+              ? "bg-theme/15 text-brand"
+              : "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]"
           }`}>
             {formData.khaalga?.length || 0}
           </span>
@@ -226,18 +219,15 @@ function ZogsoolBurtgekh(
         <button
           type="button"
           onClick={() => setActiveTab("tariffs")}
-          style={{ borderRadius: '10px' }}
-          className={`flex items-center gap-1.5 px-3.5 py-1.5 transition-all whitespace-nowrap font-medium ${
-            activeTab === "tariffs"
-              ? "bg-theme/10 text-brand border border-theme/30 shadow-xs"
-              : "text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] border border-transparent"
+          className={`stg-segment-item inline-flex min-h-10 items-center gap-2 whitespace-nowrap ${
+            activeTab === "tariffs" ? "is-active" : ""
           }`}
         >
           <span>Шатлалт тариф</span>
-          <span className={`inline-flex items-center justify-center min-w-[20px] px-2 py-0.5 text-[11px] font-medium rounded-full transition-colors ${
+          <span className={`inline-flex items-center justify-center min-w-[22px] px-1.5 text-xs rounded-full ${
             activeTab === "tariffs"
-              ? "bg-theme/80 text-brand border border-theme/60"
-              : "bg-[color:var(--panel)] text-[color:var(--panel-text)] border border-[color:var(--surface-border)]"
+              ? "bg-theme/15 text-brand"
+              : "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]"
           }`}>
             {formData.tulburuud?.length || 0}
           </span>
@@ -246,11 +236,8 @@ function ZogsoolBurtgekh(
         <button
           type="button"
           onClick={() => setActiveTab("switches")}
-          style={{ borderRadius: '10px' }}
-          className={`flex items-center gap-1.5 px-3.5 py-1.5 transition-all whitespace-nowrap font-medium ${
-            activeTab === "switches"
-              ? "bg-theme/10 text-brand border border-theme/30 shadow-xs"
-              : "text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] border border-transparent"
+          className={`stg-segment-item inline-flex min-h-10 items-center gap-2 whitespace-nowrap ${
+            activeTab === "switches" ? "is-active" : ""
           }`}
         >
           <span>Системийн тохиргоо</span>
@@ -260,24 +247,23 @@ function ZogsoolBurtgekh(
       {/* Tab 1: General & Financial & Operational Settings */}
       {activeTab === "general" && (
         <div className="space-y-4">
-          <section className="bg-[color:var(--surface-bg)] rounded-xl border border-[color:var(--surface-border)] p-4">
+          <section className="rounded-xl border border-[color:var(--surface-border)] p-4 sm:p-5">
             <SectionHeader icon={Info} title="Ерөнхий мэдээлэл" description="Зогсоолын нэр болон багтаамж" />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <label className="block text-sm text-[color:var(--panel-text)]">
+                <label className="block text-[13px] text-[color:var(--panel-text)] opacity-80">
                   Зогсоолын нэр <span className="text-danger">*</span>
                 </label>
                 <MTextInput
                   value={formData.ner}
                   onChange={(e) => updateField("ner", e.currentTarget.value)}
                   placeholder="Жишээ: Төв зогсоол"
-                  classNames={{ input: "!rounded-xl h-10 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
-                  style={{ borderRadius: '10px' }}
+                  classNames={{ input: "!h-10 !min-h-10 !rounded-[10px] !text-sm bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:border-theme transition-colors text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm text-[color:var(--panel-text)]">
+                <label className="block text-[13px] text-[color:var(--panel-text)] opacity-80">
                   Багтаамж <span className="text-danger">*</span>
                 </label>
                 <MNumberInput
@@ -285,13 +271,12 @@ function ZogsoolBurtgekh(
                   onChange={(val) => updateField("too", val)}
                   placeholder="Машины тоо"
                   min={0}
-                  classNames={{ input: "!rounded-xl h-10 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
-                  style={{ borderRadius: '10px' }}
+                  classNames={{ input: "!h-10 !min-h-10 !rounded-[10px] !text-sm bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:border-theme transition-colors text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm text-[color:var(--panel-text)]">
+                <label className="block text-[13px] text-[color:var(--panel-text)] opacity-80">
                   Үндсэн тариф <span className="text-danger">*</span>
                 </label>
                 <MNumberInput
@@ -299,8 +284,7 @@ function ZogsoolBurtgekh(
                   onChange={(val) => updateField("undsenUne", val)}
                   placeholder="0.00"
                   min={0}
-                  classNames={{ input: "!rounded-xl h-10 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
-                  style={{ borderRadius: '10px' }}
+                  classNames={{ input: "!h-10 !min-h-10 !rounded-[10px] !text-sm bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:border-theme transition-colors text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
                   thousandSeparator=","
                 />
               </div>
@@ -308,41 +292,38 @@ function ZogsoolBurtgekh(
           </section>
 
           {/* Financial Settings */}
-          <section className="bg-[color:var(--surface-bg)] rounded-xl border border-[color:var(--surface-border)] p-4">
+          <section className="rounded-xl border border-[color:var(--surface-border)] p-4 sm:p-5">
             <SectionHeader icon={CreditCard} title="Санхүүгийн тохиргоо" description="Дансны мэдээлэл" colorClass="bg-theme/10 text-brand" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="block text-sm text-[color:var(--panel-text)]">Үндсэн данс</label>
+                <label className="block text-[13px] text-[color:var(--panel-text)] opacity-80">Үндсэн данс</label>
                 <MTextInput
                   value={formData.zogsooliinDans}
                   onChange={(e) => updateField("zogsooliinDans", e.currentTarget.value)}
                   placeholder="Дансны дугаар"
-                  classNames={{ input: "!rounded-xl h-10 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
-                  style={{ borderRadius: '10px' }}
+                  classNames={{ input: "!h-10 !min-h-10 !rounded-[10px] !text-sm bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:border-theme transition-colors text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
                 />
               </div>
               <div className="space-y-2">
-                <label className="block text-sm text-[color:var(--panel-text)]">Sticker данс (QR)</label>
+                <label className="block text-[13px] text-[color:var(--panel-text)] opacity-80">Sticker данс (QR)</label>
                 <MTextInput
                   value={formData.zogsooliinDansSticker}
                   onChange={(e) => updateField("zogsooliinDansSticker", e.currentTarget.value)}
                   placeholder="Дансны дугаар"
-                  classNames={{ input: "!rounded-xl h-10 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
-                  style={{ borderRadius: '10px' }}
+                  classNames={{ input: "!h-10 !min-h-10 !rounded-[10px] !text-sm bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:border-theme transition-colors text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
                 />
               </div>
             </div>
             
             {formData.togtmolTulburEsekh && (
-              <div style={{ borderRadius: '10px' }} className="mt-4 p-4 bg-theme/10 border border-theme/30">
-                <label className="block text-sm text-[color:var(--panel-text)] mb-2">Тогтмол төлбөрийн дүн</label>
+              <div className="mt-4 p-4 rounded-xl bg-theme/5 border border-theme/30">
+                <label className="block text-[13px] text-[color:var(--panel-text)] opacity-80 mb-2">Тогтмол төлбөрийн дүн</label>
                 <MNumberInput
                   value={formData.togtmolTulburiinDun as number}
                   onChange={(val) => updateField("togtmolTulburiinDun", val)}
                   placeholder="0.00"
                   min={0}
-                  classNames={{ input: "!rounded-xl h-10 bg-[color:var(--surface-bg)] border border-theme/30 focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
-                  style={{ borderRadius: '10px' }}
+                  classNames={{ input: "!h-10 !min-h-10 !rounded-[10px] !text-sm bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:border-theme transition-colors text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
                   thousandSeparator=","
                 />
               </div>
@@ -350,54 +331,50 @@ function ZogsoolBurtgekh(
           </section>
 
           {/* Operational Settings */}
-          <section className="bg-[color:var(--surface-bg)] rounded-xl border border-[color:var(--surface-border)] p-4">
+          <section className="rounded-xl border border-[color:var(--surface-border)] p-4 sm:p-5">
             <SectionHeader icon={Clock} title="Үйл ажиллагааны хугацаа" description="Автомат процесс болон устгах хугацаа" colorClass="bg-theme/10 text-brand" />
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <label className="block text-sm text-[color:var(--panel-text)]">Гарах хугацаа (мин)</label>
+                <label className="block text-[13px] text-[color:var(--panel-text)] opacity-80">Гарах хугацаа (мин)</label>
                 <MNumberInput
                   value={formData.garakhTsag as number}
                   onChange={(val) => updateField("garakhTsag", val)}
                   placeholder="мин"
                   min={0}
-                  classNames={{ input: "!rounded-xl h-10 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
-                  style={{ borderRadius: '10px' }}
+                  classNames={{ input: "!h-10 !min-h-10 !rounded-[10px] !text-sm bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:border-theme transition-colors text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm text-[color:var(--panel-text)]">Авто гаргалт (цаг)</label>
+                <label className="block text-[13px] text-[color:var(--panel-text)] opacity-80">Авто гаргалт (цаг)</label>
                 <MNumberInput
                   value={formData.mashinGargakhKhugatsaa as number}
                   onChange={(val) => updateField("mashinGargakhKhugatsaa", val)}
                   placeholder="цаг"
                   min={0}
-                  classNames={{ input: "!rounded-xl h-10 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
-                  style={{ borderRadius: '10px' }}
+                  classNames={{ input: "!h-10 !min-h-10 !rounded-[10px] !text-sm bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:border-theme transition-colors text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm text-[color:var(--panel-text)]">Устгах (хоног)</label>
+                <label className="block text-[13px] text-[color:var(--panel-text)] opacity-80">Устгах (хоног)</label>
                 <MNumberInput
                   value={formData.mashinUstgakhKhugatsaa as number}
                   onChange={(val) => updateField("mashinUstgakhKhugatsaa", val)}
                   placeholder="хоног"
                   min={0}
-                  classNames={{ input: "!rounded-xl h-10 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
-                  style={{ borderRadius: '10px' }}
+                  classNames={{ input: "!h-10 !min-h-10 !rounded-[10px] !text-sm bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:border-theme transition-colors text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
                 />
               </div>
             </div>
             
             <div className="mt-4 space-y-2">
-              <label className="block text-sm text-[color:var(--panel-text)]">Гадна зогсоолын сонголт</label>
+              <label className="block text-[13px] text-[color:var(--panel-text)] opacity-80">Гадна зогсоолын сонголт</label>
               <MTextInput
                 value={formData.gadnaZogsooliinId || ""}
                 onChange={(e) => updateField("gadnaZogsooliinId", e.currentTarget.value || undefined)}
                 placeholder="Холбоотой зогсоолын ID оруулах..."
-                classNames={{ input: "!rounded-xl h-10 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
-                style={{ borderRadius: '10px' }}
+                classNames={{ input: "!h-10 !min-h-10 !rounded-[10px] !text-sm bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:border-theme transition-colors text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
               />
             </div>
           </section>
@@ -406,7 +383,7 @@ function ZogsoolBurtgekh(
 
       {/* Tab 2: System Switches */}
       {activeTab === "switches" && (
-        <section className="bg-[color:var(--surface-bg)] rounded-lg border border-[color:var(--surface-border)] p-4">
+        <section className="rounded-xl border border-[color:var(--surface-border)] p-4 sm:p-5">
           <SectionHeader icon={ShieldCheck} title="Системийн хязгаарлалт" description="Нэмэлт тохиргоонууд" colorClass="bg-theme/10 text-brand" />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {[
@@ -428,7 +405,7 @@ function ZogsoolBurtgekh(
                 }
               },
             ].map((item: any) => (
-              <div key={item.field} className="flex items-center justify-between p-3 rounded-lg bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors">
+              <div key={item.field} className="flex min-h-12 items-center justify-between gap-3 px-4 py-3 rounded-xl bg-[color:var(--surface-hover)]">
                 <span className="text-sm text-[color:var(--panel-text)]">{item.label}</span>
                 <MSwitch
                   checked={formData[item.field as keyof FormData] as boolean}
@@ -444,39 +421,39 @@ function ZogsoolBurtgekh(
 
       {/* Tab 3: Tiered Tariffs */}
       {activeTab === "tariffs" && (
-      <section className="bg-[color:var(--surface-bg)] rounded-lg border border-[color:var(--surface-border)] p-4">
-        <div className="flex flex-col sm:flex-row items-center justify-between mb-4 gap-3">
+      <section className="rounded-xl border border-[color:var(--surface-border)] p-4 sm:p-5">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-2 gap-3">
           <SectionHeader icon={Layers} title="Тарифын бүтэц" description="Цагийн шатлалтай үнийн тохиргоо" colorClass="bg-theme/10 text-brand" />
-          <Button
+          <button
+            type="button"
             onClick={addTariff}
-            variant="primary"
-            size="sm"
-            leftIcon={<Plus className="w-4 h-4" />}
-            className="!rounded-lg"
-            style={{ borderRadius: '0.5rem' }}
+            className="stg-btn stg-btn-primary shrink-0"
           >
+            <Plus className="w-4 h-4" />
             Тариф нэмэх
-          </Button>
+          </button>
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {formData.tulburuud?.map((tariff, index) => (
-            <div key={index} className="relative p-4 rounded-lg bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)]">
+            <div key={index} className="relative p-4 rounded-xl bg-[color:var(--surface-hover)]">
               <button
                 onClick={() => removeTariff(index)}
-                className="absolute top-3 right-3 p-1.5 text-danger hover:text-danger hover:bg-danger/10 rounded-lg transition-all"
+                className="absolute top-3 right-3 inline-flex h-9 w-9 items-center justify-center text-danger hover:bg-danger/10 rounded-lg transition-colors"
                 type="button"
+                title="Устгах"
+                aria-label="Устгах"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
               
               <div className="flex items-center gap-2 mb-4 pb-3 border-b border-[color:var(--surface-border)]">
                 <Activity className="w-4 h-4 text-brand" />
-                <span className="text-sm  text-[color:var(--panel-text)]">Групп #{index + 1}</span>
+                <span className="text-sm text-[color:var(--panel-text)]">Групп #{index + 1}</span>
               </div>
 
               <div className="mb-4 space-y-2">
-                <label className="block text-sm  text-[color:var(--panel-text)]">Цаг</label>
+                <label className="block text-[13px] text-[color:var(--panel-text)] opacity-80">Цаг</label>
                 <div className="flex items-center gap-3">
                   <MTextInput
                     type="time"
@@ -488,8 +465,7 @@ function ZogsoolBurtgekh(
                       newTulburuud[index].tsag[0] = moment(val, "HH:mm").toDate();
                       setFormData((prev) => ({ ...prev, tulburuud: newTulburuud }));
                     }}
-                    classNames={{ input: "!rounded-lg h-10 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)]" }}
-                    style={{ borderRadius: '0.5rem' }}
+                    classNames={{ input: "!h-10 !min-h-10 !rounded-[10px] !text-sm bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:border-theme transition-colors text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
                   />
                   <ChevronRight className="w-4 h-4 text-[color:var(--muted-text)]" />
                   <MTextInput
@@ -502,17 +478,16 @@ function ZogsoolBurtgekh(
                       newTulburuud[index].tsag[1] = moment(val, "HH:mm").toDate();
                       setFormData((prev) => ({ ...prev, tulburuud: newTulburuud }));
                     }}
-                    classNames={{ input: "!rounded-lg h-10 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)]" }}
-                    style={{ borderRadius: '0.5rem' }}
+                    classNames={{ input: "!h-10 !min-h-10 !rounded-[10px] !text-sm bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:border-theme transition-colors text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
                   />
                 </div>
               </div>
 
               <div className="space-y-3">
                 {tariff.tariff?.map((item: any, itemIndex: number) => (
-                  <div key={itemIndex} className="flex items-end gap-3 p-3 rounded-lg bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)]">
+                  <div key={itemIndex} className="flex items-end gap-3 p-3 rounded-xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)]">
                     <div className="flex-1 space-y-2">
-                      <label className="block text-xs  text-[color:var(--panel-text)]">Минут</label>
+                      <label className="block text-[13px] text-[color:var(--panel-text)] opacity-80">Минут</label>
                       <MNumberInput
                         value={item.minut}
                         onChange={(val) => {
@@ -522,15 +497,14 @@ function ZogsoolBurtgekh(
                         }}
                         placeholder="минут"
                         min={0}
-                        classNames={{ input: "!rounded-lg h-10 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
-                        style={{ borderRadius: '0.5rem' }}
+                        classNames={{ input: "!h-10 !min-h-10 !rounded-[10px] !text-sm bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:border-theme transition-colors text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
                       />
                     </div>
-                    <div className="pb-2">
+                    <div className="pb-3">
                       <ChevronRight className="w-4 h-4 text-[color:var(--muted-text)]" />
                     </div>
                     <div className="flex-1 space-y-2">
-                      <label className="block text-xs  text-[color:var(--panel-text)]">Тариф ()</label>
+                      <label className="block text-[13px] text-[color:var(--panel-text)] opacity-80">Тариф (₮)</label>
                       <MNumberInput
                         value={item.tulbur}
                         onChange={(val) => {
@@ -540,8 +514,7 @@ function ZogsoolBurtgekh(
                         }}
                         placeholder=""
                         min={0}
-                        classNames={{ input: "!rounded-lg h-10 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
-                        style={{ borderRadius: '0.5rem' }}
+                        classNames={{ input: "!h-10 !min-h-10 !rounded-[10px] !text-sm bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:border-theme transition-colors text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
                         thousandSeparator=","
                       />
                     </div>
@@ -551,37 +524,37 @@ function ZogsoolBurtgekh(
                         newTulburuud[index].tariff = newTulburuud[index].tariff.filter((_: any, i: number) => i !== itemIndex);
                         setFormData((prev) => ({ ...prev, tulburuud: newTulburuud }));
                       }}
-                      className="p-2 text-danger hover:text-danger hover:bg-danger/10 rounded-lg transition-colors mb-2"
+                      className="inline-flex h-10 w-10 shrink-0 items-center justify-center text-danger hover:bg-danger/10 rounded-lg transition-colors"
                       type="button"
+                      title="Шатлал устгах"
+                      aria-label="Шатлал устгах"
                     >
                       <MinusCircle className="w-4 h-4" />
                     </button>
                   </div>
                 ))}
                 
-                <Button
+                <button
+                  type="button"
                   onClick={() => {
                     const newTulburuud = [...(formData.tulburuud || [])];
                     if (!newTulburuud[index].tariff) newTulburuud[index].tariff = [];
                     newTulburuud[index].tariff.push({ minut: "", tulbur: "" });
                     setFormData((prev) => ({ ...prev, tulburuud: newTulburuud }));
                   }}
-                  variant="ghost"
-                  size="sm"
-                  leftIcon={<Plus className="w-4 h-4" />}
-                  className="w-full !rounded-lg"
-                  style={{ borderRadius: '0.5rem' }}
+                  className="stg-btn stg-btn-ghost shrink-0 w-full"
                 >
+                  <Plus className="w-4 h-4" />
                   Шатлал нэмэх
-                </Button>
+                </button>
               </div>
             </div>
           ))}
         </div>
         {(!formData.tulburuud || formData.tulburuud.length === 0) && (
-          <div className="text-center py-12 border-2 border-dashed border-[color:var(--surface-border)] rounded-lg bg-[color:var(--surface-bg)]">
+          <div className="text-center py-10 border border-dashed border-[color:var(--surface-border)] rounded-xl">
             <p className="text-sm text-[color:var(--panel-text)]">Нэмэлт тарифын мэдээлэл хоосон байна</p>
-            <p className="text-xs text-[color:var(--muted-text)] mt-1">Тариф нэмэх товчийг дарж шинэ шатлал үүсгэнэ үү</p>
+            <p className="text-[13px] text-[color:var(--muted-text)] mt-1">«Тариф нэмэх» товчийг дарж шинэ шатлал үүсгэнэ үү</p>
           </div>
         )}
       </section>
@@ -589,35 +562,35 @@ function ZogsoolBurtgekh(
 
       {/* Tab 4: Gates Section */}
       {activeTab === "gates" && (
-      <section className="bg-[color:var(--surface-bg)] rounded-xl border border-[color:var(--surface-border)] p-4">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
+      <section className="rounded-xl border border-[color:var(--surface-border)] p-4 sm:p-5">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-2">
           <SectionHeader icon={DoorOpen} title="Хаалганы удирдлага" description="Gate удирдлага болон Камерын холболт" colorClass="bg-[color:var(--surface-hover)] text-[color:var(--panel-text)]" />
-          <Button
+          <button
+            type="button"
             onClick={addKhaalga}
-            variant="primary"
-            size="sm"
-            leftIcon={<Plus className="w-4 h-4" />}
-            style={{ borderRadius: '10px' }}
-            className="px-3.5"
+            className="stg-btn stg-btn-primary shrink-0"
           >
+            <Plus className="w-4 h-4" />
             Хаалга нэмэх
-          </Button>
+          </button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {formData.khaalga?.map((gate, index) => (
-            <div key={index} style={{ borderRadius: '12px' }} className="relative p-4 bg-[color:var(--surface-hover)] border border-[color:var(--surface-border)]">
+            <div key={index} className="relative p-4 rounded-xl bg-[color:var(--surface-hover)]">
               <button
                 onClick={() => removeKhaalga(index)}
-                className="absolute top-3 right-3 p-1.5 text-danger hover:text-danger hover:bg-danger/10 rounded-lg transition-all"
+                className="absolute top-3 right-3 inline-flex h-9 w-9 items-center justify-center text-danger hover:bg-danger/10 rounded-lg transition-colors"
                 type="button"
+                title="Устгах"
+                aria-label="Устгах"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 pr-10">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 pr-11">
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-medium text-[color:var(--panel-text)]">Хаалганы таних нэр</label>
+                  <label className="block text-[13px] text-[color:var(--panel-text)] opacity-80">Хаалганы таних нэр</label>
                   <MTextInput
                     value={gate.ner}
                     onChange={(e) => {
@@ -626,12 +599,11 @@ function ZogsoolBurtgekh(
                       setFormData((prev) => ({ ...prev, khaalga: newKhaalga }));
                     }}
                     placeholder="Жишээ: Хойд Gate 1"
-                    classNames={{ input: "!rounded-xl h-9 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] text-xs placeholder:text-[color:var(--muted-text)]" }}
-                    style={{ borderRadius: '10px' }}
+                    classNames={{ input: "!h-10 !min-h-10 !rounded-[10px] !text-sm bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:border-theme transition-colors text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-medium text-[color:var(--panel-text)]">Хөдөлгөөний төрөл</label>
+                  <label className="block text-[13px] text-[color:var(--panel-text)] opacity-80">Хөдөлгөөний төрөл</label>
                   <MSelect
                     value={gate.turul}
                     onChange={(val) => {
@@ -640,8 +612,7 @@ function ZogsoolBurtgekh(
                       setFormData((prev) => ({ ...prev, khaalga: newKhaalga }));
                     }}
                     placeholder="Орох / Гарах"
-                    classNames={{ input: "!rounded-xl h-9 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] text-xs placeholder:text-[color:var(--muted-text)]" }}
-                    style={{ borderRadius: '10px' }}
+                    classNames={{ input: "!h-10 !min-h-10 !rounded-[10px] !text-sm bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:border-theme transition-colors text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
                     data={[{ label: "Орох", value: "Орох" }, { label: "Гарах", value: "Гарах" }]}
                   />
                 </div>
@@ -649,12 +620,13 @@ function ZogsoolBurtgekh(
 
               {/* Cameras inside Gate */}
               <div className="mt-3 space-y-3">
-                <div className="flex items-center justify-between pb-2 border-b border-[color:var(--surface-border)]">
-                  <div className="flex items-center gap-1.5 text-xs font-medium text-[color:var(--panel-text)]">
-                    <Camera className="w-3.5 h-3.5 text-brand" />
+                <div className="flex items-center justify-between gap-2 pb-2 border-b border-[color:var(--surface-border)]">
+                  <div className="flex items-center gap-2 text-sm text-[color:var(--panel-text)]">
+                    <Camera className="w-4 h-4 text-brand" />
                     <span>Холболттой IP Камерууд</span>
                   </div>
-                  <Button
+                  <button
+                    type="button"
                     onClick={() => {
                       const newKhaalga = [...(formData.khaalga || [])];
                       if (!newKhaalga[index].camera) newKhaalga[index].camera = [];
@@ -667,22 +639,20 @@ function ZogsoolBurtgekh(
                       });
                       setFormData((prev) => ({ ...prev, khaalga: newKhaalga }));
                     }}
-                    variant="ghost"
-                    size="xs"
-                    leftIcon={<Plus className="w-3 h-3" />}
-                    style={{ borderRadius: '8px' }}
+                    className="stg-btn stg-btn-ghost shrink-0"
                   >
+                    <Plus className="w-4 h-4" />
                     Камер нэмэх
-                  </Button>
+                  </button>
                 </div>
 
                 <div className="space-y-3">
                   {gate.camera?.map((cam: any, camIndex: number) => (
-                    <div key={camIndex} style={{ borderRadius: '10px' }} className="p-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] space-y-3">
+                    <div key={camIndex} className="p-3 sm:p-4 rounded-xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] space-y-3">
                       <div className="flex justify-between items-center pb-2 border-b border-[color:var(--surface-border)]">
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-5 h-5 rounded-full bg-theme/10 flex items-center justify-center text-[11px] text-brand font-medium">#{camIndex + 1}</span>
-                          <span className="text-xs font-medium text-[color:var(--panel-text)]">Камер #{camIndex + 1}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex h-6 min-w-6 px-1 rounded-full bg-theme/10 items-center justify-center text-xs text-brand">{camIndex + 1}</span>
+                          <span className="text-sm text-[color:var(--panel-text)]">Камер #{camIndex + 1}</span>
                         </div>
                         <button
                           onClick={() => {
@@ -690,16 +660,18 @@ function ZogsoolBurtgekh(
                             newKhaalga[index].camera = newKhaalga[index].camera.filter((_: any, i: number) => i !== camIndex);
                             setFormData((prev) => ({ ...prev, khaalga: newKhaalga }));
                           }}
-                          className="p-1 text-danger hover:text-danger rounded transition-all"
+                          className="inline-flex h-8 w-8 items-center justify-center text-danger hover:bg-danger/10 rounded-lg transition-colors"
                           type="button"
+                          title="Камер устгах"
+                          aria-label="Камер устгах"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
 
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
                         <div className="space-y-1">
-                          <label className="block text-xs text-[color:var(--muted-text)]">Камерын нэр</label>
+                          <label className="block text-[13px] text-[color:var(--muted-text)]">Камерын нэр</label>
                           <MTextInput
                             value={cam.cameraName || ""}
                             onChange={(e) => {
@@ -708,12 +680,11 @@ function ZogsoolBurtgekh(
                               setFormData((prev) => ({ ...prev, khaalga: newKhaalga }));
                             }}
                             placeholder="Нэр"
-                            classNames={{ input: "!rounded-xl h-8 bg-[color:var(--surface-hover)] border border-[color:var(--surface-border)] text-xs text-[color:var(--panel-text)]" }}
-                            style={{ borderRadius: '8px' }}
+                            classNames={{ input: "!h-10 !min-h-10 !rounded-[10px] !text-sm bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:border-theme transition-colors text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
                           />
                         </div>
                         <div className="space-y-1">
-                          <label className="block text-xs text-[color:var(--muted-text)]">IP төрөл</label>
+                          <label className="block text-[13px] text-[color:var(--muted-text)]">IP төрөл</label>
                           <MSelect
                             value={cam.cameraType || (gate.turul === "Орох" ? "entry" : "exit")}
                             onChange={(val) => {
@@ -721,13 +692,12 @@ function ZogsoolBurtgekh(
                               newKhaalga[index].camera[camIndex].cameraType = val || "entry";
                               setFormData((prev) => ({ ...prev, khaalga: newKhaalga }));
                             }}
-                            classNames={{ input: "!rounded-xl h-8 bg-[color:var(--surface-hover)] border border-[color:var(--surface-border)] text-xs text-[color:var(--panel-text)]" }}
-                            style={{ borderRadius: '8px' }}
+                            classNames={{ input: "!h-10 !min-h-10 !rounded-[10px] !text-sm bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:border-theme transition-colors text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
                             data={[{ label: "Орох (Entry)", value: "entry" }, { label: "Гарах (Exit)", value: "exit" }]}
                           />
                         </div>
                         <div className="space-y-1">
-                          <label className="block text-xs text-[color:var(--muted-text)]">IP хаяг (V4)</label>
+                          <label className="block text-[13px] text-[color:var(--muted-text)]">IP хаяг (V4)</label>
                           <MTextInput
                             value={cam.cameraIP || ""}
                             onChange={(e) => {
@@ -736,12 +706,11 @@ function ZogsoolBurtgekh(
                               setFormData((prev) => ({ ...prev, khaalga: newKhaalga }));
                             }}
                             placeholder="192.168.1.x"
-                            classNames={{ input: "!rounded-xl h-8 bg-[color:var(--surface-hover)] border border-[color:var(--surface-border)] text-xs text-[color:var(--panel-text)]" }}
-                            style={{ borderRadius: '8px' }}
+                            classNames={{ input: "!h-10 !min-h-10 !rounded-[10px] !text-sm bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:border-theme transition-colors text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
                           />
                         </div>
                         <div className="space-y-1">
-                          <label className="block text-xs text-[color:var(--muted-text)]">TCP порт</label>
+                          <label className="block text-[13px] text-[color:var(--muted-text)]">TCP порт</label>
                           <MNumberInput
                             value={cam.cameraPort || 80}
                             onChange={(val) => {
@@ -749,21 +718,20 @@ function ZogsoolBurtgekh(
                               newKhaalga[index].camera[camIndex].cameraPort = val || 80;
                               setFormData((prev) => ({ ...prev, khaalga: newKhaalga }));
                             }}
-                            classNames={{ input: "!rounded-xl h-8 bg-[color:var(--surface-hover)] border border-[color:var(--surface-border)] text-xs text-[color:var(--panel-text)]" }}
-                            style={{ borderRadius: '8px' }}
+                            classNames={{ input: "!h-10 !min-h-10 !rounded-[10px] !text-sm bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:border-theme transition-colors text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
                           />
                         </div>
                       </div>
 
                       {/* Advanced Auth Settings */}
-                      <div style={{ borderRadius: '8px' }} className="mt-2 p-2.5 bg-[color:var(--surface-hover)] space-y-2">
-                        <div className="flex items-center gap-1.5 text-xs text-[color:var(--panel-text)]">
-                          <Settings className="w-3.5 h-3.5 text-[color:var(--muted-text)]" />
-                          <span className="font-medium">Нэвтрэх эрх & Configuration</span>
+                      <div className="mt-2 p-3 rounded-lg bg-[color:var(--surface-hover)] space-y-3">
+                        <div className="flex items-center gap-2 text-[13px] text-[color:var(--panel-text)]">
+                          <Settings className="w-4 h-4 text-[color:var(--muted-text)]" />
+                          <span>Нэвтрэх эрх & Configuration</span>
                         </div>
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
                           <div className="space-y-1">
-                            <label className="block text-xs text-[color:var(--muted-text)]">Username</label>
+                            <label className="block text-[13px] text-[color:var(--muted-text)]">Username</label>
                             <MTextInput
                               value={cam.tokhirgoo?.USER || ""}
                               onChange={(e) => {
@@ -772,12 +740,11 @@ function ZogsoolBurtgekh(
                                 newKhaalga[index].camera[camIndex].tokhirgoo.USER = e.currentTarget.value;
                                 setFormData((prev) => ({ ...prev, khaalga: newKhaalga }));
                               }}
-                              classNames={{ input: "!rounded-xl h-7 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] text-xs" }}
-                              style={{ borderRadius: '6px' }}
+                              classNames={{ input: "!h-10 !min-h-10 !rounded-[10px] !text-sm bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:border-theme transition-colors text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
                             />
                           </div>
                           <div className="space-y-1">
-                            <label className="block text-xs text-[color:var(--muted-text)]">Password</label>
+                            <label className="block text-[13px] text-[color:var(--muted-text)]">Password</label>
                             <MTextInput
                               type="password"
                               value={cam.tokhirgoo?.PASSWD || ""}
@@ -787,12 +754,11 @@ function ZogsoolBurtgekh(
                                 newKhaalga[index].camera[camIndex].tokhirgoo.PASSWD = e.currentTarget.value;
                                 setFormData((prev) => ({ ...prev, khaalga: newKhaalga }));
                               }}
-                              classNames={{ input: "!rounded-xl h-7 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] text-xs" }}
-                              style={{ borderRadius: '6px' }}
+                              classNames={{ input: "!h-10 !min-h-10 !rounded-[10px] !text-sm bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:border-theme transition-colors text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
                             />
                           </div>
                           <div className="space-y-1">
-                            <label className="block text-xs text-[color:var(--muted-text)]">Root stream</label>
+                            <label className="block text-[13px] text-[color:var(--muted-text)]">Root stream</label>
                             <MTextInput
                               value={cam.tokhirgoo?.ROOT || ""}
                               onChange={(e) => {
@@ -801,12 +767,11 @@ function ZogsoolBurtgekh(
                                 newKhaalga[index].camera[camIndex].tokhirgoo.ROOT = e.currentTarget.value;
                                 setFormData((prev) => ({ ...prev, khaalga: newKhaalga }));
                               }}
-                              classNames={{ input: "!rounded-xl h-7 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] text-xs" }}
-                              style={{ borderRadius: '6px' }}
+                              classNames={{ input: "!h-10 !min-h-10 !rounded-[10px] !text-sm bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:border-theme transition-colors text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
                             />
                           </div>
                           <div className="space-y-1">
-                            <label className="block text-xs text-[color:var(--muted-text)]">HTTP port</label>
+                            <label className="block text-[13px] text-[color:var(--muted-text)]">HTTP port</label>
                             <MNumberInput
                               value={cam.tokhirgoo?.PORT ? Number(cam.tokhirgoo.PORT) : undefined}
                               onChange={(val) => {
@@ -817,13 +782,12 @@ function ZogsoolBurtgekh(
                               }}
                               min={1}
                               max={65535}
-                              classNames={{ input: "!rounded-xl h-7 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] text-xs" }}
-                              style={{ borderRadius: '6px' }}
+                              classNames={{ input: "!h-10 !min-h-10 !rounded-[10px] !text-sm bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:border-theme transition-colors text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
                             />
                           </div>
                         </div>
                         <div className="pt-1.5 flex items-center justify-between">
-                          <span className="text-xs text-[color:var(--panel-text)]">Дотор камерын горим (Indoor Mode)</span>
+                          <span className="text-[13px] text-[color:var(--panel-text)]">Дотор камерын горим (Indoor Mode)</span>
                           <MSwitch
                             checked={cam.tokhirgoo?.dotorKamerEsekh || false}
                             onChange={(e) => {
@@ -832,7 +796,7 @@ function ZogsoolBurtgekh(
                               newKhaalga[index].camera[camIndex].tokhirgoo.dotorKamerEsekh = e.currentTarget.checked;
                               setFormData((prev) => ({ ...prev, khaalga: newKhaalga }));
                             }}
-                            size="xs"
+                            size="sm"
                             color="blue"
                           />
                         </div>
@@ -840,8 +804,8 @@ function ZogsoolBurtgekh(
                     </div>
                   ))}
                   {(!gate.camera || gate.camera.length === 0) && (
-                    <div style={{ borderRadius: '10px' }} className="text-center py-6 border-2 border-dashed border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]">
-                      <p className="text-xs text-[color:var(--muted-text)]">Холболттой камер байхгүй</p>
+                    <div className="text-center py-6 rounded-xl border border-dashed border-[color:var(--surface-border)]">
+                      <p className="text-[13px] text-[color:var(--muted-text)]">Холбогдсон камер алга. «Камер нэмэх» товчийг дарж нэмнэ үү</p>
                     </div>
                   )}
                 </div>
@@ -849,9 +813,9 @@ function ZogsoolBurtgekh(
             </div>
           ))}
           {(!formData.khaalga || formData.khaalga.length === 0) && (
-            <div style={{ borderRadius: '10px' }} className="text-center py-10 border-2 border-dashed border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]">
-              <p className="text-sm text-[color:var(--panel-text)]">Gate тохиргоо одоогоор хоосон байна</p>
-              <p className="text-xs text-[color:var(--muted-text)] mt-1">Хаалга нэмэх товчийг дарж системд бүртгэнэ үү</p>
+            <div className="text-center py-10 rounded-xl border border-dashed border-[color:var(--surface-border)] lg:col-span-2">
+              <p className="text-sm text-[color:var(--panel-text)]">Хаалга бүртгэгдээгүй байна</p>
+              <p className="text-[13px] text-[color:var(--muted-text)] mt-1">«Хаалга нэмэх» товчийг дарж хаалгаа бүртгэнэ үү</p>
             </div>
           )}
         </div>

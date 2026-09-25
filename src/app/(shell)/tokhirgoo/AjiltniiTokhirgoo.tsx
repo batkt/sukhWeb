@@ -20,14 +20,13 @@ function AjiltniiTokhirgooTsonkh() {
 
   return (
     <div className="w-full space-y-4">
-      <div className="flex items-center gap-2">
-        <Users className="w-5 h-5 text-theme" />
-        <div>
-          <h2 className="text-lg text-theme">Ажилтны тохиргоо</h2>
-          <p className="text-xs text-subtle mt-0.5">
-            Ажилтан сонгоод эрх болон хариуцах барилгыг нь тохируулна
-          </p>
-        </div>
+      {/* Гарчгийг бүрхүүл зурна — энд зөвхөн яаж ашиглахыг зааварлана */}
+      <div className="flex items-start gap-3 rounded-xl bg-theme/5 px-4 py-3 text-[13px] text-[color:var(--panel-text)]">
+        <Users className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
+        <p>
+          Жагсаалтаас ажилтны мөрөн дэх <span className="text-brand">эрхийн товч</span>-ийг дарж
+          тухайн ажилтны харах, засах эрх болон хариуцах барилгыг нь сонгоно.
+        </p>
       </div>
 
       <EmployeesSection

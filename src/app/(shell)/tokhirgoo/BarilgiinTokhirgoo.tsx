@@ -26,6 +26,7 @@ import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import deleteMethod from "../../../../tools/function/deleteMethod";
 import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
 import Button from "@/components/ui/Button";
+import { SettingsCard, SettingsField } from "./SettingsRow";
 
 interface Horoo {
   _id?: string;
@@ -2206,243 +2207,169 @@ export default function BarilgiinTokhirgoo() {
     );
   }
 
+  const barilgaEsekhSongogdson = (id: string) =>
+    String(selectedBuildingId || barilga?._id || "") === id;
+
   return (
-    <div
-      id="barilgiin-panel"
-      className="xxl:col-span-9 col-span-12 lg:col-span-12 h-[700px]"
-    >
-      <div className="bg-[color:var(--surface-bg)] rounded-2xl border border-[color:var(--surface-border)] shadow-lg allow-overflow p-6 space-y-6 h-full overflow-auto custom-scrollbar">
-        {/* Header Section */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-3 pb-3 border-b border-[color:var(--surface-border)] rounded-t-lg">
-            <Building2 className="w-5 h-5 text-brand" />
-            <h2 className="text-xl  text-[color:var(--panel-text)]">
-              Барилгын тохиргоо
-            </h2>
-          </div>
-
-          {/* SÖH Name */}
-          <div className="space-y-2">
-            <label className="block text-sm  text-[color:var(--panel-text)]">
-              СӨХ-ийн нэр
-            </label>
-            <input
-              id="barilgiin-soh-name"
-              type="text"
-              value={sohNer}
-              onChange={(e) => setSohNer(e.target.value)}
-              placeholder="СӨХ-ийн нэрийг оруулна уу"
-              className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] !rounded-lg focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] disabled:opacity-60 disabled:cursor-not-allowed"
-              style={{ borderRadius: "0.5rem" }}
-              disabled
-            />
-          </div>
-
-          {/* Contact Information */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 pb-2 border-b border-[color:var(--surface-border)]">
-              <Users className="w-4 h-4 text-brand" />
-              <h3 className="text-sm  text-[color:var(--panel-text)]">
-                Холбоо барих мэдээлэл
-              </h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div id="barilgiin-phone" className="space-y-2">
-                <label className="block text-sm  text-[color:var(--panel-text)]">
-                  Утас
-                </label>
+    <div id="barilgiin-panel" className="w-full">
+      <div>
+        <SettingsCard
+          icon={<Users className="h-4 w-4" />}
+          title="СӨХ-ийн мэдээлэл"
+          subtitle="Оршин суугчдад харагдах холбоо барих мэдээлэл"
+          onSave={isDirty ? khadgalakh : undefined}
+          saving={isSaving}
+        >
+          <div className="stg-grid">
+            <SettingsField label="СӨХ-ийн нэр">
+              <input
+                id="barilgiin-soh-name"
+                type="text"
+                value={sohNer}
+                onChange={(e) => setSohNer(e.target.value)}
+                className="stg-input"
+                disabled
+              />
+            </SettingsField>
+            <SettingsField label="Хаяг">
+              <input
+                type="text"
+                value={baiguullaga?.khayag || ""}
+                placeholder="—"
+                className="stg-input"
+                disabled
+                readOnly
+              />
+            </SettingsField>
+              <SettingsField label="Утас">
                 <input
+                  id="barilgiin-phone"
                   type="tel"
                   inputMode="numeric"
                   pattern="\d*"
                   maxLength={8}
                   value={sukhDugaar}
-                  onChange={(e) => {
-                    // Allow only digits and limit to 8 characters
-                    const digits = e.target.value
-                      .replace(/\D/g, "")
-                      .slice(0, 8);
-                    setSukhDugaar(digits);
-                  }}
-                  placeholder="Утас дугаар оруулна уу"
-                  className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] !rounded-lg focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
-                  style={{ borderRadius: "0.5rem" }}
+                  onChange={(e) => setSukhDugaar(e.target.value.replace(/\D/g, "").slice(0, 8))}
+                  placeholder="8 оронтой дугаар"
+                  className="stg-input tabular-nums"
                 />
-              </div>
-              <div id="barilgiin-email" className="space-y-2">
-                <label className="block text-sm  text-[color:var(--panel-text)]">
-                  Имэйл
-                </label>
+              </SettingsField>
+              <SettingsField label="Имэйл">
                 <input
+                  id="barilgiin-email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Имэйл хаяг оруулна уу"
-                  className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] !rounded-lg focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
-                  style={{ borderRadius: "0.5rem" }}
+                  placeholder="name@example.mn"
+                  className="stg-input"
                 />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="block text-sm  text-[color:var(--panel-text)]">
-                Хаяг
-              </label>
-              <input
-                type="text"
-                value={baiguullaga?.khayag || ""}
-                placeholder="Хаяг"
-                className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] !rounded-lg focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] disabled:opacity-60 disabled:cursor-not-allowed"
-                style={{ borderRadius: "0.5rem" }}
-                disabled
-                readOnly
-              />
-            </div>
+              </SettingsField>
           </div>
+          <p className="mt-2 text-[12px] text-[color:var(--muted-text)]">
+            СӨХ-ийн нэр, хаягийг гэрээний мэдээллээс авдаг тул энд засах боломжгүй.
+          </p>
+        </SettingsCard>
 
-          {/* Save Button */}
-          {isDirty && (
-            <div className="flex justify-end pt-2">
-              <Button
-                onClick={khadgalakh}
-                variant="primary"
-                size="md"
-                isLoading={isSaving}
-                leftIcon={<Save className="w-4 h-4" />}
-                disabled={isSaving}
-                className="!rounded-lg"
-                style={{ borderRadius: "0.5rem" }}
-              >
-                Хадгалах
-              </Button>
-            </div>
-          )}
-        </div>
-
-        {/* Buildings List Section */}
-        {orgBuildings && orgBuildings.length > 0 && (
-          <div className="space-y-4 pt-4 border-t border-[color:var(--surface-border)]">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Home className="w-4 h-4 text-brand" />
-                <h3 className="text-lg  text-[color:var(--panel-text)]">
-                  Бүртгэлтэй барилгууд (Байр)
-                </h3>
-              </div>
-              <Button
-                id="barilgiin-new-building-btn"
-                onClick={openNewBuildingModal}
-                variant="primary"
-                size="sm"
-                leftIcon={<Plus className="w-4 h-4" />}
-                title="Шинэ барилга нэмэх"
-                className="!rounded-2xl"
-                style={{ borderRadius: "0.5rem" }}
-              >
-                Нэмэх
-              </Button>
-            </div>
-            <div
-              id="barilgiin-buildings-list"
-              className="space-y-0 max-h-64 overflow-y-auto rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]"
+        <SettingsCard
+          icon={<Home className="h-4 w-4" />}
+          title="Барилгууд"
+          subtitle={
+            orgBuildings?.length
+              ? `${orgBuildings.length} барилга бүртгэлтэй. Нэр дээр дарж идэвхтэй барилгаа сонгоно.`
+              : "Бүртгэлтэй барилга алга"
+          }
+          toggle={
+            <button
+              id="barilgiin-new-building-btn"
+              type="button"
+              onClick={openNewBuildingModal}
+              className="stg-btn stg-btn-primary"
             >
-              {orgBuildings.map((b: any, index: number) => {
-                const isFirst = index === 0;
-                const isLast = index === orgBuildings.length - 1;
+              <Plus className="h-4 w-4" />
+              Барилга нэмэх
+            </button>
+          }
+        >
+          {orgBuildings && orgBuildings.length > 0 ? (
+            <ul
+              id="barilgiin-buildings-list"
+              className="max-h-80 divide-y divide-[color:var(--surface-border)] overflow-y-auto rounded-xl border border-[color:var(--surface-border)]"
+            >
+              {orgBuildings.map((b: any) => {
+                const idevkhtei = barilgaEsekhSongogdson(String(b._id));
                 return (
-                  <div
+                  <li
                     key={b._id}
-                    className={`p-3 flex items-center justify-between hover:bg-[color:var(--surface-hover)] transition-colors border-b border-[color:var(--surface-border)] relative ${
-                      isFirst ? "rounded-t-lg" : ""
-                    } ${isLast ? "rounded-b-lg border-b-0" : ""}`}
-                    style={{ pointerEvents: "auto" }}
+                    className={`group flex items-center gap-3 px-3 py-2.5 transition-colors ${
+                      idevkhtei ? "bg-theme/5" : "hover:bg-[color:var(--surface-hover)]"
+                    }`}
                   >
-                    <div
+                    <button
                       id={`barilgiin-select-${b._id}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedBuildingId(String(b._id));
-                      }}
-                      className="flex-1 cursor-pointer text-[color:var(--panel-text)] hover:text-brand dark:hover:text-brand transition-colors  pointer-events-auto"
+                      type="button"
+                      onClick={() => setSelectedBuildingId(String(b._id))}
+                      className="flex min-h-[32px] min-w-0 flex-1 items-center gap-2.5 text-left text-[14px]"
                     >
-                      {b.ner || "-"}
-                    </div>
-                    <div className="flex items-center gap-2 pointer-events-auto">
+                      <Building2
+                        className={`h-4 w-4 shrink-0 ${idevkhtei ? "text-brand" : "text-[color:var(--muted-text)]"}`}
+                      />
+                      <span className={`truncate ${idevkhtei ? "text-brand" : "text-[color:var(--panel-text)]"}`}>
+                        {b.ner || "Нэргүй барилга"}
+                      </span>
+                      {idevkhtei && (
+                        <span className="shrink-0 rounded-full bg-theme/10 px-2 py-0.5 text-[11px] text-brand">
+                          Идэвхтэй
+                        </span>
+                      )}
+                    </button>
+                    <div className="flex shrink-0 items-center gap-0.5">
                       {isTransferEnabled && (
-                        <Button
+                        <button
                           id={`barilgiin-transfer-${b._id}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setBuildingToTransfer({
-                              id: String(b._id),
-                              ner: b.ner || "",
-                            });
+                          type="button"
+                          onClick={() => {
+                            setBuildingToTransfer({ id: String(b._id), ner: b.ner || "" });
                             setTransferModalOpen(true);
                           }}
-                          variant="ghost"
-                          size="sm"
                           title="Шилжүүлэх"
-                          className="!rounded-lg hover:bg-theme/10 dark:hover:bg-theme/20 hover:text-brand dark:hover:text-brand"
-                          style={{ borderRadius: "0.5rem" }}
+                          className="rounded-lg p-1.5 text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] hover:text-brand"
                         >
-                          <ArrowRight className="w-4 h-4" />
-                        </Button>
+                          <ArrowRight className="h-4 w-4" />
+                        </button>
                       )}
                       <button
                         id={`barilgiin-edit-${b._id}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditBuilding(String(b._id));
-                        }}
-                        className="p-2 rounded-2xl action-edit hover-surface transition-colors"
-                        title="Засах"
+                        type="button"
+                        onClick={() => handleEditBuilding(String(b._id))}
+                        title="Засах — нэр, орц, давхар"
+                        className="rounded-lg p-1.5 text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] hover:text-brand"
                       >
-                        <Edit className="w-5 h-5" />
+                        <Edit className="h-4 w-4" />
                       </button>
                       <button
                         id={`barilgiin-delete-${b._id}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteBuilding(String(b._id));
-                        }}
-                        className="p-2 rounded-2xl action-delete hover-surface transition-colors"
+                        type="button"
+                        onClick={() => handleDeleteBuilding(String(b._id))}
                         title="Устгах"
+                        className="rounded-lg p-1.5 text-[color:var(--muted-text)] hover:bg-danger/10 hover:text-danger"
                       >
-                        <Trash2 className="w-5 h-5" />
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
-                  </div>
+                  </li>
                 );
               })}
+            </ul>
+          ) : (
+            <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-[color:var(--surface-border)] px-4 py-8 text-center">
+              <Building2 className="h-6 w-6 text-[color:var(--muted-text)]" />
+              <p className="text-[13px] text-[color:var(--panel-text)]">Барилга бүртгээгүй байна</p>
+              <p className="max-w-xs text-[12px] text-[color:var(--muted-text)]">
+                Эхний барилгаа нэмээд орц, давхрын тоог оруулбал тоот бүртгэл, гэрээ ашиглах боломжтой болно.
+              </p>
             </div>
-          </div>
-        )}
-
-        {/* No Building Message */}
-        {!barilga && (
-          <div className="p-4 rounded-lg border border-theme/30 bg-theme/50 text-brand text-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex items-start gap-2">
-              <Building2 className="w-5 h-5 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="">Барилга олдсонгүй</p>
-                <p className="text-xs mt-1 opacity-80">
-                  Зөвхөн мэдээллийг харах боломжтой. Барилга сонгох эсвэл шинээр
-                  нэмнэ үү.
-                </p>
-              </div>
-            </div>
-            <Button
-              onClick={openNewBuildingModal}
-              variant="primary"
-              size="sm"
-              leftIcon={<Plus className="w-4 h-4" />}
-              title="Шинэ барилга нэмэх"
-              className="!rounded-lg"
-              style={{ borderRadius: "0.5rem" }}
-            >
-              Шинэ барилга
-            </Button>
-          </div>
-        )}
+          )}
+        </SettingsCard>
 
         {/* Info grid */}
 

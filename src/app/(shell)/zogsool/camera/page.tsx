@@ -718,9 +718,10 @@ export default function Camera() {
         },
       ];
     } else if (statusFilter === "free") {
-      // Үнэгүй: Exited with no payment, excluding violations
+      // Үнэгүй: гарсан, зөрчилгүй. `niitDun = 0` гэж серверт шүүвэл бүрэн
+      // хөнгөлсөн (дүнтэй боловч төлбөр 0) машин ирэхгүй — нарийн шүүлтийг
+      // доорх клиент талын шүүлт (`bureenKhungulsun`) хийнэ.
       query["tuukh.garsanKhaalga"] = { $exists: true };
-      query.niitDun = 0;
       query["tuukh.0.tuluv"] = { $nin: [-1, -2] };
     }
 

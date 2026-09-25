@@ -42,7 +42,7 @@ import {
 import ExcelButton from "@/components/ui/ExcelButton";
 import uilchilgee from "@/lib/uilchilgee";
 import deleteMethod from "../../../../tools/function/deleteMethod";
-import Button from "@/components/ui/Button";
+import { SettingsCard } from "./SettingsRow";
 import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import { ModalPortal } from "../../../../components/shell/ModalPortal";
 import useModalHotkeys from "@/lib/useModalHotkeys";
@@ -749,7 +749,7 @@ export default function AshiglaltiinZardluud() {
         align: "center",
         className: "!px-1 text-center",
         render: (_: any, __: any, index: number) => (
-          <span className="text-xs text-[color:var(--muted-text)]">
+          <span className="text-[13px] text-[color:var(--muted-text)]">
             {index + 1}
           </span>
         ),
@@ -760,7 +760,7 @@ export default function AshiglaltiinZardluud() {
         key: "ner",
         width: "45%",
         render: (v: any) => (
-          <div className="max-w-[260px] leading-tight break-words sm:max-w-[420px]">
+          <div className="max-w-[260px] break-words text-[14px] leading-snug text-[color:var(--panel-text)] sm:max-w-[420px]">
             {v}
           </div>
         ),
@@ -786,12 +786,12 @@ export default function AshiglaltiinZardluud() {
           const changed = currentValue !== displayValue;
           return (
             <div className="flex flex-col items-center gap-0.5">
-              <div className="whitespace-nowrap">
+              <div className="whitespace-nowrap text-[14px] tabular-nums text-[color:var(--panel-text)]">
                 {formatNumber(currentValue, 2)}
                 {mur.tariffUsgeer ? ` ${mur.tariffUsgeer}` : ""}
               </div>
               {changed && (
-                <span className="whitespace-nowrap tracking-tighter text-warning ">
+                <span className="whitespace-nowrap text-[12px] text-warning">
                   Өөрчлөгдсөн
                 </span>
               )}
@@ -805,7 +805,12 @@ export default function AshiglaltiinZardluud() {
         key: "tailbar",
         className: "hidden md:table-cell",
         ellipsis: true,
-        render: (v: any) => v || <span className="opacity-40">-</span>,
+        render: (v: any) =>
+          v ? (
+            <span className="text-[13px] text-[color:var(--muted-text)]">{v}</span>
+          ) : (
+            <span className="text-[color:var(--muted-text)] opacity-50">-</span>
+          ),
       },
       {
         title: "Үйлдэл",
@@ -816,20 +821,22 @@ export default function AshiglaltiinZardluud() {
           <div className="flex items-center justify-center gap-1">
             <button
               onClick={() => openEditModal(mur, false)}
-              className="shrink-0 rounded-lg p-1 text-brand transition-colors hover:bg-theme/10 dark:hover:bg-theme/30"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-brand transition-colors hover:bg-[color:var(--surface-hover)]"
               title="Засах"
+              aria-label="Засах"
             >
-              <Edit className="h-3.5 w-3.5" />
+              <Edit className="h-4 w-4" />
             </button>
             <button
               onClick={() => {
                 setItemToDelete(mur);
                 setDeleteModalOpen(true);
               }}
-              className="shrink-0 rounded-lg p-1 text-danger transition-colors hover:bg-danger/10"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-danger transition-colors hover:bg-danger/10"
               title="Устгах"
+              aria-label="Устгах"
             >
-              <Trash2 className="h-3.5 w-3.5" />
+              <Trash2 className="h-4 w-4" />
             </button>
           </div>
         ),
@@ -840,73 +847,62 @@ export default function AshiglaltiinZardluud() {
   );
 
   return (
-    <div className="h-full overflow-y-auto custom-scrollbar">
-      <div className="bg-[color:var(--surface-bg)] rounded-2xl border border-[color:var(--surface-border)] shadow-lg p-4 sm:p-5 space-y-4">
-        {/* Page Top Header Bar */}
-        <div className="flex items-center justify-between pb-3.5 border-b border-[color:var(--surface-border)] gap-3 flex-wrap">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-2xl bg-theme/10 text-theme flex items-center justify-center shrink-0 border border-theme/20 shadow-xs">
-              <CreditCard className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-lg sm:text-xl text-[color:var(--panel-text)] tracking-tight">
-                Ашиглалтын зардал
-              </h2>
-              <p className="text-xs text-[color:var(--muted-text)] mt-0.5">
-                Тогтмол болон тоолуур, заалтаар бодогдох хэрэглээний тарифууд
-              </p>
-            </div>
+    <div className="w-full">
+      <div className="space-y-4">
+        {/* Хэрэгслийн мөр: хайлт + товчнууд */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Live Search Input */}
+          <div className="relative min-w-[200px] flex-1 sm:max-w-sm">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--muted-text)]" />
+            <input
+              type="text"
+              value={filterText}
+              onChange={(e) => setFilterText(e.target.value)}
+              placeholder="Зардлын нэрээр хайх..."
+              aria-label="Зардлын нэрээр хайх"
+              className="stg-input !pl-9 !pr-10"
+            />
+            {filterText && (
+              <button
+                type="button"
+                onClick={() => setFilterText("")}
+                className="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-lg text-[color:var(--muted-text)] transition-colors hover:bg-[color:var(--surface-hover)] hover:text-[color:var(--panel-text)]"
+                title="Хайлтыг арилгах"
+                aria-label="Хайлтыг арилгах"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap justify-end w-full lg:w-auto">
-            {/* Live Search Input */}
-            <div className="relative flex-1 sm:w-60 min-w-[180px]">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--muted-text)] pointer-events-none" />
-              <input
-                type="text"
-                value={filterText}
-                onChange={(e) => setFilterText(e.target.value)}
-                placeholder="Зардлын нэрээр хайх..."
-                className="w-full h-9 pl-9 pr-7 text-xs bg-[color:var(--surface-hover)] border border-[color:var(--surface-border)] rounded-xl text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all"
-              />
-              {filterText && (
-                <button
-                  type="button"
-                  onClick={() => setFilterText("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] p-0.5 cursor-pointer"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-
-            {/* Товчнууд — үргэлж БАРУУН ирмэгт */}
-            <div className="ml-auto flex items-center gap-2 flex-wrap justify-end">
+          {/* Товчнууд — үргэлж БАРУУН ирмэгт */}
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
             {/* Excel — татах/оруулах хоёрыг НЭГ товчинд нэгтгэв */}
             <div className="relative" ref={excelMenuRef}>
               <ExcelButton
                 id="zardal-excel-btn"
                 label="Excel"
                 title="Excel загвар татах, эсвэл Excel-ээр бөөнөөр оруулах"
+                className="!h-10 !text-[14px]"
                 onClick={() => setExcelMenuOpen((v) => !v)}
                 suffix={
                   <ChevronDown
-                    className={`h-3.5 w-3.5 transition-transform ${excelMenuOpen ? "rotate-180" : ""}`}
+                    className={`h-4 w-4 transition-transform ${excelMenuOpen ? "rotate-180" : ""}`}
                   />
                 }
               />
 
               {excelMenuOpen && (
-                <div className="absolute right-0 top-full z-30 mt-1.5 w-52 overflow-hidden rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--panel)] p-1 shadow-lg">
+                <div className="absolute right-0 top-full z-30 mt-1.5 w-56 overflow-hidden rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-1 shadow-md">
                   <button
                     id="zardal-excel-template-btn"
                     onClick={() => {
                       setExcelMenuOpen(false);
                       zardalExcelZagvarTatya();
                     }}
-                    className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs text-[color:var(--panel-text)] transition-colors hover:bg-[color:var(--surface-hover)]"
+                    className="flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-left text-[14px] text-[color:var(--panel-text)] transition-colors hover:bg-[color:var(--surface-hover)]"
                   >
-                    <Download className="h-3.5 w-3.5 shrink-0 text-theme" />
+                    <Download className="h-4 w-4 shrink-0 text-brand" />
                     Загвар татах
                   </button>
                   <button
@@ -915,9 +911,9 @@ export default function AshiglaltiinZardluud() {
                       setExcelMenuOpen(false);
                       zardalExcelInputRef.current?.click();
                     }}
-                    className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs text-[color:var(--panel-text)] transition-colors hover:bg-[color:var(--surface-hover)]"
+                    className="flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-left text-[14px] text-[color:var(--panel-text)] transition-colors hover:bg-[color:var(--surface-hover)]"
                   >
-                    <Upload className="h-3.5 w-3.5 shrink-0 text-success" />
+                    <Upload className="h-4 w-4 shrink-0 text-success" />
                     Excel оруулах
                   </button>
                 </div>
@@ -931,6 +927,7 @@ export default function AshiglaltiinZardluud() {
               className="hidden"
             />
             <button
+              type="button"
               onClick={async () => {
                 showSpinner();
                 try {
@@ -942,204 +939,194 @@ export default function AshiglaltiinZardluud() {
                   hideSpinner();
                 }
               }}
-              className="px-3 py-2 text-xs rounded-xl bg-[color:var(--surface-hover)] text-[color:var(--panel-text)] border border-[color:var(--surface-border)] hover:bg-[color:var(--panel)] transition-all flex items-center gap-2 cursor-pointer shadow-xs"
+              className="stg-btn stg-btn-ghost cursor-pointer"
               title="Хуучин зардлуудыг цэвэрлэх"
             >
-              <RefreshCw className="w-3.5 h-3.5 text-[color:var(--muted-text)]" />
+              <RefreshCw className="h-4 w-4" />
               <span>Цэвэрлэх</span>
             </button>
             {allBarilguud.length > 1 && (
               <button
+                type="button"
                 id="zardal-copy-buildings-btn"
                 onClick={() => {
                   setSelectedCopyTargets([]);
                   setIsCopyModalOpen(true);
                 }}
-                className="px-3 py-2 text-xs rounded-xl bg-theme/10 text-theme border border-theme/20 hover:bg-theme/20 transition-all flex items-center gap-2 cursor-pointer shadow-xs"
+                className="stg-btn stg-btn-ghost cursor-pointer"
                 title="Одоогийн барилгын зардлуудыг бусад барилгуудад хуулах"
               >
-                <CopyPlus className="w-3.5 h-3.5" />
+                <CopyPlus className="h-4 w-4" />
                 <span>Барилгуудад хуулах</span>
               </button>
             )}
-            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4">
-          <div className="flex-1">
-            <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden">
-              <div className="p-3.5 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-theme/10 to-theme/5">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-theme/10 text-theme flex items-center justify-center shrink-0 border border-theme/20">
-                    <CalendarCheck className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-base text-[color:var(--panel-text)]">Тогтмол зардлууд</h3>
-                      <span className="text-[11px] px-2 py-0.5 rounded-full bg-theme/10 text-theme border border-theme/20">
-                        {togtmolZardluud.length}
-                      </span>
+        <div className="stg-stack">
+          <SettingsCard
+            icon={<CalendarCheck className="h-4 w-4" />}
+            title="Тогтмол зардлууд"
+            subtitle={
+              <>
+                {togtmolZardluud.length} зардал · Нийт дүн:{" "}
+                <span className="text-[color:var(--panel-text)]">
+                  {formatNumber(niitDungBodyo(togtmolZardluud), 2)} ₮
+                </span>
+              </>
+            }
+            toggle={
+              <button
+                type="button"
+                id="zardal-add-btn"
+                onClick={() => openAddModal(false)}
+                className="stg-btn stg-btn-primary cursor-pointer"
+              >
+                <Plus className="h-4 w-4" />
+                Зардал нэмэх
+              </button>
+            }
+          >
+            <div
+              id="zardal-list"
+              className="flex flex-col overflow-hidden rounded-xl border border-[color:var(--surface-border)] text-[14px]"
+            >
+              <Table<any>
+                columns={zardliinColumns}
+                loading={isLoadingAshiglaltiin}
+                locale={{
+                  emptyText: (
+                    <div className="py-4">
+                      <p className="text-[14px] text-[color:var(--panel-text)]">
+                        Тогтмол зардал одоогоор алга
+                      </p>
+                      <p className="mt-1 text-[13px] text-[color:var(--muted-text)]">
+                        Дээрх «Зардал нэмэх» товчийг дарж эхний зардлаа нэмнэ үү
+                      </p>
                     </div>
-                    <p className="text-xs text-[color:var(--muted-text)]">
-                      Нийт дүн: <span className=" text-[color:var(--panel-text)]">{formatNumber(niitDungBodyo(togtmolZardluud), 2)} ₮</span>
-                    </p>
-                  </div>
-                </div>
-
-                <Button
-                  id="zardal-add-btn"
-                  onClick={() => openAddModal(false)}
-                  variant="primary"
-                  size="sm"
-                  leftIcon={<Plus className="w-3.5 h-3.5" />}
-                >
-                  Зардал нэмэх
-                </Button>
-              </div>
-
-              <div id="zardal-list" className="flex flex-col">
-                <Table<any>
-                  columns={zardliinColumns}
-                  loading={isLoadingAshiglaltiin}
-                  locale={{
-                    emptyText: (
-                      <div>
-                        <p>Тогтмол зардал байхгүй байна</p>
-                        <p className="mt-1 text-xs opacity-70">
-                          Зардал нэмэх товчийг дарж эхлүүлнэ үү
-                        </p>
-                      </div>
-                    ),
-                  }}
-                  dataSource={
-                    bugdTogtmol
-                      ? togtmolZardluud
-                      : togtmolZardluud.slice(0, ZARDAL_URIDCHILAN_KHARUULAKH)
-                  }
-                  rowKey={(mur) => mur._id!}
-                  pagination={false}
-                  summary={() => (
-                    <Table.Summary.Row>
-                      <Table.Summary.Cell colSpan={5} align="center">
-                        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-                          <div className="col-start-2 flex items-center justify-center gap-3">
-                            <span className="whitespace-nowrap text-[11px] tracking-wide opacity-70 sm:text-xs">
-                              Нийт дүн:
-                            </span>
-                            <span className="whitespace-nowrap text-sm sm:text-base">
-                              {formatNumber(niitDungBodyo(togtmolZardluud), 2)} ₮
-                            </span>
-                          </div>
-                          {togtmolZardluud.length > ZARDAL_URIDCHILAN_KHARUULAKH && (
-                            <button
-                              onClick={() => setBugdTogtmol((n) => !n)}
-                              className="col-start-3 flex cursor-pointer items-center gap-1 justify-self-end whitespace-nowrap text-[11px] text-[color:var(--muted-text)] transition-colors hover:text-[color:var(--panel-text)] sm:text-xs"
-                            >
-                              {bugdTogtmol
-                                ? "Хураах"
-                                : `Бүгдийг харах (${togtmolZardluud.length})`}
-                              <ChevronDown
-                                className={`h-3.5 w-3.5 transition-transform ${bugdTogtmol ? "rotate-180" : ""}`}
-                              />
-                            </button>
-                          )}
+                  ),
+                }}
+                dataSource={
+                  bugdTogtmol
+                    ? togtmolZardluud
+                    : togtmolZardluud.slice(0, ZARDAL_URIDCHILAN_KHARUULAKH)
+                }
+                rowKey={(mur) => mur._id!}
+                pagination={false}
+                summary={() => (
+                  <Table.Summary.Row>
+                    <Table.Summary.Cell colSpan={5} align="center">
+                      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                        <div className="col-start-2 flex items-center justify-center gap-3">
+                          <span className="whitespace-nowrap text-[13px] text-[color:var(--muted-text)]">
+                            Нийт дүн:
+                          </span>
+                          <span className="whitespace-nowrap text-[15px] text-[color:var(--panel-text)]">
+                            {formatNumber(niitDungBodyo(togtmolZardluud), 2)} ₮
+                          </span>
                         </div>
-                      </Table.Summary.Cell>
-                    </Table.Summary.Row>
-                  )}
-                />
-              </div>
+                        {togtmolZardluud.length > ZARDAL_URIDCHILAN_KHARUULAKH && (
+                          <button
+                            type="button"
+                            onClick={() => setBugdTogtmol((n) => !n)}
+                            className="col-start-3 flex h-9 cursor-pointer items-center gap-1 justify-self-end whitespace-nowrap rounded-lg px-2 text-[13px] text-brand transition-colors hover:bg-[color:var(--surface-hover)]"
+                          >
+                            {bugdTogtmol
+                              ? "Хураах"
+                              : `Бүгдийг харах (${togtmolZardluud.length})`}
+                            <ChevronDown
+                              className={`h-4 w-4 transition-transform ${bugdTogtmol ? "rotate-180" : ""}`}
+                            />
+                          </button>
+                        )}
+                      </div>
+                    </Table.Summary.Cell>
+                  </Table.Summary.Row>
+                )}
+              />
             </div>
-          </div>
+          </SettingsCard>
 
           {/* Variable expenses section */}
-          <div className="flex-1">
-            <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden">
-              <div className="p-3.5 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-emerald-500/10 to-emerald-500/5">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/20">
-                    <Activity className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-base text-[color:var(--panel-text)]">Хувьсах зардлууд</h3>
-                      <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                        {khuvisakhZardluud.length}
-                      </span>
+          <SettingsCard
+            icon={<Activity className="h-4 w-4" />}
+            title="Хувьсах зардлууд"
+            subtitle={
+              <>
+                {khuvisakhZardluud.length} зардал · Суурь дүн:{" "}
+                <span className="text-[color:var(--panel-text)]">
+                  {formatNumber(niitDungBodyo(khuvisakhZardluud, true), 2)} ₮
+                </span>
+              </>
+            }
+            toggle={
+              <button
+                type="button"
+                id="zardal-add-variable-btn"
+                onClick={() => openAddModal(true)}
+                className="stg-btn stg-btn-primary cursor-pointer"
+              >
+                <Plus className="h-4 w-4" />
+                Зардал нэмэх
+              </button>
+            }
+          >
+            <div className="flex flex-col overflow-hidden rounded-xl border border-[color:var(--surface-border)] text-[14px]">
+              <Table<any>
+                columns={zardliinColumns}
+                loading={isLoadingAshiglaltiin}
+                locale={{
+                  emptyText: (
+                    <div className="py-4">
+                      <p className="text-[14px] text-[color:var(--panel-text)]">
+                        Хувьсах зардал одоогоор алга
+                      </p>
+                      <p className="mt-1 text-[13px] text-[color:var(--muted-text)]">
+                        Дээрх «Зардал нэмэх» товчийг дарж эхний зардлаа нэмнэ үү
+                      </p>
                     </div>
-                    <p className="text-xs text-[color:var(--muted-text)]">
-                      Суурь дүн: <span className=" text-[color:var(--panel-text)]">{formatNumber(niitDungBodyo(khuvisakhZardluud, true), 2)} ₮</span>
-                    </p>
-                  </div>
-                </div>
-
-                <Button
-                  id="zardal-add-variable-btn"
-                  onClick={() => openAddModal(true)}
-                  variant="primary"
-                  size="sm"
-                  leftIcon={<Plus className="w-3.5 h-3.5" />}
-                  style={{ backgroundColor: "#10b981", borderColor: "#10b981" }}
-                >
-                  Зардал нэмэх
-                </Button>
-              </div>
-
-              <div className="flex flex-col">
-                <Table<any>
-                  columns={zardliinColumns}
-                  loading={isLoadingAshiglaltiin}
-                  locale={{
-                    emptyText: (
-                      <div>
-                        <p>Хувьсах зардал байхгүй байна</p>
-                        <p className="mt-1 text-xs opacity-70">
-                          Зардал нэмэх товчийг дарж эхлүүлнэ үү
-                        </p>
-                      </div>
-                    ),
-                  }}
-                  dataSource={
-                    bugdKhuvisakh
-                      ? khuvisakhZardluud
-                      : khuvisakhZardluud.slice(0, ZARDAL_URIDCHILAN_KHARUULAKH)
-                  }
-                  rowKey={(mur) => mur._id!}
-                  pagination={false}
-                  summary={() => (
-                    <Table.Summary.Row>
-                      <Table.Summary.Cell colSpan={5} align="center">
-                        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-                          <div className="col-start-2 flex items-center justify-center gap-3">
-                            <span className="whitespace-nowrap text-[11px] tracking-wide opacity-70 sm:text-xs">
-                              Нийт дүн:
-                            </span>
-                            <span className="whitespace-nowrap text-sm sm:text-base">
-                              {formatNumber(niitDungBodyo(khuvisakhZardluud), 2)} ₮
-                            </span>
-                          </div>
-                          {khuvisakhZardluud.length > ZARDAL_URIDCHILAN_KHARUULAKH && (
-                            <button
-                              onClick={() => setBugdKhuvisakh((n) => !n)}
-                              className="col-start-3 flex cursor-pointer items-center gap-1 justify-self-end whitespace-nowrap text-[11px] text-[color:var(--muted-text)] transition-colors hover:text-[color:var(--panel-text)] sm:text-xs"
-                            >
-                              {bugdKhuvisakh
-                                ? "Хураах"
-                                : `Бүгдийг харах (${khuvisakhZardluud.length})`}
-                              <ChevronDown
-                                className={`h-3.5 w-3.5 transition-transform ${bugdKhuvisakh ? "rotate-180" : ""}`}
-                              />
-                            </button>
-                          )}
+                  ),
+                }}
+                dataSource={
+                  bugdKhuvisakh
+                    ? khuvisakhZardluud
+                    : khuvisakhZardluud.slice(0, ZARDAL_URIDCHILAN_KHARUULAKH)
+                }
+                rowKey={(mur) => mur._id!}
+                pagination={false}
+                summary={() => (
+                  <Table.Summary.Row>
+                    <Table.Summary.Cell colSpan={5} align="center">
+                      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                        <div className="col-start-2 flex items-center justify-center gap-3">
+                          <span className="whitespace-nowrap text-[13px] text-[color:var(--muted-text)]">
+                            Нийт дүн:
+                          </span>
+                          <span className="whitespace-nowrap text-[15px] text-[color:var(--panel-text)]">
+                            {formatNumber(niitDungBodyo(khuvisakhZardluud), 2)} ₮
+                          </span>
                         </div>
-                      </Table.Summary.Cell>
-                    </Table.Summary.Row>
-                  )}
-                />
-              </div>
+                        {khuvisakhZardluud.length > ZARDAL_URIDCHILAN_KHARUULAKH && (
+                          <button
+                            type="button"
+                            onClick={() => setBugdKhuvisakh((n) => !n)}
+                            className="col-start-3 flex h-9 cursor-pointer items-center gap-1 justify-self-end whitespace-nowrap rounded-lg px-2 text-[13px] text-brand transition-colors hover:bg-[color:var(--surface-hover)]"
+                          >
+                            {bugdKhuvisakh
+                              ? "Хураах"
+                              : `Бүгдийг харах (${khuvisakhZardluud.length})`}
+                            <ChevronDown
+                              className={`h-4 w-4 transition-transform ${bugdKhuvisakh ? "rotate-180" : ""}`}
+                            />
+                          </button>
+                        )}
+                      </div>
+                    </Table.Summary.Cell>
+                  </Table.Summary.Row>
+                )}
+              />
             </div>
-          </div>
+          </SettingsCard>
         </div>
 
         {/* Зардал нэмэх / засах — чирч хөдөлгөх боломжтой модал */}
@@ -1151,7 +1138,7 @@ export default function AshiglaltiinZardluud() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[12000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+                className="fixed inset-0 z-[12000] bg-black/50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
                 onClick={() => setView("list")}
               >
                 <motion.div
@@ -1165,34 +1152,34 @@ export default function AshiglaltiinZardluud() {
                   dragConstraints={formConstraintsRef}
                   dragMomentum={false}
                   onClick={(e) => e.stopPropagation()}
-                  className="relative w-full max-w-[540px] lg:max-w-[900px] bg-[color:var(--surface-bg)] rounded-[28px] border border-[color:var(--surface-border)] shadow-2xl overflow-hidden ring-1 ring-black/5 dark:ring-white/10 flex flex-col max-h-[92vh] my-auto"
+                  className="relative w-full max-w-[540px] lg:max-w-[900px] bg-[color:var(--surface-bg)] rounded-2xl border border-[color:var(--surface-border)] shadow-lg overflow-hidden flex flex-col max-h-[92vh] my-auto"
                 >
                   {/* Дээд чирэх хэсэг ба Гарчиг */}
                   <div
                     onPointerDown={(e) => dragControls.start(e)}
-                    className="px-6 py-4.5 border-b border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]/40 flex items-center justify-between cursor-move select-none shrink-0"
+                    className="px-5 sm:px-6 py-4 border-b border-[color:var(--surface-border)] flex items-center justify-between cursor-move select-none shrink-0"
                   >
                     <div className="flex items-center gap-3.5 min-w-0">
-                      <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-theme/20 via-emerald-500/15 to-teal-500/10 border border-theme/30 flex items-center justify-center text-theme shadow-inner shrink-0">
+                      <div className="w-10 h-10 rounded-xl bg-theme/10 flex items-center justify-center text-brand shrink-0">
                         <Wallet className="w-5 h-5" />
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h2 className="text-base sm:text-lg text-[color:var(--panel-text)] tracking-tight leading-none">
+                          <h2 className="text-[17px] text-[color:var(--panel-text)] leading-tight">
                             {editingItem
                               ? "Ашиглалтын зардал засах"
                               : "Ашиглалтын зардал бүртгэх"}
                           </h2>
                           <span
-                            className={`px-2.5 py-0.5 text-[11px] rounded-full border transition-all ${formData.turul === "Тогтмол"
-                              ? "bg-theme/10 text-theme border-theme/20"
-                              : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                            className={`px-2.5 py-0.5 text-[12px] rounded-full border transition-all ${formData.turul === "Тогтмол"
+                              ? "bg-theme/10 text-brand border-theme/20"
+                              : "bg-success/10 text-success border-success/20"
                               }`}
                           >
                             {formData.turul === "Тогтмол" ? "Тогтмол зардал" : "Хувьсах зардал"}
                           </span>
                         </div>
-                        <p className="text-xs text-[color:var(--muted-text)] mt-1">
+                        <p className="text-[13px] text-[color:var(--muted-text)] mt-1">
                           {editingItem
                             ? "Зардлын тохиргоо, тарифын дүнг шинэчлэх"
                             : "Шинэ ашиглалтын зардал, тарифыг бүртгэх"}
@@ -1202,15 +1189,16 @@ export default function AshiglaltiinZardluud() {
                     <button
                       type="button"
                       onClick={() => setView("list")}
-                      className="p-2 rounded-full hover:bg-[color:var(--surface-hover)] text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] transition-colors shrink-0 cursor-pointer"
+                      className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-[color:var(--surface-hover)] text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] transition-colors shrink-0 cursor-pointer"
+                      title="Хаах"
                       aria-label="Хаах"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-5 h-5" />
                     </button>
                   </div>
 
                   {/* Маягтын талбарууд */}
-                  <div className="overflow-y-auto custom-scrollbar p-6">
+                  <div className="overflow-y-auto custom-scrollbar p-5 sm:p-6">
                     {/* Зүүн багана — зардлыг ТОДОРХОЙЛОХ; баруун — ДҮН,
                         тайлбар, урьдчилсан харагдац. Нарийн дэлгэцэд
                         нэг багана болж хэвийн урсана. */}
@@ -1218,7 +1206,7 @@ export default function AshiglaltiinZardluud() {
                       <div className="space-y-5">
                         {/* 1. Зардлын ангилал: Тогтмол / Хувьсах */}
                         <div>
-                          <label className="block text-xs text-[color:var(--panel-text)] mb-2 ">
+                          <label className="block text-[13px] text-[color:var(--panel-text)] mb-2 ">
                             Зардлын ангилал <span className="text-danger">*</span>
                           </label>
                           <div className="grid grid-cols-2 gap-2.5">
@@ -1226,7 +1214,7 @@ export default function AshiglaltiinZardluud() {
                               type="button"
                               onClick={() => setFormData({ ...formData, turul: "Тогтмол" })}
                               className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex items-start gap-3 relative ${formData.turul === "Тогтмол"
-                                ? "bg-theme/10 border-theme text-theme ring-2 ring-theme/20 shadow-xs"
+                                ? "bg-theme/10 border-theme text-brand ring-2 ring-theme/20"
                                 : "bg-[color:var(--surface-hover)]/40 border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] text-[color:var(--panel-text)]"
                                 }`}
                             >
@@ -1239,8 +1227,8 @@ export default function AshiglaltiinZardluud() {
                                 <CalendarCheck className="w-4 h-4" />
                               </div>
                               <div className="min-w-0 pr-4">
-                                <div className="text-xs leading-tight">Тогтмол зардал</div>
-                                <div className="text-[11px] text-[color:var(--muted-text)] mt-0.5 leading-snug">
+                                <div className="text-[14px] leading-tight">Тогтмол зардал</div>
+                                <div className="text-[13px] text-[color:var(--muted-text)] mt-0.5 leading-snug">
                                   Сар бүр ижил үнийн дүнгээр бодогдоно
                                 </div>
                               </div>
@@ -1255,26 +1243,26 @@ export default function AshiglaltiinZardluud() {
                               type="button"
                               onClick={() => setFormData({ ...formData, turul: "Дурын" })}
                               className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex items-start gap-3 relative ${formData.turul !== "Тогтмол"
-                                ? "bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400 ring-2 ring-emerald-500/20 shadow-xs"
+                                ? "bg-success/10 border-success text-success ring-2 ring-success/20"
                                 : "bg-[color:var(--surface-hover)]/40 border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] text-[color:var(--panel-text)]"
                                 }`}
                             >
                               <div
                                 className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${formData.turul !== "Тогтмол"
-                                  ? "bg-emerald-500 text-white"
+                                  ? "bg-success text-white"
                                   : "bg-[color:var(--surface-border)] text-[color:var(--muted-text)]"
                                   }`}
                               >
                                 <Activity className="w-4 h-4" />
                               </div>
                               <div className="min-w-0 pr-4">
-                                <div className="text-xs leading-tight">Хувьсах зардал</div>
-                                <div className="text-[11px] text-[color:var(--muted-text)] mt-0.5 leading-snug">
+                                <div className="text-[14px] leading-tight">Хувьсах зардал</div>
+                                <div className="text-[13px] text-[color:var(--muted-text)] mt-0.5 leading-snug">
                                   Заалт, хэрэглээгээр сар бүр өөрчлөгдөнө
                                 </div>
                               </div>
                               {formData.turul !== "Тогтмол" && (
-                                <div className="absolute right-2.5 top-2.5 w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center">
+                                <div className="absolute right-2.5 top-2.5 w-4 h-4 rounded-full bg-success text-white flex items-center justify-center">
                                   <Check className="w-2.5 h-2.5 stroke-[3]" />
                                 </div>
                               )}
@@ -1285,15 +1273,15 @@ export default function AshiglaltiinZardluud() {
                         {/* 2. Зардлын нэр + Шуурхай сонголтууд */}
                         <div>
                           <div className="flex items-center justify-between mb-1.5">
-                            <label className="text-xs text-[color:var(--panel-text)] ">
+                            <label className="text-[13px] text-[color:var(--panel-text)] ">
                               Зардлын нэр <span className="text-danger">*</span>
                             </label>
-                            <span className="text-[11px] text-[color:var(--muted-text)]">
+                            <span className="text-[12px] text-[color:var(--muted-text)]">
                               Жишээ: Лифт, Хог, Харуул...
                             </span>
                           </div>
                           <div className="relative">
-                            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-theme pointer-events-none opacity-60">
+                            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-brand pointer-events-none opacity-60">
                               <Tag className="w-4 h-4" />
                             </div>
                             <input
@@ -1317,13 +1305,15 @@ export default function AshiglaltiinZardluud() {
                                 });
                               }}
                               placeholder="Зардлын нэрээ оруулна уу..."
-                              className="w-full h-11 pl-10 pr-9 bg-[color:var(--surface-hover)]/40 border border-[color:var(--surface-border)] rounded-xl text-sm font-medium text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all shadow-xs"
+                              className="w-full h-11 pl-10 pr-11 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-xl text-[15px] text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all"
                             />
                             {formData.ner && (
                               <button
                                 type="button"
                                 onClick={() => setFormData({ ...formData, ner: "" })}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] transition-colors cursor-pointer"
+                                className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] hover:text-[color:var(--panel-text)] transition-colors cursor-pointer"
+                                title="Нэрийг арилгах"
+                                aria-label="Нэрийг арилгах"
                               >
                                 <X className="w-3.5 h-3.5" />
                               </button>
@@ -1332,8 +1322,8 @@ export default function AshiglaltiinZardluud() {
 
                           {/* Шуурхай сонгох товчнууд */}
                           <div className="mt-2.5">
-                            <div className="text-[11px] font-medium text-[color:var(--muted-text)] mb-1.5 flex items-center gap-1">
-                              <Sparkles className="w-3 h-3 text-theme" />
+                            <div className="text-[12px] text-[color:var(--muted-text)] mb-1.5 flex items-center gap-1">
+                              <Sparkles className="w-3 h-3 text-brand" />
                               Шуурхай сонголтууд:
                             </div>
                             <div className="flex items-center gap-1.5 flex-wrap">
@@ -1347,12 +1337,12 @@ export default function AshiglaltiinZardluud() {
                                     key={preset.label}
                                     type="button"
                                     onClick={() => applyQuickPreset(preset)}
-                                    className={`px-2.5 py-1 text-xs rounded-lg border transition-all cursor-pointer flex items-center gap-1.5 ${isActive
-                                      ? "bg-theme text-white border-theme shadow-xs"
+                                    className={`h-9 px-3 text-[13px] rounded-lg border transition-all cursor-pointer flex items-center gap-1.5 ${isActive
+                                      ? "bg-theme text-white border-theme"
                                       : "bg-[color:var(--surface-hover)]/50 border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] text-[color:var(--panel-text)]"
                                       }`}
                                   >
-                                    <IconComp className="w-3 h-3 opacity-70" />
+                                    <IconComp className="w-3.5 h-3.5 opacity-70" />
                                     <span>{preset.label}</span>
                                   </button>
                                 );
@@ -1368,7 +1358,7 @@ export default function AshiglaltiinZardluud() {
                           !formData.ner.toLowerCase().includes("өмчлөл")
                         ) && (
                             <div>
-                              <label className="block text-xs text-[color:var(--panel-text)] mb-2 ">
+                              <label className="block text-[13px] text-[color:var(--panel-text)] mb-2 ">
                                 Зардлын төрөл <span className="text-danger">*</span>
                               </label>
                               <div className="grid grid-cols-2 gap-2.5">
@@ -1378,7 +1368,7 @@ export default function AshiglaltiinZardluud() {
                                     setFormData({ ...formData, zardliinTurul: "Энгийн" })
                                   }
                                   className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex items-start gap-3 relative ${(formData.zardliinTurul || "Энгийн") === "Энгийн"
-                                    ? "bg-theme/10 border-theme text-theme ring-2 ring-theme/20 shadow-xs"
+                                    ? "bg-theme/10 border-theme text-brand ring-2 ring-theme/20"
                                     : "bg-[color:var(--surface-hover)]/40 border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] text-[color:var(--panel-text)]"
                                     }`}
                                 >
@@ -1391,8 +1381,8 @@ export default function AshiglaltiinZardluud() {
                                     <Layers className="w-4 h-4" />
                                   </div>
                                   <div className="min-w-0 pr-4">
-                                    <div className="text-xs leading-tight">Энгийн зардал</div>
-                                    <div className="text-[11px] text-[color:var(--muted-text)] mt-0.5 leading-snug">
+                                    <div className="text-[14px] leading-tight">Энгийн зардал</div>
+                                    <div className="text-[13px] text-[color:var(--muted-text)] mt-0.5 leading-snug">
                                       Бүх оршин суугчдад нийтлэг бодогдоно
                                     </div>
                                   </div>
@@ -1409,7 +1399,7 @@ export default function AshiglaltiinZardluud() {
                                     setFormData({ ...formData, zardliinTurul: "Лифт" })
                                   }
                                   className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex items-start gap-3 relative ${formData.zardliinTurul === "Лифт"
-                                    ? "bg-theme/10 border-theme text-theme ring-2 ring-theme/20 shadow-xs"
+                                    ? "bg-theme/10 border-theme text-brand ring-2 ring-theme/20"
                                     : "bg-[color:var(--surface-hover)]/40 border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] text-[color:var(--panel-text)]"
                                     }`}
                                 >
@@ -1422,8 +1412,8 @@ export default function AshiglaltiinZardluud() {
                                     <ArrowUpDown className="w-4 h-4" />
                                   </div>
                                   <div className="min-w-0 pr-4">
-                                    <div className="text-xs leading-tight">Лифтний зардал</div>
-                                    <div className="text-[11px] text-[color:var(--muted-text)] mt-0.5 leading-snug">
+                                    <div className="text-[14px] leading-tight">Лифтний зардал</div>
+                                    <div className="text-[13px] text-[color:var(--muted-text)] mt-0.5 leading-snug">
                                       Давхар, орцны тарифтай уялдана
                                     </div>
                                   </div>
@@ -1446,16 +1436,16 @@ export default function AshiglaltiinZardluud() {
                             !formData.ner.toLowerCase().includes("өмчлөл") ? (
                             <>
                               <div className="flex items-center justify-between">
-                                <label className="text-xs text-[color:var(--panel-text)] ">
+                                <label className="text-[13px] text-[color:var(--panel-text)] ">
                                   Суурь хураамж (₮) <span className="text-danger">*</span>
                                 </label>
-                                <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] text-[color:var(--muted-text)]">
+                                <span className="text-[12px] px-2 py-0.5 rounded-md bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] text-[color:var(--muted-text)]">
                                   Тоолуураас гадна сар бүр
                                 </span>
                               </div>
 
                               <div className="relative">
-                                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-theme text-base pointer-events-none">
+                                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-brand text-base pointer-events-none">
                                   ₮
                                 </div>
                                 <input
@@ -1471,21 +1461,21 @@ export default function AshiglaltiinZardluud() {
                                     else setSuuriKhuraamjInput("");
                                   }}
                                   placeholder="0.00"
-                                  className="w-full h-12 pl-10 pr-4 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-xl text-lg sm:text-xl text-theme placeholder:text-theme/20 focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all shadow-inner"
+                                  className="w-full h-12 pl-10 pr-4 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-xl text-lg sm:text-xl text-brand placeholder:text-[color:var(--muted-text)] focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all"
                                 />
                               </div>
 
-                              <p className="text-[11px] text-[color:var(--muted-text)] leading-relaxed">
+                              <p className="text-[12px] text-[color:var(--muted-text)] leading-relaxed">
                                 ⚡ Цахилгааны тоолуурын заалтын файлаас хэрэглээ тооцогдох бөгөөд энэхүү дүн нь сар бүр сууриар нэмэгдэж бодогдоно.
                               </p>
                             </>
                           ) : (
                             <>
                               <div className="flex items-center justify-between">
-                                <label className="text-xs text-[color:var(--panel-text)] ">
+                                <label className="text-[13px] text-[color:var(--panel-text)] ">
                                   Тарифын дүн (₮) <span className="text-danger">*</span>
                                 </label>
-                                <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] text-[color:var(--muted-text)]">
+                                <span className="text-[12px] px-2 py-0.5 rounded-md bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] text-[color:var(--muted-text)]">
                                   {formData.tariffUsgeer
                                     ? `1 ${formData.tariffUsgeer}`
                                     : "Нэгжийн үнэ / Сар бүр"}
@@ -1493,7 +1483,7 @@ export default function AshiglaltiinZardluud() {
                               </div>
 
                               <div className="relative">
-                                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-theme text-base pointer-events-none">
+                                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-brand text-base pointer-events-none">
                                   ₮
                                 </div>
                                 <input
@@ -1509,11 +1499,11 @@ export default function AshiglaltiinZardluud() {
                                     else setTariffInputValue("");
                                   }}
                                   placeholder="0.00"
-                                  className="w-full h-12 pl-10 pr-4 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-xl text-lg sm:text-xl text-theme placeholder:text-theme/20 focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all shadow-inner"
+                                  className="w-full h-12 pl-10 pr-4 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-xl text-lg sm:text-xl text-brand placeholder:text-[color:var(--muted-text)] focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all"
                                 />
                               </div>
 
-                              <p className="text-[11px] text-[color:var(--muted-text)] leading-relaxed">
+                              <p className="text-[12px] text-[color:var(--muted-text)] leading-relaxed">
                                 Нэхэмжлэх бодох үед тухайн оршин суугчийн гэрээний талбай эсвэл нэгжид тооцогдох сарын үндсэн төлбөр.
                               </p>
                             </>
@@ -1523,11 +1513,11 @@ export default function AshiglaltiinZardluud() {
                         {/* 5. Тайлбар */}
                         <div>
                           <div className="flex items-center justify-between mb-1.5">
-                            <label className="text-xs text-[color:var(--panel-text)] flex items-center gap-1">
+                            <label className="text-[13px] text-[color:var(--panel-text)] flex items-center gap-1">
                               <FileText className="w-3.5 h-3.5 text-[color:var(--muted-text)]" />
                               Тайлбар
                             </label>
-                            <span className="text-[11px] text-[color:var(--muted-text)]">
+                            <span className="text-[12px] text-[color:var(--muted-text)]">
                               {(formData.tailbar || "").length}/{TAILBARIIN_DEED_URT}
                             </span>
                           </div>
@@ -1542,23 +1532,23 @@ export default function AshiglaltiinZardluud() {
                             placeholder="Зардалтай холбоотой нэмэлт тайлбар, тодруулга бичнэ үү..."
                             rows={2}
                             maxLength={TAILBARIIN_DEED_URT}
-                            className="w-full p-3 bg-[color:var(--surface-hover)]/40 border border-[color:var(--surface-border)] rounded-xl text-xs sm:text-sm text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all resize-none custom-scrollbar"
+                            className="w-full p-3 bg-[color:var(--surface-hover)]/40 border border-[color:var(--surface-border)] rounded-xl text-[14px] text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-all resize-none custom-scrollbar"
                           />
                         </div>
 
                         {/* 6. Нэхэмжлэхийн урьдчилсан харагдац */}
-                        <div className="p-3.5 rounded-2xl bg-gradient-to-br from-theme/5 via-[color:var(--surface-hover)]/30 to-transparent border border-theme/20 space-y-2">
-                          <div className="flex items-center gap-1.5 text-xs text-theme">
+                        <div className="p-3.5 rounded-2xl bg-[color:var(--surface-hover)] border border-[color:var(--surface-border)] space-y-2">
+                          <div className="flex items-center gap-1.5 text-[13px] text-brand">
                             <Sparkles className="w-3.5 h-3.5" />
                             <span>Нэхэмжлэх дээр харагдах урьдчилсан байдал</span>
                           </div>
-                          <div className="p-2.5 rounded-xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] flex items-center justify-between gap-3 shadow-xs">
+                          <div className="p-3 rounded-xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] flex items-center justify-between gap-3">
                             <div className="min-w-0">
-                              <div className="text-xs text-[color:var(--panel-text)] truncate">
+                              <div className="text-[13px] text-[color:var(--panel-text)] truncate">
                                 {formData.ner.trim() || "Зардлын нэр"}
                               </div>
                               <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                                <span className="text-[11px] px-2 py-0.5 rounded-md bg-[color:var(--surface-hover)] text-[color:var(--panel-text)] font-medium">
+                                <span className="text-[12px] px-2 py-0.5 rounded-md bg-[color:var(--surface-hover)] text-[color:var(--panel-text)]">
                                   {formData.turul === "Тогтмол" ? "Тогтмол" : "Хувьсах"}
                                 </span>
                                 {!(
@@ -1566,26 +1556,26 @@ export default function AshiglaltiinZardluud() {
                                   !formData.ner.toLowerCase().includes("дундын") &&
                                   !formData.ner.toLowerCase().includes("өмчлөл")
                                 ) && (
-                                    <span className="text-[11px] px-2 py-0.5 rounded-md bg-theme/10 text-theme font-medium">
+                                    <span className="text-[12px] px-2 py-0.5 rounded-md bg-theme/10 text-brand">
                                       {formData.zardliinTurul || "Энгийн"}
                                     </span>
                                   )}
                                 {formData.nuatBodokhEsekh && (
-                                  <span className="text-[11px] px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium">
+                                  <span className="text-[12px] px-2 py-0.5 rounded-md bg-success/10 text-success">
                                     +10% НӨАТ
                                   </span>
                                 )}
                               </div>
                             </div>
                             <div className="text-right shrink-0">
-                              <div className="text-sm text-theme">
+                              <div className="text-[15px] text-brand tabular-nums">
                                 {formData.ner.toLowerCase().includes("цахилгаан") &&
                                   !formData.ner.toLowerCase().includes("дундын") &&
                                   !formData.ner.toLowerCase().includes("өмчлөл")
                                   ? `${suuriKhuraamjInput || "0.00"} ₮`
                                   : `${tariffInputValue || "0.00"} ₮`}
                               </div>
-                              <div className="text-[11px] text-[color:var(--muted-text)]">
+                              <div className="text-[12px] text-[color:var(--muted-text)]">
                                 {formData.ner.toLowerCase().includes("цахилгаан") &&
                                   !formData.ner.toLowerCase().includes("дундын") &&
                                   !formData.ner.toLowerCase().includes("өмчлөл")
@@ -1600,14 +1590,14 @@ export default function AshiglaltiinZardluud() {
                   </div>
 
                   {/* Хөл товчнууд */}
-                  <div className="px-6 py-4 border-t border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]/30 flex items-center justify-between gap-3 shrink-0">
+                  <div className="px-5 sm:px-6 py-4 border-t border-[color:var(--surface-border)] flex items-center justify-between gap-3 shrink-0">
                     <button
                       type="button"
                       onClick={() => setView("list")}
-                      className="px-4 py-2 text-xs rounded-xl border border-[color:var(--surface-border)] text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] transition-all cursor-pointer flex items-center gap-1.5"
+                      className="stg-btn stg-btn-ghost cursor-pointer"
                     >
                       <span>Цуцлах</span>
-                      <kbd className="hidden sm:inline-block text-[11px] px-1.5 py-0.5 rounded bg-[color:var(--surface-border)] text-[color:var(--muted-text)]">
+                      <kbd className="hidden sm:inline-block text-[12px] px-1.5 py-0.5 rounded bg-[color:var(--surface-border)] text-[color:var(--muted-text)]">
                         Esc
                       </kbd>
                     </button>
@@ -1615,11 +1605,11 @@ export default function AshiglaltiinZardluud() {
                       type="button"
                       data-modal-primary
                       onClick={handleSave}
-                      className="px-6 py-2.5 text-xs rounded-xl bg-theme hover:bg-theme/90 text-white shadow-md shadow-theme/20 transition-all flex items-center gap-2 cursor-pointer active:scale-98"
+                      className="stg-btn stg-btn-primary cursor-pointer !px-5"
                     >
                       <Check className="w-4 h-4" />
                       <span>{editingItem ? "Өөрчлөлт хадгалах" : "Зардал бүртгэх"}</span>
-                      <kbd className="hidden sm:inline-block text-[11px] px-1.5 py-0.5 rounded bg-white/20 text-white font-mono">
+                      <kbd className="hidden sm:inline-block text-[12px] px-1.5 py-0.5 rounded bg-white/20 text-white font-mono">
                         Enter
                       </kbd>
                     </button>
@@ -1638,7 +1628,7 @@ export default function AshiglaltiinZardluud() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[12000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+                className="fixed inset-0 z-[12000] bg-black/50 flex items-center justify-center p-4"
                 onClick={() => setDeleteModalOpen(false)}
               >
                 <motion.div
@@ -1646,16 +1636,16 @@ export default function AshiglaltiinZardluud() {
                   animate={{ scale: 1, opacity: 1, y: 0 }}
                   exit={{ scale: 0.95, opacity: 0, y: 12 }}
                   onClick={(e) => e.stopPropagation()}
-                  className="w-full max-w-sm bg-[color:var(--surface-bg)] rounded-[24px] border border-[color:var(--surface-border)] shadow-2xl p-6 text-center space-y-4 ring-1 ring-black/5 dark:ring-white/10"
+                  className="w-full max-w-sm bg-[color:var(--surface-bg)] rounded-2xl border border-[color:var(--surface-border)] shadow-lg p-6 text-center space-y-4"
                 >
-                  <div className="w-12 h-12 rounded-2xl bg-danger/10 text-danger flex items-center justify-center mx-auto border border-danger/20">
+                  <div className="w-12 h-12 rounded-full bg-danger/10 text-danger flex items-center justify-center mx-auto">
                     <AlertTriangle className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="text-base text-[color:var(--panel-text)]">
+                    <h3 className="text-[17px] text-[color:var(--panel-text)]">
                       Зардал устгах уу?
                     </h3>
-                    <p className="text-xs text-[color:var(--muted-text)] mt-1.5 leading-relaxed">
+                    <p className="text-[13px] text-[color:var(--muted-text)] mt-1.5 leading-relaxed">
                       Та <span className=" text-[color:var(--panel-text)]">"{itemToDelete?.ner}"</span> зардлыг устгахдаа итгэлтэй байна уу? Энэ үйлдлийг буцаах боломжгүй.
                     </p>
                   </div>
@@ -1663,16 +1653,16 @@ export default function AshiglaltiinZardluud() {
                     <button
                       type="button"
                       onClick={() => setDeleteModalOpen(false)}
-                      className="flex-1 py-2.5 text-xs rounded-xl border border-[color:var(--surface-border)] text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] transition-all cursor-pointer"
+                      className="stg-btn stg-btn-ghost flex-1 cursor-pointer"
                     >
                       Хаах
                     </button>
                     <button
                       type="button"
                       onClick={handleDeleteConfirm}
-                      className="flex-1 py-2.5 text-xs rounded-xl bg-danger hover:bg-danger/90 text-white shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="flex-1 h-10 text-[14px] rounded-[0.625rem] bg-danger hover:bg-danger/90 text-white transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-4 h-4" />
                       <span>Устгах</span>
                     </button>
                   </div>
@@ -1694,29 +1684,29 @@ export default function AshiglaltiinZardluud() {
               >
                 {/* Backdrop */}
                 <motion.div
-                  className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                  className="absolute inset-0 bg-black/50"
                   onClick={() => !isCopying && setIsCopyModalOpen(false)}
                 />
 
                 {/* Modal */}
                 <motion.div
-                  className="relative z-10 w-full max-w-sm bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-2xl shadow-2xl overflow-hidden"
+                  className="relative z-10 w-full max-w-md bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-2xl shadow-lg overflow-hidden"
                   initial={{ opacity: 0, scale: 0.96, y: 12 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.96, y: 12 }}
                   transition={{ duration: 0.2, ease: "easeOut" }}
                 >
                   {/* Header */}
-                  <div className="p-4 border-b border-[color:var(--surface-border)] flex items-center justify-between bg-gradient-to-r from-theme/10 to-theme/5">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-xl bg-theme/10 text-theme flex items-center justify-center border border-theme/20">
-                        <CopyPlus className="w-4 h-4" />
+                  <div className="px-5 py-4 border-b border-[color:var(--surface-border)] flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-theme/10 text-brand flex items-center justify-center shrink-0">
+                        <CopyPlus className="w-5 h-5" />
                       </div>
                       <div>
-                        <h3 className="text-sm text-[color:var(--panel-text)]">
+                        <h3 className="text-[16px] text-[color:var(--panel-text)]">
                           Барилгуудад хуулах
                         </h3>
-                        <p className="text-[11px] text-[color:var(--muted-text)] mt-0.5">
+                        <p className="text-[12px] text-[color:var(--muted-text)] mt-0.5">
                           Эх: {allBarilguud.find((b) => String(b._id) === String(effectiveBarilgiinId))?.ner || "Сонгогдсон барилга"}
                         </p>
                       </div>
@@ -1724,22 +1714,24 @@ export default function AshiglaltiinZardluud() {
                     <button
                       type="button"
                       onClick={() => !isCopying && setIsCopyModalOpen(false)}
-                      className="w-7 h-7 rounded-lg flex items-center justify-center text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] transition-all cursor-pointer"
+                      className="w-9 h-9 shrink-0 rounded-lg flex items-center justify-center text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] transition-all cursor-pointer"
+                      title="Хаах"
+                      aria-label="Хаах"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-5 h-5" />
                     </button>
                   </div>
 
                   {/* Body */}
-                  <div className="p-4 space-y-3">
-                    <p className="text-xs text-[color:var(--muted-text)] leading-relaxed">
+                  <div className="p-5 space-y-3">
+                    <p className="text-[13px] text-[color:var(--muted-text)] leading-relaxed">
                       Сонгосон барилгуудын хуучин зардлуудыг <span className="text-[color:var(--panel-text)]">бүтэн солино</span>. Хуулах барилгуудаа сонгоно уу:
                     </p>
 
                     {/* Select All */}
-                    <label className="flex items-center gap-2.5 py-2 px-3 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] cursor-pointer hover:bg-theme/5 transition-all">
+                    <label className="flex min-h-11 items-center gap-3 py-2 px-3.5 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] cursor-pointer transition-all">
                       <div
-                        className={`w-4 h-4 rounded flex items-center justify-center border-2 transition-all ${
+                        className={`w-5 h-5 rounded-md flex items-center justify-center border-2 transition-all ${
                           selectedCopyTargets.length === otherBarilguud.length && otherBarilguud.length > 0
                             ? "bg-theme border-theme"
                             : "border-[color:var(--surface-border)]"
@@ -1753,25 +1745,25 @@ export default function AshiglaltiinZardluud() {
                         }}
                       >
                         {selectedCopyTargets.length === otherBarilguud.length && otherBarilguud.length > 0 && (
-                          <Check className="w-2.5 h-2.5 text-white" />
+                          <Check className="w-3.5 h-3.5 text-white" />
                         )}
                       </div>
-                      <span className="text-xs text-[color:var(--panel-text)]">Бүгдийг сонгох</span>
-                      <span className="ml-auto text-[11px] text-[color:var(--muted-text)]">{otherBarilguud.length} барилга</span>
+                      <span className="text-[13px] text-[color:var(--panel-text)]">Бүгдийг сонгох</span>
+                      <span className="ml-auto text-[12px] text-[color:var(--muted-text)]">{otherBarilguud.length} барилга</span>
                     </label>
 
                     {/* Building list */}
-                    <div className="space-y-1.5 max-h-52 overflow-y-auto custom-scrollbar">
+                    <div className="space-y-1.5 max-h-64 overflow-y-auto custom-scrollbar">
                       {otherBarilguud.map((barilga) => {
                         const bid = String(barilga._id);
                         const isChecked = selectedCopyTargets.includes(bid);
                         return (
                           <label
                             key={bid}
-                            className="flex items-center gap-2.5 py-2 px-3 rounded-xl border border-[color:var(--surface-border)] cursor-pointer hover:bg-[color:var(--surface-hover)] transition-all"
+                            className="flex min-h-11 items-center gap-3 py-2 px-3.5 rounded-xl border border-[color:var(--surface-border)] cursor-pointer hover:bg-[color:var(--surface-hover)] transition-all"
                           >
                             <div
-                              className={`w-4 h-4 rounded flex items-center justify-center border-2 transition-all shrink-0 ${
+                              className={`w-5 h-5 rounded-md flex items-center justify-center border-2 transition-all shrink-0 ${
                                 isChecked ? "bg-theme border-theme" : "border-[color:var(--surface-border)]"
                               }`}
                               onClick={() => {
@@ -1780,10 +1772,10 @@ export default function AshiglaltiinZardluud() {
                                 );
                               }}
                             >
-                              {isChecked && <Check className="w-2.5 h-2.5 text-white" />}
+                              {isChecked && <Check className="w-3.5 h-3.5 text-white" />}
                             </div>
-                            <Building className="w-3.5 h-3.5 text-[color:var(--muted-text)] shrink-0" />
-                            <span className="text-xs text-[color:var(--panel-text)] truncate">
+                            <Building className="w-4 h-4 text-[color:var(--muted-text)] shrink-0" />
+                            <span className="text-[13px] text-[color:var(--panel-text)] truncate">
                               {barilga.ner || bid}
                             </span>
                           </label>
@@ -1793,11 +1785,11 @@ export default function AshiglaltiinZardluud() {
                   </div>
 
                   {/* Footer */}
-                  <div className="p-4 pt-2 border-t border-[color:var(--surface-border)] flex items-center gap-2">
+                  <div className="px-5 py-4 border-t border-[color:var(--surface-border)] flex items-center gap-2">
                     <button
                       type="button"
                       onClick={() => !isCopying && setIsCopyModalOpen(false)}
-                      className="flex-1 py-2.5 text-xs rounded-xl border border-[color:var(--surface-border)] text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] transition-all cursor-pointer"
+                      className="stg-btn stg-btn-ghost flex-1 cursor-pointer"
                       disabled={isCopying}
                     >
                       Цуцлах
@@ -1806,12 +1798,12 @@ export default function AshiglaltiinZardluud() {
                       type="button"
                       onClick={handleCopyToBuildings}
                       disabled={isCopying || selectedCopyTargets.length === 0}
-                      className="flex-1 py-2.5 text-xs rounded-xl bg-theme hover:bg-theme/90 text-white shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="stg-btn stg-btn-primary flex-1 cursor-pointer"
                     >
                       {isCopying ? (
-                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        <RefreshCw className="w-4 h-4 animate-spin" />
                       ) : (
-                        <CopyPlus className="w-3.5 h-3.5" />
+                        <CopyPlus className="w-4 h-4" />
                       )}
                       <span>{isCopying ? "Хуулж байна..." : `${selectedCopyTargets.length} барилгад хуулах`}</span>
                     </button>

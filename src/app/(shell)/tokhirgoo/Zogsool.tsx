@@ -10,7 +10,7 @@ import uilchilgee from "@/lib/uilchilgee";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { Loader } from "@mantine/core";
-import Button from "@/components/ui/Button";
+import { SettingsCard } from "./SettingsRow";
 import Table from "@/components/ui/table";
 import type { ColumnsType } from "@/components/ui/table";
 
@@ -186,7 +186,7 @@ export default function Zogsool({
         width: 120,
         align: "center",
         render: (v: any) => (
-          <span className="inline-flex items-center rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] px-3 py-0.5">
+          <span className="inline-flex items-center rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] px-2.5 py-1 text-[13px]">
             {v} <span className="ml-1 opacity-70">машин</span>
           </span>
         ),
@@ -198,7 +198,7 @@ export default function Zogsool({
         width: 150,
         align: "right",
         render: (v: any) => (
-          <span className="inline-flex items-center rounded-lg border border-theme/30 bg-theme/10 px-3 py-0.5 text-brand/60">
+          <span className="inline-flex items-center rounded-lg border border-theme/30 bg-theme/10 px-2.5 py-1 text-[13px] text-brand">
             {formatNumber(v)} ₮
           </span>
         ),
@@ -213,13 +213,13 @@ export default function Zogsool({
               khaalga.map((gate: any, gateIdx: number) => (
                 <span
                   key={gateIdx}
-                  className="inline-flex items-center rounded-lg border border-theme/30 bg-theme/10 px-3 py-0.5 text-brand/60"
+                  className="inline-flex items-center rounded-lg border border-theme/30 bg-theme/10 px-2.5 py-1 text-[13px] text-brand"
                 >
                   {gate.ner}
                 </span>
               ))
             ) : (
-              <span className="italic opacity-60">Хаалга холбоогүй</span>
+              <span className="text-[13px] text-[color:var(--muted-text)]">Хаалга холбоогүй</span>
             )}
           </div>
         ),
@@ -233,16 +233,18 @@ export default function Zogsool({
           <div className="flex items-center justify-center gap-1">
             <button
               onClick={() => openEdit(record)}
-              className="rounded-lg p-1.5 text-brand transition-colors hover:bg-theme/10 dark:hover:bg-theme/10"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-brand transition-colors hover:bg-theme/10"
               title="Засах"
+              aria-label="Засах"
             >
               <Edit className="h-4 w-4" />
             </button>
             {record._id && (
               <button
                 onClick={() => deleteZogsool(record._id!)}
-                className="rounded-lg p-1.5 text-danger transition-colors hover:bg-danger/10"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-danger transition-colors hover:bg-danger/10"
                 title="Устгах"
+              aria-label="Устгах"
               >
                 <Trash2 className="h-4 w-4" />
               </button>
@@ -256,100 +258,74 @@ export default function Zogsool({
   );
 
   if (view === "form") {
-  return (
-      <div className="h-full flex flex-col overflow-hidden">
-        <div className="bg-[color:var(--surface-bg)] rounded-2xl border border-[color:var(--surface-border)] p-4 sm:p-6 flex-1 flex flex-col overflow-hidden">
-          {/* Header */}
-          <div className="flex items-center justify-between pb-4 border-b border-[color:var(--surface-border)] shrink-0">
-            <div>
-              <h2 className="text-lg text-[color:var(--panel-text)] tracking-tight">
-                {editingItem ? "Зогсоол засах" : "Шинэ зогсоол бүртгэх"}
-              </h2>
-              <p className="text-xs text-[color:var(--muted-text)]">
-                {editingItem ? `ID: ${editingItem._id || editingItem.key}` : "Системд шинэ зогсоолын талбай үүсгэх"}
-              </p>
-            </div>
+    return (
+      <div className="w-full">
+        <SettingsCard
+          icon={<Car className="h-4 w-4" />}
+          title={editingItem ? "Зогсоол засах" : "Шинэ зогсоол бүртгэх"}
+          subtitle={
+            editingItem
+              ? `ID: ${editingItem._id || editingItem.key}`
+              : "Системд шинэ зогсоолын талбай үүсгэх"
+          }
+          toggle={
             <div className="flex items-center gap-2">
-              <Button
+              <button
+                type="button"
                 onClick={handleCloseForm}
-                variant="ghost"
-                size="sm"
-                style={{ borderRadius: '10px' }}
-                className="px-3"
+                className="stg-btn stg-btn-ghost"
               >
                 Хаах
-              </Button>
-              <Button
+              </button>
+              <button
+                type="button"
                 onClick={() => zogsoolRef.current?.khadgalya()}
-                variant="primary"
-                size="sm"
-                isLoading={isValidating}
-                style={{ borderRadius: '10px' }}
-                className="px-4"
+                disabled={isValidating}
+                className="stg-btn stg-btn-primary"
               >
+                {isValidating ? <Loader size="xs" color="white" /> : null}
                 Хадгалах
-              </Button>
+              </button>
             </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto custom-scrollbar pt-4">
-            <ZogsoolBurtgekh
-              ref={zogsoolRef}
-              data={editingItem}
-              jagsaalt={zogsoolData}
-              barilgiinId={effectiveBarilgiinId || barilgiinId || undefined}
-              token={token || ""}
-              refresh={refreshZogsool}
-              onClose={handleCloseForm}
-            />
-          </div>
-        </div>
+          }
+        >
+          <ZogsoolBurtgekh
+            ref={zogsoolRef}
+            data={editingItem}
+            jagsaalt={zogsoolData}
+            barilgiinId={effectiveBarilgiinId || barilgiinId || undefined}
+            token={token || ""}
+            refresh={refreshZogsool}
+            onClose={handleCloseForm}
+          />
+        </SettingsCard>
       </div>
     );
   }
 
   return (
-    <div className="h-full overflow-y-auto custom-scrollbar">
-      <div className="bg-[color:var(--surface-bg)] rounded-2xl border border-[color:var(--surface-border)] p-4 sm:p-5 space-y-4">
-        {/* Top Header Row with Metrics */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-[color:var(--surface-border)] shrink-0">
-          <div className="flex items-center gap-4 flex-wrap">
-            <div>
-              <h2 className="text-xl text-[color:var(--panel-text)] tracking-tight">
-                Зогсоолын тохиргоо
-              </h2>
-              <p className="text-xs text-[color:var(--muted-text)]">
-                Нийт <span className="text-brand">{totalRecords}</span> талбай тохируулагдсан
-              </p>
-            </div>
-            
-            {/* Quick Metrics Pills */}
-            <div className="flex items-center gap-2 text-xs">
-              <span style={{ borderRadius: '10px' }} className="px-3 py-1 bg-[color:var(--surface-hover)] text-[color:var(--panel-text)] dark:text-white border border-[color:var(--surface-border)] font-medium">
-                Нийт талбай: <span className="text-brand font-medium">{totalRecords}</span>
-              </span>
-              <span style={{ borderRadius: '10px' }} className="px-3 py-1 bg-theme/10 text-brand border border-theme/30 font-medium">
-                Багтаамж: <span className="text-brand font-medium">{totalCapacity} машин</span>
-              </span>
-              <span style={{ borderRadius: '10px' }} className="px-3 py-1 bg-theme/10 text-brand border border-theme/30 font-medium">
-                Хаалга: <span className="text-brand font-medium">{totalGates}</span>
-              </span>
-            </div>
-          </div>
-
-          <Button
+    <div className="w-full">
+      <SettingsCard
+        icon={<Car className="h-4 w-4" />}
+        title="Зогсоолууд"
+        subtitle={
+          <>
+            Нийт {totalRecords} талбай · Багтаамж {totalCapacity} машин · Хаалга{" "}
+            {totalGates}
+          </>
+        }
+        toggle={
+          <button
+            type="button"
             onClick={openAdd}
-            variant="primary"
-            size="sm"
-            style={{ borderRadius: '10px' }}
-            className="shrink-0 px-4"
+            className="stg-btn stg-btn-primary"
           >
+            <Plus className="h-4 w-4" />
             Шинэ зогсоол нэмэх
-          </Button>
-        </div>
-
-        {/* Стандарт хүснэгт */}
-        <>
+          </button>
+        }
+      >
+        <div className="space-y-4">
           <Table<ZogsoolItem>
             columns={zogsoolColumns}
             dataSource={paginatedData}
@@ -359,10 +335,12 @@ export default function Zogsool({
             scroll={{ x: "max-content" }}
             locale={{
               emptyText: (
-                <div>
-                  <p>Зогсоолын талбай бүртгэгдээгүй байна</p>
-                  <p className="mt-1 text-xs opacity-70">
-                    &quot;Шинэ зогсоол нэмэх&quot; товчийг дарж зогсоолын систем
+                <div className="py-4">
+                  <p className="text-sm text-[color:var(--panel-text)]">
+                    Зогсоолын талбай бүртгэгдээгүй байна
+                  </p>
+                  <p className="mt-1 text-[13px] text-[color:var(--muted-text)]">
+                    Дээрх «Шинэ зогсоол нэмэх» товчийг дарж зогсоолоо
                     тохируулна уу
                   </p>
                 </div>
@@ -370,78 +348,78 @@ export default function Zogsool({
             }}
           />
 
-            {/* Pagination Controls — Fixed at bottom */}
-            {totalPages > 0 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0 pt-1 border-t border-[color:var(--surface-border)]">
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-[color:var(--panel-text)]">
-                    Нийт <span>{totalRecords}</span> талбай
-                  </span>
+          {/* Хуудаслалт */}
+          {totalPages > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-[color:var(--surface-border)]">
+              <div className="flex items-center gap-3">
+                <span className="text-[13px] text-[color:var(--muted-text)]">
+                  Нийт{" "}
+                  <span className="text-[color:var(--panel-text)]">
+                    {totalRecords}
+                  </span>{" "}
+                  талбай
+                </span>
 
-                  {/* Page Size Selector */}
-                  <div className="relative page-size-selector">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setIsPageSizeOpen(!isPageSizeOpen)}
-                      className="!rounded-xl border border-[color:var(--surface-border)] dark:border-white/10"
-                    >
-                      {pageSize} / хуудас
-                    </Button>
-                    {isPageSizeOpen && (
-                      <div className="absolute bottom-full mb-2 left-0 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-2xl shadow-xl z-20 min-w-[110px] overflow-hidden p-1">
-                        {[10, 20, 50, 100, 500].map((size) => (
-                          <button
-                            key={size}
-                            onClick={() => {
-                              setPageSize(size);
-                              setPage(1);
-                              setIsPageSizeOpen(false);
-                            }}
-                            className={`w-full px-3 py-1.5 rounded-xl text-left text-xs transition-colors ${
-                              pageSize === size
-                                ? "bg-theme/10 text-brand"
-                                : "text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"
-                            }`}
-                          >
-                            {size}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                    className="!rounded-xl border border-[color:var(--surface-border)] dark:border-white/10"
-                    leftIcon={<ChevronLeft className="w-4 h-4" />}
+                {/* Page Size Selector */}
+                <div className="relative page-size-selector">
+                  <button
+                    type="button"
+                    onClick={() => setIsPageSizeOpen(!isPageSizeOpen)}
+                    className="stg-btn stg-btn-ghost"
                   >
-                    Өмнөх
-                  </Button>
-                  <span className="text-xs text-[color:var(--panel-text)] px-3">
-                    {page} / {totalPages || 1}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={page >= totalPages}
-                    className="!rounded-xl border border-[color:var(--surface-border)] dark:border-white/10"
-                    rightIcon={<ChevronRight className="w-4 h-4" />}
-                  >
-                    Дараах
-                  </Button>
+                    {pageSize} / хуудас
+                  </button>
+                  {isPageSizeOpen && (
+                    <div className="absolute bottom-full mb-2 left-0 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-xl shadow-md z-20 min-w-[120px] overflow-hidden p-1">
+                      {[10, 20, 50, 100, 500].map((size) => (
+                        <button
+                          key={size}
+                          onClick={() => {
+                            setPageSize(size);
+                            setPage(1);
+                            setIsPageSizeOpen(false);
+                          }}
+                          className={`w-full h-9 px-3 rounded-lg text-left text-sm transition-colors ${
+                            pageSize === size
+                              ? "bg-theme/10 text-brand"
+                              : "text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"
+                          }`}
+                        >
+                          {size}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
-            )}
-        </>
-      </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="stg-btn stg-btn-ghost"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Өмнөх
+                </button>
+                <span className="text-sm text-[color:var(--panel-text)] px-2">
+                  {page} / {totalPages || 1}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page >= totalPages}
+                  className="stg-btn stg-btn-ghost"
+                >
+                  Дараах
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </SettingsCard>
     </div>
   );
 }
-

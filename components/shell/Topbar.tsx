@@ -151,44 +151,32 @@ export default function Topbar({
         <h1 className="shell-title">{title}</h1>
       )}
 
-      {/* ── License & Storage Status Badges (Between Title and Search Bar) ── */}
+      {/* Лиценз ба дата — нэг тайван шошго. Лиценз 15 хоногоос бага үлдвэл
+          л улаан болж анхаарал татна; бусад үед өнгөгүй. */}
       {isLoggedIn &&
-        (remainingDays !== null && remainingDays !== undefined ||
-          storageLabel !== null && storageLabel !== undefined) && (
-          <div className="hidden lg:flex items-center gap-2 mx-3 shrink-0">
+        ((remainingDays !== null && remainingDays !== undefined) ||
+          (storageLabel !== null && storageLabel !== undefined)) && (
+          <div className="tb-status hidden lg:flex">
             {remainingDays !== null && remainingDays !== undefined && (
-              <div
+              <span
                 title={`Лицензийн үлдсэн хугацаа: ${remainingDays} хоног`}
-                className={`h-9 flex items-center gap-1.5 px-3.5 rounded-xl text-xs border backdrop-blur-md transition shadow-2xs select-none ${
-                  remainingDays <= 15
-                    ? "bg-danger/10 border-danger/30 text-danger"
-                    : "bg-success/10 border-success/25 text-success"
-                }`}
+                className={`tb-status-item ${remainingDays <= 15 ? "is-danger" : ""}`}
               >
-                {/* Өнгө нь контейнерээс өвлөнө — лиценз дуусах дөхөхөд улаан болно */}
-                <CalendarClock className="h-4 w-4 shrink-0" />
-                <span className="text-xs font-semibold text-[color:var(--muted-text)] leading-none">
-                  Лиценз:
-                </span>
-                <span className="text-xs font-bold leading-none">
-                  {remainingDays} хоног
-                </span>
-              </div>
+                <CalendarClock className="h-4 w-4 shrink-0" strokeWidth={ICON_STROKE} />
+                <span className="tb-status-label">Лиценз</span>
+                <span className="tb-status-value">{remainingDays} хоног</span>
+              </span>
             )}
-
+            {remainingDays !== null &&
+              remainingDays !== undefined &&
+              storageLabel !== null &&
+              storageLabel !== undefined && <span className="tb-status-sep" aria-hidden />}
             {storageLabel !== null && storageLabel !== undefined && (
-              <div
-                title={`Ашигласан дата: ${storageLabel}`}
-                className="h-9 flex items-center gap-1.5 px-3.5 rounded-xl text-xs border border-info/25 bg-info/10 text-info backdrop-blur-md transition shadow-2xs select-none"
-              >
-                <Database className="h-4 w-4 shrink-0" />
-                <span className="text-xs font-semibold text-[color:var(--muted-text)] leading-none">
-                  Дата:
-                </span>
-                <span className="text-xs font-bold leading-none">
-                  {storageLabel}
-                </span>
-              </div>
+              <span title={`Ашигласан дата: ${storageLabel}`} className="tb-status-item">
+                <Database className="h-4 w-4 shrink-0" strokeWidth={ICON_STROKE} />
+                <span className="tb-status-label">Дата</span>
+                <span className="tb-status-value">{storageLabel}</span>
+              </span>
             )}
           </div>
         )}
@@ -262,10 +250,10 @@ export default function Topbar({
             {userMenuOpen && (
               <div role="menu" className="shell-usermenu">
                 <div className="shell-usermenu-head">
-                  <span className="block truncate text-[13px] font-semibold text-[color:var(--panel-text)]">
+                  <span className="block truncate text-[14px] text-[color:var(--panel-text)]">
                     {userName}
                   </span>
-                  <span className="block truncate text-[11px] text-[color:var(--panel-text)]/45">
+                  <span className="block truncate text-[12px] text-[color:var(--muted-text)]">
                     {ajiltan?.erkh || "Ажилтан"}
                   </span>
                 </div>

@@ -6,6 +6,7 @@ import { t } from "i18next";
 import formatNumber from "../../../../tools/function/formatNumber";
 import Button from "@/components/ui/Button";
 import uilchilgee from "@/lib/uilchilgee";
+import { SettingsCard, SettingsItem } from "./SettingsRow";
 
 interface StorageInfo {
   total: { dataSize: number; storageSize: number; indexSize: number };
@@ -55,72 +56,52 @@ function Baaz({ token, ajiltan }: BaazProps) {
   }
 
   return (
-    <div className="relative">
-      <div className="grid grid-cols-12 gap-6 mt-6">
-
-        {/* Storage Info Card */}
-        <div className="col-span-12 lg:col-span-6">
-          <div className="bg-gradient-to-br from-theme/10 to-theme/5 shadow-lg rounded-2xl overflow-hidden border border-theme/50">
-            <div className="px-6 py-4 border-b border-theme/50 bg-gradient-to-r from-theme/50 to-theme/50 flex items-center gap-2">
-              <HardDrive className="w-5 h-5 text-brand" />
-              <h2 className="text-lg text-theme">{t("Ашиглаж буй Storage")}</h2>
+    <div className="stg-page">
+      <SettingsCard
+        icon={<HardDrive className="h-4 w-4" />}
+        title={t("Ашиглаж буй Storage")}
+        subtitle="Таны байгууллагын өгөгдлийн сангийн нийт хэмжээ"
+      >
+        {storageLoading ? (
+          <p className="text-[14px] text-[color:var(--muted-text)]">Уншиж байна...</p>
+        ) : storageInfo ? (
+          <div>
+            <div className="text-[28px] leading-tight tabular-nums text-brand">
+              {fmtBytes(storageInfo.total.dataSize)}
             </div>
-            <div className="p-6">
-              {storageLoading ? (
-                <div className="text-sm text-theme opacity-60">Уншиж байна...</div>
-              ) : storageInfo ? (
-                <div className="flex items-center gap-4">
-                  <HardDrive className="w-10 h-10 text-brand flex-shrink-0" />
-                  <div>
-                    <div className="text-3xl font-medium text-brand">
-                      {fmtBytes(storageInfo.total.dataSize)}
-                    </div>
-                    <div className="text-xs text-theme opacity-60 mt-1 ">
-                      Нийт ашиглаж буй өгөгдөл
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-sm text-theme opacity-50">Storage мэдээлэл авах боломжгүй</div>
-              )}
+            <div className="mt-1 text-[13px] text-[color:var(--muted-text)]">
+              Нийт ашиглаж буй өгөгдөл
             </div>
           </div>
-        </div>
+        ) : (
+          <p className="text-[14px] text-[color:var(--muted-text)]">
+            Хэмжээг одоогоор авах боломжгүй байна. Хуудсаа дахин ачааллаад үзнэ үү.
+          </p>
+        )}
+      </SettingsCard>
 
-        {/* Backup Card */}
-        <div className="col-span-12 lg:col-span-6">
-          <div className="bg-gradient-to-br from-theme/10 to-theme/5 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl overflow-hidden border border-theme/50">
-            <div className="px-6 py-4 border-b border-theme/50 bg-gradient-to-r from-theme/50 to-theme/50">
-              <h2 className="text-lg text-theme flex items-center gap-2">
-                <div className="p-2 bg-theme/10 rounded-lg">
-                  <Download className="w-5 h-5 text-brand" />
-                </div>
-                {t("Мэдээллийн сан")}
-              </h2>
-            </div>
-            <div className="p-6 flex items-center justify-between">
-              <div>
-                <div className="text-theme mb-1">{t("Системийн өгөгдөл")}</div>
-                <p className="text-sm text-[color:var(--muted-text)]">
-                  {t("Сүүлд шинэчилсэн")} {new Date().toLocaleDateString()}
-                </p>
-              </div>
-              <Button
-                variant="primary"
-                size="sm"
-                className="text-white transition-all duration-200"
-                style={{ borderRadius: "0.75rem" }}
-                isLoading={loading}
-                onClick={backTatya}
-                leftIcon={<Download className="w-4 h-4" />}
-              >
-                {t("Татах")}
-              </Button>
-            </div>
-          </div>
-        </div>
-
-      </div>
+      <SettingsCard
+        icon={<Download className="h-4 w-4" />}
+        title={t("Мэдээллийн сан")}
+        subtitle={`${t("Сүүлд шинэчилсэн")} ${new Date().toLocaleDateString()}`}
+      >
+        <SettingsItem
+          title={t("Системийн өгөгдөл")}
+          desc="Өгөгдлийн хуулбарыг компьютер дээрээ татаж хадгална"
+          control={
+            <Button
+              variant="primary"
+              size="sm"
+              className="!h-10 !rounded-[10px] !px-4 text-white"
+              isLoading={loading}
+              onClick={backTatya}
+              leftIcon={<Download className="w-4 h-4" />}
+            >
+              {t("Татах")}
+            </Button>
+          }
+        />
+      </SettingsCard>
     </div>
   );
 }
