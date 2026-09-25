@@ -19,6 +19,7 @@ export function SettingsCard({
   onSave,
   saveId,
   saving,
+  stickyHead,
   children,
 }: {
   id?: string;
@@ -32,11 +33,13 @@ export function SettingsCard({
   /** Товчны id — аялалын алхмууд (tour) үүгээр олдог */
   saveId?: string;
   saving?: boolean;
+  /** Урт маягтад толгой (гарчиг + товчнууд) гүйлгэхэд дээр наалдана */
+  stickyHead?: boolean;
   children?: ReactNode;
 }) {
   return (
     <section id={id} className="stg-card">
-      <header className="stg-card-head">
+      <header className={stickyHead ? "stg-card-head stg-card-head-sticky" : "stg-card-head"}>
         {icon ? <span className="stg-icon">{icon}</span> : null}
         <div className="stg-card-titles">
           <h3 className="stg-card-title">{title}</h3>

@@ -141,6 +141,31 @@ function Tokhirgoo() {
   });
   const [khumigdsan, setKhumigdsan] = useState(false);
   const tsesNuugdsan = khumigdsan && !tsesTogtmol;
+
+  // Цэс нуугдах бүрд «энд дарж буцааж харуулна» заавар — «Дахин харуулахгүй»
+  // дарвал дахиж гарахгүй.
+  const ZAAVAR_KEY = "tokhirgoo_nav_zaavar_nuukh";
+  const [zaavarKharuulakh, setZaavarKharuulakh] = useState(false);
+  useEffect(() => {
+    if (!tsesNuugdsan) {
+      setZaavarKharuulakh(false);
+      return;
+    }
+    try {
+      if (localStorage.getItem(ZAAVAR_KEY) === "1") return;
+    } catch {
+      /* уншиж чадахгүй бол харуулна */
+    }
+    setZaavarKharuulakh(true);
+  }, [tsesNuugdsan]);
+  const zaavarDakhinKharuulakhgui = () => {
+    setZaavarKharuulakh(false);
+    try {
+      localStorage.setItem(ZAAVAR_KEY, "1");
+    } catch {
+      /* хадгалах боломжгүй */
+    }
+  };
   const togtmolSolikh = () => {
     const v = !tsesTogtmol;
     setTsesTogtmol(v);
@@ -255,8 +280,9 @@ function Tokhirgoo() {
       )}
 
       <div
-        className="min-w-0 flex-1 text-theme"
-        // Агуулга дээр ажиллаж эхэлмэгц цэсийг хумина (зөвхөн том дэлгэцэнд)
+        // Том дэлгэцэнд агуулга дэлгэцийн өндөртэй, дотроо гүйнэ — хуудас
+        // бүхэлдээ гүйж цэс/товчнууд харагдахгүй болохоос сэргийлнэ.
+        className="min-w-0 flex-1 text-theme lg:flex lg:h-[calc(100dvh-var(--shell-topbar-h,56px)-2.25rem)] lg:flex-col"
         onFocusCapture={(e) => {
           // Зөвхөн талбарт бичих/сонгох үед (товч дарахад биш)
           const t = e.target as HTMLElement;
@@ -265,11 +291,16 @@ function Tokhirgoo() {
         }}
       >
         {tsesNuugdsan && tokhirgoo[selectedIndexInternal] && (
-          <div className="mb-3 hidden items-center gap-3 lg:flex">
+          <div className="relative mb-3 hidden shrink-0 items-center gap-3 lg:flex">
             <button
               type="button"
-              onClick={() => setKhumigdsan(false)}
-              className="btn-minimal inline-flex h-10 items-center gap-2 !px-3.5 text-[14px]"
+              onClick={() => {
+                setKhumigdsan(false);
+                setZaavarKharuulakh(false);
+              }}
+              className={`btn-minimal inline-flex h-10 items-center gap-2 !px-3.5 text-[14px] ${
+                zaavarKharuulakh ? "!border-theme ring-2 ring-theme/25" : ""
+              }`}
             >
               <Menu className="h-4 w-4" />
               Тохиргооны цэс
@@ -278,6 +309,40 @@ function Tokhirgoo() {
               {tokhirgoo[selectedIndexInternal].icon}
               {tokhirgoo[selectedIndexInternal].text}
             </span>
+
+            {/* Цэс нуугдсаныг анх удаа мэдэгдэх заавар */}
+            {zaavarKharuulakh && (
+              <div
+                role="status"
+                className="absolute left-0 top-full z-40 mt-2 w-[320px] rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-4 shadow-xl"
+              >
+                <span
+                  aria-hidden
+                  className="absolute -top-1.5 left-6 h-3 w-3 rotate-45 border-l border-t border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]"
+                />
+                <p className="text-[14px] text-[color:var(--panel-text)]">Цэс түр нуугдлаа</p>
+                <p className="mt-1 text-[13px] leading-relaxed text-[color:var(--muted-text)]">
+                  Ажиллах зай өргөн болгохын тулд цэсийг нуусан. Өөр тохиргоо руу орох бол
+                  дээрх <span className="text-brand">«Тохиргооны цэс»</span> товчийг дарж буцааж харуулна.
+                </p>
+                <div className="mt-3 flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={zaavarDakhinKharuulakhgui}
+                    className="btn-minimal inline-flex h-9 items-center !px-3 text-[13px]"
+                  >
+                    Дахин харуулахгүй
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setZaavarKharuulakh(false)}
+                    className="inline-flex h-9 items-center rounded-[10px] bg-theme px-3.5 text-[13px] !text-white"
+                  >
+                    Ойлголоо
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
         {tokhirgoo.length === 0 && ajiltan && (
@@ -287,6 +352,7 @@ function Tokhirgoo() {
             <p className="text-sm mt-2">Админ тань тохиргооны эрх олгоно уу.</p>
           </div>
         )}
+        <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain lg:pr-1 custom-scrollbar">
         {Tsonkh &&
           ajiltan &&
           (() => {
@@ -312,6 +378,7 @@ function Tokhirgoo() {
               </ChunkErrorBoundary>
             );
           })()}
+        </div>
       </div>
     </AdminLayout>
   );

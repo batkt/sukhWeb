@@ -5,8 +5,8 @@ import {
   TextInput as MTextInput,
   NumberInput as MNumberInput,
   Select as MSelect,
-  Switch as MSwitch,
 } from "@mantine/core";
+import { Switch } from "./SettingsRow";
 import moment from "moment";
 import { 
   Plus, 
@@ -397,13 +397,12 @@ function ZogsoolBurtgekh(
                 }
               },
             ].map((item: any) => (
-              <div key={item.field} className="flex min-h-12 items-center justify-between gap-3 px-4 py-3 rounded-xl bg-[color:var(--surface-hover)]">
-                <span className="text-sm text-[color:var(--panel-text)]">{item.label}</span>
-                <MSwitch
-                  checked={formData[item.field as keyof FormData] as boolean}
+              <div key={item.field} className="stg-item flex min-h-14 items-center justify-between gap-3">
+                <span className="text-[14px] text-[color:var(--panel-text)]">{item.label}</span>
+                <Switch
+                  label={item.label}
+                  checked={!!formData[item.field as keyof FormData]}
                   onChange={(e) => item.onChange ? item.onChange(e.currentTarget.checked) : updateField(item.field, e.currentTarget.checked)}
-                  size="sm"
-                  color="blue"
                 />
               </div>
             ))}
@@ -780,7 +779,8 @@ function ZogsoolBurtgekh(
                         </div>
                         <div className="pt-1.5 flex items-center justify-between">
                           <span className="text-[13px] text-[color:var(--panel-text)]">Дотор камерын горим (Indoor Mode)</span>
-                          <MSwitch
+                          <Switch
+                            label="Дотор камерын горим"
                             checked={cam.tokhirgoo?.dotorKamerEsekh || false}
                             onChange={(e) => {
                               const newKhaalga = [...(formData.khaalga || [])];
@@ -788,8 +788,6 @@ function ZogsoolBurtgekh(
                               newKhaalga[index].camera[camIndex].tokhirgoo.dotorKamerEsekh = e.currentTarget.checked;
                               setFormData((prev) => ({ ...prev, khaalga: newKhaalga }));
                             }}
-                            size="sm"
-                            color="blue"
                           />
                         </div>
                       </div>

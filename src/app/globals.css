@@ -7586,3 +7586,58 @@ select:focus-visible {
 .shell-brand-salbar .btn-minimal:hover {
   background: var(--surface-hover);
 }
+
+/* Урт маягтын картын толгой — гүйлгэхэд «Хадгалах» товч харагдсаар байна */
+.stg-card-head.stg-card-head-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  margin: -1.125rem -1.25rem 0;
+  padding: 1.125rem 1.25rem 0.875rem;
+  border-radius: 1rem 1rem 0 0;
+  background: var(--surface-bg);
+  border-bottom: 1px solid var(--surface-border);
+}
+
+/* ── Унтраалга (Switch) — том, загварын өнгөөр ─────────────────────────
+   44×24 — хуруу, хулганаар амархан дарна. Унтраасан үед саарал зам,
+   асаасан үед сонгосон загварын өнгө (--theme); бөмбөлөг үргэлж цагаан. */
+.tokh-switch {
+  --sw-travel: 1.25rem;
+  width: 2.75rem;
+  height: 1.5rem;
+  border: 0;
+  background: color-mix(in oklch, var(--muted-text), transparent 62%);
+}
+.tokh-switch-sm {
+  --sw-travel: 1rem;
+  width: 2.375rem;
+  height: 1.375rem;
+}
+.tokh-switch::after {
+  top: 0.1875rem;
+  left: 0.1875rem;
+  width: 1.125rem;
+  height: 1.125rem;
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.25);
+}
+.tokh-switch-sm::after {
+  width: 1rem;
+  height: 1rem;
+}
+label:hover > .peer:not(:checked) + .tokh-switch {
+  background: color-mix(in oklch, var(--muted-text), transparent 48%);
+}
+.peer:checked + .tokh-switch,
+.peer:checked:hover + .tokh-switch {
+  background: var(--theme);
+}
+.peer:focus-visible + .tokh-switch {
+  outline: 0;
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--theme), transparent 70%);
+}
+.peer:disabled + .tokh-switch {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

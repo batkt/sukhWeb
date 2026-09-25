@@ -263,6 +263,7 @@ export default function Zogsool({
         <SettingsCard
           icon={<Car className="h-4 w-4" />}
           title={editingItem ? "Зогсоол засах" : "Шинэ зогсоол бүртгэх"}
+          stickyHead
           subtitle={
             editingItem
               ? `ID: ${editingItem._id || editingItem.key}`
