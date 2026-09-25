@@ -841,7 +841,7 @@ export default function GuilgeeTable({
     <div className="w-full overflow-hidden">
       <div className="w-full">
         <Table
-          className="[&_td]:!py-0.5 [&_td]:!leading-tight"
+          className=""
           dataSource={data}
           loading={loading}
           pagination={false}

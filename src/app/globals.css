@@ -7641,3 +7641,54 @@ label:hover > .peer:not(:checked) + .tokh-switch {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* ═══ НЭГДСЭН ХҮСНЭГТ — бүх хуудсанд ижил хэмжээ, фонт, өндөр ══════════════
+   Хүснэгтийн бүрэлдэхүүн 11px суурьтай, хуудас бүр өөр өөр text-xs /
+   text-sm / 13px / mono фонт, padding тавьдаг тул хуудас хооронд зөрдөг байв.
+   Энд нэг мөр тогтооно (unlayered — Tailwind utility-г дарна):
+     толгой 12px саарал · нүд 13px · туслах бичвэр 12px · мөр 10px/12px. */
+.zt-table table {
+  font-size: 13px;
+  font-family: var(--font-sans);
+}
+.zt-table thead th {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.3;
+  padding: 10px 12px;
+}
+.zt-table tbody td,
+.zt-table tfoot td {
+  font-size: 13px;
+  line-height: 1.4;
+  padding: 9px 12px;
+}
+/* Нүд доторх бичвэрийн хэмжээг нэгтгэнэ: үндсэн → 13px, жижиг → 12px */
+.zt-table :is(tbody, tfoot) td :is(.text-xs, .text-sm, .text-base, .text-lg,
+  [class*="text-[13px]"], [class*="text-[14px]"], [class*="text-[15px]"]) {
+  font-size: 13px;
+}
+.zt-table :is(tbody, tfoot) td :is([class*="text-[10px]"], [class*="text-[11px]"], [class*="text-[12px]"]) {
+  font-size: 12px;
+}
+/* Моно фонтыг хэрэглэхгүй — тоо багана таарахад tabular-nums хангалттай */
+.zt-table tr,
+.zt-table :is(tbody, tfoot) td,
+.zt-table :is(tbody, tfoot) td :is(.font-mono, [class*="font-[family-name:var(--font-mono)]"]) {
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Толгойн урт нэр хөрш багана руу давхцахгүй — мөр шилжинэ, нүднээсээ гарахгүй */
+.zt-table thead th {
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: normal;
+  overflow: hidden;
+  text-wrap: balance;
+  vertical-align: middle;
+}
+.zt-table thead th > * {
+  max-width: 100%;
+  min-width: 0;
+}
