@@ -7731,3 +7731,68 @@ label:hover > .peer:not(:checked) + .tokh-switch {
   padding: 0;
   border-radius: 8px;
 }
+
+/* ── Нягт мөр (бүх хүснэгт) — өмнөхөөс ~2 дахин намхан ─────────────────
+   Нүд 3px × 8px, 13px, line-height 1.35 (≈24px мөр). Толгой 5px × 8px.
+   Үйлдлийн дүрс товч 26px — мөрийг өндөрсгөхгүй. */
+.zt-table table { font-size: 13px; }
+.zt-table thead th {
+  padding: 5px 8px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+.zt-table tbody td,
+.zt-table tfoot td {
+  padding: 3px 8px;
+  font-size: 13px;
+  line-height: 1.35;
+}
+.zt-table :is(tbody, tfoot) td :is(.text-xs, .text-sm, .text-base, .text-lg,
+  [class*="text-[13px]"], [class*="text-[14px]"], [class*="text-[15px]"]) {
+  font-size: 13px;
+}
+.zt-table td button:has(> svg.lucide:only-child) {
+  min-width: 26px;
+  min-height: 26px;
+}
+.zt-table td button:has(> svg.lucide:only-child) {
+  width: 26px;
+  height: 26px;
+}
+/* Шошгон доторх жижиг × — үйлдлийн товчны 26px дүрэм хамаарахгүй */
+.zt-table td button.tb-chip-x {
+  width: 16px;
+  height: 16px;
+  min-width: 0;
+  min-height: 0;
+}
+.zt-table td button.tb-chip-x > svg.lucide {
+  width: 10px;
+  height: 10px;
+}
+.zt-table td button.tb-chip-x { display: none; }
+.zt-table td .group:hover > button.tb-chip-x,
+.zt-table td button.tb-chip-x:focus-visible { display: inline-flex; }
+
+/* ── sonner мэдэгдэл — сонгосон загварын өнгөөр ─────────────────────── */
+[data-sonner-toaster] [data-sonner-toast] {
+  background: var(--surface-bg) !important;
+  color: var(--panel-text) !important;
+  border: 1px solid var(--surface-border) !important;
+  border-left-width: 4px !important;
+  border-radius: 12px !important;
+  font-size: 14px;
+  box-shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.25) !important;
+}
+[data-sonner-toaster] [data-sonner-toast][data-type="success"] { border-left-color: var(--theme) !important; }
+[data-sonner-toaster] [data-sonner-toast][data-type="success"] [data-icon] { color: var(--theme) !important; }
+[data-sonner-toaster] [data-sonner-toast][data-type="error"] { border-left-color: var(--danger) !important; }
+[data-sonner-toaster] [data-sonner-toast][data-type="error"] [data-icon] { color: var(--danger) !important; }
+[data-sonner-toaster] [data-sonner-toast][data-type="warning"] { border-left-color: var(--warning) !important; }
+[data-sonner-toaster] [data-sonner-toast][data-type="info"] { border-left-color: var(--info, var(--theme)) !important; }
+[data-sonner-toaster] [data-sonner-toast] [data-description] { color: var(--muted-text) !important; }
+[data-sonner-toaster] [data-sonner-toast] [data-close-button] {
+  background: var(--surface-bg) !important;
+  border-color: var(--surface-border) !important;
+  color: var(--muted-text) !important;
+}

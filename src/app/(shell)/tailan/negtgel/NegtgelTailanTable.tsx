@@ -278,6 +278,7 @@ export function NegtgelTailanTable({ data, loading, niitUldegdel, sarKhuree }: N
         width: 150,
         align: "left",
         fixed: "left",
+        sorter: (a: any, b: any) => String(a._id?.ner || a.ner || "").localeCompare(String(b._id?.ner || b.ner || ""), undefined, { numeric: true, sensitivity: "base" }),
         render: (_: any, record) => {
           const ovog = String(record._id?.ovog || record.ovog || "").trim();
           const ner = String(record._id?.ner || record.ner || "").trim();
@@ -292,17 +293,19 @@ export function NegtgelTailanTable({ data, loading, niitUldegdel, sarKhuree }: N
       {
         key: "toot",
         title: "Тоот",
-        width: 60,
+        width: 70,
         align: "center",
         fixed: "left",
+        sorter: (a: any, b: any) => String(a._id?.toot || a.toot || "").localeCompare(String(b._id?.toot || b.toot || ""), undefined, { numeric: true, sensitivity: "base" }),
         render: (_: any, record) => record._id?.toot || record.toot || "-",
       },
       {
         key: "orts",
         title: "Орц",
-        width: 50,
+        width: 64,
         align: "center",
         fixed: "left",
+        sorter: (a: any, b: any) => String(a._id?.orts || a.orts || "").localeCompare(String(b._id?.orts || b.orts || ""), undefined, { numeric: true, sensitivity: "base" }),
         render: (_: any, record) => record._id?.orts || record.orts || "-",
       },
       {
@@ -409,6 +412,7 @@ export function NegtgelTailanTable({ data, loading, niitUldegdel, sarKhuree }: N
       children: [
         {
           key: "niitBodogdson",
+          sorter: (a: any, b: any) => dunAvya(a).bodogdson - dunAvya(b).bodogdson,
           title: "Бодогдсон",
           width: NIIT_URGUN.bodogdson,
           align: "right",
@@ -420,6 +424,7 @@ export function NegtgelTailanTable({ data, loading, niitUldegdel, sarKhuree }: N
         },
         {
           key: "niitKhungulult",
+          sorter: (a: any, b: any) => dunAvya(a).khungulult - dunAvya(b).khungulult,
           title: "Хөнгөлөлт",
           width: NIIT_URGUN.khungulult,
           align: "right",
@@ -435,6 +440,7 @@ export function NegtgelTailanTable({ data, loading, niitUldegdel, sarKhuree }: N
         },
         {
           key: "niitUldegdel",
+          sorter: (a: any, b: any) => dunAvya(a).uldegdel - dunAvya(b).uldegdel,
           title: "Үлдэгдэл",
           width: NIIT_URGUN.uldegdel,
           align: "right",

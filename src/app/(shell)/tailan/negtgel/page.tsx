@@ -3,7 +3,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useBuilding } from "@/context/BuildingContext";
 import { useAuth } from "@/lib/useAuth";
-import useBaiguullaga from "@/lib/useBaiguullaga";
 import { StandardPagination } from "@/components/ui/StandardTable";
 import { ExcelButton } from "@/components/ui/ExcelButton";
 import dayjs, { Dayjs } from "dayjs";
@@ -12,7 +11,6 @@ import uilchilgee from "@/lib/uilchilgee";
 import { useSearch } from "@/context/SearchContext";
 import { NegtgelTailanTable, NegtgelTailanItem } from "./NegtgelTailanTable";
 import FilterDatePicker from "@/components/ui/FilterDatePicker";
-import FilterSelect from "@/components/ui/FilterSelect";
 
 /** Сарын хүрээг [эхний сарын 1, сүүлийн сарын сүүлийн өдөр] болгоно */
 const sarKhureeruu = (a: Dayjs, b: Dayjs): [string, string] => [
@@ -21,29 +19,9 @@ const sarKhureeruu = (a: Dayjs, b: Dayjs): [string, string] => [
 ];
 const odooginSar = (): [string, string] => sarKhureeruu(dayjs(), dayjs());
 
-/** Барилгын тохиргооны `orts`-ийг (тоо / массив / мөр) жагсаалт болгоно */
-function ortsJagsaalt(tok: any): string[] {
-  if (Array.isArray(tok)) return tok.map(String).filter(Boolean);
-  if (typeof tok === "number" && tok > 0)
-    return Array.from({ length: tok }, (_, i) => String(i + 1));
-  if (typeof tok === "string") {
-    const s = tok.trim();
-    if (/^\d+$/.test(s)) {
-      const n = Number(s);
-      return Array.from({ length: n }, (_, i) => String(i + 1));
-    }
-    return s.split(/[\s,;|]+/).filter(Boolean);
-  }
-  return [];
-}
-
 export default function NegtgelTailanPage() {
   const { selectedBuildingId } = useBuilding();
   const { token, ajiltan } = useAuth();
-  const { baiguullaga } = useBaiguullaga(
-    token || null,
-    ajiltan?.baiguullagiinId || null,
-  );
 
   const baiguullagiinId = ajiltan?.baiguullagiinId ?? null;
 
@@ -52,9 +30,6 @@ export default function NegtgelTailanPage() {
   // Оршин суугч (нэр, утас, тоот...) — бичих үед 400ms хүлээж хайна
   // Оршин суугчийн dropdown-оос сонгосон утга (утас эсвэл нэр) — сервер хайлтад явна
   const [searchText, setSearchText] = useState("");
-  const [orshinSuugchSongolt, setOrshinSuugchSongolt] = useState<
-    { value: string; label: string; tailbar?: string }[]
-  >([]);
   const [orts, setOrts] = useState("");
   const { searchTerm } = useSearch();
   const [currentPage, setCurrentPage] = useState(1);
@@ -155,50 +130,6 @@ export default function NegtgelTailanPage() {
   // мөрүүдтэй огт таарахгүй байв.
   const niitUldegdel = rawData?.niitDun?.niitUldegdel ?? 0;
 
-  // ── Оршин суугчийн сонголтууд ────────────────────────────────────────
-  // Шүүлтгүй ирсэн мөрүүдээс цуглуулна (оршин суугч сонгосны дараа жагсаалт
-  // багасахгүйн тулд хадгалж үлдээнэ). Барилга/орц/сар солигдоход шинэчлэгдэнэ.
-  useEffect(() => {
-    if (searchText || !rawData) return;
-    const map = new Map<string, { value: string; label: string; tailbar?: string }>();
-    (rawData.data || []).forEach((r: any) => {
-      const ner = String(r._id?.ner || r.ner || "").trim();
-      if (!ner) return;
-      const ovog = String(r._id?.ovog || r.ovog || "").trim();
-      const utas = String(r._id?.utas || r.utas || "").trim();
-      const toot = String(r._id?.toot || r.toot || "").trim();
-      const value = utas || ner;
-      if (map.has(value)) return;
-      map.set(value, {
-        value,
-        label: [ovog ? `${ovog.charAt(0)}.` : "", ner].filter(Boolean).join(" "),
-        tailbar: toot ? `${toot} тоот` : utas || undefined,
-      });
-    });
-    setOrshinSuugchSongolt(
-      Array.from(map.values()).sort((x, y) => x.label.localeCompare(y.label)),
-    );
-  }, [rawData, searchText]);
-
-  // ── Орцын сонголтууд ───────────────────────────────────────────────────
-  // Барилгын тохиргооноос; тохиргоогүй бол ирсэн мөрүүдээс цуглуулна
-  const ortsOptions = useMemo(() => {
-    const barilguud: any[] = (baiguullaga as any)?.barilguud || [];
-    const songogdson = selectedBuildingId
-      ? barilguud.filter((b) => String(b?._id) === String(selectedBuildingId))
-      : barilguud;
-    const set = new Set<string>();
-    songogdson.forEach((b) => ortsJagsaalt(b?.tokhirgoo?.orts).forEach((o) => set.add(o)));
-    if (set.size === 0) {
-      tailanGaralt.forEach((r) => {
-        const o = String(r._id?.orts || r.orts || "").trim();
-        if (o) set.add(o);
-      });
-    }
-    if (orts) set.add(orts);
-    return Array.from(set).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-  }, [baiguullaga, selectedBuildingId, tailanGaralt, orts]);
-
   // ── Excel export ────────────────────────────────────────────────────────
   const exportToExcel = async () => {
     try {
@@ -250,24 +181,6 @@ export default function NegtgelTailanPage() {
           }
           placeholder="Сар сонгох"
           className="w-[220px]"
-        />
-        <FilterSelect
-          id="negtgel-orshinSuugch"
-          label="Оршин суугч"
-          value={searchText}
-          onChange={setSearchText}
-          options={orshinSuugchSongolt}
-          searchable
-          searchPlaceholder="Нэр, утас, тоот..."
-          className="max-w-[280px]"
-        />
-        <FilterSelect
-          id="negtgel-orts"
-          label="Орц"
-          value={orts}
-          onChange={setOrts}
-          options={ortsOptions.map((o) => ({ value: o, label: o }))}
-          className="max-w-[200px]"
         />
         <ExcelButton
           className="ml-auto"

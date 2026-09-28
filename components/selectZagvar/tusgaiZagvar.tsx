@@ -321,7 +321,7 @@ export default function TusgaiZagvar({
                         opt.disabled
                           ? "opacity-50 cursor-not-allowed text-[color:var(--muted-text)]"
                           : opt.isOccupied
-                          ? "bg-theme/10 text-brand font-medium hover:bg-theme/20"
+                          ? "text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] before:mr-2 before:inline-block before:h-2 before:w-2 before:rounded-full before:bg-warning before:align-middle before:content-['']"
                           : tone === "neutral"
                           ? opt.value === value
                             ? " text-[color:var(--panel-text)] bg-[color:var(--surface-hover)]"

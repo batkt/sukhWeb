@@ -198,7 +198,7 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
               ? "ascend"
               : "descend"
             : null,
-        align: "left",
+        align: "center",
         render: (_: any, record: ClientItem) => {
           let toots =
             Array.isArray(record.toots) && record.toots.length > 0
@@ -236,17 +236,17 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
           // Бүх тоот нэг мөрөнд — hover хийх шаардлагагүй. Хасах × нь
           // шошгон дээр очиход л гарна.
           return (
-            <div className="flex items-center gap-1 overflow-hidden whitespace-nowrap">
+            <div className="flex items-center justify-center gap-1.5 overflow-visible whitespace-nowrap py-0.5">
               {toots.map((t: any, idx: number) => {
                 const label = t.turul === "Гараж" ? "Зогсоол" : "Агуулах";
                 return (
                   <span
                     key={idx}
                     title={`Тоот ${t.toot} · ${label}`}
-                    className="group inline-flex shrink-0 items-center gap-1 rounded-md border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] px-2 py-0.5 text-[color:var(--panel-text)]"
+                    className="group relative inline-flex h-6 shrink-0 items-center gap-1 rounded-md bg-[color:var(--surface-hover)] px-2 leading-none text-[color:var(--panel-text)]"
                   >
                     <span className="tabular-nums">{t.toot}</span>
-                    <span className="text-[10px] text-[color:var(--muted-text)]">{label}</span>
+                    <span className="text-[12px] text-[color:var(--muted-text)]">{label}</span>
                     <button
                       type="button"
                       onClick={(e) => {
@@ -259,10 +259,12 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
                           label: `${t.toot} (${label})`,
                         });
                       }}
-                      className="-mr-1 inline-flex rounded p-0.5 text-danger opacity-0 transition-opacity hover:bg-danger/10 focus:opacity-100 group-hover:opacity-100"
+                      // Шошгыг өндөрсгөхгүй — булан дээр жижиг дугуй, hover үед л
+                      className="tb-chip-x absolute -right-1.5 -top-1.5 hidden h-4 w-4 items-center justify-center rounded-full bg-danger !text-white group-hover:inline-flex focus:inline-flex"
                       title="Хасах"
+                      aria-label={`${t.toot} ${label} хасах`}
                     >
-                      <X className="h-3 w-3" />
+                      <X className="h-2.5 w-2.5" />
                     </button>
                   </span>
                 );
@@ -275,7 +277,7 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
         title: "Нэхэмжлэх",
         key: "nekhemjlekh",
         width: 120,
-        align: "left",
+        align: "center",
         // Энэ сард Зогсоол/Агуулахын нэхэмжлэх илгээгдсэн эсэх
         render: (_: any, record: ClientItem) => {
           const toots = zogsoolAguulakh(record);

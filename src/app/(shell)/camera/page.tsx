@@ -4,7 +4,6 @@ import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
 import {
-  Video,
   VideoOff,
   Maximize2,
   Minimize2,
@@ -14,7 +13,6 @@ import {
   RefreshCw,
   Settings,
   X,
-  Sliders
 } from "lucide-react";
 import Link from "next/link";
 import uilchilgee, { url as apiUrl } from "@/lib/uilchilgee";
@@ -53,11 +51,9 @@ const RealTimeClock = () => {
     return () => clearInterval(interval);
   }, []);
   return (
-    <div className="text-right hidden md:block">
-      <p className="text-xs font-medium text-[color:var(--muted-text)] tracking-wide font-mono">
-        {time}
-      </p>
-    </div>
+    <span className="hidden text-[13px] tabular-nums text-[color:var(--muted-text)] lg:inline">
+      {time}
+    </span>
   );
 };
 
@@ -206,245 +202,212 @@ export default function CameraVideoWall() {
     }
   }, [filteredCameras.length, cols]);
 
+  // Видео ханаас Esc дарж гарна
+  useEffect(() => {
+    if (!isWallMode) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !document.fullscreenElement) setIsWallMode(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isWallMode]);
+
+  const idevkhteiToo = cameras.filter((c) => c.enabled).length;
+  const zokhionBaiguulalt: { v: number; label: string; title: string }[] = [
+    { v: 0, label: "Авто", title: "Камерын тооноос хамааран автоматаар" },
+    { v: 1, label: "1", title: "1 багана — том" },
+    { v: 2, label: "2", title: "2 багана" },
+    { v: 3, label: "3", title: "3 багана" },
+    { v: 4, label: "4", title: "4 багана" },
+  ];
+
+  const khooson = (Icon: any, garchig: string, tailbar: string, uildel?: React.ReactNode) => (
+    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[color:var(--surface-border)] px-6 py-20 text-center">
+      <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[color:var(--surface-hover)]">
+        <Icon className="h-6 w-6 text-[color:var(--muted-text)]" />
+      </span>
+      <p className="text-[15px] text-[color:var(--panel-text)]">{garchig}</p>
+      <p className="mt-1 max-w-md text-[13px] text-[color:var(--muted-text)]">{tailbar}</p>
+      {uildel}
+    </div>
+  );
+
   return (
-    <div className={`h-full overflow-y-auto overflow-x-hidden custom-scrollbar bg-[color:var(--wall-bg)] text-white rounded-3xl relative ${isWallMode ? "p-2" : "p-4 md:p-6"}`}>
-      <div className="space-y-4">
-
-        {/* Main Header Bar */}
-        {!isWallMode && (
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/5 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-1.5 h-6 bg-theme rounded-full"></div>
-              <div>
-                <h1 className="text-xl  tracking-tight text-white flex items-center gap-2">
-                  Хяналтын Камерууд
-                </h1>
-                <p className="text-[11px] text-[color:var(--muted-text)] mt-0.5 font-medium ">
-                  Амар СӨХ — Видео хяналтын систем
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4 shrink-0">
-              <RealTimeClock />
-              <button
-                onClick={() => setIsConfigOpen(true)}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-[color:var(--wall-bg)] border border-white/10 hover:bg-[color:var(--wall-panel)] transition-all hover:scale-105 active:scale-95 text-xs  text-[color:var(--muted-text)] shadow-md"
-                title="Тохиргоо нээх"
-              >
-                <Settings className="w-4 h-4 text-[color:var(--theme)]" />
-                <span>Тохиргоо</span>
-              </button>
-            </div>
+    <div
+      className={
+        isWallMode
+          ? "fixed inset-0 z-[1100] overflow-y-auto bg-black p-2"
+          : "w-full space-y-4 px-4 pb-6 pt-3"
+      }
+    >
+      {/* ── Толгой: гарчиг, хайлт, зохион байгуулалт, үйлдэл ── */}
+      {isWallMode ? (
+        <div className="fixed right-3 top-3 z-[1110] flex items-center gap-2">
+          <span className="rounded-full bg-black/60 px-3 py-1.5 text-[12px] tabular-nums text-white/80">
+            {filteredCameras.length} камер
+          </span>
+          <button
+            type="button"
+            onClick={() => setIsWallMode(false)}
+            className="inline-flex h-9 items-center gap-1.5 rounded-full bg-white/10 px-4 text-[13px] text-white backdrop-blur hover:bg-white/20"
+            title="Видео ханаас гарах (Esc)"
+          >
+            <X className="h-4 w-4" />
+            Гарах
+          </button>
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="text-[17px] text-[color:var(--panel-text)]">Хяналтын камер</h1>
+            <p className="text-[13px] text-[color:var(--muted-text)]">
+              {cameras.length} камер · <span className="text-brand">{idevkhteiToo} идэвхтэй</span>
+            </p>
           </div>
-        )}
-
-        {/* Toolbar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-3xl bg-[color:var(--wall-bg)] border border-white/5 backdrop-blur-xl shadow-lg">
-          {/* Filters */}
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="relative">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--muted-text)]" />
+          <div className="flex flex-wrap items-center gap-2">
+            <label className={`filter-field w-[240px] ${searchTerm ? "is-active" : ""}`}>
+              <Search className="h-4 w-4 shrink-0 text-[color:var(--muted-text)]" />
               <input
                 type="text"
-                placeholder="Камер, суваг хайх..."
+                placeholder="Камерын нэр, IP хайх"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-56 pl-10 pr-4 h-9 rounded-full bg-[color:var(--wall-bg)] border border-white/10 text-xs text-white placeholder:text-[color:var(--muted-text)] focus:border-theme/40 outline-none transition-all"
               />
+            </label>
+            <div className="stg-segment" role="radiogroup" aria-label="Баганын тоо">
+              {zokhionBaiguulalt.map((z) => (
+                <button
+                  key={z.v}
+                  type="button"
+                  role="radio"
+                  aria-checked={cols === z.v}
+                  onClick={() => setCols(z.v)}
+                  title={z.title}
+                  className={`stg-segment-item inline-flex min-h-9 min-w-9 items-center justify-center gap-1.5 ${cols === z.v ? "is-active" : ""}`}
+                >
+                  {z.v === 0 && <Grid className="h-4 w-4" />}
+                  {z.label}
+                </button>
+              ))}
             </div>
-            <span className="px-3.5 py-1.5 rounded-full bg-[color:var(--wall-bg)] border border-white/5 text-[11px] text-[color:var(--muted-text)] font-mono shadow-inner flex items-center gap-1.5">
-              Идэвхтэй: <span className="text-theme">{filteredCameras.length}</span> / <span className="text-[color:var(--muted-text)]">{cameras.filter(c => c.enabled).length}</span>
-            </span>
-          </div>
-
-          {/* Grid Layout controls */}
-          <div className="flex items-center gap-3">
-            {/* Grid selectors */}
-            <div className="flex items-center rounded-full bg-[color:var(--wall-bg)] p-1 border border-white/10 text-xs h-9">
-              <button
-                onClick={() => setCols(0)}
-                className={`px-2.5 py-1 rounded-full transition-colors ${cols === 0 ? "bg-[color:var(--wall-panel)] text-white " : "text-[color:var(--muted-text)] hover:text-white"}`}
-                title="Автомат байршил"
-              >
-                <Grid className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => setCols(1)}
-                className={`w-6 h-6 flex items-center justify-center rounded-full transition-colors ${cols === 1 ? "bg-[color:var(--wall-panel)] text-white " : "text-[color:var(--muted-text)] hover:text-white"}`}
-                title="1 багана (Том)"
-              >
-                1
-              </button>
-              <button
-                onClick={() => setCols(2)}
-                className={`w-6 h-6 flex items-center justify-center rounded-full transition-colors ${cols === 2 ? "bg-[color:var(--wall-panel)] text-white " : "text-[color:var(--muted-text)] hover:text-white"}`}
-                title="2 багана"
-              >
-                2
-              </button>
-              <button
-                onClick={() => setCols(3)}
-                className={`w-6 h-6 flex items-center justify-center rounded-full transition-colors ${cols === 3 ? "bg-[color:var(--wall-panel)] text-white " : "text-[color:var(--muted-text)] hover:text-white"}`}
-                title="3 багана"
-              >
-                3
-              </button>
-              <button
-                onClick={() => setCols(4)}
-                className={`w-6 h-6 flex items-center justify-center rounded-full transition-colors ${cols === 4 ? "bg-[color:var(--wall-panel)] text-white " : "text-[color:var(--muted-text)] hover:text-white"}`}
-                title="4 багана"
-              >
-                4
-              </button>
-            </div>
-
-            {/* Video Wall Toggler */}
             <button
-              onClick={() => setIsWallMode(!isWallMode)}
-              className={`flex items-center gap-2 px-5 h-9 rounded-full border text-xs  transition-all ${isWallMode
-                ? "bg-theme border-theme text-white shadow-lg animate-pulse"
-                : "bg-[color:var(--wall-bg)] border-white/10 text-[color:var(--muted-text)] hover:text-white"
-                }`}
+              type="button"
+              onClick={() => setIsWallMode(true)}
+              className="btn-minimal inline-flex h-9 items-center gap-1.5 !px-3.5"
               title="Бүтэн дэлгэцээр хянах"
             >
-              <Tv className="w-4 h-4" />
-              <span>{isWallMode ? "Энгийн харагдац" : "Видео Хана"}</span>
+              <Tv className="h-4 w-4" />
+              Видео хана
             </button>
-
-            {isWallMode && (
-              <button
-                onClick={() => setIsConfigOpen(true)}
-                className="w-9 h-9 flex items-center justify-center rounded-full bg-[color:var(--wall-bg)] border border-white/10 hover:bg-[color:var(--wall-panel)] transition-colors"
-                title="Тохиргоо"
-              >
-                <Settings className="w-4 h-4 text-[color:var(--theme)]" />
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => setIsConfigOpen(true)}
+              className="btn-minimal inline-flex h-9 items-center gap-1.5 !px-3.5"
+              title="Камеруудыг асаах, унтраах"
+            >
+              <Settings className="h-4 w-4" />
+              Тохиргоо
+            </button>
+            <RealTimeClock />
           </div>
         </div>
+      )}
 
-        {/* Live Camera Surveillance Grid */}
-        {loading ? (
-          <div className="flex flex-col items-center justify-center p-36 rounded-3xl bg-[color:var(--wall-bg)] border border-white/5 shadow-inner">
-            <RefreshCw className="w-14 h-14 text-[color:var(--panel-text)] mb-4 animate-spin text-[color:var(--theme)]" />
-            <p className="text-xs font-medium text-[color:var(--muted-text)]">
-              Уншиж байна...
-            </p>
-          </div>
-        ) : cameras.length === 0 ? (
-          <div className="flex flex-col items-center justify-center p-36 rounded-3xl bg-[color:var(--wall-bg)] border border-white/5 shadow-inner">
-            <VideoOff className="w-14 h-14 text-[color:var(--panel-text)] mb-4 animate-pulse" />
-            <p className="text-xs font-medium text-[color:var(--muted-text)]">
-              СӨХ-ийн камер тохируулаагүй байна
-            </p>
-            <p className="text-[11px] text-[color:var(--muted-text)] mt-2 max-w-md text-center">
-              Барилгын хяналтын камер СӨХ-ийн тохиргоонд одоогоор тохируулагдаагүй байна. Тохиргоо цэс рүү орж камеруудыг тохируулна уу.
-            </p>
-            <Link
-              href="/tokhirgoo"
-              className="mt-6 px-6 py-2.5 rounded-full bg-theme text-white  text-xs shadow-lg hover:bg-theme/90 active:scale-95 transition-all text-center"
+      {/* ── Камерын сүлжээ ── */}
+      {loading ? (
+        khooson(RefreshCw, "Камеруудыг ачаалж байна...", "Түр хүлээнэ үү")
+      ) : cameras.length === 0 ? (
+        khooson(
+          VideoOff,
+          "Камер тохируулаагүй байна",
+          "Барилгын хяналтын камеруудыг Тохиргоо → Зогсоол → Камер хэсэгт нэмсний дараа энд харагдана.",
+          <Link
+            href="/tokhirgoo"
+            className="mt-5 inline-flex h-10 items-center rounded-[10px] bg-theme px-5 text-[14px] !text-white hover:opacity-90"
+          >
+            Камер тохируулах
+          </Link>,
+        )
+      ) : filteredCameras.length === 0 ? (
+        khooson(
+          VideoOff,
+          searchTerm ? "Хайлтад тохирох камер олдсонгүй" : "Идэвхтэй камер алга",
+          searchTerm
+            ? "Өөр нэр эсвэл IP-ээр хайгаад үзнэ үү."
+            : "Бүх камер унтраалттай байна. «Тохиргоо» товчоор камеруудаа асаана уу.",
+        )
+      ) : (
+        <div className={`grid ${isWallMode ? "gap-2" : "gap-3"} ${gridClassName}`}>
+          {filteredCameras.map((camera) => (
+            <div
+              key={camera.id}
+              className={`group/card relative isolate aspect-video overflow-hidden bg-black ${
+                isWallMode ? "rounded-lg" : "rounded-xl border border-[color:var(--surface-border)]"
+              }`}
             >
-              Камер тохируулах
-            </Link>
-          </div>
-        ) : filteredCameras.length === 0 ? (
-          <div className="flex flex-col items-center justify-center p-36 rounded-3xl bg-[color:var(--wall-bg)] border border-white/5 shadow-inner">
-            <VideoOff className="w-14 h-14 text-[color:var(--panel-text)] mb-4 animate-pulse" />
-            <p className="text-xs font-medium text-[color:var(--muted-text)]">
-              Идэвхтэй камер олдсонгүй
-            </p>
-            <p className="text-[11px] text-[color:var(--muted-text)] mt-2 max-w-md text-center">
-              Бүх камеруудыг хаасан байна. Тохиргоо цэсний "Нийтийн удирдлага" хэсгээс камеруудыг идэвхжүүлнэ үү.
-            </p>
-          </div>
-        ) : (
-          <div className={`grid gap-4 ${gridClassName} transition-all duration-500`}>
-            {filteredCameras.map((camera) => (
-              <div
-                key={camera.id}
-                className="relative overflow-hidden rounded-3xl bg-black border border-white/5 shadow-2xl hover:border-white/15 transition-all duration-300 group/card aspect-video isolate"
-              >
-                {/* Header Overlay */}
-                <div className="absolute top-3 left-3 right-3 z-40 flex items-center justify-between pointer-events-none">
-                  <div className="flex items-center gap-2 bg-black/75 backdrop-blur-xl px-3 py-1.5 rounded-full border border-white/10 shadow-md">
-                    <span className="w-1.5 h-1.5 rounded-full bg-theme shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse"></span>
-                    <span className="text-[11px] font-medium text-[color:var(--muted-text)]">
-                      {camera.name}
-                    </span>
-                    <span className="text-[11px] text-[color:var(--muted-text)] font-mono border-l border-white/20 pl-2">
-                      CH {camera.root?.replace("Streaming/Channels/", "") || ""}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Video feed element */}
-                <div className="w-full h-full relative">
-                  <CameraStream
-                    ip={camera.ip}
-                    port={camera.port}
-                    name={camera.name}
-                    username={camera.username}
-                    password={camera.password}
-                    root={camera.root}
-                    barilgiinId={effectiveBarilgiinId}
-                    token={token ?? undefined}
-                  />
-                </div>
+              <div className="relative h-full w-full">
+                <CameraStream
+                  ip={camera.ip}
+                  port={camera.port}
+                  name={camera.name}
+                  username={camera.username}
+                  password={camera.password}
+                  root={camera.root}
+                  barilgiinId={effectiveBarilgiinId}
+                  token={token ?? undefined}
+                />
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+              {/* Доод гарчиг — нэр, суваг */}
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex items-center gap-2 bg-gradient-to-t from-black/70 to-transparent px-3 pb-2 pt-6">
+                <span className="h-2 w-2 shrink-0 rounded-full bg-success" aria-hidden />
+                <span className="truncate text-[13px] text-white">{camera.name}</span>
+                {camera.root && (
+                  <span className="ml-auto shrink-0 text-[12px] tabular-nums text-white/60">
+                    CH {camera.root.replace("Streaming/Channels/", "")}
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
-      {/* Slide-out Sidebar Settings Drawer */}
+      {/* ── Тохиргооны самбар ── */}
       {isConfigOpen && (
         <div className="fixed inset-0 z-[1200] flex justify-end">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300"
-            onClick={() => {
-              setIsConfigOpen(false);
-            }}
-          />
-          {/* Drawer Body */}
-          <div className="relative w-full max-w-md h-full bg-[color:var(--wall-bg)] border-l border-white/10 shadow-2xl flex flex-col text-[color:var(--muted-text)] z-10 animate-slideLeft rounded-l-3xl overflow-hidden">
-
-            {/* Drawer Header */}
-            <div className="p-4 border-b border-white/5 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Sliders className="w-4 h-4 text-[color:var(--theme)]" />
-                <span className="text-sm font-medium text-white ">Камер тохиргоо</span>
+          <div className="absolute inset-0 bg-black/40" onClick={() => setIsConfigOpen(false)} />
+          <div className="relative z-10 flex h-full w-full max-w-md flex-col border-l border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] shadow-xl">
+            <div className="flex items-center justify-between border-b border-[color:var(--surface-border)] px-5 py-4">
+              <div>
+                <h2 className="text-[16px] text-[color:var(--panel-text)]">Камерын тохиргоо</h2>
+                <p className="text-[13px] text-[color:var(--muted-text)]">Харуулах камеруудаа асаана уу</p>
               </div>
               <button
-                onClick={() => {
-                  setIsConfigOpen(false);
-                }}
-                className="p-1.5 rounded-full hover:bg-[color:var(--wall-panel)] transition-colors text-[color:var(--muted-text)] hover:text-white"
+                type="button"
+                onClick={() => setIsConfigOpen(false)}
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] hover:text-[color:var(--panel-text)]"
+                aria-label="Хаах"
+                title="Хаах"
               >
-                <X className="w-5 h-5" />
+                <X className="h-5 w-5" />
               </button>
             </div>
 
-            {/* Config Content */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
-
-              {/* Stream Server URL */}
-              <div className="p-4 rounded-2xl bg-[color:var(--wall-bg)] border border-white/5 space-y-3">
-                <p className="text-[11px] text-[color:var(--muted-text)] font-medium ">Стрим Сервер</p>
-                <div className="flex gap-1.5">
+            <div className="flex-1 space-y-5 overflow-y-auto p-5 custom-scrollbar">
+              <section>
+                <h3 className="mb-2 text-[13px] text-[color:var(--muted-text)]">Стрим сервер</h3>
+                <div className="stg-segment mb-2 w-full">
                   <button
+                    type="button"
                     onClick={() => handleStreamServerUrlChange("http://127.0.0.1:8083")}
-                    className={`flex-1 px-3 py-2 rounded-xl text-[11px] font-medium border transition-colors ${streamServerUrl === "http://127.0.0.1:8083" ? "bg-theme border-theme !text-white" : "bg-[color:var(--wall-panel)] border-white/5 text-[color:var(--muted-text)] hover:bg-[color:var(--wall-panel-hover)]"}`}
+                    className={`stg-segment-item min-h-9 flex-1 ${streamServerUrl === "http://127.0.0.1:8083" ? "is-active" : ""}`}
                   >
                     Локал
                   </button>
                   <button
-                    onClick={() => {
-                      const relayUrl = `${apiUrl}/camera/stream/${effectiveBarilgiinId}`;
-                      handleStreamServerUrlChange(relayUrl);
-                    }}
-                    className={`flex-1 px-3 py-2 rounded-xl text-[11px] font-medium border transition-colors ${streamServerUrl !== "http://127.0.0.1:8083" ? "bg-theme border-theme !text-white" : "bg-[color:var(--wall-panel)] border-white/5 text-[color:var(--muted-text)] hover:bg-[color:var(--wall-panel-hover)]"}`}
+                    type="button"
+                    onClick={() => handleStreamServerUrlChange(`${apiUrl}/camera/stream/${effectiveBarilgiinId}`)}
+                    className={`stg-segment-item min-h-9 flex-1 ${streamServerUrl !== "http://127.0.0.1:8083" ? "is-active" : ""}`}
                   >
                     Цахим (Relay)
                   </button>
@@ -453,75 +416,63 @@ export default function CameraVideoWall() {
                   type="text"
                   value={streamServerUrl}
                   onChange={(e) => handleStreamServerUrlChange(e.target.value)}
-                  className="w-full h-8 px-3 rounded-xl bg-[color:var(--wall-bg)] border border-white/10 !text-white font-mono text-[11px] outline-none focus:border-theme/40"
+                  className="stg-input tabular-nums"
+                  aria-label="Стрим серверийн хаяг"
                 />
-              </div>
+              </section>
 
-              {/* Quick controls */}
-              <div className="flex items-center justify-between bg-[color:var(--wall-bg)] p-4 rounded-2xl border border-white/5 text-xs font-medium">
-                <span className="text-white">Харагдац тохируулах:</span>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleToggleAll(true)}
-                    className="px-3.5 py-1.5 rounded-full bg-[color:var(--wall-panel)] border border-white/5 hover:bg-[color:var(--wall-panel-hover)] transition-colors text-white"
-                  >
-                    Бүгдийг нээх
-                  </button>
-                  <button
-                    onClick={() => handleToggleAll(false)}
-                    className="px-3.5 py-1.5 rounded-full bg-[color:var(--wall-panel)] border border-white/5 hover:bg-[color:var(--wall-panel-hover)] transition-colors text-white"
-                  >
-                    Бүгдийг хаах
-                  </button>
+              <section>
+                <div className="mb-2 flex items-center justify-between">
+                  <h3 className="text-[13px] text-[color:var(--muted-text)]">
+                    Камерууд · {idevkhteiToo}/{cameras.length} идэвхтэй
+                  </h3>
+                  <div className="flex gap-1.5">
+                    <button type="button" onClick={() => handleToggleAll(true)} className="btn-minimal inline-flex h-8 items-center !px-3 text-[13px]">
+                      Бүгдийг асаах
+                    </button>
+                    <button type="button" onClick={() => handleToggleAll(false)} className="btn-minimal inline-flex h-8 items-center !px-3 text-[13px]">
+                      Бүгдийг унтраах
+                    </button>
+                  </div>
                 </div>
-              </div>
-
-              {/* Cameras List */}
-              <div className="space-y-2">
-                {cameras.map((cam, idx) => {
-                  const channelCode = cam.root?.replace("Streaming/Channels/", "") || "";
-                  return (
-                    <div
-                      key={cam.id}
-                      className={`p-3 rounded-2xl bg-[color:var(--wall-bg)] border transition-all ${cam.enabled
-                        ? "border-theme/10 hover:border-theme/20"
-                        : "border-white/5 opacity-70"
-                        }`}
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="min-w-0 flex-1 flex items-center gap-2">
-                          <button
-                            onClick={() => handleToggleEnabled(cam.id, !cam.enabled)}
-                            className={`w-7 h-4 rounded-full p-0.5 transition-all duration-300 shrink-0 ${cam.enabled ? "bg-theme" : "bg-[color:var(--wall-panel)]"}`}
-                          >
-                            <div className={`w-3 h-3 rounded-full bg-[color:var(--surface-bg)] transition-all ${cam.enabled ? "translate-x-3" : "translate-x-0"}`}></div>
-                          </button>
-
-                          <div className="min-w-0">
-                            <span className="block text-xs font-medium text-white truncate">
-                              {idx + 1}. {cam.name}
-                            </span>
-                            <span className="block text-[11px] text-[color:var(--muted-text)] font-mono truncate mt-0.5">
-                              {cam.ip}:{cam.port} / CH {channelCode}
-                            </span>
+                <ul className="divide-y divide-[color:var(--surface-border)] rounded-xl border border-[color:var(--surface-border)]">
+                  {cameras.map((cam, idx) => {
+                    const channelCode = cam.root?.replace("Streaming/Channels/", "") || "";
+                    return (
+                      <li key={cam.id} className="flex items-center gap-3 px-3.5 py-2.5">
+                        <div className={`min-w-0 flex-1 ${cam.enabled ? "" : "opacity-60"}`}>
+                          <div className="truncate text-[14px] text-[color:var(--panel-text)]">
+                            {idx + 1}. {cam.name}
+                          </div>
+                          <div className="truncate text-[12px] tabular-nums text-[color:var(--muted-text)]">
+                            {cam.ip}:{cam.port}
+                            {channelCode ? ` · CH ${channelCode}` : ""}
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                        <label className="relative inline-flex cursor-pointer items-center">
+                          <input
+                            type="checkbox"
+                            className="peer sr-only"
+                            checked={cam.enabled}
+                            onChange={(e) => handleToggleEnabled(cam.id, e.target.checked)}
+                            aria-label={`${cam.name} харуулах`}
+                          />
+                          <span className="tokh-switch" />
+                        </label>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
             </div>
 
-            {/* Drawer Footer */}
-            <div className="p-4 border-t border-white/5 bg-[color:var(--wall-bg)] flex">
+            <div className="border-t border-[color:var(--surface-border)] px-5 py-4">
               <button
-                onClick={() => {
-                  setIsConfigOpen(false);
-                }}
-                className="w-full py-3 rounded-full bg-theme text-white hover:bg-theme/90 transition-all text-xs  shadow-lg shadow-theme/20"
+                type="button"
+                onClick={() => setIsConfigOpen(false)}
+                className="inline-flex h-10 w-full items-center justify-center rounded-[10px] bg-theme text-[14px] !text-white hover:opacity-90"
               >
-                Дуусгах
+                Болсон
               </button>
             </div>
           </div>
@@ -617,28 +568,17 @@ const CameraStream = React.memo(
 
     if (error) {
       return (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[color:var(--wall-bg)] text-white p-4">
-          <div className="relative text-center max-w-sm">
-            <div className="absolute inset-0 bg-danger/10 rounded-full blur-2xl animate-pulse"></div>
-            <div className="relative p-6 rounded-3xl bg-[color:var(--wall-bg)] border border-danger/20">
-              <VideoOff className="w-10 h-10 mb-3 mx-auto opacity-75 text-danger" />
-              <p className="text-xs  mb-1">
-                Холболт амжилтгүй
-              </p>
-              <p className="text-[11px] text-[color:var(--muted-text)] font-mono mb-4">
-                {ip}:{port}
-              </p>
-
-              <div className="flex flex-col gap-2">
-                <button
-                  onClick={() => setError(false)}
-                  className="px-5 py-2 rounded-full bg-[color:var(--wall-panel)] border border-white/10 hover:bg-[color:var(--wall-panel-hover)] transition-colors text-[11px] "
-                >
-                  Дахин ачаалах
-                </button>
-              </div>
-            </div>
-          </div>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-neutral-900 p-4 text-center text-white">
+          <VideoOff className="h-8 w-8 text-white/50" />
+          <p className="text-[14px]">Камер холбогдсонгүй</p>
+          <p className="text-[12px] tabular-nums text-white/50">{ip}:{port}</p>
+          <button
+            type="button"
+            onClick={() => setError(false)}
+            className="mt-1 inline-flex h-9 items-center rounded-full bg-white/10 px-4 text-[13px] text-white hover:bg-white/20"
+          >
+            Дахин оролдох
+          </button>
         </div>
       );
     }
