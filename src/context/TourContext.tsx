@@ -27,7 +27,8 @@ type StepsMap = Record<string, DriverStep[]>;
 
 interface TourContextValue {
   registerSteps: (id: string, steps: DriverStep[]) => void;
-  start: (id?: string) => void;
+  /** force — хэрэглэгч өөрөө «Дахин үзүүлэх» дарсан (унтраасан ч ажиллана) */
+  start: (id?: string, force?: boolean) => void;
   disable: (key?: string) => void;
   enable: (key?: string) => void;
   disabled: boolean;
@@ -121,10 +122,10 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   const start = useCallback(
-    async (id?: string) => {
-      if (globalDisabled) return;
+    async (id?: string, force = false) => {
+      if (globalDisabled && !force) return;
       const key = id || pathname || "global";
-      if (disabledPages[key]) return;
+      if (disabledPages[key] && !force) return;
       const steps = stepsMap[key] || stepsMap["global"];
       if (!steps || steps.length === 0) return;
       
@@ -143,6 +144,15 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
             popoverClass: "premium-driver-popover",
             progressText: "{{current}} / {{total}}",
             steps: steps as any,
+            // Аль нэг хуудсанд X / «Хаах» / «Дуусгах» дарвал бүх хуудсанд
+            // автоматаар ДАХИЖ гарахгүй. Тусламжийн товчны «Дахин үзүүлэх»-ээр
+            // хүссэн үедээ гараар үзнэ.
+            onDestroyed: () => {
+              setGlobalDisabled(true);
+              try {
+                localStorage.setItem(GLOBAL_DISABLED_KEY, "1");
+              } catch {}
+            },
             onPopoverRender: (popover: any, { config, state }: any) => {
               const step = state.activeStep;
               if (step?.popover?.image || step?.popover?.video) {

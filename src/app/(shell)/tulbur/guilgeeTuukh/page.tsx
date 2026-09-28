@@ -1816,6 +1816,29 @@ export default function DansniiKhuulga() {
             bVal = tableDisplayBalances[gidB] ?? Number(b?.uldegdel ?? 0);
           }
         }
+      } else if (sortField === "khungulult") {
+        // Хөнгөлөлтийн багана харуулдагтай ижил эх сурвалж
+        const khung = (it: any) => {
+          const gid = getGid(it);
+          return (gid ? Number(monthKhungulultByGereeId[gid] ?? 0) : 0) ||
+            Number(it?.khungulult || it?.discount || it?._khungulultAmount || 0);
+        };
+        aVal = khung(a);
+        bVal = khung(b);
+      } else if (sortField === "orts") {
+        const ortsVal = (it: any) => {
+          const cid = it.gereeniiId ? String(it.gereeniiId) : null;
+          const con = cid
+            ? contractsById[cid]
+            : it.gereeniiDugaar
+              ? contractsByNumber[it.gereeniiDugaar]
+              : null;
+          const rid = it.orshinSuugchId ? String(it.orshinSuugchId) : null;
+          const res = rid ? residentsById[rid] : null;
+          return String(con?.orts || it.orts || it.medeelel?.orts || res?.orts || "");
+        };
+        aVal = ortsVal(a);
+        bVal = ortsVal(b);
       } else if (sortField === "toot") {
         const getTootVal = (it: any) => {
           const rid = it.orshinSuugchId ? String(it.orshinSuugchId) : null;
@@ -1872,6 +1895,7 @@ export default function DansniiKhuulga() {
     sortField,
     sortOrder,
     monthPaidByGereeId,
+    monthKhungulultByGereeId,
     tableDisplayBalances,
     residentsById,
     contractsById,

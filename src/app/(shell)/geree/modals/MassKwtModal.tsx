@@ -8,7 +8,6 @@ import {
   Loader2,
   X,
   Search,
-  RefreshCw,
   Download,
   Upload,
   ChevronDown,
@@ -465,6 +464,19 @@ export default function MassKwtModal({
     );
   }, [residents, searchTerm]);
 
+  // Footer summary — same "filled" rule as handleSubmit
+  const summary = useMemo(() => {
+    let filled = 0;
+    let totalKwt = 0;
+    residents.forEach((r) => {
+      if (r.newKwt !== "" && !isNaN(parseFloat(r.newKwt))) {
+        filled++;
+        totalKwt += parseFloat(r.newKwt);
+      }
+    });
+    return { filled, missing: residents.length - filled, totalKwt };
+  }, [residents]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -539,51 +551,108 @@ export default function MassKwtModal({
             dragConstraints={constraintsRef}
             dragMomentum={false}
             onClick={(e) => e.stopPropagation()}
-            className="w-full !max-w-[1260px] max-h-[100vh] flex flex-col modal-surface rounded-2xl shadow-2xl p-5 sm:p-6 text-sm relative"
+            className="w-full !max-w-[1260px] max-h-[100vh] flex flex-col modal-surface rounded-2xl shadow-xl p-5 sm:p-6 text-sm relative"
             style={{ maxWidth: "1260px", width: "100%" }}
           >
             {/* Header */}
             <div
-              className="flex items-center justify-between border-b border-[color:var(--surface-border)] pb-4 cursor-move select-none"
+              className="flex items-start justify-between gap-3 border-b border-[color:var(--surface-border)] pb-4 cursor-move select-none"
               onPointerDown={(e) => dragControls.start(e)}
             >
-              <div className="flex items-center gap-3">
-                <div>
-                  <h3 className="text-base text-[color:var(--panel-text)] dark:text-white">
-                    Цахилгааны (кВт) заалт шинэчлэх
+              <div className="flex items-start gap-3 min-w-0">
+                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-warning/10 text-warning">
+                  <Zap className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <div className="min-w-0">
+                  <h3 className="text-base font-medium text-[color:var(--panel-text)]">
+                    Цахилгааны (кВт) заалт оруулах
                   </h3>
+                  <p className="mt-0.5 text-[13px] text-[color:var(--muted-text)]">
+                    Тоот бүрийн шинэ заалтыг оруулаад «Хадгалах» товчийг дарна уу.
+                    Enter эсвэл ↑ ↓ товчоор дараагийн мөр рүү шилжинэ.
+                  </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={onClose}
+                onPointerDown={(e) => e.stopPropagation()}
                 disabled={loading}
-                className="text-[color:var(--muted-text)] hover:text-[color:var(--muted-text)] transition-colors p-1 rounded-lg hover:bg-[color:var(--surface-hover)]"
+                title="Хаах"
+                aria-label="Хаах"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-[color:var(--muted-text)] transition-colors hover:bg-[color:var(--surface-hover)] hover:text-[color:var(--panel-text)] disabled:opacity-50"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Quick Excel & Search Action Bar */}
-            <div className="py-3 flex flex-wrap items-center justify-between gap-3 border-b border-[color:var(--surface-border)]">
-              <div className="relative flex-1 min-w-[200px]">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--muted-text)]" />
-                <input
-                  type="text"
-                  placeholder="Тоот, давхар эсвэл нэрээр хайх..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] dark:text-white focus:outline-none focus:ring-2 focus:ring-warning"
-                />
-              </div>
+            {/* Search, Excel & bulk value toolbar */}
+            <div className="py-3 flex flex-wrap items-end justify-between gap-3 border-b border-[color:var(--surface-border)]">
+              <label className="flex-1 min-w-[220px]">
+                <span className="mb-1 block text-[13px] text-[color:var(--muted-text)]">
+                  Хайх
+                </span>
+                <span className="relative block">
+                  <Search
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--muted-text)]"
+                    aria-hidden="true"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Тоот, давхар, нэр эсвэл утас"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="stg-input !h-10 !pl-9 !text-sm"
+                  />
+                </span>
+              </label>
 
-              {/* Action Buttons */}
-              <div className="flex items-center gap-2">
-                {/* Unified Single Excel Dropdown Button */}
+              <div className="flex flex-wrap items-end gap-3">
+                {/* Bulk value */}
+                <div>
+                  <span className="mb-1 block text-[13px] text-[color:var(--muted-text)]">
+                    Бүх тоотод ижил заалт
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <div className="relative w-36">
+                      <input
+                        type="number"
+                        step="any"
+                        min="0"
+                        inputMode="decimal"
+                        placeholder="0"
+                        aria-label="Бүх тоотод оруулах кВт заалт"
+                        value={bulkInputValue}
+                        onChange={(e) => setBulkInputValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleApplyBulkValue();
+                          }
+                        }}
+                        className="stg-input !h-10 !pr-11 !text-sm text-right tabular-nums"
+                      />
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[13px] text-[color:var(--muted-text)]">
+                        кВт
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleApplyBulkValue}
+                      disabled={!bulkInputValue.trim()}
+                      className="stg-btn stg-btn-ghost !h-10 !text-sm"
+                      title="Энэ утгыг бүх тоотод оруулах"
+                    >
+                      Бүгдэд оруулах
+                    </button>
+                  </div>
+                </div>
+
+                {/* Excel dropdown */}
                 <div ref={excelMenuRef} className="relative">
                   <ExcelButton
                     label="Excel"
-                    title="Excel үйлдлүүд"
+                    title="Excel файлаар татах / оруулах"
                     onClick={() => setExcelMenuOpen((prev) => !prev)}
                     suffix={
                       <ChevronDown
@@ -593,25 +662,16 @@ export default function MassKwtModal({
                   />
 
                   {excelMenuOpen && (
-                    <div
-                      className="absolute right-0 top-full mt-2 z-50 min-w-[170px] dropdown-menu-surface !rounded-2xl shadow-2xl border border-[color:var(--surface-border)] p-1.5 overflow-hidden"
-                      style={{
-                        backgroundColor: "var(--surface-bg, #ffffff)",
-                        borderRadius: "1rem",
-                        boxShadow:
-                           "0 10px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.15)",
-                      }}
-                    >
+                    <div className="absolute right-0 top-full mt-2 z-50 min-w-[220px] rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-1.5 shadow-lg">
                       <button
                         type="button"
                         onClick={() => {
                           setExcelMenuOpen(false);
                           handleExportToExcel();
                         }}
-                        className="w-full px-3 py-2 text-left text-xs text-[color:var(--panel-text)] hover:!bg-theme/10 hover:!text-brand dark:hover:!text-brand !rounded-xl flex items-center gap-2.5 transition-colors cursor-pointer"
-                        style={{ borderRadius: "0.75rem" }}
+                        className="w-full min-h-10 px-3 py-2 text-left text-sm text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] rounded-lg flex items-center gap-2.5 transition-colors cursor-pointer"
                       >
-                        <Download className="w-4 h-4 text-brand shrink-0" />
+                        <Download className="w-4 h-4 text-brand shrink-0" aria-hidden="true" />
                         <span>Excel татах</span>
                       </button>
 
@@ -621,11 +681,10 @@ export default function MassKwtModal({
                           setExcelMenuOpen(false);
                           fileInputRef.current?.click();
                         }}
-                        className="w-full px-3 py-2 text-left text-xs text-[color:var(--panel-text)] hover:!bg-theme/10 hover:!text-brand dark:hover:!text-brand !rounded-xl flex items-center gap-2.5 transition-colors cursor-pointer mt-0.5"
-                        style={{ borderRadius: "0.75rem" }}
+                        className="w-full min-h-10 px-3 py-2 text-left text-sm text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] rounded-lg flex items-center gap-2.5 transition-colors cursor-pointer mt-0.5"
                       >
-                        <Upload className="w-4 h-4 text-brand shrink-0" />
-                        <span>Excel оруулах</span>
+                        <Upload className="w-4 h-4 text-brand shrink-0" aria-hidden="true" />
+                        <span>Excel-ээс заалт оруулах</span>
                       </button>
                     </div>
                   )}
@@ -638,172 +697,168 @@ export default function MassKwtModal({
                   className="hidden"
                   onChange={handleExcelImport}
                 />
-
-                <div className="h-4 w-px bg-[color:var(--panel)] mx-0.5" />
-
-                <div className="flex items-center gap-1.5">
-                  <div className="relative w-28 md:w-32">
-                    <input
-                      type="number"
-                      step="any"
-                      min="0"
-                      placeholder="Ижил кВт"
-                      value={bulkInputValue}
-                      onChange={(e) => setBulkInputValue(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          handleApplyBulkValue();
-                        }
-                      }}
-                      className="w-full px-2.5 py-1.5 text-xs rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] dark:text-white focus:outline-none focus:ring-2 focus:ring-warning"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleApplyBulkValue}
-                    className="px-3 py-1.5 text-xs text-warning bg-warning/10 hover:bg-warning/20 rounded-xl border border-warning/20 transition-colors cursor-pointer"
-                    title="Бүх тоотод ижил утга оруулах"
-                  >
-                    <span>Бүгдэд</span>
-                  </button>
-                </div>
               </div>
             </div>
 
-            {/* Resident List Table with Sticky Header and solid background */}
-            <div className="flex-1 overflow-y-auto min-h-[260px] max-h-[50vh] border border-[color:var(--surface-border)] rounded-xl relative my-2 bg-[color:var(--surface-bg)]">
+            {/* Resident list table */}
+            <div className="flex-1 overflow-y-auto min-h-[260px] max-h-[50vh] border border-[color:var(--surface-border)] rounded-xl relative my-3 bg-[color:var(--surface-bg)]">
               {fetching ? (
-                <div className="flex items-center justify-center h-48 text-[color:var(--muted-text)] gap-2">
-                  <Loader2 className="w-5 h-5 animate-spin text-warning" />
-                  <span>Уншиж байна...</span>
+                <div className="flex items-center justify-center h-48 text-sm text-[color:var(--muted-text)] gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin text-brand" aria-hidden="true" />
+                  <span>Тоотын мэдээллийг ачаалж байна…</span>
                 </div>
               ) : filteredResidents.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-48 text-[color:var(--muted-text)]">
-                  <p>Орон сууцны тоот олдсонгүй.</p>
+                <div className="flex flex-col items-center justify-center gap-1 h-48 px-4 text-center">
+                  <p className="text-sm text-[color:var(--panel-text)]">
+                    {searchTerm.trim()
+                      ? "Хайлтад тохирох тоот олдсонгүй."
+                      : "Орон сууцны тоот олдсонгүй."}
+                  </p>
+                  <p className="text-[13px] text-[color:var(--muted-text)]">
+                    {searchTerm.trim()
+                      ? "Хайх үгээ өөрчилж дахин оролдоно уу."
+                      : "Энэ барилгад идэвхтэй гэрээтэй эсвэл бүртгэлтэй тоот алга байна."}
+                  </p>
                 </div>
               ) : (
-                <table className="w-full text-left text-xs border-separate border-spacing-0 table-fixed">
-                  <thead className="sticky top-0 z-20 shadow-xs">
-                    <tr>
-                      <th
-                        style={{ backgroundColor: "var(--surface-bg, #f1f5f9)" }}
-                        className="py-2.5 px-3 sticky top-0 z-20 text-[color:var(--panel-text)] text-center w-[6%] border-b border-[color:var(--surface-border)] first:rounded-tl-xl"
-                      >
+                <table className="w-full text-left text-sm border-separate border-spacing-0 table-fixed">
+                  <thead>
+                    <tr className="text-[13px] text-[color:var(--muted-text)]">
+                      <th className="sticky top-0 z-20 h-10 px-3 font-normal text-right w-[6%] border-b border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] rounded-tl-xl">
                         №
                       </th>
-                      <th
-                        style={{ backgroundColor: "var(--surface-bg, #f1f5f9)" }}
-                        className="py-2.5 px-3 sticky top-0 z-20 text-[color:var(--panel-text)] text-left w-[24%] border-b border-[color:var(--surface-border)]"
-                      >
+                      <th className="sticky top-0 z-20 h-10 px-3 font-normal text-left w-[24%] border-b border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]">
                         Нэр
                       </th>
-                      <th
-                        style={{ backgroundColor: "var(--surface-bg, #f1f5f9)" }}
-                        className="py-2.5 px-3 sticky top-0 z-20 text-[color:var(--panel-text)] text-center w-[12%] border-b border-[color:var(--surface-border)]"
-                      >
+                      <th className="sticky top-0 z-20 h-10 px-3 font-normal text-left w-[11%] border-b border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]">
                         Тоот
                       </th>
-                      <th
-                        style={{ backgroundColor: "var(--surface-bg, #f1f5f9)" }}
-                        className="py-2.5 px-3 sticky top-0 z-20 text-[color:var(--panel-text)] text-center w-[10%] border-b border-[color:var(--surface-border)]"
-                      >
+                      <th className="sticky top-0 z-20 h-10 px-3 font-normal text-left w-[10%] border-b border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]">
                         Давхар
                       </th>
-                      <th
-                        style={{ backgroundColor: "var(--surface-bg, #f1f5f9)" }}
-                        className="py-2.5 px-3 sticky top-0 z-20 text-[color:var(--panel-text)] text-center w-[16%] border-b border-[color:var(--surface-border)]"
-                      >
-                        Дугаар
+                      <th className="sticky top-0 z-20 h-10 px-3 font-normal text-left w-[15%] border-b border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]">
+                        Утас
                       </th>
-                      <th
-                        style={{ backgroundColor: "var(--surface-bg, #f1f5f9)" }}
-                        className="py-2.5 px-3 sticky top-0 z-20 text-[color:var(--panel-text)] text-right w-[16%] border-b border-[color:var(--surface-border)]"
-                      >
-                        Одоогийн кВт
+                      <th className="sticky top-0 z-20 h-10 px-3 font-normal text-right w-[15%] border-b border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]">
+                        Өмнөх заалт
                       </th>
-                      <th
-                        style={{ backgroundColor: "var(--surface-bg, #f1f5f9)" }}
-                        className="py-2.5 px-3 sticky top-0 z-20 text-[color:var(--panel-text)] text-center w-[16%] border-b border-[color:var(--surface-border)] last:rounded-tr-xl"
-                      >
-                        Шинэ кВт заалт
+                      <th className="sticky top-0 z-20 h-10 px-3 font-normal text-right w-[19%] border-b border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] rounded-tr-xl">
+                        Шинэ заалт
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-[color:var(--surface-bg)]">
-                    {filteredResidents.map((r, index) => (
-                      <tr
-                        key={r._id}
-                        className="hover:bg-warning/5 transition-colors"
-                      >
-                        <td className="py-2 px-3 text-center text-[color:var(--muted-text)] font-mono text-[11px] border-b border-[color:var(--surface-border)]">
-                          {index + 1}
-                        </td>
-                        <td className="py-2 px-3 text-left border-b border-[color:var(--surface-border)] truncate">
-                          <span className="text-[color:var(--panel-text)] dark:text-white">
+                  <tbody>
+                    {filteredResidents.map((r, index) => {
+                      const isMissing =
+                        r.newKwt === "" || isNaN(parseFloat(r.newKwt));
+                      return (
+                        <tr
+                          key={r._id}
+                          className={`h-12 transition-colors ${
+                            isMissing
+                              ? "bg-warning/5 hover:bg-warning/10"
+                              : "hover:bg-[color:var(--surface-hover)]"
+                          }`}
+                        >
+                          <td className="px-3 text-right tabular-nums text-[13px] text-[color:var(--muted-text)] border-b border-[color:var(--surface-border)]">
+                            {index + 1}
+                          </td>
+                          <td
+                            className="px-3 text-left text-[color:var(--panel-text)] border-b border-[color:var(--surface-border)] truncate"
+                            title={r.ner}
+                          >
                             {r.ner}
-                          </span>
-                        </td>
-                        <td className="py-2 px-3 text-center text-[color:var(--panel-text)] dark:text-white border-b border-[color:var(--surface-border)] truncate">
-                          {r.toot}
-                        </td>
-                        <td className="py-2 px-3 text-center text-[color:var(--muted-text)] border-b border-[color:var(--surface-border)] truncate">
-                          {r.davkhar || "-"}
-                        </td>
-                        <td className="py-2 px-3 text-center text-[color:var(--muted-text)] font-mono text-xs border-b border-[color:var(--surface-border)] whitespace-nowrap">
-                          {r.utas || "-"}
-                        </td>
-                        <td className="py-2 px-3 text-right text-[color:var(--muted-text)] font-mono border-b border-[color:var(--surface-border)] whitespace-nowrap">
-                          {r.currentKwt} кВт
-                        </td>
-                        <td className="py-2 px-3 text-center border-b border-[color:var(--surface-border)]">
-                          <div className="relative inline-block w-full max-w-[120px]">
-                            <input
-                              data-kwt-index={index}
-                              type="number"
-                              step="any"
-                              min="0"
-                              value={r.newKwt}
-                              onChange={(e) => handleKwtChange(r._id, e.target.value)}
-                              onKeyDown={(e) => handleKeyDown(e, index)}
-                              placeholder="0"
-                              className="w-full px-2.5 py-1 text-center text-xs rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] dark:text-white focus:outline-none focus:ring-2 focus:ring-theme"
-                            />
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                          <td className="px-3 text-left text-[color:var(--panel-text)] border-b border-[color:var(--surface-border)] truncate">
+                            {r.toot}
+                          </td>
+                          <td className="px-3 text-left text-[color:var(--muted-text)] border-b border-[color:var(--surface-border)] truncate">
+                            {r.davkhar || "—"}
+                          </td>
+                          <td className="px-3 text-left tabular-nums text-[color:var(--muted-text)] border-b border-[color:var(--surface-border)] truncate">
+                            {r.utas || "—"}
+                          </td>
+                          <td className="px-3 text-right tabular-nums text-[color:var(--muted-text)] border-b border-[color:var(--surface-border)] whitespace-nowrap">
+                            {r.currentKwt.toLocaleString("mn-MN")}{" "}
+                            <span className="text-[13px]">кВт</span>
+                          </td>
+                          <td className="px-3 py-1 text-right border-b border-[color:var(--surface-border)]">
+                            <div className="relative ml-auto w-full max-w-[160px]">
+                              <input
+                                data-kwt-index={index}
+                                type="number"
+                                step="any"
+                                min="0"
+                                inputMode="decimal"
+                                value={r.newKwt}
+                                onChange={(e) => handleKwtChange(r._id, e.target.value)}
+                                onKeyDown={(e) => handleKeyDown(e, index)}
+                                placeholder="Оруулаагүй"
+                                aria-label={`${r.toot} тоотын шинэ кВт заалт`}
+                                aria-invalid={isMissing || undefined}
+                                className={`stg-input !h-10 !pr-11 !text-sm text-right tabular-nums ${
+                                  isMissing ? "!border-warning/60" : ""
+                                }`}
+                              />
+                              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[13px] text-[color:var(--muted-text)]">
+                                кВт
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               )}
             </div>
 
-            {/* Footer Actions */}
-            <div className="flex items-center justify-between pt-4 border-t border-[color:var(--surface-border)] mt-2">
-              <span className="text-xs text-[color:var(--muted-text)]">
-                Нийт: {filteredResidents.length} тоот
-              </span>
+            {/* Footer: summary + actions */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-[color:var(--surface-border)]">
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-[13px] text-[color:var(--muted-text)]">
+                <span>
+                  Заалт оруулсан:{" "}
+                  <span className="tabular-nums text-[color:var(--panel-text)]">
+                    {summary.filled} / {residents.length}
+                  </span>{" "}
+                  тоот
+                </span>
+                {summary.missing > 0 && (
+                  <span className="text-warning">
+                    Оруулаагүй: <span className="tabular-nums">{summary.missing}</span> тоот
+                  </span>
+                )}
+                <span>
+                  Нийт заалт:{" "}
+                  <span className="tabular-nums text-[color:var(--panel-text)]">
+                    {summary.totalKwt.toLocaleString("mn-MN")}
+                  </span>{" "}
+                  кВт
+                </span>
+                {searchTerm.trim() && (
+                  <span>
+                    Харагдаж буй: <span className="tabular-nums">{filteredResidents.length}</span> тоот
+                  </span>
+                )}
+              </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 ml-auto">
                 <button
                   type="button"
                   onClick={onClose}
                   disabled={loading}
-                  className="px-4 py-2 text-xs text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] rounded-xl transition-colors cursor-pointer"
+                  className="stg-btn stg-btn-ghost !h-10 !text-sm"
                 >
-                  Цуцлах
+                  Болих
                 </button>
                 <button
                   type="button"
                   onClick={handleSubmit}
                   disabled={loading || fetching}
-                  className="px-5 py-2 text-xs !text-white bg-theme hover:bg-theme active:bg-theme !rounded-xl transition-colors flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:opacity-50 cursor-pointer"
-                  style={{ color: "#ffffff", borderRadius: "0.75rem" }}
+                  className="stg-btn stg-btn-primary !h-10 !px-6 !text-sm"
                 >
-                  {loading && <Loader2 className="w-4 h-4 animate-spin text-white" />}
-                  <span className="!text-white" style={{ color: "#ffffff" }}>
-                    Хадгалах
-                  </span>
+                  {loading && <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}
+                  <span>{loading ? "Хадгалж байна…" : "Хадгалах"}</span>
                 </button>
               </div>
             </div>

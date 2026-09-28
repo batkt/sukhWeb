@@ -731,7 +731,7 @@ export default function ChatWidget({ inline = false }: ChatWidgetProps): JSX.Ele
                 <button
                   type="button"
                   onClick={() => {
-                    start();
+                    start(undefined, true);
                     setIsOpen(false);
                   }}
                   style={{
