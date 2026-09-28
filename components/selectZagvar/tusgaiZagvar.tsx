@@ -54,10 +54,16 @@ export default function TusgaiZagvar({
     `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
   );
   const [portalStyle, setPortalStyle] = useState<{
-    top: string;
+    top?: string;
+    bottom?: string;
     left: string;
     width: string;
+    maxHeight: number;
+    deeshee: boolean;
   } | null>(null);
+  // Combobox: нээгдсэний дараа хэрэглэгч бичсэн үед л шүүнэ. Үгүй бол
+  // сонгосон утгаар шүүгдэж ("5" → 5, 15, 25) бусад сул дугаар харагдахгүй.
+  const [bichsen, setBichsen] = useState(false);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -81,12 +87,24 @@ export default function TusgaiZagvar({
     }
     const el = ref.current;
     if (!el) return;
-    const r = el.getBoundingClientRect();
-    setPortalStyle({ 
-      top: `${r.bottom}px`, 
-      left: `${r.left}px`, 
-      width: `${r.width}px` 
-    });
+    // Доор зай хүрэлцэхгүй бол (модалын доод хэсэг) дээш нь нээнэ.
+    const bairshuulakh = () => {
+      const r = el.getBoundingClientRect();
+      const doorZai = window.innerHeight - r.bottom - 12;
+      const deerZai = r.top - 12;
+      const deeshee = doorZai < 220 && deerZai > doorZai;
+      const maxHeight = Math.max(120, Math.min(240, (deeshee ? deerZai : doorZai) - 8));
+      setPortalStyle({
+        ...(deeshee
+          ? { bottom: `${window.innerHeight - r.top}px` }
+          : { top: `${r.bottom}px` }),
+        left: `${r.left}px`,
+        width: `${r.width}px`,
+        maxHeight,
+        deeshee,
+      });
+    };
+    bairshuulakh();
 
     // Reposition the portal on scroll/resize instead of closing it so the user
     // can scroll the page while the dropdown stays open.
@@ -94,14 +112,7 @@ export default function TusgaiZagvar({
     const recalc = () => {
       if (!el) return;
       if (raf) cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        const r2 = el.getBoundingClientRect();
-        setPortalStyle({ 
-          top: `${r2.bottom}px`, 
-          left: `${r2.left}px`, 
-          width: `${r2.width}px` 
-        });
-      }) as unknown as number;
+      raf = requestAnimationFrame(bairshuulakh) as unknown as number;
     };
 
     window.addEventListener("scroll", recalc, true);
@@ -152,7 +163,7 @@ export default function TusgaiZagvar({
 
   // Filter list while typing (combobox behaviour)
   const filteredOptions =
-    allowCustomInput && trimmedValue
+    allowCustomInput && trimmedValue && bichsen
       ? mergedOptions.filter(
           (opt) =>
             opt.label.toLowerCase().includes(trimmedValue.toLowerCase()) ||
@@ -162,7 +173,7 @@ export default function TusgaiZagvar({
 
   // Show typed value as the first selectable entry when it is not already an exact match
   const typedCustomEntry =
-    allowCustomInput && trimmedValue && !mergedOptions.some((opt) => opt.value === trimmedValue)
+    allowCustomInput && bichsen && trimmedValue && !mergedOptions.some((opt) => opt.value === trimmedValue)
       ? { value: trimmedValue, label: trimmedValue }
       : null;
 
@@ -175,6 +186,7 @@ export default function TusgaiZagvar({
             value={value}
             onChange={(e) => {
               onChange(e.target.value);
+              setBichsen(true);
               if (!disabled && !isOpen) {
                 window.dispatchEvent(
                   new CustomEvent("tusgai-select-open", {
@@ -186,8 +198,11 @@ export default function TusgaiZagvar({
             }}
             disabled={disabled}
             placeholder={placeholder}
-            onFocus={() => {
+            onFocus={(e) => {
               if (!disabled) {
+                setBichsen(false);
+                // Сонгосон утгыг бүхэлд нь тэмдэглэнэ — шууд бичээд солино.
+                e.currentTarget.select();
                 window.dispatchEvent(
                   new CustomEvent("tusgai-select-open", {
                     detail: { id: instanceId.current },
@@ -206,6 +221,7 @@ export default function TusgaiZagvar({
               if (disabled) return;
               const next = !isOpen;
               if (next) {
+                setBichsen(false);
                 window.dispatchEvent(
                   new CustomEvent("tusgai-select-open", {
                     detail: { id: instanceId.current },
@@ -269,21 +285,27 @@ export default function TusgaiZagvar({
             role="listbox"
             style={{
               position: "fixed",
-              top: portalStyle?.top ?? "0px",
+              top: portalStyle?.top,
+              bottom: portalStyle?.bottom,
               left: portalStyle?.left ?? "0px",
+              visibility: portalStyle ? "visible" : "hidden",
               width: portalStyle?.width ?? "auto",
               // Must be above modal shells (some use z-[12001]+).
               zIndex: 13000,
             } as React.CSSProperties}
           >
             <div
-              className={`mt-2 w-full max-h-60 rounded-2xl overflow-hidden shadow-xl bg-[color:var(--surface-bg)] backdrop-blur-xl border border-white/10 isolate ${
+              style={{ maxHeight: portalStyle?.maxHeight ?? 240 }}
+              className={`${portalStyle?.deeshee ? "mb-2" : "mt-2"} w-full rounded-2xl overflow-hidden shadow-xl bg-[color:var(--surface-bg)] backdrop-blur-xl border border-white/10 isolate ${
                 tone === "neutral"
                   ? "!bg-[color:var(--surface-bg)] !text-[color:var(--panel-text)] !border !border-[color:var(--surface-border)]"
                   : ""
               } ${dropdownClassName}`}
             >
-              <ul className="py-2 overflow-y-auto max-h-60 custom-scrollbar">
+              <ul
+                className="py-2 overflow-y-auto custom-scrollbar"
+                style={{ maxHeight: portalStyle?.maxHeight ?? 240 }}
+              >
                 {typedCustomEntry && (
                   <li key="__custom__">
                     <button

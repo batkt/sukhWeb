@@ -104,7 +104,7 @@ export default function TourReplayButton() {
   if (pathname === "/login") return null;
 
   return (
-    <div className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-[1200] pointer-events-auto">
+    <div id="tour-replay-fab" className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-[1200] pointer-events-auto">
       <div className="relative flex flex-col items-end gap-3">
         {/* Main Floating Button - only shown when closed */}
         {!open && (

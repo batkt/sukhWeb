@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/useAuth";
 import ContractsTable from "../ContractsTable";
@@ -16,6 +16,23 @@ export default function GereeGereePage() {
 
   // Админаар цуцлагдсан гэрээтэй харилцагчийг устгах цонх.
   const [adminUstgakhGeree, setAdminUstgakhGeree] = useState<any | null>(null);
+
+  // Дашбоард: Бүгд / Идэвхтэй / Идэвхгүй — дарахад жагсаалтыг шүүнэ.
+  // (Цуцалсан гэрээ = Идэвхгүй; шүүлтүүрийн логиктой ижил ангилал.)
+  const toonuud = useMemo(() => {
+    const jagsaalt: any[] = Array.isArray(data.contracts) ? data.contracts : [];
+    let idevkhgui = 0;
+    jagsaalt.forEach((c: any) => {
+      const t = String(c?.tuluv || c?.status || "").trim().toLowerCase();
+      if (t === "цуцалсан" || t === "tsutlsasan" || t === "идэвхгүй") idevkhgui++;
+    });
+    return { bugd: jagsaalt.length, idevkhtei: jagsaalt.length - idevkhgui, idevkhgui };
+  }, [data.contracts]);
+  const kartuud: { key: "all" | "active" | "cancelled"; ner: string; too: number; unguClass: string }[] = [
+    { key: "all", ner: "Бүгд", too: toonuud.bugd, unguClass: "text-[color:var(--panel-text)]" },
+    { key: "active", ner: "Идэвхтэй", too: toonuud.idevkhtei, unguClass: "text-success" },
+    { key: "cancelled", ner: "Идэвхгүй", too: toonuud.idevkhgui, unguClass: "text-danger" },
+  ];
 
   // Tour steps
   const gereeTourSteps = useTourSteps("contracts");
@@ -47,6 +64,32 @@ export default function GereeGereePage() {
 
   return (
     <>
+      <div className="stat-cards-grid mb-3 grid grid-cols-1 sm:grid-cols-3" role="tablist" aria-label="Гэрээний төлөв">
+        {kartuud.map((k) => {
+          const idevkhtei = (state.statusFilter || "all") === k.key;
+          return (
+            <button
+              key={k.key}
+              type="button"
+              role="tab"
+              aria-selected={idevkhtei}
+              onClick={() => {
+                state.setStatusFilter(k.key);
+                state.setCurrentPage?.(1);
+              }}
+              className={`relative rounded-2xl neu-panel text-left transition-all select-none ${
+                idevkhtei ? "ring-2 ring-theme shadow-lg" : "hover:bg-[color:var(--surface-hover)]"
+              }`}
+            >
+              <div className="stat-card">
+                <div className={`stat-card-value ${k.unguClass}`}>{k.too.toLocaleString("mn-MN")}</div>
+                <div className="stat-card-title">{k.ner} гэрээ</div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
       <ContractsTable
         ajiltan={ajiltan}
         selectedContracts={state.selectedContracts}

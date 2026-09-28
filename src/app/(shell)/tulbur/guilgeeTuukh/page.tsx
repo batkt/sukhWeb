@@ -9,7 +9,7 @@ import { useSearch } from "@/context/SearchContext";
 import useSWR, { useSWRConfig } from "swr";
 import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
-// import KhungulultPage from "../khungulult/page";
+import HongololtTool from "../khungulult/HongololtTool";
 import { useAuth } from "@/lib/useAuth";
 import { hasPermission } from "@/lib/permissionUtils";
 import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
@@ -38,6 +38,7 @@ import {
   MessageSquare,
   Mail,
   X,
+  Tag,
 } from "lucide-react";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { getErrorMessage } from "@/lib/uilchilgee";
@@ -170,6 +171,10 @@ export default function DansniiKhuulga() {
   ]);
   const [tuluvFilter, setTuluvFilter] = useState<
     "all" | "paid" | "unpaid" | "partiallyPaid" | "overdue"
+  >("all");
+  /** Эзэмшигчийн төрлөөр ялгах: оршин суугч эсвэл харилцагч (гараж/агуулах түрээслэгч). */
+  const [ezemshigchFilter, setEzemshigchFilter] = useState<
+    "all" | "orshinSuugch" | "khariltsagch"
   >("all");
 
   const effectiveDateFilter = useMemo(() => {
@@ -742,6 +747,19 @@ export default function DansniiKhuulga() {
     return map;
   }, [gereeGaralt?.jagsaalt]);
 
+  /** Мөрийн эзэмшигч харилцагч уу (гэрээнд khariltsagchId байвал), оршин суугч уу. */
+  const ezemshigchiinTurul = useCallback(
+    (it: any): "orshinSuugch" | "khariltsagch" => {
+      const cId = String(it?.gereeniiId ?? it?.gereeId ?? "").trim();
+      const c =
+        (cId && (contractsById as any)[cId]) ||
+        (it?.gereeniiDugaar && (contractsByNumber as any)[String(it.gereeniiDugaar)]) ||
+        null;
+      return c?.khariltsagchId || it?.khariltsagchId ? "khariltsagch" : "orshinSuugch";
+    },
+    [contractsById, contractsByNumber],
+  );
+
   // Орц / Давхар / Тоотын dropdown сонголтууд — гэрээнүүдээс
   const { ortsSongolt, davkharSongolt, tootSongolt } = useMemo(() => {
     const orts = new Set<string>();
@@ -935,6 +953,11 @@ export default function DansniiKhuulga() {
         }
       }
 
+      // 1b. Эзэмшигчийн төрөл (Оршин суугч / Харилцагч)
+      if (ezemshigchFilter !== "all" && ezemshigchiinTurul(it) !== ezemshigchFilter) {
+        return false;
+      }
+
       // 2. Search Filter - MUST BE SECOND
       if (searchTerm) {
         const cId = String(it?.gereeniiId ?? it?.gereeId ?? "").trim();
@@ -1017,6 +1040,8 @@ export default function DansniiKhuulga() {
     selectedOrtsFilter,
     selectedDavkharFilter,
     selectedTootFilter,
+    ezemshigchFilter,
+    ezemshigchiinTurul,
     tableDisplayBalances,
     monthPaidByGereeId,
   ]);
@@ -1084,6 +1109,11 @@ export default function DansniiKhuulga() {
         }
       }
 
+      // 1b. Эзэмшигчийн төрөл (Оршин суугч / Харилцагч)
+      if (ezemshigchFilter !== "all" && ezemshigchiinTurul(it) !== ezemshigchFilter) {
+        return false;
+      }
+
       // 2. Search Filter
       if (searchTerm) {
         const cId = String(it?.gereeniiId ?? it?.gereeId ?? "").trim();
@@ -1124,6 +1154,8 @@ export default function DansniiKhuulga() {
     selectedOrtsFilter,
     selectedDavkharFilter,
     selectedTootFilter,
+    ezemshigchFilter,
+    ezemshigchiinTurul,
   ]);
 
   const totalSum = useMemo(() => {
@@ -2121,6 +2153,22 @@ export default function DansniiKhuulga() {
     contractsByNumber,
   ]);
 
+  /** Эзэмшигчийн бүлэг бүрийн гэрээний тоо (бүлгийн шүүлтүүрээс үл хамаарна). */
+  const ezemshigchToo = useMemo(() => {
+    const sets = { orshinSuugch: new Set<string>(), khariltsagch: new Set<string>() };
+    buildingHistoryItems.forEach((it: any) => {
+      const key = String(
+        it?.gereeniiId ?? it?.gereeId ?? it?.gereeniiDugaar ?? it?.orshinSuugchId ?? "",
+      ).trim();
+      if (key) sets[ezemshigchiinTurul(it)].add(key);
+    });
+    return {
+      orshinSuugch: sets.orshinSuugch.size,
+      khariltsagch: sets.khariltsagch.size,
+      all: sets.orshinSuugch.size + sets.khariltsagch.size,
+    };
+  }, [buildingHistoryItems, ezemshigchiinTurul]);
+
   // Stats use deduplicatedResidentsAll so dashboard numbers stay fixed when clicking filters
   const stats = useMemo(() => {
     const residentCount = deduplicatedResidentsAll.length;
@@ -2178,13 +2226,37 @@ export default function DansniiKhuulga() {
       { paid: 0, unpaid: 0 },
     );
 
+    // Сонгосон хугацааны хөнгөлөлтийн нийт дүн (сонгосон эзэмшигчийн бүлгээр).
+    const khungulultNiit = deduplicatedResidentsAll.reduce((sum, r) => {
+      const gid =
+        String(r?.gereeniiId ?? r?.gereeId ?? "").trim() ||
+        (r?.gereeniiDugaar &&
+          String((contractsByNumber as any)[String(r.gereeniiDugaar)]?._id || "")) ||
+        "";
+      return sum + (gid ? Number(monthKhungulultByGereeId[gid] ?? 0) : 0);
+    }, 0);
+
     return [
-      { title: "Оршин суугч", value: residentCount },
+      {
+        title:
+          ezemshigchFilter === "khariltsagch"
+            ? "Харилцагч"
+            : ezemshigchFilter === "orshinSuugch"
+              ? "Оршин суугч"
+              : "Нийт",
+        value: residentCount,
+      },
       { title: "Цуцалсан гэрээний авлага", value: cancelledGereesWithUnpaid },
       { title: "Төлсөн", value: counts.paid },
       { title: "Төлөөгүй", value: counts.unpaid },
+      {
+        title: "Хөнгөлөлт",
+        value: `${Math.round(khungulultNiit).toLocaleString("mn-MN")}₮`,
+      },
     ];
   }, [
+    ezemshigchFilter,
+    monthKhungulultByGereeId,
     deduplicatedResidentsAll,
     cancelledGereesWithUnpaid,
     contractsByNumber,
@@ -3390,16 +3462,55 @@ export default function DansniiKhuulga() {
       </div> */}
 
       <div className="space-y-3">
+        {/* Эзэмшигчээр ялгах: Бүгд / Оршин суугч / Харилцагч */}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="stg-segment" role="tablist" aria-label="Эзэмшигчийн төрөл">
+            {([
+              { key: "all", ner: "Бүгд", too: ezemshigchToo.all },
+              { key: "orshinSuugch", ner: "Оршин суугч", too: ezemshigchToo.orshinSuugch },
+              { key: "khariltsagch", ner: "Харилцагч", too: ezemshigchToo.khariltsagch },
+            ] as const).map((b) => (
+              <button
+                key={b.key}
+                type="button"
+                role="tab"
+                aria-selected={ezemshigchFilter === b.key}
+                onClick={() => setEzemshigchFilter(b.key)}
+                className={`stg-segment-item inline-flex min-h-9 items-center gap-2 ${ezemshigchFilter === b.key ? "is-active" : ""}`}
+              >
+                {b.ner}
+                <span className="rounded-full bg-[color:var(--surface-hover)] px-1.5 text-[11px] text-[color:var(--muted-text)]">
+                  {b.too}
+                </span>
+              </button>
+            ))}
+          </div>
+          {canAddDiscount && (
+            <button
+              type="button"
+              onClick={() => setIsKhungulultOpen(true)}
+              className="btn-minimal inline-flex h-9 items-center gap-1.5 !px-3"
+            >
+              <Tag className="h-4 w-4" />
+              Хөнгөлөлт оруулах
+            </button>
+          )}
+        </div>
         <div
           id="guilgee-status-filter"
-          className="stat-cards-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
+          className="stat-cards-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5"
         >
           {stats.map((stat, idx) => {
             // Map stat titles to filter values
             const getFilterValue = (
               title: string,
             ): "all" | "paid" | "unpaid" | "overdue" | null => {
-              if (title === "Оршин суугч" || title === "Нийт гүйлгээ")
+              if (
+                title === "Оршин суугч" ||
+                title === "Харилцагч" ||
+                title === "Нийт" ||
+                title === "Нийт гүйлгээ"
+              )
                 return "all";
               if (title === "Төлсөн") return "paid";
               if (title === "Төлөөгүй") return "unpaid";
@@ -3416,8 +3527,11 @@ export default function DansniiKhuulga() {
                 onClick={() => {
                   if (filterValue) {
                     setTuluvFilter(filterValue);
+                  } else if (stat.title === "Хөнгөлөлт" && canAddDiscount) {
+                    setIsKhungulultOpen(true);
                   }
                 }}
+                title={stat.title === "Хөнгөлөлт" ? "Сонгосон хугацааны нийт хөнгөлөлт" + (canAddDiscount ? " — дарж хөнгөлөлт оруулна" : "") : undefined}
                 className={`relative group rounded-2xl neu-panel transition-all cursor-pointer ${
                   isActive
                     ? "ring-2 ring-theme shadow-lg"
@@ -3738,41 +3852,17 @@ export default function DansniiKhuulga() {
         </div>
       </div>
 
-      {isKhungulultOpen && (
-        <ModalPortal>
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[12000]"
-              onClick={() => setIsKhungulultOpen(false)}
-            />
-            <motion.div
-              initial={{ scale: 0.98, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.98, opacity: 0 }}
-              className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[1100px] rounded-3xl overflow-hidden shadow-2xl modal-surface modal-responsive"
-              onClick={(e) => e.stopPropagation()}
-              ref={khungulultRef}
-            >
-              <div className="flex items-center justify-between p-3 border-b border-white/20">
-                <div className=""></div>
-                <Button
-                  onClick={() => setIsKhungulultOpen(false)}
-                  variant="secondary"
-                  className="px-6 py-2"
-                >
-                  Хаах
-                </Button>
-              </div>
-              {/* <div className="p-2 overflow-auto max-h-[calc(90vh-48px)] ">
-                <KhungulultPage />
-              </div> */}
-            </motion.div>
-          </>
-        </ModalPortal>
-      )}
+      {/* Хөнгөлөлт оруулах — Төлбөр → Хөнгөлөлт хуудасны хэрэгсэл, модал горимоор */}
+      <HongololtTool
+        show={isKhungulultOpen}
+        onClose={() => setIsKhungulultOpen(false)}
+        token={token || ""}
+        baiguullagiinId={ajiltan?.baiguullagiinId || undefined}
+        barilgiinId={effectiveBarilgiinId}
+        onSuccess={() => {
+          revalidateTulburCaches();
+        }}
+      />
 
       {/* Invoice Modal */}
       {isModalOpen && selectedResident && (

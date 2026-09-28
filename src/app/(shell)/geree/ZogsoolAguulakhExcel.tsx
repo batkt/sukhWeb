@@ -34,6 +34,7 @@ import {
   personUnits,
   runPool,
   tootTurulAngilal,
+  turulNer,
   turulToToot,
   unitKey,
 } from "@/lib/zogsoolAguulakhExcel";
@@ -62,7 +63,7 @@ type ResultItem = {
 };
 
 const unitLabel = (u: { turul: string; davkhar: string; toot: string }) =>
-  `${u.turul} ${u.davkhar}-${u.toot}`;
+  `${turulNer(u.turul)} ${u.davkhar}-${u.toot}`;
 
 export default function ZogsoolAguulakhExcel({
   turul,
@@ -128,14 +129,14 @@ export default function ZogsoolAguulakhExcel({
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${turul} эзэмшигч загвар.xlsx`;
+      a.download = `${turulNer(turul)} эзэмшигч загвар.xlsx`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
       if (floors[turul].length === 0) {
         openErrorOverlay(
-          `Энэ барилгад ${turul.toLowerCase()}ын дугаар тохируулаагүй байна. Эхлээд тоот бүртгэлээс дугаар нэмнэ үү.`,
+          `Энэ барилгад ${turulNer(turul).toLowerCase()}${turul === "Зогсоол" ? "ийн" : "ын"} дугаар тохируулаагүй байна. Эхлээд тоот бүртгэлээс дугаар нэмнэ үү.`,
         );
       } else {
         openSuccessOverlay("Загвар татагдлаа");
@@ -417,7 +418,7 @@ export default function ZogsoolAguulakhExcel({
     };
   }, [plan, includeConflicts]);
 
-  const btnLabel = turul === "Зогсоол" ? "Зогсоолын" : "Агуулахын";
+  const btnLabel = turul === "Зогсоол" ? "Гаражийн" : "Агуулахын";
 
   return (
     <>

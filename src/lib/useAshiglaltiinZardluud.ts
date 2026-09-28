@@ -152,7 +152,9 @@ export function useAshiglaltiinZardluud(overrides?: {
 
   const deleteZardal = async (id: string) => {
     if (!token || !currentOrg || !currentBarilga) return;
-    await uilchilgee(token).delete(`/ashiglaltiinZardluud/${id}`);
+    // Устгаад тухайн барилгын гэрээнүүдээс шууд хасна — дараа сарын
+    // нэхэмжлэхэд орохгүй. Дараа нь гэрээг барилгын зардлуудтай синк хийнэ.
+    await uilchilgee(token).post("/ashiglaltiinZardalUstgaya", { id });
     await syncZardluud();
     mutate();
   };

@@ -8,9 +8,10 @@ import TusgaiZagvar from "../../../../../components/selectZagvar/tusgaiZagvar";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { ConfirmCloseDialog } from "@/components/ui/ConfirmCloseDialog";
 import Button from "@/components/ui/Button";
-import { Plus, Calendar } from "lucide-react";
+import { Plus, Calendar, Car, ChevronDown, Home, Trash2, Warehouse, X } from "lucide-react";
 import StandardDatePicker from "@/components/ui/StandardDatePicker";
 import uilchilgee from "@/lib/uilchilgee";
+import { toast } from "sonner";
 import {
   getResidentToot,
   getResidentDavkhar,
@@ -87,19 +88,13 @@ export default function ResidentModal({
 
   // Snapshot of newResident when modal opens — used to detect unsaved changes
   const initialSnapshot = React.useRef<string | null>(null);
+  // Зургийг (snapshot) доорх синк эффект тоотуудыг өөрийн хэлбэрт (орон сууц →
+  // гараж → агуулах, сэргээсэн төрөлтэй) оруулсны ДАРАА авна. Өмнө нь анхны
+  // өгөгдлөөр авдаг байсан тул юу ч өөрчлөөгүй байхад "Өөрчлөлт хадгалагдахгүй" гардаг байв.
+  const snapshotKhuleekhRef = React.useRef(false);
   React.useEffect(() => {
     if (show) {
-      // Wait for units to be initialized (either from props or from the useEffect below)
-      // to avoid false-positive "unsaved changes" warnings on new residents.
-      const hasUnits = Array.isArray(newResident?.units) && newResident.units.length > 0;
-      
-      if (!initialSnapshot.current) {
-          // Only take snapshot if units are populated (initialization done)
-          // OR if it's been a few renders and still no units (though should always have one)
-          if (hasUnits) {
-            initialSnapshot.current = JSON.stringify(newResident);
-          }
-      }
+      if (!initialSnapshot.current) snapshotKhuleekhRef.current = true;
       setErrors([]);
     } else {
       initialSnapshot.current = null;
@@ -349,6 +344,19 @@ export default function ResidentModal({
             t.source !== "WALLET_API"
         );
 
+        // Бүртгэлтэй хүний орон сууц, гараж, агуулахыг төрөлтэй нь авч модалын
+        // мөрүүдийг шинэчилнэ — өмнө нь төрөлгүй, мөн мөрүүд шинэчлэгддэггүй
+        // байсан тул гараж/агуулахыг дахин гараар оруулах шаардлагатай болдог байв.
+        const olsonUnits = filteredToots.map((t: any) => ({
+          orts: t.orts || "1",
+          davkhar: t.davkhar || "",
+          toot: t.toot || "",
+          turul: t.turul || "Орон сууц",
+          ekhniiUldegdel: t.ekhniiUldegdel || 0,
+          tsahilgaaniiZaalt: t.tsahilgaaniiZaalt || 0,
+          khonogoorBodokhEsekh: t.khonogoorBodokhEsekh || false,
+          bodokhKhonog: t.bodokhKhonog || 0,
+        }));
         setNewResident((p: any) => ({
           ...p,
           ovog: found.ovog || p.ovog,
@@ -356,18 +364,19 @@ export default function ResidentModal({
           register: found.register || p.register,
           mail: found.mail || found.email || p.mail,
           khayag: found.khayag || p.khayag,
-          units: filteredToots.length > 0 
-            ? filteredToots.map((t: any) => ({
-                orts: t.orts || "1",
-                davkhar: t.davkhar || "",
-                toot: t.toot || "",
-                ekhniiUldegdel: t.ekhniiUldegdel || 0,
-                tsahilgaaniiZaalt: t.tsahilgaaniiZaalt || 0,
-                khonogoorBodokhEsekh: t.khonogoorBodokhEsekh || false,
-                bodokhKhonog: t.bodokhKhonog || 0,
-              }))
-            : p.units
         }));
+        if (olsonUnits.length > 0) {
+          setMainUnits(mainUnitsBeldekh(olsonUnits));
+          setCollapsedMains([]);
+          const garashToo = olsonUnits.filter((u: any) => u.turul === "Гараж").length;
+          const aguulakhToo = olsonUnits.filter((u: any) => u.turul === "Агуулах").length;
+          toast.success(
+            `Бүртгэлтэй оршин суугч олдлоо: ${olsonUnits.length - garashToo - aguulakhToo} тоот` +
+              (garashToo ? `, ${garashToo} гараж` : "") +
+              (aguulakhToo ? `, ${aguulakhToo} агуулах` : "") +
+              " автоматаар орлоо.",
+          );
+        }
       }
     } catch (err) {
       console.error("Search error:", err);
@@ -532,30 +541,59 @@ export default function ResidentModal({
     );
   }, [editingResident, show, initialSnapshot.current]);
 
+  /**
+   * Тоотуудын жагсаалтаас модалын мөрүүдийг (орон сууц + түүний гараж/агуулах)
+   * бэлдэнэ. Модал нээгдэхэд болон утсаар бүртгэлтэй хүн олдоход дуудна.
+   */
+  const mainUnitsBeldekh = (unitsRaw: any[], base?: any) => {
+    // Өмнө нь гараж/агуулахын төрөл хадгалагддаггүй байсан тул хуучин
+    // бүртгэлд тэд "Орон сууц" гэж ирдэг. Зоорийн (B1 г.м.) давхрын
+    // дугаарыг барилгын гараж/агуулахын жагсаалтаас таньж зөв төрлийг сэргээнэ
+    // — хадгалахад зөв төрөл баазад бичигдэнэ.
+    const turulTaniya = (u: any) => {
+      const t = String(u?.turul || "").trim();
+      if (t === "Гараж" || t === "Агуулах") return u;
+      const davkhar = String(u?.davkhar || "").trim();
+      const toot = String(u?.toot || "").trim();
+      if (!/^b\d*$/i.test(davkhar) || !toot) return u;
+      const tootuud = (turul: "Тоот" | "Зогсоол" | "Агуулах") =>
+        getTootOptions(String(u.orts || "1"), davkhar, turul).map((x) => String(x).trim());
+      if (tootuud("Тоот").includes(toot)) return u;
+      const garash = tootuud("Зогсоол").includes(toot) || getTootOptions("1", davkhar, "Зогсоол").map(String).includes(toot);
+      const aguulakh = tootuud("Агуулах").includes(toot) || getTootOptions("1", davkhar, "Агуулах").map(String).includes(toot);
+      if (aguulakh && !garash) return { ...u, turul: "Агуулах" };
+      if (garash) return { ...u, turul: "Гараж" };
+      // Жагсаалтад олдоогүй ч зоорийн давхарт орон сууц байхгүй тул гараж гэж үзнэ.
+      return { ...u, turul: "Гараж" };
+    };
+    const units = (Array.isArray(unitsRaw) ? unitsRaw : []).map(turulTaniya);
+    const foundMains = units.filter((u: any) => u.turul !== "Гараж" && u.turul !== "Агуулах");
+    const allGarages = units.filter((u: any) => u.turul === "Гараж");
+    const allStorages = units.filter((u: any) => u.turul === "Агуулах");
+
+    const initialMains = (foundMains.length > 0 ? foundMains : [{
+      orts: base?.orts || "1",
+      davkhar: base?.davkhar || "",
+      toot: base?.toot || "",
+      turul: "Орон сууц",
+      ekhniiUldegdel: base?.ekhniiUldegdel || 0,
+      tsahilgaaniiZaalt: base?.tsahilgaaniiZaalt || 0,
+      khonogoorBodokhEsekh: base?.khonogoorBodokhEsekh || false,
+      bodokhKhonog: base?.bodokhKhonog || 0,
+    }]).map((m: any, idx: number) => ({
+      ...m,
+      garages: idx === 0 ? allGarages.map((g: any) => ({ ...g })) : [],
+      storages: idx === 0 ? allStorages.map((s: any) => ({ ...s })) : [],
+    }));
+
+    return initialMains;
+  };
+
   // Sync local state when modal opens
   React.useEffect(() => {
     if (show) {
       setCollapsedMains([]);
-      const units = Array.isArray(newResident.units) ? newResident.units : [];
-      const foundMains = units.filter((u: any) => u.turul !== "Гараж" && u.turul !== "Агуулах");
-      const allGarages = units.filter((u: any) => u.turul === "Гараж");
-      const allStorages = units.filter((u: any) => u.turul === "Агуулах");
-
-      const initialMains = (foundMains.length > 0 ? foundMains : [{
-        orts: newResident.orts || "1",
-        davkhar: newResident.davkhar || "",
-        toot: newResident.toot || "",
-        turul: "Орон сууц",
-        ekhniiUldegdel: newResident.ekhniiUldegdel || 0,
-        tsahilgaaniiZaalt: newResident.tsahilgaaniiZaalt || 0,
-        khonogoorBodokhEsekh: newResident.khonogoorBodokhEsekh || false,
-        bodokhKhonog: newResident.bodokhKhonog || 0,
-      }]).map((m: any, idx: number) => ({
-        ...m,
-        garages: idx === 0 ? allGarages.map((g: any) => ({ ...g })) : [],
-        storages: idx === 0 ? allStorages.map((s: any) => ({ ...s })) : [],
-      }));
-
+      const initialMains = mainUnitsBeldekh(newResident.units, newResident);
       setMainUnits(initialMains);
       const primaryMain = initialMains[0];
       setUldegdelInput(formatWithCommas(primaryMain.ekhniiUldegdel) || "0");
@@ -591,11 +629,17 @@ export default function ResidentModal({
     setNewResident((p: any) => {
       const stringifiedActive = JSON.stringify(activeUnits);
       const stringifiedExisting = JSON.stringify(p.units);
-      if (stringifiedActive === stringifiedExisting) return p;
+      if (stringifiedActive === stringifiedExisting) {
+        if (snapshotKhuleekhRef.current) {
+          initialSnapshot.current = JSON.stringify(p);
+          snapshotKhuleekhRef.current = false;
+        }
+        return p;
+      }
 
       const primaryMain = mainUnits[0];
 
-      return {
+      const next = {
         ...p,
         units: activeUnits,
         orts: primaryMain.orts || "",
@@ -606,6 +650,11 @@ export default function ResidentModal({
         khonogoorBodokhEsekh: primaryMain.khonogoorBodokhEsekh || false,
         bodokhKhonog: primaryMain.bodokhKhonog || 0,
       };
+      if (snapshotKhuleekhRef.current) {
+        initialSnapshot.current = JSON.stringify(next);
+        snapshotKhuleekhRef.current = false;
+      }
+      return next;
     });
   }, [mainUnits, show]);
 
@@ -1096,56 +1145,68 @@ export default function ResidentModal({
                       {/* Main Units (Тоот) */}
                       {mainUnits.map((mainUnit, index) => {
                         return (
-                          <div key={index} className="relative rounded-xl border-l-4 border-l-blue-500 border border-[color:var(--surface-border)] shadow-sm bg-[color:var(--surface-bg)] overflow-hidden transition-all">
-                            {/* Toot Header — clickable to collapse */}
-                            <div
-                              className="flex items-center justify-between gap-2 px-4 py-2.5 bg-theme/50 border-b border-theme/30"
-                            >
+                          <div key={index} className="rm-unit">
+                            {/* Толгой — дарахад нуугдана/нээгдэнэ */}
+                            <div className="rm-unit-head">
                               <button
                                 type="button"
                                 onClick={() => toggleMainCollapse(index)}
-                                className="flex-1 flex items-center gap-2 cursor-pointer text-left min-w-0"
+                                className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
+                                aria-expanded={!collapsedMains.includes(index)}
                               >
-                                <span className="w-2 h-2 rounded-full bg-theme shadow-sm shadow-theme/50 flex-shrink-0" />
-                                <h4 className="text-xs font-medium text-brand min-w-0 truncate">
-                                  Тоот {mainUnits.length > 1 ? `#${index + 1}` : "(Үндсэн)"}
-                                  {collapsedMains.includes(index) && mainUnit.toot && (
-                                    <span className="ml-2 font-normal text-brand normal-case tracking-normal">
-                                      — {mainUnit.orts && `${mainUnit.orts} орц, `}{mainUnit.davkhar && `${mainUnit.davkhar} давхар, `}{mainUnit.toot} тоот
-                                    </span>
-                                  )}
-                                </h4>
+                                <span className="rm-unit-icon">
+                                  <Home className="h-4 w-4" />
+                                </span>
+                                <span className="min-w-0">
+                                  <span className="block text-[13px] font-semibold text-[color:var(--panel-text)]">
+                                    {mainUnits.length > 1 ? `Орон сууц #${index + 1}` : "Орон сууц"}
+                                  </span>
+                                  <span className="block truncate text-[11px] text-[color:var(--muted-text)]">
+                                    {mainUnit.toot
+                                      ? [
+                                          mainUnit.orts && `${mainUnit.orts} орц`,
+                                          mainUnit.davkhar && `${mainUnit.davkhar} давхар`,
+                                          `${mainUnit.toot} тоот`,
+                                        ]
+                                          .filter(Boolean)
+                                          .join(" · ")
+                                      : "Орц, давхар, тоотоо сонгоно уу"}
+                                    {((mainUnit.garages || []).length > 0 || (mainUnit.storages || []).length > 0) &&
+                                      ` · ${[
+                                        (mainUnit.garages || []).length && `${(mainUnit.garages || []).length} гараж`,
+                                        (mainUnit.storages || []).length && `${(mainUnit.storages || []).length} агуулах`,
+                                      ]
+                                        .filter(Boolean)
+                                        .join(", ")}`}
+                                  </span>
+                                </span>
                               </button>
-                              <div className="flex items-center gap-1 flex-shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => toggleMainCollapse(index)}
+                                className="rm-icon-btn"
+                                aria-label={collapsedMains.includes(index) ? "Нээх" : "Нуух"}
+                                title={collapsedMains.includes(index) ? "Нээх" : "Нуух"}
+                              >
+                                <ChevronDown
+                                  className={`h-4 w-4 transition-transform duration-200 ${collapsedMains.includes(index) ? "-rotate-90" : ""}`}
+                                />
+                              </button>
+                              {mainUnits.length > 1 && (
                                 <button
                                   type="button"
-                                  onClick={() => toggleMainCollapse(index)}
-                                  className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-brand hover:bg-theme/10 dark:hover:bg-theme/40 transition-colors cursor-pointer"
+                                  onClick={() => removeMainUnitRow(index)}
+                                  className="rm-icon-btn rm-icon-btn-danger"
+                                  aria-label="Тоот хасах"
+                                  title="Тоот хасах"
                                 >
-                                  <svg
-                                    className={`w-3.5 h-3.5 transition-transform duration-200 ${collapsedMains.includes(index) ? "-rotate-90" : "rotate-0"}`}
-                                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
-                                  >
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                                  </svg>
-                                  {collapsedMains.includes(index) ? "Нээх" : "Нуух"}
+                                  <Trash2 className="h-4 w-4" />
                                 </button>
-                                {mainUnits.length > 1 && (
-                                  <button
-                                    type="button"
-                                    onClick={() => removeMainUnitRow(index)}
-                                    className="p-1.5 text-danger rounded-lg hover:bg-danger/10 hover:text-danger transition-all"
-                                  >
-                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                  </button>
-                                )}
-                              </div>
+                              )}
                             </div>
 
                             {/* Toot Fields - collapsible */}
-                            {!collapsedMains.includes(index) && (<div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+                            {!collapsedMains.includes(index) && (<div className="px-4 pt-3 pb-4 grid grid-cols-1 md:grid-cols-3 gap-3">
                               <div>
                                 <label className="block text-xs font-medium text-[color:var(--muted-text)] mb-1">Орц</label>
                                 <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${getFlatIndex(index, "main")}.orts`) ? "input-error" : ""}`}>
@@ -1295,125 +1356,87 @@ export default function ResidentModal({
                               </div>
                             </div>)}
 
-                            {/* Per-Toot action buttons */}
-                            {!collapsedMains.includes(index) && (<div className="px-4 pb-3 flex items-center gap-3 border-t border-[color:var(--surface-border)] pt-3">
-                              {/* Add Garage button */}
-                              <button
-                                type="button"
-                                onClick={() => addGarageToUnit(index)}
-                                className="flex items-center gap-1.5 text-[11px] font-medium text-brand hover:text-brand dark:hover:text-brand transition-colors px-2.5 py-1.5 rounded-lg hover:bg-theme/10 dark:hover:bg-theme/20 border border-theme/30"
-                              >
-                                Гараж нэмэх
-                                {(mainUnit.garages || []).length > 0 && (
-                                  <span className="ml-1 bg-theme text-white rounded-full px-1.5 py-0.5 text-[11px] font-medium">
-                                    {(mainUnit.garages || []).length}
-                                  </span>
-                                )}
-                              </button>
-
-                              <div className="w-px h-4 bg-[color:var(--panel)]" />
-                            {/* Add Storage button */}
-                              <button
-                                type="button"
-                                onClick={() => addStorageToUnit(index)}
-                                className="flex items-center gap-1.5 text-[11px] font-medium text-brand hover:text-brand dark:hover:text-brand transition-colors px-2.5 py-1.5 rounded-lg hover:bg-theme/10 dark:hover:bg-theme/20 border border-theme/30"
-                              >
-                                Агуулах нэмэх
-                                {(mainUnit.storages || []).length > 0 && (
-                                  <span className="ml-1 bg-theme text-white rounded-full px-1.5 py-0.5 text-[11px] font-medium">
-                                    {(mainUnit.storages || []).length}
-                                  </span>
-                                )}
-                              </button>
-                            </div>)}
-
-                            {/* Nested Garage Cards */}
-                            {!collapsedMains.includes(index) && (<>
-                            {(mainUnit.garages || []).map((garage: any, gIdx: number) => {
-                              const gFlatIdx = getGarageFlatIndex(index, gIdx);
-                              return (
-                                <div key={gIdx} className="mx-4 mb-2 rounded-lg border-l-4 border-l-emerald-500 border border-theme/30 bg-theme/30 overflow-hidden">
-                                  <div className="flex items-center justify-between px-3 py-2 border-b border-theme/30 bg-theme/60">
-                                    <div className="flex items-center gap-2">
-                                      <h5 className="text-[11px] font-medium text-brand">
-                                        Гараж {(mainUnit.garages || []).length > 1 ? `#${gIdx + 1}` : ""}
-                                      </h5>
-                                    </div>
-                                    <button type="button" onClick={() => removeGarageFromUnit(index, gIdx)}
-                                      className="p-1 text-danger hover:text-danger hover:bg-danger/10 rounded transition-all">
-                                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                      </svg>
-                                    </button>
-                                  </div>
-                                  <div className="p-3 grid grid-cols-2 gap-3">
-                                    <div>
-                                      <label className="block text-xs font-medium text-brand mb-1">Давхар</label>
-                                      <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${gFlatIdx}.davkhar`) ? "input-error" : ""}`}>
-                                        <TusgaiZagvar value={garage.davkhar || ""} onChange={(val: string) => updateGarageField(index, gIdx, "davkhar", val)}
-                                          options={additionalFloors.map((d) => ({ value: d, label: d }))} className="w-full h-full" placeholder="Давхар..." />
+                            {/* Гараж | Агуулах — «Харилцагч нэмэх»-тэй ижил зэрэгцээ самбар.
+                                Энэ орон сууцны тоотод холбогдоно. */}
+                            {!collapsedMains.includes(index) && (
+                              <div className="grid grid-cols-1 items-start gap-3 px-4 pb-4 md:grid-cols-2">
+                                {([
+                                  { turul: "Зогсоол" as const, ner: "Гараж", jagsaalt: mainUnit.garages || [] },
+                                  { turul: "Агуулах" as const, ner: "Агуулах", jagsaalt: mainUnit.storages || [] },
+                                ]).map(({ turul, ner, jagsaalt }) => {
+                                  const garash = turul === "Зогсоол";
+                                  return (
+                                    <div key={turul} className="overflow-hidden rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]">
+                                      <div className="flex items-center justify-between gap-2 px-3 py-2">
+                                        <div className="flex items-center gap-2">
+                                          <span className={`grid h-6 w-6 place-items-center rounded-md ${garash ? "bg-theme/10 text-brand" : "bg-indigo-500/10 text-indigo-500"}`}>
+                                            {garash ? <Car className="h-3.5 w-3.5" /> : <Warehouse className="h-3.5 w-3.5" />}
+                                          </span>
+                                          <span className="text-xs font-medium text-[color:var(--panel-text)]">
+                                            {ner}
+                                            {jagsaalt.length > 0 && (
+                                              <span className="ml-1 text-[color:var(--muted-text)]">({jagsaalt.length})</span>
+                                            )}
+                                          </span>
+                                        </div>
+                                        <Button
+                                          type="button"
+                                          onClick={() => (garash ? addGarageToUnit(index) : addStorageToUnit(index))}
+                                          variant="secondary"
+                                          size="sm"
+                                          leftIcon={<Plus className="w-3.5 h-3.5" />}
+                                        >
+                                          Нэмэх
+                                        </Button>
                                       </div>
-                                    </div>
-                                    <div>
-                                      <label className="block text-xs font-medium text-brand mb-1">Дугаар</label>
-                                      {(() => {
-                                        const opts = getTootOptions("1", garage.davkhar || "", "Зогсоол");
+                                      {jagsaalt.map((u: any, i2: number) => {
+                                        const flatIdx = garash ? getGarageFlatIndex(index, i2) : getStorageFlatIndex(index, i2);
+                                        const shinechlekh = (field: string, val: string) =>
+                                          garash ? updateGarageField(index, i2, field, val) : updateStorageField(index, i2, field, val);
+                                        const opts = getTootOptions("1", u.davkhar || "", turul);
                                         return (
-                                          <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${gFlatIdx}.toot`) ? "input-error" : ""}`}>
-                                            <TusgaiZagvar value={garage.toot || ""} onChange={(val: string) => updateGarageField(index, gIdx, "toot", val)}
-                                              options={opts.map((t) => ({ value: t, label: t, isOccupied: isTootOccupied(t, garage.davkhar || "", "1", "Зогсоол") }))} className="w-full h-full" placeholder="Дугаар..." disabled={!garage.davkhar} allowCustomInput={true} />
+                                          <div key={`${turul}-${i2}`} className="flex items-center gap-2 border-t border-[color:var(--surface-border)] px-3 py-2">
+                                            <div className={`tusgai-wrapper min-w-0 flex-1 flex items-center ${errors.includes(`units.${flatIdx}.davkhar`) ? "input-error" : ""}`}>
+                                              <TusgaiZagvar
+                                                value={u.davkhar || ""}
+                                                onChange={(val: string) => shinechlekh("davkhar", val)}
+                                                options={additionalFloors.map((d) => ({ value: d, label: d }))}
+                                                className="w-full h-full"
+                                                placeholder="Давхар"
+                                              />
+                                            </div>
+                                            <div className={`tusgai-wrapper min-w-0 flex-1 flex items-center ${errors.includes(`units.${flatIdx}.toot`) ? "input-error" : ""}`}>
+                                              <TusgaiZagvar
+                                                value={u.toot || ""}
+                                                onChange={(val: string) => shinechlekh("toot", val)}
+                                                options={opts.map((t) => ({
+                                                  value: t,
+                                                  label: t,
+                                                  isOccupied: isTootOccupied(t, u.davkhar || "", "1", turul),
+                                                }))}
+                                                className="w-full h-full"
+                                                placeholder="Дугаар"
+                                                disabled={!u.davkhar}
+                                                allowCustomInput={true}
+                                              />
+                                            </div>
+                                            <button
+                                              type="button"
+                                              onClick={() => (garash ? removeGarageFromUnit(index, i2) : removeStorageFromUnit(index, i2))}
+                                              title="Хасах"
+                                              aria-label={`${ner} хасах`}
+                                              className="shrink-0 rounded-md p-1 text-[color:var(--muted-text)] transition-colors hover:bg-danger/10 hover:text-danger"
+                                            >
+                                              <X className="h-3.5 w-3.5" />
+                                            </button>
                                           </div>
                                         );
-                                      })()}
+                                      })}
                                     </div>
-                                  </div>
-                                </div>
-                              );
-                            })}
-
-                            {/* Nested Storage Cards */}
-                            {(mainUnit.storages || []).map((storage: any, sIdx: number) => {
-                              const sFlatIdxNested = getStorageFlatIndex(index, sIdx);
-                              return (
-                                <div key={sIdx} className="mx-4 mb-2 rounded-lg border-l-4 border-l-indigo-500 border border-theme/30 bg-theme/30 overflow-hidden">
-                                  <div className="flex items-center justify-between px-3 py-2 border-b border-theme/30 bg-theme/60">
-                                    <div className="flex items-center gap-2">
-                                      <h5 className="text-[11px] font-medium text-brand">
-                                        Агуулах {(mainUnit.storages || []).length > 1 ? `#${sIdx + 1}` : ""}
-                                      </h5>
-                                    </div>
-                                    <button type="button" onClick={() => removeStorageFromUnit(index, sIdx)}
-                                      className="p-1 text-danger hover:text-danger hover:bg-danger/10 rounded transition-all">
-                                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                      </svg>
-                                    </button>
-                                  </div>
-                                  <div className="p-3 grid grid-cols-2 gap-3">
-                                    <div>
-                                      <label className="block text-xs font-medium text-brand mb-1">Давхар</label>
-                                      <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${sFlatIdxNested}.davkhar`) ? "input-error" : ""}`}>
-                                        <TusgaiZagvar value={storage.davkhar || ""} onChange={(val: string) => updateStorageField(index, sIdx, "davkhar", val)}
-                                          options={additionalFloors.map((d) => ({ value: d, label: d }))} className="w-full h-full" placeholder="Давхар..." />
-                                      </div>
-                                    </div>
-                                    <div>
-                                      <label className="block text-xs font-medium text-brand mb-1">Дугаар</label>
-                                      {(() => {
-                                        const opts = getTootOptions("1", storage.davkhar || "", "Агуулах");
-                                        return (
-                                          <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${sFlatIdxNested}.toot`) ? "input-error" : ""}`}>
-                                            <TusgaiZagvar value={storage.toot || ""} onChange={(val: string) => updateStorageField(index, sIdx, "toot", val)}
-                                              options={opts.map((t) => ({ value: t, label: t, isOccupied: isTootOccupied(t, storage.davkhar || "", "1", "Агуулах") }))} className="w-full h-full" placeholder="Дугаар..." disabled={!storage.davkhar} allowCustomInput={true} />
-                                          </div>
-                                        );
-                                      })()}
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </>)}
+                                  );
+                                })}
+                              </div>
+                            )}
                           </div>
                         );
                       })}

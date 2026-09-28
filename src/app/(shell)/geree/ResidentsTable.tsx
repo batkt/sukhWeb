@@ -180,10 +180,10 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
           const tooltipContent = (
             <div className="space-y-1.5 p-1.5 max-w-[220px]">
               {toots.map((t: any, idx: number) => {
-                const label = t.turul === "Гараж" ? "Зогсоол" : t.turul === "Агуулах" ? "Агуулах" : "Орон сууц";
+                const label = t.turul === "Гараж" ? "Гараж" : t.turul === "Агуулах" ? "Агуулах" : "Орон сууц";
                 return (
                   <div key={idx} className="flex items-center justify-between gap-3 py-0.5">
-                    <span className="text-white font-medium">Тоот {t.toot} {label}</span>
+                    <span className="font-medium text-[color:var(--panel-text)]">Тоот {t.toot} {label}</span>
                     <button
                       type="button"
                       onClick={(e) => {
@@ -209,7 +209,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
           );
 
           return (
-            <Tooltip title={tooltipContent} placement="top" color="#1e293b" trigger="hover">
+            <Tooltip title={tooltipContent} placement="top" trigger="hover">
               <span className="inline-flex items-center gap-1.5 cursor-pointer px-2.5 py-0.5 rounded-md bg-[color:var(--surface-hover)] font-medium text-[color:var(--panel-text)] border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors">
                 {toots[0].toot}
                 {toots.length > 1 && (
@@ -253,10 +253,10 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
           const tooltipContent = (
             <div className="space-y-1.5 p-1.5 max-w-[220px]">
               {toots.map((t: any, idx: number) => {
-                const label = t.turul === "Гараж" ? "Зогсоол" : "Агуулах";
+                const label = t.turul === "Гараж" ? "Гараж" : "Агуулах";
                 return (
                   <div key={idx} className="flex items-center justify-between gap-3 py-0.5">
-                    <span className="text-white font-medium">Тоот {t.toot} {label}</span>
+                    <span className="font-medium text-[color:var(--panel-text)]">Тоот {t.toot} {label}</span>
                     <button
                       type="button"
                       onClick={(e) => {
@@ -282,7 +282,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
           );
 
           return (
-            <Tooltip title={tooltipContent} placement="top" color="#1e293b" trigger="hover">
+            <Tooltip title={tooltipContent} placement="top" trigger="hover">
               <span className="inline-flex items-center gap-1.5 cursor-pointer px-2.5 py-0.5 rounded-md bg-[color:var(--surface-hover)] font-medium text-[color:var(--panel-text)] border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors">
                 {toots[0].toot}
                 {toots.length > 1 && (

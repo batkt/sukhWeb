@@ -170,10 +170,17 @@ export default function UnitsSection({
   } | null>(null);
   const holbootoiUstgakhBatlakh = async () => {
     if (!holbootoiUstgakh) return;
-    const { floor, unit, resident } = holbootoiUstgakh;
-    const salgasan = await actions.handleUnlinkFromUnit(resident, unit, propertyTab);
+    const { floor, unit, ner, resident } = holbootoiUstgakh;
+    // Нэг үйлдэл, нэг мэдэгдэл: эхлээд эзэмшигчээс салгаж (чимээгүй), дараа нь
+    // дугаарыг устгана. Өмнө нь салгахад "амжилттай", устгахад хуучин гэрээний
+    // жагсаалтаар "идэвхтэй гэрээ байна" гэж зөрүүтэй хоёр мэдэгдэл гардаг байв.
+    const salgasan = await actions.handleUnlinkFromUnit(resident, unit, propertyTab, { chimeegui: true });
     if (salgasan && actions.deleteUnit) {
-      await actions.deleteUnit(floor, unit, propertyTab);
+      // Амжилтгүй бол deleteUnit өөрөө шалтгааныг харуулна.
+      await actions.deleteUnit(floor, unit, propertyTab, {
+        gereeShalgakhgui: true,
+        amjiltiinMsg: `${unit} дугаарыг ${ner || "эзэмшигч"}-ээс салгаж устгалаа`,
+      });
     }
     setHolbootoiUstgakh(null);
   };
@@ -596,11 +603,11 @@ export default function UnitsSection({
 
     const totalCount = dedicatedIds.length + nestedIds.length;
     if (totalCount === 0) {
-      alert(`Сонгосон тоотуудад идэвхтэй ${propertyTab === "Зогсоол" ? "Зогсоол/Гараж" : propertyTab === "Агуулах" ? "Агуулах" : "Орон сууц/Тоот"} гэрээ олдсонгүй.`);
+      alert(`Сонгосон тоотуудад идэвхтэй ${propertyTab === "Зогсоол" ? "Гараж" : propertyTab === "Агуулах" ? "Агуулах" : "Орон сууц/Тоот"} гэрээ олдсонгүй.`);
       return;
     }
 
-    const typeLabel = propertyTab === "Зогсоол" ? "Зогсоол/Гараж" : propertyTab === "Агуулах" ? "Агуулах" : "Орон сууц/Тоот";
+    const typeLabel = propertyTab === "Зогсоол" ? "Гараж" : propertyTab === "Агуулах" ? "Агуулах" : "Орон сууц/Тоот";
     setConfirmModal({
       show: true,
       title: `Сонгосон тоотуудад ${propertyTab === "Зогсоол" || propertyTab === "Агуулах" ? "авлага нэмэх" : "нэхэмжлэх илгээх"}`,
@@ -642,7 +649,7 @@ export default function UnitsSection({
 
     const typeLabel =
       propertyTab === "Зогсоол"
-        ? "зогсоолын дугаарыг"
+        ? "гаражийн дугаарыг"
         : propertyTab === "Агуулах"
           ? "агуулахын дугаарыг"
           : "тоотыг";
@@ -781,11 +788,11 @@ export default function UnitsSection({
 
     const totalCount = dedicatedIds.length + nestedIds.length;
     if (totalCount === 0) {
-      alert(`Энэ давхарт идэвхтэй ${propertyTab === "Зогсоол" ? "Зогсоол/Гараж" : propertyTab === "Агуулах" ? "Агуулах" : "Орон сууц/Тоот"} гэрээ олдсонгүй.`);
+      alert(`Энэ давхарт идэвхтэй ${propertyTab === "Зогсоол" ? "Гараж" : propertyTab === "Агуулах" ? "Агуулах" : "Орон сууц/Тоот"} гэрээ олдсонгүй.`);
       return;
     }
 
-    const typeLabel = propertyTab === "Зогсоол" ? "Зогсоол/Гараж" : propertyTab === "Агуулах" ? "Агуулах" : "Орон сууц/Тоот";
+    const typeLabel = propertyTab === "Зогсоол" ? "Гараж" : propertyTab === "Агуулах" ? "Агуулах" : "Орон сууц/Тоот";
     setConfirmModal({
       show: true,
       title: `Давхарт ${propertyTab === "Зогсоол" || propertyTab === "Агуулах" ? "авлага нэмэх" : "нэхэмжлэх илгээх"}`,
@@ -874,11 +881,11 @@ export default function UnitsSection({
 
     const totalCount = dedicatedIds.length + nestedIds.length;
     if (totalCount === 0) {
-      alert(`Идэвхтэй ${propertyTab === "Зогсоол" ? "Зогсоол/Гараж" : propertyTab === "Агуулах" ? "Агуулах" : "Орон сууц/Тоот"} гэрээ олдсонгүй.`);
+      alert(`Идэвхтэй ${propertyTab === "Зогсоол" ? "Гараж" : propertyTab === "Агуулах" ? "Агуулах" : "Орон сууц/Тоот"} гэрээ олдсонгүй.`);
       return;
     }
 
-    const typeLabel = propertyTab === "Зогсоол" ? "Зогсоол/Гараж" : propertyTab === "Агуулах" ? "Агуулах" : "Орон сууц/Тоот";
+    const typeLabel = propertyTab === "Зогсоол" ? "Гараж" : propertyTab === "Агуулах" ? "Агуулах" : "Орон сууц/Тоот";
     setConfirmModal({
       show: true,
       title: `Бүх давхарт ${propertyTab === "Зогсоол" || propertyTab === "Агуулах" ? "авлага нэмэх" : "нэхэмжлэх илгээх"}`,
@@ -934,7 +941,7 @@ export default function UnitsSection({
           return t === "зогсоол" || t === "гараж" || t === "агуулах";
         })();
       const isNestedGarage = (propertyTab === "Зогсоол" || propertyTab === "Агуулах") && !isDedicatedGarageTab;
-      const typeLabel = propertyTab === "Зогсоол" ? "Зогсоол/Гараж" : propertyTab === "Агуулах" ? "Агуулах" : "Орон сууц/Тоот";
+      const typeLabel = propertyTab === "Зогсоол" ? "Гараж" : propertyTab === "Агуулах" ? "Агуулах" : "Орон сууц/Тоот";
 
       setConfirmModal({
         show: true,
@@ -1248,45 +1255,42 @@ export default function UnitsSection({
       { title: "№", dataIndex: "index", key: "index", width: 40, align: "center" },
       { title: "Огноо", dataIndex: "ognoo", key: "ognoo" },
       {
-        title: "Нэр",
-        dataIndex: "ner",
-        key: "ner",
-        render: (v: any) => <span>{v}</span>,
-      },
-      {
-        title: "Орц",
-        dataIndex: "orts",
-        key: "orts",
-        width: 60,
-        align: "center",
-        render: (v: any) => <span className="text-xs">{v || "-"}</span>,
-      },
-      {
-        title: "Тоот",
-        dataIndex: "toot",
-        key: "toot",
-        width: 65,
-        align: "center",
-        render: (v: any) => <span className="text-xs">{v || "-"}</span>,
-      },
-      {
-        title: propertyTab === "Зогсоол" ? "Зогсоол" : "Агуулах",
+        // Гараж/агуулахын дугаар ба эзэмшигчийн байрны тоот — нэг баганад.
+        title: propertyTab === "Зогсоол" ? "Гараж · Байрны тоот" : "Агуулах · Байрны тоот",
         dataIndex: "zogsoolDugaar",
         key: "zogsoolDugaar",
-        align: "center",
-        render: (v: any) => (
-          <span className="text-brand">
-            {v}
+        width: 170,
+        render: (v: any, row: any) => (
+          <span className="inline-flex items-center gap-2 whitespace-nowrap">
+            <span className="inline-flex h-6 min-w-[36px] items-center justify-center rounded-md bg-theme/10 px-2 font-medium text-brand">
+              {v}
+            </span>
+            {row.toot && row.toot !== "-" ? (
+              <span className="text-[color:var(--muted-text)]">
+                → {row.orts && row.orts !== "-" ? `${row.orts} орц · ` : ""}
+                {row.toot} тоот
+              </span>
+            ) : (
+              <span className="text-[color:var(--muted-text)]">—</span>
+            )}
           </span>
         ),
       },
       {
-        title: "Дугаар",
+        title: "Эзэмшигч",
+        dataIndex: "ner",
+        key: "ner",
+        render: (v: any, row: any) => (
+          <span className={row.isOccupied ? "" : "text-[color:var(--muted-text)]"}>{v}</span>
+        ),
+      },
+      {
+        title: "Утас",
         dataIndex: "dugaar",
         key: "dugaar",
         width: 110,
         align: "center",
-        render: (v: any) => <span className="text-xs text-center">{v || "-"}</span>,
+        render: (v: any) => <span className="text-center">{v || "-"}</span>,
       },
       {
         title: "Төлбөр",
@@ -1559,7 +1563,7 @@ export default function UnitsSection({
                       }`}
                   >
                     <p className="text-xs text-[color:var(--muted-text)] mb-1">
-                      {propertyTab === "Зогсоол" ? "Грашийн нийт тоот" : "Нийт тоот"}
+                      {propertyTab === "Зогсоол" ? "Гаражийн нийт дугаар" : propertyTab === "Агуулах" ? "Агуулахын нийт дугаар" : "Нийт тоот"}
                     </p>
                     <p className="text-2xl text-[color:var(--panel-text)] tabular-nums">{stats.total}</p>
                   </button>
@@ -1598,7 +1602,7 @@ export default function UnitsSection({
                   <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[color:var(--surface-border)]">
                     <div className="flex items-center gap-2">
                       <h3 className="text-base text-[color:var(--panel-text)]">
-                        {propertyTab === "Зогсоол" ? "Зогсоол давхрын тоотууд" : "Агуулах давхрын тоотууд"}
+                        {propertyTab === "Зогсоол" ? "Гараж — давхрын дугаарууд" : "Агуулах — давхрын дугаарууд"}
                       </h3>
                       {uniqueSortedFloorOptions.length > 0 && (
                         <div className="flex items-center gap-1.5 ml-2">
@@ -1636,7 +1640,7 @@ export default function UnitsSection({
                           type="text"
                           value={zogsoolSearch}
                           onChange={(e) => setZogsoolSearch(e.target.value)}
-                          placeholder={propertyTab === "Зогсоол" ? "Хайх /зогсоолын дугаар/" : "Хайх /агуулахын дугаар/"}
+                          placeholder={propertyTab === "Зогсоол" ? "Хайх: гаражийн дугаар, нэр, тоот..." : "Хайх: агуулахын дугаар, нэр, тоот..."}
                           className="h-9 w-full rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-3 text-xs text-[color:var(--panel-text)] dark:text-white placeholder:text-[color:var(--muted-text)] focus:border-theme focus:outline-none transition shadow-2xs"
                         />
                       </div>
@@ -1847,7 +1851,7 @@ export default function UnitsSection({
                       className="!bg-warning hover:!bg-warning !text-white rounded-2xl shadow-md shadow-warning/10"
                     >
                       {propertyTab === "Зогсоол"
-                        ? "Зогсоолын нэхэмжлэх илгээх"
+                        ? "Гаражийн нэхэмжлэх илгээх"
                         : "Агуулахын нэхэмжлэх илгээх"}
                     </Button>
                     {/* Action Button: Unlink User */}

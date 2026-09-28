@@ -2,8 +2,9 @@
 
 import React, { useMemo, useState } from "react";
 import Table from "@/components/ui/table";
+import { Tooltip } from "antd";
 import type { ColumnsType } from "@/components/ui/table";
-import { Edit, Trash2, ChevronUp, ChevronDown, X } from "lucide-react";
+import { Edit, Trash2, ChevronUp, ChevronDown, X, Car, Warehouse } from "lucide-react";
 import { ConfirmCloseDialog } from "@/components/ui/ConfirmCloseDialog";
 import { getPaymentStatusLabel } from "@/lib/utils";
 import useSWR from "swr";
@@ -188,8 +189,11 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
       },
 
       {
-        title: "Зогсоол / Агуулах",
+        title: "Гараж / Агуулах",
         key: "garage_storage",
+        // Машины дугаарын дараа, өөр өнгийн баганаар.
+        onHeaderCell: () => ({ className: "zt-col-garash" }),
+        onCell: () => ({ className: "zt-col-garash" }),
         width: 220,
         sorter: true,
         sortOrder:
@@ -230,47 +234,65 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
           });
 
           if (toots.length === 0) return "-";
+          // Гараж эхэнд, дараа нь агуулах — дугаараар нь эрэмбэлнэ.
+          toots = [...toots].sort((a: any, b: any) =>
+            a.turul === b.turul
+              ? String(a.toot).localeCompare(String(b.toot), undefined, { numeric: true })
+              : a.turul === "Гараж" ? -1 : 1,
+          );
 
 
 
-          // Бүх тоот нэг мөрөнд — hover хийх шаардлагагүй. Хасах × нь
-          // шошгон дээр очиход л гарна.
-          return (
-            <div className="flex items-center justify-center gap-1.5 overflow-visible whitespace-nowrap py-0.5">
-              {toots.map((t: any, idx: number) => {
-                const label = t.turul === "Гараж" ? "Зогсоол" : "Агуулах";
-                return (
-                  <span
-                    key={idx}
-                    title={`Тоот ${t.toot} · ${label}`}
-                    className="group relative inline-flex h-6 shrink-0 items-center gap-1 rounded-md bg-[color:var(--surface-hover)] px-2 leading-none text-[color:var(--panel-text)]"
-                  >
-                    {/* Тоот ба төрөл — ижил фонт, хэмжээ; төрөл нь зөвхөн өнгөөр ялгарна */}
-                    <span>{t.toot}</span>
-                    <span className="text-[color:var(--muted-text)]">{label}</span>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setPendingTootRemove({
-                          clientId: String(record._id),
-                          baiguullagiinId: t.baiguullagiinId,
-                          barilgiinId: t.barilgiinId,
-                          toot: t.toot,
-                          label: `${t.toot} (${label})`,
-                        });
-                      }}
-                      // Шошгон дотор жижиг бүдэг ×, hover үед улаан болно
-                      className="tb-chip-x"
-                      title="Хасах"
-                      aria-label={`${t.toot} ${label} хасах`}
-                    >
-                      <X className="h-2.5 w-2.5" />
-                    </button>
+          // Оршин суугчийн бүртгэлтэй адил: эхний дугаар + «+N», бүгдийг hover-оор.
+          const ner = (t: any) => (t.turul === "Гараж" ? "Гараж" : "Агуулах");
+          const tooltipContent = (
+            <div className="space-y-1 p-1 min-w-[180px]">
+              {toots.map((t: any, idx: number) => (
+                <div key={idx} className="flex items-center justify-between gap-3 py-0.5">
+                  <span className="inline-flex items-center gap-1.5 font-medium">
+                    {t.turul === "Гараж" ? (
+                      <Car className="h-3.5 w-3.5 text-brand" />
+                    ) : (
+                      <Warehouse className="h-3.5 w-3.5 text-indigo-500" />
+                    )}
+                    {t.toot}
+                    <span className="font-normal text-[color:var(--muted-text)]">{ner(t)}</span>
                   </span>
-                );
-              })}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPendingTootRemove({
+                        clientId: String(record._id),
+                        baiguullagiinId: t.baiguullagiinId,
+                        barilgiinId: t.barilgiinId,
+                        toot: t.toot,
+                        label: `${t.toot} (${ner(t)})`,
+                      });
+                    }}
+                    className="rounded p-0.5 text-danger transition-colors hover:bg-danger/10"
+                    title="Хасах"
+                    aria-label={`${t.toot} ${ner(t)} хасах`}
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
             </div>
+          );
+          const ekhnii = toots[0];
+          return (
+            <Tooltip title={tooltipContent} placement="top" trigger="hover">
+              <span
+                className={`inline-flex h-6 cursor-pointer items-center gap-1 rounded-md px-2 leading-none ${
+                  ekhnii.turul === "Гараж" ? "zt-chip-garash" : "zt-chip-aguulakh"
+                }`}
+              >
+                {ekhnii.turul === "Гараж" ? <Car className="h-3 w-3 shrink-0" /> : <Warehouse className="h-3 w-3 shrink-0" />}
+                <span>{ekhnii.toot}</span>
+                {toots.length > 1 && <span className="opacity-70">+{toots.length - 1}</span>}
+              </span>
+            </Tooltip>
           );
         },
       },
@@ -351,14 +373,18 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
         key: "tailbar",
         width: 160,
         align: "center",
-        render: (val: string) => (
-          <span
-            title={val || undefined}
-            className="block truncate text-[color:var(--muted-text)]"
-          >
-            {val || "-"}
-          </span>
-        ),
+        render: (val: string) =>
+          val ? (
+            <Tooltip
+              title={<div className="max-w-[280px] whitespace-pre-wrap p-0.5">{val}</div>}
+              placement="top"
+              trigger="hover"
+            >
+              <span className="block cursor-default truncate text-[color:var(--muted-text)]">{val}</span>
+            </Tooltip>
+          ) : (
+            <span className="text-[color:var(--muted-text)]">-</span>
+          ),
       },
       {
         title: "Үйлдэл",

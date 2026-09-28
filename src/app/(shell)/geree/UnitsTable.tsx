@@ -141,7 +141,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
       title: (
         <span className={`text-[color:var(--panel-text)] text-center block ${propertyTab === "Зогсоол" ? "" : "font-medium"}`}>
           {propertyTab === "Зогсоол"
-            ? "Зогсоолын дугаарууд"
+            ? "Гаражийн дугаарууд"
             : propertyTab === "Агуулах"
               ? "Агуулахын дугаарууд"
               : "Тоотууд"}

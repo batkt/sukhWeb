@@ -123,7 +123,11 @@ export default function KhariltsagchModal({
         str(u.davkhar),
         str(u.toot),
         Number(u.ekhniiUldegdel || 0),
-      ]);
+      ])
+      // Модал тоотуудыг (гараж → агуулах) дахин эрэмбэлдэг тул дарааллаас
+      // үл хамааран харьцуулна — эс бөгөөс юу ч өөрчлөөгүй үед анхааруулга гарна.
+      .map((x: any[]) => JSON.stringify(x))
+      .sort();
     return JSON.stringify([
       str(c.ovog),
       str(c.ner),

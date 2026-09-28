@@ -5,11 +5,12 @@ import { usePathname } from "next/navigation";
 import { Send, Sparkles, Square, Trash2, X } from "lucide-react";
 import { useAuth } from "@/lib/useAuth";
 import { getApiUrl } from "@/lib/uilchilgee";
+import { useBuilding } from "@/context/BuildingContext";
 
 /**
- * AI туслах — системийг хэрхэн ашиглах асуултад хариулдаг хөвөгч цонх.
- * Байгууллагын өгөгдөлд хандахгүй; backend `/aiTuslakh` нь хариуг
- * text/plain хэлбэрээр stream хийнэ.
+ * AI туслах — системийн хэрэглээ, ерөнхий асуулт, байгууллагын өгөгдлийн
+ * (ажилтны эрхийн хүрээнд, зөвхөн унших) асуултад хариулдаг хөвөгч цонх.
+ * Backend `/aiTuslakh` нь хариуг text/plain хэлбэрээр stream хийнэ.
  */
 
 type Messej = { role: "user" | "assistant"; content: string };
@@ -19,10 +20,11 @@ const TUUKH_KEY = "aiTuslakhTuukh";
 const NUULT_EVENT = "ai-tuslakh-nuult";
 
 const JISHEE_ASUULTUUD = [
+  "Хамгийн их өртэй 10 айл хэн бэ?",
+  "Өнөөдөр зогсоолоос хэдэн төгрөгийн орлого орсон бэ?",
+  "Энэ сарын нэхэмжлэхийн хэд нь төлөгдөөгүй байна?",
   "Хөнгөлөлт яаж бүртгэх вэ?",
-  "Зогсоолын тоотыг Excel-ээр яаж оруулах вэ?",
-  "Өдрийн хаалт яаж хийх вэ?",
-  "Оршин суугчийн хуулгыг хаанаас харах вэ?",
+  "Ус тасрах тухай оршин суугчдад зар бичээд өгөөч",
 ];
 
 function nuusanUnshikh(): boolean {
@@ -117,6 +119,7 @@ export default function AiTuslakh() {
   const { token } = useAuth();
   const pathname = usePathname();
   const { nuusan, setNuusan } = useAiTuslakhNuult();
+  const { selectedBuildingId } = useBuilding();
   const [neelttei, setNeelttei] = useState(false);
   const [messejuud, setMessejuud] = useState<Messej[]>([]);
   const [oruulga, setOruulga] = useState("");
@@ -185,11 +188,18 @@ export default function AiTuslakh() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ messages: shine, khuudas: pathname, khuudasniiNer }),
+          body: JSON.stringify({
+            messages: shine,
+            khuudas: pathname,
+            khuudasniiNer,
+            barilgiinId: selectedBuildingId || undefined,
+          }),
         });
         if (!resp.ok || !resp.body) {
           const data = await resp.json().catch(() => null);
-          throw new Error(data?.message || "AI туслах хариу өгч чадсангүй.");
+          // Жинхэнэ шалтгааныг (жишээ "503 UNAVAILABLE: model overloaded") хамт харуулна.
+          const undsen = data?.message || `AI туслах хариу өгч чадсангүй (${resp.status}).`;
+          throw new Error(data?.aldaa ? `${undsen}\n${data.aldaa}` : undsen);
         }
         const reader = resp.body.getReader();
         const decoder = new TextDecoder();
@@ -220,7 +230,7 @@ export default function AiTuslakh() {
         zogsookhRef.current = null;
       }
     },
-    [oruulga, khariulj, token, messejuud, pathname],
+    [oruulga, khariulj, token, messejuud, pathname, selectedBuildingId],
   );
 
   if (!token) return null;
@@ -259,7 +269,7 @@ export default function AiTuslakh() {
             <div className="min-w-0 flex-1">
               <h2 className="text-[15px] font-semibold leading-tight">AI туслах</h2>
               <p className="text-[12px] leading-tight text-[color:var(--muted-text)]">
-                Системийг хэрхэн ашиглах талаар асуугаарай
+                Систем, өгөгдөл, ерөнхий асуулт — юу ч асуугаарай
               </p>
             </div>
             {messejuud.length > 0 && !khariulj && (
@@ -291,7 +301,8 @@ export default function AiTuslakh() {
               <div className="ai-empty">
                 <p className="text-[15px] font-semibold">Сайн байна уу! 👋</p>
                 <p className="mt-1 text-[13px] text-[color:var(--muted-text)]">
-                  Би системийн хуудас, товч, тохиргоог хэрхэн ашиглахыг тайлбарлана. Жишээ нь:
+                  Системийг хэрхэн ашиглахыг тайлбарлаж, таны эрхийн хүрээнд өр, үлдэгдэл, нэхэмжлэх,
+                  зогсоолын орлогыг хэлж, зар мэдэгдэл бичихэд тусална. Жишээ нь:
                 </p>
                 <div className="mt-3 flex flex-col gap-2">
                   {JISHEE_ASUULTUUD.map((a) => (

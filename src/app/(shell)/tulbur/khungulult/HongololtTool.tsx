@@ -1595,7 +1595,7 @@ export default function HongololtTool({
                     }}
                     className={`stg-segment-item inline-flex min-h-9 items-center gap-2 ${tootTurul === k ? "is-active" : ""}`}
                   >
-                    {k}
+                    {k === "Зогсоол" ? "Гараж" : k}
                     <span className="rounded-full bg-[color:var(--surface-hover)] px-1.5 text-[12px] tabular-nums text-[color:var(--muted-text)]">
                       {tootTurulToo[k]}
                     </span>

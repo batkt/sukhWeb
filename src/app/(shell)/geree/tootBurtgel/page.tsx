@@ -43,7 +43,7 @@ export default function ӨмчБүртгэлPage() {
                 : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
             }`}
           >
-            {tab}
+            {tab === "Зогсоол" ? "Гараж" : tab}
           </button>
         ))}
       </div>

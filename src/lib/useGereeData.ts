@@ -448,7 +448,7 @@ export function useGereeData(
         case "toot": {
           let val = contract.toot != null ? String(contract.toot) : "";
           if (Array.isArray(contract.nemeltTootnuud) && contract.nemeltTootnuud.length > 0) {
-            const extra = contract.nemeltTootnuud.map((n: any) => `${n.toot} (${n.turul === "Гараж" ? "Зогсоол" : n.turul})`).join(", ");
+            const extra = contract.nemeltTootnuud.map((n: any) => `${n.toot} (${n.turul === "Гараж" || n.turul === "Зогсоол" ? "Гараж" : n.turul})`).join(", ");
             if (val) {
               val = `${val}, ${extra}`;
             } else {

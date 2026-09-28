@@ -9,6 +9,8 @@
 import { dugaarZuvEsekh, mashiniiDugaarTseverle } from "@/lib/mashiniiDugaar";
 
 export type EzemshikhTurul = "Зогсоол" | "Агуулах";
+/** Хэрэглэгчид харуулах нэр — "Зогсоол" нь дотоод утга, дэлгэц/Excel-д "Гараж". */
+export const turulNer = (t: string) => (t === "Зогсоол" ? "Гараж" : t);
 /** Backend-ийн `toots[].turul` дээр хадгалагддаг утга. */
 export type TootTurul = "Гараж" | "Агуулах";
 
@@ -27,7 +29,7 @@ export const turulToToot = (t: EzemshikhTurul): TootTurul =>
 /** `toots[].turul` → табын төрөл (KhariltsagchModal.isTootOccupied-тэй ижил). */
 export function tootTurulAngilal(raw: any): EzemshikhTurul | "Тоот" {
   const t = String(raw || "Орон сууц").trim().toLowerCase();
-  if (["гараж", "зогсоол", "parking", "garage"].includes(t)) return "Зогсоол";
+  if (["гараж", "гараш", "зогсоол", "parking", "garage"].includes(t)) return "Зогсоол";
   if (["агуулах", "storage"].includes(t)) return "Агуулах";
   return "Тоот";
 }
@@ -196,8 +198,8 @@ export async function buildTemplate(opts: {
   const ex1 = opts0.slice(0, 2).join(", ") || "12, 13";
   const ex2 = opts0[2] || opts0[0] || "14";
   const examples = [
-    { ovog: "Бат", ner: "Жишээ Болд", utas: "99112233", turul, davkhar: f0, dugaar: ex1, mashin: "1234УБА, 5678УНА", tailbar: JISHEE_TEMDEG },
-    { ovog: "Бат", ner: "Жишээ Болд", utas: "99112233", turul, davkhar: f0, dugaar: ex2, mashin: "", tailbar: JISHEE_TEMDEG },
+    { ovog: "Бат", ner: "Жишээ Болд", utas: "99112233", turul: turulNer(turul), davkhar: f0, dugaar: ex1, mashin: "1234УБА, 5678УНА", tailbar: JISHEE_TEMDEG },
+    { ovog: "Бат", ner: "Жишээ Болд", utas: "99112233", turul: turulNer(turul), davkhar: f0, dugaar: ex2, mashin: "", tailbar: JISHEE_TEMDEG },
   ];
   examples.forEach((r) => {
     const row = ws.addRow(r);
@@ -216,10 +218,10 @@ export async function buildTemplate(opts: {
     ws.getCell(r, 4).dataValidation = {
       type: "list",
       allowBlank: true,
-      formulae: ['"Зогсоол,Агуулах"'],
+      formulae: ['"Гараж,Агуулах"'],
       showErrorMessage: true,
       errorTitle: "Төрөл",
-      error: "Зогсоол эсвэл Агуулах сонгоно уу",
+      error: "Гараж эсвэл Агуулах сонгоно уу",
     };
     if (allFloors.length > 0) {
       ws.getCell(r, 5).dataValidation = {
@@ -237,13 +239,13 @@ export async function buildTemplate(opts: {
   const z = wb.addWorksheet("Заавар");
   z.getColumn(1).width = 110;
   const lines = [
-    "Зогсоол / Агуулахын эзэмшигч бүртгэх заавар",
+    "Гараж / Агуулахын эзэмшигч бүртгэх заавар",
     "",
     "1. «Бүртгэл» хуудсанд нэг мөрөнд нэг хүн бичнэ. Нэг хүн олон дугаартай бол:",
     "   • нэг мөрөнд «Дугаар» баганад таслалаар бичнэ, жишээ нь: 12, 13, 14",
     "   • эсвэл ижил утастай хэд хэдэн мөр бичнэ. Хоёулаа бүх дугаарыг тэр нэг хүнд холбоно.",
     "2. Утас — 8 оронтой тоо. Хүнийг утсаар нь танина.",
-    "3. Төрөл — «Зогсоол» эсвэл «Агуулах». Хоосон орхивол Excel-ийг оруулж буй цэсний төрлөөр бүртгэнэ.",
+    "3. Төрөл — «Гараж» эсвэл «Агуулах». Хоосон орхивол Excel-ийг оруулж буй цэсний төрлөөр бүртгэнэ.",
     "4. Давхар — жагсаалтаас сонгоно (жишээ нь B1). Дугаар нь тухайн давхарт тохируулагдсан байх ёстой.",
     "5. Машины дугаар — заавал биш. Олон бол таслалаар: 1234УБА, 5678УНА (4 тоо + 3 үсэг).",
     "6. Саарал налуу үсэгтэй, Тайлбар нь «ЖИШЭЭ» мөрүүдийг оруулахгүй. Устгаад эсвэл дээр нь бичээд ашиглана уу.",
@@ -281,7 +283,7 @@ export async function buildTemplate(opts: {
   order.forEach((t) =>
     floors[t].forEach((f) => {
       const sul = tootOptions(getTootOptions, f, t).filter((d) => !ownerMap.has(unitKey(t, f, d)));
-      const row = s.addRow({ turul: t, davkhar: f, too: sul.length, sul: sul.join(", ") });
+      const row = s.addRow({ turul: turulNer(t), davkhar: f, too: sul.length, sul: sul.join(", ") });
       row.getCell(4).alignment = { wrapText: true, vertical: "top" };
     }),
   );
@@ -324,7 +326,7 @@ const COLUMN_ALIASES: Record<string, string[]> = {
 function parseTurul(v: string, fallback: EzemshikhTurul): EzemshikhTurul | null {
   const t = v.trim().toLowerCase();
   if (!t) return fallback;
-  if (["зогсоол", "гараж", "parking", "garage"].includes(t)) return "Зогсоол";
+  if (["зогсоол", "гараж", "гараш", "parking", "garage"].includes(t)) return "Зогсоол";
   if (["агуулах", "storage"].includes(t)) return "Агуулах";
   return null;
 }
@@ -398,7 +400,7 @@ export async function parseWorkbook(
 
     const turulRaw = get(r, "turul");
     const turul = parseTurul(turulRaw, opts.defaultTurul);
-    if (!turul) rowErrors.push(`Төрөл буруу («${turulRaw}») — Зогсоол эсвэл Агуулах`);
+    if (!turul) rowErrors.push(`Төрөл буруу («${turulRaw}») — Гараж эсвэл Агуулах`);
 
     const davkharRaw = get(r, "davkhar");
     let davkhar = "";

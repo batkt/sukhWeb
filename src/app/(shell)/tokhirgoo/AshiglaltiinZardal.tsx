@@ -1205,32 +1205,24 @@ export default function AshiglaltiinZardluud() {
                   {/* Дээд чирэх хэсэг ба Гарчиг */}
                   <div
                     onPointerDown={(e) => dragControls.start(e)}
-                    className="px-5 sm:px-6 py-4 border-b border-[color:var(--surface-border)] flex items-center justify-between cursor-move select-none shrink-0"
+                    className="px-6 py-5 border-b border-[color:var(--surface-border)] flex items-center justify-between cursor-move select-none shrink-0"
                   >
                     <div className="flex items-center gap-3.5 min-w-0">
-                      <div className="w-10 h-10 rounded-xl bg-theme/10 flex items-center justify-center text-brand shrink-0">
-                        <Wallet className="w-5 h-5" />
+                      <div className="w-12 h-12 rounded-xl bg-theme/10 flex items-center justify-center text-brand shrink-0">
+                        <Wallet className="w-6 h-6" />
                       </div>
                       <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h2 className="text-[17px] text-[color:var(--panel-text)] leading-tight">
-                            {editingItem
-                              ? "Ашиглалтын зардал засах"
-                              : "Ашиглалтын зардал бүртгэх"}
-                          </h2>
-                          <span
-                            className={`px-2.5 py-0.5 text-[12px] rounded-full border transition-all ${formData.turul === "Тогтмол"
-                              ? "bg-theme/10 text-brand border-theme/20"
-                              : "bg-success/10 text-success border-success/20"
-                              }`}
-                          >
-                            {formData.turul === "Тогтмол" ? "Тогтмол зардал" : "Хувьсах зардал"}
-                          </span>
-                        </div>
+                        <h2 className="text-[18px] text-[color:var(--panel-text)] leading-tight">
+                          {editingItem
+                            ? "Ашиглалтын зардал засах"
+                            : "Ашиглалтын зардал бүртгэх"}
+                        </h2>
                         <p className="text-[13px] text-[color:var(--muted-text)] mt-1">
                           {editingItem
-                            ? "Зардлын тохиргоо, тарифын дүнг шинэчлэх"
-                            : "Шинэ ашиглалтын зардал, тарифыг бүртгэх"}
+                            ? "Зардлын мэдээллийг шинэчилнэ үү"
+                            : "Шинэ зардлын мэдээллийг оруулна уу"}
+                          {" · "}
+                          {formData.turul === "Тогтмол" ? "Тогтмол зардал" : "Хувьсах зардал"}
                         </p>
                       </div>
                     </div>
@@ -1245,192 +1237,141 @@ export default function AshiglaltiinZardluud() {
                     </button>
                   </div>
 
-                  {/* Маягт — нэг багана, дээрээс доош 1→5 алхмаар бөглөнө.
-                      Том карт, олон шошго бүхий хоёр баганат загвар ахмад
-                      хэрэглэгчдэд хаанаас эхлэхээ ойлгоход хэцүү байв. */}
+                  {/* Маягт — шошго зүүн, талбар баруун (жишиг загвар) */}
                   {(() => {
                     const zaaltTsakhilgaan =
                       formData.ner.toLowerCase().includes("цахилгаан") &&
                       !formData.ner.toLowerCase().includes("дундын") &&
                       !formData.ner.toLowerCase().includes("өмчлөл");
                     return (
-                      <div className="overflow-y-auto custom-scrollbar space-y-6 p-5 sm:p-6">
-                        <Alkham dugaar={1} garchig="Зардлын нэр" tailbar="Нэхэмжлэх дээр ийм нэрээр харагдана" zaaval>
-                          <div className="relative">
-                            <input
-                              type="text"
-                              value={formData.ner}
-                              onChange={(e) => {
-                                const newName = e.target.value;
-                                const isCakhilgaan = newName.toLowerCase().includes("цахилгаан");
-                                const isVarElec =
-                                  isCakhilgaan &&
-                                  !newName.toLowerCase().includes("дундын") &&
-                                  !newName.toLowerCase().includes("өмчлөл");
-                                setFormData({
-                                  ...formData,
-                                  ner: newName,
-                                  zaalt: isVarElec ? true : formData.zaalt,
-                                  tariffUsgeer: isVarElec ? "кВт" : formData.tariffUsgeer,
-                                });
-                              }}
-                              placeholder="Жишээ нь: Лифт, Хог, Харуул"
-                              className="stg-input !h-11 !pr-11 !text-[15px]"
-                            />
-                            {formData.ner && (
-                              <button
-                                type="button"
-                                onClick={() => setFormData({ ...formData, ner: "" })}
-                                className="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] hover:text-[color:var(--panel-text)]"
-                                title="Нэрийг арилгах"
-                                aria-label="Нэрийг арилгах"
-                              >
-                                <X className="h-4 w-4" />
-                              </button>
+                      <div className="overflow-y-auto custom-scrollbar space-y-4 px-6 py-5">
+                        <div className="az-row">
+                          <label htmlFor="az-ner" className="az-label">
+                            Зардлын нэр <span className="text-danger">*</span>
+                          </label>
+                          <div className="min-w-0">
+                            <div className="az-field">
+                              <Tag className="az-field-icon" />
+                              <input
+                                id="az-ner"
+                                type="text"
+                                value={formData.ner}
+                                onChange={(e) => {
+                                  const newName = e.target.value;
+                                  const isCakhilgaan = newName.toLowerCase().includes("цахилгаан");
+                                  const isVarElec =
+                                    isCakhilgaan &&
+                                    !newName.toLowerCase().includes("дундын") &&
+                                    !newName.toLowerCase().includes("өмчлөл");
+                                  setFormData({
+                                    ...formData,
+                                    ner: newName,
+                                    zaalt: isVarElec ? true : formData.zaalt,
+                                    tariffUsgeer: isVarElec ? "кВт" : formData.tariffUsgeer,
+                                  });
+                                }}
+                                placeholder="Жишээ: Цахилгааны төлбөр"
+                                className="az-input"
+                              />
+                            </div>
+                            {!editingItem && (
+                              <div className="mt-2 flex flex-wrap gap-1.5">
+                                {QUICK_PRESETS.map((preset) => {
+                                  const isActive = formData.ner.trim().toLowerCase() === preset.name.toLowerCase();
+                                  return (
+                                    <button
+                                      key={preset.label}
+                                      type="button"
+                                      onClick={() => applyQuickPreset(preset)}
+                                      aria-pressed={isActive}
+                                      className={`h-7 rounded-full border px-2.5 text-[12px] transition-colors ${
+                                        isActive
+                                          ? "border-theme bg-theme !text-white"
+                                          : "border-[color:var(--surface-border)] text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] hover:text-[color:var(--panel-text)]"
+                                      }`}
+                                    >
+                                      {preset.label}
+                                    </button>
+                                  );
+                                })}
+                              </div>
                             )}
                           </div>
-                          <p className="mb-1.5 mt-3 text-[13px] text-[color:var(--muted-text)]">Эсвэл доороос сонгоно уу:</p>
-                          <div className="flex flex-wrap gap-2">
-                            {QUICK_PRESETS.map((preset) => {
-                              const isActive = formData.ner.trim().toLowerCase() === preset.name.toLowerCase();
-                              const IconComp = preset.icon;
-                              return (
-                                <button
-                                  key={preset.label}
-                                  type="button"
-                                  onClick={() => applyQuickPreset(preset)}
-                                  aria-pressed={isActive}
-                                  className={`flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-[13px] transition-colors ${
-                                    isActive
-                                      ? "border-theme bg-theme !text-white"
-                                      : "border-[color:var(--surface-border)] text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"
-                                  }`}
-                                >
-                                  <IconComp className="h-4 w-4 opacity-70" />
-                                  {preset.label}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </Alkham>
-
-                        <Alkham dugaar={2} garchig="Хэрхэн бодогдох вэ?" zaaval>
-                          <div className="space-y-2" role="radiogroup" aria-label="Зардлын ангилал">
-                            <Songolt
-                              songogdson={formData.turul === "Тогтмол"}
-                              onClick={() => setFormData({ ...formData, turul: "Тогтмол" })}
-                              Icon={CalendarCheck}
-                              ner="Сар бүр ижил дүн"
-                              tailbar="Тогтмол зардал — жишээ нь хог, харуул, СӨХ-ийн төлбөр"
-                            />
-                            <Songolt
-                              songogdson={formData.turul !== "Тогтмол"}
-                              onClick={() => setFormData({ ...formData, turul: "Дурын" })}
-                              Icon={Activity}
-                              ner="Сар бүр өөр дүн"
-                              tailbar="Хувьсах зардал — тоолуурын заалт, хэрэглээгээр бодогдоно"
-                            />
-                          </div>
-                        </Alkham>
+                        </div>
 
                         {!zaaltTsakhilgaan && (
-                          <Alkham dugaar={3} garchig="Хэнд бодогдох вэ?" zaaval>
-                            <div className="space-y-2" role="radiogroup" aria-label="Зардлын төрөл">
-                              <Songolt
-                                songogdson={(formData.zardliinTurul || "Энгийн") === "Энгийн"}
-                                onClick={() => setFormData({ ...formData, zardliinTurul: "Энгийн" })}
-                                Icon={Layers}
-                                ner="Бүх оршин суугчид"
-                                tailbar="Энгийн зардал — бүгдэд ижил бодогдоно"
-                              />
-                              <Songolt
-                                songogdson={formData.zardliinTurul === "Лифт"}
-                                onClick={() => setFormData({ ...formData, zardliinTurul: "Лифт" })}
-                                Icon={ArrowUpDown}
-                                ner="Лифт ашигладаг давхрынхан"
-                                tailbar="Лифтний зардал — давхар, орцны тохиргооноос хамаарна"
-                              />
+                          <div className="az-row">
+                            <label htmlFor="az-turul" className="az-label">
+                              Зардлын төрөл <span className="text-danger">*</span>
+                            </label>
+                            <div className="az-field">
+                              <Layers className="az-field-icon" />
+                              <select
+                                id="az-turul"
+                                value={formData.zardliinTurul || "Энгийн"}
+                                onChange={(e) => setFormData({ ...formData, zardliinTurul: e.target.value })}
+                                className="az-input az-select"
+                              >
+                                <option value="Энгийн">Энгийн — бүх оршин суугчид</option>
+                                <option value="Лифт">Лифт — лифт ашигладаг давхрынхан</option>
+                              </select>
+                              <ChevronDown className="az-select-chevron" />
                             </div>
-                          </Alkham>
+                          </div>
                         )}
 
-                        <Alkham
-                          dugaar={zaaltTsakhilgaan ? 3 : 4}
-                          garchig={zaaltTsakhilgaan ? "Суурь хураамж" : "Сарын дүн"}
-                          tailbar={
-                            zaaltTsakhilgaan
-                              ? "Тоолуурын заалтаас гадна сар бүр нэмэгдэх тогтмол дүн"
-                              : formData.tariffUsgeer
-                                ? `1 ${formData.tariffUsgeer}-ийн үнэ`
-                                : "Нэг айл сар бүр төлөх дүн"
-                          }
-                          zaaval
-                        >
-                          <div className="relative">
-                            <input
-                              type="text"
-                              inputMode="decimal"
-                              value={zaaltTsakhilgaan ? suuriKhuraamjInput : tariffInputValue}
-                              onChange={zaaltTsakhilgaan ? handleSuuriKhuraamjChange : handleTariffChange}
-                              onFocus={(e) => e.currentTarget.select()}
-                              onBlur={() => {
-                                if (zaaltTsakhilgaan) {
-                                  if (formData.suuriKhuraamj) setSuuriKhuraamjInput(formatNumber(formData.suuriKhuraamj, 2));
-                                  else setSuuriKhuraamjInput("");
-                                } else if (formData.tariff) setTariffInputValue(formatNumber(formData.tariff, 2));
-                                else setTariffInputValue("");
-                              }}
-                              placeholder="0"
-                              className="stg-input !h-12 !pr-10 text-right !text-[18px] tabular-nums"
-                            />
-                            <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[15px] text-[color:var(--muted-text)]">
-                              ₮
-                            </span>
-                          </div>
-                          {zaaltTsakhilgaan && (
-                            <p className="mt-2 text-[13px] text-[color:var(--muted-text)]">
-                              Хэрэглээ нь тоолуурын заалтын файлаас бодогдоод энэ дүн дээр нэмэгдэнэ.
-                            </p>
-                          )}
-                        </Alkham>
-
-                        <Alkham
-                          dugaar={zaaltTsakhilgaan ? 4 : 5}
-                          garchig="Тайлбар"
-                          tailbar="Заавал биш — дотоод тэмдэглэл"
-                        >
-                          <textarea
-                            value={formData.tailbar}
-                            onChange={(e) => setFormData({ ...formData, tailbar: e.target.value })}
-                            placeholder="Жишээ нь: 2026 оны 9-р сараас эхлэн"
-                            rows={2}
-                            maxLength={TAILBARIIN_DEED_URT}
-                            className="stg-input !h-auto resize-none py-2.5 leading-relaxed"
-                          />
-                          <div className="mt-1 text-right text-[12px] text-[color:var(--muted-text)]">
-                            {(formData.tailbar || "").length}/{TAILBARIIN_DEED_URT}
-                          </div>
-                        </Alkham>
-
-                        {/* Хураангуй — нэхэмжлэх дээр яаж харагдах */}
-                        <div className="flex items-center justify-between gap-3 rounded-xl bg-[color:var(--surface-hover)] px-4 py-3">
+                        <div className="az-row">
+                          <label htmlFor="az-dun" className="az-label">
+                            {zaaltTsakhilgaan ? "Суурь хураамж (₮)" : "Тарифын дүн (₮)"} <span className="text-danger">*</span>
+                          </label>
                           <div className="min-w-0">
-                            <div className="text-[12px] text-[color:var(--muted-text)]">Нэхэмжлэх дээр</div>
-                            <div className="truncate text-[15px] text-[color:var(--panel-text)]">
-                              {formData.ner.trim() || "Зардлын нэр"}
-                              <span className="ml-2 text-[13px] text-[color:var(--muted-text)]">
-                                · {formData.turul === "Тогтмол" ? "сар бүр ижил" : "сар бүр өөр"}
-                                {!zaaltTsakhilgaan && formData.zardliinTurul === "Лифт" ? " · лифт" : ""}
-                                {formData.nuatBodokhEsekh ? " · +10% НӨАТ" : ""}
-                              </span>
+                            <div className="az-field">
+                              <span className="az-field-icon az-field-icon-text">₮</span>
+                              <input
+                                id="az-dun"
+                                type="text"
+                                inputMode="decimal"
+                                value={zaaltTsakhilgaan ? suuriKhuraamjInput : tariffInputValue}
+                                onChange={zaaltTsakhilgaan ? handleSuuriKhuraamjChange : handleTariffChange}
+                                onFocus={(e) => e.currentTarget.select()}
+                                onBlur={() => {
+                                  if (zaaltTsakhilgaan) {
+                                    if (formData.suuriKhuraamj) setSuuriKhuraamjInput(formatNumber(formData.suuriKhuraamj, 2));
+                                    else setSuuriKhuraamjInput("");
+                                  } else if (formData.tariff) setTariffInputValue(formatNumber(formData.tariff, 2));
+                                  else setTariffInputValue("");
+                                }}
+                                placeholder="0.00"
+                                className="az-input tabular-nums"
+                              />
+                              {!zaaltTsakhilgaan && formData.tariffUsgeer && (
+                                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[12px] text-[color:var(--muted-text)]">
+                                  / {formData.tariffUsgeer}
+                                </span>
+                              )}
                             </div>
+                            {zaaltTsakhilgaan && (
+                              <p className="mt-1.5 text-[12px] text-[color:var(--muted-text)]">
+                                Тоолуурын заалтаар бодогдсон дүн дээр нэмэгдэнэ.
+                              </p>
+                            )}
                           </div>
-                          <div className="shrink-0 text-right">
-                            <div className="text-[17px] tabular-nums text-brand">
-                              {(zaaltTsakhilgaan ? suuriKhuraamjInput : tariffInputValue) || "0"} ₮
-                            </div>
-                            <div className="text-[12px] text-[color:var(--muted-text)]">
-                              {zaaltTsakhilgaan ? "суурь + заалт" : "сард"}
+                        </div>
+
+                        <div className="az-row az-row-top">
+                          <label htmlFor="az-tailbar" className="az-label">Тайлбар</label>
+                          <div className="min-w-0">
+                            <textarea
+                              id="az-tailbar"
+                              value={formData.tailbar}
+                              onChange={(e) => setFormData({ ...formData, tailbar: e.target.value })}
+                              placeholder="Тайлбар бичнэ үү..."
+                              rows={2}
+                              maxLength={TAILBARIIN_DEED_URT}
+                              className="az-input az-textarea"
+                            />
+                            <div className="mt-1 text-right text-[12px] text-[color:var(--muted-text)]">
+                              {(formData.tailbar || "").length}/{TAILBARIIN_DEED_URT}
                             </div>
                           </div>
                         </div>
@@ -1439,13 +1380,13 @@ export default function AshiglaltiinZardluud() {
                   })()}
 
                   {/* Хөл товчнууд */}
-                  <div className="flex shrink-0 items-center justify-end gap-2.5 border-t border-[color:var(--surface-border)] px-5 py-4 sm:px-6">
+                  <div className="flex shrink-0 items-center justify-between gap-2.5 border-t border-[color:var(--surface-border)] px-6 py-4">
                     <button
                       type="button"
                       onClick={() => setView("list")}
-                      className="stg-btn stg-btn-ghost cursor-pointer"
+                      className="stg-btn stg-btn-ghost cursor-pointer !px-5"
                     >
-                      Болих
+                      Цуцлах
                     </button>
                     <button
                       type="button"
@@ -1454,7 +1395,7 @@ export default function AshiglaltiinZardluud() {
                       className="stg-btn stg-btn-primary cursor-pointer !px-5"
                     >
                       <Check className="h-4 w-4" />
-                      {editingItem ? "Өөрчлөлт хадгалах" : "Зардал бүртгэх"}
+                      Хадгалах
                     </button>
                   </div>
                 </motion.div>

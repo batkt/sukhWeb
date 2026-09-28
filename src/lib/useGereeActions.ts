@@ -582,7 +582,10 @@ export function useGereeActions(
       floor: string,
       unit: string,
       turul: "Тоот" | "Зогсоол" | "Агуулах" = "Тоот",
-    ) => {
+      // gereeShalgakhgui: эзэмшигчийг дөнгөж салгасан тул хуучин (салгахаас
+      // өмнөх) гэрээний жагсаалтаар шалгахгүй. amjiltiinMsg: нэгдсэн мэдэгдэл.
+      opts?: { gereeShalgakhgui?: boolean; amjiltiinMsg?: string },
+    ): Promise<boolean> => {
       const propName =
         turul === "Зогсоол"
           ? "davkhariinZogsoolnuud"
@@ -591,13 +594,13 @@ export function useGereeActions(
             : "davkhariinToonuud";
       if (!token || !baiguullaga?._id) {
         openErrorOverlay("Мэдээлэл дутуу байна");
-        return;
+        return false;
       }
 
       const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
       if (!effectiveBarilgiinId) {
         openErrorOverlay("Барилга сонгоогүй байна");
-        return;
+        return false;
       }
 
       setIsSavingUnits?.(true);
@@ -614,7 +617,7 @@ export function useGereeActions(
         );
         if (!barilga) {
           openErrorOverlay("Барилга олдсонгүй");
-          return;
+          return false;
         }
 
         const getUnitsAsArray = (val: any): string[] => {
@@ -643,11 +646,11 @@ export function useGereeActions(
 
         if (currentUnits.length === updatedUnits.length) {
           openErrorOverlay(`${turul} олдсонгүй`);
-          return;
+          return false;
         }
 
         // Check if there are active contracts for this unit
-        if (contracts && Array.isArray(contracts)) {
+        if (!opts?.gereeShalgakhgui && contracts && Array.isArray(contracts)) {
           const hasActiveContract = contracts.some((c: any) => {
             const isCancelled =
               String(c.tuluv || c.status || "")
@@ -677,7 +680,7 @@ export function useGereeActions(
             openErrorOverlay(
               "Энэ тоот дээр идэвхтэй гэрээ байна. Устгах боломжгүй.",
             );
-            return;
+            return false;
           }
         }
 
@@ -702,9 +705,11 @@ export function useGereeActions(
 
         await updateMethod("baiguullaga", token, payload);
         await baiguullagaMutate?.();
-        openSuccessOverlay(`${turul} устгагдлаа`);
+        openSuccessOverlay(opts?.amjiltiinMsg || `${turul === "Зогсоол" ? "Гараж" : turul} устгагдлаа`);
+        return true;
       } catch (err) {
         openErrorOverlay(getErrorMessage(err));
+        return false;
       } finally {
         setIsSavingUnits?.(false);
       }
@@ -2500,6 +2505,7 @@ export function useGereeActions(
       resident: any,
       unit: string,
       propertyTab: "Тоот" | "Зогсоол" | "Агуулах",
+      opts?: { chimeegui?: boolean },
     ) => {
       if (!token || !baiguullaga?._id) {
         openErrorOverlay("Нэвтрэх шаардлагтай");
@@ -2542,7 +2548,7 @@ export function useGereeActions(
           toots: updatedToots,
           units: updatedToots,
         });
-        openSuccessOverlay("Тоот амжилттай хасагдлаа");
+        if (!opts?.chimeegui) openSuccessOverlay("Тоот амжилттай хасагдлаа");
         mutate(
           (key: any) =>
             Array.isArray(key) &&

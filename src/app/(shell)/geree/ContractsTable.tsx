@@ -152,10 +152,10 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
             const tooltipContent = (
               <div className="space-y-1.5 p-1.5 max-w-[220px]">
                 {allUnits.map((u: any, idx: number) => {
-                  const label = u.turul === "Гараж" ? "Зогсоол" : u.turul;
+                  const label = u.turul === "Гараж" || u.turul === "Зогсоол" ? "Гараж" : u.turul;
                   return (
                     <div key={idx} className="flex items-center gap-3 py-0.5">
-                      <span className="text-white font-medium">
+                      <span className="font-medium text-[color:var(--panel-text)]">
                         Тоот {u.toot} {label}
                       </span>
                     </div>
@@ -165,7 +165,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
             );
 
             return (
-              <Tooltip title={tooltipContent} placement="top" color="#1e293b" trigger="hover">
+              <Tooltip title={tooltipContent} placement="top" trigger="hover">
                 <span className="inline-flex items-center gap-1.5 cursor-pointer px-2 py-0.5 rounded-lg bg-[color:var(--surface-hover)] font-medium text-[color:var(--panel-text)] border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors">
                   {allUnits[0].toot}
                   <span className="text-[color:var(--muted-text)] font-medium">

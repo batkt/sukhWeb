@@ -671,8 +671,8 @@ export const ResidentDetailModal: React.FC<Props> = ({
   );
 
   /**
-   * Тоотуудыг замбараагүй биш дэс дараалалтай (Орон сууц -> Гараж -> Агуулах)
-   * болгож эрэмбэлэн шүүлтүүрээр шүүнэ.
+   * Тоотуудыг байрны тоотоор нь бүлэглэнэ: орон сууц бүрийн ард тухайн
+   * байрны гараж, агуулах нь жагсана (302 → 302-ын гараж → 302-ын агуулах).
    */
   const filteredTootJagsaalt = useMemo(() => {
     const list = [...tootJagsaalt];
@@ -681,19 +681,24 @@ export const ResidentDetailModal: React.FC<Props> = ({
       "Гараж": 2,
       "Агуулах": 3,
     };
+    const cmp = (x: string, y: string) =>
+      x.localeCompare(y, undefined, { numeric: true, sensitivity: "base" });
+    const bairniiToot = (t: any) =>
+      getTurulCategory(t) === "Орон сууц"
+        ? String(t.toot || "")
+        : getAssociatedAptToot(t).replace(/\s*тоот$/i, "");
     list.sort((a, b) => {
+      const bair = cmp(bairniiToot(a), bairniiToot(b));
+      if (bair !== 0) return bair;
       const prioA = priorityMap[getTurulCategory(a)] || 99;
       const prioB = priorityMap[getTurulCategory(b)] || 99;
       if (prioA !== prioB) return prioA - prioB;
-      return String(a.toot || "").localeCompare(String(b.toot || ""), undefined, {
-        numeric: true,
-        sensitivity: "base",
-      });
+      return cmp(String(a.toot || ""), String(b.toot || ""));
     });
 
     if (omchFilter === "Бүгд") return list;
     return list.filter((t) => getTurulCategory(t) === omchFilter);
-  }, [tootJagsaalt, omchFilter]);
+  }, [tootJagsaalt, omchFilter, getAssociatedAptToot]);
 
   const bairNer = useMemo(() => {
     if (medeelel?.bairniiNer) return medeelel.bairniiNer;
@@ -1637,7 +1642,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                         </div>
                                         <div>
                                           <p className="text-[11px] text-[color:var(--muted-text)] leading-tight">
-                                            {tekst(t.turul || "Орон сууц")}
+                                            {category === "Гараж" ? "Гараж" : category}
                                           </p>
                                           <p className="text-sm font-medium text-[color:var(--panel-text)] dark:text-white leading-tight">
                                             {tekst(t.toot)}
@@ -1658,7 +1663,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                       {/* Гараж or Агуулах: rename Байр into Тоот and show associated Орон сууц тоот. For Орон сууц: remove it completely */}
                                       {category !== "Орон сууц" && (
                                         <div className="flex items-center justify-between">
-                                          <span className="text-[color:var(--muted-text)]">Тоот</span>
+                                          <span className="text-[color:var(--muted-text)]">Байрны тоот</span>
                                           <span className="text-[color:var(--panel-text)] font-medium">
                                             {associatedToot
                                               ? associatedToot.toLowerCase().includes("тоот")
