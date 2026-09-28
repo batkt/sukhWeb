@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import FilterSelect from "@/components/ui/FilterSelect";
 import FilterDatePicker from "@/components/ui/FilterDatePicker";
 import { useAuth } from "@/lib/useAuth";
@@ -9,6 +9,7 @@ import PageSongokh from "components/selectZagvar/pageSongokh";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { getErrorMessage } from "@/lib/uilchilgee";
 import { useBuilding } from "@/context/BuildingContext";
+import { useSearch } from "@/context/SearchContext";
 import IconTextButton from "@/components/ui/IconTextButton";
 import { getDefaultDateRange } from "@/lib/utils";
 import { ChevronLeft, ChevronRight, Printer } from "lucide-react";
@@ -74,7 +75,9 @@ export default function TransactionsPage() {
   const [status, setStatus] = useState<string>(""); // approved / pending
   const [minAmount, setMinAmount] = useState<string>("");
   const [maxAmount, setMaxAmount] = useState<string>("");
-  const [note, setNote] = useState<string>("");
+  // «Тайлбар / Нэх.» хайлт — толгойн (Topbar) нэгдсэн хайлтаас
+  const { searchTerm } = useSearch();
+  const note = (searchTerm || "").trim();
   const [bank, setBank] = useState<string>("");
 
   const [rows, setRows] = useState<any[]>([]);
@@ -86,6 +89,17 @@ export default function TransactionsPage() {
   useEffect(() => {
     fetchTransactions();
   }, [page, pageSize]);
+
+  // Нэгдсэн хайлт өөрчлөгдөхөд 1-р хуудаснаас дахин татна
+  const isFirstNoteRun = useRef(true);
+  useEffect(() => {
+    if (isFirstNoteRun.current) {
+      isFirstNoteRun.current = false;
+      return;
+    }
+    if (page !== 1) setPage(1);
+    else fetchTransactions();
+  }, [note]);
 
   const buildBody = () => ({
     baiguullagiinId: ajiltan?.baiguullagiinId,
@@ -279,17 +293,6 @@ export default function TransactionsPage() {
             value={maxAmount}
             onChange={(e) => setMaxAmount(e.target.value)}
             placeholder="∞"
-          />
-        </label>
-        <label
-          className={`filter-field w-full sm:w-[240px] ${note ? "is-active" : ""}`}
-        >
-          <span className="filter-field-label">Тайлбар / Нэх.</span>
-          <input
-            type="text"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Хайх..."
           />
         </label>
         <label

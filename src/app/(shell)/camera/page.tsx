@@ -3,11 +3,11 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
+import { useSearch } from "@/context/SearchContext";
 import {
   VideoOff,
   Maximize2,
   Minimize2,
-  Search,
   Grid,
   Tv,
   RefreshCw,
@@ -63,7 +63,8 @@ export default function CameraVideoWall() {
   const { selectedBuildingId } = useBuilding();
   const effectiveBarilgiinId = selectedBuildingId || barilgiinId || undefined;
 
-  const [searchTerm, setSearchTerm] = useState("");
+  // Камер хайх — дээд талын (Topbar) нэгдсэн хайлтаас.
+  const { searchTerm } = useSearch();
   const [cols, setCols] = useState<number>(0); // 0 means automatic layout
   const [isWallMode, setIsWallMode] = useState(false); // Video Wall Mode
   const [isConfigOpen, setIsConfigOpen] = useState(false); // Settings Panel Toggle
@@ -265,15 +266,6 @@ export default function CameraVideoWall() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <label className={`filter-field w-[240px] ${searchTerm ? "is-active" : ""}`}>
-              <Search className="h-4 w-4 shrink-0 text-[color:var(--muted-text)]" />
-              <input
-                type="text"
-                placeholder="Камерын нэр, IP хайх"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </label>
             <div className="stg-segment" role="radiogroup" aria-label="Баганын тоо">
               {zokhionBaiguulalt.map((z) => (
                 <button

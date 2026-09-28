@@ -30,7 +30,6 @@ import {
   Tag,
   X,
   Check,
-  Search,
   CalendarCheck,
   Activity,
   Zap,
@@ -44,6 +43,7 @@ import {
 } from "lucide-react";
 import ExcelButton from "@/components/ui/ExcelButton";
 import uilchilgee from "@/lib/uilchilgee";
+import { useSearch } from "@/context/SearchContext";
 import deleteMethod from "../../../../tools/function/deleteMethod";
 import { SettingsCard } from "./SettingsRow";
 import { motion, AnimatePresence, useDragControls } from "framer-motion";
@@ -233,7 +233,8 @@ export default function AshiglaltiinZardluud() {
   ]);
 
   const [pageSize] = useState(500);
-  const [filterText, setFilterText] = useState<string>("");
+  // Зардлын нэрээр хайх — дээд талын (Topbar) нэгдсэн хайлтаас.
+  const { searchTerm: filterText } = useSearch();
   // Хүснэгтэд хэдэн зардал шууд харуулах вэ. Үүнээс олон бол «Бүгдийг харах»
   // товч гарч ирнэ — өмнө нь дотогшоо гүйлгэдэг байсан нь хэдэн зардал байгаа
   // нь харагдахгүй, хуудсаа гүйлгэхэд ч саад болдог байв.
@@ -910,32 +911,8 @@ export default function AshiglaltiinZardluud() {
   return (
     <div className="w-full">
       <div className="space-y-4">
-        {/* Хэрэгслийн мөр: хайлт + товчнууд */}
+        {/* Хэрэгслийн мөр: товчнууд */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Live Search Input */}
-          <div className="relative min-w-[200px] flex-1 sm:max-w-sm">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--muted-text)]" />
-            <input
-              type="text"
-              value={filterText}
-              onChange={(e) => setFilterText(e.target.value)}
-              placeholder="Зардлын нэрээр хайх..."
-              aria-label="Зардлын нэрээр хайх"
-              className="stg-input !pl-9 !pr-10"
-            />
-            {filterText && (
-              <button
-                type="button"
-                onClick={() => setFilterText("")}
-                className="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-lg text-[color:var(--muted-text)] transition-colors hover:bg-[color:var(--surface-hover)] hover:text-[color:var(--panel-text)]"
-                title="Хайлтыг арилгах"
-                aria-label="Хайлтыг арилгах"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-
           {/* Товчнууд — үргэлж БАРУУН ирмэгт */}
           <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
             {/* Excel — татах/оруулах хоёрыг НЭГ товчинд нэгтгэв */}

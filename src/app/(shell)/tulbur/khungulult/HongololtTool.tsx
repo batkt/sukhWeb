@@ -10,7 +10,6 @@ import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import { ModalPortal } from "../../../../../components/shell/ModalPortal";
 import {
   X,
-  Search,
   RefreshCw,
   Tag,
   History,
@@ -28,6 +27,7 @@ import dayjs from "dayjs";
 import useModalHotkeys from "@/lib/useModalHotkeys";
 import uilchilgee from "@/lib/uilchilgee";
 import { useAuth } from "@/lib/useAuth";
+import { useSearch } from "@/context/SearchContext";
 import { toast } from "sonner";
 import Table from "@/components/ui/table";
 import type { ColumnsType } from "@/components/ui/table";
@@ -305,7 +305,8 @@ export default function HongololtTool({
   /* Right-panel data */
   const [fetching, setFetching] = useState(false);
   const [residents, setResidents] = useState<ResidentRow[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
+  // Жагсаалтын хайлт — дээд талын (Topbar) нэгдсэн хайлтаас.
+  const { searchTerm } = useSearch();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   // Хөнгөлөлт зөвхөн СОНГОСОН мөрүүдэд сууна — хураангуй ч зөвхөн тэднийг
   // тоолно. Бүгдийг хөнгөлөх бол толгойн checkbox-оор бүгдийг сонгоно.
@@ -314,7 +315,7 @@ export default function HongololtTool({
   /* History tab */
   const [histFetching, setHistFetching] = useState(false);
   const [history, setHistory] = useState<DiscountHistoryRow[]>([]);
-  const [histSearch, setHistSearch] = useState("");
+  const histSearch = searchTerm;
   const [histDavkhar, setHistDavkhar] = useState("");
   const [histDateRange, setHistDateRange] = useState<[string | null, string | null]>([
     dayjs().format("YYYY-MM-DD"),
@@ -322,6 +323,10 @@ export default function HongololtTool({
   ]);
   const [histPage, setHistPage] = useState(1);
   const [histPageSize, setHistPageSize] = useState(100);
+
+  useEffect(() => {
+    setHistPage(1);
+  }, [histSearch]);
 
   /* Submitting */
   const [loading, setLoading] = useState(false);
@@ -587,13 +592,11 @@ export default function HongololtTool({
     } else {
       setResidents([]);
       setSelectedIds(new Set());
-      setSearchTerm("");
       setHongololtUtga("");
       setShaltgaan("");
       setDavkhar("");
       setActiveTab("oruulakh");
       setHistory([]);
-      setHistSearch("");
       setHistDavkhar("");
       setHistPage(1);
     }
@@ -1427,15 +1430,6 @@ export default function HongololtTool({
                 <X className="h-3 w-3" />
               </button>
             )}
-            <label className="filter-field w-[280px] max-w-full">
-              <Search className="h-4 w-4 shrink-0 text-[color:var(--muted-text)]" />
-              <input
-                type="text"
-                placeholder="Тоот, нэр, утсаар хайх..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </label>
             <button
               type="button"
               onClick={loadResidents}
@@ -1701,18 +1695,6 @@ export default function HongololtTool({
                   placeholder={["Эхлэх огноо", "Дуусах огноо"]}
                   className="w-full sm:w-[284px]"
                 />
-                <label className={`filter-field w-full sm:w-[260px] ${histSearch ? "is-active" : ""}`}>
-                  <Search className="h-4 w-4 shrink-0 text-[color:var(--muted-text)]" />
-                  <input
-                    type="text"
-                    placeholder="Нэр, тоот, гэрээгээр хайх"
-                    value={histSearch}
-                    onChange={(e) => {
-                      setHistSearch(e.target.value);
-                      setHistPage(1);
-                    }}
-                  />
-                </label>
                 <FilterSelect
                   label="Давхар"
                   value={histDavkhar}

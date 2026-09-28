@@ -27,10 +27,8 @@ export default function NegtgelTailanPage() {
 
   // Анхдагч: зөвхөн тухайн сар
   const [dateRange, setDateRange] = useState<[string, string]>(odooginSar);
-  // Оршин суугч (нэр, утас, тоот...) — бичих үед 400ms хүлээж хайна
-  // Оршин суугчийн dropdown-оос сонгосон утга (утас эсвэл нэр) — сервер хайлтад явна
-  const [searchText, setSearchText] = useState("");
   const [orts, setOrts] = useState("");
+  // Хайлт — толгойн (Topbar) нэгдсэн хайлтаас, серверт илгээнэ
   const { searchTerm } = useSearch();
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(500);
@@ -40,7 +38,7 @@ export default function NegtgelTailanPage() {
   // Шүүлт өөрчлөгдөхөд эхний хуудас руу
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchText, searchTerm, orts, dateRange, selectedBuildingId]);
+  }, [searchTerm, orts, dateRange, selectedBuildingId]);
 
   // Барилга солигдоход орцын сонголт хүчингүй болно
   useEffect(() => {
@@ -57,7 +55,6 @@ export default function NegtgelTailanPage() {
       selectedBuildingId,
       dateRange[0],
       dateRange[1],
-      searchText,
       searchTerm,
       orts,
       currentPage,
@@ -68,7 +65,6 @@ export default function NegtgelTailanPage() {
     baiguullagiinId,
     selectedBuildingId,
     dateRange,
-    searchText,
     searchTerm,
     orts,
     currentPage,
@@ -88,7 +84,6 @@ export default function NegtgelTailanPage() {
       barId,
       start,
       end,
-      search,
       globalSearch,
       ortsVal,
       page,
@@ -99,7 +94,7 @@ export default function NegtgelTailanPage() {
         ...(barId ? { barilgiinId: barId } : {}),
         ekhlekhOgnoo: start ? `${start} 00:00:00` : undefined,
         duusakhOgnoo: end ? `${end} 23:59:59` : undefined,
-        search: search || globalSearch || undefined,
+        search: globalSearch || undefined,
         orts: ortsVal || undefined,
         khuudasniiDugaar: page,
         khuudasniiKhemjee: limit,
@@ -144,7 +139,7 @@ export default function NegtgelTailanPage() {
           barilgiinId: selectedBuildingId ?? undefined,
           ekhlekhOgnoo: `${dateRange[0]} 00:00:00`,
           duusakhOgnoo: `${dateRange[1]} 23:59:59`,
-          search: searchText || searchTerm || undefined,
+          search: searchTerm || undefined,
           orts: orts || undefined,
         },
         { responseType: "blob" },

@@ -1,13 +1,14 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import FilterDatePicker from "@/components/ui/FilterDatePicker";
-import { Clock, User, Globe, Monitor, MapPin, Search } from "lucide-react";
+import { Clock, User, Globe, Monitor, MapPin } from "lucide-react";
 import moment from "moment";
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
 import useSWR from "swr";
 import uilchilgee from "@/lib/uilchilgee";
+import { useSearch } from "@/context/SearchContext";
 import { Loader } from "@mantine/core";
 import {
   StandardTable,
@@ -51,7 +52,12 @@ export default function NevtreltiinTuukh({
   ]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(500);
-  const [searchTerm, setSearchTerm] = useState("");
+  // Хайлт — дээд талын (Topbar) нэгдсэн хайлтаас.
+  const { searchTerm } = useSearch();
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm]);
 
   // Fetch login history — page/pageSize NOT in key (client-side pagination)
   const { data, isLoading } = useSWR(
@@ -62,10 +68,9 @@ export default function NevtreltiinTuukh({
           baiguullaga._id,
           dateRange?.[0] || null,
           dateRange?.[1] || null,
-          searchTerm,
         ]
       : null,
-    async ([url, tkn, orgId, startDate, endDate, search]) => {
+    async ([url, tkn, orgId, startDate, endDate]) => {
       const params: any = {
         khuudasniiDugaar: 1,
         khuudasniiKhemjee: 10000,
@@ -144,19 +149,6 @@ export default function NevtreltiinTuukh({
             onChange={handleDateChange}
             className="w-full sm:w-[284px]"
           />
-
-          <label className={`filter-field w-full sm:w-[280px] ${searchTerm ? "is-active" : ""}`}>
-            <Search className="h-4 w-4 shrink-0 text-[color:var(--muted-text)]" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Ажилтан, IP, байршлаар хайх"
-            />
-          </label>
         </div>
 
         {/* Table */}

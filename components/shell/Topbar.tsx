@@ -64,6 +64,12 @@ export default function Topbar({
   // Local mirror so typing never re-renders the whole shell on every keystroke.
   const [draft, setDraft] = useState(searchTerm);
   useEffect(() => setDraft(searchTerm), [searchTerm]);
+  // Хайлт бүх хуудсанд нэг (дээд) талбараас ажилладаг тул хуудас солигдоход
+  // цэвэрлэнэ — өмнөх хуудасны хайлт шинэ хуудсыг шүүчихгүй.
+  useEffect(() => {
+    setDraft("");
+    setSearchTerm("");
+  }, [pathname, setSearchTerm]);
   useEffect(() => {
     if (draft === searchTerm) return;
     const id = window.setTimeout(() => setSearchTerm(draft), 180);

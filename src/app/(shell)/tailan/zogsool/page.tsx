@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/useAuth";
 import useBaiguullaga from "@/lib/useBaiguullaga";
 import uilchilgee from "@/lib/uilchilgee";
 import formatNumber from "../../../../../tools/function/formatNumber";
-import { Car, Hash, Home, Phone, Printer, Search, X } from "lucide-react";
+import { Car, Hash, Home, Phone, Printer, X } from "lucide-react";
 import { Modal } from "antd";
 import ExcelButton from "@/components/ui/ExcelButton";
 import { getDefaultDateRange } from "@/lib/utils";
@@ -120,18 +120,8 @@ export default function ZogsoolTailanPage() {
   const [dateRange, setDateRange] = useState<
     [string | null, string | null] | undefined
   >(getDefaultDateRange);
-  const [filters, setFilters] = useState({
-    orshinSuugch: "",
-  });
-  // Хайлтын талбар — 400мс хүлээж байж серверт илгээнэ
-  const [khaikh, setKhaikh] = useState("");
-  useEffect(() => {
-    const t = setTimeout(
-      () => setFilters((f) => (f.orshinSuugch === khaikh.trim() ? f : { ...f, orshinSuugch: khaikh.trim() })),
-      400,
-    );
-    return () => clearTimeout(t);
-  }, [khaikh]);
+  // Хайлт — толгойн (Topbar) нэгдсэн хайлтаас (Topbar өөрөө debounce хийнэ), серверт илгээнэ
+  const khaikhUg = (searchTerm || "").trim();
   const [apiResponse, setApiResponse] = useState<{
     residentSummary: ResidentSummaryRow[];
     niit: {
@@ -169,7 +159,7 @@ export default function ZogsoolTailanPage() {
             barilgiinId: selectedBuildingId,
             ekhlekhOgnoo: dateRange?.[0] || undefined,
             duusakhOgnoo: dateRange?.[1] || undefined,
-            orshinSuugch: filters.orshinSuugch || searchTerm || undefined,
+            orshinSuugch: khaikhUg || undefined,
           },
         );
         setApiResponse(response.data);
@@ -188,7 +178,7 @@ export default function ZogsoolTailanPage() {
     };
 
     fetchData();
-  }, [selectedBuildingId, baiguullaga, token, dateRange, filters, searchTerm]);
+  }, [selectedBuildingId, baiguullaga, token, dateRange, khaikhUg]);
 
   const residentSummary = apiResponse?.residentSummary || [];
   const niit = apiResponse?.niit || {
@@ -713,16 +703,6 @@ export default function ZogsoolTailanPage() {
           placeholder="Огноо сонгох"
           className="w-full sm:w-[284px]"
         />
-
-        <label className={`filter-field w-full sm:w-[240px] ${khaikh ? "is-active" : ""}`}>
-          <Search className="h-4 w-4 shrink-0 text-[color:var(--muted-text)]" />
-          <input
-            type="text"
-            value={khaikh}
-            onChange={(e) => setKhaikh(e.target.value)}
-            placeholder="Оршин суугч, тоот хайх..."
-          />
-        </label>
 
         <div className="flex flex-wrap gap-1">
           <button

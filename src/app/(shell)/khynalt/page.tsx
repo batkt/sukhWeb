@@ -54,6 +54,7 @@ import {
   Copy,
 } from "lucide-react";
 import { useBuilding } from "@/context/BuildingContext";
+import { useSearch } from "@/context/SearchContext";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -739,7 +740,8 @@ export default function Khynalt() {
     });
   }, [medegdelData, rangeStart, rangeEnd]);
 
-  const [paymentQuery, setPaymentQuery] = useState("");
+  // Төлөлтийн түүхийн хайлт — дээд талын (Topbar) нэгдсэн хайлтаас.
+  const { searchTerm: paymentQuery } = useSearch();
   // Төлөлтийн түүхийн хуудаслалт ба үйлдлүүд.
   const [paymentPage, setPaymentPage] = useState(1);
   const [paymentPageSize, setPaymentPageSize] = useState(500);
@@ -2270,19 +2272,6 @@ export default function Khynalt() {
                     </span>
                   </div>
                 </div>
-
-                {/* Хайлт — жагсаалт урт болоход тоот/нэрээр шүүнэ */}
-                {paymentHistory.length > 0 && (
-                  <div className="relative mb-3">
-                    <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--muted-text)]" />
-                    <input
-                      value={paymentQuery}
-                      onChange={(e) => setPaymentQuery(e.target.value)}
-                      placeholder="Тоот, нэр, утсаар хайх..."
-                      className="w-full h-9 pl-9 pr-3 text-xs rounded-xl bg-[color:var(--surface-hover)]/40 border border-[color:var(--panel-text)]/10 text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] focus:outline-none focus:border-theme/50 transition-colors"
-                    />
-                  </div>
-                )}
 
                 {/* Жагсаалт — хүснэгт хэлбэрээр.
                   Өмнө нь өдрөөр бүлэглэсэн карт жагсаалт байсан нь мөр бүрийн

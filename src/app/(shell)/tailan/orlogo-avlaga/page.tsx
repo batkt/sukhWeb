@@ -163,8 +163,8 @@ export default function OrlogoAvlagaPage() {
   const [activeTab, setActiveTab] = useState<TabType>("tulult");
   const [dateRange, setDateRange] = useState<DateRangeValue>(getDefaultDateRange);
   const { searchTerm } = useSearch();
+  // Оршин суугчийн нэрээр хайх нь толгойн (Topbar) нэгдсэн хайлтаар (searchTerm) хийгдэнэ
   const [filters, setFilters] = useState({
-    orshinSuugch: "",
     toot: "",
     davkhar: "",
     gereeniiDugaar: "",
@@ -613,10 +613,6 @@ export default function OrlogoAvlagaPage() {
       ).toLowerCase();
       if (!gd.includes(f.gereeniiDugaar.toLowerCase())) return false;
     }
-    if (f.orshinSuugch) {
-      const name = `${it?._ovog || ""} ${it?._ner || ""}`.toLowerCase();
-      if (!name.includes(f.orshinSuugch.toLowerCase())) return false;
-    }
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       const name = `${it?._ovog || ""} ${it?._ner || ""}`.toLowerCase();
@@ -989,17 +985,6 @@ export default function OrlogoAvlagaPage() {
           onChange={setDateRange}
           className="w-full sm:w-[284px]"
         />
-        <label
-          className={`filter-field w-full sm:w-[260px] ${filters.orshinSuugch ? "is-active" : ""}`}
-        >
-          <span className="filter-field-label">Оршин суугч</span>
-          <input
-            type="text"
-            value={filters.orshinSuugch}
-            onChange={(e) => setFilters((p) => ({ ...p, orshinSuugch: e.target.value }))}
-            placeholder="Овог, нэрээр хайх"
-          />
-        </label>
         <FilterSelect
           label="Тоот"
           value={filters.toot}

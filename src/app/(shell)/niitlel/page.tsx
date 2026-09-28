@@ -4,10 +4,11 @@ import { useEffect, useState, useRef } from "react";
 import { Input, Modal, notification, Popconfirm } from "antd";
 import Button from "@/components/ui/Button";
 import { motion } from "framer-motion";
-import { SearchIcon, Plus, X, Edit2, Trash2, MessageSquare, Loader2 } from "lucide-react";
+import { Plus, X, Edit2, Trash2, MessageSquare, Loader2 } from "lucide-react";
 import uilchilgee, { getApiUrl } from "@/lib/uilchilgee";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
+import { useSearch } from "@/context/SearchContext";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import useSWR from "swr";
@@ -40,7 +41,9 @@ export default function BlogNiitlelPage() {
     Aos.init({ once: true });
   }, []);
 
-  const [searchQuery, setSearchQuery] = useState("");
+  // Жагсаалтын хайлт — толгойн (Topbar) нэгдсэн хайлтаас
+  const { searchTerm } = useSearch();
+  const searchQuery = searchTerm || "";
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBlog, setEditingBlog] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(false);
@@ -218,16 +221,7 @@ export default function BlogNiitlelPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <div className="relative h-10 flex-1 sm:w-64 flex items-center neu-panel">
-            <SearchIcon className="absolute left-3 w-4 h-4 text-[color:var(--muted-text)] pointer-events-none" />
-            <input
-              placeholder="Хайх..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-full pl-10 pr-3 rounded-2xl bg-transparent border-0 text-sm text-theme placeholder:text-[color:var(--muted-text)] focus:outline-none"
-            />
-          </div>
+        <div className="flex items-center justify-end gap-3 w-full sm:w-auto">
           <Button
             type="primary"
             icon={<Plus size={18} />}

@@ -6,11 +6,12 @@ import { Input, Modal, notification, Card, Popconfirm, Tooltip } from "antd";
 import Button from "@/components/ui/Button";
 import Aos from "aos";
 import { motion, AnimatePresence } from "framer-motion";
-import { SearchIcon, Bell, Users, Mail, MessageSquare, Smartphone, FileText, Plus, ImagePlus, X, Home, Phone, User, Check, Search, Trash2 } from "lucide-react";
+import { Bell, Users, Mail, MessageSquare, Smartphone, FileText, Plus, ImagePlus, X, Home, Phone, User, Check, Trash2 } from "lucide-react";
 import uilchilgee, { getApiUrl } from "@/lib/uilchilgee";
 import { useAuth } from "@/lib/useAuth";
 import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
 import { useBuilding } from "@/context/BuildingContext";
+import { useSearch } from "@/context/SearchContext";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import useSWR, { mutate } from "swr"; // Added SWR import if not there
 import BlogManagement from "./BlogManagement";
@@ -115,7 +116,9 @@ function MedegdelContent() {
   const [msj, setMsj] = useState("");
   const [turul, setTurul] = useState<"App" | "Мессеж" | "Mail">("App");
   const [loading, setLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  // Жагсаалтын хайлт — толгойн (Topbar) нэгдсэн хайлтаас
+  const { searchTerm } = useSearch();
+  const searchQuery = searchTerm || "";
   const [lastSendResult, setLastSendResult] = useState<{
     sent: number;
     failed: number;
@@ -153,7 +156,6 @@ function MedegdelContent() {
   const [tulultList, setTulultList] = useState<any[]>([]);
   const [selectedTulult, setSelectedTulult] = useState<any | null>(null);
   const [tulultLoading, setTulultLoading] = useState(false);
-  const [tulultSearch, setTulultSearch] = useState("");
   const [residentsMap, setResidentsMap] = useState<
     Record<string, { ner: string; toot: string; utas: string }>
   >({});
@@ -659,7 +661,7 @@ function MedegdelContent() {
   });
 
   const filteredTulult = tulultList.filter((item: any) => {
-    const query = tulultSearch.toLowerCase();
+    const query = searchQuery.toLowerCase();
     const matchesSearch =
       (item.title || "").toLowerCase().includes(query) ||
       (item.message || "").toLowerCase().includes(query) ||
@@ -898,15 +900,6 @@ function MedegdelContent() {
                 </h3>
               </div>
 
-              <label id="medegdel-contact-search" className="filter-field mb-3 w-full">
-                <SearchIcon className="h-4 w-4 shrink-0 text-[color:var(--muted-text)]" />
-                <input
-                  aria-label="Хайх"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Нэр, утас хайх..."
-                />
-              </label>
               <div className="flex items-center gap-2 mb-3 flex-wrap">
                 <label id="medegdel-select-all" className="flex items-center gap-2 cursor-pointer text-sm">
                   <input
@@ -1168,18 +1161,6 @@ function MedegdelContent() {
                 <span className="text-xs bg-[color:var(--surface-hover)] dark:bg-white/10 px-2 py-0.5 rounded-2xl text-[color:var(--muted-text)]">
                   {filteredTulult.length}
                 </span>
-              </div>
-
-              {/* Search input */}
-              <div className="relative h-9 w-full neu-panel mb-4 flex items-center">
-                <Search className="absolute left-3 w-4 h-4 text-[color:var(--muted-text)] pointer-events-none" />
-                <input
-                  aria-label="Хайх"
-                  value={tulultSearch}
-                  onChange={(e) => setTulultSearch(e.target.value)}
-                  className="w-full h-full pl-9 pr-3 rounded-2xl bg-transparent border-0 text-sm text-theme placeholder:text-[color:var(--muted-text)] focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/50"
-                  placeholder="Нэр, тоот, утас хайх..."
-                />
               </div>
 
               {/* List */}

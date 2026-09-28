@@ -3,12 +3,13 @@
 import React, { useState, useMemo } from "react";
 import FilterDatePicker from "@/components/ui/FilterDatePicker";
 import matchesSearch from "../../../../tools/function/matchesSearch";
-import { Tag, Input, Popconfirm, Card, Select } from "antd";
+import { Tag, Popconfirm, Card, Select } from "antd";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import moment from "moment";
 import { motion, AnimatePresence } from "framer-motion";
 import formatNumber from "../../../../../tools/function/formatNumber";
 import { getDefaultDateRange } from "@/lib/utils";
+import { useSearch } from "@/context/SearchContext";
 
 const { Option } = Select;
 
@@ -143,7 +144,7 @@ export default function TaskManagementSystem() {
     ];
   });
   const [turulFilter, setTurulFilter] = useState<string>("Бүгд");
-  const [searchTerm, setSearchTerm] = useState<string>("");
+  const { searchTerm } = useSearch();
   const [expandedNames, setExpandedNames] = useState<Set<string>>(new Set());
   const [mockData, setMockData] = useState<DuudlagaItem[]>(MOCK_CALLS);
 
@@ -418,12 +419,6 @@ export default function TaskManagementSystem() {
               <Option value="Ус">Ус</Option>
             </Select>
           </div>
-
-          <Input
-            placeholder="Хайх..."
-            onChange={({ target }) => setSearchTerm(target.value)}
-            className="!h-10 !text-base !bg-transparent !backdrop-blur-md  !text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
-          />
 
           <div className="flex-1 overflow-y-auto pr-2 mt-4">
             {filteredJagsaalt.length === 0 ? (

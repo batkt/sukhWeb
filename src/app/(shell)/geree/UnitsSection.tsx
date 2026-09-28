@@ -19,6 +19,7 @@ import { isGarageFloor } from "@/lib/useGereeData";
 import useSWR from "swr";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
+import { useSearch } from "@/context/SearchContext";
 import uilchilgee from "@/lib/uilchilgee";
 
 interface UnitsSectionProps {
@@ -103,7 +104,7 @@ export default function UnitsSection({
   const [activeUnitDetails, setActiveUnitDetails] = useState<{ unit: string; floor: string; resident: any } | null>(null);
   const [checkedUnits, setCheckedUnits] = useState<string[]>([]);
   const [selectionMode, setSelectionMode] = useState(false);
-  const [zogsoolSearch, setZogsoolSearch] = useState("");
+  const { searchTerm: zogsoolSearch } = useSearch();
 
   const { token, baiguullaga } = useAuth();
   const { selectedBuildingId } = useBuilding();
@@ -1634,17 +1635,6 @@ export default function UnitsSection({
                     </div>
 
                     <div className="flex items-center gap-2.5 w-full sm:w-auto">
-                      {/* Search Input: Хайх /зогсоолын дугаар/ */}
-                      <div className="relative flex-1 sm:w-64">
-                        <input
-                          type="text"
-                          value={zogsoolSearch}
-                          onChange={(e) => setZogsoolSearch(e.target.value)}
-                          placeholder={propertyTab === "Зогсоол" ? "Хайх: гаражийн дугаар, нэр, тоот..." : "Хайх: агуулахын дугаар, нэр, тоот..."}
-                          className="h-9 w-full rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-3 text-xs text-[color:var(--panel-text)] dark:text-white placeholder:text-[color:var(--muted-text)] focus:border-theme focus:outline-none transition shadow-2xs"
-                        />
-                      </div>
-
                       <Button
                         onClick={() => onAddUnit(selectedFloor || "")}
                         variant="secondary"

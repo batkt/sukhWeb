@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
+import { useSearch } from "@/context/SearchContext";
 import { useSocket } from "@/context/SocketContext";
 import uilchilgee, { getApiUrl } from "@/lib/uilchilgee";
 import {
@@ -21,7 +22,6 @@ import {
   Calendar,
   AlertCircle,
   ChevronRight,
-  Search,
   ArrowLeft,
   X,
   RefreshCw,
@@ -97,7 +97,9 @@ export default function SanalKhuselt() {
     oldStatus: string;
   } | null>(null);
   const [tailbarText, setTailbarText] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
+  // Жагсаалтын хайлт — толгойн (Topbar) нэгдсэн хайлтаас
+  const { searchTerm: globalSearchTerm, setSearchTerm } = useSearch();
+  const searchTerm = globalSearchTerm || "";
   const [showDetail, setShowDetail] = useState(false);
   const [filterType, setFilterType] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -1244,28 +1246,11 @@ export default function SanalKhuselt() {
         <div
           className={`w-full md:w-[340px] lg:w-[380px] shrink-0 flex-col overflow-hidden rounded-2xl border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] shadow-[var(--ctl-shadow)] ${showDetail ? "hidden md:flex" : "flex"}`}
         >
-          {/* Хайлт — жагсаалтын дээр */}
+          {/* Жагсаалтын толгой (хайлт — Topbar-ын нэгдсэн хайлтаас) */}
           <div className="flex shrink-0 items-center gap-2 border-b border-[color:var(--ctl-border)] px-3 py-2.5">
-            <label id="feedback-search" className="filter-field h-9 min-w-0 flex-1">
-              <Search className="h-4 w-4 shrink-0 text-[color:var(--muted-text)]" />
-              <input
-                type="text"
-                aria-label={t("Хайх")}
-                placeholder={t("Гарчиг, нэр, тоот, утас...")}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              {searchTerm && (
-                <button
-                  type="button"
-                  onClick={() => setSearchTerm("")}
-                  aria-label={t("Хайлт цэвэрлэх")}
-                  className="shrink-0 rounded p-0.5 text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              )}
-            </label>
+            <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-[color:var(--panel-text)]">
+              {t("Хүсэлтүүд")}
+            </span>
             <span
               className="shrink-0 text-xs tabular-nums text-[color:var(--muted-text)]"
               title={t("Хүсэлтүүд")}

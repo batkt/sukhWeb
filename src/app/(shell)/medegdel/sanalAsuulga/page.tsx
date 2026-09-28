@@ -30,7 +30,6 @@ import {
   CheckCircle2,
   Clock,
   Check,
-  Search,
   Copy,
   Building2,
   ListChecks,
@@ -40,6 +39,7 @@ import {
 import uilchilgee from "@/lib/uilchilgee";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
+import { useSearch } from "@/context/SearchContext";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { getErrorMessage } from "@/lib/uilchilgee";
@@ -246,7 +246,9 @@ export default function SanalAsuulgaPage() {
   const [gorim, setGorim] = useState<"jagsaalt" | "uusgekh" | "dun">(
     "jagsaalt"
   );
-  const [hailtUg, setHailtUg] = useState("");
+  // Жагсаалтын хайлт — толгойн (Topbar) нэгдсэн хайлтаас
+  const { searchTerm, setSearchTerm: setHailtUg } = useSearch();
+  const hailtUg = searchTerm || "";
   const [filterTuluv, setFilterTuluv] = useState<
     "bugd" | "idevkhtei" | "duussan" | "noots"
   >("bugd");
@@ -692,26 +694,6 @@ export default function SanalAsuulgaPage() {
 
         {/* Toolbar */}
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <label className="filter-field w-full sm:w-[280px]">
-            <Search className="h-4 w-4 shrink-0 text-[color:var(--muted-text)]" />
-            <input
-              aria-label="Санал асуулга хайх"
-              value={hailtUg}
-              onChange={(e) => setHailtUg(e.target.value)}
-              placeholder="Санал асуулга хайх..."
-            />
-            {hailtUg && (
-              <button
-                type="button"
-                onClick={() => setHailtUg("")}
-                aria-label="Хайлт цэвэрлэх"
-                className="shrink-0 rounded p-0.5 text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </label>
-
           <div className="ml-auto flex items-center gap-3">
           {!achaalj && (hailtUg || filterTuluv !== "bugd") && (
             <span className="text-xs text-[color:var(--muted-text)]">
