@@ -610,10 +610,8 @@ export default function GuilgeeTable({
             ...baseColumn,
             render: (_: any, record: any) => {
               const gid = getGereeId(record);
-              const historyAggregate =
-                Number(record?._totalTulbur || 0) -
-                Number(record?._totalTulsun || 0);
-              const remainingValue = historyAggregate;
+              // «Үлдэгдэл» нүдэнд харагдаж буй утгатай яг ижил үлдэгдлийг ашиглана
+              const remainingValue = getMoneyValue("uldegdel", record);
               const paidForTuluv = gid
                 ? Number(monthPaidByGereeId[gid] ?? 0)
                 : 0;
@@ -751,14 +749,13 @@ export default function GuilgeeTable({
 
   // Handle table change (sorting)
   const handleTableChange = (_: any, __: any, sorter: any) => {
-    if (sorter?.field) {
-      const newOrder =
-        sorter.order === "ascend"
-          ? "asc"
-          : sorter.order === "descend"
-            ? "desc"
-            : "asc";
-      onSortChange(sorter.field, newOrder);
+    // asc → desc → эрэмбэгүй (order байхгүй бол эрэмбийг цуцална)
+    const field = sorter?.field ?? sorter?.columnKey ?? sorter?.key;
+    if (field && sorter.order) {
+      const newOrder = sorter.order === "descend" ? "desc" : "asc";
+      onSortChange(String(field), newOrder);
+    } else {
+      onSortChange(null, "asc");
     }
   };
 

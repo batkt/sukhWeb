@@ -45,6 +45,19 @@ interface UseAshiglaltiinZardluudReturn {
   syncZardluud: () => Promise<void>;
 }
 
+/**
+ * Зардал устгагдсаны дараа гэрээнүүдтэй синк хийхэд алдаа гарсныг илэрхийлнэ.
+ * Устгал өөрөө амжилттай болсон тул дуудагч үүнийг ялгаж мессеж харуулна.
+ */
+export class ZardalSyncAfterDeleteError extends Error {
+  cause: unknown;
+  constructor(cause: unknown) {
+    super("Зардал устгагдсан боловч гэрээнүүдтэй синк хийхэд алдаа гарлаа");
+    this.name = "ZardalSyncAfterDeleteError";
+    this.cause = cause;
+  }
+}
+
 export function useAshiglaltiinZardluud(overrides?: {
   token?: string;
   baiguullagiinId?: string | number;
@@ -139,15 +152,22 @@ export function useAshiglaltiinZardluud(overrides?: {
     mutate();
   };
 
+  // Алдааг залгилгүй дуудагч руу шиднэ — дуудагч амжилт/алдааг харуулна
   const syncZardluud = async () => {
-    if (!token || !currentOrg) return;
+    if (!token || !currentOrg) {
+      throw new Error("Байгууллагын мэдээлэл олдсонгүй");
+    }
     try {
-      await uilchilgee(token).post("/zardalTseverlekhiya", {
+      const resp = await uilchilgee(token).post("/zardalTseverlekhiya", {
         baiguullagiinId: currentOrg,
         barilgiinId: currentBarilga,
       });
-    } catch (_) {}
-    mutate();
+      if (resp?.data?.success === false) {
+        throw new Error(resp.data?.message || "Цэвэрлэхэд алдаа гарлаа");
+      }
+    } finally {
+      mutate();
+    }
   };
 
   const deleteZardal = async (id: string) => {
@@ -155,7 +175,12 @@ export function useAshiglaltiinZardluud(overrides?: {
     // Устгаад тухайн барилгын гэрээнүүдээс шууд хасна — дараа сарын
     // нэхэмжлэхэд орохгүй. Дараа нь гэрээг барилгын зардлуудтай синк хийнэ.
     await uilchilgee(token).post("/ashiglaltiinZardalUstgaya", { id });
-    await syncZardluud();
+    try {
+      await syncZardluud();
+    } catch (e) {
+      // Устгал амжилттай болсон, зөвхөн синк алдаатай гэдгийг дуудагч ялгана
+      throw new ZardalSyncAfterDeleteError(e);
+    }
     mutate();
   };
 

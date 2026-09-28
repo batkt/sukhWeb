@@ -252,29 +252,28 @@ const khuviFormatlay = (raw: string): string => {
   return `${buten || "0"}.${butarkhai}`;
 };
 
-/** Хөнгөлөлтийн доод мөрийн нэг нүд. */
+/** Хөнгөлөлтийн хураангуйн нэг нүд. */
 const KhungulultiinMur = ({
   ner,
   utga,
   onts,
+  tailbar,
 }: {
   ner: string;
   utga: string;
   onts?: boolean;
+  tailbar?: string;
 }) => (
-  <div className="flex flex-col">
-    <span className="text-[11px] text-brand/70">
-      {ner}
-    </span>
+  <div className="flex min-w-0 flex-col gap-0.5">
+    <span className="text-[12px] text-[color:var(--muted-text)]">{ner}</span>
     <span
-      className={
-        onts
-          ? "text-[13px] font-medium tabular-nums text-brand"
-          : "text-[13px] font-medium tabular-nums text-brand"
-      }
+      className={`tabular-nums ${
+        onts ? "text-[16px] font-semibold text-brand" : "text-[14px] font-medium text-[color:var(--panel-text)]"
+      }`}
     >
       {utga}₮
     </span>
+    {tailbar && <span className="text-[11px] text-[color:var(--muted-text)]">{tailbar}</span>}
   </div>
 );
 
@@ -316,6 +315,11 @@ export default function TransactionModal({
   );
   const [discountValue, setDiscountValue] = useState("");
   const [discountReason, setDiscountReason] = useState("");
+  /** Талбар бүрийн алдааг тухайн талбарын доор харуулна. */
+  const [khungulultAldaa, setKhungulultAldaa] = useState<{ utga?: string; shaltgaan?: string; geree?: string }>({});
+  /** Гэрээний сарын төлбөр — хувиар хөнгөлөх суурь (Хөнгөлөлт хуудастай ижил). */
+  const [sariinTulbur, setSariinTulbur] = useState<number | null>(null);
+  const [sariinTulburAchaalj, setSariinTulburAchaalj] = useState(false);
 
   // Ашиглалтын зардал (цахилгаан кВт) – additional fields when type === "ashiglalt"
   const [ashiglaltZardal, setAshiglaltZardal] = useState<"" | "tsakhilgaan_kv">(
@@ -434,6 +438,7 @@ export default function TransactionModal({
     setDiscountMonth(new Date().toISOString().slice(0, 7));
     setDiscountValue("");
     setDiscountReason("");
+    setKhungulultAldaa({});
   };
 
   const handleClose = () => {
@@ -646,19 +651,53 @@ export default function TransactionModal({
     useLegacyAshiglaltCalculator,
   ]);
 
+  // Хөнгөлөлт сонгоход гэрээний сарын төлбөрийг (хувийн суурь) татна.
+  const gereeniiIdKhungulult = String(resident?.gereeniiId || resident?.gereeId || "");
+  React.useEffect(() => {
+    if (!show || transactionType !== "khungulult" || !token || !baiguullagiinId || !gereeniiIdKhungulult) {
+      return;
+    }
+    let khuchintei = true;
+    setSariinTulburAchaalj(true);
+    uilchilgee(token)
+      .post("/khungulultSuuriAvya", {
+        baiguullagiinId,
+        barilgiinId: barilgiinId || undefined,
+        gereeniiIdnuud: [gereeniiIdKhungulult],
+      })
+      .then((resp: any) => {
+        if (!khuchintei) return;
+        const dun = Number(resp?.data?.suuri?.[gereeniiIdKhungulult]?.sariinDun);
+        setSariinTulbur(Number.isFinite(dun) ? dun : 0);
+      })
+      .catch(() => {
+        if (khuchintei) setSariinTulbur(null);
+      })
+      .finally(() => {
+        if (khuchintei) setSariinTulburAchaalj(false);
+      });
+    return () => {
+      khuchintei = false;
+    };
+  }, [show, transactionType, token, baiguullagiinId, barilgiinId, gereeniiIdKhungulult]);
+
   /**
-   * Хөнгөлөлтийн бодолт. Оролт нь форматтай (таслал/цэг) байж болох тул
-   * цэвэрлээд тооцно — дэлгэц ба хадгалалт хоёр ижил тоо ашиглана.
+   * Хөнгөлөлтийн бодолт — Хөнгөлөлт хуудас болон сервертэй ижил: хувиар бол
+   * САРЫН ТӨЛБӨРИЙН хувь (нийт үлдэгдлийн биш), дүнгээр бол тэр дүн. Аль аль нь
+   * сарын төлбөрөөс хэтрэхгүй.
    */
+  const khungulultiinUtga =
+    parseFloat(String(discountValue).replace(/%/g, "").replace(/,/g, "")) || 0;
   const khungulultiinDun = useMemo(() => {
-    const val =
-      parseFloat(String(discountValue).replace(/%/g, "").replace(/,/g, "")) ||
-      0;
-    if (val <= 0) return 0;
-    if (discountType === "percent")
-      return Math.round((residentBalance || 0) * (val / 100) * 100) / 100;
-    return val;
-  }, [discountValue, discountType, residentBalance]);
+    if (khungulultiinUtga <= 0) return 0;
+    const suuri = Number(sariinTulbur) || 0;
+    const dun =
+      discountType === "percent"
+        ? Math.round((suuri * khungulultiinUtga) / 100)
+        : Math.round(khungulultiinUtga);
+    if (suuri > 0) return Math.min(dun, Math.round(suuri));
+    return discountType === "percent" ? 0 : dun;
+  }, [khungulultiinUtga, discountType, sariinTulbur]);
 
   const uldekhDun = useMemo(
     () =>
@@ -668,51 +707,37 @@ export default function TransactionModal({
 
   const handleSubmit = async () => {
     if (transactionType === "khungulult") {
-      const rawVal = discountValue.replace(/%/g, "").replace(/,/g, "");
-      const valNum = parseFloat(rawVal) || 0;
-      if (valNum <= 0) {
-        messageApi.warning("Хөнгөлөх дүн эсвэл хувийг зөв оруулна уу.");
-        return;
+      // Шалгуурыг тухайн талбар дээр нь харуулна
+      const aldaa: { utga?: string; shaltgaan?: string; geree?: string } = {};
+      if (!gereeniiIdKhungulult)
+        aldaa.geree = "Энэ оршин суугчид идэвхтэй гэрээ алга — хөнгөлөлт оруулах боломжгүй.";
+      if (khungulultiinUtga <= 0) {
+        aldaa.utga =
+          discountType === "percent"
+            ? "Хөнгөлөх хувиа оруулна уу (жишээ нь 10)."
+            : "Хөнгөлөх дүнгээ оруулна уу.";
+      } else if (discountType === "percent" && khungulultiinUtga > 100) {
+        aldaa.utga = "Хувь 100-аас их байж болохгүй.";
+      } else if (sariinTulbur !== null && sariinTulbur <= 0) {
+        aldaa.utga = "Энэ гэрээнд сарын төлбөр тохируулаагүй тул хөнгөлөх боломжгүй.";
+      } else if (discountType === "amount" && sariinTulbur && khungulultiinUtga > sariinTulbur) {
+        aldaa.utga = `Сарын төлбөрөөс (${mungunDunFormat(sariinTulbur)}₮) их хөнгөлөх боломжгүй.`;
       }
-
-      let calculatedAmount = 0;
-      if (discountType === "percent") {
-        const bal = residentBalance ?? Number(resident?.uldegdel ?? 0);
-        calculatedAmount = Math.round(bal * (valNum / 100) * 100) / 100;
-      } else {
-        calculatedAmount = valNum;
-      }
-
-      if (calculatedAmount <= 0) {
-        messageApi.warning("Хөнгөлөх дүн 0-ээс их байх шаардлагатай.");
-        return;
-      }
-
-      const dateTag = discountMonth ? `(${discountMonth})` : "";
-      const percentTag = discountType === "percent" ? ` ${valNum}%` : "";
-      // Хэрэглэгчийн бичсэн тайлбарыг ХАЯДАГ байсан: доорх "Тайлбар" талбар
-      // нь зөвхөн бусад төрөлд ашиглагддаг байсан тул хөнгөлөлт дээр бичсэн
-      // тэмдэглэл хаашаа ч хадгалагддаггүй байв. Одоо системийн шошгоны
-      // ард залгана — хуулга дээр "Хөнгөлөлт 20% (2026-08) · <тэмдэглэл>"
-      // гэж харагдана.
-      const nemeltTailbar = tailbar.trim();
-      const finalTailbar = [
-        `Хөнгөлөлт${percentTag} ${dateTag}`.trim(),
-        nemeltTailbar,
-      ]
-        .filter(Boolean)
-        .join(" · ");
+      if (!tailbar.trim())
+        aldaa.shaltgaan = "Хөнгөлөх шалтгаанаа бичнэ үү — хөнгөлөлтийн түүхэд харагдана.";
+      setKhungulultAldaa(aldaa);
+      if (Object.keys(aldaa).length > 0) return;
 
       const data: TransactionData = {
         type: "khungulult",
         date: discountMonth ? `${discountMonth}-01` : transactionDate,
-        amount: calculatedAmount,
+        amount: khungulultiinDun,
         residentId: resident?._id || resident?.orshinSuugchId,
-        gereeniiId: resident?.gereeniiId,
-        tailbar: finalTailbar,
+        gereeniiId: gereeniiIdKhungulult,
+        tailbar: tailbar.trim(),
         ekhniiUldegdel: false,
         discountType,
-        discountValue: valNum,
+        discountValue: khungulultiinUtga,
       };
 
       await onSubmit(data);
@@ -944,10 +969,15 @@ export default function TransactionModal({
 
                 {/* Form Content */}
                 {transactionType === "khungulult" ? (
-                  <div className="bg-theme/70 border border-theme/30 text-brand rounded-2xl p-4 space-y-4/30">
-                    <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-4 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] p-4">
+                    {khungulultAldaa.geree && (
+                      <p className="rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-[13px] text-danger" role="alert">
+                        {khungulultAldaa.geree}
+                      </p>
+                    )}
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div className="space-y-1.5">
-                        <label className="block text-xs font-medium text-brand">
+                        <label className="block text-[13px] font-medium text-[color:var(--panel-text)]">
                           Хөнгөлөх сар
                         </label>
                         <DoubleYearMonthPicker
@@ -958,79 +988,118 @@ export default function TransactionModal({
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="block text-xs font-medium text-brand">
-                          Хөнгөлөлтийн хэлбэр
-                        </label>
-                        <select
-                          value={discountType}
-                          onChange={(e) => {
-                            setDiscountType(e.target.value as "percent" | "amount");
-                            setDiscountValue("");
-                          }}
-                          disabled={isProcessing}
-                          className="w-full px-3 py-2.5 border border-theme/30 bg-[color:var(--surface-bg)] text-brand rounded-2xl focus:outline-none focus:ring-2 focus:ring-theme/30 focus:border-theme transition-all text-sm font-medium"
-                        >
-                          <option value="percent">Хувиар</option>
-                          <option value="amount">Дүнгээр</option>
-                        </select>
+                        <span className="block text-[13px] font-medium text-[color:var(--panel-text)]">
+                          Хөнгөлөх хэлбэр
+                        </span>
+                        {/* Сонголт хоёрхон тул dropdown биш — нэг товшилтоор солино */}
+                        <div className="grid h-[46px] grid-cols-2 gap-1 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-1" role="radiogroup" aria-label="Хөнгөлөх хэлбэр">
+                          {([
+                            { key: "percent", ner: "Хувиар (%)" },
+                            { key: "amount", ner: "Дүнгээр (₮)" },
+                          ] as const).map((h) => (
+                            <button
+                              key={h.key}
+                              type="button"
+                              role="radio"
+                              aria-checked={discountType === h.key}
+                              disabled={isProcessing}
+                              onClick={() => {
+                                if (discountType === h.key) return;
+                                setDiscountType(h.key);
+                                setDiscountValue("");
+                                setKhungulultAldaa((a) => ({ ...a, utga: undefined }));
+                              }}
+                              className={`rounded-xl text-[13px] font-medium transition-colors ${
+                                discountType === h.key
+                                  ? "bg-theme !text-white shadow-sm"
+                                  : "text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)]"
+                              }`}
+                            >
+                              {h.ner}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      {/* Гарчиг нь сонгосон хэлбэрээс хамаарч хувьсана —
-                          өмнө нь "ХӨНГӨЛӨХ ДҮН / ХӨНГӨЛӨХ ХУВЬ" гэж хоёуланг
-                          нь зэрэг бичдэг тул аль нь хүчинтэй нь ойлгомжгүй
-                          байв. */}
-                      <label className="block text-xs font-medium text-brand">
-                        {discountType === "percent"
-                          ? "ХӨНГӨЛӨХ ХУВЬ"
-                          : "ХӨНГӨЛӨХ ДҮН"}
+                    <div className="space-y-1.5">
+                      <label htmlFor="khungulult-utga" className="block text-[13px] font-medium text-[color:var(--panel-text)]">
+                        {discountType === "percent" ? "Хөнгөлөх хувь" : "Хөнгөлөх дүн"}{" "}
+                        <span className="text-danger">*</span>
                       </label>
-
                       <div className="relative">
                         <input
+                          id="khungulult-utga"
                           type="text"
                           inputMode="decimal"
                           value={discountValue}
-                          onChange={(e) =>
+                          onChange={(e) => {
                             setDiscountValue(
                               discountType === "percent"
                                 ? khuviFormatlay(e.target.value)
                                 : dunFormatlay(e.target.value),
-                            )
-                          }
+                            );
+                            if (khungulultAldaa.utga) setKhungulultAldaa((a) => ({ ...a, utga: undefined }));
+                          }}
                           placeholder={discountType === "percent" ? "0" : "0.00"}
                           disabled={isProcessing}
-                          className="w-full rounded-2xl border border-theme/30 bg-[color:var(--surface-bg)] py-3 pl-4 pr-12 text-right text-lg font-medium tabular-nums tracking-wide text-brand transition-all focus:border-theme focus:outline-none focus:ring-2 focus:ring-theme/30 disabled:opacity-60"
+                          aria-invalid={!!khungulultAldaa.utga}
+                          aria-describedby={khungulultAldaa.utga ? "khungulult-utga-aldaa" : undefined}
+                          className={`w-full rounded-2xl border bg-[color:var(--surface-bg)] py-3 pl-4 pr-12 text-right text-lg font-medium tabular-nums text-[color:var(--panel-text)] transition-all focus:outline-none focus:ring-2 disabled:opacity-60 ${
+                            khungulultAldaa.utga
+                              ? "border-danger focus:border-danger focus:ring-danger/20"
+                              : "border-[color:var(--surface-border)] focus:border-theme focus:ring-theme/20"
+                          }`}
                         />
-                        <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-base font-medium text-brand/70">
+                        <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-base font-medium text-[color:var(--muted-text)]">
                           {discountType === "percent" ? "%" : "₮"}
                         </span>
                       </div>
-
-                      {residentBalance !== null && (
-                        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 rounded-xl bg-white/70 px-3 py-2.5">
-                          {/* Сүүлчийн үлдэгдэл нь гарчгийн хажуугаас ЭНД
-                              шилжив: оролтод аль хэдийн форматтай дүн
-                              харагдаж байгаа тул хуучин "Хөнгөлөх дүн: ..."
-                              давхардал болж байсан. */}
-                          <KhungulultiinMur
-                            ner="Сүүлчийн үлдэгдэл"
-                            utga={mungunDunFormat(residentBalance)}
-                          />
-                          {discountType === "percent" && (
-                            <KhungulultiinMur
-                              ner="Хөнгөлөх дүн"
-                              utga={mungunDunFormat(khungulultiinDun)}
-                            />
-                          )}
-                          <KhungulultiinMur
-                            ner="Үлдэгдэл дүн"
-                            utga={mungunDunFormat(uldekhDun)}
-                            onts
-                          />
+                      {discountType === "percent" && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {[10, 20, 50, 100].map((k) => (
+                            <button
+                              key={k}
+                              type="button"
+                              disabled={isProcessing}
+                              onClick={() => {
+                                setDiscountValue(String(k));
+                                setKhungulultAldaa((a) => ({ ...a, utga: undefined }));
+                              }}
+                              className={`h-7 rounded-full border px-3 text-[12px] transition-colors ${
+                                khungulultiinUtga === k
+                                  ? "border-theme bg-theme !text-white"
+                                  : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+                              }`}
+                            >
+                              {k}%
+                            </button>
+                          ))}
                         </div>
                       )}
+                      {khungulultAldaa.utga && (
+                        <p id="khungulult-utga-aldaa" className="text-[12px] text-danger" role="alert">
+                          {khungulultAldaa.utga}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-4 py-3 sm:grid-cols-4">
+                      <KhungulultiinMur
+                        ner="Сарын төлбөр"
+                        utga={sariinTulburAchaalj ? "…" : mungunDunFormat(sariinTulbur ?? 0)}
+                        tailbar={discountType === "percent" ? "хувь үүнээс бодогдоно" : undefined}
+                      />
+                      <KhungulultiinMur
+                        ner="Одоогийн үлдэгдэл"
+                        utga={residentBalance === null ? "…" : mungunDunFormat(residentBalance)}
+                      />
+                      <KhungulultiinMur ner="Хөнгөлөх дүн" utga={`−${mungunDunFormat(khungulultiinDun)}`} />
+                      <KhungulultiinMur
+                        ner="Хөнгөлөлтийн дараа"
+                        utga={residentBalance === null ? "…" : mungunDunFormat(uldekhDun)}
+                        onts
+                      />
                     </div>
                   </div>
                 ) : transactionType === "ashiglalt" ? (
@@ -1173,17 +1242,48 @@ export default function TransactionModal({
 
                 {transactionType !== "ashiglalt" && (
                   <div className="space-y-1.5">
-                    <label className="block text-xs text-[color:var(--panel-text)] mb-1.5">
-                      Тайлбар
+                    <label
+                      htmlFor="guilgee-tailbar"
+                      className={
+                        transactionType === "khungulult"
+                          ? "block text-[13px] font-medium text-[color:var(--panel-text)] mb-1.5"
+                          : "block text-xs text-[color:var(--panel-text)] mb-1.5"
+                      }
+                    >
+                      {transactionType === "khungulult" ? (
+                        <>
+                          Хөнгөлөх шалтгаан <span className="text-danger">*</span>
+                        </>
+                      ) : (
+                        "Тайлбар"
+                      )}
                     </label>
                     <textarea
+                      id="guilgee-tailbar"
                       value={tailbar}
-                      onChange={(e) => setTailbar(e.target.value)}
+                      onChange={(e) => {
+                        setTailbar(e.target.value);
+                        if (khungulultAldaa.shaltgaan) setKhungulultAldaa((a) => ({ ...a, shaltgaan: undefined }));
+                      }}
                       disabled={isProcessing}
-                      placeholder="Гүйлгээний утга..."
+                      placeholder={
+                        transactionType === "khungulult"
+                          ? "Жишээ нь: Ахмад настны хөнгөлөлт"
+                          : "Гүйлгээний утга..."
+                      }
                       rows={3}
-                      className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm resize-none"
+                      aria-invalid={transactionType === "khungulult" && !!khungulultAldaa.shaltgaan}
+                      className={`w-full px-3 py-2.5 border bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 transition-all text-sm resize-none ${
+                        transactionType === "khungulult" && khungulultAldaa.shaltgaan
+                          ? "border-danger focus:border-danger focus:ring-danger/20"
+                          : "border-[color:var(--surface-border)] focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)]"
+                      }`}
                     />
+                    {transactionType === "khungulult" && khungulultAldaa.shaltgaan && (
+                      <p className="text-[12px] text-danger" role="alert">
+                        {khungulultAldaa.shaltgaan}
+                      </p>
+                    )}
                   </div>
                 )}
               </div>

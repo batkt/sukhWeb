@@ -59,6 +59,8 @@ export function aggregateLedgerTulsunByGereeId(
 
     // EXCLUDE discounts from Гүйцэтгэл (paid performance)
     if (isDiscount) continue;
+    // Эхний үлдэгдлийн мөр нь төлөлт биш — Гүйцэтгэлд тооцохгүй
+    if (it?.ekhniiUldegdelEsekh === true) continue;
 
     let paidForRow = 0;
     if (rawDun < 0 || rawTulsun > 0) {

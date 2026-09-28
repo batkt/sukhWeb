@@ -1298,7 +1298,9 @@ export default function InvoiceModal({
 
         const dun = Number(g.undsenDun ?? g.tulukhDun ?? g.dun ?? 0);
         if (angilal === "khungulult") {
-          angilalNemey("khungulult", -Math.abs(dun));
+          // Хуулга байвал хөнгөлөлт доод хэсэгт тусдаа мөрөөр харагдана —
+          // зардлын мөрөнд давхар оруулахгүй.
+          if (!(ledgerRawRows?.length > 0)) angilalNemey("khungulult", -Math.abs(dun));
         } else if (dun > 0) {
           angilalNemey(angilal, dun);
         }
@@ -1696,21 +1698,35 @@ export default function InvoiceModal({
         })
       : [];
 
+    // Хөнгөлөлтийн мөр нь «төлсөн» дүнтэй хадгалагддаг тул өмнө нь «Төлсөн
+    // дүн»-д орж, хөнгөлөлт төлбөр мэт харагддаг байв — тусад нь тооцно.
+    const khungulultMurEsekh = (r: any) => {
+      const t = `${r?.turul || ""} ${r?.zardliinTurul || ""} ${r?.khelber || ""}`.toLowerCase();
+      return t.includes("хөнгөлөлт") || t.includes("khungulult") || r?.source === "khungulult";
+    };
     const monthTulukh = roundInvoiceMoney(
       monthRows.reduce((s, r) => {
+        if (khungulultMurEsekh(r)) return s;
         const { tulukh } = pickInvoiceModalLedgerTulukhTulsun(r);
         return s + tulukh;
       }, 0),
     );
+    const monthKhungulult = roundInvoiceMoney(
+      monthRows.reduce((s, r) => {
+        if (!khungulultMurEsekh(r)) return s;
+        return s + Math.abs(Number(r?.dun ?? r?.tulsunDun ?? 0) || 0);
+      }, 0),
+    );
     const monthTulsun = roundInvoiceMoney(
       monthRows.reduce((s, r) => {
+        if (khungulultMurEsekh(r)) return s;
         const { tulsun } = pickInvoiceModalLedgerTulukhTulsun(r);
         return s + tulsun;
       }, 0),
     );
 
-    /** Тухайн сард төлөх үлдсэн дүн = тухайн сарын нэхэмжилсэн − төлсөн. */
-    const monthUldegdel = roundInvoiceMoney(monthTulukh - monthTulsun);
+    /** Тухайн сард төлөх үлдсэн дүн = нэхэмжилсэн − хөнгөлөлт − төлсөн. */
+    const monthUldegdel = roundInvoiceMoney(monthTulukh - monthKhungulult - monthTulsun);
 
     let balEndMonth: number | null = null;
     if (invoiceYm && sortedAsc.length) {
@@ -1746,6 +1762,7 @@ export default function InvoiceModal({
       monthRows,
       monthTulukh,
       monthTulsun,
+      monthKhungulult,
       monthUldegdel,
       balEndMonth,
       sortedAsc,
@@ -2163,48 +2180,39 @@ export default function InvoiceModal({
                                 {invoiceLedgerBreakdown.invoiceYm &&
                                 invoiceLedgerBreakdown.invoiceYmLabel ? (
                                   <>
+                                    {invoiceLedgerBreakdown.monthKhungulult > 0.005 && (
+                                      <tr className="border-t border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]/5">
+                                        <td colSpan={4} className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center text-[12px] text-[color:var(--panel-text)]">
+                                          Хөнгөлөлт
+                                        </td>
+                                        <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right font-medium text-success">
+                                          −{formatNumber(invoiceLedgerBreakdown.monthKhungulult, 2)}
+                                        </td>
+                                      </tr>
+                                    )}
                                     <tr className="border-t border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]/5">
-                                      <td
-                                        colSpan={4}
-                                        className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center text-[12px] text-[color:var(--panel-text)]"
-                                      >
-                                        Төлөх дүн
-                                      </td>
-                                      <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right font-medium text-theme dark:text-white">
-                                        {formatNumber(
-                                          invoiceLedgerBreakdown.monthUldegdel,
-                                          2,
-                                        )}
-                                      </td>
-                                    </tr>
-                                    <tr className="border-t border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]/5">
-                                      <td
-                                        colSpan={4}
-                                        className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center text-[12px] text-[color:var(--panel-text)]"
-                                      >
+                                      <td colSpan={4} className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center text-[12px] text-[color:var(--panel-text)]">
                                         Төлсөн дүн
                                       </td>
                                       <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right font-medium text-theme dark:text-white">
-                                        {formatNumber(
-                                          invoiceLedgerBreakdown.monthTulsun,
-                                          2,
-                                        )}
+                                        {formatNumber(invoiceLedgerBreakdown.monthTulsun, 2)}
                                       </td>
                                     </tr>
-                                    {invoiceLedgerBreakdown.balEndMonth !=
-                                    null ? (
-                                      <tr className="border-t border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]/5">
-                                        <td
-                                          colSpan={4}
-                                          className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center text-[12px] text-[color:var(--panel-text)]"
-                                        >
-                                          Үлдэгдэл
+                                    <tr className="border-t border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]/5">
+                                      <td colSpan={4} className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center text-[12px] text-[color:var(--panel-text)]">
+                                        Энэ сарын үлдэгдэл
+                                      </td>
+                                      <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right font-medium text-theme dark:text-white">
+                                        {formatNumber(invoiceLedgerBreakdown.monthUldegdel, 2)}
+                                      </td>
+                                    </tr>
+                                    {invoiceLedgerBreakdown.balEndMonth != null ? (
+                                      <tr className="border-t-2 border-[color:var(--panel-text)]/30 bg-theme/10">
+                                        <td colSpan={4} className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center text-[13px] font-semibold text-[color:var(--panel-text)]">
+                                          Одоогийн нийт төлөх дүн
                                         </td>
-                                        <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right font-medium text-theme dark:text-white">
-                                          {formatNumber(
-                                            invoiceLedgerBreakdown.balEndMonth,
-                                            2,
-                                          )}
+                                        <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right text-[14px] font-semibold text-theme dark:text-white">
+                                          {formatNumber(invoiceLedgerBreakdown.balEndMonth, 2)}
                                         </td>
                                       </tr>
                                     ) : null}

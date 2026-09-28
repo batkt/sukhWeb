@@ -1615,13 +1615,23 @@ export default function HongololtTool({
 
             {/* Actions */}
             <div className="flex shrink-0 justify-between gap-2 border-t border-[color:var(--surface-border)] px-5 py-3">
+              {/* Хуудсан (inline) дээр onClose байхгүй тул өмнө нь товч юу ч
+                  хийдэггүй байв — одоо маягтыг цэвэрлэнэ, модал бол хаана. */}
               <button
                 type="button"
-                onClick={() => onClose?.()}
+                onClick={() => {
+                  if (!inline && onClose) {
+                    onClose();
+                    return;
+                  }
+                  setHongololtUtga("");
+                  setShaltgaan("");
+                  setSelectedIds(new Set());
+                }}
                 disabled={loading}
                 className="btn-minimal inline-flex h-9 min-w-[96px] items-center justify-center !px-4 text-[13px]"
               >
-                Цуцлах
+                {inline ? "Цэвэрлэх" : "Цуцлах"}
               </button>
               <button
                 type="button"

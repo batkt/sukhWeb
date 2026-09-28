@@ -1631,6 +1631,7 @@ export function useGereeActions(
 
         let totalCreated = 0;
         const combinedErrors: any[] = [];
+        const serverFailures: string[] = [];
 
         // ── 1. Dedicated garage/storage contracts ──────────────────────────
         if (dedicatedIds.length > 0) {
@@ -1642,9 +1643,14 @@ export function useGereeActions(
             ...(options?.onlyStorage ? { onlyStorage: true } : {}),
           };
           const res = await uilchilgee(token).post("/manualSend", body);
-          if (res.data?.success) {
+          if (res.data?.success !== false) {
             totalCreated += Number(res.data?.data?.created ?? 0) || 0;
             (res.data?.data?.errorsList || []).forEach((e: any) => combinedErrors.push(e));
+          } else {
+            // Сервер success:false буцаавал мессежийг нь хадгална
+            serverFailures.push(
+              String(res.data?.message || res.data?.error || "Серверээс алдаа буцлаа"),
+            );
           }
         }
 
@@ -1658,16 +1664,28 @@ export function useGereeActions(
             ...(options?.onlyStorage ? { onlyStorage: true } : {}),
           };
           const res = await uilchilgee(token).post("/manualSend", body);
-          if (res.data?.success) {
+          if (res.data?.success !== false) {
             totalCreated += Number(res.data?.data?.created ?? 0) || 0;
             (res.data?.data?.errorsList || []).forEach((e: any) => combinedErrors.push(e));
+          } else {
+            // Сервер success:false буцаавал мессежийг нь хадгална
+            serverFailures.push(
+              String(res.data?.message || res.data?.error || "Серверээс алдаа буцлаа"),
+            );
           }
         }
 
-        const message = `${totalCreated} нэхэмжлэх амжилттай үүсгэгдлээ`;
-        openSuccessOverlay(message);
-
-        if (totalCreated <= 0 && !legacyFlag && mainWithNestedIds.length === 0) {
+        // Амжилтыг зөвхөн created > 0 бөгөөд сервер success:false буцаагаагүй үед харуулна
+        if (serverFailures.length > 0) {
+          const prefix =
+            totalCreated > 0 ? `${totalCreated} нэхэмжлэх үүссэн боловч алдаа гарлаа:\n` : "";
+          openErrorOverlay(
+            `${prefix || "Нэхэмжлэх илгээхэд алдаа гарлаа: "}${serverFailures.join("\n")}`,
+          );
+        } else if (totalCreated > 0) {
+          openSuccessOverlay(`${totalCreated} нэхэмжлэх амжилттай үүсгэгдлээ`);
+        } else if (combinedErrors.length === 0) {
+          // errorsList хоосон бол доорх анхааруулга гарахгүй тул энд тайлбарлана
           openErrorOverlay(
             "Шинэ нэхэмжлэх үүсээгүй байна (created = 0). Давхар үүсгэх тохиргоо (override) эсвэл тухайн сар аль хэдийн үүссэн эсэхийг шалгана уу.",
           );
@@ -1826,16 +1844,29 @@ export function useGereeActions(
         const garageMethod = String(tok.garsiinTolborArga || baiguullaga.zogsooliinTulburBodokhArga || "Тогтмол");
         const storageMethod = String(tok.aguulakhTolborArga || baiguullaga.aguulakhTulburBodokhArga || "Тогтмол");
 
-        const garageValue = Number(tok.garsiinTolborUtga) || Number(baiguullaga.zogsoolUusgekhTulbur) || 50000;
-        const storageValue = Number(tok.aguulakhTolborUtga) || Number(baiguullaga.aguulakhUusgekhTulbur) || 50000;
+        // Тохиргоонд дүн оруулаагүй бол далд 50000 төгрөг авахгүй — доорх шалгалтаар зогсооно
+        const garageValue = Number(tok.garsiinTolborUtga) || Number(baiguullaga.zogsoolUusgekhTulbur) || 0;
+        const storageValue = Number(tok.aguulakhTolborUtga) || Number(baiguullaga.aguulakhUusgekhTulbur) || 0;
 
-        if (isGarageCharge && (!garageEnabled || garageValue <= 0)) {
-          openErrorOverlay("Зогсоолын төлбөрийн тохиргоо идэвхгүй эсвэл дүн 0 байна.");
+        if (isGarageCharge && !garageEnabled) {
+          openErrorOverlay("Зогсоолын төлбөрийн тохиргоо идэвхгүй байна.");
+          return;
+        }
+        if (isGarageCharge && garageValue <= 0) {
+          openErrorOverlay(
+            "Зогсоолын төлбөрийн дүн тохируулаагүй (0) байна. Тохиргоо хэсэгт зогсоолын төлбөрийн дүнг оруулна уу.",
+          );
           return;
         }
 
-        if (!isGarageCharge && (!storageEnabled || storageValue <= 0)) {
-          openErrorOverlay("Агуулахын төлбөрийн тохиргоо идэвхгүй эсвэл дүн 0 байна.");
+        if (!isGarageCharge && !storageEnabled) {
+          openErrorOverlay("Агуулахын төлбөрийн тохиргоо идэвхгүй байна.");
+          return;
+        }
+        if (!isGarageCharge && storageValue <= 0) {
+          openErrorOverlay(
+            "Агуулахын төлбөрийн дүн тохируулаагүй (0) байна. Тохиргоо хэсэгт агуулахын төлбөрийн дүнг оруулна уу.",
+          );
           return;
         }
 
@@ -2523,11 +2554,15 @@ export function useGereeActions(
           : ["Орон сууц", "Тоот"];
 
       const existingToots: any[] = Array.isArray(resident.toots) ? resident.toots : [];
+      // Зөвхөн ОДООГИЙН барилгын тоотыг хасна — өмнө нь өөр барилгын ижил
+      // дугаартай тоот ч хамт хасагддаг байв.
+      const odoogiinBarilga = String(selectedBuildingId || barilgiinId || "");
       const updatedToots = existingToots.filter((t: any) => {
         const tToot = String(t.toot || "").trim();
         const tTurul = String(t.turul || "Орон сууц").trim();
-        // Remove the entry that matches this unit number AND the tab type
-        if (tToot === String(unit).trim() && turulToRemove.includes(tTurul)) return false;
+        const ijilBarilga = !odoogiinBarilga || !t.barilgiinId || String(t.barilgiinId) === odoogiinBarilga;
+        // Remove the entry that matches this unit number AND the tab type AND building
+        if (ijilBarilga && tToot === String(unit).trim() && turulToRemove.includes(tTurul)) return false;
         return true;
       });
 
@@ -2563,7 +2598,7 @@ export function useGereeActions(
         return false;
       }
     },
-    [token, baiguullaga, mutate],
+    [token, baiguullaga, mutate, selectedBuildingId, barilgiinId],
   );
 
   const handleAssignToUnit = useCallback(

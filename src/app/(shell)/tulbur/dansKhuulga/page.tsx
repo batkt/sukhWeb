@@ -17,6 +17,7 @@ import { DANS_ENDPOINT } from "@/lib/endpoints";
 import useJagsaalt from "@/lib/useJagsaalt";
 import uilchilgee from "@/lib/uilchilgee";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
+import { ConfirmCloseDialog } from "@/components/ui/ConfirmCloseDialog";
 import { getErrorMessage } from "@/lib/uilchilgee";
 import formatNumber from "../../../../../tools/function/formatNumber";
 import { useBuilding } from "@/context/BuildingContext";
@@ -438,9 +439,35 @@ export default function DansniiKhuulga() {
     }
   }, [token, ajiltan, selectedGuilgee, fetchBankTransfers]);
 
+  // Холболт салгахаас өмнө баталгаажуулах гүйлгээ
+  const [pendingUnlink, setPendingUnlink] = useState<TableItem | null>(null);
+
   const handleUnlinkTransaction = useCallback((item: TableItem) => {
-    toast.success("Гүйлгээ холбогдсон байна");
+    setPendingUnlink(item);
   }, []);
+
+  // Банкны гүйлгээг гэрээнээс салгах (backend: POST /guilgeeSalgaya)
+  const confirmUnlinkTransaction = useCallback(async () => {
+    const item = pendingUnlink;
+    setPendingUnlink(null);
+    if (!item || !token || !ajiltan?.tukhainBaaziinKholbolt) return;
+    const loadingToast = toast.loading("Холболт салгаж байна...");
+    try {
+      const resp = await uilchilgee(token).post("/guilgeeSalgaya", {
+        bankniiGuilgeeId: item.id,
+        tukhainBaaziinKholbolt: ajiltan.tukhainBaaziinKholbolt,
+      });
+      if (resp.data?.success) {
+        toast.success(resp.data?.message || "Холболт амжилттай салгалаа", { id: loadingToast });
+        fetchBankTransfers();
+      } else {
+        toast.error(resp.data?.message || resp.data?.error || "Алдаа гарлаа", { id: loadingToast });
+      }
+    } catch (e: any) {
+      console.error(e);
+      toast.error(getErrorMessage(e) || "Алдаа гарлаа", { id: loadingToast });
+    }
+  }, [pendingUnlink, token, ajiltan, fetchBankTransfers]);
 
   // Map + client-side date/search filter (on the small per-account result set)
   useEffect(() => {
@@ -1074,6 +1101,16 @@ export default function DansniiKhuulga() {
           </div>
         )}
       </Modal>
+      <ConfirmCloseDialog
+        open={!!pendingUnlink}
+        title="Холболт салгах уу?"
+        description="Энэ гүйлгээг холбогдсон гэрээнээс салгаж, төлөлтийн бичилтийг устгана."
+        confirmLabel="Салгах"
+        cancelLabel="Болих"
+        confirmVariant="danger"
+        onCancel={() => setPendingUnlink(null)}
+        onConfirm={confirmUnlinkTransaction}
+      />
     </>
   );
 }

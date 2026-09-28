@@ -11,7 +11,6 @@ import uilchilgee, { getApiUrl } from "@/lib/uilchilgee";
 import { useAuth } from "@/lib/useAuth";
 import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
 import { useBuilding } from "@/context/BuildingContext";
-import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import useSWR, { mutate } from "swr"; // Added SWR import if not there
 import BlogManagement from "./BlogManagement";
@@ -613,12 +612,9 @@ function MedegdelContent() {
         turul: turul,
         failedUsers: failedList,
       });
+      // Үр дүнг (илгээсэн/илгээгээгүй тоо) зөвхөн result modal-аар харуулна —
+      // давхар success overlay нь sent=0 үед ч "амжилттай" гэж харагддаг байсан.
       setResultModalOpen(true);
-
-      // Show different success message with count details
-      const successMessage = `${turul} амжилттай илгээгдлээ: ${sentCount} илгээсэн${failedCount > 0 ? `, ${failedCount} илгээгээгүй` : ""}`;
-
-      openSuccessOverlay(successMessage);
 
       attachPreviewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
       attachPreviewUrlsRef.current = [];

@@ -1973,10 +1973,16 @@ export default function DansniiKhuulga() {
   const billingCycleRangeKey = JSON.stringify(billingCycleRange);
 
   // Clear request tracking when building or cycle changes so we can refetch.
-  // We DON'T clear the actual state (latestRowUldegdelByGereeId) here to prevent
-  // the "disappearing data" flicker. New data will simply overwrite the old.
+  // Барилга солигдоход state-г цэвэрлэхгүй ("disappearing data" flicker-ээс сэргийлнэ).
+  // Харин хугацааны муж солигдвол өмнөх сарын серверийн үлдэгдэл шинэ мужид
+  // хамаарахгүй тул кэшийг заавал цэвэрлэнэ — эс бол өмнөх сарын дүн харагдана.
+  const latestRowUldegdelRangeKeyRef = useRef<string>(billingCycleRangeKey);
   useEffect(() => {
     latestRowUldegdelRequestedRef.current.clear();
+    if (latestRowUldegdelRangeKeyRef.current !== billingCycleRangeKey) {
+      latestRowUldegdelRangeKeyRef.current = billingCycleRangeKey;
+      setLatestRowUldegdelByGereeId({});
+    }
   }, [effectiveBarilgiinId, billingCycleRangeKey]);
 
   useEffect(() => {
@@ -2816,24 +2822,27 @@ export default function DansniiKhuulga() {
           }
         }
       } else if (data.type === "khungulult") {
-        const response = await uilchilgee(token).post("/guilgeeAvlaguud", {
+        // Гараас оруулсан хөнгөлөлтийг ч Хөнгөлөлт хуудастай НЭГ замаар бүртгэнэ:
+        // хөнгөлөлтийн түүхэд харагдана, сарын төлбөрөөс хэтрэхгүй, нэг сарыг
+        // давхар хөнгөлөхгүй, устгах/засах нь түүхтэйгээ хамт ажиллана.
+        const sar = String(data.date || "").slice(0, 7);
+        const response = await uilchilgee(token).post("/khungulultKhadgalya", {
           baiguullagiinId: ajiltan.baiguullagiinId,
           barilgiinId: effectiveBarilgiinId,
-          tukhainBaaziinKholbolt: ajiltan?.tukhainBaaziinKholbolt,
-          turul: "Хөнгөлөлт",
-          zardliinTurul: "Хөнгөлөлт",
-          source: "gar",
-          tulsunDun: data.amount,
-          tulukhDun: 0,
-          dun: -Math.abs(data.amount),
-          orshinSuugchId: data.residentId,
-          gereeniiId: data.gereeniiId,
-          tailbar: data.tailbar || `Хөнгөлөлт - ${data.date}`,
-          ognoo: data.date,
-          guilgeeKhiisenAjiltniiId: ajiltan._id,
-          guilgeeKhiisenAjiltniiNer:
-            `${(ajiltan as any).ovog || ""} ${ajiltan.ner || ""}`.trim(),
+          gereenuud: [{ gereeniiId: data.gereeniiId }],
+          ekhlekhSar: sar,
+          duusakhSar: sar,
+          khungulukhTurul: data.discountType === "amount" ? "dun" : "khuvi",
+          khungulukhUtga: Number(data.discountValue) || 0,
+          shaltgaan: data.tailbar,
         });
+        const ur = (response as any)?.data?.results;
+        const alggasan = ur?.alggasanGereenuud?.[0]?.shaltgaan;
+        const aldaatai = ur?.failed?.[0]?.error;
+        if (isTransactionHttpOk(response) && !(ur?.success?.length > 0)) {
+          toast.error(alggasan || aldaatai || "Хөнгөлөлт бүртгэгдсэнгүй.");
+          return;
+        }
 
         if (isTransactionHttpOk(response)) {
           toast.success("Хөнгөлөлт амжилттай бүртгэгдлээ");

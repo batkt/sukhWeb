@@ -10,8 +10,11 @@ import { useAuth } from "@/lib/useAuth";
 import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
-import { fetchWithDomainFallback } from "@/lib/uilchilgee";
-import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
+import { fetchWithDomainFallback, getErrorMessage } from "@/lib/uilchilgee";
+import {
+  useAshiglaltiinZardluud,
+  ZardalSyncAfterDeleteError,
+} from "@/lib/useAshiglaltiinZardluud";
 import { useBuilding } from "@/context/BuildingContext";
 import { useSpinner } from "@/context/SpinnerContext";
 import {
@@ -746,7 +749,17 @@ export default function AshiglaltiinZardluud() {
       // refresh list
       await refreshZardluud();
     } catch (e) {
-      openErrorOverlay("Зардал устгахад алдаа гарлаа");
+      if (e instanceof ZardalSyncAfterDeleteError) {
+        // Устгал амжилттай, зөвхөн гэрээний синк алдаатай
+        setDeleteModalOpen(false);
+        setItemToDelete(null);
+        await refreshZardluud();
+        openErrorOverlay(
+          `"${itemToDelete.ner}" зардал устгагдсан боловч гэрээнүүдээс цэвэрлэхэд алдаа гарлаа: ${getErrorMessage(e.cause)}. "Цэвэрлэх" товчийг дахин дарна уу.`,
+        );
+      } else {
+        openErrorOverlay(`Зардал устгахад алдаа гарлаа: ${getErrorMessage(e)}`);
+      }
     } finally {
       hideSpinner();
     }
@@ -982,7 +995,7 @@ export default function AshiglaltiinZardluud() {
                   await syncZardluud();
                   openSuccessOverlay("Гэрээнүүдээс хуучин зардлуудыг амжилттай цэвэрлэлээ");
                 } catch (e) {
-                  openErrorOverlay("Цэвэрлэхэд алдаа гарлаа");
+                  openErrorOverlay(`Цэвэрлэхэд алдаа гарлаа: ${getErrorMessage(e)}`);
                 } finally {
                   hideSpinner();
                 }

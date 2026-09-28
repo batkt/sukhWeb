@@ -17,7 +17,8 @@ import { useRouter } from "next/navigation";
 import { hasPermission } from "@/lib/permissionUtils";
 import { useTourSteps } from "@/lib/useTourSteps";
 import { useRegisterTourSteps } from "@/context/TourContext";
-import uilchilgee, { getApiUrl } from "@/lib/uilchilgee";
+import uilchilgee, { getApiUrl, getErrorMessage } from "@/lib/uilchilgee";
+import { ConfirmCloseDialog } from "@/components/ui/ConfirmCloseDialog";
 import useBaiguullaga from "@/lib/useBaiguullaga";
 import formatNumber from "../../../../../tools/function/formatNumber";
 import { StandardPagination } from "@/components/ui/StandardTable";
@@ -563,7 +564,11 @@ export default function Ebarimt() {
     if (v) setSuuliinIlgeesen(String(v));
   }, [baiguullaga]);
 
+  // Татварт илгээхээс өмнө баталгаажуулах цонх
+  const [ilgeekhConfirmOpen, setIlgeekhConfirmOpen] = useState(false);
+
   const ebarimtIlgeeye = async () => {
+    setIlgeekhConfirmOpen(false);
     if (!token || !ajiltan?.baiguullagiinId) {
       toast.error("Нэвтэрсэн эсэхээ шалгана уу");
       return;
@@ -574,13 +579,20 @@ export default function Ebarimt() {
         baiguullagiinId: ajiltan.baiguullagiinId,
         barilgiinId: barilgiinId || null,
       });
+      // Сервер success:false буцаавал амжилт харуулахгүй
+      if (resp.data?.success === false) {
+        toast.error(
+          resp.data?.message || resp.data?.error || "Татварт илгээхэд алдаа гарлаа",
+        );
+        return;
+      }
       setSuuliinIlgeesen(
         String(resp.data?.suuliinIlgeesenOgnoo || new Date().toISOString()),
       );
       toast.success("Татварт амжилттай илгээлээ");
     } catch (e) {
       console.error(e);
-      toast.error("Татварт илгээхэд алдаа гарлаа");
+      toast.error(`Татварт илгээхэд алдаа гарлаа: ${getErrorMessage(e)}`);
     } finally {
       setLoading(false);
     }
@@ -699,7 +711,7 @@ export default function Ebarimt() {
                     </span>
                   </span>
                   <Button
-                    onClick={ebarimtIlgeeye}
+                    onClick={() => setIlgeekhConfirmOpen(true)}
                     isLoading={loading}
                     variant="primary"
                     className="rounded-xl"
@@ -743,6 +755,15 @@ export default function Ebarimt() {
             </div>
           </div>
         </div>
+        <ConfirmCloseDialog
+          open={ilgeekhConfirmOpen}
+          title="Татварт илгээх үү?"
+          description="И-баримтын мэдээллийг татварын системд илгээнэ. Үргэлжлүүлэх үү?"
+          confirmLabel="Илгээх"
+          cancelLabel="Болих"
+          onCancel={() => setIlgeekhConfirmOpen(false)}
+          onConfirm={ebarimtIlgeeye}
+        />
       </div>
   );
 }

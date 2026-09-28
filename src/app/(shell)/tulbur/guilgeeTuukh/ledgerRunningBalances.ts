@@ -194,8 +194,18 @@ export function computeLedgerRunningBalancesByGereeId(
 
     // Нэг мөр болсон гүйлгээ (төлөлт, ганцаарчилсан авлага, нэхэмжлэхийн дүүргэлтгүй)
     const isStandaloneEkhnii = it?.ekhniiUldegdelEsekh === true;
+    // Эхний үлдэгдэл: тэмдэгтэй `dun`-г ашиглана (сөрөг үед backend undsenDun=0, tulsunDun=X хадгалдаг тул
+    // tulsunDun-г давхар хасахгүй). `dun` байхгүй үед л undsenDun/tulukhDun руу буцна.
+    const ekhniiDunRaw = it?.dun;
+    const ekhniiHasDun =
+      ekhniiDunRaw !== undefined &&
+      ekhniiDunRaw !== null &&
+      ekhniiDunRaw !== "" &&
+      Number.isFinite(Number(ekhniiDunRaw));
     const itemAmount = isStandaloneEkhnii
-      ? (Number(it?.undsenDun) || Number(it?.tulukhDun) || Number(it?.dun) || Number(it?.uldegdel) || 0)
+      ? ekhniiHasDun
+        ? Number(ekhniiDunRaw)
+        : Number(it?.undsenDun) || Number(it?.tulukhDun) || Number(it?.uldegdel) || 0
       : Number(
           it?.niitTulbur ??
             it?.niitDun ??
@@ -232,7 +242,7 @@ export function computeLedgerRunningBalancesByGereeId(
         gid,
         ms: itemMs,
         tul: itemAmount,
-        tsun: fromTulsun,
+        tsun: 0,
         ord: `${it._id}-ekh`,
       });
       continue;
