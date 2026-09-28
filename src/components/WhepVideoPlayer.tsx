@@ -66,11 +66,33 @@ export function rtspIpAvya(rtspUrl: string): string {
   return m ? m[1] : "";
 }
 
-/** Rust worker-ийн `Config::stream_path`-тай ижил дүрэм. */
+/**
+ * RTSP хаягаас СУВГИЙН дугаарыг салгана.
+ *
+ * NVR бол НЭГ IP дээр олон камер: зөвхөн IP-гээр зам нэрлэвэл бүх суваг нэг
+ * зам руу орж, бие биенээ түлхэнэ.
+ *
+ * Зогсоолын ANPR камерын `root` нь `tokhirgoo.ROOT || "stream"` бөгөөд
+ * сувгийн дугаар агуулдаггүй. Тиймээс "суваг олдвол л дагавар нэмэх" дүрэм
+ * нь одоо ажиллаж байгаа замуудыг ХЭВЭЭР үлдээнэ.
+ *
+ * `Streaming/Channels/102` → "102"   ·   `?channel=2` → "2"   ·   `stream` → ""
+ */
+export function rtspSuvagAvya(rtspUrl: string): string {
+  const u = String(rtspUrl || "").trim();
+  const hik = /\/Channels\/(\d+)/.exec(u);
+  if (hik) return hik[1];
+  const query = /[?&]channel=(\d+)/.exec(u);
+  if (query) return query[1];
+  return "";
+}
+
+/** Rust worker-ийн `Config::nemelt_zam` / `stream_path`-тай ижил дүрэм. */
 export function urgasniiZam(barilgiinId: string, rtspUrl: string): string {
   const ip = rtspIpAvya(rtspUrl);
   if (!barilgiinId || !ip) return "";
-  return `${barilgiinId}/${ip.replace(/\./g, "-")}`;
+  const suvag = rtspSuvagAvya(rtspUrl);
+  return `${barilgiinId}/${ip.replace(/\./g, "-")}${suvag ? `-${suvag}` : ""}`;
 }
 
 export default function WhepVideoPlayer({
