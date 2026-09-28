@@ -1606,11 +1606,7 @@ export default function HongololtTool({
                   {fmt(summaryRows.length ? niitUldegdel : 0)}
                 </span>
               </div>
-              {summaryRows.length === 0 && (
-                <p className="pt-1 text-[12px] text-[color:var(--muted-text)]">
-                  Хүснэгтээс хөнгөлөх оршин суугчаа сонгоно уу. Бүгдийг сонгох бол толгойн checkbox-ыг дарна.
-                </p>
-              )}
+              
             </div>
 
             {/* Actions */}
