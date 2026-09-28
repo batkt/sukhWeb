@@ -1153,6 +1153,12 @@ export default function Camera() {
             _id: plate, // Use plate as stable ID for synthetic entry
             mashiniiDugaar: plate,
             baiguullagiinId: data.baiguullagiinId,
+            // Socket нь машины төрлийг АЛЬ ХЭДИЙН илгээдэг (sdkService →
+            // `zogsoolOroh`) атлаа энд хаягддаг байв. Улмаар дөнгөж орсон
+            // оршин суугч REST дахин татах хүртэл «Үйлчлүүлэгч» гэж
+            // харагддаг байсан — `getVehicleType` нь төрөлгүй мөрийг
+            // тэгж нөхдөг.
+            turul: data.turul || undefined,
             createdAt: new Date().toISOString(),
             tuukh: [
               {
