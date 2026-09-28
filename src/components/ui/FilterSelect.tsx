@@ -67,10 +67,18 @@ export default function FilterSelect({
     setKhaikh("");
   };
 
+  /** Нээгдэхэд талбар сунахгүй — хаалттай үеийн өргөнөөр түгжинэ */
+  const [khaaltUrgun, setKhaaltUrgun] = useState<number | null>(null);
+  // Шошго нуугдахаас ӨМНӨ (хаалттай үед) өргөнийг хэмжинэ
+  const neekh = () => {
+    setKhaaltUrgun(triggerRef.current?.getBoundingClientRect().width ?? null);
+    setNeelttei(true);
+  };
   useLayoutEffect(() => {
     if (!neelttei || !triggerRef.current) return;
     const r = triggerRef.current.getBoundingClientRect();
-    setBairlal({ top: r.bottom + 6, left: r.left, width: Math.max(r.width, 220) });
+    // Жагсаалт талбартайгаа ижил өргөнтэй — «сунах» мэт харагдахгүй
+    setBairlal({ top: r.bottom + 6, left: r.left, width: Math.max(r.width, 140) });
   }, [neelttei]);
 
   useEffect(() => {
@@ -146,18 +154,19 @@ export default function FilterSelect({
         aria-controls={jagsaaltId}
         tabIndex={searchable && neelttei ? -1 : 0}
         onClick={() => {
-          if (!neelttei) setNeelttei(true);
+          if (!neelttei) neekh();
           else if (!searchable) khaakh();
         }}
         onKeyDown={(e) => {
           if (!neelttei && (e.key === "Enter" || e.key === " " || e.key === "ArrowDown")) {
             e.preventDefault();
-            setNeelttei(true);
+            neekh();
           }
         }}
+        style={neelttei && khaaltUrgun ? { width: khaaltUrgun } : undefined}
         className={`filter-field cursor-pointer text-left ${value && allowClear ? "is-active" : ""} ${className}`}
       >
-        {label && <span className="filter-field-label">{label}</span>}
+        {label && !(searchable && neelttei) && <span className="filter-field-label">{label}</span>}
         {searchable && neelttei ? (
           <input
             ref={searchRef}
@@ -170,7 +179,8 @@ export default function FilterSelect({
                 if (ekhnii) songokh(ekhnii.value);
               }
             }}
-            placeholder={songogdson?.label || searchPlaceholder}
+            placeholder={songogdson?.label || (label ? `${label} хайх...` : searchPlaceholder)}
+            size={1}
             className="min-w-0 flex-1 cursor-text"
           />
         ) : (

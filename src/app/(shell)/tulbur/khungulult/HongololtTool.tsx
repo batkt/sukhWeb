@@ -540,6 +540,8 @@ export default function HongololtTool({
         });
       });
       (khuuchinRes.data?.jagsaalt || []).forEach((h: any) => {
+        // Бүртгэлтэй хөнгөлөлтийн мөр дээр давхар харагдахгүй
+        if (h.khungulultiinTuukhId) return;
         const sar = h.ognoo ? dayjs(h.ognoo).format("YYYY-MM") : "";
         murnuud.push({
           ...h,
@@ -675,6 +677,20 @@ export default function HongololtTool({
     };
   }, [filteredHistory]);
 
+  const tuukhKhuraangui = useMemo(() => {
+    const tuukhuud = new Set<string>();
+    const suugchid = new Set<string>();
+    filteredHistory.forEach((h) => {
+      tuukhuud.add(h.tuukhId || h._id);
+      if (h.gereeniiId) suugchid.add(String(h.gereeniiId));
+    });
+    return {
+      too: tuukhuud.size,
+      suugch: suugchid.size,
+      dundaj: suugchid.size ? totalKhungulukhDun / suugchid.size : 0,
+    };
+  }, [filteredHistory, totalKhungulukhDun]);
+
   const totalPages = Math.ceil(filteredHistory.length / histPageSize) || 1;
   const paginatedHistory = useMemo(() => {
     const start = (histPage - 1) * histPageSize;
@@ -687,20 +703,19 @@ export default function HongololtTool({
       const data = filteredHistory.map((h, i) => ({
         "№": i + 1,
         "Огноо": fmtDateTime(h.createdAt || h.ognoo),
-        "Хөнгөлөлт": `Олон (${h.bichlegiinToo || 3})`,
-        "Гэрээнүүд": h.gereeniiDugaar || "",
-        "Талбай дугаар": h.toot || "",
-        "Түрээслэгчид": h.ner || "",
-        "Эхлэх хугацаа": h.ekhlekhOgnoo || "",
-        "Дуусах хугацаа": h.duusakhOgnoo || "",
-        "Хөнгөлөх төрөл": h.khungulukhTurul || "Гэрээнээс",
-        "Төлөх дүн": h.tulukhDun || 0,
-        "Хөнгөлөх дүн": Math.abs(h.dun || 0),
-        "Төлсөн дүн": h.tulsunDun || 0,
-        "Төрөл": h.turul || "Шаталсан",
+        "Оршин суугч": h.ner || "",
+        "Гэрээний дугаар": h.gereeniiDugaar || "",
+        "Орц": h.orts || "",
+        "Тоот": h.toot || "",
+        "Эхлэх сар": h.ekhlekhOgnoo || "",
+        "Дуусах сар": h.duusakhOgnoo || "",
+        "Сарын тоо": h.bichlegiinToo || 1,
+        "Хөнгөлөх": h.turul || "",
+        "Хөнгөлөлтгүй дүн": Number(h.tulukhDun) || 0,
+        "Хөнгөлөлт": Math.abs(Number(h.dun) || 0),
         "Шалтгаан": h.tailbar || "",
         "Ажилтан": h.guilgeeKhiisenAjiltniiNer || "",
-        "Зассан": h.zassan || "-",
+        "Зассан": h.zassan || "",
       }));
       const ws = XLSX.utils.json_to_sheet(data);
       const wb = XLSX.utils.book_new();
@@ -724,13 +739,14 @@ export default function HongololtTool({
           ? { baiguullagiinId, tuukhId: row.tuukhId, gereeniiId: row.gereeniiId, tailbar: tailbar.trim() }
           : { baiguullagiinId, id: row._id, tailbar: tailbar.trim() },
       );
-      if (res.data?.success !== false) {
-        toast.success("Хөнгөлөлт амжилттай устгагдлаа");
+      if (res.data?.success === true) {
+        toast.success(res.data?.message || "Хөнгөлөлт устгагдлаа");
         loadHistory();
+        setSuuriShinechlel((n) => n + 1);
         if (onSuccess) onSuccess();
         return true;
       }
-      toast.error(res.data?.message || "Устгахад алдаа гарлаа");
+      toast.error(res.data?.message || "Хөнгөлөлт устгагдсангүй. Дахин оролдоно уу.");
     } catch (err: any) {
       toast.error(
         err?.response?.data?.message || err.message || "Устгахад алдаа гарлаа"
@@ -749,8 +765,9 @@ export default function HongololtTool({
         khungulukhUtga: utga,
         tailbar: tailbar.trim(),
       });
-      toast.success("Хөнгөлөлт засагдлаа");
+      toast.success("Хөнгөлөлт засагдлаа — бүх сарын дүн шинэчлэгдлээ");
       loadHistory();
+      setSuuriShinechlel((n) => n + 1);
       if (onSuccess) onSuccess();
       return true;
     } catch (err: any) {
@@ -807,6 +824,8 @@ export default function HongololtTool({
   /** Гэрээ бүрийн бодит үлдэгдэл (авлагын дэвтрээс) — `/khungulultSuuriAvya` */
   const [boditUldegdel, setBoditUldegdel] = useState<Record<string, number> | null>(null);
   const [suuriAchaalj, setSuuriAchaalj] = useState(false);
+  /** Хадгалсны дараа үлдэгдлийг дахин татахад нэмэгдэнэ */
+  const [suuriShinechlel, setSuuriShinechlel] = useState(0);
   // Суурь нь сараас хамаарахгүй (гэрээний сарын төлбөр) — барилга солигдох
   // эсвэл оршин суугчдын жагсаалт шинэчлэгдэхэд л дахин татна.
   const gereeniiIdnuud = React.useMemo(
@@ -839,7 +858,7 @@ export default function HongololtTool({
     return () => {
       khuchintei = false;
     };
-  }, [token, baiguullagiinId, barilgiinId, gereeniiIdTulkhuur]);
+  }, [token, baiguullagiinId, barilgiinId, gereeniiIdTulkhuur, suuriShinechlel]);
 
   /** Сонгосон сарууд ("YYYY-MM") */
   const saruud = React.useMemo(() => {
@@ -916,32 +935,48 @@ export default function HongololtTool({
   /* ── Submit ── */
   const handleSubmit = async () => {
     const val = parseFloat(hongololtUtga) || 0;
-    if (!val || val <= 0) {
-      toast.error("Хөнгөлөх утгаа оруулна уу");
+    // Шалгалт — маягтын дарааллаар, юу дутуу байгааг тодорхой хэлнэ
+    if (selectedIds.size === 0) {
+      toast.error("Хөнгөлөх оршин суугчаа хүснэгтээс сонгоно уу. Бүгдийг сонгох бол толгойн checkbox-ыг дарна.");
       return;
     }
-    if (selectedIds.size === 0) {
-      toast.error("Оршин суугч сонгоно уу");
+    if (!selectedMonth) {
+      toast.error("Хөнгөлөх сараа «Огноо» талбараас сонгоно уу");
+      return;
+    }
+    if (!val || val <= 0) {
+      toast.error(
+        hongololtTurul === "percent"
+          ? "Хөнгөлөх хувиа оруулна уу (жишээ нь 10)"
+          : "Сар бүр хөнгөлөх дүнгээ оруулна уу (жишээ нь 50,000)",
+      );
+      return;
+    }
+    if (hongololtTurul === "percent" && val > 100) {
+      toast.error("Хөнгөлөх хувь 100%-иас их байж болохгүй");
+      return;
+    }
+    // Байгууллагын тохируулсан дээд хувь
+    if (hongololtTurul === "percent" && deedKhuvi != null && val > deedKhuvi) {
+      toast.error(`Хөнгөлөх хувь ${val}% байна. Тохиргоогоор хамгийн ихдээ ${deedKhuvi}% хөнгөлөх боломжтой.`);
       return;
     }
     if (!shaltgaan.trim()) {
-      toast.error("Шалтгаан оруулна уу");
+      toast.error("Хөнгөлөлт олгох шалтгаанаа бичнэ үү — түүх дээр харагдана");
       return;
     }
-
-    // Байгууллагын тохируулсан дээд хувь. turees дээр яг ийм шалгалт
-    // байдаг — sukh-ийн схемд талбар нь байсан ч ашиглагдаагүй байв.
-    if (hongololtTurul === "percent" && deedKhuvi != null && val > deedKhuvi) {
-      toast.error(`Тохируулсан дээд хувь (${deedKhuvi}%)-иас хэтэрсэн байна`);
+    if (hongololtTurul === "percent" && suuriAchaalj) {
+      toast.error("Сарын төлбөрийг бодож байна, түр хүлээгээд дахин дарна уу");
       return;
     }
 
     const applyTo = residents.filter((r) => selectedIds.has(r._id));
 
     if (applyTo.length === 0) {
-      toast.error("Хөнгөлөлт оруулах оршин суугч олдсонгүй");
+      toast.error("Сонгосон оршин суугч жагсаалтад алга. Жагсаалтаа шинэчлээд дахин сонгоно уу.");
       return;
     }
+    const gereeguiToo = applyTo.filter((r) => !r.gereeniiId).length;
 
     // Олон сар сонгосон бол шалтгаанд хугацааг нь үлдээнэ — түүх дээрээс
     // яагаад дүн нь их байгаа нь ойлгомжтой байг.
@@ -975,9 +1010,11 @@ export default function HongololtTool({
     if (ilgeekhGereenuud.length === 0) {
       setLoading(false);
       toast.error(
-        hongololtTurul === "percent"
-          ? "Сарын төлбөртэй гэрээ алга — хувиар хөнгөлөх суурь дүн 0₮"
-          : "Хөнгөлөх дүн гарсан оршин суугч алга",
+        gereeguiToo === applyTo.length
+          ? "Сонгосон оршин суугчид гэрээгүй тул хөнгөлөлт оруулах боломжгүй"
+          : hongololtTurul === "percent"
+            ? "Сонгосон оршин суугчдын гэрээнд сарын төлбөр тохируулаагүй тул хувиар хөнгөлөх суурь 0₮ байна. Дүнгээр хөнгөлнө үү."
+            : "Хөнгөлөх дүн бодогдсонгүй. Дүнгээ шалгана уу.",
       );
       return;
     }
@@ -1001,31 +1038,42 @@ export default function HongololtTool({
       const aldaatai = ur?.failed ?? [];
 
       if (amjilttai > 0) {
-        toast.success(`${amjilttai} гэрээнд хөнгөлөлт бүртгэгдлээ`);
+        toast.success(`${amjilttai} оршин суугчид хөнгөлөлт бүртгэгдлээ`);
         onSuccess?.();
+        // Маягтыг цэвэрлэж, үлдэгдэл/түүхийг хуудас ачаалахгүйгээр шинэчилнэ
+        setHongololtUtga("");
+        setShaltgaan("");
+        setSelectedIds(new Set());
+        setSuuriShinechlel((n) => n + 1);
+        loadHistory();
       }
 
       // Сонгосон сард төлбөргүй байсан гэрээг нэр заан мэдэгдэнэ —
       // чимээгүй алгасвал хэрэглэгч хөнгөлөлт суусан гэж эндүүрнэ.
       if (alggasan.length > 0) {
         toast.error(
-          `${alggasan.length} гэрээнд хөнгөлөлт суугаагүй: ` +
+          `${alggasan.length} оршин суугчид хөнгөлөлт суугаагүй: ` +
           alggasan
             .slice(0, 3)
-            .map((x: any) => x.toot || x.gereeniiDugaar)
-            .join(", ") +
+            .map((x: any) => `${x.toot || x.gereeniiDugaar} тоот — ${x.shaltgaan || "шалтгаан тодорхойгүй"}`)
+            .join("; ") +
           (alggasan.length > 3 ? " …" : ""),
+          { duration: 7000 },
         );
       }
       if (aldaatai.length > 0) {
-        toast.error(`${aldaatai.length} гэрээнд алдаа гарлаа`);
+        toast.error(
+          `${aldaatai.length} оршин суугчид хөнгөлөлт хадгалагдсангүй: ${aldaatai[0]?.error || "алдаа гарлаа"}`,
+          { duration: 7000 },
+        );
       }
       if (amjilttai > 0 && alggasan.length === 0 && aldaatai.length === 0) {
         onClose?.();
       }
     } catch (err: any) {
       toast.error(
-        err?.response?.data?.message || "Хөнгөлөлт бүртгэхэд алдаа гарлаа",
+        err?.response?.data?.message ||
+          "Хөнгөлөлт хадгалахад алдаа гарлаа. Интернэт холболтоо шалгаад дахин оролдоно уу.",
       );
     }
 
@@ -1100,7 +1148,7 @@ export default function HongololtTool({
                 v > 0 ? "text-danger" : "opacity-70"
               }`}
             >
-              {fmt(v)}₮
+              {fmt(v)}
             </span>
           );
         },
@@ -1126,7 +1174,7 @@ export default function HongololtTool({
                       "Гэрээний сарын төлбөр — хувь үүнээс бодогдоно"
                     }
                   >
-                    {v > 0 ? `${fmt(v)}₮` : suuriAchaalj ? "…" : "Төлбөргүй"}
+                    {suuriAchaalj && !(v > 0) ? "…" : fmt(v > 0 ? v : 0)}
                   </span>
                 );
               },
@@ -1145,10 +1193,10 @@ export default function HongololtTool({
           const discountDun = computeDiscount(r);
           return isTarget && discountDun > 0 ? (
             <span className="font-medium tabular-nums whitespace-nowrap text-brand">
-              -{fmt(discountDun)}₮
+              -{fmt(discountDun)}
             </span>
           ) : (
-            <span className="opacity-40">—</span>
+            <span className="tabular-nums text-[color:var(--muted-text)]">0</span>
           );
         },
       },
@@ -1240,6 +1288,19 @@ export default function HongololtTool({
         render: (_: any, h: any) => (
           <span className="inline-flex rounded-full bg-theme/10 px-2 py-0.5 text-[12px] text-brand whitespace-nowrap">
             {h.turul || "—"}
+          </span>
+        ),
+      },
+      {
+        title: "Шалтгаан",
+        key: "tailbar",
+        width: 200,
+        render: (_: any, h: any) => (
+          <span
+            className="block truncate text-[13px] text-[color:var(--muted-text)]"
+            title={h.tailbar || undefined}
+          >
+            {h.tailbar || "—"}
           </span>
         ),
       },
@@ -1470,19 +1531,19 @@ export default function HongololtTool({
               <div className="flex justify-between">
                 <span className="text-[color:var(--muted-text)]">Нийт хөнгөлөх тоо:</span>
                 <span className="font-medium tabular-nums text-[color:var(--panel-text)]">
-                  {summaryRows.length || "—"}
+                  {summaryRows.length}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-[color:var(--muted-text)]">Нийт хөнгөлсөн дүн:</span>
                 <span className="font-medium tabular-nums text-brand">
-                  {summaryRows.length ? `${fmt(totalDun)}₮` : "—"}
+                  {fmt(summaryRows.length ? totalDun : 0)}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-[color:var(--muted-text)]">Нийт үлдэгдэл:</span>
                 <span className={`font-medium tabular-nums ${summaryRows.length && niitUldegdel > 0 ? "text-danger" : "text-[color:var(--panel-text)]"}`}>
-                  {summaryRows.length ? `${fmt(niitUldegdel)}₮` : "—"}
+                  {fmt(summaryRows.length ? niitUldegdel : 0)}
                 </span>
               </div>
               {summaryRows.length === 0 && (
@@ -1635,6 +1696,26 @@ export default function HongololtTool({
               </div>
             </div>
 
+            {/* Хураангуй — шүүсэн хугацааны хөнгөлөлт нэг харцаар */}
+            <div className="mb-3 grid shrink-0 grid-cols-2 gap-2 sm:grid-cols-4">
+              {[
+                { ner: "Хөнгөлөлт", utga: String(tuukhKhuraangui.too), tailbar: "удаа" },
+                { ner: "Хамрагдсан", utga: String(tuukhKhuraangui.suugch), tailbar: "оршин суугч" },
+                { ner: "Нийт хөнгөлсөн", utga: fmt2(totalKhungulukhDun), tailbar: "₮", brand: true },
+                { ner: "Дундаж", utga: fmt2(tuukhKhuraangui.dundaj), tailbar: "₮ / оршин суугч" },
+              ].map((k) => (
+                <div key={k.ner} className="rounded-xl border border-[color:var(--surface-border)] px-3.5 py-2.5">
+                  <div className="text-[12px] text-[color:var(--muted-text)]">{k.ner}</div>
+                  <div className="mt-0.5 flex items-baseline gap-1.5">
+                    <span className={`text-[18px] tabular-nums ${k.brand ? "text-brand" : "text-[color:var(--panel-text)]"}`}>
+                      {k.utga}
+                    </span>
+                    <span className="text-[12px] text-[color:var(--muted-text)]">{k.tailbar}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
             {/* History table — гүйлгэлтийг хүснэгт өөрөө хариуцна */}
             <div className="min-h-0 flex-1">
               <Table<any>
@@ -1645,7 +1726,7 @@ export default function HongololtTool({
                   loading={histFetching}
                   locale={{ emptyText: "Хөнгөлөлтийн түүх байхгүй" }}
                   pagination={false}
-                  scroll={{ x: 1180 }}
+                  scroll={{ x: 1380 }}
                   fillHeight={inline}
                   summary={() => (
                     <Table.Summary.Row>
@@ -1662,7 +1743,7 @@ export default function HongololtTool({
                       </Table.Summary.Cell>
                       <Table.Summary.Cell align="right" className="tabular-nums whitespace-nowrap">
                       </Table.Summary.Cell>
-                      <Table.Summary.Cell colSpan={2} />
+                      <Table.Summary.Cell colSpan={3} />
                     </Table.Summary.Row>
                   )}
                 />

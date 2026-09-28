@@ -7712,3 +7712,22 @@ label:hover > .peer:not(:checked) + .tokh-switch {
   [class*="text-[13px]"], [class*="text-[14px]"], [class*="text-[15px]"]) {
   font-size: 14px;
 }
+
+/* ── Хүснэгтийн үйлдлийн дүрс — бүх хуудсанд нэг хэмжээ ────────────────
+   Хуудас бүр h-3.5 / h-4 / h-5 өөр өөр тавьдаг, нарийн баганад
+   `svg { max-width: 100% }` дүрсийг жижгэрүүлдэг байв. */
+.zt-table td :is(button, a) > svg.lucide {
+  width: 16px;
+  height: 16px;
+  max-width: none;
+  flex-shrink: 0;
+}
+.zt-table td button:has(> svg.lucide:only-child) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  border-radius: 8px;
+}

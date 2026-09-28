@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 import { Spin, Tooltip } from "antd";
 import Table from "@/components/ui/table";
 import useSWR from "swr";
@@ -11,6 +11,22 @@ import { pickMonthSlice } from "./guilgeeMonthMatrix";
 
 const formatDate = (d?: string) =>
   d ? new Date(d).toLocaleDateString("mn-MN") : "-";
+
+/** Мөнгөн дүнтэй баганууд — хөл мөрөнд нийлбэр гарна */
+const MONEY_KEYS = new Set([
+  "ekhniiUldegdel",
+  "uldegdel",
+  "sariinTurees",
+  "paid",
+  "khungulult",
+  "sariinUldegdel",
+]);
+
+/** NaN/Infinity-г 0 болгож, нүдэнд харагдах 2 оронтой утга руу бөөрөнхийлнө */
+const toDisplayAmount = (v: unknown): number => {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.round(n * 100) / 100 : 0;
+};
 
 interface GuilgeeTableProps {
   data: any[];
@@ -85,6 +101,69 @@ export default function GuilgeeTable({
     (col) => col.key === "checkbox",
   );
 
+  /**
+   * Мөнгөн баганын нүдэнд ХАРАГДАХ утга. Нүд болон хөл мөрийн нийлбэр хоёулаа
+   * үүнийг ашиглана — ингэснээр нийлбэр нь яг харагдаж буй тоонуудын нийлбэр болно.
+   */
+  const getMoneyValue = useCallback(
+    (key: string, record: any): number => {
+      const gid = getGereeId(record);
+      const resolveMonthSlice = () => {
+        const gDugaar =
+          record?.gereeniiDugaar ||
+          (record?.gereeniiId &&
+            contractsById[String(record.gereeniiId)]?.gereeniiDugaar);
+        const monthlyData = gid
+          ? monthlyDataByGereeId?.get(gid)
+          : gDugaar
+            ? monthlyDataByGereeId?.get(String(gDugaar))
+            : null;
+        return pickMonthSlice(monthlyData, monthlyPeriods, matrixMonthKey);
+      };
+      switch (key) {
+        case "ekhniiUldegdel":
+          return toDisplayAmount(record?._ekhniiUldegdelAmount ?? 0);
+        case "paid":
+          return toDisplayAmount(gid ? (monthPaidByGereeId[gid] ?? 0) : 0);
+        case "khungulult":
+          return toDisplayAmount(gid ? (khungulultMap[gid] ?? 0) : 0);
+        case "sariinTurees": {
+          const monthSlice = resolveMonthSlice();
+          return toDisplayAmount(
+            monthSlice != null
+              ? (monthSlice.billed ?? 0)
+              : (record?._totalTulbur ?? 0),
+          );
+        }
+        case "uldegdel":
+          return toDisplayAmount(bestKnownBalances[gid] ?? 0);
+        case "sariinUldegdel": {
+          // 1. Сервер тооцсон үлдэгдэл (uldegdelBodyo) 2. Сарын матриц 3. Дотоод нэгтгэл
+          const serverBalance = gid ? bestKnownBalances[gid] : null;
+          if (serverBalance != null) return toDisplayAmount(serverBalance);
+          const monthSlice = resolveMonthSlice();
+          if (monthSlice != null) return toDisplayAmount(monthSlice.uldegdel ?? 0);
+          return toDisplayAmount(
+            Number(record?._totalTulburMonth || 0) -
+              Number(record?._totalTulsunMonth || 0),
+          );
+        }
+        default:
+          return 0;
+      }
+    },
+    [
+      getGereeId,
+      contractsById,
+      monthlyDataByGereeId,
+      monthlyPeriods,
+      matrixMonthKey,
+      monthPaidByGereeId,
+      khungulultMap,
+      bestKnownBalances,
+    ],
+  );
+
   // Мөр тус бүрийн SMS товч хасагдсан — Төлбөрийн цонхны дээд талаас
   // сонгосон бүх гэрээнд НЭГ дарахад илгээдэг болов
   // (`/nekhemjlekh/send-reminder-sms-bulk`).
@@ -106,9 +185,7 @@ export default function GuilgeeTable({
           minWidth: col.minWidth,
           align: col.align || "center",
           sorter:
-            col.key === "uldegdel" || col.key === "paid" || col.key === "toot"
-              ? true
-              : false,
+            ["uldegdel", "paid", "toot", "orts", "khungulult"].includes(col.key),
           fixed: col.sticky ? ("left" as const) : undefined,
           onCell: () => ({
             className:
@@ -116,7 +193,9 @@ export default function GuilgeeTable({
                 ? "!text-right"
                 : col.align === "start"
                   ? "!text-left"
-                  : "!text-center") + " !py-0.5 !leading-tight",
+                  : "!text-center") +
+              "" +
+              (MONEY_KEYS.has(col.key) ? " tabular-nums" : ""),
           }),
         };
 
@@ -340,7 +419,7 @@ export default function GuilgeeTable({
           return {
             ...baseColumn,
             render: (_: any, record: any) => {
-              const amt = Number(record?._ekhniiUldegdelAmount ?? 0);
+              const amt = getMoneyValue("ekhniiUldegdel", record);
               return (
                 <span
                   className={
@@ -360,10 +439,7 @@ export default function GuilgeeTable({
           return {
             ...baseColumn,
             render: (_: any, record: any) => {
-              const gid = getGereeId(record);
-              const paidDisplay = gid
-                ? Number(monthPaidByGereeId[gid] ?? 0)
-                : 0;
+              const paidDisplay = getMoneyValue("paid", record);
               return (
                 <span className="text-[color:var(--panel-text)] dark:text-white">
                   {formatNumber(paidDisplay, 2)}
@@ -377,8 +453,7 @@ export default function GuilgeeTable({
           return {
             ...baseColumn,
             render: (_: any, record: any) => {
-              const gid = getGereeId(record);
-              const discVal = gid && khungulultMap[gid] ? Number(khungulultMap[gid]) : 0;
+              const discVal = getMoneyValue("khungulult", record);
               return (
                 <span className="text-[color:var(--panel-text)] dark:text-white">
                   {formatNumber(discVal, 2)}
@@ -392,20 +467,7 @@ export default function GuilgeeTable({
           return {
             ...baseColumn,
             render: (_: any, record: any) => {
-              const gid = getGereeId(record);
-              const gDugaar = record?.gereeniiDugaar || (record?.gereeniiId && contractsById[String(record.gereeniiId)]?.gereeniiDugaar);
-
-              const monthlyData = gid ? monthlyDataByGereeId?.get(gid) : (gDugaar ? monthlyDataByGereeId?.get(String(gDugaar)) : null);
-
-              const monthSlice = pickMonthSlice(
-                monthlyData,
-                monthlyPeriods,
-                matrixMonthKey,
-              );
-              const billedDisplay =
-                monthSlice != null
-                  ? Number(monthSlice.billed ?? 0)
-                  : Number(record?._totalTulbur ?? 0);
+              const billedDisplay = getMoneyValue("sariinTurees", record);
               return (
                 <span className="text-[color:var(--panel-text)] dark:text-white">
                   {formatNumber(billedDisplay, 2)}
@@ -419,8 +481,7 @@ export default function GuilgeeTable({
           return {
             ...baseColumn,
             render: (_: any, record: any) => {
-              const gid = getGereeId(record);
-              const balance = bestKnownBalances[gid] ?? 0;
+              const balance = getMoneyValue("uldegdel", record);
               return (
                 <span
                   className={
@@ -439,36 +500,10 @@ export default function GuilgeeTable({
           return {
             ...baseColumn,
             render: (_: any, record: any) => {
-              const gid = getGereeId(record);
-              const gDugaar = record?.gereeniiDugaar || (record?.gereeniiId && contractsById[String(record.gereeniiId)]?.gereeniiDugaar);
-
-              // 1. Prioritize server-computed balance (uldegdelBodyo)
-              const serverBalance = gid ? bestKnownBalances[gid] : null;
-              if (serverBalance != null) {
-                return (
-                  <span className={serverBalance < 0.01 ? "!text-success dark:!text-success font-medium" : "!text-danger dark:!text-danger font-medium"}>
-                    {formatNumber(serverBalance, 2)}
-                  </span>
-                );
-              }
-
-              // 2. Fallback to monthly matrix
-              const monthlyData = gid ? monthlyDataByGereeId?.get(gid) : (gDugaar ? monthlyDataByGereeId?.get(String(gDugaar)) : null);
-              const monthSlice = pickMonthSlice(monthlyData, monthlyPeriods, matrixMonthKey);
-              if (monthSlice != null) {
-                const b = Number(monthSlice.uldegdel ?? 0);
-                return (
-                  <span className={b < 0.01 ? "!text-success dark:!text-success font-medium" : "!text-danger dark:!text-danger font-medium"}>
-                    {formatNumber(b, 2)}
-                  </span>
-                );
-              }
-
-              // 3. Last resort: local aggregation
-              const aggB = Number(record?._totalTulburMonth || 0) - Number(record?._totalTulsunMonth || 0);
+              const b = getMoneyValue("sariinUldegdel", record);
               return (
-                <span className={aggB < 0.01 ? "!text-success dark:!text-success font-medium" : "!text-danger dark:!text-danger font-medium"}>
-                  {formatNumber(aggB, 2)}
+                <span className={b < 0.01 ? "!text-success dark:!text-success font-medium" : "!text-danger dark:!text-danger font-medium"}>
+                  {formatNumber(b, 2)}
                 </span>
               );
             },
@@ -553,8 +588,8 @@ export default function GuilgeeTable({
         if (col.key === "action") {
           return {
             ...baseColumn,
-            // 3 дүрс: 3 × 28px + 2 × 4px = 92px (+ нүдний зай)
-            width: 104,
+            // 3 дүрс: 3 × 32px + 2 × 4px = 104px (+ нүдний зай 16px)
+            width: 124,
             render: (_: any, record: any) => {
               const resident =
                 (record?.orshinSuugchId &&
@@ -693,12 +728,16 @@ export default function GuilgeeTable({
     monthPaidByGereeId,
     bestKnownBalances,
     getGereeId,
-    deduplicatedResidents,
     monthlyDataByGereeId,
     monthlyPeriods,
     matrixMonthKey,
     historyScopedByDate,
     canCreateTransaction,
+    getMoneyValue,
+    isCheckboxVisible,
+    onTransaction,
+    onViewHistory,
+    onViewInvoice,
   ]);
 
   // Handle table change (sorting)
@@ -714,111 +753,68 @@ export default function GuilgeeTable({
     }
   };
 
-  // Calculate summary/footer data
+  // Хөл мөр: шүүгдсэн БҮХ мөрийн (зөвхөн энэ хуудас биш — `deduplicatedResidents`)
+  // нүдэнд харагдах утгуудын нийлбэр. Нүд бүр өөрийн баганын доор (leafIndex)
+  // байрлаж, түгжсэн баганууд биеийн нүдтэй ижил зайд наалдана.
   const getSummary = () => {
+    // `columns`-той яг ижил дараалал — checkbox нь rowSelection-оор тусдаа зурагдана
     const dataCols = visibleColumns.filter((col) => col.key !== "checkbox");
-    const checkboxOffset = isCheckboxVisible ? 1 : 0;
+    // Эхний дараалсан түгжсэн (мөнгөн бус) баганууд → «Нийт» гэсэн нэг нүд
+    let labelSpan = 0;
+    while (
+      labelSpan < dataCols.length &&
+      dataCols[labelSpan].sticky &&
+      !MONEY_KEYS.has(dataCols[labelSpan].key)
+    ) {
+      labelSpan++;
+    }
+
+    const totals: Record<string, number> = {};
+    dataCols.forEach((col) => {
+      if (!MONEY_KEYS.has(col.key)) return;
+      totals[col.key] = toDisplayAmount(
+        deduplicatedResidents.reduce(
+          (sum: number, it: any) => sum + getMoneyValue(col.key, it),
+          0,
+        ),
+      );
+    });
+
+    const alignClass = (align?: string) =>
+      align === "end" ? "text-right" : align === "start" ? "text-left" : "text-center";
 
     return (
       <Table.Summary fixed="bottom">
-        <Table.Summary.Row className="bg-[color:var(--surface-hover)]">
+        <Table.Summary.Row>
           {isCheckboxVisible && (
+            <Table.Summary.Cell fixed="left" className="w-8" />
+          )}
+          {labelSpan > 0 && (
             <Table.Summary.Cell
-              index={0}
-              className="text-center text border-r border-[hsl(var(--zt-border))]"
+              key="__label"
+              colSpan={labelSpan > 1 ? labelSpan : undefined}
+              fixed="left"
+              leafIndex={0}
+              className={`text-left ${
+                isCheckboxVisible && dataCols[0]?.key === "index"
+                  ? "!border-l !border-[hsl(var(--zt-border))]"
+                  : ""
+              }`}
             >
-              -
+              Нийт
             </Table.Summary.Cell>
           )}
-          {dataCols.map((col, colIdx) => {
-            let content: React.ReactNode = "";
-
-            if (col.key === "ekhniiUldegdel") {
-              const total = deduplicatedResidents.reduce(
-                (sum: number, it: any) => sum + Number(it?._ekhniiUldegdelAmount ?? 0),
-                0,
-              );
-              content = (
-                <span className="font-medium text-[color:var(--panel-text)] dark:!text-white">
-                  {formatNumber(total, 2)} ₮
-                </span>
-              );
-            } else if (col.key === "sariinTurees") {
-              const total = deduplicatedResidents.reduce(
-                (sum: number, it: any) => {
-                  const gid = getGereeId(it);
-                  const monthlyData = gid ? monthlyDataByGereeId?.get(gid) : null;
-                  const monthSlice = pickMonthSlice(monthlyData, monthlyPeriods, matrixMonthKey);
-                  const v = monthSlice != null ? Number(monthSlice.billed ?? 0) : Number(it?._totalTulbur ?? 0);
-                  return sum + v;
-                },
-                0,
-              );
-              content = (
-                <span className="text-[color:var(--panel-text)] dark:!text-white font-medium">
-                  {formatNumber(total, 2)} ₮
-                </span>
-              );
-            } else if (col.key === "paid") {
-              const total = deduplicatedResidents.reduce(
-                (sum: number, it: any) => {
-                  const gid = getGereeId(it);
-                  const v = gid ? Number(monthPaidByGereeId[gid] ?? 0) : 0;
-                  return sum + v;
-                },
-                0,
-              );
-              content = (
-                <span className="text-[color:var(--panel-text)] dark:!text-white font-medium">
-                  {formatNumber(total, 2)} ₮
-                </span>
-              );
-            } else if (col.key === "uldegdel") {
-              const totalBalance = deduplicatedResidents.reduce(
-                (sum: number, it: any) => {
-                  const gid = getGereeId(it);
-                  return sum + (bestKnownBalances[gid] ?? 0);
-                },
-                0,
-              );
-              content = (
-                <span className="font-medium text-[color:var(--panel-text)] dark:!text-white">
-                  {formatNumber(totalBalance, 2)} ₮
-                </span>
-              );
-            } else if (col.key === "sariinUldegdel") {
-              const total = deduplicatedResidents.reduce((sum: number, it: any) => {
-                const gid = getGereeId(it);
-                const serverB = gid ? bestKnownBalances[gid] : null;
-                if (serverB != null) return sum + serverB;
-
-                const gD = it?.gereeniiDugaar || (it?.gereeniiId && contractsById[String(it.gereeniiId)]?.gereeniiDugaar);
-                const mData = gid ? monthlyDataByGereeId?.get(gid) : (gD ? monthlyDataByGereeId?.get(String(gD)) : null);
-                const mSlice = pickMonthSlice(mData, monthlyPeriods, matrixMonthKey);
-                if (mSlice != null) return sum + Number(mSlice.uldegdel ?? 0);
-
-                return sum + (Number(it?._totalTulburMonth || 0) - Number(it?._totalTulsunMonth || 0));
-              }, 0);
-
-              content = (
-                <span className="font-medium text-[color:var(--panel-text)] dark:!text-white">
-                  {formatNumber(total, 2)} ₮
-                </span>
-              );
-            }
-
+          {dataCols.slice(labelSpan).map((col, i) => {
+            const leafIndex = labelSpan + i;
+            const hasTotal = col.key in totals;
             return (
               <Table.Summary.Cell
                 key={col.key}
-                index={colIdx + checkboxOffset}
-                className={`${col.align === "end"
-                  ? "text-right"
-                  : col.align === "start"
-                    ? "text-left"
-                    : "text-center"
-                  }`}
+                leafIndex={leafIndex}
+                fixed={col.sticky ? "left" : undefined}
+                className={`${alignClass(col.align)} ${hasTotal ? "tabular-nums whitespace-nowrap" : ""}`}
               >
-                {content}
+                {hasTotal ? formatNumber(totals[col.key], 2) : null}
               </Table.Summary.Cell>
             );
           })}

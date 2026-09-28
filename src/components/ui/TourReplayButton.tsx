@@ -181,7 +181,7 @@ export default function TourReplayButton() {
                 <button
                   type="button"
                   onClick={() => {
-                    start();
+                    start(undefined, true);
                     setOpen(false);
                   }}
                   className="group flex items-center justify-between w-full p-3 rounded-2xl hover:bg-theme/10 dark:hover:bg-theme/10 transition-colors text-left"
