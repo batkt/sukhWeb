@@ -78,7 +78,7 @@ export default function FilterSelect({
     if (!neelttei || !triggerRef.current) return;
     const r = triggerRef.current.getBoundingClientRect();
     // Жагсаалт талбартайгаа ижил өргөнтэй — «сунах» мэт харагдахгүй
-    setBairlal({ top: r.bottom + 6, left: r.left, width: Math.max(r.width, 140) });
+    setBairlal({ top: r.bottom + 6, left: r.left, width: Math.max(r.width, 200) });
   }, [neelttei]);
 
   useEffect(() => {

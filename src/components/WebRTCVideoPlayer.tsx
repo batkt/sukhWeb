@@ -123,8 +123,20 @@ export default function WebRTCVideoPlayer({
   // instead of reporting its (irrelevant) failure over a newer, working one.
   const connectEpochRef = useRef(0);
 
+  /**
+   * Хүлээгдэж буй signaling хүсэлт. Өмнө нь цуцлагддаггүй байсан тул дахин
+   * оролдлого бүр (3–15 сек) нэг POST үлдээж, хөтчийн нэг хост руу зэрэг
+   * нээх 6 холболтыг эзэлдэг байв — камерын хуудаснаас гарсны дараа ч бусад
+   * хуудасны API хүсэлт дараалалд гацаж «дуусашгүй ачаалал» болдог байв.
+   */
+  const abortRef = useRef<AbortController | null>(null);
+
   const stop = useCallback(() => {
     connectEpochRef.current += 1;
+    if (abortRef.current) {
+      abortRef.current.abort();
+      abortRef.current = null;
+    }
     clearTimers();
     if (pcRef.current) {
       // Detach handlers first so close() doesn't fire a spurious retry.
@@ -314,11 +326,23 @@ export default function WebRTCVideoPlayer({
       if (tk) (headers as Record<string, string>)["Authorization"] = `Bearer ${tk}`;
 
       const currentRtsp = rtspRef.current;
-      const res = await fetch(signalingUrl, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ sdp64, rtsp: currentRtsp, url: currentRtsp }),
-      });
+      // Цуцлагдах боломжтой + 15 секундын хязгаартай (сервер RTSP-д
+      // холбогдож чадахгүй үед удаан хүлээлгэхгүй)
+      const ac = new AbortController();
+      abortRef.current = ac;
+      const abortTimer = setTimeout(() => ac.abort(), 15000);
+      let res: Response;
+      try {
+        res = await fetch(signalingUrl, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ sdp64, rtsp: currentRtsp, url: currentRtsp }),
+          signal: ac.signal,
+        });
+      } finally {
+        clearTimeout(abortTimer);
+        if (abortRef.current === ac) abortRef.current = null;
+      }
 
       if (isStale()) return;
 

@@ -16,7 +16,7 @@ export function openWarningOverlay(message: string, duration = 4000) {
     position: "top-right",
     icon: "⚠️",
     style: {
-      borderLeft: "4px solid #f97316",
+      borderLeft: "4px solid var(--warning)",
     }
   });
 }
@@ -27,23 +27,28 @@ export function ErrorOverlayHost() {
       position="top-right"
       containerStyle={{ zIndex: 99999 }}
       toastOptions={{
+        // Хатуу бараан (#1e293b) биш — хуудасны өнгө, сонгосон загварын
+        // өнгөөр (гэрэл/харанхуй горимд хоёуланд тохирно)
         style: {
           borderRadius: "12px",
-          background: "#1e293b",
-          color: "#fff",
+          background: "var(--surface-bg)",
+          color: "var(--panel-text)",
+          border: "1px solid var(--surface-border)",
           fontSize: "14px",
-          fontWeight: 500,
-          padding: "16px",
-          boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+          fontWeight: 400,
+          padding: "12px 14px",
+          boxShadow: "0 12px 32px -12px rgba(0, 0, 0, 0.25)",
         },
         error: {
+          iconTheme: { primary: "var(--danger)", secondary: "#fff" },
           style: {
-            borderLeft: "4px solid #ef4444",
+            borderLeft: "4px solid var(--danger)",
           }
         },
         success: {
+          iconTheme: { primary: "var(--theme)", secondary: "#fff" },
           style: {
-            borderLeft: "4px solid #10b981",
+            borderLeft: "4px solid var(--theme)",
           }
         }
       }}

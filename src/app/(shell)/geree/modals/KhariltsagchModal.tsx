@@ -688,6 +688,41 @@ export default function KhariltsagchModal({
     [currentResidents, editingClient]
   );
 
+  /** Тоотыг эзэмшиж буй хүний нэр (өөр харилцагч/оршин суугч) — байхгүй бол null */
+  const tootEzemshigch = React.useCallback(
+    (tootVal: string, floorVal: string, propertyType: "Зогсоол" | "Агуулах"): string | null => {
+      if (!isTootOccupied(tootVal, floorVal, propertyType)) return null;
+      const uDavkhar = String(floorVal || "").trim().toLowerCase();
+      const uToot = String(tootVal || "").trim().toLowerCase();
+      const r = (currentResidents || []).find((x: any) => {
+        if (editingClient && String(editingClient._id || "") === String(x._id || "")) return false;
+        const units = Array.isArray(x.toots) && x.toots.length ? x.toots : [x];
+        return units.some(
+          (u: any) =>
+            String(u.davkhar || "").trim().toLowerCase() === uDavkhar &&
+            String(u.toot || "").trim().toLowerCase() === uToot,
+        );
+      });
+      const ner = [r?.ovog ? `${String(r.ovog).charAt(0)}.` : "", r?.ner || ""].filter(Boolean).join(" ");
+      return ner || "эзэмшигчтэй";
+    },
+    [isTootOccupied, currentResidents, editingClient],
+  );
+
+  /** Дугаарын сонголтууд — сул нь эхэнд, эзэмшигчтэй нь нэртэйгээ доор */
+  const dugaariinSongolt = (davkhar: string, turul: "Зогсоол" | "Агуулах") => {
+    const jagsaalt = getTootOptions("1", davkhar || "", turul).map((t) => {
+      const ezen = tootEzemshigch(t, davkhar || "", turul);
+      return {
+        value: t,
+        label: ezen ? `${t}  ·  ${ezen}` : t,
+        isOccupied: !!ezen,
+        title: ezen ? `${t} — ${ezen} эзэмшдэг` : `${t} — сул`,
+      };
+    });
+    return [...jagsaalt.filter((o) => !o.isOccupied), ...jagsaalt.filter((o) => o.isOccupied)];
+  };
+
   if (!show) return null;
 
   return (
@@ -1188,7 +1223,7 @@ export default function KhariltsagchModal({
                               </div>
                               <div className={`tusgai-wrapper min-w-0 flex-1 flex items-center ${errors.includes(`units.${gFlatIdx}.toot`) ? "input-error" : ""}`}>
                                 <TusgaiZagvar value={garage.toot || ""} onChange={(val: string) => updateGarageField(gIdx, "toot", val)}
-                                  options={getTootOptions("1", garage.davkhar || "", "Зогсоол").map((t) => ({ value: t, label: t, isOccupied: isTootOccupied(t, garage.davkhar || "", "Зогсоол") }))} className="w-full h-full" placeholder="Дугаар" disabled={!garage.davkhar} allowCustomInput={true} />
+                                  options={dugaariinSongolt(garage.davkhar || "", "Зогсоол")} className="w-full h-full" placeholder="Дугаар" disabled={!garage.davkhar} allowCustomInput={true} />
                               </div>
                               <button type="button" onClick={() => removeGarage(gIdx)}
                                 title="Хасах" aria-label="Хасах"
@@ -1232,7 +1267,7 @@ export default function KhariltsagchModal({
                               </div>
                               <div className={`tusgai-wrapper min-w-0 flex-1 flex items-center ${errors.includes(`units.${sFlatIdxNested}.toot`) ? "input-error" : ""}`}>
                                 <TusgaiZagvar value={storage.toot || ""} onChange={(val: string) => updateStorageField(sIdx, "toot", val)}
-                                  options={getTootOptions("1", storage.davkhar || "", "Агуулах").map((t) => ({ value: t, label: t, isOccupied: isTootOccupied(t, storage.davkhar || "", "Агуулах") }))} className="w-full h-full" placeholder="Дугаар" disabled={!storage.davkhar} allowCustomInput={true} />
+                                  options={dugaariinSongolt(storage.davkhar || "", "Агуулах")} className="w-full h-full" placeholder="Дугаар" disabled={!storage.davkhar} allowCustomInput={true} />
                               </div>
                               <button type="button" onClick={() => removeStorage(sIdx)}
                                 title="Хасах" aria-label="Хасах"
