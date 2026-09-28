@@ -170,6 +170,99 @@ export default function GuilgeeTable({
 
   // Build Ant Design columns from visibleColumns
   const columns = useMemo(() => {
+    /** Мөрийн оршин суугч + үлдэгдэл — үйлдлийн товч ба үлдэгдлийн нүд хуваалцана */
+    const murniiMedeelel = (record: any) => {
+      const resident =
+        (record?.orshinSuugchId &&
+          residentsById[String(record.orshinSuugchId)]) ||
+        (record?.orshinSuugch && typeof record.orshinSuugch === "object"
+          ? record.orshinSuugch
+          : undefined);
+      const ct =
+        (record?.gereeniiId &&
+          contractsById[String(record.gereeniiId)]) ||
+        (record?.gereeniiDugaar &&
+          contractsByNumber[String(record.gereeniiDugaar)]) ||
+        undefined;
+      const dugaar = String(
+        record?.gereeniiDugaar || ct?.gereeniiDugaar || "-",
+      );
+      const ner = resident
+        ? [resident.ner]
+          .map((v) => (v ? String(v).trim() : ""))
+          .filter(Boolean)
+          .join(" ") || "-"
+        : [record.ner]
+          .map((v) => (v ? String(v).trim() : ""))
+          .filter(Boolean)
+          .join(" ") || "-";
+      const residentToot =
+        Array.isArray(resident?.toots) && resident.toots.length > 0
+          ? resident.toots[0]?.toot
+          : resident?.toot;
+      const toot = String(
+        ct?.toot || residentToot || record?.toot || "-",
+      );
+      const utas = (() => {
+        if (resident?.utas) {
+          if (
+            Array.isArray(resident.utas) &&
+            resident.utas.length > 0
+          ) {
+            const first = resident.utas[0];
+            if (first !== undefined && first !== null)
+              return String(first);
+          } else if (
+            typeof resident.utas === "string" &&
+            resident.utas.trim() !== ""
+          ) {
+            return String(resident.utas);
+          }
+        }
+        if (record?.utas) {
+          if (Array.isArray(record.utas) && record.utas.length > 0) {
+            const first = record.utas[0];
+            if (first !== undefined && first !== null)
+              return String(first);
+          } else if (
+            typeof record.utas === "string" &&
+            record.utas.trim() !== ""
+          ) {
+            return String(record.utas);
+          }
+        }
+        return "-";
+      })();
+      const gid = getGereeId(record);
+      const historyAggregate =
+        Number(record?._totalTulbur || 0) -
+        Number(record?._totalTulsun || 0);
+      const remainingValue = historyScopedByDate
+        ? (bestKnownBalances[gid] ?? historyAggregate)
+        : (bestKnownBalances[gid] ??
+          (historyAggregate || Number(record?.uldegdel ?? 0)));
+
+      const contractToot = ct?.toot || record?.toot;
+      const residentData = resident
+        ? {
+          ...resident,
+          toot: contractToot || residentToot || resident.toot,
+          gereeniiDugaar: dugaar,
+          gereeniiId: gid || record?.gereeniiId || ct?._id,
+        }
+        : {
+          _id: record?.orshinSuugchId,
+          ner: ner,
+          toot: contractToot || toot,
+          utas: utas,
+          gereeniiDugaar: dugaar,
+          gereeniiId: gid || record?.gereeniiId || ct?._id,
+          ...record,
+        };
+
+      return { residentData, remainingValue };
+    };
+
     return visibleColumns
       .filter((col) => col.key !== "checkbox")
       .map((col): any => {
@@ -482,16 +575,18 @@ export default function GuilgeeTable({
             ...baseColumn,
             render: (_: any, record: any) => {
               const balance = getMoneyValue("uldegdel", record);
+              // Дүн дээр дарахад тухайн оршин суугчийн хуулга (түүх) нээгдэнэ
               return (
-                <span
-                  className={
-                    balance < 0.01
-                      ? "!text-success dark:!text-success font-medium"
-                      : "!text-danger dark:!text-danger font-medium"
-                  }
+                <button
+                  type="button"
+                  onClick={() => onViewHistory(murniiMedeelel(record).residentData)}
+                  title="Хуулга харах"
+                  className={`cursor-pointer rounded px-1 underline-offset-2 hover:underline ${
+                    balance < 0.01 ? "!text-success" : "!text-danger"
+                  }`}
                 >
                   {formatNumber(balance, 2)}
-                </span>
+                </button>
               );
             },
           };
@@ -591,93 +686,7 @@ export default function GuilgeeTable({
             // 3 дүрс: 3 × 32px + 2 × 4px = 104px (+ нүдний зай 16px)
             width: 124,
             render: (_: any, record: any) => {
-              const resident =
-                (record?.orshinSuugchId &&
-                  residentsById[String(record.orshinSuugchId)]) ||
-                (record?.orshinSuugch && typeof record.orshinSuugch === "object"
-                  ? record.orshinSuugch
-                  : undefined);
-              const ct =
-                (record?.gereeniiId &&
-                  contractsById[String(record.gereeniiId)]) ||
-                (record?.gereeniiDugaar &&
-                  contractsByNumber[String(record.gereeniiDugaar)]) ||
-                undefined;
-              const dugaar = String(
-                record?.gereeniiDugaar || ct?.gereeniiDugaar || "-",
-              );
-              const ner = resident
-                ? [resident.ner]
-                  .map((v) => (v ? String(v).trim() : ""))
-                  .filter(Boolean)
-                  .join(" ") || "-"
-                : [record.ner]
-                  .map((v) => (v ? String(v).trim() : ""))
-                  .filter(Boolean)
-                  .join(" ") || "-";
-              const residentToot =
-                Array.isArray(resident?.toots) && resident.toots.length > 0
-                  ? resident.toots[0]?.toot
-                  : resident?.toot;
-              const toot = String(
-                ct?.toot || residentToot || record?.toot || "-",
-              );
-              const utas = (() => {
-                if (resident?.utas) {
-                  if (
-                    Array.isArray(resident.utas) &&
-                    resident.utas.length > 0
-                  ) {
-                    const first = resident.utas[0];
-                    if (first !== undefined && first !== null)
-                      return String(first);
-                  } else if (
-                    typeof resident.utas === "string" &&
-                    resident.utas.trim() !== ""
-                  ) {
-                    return String(resident.utas);
-                  }
-                }
-                if (record?.utas) {
-                  if (Array.isArray(record.utas) && record.utas.length > 0) {
-                    const first = record.utas[0];
-                    if (first !== undefined && first !== null)
-                      return String(first);
-                  } else if (
-                    typeof record.utas === "string" &&
-                    record.utas.trim() !== ""
-                  ) {
-                    return String(record.utas);
-                  }
-                }
-                return "-";
-              })();
-              const gid = getGereeId(record);
-              const historyAggregate =
-                Number(record?._totalTulbur || 0) -
-                Number(record?._totalTulsun || 0);
-              const remainingValue = historyScopedByDate
-                ? (bestKnownBalances[gid] ?? historyAggregate)
-                : (bestKnownBalances[gid] ??
-                  (historyAggregate || Number(record?.uldegdel ?? 0)));
-
-              const contractToot = ct?.toot || record?.toot;
-              const residentData = resident
-                ? {
-                  ...resident,
-                  toot: contractToot || residentToot || resident.toot,
-                  gereeniiDugaar: dugaar,
-                  gereeniiId: gid || record?.gereeniiId || ct?._id,
-                }
-                : {
-                  _id: record?.orshinSuugchId,
-                  ner: ner,
-                  toot: contractToot || toot,
-                  utas: utas,
-                  gereeniiDugaar: dugaar,
-                  gereeniiId: gid || record?.gereeniiId || ct?._id,
-                  ...record,
-                };
+              const { residentData, remainingValue } = murniiMedeelel(record);
 
               return (
                 <div className="flex items-center justify-center gap-1 py-0">

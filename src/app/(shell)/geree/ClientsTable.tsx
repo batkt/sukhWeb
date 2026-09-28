@@ -245,8 +245,9 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
                     title={`Тоот ${t.toot} · ${label}`}
                     className="group relative inline-flex h-6 shrink-0 items-center gap-1 rounded-md bg-[color:var(--surface-hover)] px-2 leading-none text-[color:var(--panel-text)]"
                   >
-                    <span className="tabular-nums">{t.toot}</span>
-                    <span className="text-[12px] text-[color:var(--muted-text)]">{label}</span>
+                    {/* Тоот ба төрөл — ижил фонт, хэмжээ; төрөл нь зөвхөн өнгөөр ялгарна */}
+                    <span>{t.toot}</span>
+                    <span className="text-[color:var(--muted-text)]">{label}</span>
                     <button
                       type="button"
                       onClick={(e) => {
@@ -259,8 +260,8 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
                           label: `${t.toot} (${label})`,
                         });
                       }}
-                      // Шошгыг өндөрсгөхгүй — булан дээр жижиг дугуй, hover үед л
-                      className="tb-chip-x absolute -right-1.5 -top-1.5 hidden h-4 w-4 items-center justify-center rounded-full bg-danger !text-white group-hover:inline-flex focus:inline-flex"
+                      // Шошгон дотор жижиг бүдэг ×, hover үед улаан болно
+                      className="tb-chip-x"
                       title="Хасах"
                       aria-label={`${t.toot} ${label} хасах`}
                     >
