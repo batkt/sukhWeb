@@ -17,9 +17,8 @@ type Status = "connecting" | "connected" | "failed" | "retrying";
 // random reconnects: "disconnected" is not fatal and usually self-heals.
 const DISCONNECT_GRACE_MS = 6000;
 
-// Upper bound on ICE gathering before the offer is sent anyway. Must comfortably
-// exceed a TURN Allocate round trip (see the gathering block below for why).
-const ICE_GATHER_TIMEOUT_MS = 5000;
+// Upper bound on ICE gathering before the offer is sent anyway.
+const ICE_GATHER_TIMEOUT_MS = 1500;
 
 // Flip to false in production once you've confirmed the pattern in the console.
 const DEBUG = true;
@@ -189,12 +188,21 @@ export default function WebRTCVideoPlayer({
       pc.ontrack = (e) => {
         if (!mountedRef.current) return;
         if (e.track.kind === "video" && e.streams[0] && videoRef.current) {
-          videoRef.current.srcObject = e.streams[0];
-          // Explicitly call play() — autoPlay on a display:none element is
-          // unreliable across browsers. This is the authoritative play trigger.
-          videoRef.current.play().catch((err) =>
+          const v = videoRef.current;
+          v.srcObject = e.streams[0];
+          v.play().catch((err) =>
             log("play() error (usually safe to ignore):", err)
           );
+          // Keep buffer latency ultra-low and eliminate jitter lag drift
+          v.ontimeupdate = () => {
+            if (v.buffered.length > 0) {
+              const liveEdge = v.buffered.end(v.buffered.length - 1);
+              const lag = liveEdge - v.currentTime;
+              if (lag > 0.4) {
+                v.currentTime = liveEdge - 0.05;
+              }
+            }
+          };
           setStatus("connected");
           retryCountRef.current = 0;
           log("track received → connected");
@@ -281,6 +289,10 @@ export default function WebRTCVideoPlayer({
           if (e.candidate?.candidate.includes(" typ relay")) {
             log("relay candidate gathered");
             finish();
+          } else if (e.candidate?.candidate.includes(" typ srflx")) {
+            log("srflx candidate gathered");
+            // Allow 150ms for relay if present, otherwise complete
+            setTimeout(finish, 150);
           }
         };
         pc.addEventListener("icegatheringstatechange", onState);
