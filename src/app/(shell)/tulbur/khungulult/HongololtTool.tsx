@@ -586,13 +586,16 @@ export default function HongololtTool({
       setHistDavkhar("");
       setHistPage(1);
     }
-  }, [show]);
+    // loadResidents нь token/байгууллага/барилгаас хамаарна — F5 дарахад эдгээр
+    // хоцорч ирдэг тул тэд ирмэгц дахин татна (өмнө нь зөвхөн [show] байсан
+    // тул хоосон үлддэг байв).
+  }, [show, inline, loadResidents]);
 
   useEffect(() => {
     if ((inline || show) && activeTab === "tuukh") {
       loadHistory();
     }
-  }, [show, activeTab]);
+  }, [show, inline, activeTab, loadHistory]);
 
   /* ── Filtered list ── */
   /** Орон сууц / Агуулах / Зогсоол — тусад нь харуулна (холилдохгүй) */
