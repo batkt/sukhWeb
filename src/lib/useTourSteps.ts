@@ -170,7 +170,7 @@ export function useTourSteps(activeTab: string): DriverStep[] {
           element: "#units-download-template-btn-top, #mobile-units-download-template-btn",
           popover: {
             title: "Загвар татах",
-            description: "Тоот бүртгэлийн Excel загвар файлыг татаж авна.",
+            description: "Тоот бүртгэлийн Excel загвар татна. Орон сууц, зогсоол, агуулахын тоотыг «Төрөл» баганаар нэг загвараар бүртгэнэ.",
             side: "bottom",
           },
         },

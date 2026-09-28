@@ -12,6 +12,7 @@ import {
   Menu,
   Search as SearchIcon,
   Settings,
+  Sparkles,
   Type,
 } from "lucide-react";
 import ThemeModeToggler from "@/components/ui/ThemeModeToggler";
@@ -24,6 +25,7 @@ import { useBuilding } from "@/context/BuildingContext";
 import { useChatLauncher } from "@/lib/useChatLauncher";
 import { ICON_STROKE, type NavItem, titleForPath } from "./navConfig";
 import SanalAsuulgaTracker from "./SanalAsuulgaTracker";
+import { useAiTuslakhNuult } from "@/components/AiTuslakh";
 
 interface Props {
   items: NavItem[];
@@ -52,6 +54,7 @@ export default function Topbar({
   const { selectedBuildingId } = useBuilding();
   // Хөвөгч чат товчийг нуусан үед эндээс буцааж гаргана.
   const { hidden: chatHidden, toggleHidden: toggleChat } = useChatLauncher();
+  const { nuusan: aiNuusan, setNuusan: setAiNuusan } = useAiTuslakhNuult();
 
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
@@ -300,6 +303,20 @@ export default function Topbar({
                   )}
                   {chatHidden ? "Чат товч гаргах" : "Чат товч нуух"}
                 </button>
+                {aiNuusan && (
+                  <button
+                    role="menuitem"
+                    type="button"
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      setAiNuusan(false);
+                    }}
+                    className="shell-usermenu-item"
+                  >
+                    <Sparkles className="h-4 w-4" strokeWidth={ICON_STROKE} />
+                    AI туслах гаргах
+                  </button>
+                )}
                 <button
                   role="menuitem"
                   type="button"

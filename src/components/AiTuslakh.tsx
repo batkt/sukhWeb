@@ -1,0 +1,375 @@
+"use client";
+
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
+import { Send, Sparkles, Square, Trash2, X } from "lucide-react";
+import { useAuth } from "@/lib/useAuth";
+import { getApiUrl } from "@/lib/uilchilgee";
+
+/**
+ * AI туслах — системийг хэрхэн ашиглах асуултад хариулдаг хөвөгч цонх.
+ * Байгууллагын өгөгдөлд хандахгүй; backend `/aiTuslakh` нь хариуг
+ * text/plain хэлбэрээр stream хийнэ.
+ */
+
+type Messej = { role: "user" | "assistant"; content: string };
+
+const NUUSAN_KEY = "aiTuslakhNuusan";
+const TUUKH_KEY = "aiTuslakhTuukh";
+const NUULT_EVENT = "ai-tuslakh-nuult";
+
+const JISHEE_ASUULTUUD = [
+  "Хөнгөлөлт яаж бүртгэх вэ?",
+  "Зогсоолын тоотыг Excel-ээр яаж оруулах вэ?",
+  "Өдрийн хаалт яаж хийх вэ?",
+  "Оршин суугчийн хуулгыг хаанаас харах вэ?",
+];
+
+function nuusanUnshikh(): boolean {
+  try {
+    return localStorage.getItem(NUUSAN_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+/** Хөвөгч товчийг нуух / гаргах — Topbar-ын цэснээс ч дуудна. */
+export function useAiTuslakhNuult() {
+  const [nuusan, setNuusanState] = useState(false);
+  useEffect(() => {
+    setNuusanState(nuusanUnshikh());
+    const sonsogch = () => setNuusanState(nuusanUnshikh());
+    window.addEventListener(NUULT_EVENT, sonsogch);
+    return () => window.removeEventListener(NUULT_EVENT, sonsogch);
+  }, []);
+  const setNuusan = useCallback((v: boolean) => {
+    try {
+      if (v) localStorage.setItem(NUUSAN_KEY, "1");
+      else localStorage.removeItem(NUUSAN_KEY);
+    } catch {
+      /* private горимд хадгалахгүй ч ажиллана */
+    }
+    setNuusanState(v);
+    window.dispatchEvent(new Event(NUULT_EVENT));
+  }, []);
+  return { nuusan, setNuusan };
+}
+
+/** **тод**, 1. жагсаалт, - жагсаалт — HTML оруулахгүйгээр энгийн дүрслэл. */
+function Tod({ text }: { text: string }) {
+  const khesguud = text.split(/(\*\*[^*]+\*\*)/g);
+  return (
+    <>
+      {khesguud.map((k, i) =>
+        k.startsWith("**") && k.endsWith("**") ? (
+          <strong key={i}>{k.slice(2, -2)}</strong>
+        ) : (
+          <React.Fragment key={i}>{k}</React.Fragment>
+        ),
+      )}
+    </>
+  );
+}
+
+function Khariu({ text }: { text: string }) {
+  const murnuud = text.split("\n");
+  const blokuud: React.ReactNode[] = [];
+  let jagsaalt: { turul: "ol" | "ul"; mur: string[] } | null = null;
+  const jagsaaltKhaakh = () => {
+    if (!jagsaalt) return;
+    const Tag = jagsaalt.turul;
+    blokuud.push(
+      <Tag key={blokuud.length} className={`ai-list ai-${Tag}`}>
+        {jagsaalt.mur.map((m, i) => (
+          <li key={i}>
+            <Tod text={m} />
+          </li>
+        ))}
+      </Tag>,
+    );
+    jagsaalt = null;
+  };
+  murnuud.forEach((mur) => {
+    const ol = mur.match(/^\s*\d+[.)]\s+(.*)$/);
+    const ul = mur.match(/^\s*[-•*]\s+(.*)$/);
+    if (ol || ul) {
+      const turul = ol ? "ol" : "ul";
+      if (jagsaalt && jagsaalt.turul !== turul) jagsaaltKhaakh();
+      if (!jagsaalt) jagsaalt = { turul, mur: [] };
+      jagsaalt.mur.push((ol || ul)![1]);
+      return;
+    }
+    jagsaaltKhaakh();
+    const tseverkhen = mur.replace(/^#+\s*/, "");
+    if (tseverkhen.trim()) {
+      blokuud.push(
+        <p key={blokuud.length} className={mur.startsWith("#") ? "font-semibold" : ""}>
+          <Tod text={tseverkhen} />
+        </p>,
+      );
+    }
+  });
+  jagsaaltKhaakh();
+  return <div className="ai-khariu">{blokuud}</div>;
+}
+
+export default function AiTuslakh() {
+  const { token } = useAuth();
+  const pathname = usePathname();
+  const { nuusan, setNuusan } = useAiTuslakhNuult();
+  const [neelttei, setNeelttei] = useState(false);
+  const [messejuud, setMessejuud] = useState<Messej[]>([]);
+  const [oruulga, setOruulga] = useState("");
+  const [khariulj, setKhariulj] = useState(false);
+  const [aldaa, setAldaa] = useState<string | null>(null);
+  const zogsookhRef = useRef<AbortController | null>(null);
+  const jagsaaltRef = useRef<HTMLDivElement>(null);
+  const oruulgaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Хуудас шилжихэд яриа алдагдахгүйн тулд sessionStorage-д хадгална.
+  useEffect(() => {
+    try {
+      const khadgalsan = sessionStorage.getItem(TUUKH_KEY);
+      if (khadgalsan) setMessejuud(JSON.parse(khadgalsan));
+    } catch {
+      /* хоосон эхэлнэ */
+    }
+  }, []);
+  useEffect(() => {
+    if (khariulj) return;
+    try {
+      sessionStorage.setItem(TUUKH_KEY, JSON.stringify(messejuud.slice(-30)));
+    } catch {
+      /* хадгалахгүй ч ажиллана */
+    }
+  }, [messejuud, khariulj]);
+
+  useEffect(() => {
+    const el = jagsaaltRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [messejuud, neelttei, aldaa]);
+
+  useEffect(() => {
+    if (!neelttei) return;
+    const id = window.setTimeout(() => oruulgaRef.current?.focus(), 60);
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setNeelttei(false);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      window.clearTimeout(id);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [neelttei]);
+
+  useEffect(() => () => zogsookhRef.current?.abort(), []);
+
+  const ilgeekh = useCallback(
+    async (asuult?: string) => {
+      const text = (asuult ?? oruulga).trim();
+      if (!text || khariulj || !token) return;
+      setAldaa(null);
+      setOruulga("");
+      const shine: Messej[] = [...messejuud, { role: "user", content: text }];
+      setMessejuud([...shine, { role: "assistant", content: "" }]);
+      setKhariulj(true);
+
+      const tasalgch = new AbortController();
+      zogsookhRef.current = tasalgch;
+      let khuleen = "";
+      try {
+        const khuudasniiNer =
+          document.querySelector(".shell-title")?.textContent?.trim() || "";
+        const resp = await fetch(`${getApiUrl().replace(/\/+$/, "")}/aiTuslakh`, {
+          method: "POST",
+          signal: tasalgch.signal,
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ messages: shine, khuudas: pathname, khuudasniiNer }),
+        });
+        if (!resp.ok || !resp.body) {
+          const data = await resp.json().catch(() => null);
+          throw new Error(data?.message || "AI туслах хариу өгч чадсангүй.");
+        }
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder();
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          khuleen += decoder.decode(value, { stream: true });
+          const odoo = khuleen;
+          setMessejuud((prev) => {
+            const next = [...prev];
+            next[next.length - 1] = { role: "assistant", content: odoo };
+            return next;
+          });
+        }
+        if (!khuleen.trim()) throw new Error("AI туслах хариу өгсөнгүй. Дахин оролдоно уу.");
+      } catch (err: any) {
+        if (err?.name === "AbortError") {
+          // Зогсоосон — ирсэн хэсгийг нь үлдээнэ.
+          if (!khuleen.trim()) setMessejuud((prev) => prev.slice(0, -1));
+        } else {
+          // Хоосон хариуг хасаж, асуултыг буцааж оруулгад тавина.
+          setMessejuud((prev) => prev.slice(0, khuleen.trim() ? prev.length : -2));
+          if (!khuleen.trim()) setOruulga(text);
+          setAldaa(err?.message || "Алдаа гарлаа. Дахин оролдоно уу.");
+        }
+      } finally {
+        setKhariulj(false);
+        zogsookhRef.current = null;
+      }
+    },
+    [oruulga, khariulj, token, messejuud, pathname],
+  );
+
+  if (!token) return null;
+
+  return (
+    <>
+      {!neelttei && !nuusan && (
+        <div className="ai-launcher-wrap">
+          <button
+            type="button"
+            onClick={() => setNeelttei(true)}
+            className="ai-launcher"
+            aria-label="AI туслах нээх"
+            title="AI туслах"
+          >
+            <Sparkles className="h-[22px] w-[22px]" strokeWidth={2} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setNuusan(true)}
+            className="ai-launcher-x"
+            aria-label="AI туслах товч нуух"
+            title="Нуух (хэрэглэгчийн цэснээс буцааж гаргана)"
+          >
+            <X className="h-3 w-3" strokeWidth={2.5} />
+          </button>
+        </div>
+      )}
+
+      {neelttei && (
+        <div role="dialog" aria-label="AI туслах" className="ai-panel">
+          <header className="ai-head">
+            <span className="ai-head-icon">
+              <Sparkles className="h-4 w-4" strokeWidth={2} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-[15px] font-semibold leading-tight">AI туслах</h2>
+              <p className="text-[12px] leading-tight text-[color:var(--muted-text)]">
+                Системийг хэрхэн ашиглах талаар асуугаарай
+              </p>
+            </div>
+            {messejuud.length > 0 && !khariulj && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMessejuud([]);
+                  setAldaa(null);
+                }}
+                className="ai-icon-btn"
+                aria-label="Яриаг цэвэрлэх"
+                title="Шинэ яриа"
+              >
+                <Trash2 className="h-4 w-4" strokeWidth={2} />
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setNeelttei(false)}
+              className="ai-icon-btn"
+              aria-label="Хаах"
+            >
+              <X className="h-5 w-5" strokeWidth={2} />
+            </button>
+          </header>
+
+          <div ref={jagsaaltRef} className="ai-body" aria-live="polite">
+            {messejuud.length === 0 && (
+              <div className="ai-empty">
+                <p className="text-[15px] font-semibold">Сайн байна уу! 👋</p>
+                <p className="mt-1 text-[13px] text-[color:var(--muted-text)]">
+                  Би системийн хуудас, товч, тохиргоог хэрхэн ашиглахыг тайлбарлана. Жишээ нь:
+                </p>
+                <div className="mt-3 flex flex-col gap-2">
+                  {JISHEE_ASUULTUUD.map((a) => (
+                    <button key={a} type="button" onClick={() => ilgeekh(a)} className="ai-jishee">
+                      {a}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {messejuud.map((m, i) =>
+              m.role === "user" ? (
+                <div key={i} className="ai-msg ai-msg-user">
+                  {m.content}
+                </div>
+              ) : (
+                <div key={i} className="ai-msg ai-msg-bot">
+                  {m.content ? (
+                    <Khariu text={m.content} />
+                  ) : (
+                    <span className="ai-typing" aria-label="Бичиж байна">
+                      <i />
+                      <i />
+                      <i />
+                    </span>
+                  )}
+                </div>
+              ),
+            )}
+
+            {aldaa && (
+              <div className="ai-aldaa" role="alert">
+                {aldaa}
+              </div>
+            )}
+          </div>
+
+          <footer className="ai-foot">
+            <textarea
+              ref={oruulgaRef}
+              value={oruulga}
+              onChange={(e) => setOruulga(e.target.value.slice(0, 2000))}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                  e.preventDefault();
+                  ilgeekh();
+                }
+              }}
+              rows={1}
+              placeholder="Асуултаа бичнэ үү..."
+              className="ai-input"
+            />
+            {khariulj ? (
+              <button
+                type="button"
+                onClick={() => zogsookhRef.current?.abort()}
+                className="ai-send"
+                aria-label="Зогсоох"
+                title="Зогсоох"
+              >
+                <Square className="h-4 w-4" strokeWidth={2.5} />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => ilgeekh()}
+                disabled={!oruulga.trim()}
+                className="ai-send"
+                aria-label="Илгээх"
+              >
+                <Send className="h-4 w-4" strokeWidth={2.2} />
+              </button>
+            )}
+          </footer>
+          <p className="ai-note">AI алдаа гаргаж болно. Чухал зүйлийг шалгаарай.</p>
+        </div>
+      )}
+    </>
+  );
+}

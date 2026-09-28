@@ -1339,18 +1339,38 @@ export function useGereeActions(
         );
 
         const data = resp?.data;
-        const failed = data?.result?.failed;
+        // Backend "results" гэж буцаадаг; хуучин "result"-ийг ч дэмжинэ.
+        const ur = data?.results || data?.result || {};
+        const failed = ur?.failed;
+        const amjilttai: any[] = Array.isArray(ur?.success) ? ur.success : [];
+        // Орон сууц / зогсоол / агуулахаар хэдэн мөр орсныг харуулна.
+        const turluur: Record<string, number> = {};
+        amjilttai.forEach((r) => {
+          const t = r?.turul || "Орон сууц";
+          turluur[t] = (turluur[t] || 0) + 1;
+        });
+        const zadargaa = Object.entries(turluur)
+          .map(([t, too]) => `${t}: ${too} мөр`)
+          .join(", ");
         if (Array.isArray(failed) && failed.length > 0) {
           const detailLines = failed.map(
             (f: any) =>
-              `Мөр ${f.row || "?"}: ${f.error || f.message || "Алдаа"}`,
+              `${f.sheet ? `${f.sheet}, ` : ""}Мөр ${f.row || "?"}: ${f.error || f.message || "Алдаа"}`,
           );
           const details = detailLines.join("\n");
-          const topMsg =
-            data?.message || "Импортын явцад зарим мөр алдаатай байна";
+          const topMsg = zadargaa
+            ? `Бүртгэгдсэн — ${zadargaa}. Дараах мөрүүд алдаатай:`
+            : "Импортын явцад зарим мөр алдаатай байна";
           openErrorOverlay(`${topMsg}\n${details}`);
         } else {
-          openSuccessOverlay("Загвар амжилттай орууллаа.");
+          openSuccessOverlay(
+            zadargaa
+              ? `Тоот амжилттай бүртгэгдлээ (${zadargaa}).`
+              : "Загвар амжилттай орууллаа.",
+          );
+        }
+        // Алдаатай мөртэй байсан ч амжилттай мөрүүд хадгалагдсан тул шинэчилнэ.
+        if (amjilttai.length > 0) {
           if (baiguullagaMutate) {
             await baiguullagaMutate();
           }

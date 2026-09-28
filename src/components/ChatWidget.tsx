@@ -69,6 +69,8 @@ export default function ChatWidget({ inline = false }: ChatWidgetProps): JSX.Ele
   const [chatConfig, setChatConfig] = useState<ChatConfigType | null>(null);
   const [currentChoices, setCurrentChoices] = useState<ChoiceType[]>([]);
   const [operatorLoading, setOperatorLoading] = useState<boolean>(false);
+  // Чатын сервертэй холбогдож чадаагүй үед хоосон цонх биш, тайлбар харуулна.
+  const [kholboltAldaa, setKholboltAldaa] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const socketRef = useRef<Socket | null>(null);
@@ -363,13 +365,17 @@ export default function ChatWidget({ inline = false }: ChatWidgetProps): JSX.Ele
         displayName: ajiltan?.ner || "Зочин"
       });
       const shine: ConversationType = res.data.data;
+      if (!shine?.id) throw new Error("Харилцаа үүссэнгүй");
       setConversation(shine);
+      setKholboltAldaa(false);
 
       const msgRes = await axios.get(`${BASE_API}/conversations/${shine.id}/messages?guestId=${guestId}`);
-      setMessages(msgRes.data.data || []);
+      const irsen = msgRes.data?.data;
+      setMessages(Array.isArray(irsen) ? irsen.filter((m: MessageType) => m && m.text) : []);
       return shine;
     } catch (err) {
       console.error("Failed to init chat", err);
+      setKholboltAldaa(true);
       return null;
     } finally {
       setLoading(false);
@@ -387,10 +393,10 @@ export default function ChatWidget({ inline = false }: ChatWidgetProps): JSX.Ele
   // Чат цонх нээгдэх үед (модалын "Шууд чат" таб эсвэл виджет дээр)
   // хэрэглэгч мессеж бичихийг хүлээлгүйгээр хуучин чатын түүх болон эхлэлийн цэсийг шууд дуудна.
   useEffect(() => {
-    if ((isOpen || inline) && activeTab === "chat" && guestId && !conversation && !loading) {
+    if ((isOpen || inline) && activeTab === "chat" && guestId && !conversation && !loading && !kholboltAldaa) {
       initChat();
     }
-  }, [isOpen, inline, activeTab, guestId, conversation, loading]);
+  }, [isOpen, inline, activeTab, guestId, conversation, loading, kholboltAldaa]);
 
   useEffect(() => {
     if (!conversation) return;
@@ -874,13 +880,39 @@ export default function ChatWidget({ inline = false }: ChatWidgetProps): JSX.Ele
                   </div>
                 )}
 
-                {!loading && messages.length === 0 && (
-                  <div style={{ textAlign: "center", fontSize: "13px", color: "#64748b", marginTop: "40px", padding: "0 20px" }}>
-                    <p style={{ margin: "0 0 6px 0", fontWeight: "600", color: "#334155" }}>
+                {!loading && kholboltAldaa && messages.length === 0 && (
+                  <div style={{ margin: "auto", maxWidth: "340px", textAlign: "center", padding: "24px 20px", borderRadius: "16px", backgroundColor: "#ffffff", border: "1px solid rgba(0,0,0,0.06)" }}>
+                    <p style={{ margin: "0 0 6px 0", fontSize: "15px", fontWeight: 600, color: "#334155" }}>
+                      Чат холбогдсонгүй
+                    </p>
+                    <p style={{ margin: "0 0 16px 0", fontSize: "13px", lineHeight: 1.5, color: "#64748b" }}>
+                      Интернэт холболтоо шалгаад дахин оролдоно уу.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setKholboltAldaa(false);
+                        initChat();
+                      }}
+                      style={{ padding: "8px 18px", borderRadius: "10px", border: "none", backgroundColor: "#059669", color: "#ffffff", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}
+                    >
+                      Дахин оролдох
+                    </button>
+                  </div>
+                )}
+
+                {!loading && !kholboltAldaa && messages.length === 0 && (
+                  <div style={{ margin: "auto", maxWidth: "360px", textAlign: "center", padding: "24px 20px" }}>
+                    <div style={{ width: "52px", height: "52px", margin: "0 auto 14px", borderRadius: "16px", backgroundColor: "#ecfdf5", color: "#059669", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                      </svg>
+                    </div>
+                    <p style={{ margin: "0 0 6px 0", fontSize: "16px", fontWeight: 600, color: "#334155" }}>
                       Сайн байна уу! 👋
                     </p>
-                    <p style={{ margin: 0, fontSize: "12px", color: "#94a3b8" }}>
-                      Бидэнд асуух зүйл байвал мессеж илгээнэ үү эсвэл доорх цэснээс сонгоно уу.
+                    <p style={{ margin: 0, fontSize: "13px", lineHeight: 1.5, color: "#64748b" }}>
+                      Асуух зүйлээ доор бичиж илгээнэ үү, эсвэл доорх сэдвүүдээс сонгоно уу. Шууд хүнтэй ярих бол «Оператортой холбох»-ыг дарна уу.
                     </p>
                   </div>
                 )}
@@ -947,7 +979,7 @@ export default function ChatWidget({ inline = false }: ChatWidgetProps): JSX.Ele
               </div>
 
               {/* Choices Area */}
-              {!loading && conversation && !conversation.humanMode && (
+              {!loading && !kholboltAldaa && !conversation?.humanMode && (
                 <div style={{ padding: "10px 14px", backgroundColor: "#f8fafc", display: "flex", flexDirection: "column", gap: "8px", borderTop: "1px solid rgba(0,0,0,0.06)", flexShrink: 0, maxHeight: "150px", overflowY: "auto" }}>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                     {currentChoices.map((c, idx) => (

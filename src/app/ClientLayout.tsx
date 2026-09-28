@@ -24,6 +24,7 @@ import { TourProvider } from "@/context/TourContext";
 import TourHost from "@/components/ui/TourHost";
 import type { Socket } from "socket.io-client";
 import ChatWidget from "@/components/ChatWidget";
+import AiTuslakh from "@/components/AiTuslakh";
 
 function parseJwt(token: string) {
   try {
@@ -305,7 +306,12 @@ function LayoutContent({ children }: { children: ReactNode }) {
             pathname !== "/signup" &&
             pathname !== "/nevtrekh" &&
             !pathname?.startsWith("/pay/") &&
-            !pathname?.startsWith("/zogsool-qr/") && <ChatWidget />}
+            !pathname?.startsWith("/zogsool-qr/") && (
+              <>
+                <ChatWidget />
+                <AiTuslakh />
+              </>
+            )}
           <Toaster position="top-right" richColors closeButton />
           <SuccessOverlayHost />
           <ErrorOverlayHost />

@@ -17,6 +17,7 @@ import { hasPermission } from "@/lib/permissionUtils";
 import { ALL_COLUMNS } from "./columns";
 import Link from "next/link";
 import ExcelButton from "@/components/ui/ExcelButton";
+import ZogsoolAguulakhExcel from "./ZogsoolAguulakhExcel";
 
 interface GereeHeaderProps {
   activeTab: "contracts" | "residents" | "employees" | "units" | "clients";
@@ -483,7 +484,15 @@ export default function GereeHeader({
                 </button>
               )}
 
-              {activeTab === "units" && (
+              {activeTab === "units" &&
+                (activePropertyTab === "Зогсоол" ||
+                  activePropertyTab === "Агуулах") && (
+                  <div className="flex items-center gap-2">
+                    <ZogsoolAguulakhExcel turul={activePropertyTab} />
+                  </div>
+                )}
+
+              {activeTab === "units" && activePropertyTab === "Тоот" && (
                 <div className="flex items-center gap-2">
                   <button
                     onClick={onDownloadUnitsTemplate}
@@ -765,7 +774,12 @@ export default function GereeHeader({
             <span className="hidden sm:inline text-xs ml-1">Ажилтан нэмэх</span>
           </button>
         )}
-        {activeTab === "units" && (
+        {activeTab === "units" &&
+          (activePropertyTab === "Зогсоол" ||
+            activePropertyTab === "Агуулах") && (
+            <ZogsoolAguulakhExcel turul={activePropertyTab} idPrefix="mobile-" />
+          )}
+        {activeTab === "units" && activePropertyTab === "Тоот" && (
           <>
             <button
               onClick={onDownloadUnitsTemplate}
