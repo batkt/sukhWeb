@@ -92,6 +92,14 @@ interface DiscountHistoryRow {
   sariinDun?: number;
 }
 
+/** Зардлын нэрээр ангилал (backend-ийн `angilalTaniya`-тай ижил). */
+const angilalTaniya = (ner: string): string => {
+  const n = String(ner || "").toLowerCase();
+  if (n.includes("гараж") || n.includes("гараш") || n.includes("зогсоол")) return "Зогсоол";
+  if (n.includes("агуулах")) return "Агуулах";
+  return "Орон сууц";
+};
+
 interface HongololtToolProps {
   /** Модал горимд заавал. `inline` үед үл хэрэгсэнэ. */
   show?: boolean;
@@ -397,6 +405,9 @@ export default function HongololtTool({
                 tootiinGeree.get(`${resId}|${tootStr.trim()}`) ||
                 // Ганц тоот бол оршин суугчийн гэрээ нь л тэр
                 (tootsList.length === 1 ? item.gereeniiId : "") ||
+                // Гараж/агуулах тусдаа гэрээгүй бол орон сууцны гэрээнд нэмэлт
+                // тоот болж багтдаг — тэр гэрээгээр ангиллын үлдэгдлийг харна.
+                (String(t.turul || "").trim() && String(t.turul).trim() !== "Орон сууц" ? item.gereeniiId : "") ||
                 "",
             );
             // Тоот бүр ТУСДАА мөр — гэрээ олдоогүй ч давхцахгүй.
@@ -613,7 +624,7 @@ export default function HongololtTool({
   const filteredResidents = useMemo(() => {
     const q = searchTerm.toLowerCase();
     return residents.filter((r) => {
-      if ((r.turul || "Орон сууц") !== tootTurul && tootTurluud.length > 1) return false;
+      if ((r.turul || "Орон сууц") !== tootTurul) return false;
       if (orts && String(r.orts || "") !== orts) return false;
       if (davkhar && String(r.davkhar || "") !== davkhar) return false;
       return (
@@ -822,10 +833,20 @@ export default function HongololtTool({
    */
   /** Гэрээ бүрийн САРЫН төлбөр (turees: сарын түрээс) — хувийн суурь */
   const [suuriDun, setSuuriDun] = useState<
-    Record<string, { sariinDun: number; zadargaa: { ner: string; dun: number }[] }>
+    Record<
+      string,
+      {
+        sariinDun: number;
+        zadargaa: { ner: string; dun: number }[];
+        /** Ангилал бүрийн сарын төлбөр: Орон сууц / Агуулах / Зогсоол (гараж) */
+        angilal?: Record<string, number>;
+      }
+    >
   >({});
   /** Гэрээ бүрийн бодит үлдэгдэл (авлагын дэвтрээс) — `/khungulultSuuriAvya` */
   const [boditUldegdel, setBoditUldegdel] = useState<Record<string, number> | null>(null);
+  /** Гэрээ × ангиллын үлдэгдэл — нэг гэрээнд багтсан гараж/агуулахыг тусад нь */
+  const [uldegdelAngilal, setUldegdelAngilal] = useState<Record<string, Record<string, number>> | null>(null);
   const [suuriAchaalj, setSuuriAchaalj] = useState(false);
   /** Хадгалсны дараа үлдэгдлийг дахин татахад нэмэгдэнэ */
   const [suuriShinechlel, setSuuriShinechlel] = useState(0);
@@ -850,6 +871,7 @@ export default function HongololtTool({
         if (khuchintei) {
           setSuuriDun(resp.data?.suuri || {});
           setBoditUldegdel(resp.data?.uldegdel || null);
+          setUldegdelAngilal(resp.data?.uldegdelAngilal || null);
         }
       })
       .catch(() => {
@@ -874,8 +896,13 @@ export default function HongololtTool({
   }, [selectedMonth, sariinToo]);
 
   /** Гэрээний нэг сарын төлбөр (turees: сарын түрээс) */
-  const sariinTulbur = (r: ResidentRow): number =>
-    (r.gereeniiId && Number(suuriDun[r.gereeniiId]?.sariinDun)) || 0;
+  // Хувийн суурь — зөвхөн мөрийн ангиллын сарын төлбөр.
+  const sariinTulbur = (r: ResidentRow): number => {
+    const s = r.gereeniiId ? suuriDun[r.gereeniiId] : undefined;
+    if (!s) return 0;
+    if (s.angilal) return Number(s.angilal[r.turul || "Орон сууц"]) || 0;
+    return Number(s.sariinDun) || 0;
+  };
 
   /** Сар бүрийн хөнгөлөх дүн — сервер ижил томьёогоор дахин бодно */
   const sarBureer = (r: ResidentRow): Record<string, number> => {
@@ -896,10 +923,15 @@ export default function HongololtTool({
   const suuriNiilber = (r: ResidentRow): number => sariinTulbur(r);
 
   /** Мөрийн үлдэгдэл — бодит дэвтрийн үлдэгдэл байвал тэр */
-  const murUldegdel = (r: ResidentRow): number =>
-    boditUldegdel && r.gereeniiId
+  // Мөрийн төрлийн (орон сууц / агуулах / гараж) үлдэгдэл — нэг гэрээнд
+  // багтсан ч ангилал бүр өөрийн үлдэгдэлтэй харагдана.
+  const murUldegdel = (r: ResidentRow): number => {
+    const ang = r.gereeniiId ? uldegdelAngilal?.[r.gereeniiId] : undefined;
+    if (ang) return Number(ang[r.turul || "Орон сууц"]) || 0;
+    return boditUldegdel && r.gereeniiId
       ? Number(boditUldegdel[r.gereeniiId]) || 0
       : Number(r.uldegdel) || 0;
+  };
 
   const computeDiscount = (r: ResidentRow): number => {
     const val = parseFloat(hongololtUtga) || 0;
@@ -1027,7 +1059,9 @@ export default function HongololtTool({
         baiguullagiinId,
         barilgiinId: barilgiinId || undefined,
         // Сервер дүнг өөрөө (гэрээний сарын төлбөрөөс) дахин бодно
-        gereenuud: ilgeekhGereenuud.map((g) => ({ gereeniiId: g.gereeniiId })),
+        // Нэг гэрээнд ижил ангиллын хоёр мөр (жишээ 2 гараж) байж болох тул давхардуулахгүй
+        gereenuud: Array.from(new Set(ilgeekhGereenuud.map((g) => g.gereeniiId))).map((gereeniiId) => ({ gereeniiId })),
+        angilal: tootTurul,
         ekhlekhSar: selectedMonth,
         duusakhSar: duusakhSar || selectedMonth,
         khungulukhTurul: hongololtTurul === "percent" ? "khuvi" : "dun",
@@ -1173,7 +1207,11 @@ export default function HongololtTool({
                   <span
                     className={`tabular-nums whitespace-nowrap ${v > 0 ? "" : "text-[color:var(--muted-text)]"}`}
                     title={
-                      (r.gereeniiId && suuriDun[r.gereeniiId]?.zadargaa?.map((z) => `${z.ner}: ${fmt(z.dun)}₮`).join("\n")) ||
+                      (r.gereeniiId &&
+                        suuriDun[r.gereeniiId]?.zadargaa
+                          ?.filter((z) => angilalTaniya(z.ner) === (r.turul || "Орон сууц"))
+                          .map((z) => `${z.ner}: ${fmt(z.dun)}₮`)
+                          .join("\n")) ||
                       "Гэрээний сарын төлбөр — хувь үүнээс бодогдоно"
                     }
                   >
@@ -1421,6 +1459,25 @@ export default function HongololtTool({
                 Хамрах хүрээ
               </h3>
 
+              {/* Тоотын төрөл — орон сууц, агуулах, гаражийг тусад нь (анхдагч: Орон сууц) */}
+              <Mur shoshgo="Төрөл">
+                <FilterSelect
+                  value={tootTurul}
+                  onChange={(v: string) => {
+                    if (!v) return;
+                    setTootTurul(v);
+                    setSelectedIds(new Set());
+                  }}
+                  options={["Орон сууц", "Агуулах", "Зогсоол"].map((k) => ({
+                    value: k,
+                    label: `${k === "Зогсоол" ? "Гараж" : k} (${tootTurulToo[k] || 0})`,
+                  }))}
+                  placeholder="Орон сууц"
+                  bugdLabel={null}
+                  className="w-full"
+                />
+              </Mur>
+
               <Mur shoshgo="Орц">
                 <FilterSelect
                   value={orts}
@@ -1580,29 +1637,6 @@ export default function HongololtTool({
 
           {/* Right panel: resident table */}
           <div className="flex-1 flex flex-col min-h-0">
-            {/* Тоотын төрөл — орон сууц, агуулах, зогсоолыг тусад нь */}
-            {tootTurluud.length > 1 && (
-              <div className="stg-segment mb-3 self-start" role="tablist" aria-label="Тоотын төрөл">
-                {tootTurluud.map((k) => (
-                  <button
-                    key={k}
-                    type="button"
-                    role="tab"
-                    aria-selected={tootTurul === k}
-                    onClick={() => {
-                      setTootTurul(k);
-                      setSelectedIds(new Set());
-                    }}
-                    className={`stg-segment-item inline-flex min-h-9 items-center gap-2 ${tootTurul === k ? "is-active" : ""}`}
-                  >
-                    {k === "Зогсоол" ? "Гараж" : k}
-                    <span className="rounded-full bg-[color:var(--surface-hover)] px-1.5 text-[12px] tabular-nums text-[color:var(--muted-text)]">
-                      {tootTurulToo[k]}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
             {/* Table — гүйлгэлтийг хүснэгт өөрөө хариуцна */}
             <div className="min-h-0 flex-1">
               <Table<any>

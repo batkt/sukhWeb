@@ -1109,11 +1109,6 @@ export default function DansniiKhuulga() {
         }
       }
 
-      // 1b. Эзэмшигчийн төрөл (Оршин суугч / Харилцагч)
-      if (ezemshigchFilter !== "all" && ezemshigchiinTurul(it) !== ezemshigchFilter) {
-        return false;
-      }
-
       // 2. Search Filter
       if (searchTerm) {
         const cId = String(it?.gereeniiId ?? it?.gereeId ?? "").trim();
@@ -1154,8 +1149,6 @@ export default function DansniiKhuulga() {
     selectedOrtsFilter,
     selectedDavkharFilter,
     selectedTootFilter,
-    ezemshigchFilter,
-    ezemshigchiinTurul,
   ]);
 
   const totalSum = useMemo(() => {
@@ -1493,7 +1486,10 @@ export default function DansniiKhuulga() {
       }
     });
 
-    const result = Array.from(map.values());
+    // Эзэмшигчийн бүлэг (Оршин суугч / Харилцагч) — хүснэгт мөр бүр гэрээгээр ангилагдана.
+    const result = Array.from(map.values()).filter(
+      (r: any) => ezemshigchFilter === "all" || ezemshigchiinTurul(r) === ezemshigchFilter,
+    );
 
     // FINAL PASS: Apply tuluvFilter at the resident level based on their aggregated performance/balance
     if (!tuluvFilter || tuluvFilter === "all") return result;
@@ -1558,10 +1554,12 @@ export default function DansniiKhuulga() {
     tuluvFilter,
     monthPaidByGereeId,
     tableDisplayBalances,
+    ezemshigchFilter,
+    ezemshigchiinTurul,
   ]);
 
   // Full resident set (no tuluvFilter) - for stats so dashboard numbers stay fixed when clicking filters
-  const deduplicatedResidentsAll = useMemo(() => {
+  const deduplicatedResidentsAllRaw = useMemo(() => {
     const map = new Map<string, any>();
     // Build set of resident keys that pass the static filters (orts, davkhar, search, toot)
     const residentKeysFromProfile = new Set<string>();
@@ -1807,6 +1805,16 @@ export default function DansniiKhuulga() {
     selectedDavkharFilter,
     selectedTootFilter,
   ]);
+
+  // Эзэмшигчийн бүлгээр шүүсэн (стат карт, хүснэгтийн тоо). Табын тоо нь
+  // яг энэ мөрүүдээс тоологдоно — жагсаалттай зөрөхгүй.
+  const deduplicatedResidentsAll = useMemo(
+    () =>
+      ezemshigchFilter === "all"
+        ? deduplicatedResidentsAllRaw
+        : deduplicatedResidentsAllRaw.filter((r: any) => ezemshigchiinTurul(r) === ezemshigchFilter),
+    [deduplicatedResidentsAllRaw, ezemshigchFilter, ezemshigchiinTurul],
+  );
 
   const sortedResidents = useMemo(() => {
     const result = Array.from(deduplicatedResidents);
@@ -2153,21 +2161,18 @@ export default function DansniiKhuulga() {
     contractsByNumber,
   ]);
 
-  /** Эзэмшигчийн бүлэг бүрийн гэрээний тоо (бүлгийн шүүлтүүрээс үл хамаарна). */
+  /** Эзэмшигчийн бүлэг бүрийн тоо — жагсаалтын мөрүүдээс (бүлгийн шүүлтүүрээс үл хамаарна). */
   const ezemshigchToo = useMemo(() => {
-    const sets = { orshinSuugch: new Set<string>(), khariltsagch: new Set<string>() };
-    buildingHistoryItems.forEach((it: any) => {
-      const key = String(
-        it?.gereeniiId ?? it?.gereeId ?? it?.gereeniiDugaar ?? it?.orshinSuugchId ?? "",
-      ).trim();
-      if (key) sets[ezemshigchiinTurul(it)].add(key);
+    let khariltsagch = 0;
+    deduplicatedResidentsAllRaw.forEach((r: any) => {
+      if (ezemshigchiinTurul(r) === "khariltsagch") khariltsagch++;
     });
     return {
-      orshinSuugch: sets.orshinSuugch.size,
-      khariltsagch: sets.khariltsagch.size,
-      all: sets.orshinSuugch.size + sets.khariltsagch.size,
+      all: deduplicatedResidentsAllRaw.length,
+      khariltsagch,
+      orshinSuugch: deduplicatedResidentsAllRaw.length - khariltsagch,
     };
-  }, [buildingHistoryItems, ezemshigchiinTurul]);
+  }, [deduplicatedResidentsAllRaw, ezemshigchiinTurul]);
 
   // Stats use deduplicatedResidentsAll so dashboard numbers stay fixed when clicking filters
   const stats = useMemo(() => {
@@ -3475,7 +3480,7 @@ export default function DansniiKhuulga() {
                 type="button"
                 role="tab"
                 aria-selected={ezemshigchFilter === b.key}
-                onClick={() => setEzemshigchFilter(b.key)}
+                onClick={() => { setEzemshigchFilter(b.key); setPage(1); }}
                 className={`stg-segment-item inline-flex min-h-9 items-center gap-2 ${ezemshigchFilter === b.key ? "is-active" : ""}`}
               >
                 {b.ner}

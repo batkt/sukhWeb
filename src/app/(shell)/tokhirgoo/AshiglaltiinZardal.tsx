@@ -1306,14 +1306,31 @@ export default function AshiglaltiinZardluud() {
                             </label>
                             <div className="az-field">
                               <Layers className="az-field-icon" />
+                              {/* Нэг сонголтоор хоёр талбарыг тохируулна:
+                                  turul (Тогтмол / Дурын) ба zardliinTurul (Энгийн / Лифт).
+                                  Дурын бол «Хувьсах зардлууд» хэсэгт харагдана. */}
                               <select
                                 id="az-turul"
-                                value={formData.zardliinTurul || "Энгийн"}
-                                onChange={(e) => setFormData({ ...formData, zardliinTurul: e.target.value })}
+                                value={
+                                  formData.turul === "Дурын"
+                                    ? "durin"
+                                    : formData.zardliinTurul === "Лифт"
+                                      ? "lift"
+                                      : "togtmol"
+                                }
+                                onChange={(e) => {
+                                  const v = e.target.value;
+                                  setFormData({
+                                    ...formData,
+                                    turul: v === "durin" ? "Дурын" : "Тогтмол",
+                                    zardliinTurul: v === "lift" ? "Лифт" : "Энгийн",
+                                  });
+                                }}
                                 className="az-input az-select"
                               >
-                                <option value="Энгийн">Энгийн — бүх оршин суугчид</option>
-                                <option value="Лифт">Лифт — лифт ашигладаг давхрынхан</option>
+                                <option value="togtmol">Тогтмол — сар бүр ижил дүн</option>
+                                <option value="lift">Лифт — лифт ашигладаг давхрынхан</option>
+                                <option value="durin">Дурын — сар бүр өөр дүн (хувьсах)</option>
                               </select>
                               <ChevronDown className="az-select-chevron" />
                             </div>
