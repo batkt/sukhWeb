@@ -1,16 +1,18 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import FilterSelect from "@/components/ui/FilterSelect";
+import FilterDatePicker from "@/components/ui/FilterDatePicker";
 import { useBuilding } from "@/context/BuildingContext";
 import { useAuth } from "@/lib/useAuth";
 import useBaiguullaga from "@/lib/useBaiguullaga";
 import TusgaiZagvar from "../../../../../components/selectZagvar/tusgaiZagvar";
-import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { getDefaultDateRange } from "@/lib/utils";
 import uilchilgee from "@/lib/uilchilgee";
 import formatNumber from "../../../../../tools/function/formatNumber";
 import PageSongokh from "../../../../../components/selectZagvar/pageSongokh";
-import { FileSpreadsheet, Printer } from "lucide-react";
+import { Printer } from "lucide-react";
+import ExcelButton from "@/components/ui/ExcelButton";
 import Table from "@/components/ui/table";
 import type { ColumnsType } from "@/components/ui/table";
 
@@ -415,14 +417,15 @@ export default function NekhemjlekhiinTuukhPage() {
   );
 
   return (
-    <div className="p-6 print-container bg-[color:var(--surface-bg)] min-h-screen h-full flex flex-col">
+    // Бусад хуудастай ижил бүрхүүл — нэмэлт `p-6`/цагаан дэвсгэргүй
+    <div className="print-container flex w-full flex-col gap-3 pb-14">
       <PrintStyles />
 
       {/* Print-only Header */}
       <div className="print-only mb-6">
         <div className="flex justify-between items-start border-b-2 border-[color:var(--surface-border)] pb-4">
           <div>
-            <h1 className="text-2xl font-bold uppercase">Нэхэмжлэхийн түүх тайлан</h1>
+            <h1 className="text-2xl font-medium ">Нэхэмжлэхийн түүх тайлан</h1>
             <p className="text-sm mt-1">{baiguullaga?.ner || "Байгууллагын нэр"}</p>
           </div>
           <div className="text-right text-sm">
@@ -435,23 +438,17 @@ export default function NekhemjlekhiinTuukhPage() {
         </div>
         
         <div className="mt-6 border p-4 rounded bg-[color:var(--surface-hover)] flex justify-between items-center">
-          <p className="font-semibold text-[color:var(--panel-text)]">НИЙТ ТӨЛБӨР:</p>
-          <p className="text-2xl font-bold text-brand">{formatNumber(totalTulbur)} </p>
+          <p className="font-medium text-[color:var(--panel-text)]">Нийт төлбөр:</p>
+          <p className="text-2xl font-medium text-brand">{formatNumber(totalTulbur)} </p>
         </div>
       </div>
-      <div className="flex justify-between items-center mb-3 no-print">
-        <h1 className="text-2xl font-bold">Нэхэмжлэхийн түүх</h1>
+      {/* Гарчиг нь толгой хэсэгт («Тайлан — Нэхэмжлэхийн түүх») байгаа тул давхарлахгүй */}
+      <div className="flex flex-wrap items-center justify-end gap-2 no-print">
         <div className="flex gap-3">
-          <button
-            onClick={exportToExcel}
-            className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
-          >
-            <FileSpreadsheet className="w-4 h-4 text-brand" />
-            Excel татах
-          </button>
+          <ExcelButton onClick={exportToExcel} />
 {/* <button
             onClick={handlePrint}
-            className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
+            className="btn-minimal inline-flex h-9 shrink-0 items-center gap-2 !px-3 text-[13px]"
           >
             <Printer className="w-4 h-4 text-brand" />
             Хэвлэх
@@ -459,21 +456,17 @@ export default function NekhemjlekhiinTuukhPage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4 mb-6 no-print">
-        <div className="flex flex-col md:flex-row flex-wrap gap-4 no-print items-end">
-          <div className="rounded-xl btn-minimal h-[40px] w-full md:w-[320px] flex items-center px-3">
-            <StandardDatePicker
-              isRange={true}
-              value={dateRange}
-              onChange={setDateRange}
-              allowClear
-              placeholder="Огноо сонгох"
-              className="!h-full !w-full text-theme !px-0 flex items-center justify-center text-center border-0 shadow-none"
-            />
-          </div>
-          <div className="p-4 rounded-xl">
-            <TusgaiZagvar
-              value={formData.tuluv}
+      <form onSubmit={handleSubmit} className="no-print">
+        <div className="flex flex-wrap items-center gap-2 no-print">
+          <FilterDatePicker
+            value={dateRange}
+            onChange={setDateRange}
+            className="w-full sm:w-[284px]"
+          />
+          <div>
+            <FilterSelect
+              label="Төлөв"
+              value={formData.tuluv || ""}
               onChange={(v: string) => setFormData({ ...formData, tuluv: v })}
               options={[
                 { value: "Төлсөн", label: "Төлсөн" },
@@ -481,8 +474,7 @@ export default function NekhemjlekhiinTuukhPage() {
 
                 // { value: "Хэсэгчлэн төлсөн", label: "Хэсэгчлэн төлсөн" },
               ]}
-              placeholder="Төлөв сонгох"
-              className="h-[40px] w-full"
+              className="max-w-[220px]"
             />
           </div>
           {/* <div className="neu-panel p-4 rounded-xl">
@@ -510,7 +502,7 @@ export default function NekhemjlekhiinTuukhPage() {
                 })),
               ]}
               placeholder="Байрны нэр сонгох"
-              className="h-[40px] w-full"
+              className="h-9 w-full"
             />
           </div> */}
           {/* <div className="neu-panel p-4 rounded-xl">
@@ -528,7 +520,7 @@ export default function NekhemjlekhiinTuukhPage() {
                 label: b.ner,
               }))}
               placeholder="Барилга сонгох"
-              className="h-[40px] w-full"
+              className="h-9 w-full"
             />
           </div> */}
           {/* <div className="neu-panel p-4 rounded-xl">
@@ -587,16 +579,16 @@ export default function NekhemjlekhiinTuukhPage() {
                 setFormData({ ...formData, khuudasniiKhemjee: v })
               }
               options={[20, 50, 100]}
-              className="h-[40px] w-full"
+              className="h-9 w-full"
             />
           </div> */}
         </div>
       </form>
 
-      {error && <div className="text-danger mb-4">Алдаа: {error}</div>}
+      {error && <div className="text-danger">Алдаа: {error}</div>}
 
       {/* Дүнгийн хураангуй */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           {
             label: "Нийт нэхэмжилсэн",
@@ -631,7 +623,7 @@ export default function NekhemjlekhiinTuukhPage() {
             className="neu-panel rounded-2xl p-4 flex flex-col gap-1"
           >
             <span className="text-xs text-theme opacity-70 leading-normal">{k.label}</span>
-            <span className={`text-xl font-semibold ${k.angi} leading-normal`}>
+            <span className={`text-xl font-medium ${k.angi} leading-normal`}>
               {formatNumber(k.utga)}₮
             </span>
             <span className="text-[11px] text-theme opacity-50 leading-normal">

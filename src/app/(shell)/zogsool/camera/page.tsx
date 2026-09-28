@@ -7,6 +7,7 @@ import React, {
   useRef,
   useCallback,
 } from "react";
+import FilterDatePicker from "@/components/ui/FilterDatePicker";
 import { createPortal } from "react-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { useAuth } from "@/lib/useAuth";
@@ -39,9 +40,9 @@ import {
   ChevronRight,
 
   Receipt,
+  CalendarCheck,
   AlertTriangle,
 } from "lucide-react";
-import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { ConfigProvider } from "antd";
 import moment from "moment";
 import { getDefaultDateRange } from "@/lib/utils";
@@ -64,6 +65,7 @@ import type { ColumnsType } from "@/components/ui/table";
 import { toast } from "react-hot-toast";
 import Button from "@/components/ui/Button";
 import { tulburiinZadargaaBodyo } from "@/lib/tulburiinZadargaa";
+import UdriinKhaaltModal from "./UdriinKhaaltModal";
 
 const RealTimeDuration = ({
   orsonTsag,
@@ -109,7 +111,7 @@ const RealTimeDuration = ({
   const h = Math.floor(khugatsaaMin / 60);
   const m = khugatsaaMin % 60;
   return (
-    <span className="text-[10px]  uppercase tracking-wide text-[color:var(--panel-text)]">
+    <span className="text-[11px] text-[color:var(--panel-text)]">
       {h > 0 ? `${h} цаг ${m} мин` : `${m} мин`}
     </span>
   );
@@ -269,7 +271,7 @@ const FilterPopover = ({
             onMouseEnter={neekh}
             onMouseLeave={khaakh}
           >
-            <div className="mb-1 px-3 py-2 text-[10px] tracking-wider text-[color:var(--muted-text)] uppercase">
+            <div className="mb-1 px-3 py-2 text-[11px] text-[color:var(--muted-text)]">
               {label} сонгох
             </div>
             {options.map((opt, idx, arr) => {
@@ -370,6 +372,14 @@ function murNiiluulye(transaction: any) {
     )
     .reduce((sum: number, pay: any) => sum + Math.abs(pay?.dun ?? 0), 0);
   const effectiveOwed = Math.max(0, niitDun - discountTotal);
+  // Бүрэн хөнгөлсөн: хөнгөлөлт нь нийт дүнг бүрэн нөхөж, бодит төлбөр 0 —
+  // төлөв нь «Үнэгүй», и-баримт гарахгүй.
+  const boditTulsun = tulburuudiigTsugluulya(transaction).reduce(
+    (s: number, t: any) => s + (Number(t?.dun) || 0),
+    0,
+  );
+  const bureenKhungulsun =
+    !isCurrentlyIn && niitDun > 0 && discountTotal >= niitDun && boditTulsun <= 0;
   const hasRemainingBalance =
     tuluv === 1 &&
     effectiveOwed > 0 &&
@@ -382,7 +392,8 @@ function murNiiluulye(transaction: any) {
     tuluv,
     niitDun,
     isCurrentlyIn,
-    isFreeExit,
+    isFreeExit: isFreeExit || bureenKhungulsun,
+    bureenKhungulsun,
     isPaid,
     isDebt,
     discountTotal,
@@ -432,6 +443,7 @@ export default function Camera() {
   const [discountAmount, setDiscountAmount] = useState("");
   const [discountMinutes, setDiscountMinutes] = useState("");
   const [revenueModalOpen, setRevenueModalOpen] = useState(false);
+  const [khaaltOpen, setKhaaltOpen] = useState(false);
   const [revenueDateRange, setRevenueDateRange] = useState<[string | null, string | null] | undefined>(undefined);
   const [revenueListData, setRevenueListData] = useState<any>(null);
   const [revenueLoading, setRevenueLoading] = useState(false);
@@ -473,6 +485,16 @@ export default function Camera() {
       revalidateOnReconnect: false,
     },
   );
+
+  /** Зогсоолын нийт багтаамж — `parking.too`-ийн нийлбэр */
+  const zogsooliinBagtaamj = useMemo(() => {
+    const list = Array.isArray(parkingConfigData?.jagsaalt)
+      ? parkingConfigData.jagsaalt
+      : Array.isArray(parkingConfigData)
+        ? parkingConfigData
+        : [];
+    return list.reduce((s: number, p: any) => s + (Number(p?.too) || 0), 0);
+  }, [parkingConfigData]);
 
   // Extract cameras from parking configuration
   const cameras = useMemo(() => {
@@ -620,6 +642,29 @@ export default function Camera() {
   });
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
+  /** Одоо зогсоолд байгаа (гараагүй) машины тоо — огнооны шүүлтээс үл хамаарна */
+  const { data: idevkhteiToo = 0 } = useSWR(
+    shouldFetch
+      ? ["idevkhteiMashin", token, ajiltan?.baiguullagiinId, effectiveBarilgiinId, listData?.niitMur]
+      : null,
+    async () => {
+      const resp = await uilchilgee(token || "").get("/zogsoolUilchluulegchJagsaalt", {
+        params: {
+          khuudasniiDugaar: 1,
+          khuudasniiKhemjee: 1,
+          query: JSON.stringify({
+            baiguullagiinId: ajiltan?.baiguullagiinId,
+            ...(effectiveBarilgiinId ? { barilgiinId: effectiveBarilgiinId } : {}),
+            "tuukh.garsanKhaalga": { $exists: false },
+            "tuukh.tsagiinTuukh.garsanTsag": { $exists: false },
+          }),
+        },
+      });
+      return Number(resp.data?.niitMur) || 0;
+    },
+    { refreshInterval: 30000, revalidateOnFocus: false },
+  );
+
   // Helper to fetch list via REST (as a fallback or for filters)
   const fetchList = useCallback(async () => {
     if (!rangeStart || !rangeEnd || !token) return;
@@ -673,9 +718,10 @@ export default function Camera() {
         },
       ];
     } else if (statusFilter === "free") {
-      // Үнэгүй: Exited with no payment, excluding violations
+      // Үнэгүй: гарсан, зөрчилгүй. `niitDun = 0` гэж серверт шүүвэл бүрэн
+      // хөнгөлсөн (дүнтэй боловч төлбөр 0) машин ирэхгүй — нарийн шүүлтийг
+      // доорх клиент талын шүүлт (`bureenKhungulsun`) хийнэ.
       query["tuukh.garsanKhaalga"] = { $exists: true };
-      query.niitDun = 0;
       query["tuukh.0.tuluv"] = { $nin: [-1, -2] };
     }
 
@@ -1279,6 +1325,7 @@ export default function Camera() {
         }
         if (statusFilter === "paid") {
           // Төлсөн: Payment completed (tuluv === 1 and not currently in, or tuluv === 2)
+          if (murNiiluulye(t).bureenKhungulsun) return false;
           return (tuluv === 1 && !isCurrentlyIn) || tuluv === 2;
         }
         if (statusFilter === "unpaid") {
@@ -1287,6 +1334,7 @@ export default function Camera() {
         }
         if (statusFilter === "free") {
           // Үнэгүй: Exited with no payment, excluding violations
+          if (murNiiluulye(t).bureenKhungulsun) return true;
           return !isCurrentlyIn && niitDun === 0 && tuluv !== -2 && tuluv !== -1;
         }
         return true;
@@ -1601,15 +1649,17 @@ export default function Camera() {
     {
       title: erembiinTolgoi("dugaar", "Дугаар"),
       key: "dugaar",
-      width: 110,
-      align: "center",
+      width: 120,
+      align: "left",
+      // Дугаар бүр өөр өргөнтэй тул голлуулахад «хөрөөний ир» шиг харагддаг —
+      // зүүн тийш тэгшилж, хуулах дүрсийг баруун захад тогтооно.
       render: (_: any, transaction: any) => (
-        <div className="flex items-center justify-center gap-1">
-          <span className="font-[family-name:var(--font-mono)]">
+        <div className="flex w-full items-center justify-between gap-1.5 pl-1">
+          <span className="truncate tabular-nums tracking-wide">
             {transaction.mashiniiDugaar || "-"}
           </span>
           <Copy
-            className="h-4 w-4 cursor-pointer text-[color:var(--muted-text)] transition-colors hover:text-brand"
+            className="h-3.5 w-3.5 shrink-0 cursor-pointer text-[color:var(--muted-text)] transition-colors hover:text-brand"
             onClick={() => copyToClipboard(transaction.mashiniiDugaar)}
           />
         </div>
@@ -1677,16 +1727,16 @@ export default function Camera() {
         const getStatusColor = () => {
           if (tuluv === -2 || tuluv === -1) return "bg-danger border-danger";
           if (hasRemainingBalance) return "bg-warning border-warning";
-          if (isFreeExit) return "bg-[color:var(--panel)] border-[color:var(--surface-border)]";
+          if (isFreeExit) return "bg-slate-400 border-slate-400";
           if (tuluv === 1)
             return isCurrentlyIn && niitDun === 0
-              ? "bg-theme border-theme"
+              ? "bg-sky-500 border-sky-500"
               : "bg-success border-success";
           if (!isCurrentlyIn && (niitDun > 0 || isDebt))
             return "bg-warning border-warning";
           if (!isCurrentlyIn && niitDun === 0)
-            return "bg-[color:var(--panel)] border-[color:var(--surface-border)]";
-          return "bg-theme border-theme";
+            return "bg-slate-400 border-slate-400";
+          return "bg-sky-500 border-sky-500";
         };
         return (
           <div
@@ -1737,9 +1787,11 @@ export default function Camera() {
     {
       title: erembiinTolgoi("payment", "Төлбөр"),
       key: "payment",
-      width: 90,
-      align: "center",
+      width: 120,
+      align: "right",
       render: (_: any, transaction: any) => {
+        // Гарах хүртэл төлбөр/хөнгөлөлт/и-баримт тодорхойгүй — хоосон
+        if (murNiiluulye(transaction).isCurrentlyIn) return "";
         const tulsunDun = transaction.tuukh?.[0]?.tulsunDun || 0;
         // Төрлийн шүүлтүүрээс үл хамааран бүх түүхээс төлбөрийг нэгтгэнэ.
         const payOnly = tulburuudiigTsugluulya(transaction);
@@ -1771,18 +1823,25 @@ export default function Camera() {
       key: "discount",
       width: 110,
       align: "right",
-      render: (_: any, transaction: any) => (
-        <span className="font-[family-name:var(--font-mono)]">
-          {formatNumber(murNiiluulye(transaction).discountTotal || 0, 2)}
-        </span>
-      ),
+      render: (_: any, transaction: any) => {
+        const { isCurrentlyIn, discountTotal } = murNiiluulye(transaction);
+        if (isCurrentlyIn) return "";
+        return (
+          <span className="font-[family-name:var(--font-mono)]">
+            {formatNumber(discountTotal || 0, 2)}
+          </span>
+        );
+      },
     },
     {
       title: erembiinTolgoi("ebarimt", "И-Баримт"),
       key: "ebarimt",
       width: 100,
-      align: "center",
+      align: "right",
       render: (_: any, transaction: any) => {
+        const { isCurrentlyIn, bureenKhungulsun } = murNiiluulye(transaction);
+        if (isCurrentlyIn) return "";
+        if (bureenKhungulsun) return "-";
         const mur = transaction.tuukh?.[0] as any;
         const ebarimtId =
           mur?.ebarimtId ||
@@ -1846,17 +1905,17 @@ export default function Camera() {
             className={`${badgeClass} ${color}`}
             style={{ borderRadius: "6px", color: "white" }}
           >
-            <span className="whitespace-nowrap uppercase">
+            <span className="whitespace-nowrap">
               {text}
             </span>
           </div>
         );
 
         if (!showActionBtn) {
-          if (isFreeExit) return badge("bg-[color:var(--panel)] border-[color:var(--surface-border)]", "Үнэгүй");
+          if (isFreeExit) return badge("bg-slate-400 border-slate-400", "Үнэгүй");
           if (tuluv === 1)
             return isCurrentlyIn && niitDun === 0
-              ? badge("bg-theme border-theme", "Идэвхтэй")
+              ? badge("bg-sky-500 border-sky-500", "Идэвхтэй")
               : badge("bg-success border-success", "Төлсөн");
           if (tuluv === -2 || tuluv === -1)
             return badge("bg-danger border-danger", "Зөрчилтэй");
@@ -1865,8 +1924,8 @@ export default function Camera() {
           if (!isCurrentlyIn && (niitDun > 0 || isDebt))
             return badge("bg-warning border-warning", "Төлбөртэй");
           if (!isCurrentlyIn && niitDun === 0)
-            return badge("bg-[color:var(--panel)] border-[color:var(--surface-border)]", "Үнэгүй");
-          return badge("bg-theme border-theme", "Идэвхтэй");
+            return badge("bg-slate-400 border-slate-400", "Үнэгүй");
+          return badge("bg-sky-500 border-sky-500", "Идэвхтэй");
         }
 
         return (
@@ -1888,14 +1947,14 @@ export default function Camera() {
                   setConfirmExitId(transaction._id ?? null);
                 }
               }}
-              className={`mx-auto flex w-[100px] max-w-[100px] min-w-[100px] cursor-pointer flex-nowrap items-center justify-center overflow-hidden rounded-[6px] border px-2 py-0.5 whitespace-nowrap uppercase ${
+              className={`mx-auto flex w-[100px] max-w-[100px] min-w-[100px] cursor-pointer flex-nowrap items-center justify-center overflow-hidden rounded-[6px] border px-2 py-0.5 whitespace-nowrap ${
                 hasRemainingBalance
                   ? "bg-warning border-warning"
                   : !isCurrentlyIn && isDebt
                     ? "bg-warning border-warning"
                     : tuluv === -1 || tuluv === -2
                       ? "bg-danger border-danger"
-                      : "bg-theme border-theme"
+                      : "bg-sky-500 border-sky-500"
               }`}
               style={{ color: "white" }}
             >
@@ -2038,7 +2097,7 @@ export default function Camera() {
 
   return (
     <div className="w-full bg-[color:var(--surface-bg)]">
-      <div className="px-4 pt-3 pb-4 lg:px-6 lg:pb-6 space-y-4">
+      <div className="px-4 pt-3 pb-2 lg:px-6 lg:pb-2 space-y-4">
         {/* Camera Streaming Sections */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           {/* Entry Camera Stream */}
@@ -2048,10 +2107,10 @@ export default function Camera() {
               <div className="absolute top-4 right-4 z-40 flex flex-col items-end gap-2">
                 <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10">
                   <div className="w-1.5 h-1.5 rounded-full bg-theme animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div>
-                  <span className="text-[10px] font-black !text-white uppercase tracking-widest">
+                  <span className="text-[11px] font-medium !text-white">
                     Орох Камер
                   </span>
-                  <span className="text-[9px] font-mono !text-[color:var(--muted-text)] ml-1">
+                  <span className="text-[11px] font-mono !text-[color:var(--muted-text)] ml-1">
                     ({activeEntryIP || entryCameras[0]?.cameraIP || "-"})
                   </span>
                 </div>
@@ -2061,7 +2120,7 @@ export default function Camera() {
                     <select
                       value={activeEntryIP}
                       onChange={(e) => setActiveEntryIP(e.target.value)}
-                      className="appearance-none bg-black/60 backdrop-blur-xl border border-white/20 rounded-full px-5 py-2 pr-10 text-[10px] font-black !text-white uppercase tracking-widest cursor-pointer hover:bg-black/80 transition-all outline-none"
+                      className="appearance-none bg-black/60 backdrop-blur-xl border border-white/20 rounded-full px-5 py-2 pr-10 text-[11px] font-medium !text-white cursor-pointer hover:bg-black/80 transition-all outline-none"
                     >
                       {entryCameras.map((cam) => (
                         <option
@@ -2079,11 +2138,11 @@ export default function Camera() {
               </div>
             )}
 
-            <div className="aspect-video relative">
+            <div className="relative h-[clamp(170px,26vh,280px)]">
               {entryCameras.length === 0 ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-[color:var(--panel)] border border-white/5">
                   <VideoOff className="w-12 h-12 text-[color:var(--panel-text)] mb-4" />
-                  <p className="text-[10px] font-black text-[color:var(--muted-text)] uppercase tracking-widest">
+                  <p className="text-[11px] font-medium text-[color:var(--muted-text)]">
                     Тохиргоогүй байна
                   </p>
                 </div>
@@ -2129,10 +2188,10 @@ export default function Camera() {
               <div className="absolute top-4 right-4 z-40 flex flex-col items-end gap-2">
                 <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10">
                   <div className="w-1.5 h-1.5 rounded-full bg-danger animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]"></div>
-                  <span className="text-[10px] font-black !text-white uppercase tracking-widest">
+                  <span className="text-[11px] font-medium !text-white">
                     Гарах Камер
                   </span>
-                  <span className="text-[9px] font-mono !text-[color:var(--muted-text)] ml-1">
+                  <span className="text-[11px] font-mono !text-[color:var(--muted-text)] ml-1">
                     ({activeExitIP || exitCameras[0]?.cameraIP || "-"})
                   </span>
                 </div>
@@ -2142,7 +2201,7 @@ export default function Camera() {
                     <select
                       value={activeExitIP}
                       onChange={(e) => setActiveExitIP(e.target.value)}
-                      className="appearance-none bg-black/60 backdrop-blur-xl border border-white/20 rounded-full px-5 py-2 pr-10 text-[10px] font-black !text-white uppercase tracking-widest cursor-pointer hover:bg-black/80 transition-all outline-none"
+                      className="appearance-none bg-black/60 backdrop-blur-xl border border-white/20 rounded-full px-5 py-2 pr-10 text-[11px] font-medium !text-white cursor-pointer hover:bg-black/80 transition-all outline-none"
                     >
                       {exitCameras.map((cam) => (
                         <option
@@ -2160,11 +2219,11 @@ export default function Camera() {
               </div>
             )}
 
-            <div className="aspect-video relative">
+            <div className="relative h-[clamp(170px,26vh,280px)]">
               {exitCameras.length === 0 ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-[color:var(--panel)] border border-white/5">
                   <VideoOff className="w-12 h-12 text-[color:var(--panel-text)] mb-4" />
-                  <p className="text-[10px] font-black text-[color:var(--muted-text)] uppercase tracking-widest">
+                  <p className="text-[11px] font-medium text-[color:var(--muted-text)]">
                     Тохиргоогүй байна
                   </p>
                 </div>
@@ -2206,66 +2265,42 @@ export default function Camera() {
 
         {/* Transactions Table Section */}
         <div className="space-y-4">
-          {/* ─── Top Bar ─── */}
-          <div
-            className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-white/60 dark:bg-white/[0.02] backdrop-blur-xl border border-[color:var(--surface-border)] dark:border-white/[0.04] shadow-sm"
-            style={{ zIndex: 1 }}
-          >
-            {/* Left: Title */}
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-9 h-9 rounded-xl ">
-                <Calendar className="w-4 h-4 text-[color:var(--muted-text)]" />
-              </div>
-              <div>
-                <h3 className="text-[13px] text-[color:var(--panel-text)] tracking-tight leading-none">
-                  Жагсаалт
-                </h3>
-                <p className="text-[10px]  text-[color:var(--muted-text)] mt-0.5">
-                  Зогсоолын бүртгэл
-                </p>
-              </div>
-            </div>
-
-            {/* Right: Register + DatePicker */}
-            <div className="flex items-center gap-2.5 flex-wrap">
-              {/* Date picker */}
-              <div className="min-w-[220px] h-9">
-                <StandardDatePicker
-                  isRange={true}
-                  value={dateRange}
-                  onChange={(_: any, dateStrings: [string, string]) => {
-                    setDateRange(dateStrings);
-                    setPage(1);
-                  }}
-                  format="YYYY-MM-DD"
-                  classNames={{
-                    input:
-                      "flex items-center gap-2 rounded-full bg-[color:var(--surface-hover)] dark:bg-white/[0.03] border border-[color:var(--surface-border)] dark:border-white/[0.06] h-9 px-4 text-[11px] text-[color:var(--muted-text)] focus:ring-2 focus:ring-theme/10 transition-all",
-                  }}
-                  allowClear
-                />
-              </div>
-
-              {/* Revenue report button */}
-              <Button
+          {/* ─── Top Bar: зүүн талд огноо, баруун талд үйлдлүүд ─── */}
+          <div className="relative z-30 flex flex-wrap items-center justify-between gap-2">
+            <FilterDatePicker
+              value={dateRange}
+              onChange={(_: any, dateStrings: [string, string]) => {
+                setDateRange(dateStrings);
+                setPage(1);
+              }}
+              format="YYYY-MM-DD"
+              className="w-full sm:w-[284px]"
+            />
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setKhaaltOpen(true)}
+                className="btn-minimal inline-flex h-9 items-center gap-1.5 !px-3"
+              >
+                <CalendarCheck className="h-4 w-4" />
+                Өдрийн хаалт
+              </button>
+              <button
+                type="button"
                 onClick={() => { const today = moment().format("YYYY-MM-DD"); setRevenueDateRange([today, today]); setRevenueModalOpen(true); }}
-                variant="primary"
-                size="sm"
-                className="rounded-lg h-8 px-4 text-[9px] shadow-sm"
+                className="btn-minimal inline-flex h-9 items-center gap-1.5 !px-3"
               >
-                <Receipt className="w-3.5 h-3.5 mr-1.5" />
+                <Receipt className="h-4 w-4" />
                 Орлого тайлан
-              </Button>
-
-              {/* Register button */}
-              <Button
+              </button>
+              <button
+                type="button"
                 onClick={() => setIsRegModalOpen(true)}
-                variant="primary"
-                size="sm"
-                className="rounded-lg h-8 px-4 text-[9px] shadow-sm"
+                className="inline-flex h-9 items-center gap-1.5 rounded-[10px] bg-theme px-3 text-[13px] !text-white shadow-[var(--ctl-shadow)] hover:opacity-90"
               >
-                Машин бүртгэх
-              </Button>
+                <Plus className="h-4 w-4" />
+                Машин
+              </button>
             </div>
           </div>
 
@@ -2277,15 +2312,16 @@ export default function Camera() {
                 rowKey={(t, idx) => t._id || idx}
                 pagination={false}
                 scroll={{ x: 1300 }}
+                fillHeight
                 rowClassName={(t) => (murNiiluulye(t).isActive ? "zt-row-selected" : "")}
                 summary={() => (
                   <Table.Summary.Row className="font-[family-name:var(--font-mono)] text-[11px]">
                     <Table.Summary.Cell colSpan={6} align="right">
-                      <span className="font-bold tracking-wider uppercase">
+                      <span className="font-medium">
                         Нийт Дүн:
                       </span>
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell align="right" className="font-bold whitespace-nowrap">
+                    <Table.Summary.Cell align="right" className="font-medium whitespace-nowrap">
                       {formatNumber(
                         transactions.reduce(
                           (sum, t) => sum + (Number(t.niitDun) || 0),
@@ -2293,9 +2329,10 @@ export default function Camera() {
                         ),
                       )}
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell align="right" className="font-bold whitespace-nowrap">
+                    <Table.Summary.Cell align="right" className="font-medium whitespace-nowrap">
                       {formatNumber(
                         transactions.reduce((sum, t) => {
+                          if (murNiiluulye(t).isCurrentlyIn) return sum;
                           const payOnly = tulburuudiigTsugluulya(t);
                           if (payOnly.length > 0) {
                             return (
@@ -2310,9 +2347,10 @@ export default function Camera() {
                         }, 0),
                       )}
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell align="right" className="font-bold whitespace-nowrap">
+                    <Table.Summary.Cell align="right" className="font-medium whitespace-nowrap">
                       {formatNumber(
                         transactions.reduce((sum, t) => {
+                          if (murNiiluulye(t).isCurrentlyIn) return sum;
                           const disc = murNiiluulye(t).discountTotal;
                           return (
                             sum +
@@ -2323,15 +2361,42 @@ export default function Camera() {
                         }, 0),
                       )}
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell colSpan={3} />
+                    <Table.Summary.Cell align="right" className="font-medium whitespace-nowrap">
+                      {formatNumber(
+                        transactions.reduce((sum, t) => {
+                          const { isCurrentlyIn, bureenKhungulsun } = murNiiluulye(t);
+                          if (isCurrentlyIn || bureenKhungulsun) return sum;
+                          const m = t.tuukh?.[0] as any;
+                          return sum + (Number(m?.ebarimtAvsanDun ?? t?.ebarimtAvsanDun) || 0);
+                        }, 0),
+                      )}
+                    </Table.Summary.Cell>
+                    <Table.Summary.Cell colSpan={2} />
                   </Table.Summary.Row>
                 )}
               />
             </div>
 
-            {/* Pagination */}
-            <div className="p-4 border-t border-[color:var(--surface-border)] dark:border-white/5 bg-[color:var(--surface-bg)] rounded-b-2xl flex items-center justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-3">
+            {/* Хуудаслалт — нэг эгнээнд. Зүүн талд идэвхтэй / сул зогсоол */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--surface-border)] px-1 py-2.5">
+              <div className="flex items-center gap-4 text-[13px]">
+                <span className="inline-flex items-center gap-1.5" title="Одоо зогсоолд байгаа машин">
+                  <span className="h-2 w-2 rounded-full bg-sky-500" />
+                  <span className="text-[color:var(--muted-text)]">Идэвхтэй</span>
+                  <span className="tabular-nums text-sky-600 dark:text-sky-400">{idevkhteiToo}</span>
+                </span>
+                {zogsooliinBagtaamj > 0 && (
+                  <span className="inline-flex items-center gap-1.5" title={`Нийт ${zogsooliinBagtaamj} зогсоол`}>
+                    <span className="h-2 w-2 rounded-full bg-amber-400" />
+                    <span className="text-[color:var(--muted-text)]">Сул</span>
+                    <span className="tabular-nums text-amber-600 dark:text-amber-400">
+                      {Math.max(0, zogsooliinBagtaamj - idevkhteiToo)}
+                    </span>
+                  </span>
+                )}
+                <span className="text-xs text-[color:var(--muted-text)]">Нийт {total} мөр</span>
+              </div>
+              <div className="flex items-center gap-2">
                 <div className="relative" ref={pageSizeRef}>
                   <button
                     onClick={() => setIsPageSizeOpen(!isPageSizeOpen)}
@@ -2376,11 +2441,6 @@ export default function Camera() {
                     </div>
                   )}
                 </div>
-                <span className="text-xs text-[color:var(--muted-text)]">
-                  Нийт {total} мөр
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
                 <Button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
@@ -2528,7 +2588,16 @@ export default function Camera() {
                   toast.success("Төлбөр амжилттай бүртгэгдлээ");
 
                   // E-Barimt (payment.md section 3)
-                  if (extraData?.ebarimt) {
+                  // Бодит төлсөн дүн 0 (бүрэн хөнгөлсөн/үнэгүй) бол и-баримт гаргахгүй
+                  const boditTulsunDun = newEntries.reduce(
+                    (s: number, t: any) =>
+                      s +
+                      (Number(t?.dun) > 0 && !["khungulult", "discount", "Хөнгөлөлт"].includes(t?.turul)
+                        ? Number(t.dun)
+                        : 0),
+                    0,
+                  );
+                  if (extraData?.ebarimt && boditTulsunDun > 0) {
                     try {
                       const ebResp = await uilchilgee(token || "").post(
                         "/ebarimtShivye",
@@ -2601,7 +2670,7 @@ export default function Camera() {
                 </div>
 
                 <div className="text-center">
-                  <p className="text-[15px] font-bold text-[color:var(--panel-text)] dark:text-white">И-Баримт амжилттай</p>
+                  <p className="text-[15px] font-medium text-[color:var(--panel-text)] dark:text-white">И-Баримт амжилттай</p>
                   <p className="text-[11px] text-[color:var(--muted-text)] mt-0.5">Цахим баримт үүсгэгдлээ</p>
                 </div>
 
@@ -2621,7 +2690,7 @@ export default function Camera() {
                     <svg className="w-8 h-8 text-[color:var(--muted-text)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                     </svg>
-                    <span className="text-[10px] text-[color:var(--muted-text)]">QR байхгүй</span>
+                    <span className="text-[11px] text-[color:var(--muted-text)]">QR байхгүй</span>
                   </div>
                 )}
 
@@ -2629,14 +2698,14 @@ export default function Camera() {
                 <div className="w-full space-y-2">
                   {ebarimtResult.lottery && (
                     <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-2xl bg-warning/10 border border-warning/30">
-                      <span className="text-[10px] font-semibold text-warning uppercase tracking-wider shrink-0">Сугалааны №</span>
-                      <span className="text-[13px] font-black text-warning font-[family-name:var(--font-mono)] text-right">{ebarimtResult.lottery}</span>
+                      <span className="text-[11px] font-medium text-warning shrink-0">Сугалааны №</span>
+                      <span className="text-[13px] font-medium text-warning font-[family-name:var(--font-mono)] text-right">{ebarimtResult.lottery}</span>
                     </div>
                   )}
                   {(ebarimtResult.receiptId || ebarimtResult.id) && (
                     <div className="px-4 py-2.5 rounded-2xl bg-[color:var(--surface-hover)] dark:bg-white/[0.04] border border-[color:var(--surface-border)] dark:border-white/[0.08] space-y-1">
-                      <span className="text-[10px] font-semibold text-[color:var(--muted-text)] uppercase tracking-wider block">Баримтын №</span>
-                      <span className="text-[11px] font-bold text-[color:var(--panel-text)] font-[family-name:var(--font-mono)] break-all block leading-relaxed">
+                      <span className="text-[11px] font-medium text-[color:var(--muted-text)] block">Баримтын №</span>
+                      <span className="text-[11px] font-medium text-[color:var(--panel-text)] font-[family-name:var(--font-mono)] break-all block leading-relaxed">
                         {ebarimtResult.receiptId || ebarimtResult.id}
                       </span>
                     </div>
@@ -2672,7 +2741,7 @@ export default function Camera() {
                         setTimeout(() => document.body.removeChild(iframe), 1000);
                       };
                     }}
-                    className="flex-1 h-10 rounded-2xl border border-[color:var(--surface-border)] dark:border-white/[0.1] bg-white dark:bg-white/[0.04] text-[color:var(--panel-text)] text-[13px] font-semibold hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/[0.08] transition-colors flex items-center justify-center gap-1.5"
+                    className="flex-1 h-10 rounded-2xl border border-[color:var(--surface-border)] dark:border-white/[0.1] bg-white dark:bg-white/[0.04] text-[color:var(--panel-text)] text-[13px] font-medium hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/[0.08] transition-colors flex items-center justify-center gap-1.5"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
@@ -2681,7 +2750,7 @@ export default function Camera() {
                   </button>
                   <button
                     onClick={() => setEbarimtResult(null)}
-                    className="flex-1 h-10 rounded-2xl bg-theme hover:bg-theme text-white text-[13px] font-bold transition-colors"
+                    className="flex-1 h-10 rounded-2xl bg-theme hover:bg-theme text-white text-[13px] font-medium transition-colors"
                   >
                     Хаах
                   </button>
@@ -2748,7 +2817,7 @@ export default function Camera() {
                 ) : (
                   <>
                     <div>
-                      <label className="block text-[11px] text-[color:var(--muted-text)] dark:text-white uppercase tracking-wider mb-1.5">
+                      <label className="block text-xs text-[color:var(--muted-text)] dark:text-white mb-1.5">
                         Хөнгөлөх дүн
                       </label>
                       <input
@@ -2761,7 +2830,7 @@ export default function Camera() {
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] text-[color:var(--muted-text)] dark:text-white uppercase tracking-wider mb-1.5">
+                      <label className="block text-xs text-[color:var(--muted-text)] dark:text-white mb-1.5">
                         Хөнгөлөх минут
                       </label>
                       <input
@@ -2873,10 +2942,10 @@ export default function Camera() {
               {/* Header */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-[color:var(--surface-border)] dark:border-white/10 bg-[color:var(--surface-bg)]">
                 <div>
-                  <h2 className="text-sm font-black text-[color:var(--panel-text)] dark:text-white tracking-tight">
+                  <h2 className="text-sm font-medium text-[color:var(--panel-text)] dark:text-white tracking-tight">
                     Үнэгүй үйлчлүүлэгчийн төрөл сонгох
                   </h2>
-                  <p className="text-[9px] text-[color:var(--muted-text)] uppercase tracking-wider mt-0.5">
+                  <p className="text-[11px] text-[color:var(--muted-text)] mt-0.5">
                     {freeExitModalTransaction.mashiniiDugaar}
                   </p>
                 </div>
@@ -2994,8 +3063,8 @@ export default function Camera() {
                       <AlertTriangle className="w-5 h-5 text-danger" />
                     </div>
                     <div>
-                      <h2 className="text-sm font-semibold text-[color:var(--panel-text)] dark:text-white">Зөрчил бүртгэх</h2>
-                      <p className="text-[10px] text-[color:var(--muted-text)] mt-0.5 font-mono uppercase tracking-wide">
+                      <h2 className="text-sm font-medium text-[color:var(--panel-text)] dark:text-white">Зөрчил бүртгэх</h2>
+                      <p className="text-[11px] text-[color:var(--muted-text)] mt-0.5 font-mono uppercase tracking-wide">
                         {violationModalTransaction.mashiniiDugaar}
                       </p>
                     </div>
@@ -3012,7 +3081,7 @@ export default function Camera() {
               {/* Body */}
               <div className="px-6 py-5 space-y-4">
                 <div>
-                  <label className="block text-[11px] text-[color:var(--muted-text)] uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs text-[color:var(--muted-text)] mb-1.5">
                     Зөрчлийн шалтгаан
                   </label>
                   <textarea
@@ -3086,19 +3155,11 @@ export default function Camera() {
                         Орлого тайлан
                       </h2>
                       <div className="mt-1.5 min-w-[220px]">
-                        <ConfigProvider theme={{ token: { zIndexPopupBase: 10000 } }}>
-                          <StandardDatePicker
-                            isRange={true}
-                            value={revenueDateRange}
-                            onChange={(_: any, dateStrings: [string, string]) => setRevenueDateRange(dateStrings)}
-                            format="YYYY-MM-DD"
-                            classNames={{
-                              input: "flex items-center gap-2 rounded-full bg-[color:var(--surface-hover)] dark:bg-white/[0.06] border border-[color:var(--surface-border)] dark:border-white/[0.06] h-8 px-3 text-[11px] text-[color:var(--muted-text)] focus:ring-2 focus:ring-theme/10 transition-all",
-                            }}
-                            allowClear
-                            getPopupContainer={() => document.body}
-                          />
-                        </ConfigProvider>
+                        <FilterDatePicker
+                          value={revenueDateRange}
+                          onChange={(_, dateStrings) => setRevenueDateRange(dateStrings)}
+                          className="w-[260px]"
+                        />
                       </div>
                     </div>
                   </div>
@@ -3113,7 +3174,7 @@ export default function Camera() {
 
               {/* Body */}
               <div className="p-5 space-y-2 max-h-[60vh] overflow-y-auto">
-                <p className="text-[10px] text-[color:var(--muted-text)] uppercase tracking-[0.15em] mb-1">
+                <p className="text-[11px] text-[color:var(--muted-text)] mb-1">
                   Төлбөрийн хэлбэр
                 </p>
                 {revenueLoading && (
@@ -3140,7 +3201,7 @@ export default function Camera() {
                         {item.name}
                       </span>
                     </div>
-                    <span className="text-[13px] font-black text-[color:var(--panel-text)] dark:text-white font-[family-name:var(--font-mono)] shrink-0 relative z-10">
+                    <span className="text-[13px] font-medium text-[color:var(--panel-text)] dark:text-white font-[family-name:var(--font-mono)] shrink-0 relative z-10">
                       {formatNumber(item.amount)}₮
                     </span>
                     <span className="text-[11px] text-[color:var(--muted-text)] font-[family-name:var(--font-mono)] w-6 text-center shrink-0 relative z-10">
@@ -3161,10 +3222,10 @@ export default function Camera() {
               {/* Footer total */}
               <div className="px-7 pb-6 pt-2">
                 <div className="flex justify-between items-center py-3 px-4 rounded-2xl bg-theme/[0.08] border border-theme/30">
-                  <span className="text-[11px] font-black text-brand uppercase tracking-wider">
+                  <span className="text-[11px] font-medium text-brand">
                     Нийт орлого
                   </span>
-                  <span className="text-[14px] font-black text-brand font-[family-name:var(--font-mono)]">
+                  <span className="text-[14px] font-medium text-brand font-[family-name:var(--font-mono)]">
                     {formatNumber(revenueModalBreakdown.totalAmount)}₮
                   </span>
                 </div>
@@ -3172,6 +3233,15 @@ export default function Camera() {
             </div>
           </div>,
           document.body
+        )}
+
+        {khaaltOpen && (
+          <UdriinKhaaltModal
+            token={token || ""}
+            baiguullagiinId={ajiltan?.baiguullagiinId}
+            barilgiinId={effectiveBarilgiinId}
+            onClose={() => setKhaaltOpen(false)}
+          />
         )}
 
         {isRegModalOpen && createPortal(
@@ -3331,17 +3401,17 @@ const CameraStream = React.memo(
             <div className="relative p-6 rounded-3xl bg-[color:var(--panel)] backdrop-blur-sm border border-danger/30 space-y-3">
               <VideoOff className="w-16 h-16 mb-2 mx-auto opacity-75 animate-pulse" />
               <p className="text-base text-center">Камер холбогдохгүй байна</p>
-              <p className="text-[10px] opacity-50 text-center font-mono break-all">
+              <p className="text-[11px] opacity-50 text-center font-mono break-all">
                 {rtspUrl}
               </p>
               {connectionState && (
                 <div className="px-3 py-1.5 rounded-lg bg-danger/20 border border-danger/30">
-                  <p className="text-[10px] opacity-80 text-center">
+                  <p className="text-[11px] opacity-80 text-center">
                     Алдаа: {connectionState}
                   </p>
                 </div>
               )}
-              <p className="text-[10px] text-[color:var(--muted-text)] text-center leading-relaxed">
+              <p className="text-[11px] text-[color:var(--muted-text)] text-center leading-relaxed">
                 Stream path (&quot;{root}&quot;) буруу байж магадгүй.
                 <br />
                 Камер тохиргооноос ROOT-г шалгана уу.
@@ -3382,15 +3452,15 @@ const CameraStream = React.memo(
         />
 
         {/* Manual Gate Control Button - Modernized */}
-        <div className="absolute bottom-6 left-6 z-40 transition-all duration-300 group-hover/stream:translate-y-0 translate-y-2 group-hover/stream:opacity-100 opacity-0 sm:opacity-100">
+        <div className="absolute bottom-3 left-3 z-40">
           <button
             onClick={(e) => {
               e.stopPropagation();
               onOpenGate?.(ip);
             }}
             className={`
-            relative flex items-center gap-3 px-8 py-3 rounded-full 
-            font-black text-[11px] uppercase tracking-[0.2em]
+            relative flex items-center gap-2 px-5 py-2 rounded-full
+            font-medium text-[12px]
             transition-all duration-300 active:scale-90
             backdrop-blur-xl border-2
             shadow-[0_8px_32px_rgba(0,0,0,0.3)]

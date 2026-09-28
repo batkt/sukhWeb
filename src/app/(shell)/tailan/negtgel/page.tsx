@@ -1,23 +1,41 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useBuilding } from "@/context/BuildingContext";
 import { useAuth } from "@/lib/useAuth";
 import useBaiguullaga from "@/lib/useBaiguullaga";
-import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { StandardPagination } from "@/components/ui/StandardTable";
-import formatNumber from "tools/function/formatNumber";
-import { FileSpreadsheet } from "lucide-react";
-import { getDefaultDateRange } from "@/lib/utils";
-import dayjs from "dayjs";
+import { ExcelButton } from "@/components/ui/ExcelButton";
+import dayjs, { Dayjs } from "dayjs";
 import useSWR from "swr";
 import uilchilgee from "@/lib/uilchilgee";
 import { useSearch } from "@/context/SearchContext";
-import {
-  NegtgelTailanTable,
-  NegtgelTailanItem,
-  AvlagaItem,
-} from "./NegtgelTailanTable";
+import { NegtgelTailanTable, NegtgelTailanItem } from "./NegtgelTailanTable";
+import FilterDatePicker from "@/components/ui/FilterDatePicker";
+import FilterSelect from "@/components/ui/FilterSelect";
+
+/** Сарын хүрээг [эхний сарын 1, сүүлийн сарын сүүлийн өдөр] болгоно */
+const sarKhureeruu = (a: Dayjs, b: Dayjs): [string, string] => [
+  a.startOf("month").format("YYYY-MM-DD"),
+  b.endOf("month").format("YYYY-MM-DD"),
+];
+const odooginSar = (): [string, string] => sarKhureeruu(dayjs(), dayjs());
+
+/** Барилгын тохиргооны `orts`-ийг (тоо / массив / мөр) жагсаалт болгоно */
+function ortsJagsaalt(tok: any): string[] {
+  if (Array.isArray(tok)) return tok.map(String).filter(Boolean);
+  if (typeof tok === "number" && tok > 0)
+    return Array.from({ length: tok }, (_, i) => String(i + 1));
+  if (typeof tok === "string") {
+    const s = tok.trim();
+    if (/^\d+$/.test(s)) {
+      const n = Number(s);
+      return Array.from({ length: n }, (_, i) => String(i + 1));
+    }
+    return s.split(/[\s,;|]+/).filter(Boolean);
+  }
+  return [];
+}
 
 export default function NegtgelTailanPage() {
   const { selectedBuildingId } = useBuilding();
@@ -29,11 +47,30 @@ export default function NegtgelTailanPage() {
 
   const baiguullagiinId = ajiltan?.baiguullagiinId ?? null;
 
-  const [dateRange, setDateRange] = useState<[any, any] | undefined>(undefined);
+  // Анхдагч: зөвхөн тухайн сар
+  const [dateRange, setDateRange] = useState<[string, string]>(odooginSar);
+  // Оршин суугч (нэр, утас, тоот...) — бичих үед 400ms хүлээж хайна
+  // Оршин суугчийн dropdown-оос сонгосон утга (утас эсвэл нэр) — сервер хайлтад явна
   const [searchText, setSearchText] = useState("");
+  const [orshinSuugchSongolt, setOrshinSuugchSongolt] = useState<
+    { value: string; label: string; tailbar?: string }[]
+  >([]);
+  const [orts, setOrts] = useState("");
   const { searchTerm } = useSearch();
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(500);
+  const [exporting, setExporting] = useState(false);
+
+
+  // Шүүлт өөрчлөгдөхөд эхний хуудас руу
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchText, searchTerm, orts, dateRange, selectedBuildingId]);
+
+  // Барилга солигдоход орцын сонголт хүчингүй болно
+  useEffect(() => {
+    setOrts("");
+  }, [selectedBuildingId]);
 
   // ── Data fetching ────────────────────────────────────────────────────────
   const swrKey = useMemo(() => {
@@ -43,10 +80,11 @@ export default function NegtgelTailanPage() {
       token,
       baiguullagiinId,
       selectedBuildingId,
-      dateRange?.[0] || "",
-      dateRange?.[1] || "",
+      dateRange[0],
+      dateRange[1],
       searchText,
       searchTerm,
+      orts,
       currentPage,
       pageSize,
     ];
@@ -57,6 +95,7 @@ export default function NegtgelTailanPage() {
     dateRange,
     searchText,
     searchTerm,
+    orts,
     currentPage,
     pageSize,
   ]);
@@ -76,18 +115,17 @@ export default function NegtgelTailanPage() {
       end,
       search,
       globalSearch,
+      ortsVal,
       page,
       limit,
     ]: any) => {
-      const s = start ? dayjs(start).format("YYYY-MM-DD") : "";
-      const e = end ? dayjs(end).format("YYYY-MM-DD") : "";
-
       const resp = await uilchilgee(tkn).post(url, {
         baiguullagiinId: bId,
         ...(barId ? { barilgiinId: barId } : {}),
-        ekhlekhOgnoo: s ? `${s} 00:00:00` : undefined,
-        duusakhOgnoo: e ? `${e} 23:59:59` : undefined,
+        ekhlekhOgnoo: start ? `${start} 00:00:00` : undefined,
+        duusakhOgnoo: end ? `${end} 23:59:59` : undefined,
         search: search || globalSearch || undefined,
+        orts: ortsVal || undefined,
         khuudasniiDugaar: page,
         khuudasniiKhemjee: limit,
       });
@@ -117,10 +155,55 @@ export default function NegtgelTailanPage() {
   // мөрүүдтэй огт таарахгүй байв.
   const niitUldegdel = rawData?.niitDun?.niitUldegdel ?? 0;
 
+  // ── Оршин суугчийн сонголтууд ────────────────────────────────────────
+  // Шүүлтгүй ирсэн мөрүүдээс цуглуулна (оршин суугч сонгосны дараа жагсаалт
+  // багасахгүйн тулд хадгалж үлдээнэ). Барилга/орц/сар солигдоход шинэчлэгдэнэ.
+  useEffect(() => {
+    if (searchText || !rawData) return;
+    const map = new Map<string, { value: string; label: string; tailbar?: string }>();
+    (rawData.data || []).forEach((r: any) => {
+      const ner = String(r._id?.ner || r.ner || "").trim();
+      if (!ner) return;
+      const ovog = String(r._id?.ovog || r.ovog || "").trim();
+      const utas = String(r._id?.utas || r.utas || "").trim();
+      const toot = String(r._id?.toot || r.toot || "").trim();
+      const value = utas || ner;
+      if (map.has(value)) return;
+      map.set(value, {
+        value,
+        label: [ovog ? `${ovog.charAt(0)}.` : "", ner].filter(Boolean).join(" "),
+        tailbar: toot ? `${toot} тоот` : utas || undefined,
+      });
+    });
+    setOrshinSuugchSongolt(
+      Array.from(map.values()).sort((x, y) => x.label.localeCompare(y.label)),
+    );
+  }, [rawData, searchText]);
+
+  // ── Орцын сонголтууд ───────────────────────────────────────────────────
+  // Барилгын тохиргооноос; тохиргоогүй бол ирсэн мөрүүдээс цуглуулна
+  const ortsOptions = useMemo(() => {
+    const barilguud: any[] = (baiguullaga as any)?.barilguud || [];
+    const songogdson = selectedBuildingId
+      ? barilguud.filter((b) => String(b?._id) === String(selectedBuildingId))
+      : barilguud;
+    const set = new Set<string>();
+    songogdson.forEach((b) => ortsJagsaalt(b?.tokhirgoo?.orts).forEach((o) => set.add(o)));
+    if (set.size === 0) {
+      tailanGaralt.forEach((r) => {
+        const o = String(r._id?.orts || r.orts || "").trim();
+        if (o) set.add(o);
+      });
+    }
+    if (orts) set.add(orts);
+    return Array.from(set).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  }, [baiguullaga, selectedBuildingId, tailanGaralt, orts]);
+
   // ── Excel export ────────────────────────────────────────────────────────
   const exportToExcel = async () => {
     try {
       if (!token) return;
+      setExporting(true);
 
       const response = await uilchilgee(token).post(
         "/tailan/export",
@@ -128,9 +211,10 @@ export default function NegtgelTailanPage() {
           report: "negtgel",
           baiguullagiinId: baiguullagiinId ?? undefined,
           barilgiinId: selectedBuildingId ?? undefined,
-          ekhlekhOgnoo: dateRange?.[0] ? `${dayjs(dateRange[0]).format("YYYY-MM-DD")} 00:00:00` : undefined,
-          duusakhOgnoo: dateRange?.[1] ? `${dayjs(dateRange[1]).format("YYYY-MM-DD")} 23:59:59` : undefined,
+          ekhlekhOgnoo: `${dateRange[0]} 00:00:00`,
+          duusakhOgnoo: `${dateRange[1]} 23:59:59`,
           search: searchText || searchTerm || undefined,
+          orts: orts || undefined,
         },
         { responseType: "blob" },
       );
@@ -147,55 +231,63 @@ export default function NegtgelTailanPage() {
       link.remove();
     } catch (error) {
       console.error("Excel export error:", error);
+    } finally {
+      setExporting(false);
     }
   };
 
   return (
-    <div className="p-6 bg-[color:var(--surface-bg)] min-h-full h-auto w-full custom-scrollbar">
-      {/* ── Header ─────────────────────────────────────────────── */}
-      <div className="flex justify-between items-center mb-3 no-print">
-        <h1 className="text-2xl">Нэгтгэл тайлан</h1>
-      </div>
-
-
+   
+    <div className="flex w-full flex-col gap-3 pb-14">
       {/* ── Filters ─────────────────────────────────────────────── */}
-      <div className="flex flex-wrap gap-3 items-center no-print mb-4">
-        <div
+      <div className="flex flex-wrap items-center gap-2 no-print">
+        <FilterDatePicker
           id="negtgel-date"
-          className="btn-minimal h-[40px] w-full sm:w-[320px] flex items-center px-3"
-        >
-          <StandardDatePicker
-            isRange={true}
-            value={dateRange}
-            onChange={setDateRange}
-            allowClear
-            placeholder="Огноо сонгох"
-            classNames={{
-              root: "!h-full !w-full",
-              input:
-                "text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
-            }}
-          />
-        </div>
-        <button
+          picker="month"
+          value={dateRange}
+          onChange={(v: [Dayjs, Dayjs] | null) =>
+            setDateRange(v ? sarKhureeruu(v[0], v[1]) : odooginSar())
+          }
+          placeholder="Сар сонгох"
+          className="w-[220px]"
+        />
+        <FilterSelect
+          id="negtgel-orshinSuugch"
+          label="Оршин суугч"
+          value={searchText}
+          onChange={setSearchText}
+          options={orshinSuugchSongolt}
+          searchable
+          searchPlaceholder="Нэр, утас, тоот..."
+          className="max-w-[280px]"
+        />
+        <FilterSelect
+          id="negtgel-orts"
+          label="Орц"
+          value={orts}
+          onChange={setOrts}
+          options={ortsOptions.map((o) => ({ value: o, label: o }))}
+          className="max-w-[200px]"
+        />
+        <ExcelButton
+          className="ml-auto"
           onClick={exportToExcel}
-          className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
-        >
-          <FileSpreadsheet className="w-4 h-4 text-theme" /> Excel татах
-        </button>
+          loading={exporting}
+        />
       </div>
 
-      {/* ── Table ───────────────────────────────────────────────── */}
+     
       <div className="w-full no-print">
         <NegtgelTailanTable
           data={pagedData}
           loading={isLoading}
           niitUldegdel={niitUldegdel}
+          sarKhuree={[dateRange[0].slice(0, 7), dateRange[1].slice(0, 7)]}
         />
       </div>
 
-      {/* ── Pagination ──────────────────────────────────────────── */}
-      <div className="flex items-center justify-between no-print mt-3">
+      
+      <div className="flex items-center justify-between no-print">
         <StandardPagination
           current={currentPage}
           total={totalCount}

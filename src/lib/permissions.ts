@@ -269,19 +269,50 @@ export const ALL_PERMISSIONS: PermissionItem[] = [
         label: "Нэвтрэлтийн түүх",
         description: "Нэвтрэлтийн түүх харах, засах эрх",
       },
+    ],
+  },
+  {
+    id: "tuukh",
+    label: "Түүх",
+    description: "Зассан, устгасан түүх харах эрх",
+    children: [
       {
-        id: "tokhirgoo.zassanTuukh",
+        id: "tuukh.zassan",
         label: "Зассан түүх",
-        description: "Зассан түүх харах, засах эрх",
+        description: "Зассан баримтын түүх харах эрх",
       },
       {
-        id: "tokhirgoo.ustsanTuukh",
-        label: "Устсан түүх",
-        description: "Устсан түүх харах, засах эрх",
+        id: "tuukh.ustgasan",
+        label: "Устгасан түүх",
+        description: "Устгасан баримтын түүх харах эрх",
       },
     ],
   },
 ];
+
+/**
+ * Хуучин эрхийн ID → шинэ ID. «Зассан / Устгасан түүх» өмнө нь Тохиргооны
+ * таб байсан тул тэр эрхтэй ажилтнууд шинэ цэсний хуудсанд хэвээр хандана.
+ * Түлхүүр: шинэ ID, утга: түүнийг мөн хангах хуучин ID-ууд.
+ */
+export const PERMISSION_ALIASES: Record<string, string[]> = {
+  "tuukh.zassan": ["tokhirgoo.zassanTuukh"],
+  "tuukh.ustgasan": ["tokhirgoo.ustsanTuukh"],
+};
+
+/**
+ * Хадгалсан эрхийн жагсаалтын хуучин ID-г харгалзах шинэ ID-аар солино.
+ * Хуучныг нь хасна — эс тэгвээс эрхийн цонхонд шинэ эрхийг унтраасан ч
+ * хуучин ID-аар хандах эрх үлдэнэ.
+ */
+export function migratePermissionIds(ids: string[]): string[] {
+  const set = new Set(ids);
+  for (const [shine, khuuchnuud] of Object.entries(PERMISSION_ALIASES)) {
+    if (khuuchnuud.some((k) => set.has(k))) set.add(shine);
+    khuuchnuud.forEach((k) => set.delete(k));
+  }
+  return [...set];
+}
 
 // Helper function to get all permission IDs (flat list)
 export function getAllPermissionIds(): string[] {

@@ -86,7 +86,7 @@ export default function Tailan() {
 
         {/* Main heading */}
         <div className="space-y-4">
-          <h1 className="text-6xl py-14 md:text-7xl font-black bg-gradient-to-r from-theme/20 via-theme/20 to-theme/20 bg-clip-text text-transparent animate-gradient-x">
+          <h1 className="text-6xl py-14 md:text-7xl font-medium bg-gradient-to-r from-theme/20 via-theme/20 to-theme/20 bg-clip-text text-transparent animate-gradient-x">
             Тун удахгүй
           </h1>
           <p className="text-xl md:text-2xl text-[color:var(--muted-text)] ">

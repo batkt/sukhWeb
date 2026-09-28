@@ -28,7 +28,7 @@ export default function TourReplayButton() {
   <p><strong>Оршин суугчдын бүртгэлийн хэсэг</strong> нь орон сууцны хотхон, барилгын оршин суугчид болон тэдгээрийн тээврийн хэрэгслийн мэдээллийг нэгдсэн байдлаар удирдах зориулалттай.</p>
   
   <div class="bg-theme/10 p-5 rounded-3xl border border-theme/30">
-    <h4 class="font-bold text-brand mb-2">Үндсэн боломжууд:</h4>
+    <h4 class="font-medium text-brand mb-2">Үндсэн боломжууд:</h4>
     <ul class="list-disc pl-5 space-y-1.5 text-[color:var(--panel-text)]">
       <li>Шинээр оршин суугч болон түүний тээврийн хэрэгслийн дугаарыг бүртгэх</li>
       <li>Оршин суугчдын мэдээллийг харах, шүүх болон засах</li>
@@ -38,7 +38,7 @@ export default function TourReplayButton() {
   </div>
 
   <div class="mt-4">
-    <h4 class="font-bold text-[color:var(--panel-text)] dark:text-white mb-2">Ажиллуулах зааварчилгаа:</h4>
+    <h4 class="font-medium text-[color:var(--panel-text)] dark:text-white mb-2">Ажиллуулах зааварчилгаа:</h4>
     <ol class="list-decimal pl-5 space-y-2.5 text-[color:var(--panel-text)]">
       <li><strong>Нэмэх товч</strong> дээр дарж оршин суугчийн нэр, утасны дугаар, орц, тоот болон тээврийн хэрэгслийн улсын дугаарыг бүртгэнэ.</li>
       <li>Жагсаалтаас хайлт хийхдээ дээд хэсэгт байрлах <strong>Хайх цонхыг</strong> ашиглан нэр, утас эсвэл улсын дугаараар хайх боломжтой.</li>
@@ -160,7 +160,7 @@ export default function TourReplayButton() {
             >
               <div className="p-5 border-b border-[color:var(--surface-border)] dark:border-white/5">
                 <div className="flex items-center justify-between gap-3">
-                  <h3 className="text-lg font-bold text-[color:var(--panel-text)] dark:text-white">
+                  <h3 className="text-lg font-medium text-[color:var(--panel-text)] dark:text-white">
                     {currentTsonkh?.ner || "Ерөнхий тусламж"}
                   </h3>
                   <button
@@ -191,7 +191,7 @@ export default function TourReplayButton() {
                       <RotateCcw className="w-5 h-5" />
                     </div>
                     <div>
-                      <div className="text-sm font-semibold text-[color:var(--panel-text)] dark:text-white">Дахин үзүүлэх</div>
+                      <div className="text-sm font-medium text-[color:var(--panel-text)] dark:text-white">Дахин үзүүлэх</div>
                       <div className="text-[11px] text-[color:var(--muted-text)]">Хуудасны зааварчилгааг эхлүүлэх</div>
                     </div>
                   </div>
@@ -212,7 +212,7 @@ export default function TourReplayButton() {
                         <HelpCircle className="w-5 h-5" />
                       </div>
                       <div>
-                        <div className="text-sm font-semibold text-[color:var(--panel-text)] dark:text-white">Дахин идэвхжүүлэх</div>
+                        <div className="text-sm font-medium text-[color:var(--panel-text)] dark:text-white">Дахин идэвхжүүлэх</div>
                         <div className="text-[11px] text-[color:var(--muted-text)]">Тусламжийн функцийг нээх</div>
                       </div>
                     </div>
@@ -232,7 +232,7 @@ export default function TourReplayButton() {
                         <EyeOff className="w-5 h-5" />
                       </div>
                       <div>
-                        <div className="text-sm font-semibold text-[color:var(--panel-text)] dark:text-white">Дахиж харуулахгүй</div>
+                        <div className="text-sm font-medium text-[color:var(--panel-text)] dark:text-white">Дахиж харуулахгүй</div>
                         <div className="text-[11px] text-[color:var(--muted-text)]">Зааварчилгааг нуух</div>
                       </div>
                     </div>

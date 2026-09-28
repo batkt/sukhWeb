@@ -32,7 +32,7 @@ export default function TuslamjTokhirgoo(props: Props) {
   <p><strong>Оршин суугч ба тээврийн хэрэгслийн бүртгэлийн хэсэг</strong> нь орон сууцны хотхон, барилгын оршин суугчид болон тэдгээрийн тээврийн хэрэгслийн мэдээллийг нэгдсэн байдлаар удирдах зориулалттай.</p>
   
   <div class="bg-theme/10 p-5 rounded-3xl border border-theme/30">
-    <h4 class="font-bold text-brand mb-2">Үндсэн боломжууд:</h4>
+    <h4 class="font-medium text-brand mb-2">Үндсэн боломжууд:</h4>
     <ul class="list-disc pl-5 space-y-1.5 text-[color:var(--panel-text)]">
       <li>Шинээр оршин суугч болон түүний тээврийн хэрэгслийн дугаарыг бүртгэх</li>
       <li>Оршин суугчдын мэдээллийг харах, орц тоотоор болон машины дугаараар шүүх</li>
@@ -42,7 +42,7 @@ export default function TuslamjTokhirgoo(props: Props) {
   </div>
 
   <div class="mt-4">
-    <h4 class="font-bold text-[color:var(--panel-text)] dark:text-white mb-2">Ажиллуулах зааварчилгаа:</h4>
+    <h4 class="font-medium text-[color:var(--panel-text)] dark:text-white mb-2">Ажиллуулах зааварчилгаа:</h4>
     <ol class="list-decimal pl-5 space-y-2.5 text-[color:var(--panel-text)]">
       <li><strong>Нэмэх товч</strong> дээр дарж оршин суугчийн утасны дугаар, нэр, орц, тоот болон тээврийн хэрэгслийн улсын дугаарыг (жишээ нь: 1234УБҮ) бүртгэнэ.</li>
       <li>Жагсаалтаас хайлт хийхдээ дээд хэсэгт байрлах <strong>Хайх цонхыг</strong> ашиглан нэр, утас, орц, тоот эсвэл улсын дугаараар хайх боломжтой.</li>
@@ -74,28 +74,27 @@ export default function TuslamjTokhirgoo(props: Props) {
   return (
     <div
       id="tuslamj-panel"
-      className={`flex flex-col min-h-0 ${compact ? "w-full" : "xxl:col-span-9 col-span-12 lg:col-span-12"}`}
-      style={compact ? {} : { height: "calc(100vh - 220px)" }}
+      className="flex w-full min-h-0 flex-col"
     >
-      <div className={`${compact ? "p-4" : "p-4 md:p-6"} flex flex-col flex-1 min-h-0 overflow-hidden`}>
-        <div className="flex flex-col flex-1 min-h-0 bg-[color:var(--surface-bg)] rounded-3xl shadow-xl border border-[color:var(--surface-border)] dark:border-white/5 overflow-hidden">
+      <div className={`${compact ? "p-4" : ""} flex flex-col flex-1 min-h-0 overflow-hidden`}>
+        <div className="flex flex-col flex-1 min-h-0 overflow-hidden rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]">
           {/* Header */}
-          <div className="px-6 py-5 border-b border-[color:var(--surface-border)] dark:border-white/5 bg-[color:var(--surface-hover)] dark:bg-white/5 flex items-center gap-4">
-            <div className="flex items-center justify-center h-12 w-12 rounded-2xl bg-theme/10 text-brand">
-              <BookOpen className="w-6 h-6" />
+          <div className="flex items-center gap-3 border-b border-[color:var(--surface-border)] px-5 py-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-theme/10 text-brand">
+              <BookOpen className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-[color:var(--panel-text)] dark:text-white">
+              <h2 className="text-[16px] text-[color:var(--panel-text)]">
                 {currentTsonkh?.ner || "Хуудасны зааварчилгаа"}
               </h2>
-              <p className="text-xs text-[color:var(--muted-text)]">
+              <p className="text-[13px] text-[color:var(--muted-text)]">
                 {currentTsonkh?.ner ? "Энэ хуудасны тухай дэлгэрэнгүй мэдээлэл" : "Мэдээлэл байхгүй байна"}
               </p>
             </div>
           </div>
 
           {/* Content Area */}
-          <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-6">
+          <div className={`flex-1 min-h-0 overflow-y-auto custom-scrollbar p-5 text-[14px] leading-relaxed ${compact ? "" : "max-h-[calc(100dvh-280px)]"}`}>
             {tsonkhLoading ? (
               <div className="flex flex-col items-center justify-center py-20 text-[color:var(--muted-text)]">
                 <Loader2 className="w-10 h-10 animate-spin mb-4 text-brand" />
@@ -106,7 +105,7 @@ export default function TuslamjTokhirgoo(props: Props) {
                 <div className="h-20 w-20 rounded-full bg-[color:var(--surface-hover)] dark:bg-white/5 flex items-center justify-center mb-6">
                   <AlertCircle className="w-10 h-10 text-[color:var(--muted-text)]" />
                 </div>
-                <h3 className="text-base font-semibold text-[color:var(--panel-text)] dark:text-white mb-2">Зааварчилгаа байхгүй</h3>
+                <h3 className="text-base font-medium text-[color:var(--panel-text)] dark:text-white mb-2">Зааварчилгаа байхгүй</h3>
                 <p className="text-sm text-[color:var(--muted-text)] max-w-xs mx-auto leading-relaxed">
                   Энэ хуудсанд одоогоор тусламжийн мэдээлэл ороогүй байна. Админ зааварчилгаа оруулснаар энд харагдах болно.
                 </p>
@@ -116,7 +115,7 @@ export default function TuslamjTokhirgoo(props: Props) {
                 <div className="h-20 w-20 rounded-full bg-[color:var(--surface-hover)] dark:bg-white/5 flex items-center justify-center mb-6">
                   <Info className="w-10 h-10 text-[color:var(--muted-text)]" />
                 </div>
-                <h3 className="text-base font-semibold text-[color:var(--panel-text)] dark:text-white mb-2">Агуулга байхгүй</h3>
+                <h3 className="text-base font-medium text-[color:var(--panel-text)] dark:text-white mb-2">Агуулга байхгүй</h3>
                 <p className="text-sm text-[color:var(--muted-text)] max-w-xs mx-auto leading-relaxed">
                   Хуудасны бүртгэл байгаа боловч зааварчилгааны агуулга хоосон байна.
                 </p>
@@ -126,7 +125,7 @@ export default function TuslamjTokhirgoo(props: Props) {
                 {currentTsonkh.zaavar && (
                   <div
                     className="tsonkh-zaavar prose prose-slate dark:prose-invert max-w-none 
-                      prose-headings:font-bold prose-headings:text-[color:var(--panel-text)] dark:prose-headings:text-white
+                      prose-headings:font-medium prose-headings:text-[color:var(--panel-text)] dark:prose-headings:text-white
                       prose-p:text-[color:var(--muted-text)] dark:prose-p:text-[color:var(--muted-text)] prose-p:leading-relaxed
                       prose-li:text-[color:var(--muted-text)] dark:prose-li:text-[color:var(--muted-text)]
                       prose-strong:text-[color:var(--panel-text)] dark:prose-strong:text-white
@@ -141,9 +140,9 @@ export default function TuslamjTokhirgoo(props: Props) {
           </div>
 
           {/* Footer Area */}
-          <div className="px-6 py-4 bg-[color:var(--surface-hover)] dark:bg-white/5 border-t border-[color:var(--surface-border)] dark:border-white/5 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-[11px] text-[color:var(--muted-text)] uppercase tracking-wider font-semibold">
-              <HelpCircle className="w-3 h-3" />
+          <div className="flex items-center justify-between gap-3 border-t border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] px-5 py-3">
+            <div className="flex items-center gap-2 text-[13px] text-[color:var(--muted-text)]">
+              <HelpCircle className="h-4 w-4" />
               <span>Ерөнхий тусламж</span>
             </div>
             <label className="flex items-center gap-2 cursor-pointer group select-none">
@@ -151,9 +150,9 @@ export default function TuslamjTokhirgoo(props: Props) {
                 type="checkbox"
                 checked={disabled}
                 onChange={(e) => (e.target.checked ? disable() : enable())}
-                className="w-4 h-4 rounded border-[color:var(--surface-border)] dark:border-white/10 text-theme focus:ring-theme"
+                className="h-[18px] w-[18px] rounded accent-[color:var(--theme)]"
               />
-              <span className="text-xs font-semibold text-[color:var(--muted-text)] group-hover:text-theme transition-colors">
+              <span className="text-[13px] text-[color:var(--panel-text)] transition-colors group-hover:text-brand">
                 Дахин харуулахгүй
               </span>
             </label>

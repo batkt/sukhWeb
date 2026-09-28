@@ -117,14 +117,14 @@ export default function PaymentLandingPage() {
             <AlertTriangle className="w-8 h-8 text-danger" />
           </div>
           <div className="space-y-2">
-            <h1 className="text-xl font-bold text-white">Алдаа гарлаа</h1>
+            <h1 className="text-xl font-medium text-white">Алдаа гарлаа</h1>
             <p className="text-sm text-[color:var(--muted-text)]">
               {error.message || "Нэхэмжлэх олоход алдаа гарлаа. Холбоос буруу эсвэл нэхэмжлэх устгагдсан байж магадгүй."}
             </p>
           </div>
           <button
             onClick={() => mutate()}
-            className="w-full h-12 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-semibold transition-all flex items-center justify-center gap-2"
+            className="w-full h-12 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-medium transition-all flex items-center justify-center gap-2"
           >
             <RefreshCw className="w-4 h-4" />
             Дахин ачааллах
@@ -205,7 +205,7 @@ export default function PaymentLandingPage() {
               </div>
 
               <div className="space-y-2">
-                <h1 className="text-2xl font-bold text-white">Нэхэмжлэх төлөгдсөн</h1>
+                <h1 className="text-2xl font-medium text-white">Нэхэмжлэх төлөгдсөн</h1>
                 <p className="text-sm text-brand font-medium bg-theme/10 px-3 py-1 rounded-full inline-block border border-theme/15">
                   Төлбөр амжилттай баталгаажлаа
                 </p>
@@ -215,31 +215,31 @@ export default function PaymentLandingPage() {
               <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 text-left space-y-3">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-4 text-sm py-1 border-b border-white/5">
                   <span className="text-[color:var(--muted-text)] shrink-0">Хүлээн авагч</span>
-                  <span className="font-semibold text-white sm:text-right break-words sm:max-w-[65%]">
+                  <span className="font-medium text-white sm:text-right break-words sm:max-w-[65%]">
                     {invoice.baiguullagiinNer}
                   </span>
                 </div>
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-4 text-sm py-1 border-b border-white/5">
                   <span className="text-[color:var(--muted-text)] shrink-0">Төлөгч оршин суугч</span>
-                  <span className="font-semibold text-white sm:text-right break-words sm:max-w-[65%]">
+                  <span className="font-medium text-white sm:text-right break-words sm:max-w-[65%]">
                     {invoice.ner || "Тодорхойгүй"}
                   </span>
                 </div>
                 <div className="flex justify-between items-center gap-4 text-sm py-1 border-b border-white/5">
                   <span className="text-[color:var(--muted-text)] shrink-0">Тоот</span>
-                  <span className="font-semibold text-white text-right">
+                  <span className="font-medium text-white text-right">
                     {invoice.toot ? `${invoice.toot} тоот` : "Тодорхойгүй"}
                   </span>
                 </div>
                 <div className="flex justify-between items-center gap-4 text-sm py-1 border-b border-white/5">
                   <span className="text-[color:var(--muted-text)] shrink-0">Нэхэмжлэхийн дугаар</span>
-                  <span className="font-semibold text-white text-right font-mono">
+                  <span className="font-medium text-white text-right font-mono">
                     {invoice.nekhemjlekhiinDugaar}
                   </span>
                 </div>
                 <div className="flex justify-between items-center gap-4 text-sm py-1">
                   <span className="text-[color:var(--muted-text)] shrink-0">Төлсөн огноо</span>
-                  <span className="font-semibold text-white text-right">
+                  <span className="font-medium text-white text-right">
                     {formatDate(new Date().toISOString())}
                   </span>
                 </div>
@@ -249,7 +249,7 @@ export default function PaymentLandingPage() {
                 <div className="text-[color:var(--muted-text)] text-xs py-2">
                   Нийт төлсөн дүн:
                 </div>
-                <div className="text-3xl font-black text-white bg-black/40 p-4 rounded-2xl border border-white/5">
+                <div className="text-3xl font-medium text-white bg-black/40 p-4 rounded-2xl border border-white/5">
                   {formatAmount(Number(invoice.tulsunDun) || Number(invoice.niitTulbur))}
                 </div>
               </div>
@@ -270,7 +270,7 @@ export default function PaymentLandingPage() {
               {/* Header section with amount */}
               <div className="text-center space-y-2 pb-2">
                 <span className="text-xs text-[color:var(--muted-text)] uppercase tracking-widest">{actualIsPaid ? 'Төлсөн нийт дүн' : 'Төлөх нийт дүн'}</span>
-                <h2 className="text-4xl font-black text-white tracking-tight">
+                <h2 className="text-4xl font-medium text-white tracking-tight">
                   {formatAmount(displayAmount)}
                 </h2>
                 {actualIsPaid ? (
@@ -292,7 +292,7 @@ export default function PaymentLandingPage() {
                   <span className="text-[color:var(--muted-text)] flex items-center gap-1.5 shrink-0">
                     <Building className="w-3.5 h-3.5 text-[color:var(--muted-text)]" /> СӨХ-ийн нэр
                   </span>
-                  <span className="font-semibold text-white sm:text-right break-words sm:max-w-[65%]">
+                  <span className="font-medium text-white sm:text-right break-words sm:max-w-[65%]">
                     {invoice.baiguullagiinNer}
                   </span>
                 </div>
@@ -300,7 +300,7 @@ export default function PaymentLandingPage() {
                   <span className="text-[color:var(--muted-text)] flex items-center gap-1.5 shrink-0">
                     <User className="w-3.5 h-3.5 text-[color:var(--muted-text)]" /> Оршин суугч
                   </span>
-                  <span className="font-semibold text-white sm:text-right break-words sm:max-w-[65%]">
+                  <span className="font-medium text-white sm:text-right break-words sm:max-w-[65%]">
                     {invoice.ner || "Тодорхойгүй"}
                   </span>
                 </div>
@@ -309,7 +309,7 @@ export default function PaymentLandingPage() {
                     <span className="text-[color:var(--muted-text)] flex items-center gap-1.5 shrink-0">
                       <Hash className="w-3.5 h-3.5 text-[color:var(--muted-text)]" /> Тоот
                     </span>
-                    <span className="font-semibold text-white text-right">
+                    <span className="font-medium text-white text-right">
                       {invoice.toot} тоот
                     </span>
                   </div>
@@ -318,7 +318,7 @@ export default function PaymentLandingPage() {
                   <span className="text-[color:var(--muted-text)] flex items-center gap-1.5 shrink-0">
                     <Hash className="w-3.5 h-3.5 text-[color:var(--muted-text)]" /> Нэхэмжлэх №
                   </span>
-                  <span className="font-semibold text-white text-right font-mono">
+                  <span className="font-medium text-white text-right font-mono">
                     {invoice.nekhemjlekhiinDugaar}
                   </span>
                 </div>
@@ -327,7 +327,7 @@ export default function PaymentLandingPage() {
                     <span className="text-[color:var(--muted-text)] flex items-center gap-1.5 shrink-0">
                       <Calendar className="w-3.5 h-3.5 text-[color:var(--muted-text)]" /> Огноо
                     </span>
-                    <span className="font-semibold text-white text-right">
+                    <span className="font-medium text-white text-right">
                       {formatDate(invoice.ognoo)}
                     </span>
                   </div>
@@ -338,7 +338,7 @@ export default function PaymentLandingPage() {
               <div className="flex p-1 rounded-full bg-white/[0.03] border border-white/5">
                 <button
                   onClick={() => setActiveTab("deeplink")}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 ${activeTab === "deeplink"
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 ${activeTab === "deeplink"
                     ? "bg-[color:var(--theme)] text-white shadow-lg shadow-[#10b981]/15"
                     : "text-[color:var(--muted-text)] hover:text-white"
                     }`}
@@ -348,7 +348,7 @@ export default function PaymentLandingPage() {
                 </button>
                 <button
                   onClick={() => setActiveTab("qrcode")}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 ${activeTab === "qrcode"
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 ${activeTab === "qrcode"
                     ? "bg-[color:var(--theme)] text-white shadow-lg shadow-[#10b981]/15"
                     : "text-[color:var(--muted-text)] hover:text-white"
                     }`}
@@ -385,12 +385,12 @@ export default function PaymentLandingPage() {
                                 }}
                               />
                             ) : (
-                              <div className="w-8 h-8 rounded-xl bg-[color:var(--panel)] flex items-center justify-center font-bold text-xs shrink-0">
+                              <div className="w-8 h-8 rounded-xl bg-[color:var(--panel)] flex items-center justify-center font-medium text-xs shrink-0">
                                 {bank.name?.charAt(0)}
                               </div>
                             )}
                             <div className="flex-1 min-w-0">
-                              <div className="text-xs font-semibold text-white truncate group-hover:text-brand transition-colors">
+                              <div className="text-xs font-medium text-white truncate group-hover:text-brand transition-colors">
                                 {bank.description || bank.name}
                               </div>
                               <span className="text-[9px] text-[color:var(--muted-text)] block">

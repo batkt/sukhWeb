@@ -1,5 +1,8 @@
 "use client";
 
+import ExcelButton from "@/components/ui/ExcelButton";
+import FilterDatePicker from "@/components/ui/FilterDatePicker";
+import FilterSelect from "@/components/ui/FilterSelect";
 import React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearch } from "@/context/SearchContext";
@@ -42,7 +45,6 @@ import formatNumber, {
   formatCurrency,
 } from "../../../../../tools/function/formatNumber";
 import matchesSearch from "@/tools/function/matchesSearch";
-import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import {
   getPaymentStatusLabel,
   isPaidLike,
@@ -84,25 +86,6 @@ const toMonthKey = (v?: string | null) => {
   const m = s.match(/^(\d{4})-(\d{2})/);
   return m ? `${m[1]}-${m[2]}` : "";
 };
-
-/** Сарын Dayjs → тухайн сарын [эхний өдөр, сүүлийн өдөр] + YYYY-MM түлхүүр */
-function monthPickToStartEnd(
-  d: {
-    isValid?: () => boolean;
-    format?: (f: string) => string;
-  } | null,
-): { start: string; end: string; ym: string } | null {
-  if (!d || typeof d.format !== "function") return null;
-  if (typeof d.isValid === "function" && !d.isValid()) return null;
-  const ym = d.format("YYYY-MM");
-  const [y, m] = ym.split("-").map((x) => Number(x));
-  if (!Number.isFinite(y) || !Number.isFinite(m) || m < 1 || m > 12)
-    return null;
-  const start = `${y}-${String(m).padStart(2, "0")}-01`;
-  const lastDay = new Date(y, m, 0).getDate();
-  const end = `${y}-${String(m).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
-  return { start, end, ym };
-}
 
 // Pure utility moved outside to prevent hoisting issues
 function getGereeIdPure(it: any, contractsByNumber: Record<string, any>) {
@@ -360,35 +343,35 @@ export default function DansniiKhuulga() {
         label: "Нэр",
         align: "start",
         sticky: true,
-        width: 180,
-        minWidth: 180,
+        width: 200,
+        minWidth: 200,
       },
       {
         key: "toot",
         label: "Тоот",
         align: "center",
         sticky: true,
-        width: 80,
-        minWidth: 80,
+        width: 72,
+        minWidth: 72,
       },
       {
         key: "gereeniiDugaar",
         label: "Гэрээний дугаар",
         align: "start",
         sticky: true,
-        width: 130,
-        minWidth: 130,
+        width: 124,
+        minWidth: 124,
       },
       {
         key: "utas",
         label: "Утас",
         align: "start",
         sticky: true,
-        width: 100,
-        minWidth: 100,
+        width: 96,
+        minWidth: 96,
       },
-      { key: "orts", label: "Орц", align: "center", minWidth: 80 },
-      { key: "davkhar", label: "Давхар", align: "center", minWidth: 80 },
+      { key: "orts", label: "Орц", align: "center", minWidth: 56 },
+      { key: "davkhar", label: "Давхар", align: "center", minWidth: 64 },
       {
         key: "ekhniiUldegdel",
         label: "Эхний үлдэгдэл",
@@ -403,15 +386,15 @@ export default function DansniiKhuulga() {
         minWidth: 110,
       },
       { key: "paid", label: "Гүйцэтгэл", align: "end", minWidth: 110 },
-      { key: "khungulult", label: "Хөнгөлөлт", align: "end", minWidth: 110 },
-      { key: "tuluv", label: "Төлөв", align: "start", minWidth: 110 },
+      { key: "khungulult", label: "Хөнгөлөлт", align: "end", minWidth: 100 },
+      { key: "tuluv", label: "Төлөв", align: "start", minWidth: 100 },
       {
         key: "lastLog",
         label: "Огноо",
         align: "start",
-        minWidth: 140,
+        minWidth: 120,
       },
-      { key: "action", label: "Үйлдэл", align: "center", minWidth: 160 },
+      { key: "action", label: "Үйлдэл", align: "center", minWidth: 104 },
     ],
     [],
   );
@@ -607,36 +590,6 @@ export default function DansniiKhuulga() {
 
   /** Жагсаалтын SWR түлхүүрүүдийг шууд revalidate — global mutate заримдаа бүрэн ажиллахгүй (тусгайлбал ашиглалт) */
   /** Сарын хязгаар: эхний сарын 1-ний өдрөөс сүүлийн сарын сүүлийн өдөр хүртэл (YYYY-MM-DD). */
-  const handleEkhlekhSarRangeChange = useCallback((dates: unknown) => {
-    if (dates == null) {
-      setEkhlekhOgnoo([null, null]);
-      return;
-    }
-    if (!Array.isArray(dates)) {
-      setEkhlekhOgnoo([null, null]);
-      return;
-    }
-    const [raw0, raw1] = dates as [unknown, unknown];
-    if (raw0 == null && raw1 == null) {
-      setEkhlekhOgnoo([null, null]);
-      return;
-    }
-    if (raw0 != null && raw1 == null) {
-      const one = monthPickToStartEnd(raw0 as any);
-      if (one) setEkhlekhOgnoo([one.start, one.end]);
-      return;
-    }
-    if (raw0 == null || raw1 == null) return;
-    const a = monthPickToStartEnd(raw0 as any);
-    const b = monthPickToStartEnd(raw1 as any);
-    if (!a || !b) {
-      setEkhlekhOgnoo([null, null]);
-      return;
-    }
-    const [first, last] = a.ym <= b.ym ? [a, b] : [b, a];
-    setEkhlekhOgnoo([first.start, last.end]);
-  }, []);
-
   const revalidateTulburCaches = useCallback(async () => {
     await Promise.all([
       mutateHistory?.(),
@@ -788,6 +741,26 @@ export default function DansniiKhuulga() {
     });
     return map;
   }, [gereeGaralt?.jagsaalt]);
+
+  // Орц / Давхар / Тоотын dropdown сонголтууд — гэрээнүүдээс
+  const { ortsSongolt, davkharSongolt, tootSongolt } = useMemo(() => {
+    const orts = new Set<string>();
+    const davkhar = new Set<string>();
+    const toot = new Set<string>();
+    ((gereeGaralt?.jagsaalt || []) as any[]).forEach((g) => {
+      const o = String(g?.orts ?? g?.ortsDugaar ?? g?.ortsNer ?? "").trim();
+      const d = String(g?.davkhar ?? "").trim();
+      const t = String(g?.toot ?? "").trim();
+      if (o) orts.add(o);
+      if (d) davkhar.add(d);
+      if (t) toot.add(t);
+    });
+    const jagsaalt = (set: Set<string>) =>
+      Array.from(set)
+        .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+        .map((v) => ({ value: v, label: v }));
+    return { ortsSongolt: jagsaalt(orts), davkharSongolt: jagsaalt(davkhar), tootSongolt: jagsaalt(toot) };
+  }, [gereeGaralt]);
 
   const residentsById = useMemo(() => {
     const list = (orshinSuugchGaralt?.jagsaalt || []) as any[];
@@ -944,20 +917,20 @@ export default function DansniiKhuulga() {
         if (selectedOrtsFilter) {
           const filterVal = toStr(selectedOrtsFilter).toLowerCase();
           const targetOrts = orts.toLowerCase();
-          if (targetOrts !== filterVal && !targetOrts.includes(filterVal))
+          if (targetOrts !== filterVal)
             return false;
         }
         if (selectedDavkharFilter) {
           const filterVal = toStr(selectedDavkharFilter).toLowerCase();
           const targetDavkhar = davkhar.toLowerCase();
-          if (targetDavkhar !== filterVal && !targetDavkhar.includes(filterVal))
+          if (targetDavkhar !== filterVal)
             return false;
         }
         if (selectedTootFilter) {
           // Robust case-insensitive partial matching for toot
           const filterVal = toStr(selectedTootFilter).toLowerCase();
           const targetToot = currentToot.toLowerCase();
-          if (targetToot !== filterVal && !targetToot.includes(filterVal))
+          if (targetToot !== filterVal)
             return false;
         }
       }
@@ -1106,7 +1079,7 @@ export default function DansniiKhuulga() {
         if (selectedTootFilter) {
           const filterVal = toStr(selectedTootFilter).toLowerCase();
           const targetToot = currentToot.toLowerCase();
-          if (targetToot !== filterVal && !targetToot.includes(filterVal))
+          if (targetToot !== filterVal)
             return false;
         }
       }
@@ -1204,18 +1177,18 @@ export default function DansniiKhuulga() {
       if (selectedOrtsFilter) {
         const filterVal = toStr(selectedOrtsFilter).toLowerCase();
         const targetOrts = orts.toLowerCase();
-        if (targetOrts !== filterVal && !targetOrts.includes(filterVal)) return;
+        if (targetOrts !== filterVal) return;
       }
       if (selectedDavkharFilter) {
         const filterVal = toStr(selectedDavkharFilter).toLowerCase();
         const targetDavkhar = davkhar.toLowerCase();
-        if (targetDavkhar !== filterVal && !targetDavkhar.includes(filterVal))
+        if (targetDavkhar !== filterVal)
           return;
       }
       if (selectedTootFilter) {
         const filterVal = toStr(selectedTootFilter).toLowerCase();
         const targetToot = currentToot.toLowerCase();
-        if (targetToot !== filterVal && !targetToot.includes(filterVal)) return;
+        if (targetToot !== filterVal) return;
       }
       if (searchTerm) {
         const augmented = {
@@ -1583,18 +1556,18 @@ export default function DansniiKhuulga() {
       if (selectedOrtsFilter) {
         const filterVal = toStr(selectedOrtsFilter).toLowerCase();
         const targetOrts = orts.toLowerCase();
-        if (targetOrts !== filterVal && !targetOrts.includes(filterVal)) return;
+        if (targetOrts !== filterVal) return;
       }
       if (selectedDavkharFilter) {
         const filterVal = toStr(selectedDavkharFilter).toLowerCase();
         const targetDavkhar = davkhar.toLowerCase();
-        if (targetDavkhar !== filterVal && !targetDavkhar.includes(filterVal))
+        if (targetDavkhar !== filterVal)
           return;
       }
       if (selectedTootFilter) {
         const filterVal = toStr(selectedTootFilter).toLowerCase();
         const targetToot = currentToot.toLowerCase();
-        if (targetToot !== filterVal && !targetToot.includes(filterVal)) return;
+        if (targetToot !== filterVal) return;
       }
       if (searchTerm) {
         const augmented = {
@@ -3439,104 +3412,74 @@ export default function DansniiKhuulga() {
             );
           })}
         </div>
-        <div className="rounded-2xl">
+        <div className="relative z-30 rounded-2xl">
           <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
-            <div className="flex flex-col lg:flex-row gap-3 w-full xl:w-auto">
-              <div
+            {/* Шүүлтүүр — нэгдсэн `.btn-minimal` / `.filter-field` загвар (globals.css) */}
+            <div className="flex w-full flex-wrap items-center gap-2 xl:w-auto">
+              <FilterDatePicker
                 id="guilgee-date"
-                className="btn-minimal h-[40px] w-[min(100%,320px)] sm:w-[320px] flex items-center px-3"
-              >
-                <StandardDatePicker
-                  isRange
-                  picker="month"
-                  format="YYYY-MM"
-                  value={ekhlekhOgnoo}
-                  onChange={handleEkhlekhSarRangeChange}
-                  size="small"
-                  allowClear
-                  placeholder={["Эхний сар", "Сүүлийн сар"]}
-                  classNames={{
-                    root: "!h-full !w-full",
-                    input:
-                      "text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
-                  }}
-                />
-              </div>
-              <div className="flex flex-wrap gap-3">
-                {/* Орц filter */}
-                <div className="flex items-center gap-1.5">
-                  <label className="text-[13px] text-theme whitespace-nowrap  tracking-wider font-normal">
-                    Орц:
-                  </label>
-                  <div className="w-[100px]">
-                    <input
-                      type="text"
-                      value={selectedOrtsFilter}
-                      onChange={(e) => setSelectedOrtsFilter(e.target.value)}
-                      className="w-full h-[40px] px-3 rounded-2xl neu-panel text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] text-[13px] focus:outline-none transition-all"
-                      placeholder="Бүгд"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1.5">
-                  <label className="text-[11px] text-theme whitespace-nowrap text-[13px]  tracking-wider font-normal">
-                    Давхар:
-                  </label>
-                  <div className="w-[100px]">
-                    <input
-                      type="number"
-                      min={1}
-                      value={selectedDavkharFilter}
-                      onChange={(e) => setSelectedDavkharFilter(e.target.value)}
-                      className="w-full h-[40px] px-3 rounded-2xl neu-panel text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] text-[13px] focus:outline-none transition-all"
-                      placeholder="Бүгд"
-                    />
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <label className="text-[13px] text-theme whitespace-nowrap  tracking-wider font-normal">
-                    Тоот:
-                  </label>
-                  <div className="w-[100px]">
-                    <input
-                      type="text"
-                      value={selectedTootFilter}
-                      onChange={(e) => setSelectedTootFilter(e.target.value)}
-                      className="w-full h-[40px] px-3 rounded-2xl neu-panel text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] text-[13px] focus:outline-none transition-all"
-                      placeholder="Бүгд"
-                    />
-                  </div>
-                </div>
-
-                {/* Давхар filter */}
-              </div>
+                picker="month"
+                value={ekhlekhOgnoo}
+                onChange={(dates) => {
+                  // Сараар шүүнэ: эхлэх сарын 1 → дуусах сарын сүүлийн өдөр
+                  const [a, b] = (dates || []) as [any, any];
+                  setEkhlekhOgnoo(
+                    a && b
+                      ? [
+                          a.startOf("month").format("YYYY-MM-DD"),
+                          b.endOf("month").format("YYYY-MM-DD"),
+                        ]
+                      : [null, null],
+                  );
+                }}
+                className="w-full sm:w-[284px]"
+              />
+              <FilterSelect
+                label="Орц"
+                value={selectedOrtsFilter}
+                onChange={setSelectedOrtsFilter}
+                options={ortsSongolt}
+                className="max-w-[180px]"
+              />
+              <FilterSelect
+                label="Давхар"
+                value={selectedDavkharFilter}
+                onChange={setSelectedDavkharFilter}
+                options={davkharSongolt}
+                className="max-w-[180px]"
+              />
+              <FilterSelect
+                label="Тоот"
+                value={selectedTootFilter}
+                onChange={setSelectedTootFilter}
+                options={tootSongolt}
+                searchable
+                searchPlaceholder="Тоот хайх..."
+                className="max-w-[180px]"
+              />
             </div>
 
-            <div className="flex items-center gap-2">
+            {/* Хэрэгслийн товчнууд — бүгд `.btn-minimal` */}
+            <div className="flex flex-wrap items-center gap-2">
               <div ref={smsHistoryButtonRef} className="relative">
                 <Tooltip title="SMS илгээсэн түүх">
                   <motion.button
-                    whileHover={{ scale: 1.03 }}
-                    transition={{ duration: 0.3 }}
                     onClick={() => setIsSmsHistoryOpen(true)}
-                    className="btn-minimal inline-flex items-center gap-1 h-[40px] px-2"
+                    className="btn-minimal inline-flex h-9 min-w-9 items-center justify-center gap-1 !px-2 disabled:cursor-not-allowed disabled:opacity-40"
                     id="sms-history-btn"
                   >
-                    <Mail className="w-5 h-5" />
+                    <Mail className="h-4 w-4" />
                   </motion.button>
                 </Tooltip>
               </div>
               <div ref={zaaltButtonRef} className="relative">
                 <Tooltip title={zaaltaarBodokh ? "Заалт" : "Цахилгаан"}>
                   <motion.button
-                    whileHover={{ scale: 1.03 }}
-                    transition={{ duration: 0.3 }}
                     onClick={() => setIsZaaltDropdownOpen(!isZaaltDropdownOpen)}
-                    className="btn-minimal inline-flex items-center gap-1 h-[40px] px-2"
+                    className="btn-minimal inline-flex h-9 min-w-9 items-center justify-center gap-1 !px-2 disabled:cursor-not-allowed disabled:opacity-40"
                     id="zaalt-btn"
                   >
-                    <FileSpreadsheet className="w-5 h-5" />
+                    <FileSpreadsheet className="h-4 w-4" />
                     <span className="hidden">
                       {zaaltaarBodokh ? "Заалт" : "Цахилгаан"}
                     </span>
@@ -3591,14 +3534,12 @@ export default function DansniiKhuulga() {
               </div>
               <Tooltip title="Эхний үлдэгдэл">
                 <motion.div
-                  whileHover={{ scale: 1.03 }}
-                  transition={{ duration: 0.3 }}
                 >
                   <IconTextButton
                     onClick={() => setIsInitialBalanceModalOpen(true)}
-                    icon={<Upload className="w-5 h-5" />}
+                    icon={<Upload className="h-4 w-4" />}
                     label="Эхний үлдэгдэл"
-                    className="w-[40px] h-[40px] !p-0 justify-center [&>span]:hidden"
+                    className="btn-minimal inline-flex h-9 min-w-9 items-center justify-center gap-1 !px-2 disabled:cursor-not-allowed disabled:opacity-40 [&>span]:hidden"
                   />
                 </motion.div>
               </Tooltip>
@@ -3612,14 +3553,11 @@ export default function DansniiKhuulga() {
               <Tooltip title={t("Excel татах")}>
                 <motion.div
                   id="guilgee-excel-btn"
-                  whileHover={{ scale: 1.03 }}
-                  transition={{ duration: 0.3 }}
                 >
-                  <IconTextButton
+                  <ExcelButton
                     onClick={exceleerTatya}
-                    icon={<Download className="w-5 h-5" />}
-                    label={t("Excel татах")}
-                    className="w-[40px] h-[40px] !p-0 justify-center [&>span]:hidden"
+                    label="Excel татах"
+                    iconOnly
                   />
                 </motion.div>
               </Tooltip>
@@ -3630,14 +3568,12 @@ export default function DansniiKhuulga() {
                 <Tooltip title="Багана">
                   <motion.div
                     id="guilgee-columns-btn"
-                    whileHover={{ scale: 1.03 }}
-                    transition={{ duration: 0.3 }}
                   >
                     <IconTextButton
                       onClick={() => setIsColumnModalOpen(!isColumnModalOpen)}
-                      icon={<Columns className="w-5 h-5" />}
+                      icon={<Columns className="h-4 w-4" />}
                       label="Багана"
-                      className="w-[40px] h-[40px] !p-0 justify-center [&>span]:hidden"
+                      className="btn-minimal inline-flex h-9 min-w-9 items-center justify-center gap-1 !px-2 disabled:cursor-not-allowed disabled:opacity-40 [&>span]:hidden"
                     />
                   </motion.div>
                 </Tooltip>
@@ -3670,44 +3606,41 @@ export default function DansniiKhuulga() {
               </div>
               <Tooltip title="Төлбөр сануулах SMS илгээх">
                 <motion.div
-                  whileHover={{ scale: 1.03 }}
-                  transition={{ duration: 0.3 }}
                 >
                   <IconTextButton
                     onClick={handleSendReminderSmsBulk}
                     icon={
                       isSendingSms ? (
-                        <div className="h-5 w-5 animate-spin rounded-full border-b-2 border-[color:var(--surface-border)]"></div>
+                        <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-[color:var(--surface-border)]"></div>
                       ) : (
-                        <MessageSquare className="h-5 w-5" />
+                        <MessageSquare className="h-4 w-4" />
                       )
                     }
                     label="SMS илгээх"
                     disabled={isSendingSms || selectedGereeIds.length === 0}
-                    className="w-[40px] h-[40px] !p-0 justify-center [&>span]:hidden bg-warning text-white hover:bg-warning disabled:opacity-50"
+                    className="btn-minimal inline-flex h-9 min-w-9 items-center justify-center gap-1 !px-2 disabled:cursor-not-allowed disabled:opacity-40 [&>span]:hidden [&>svg]:text-warning"
                   />
                 </motion.div>
               </Tooltip>
               <Tooltip title="Нэхэмжлэх илгээх">
                 <motion.div
                   id="guilgee-nekhemjlekh-btn"
-                  whileHover={{ scale: 1.03 }}
-                  transition={{ duration: 0.3 }}
                 >
                   <IconTextButton
                     onClick={handleSendInvoices}
                     icon={
                       isSendingInvoices ? (
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[color:var(--surface-border)]"></div>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[color:var(--surface-border)]"></div>
                       ) : (
-                        <Send className="w-5 h-5" />
+                        <Send className="h-4 w-4" />
                       )
                     }
                     label="Нэхэмжлэх илгээх"
                     disabled={
                       isSendingInvoices || selectedGereeIds.length === 0
                     }
-                    className="w-[40px] h-[40px] !p-0 justify-center [&>span]:hidden bg-theme text-white hover:bg-theme disabled:opacity-50"
+                    variant="plain"
+                    className="inline-flex h-9 min-w-9 items-center justify-center rounded-[10px] bg-theme px-2 text-white shadow-[var(--ctl-shadow)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 [&>span]:hidden"
                   />
                 </motion.div>
               </Tooltip>
@@ -3962,7 +3895,7 @@ export default function DansniiKhuulga() {
                       <Mail className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-white">Илгээсэн SMS түүх</h3>
+                      <h3 className="text-lg font-medium text-white">Илгээсэн SMS түүх</h3>
                       <p className="text-sm text-brand">Нийт {smsHistoryTotal} мессеж</p>
                     </div>
                   </div>
@@ -3995,21 +3928,16 @@ export default function DansniiKhuulga() {
                     {/* Date Filter & Stats Summary */}
                     <div className="px-4 py-3 bg-[color:var(--surface-bg)] border-b border-[color:var(--surface-border)]">
                       <div className="flex items-center gap-3">
-                        <div className="w-[50px] sm:w-40 lg:w-[280px] h-11 z-[12002] [&_.ant-picker-dropdown]:!z-[12003] [&_.ant-picker-input]:!bg-transparent [&_input]:!bg-transparent [&_.ant-picker-input-active]:!bg-transparent dark:[&_.ant-picker-suffix]:!text-white dark:[&_.ant-picker-suffix_svg]:!fill-white dark:[&_.ant-picker:hover]:!bg-[color:var(--panel)] dark:[&_.ant-picker-focused]:!bg-[color:var(--panel)] [&_.ant-picker-range-separator]:!text-[color:var(--muted-text)] dark:[&_.ant-picker-range-separator]:!text-[color:var(--muted-text)]">
-                          <StandardDatePicker
-                            isRange={true}
-                            value={smsDateRange}
-                            onChange={(_, dateString) => setSmsDateRange(dateString)}
-                            className="w-full"
-                            format="YYYY-MM-DD"
-                            popupClassName="!z-[12003]"
-                          />
-                        </div>
+                        <FilterDatePicker
+                          value={smsDateRange}
+                          onChange={(_, dateString) => setSmsDateRange([dateString[0] || null, dateString[1] || null])}
+                          className="w-full sm:w-[284px]"
+                        />
                       
                         <div className="flex items-center gap-2 text-sm ml-auto">
                           <div className="w-2 h-2 rounded-full bg-theme" />
                           <span className="text-[color:var(--muted-text)]">
-                            Амжилттай: <span className="font-semibold text-brand">{smsHistoryList.length}</span>
+                            Амжилттай: <span className="font-medium text-brand">{smsHistoryList.length}</span>
                           </span>
                         </div>
                       </div>
@@ -4028,10 +3956,10 @@ export default function DansniiKhuulga() {
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-2">
-                                <span className="font-semibold text-[color:var(--panel-text)]">
+                                <span className="font-medium text-[color:var(--panel-text)]">
                                   {Array.isArray(item.dugaar) ? item.dugaar.join(", ") : item.dugaar || "-"}
                                 </span>
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-theme/10 text-brand">
+                                <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-theme/10 text-brand">
                                   Амжилттай
                                 </span>
                               </div>

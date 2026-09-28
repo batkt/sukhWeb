@@ -431,7 +431,7 @@ export default function BlogNiitlelPage() {
                 className="w-20 h-20 rounded-xl border-2 border-dashed border-[color:var(--surface-border)] dark:border-white/10 flex flex-col items-center justify-center gap-1 text-[color:var(--muted-text)] hover:border-theme hover:text-theme transition-all"
               >
                 <Plus size={20} />
-                <span className="text-[10px]">Нэмэх</span>
+                <span className="text-[11px]">Нэмэх</span>
               </button>
               <input
                 ref={attachInputRef}

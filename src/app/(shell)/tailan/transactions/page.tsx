@@ -1,18 +1,18 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import FilterSelect from "@/components/ui/FilterSelect";
+import FilterDatePicker from "@/components/ui/FilterDatePicker";
 import { useAuth } from "@/lib/useAuth";
 import * as tailanApi from "@/lib/useTailan";
-import ReportsControls from "@/components/tailan/ReportsControls";
-import TusgaiZagvar from "components/selectZagvar/tusgaiZagvar";
 import PageSongokh from "components/selectZagvar/pageSongokh";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { getErrorMessage } from "@/lib/uilchilgee";
-import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { useBuilding } from "@/context/BuildingContext";
 import IconTextButton from "@/components/ui/IconTextButton";
 import { getDefaultDateRange } from "@/lib/utils";
-import { Download, ChevronLeft, ChevronRight, Printer } from "lucide-react";
+import { ChevronLeft, ChevronRight, Printer } from "lucide-react";
+import ExcelButton from "@/components/ui/ExcelButton";
 import formatNumber from "../../../../../tools/function/formatNumber";
 import Table from "@/components/ui/table";
 import type { ColumnsType } from "@/components/ui/table";
@@ -200,87 +200,111 @@ export default function TransactionsPage() {
     [page, pageSize],
   );
 
+  // Байр/Орц/Давхар/Тоот шүүлтүүр — ReportsControls-ийн оронд нэгдсэн `.filter-field` загвараар
+  const locationFilters: { key: string; label: string }[] = [
+    { key: "bair", label: "Байр" },
+    { key: "orts", label: "Орц" },
+    { key: "davkhar", label: "Давхар" },
+    { key: "toot", label: "Тоот" },
+  ];
+
   return (
-    <div className="min-h-screen p-6 print-container h-full flex flex-col">
+    // Бусад хуудастай ижил бүрхүүл — нэмэлт `p-6`/`min-h-screen`-гүй
+    <div className="print-container flex w-full flex-col gap-3 pb-14">
       <PrintStyles />
-      <div className="flex justify-between items-center mb-3 no-print">
-        <h1 className="text-2xl font-bold">Гүйлгээний түүх</h1>
-        <div className="flex gap-3">
-          <IconTextButton
-            onClick={exportCsv}
-            icon={<Download className="w-4 h-4 text-theme" />}
-            label="CSV татах"
-            className="neu-panel px-4 py-2 rounded-xl text-sm"
-          />
-          {/* <button
-            onClick={handlePrint}
-            className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
-          >
-            <Printer className="w-4 h-4 text-theme" />
-            Хэвлэх
-          </button> */}
-        </div>
-      </div>
-
-      <div className="no-print">
-        <ReportsControls
-          dateRange={dateRange}
-          setDateRange={setDateRange}
-          filters={filters}
-          setFilters={setFilters}
+      {/* Гарчиг нь толгой хэсэгт («Тайлан — …») байгаа тул давхарлахгүй */}
+      <div className="flex flex-wrap items-center gap-2 no-print">
+        <FilterDatePicker
+          id="reports-date"
+          value={dateRange}
+          onChange={setDateRange}
+          className="w-full sm:w-[284px]"
         />
-      </div>
 
-      <div className="mb-4 grid grid-cols-1 sm:grid-cols-3 gap-3 no-print">
-        <TusgaiZagvar
+        {locationFilters.map(({ key, label }) => (
+          <label
+            key={key}
+            className={`filter-field w-[130px] ${filters[key] ? "is-active" : ""}`}
+          >
+            <span className="filter-field-label">{label}</span>
+            <input
+              type="text"
+              value={filters[key] ?? ""}
+              onChange={(e) =>
+                setFilters({ ...filters, [key]: e.target.value })
+              }
+             
+            />
+          </label>
+        ))}
+
+        <FilterSelect
+          label="Төрөл"
           value={type}
           onChange={setType}
           options={[
-            { value: "", label: "Бүгд" },
             { value: "income", label: "Орлого" },
             { value: "expense", label: "Зарлага" },
           ]}
+          className="max-w-[220px]"
         />
-        <TusgaiZagvar
+        <FilterSelect
+          label="Төлөв"
           value={status}
           onChange={setStatus}
           options={[
-            { value: "", label: "Бүгд" },
             { value: "approved", label: "Батлагдсан" },
             { value: "pending", label: "Хүлээгдэж буй" },
           ]}
+          className="max-w-[220px]"
         />
-        <div className="flex gap-2">
+
+        <label
+          className={`filter-field w-[130px] ${minAmount ? "is-active" : ""}`}
+        >
+          <span className="filter-field-label">Мин дүн</span>
           <input
-            placeholder="Мин дүн"
+            type="number"
             value={minAmount}
             onChange={(e) => setMinAmount(e.target.value)}
-            className="rounded-2xl border px-3 py-2 w-full"
+            placeholder="0"
           />
+        </label>
+        <label
+          className={`filter-field w-[130px] ${maxAmount ? "is-active" : ""}`}
+        >
+          <span className="filter-field-label">Макс дүн</span>
           <input
-            placeholder="Макс дүн"
+            type="number"
             value={maxAmount}
             onChange={(e) => setMaxAmount(e.target.value)}
-            className="rounded-2xl border px-3 py-2 w-full"
+            placeholder="∞"
           />
-        </div>
-        <input
-          placeholder="Тайлбар / Нэх. дугаар"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          className="rounded-2xl border px-3 py-2 col-span-1 sm:col-span-2"
-        />
-        <input
-          placeholder="Банк / Данс"
-          value={bank}
-          onChange={(e) => setBank(e.target.value)}
-          className="rounded-2xl border px-3 py-2"
-        />
-      </div>
+        </label>
+        <label
+          className={`filter-field w-full sm:w-[240px] ${note ? "is-active" : ""}`}
+        >
+          <span className="filter-field-label">Тайлбар / Нэх.</span>
+          <input
+            type="text"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Хайх..."
+          />
+        </label>
+        <label
+          className={`filter-field w-full sm:w-[200px] ${bank ? "is-active" : ""}`}
+        >
+          <span className="filter-field-label">Банк / Данс</span>
+          <input
+            type="text"
+            value={bank}
+            onChange={(e) => setBank(e.target.value)}
+          />
+        </label>
 
-      <div className="mb-4 flex items-center gap-3 no-print">
         <button
-          className="btn-minimal"
+          className="btn-minimal inline-flex h-9 items-center gap-2 !px-3 text-[13px]"
           onClick={() => {
             setPage(1);
             fetchTransactions();
@@ -289,6 +313,7 @@ export default function TransactionsPage() {
         >
           {loading ? "Татаж байна..." : "Хайх"}
         </button>
+
         <div className="ml-auto flex items-center gap-2">
           <PageSongokh
             value={pageSize}
@@ -297,6 +322,14 @@ export default function TransactionsPage() {
               setPage(1);
             }}
           />
+          <ExcelButton onClick={exportCsv} />
+          {/* <button
+            onClick={handlePrint}
+            className="btn-minimal inline-flex h-9 shrink-0 items-center gap-2 !px-3 text-[13px]"
+          >
+            <Printer className="w-4 h-4 text-theme" />
+            Хэвлэх
+          </button> */}
         </div>
       </div>
 
@@ -310,7 +343,7 @@ export default function TransactionsPage() {
         locale={{ emptyText: "Мэдээлэл олдсонгүй" }}
       />
 
-      <div className="flex items-center justify-between mt-4 no-print">
+      <div className="flex items-center justify-between text-[13px] no-print">
         <div>Нийт: {total}</div>
         <div className="flex items-center gap-2">
           <IconTextButton

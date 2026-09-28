@@ -32,7 +32,7 @@ export default function ComingSoon({
     >
       <div className="absolute inset-0 bg-black/30 dark:bg-black/40 backdrop-blur-sm" />
       <div className="relative mx-4 rounded-2xl px-5 py-4 text-center shadow-xl neu-panel">
-        <div className="text-sm  tracking-wide text-theme uppercase">
+        <div className="text-sm text-theme ">
           {label}
         </div>
         <div className="mt-1 text-xs text-theme">{description}</div>

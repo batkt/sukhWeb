@@ -9,7 +9,6 @@ import {
   X,
   Search,
   RefreshCw,
-  FileSpreadsheet,
   Download,
   Upload,
   ChevronDown,
@@ -17,6 +16,7 @@ import {
 import useModalHotkeys from "@/lib/useModalHotkeys";
 import uilchilgee from "@/lib/uilchilgee";
 import { toast } from "sonner";
+import ExcelButton from "@/components/ui/ExcelButton";
 
 interface ResidentUnitRow {
   _id: string; // unique row id: `${orshinSuugchId}|${toot}` or `geree_${gereeId}`
@@ -581,20 +581,16 @@ export default function MassKwtModal({
               <div className="flex items-center gap-2">
                 {/* Unified Single Excel Dropdown Button */}
                 <div ref={excelMenuRef} className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setExcelMenuOpen((prev) => !prev)}
-                    className="px-3 py-1.5 text-xs text-brand bg-theme/10 hover:bg-theme/20 !rounded-xl transition-colors flex items-center gap-1.5 border border-theme/30 shadow-xs cursor-pointer"
-                    style={{ borderRadius: "0.75rem" }}
+                  <ExcelButton
+                    label="Excel"
                     title="Excel үйлдлүүд"
-                  >
-                    <FileSpreadsheet className="w-4 h-4 text-brand" />
-                    <span>Excel</span>
-                    <ChevronDown
-                      className={`w-3.5 h-3.5 transition-transform duration-200 ${excelMenuOpen ? "rotate-180" : ""
-                        }`}
-                    />
-                  </button>
+                    onClick={() => setExcelMenuOpen((prev) => !prev)}
+                    suffix={
+                      <ChevronDown
+                        className={`h-3.5 w-3.5 transition-transform ${excelMenuOpen ? "rotate-180" : ""}`}
+                      />
+                    }
+                  />
 
                   {excelMenuOpen && (
                     <div

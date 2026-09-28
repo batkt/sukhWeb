@@ -1,6 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import FilterSelect from "@/components/ui/FilterSelect";
+import FilterDatePicker from "@/components/ui/FilterDatePicker";
+import ExcelButton from "@/components/ui/ExcelButton";
 import { Modal, TextInput, Loader } from "@mantine/core";
 import toast from "react-hot-toast";
 import moment from "moment";
@@ -9,10 +12,8 @@ import Button from "@/components/ui/Button";
 import { useSocket } from "@/context/SocketContext";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useSearch } from "@/context/SearchContext";
-import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { useAuth } from "@/lib/useAuth";
 import { DANS_ENDPOINT } from "@/lib/endpoints";
-import TusgaiZagvar from "../../../../../components/selectZagvar/tusgaiZagvar";
 import useJagsaalt from "@/lib/useJagsaalt";
 import uilchilgee from "@/lib/uilchilgee";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
@@ -30,6 +31,8 @@ type TableItem = {
   month: string;
   // numerical value in minor units (assumed) or main units depending on backend
   total: number;
+  /** Зарлагын гүйлгээ эсэх (total нь хасах) */
+  zarlagaEsekh?: boolean;
   balance?: number | null;
   // human readable description / purpose of transaction
   action: string;
@@ -71,6 +74,8 @@ export default function DansniiKhuulga() {
   const [isLoadingUldegdel, setIsLoadingUldegdel] = useState(false);
 
   const [activeStatFilter, setActiveStatFilter] = useState<number | null>(null);
+  // Орлого / Зарлагаар ялгах
+  const [turulShuult, setTurulShuult] = useState<"all" | "orlogo" | "zarlaga">("all");
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(500);
   // Эрэмбэ. Хүснэгт рүү ЗӨВХӨН тухайн хуудсын мөр очдог тул эрэмбийг энд,
@@ -486,7 +491,18 @@ export default function DansniiKhuulga() {
         id: r._id || `bank-${idx}`,
         date: dateValFormatted,
         month: d ? d.toLocaleDateString("mn-MN", { year: "numeric", month: "2-digit" }) : r.sar || "",
-        total: Number(r.amount ?? r.Amt ?? r.tranAmount ?? r.income ?? r.kholbosonDun ?? 0) || 0,
+        // Зарлага нь банк бүрд өөр тэмдэглэгддэг: хасах дүн (khan/tdb/bogd),
+        // `drOrCr: "Debit"` (golomt), эсвэл `outcome` (trans). Нэг мөрөнд
+        // тэмдэгтэй дүн болгоно — хасах = зарлага.
+        ...(() => {
+          const tuukhii = Number(r.amount ?? r.Amt ?? r.tranAmount ?? r.income ?? r.kholbosonDun ?? 0) || 0;
+          const zarlagaEsekh =
+            tuukhii < 0 ||
+            r.drOrCr === "Debit" ||
+            (Number(r.outcome) > 0 && !(Number(r.income) > 0));
+          const dun = Math.abs(tuukhii) || (zarlagaEsekh ? Math.abs(Number(r.outcome) || 0) : 0);
+          return { total: zarlagaEsekh ? -dun : dun, zarlagaEsekh };
+        })(),
         balance: r.balance !== undefined && r.balance !== null && r.balance !== "" && !isNaN(Number(r.balance)) ? Number(r.balance) : (r.closingBalance ?? r.bal ?? null),
         action: r.description || r.TxAddInf || r.tranDesc || r.txnDesc || r.ner || "Банкны гүйлгээ",
         contractIds: Array.isArray(r.kholbosonGereeniiId) ? r.kholbosonGereeniiId : r.kholbosonGereeniiId ? [String(r.kholbosonGereeniiId)] : [],
@@ -630,8 +646,19 @@ export default function DansniiKhuulga() {
     return Number.isNaN(t) ? Number.NEGATIVE_INFINITY : t;
   };
 
+  const turulTooluur = useMemo(() => {
+    const zarlaga = statFiltered.filter((m) => m.zarlagaEsekh).length;
+    return { all: statFiltered.length, orlogo: statFiltered.length - zarlaga, zarlaga };
+  }, [statFiltered]);
+
   const erembelsen = useMemo(() => {
-    if (!sortKey || !sortOrder) return statFiltered;
+    const suuri =
+      turulShuult === "all"
+        ? statFiltered
+        : statFiltered.filter((m) =>
+            turulShuult === "zarlaga" ? m.zarlagaEsekh : !m.zarlagaEsekh,
+          );
+    if (!sortKey || !sortOrder) return suuri;
     const chig = sortOrder === "ascend" ? 1 : -1;
     const utgaAvya = (m: TableItem): string | number => {
       switch (sortKey) {
@@ -639,8 +666,10 @@ export default function DansniiKhuulga() {
           return tsagRuu(m.date);
         case "total":
           return Number(m.total) || 0;
-        case "balance":
-          return Number(m.balance ?? m.raw?.balance ?? m.raw?.closingBalance ?? m.raw?.bal) || 0;
+        case "ajiltan":
+          return String(m.raw?.kholbosonAjiltniiNer || "");
+        case "ebarimt":
+          return m.raw?.ebarimtAvsanEsekh ? 1 : 0;
         case "action":
           return String(m.action || m.raw?.uilchilgeeniiUtga || "");
         case "account":
@@ -661,14 +690,64 @@ export default function DansniiKhuulga() {
           return 0;
       }
     };
-    return [...statFiltered].sort((a, b) => {
+    return [...suuri].sort((a, b) => {
       const av = utgaAvya(a);
       const bv = utgaAvya(b);
       if (typeof av === "string" || typeof bv === "string")
         return String(av).localeCompare(String(bv), "mn") * chig;
       return (av - bv) * chig;
     });
-  }, [statFiltered, sortKey, sortOrder]);
+  }, [statFiltered, sortKey, sortOrder, turulShuult]);
+
+
+  const [excelTatajBaina, setExcelTatajBaina] = useState(false);
+  /** Одоогийн шүүлт, эрэмбээр хуулгыг Excel болгож татна */
+  const khuulgaExcelTatya = async () => {
+    if (erembelsen.length === 0) {
+      toast.error("Татах гүйлгээ алга");
+      return;
+    }
+    setExcelTatajBaina(true);
+    try {
+      const XLSX = await import("xlsx");
+      const pad = (n: number) => String(n).padStart(2, "0");
+      const ognooMur = (v: any) => {
+        if (!v) return "";
+        const d = new Date(v);
+        return isNaN(d.getTime())
+          ? String(v)
+          : `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      };
+      const murnuud = erembelsen.map((m: any, i: number) => {
+        const geree = m.contracts?.[0];
+        const ezen = geree ? `${geree.ovog || ""} ${geree.ner || ""}`.trim() : "";
+        return {
+          "№": i + 1,
+          "Огноо": ognooMur(m.date),
+          "Гүйлгээний утга": m.action || "",
+          "Гүйлгээний дүн": Number(m.total) || 0,
+          "Шилжүүлсэн данс": m.account || "",
+          "Оршин суугч": ezen,
+          "Тоот": geree?.toot || "",
+          "Ажилтан": m.raw?.kholbosonAjiltniiNer || "",
+          "Холбосон огноо": (m.contractIds?.length || 0) > 0 ? ognooMur(m.raw?.updatedAt) : "",
+          "НӨАТУС": m.raw?.ebarimtAvsanEsekh ? "Илгээсэн" : "Илгээгээгүй",
+          "Төлөв": (m.contractIds?.length || 0) > 0 ? "Холбогдсон" : "Холбогдоогүй",
+        };
+      });
+      const ws = XLSX.utils.json_to_sheet(murnuud);
+      ws["!cols"] = [6, 18, 40, 16, 22, 24, 10, 18, 18, 12, 14].map((wch) => ({ wch }));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Дансны хуулга");
+      const [ekh, tug] = (ekhlekhOgnoo || []) as any[];
+      const khugatsaa = ekh && tug ? `_${String(ekh).slice(0, 10)}_${String(tug).slice(0, 10)}` : "";
+      XLSX.writeFile(wb, `Дансны хуулга${selectedDugaar ? "_" + selectedDugaar : ""}${khugatsaa}.xlsx`);
+    } catch {
+      toast.error("Excel татахад алдаа гарлаа");
+    } finally {
+      setExcelTatajBaina(false);
+    }
+  };
 
   const totalPages = Math.max(1, Math.ceil(erembelsen.length / rowsPerPage));
   useEffect(() => {
@@ -706,53 +785,85 @@ export default function DansniiKhuulga() {
             ))}
           </div>
 
-          <div className="relative z-10 px-6 py-3 rounded-[32px] neu-panel shadow-sm">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto flex-wrap">
-                <div id="dans-date" className="h-10 w-full sm:w-[320px]">
-                  <StandardDatePicker
-                    isRange={true}
-                    value={ekhlekhOgnoo}
-                    onChange={(_dates, dateStrings) => {
-                      const [s, e] = (dateStrings || []) as [
-                        string | undefined,
-                        string | undefined,
-                      ];
-                      setEkhlekhOgnoo([s || null, e || null]);
-                    }}
-                    allowClear
-                    placeholder="Огноо сонгох"
-                    className="text-theme !px-3"
-                  />
-                </div>
-                <div id="dans-account" className="h-10 w-full sm:w-[200px]">
-                  <TusgaiZagvar
-                    value={selectedDansId || ""}
-                    onChange={(v) => setSelectedDansId(v || undefined)}
-                    options={dansOptions}
-                    placeholder={t("Данс")}
-                    className="h-full w-full rounded-2xl !border-[color:var(--surface-border)] dark:!border-[color:var(--surface-border)] !bg-white/50 dark:!bg-[color:var(--panel)] hover:!border-[color:var(--surface-border)] dark:hover:!border-[color:var(--surface-border)] transition-all font-inter"
-                    buttonClassName="!font-normal text-[13px] !px-3 hover:!translate-y-0 hover:!shadow-none hover:!scale-100 !border-0 !bg-transparent"
-                    optionClassName="!px-3 !py-1.5 text-[13px] !font-normal"
-                  />
-                </div>
-                {selectedDansId && (
-                  <div className="flex items-center h-10 px-4 rounded-2xl neu-panel text-sm text-theme whitespace-nowrap">
-                    {isLoadingUldegdel ? (
-                      <span className="opacity-60">Үлдэгдэл...</span>
-                    ) : effectiveUldegdel !== null ? (
-                      <span>
-                        Үлдэгдэл:{" "}
-                        <strong className="font-semibold text-[color:var(--panel-text)] dark:text-white">
-                          {formatNumber(effectiveUldegdel, 2)}₮
-                        </strong>
-                      </span>
-                    ) : (
-                      <span className="opacity-60">Үлдэгдэл тодорхойгүй</span>
-                    )}
-                  </div>
+          {/* Шүүлтүүр — нэгдсэн `.btn-minimal` загвар (globals.css); үлдэгдэл баруун талд */}
+          <div className="relative z-30 flex flex-wrap items-center gap-2">
+            <FilterDatePicker
+              id="dans-date"
+              value={ekhlekhOgnoo}
+              onChange={(_dates, dateStrings) => {
+                  const [s, e] = (dateStrings || []) as [
+                    string | undefined,
+                    string | undefined,
+                  ];
+                  setEkhlekhOgnoo([s || null, e || null]);
+                }}
+              placeholder="Огноо сонгох"
+              className="w-full sm:w-[284px]"
+            />
+            <div id="dans-account">
+              <FilterSelect
+                label={t("Данс")}
+                value={selectedDansId || ""}
+                onChange={(v) => setSelectedDansId(v || undefined)}
+                options={dansOptions}
+                className="max-w-[220px]"
+              />
+            </div>
+            {/* Орлого / Зарлага */}
+            <div className="inline-flex h-9 items-center gap-0.5 rounded-[10px] border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] p-0.5 shadow-[var(--ctl-shadow)]">
+              {([
+                ["all", "Бүгд"],
+                ["orlogo", "Орлого"],
+                ["zarlaga", "Зарлага"],
+              ] as const).map(([k, nershil]) => {
+                const idevkhtei = turulShuult === k;
+                return (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => { setTurulShuult(k); setPage(1); }}
+                    className={`inline-flex h-full items-center gap-1.5 rounded-[8px] px-3 text-[13px] transition-colors ${
+                      idevkhtei
+                        ? k === "zarlaga"
+                          ? "bg-danger/10 text-danger"
+                          : k === "orlogo"
+                            ? "bg-success/10 text-success"
+                            : "bg-theme/10 text-brand"
+                        : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+                    }`}
+                  >
+                    {nershil}
+                    <span className="text-[11px] opacity-70">{turulTooluur[k]}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="ml-auto flex items-center gap-2">
+            {selectedDansId && (
+              <div className="flex h-9 items-center gap-2 whitespace-nowrap rounded-[10px] border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] px-3 text-[13px] shadow-[var(--ctl-shadow)]">
+                {isLoadingUldegdel ? (
+                  <span className="text-[color:var(--muted-text)]">Үлдэгдэл...</span>
+                ) : effectiveUldegdel !== null ? (
+                  <>
+                    <span className="text-xs text-[color:var(--muted-text)]">Дансны үлдэгдэл</span>
+                    <strong className="font-medium text-[color:var(--panel-text)]">
+                      {formatNumber(effectiveUldegdel, 2)}₮
+                    </strong>
+                  </>
+                ) : (
+                  <span className="text-[color:var(--muted-text)]">Үлдэгдэл тодорхойгүй</span>
                 )}
               </div>
+            )}
+            {/* Excel — зөвхөн ТАТНА: шүүсэн, эрэмбэлсэн бүх мөр (хуудаслалтаас үл хамаарна) */}
+            <ExcelButton
+              id="dans-excel-btn"
+              label={excelTatajBaina ? "Татаж байна..." : "Excel"}
+              title="Дансны хуулгыг Excel-ээр татах"
+              loading={excelTatajBaina}
+              onClick={khuulgaExcelTatya}
+            />
             </div>
           </div>
 
@@ -809,7 +920,7 @@ export default function DansniiKhuulga() {
           <div className="flex w-full flex-col space-y-2 min-h-[500px] justify-between">
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <span className="text-sm font-semibold lg:text-xl">
+                <span className="text-sm font-medium lg:text-xl">
                   Гүйлгээний мэдээлэл
                 </span>
                 <span className=" text-sm font-mono">
@@ -826,7 +937,7 @@ export default function DansniiKhuulga() {
                 <div className="col-span-2 text-center lg:col-span-1">
                   {selectedGuilgee.date.split(" ")[0]}
                 </div>
-                <div className="col-span-2 text-right text-danger font-semibold lg:col-span-1">
+                <div className="col-span-2 text-right text-danger font-medium lg:col-span-1">
                   {formatNumber(selectedGuilgee.total)}
                 </div>
                 <div className="col-span-4 mt-2">
@@ -870,7 +981,7 @@ export default function DansniiKhuulga() {
                             setShowDropdown(false);
                           }}
                         >
-                          <div className="font-semibold truncate">{geree.toot ? `${geree.toot} тоот` : "-"}</div>
+                          <div className="font-medium truncate">{geree.toot ? `${geree.toot} тоот` : "-"}</div>
                           <div className="truncate">{geree.ner || `${geree.ovog || ""} ${geree.ner || ""}`}</div>
                           <div className="truncate text-[color:var(--muted-text)]">{geree.gereeniiDugaar || "-"}</div>
                         </div>
@@ -900,7 +1011,7 @@ export default function DansniiKhuulga() {
 
                   {/* Төлбөрийн үлдэгдэл box */}
                   <div className="box grid w-full grid-cols-3 rounded-md border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] p-2 text-xs">
-                    <div className="col-span-3 font-semibold mb-1">Төлбөрийн үлдэгдэл</div>
+                    <div className="col-span-3 font-medium mb-1">Төлбөрийн үлдэгдэл</div>
                     <div className="text-danger font-medium">
                       {formatNumber(selectedContract.uldegdel || 0, 2)}
                     </div>
@@ -924,13 +1035,13 @@ export default function DansniiKhuulga() {
               <div className="grid w-full grid-cols-2 divide-x-2 divide-[color:var(--surface-border)] px-2">
                 <div className="flex flex-col justify-between pr-2 lg:flex-row text-xs">
                   <div className="">Холбосон дүн:</div>
-                  <div className="text-right text-base font-bold text-brand">
+                  <div className="text-right text-base font-medium text-brand">
                     {formatNumber(selectedContract ? selectedGuilgee.total : 0)}
                   </div>
                 </div>
                 <div className="flex flex-col justify-between pl-2 lg:flex-row text-xs">
                   <div className="">Холбоогүй дүн:</div>
-                  <div className="text-right text-base font-bold text-danger">
+                  <div className="text-right text-base font-medium text-danger">
                     {formatNumber(selectedContract ? 0 : selectedGuilgee.total)}
                   </div>
                 </div>
@@ -946,7 +1057,7 @@ export default function DansniiKhuulga() {
                     setSelectedContract(null);
                   }}
                   variant="secondary"
-                  className="rounded-md h-9 px-4 text-xs font-semibold"
+                  className="rounded-md h-9 px-4 text-xs font-medium"
                 >
                   Хаах
                 </Button>
@@ -954,7 +1065,7 @@ export default function DansniiKhuulga() {
                   onClick={() => selectedContract && handleLinkTransaction(selectedContract._id)}
                   disabled={!selectedContract}
                   variant="primary"
-                  className="rounded-md h-9 px-4 text-xs font-semibold"
+                  className="rounded-md h-9 px-4 text-xs font-medium"
                 >
                   Хадгалах
                 </Button>

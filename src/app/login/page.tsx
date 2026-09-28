@@ -177,7 +177,7 @@ export default function LoginPage() {
       <div className="absolute top-5 left-5 z-20 flex items-center gap-2.5 sm:top-6 sm:left-8">
         <ThemedLogo size={34} withBg={false} />
         <span
-          className="text-[15px] font-semibold tracking-[-0.01em]"
+          className="text-[15px] font-medium tracking-[-0.01em]"
           style={{ color: "var(--panel-text)" }}
         >
           Amarhome
@@ -231,7 +231,7 @@ export default function LoginPage() {
                   }}
                 >
                   <h2
-                    className="whitespace-pre-line text-3xl font-bold leading-[1.22] tracking-[-0.02em] xl:text-[38px]"
+                    className="whitespace-pre-line text-3xl font-medium leading-[1.22] tracking-[-0.02em] xl:text-[38px]"
                     style={{ color: "var(--panel-text)" }}
                   >
                     {s.title}

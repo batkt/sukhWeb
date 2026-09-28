@@ -3,7 +3,6 @@
 import React, { useMemo, useState } from "react";
 import {
   Tooltip,
-  Switch,
   TextInput,
   PasswordInput,
   Modal,
@@ -20,7 +19,8 @@ import deleteMethod from "../../../../tools/function/deleteMethod";
 import { aldaaBarigch } from "@/lib/uilchilgee";
 import { DANS_ENDPOINT } from "@/lib/endpoints";
 import { useSpinner } from "@/context/SpinnerContext";
-import Button from "@/components/ui/Button";
+import { Landmark, Pencil, Plus, Trash2 } from "lucide-react";
+import { SettingsCard, SettingsItem, Switch } from "./SettingsRow";
 
 interface DansItem {
   _id: string;
@@ -46,75 +46,78 @@ function DansTile({ data, onEdit, onDelete, t }: DansTileProps) {
   const [deleteOpened, setDeleteOpened] = useState(false);
 
   return (
-    <div className="flex items-center flex-col justify-between bg-white/50 rounded-xl shadow-md hover:shadow-lg p-4 mb-3 transition-all duration-300 border border-[color:var(--surface-border)]">
-      <div className="flex justify-between flex-col sm:flex-row w-full gap-3">
-        <div>
-          <div className=" text-theme dark:text-white text-sm mb-1">{t("Данс")}</div>
-          <div className="text-theme font-mono">{data.dugaar}</div>
+    <li className="flex items-center gap-3 px-4 py-3">
+      <div className="grid min-w-0 flex-1 gap-3 sm:grid-cols-2">
+        <div className="min-w-0">
+          <div className="text-[12px] text-[color:var(--muted-text)]">{t("Дансны дугаар")}</div>
+          <div className="truncate text-[14px] text-[color:var(--panel-text)] tabular-nums">{data.dugaar}</div>
           {data.ibanDugaar && (
-            <div className="text-xs text-[color:var(--muted-text)] font-mono mt-0.5">{data.ibanDugaar}</div>
+            <div className="truncate text-[12px] text-[color:var(--muted-text)] tabular-nums">{data.ibanDugaar}</div>
           )}
         </div>
-        <div className="sm:text-right">
-          <div className=" text-theme dark:text-white text-sm mb-1">{t("Дансны нэр")}</div>
-          <div className="text-theme mb-3">{data.dansniiNer}</div>
-          <div className="flex justify-end gap-2">
-            <Popover
-              opened={deleteOpened}
-              onChange={setDeleteOpened}
-              width={200}
-              position="bottom-end"
-            >
-              <Popover.Target>
-                <Tooltip label={t("Устгах")} withArrow>
-                   <button
-                     onClick={() => setDeleteOpened(true)}
-                     className="flex h-9 w-9 items-center justify-center rounded-xl bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all duration-200"
-                     aria-label={t("Устгах")}
-                   >
-                     <span className="text-lg leading-none">×</span>
-                   </button>
+        <div className="min-w-0">
+          <div className="text-[12px] text-[color:var(--muted-text)]">{t("Дансны нэр")}</div>
+          <div className="truncate text-[14px] text-[color:var(--panel-text)]">{data.dansniiNer}</div>
+        </div>
+      </div>
+      <div className="flex shrink-0 items-center gap-1">
+        <Tooltip label={t("Засах")} withArrow>
+          <button
+            type="button"
+            onClick={() => onEdit(data)}
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--muted-text)] transition-colors hover:bg-[color:var(--surface-hover)] hover:text-brand"
+            aria-label={t("Засах")}
+            title={t("Засах")}
+          >
+            <Pencil className="h-4 w-4" />
+          </button>
+        </Tooltip>
+        <Popover
+          opened={deleteOpened}
+          onChange={setDeleteOpened}
+          width={240}
+          position="bottom-end"
+        >
+          <Popover.Target>
+            <Tooltip label={t("Устгах")} withArrow>
+              <button
+                type="button"
+                onClick={() => setDeleteOpened(true)}
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--muted-text)] transition-colors hover:bg-danger/10 hover:text-danger"
+                aria-label={t("Устгах")}
+                title={t("Устгах")}
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
             </Tooltip>
           </Popover.Target>
           <Popover.Dropdown className="modal-surface border-[color:var(--surface-border)]">
-            <div className="text-sm text-theme dark:text-white">
+            <div className="text-[14px] text-[color:var(--panel-text)]">
               <p className="mb-3">{data.dugaar} данс устгах уу?</p>
-              <div className="flex gap-2 justify-end">
-                <Button
-                  variant="secondary"
-                  size="sm"
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  className="stg-btn stg-btn-ghost"
                   onClick={() => setDeleteOpened(false)}
                 >
                   {t("Хаах")}
-                </Button>
-                <Button
-                  variant="danger"
-                  size="sm"
+                </button>
+                <button
+                  type="button"
+                  className="stg-btn bg-danger text-white hover:opacity-90"
                   onClick={() => {
                     onDelete(data._id);
                     setDeleteOpened(false);
                   }}
                 >
                   {t("Устгах")}
-                </Button>
+                </button>
               </div>
             </div>
           </Popover.Dropdown>
         </Popover>
-
-        <Tooltip label={t("Засах")} withArrow>
-          <button
-            onClick={() => onEdit(data)}
-            className="flex h-9 w-9 items-center justify-center rounded-xl bg-theme/10 text-brand hover:bg-theme hover:text-white transition-all duration-200"
-            aria-label={t("Засах")}
-          >
-            <span className="text-sm">✎</span>
-          </button>
-        </Tooltip>
-          </div>
-        </div>
       </div>
-    </div>
+    </li>
   );
 }
 
@@ -257,117 +260,122 @@ function Dans() {
     corporateState: Partial<DansItem>;
     setCorporateState: React.Dispatch<React.SetStateAction<Partial<DansItem>>>;
   }) => {
-    const colors = bankKey === "khanbank" 
-      ? "from-theme/10 to-theme/5 border-theme/50 dark:shadow-theme/20 dark:hover:shadow-theme/30"
-      : "from-theme/10 to-theme/5 border-theme/50 dark:shadow-theme/20 dark:hover:shadow-theme/30";
-    
+    const bankDans = (allDans || []).filter((d) => d.bank === bankKey);
+
     return (
-      <div className={`bg-gradient-to-br ${colors} shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl p-5 mb-6 border`}>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg  text-theme dark:text-white">{title}</h2>
-          <Button
+      <SettingsCard
+        icon={<Landmark className="h-4 w-4" />}
+        title={title}
+        subtitle={
+          bankDans.length
+            ? `${bankDans.length} данс бүртгэлтэй`
+            : "Данс бүртгэгдээгүй байна"
+        }
+        toggle={
+          <button
+            type="button"
             onClick={() => openAdd(bankKey)}
-            variant="primary"
-            size="sm"
-            style={{ borderRadius: '0.75rem' }}
+            className="stg-btn stg-btn-primary"
           >
-            + {t("Нэмэх")}
-          </Button>
-        </div>
-
-        <div className="flex items-center justify-between mb-4 p-3 bg-white/50 rounded-xl">
-          <span className=" text-theme dark:text-white">{t("Corporate ашиглах эсэх")}</span>
-          <Switch
-            checked={corporateState.corporateAshiglakhEsekh || false}
-            onChange={(event) =>
-              setCorporateState({
-                ...corporateState,
-                corporateAshiglakhEsekh: event.currentTarget.checked,
-              })
-            }
-          />
-        </div>
-
-        {corporateState.corporateAshiglakhEsekh && (
-          <div className="flex flex-col gap-3 mb-4 p-4 bg-white/50 rounded-xl">
-            <TextInput
-              label={t("Нэвтрэх нэр")}
-              placeholder="CAdmin1"
-              value={corporateState.corporateNevtrekhNer || ""}
-              onChange={(e) =>
+            <Plus className="h-4 w-4" />
+            {t("Нэмэх")}
+          </button>
+        }
+        onSave={() => saveBank(bankKey)}
+      >
+        <SettingsItem
+          title={t("Corporate ашиглах эсэх")}
+          desc="Банкны corporate эрхээр гүйлгээг автоматаар татах бол асаана уу."
+          control={
+            <Switch
+              checked={corporateState.corporateAshiglakhEsekh || false}
+              onChange={(event) =>
                 setCorporateState({
                   ...corporateState,
-                  corporateNevtrekhNer: e.target.value,
+                  corporateAshiglakhEsekh: event.currentTarget.checked,
                 })
               }
-              className="text-theme"
+              label={t("Corporate ашиглах эсэх")}
             />
-            <PasswordInput
-              label={t("Нэвтрэх нууц үг")}
-              placeholder="••••••••"
-              value={corporateState.corporateNuutsUg || ""}
-              onChange={(e) =>
-                setCorporateState({
-                  ...corporateState,
-                  corporateNuutsUg: e.target.value,
-                })
-              }
-              className="text-theme"
-            />
-          </div>
-        )}
+          }
+        >
+          {corporateState.corporateAshiglakhEsekh && (
+            <div className="stg-grid">
+              <TextInput
+                label={t("Нэвтрэх нэр")}
+                placeholder="CAdmin1"
+                value={corporateState.corporateNevtrekhNer || ""}
+                onChange={(e) =>
+                  setCorporateState({
+                    ...corporateState,
+                    corporateNevtrekhNer: e.target.value,
+                  })
+                }
+                className="text-theme"
+              />
+              <PasswordInput
+                label={t("Нэвтрэх нууц үг")}
+                placeholder="••••••••"
+                value={corporateState.corporateNuutsUg || ""}
+                onChange={(e) =>
+                  setCorporateState({
+                    ...corporateState,
+                    corporateNuutsUg: e.target.value,
+                  })
+                }
+                className="text-theme"
+              />
+            </div>
+          )}
+        </SettingsItem>
 
         {isValidating && (
-          <div className="py-4 flex justify-center">
-            <Loader />
+          <div className="flex justify-center py-4">
+            <Loader size="sm" />
           </div>
         )}
-        {(allDans || [])
-          .filter((d) => d.bank === bankKey)
-          .map((d) => (
-            <DansTile
-              key={d._id}
-              data={d}
-              onEdit={openEdit}
-              onDelete={removeDans}
-              t={t}
-            />
-          ))}
-
-        <div className="flex justify-end mt-4">
-          <Button
-            size="sm"
-            style={{ borderRadius: '0.75rem' }}
-            onClick={() => saveBank(bankKey)}
-            variant="primary"
-          >
-            {t("Хадгалах")}
-          </Button>
-        </div>
-      </div>
+        {bankDans.length > 0 ? (
+          <ul className="divide-y divide-[color:var(--surface-border)] rounded-xl border border-[color:var(--surface-border)]">
+            {bankDans.map((d) => (
+              <DansTile
+                key={d._id}
+                data={d}
+                onEdit={openEdit}
+                onDelete={removeDans}
+                t={t}
+              />
+            ))}
+          </ul>
+        ) : (
+          !isValidating && (
+            <div className="flex flex-col items-center gap-1 rounded-xl border border-dashed border-[color:var(--surface-border)] px-4 py-6 text-center">
+              <p className="text-[14px] text-[color:var(--panel-text)]">Данс нэмээгүй байна</p>
+              <p className="max-w-xs text-[13px] text-[color:var(--muted-text)]">
+                «Нэмэх» товч дарж энэ банкны дансаа оруулна уу.
+              </p>
+            </div>
+          )
+        )}
+      </SettingsCard>
     );
   };
 
   return (
-    <div className="xxl:col-span-9 col-span-12 lg:col-span-12 h-full overflow-visible">
-      <div className="neu-panel  allow-overflow p-4 md:p-6 space-y-6 min-h-[24rem]">
-        <div className="grid grid-cols-12 gap-6 ">
-          <div className="col-span-12 lg:col-span-6">
-            <BankCard
-              title={t("Хаан банк")}
-              bankKey="khanbank"
-              corporateState={khanbankCorporate}
-              setCorporateState={setKhanBankCorporate}
-            />
-          </div>
-          <div className="col-span-12 lg:col-span-6">
-            <BankCard
-              title={t("Худалдаа хөгжлийн банк")}
-              bankKey="tdb"
-              corporateState={tdbCorporate}
-              setCorporateState={setTdbCorporate}
-            />
-          </div>
+    <div className="w-full">
+      <div className="grid grid-cols-1 gap-x-4 lg:grid-cols-2">
+        <BankCard
+          title={t("Хаан банк")}
+          bankKey="khanbank"
+          corporateState={khanbankCorporate}
+          setCorporateState={setKhanBankCorporate}
+        />
+        <BankCard
+          title={t("Худалдаа хөгжлийн банк")}
+          bankKey="tdb"
+          corporateState={tdbCorporate}
+          setCorporateState={setTdbCorporate}
+        />
+      </div>
 
           <Modal
             opened={modalOpen}
@@ -379,9 +387,9 @@ function Dans() {
             classNames={{ content: "modal-surface" }}
             centered
           >
-            <div className="flex flex-col gap-3 mt-2 ">
+            <div className="mt-1 flex flex-col gap-4">
               <div>
-                <div className="text-sm mb-1">{t("Банк")}</div>
+                <div className="mb-1 text-[13px] text-[color:var(--muted-text)]">{t("Банк")}</div>
                 <Select
                   data={[
                     { label: "Хаан банк", value: "khanbank" },
@@ -399,7 +407,7 @@ function Dans() {
                 />
               </div>
               <div>
-                <div className="text-sm mb-1">{t("Дансны дугаар")}</div>
+                <div className="mb-1 text-[13px] text-[color:var(--muted-text)]">{t("Дансны дугаар")}</div>
                 <TextInput
                   placeholder={t("Дансны дугаар")}
                   value={formState.dugaar}
@@ -410,7 +418,7 @@ function Dans() {
                 />
               </div>
               <div>
-                <div className="text-sm mb-1">{t("Дансны нэр")}</div>
+                <div className="mb-1 text-[13px] text-[color:var(--muted-text)]">{t("Дансны нэр")}</div>
                 <TextInput
                   placeholder={t("Дансны нэр")}
                   value={formState.dansniiNer}
@@ -421,7 +429,7 @@ function Dans() {
                 />
               </div>
               <div>
-                <div className="text-sm mb-1">{t("IBAN дугаар")}</div>
+                <div className="mb-1 text-[13px] text-[color:var(--muted-text)]">{t("IBAN дугаар")}</div>
                 <TextInput
                   placeholder="MN76000500XXXXXXXXXX"
                   value={formState.ibanDugaar || ""}
@@ -433,30 +441,27 @@ function Dans() {
               </div>
 
 
-          <div className="flex justify-end gap-2 mt-2">
-                <Button
+              <div className="mt-2 flex justify-end gap-2">
+                <button
+                  type="button"
+                  className="stg-btn stg-btn-ghost"
                   onClick={() => {
                     setModalOpen(false);
                     setEditing(null);
                   }}
-                  variant="secondary"
-                  size="sm"
                 >
                   {t("Хаах")}
-                </Button>
-                <Button
-                  variant="primary"
-                  size="sm"
+                </button>
+                <button
+                  type="button"
+                  className="stg-btn stg-btn-primary"
                   onClick={saveDans}
-                  isLoading={false}
                 >
                   {t("Хадгалах")}
-                </Button>
+                </button>
               </div>
             </div>
           </Modal>
-        </div>
-      </div>
     </div>
   );
 }

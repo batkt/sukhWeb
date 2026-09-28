@@ -16,7 +16,6 @@ import PreviewModal from "./modals/PreviewModal";
 import InvoicePreviewModal from "./modals/InvoicePreviewModal";
 import AddUnitModal from "./modals/AddUnitModal";
 import PermissionsModal from "./modals/PermissionsModal";
-import CredentialsModal from "./modals/CredentialsModal"; // Import missing modal
 import HistoryModal from "./modals/HistoryModal";
 import MassKwtModal from "./modals/MassKwtModal";
 import { useBuilding } from "@/context/BuildingContext";
@@ -39,10 +38,6 @@ export default function GereeModals() {
     return [...(data.residentsList || []), ...(data.clientsList || [])];
   }, [data.residentsList, data.clientsList]);
 
-  // Credentials Modal State
-  const [showCredentialsModal, setShowCredentialsModal] = useState(false);
-  const [credentialsEmployee, setCredentialsEmployee] = useState<any>(null);
-
   // Zagvar Editor Modal (full-screen for create/edit template)
   const [showZagvarEditorModal, setShowZagvarEditorModal] = useState(false);
   const [zagvarEditorTemplateId, setZagvarEditorTemplateId] = useState<
@@ -58,12 +53,6 @@ export default function GereeModals() {
         setShowPermissionsModal(true);
       };
 
-      (window as any).__openCredentialsModal = (employee: any) => {
-        console.log("🔐 Opening credentials modal for employee:", employee);
-        setCredentialsEmployee(employee);
-        setShowCredentialsModal(true);
-      };
-
       (window as any).__openHistoryModal = (contract: any) => {
         console.log("📜 Opening history modal for contract:", contract);
         state.setHistoryContract(contract);
@@ -75,7 +64,6 @@ export default function GereeModals() {
     return () => {
       if (typeof window !== "undefined") {
         delete (window as any).__openPermissionsModal;
-        delete (window as any).__openCredentialsModal;
       }
     };
   }, []);
@@ -381,35 +369,6 @@ export default function GereeModals() {
         employee={permissionsEmployee}
         onSave={handleSavePermissions}
         permissionsData={permissionsData}
-      />
-
-      {/* Credentials Modal */}
-      <CredentialsModal
-        show={showCredentialsModal}
-        onClose={() => setShowCredentialsModal(false)}
-        employee={credentialsEmployee}
-        onSave={async (emp, nevtrekhNer, nuutsUg) => {
-          if (!token || !emp?._id) return;
-          try {
-            // Send full employee with updated credentials so backend doesn't
-            // overwrite baiguullagiinId/barilguud (which would remove from list)
-            const payload: any = { ...emp, nevtrekhNer };
-            if (nuutsUg && nuutsUg.trim()) {
-              payload.nuutsUg = nuutsUg;
-            } else {
-              delete payload.nuutsUg; // Don't send hashed password; backend keeps existing
-            }
-            await uilchilgee(token).put(`/ajiltan/${emp._id}`, payload);
-
-            openSuccessOverlay("Нэвтрэх эрх шинэчлэгдлээ");
-            setShowCredentialsModal(false);
-
-            await data.ajiltniiJagsaaltMutate();
-          } catch (err: any) {
-            const msg = err?.response?.data?.aldaa || "Алдаа гарлаа";
-            openErrorOverlay(msg);
-          }
-        }}
       />
 
       {/* History Modal */}

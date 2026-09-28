@@ -787,7 +787,7 @@ export default function ExcelImportModal({
                         <td className="px-3 py-2 text-[color:var(--panel-text)]">
                           {r.turul}
                         </td>
-                        <td className="px-3 py-2 font-mono text-xs text-[color:var(--panel-text)] font-semibold">
+                        <td className="px-3 py-2 font-mono text-xs text-[color:var(--panel-text)] font-medium">
                           {r.plate || "БҮРТГЭЛГҮЙ"}
                         </td>
                         <td className="px-3 py-2">
@@ -838,7 +838,7 @@ export default function ExcelImportModal({
           {/* Амжилтгүй болсон мөрүүд */}
           {failed.length > 0 && (
             <div className="rounded-xl border border-danger/30 bg-danger/60 p-3 space-y-1">
-              <p className="text-xs font-semibold text-danger">
+              <p className="text-xs font-medium text-danger">
                 Дараах мөрүүд серверт хадгалагдсангүй:
               </p>
               {failed.map((f) => (
@@ -869,7 +869,7 @@ export default function ExcelImportModal({
               onClick={onClose}
               variant="ghost"
               disabled={importing}
-              className="h-11 px-5 rounded-xl border border-[color:var(--surface-border)] dark:border-white/10"
+              className="h-9 px-4 rounded-[10px] text-[13px] border border-[color:var(--surface-border)] dark:border-white/10"
             >
               Хаах
             </Button>
@@ -878,7 +878,7 @@ export default function ExcelImportModal({
               variant="primary"
               isLoading={importing}
               disabled={validRows.length === 0}
-              className="h-11 px-6 rounded-xl"
+              className="h-9 px-4 rounded-[10px] text-[13px]"
             >
               Импортлох ({validRows.length})
             </Button>

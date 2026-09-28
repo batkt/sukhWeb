@@ -146,7 +146,7 @@ export default function InitialBalanceExcelModal({
               onPointerDown={(e) => dragControls.start(e)}
               className="-mt-2 mb-6 px-1 py-1 flex items-center justify-between cursor-move select-none"
             >
-              <div className="text-sm font-semibold text-[color:var(--panel-text)] dark:text-white">
+              <div className="text-sm font-medium text-[color:var(--panel-text)] dark:text-white">
                 Эхний үлдэгдэл импорт (Excel)
               </div>
               <Button
@@ -169,7 +169,7 @@ export default function InitialBalanceExcelModal({
                   />
                 </div>
               </div>
-              <p className="text-[10px] text-[color:var(--muted-text)] italic">
+              <p className="text-[11px] text-[color:var(--muted-text)] italic">
                 * Сонгосон огноогоор эхний үлдэгдэл бүртгэгдэнэ.
               </p>
             </div>

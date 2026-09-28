@@ -1,8 +1,20 @@
 "use client";
 
 import { useMemo, useState, useEffect, lazy, Suspense, Component, ReactNode } from "react";
+import { Menu, Pin, PinOff } from "lucide-react";
 import { useAuth } from "@/lib/useAuth";
-import { Settings } from "lucide-react";
+import {
+  Building2,
+  Car,
+  Database,
+  Landmark,
+  LifeBuoy,
+  ListChecks,
+  LogIn,
+  Receipt,
+  Settings,
+  SlidersHorizontal,
+} from "lucide-react";
 import { hasPermission } from "@/lib/permissionUtils";
 import Button from "@/components/ui/Button";
 
@@ -15,14 +27,10 @@ const Dans = lazy(() => import("./Dans"));
 const EmailTokhirgoo = lazy(() => import("./EmailTokhirgoo"));
 const Medegdel = lazy(() => import("./Medegdel"));
 const NevtreltiinTuukh = lazy(() => import("./NevtreltiinTuukh"));
-const Zogsool = lazy(() => import("./Zogsool"));
-const UstgasanTuukh = lazy(() => import("./UstsanTuukh"));
-const ZassanTuukh = lazy(() => import("./ZassanTuukh"));
+const ZogsoolTokhirgoo = lazy(() => import("./ZogsoolTokhirgoo"));
 const BarilgiinTokhirgoo = lazy(() => import("./BarilgiinTokhirgoo"));
 const NemeltTokhirgoo = lazy(() => import("./NemeltTokhirgoo"));
 const TuslamjTokhirgoo = lazy(() => import("./TuslamjTokhirgoo"));
-const KameriinTokhirgoo = lazy(() => import("./KameriinTokhirgoo"));
-const AjiltniiTokhirgoo = lazy(() => import("./AjiltniiTokhirgoo"));
 
 // Error boundary for chunk loading errors
 class ChunkErrorBoundary extends Component<
@@ -81,34 +89,21 @@ class ChunkErrorBoundary extends Component<
   }
 }
 
-const AdminLayout = ({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) => (
-  <div className="w-full pb-6 flex flex-col min-h-0" style={{ minHeight: "calc(100vh - 140px)" }}>
-    <header className="px-4 pt-3 flex-shrink-0">
-      <h1 className="text-2xl  mb-2 text-[color:var(--panel-text)] leading-tight">
-        {title}
-      </h1>
-    </header>
-
-    <main className="flex-1 min-h-0 overflow-visible px-4 flex flex-col">
-      <div className="flex-1 min-h-0 flex flex-col lg:grid lg:grid-cols-12 gap-6 items-start">
-        {children}
-      </div>
-    </main>
+const AdminLayout = ({ children }: { children: React.ReactNode }) => (
+  <div className="w-full px-4 pb-6 pt-3">
+    <div className="flex flex-col gap-5 lg:flex-row lg:items-start">{children}</div>
   </div>
 );
+
+/** Цэсний бүлэг — нэг бүлгийн табууд хамт харагдана */
+type Buleg = "Байгууллага" | "Төлбөр" | "Зогсоол" | "Систем";
 
 function Tokhirgoo() {
   const { ajiltan, baiguullaga, token } = useAuth();
 
   // Persist selected tab so saving in child windows (which may trigger
   // re-renders/remounts) doesn't jump back to the first tab.
-  const STORAGE_KEY = "tokhirgoo_selectedIndex";
+  const STORAGE_KEY = "tokhirgoo_selectedIndex_v2";
   const [selectedIndexInternal, setSelectedIndexInternal] = useState<number>(
     () => {
       try {
@@ -129,43 +124,92 @@ function Tokhirgoo() {
     }
   };
 
+  /**
+   * Талбарт ажиллаж эхлэхэд (focus) цэс бүрэн нуугдаж, агуулга бүтэн
+   * өргөнтэй болно. Оронд нь «Тохиргооны цэс» товч + одоогийн табын нэр
+   * гарна — дарж буцааж нээнэ. Hover-оор нээх нь санамсаргүй үсэрдэг,
+   * ахмад хэрэглэгчдэд олдохгүй байсан тул тодорхой товч болгов.
+   * «Нуухгүй» (pin) сонгосон бол цэс үргэлж харагдана.
+   */
+  const PIN_KEY = "tokhirgoo_nav_pin";
+  const [tsesTogtmol, setTsesTogtmol] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(PIN_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+  const [khumigdsan, setKhumigdsan] = useState(false);
+  const tsesNuugdsan = khumigdsan && !tsesTogtmol;
+
+  // Цэс нуугдах бүрд «энд дарж буцааж харуулна» заавар — «Дахин харуулахгүй»
+  // дарвал дахиж гарахгүй.
+  const ZAAVAR_KEY = "tokhirgoo_nav_zaavar_nuukh";
+  const [zaavarKharuulakh, setZaavarKharuulakh] = useState(false);
+  useEffect(() => {
+    if (!tsesNuugdsan) {
+      setZaavarKharuulakh(false);
+      return;
+    }
+    try {
+      if (localStorage.getItem(ZAAVAR_KEY) === "1") return;
+    } catch {
+      /* уншиж чадахгүй бол харуулна */
+    }
+    setZaavarKharuulakh(true);
+  }, [tsesNuugdsan]);
+  const zaavarDakhinKharuulakhgui = () => {
+    setZaavarKharuulakh(false);
+    try {
+      localStorage.setItem(ZAAVAR_KEY, "1");
+    } catch {
+      /* хадгалах боломжгүй */
+    }
+  };
+  const togtmolSolikh = () => {
+    const v = !tsesTogtmol;
+    setTsesTogtmol(v);
+    if (v) setKhumigdsan(false);
+    try {
+      localStorage.setItem(PIN_KEY, v ? "1" : "0");
+    } catch {
+      /* хадгалах боломжгүй */
+    }
+  };
+
   const tokhirgoo = useMemo(() => {
     const isAdmin = ajiltan?.erkh === "Admin" || ajiltan?.erkh === "admin";
     const has = (path: string) => hasPermission(ajiltan, path);
 
-    const allTabs = [
-      { perm: "tokhirgoo.barilga", text: "Барилгын тохиргоо", tsonkh: BarilgiinTokhirgoo, comingSoon: false },
-      { perm: "tokhirgoo.nemelt", text: "Нэмэлт тохиргоо", tsonkh: NemeltTokhirgoo, comingSoon: false },
-      { perm: "tokhirgoo.ebarimt", text: "И-Баримт", tsonkh: EbarimtTokhirgoo, comingSoon: false },
-      { perm: "tokhirgoo.ashiglaltiinZardal", text: "Ашиглалтын зардал", tsonkh: AshiglaltiinZardal, comingSoon: false },
-      { perm: "tokhirgoo.dans", text: "Данс", tsonkh: Dans, comingSoon: false },
-      { perm: "tokhirgoo.zogsool", text: "Зогсоол", tsonkh: Zogsool, comingSoon: false },
-      { perm: "tokhirgoo.nevtreltiinTuukh", text: "Нэвтрэлтийн түүх", tsonkh: NevtreltiinTuukh, comingSoon: false },
-      { perm: "tokhirgoo.ustsanTuukh", text: "Устгасан түүх", tsonkh: UstgasanTuukh, comingSoon: false },
-      { perm: "tokhirgoo.zassanTuukh", text: "Зассан түүх", tsonkh: ZassanTuukh, comingSoon: false },
-      { perm: "tokhirgoo.tuslamj", text: "Ерөнхий тусламж", tsonkh: TuslamjTokhirgoo, comingSoon: false },
-      { perm: "tokhirgoo.kamer", text: "Камерийн тохиргоо", tsonkh: KameriinTokhirgoo, comingSoon: false },
-      { perm: "tokhirgoo.baaz", text: "Бааз", tsonkh: Baaz, comingSoon: false },
-      { perm: "tokhirgoo.ajiltan", text: "Ажилтны тохиргоо", tsonkh: AjiltniiTokhirgoo, comingSoon: false },
+    // `tailbar` — баруун талын гарчгийн доор нэг мөр. `tolgoi: true` —
+    // таб өөрөө гарчиг зурдаггүй (шинэ загварт шилжсэн) тул бүрхүүл зурна.
+    const allTabs: {
+      perm: string;
+      /** Өөр эрхээр ч харагдана (нэгтгэсэн таб) */
+      perm2?: string;
+      text: string;
+      tailbar: string;
+      buleg: Buleg;
+      Icon: React.ComponentType<{ className?: string }>;
+      tsonkh: React.ComponentType<any>;
+      tolgoi?: boolean;
+      comingSoon: boolean;
+    }[] = [
+      { perm: "tokhirgoo.barilga", text: "Барилгын тохиргоо", tailbar: "СӨХ-ийн мэдээлэл, барилга, орц, давхар", buleg: "Байгууллага", Icon: Building2, tsonkh: BarilgiinTokhirgoo, tolgoi: true, comingSoon: false },
+      { perm: "tokhirgoo.nemelt", text: "Нэмэлт тохиргоо", tailbar: "Нэхэмжлэх, алданги, мэдэгдэл, машины хязгаар", buleg: "Байгууллага", Icon: SlidersHorizontal, tsonkh: NemeltTokhirgoo, tolgoi: true, comingSoon: false },
+      { perm: "tokhirgoo.ashiglaltiinZardal", text: "Ашиглалтын зардал", tailbar: "Сар бүр бодогдох зардлууд", buleg: "Төлбөр", Icon: ListChecks, tsonkh: AshiglaltiinZardal, tolgoi: true, comingSoon: false },
+      { perm: "tokhirgoo.dans", text: "Данс", tailbar: "Төлбөр хүлээн авах данс", buleg: "Төлбөр", Icon: Landmark, tsonkh: Dans, tolgoi: true, comingSoon: false },
+      { perm: "tokhirgoo.ebarimt", text: "И-Баримт", tailbar: "Татварын баримтын тохиргоо", buleg: "Төлбөр", Icon: Receipt, tsonkh: EbarimtTokhirgoo, tolgoi: true, comingSoon: false },
+      { perm: "tokhirgoo.zogsool", perm2: "tokhirgoo.kamer", text: "Зогсоол", tailbar: "Зогсоол, тариф, хаалга, камер", buleg: "Зогсоол", Icon: Car, tsonkh: ZogsoolTokhirgoo, tolgoi: true, comingSoon: false },
+      { perm: "tokhirgoo.nevtreltiinTuukh", text: "Нэвтрэлтийн түүх", tailbar: "Хэн, хэзээ нэвтэрсэн", buleg: "Систем", Icon: LogIn, tsonkh: NevtreltiinTuukh, tolgoi: true, comingSoon: false },
+      { perm: "tokhirgoo.baaz", text: "Бааз", tailbar: "Өгөгдлийн сангийн хэмжээ", buleg: "Систем", Icon: Database, tsonkh: Baaz, tolgoi: true, comingSoon: false },
+      { perm: "tokhirgoo.tuslamj", text: "Ерөнхий тусламж", tailbar: "Тусламжийн агуулга", buleg: "Систем", Icon: LifeBuoy, tsonkh: TuslamjTokhirgoo, tolgoi: true, comingSoon: false },
     ];
 
-    if (isAdmin) {
-      return allTabs.map((t) => ({
-        icon: <Settings className="w-5 h-5" />,
-        text: t.text,
-        tsonkh: t.tsonkh,
-        comingSoon: t.comingSoon,
-      }));
-    }
-
-    return allTabs
-      .filter((t) => has(t.perm))
-      .map((t) => ({
-        icon: <Settings className="w-5 h-5" />,
-        text: t.text,
-        tsonkh: t.tsonkh,
-        comingSoon: t.comingSoon,
-      }));
+    return (isAdmin ? allTabs : allTabs.filter((t) => has(t.perm) || (!!t.perm2 && has(t.perm2)))).map((t) => ({
+      ...t,
+      icon: <t.Icon className="h-4 w-4 shrink-0" />,
+    }));
   }, [ajiltan]);
 
   const Tsonkh = useMemo(
@@ -184,45 +228,123 @@ function Tokhirgoo() {
   }, [tokhirgoo.length, selectedIndexInternal]);
 
   return (
-    <AdminLayout title="Тохиргоо">
+    <AdminLayout>
       {tokhirgoo.length > 0 && (
-        <aside className="w-full lg:col-span-3 lg:sticky lg:top-[calc(var(--shell-topbar-h,56px)+1rem)] h-fit self-start z-10">
-          <div className="bg-transparent rounded-2xl shadow-lg overflow-hidden flex flex-col">
-            <div className="p-3 space-y-1.5 bg-transparent overflow-y-auto max-h-[calc(100dvh-var(--shell-topbar-h,56px)-2.5rem)] custom-scrollbar">
-              {tokhirgoo.map((item: any, i) => {
-                const isActive = i === selectedIndexInternal;
-                const isSoon = Boolean(item?.comingSoon);
-                return (
+        <aside
+          className={`relative w-full shrink-0 lg:sticky lg:top-[calc(var(--shell-topbar-h,56px)+1rem)] lg:w-[232px] ${
+            tsesNuugdsan ? "lg:hidden" : ""
+          }`}
+        >
+          <nav
+            aria-label="Тохиргоо"
+            className="flex gap-1 overflow-x-auto rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-2 lg:max-h-[calc(100dvh-var(--shell-topbar-h,56px)-2.5rem)] lg:flex-col lg:overflow-y-auto custom-scrollbar"
+          >
+            {tokhirgoo.map((item: any, i) => {
+              const isActive = i === selectedIndexInternal;
+              const shineBuleg = i === 0 || tokhirgoo[i - 1]?.buleg !== item.buleg;
+              return (
+                <div key={item.text} className="contents">
+                  {shineBuleg && (
+                    <div className={`hidden px-2.5 pb-1 text-[12px] text-[color:var(--muted-text)] lg:block ${i === 0 ? "pt-1" : "pt-3"}`}>
+                      {item.buleg}
+                    </div>
+                  )}
                   <button
-                    key={item.text}
-                    onClick={() => {
-                      if (isSoon) return;
-                      setSelectedIndex(i);
-                    }}
-                    aria-disabled={isSoon}
-                    className={`relative btn-minimal flex items-center w-full justify-start gap-3 text-left transition-all duration-200 ${isActive
-                      ? "bg-[var(--btn-bg-hover)] border border-[var(--btn-border)] text-theme font-medium shadow-xs"
-                      : "text-theme opacity-80 hover:opacity-100 hover:bg-[var(--btn-bg-hover)]/50"
-                      } ${isSoon ? "cursor-not-allowed pr-24" : ""} px-3.5 py-2 rounded-xl text-sm`}
+                    type="button"
+                    onClick={() => setSelectedIndex(i)}
+                    aria-current={isActive ? "page" : undefined}
+                    className={`relative flex min-h-10 shrink-0 items-center gap-2.5 whitespace-nowrap rounded-[10px] px-2.5 py-2 text-left text-[14px] transition-colors ${
+                      isActive
+                        ? "bg-theme/10 text-brand"
+                        : "text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"
+                    }`}
                   >
-                    {item.icon}
-                    <span className="flex-1 min-w-0 overflow-hidden whitespace-nowrap text-left text-sm">
-                      {item.text}
-                    </span>
-                    {isSoon && (
-                      <span className="text-xs text-theme whitespace-nowrap flex-shrink-0 overflow-hidden text-ellipsis max-w-20">
-                        Тун удахгүй
-                      </span>
-                    )}
+                    <span className={isActive ? "text-brand" : "text-[color:var(--muted-text)]"}>{item.icon}</span>
+                    <span className="min-w-0 truncate">{item.text}</span>
                   </button>
-                );
-              })}
-            </div>
-          </div>
+                </div>
+              );
+            })}
+            <button
+              type="button"
+              onClick={togtmolSolikh}
+              title={tsesTogtmol ? "Талбарт ажиллах үед цэсийг нуух" : "Цэсийг хэзээ ч нуухгүй"}
+              aria-pressed={tsesTogtmol}
+              className="mt-auto hidden min-h-10 items-center gap-2.5 border-t border-[color:var(--surface-border)] px-2.5 pb-1 pt-3 text-[13px] text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] lg:flex"
+            >
+              {tsesTogtmol ? <PinOff className="h-4 w-4 shrink-0" /> : <Pin className="h-4 w-4 shrink-0" />}
+              {tsesTogtmol ? "Ажиллах үед нуух" : "Цэсийг нуухгүй"}
+            </button>
+          </nav>
         </aside>
       )}
 
-      <div className={`w-full text-theme min-h-0 ${tokhirgoo.length > 0 ? "lg:col-span-9" : "lg:col-span-12"}`}>
+      <div
+        // Том дэлгэцэнд агуулга дэлгэцийн өндөртэй, дотроо гүйнэ — хуудас
+        // бүхэлдээ гүйж цэс/товчнууд харагдахгүй болохоос сэргийлнэ.
+        className="min-w-0 flex-1 text-theme lg:flex lg:h-[calc(100dvh-var(--shell-topbar-h,56px)-2.25rem)] lg:flex-col"
+        onFocusCapture={(e) => {
+          // Зөвхөн талбарт бичих/сонгох үед (товч дарахад биш)
+          const t = e.target as HTMLElement;
+          if (!tsesTogtmol && t.matches("input, textarea, select, [contenteditable='true']"))
+            setKhumigdsan(true);
+        }}
+      >
+        {tsesNuugdsan && tokhirgoo[selectedIndexInternal] && (
+          <div className="relative mb-3 hidden shrink-0 items-center gap-3 lg:flex">
+            <button
+              type="button"
+              onClick={() => {
+                setKhumigdsan(false);
+                setZaavarKharuulakh(false);
+              }}
+              className={`btn-minimal inline-flex h-10 items-center gap-2 !px-3.5 text-[14px] ${
+                zaavarKharuulakh ? "!border-theme ring-2 ring-theme/25" : ""
+              }`}
+            >
+              <Menu className="h-4 w-4" />
+              Тохиргооны цэс
+            </button>
+            <span className="inline-flex items-center gap-2 text-[14px] text-[color:var(--muted-text)]">
+              {tokhirgoo[selectedIndexInternal].icon}
+              {tokhirgoo[selectedIndexInternal].text}
+            </span>
+
+            {/* Цэс нуугдсаныг анх удаа мэдэгдэх заавар */}
+            {zaavarKharuulakh && (
+              <div
+                role="status"
+                className="absolute left-0 top-full z-40 mt-2 w-[320px] rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-4 shadow-xl"
+              >
+                <span
+                  aria-hidden
+                  className="absolute -top-1.5 left-6 h-3 w-3 rotate-45 border-l border-t border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]"
+                />
+                <p className="text-[14px] text-[color:var(--panel-text)]">Цэс түр нуугдлаа</p>
+                <p className="mt-1 text-[13px] leading-relaxed text-[color:var(--muted-text)]">
+                  Ажиллах зай өргөн болгохын тулд цэсийг нуусан. Өөр тохиргоо руу орох бол
+                  дээрх <span className="text-brand">«Тохиргооны цэс»</span> товчийг дарж буцааж харуулна.
+                </p>
+                <div className="mt-3 flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={zaavarDakhinKharuulakhgui}
+                    className="btn-minimal inline-flex h-9 items-center !px-3 text-[13px]"
+                  >
+                    Дахин харуулахгүй
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setZaavarKharuulakh(false)}
+                    className="inline-flex h-9 items-center rounded-[10px] bg-theme px-3.5 text-[13px] !text-white"
+                  >
+                    Ойлголоо
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
         {tokhirgoo.length === 0 && ajiltan && (
           <div className="flex flex-col items-center justify-center p-12 text-theme">
             <Settings className="w-16 h-16 mb-4 opacity-50" />
@@ -230,6 +352,7 @@ function Tokhirgoo() {
             <p className="text-sm mt-2">Админ тань тохиргооны эрх олгоно уу.</p>
           </div>
         )}
+        <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain lg:pr-1 custom-scrollbar">
         {Tsonkh &&
           ajiltan &&
           (() => {
@@ -255,6 +378,7 @@ function Tokhirgoo() {
               </ChunkErrorBoundary>
             );
           })()}
+        </div>
       </div>
     </AdminLayout>
   );

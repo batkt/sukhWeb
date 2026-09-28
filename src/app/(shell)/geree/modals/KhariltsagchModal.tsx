@@ -8,7 +8,7 @@ import TusgaiZagvar from "../../../../../components/selectZagvar/tusgaiZagvar";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { ConfirmCloseDialog } from "@/components/ui/ConfirmCloseDialog";
 import Button from "@/components/ui/Button";
-import { Plus, Minus } from "lucide-react";
+import { Plus, Minus, X, Car, Warehouse } from "lucide-react";
 import {
   mashiniiDugaarTseverle,
   dugaarZuvEsekh,
@@ -99,25 +99,55 @@ export default function KhariltsagchModal({
     }
   });
 
+  /**
+   * Хэрэглэгчийн ЗАСАХ боломжтой талбаруудын түлхүүр. Нээгдсэний дараа
+   * sync effect-үүд `units`, `mashiniiDugaar`, `orts/toot`-ийг дахин
+   * бичдэг тул бүтэн объектыг харьцуулбал юу ч засаагүй байхад
+   * "өөрчлөгдсөн" гэж хаахад анхааруулга гардаг байв.
+   */
+  const zasvariinTulkhuur = (c: any): string => {
+    if (!c) return "";
+    const str = (v: any) => String(v ?? "").trim();
+    const utas = Array.isArray(c.utas) ? c.utas[0] : c.utas;
+    const mashinuud = (
+      Array.isArray(c.mashinuud) && !c.mashiniiDugaar
+        ? c.mashinuud
+        : String(c.mashiniiDugaar || "").split(",")
+    )
+      .map(str)
+      .filter(Boolean);
+    const units = (Array.isArray(c.units) ? c.units : [])
+      .filter((u: any) => u?.turul === "Гараж" || u?.turul === "Агуулах")
+      .map((u: any) => [
+        u.turul,
+        str(u.davkhar),
+        str(u.toot),
+        Number(u.ekhniiUldegdel || 0),
+      ]);
+    return JSON.stringify([
+      str(c.ovog),
+      str(c.ner),
+      str(utas),
+      str(c.tailbar),
+      !!c.gadnaZogsoolEsekh,
+      mashinuud,
+      units,
+    ]);
+  };
+
   // Snapshot of newClient when modal opens — used to detect unsaved changes
   const initialSnapshot = React.useRef<string | null>(null);
+  const initialTulkhuur = React.useRef<string | null>(null);
   React.useEffect(() => {
     if (show) {
-      // Wait for units to be initialized (either from props or from the useEffect below)
-      // to avoid false-positive "unsaved changes" warnings on new residents.
-      const hasUnits =
-        Array.isArray(newClient?.units) && newClient.units.length > 0;
-
-      if (!initialSnapshot.current) {
-        // Only take snapshot if units are populated (initialization done)
-        // OR if it's been a few renders and still no units (though should always have one)
-        if (hasUnits) {
-          initialSnapshot.current = JSON.stringify(newClient);
-        }
+      if (!initialSnapshot.current && newClient) {
+        initialSnapshot.current = JSON.stringify(newClient);
+        initialTulkhuur.current = zasvariinTulkhuur(newClient);
       }
       setErrors([]);
     } else {
       initialSnapshot.current = null;
+      initialTulkhuur.current = null;
       setShowConfirmClose(false);
       setUldegdelInput("");
       setZaaltInput("");
@@ -126,54 +156,8 @@ export default function KhariltsagchModal({
   }, [show, newClient?.units, editingClient]);
 
   const hasChanges = React.useMemo(() => {
-    if (!initialSnapshot.current || !newClient) return false;
-
-    // Compare normalized versions
-    const normalize = (val: any) => {
-      if (!val) return {};
-      const obj =
-        typeof val === "string"
-          ? JSON.parse(val)
-          : JSON.parse(JSON.stringify(val));
-
-      // Remove volatile fields or normalize types
-      const clean = (o: any) => {
-        if (!o || typeof o !== "object") return o;
-        const result: any = Array.isArray(o) ? [] : {};
-        Object.keys(o).forEach((k) => {
-          let v = o[k];
-          // Treat undefined, null, empty string as equivalent for ALL fields
-          if (v === undefined || v === null || v === "") {
-            v = "";
-          }
-          // Special case for numbers: 0 is also an "empty" value for these specific fields
-          if (v === 0 || v === "0") {
-            if (
-              k === "ekhniiUldegdel" ||
-              k === "tsahilgaaniiZaalt" ||
-              k === "bodokhKhonog"
-            ) {
-              v = ""; // Normalize to empty string for comparison
-            }
-          }
-
-          if (Array.isArray(v)) {
-            result[k] = v.map(clean);
-          } else if (v && typeof v === "object") {
-            result[k] = clean(v);
-          } else {
-            result[k] = v;
-          }
-        });
-        return result;
-      };
-      return clean(obj);
-    };
-
-    const s1 = JSON.stringify(normalize(newClient));
-    const s2 = JSON.stringify(normalize(initialSnapshot.current));
-
-    return s1 !== s2;
+    if (!initialTulkhuur.current || !newClient) return false;
+    return zasvariinTulkhuur(newClient) !== initialTulkhuur.current;
   }, [newClient, show]);
 
   const requestClose = () => {
@@ -869,6 +853,13 @@ export default function KhariltsagchModal({
           border-radius: 6px !important;
           width: 100% !important;
         }
+        /* Бичих боломжтой сонгогчийн сумтай товч — дээрх 100% өргөн нь
+           сумыг талбарын дунд аваачиж байсан */
+        .tusgai-wrapper input + button {
+          width: auto !important;
+          flex-shrink: 0 !important;
+          padding: 0 10px !important;
+        }
         .tusgai-wrapper button:focus {
           outline: none !important;
         }
@@ -1129,19 +1120,13 @@ export default function KhariltsagchModal({
                           </div>
                         ))}
                       </div>
-                      <p className="mt-1 text-[11px] text-[color:var(--muted-text)]">
-                        4 тоо + 3 үсэг (жишээ: 1234УБА)
-                        {mashiniiKhyazgaar > 0
-                          ? ` · дээд тал ${mashiniiKhyazgaar}`
-                          : ""}
-                      </p>
                     </div>
 
                     {/* ── Гадна зогсоол ────────────────────────────────────
-                        Тэмдэглэвэл гараж/агуулахын тоот бүртгэхгүйгээр
-                        хадгална. Тоотгүй бол `syncResidentContracts` гэрээ
-                        үүсгэхгүй — гадна зогсоолын төлбөр нь зогсоолын
-                        системээр бодогддог, сарын гэрээгээр биш. */}
+                        Гадна зогсоол хэрэглэдэг харилцагч гараж/агуулах
+                        давхар эзэмшиж болно — тэмдэглэсэн ч тоот нэмэх
+                        боломжтой. Тоотгүй бол `syncResidentContracts` гэрээ
+                        үүсгэхгүй. */}
                     <div className="md:col-span-2">
                       <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] px-3 py-2.5 transition-colors hover:border-theme/40">
                         <input
@@ -1153,12 +1138,6 @@ export default function KhariltsagchModal({
                               ...p,
                               gadnaZogsoolEsekh: asaav,
                             }));
-                            // Тэмдэглэхэд хагас бөглөсөн тоотууд үлдвэл
-                            // хадгалахад давхардлын шалгалтад унана.
-                            if (asaav) {
-                              setGarages([]);
-                              setStorages([]);
-                            }
                           }}
                           className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-[color:var(--theme)]"
                         />
@@ -1167,18 +1146,28 @@ export default function KhariltsagchModal({
                             Гадна зогсоол
                           </span>
                           <span className="mt-0.5 block text-[11px] text-[color:var(--muted-text)]">
-                            Гараж / агуулах бүртгэхгүйгээр хадгална
+                            Гараж / агуулахгүйгээр хадгалах, эсвэл давхар нэмж болно
                           </span>
                         </span>
                       </label>
                     </div>
 
-                    {/* Units Section — гадна зогсоол бол шаардлагагүй */}
-                    {!newClient.gadnaZogsoolEsekh && (
-                    <div className="md:col-span-2 space-y-4 pt-2">
-                      <div className="flex items-center justify-between border-b border-[color:var(--surface-border)] pb-2">
-                        <h3 className="text-sm font-semibold text-[color:var(--panel-text)]">Гараж / Агуулах</h3>
-                        <div className="flex gap-2">
+                    {/* Гараж | Агуулах — зэрэгцээ самбар. Гадна зогсоолтой ч
+                        давхар нэмж болно. */}
+                    <div className="md:col-span-2 grid grid-cols-1 items-start gap-3 md:grid-cols-2">
+                      <div className="overflow-hidden rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]">
+                        <div className="flex items-center justify-between gap-2 px-3 py-2">
+                          <div className="flex items-center gap-2">
+                            <span className="grid h-6 w-6 place-items-center rounded-md bg-theme/10 text-brand">
+                              <Car className="h-3.5 w-3.5" />
+                            </span>
+                            <span className="text-xs font-medium text-[color:var(--panel-text)]">
+                              Гараж
+                              {garages.length > 0 && (
+                                <span className="ml-1 text-[color:var(--muted-text)]">({garages.length})</span>
+                              )}
+                            </span>
+                          </div>
                           <Button
                             type="button"
                             onClick={addGarage}
@@ -1186,8 +1175,43 @@ export default function KhariltsagchModal({
                             size="sm"
                             leftIcon={<Plus className="w-3.5 h-3.5" />}
                           >
-                            Гараж нэмэх
+                            Нэмэх
                           </Button>
+                        </div>
+                        {garages.map((garage: any, gIdx: number) => {
+                          const gFlatIdx = getGarageFlatIndex(gIdx);
+                          return (
+                            <div key={`garage-${gIdx}`} className="flex items-center gap-2 border-t border-[color:var(--surface-border)] px-3 py-2">
+                              <div className={`tusgai-wrapper min-w-0 flex-1 flex items-center ${errors.includes(`units.${gFlatIdx}.davkhar`) ? "input-error" : ""}`}>
+                                <TusgaiZagvar value={garage.davkhar || ""} onChange={(val: string) => updateGarageField(gIdx, "davkhar", val)}
+                                  options={additionalFloors.map((d) => ({ value: d, label: d }))} className="w-full h-full" placeholder="Давхар" />
+                              </div>
+                              <div className={`tusgai-wrapper min-w-0 flex-1 flex items-center ${errors.includes(`units.${gFlatIdx}.toot`) ? "input-error" : ""}`}>
+                                <TusgaiZagvar value={garage.toot || ""} onChange={(val: string) => updateGarageField(gIdx, "toot", val)}
+                                  options={getTootOptions("1", garage.davkhar || "", "Зогсоол").map((t) => ({ value: t, label: t, isOccupied: isTootOccupied(t, garage.davkhar || "", "Зогсоол") }))} className="w-full h-full" placeholder="Дугаар" disabled={!garage.davkhar} allowCustomInput={true} />
+                              </div>
+                              <button type="button" onClick={() => removeGarage(gIdx)}
+                                title="Хасах" aria-label="Хасах"
+                                className="shrink-0 rounded-md p-1 text-[color:var(--muted-text)] transition-colors hover:bg-danger/10 hover:text-danger">
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="overflow-hidden rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]">
+                        <div className="flex items-center justify-between gap-2 px-3 py-2">
+                          <div className="flex items-center gap-2">
+                            <span className="grid h-6 w-6 place-items-center rounded-md bg-indigo-500/10 text-indigo-500">
+                              <Warehouse className="h-3.5 w-3.5" />
+                            </span>
+                            <span className="text-xs font-medium text-[color:var(--panel-text)]">
+                              Агуулах
+                              {storages.length > 0 && (
+                                <span className="ml-1 text-[color:var(--muted-text)]">({storages.length})</span>
+                              )}
+                            </span>
+                          </div>
                           <Button
                             type="button"
                             onClick={addStorage}
@@ -1195,98 +1219,31 @@ export default function KhariltsagchModal({
                             size="sm"
                             leftIcon={<Plus className="w-3.5 h-3.5" />}
                           >
-                            Агуулах нэмэх
+                            Нэмэх
                           </Button>
                         </div>
-                      </div>
-
-                      {/* Garage Cards */}
-                      {garages.map((garage: any, gIdx: number) => {
-                        const gFlatIdx = getGarageFlatIndex(gIdx);
-                        return (
-                          <div key={`garage-${gIdx}`} className="rounded-lg border-l-4 border-l-emerald-500 border border-theme/30 bg-theme/30 overflow-hidden">
-                            <div className="flex items-center justify-between px-3 py-2 border-b border-theme/30 bg-theme/60">
-                              <div className="flex items-center gap-2">
-                                <h5 className="text-[10px] font-bold uppercase tracking-wider text-brand">
-                                  Гараж {garages.length > 1 ? `#${gIdx + 1}` : ""}
-                                </h5>
+                        {storages.map((storage: any, sIdx: number) => {
+                          const sFlatIdxNested = getStorageFlatIndex(sIdx);
+                          return (
+                            <div key={`storage-${sIdx}`} className="flex items-center gap-2 border-t border-[color:var(--surface-border)] px-3 py-2">
+                              <div className={`tusgai-wrapper min-w-0 flex-1 flex items-center ${errors.includes(`units.${sFlatIdxNested}.davkhar`) ? "input-error" : ""}`}>
+                                <TusgaiZagvar value={storage.davkhar || ""} onChange={(val: string) => updateStorageField(sIdx, "davkhar", val)}
+                                  options={additionalFloors.map((d) => ({ value: d, label: d }))} className="w-full h-full" placeholder="Давхар" />
                               </div>
-                              <button type="button" onClick={() => removeGarage(gIdx)}
-                                className="p-1 text-danger hover:text-danger hover:bg-danger/10 rounded transition-all">
-                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                              </button>
-                            </div>
-                            <div className="p-3 grid grid-cols-2 gap-3">
-                              <div>
-                                <label className="block text-[10px] uppercase tracking-wider font-bold text-brand mb-1">Давхар</label>
-                                <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${gFlatIdx}.davkhar`) ? "input-error" : ""}`}>
-                                  <TusgaiZagvar value={garage.davkhar || ""} onChange={(val: string) => updateGarageField(gIdx, "davkhar", val)}
-                                    options={additionalFloors.map((d) => ({ value: d, label: d }))} className="w-full h-full" placeholder="Давхар..." />
-                                </div>
-                              </div>
-                              <div>
-                                <label className="block text-[10px] uppercase tracking-wider font-bold text-brand mb-1">Дугаар</label>
-                                {(() => {
-                                  const opts = getTootOptions("1", garage.davkhar || "", "Зогсоол");
-                                  return (
-                                    <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${gFlatIdx}.toot`) ? "input-error" : ""}`}>
-                                      <TusgaiZagvar value={garage.toot || ""} onChange={(val: string) => updateGarageField(gIdx, "toot", val)}
-                                        options={opts.map((t) => ({ value: t, label: t, isOccupied: isTootOccupied(t, garage.davkhar || "", "Зогсоол") }))} className="w-full h-full" placeholder="Дугаар..." disabled={!garage.davkhar} allowCustomInput={true} />
-                                    </div>
-                                  );
-                                })()}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-
-                      {/* Storage Cards */}
-                      {storages.map((storage: any, sIdx: number) => {
-                        const sFlatIdxNested = getStorageFlatIndex(sIdx);
-                        return (
-                          <div key={`storage-${sIdx}`} className="rounded-lg border-l-4 border-l-indigo-500 border border-theme/30 bg-theme/30 overflow-hidden">
-                            <div className="flex items-center justify-between px-3 py-2 border-b border-theme/30 bg-theme/60">
-                              <div className="flex items-center gap-2">
-                                <h5 className="text-[10px] font-bold uppercase tracking-wider text-brand">
-                                  Агуулах {storages.length > 1 ? `#${sIdx + 1}` : ""}
-                                </h5>
+                              <div className={`tusgai-wrapper min-w-0 flex-1 flex items-center ${errors.includes(`units.${sFlatIdxNested}.toot`) ? "input-error" : ""}`}>
+                                <TusgaiZagvar value={storage.toot || ""} onChange={(val: string) => updateStorageField(sIdx, "toot", val)}
+                                  options={getTootOptions("1", storage.davkhar || "", "Агуулах").map((t) => ({ value: t, label: t, isOccupied: isTootOccupied(t, storage.davkhar || "", "Агуулах") }))} className="w-full h-full" placeholder="Дугаар" disabled={!storage.davkhar} allowCustomInput={true} />
                               </div>
                               <button type="button" onClick={() => removeStorage(sIdx)}
-                                className="p-1 text-danger hover:text-danger hover:bg-danger/10 rounded transition-all">
-                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
+                                title="Хасах" aria-label="Хасах"
+                                className="shrink-0 rounded-md p-1 text-[color:var(--muted-text)] transition-colors hover:bg-danger/10 hover:text-danger">
+                                <X className="h-3.5 w-3.5" />
                               </button>
                             </div>
-                            <div className="p-3 grid grid-cols-2 gap-3">
-                              <div>
-                                <label className="block text-[10px] uppercase tracking-wider font-bold text-brand mb-1">Давхар</label>
-                                <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${sFlatIdxNested}.davkhar`) ? "input-error" : ""}`}>
-                                  <TusgaiZagvar value={storage.davkhar || ""} onChange={(val: string) => updateStorageField(sIdx, "davkhar", val)}
-                                    options={additionalFloors.map((d) => ({ value: d, label: d }))} className="w-full h-full" placeholder="Давхар..." />
-                                </div>
-                              </div>
-                              <div>
-                                <label className="block text-[10px] uppercase tracking-wider font-bold text-brand mb-1">Дугаар</label>
-                                {(() => {
-                                  const opts = getTootOptions("1", storage.davkhar || "", "Агуулах");
-                                  return (
-                                    <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${sFlatIdxNested}.toot`) ? "input-error" : ""}`}>
-                                      <TusgaiZagvar value={storage.toot || ""} onChange={(val: string) => updateStorageField(sIdx, "toot", val)}
-                                        options={opts.map((t) => ({ value: t, label: t, isOccupied: isTootOccupied(t, storage.davkhar || "", "Агуулах") }))} className="w-full h-full" placeholder="Дугаар..." disabled={!storage.davkhar} allowCustomInput={true} />
-                                    </div>
-                                  );
-                                })()}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
                     </div>
-                    )}
                     {/* Tailbar */}
                     <div className="md:col-span-2">
                       <label className="block text-xs text-[color:var(--muted-text)] mb-1 transition-colors">

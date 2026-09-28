@@ -14,7 +14,7 @@ import uilchilgee from "@/lib/uilchilgee";
 import formatNumber, {
   formatCurrency,
 } from "../../../../../tools/function/formatNumber";
-import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
+import FilterDatePicker from "@/components/ui/FilterDatePicker";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import InvoiceModal from "./InvoiceModal";
 import { ModalPortal } from "../../../../../components/shell/ModalPortal";
@@ -487,20 +487,20 @@ function LedgerMonthlyBreakdownTable({
     <div className="overflow-x-auto rounded-xl border border-[color:var(--surface-border)]">
       <table className="w-full text-[11px] sm:text-[12px] border-collapse min-w-[340px] font-normal">
         <thead>
-          <tr className="border-b border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] text-center text-[9px] uppercase tracking-wide text-[color:var(--panel-text)]">
-            <th className="py-1.5 px-2 font-semibold whitespace-nowrap text-center border-r border-[color:var(--surface-border)]">
+          <tr className="border-b border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] text-center text-[11px] text-[color:var(--panel-text)]">
+            <th className="py-1.5 px-2 font-medium whitespace-nowrap text-center border-r border-[color:var(--surface-border)]">
               Сар
             </th>
-            <th className="py-1.5 px-2 font-semibold whitespace-nowrap text-center border-r border-[color:var(--surface-border)]">
+            <th className="py-1.5 px-2 font-medium whitespace-nowrap text-center border-r border-[color:var(--surface-border)]">
               Өмнөх үлдэгдэл
             </th>
-            <th className="py-1.5 px-2 font-semibold whitespace-nowrap text-center border-r border-[color:var(--surface-border)]">
+            <th className="py-1.5 px-2 font-medium whitespace-nowrap text-center border-r border-[color:var(--surface-border)]">
               Төлөх
             </th>
-            <th className="py-1.5 px-2 font-semibold whitespace-nowrap text-center border-r border-[color:var(--surface-border)]">
+            <th className="py-1.5 px-2 font-medium whitespace-nowrap text-center border-r border-[color:var(--surface-border)]">
               Төлсөн
             </th>
-            <th className="py-1.5 px-2 font-semibold whitespace-nowrap text-center border-[color:var(--surface-border)]">
+            <th className="py-1.5 px-2 font-medium whitespace-nowrap text-center border-[color:var(--surface-border)]">
               Сарын эцсийн үлдэгдэл
             </th>
           </tr>
@@ -538,17 +538,17 @@ function LedgerMonthlyBreakdownTable({
           <tr className="history-print-total-row border-t border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]">
             <td
               colSpan={2}
-              className="py-1.5 px-2 text-left text-[color:var(--panel-text)] font-bold border-r border-[color:var(--surface-border)]"
+              className="py-1.5 px-2 text-left text-[color:var(--panel-text)] font-medium border-r border-[color:var(--surface-border)]"
             >
               Нийт
             </td>
-            <td className="py-1.5 px-2 text-left tabular-nums text-[color:var(--panel-text)] whitespace-nowrap font-bold border-r border-[color:var(--surface-border)]">
+            <td className="py-1.5 px-2 text-left tabular-nums text-[color:var(--panel-text)] whitespace-nowrap font-medium border-r border-[color:var(--surface-border)]">
               {formatCurrency(totalTulukh)} ₮
             </td>
-            <td className="py-1.5 px-2 text-left tabular-nums text-[color:var(--panel-text)] whitespace-nowrap font-bold border-r border-[color:var(--surface-border)]">
+            <td className="py-1.5 px-2 text-left tabular-nums text-[color:var(--panel-text)] whitespace-nowrap font-medium border-r border-[color:var(--surface-border)]">
               {formatCurrency(totalTulsun)} ₮
             </td>
-            <td className="py-1.5 px-2 text-left tabular-nums text-[color:var(--panel-text)] whitespace-nowrap font-bold">
+            <td className="py-1.5 px-2 text-left tabular-nums text-[color:var(--panel-text)] whitespace-nowrap font-medium">
               {formatCurrency(finalUldegdel)} ₮
             </td>
           </tr>
@@ -584,7 +584,7 @@ function HistoryContractInfoGrid({
           key={idx}
           className="bg-[color:var(--panel)] px-3 py-2 rounded-2xl border border-[color:var(--surface-border)] print:bg-[color:var(--panel)] print:border-black print:text-black"
         >
-          <span className="text-[9px] text-[color:var(--muted-text)] uppercase tracking-wider block print:text-black">
+          <span className="text-[11px] text-[color:var(--muted-text)] block print:text-black">
             {item.label}
           </span>
           <span className="text-[13px] text-[color:var(--panel-text)] truncate block print:text-black">
@@ -2299,7 +2299,7 @@ export default function HistoryModal({
                     : "w-full flex-1"
                 }`}
               >
-                <div className="hidden print:block w-full border-b border-black pb-2 mb-3 text-center text-[11pt] font-bold text-black">
+                <div className="hidden print:block w-full border-b border-black pb-2 mb-3 text-center text-[11pt] font-medium text-black">
                   {String(baiguullagiinNer ?? "").trim() || "—"}
                 </div>
 
@@ -2340,23 +2340,17 @@ export default function HistoryModal({
                       className="w-full sm:w-[220px]"
                       onPointerDown={(e) => e.stopPropagation()}
                     >
-                      <StandardDatePicker
-                        isRange={true}
+                      <FilterDatePicker
                         value={dateRange}
-                        getPopupContainer={() => document.body}
-                        popupStyle={{ zIndex: 10000050 }}
+                        allowClear={false}
                         onChange={(date: any, dateString: any) => {
                           setModalDateFilterFromUser(true);
                           if (Array.isArray(date)) {
                             setDateRange([
-                              date[0]?.isValid?.()
-                                ? date[0].format("YYYY-MM-DD")
-                                : null,
-                              date[1]?.isValid?.()
-                                ? date[1].format("YYYY-MM-DD")
-                                : null,
+                              date[0]?.isValid?.() ? date[0].format("YYYY-MM-DD") : null,
+                              date[1]?.isValid?.() ? date[1].format("YYYY-MM-DD") : null,
                             ]);
-                          } else if (Array.isArray(dateString)) {
+                          } else if (Array.isArray(dateString) && (dateString[0] || dateString[1])) {
                             setDateRange([
                               dateString[0] ? String(dateString[0]) : null,
                               dateString[1] ? String(dateString[1]) : null,
@@ -2365,12 +2359,8 @@ export default function HistoryModal({
                             setDateRange([null, null]);
                           }
                         }}
-                        size="small"
                         placeholder="Огноо"
-                        classNames={{
-                          input: "border-none h-8 text-[13px]",
-                        }}
-                        className="dark:text-white"
+                        className="w-full"
                       />
                     </div>
                     {(dateRange?.[0] || dateRange?.[1]) && (
@@ -2380,7 +2370,7 @@ export default function HistoryModal({
                           setModalDateFilterFromUser(true);
                           setDateRange([null, null]);
                         }}
-                        className="text-[10px] text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] hover:underline"
+                        className="text-[11px] text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] hover:underline"
                       >
                         Арилгах
                       </button>
@@ -2393,37 +2383,37 @@ export default function HistoryModal({
                   <table className="w-full text-[12px] border-collapse leading-tight">
                     <thead className="sticky top-0 z-10 bg-white dark:bg-[color:var(--panel)]">
                       <tr className="border-b border-[color:var(--surface-border)]">
-                        <th className="py-1 px-1.5 text-center text-[9px] border-r border-b border-[color:var(--surface-border)] text-[color:var(--panel-text)] uppercase font-semibold tracking-wide w-10 print:w-8">
+                        <th className="py-1 px-1.5 text-center text-[11px] border-r border-b border-[color:var(--surface-border)] text-[color:var(--panel-text)] font-medium w-10 print:w-8">
                           №
                         </th>
-                        <th className="py-1 px-2 text-center text-[9px] border-r border-b border-[color:var(--surface-border)] text-[color:var(--panel-text)] uppercase font-semibold tracking-wide">
+                        <th className="py-1 px-2 text-center text-[11px] border-r border-b border-[color:var(--surface-border)] text-[color:var(--panel-text)] font-medium ">
                           Огноо
                         </th>
-                        <th className="py-1 px-2 text-center text-[9px] border-r border-b border-[color:var(--surface-border)] text-[color:var(--panel-text)] uppercase font-semibold tracking-wide hidden sm:table-cell print:table-cell">
+                        <th className="py-1 px-2 text-center text-[11px] border-r border-b border-[color:var(--surface-border)] text-[color:var(--panel-text)] font-medium hidden sm:table-cell print:table-cell">
                           Ажилтан
                         </th>
-                        <th className="py-1 px-2 text-center text-[9px] border-r border-b border-[color:var(--surface-border)] text-[color:var(--panel-text)] uppercase font-semibold tracking-wide">
+                        <th className="py-1 px-2 text-center text-[11px] border-r border-b border-[color:var(--surface-border)] text-[color:var(--panel-text)] font-medium ">
                           Төлөх дүн
                         </th>
-                        <th className="py-1 px-2 text-center text-[9px] border-r border-b border-[color:var(--surface-border)] text-[color:var(--panel-text)] uppercase font-semibold tracking-wide">
+                        <th className="py-1 px-2 text-center text-[11px] border-r border-b border-[color:var(--surface-border)] text-[color:var(--panel-text)] font-medium ">
                           Төлсөн дүн
                         </th>
-                        <th className="py-1 px-2 text-center text-[9px] border-r border-b border-[color:var(--surface-border)] text-[color:var(--panel-text)] uppercase font-semibold tracking-wide">
+                        <th className="py-1 px-2 text-center text-[11px] border-r border-b border-[color:var(--surface-border)] text-[color:var(--panel-text)] font-medium ">
                           Хөнгөлөлт
                         </th>
-                        <th className="py-1 px-2 text-center text-[9px] border-r border-b border-[color:var(--surface-border)] text-[color:var(--panel-text)] uppercase font-semibold tracking-wide">
+                        <th className="py-1 px-2 text-center text-[11px] border-r border-b border-[color:var(--surface-border)] text-[color:var(--panel-text)] font-medium ">
                           Үлдэгдэл сараар
                         </th>
-                        <th className="py-1 px-2 text-center text-[9px] border-r border-b border-[color:var(--surface-border)] text-[color:var(--panel-text)] uppercase font-semibold tracking-wide hidden md:table-cell print:table-cell">
+                        <th className="py-1 px-2 text-center text-[11px] border-r border-b border-[color:var(--surface-border)] text-[color:var(--panel-text)] font-medium hidden md:table-cell print:table-cell">
                           Хэлбэр
                         </th>
-                        <th className="py-1 px-2 text-center text-[9px] border-r border-b border-[color:var(--surface-border)] text-[color:var(--panel-text)] uppercase font-semibold tracking-wide hidden md:table-cell print:table-cell">
+                        <th className="py-1 px-2 text-center text-[11px] border-r border-b border-[color:var(--surface-border)] text-[color:var(--panel-text)] font-medium hidden md:table-cell print:table-cell">
                           Тайлбар
                         </th>
-                        <th className="py-1 px-2 text-center text-[9px] border-r border-b border-[color:var(--surface-border)] text-[color:var(--panel-text)] uppercase font-semibold tracking-wide hidden lg:table-cell print:table-cell">
+                        <th className="py-1 px-2 text-center text-[11px] border-r border-b border-[color:var(--surface-border)] text-[color:var(--panel-text)] font-medium hidden lg:table-cell print:table-cell">
                           Бүртгэсэн огноо
                         </th>
-                        <th className="py-1 px-1 text-center text-[9px] border-b border-[color:var(--surface-border)] text-[color:var(--panel-text)] uppercase font-semibold tracking-wide w-12">
+                        <th className="py-1 px-1 text-center text-[11px] border-b border-[color:var(--surface-border)] text-[color:var(--panel-text)] font-medium w-12">
                           Үйлдэл
                         </th>
                       </tr>
@@ -2576,7 +2566,7 @@ export default function HistoryModal({
                                     <td className="sticky bottom-[37px] z-10 bg-[color:var(--surface-bg)] py-1 px-2 text-[12px] text-[color:var(--panel-text)] text-right border-t border-r border-[color:var(--surface-border)]">
                                       {totalDiscounts > 0 ? `${formatCurrency(totalDiscounts)} ₮` : ""}
                                     </td>
-                                    <td className="sticky bottom-[37px] z-10 bg-[color:var(--surface-bg)] py-1 px-2 text-[12px] font-bold text-[color:var(--panel-text)] text-right border-t border-r border-[color:var(--surface-border)]">
+                                    <td className="sticky bottom-[37px] z-10 bg-[color:var(--surface-bg)] py-1 px-2 text-[12px] font-medium text-[color:var(--panel-text)] text-right border-t border-r border-[color:var(--surface-border)]">
                                       {formatCurrency(openingBalance)} ₮
                                     </td>
                                     <td colSpan={4} className="sticky bottom-[37px] z-10 bg-[color:var(--surface-bg)] border-t border-r border-[color:var(--surface-border)]"></td>
@@ -2586,17 +2576,17 @@ export default function HistoryModal({
                                   
                                 <td
                                   colSpan={3}
-                                  className="sticky bottom-0 z-10 bg-[color:var(--surface-bg)] py-1 px-2 text-[13px] font-bold text-[color:var(--panel-text)] text-left border-t-2 border-r border-[color:var(--surface-border)]"
+                                  className="sticky bottom-0 z-10 bg-[color:var(--surface-bg)] py-1 px-2 text-[13px] font-medium text-[color:var(--panel-text)] text-left border-t-2 border-r border-[color:var(--surface-border)]"
                                 >
                                   Нийт
                                 </td>
-                                <td className="sticky bottom-0 z-10 bg-[color:var(--surface-bg)] py-1 px-2 text-[13px] font-bold text-[color:var(--panel-text)] text-right whitespace-nowrap border-t-2 border-r border-[color:var(--surface-border)]">
+                                <td className="sticky bottom-0 z-10 bg-[color:var(--surface-bg)] py-1 px-2 text-[13px] font-medium text-[color:var(--panel-text)] text-right whitespace-nowrap border-t-2 border-r border-[color:var(--surface-border)]">
                                   {formatCurrency(totalCharges)} ₮
                                 </td>
-                                <td className="sticky bottom-0 z-10 bg-[color:var(--surface-bg)] py-1 px-2 text-[13px] font-bold text-[color:var(--panel-text)] text-right whitespace-nowrap border-t-2 border-r border-[color:var(--surface-border)]">
+                                <td className="sticky bottom-0 z-10 bg-[color:var(--surface-bg)] py-1 px-2 text-[13px] font-medium text-[color:var(--panel-text)] text-right whitespace-nowrap border-t-2 border-r border-[color:var(--surface-border)]">
                                   {formatCurrency(totalPayments)} ₮
                                 </td>
-                                <td className="sticky bottom-0 z-10 bg-[color:var(--surface-bg)] py-1 px-2 text-[13px] font-bold text-[color:var(--panel-text)] text-right whitespace-nowrap border-t-2 border-r border-[color:var(--surface-border)]">
+                                <td className="sticky bottom-0 z-10 bg-[color:var(--surface-bg)] py-1 px-2 text-[13px] font-medium text-[color:var(--panel-text)] text-right whitespace-nowrap border-t-2 border-r border-[color:var(--surface-border)]">
                                   {formatCurrency(totalDiscounts)} ₮
                                 </td>
                                 <td
@@ -2625,7 +2615,7 @@ export default function HistoryModal({
                                   data-print-balance={
                                     balance < 0.01 ? "ok" : "due"
                                   }
-                                  className={`sticky bottom-0 z-10 bg-[color:var(--surface-hover)] py-1 px-2 text-[13px] font-bold text-right whitespace-nowrap border-t-2 border-r border-[color:var(--surface-border)] cursor-pointer rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-theme/80 hover:bg-[color:var(--panel)] transition-colors ${balanceClass}`}
+                                  className={`sticky bottom-0 z-10 bg-[color:var(--surface-hover)] py-1 px-2 text-[13px] font-medium text-right whitespace-nowrap border-t-2 border-r border-[color:var(--surface-border)] cursor-pointer rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-theme/80 hover:bg-[color:var(--panel)] transition-colors ${balanceClass}`}
                                   title="Дэлгэрэнгүй харах"
                                 >
                                   {formatCurrency(balance)} ₮
@@ -2808,7 +2798,7 @@ export default function HistoryModal({
                     transition={{ type: "spring", stiffness: 320, damping: 32 }}
                     className="ledger-print-panel flex flex-col overflow-hidden min-h-0 min-w-0 flex-none w-full max-h-[48%] lg:max-h-none lg:w-[min(48vw,580px)] lg:max-w-[min(94vw,620px)] bg-white dark:bg-[color:var(--panel)] rounded-2xl sm:rounded-3xl shadow-2xl border border-[color:var(--surface-border)]"
                   >
-                    <div className="hidden print:block w-full border-b border-black pb-2 mb-2 text-center text-[11pt] font-bold text-black px-4">
+                    <div className="hidden print:block w-full border-b border-black pb-2 mb-2 text-center text-[11pt] font-medium text-black px-4">
                       {String(baiguullagiinNer ?? "").trim() || "—"}
                     </div>
                     <div className="p-4 sm:p-5 border-b border-[color:var(--surface-border)] shrink-0 relative">
@@ -2839,14 +2829,21 @@ export default function HistoryModal({
                                 ? "ok"
                                 : "due"
                             }
-                            className={`no-print rounded-2xl px-4 py-3 border border-[color:var(--surface-border)] ${
+                            className={`no-print rounded-2xl border border-l-4 px-5 py-4 ${
                               (ledgerDetailSelection.row.uldegdel ?? 0) < 0.01
-                                ? "bg-success/80"
-                                : "bg-danger/80"
+                                ? "border-success/25 border-l-success bg-success/[0.06]"
+                                : "border-danger/25 border-l-danger bg-danger/[0.05]"
                             }`}
                           >
-                            <div className="text-[10px] uppercase tracking-wider text-[color:var(--muted-text)] mb-1">
+                            <div className="mb-1.5 flex items-center gap-2 text-[13px] text-[color:var(--muted-text)]">
                               Үлдэгдэл дүн
+                              <span
+                                className={`rounded-full px-2 py-0.5 text-[12px] ${
+                                  (ledgerDetailSelection.row.uldegdel ?? 0) < 0.01 ? "bg-success/15 text-success" : "bg-danger/10 text-danger"
+                                }`}
+                              >
+                                {(ledgerDetailSelection.row.uldegdel ?? 0) < 0.01 ? "Төлөгдсөн" : "Төлөх"}
+                              </span>
                             </div>
                             <div
                               data-print-balance={
@@ -2854,7 +2851,7 @@ export default function HistoryModal({
                                   ? "ok"
                                   : "due"
                               }
-                              className={`text-xl sm:text-2xl font-semibold tabular-nums ${
+                              className={`text-[26px] leading-tight tabular-nums ${
                                 (ledgerDetailSelection.row.uldegdel ?? 0) < 0.01
                                   ? "text-success"
                                   : "text-danger"
@@ -2879,14 +2876,21 @@ export default function HistoryModal({
                                 ? "ok"
                                 : "due"
                             }
-                            className={`no-print rounded-2xl px-4 py-3 border border-[color:var(--surface-border)] ${
+                            className={`no-print rounded-2xl border border-l-4 px-5 py-4 ${
                               ledgerDetailSelection.balance < 0.01
-                                ? "bg-success/80"
-                                : "bg-danger/80"
+                                ? "border-success/25 border-l-success bg-success/[0.06]"
+                                : "border-danger/25 border-l-danger bg-danger/[0.05]"
                             }`}
                           >
-                            <div className="text-[10px] uppercase tracking-wider text-[color:var(--muted-text)] mb-1">
+                            <div className="mb-1.5 flex items-center gap-2 text-[13px] text-[color:var(--muted-text)]">
                               Үлдэгдэл (хамгийн сүүлийн мөр)
+                              <span
+                                className={`rounded-full px-2 py-0.5 text-[12px] ${
+                                  ledgerDetailSelection.balance < 0.01 ? "bg-success/15 text-success" : "bg-danger/10 text-danger"
+                                }`}
+                              >
+                                {ledgerDetailSelection.balance < 0.01 ? "Төлөгдсөн" : "Төлөх"}
+                              </span>
                             </div>
                             <div
                               data-print-balance={
@@ -2894,7 +2898,7 @@ export default function HistoryModal({
                                   ? "ok"
                                   : "due"
                               }
-                              className={`text-xl sm:text-2xl font-semibold tabular-nums ${
+                              className={`text-[26px] leading-tight tabular-nums ${
                                 ledgerDetailSelection.balance < 0.01
                                   ? "text-success"
                                   : "text-danger"

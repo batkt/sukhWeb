@@ -1,5 +1,7 @@
 "use client";
 
+import ExcelButton from "@/components/ui/ExcelButton";
+import FilterDatePicker from "@/components/ui/FilterDatePicker";
 import React, {
   useState,
   useMemo,
@@ -40,7 +42,6 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { ConfigProvider } from "antd";
-import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import moment from "moment";
 import useSWR from "swr";
 import uilchilgee from "@/lib/uilchilgee";
@@ -130,7 +131,7 @@ const RealTimeDuration = ({
   const h = Math.floor(khugatsaaMin / 60);
   const m = khugatsaaMin % 60;
   return (
-    <span className="text-[10px] uppercase tracking-wide">
+    <span className="text-[11px]">
       {h > 0 ? `${h} цаг ${m} мин` : `${m} мин`}
     </span>
   );
@@ -1032,7 +1033,7 @@ export default function Jagsaalt() {
           }`}
       >
         <div className="relative z-10 flex flex-col gap-1">
-          <div className="mb-1 border-b border-white/5 px-3 py-1.5 text-[9px] tracking-widest text-[color:var(--muted-text)] uppercase">
+          <div className="mb-1 border-b border-white/5 px-3 py-1.5 text-[11px] text-[color:var(--muted-text)]">
             Сонгох
           </div>
           {options.map((opt) => (
@@ -1044,7 +1045,7 @@ export default function Jagsaalt() {
                 setPage(1);
                 setOpenFilter(null);
               }}
-              className={`flex cursor-pointer items-center justify-between rounded-xl px-4 py-2.5 text-left text-[10px] transition-all duration-200 ${current === opt.value
+              className={`flex cursor-pointer items-center justify-between rounded-xl px-4 py-2.5 text-left text-[11px] transition-all duration-200 ${current === opt.value
                 ? "bg-theme text-white shadow-lg shadow-theme/40"
                 : "text-[color:var(--muted-text)] hover:bg-white/10 hover:text-white"
                 }`}
@@ -1140,7 +1141,7 @@ export default function Jagsaalt() {
                   ? `Блоклсон${blockRecord.tailbar ? ": " + blockRecord.tailbar : ""}`
                   : undefined
               }
-              className={`rounded-full px-2.5 py-0.5 font-[family-name:var(--font-mono)] font-bold tracking-widest !text-white ${blockRecord ? "bg-danger" : "bg-theme"
+              className={`rounded-full px-2.5 py-0.5 font-[family-name:var(--font-mono)] font-medium tracking-widest !text-white ${blockRecord ? "bg-danger" : "bg-theme"
                 }`}
             >
               {transaction.mashiniiDugaar || ""}
@@ -1320,7 +1321,7 @@ export default function Jagsaalt() {
             className={`mx-auto flex w-[100px] max-w-[100px] min-w-[100px] flex-nowrap items-center justify-center overflow-hidden rounded-[6px] border px-2 py-0.5 ${getStatusColor()}`}
             style={{ borderRadius: "6px" }}
           >
-            <span className="whitespace-nowrap !text-white uppercase">
+            <span className="whitespace-nowrap !text-white">
               {label}
             </span>
           </div>
@@ -1390,26 +1391,19 @@ export default function Jagsaalt() {
 return (
   <div className="flex flex-col h-[calc(100dvh-var(--shell-topbar-h)-3.5rem-2px)] min-h-[420px] overflow-hidden">
     <div className="flex-1 min-h-0 flex flex-col gap-4 max-w-[1700px] mx-auto w-full overflow-hidden">
-      <div className="relative z-10 flex-shrink-0 px-1">
+      <div className="relative z-30 flex-shrink-0 px-1">
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
           {/* Left: Date picker + Search */}
           <div className="flex items-center gap-4 shrink-0">
-            <div className="w-[50px] sm:w-40 lg:w-[300px] h-11 [&_.ant-picker-input]:!bg-transparent [&_input]:!bg-transparent [&_.ant-picker-input-active]:!bg-transparent dark:[&_.ant-picker-suffix]:!text-white dark:[&_.ant-picker-suffix_svg]:!fill-white dark:[&_.ant-picker:hover]:!bg-[color:var(--panel)] dark:[&_.ant-picker-focused]:!bg-[color:var(--panel)] [&_.ant-picker-range-separator]:!text-[color:var(--muted-text)] dark:[&_.ant-picker-range-separator]:!text-[color:var(--muted-text)]">
-              <StandardDatePicker
-                isRange={true}
-                value={dateRange ?? undefined}
-                onChange={(date: any, dateString: [string, string]) => {
+            <FilterDatePicker
+              value={dateRange ?? undefined}
+              onChange={(date: any, dateString: [string, string]) => {
                   setDateRange(dateString);
                   setPage(1);
                 }}
-                format="YYYY-MM-DD"
-                className="w-full !bg-white dark:!bg-[color:var(--panel)] hover:!bg-white dark:hover:!bg-[color:var(--panel)] !border-[color:var(--surface-border)] dark:!border-[color:var(--surface-border)] hover:!border-[color:var(--surface-border)] dark:hover:!border-[color:var(--surface-border)] shadow-sm"
-                classNames={{
-                  input: "!bg-transparent !border-0 !shadow-none text-[11px] !text-[color:var(--panel-text)] dark:!text-[color:var(--muted-text)] px-2",
-                }}
-                allowClear
-              />
-            </div>
+              format="YYYY-MM-DD"
+              className="w-full sm:w-[284px]"
+            />
 
           </div>
 
@@ -1423,7 +1417,7 @@ return (
                 <Ban className="w-3.5 h-3.5" />
                 Блок
                 {blockedMap.size > 0 && (
-                  <span className="ml-0.5 min-w-[16px] h-4 px-1 rounded-full bg-white/25 flex items-center justify-center text-[10px] font-bold">
+                  <span className="ml-0.5 min-w-[16px] h-4 px-1 rounded-full bg-white/25 flex items-center justify-center text-[11px] font-medium">
                     {blockedMap.size}
                   </span>
                 )}
@@ -1435,13 +1429,7 @@ return (
                 <TrendingUp className="w-3.5 h-3.5" />
                 Орлого тайлан
               </button>
-              <button
-                onClick={downloadExcel}
-                className="flex items-center justify-center gap-1.5 h-8.5 w-32 rounded-xl bg-theme hover:bg-theme/90 active:bg-theme text-white text-xs font-medium shadow-sm transition-all whitespace-nowrap flex-shrink-0"
-              >
-                <Download className="w-3.5 h-3.5" />
-                Excel татах
-              </button>
+              <ExcelButton onClick={downloadExcel} />
             </div>
           </div>
         </div>
@@ -1469,13 +1457,13 @@ return (
             <Table.Summary fixed="bottom">
               <Table.Summary.Row>
                 <Table.Summary.Cell colSpan={6} align="right">
-                  <span className="font-semibold tracking-wider uppercase text-[color:var(--muted-text)]">
+                  <span className="font-medium text-[color:var(--muted-text)]">
                     Нийт Дүн:
                   </span>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell
                   align="center"
-                  className="font-[family-name:var(--font-mono)] font-semibold whitespace-nowrap text-[color:var(--panel-text)]"
+                  className="font-[family-name:var(--font-mono)] font-medium whitespace-nowrap text-[color:var(--panel-text)]"
                 >
                   {formatNumber(
                     displayVehicles.reduce(
@@ -1487,7 +1475,7 @@ return (
                 </Table.Summary.Cell>
                 <Table.Summary.Cell
                   align="center"
-                  className="font-[family-name:var(--font-mono)] font-semibold whitespace-nowrap text-[color:var(--panel-text)]"
+                  className="font-[family-name:var(--font-mono)] font-medium whitespace-nowrap text-[color:var(--panel-text)]"
                 >
                   {formatNumber(
                     displayVehicles.reduce(
@@ -1504,7 +1492,7 @@ return (
                 </Table.Summary.Cell>
                 <Table.Summary.Cell
                   align="center"
-                  className="font-[family-name:var(--font-mono)] font-semibold whitespace-nowrap text-[color:var(--panel-text)]"
+                  className="font-[family-name:var(--font-mono)] font-medium whitespace-nowrap text-[color:var(--panel-text)]"
                 >
                   {formatNumber(
                     displayVehicles.reduce(
@@ -1557,7 +1545,7 @@ return (
                     <Ban className="w-5 h-5 text-danger" />
                   </div>
                   <div>
-                    <h3 className="text-[15px] font-semibold text-[color:var(--panel-text)] dark:text-white">
+                    <h3 className="text-[15px] font-medium text-[color:var(--panel-text)] dark:text-white">
                       Машин блоклох
                     </h3>
                     <p className="text-[11px] text-[color:var(--muted-text)]">
@@ -1579,7 +1567,7 @@ return (
             <div className="px-7 py-5 border-b border-[color:var(--surface-border)] dark:border-white/[0.06] flex-shrink-0">
               <div className="flex items-end gap-3">
                 <div className="w-[150px] flex-shrink-0 space-y-1.5">
-                  <label className="text-[10px] font-semibold text-[color:var(--muted-text)] uppercase tracking-wider">
+                  <label className="text-xs font-medium text-[color:var(--muted-text)]">
                     Улсын дугаар <span className="text-danger">*</span>
                   </label>
                   <input
@@ -1600,11 +1588,11 @@ return (
                     }}
                     placeholder="1234УБА"
                     maxLength={7}
-                    className="w-full h-10 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] px-4 text-[13px] font-bold tracking-widest text-center font-[family-name:var(--font-mono)] text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] placeholder:font-normal placeholder:tracking-normal outline-none focus:border-danger transition-colors"
+                    className="w-full h-10 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] px-4 text-[13px] font-medium tracking-widest text-center font-[family-name:var(--font-mono)] text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] placeholder:font-normal placeholder:tracking-normal outline-none focus:border-danger transition-colors"
                   />
                 </div>
                 <div className="flex-1 space-y-1.5">
-                  <label className="text-[10px] font-semibold text-[color:var(--muted-text)] uppercase tracking-wider">
+                  <label className="text-xs font-medium text-[color:var(--muted-text)]">
                     Шалтгаан <span className="text-danger">*</span>
                   </label>
                   <input
@@ -1628,7 +1616,7 @@ return (
                     !MASHINII_DUGAARIIN_ZAGVAR.test(blockModal.dugaar) ||
                     !blockModal.tailbar.trim()
                   }
-                  className="h-10 px-5 rounded-[30px] bg-danger hover:bg-danger active:bg-danger text-white text-[11px] font-semibold shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-2 flex-shrink-0"
+                  className="h-9 px-4 rounded-[10px] bg-danger hover:bg-danger active:bg-danger text-white text-[13px] font-medium shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-2 flex-shrink-0"
                 >
                   {blockSaving ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1642,14 +1630,14 @@ return (
 
             {/* Excel-ээр олноор бүртгэх */}
             <div className="px-7 py-3.5 border-b border-[color:var(--surface-border)] dark:border-white/[0.06] flex-shrink-0 flex items-center gap-3">
-              <span className="text-[10px] font-semibold text-[color:var(--muted-text)] uppercase tracking-wider whitespace-nowrap">
+              <span className="text-[11px] font-medium text-[color:var(--muted-text)] whitespace-nowrap">
                 Excel-ээр машин бүртгэх
               </span>
               <div className="flex-1 h-px bg-[color:var(--surface-hover)] dark:bg-white/[0.06]" />
               <button
                 onClick={excelZagvarTatya}
                 disabled={excelKhadgalj}
-                className="h-8 px-3 rounded-2xl border border-[color:var(--surface-border)] text-[color:var(--muted-text)] hover:border-[color:var(--surface-border)] hover:text-[color:var(--panel-text)] text-[11px] font-semibold transition-all inline-flex items-center gap-1.5 disabled:opacity-40"
+                className="h-8 px-3 rounded-2xl border border-[color:var(--surface-border)] text-[color:var(--muted-text)] hover:border-[color:var(--surface-border)] hover:text-[color:var(--panel-text)] text-[11px] font-medium transition-all inline-flex items-center gap-1.5 disabled:opacity-40"
               >
                 <Download className="w-3.5 h-3.5" />
                 Загвар
@@ -1657,7 +1645,7 @@ return (
               <button
                 onClick={() => excelFileRef.current?.click()}
                 disabled={excelUnshij || excelKhadgalj}
-                className="h-8 px-3 rounded-2xl bg-theme hover:bg-theme active:bg-theme text-white text-[11px] font-semibold shadow-sm transition-all inline-flex items-center gap-1.5 disabled:opacity-40"
+                className="h-8 px-3 rounded-2xl bg-theme hover:bg-theme active:bg-theme text-white text-[11px] font-medium shadow-sm transition-all inline-flex items-center gap-1.5 disabled:opacity-40"
               >
                 {excelUnshij ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1679,7 +1667,7 @@ return (
               <>
                 {/* Урьдчилан харах — хэрэглэгч шалгасны дараа л хадгална */}
                 <div className="px-7 py-4 flex items-center justify-between gap-3 flex-shrink-0">
-                  <span className="text-[11px] font-semibold text-[color:var(--muted-text)] uppercase tracking-wider whitespace-nowrap">
+                  <span className="text-[11px] font-medium text-[color:var(--muted-text)] whitespace-nowrap">
                     Урьдчилан харах
                   </span>
                   <div className="flex items-center gap-2 min-w-0">
@@ -1687,11 +1675,11 @@ return (
                       <FileSpreadsheet className="w-3.5 h-3.5 shrink-0" />
                       <span className="truncate">{excelFileNer}</span>
                     </span>
-                    <span className="px-2 py-0.5 rounded-full bg-theme/10 text-brand text-[11px] font-semibold whitespace-nowrap">
+                    <span className="px-2 py-0.5 rounded-full bg-theme/10 text-brand text-[11px] font-medium whitespace-nowrap">
                       Зөв: {excelZuvMuruud.length}
                     </span>
                     {excelMuruud.length - excelZuvMuruud.length > 0 && (
-                      <span className="px-2 py-0.5 rounded-full bg-danger/10 text-danger text-[11px] font-semibold whitespace-nowrap">
+                      <span className="px-2 py-0.5 rounded-full bg-danger/10 text-danger text-[11px] font-medium whitespace-nowrap">
                         Алдаатай: {excelMuruud.length - excelZuvMuruud.length}
                       </span>
                     )}
@@ -1702,7 +1690,7 @@ return (
                   <div className="rounded-2xl border border-[color:var(--surface-border)] dark:border-white/[0.06] overflow-hidden">
                     <table className="w-full border-collapse">
                       <thead className="sticky top-0 z-10 bg-[color:var(--surface-hover)]">
-                        <tr className="text-[11px] uppercase font-semibold text-[color:var(--muted-text)]">
+                        <tr className="text-[11px] font-medium text-[color:var(--muted-text)]">
                           <th className="py-2.5 px-3 w-14 text-center">Мөр</th>
                           <th className="py-2.5 px-3 text-center w-[130px]">
                             Улсын дугаар
@@ -1728,7 +1716,7 @@ return (
                             </td>
                             <td className="py-2.5 px-3 text-center">
                               {mur.dugaar ? (
-                                <span className="px-3 py-0.5 rounded-full bg-danger text-[11px] font-bold !text-white tracking-wider whitespace-nowrap font-[family-name:var(--font-mono)]">
+                                <span className="px-3 py-0.5 rounded-full bg-danger text-[11px] font-medium !text-white tracking-wider whitespace-nowrap font-[family-name:var(--font-mono)]">
                                   {mur.dugaar}
                                 </span>
                               ) : (
@@ -1742,12 +1730,12 @@ return (
                             </td>
                             <td className="py-2.5 px-3 text-left">
                               {mur.aldaanuud.length === 0 ? (
-                                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand">
+                                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-brand">
                                   <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
                                   Бэлэн
                                 </span>
                               ) : (
-                                <span className="inline-flex items-start gap-1 text-[11px] font-semibold text-danger">
+                                <span className="inline-flex items-start gap-1 text-[11px] font-medium text-danger">
                                   <AlertTriangle className="w-3.5 h-3.5 mt-px shrink-0" />
                                   {mur.aldaanuud.join(", ")}
                                 </span>
@@ -1770,14 +1758,14 @@ return (
                     <button
                       onClick={excelTsutslaya}
                       disabled={excelKhadgalj}
-                      className="h-10 px-5 rounded-[30px] border border-[color:var(--surface-border)] text-[color:var(--muted-text)] text-[11px] font-semibold hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/5 transition-all disabled:opacity-40"
+                      className="h-9 px-4 rounded-[10px] border border-[color:var(--surface-border)] text-[color:var(--muted-text)] text-[13px] font-medium hover:bg-[color:var(--surface-hover)] dark:hover:bg-white/5 transition-all disabled:opacity-40"
                     >
                       Болих
                     </button>
                     <button
                       onClick={excelBlokloyo}
                       disabled={excelKhadgalj || excelZuvMuruud.length === 0}
-                      className="h-10 px-5 rounded-[30px] bg-danger hover:bg-danger active:bg-danger text-white text-[11px] font-semibold shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-2"
+                      className="h-9 px-4 rounded-[10px] bg-danger hover:bg-danger active:bg-danger text-white text-[13px] font-medium shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-2"
                     >
                       {excelKhadgalj ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1793,7 +1781,7 @@ return (
               <>
                 {/* Блоклсон машинууд */}
                 <div className="px-7 py-4 flex items-center justify-between gap-3 flex-shrink-0">
-                  <span className="text-[11px] font-semibold text-[color:var(--muted-text)] uppercase tracking-wider whitespace-nowrap">
+                  <span className="text-[11px] font-medium text-[color:var(--muted-text)] whitespace-nowrap">
                     Блоклсон <span className="text-danger">{blockedMap.size}</span>{" "}
                     машин
                   </span>
@@ -1827,14 +1815,14 @@ return (
                           key={b._id}
                           className="flex items-center gap-3 px-3 py-2.5 rounded-2xl bg-[color:var(--surface-hover)] border border-[color:var(--surface-border)] dark:border-white/[0.04]"
                         >
-                          <span className="px-3 py-0.5 rounded-full bg-danger text-[11px] font-bold !text-white tracking-wider whitespace-nowrap font-[family-name:var(--font-mono)] flex-shrink-0">
+                          <span className="px-3 py-0.5 rounded-full bg-danger text-[11px] font-medium !text-white tracking-wider whitespace-nowrap font-[family-name:var(--font-mono)] flex-shrink-0">
                             {b.dugaar}
                           </span>
                           <div className="flex-1 min-w-0">
                             <p className="text-[11px] text-[color:var(--muted-text)] truncate">
                               {b.tailbar || "—"}
                             </p>
-                            <p className="text-[10px] text-[color:var(--muted-text)] truncate">
+                            <p className="text-[11px] text-[color:var(--muted-text)] truncate">
                               {[
                                 b.burtgesenAjiltaniiNer,
                                 b.createdAt
@@ -1889,19 +1877,11 @@ return (
                       Орлого тайлан
                     </h2>
                     <div className="mt-1.5 min-w-[220px]">
-                      <ConfigProvider theme={{ token: { zIndexPopupBase: 10000 } }}>
-                        <StandardDatePicker
-                          isRange={true}
-                          value={revenueDateRange}
-                          onChange={(_: any, dateStrings: [string, string]) => setRevenueDateRange(dateStrings)}
-                          format="YYYY-MM-DD"
-                          classNames={{
-                            input: "flex items-center gap-2 rounded-full border border-[color:var(--surface-border)] dark:border-white/[0.06] h-8 px-3 text-[11px] text-[color:var(--muted-text)] focus:ring-2 focus:ring-theme/10 transition-all",
-                          }}
-                          allowClear
-                          getPopupContainer={() => document.body}
-                        />
-                      </ConfigProvider>
+                      <FilterDatePicker
+                        value={revenueDateRange}
+                        onChange={(_, dateStrings) => setRevenueDateRange(dateStrings)}
+                        className="w-[260px]"
+                      />
                     </div>
                   </div>
                 </div>
@@ -1916,7 +1896,7 @@ return (
 
             {/* Body */}
             <div className="p-5 space-y-2 max-h-[60vh] overflow-y-auto">
-              <p className="text-[10px] text-[color:var(--muted-text)] uppercase tracking-[0.15em] mb-1">
+              <p className="text-[11px] text-[color:var(--muted-text)] mb-1">
                 Төлбөрийн хэлбэр
               </p>
               {revenueLoading && (
@@ -1943,7 +1923,7 @@ return (
                       {item.name}
                     </span>
                   </div>
-                  <span className="text-[13px] font-black text-[color:var(--panel-text)] dark:text-white font-[family-name:var(--font-mono)] shrink-0 relative z-10">
+                  <span className="text-[13px] font-medium text-[color:var(--panel-text)] dark:text-white font-[family-name:var(--font-mono)] shrink-0 relative z-10">
                     {formatNumber(item.amount)}₮
                   </span>
                   <span className="text-[11px] text-[color:var(--muted-text)] font-[family-name:var(--font-mono)] w-6 text-center shrink-0 relative z-10">
@@ -1964,10 +1944,10 @@ return (
             {/* Footer total */}
             <div className="px-7 pb-6 pt-2">
               <div className="flex justify-between items-center py-3 px-4 rounded-2xl bg-theme/[0.08] border border-theme/30">
-                <span className="text-[11px] font-black text-brand uppercase tracking-wider">
+                <span className="text-[11px] font-medium text-brand">
                   Нийт орлого
                 </span>
-                <span className="text-[14px] font-black text-brand font-[family-name:var(--font-mono)]">
+                <span className="text-[14px] font-medium text-brand font-[family-name:var(--font-mono)]">
                   {formatNumber(revenueModalBreakdown.totalAmount)}₮
                 </span>
               </div>

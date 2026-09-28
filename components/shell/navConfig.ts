@@ -8,7 +8,9 @@ import {
   Clock,
   Contact,
   FileSpreadsheet,
+  FilePen,
   FileText,
+  FileX,
   Gauge,
   History,
   Landmark,
@@ -98,6 +100,15 @@ export const NAV_ITEMS: NavItem[] = [
     ],
   },
   {
+    label: "Түүх",
+    path: "tuukh",
+    icon: History,
+    submenu: [
+      { label: "Зассан түүх", path: "zassan", icon: FilePen },
+      { label: "Устгасан түүх", path: "ustgasan", icon: FileX },
+    ],
+  },
+  {
     label: "Зогсоол",
     path: "zogsool",
     icon: SquareParking,
@@ -167,7 +178,9 @@ export function titleForPath(pathname: string, items: NavItem[]): string {
     const sub = item.submenu?.find((s) =>
       pathname.startsWith(subHrefFor(item, s)),
     );
-    return sub ? `${item.label} — ${sub.label}` : item.label;
+    // «Мэдэгдэл — Мэдэгдэл» шиг давхардахгүй
+    if (!sub || sub.label === item.label) return item.label;
+    return `${item.label} — ${sub.label}`;
   }
   return "Амар Сөх";
 }

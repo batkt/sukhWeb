@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
-import { Clock, User, Globe, Monitor, MapPin } from "lucide-react";
+import FilterDatePicker from "@/components/ui/FilterDatePicker";
+import { Clock, User, Globe, Monitor, MapPin, Search } from "lucide-react";
 import moment from "moment";
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
@@ -134,39 +134,19 @@ export default function NevtreltiinTuukh({
   };
 
   return (
-    <div className="h-full overflow-y-auto custom-scrollbar">
-      <div className="bg-[color:var(--surface-bg)] rounded-2xl border border-[color:var(--surface-border)] shadow-lg p-6 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-[color:var(--surface-border)]">
-          <div className="flex items-center gap-3">
-            <Clock className="w-5 h-5 text-brand" />
-            <h2 className="text-xl text-[color:var(--panel-text)]">
-              {t("Нэвтрэлтийн түүх")}
-            </h2>
-          </div>
-        </div>
-
-        {/* Filters */}
-        <div className="flex flex-wrap items-center gap-3 mb-4">
-          <div
+    <div>
+      <div className="stg-card space-y-4">
+        {/* Шүүлтүүр — гарчгийг бүрхүүл зурна */}
+        <div className="flex flex-wrap items-center gap-3">
+          <FilterDatePicker
             id="nevtrel-date"
-            className="btn-minimal h-[40px] w-full sm:w-[320px] flex items-center px-3"
-          >
-            <StandardDatePicker
-              isRange={true}
-              value={dateRange}
-              onChange={handleDateChange}
-              allowClear
-              placeholder="Огноо сонгох"
-              classNames={{
-                root: "!h-full !w-full",
-                input:
-                  "text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] dark:placeholder:text-[color:var(--muted-text)] h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
-              }}
-            />
-          </div>
+            value={dateRange}
+            onChange={handleDateChange}
+            className="w-full sm:w-[284px]"
+          />
 
-          <div className="border border-[color:var(--surface-border)] rounded-2xl bg-[color:var(--surface-bg)] h-[40px] w-full sm:w-[220px] flex items-center px-3 gap-2">
+          <label className={`filter-field w-full sm:w-[280px] ${searchTerm ? "is-active" : ""}`}>
+            <Search className="h-4 w-4 shrink-0 text-[color:var(--muted-text)]" />
             <input
               type="text"
               value={searchTerm}
@@ -174,10 +154,9 @@ export default function NevtreltiinTuukh({
                 setSearchTerm(e.target.value);
                 setPage(1);
               }}
-              placeholder="Хайх..."
-              className="w-full text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] text-sm"
+              placeholder="Ажилтан, IP, байршлаар хайх"
             />
-          </div>
+          </label>
         </div>
 
         {/* Table */}
@@ -208,10 +187,10 @@ export default function NevtreltiinTuukh({
                 {
                   key: "ajiltniiNer",
                   label: "Ажилтны нэр",
-                  align: "center",
+                  align: "left",
                   render: (value: any) => (
-                    <div className="flex items-start gap-2">
-                      <User className="w-4 h-4 text-[color:var(--muted-text)]" />
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4 shrink-0 text-[color:var(--muted-text)]" />
                       {value || "-"}
                     </div>
                   ),
@@ -219,18 +198,18 @@ export default function NevtreltiinTuukh({
                 {
                   key: "ip",
                   label: "IP хаяг",
-                  align: "center",
+                  align: "left",
                   render: (value: any) => (
-                    <span className="font-mono">{value || "-"}</span>
+                    <span className="tabular-nums">{value || "-"}</span>
                   ),
                 },
                 {
                   key: "bairshilKhot",
                   label: "Байршил",
-                  align: "center",
+                  align: "left",
                   render: (value: any, record: any) => (
-                    <div className="flex items-center justify-center gap-2">
-                      <MapPin className="w-4 h-4 text-[color:var(--muted-text)]" />
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 shrink-0 text-[color:var(--muted-text)]" />
                       <span>
                         {value || "-"}
                         {record.bairshilUls && `, ${record.bairshilUls}`}
@@ -241,10 +220,10 @@ export default function NevtreltiinTuukh({
                 {
                   key: "browser",
                   label: "Хөтөч",
-                  align: "center",
+                  align: "left",
                   render: (value: any) => (
-                    <div className="flex items-center justify-center gap-2">
-                      <Globe className="w-4 h-4 text-[color:var(--muted-text)]" />
+                    <div className="flex items-center gap-2">
+                      <Globe className="h-4 w-4 shrink-0 text-[color:var(--muted-text)]" />
                       {value || "-"}
                     </div>
                   ),
@@ -252,10 +231,10 @@ export default function NevtreltiinTuukh({
                 {
                   key: "uildliinSystem",
                   label: "Төхөөрөмж",
-                  align: "center",
+                  align: "left",
                   render: (value: any) => (
-                    <div className="flex items-end gap-2">
-                      <Monitor className="w-4 h-4 text-[color:var(--muted-text)]" />
+                    <div className="flex items-center gap-2">
+                      <Monitor className="h-4 w-4 shrink-0 text-[color:var(--muted-text)]" />
                       {value || "-"}
                     </div>
                   ),

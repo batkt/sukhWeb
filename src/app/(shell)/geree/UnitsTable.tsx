@@ -139,7 +139,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
     cols.push({
       width: tootuudWidth,
       title: (
-        <span className={`text-[color:var(--panel-text)] text-center block ${propertyTab === "Зогсоол" ? "" : "font-semibold"}`}>
+        <span className={`text-[color:var(--panel-text)] text-center block ${propertyTab === "Зогсоол" ? "" : "font-medium"}`}>
           {propertyTab === "Зогсоол"
             ? "Зогсоолын дугаарууд"
             : propertyTab === "Агуулах"
@@ -173,7 +173,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
                     }`}
                   >
                     <span
-                      className={`${propertyTab === "Зогсоол" ? "" : "font-semibold"} ${
+                      className={`${propertyTab === "Зогсоол" ? "" : "font-medium"} ${
                         hasActive
                           ? "text-brand"
                           : "text-[color:var(--muted-text)]"
@@ -184,22 +184,21 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
                     {hasActive && (
                       <div className="absolute top-1 left-1 w-1 h-1 rounded-full bg-success animate-pulse" />
                     )}
-                    <button
-                      className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center rounded-full bg-neutral text-white opacity-0 group-hover:opacity-100 transition-all shadow-md hover:bg-danger z-20 scale-90 group-hover:scale-100"
-                      aria-label={`Устгах ${unitStr}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (hasActive) {
-                          alert(
-                            `Тоот ${unitStr} дээр оршин суугч/харилцагч эсвэл идэвхтэй гэрээ холбогдсон байна. Эхлээд холбоосоо салгасны дараа устгана уу.`,
-                          );
-                          return;
-                        }
-                        onDeleteUnit?.(record.floor, unitStr);
-                      }}
-                    >
-                      <span className="leading-none">×</span>
-                    </button>
+                    {/* Холбогдсон тоотод устгах «×» гаргахгүй — alert-аар
+                        хориглохын оронд үйлдлийг ерөөсөө санал болгохгүй. */}
+                    {!hasActive && (
+                      <button
+                        className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center rounded-full bg-neutral text-white opacity-0 group-hover:opacity-100 transition-all shadow-md hover:bg-danger z-20 scale-90 group-hover:scale-100"
+                        aria-label={`Устгах ${unitStr}`}
+                        title="Устгах"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteUnit?.(record.floor, unitStr);
+                        }}
+                      >
+                        <span className="leading-none">×</span>
+                      </button>
+                    )}
                   </div>
                 );
               })}
@@ -296,7 +295,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
           // Ээлжлэх/hover өнгийг стандарт хүснэгт өөрөө хийнэ — энд зөвхөн
           // сонгосон давхарын онцлолт үлдэнэ.
           `cursor-pointer${
-            selectedFloor === record.floor ? " zt-row-selected font-semibold" : ""
+            selectedFloor === record.floor ? " zt-row-selected font-medium" : ""
           }`
         }
         locale={{

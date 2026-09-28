@@ -71,12 +71,6 @@ export default function AjiltanPage() {
         state.setShowDeleteEmployeeModal(true);
       }}
       onManagePermissions={(employee) => setErkhAjiltan(employee)}
-      onCredentialsUpdate={(employee) => {
-        console.log("🔐 Lock button clicked for employee:", employee);
-        if (typeof window !== 'undefined' && (window as any).__openCredentialsModal) {
-          (window as any).__openCredentialsModal(employee);
-        }
-      }}
       />
 
       <EmployeePermissionsModal

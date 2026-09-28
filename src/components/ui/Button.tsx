@@ -62,8 +62,8 @@ const Button = React.forwardRef<HTMLElement, ButtonProps>(
 
     // Size mapping
     const sizes = {
-      sm: "h-7 px-2.5 text-[10px]",
-      small: "h-7 px-2.5 text-[10px]",
+      sm: "h-7 px-2.5 text-[11px]",
+      small: "h-7 px-2.5 text-[11px]",
       md: "h-8.5 px-3 text-xs",
       middle: "h-8.5 px-3 text-xs",
       lg: "h-10 px-6 text-sm",

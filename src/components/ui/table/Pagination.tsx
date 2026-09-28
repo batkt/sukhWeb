@@ -119,7 +119,7 @@ export default function Pagination({
               "inline-flex min-w-7 items-center justify-center rounded-md border px-1.5 text-[11px] transition-colors",
               small ? "h-6" : "h-7",
               p === current
-                ? "border-[hsl(var(--zt-primary))] bg-[hsl(var(--zt-primary)/0.1)] font-semibold text-[hsl(var(--zt-primary))]"
+                ? "border-[hsl(var(--zt-primary))] bg-[hsl(var(--zt-primary)/0.1)] font-medium text-[hsl(var(--zt-primary))]"
                 : "border-[hsl(var(--zt-input))] bg-[hsl(var(--zt-card))] text-[hsl(var(--zt-fg))] hover:border-[hsl(var(--zt-primary)/0.6)] hover:text-[hsl(var(--zt-primary))]"
             )}
           >
@@ -165,7 +165,7 @@ export default function Pagination({
               </option>
             ))}
           </select>
-          <span className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-[hsl(var(--zt-muted-fg))]">
+          <span className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-[11px] text-[hsl(var(--zt-muted-fg))]">
             ▾
           </span>
         </span>
