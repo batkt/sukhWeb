@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import uilchilgee, { url as apiUrl } from "@/lib/uilchilgee";
-import WebRTCVideoPlayer from "@/components/WebRTCVideoPlayer";
+import CameraPlayer from "@/components/CameraPlayer";
 import { toast } from "react-hot-toast";
 
 // Interface for customizable camera configuration
@@ -661,7 +661,7 @@ const CameraStream = React.memo(
             : {}
         }
       >
-        <WebRTCVideoPlayer
+        <CameraPlayer
           // Only send credentials when BOTH are present. Building the URL
           // unconditionally produced "rtsp://:@host/..." for a camera with no
           // login, and an NVR that happily serves anonymous RTSP rejects that

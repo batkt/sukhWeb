@@ -55,7 +55,7 @@ import uilchilgee, {
   getApiUrl,
 } from "@/lib/uilchilgee";
 import formatNumber from "../../../../../tools/function/formatNumber";
-import WebRTCVideoPlayer from "@/components/WebRTCVideoPlayer";
+import CameraPlayer from "@/components/CameraPlayer";
 import { type Uilchluulegch } from "@/lib/useParkingSocket";
 import PaymentModal from "./PaymentModal";
 import VehicleRegistrationModal from "./VehicleRegistrationModal";
@@ -3446,7 +3446,7 @@ const CameraStream = React.memo(
             : {}
         }
       >
-        <WebRTCVideoPlayer
+        <CameraPlayer
           rtspUrl={username && password
             ? `rtsp://${encodeURIComponent(username)}:${encodeURIComponent(password)}@${ip}:${port}/${root}`
             : `rtsp://${ip}:${port}/${root}`
