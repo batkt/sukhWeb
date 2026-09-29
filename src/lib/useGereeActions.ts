@@ -2560,7 +2560,7 @@ export function useGereeActions(
       resident: any,
       unit: string,
       propertyTab: "Тоот" | "Зогсоол" | "Агуулах",
-      opts?: { chimeegui?: boolean },
+      opts?: { chimeegui?: boolean; davkhar?: string },
     ) => {
       if (!token || !baiguullaga?._id) {
         openErrorOverlay("Нэвтрэх шаардлагтай");
@@ -2585,13 +2585,21 @@ export function useGereeActions(
         const tToot = String(t.toot || "").trim();
         const tTurul = String(t.turul || "Орон сууц").trim();
         const ijilBarilga = !odoogiinBarilga || !t.barilgiinId || String(t.barilgiinId) === odoogiinBarilga;
+        // Гараж B1-10 ба B2-10 нь өөр нэгж — давхар өгөгдсөн бол түүгээр ч тааруулна
+        // (өмнө нь ижил дугаартай өөр давхрын гаражийг ч хамт хасдаг байв).
+        const tDavkhar = String(t.davkhar || "").trim().toLowerCase();
+        const khuseltDavkhar = String(opts?.davkhar || "").trim().toLowerCase();
+        const ijilDavkhar = !khuseltDavkhar || !tDavkhar || tDavkhar === khuseltDavkhar;
         // Remove the entry that matches this unit number AND the tab type AND building
-        if (ijilBarilga && tToot === String(unit).trim() && turulToRemove.includes(tTurul)) return false;
+        if (ijilBarilga && ijilDavkhar && tToot === String(unit).trim() && turulToRemove.includes(tTurul)) return false;
         return true;
       });
 
       if (updatedToots.length === existingToots.length) {
-        openErrorOverlay("Таарсан тоотын бүртгэл олдсонгүй");
+        const ezen = [resident.ovog ? `${String(resident.ovog).charAt(0)}.` : "", resident.ner || ""].filter(Boolean).join(" ");
+        openErrorOverlay(
+          `${ezen ? `«${ezen}»-ийн` : "Эзэмшигчийн"} бүртгэлд ${opts?.davkhar ? `${opts.davkhar} давхрын ` : ""}${unit} ${propertyTab === "Тоот" ? "тоот" : "дугаар"} олдсонгүй — аль хэдийн салгагдсан байж магадгүй. Жагсаалтаа шинэчилнэ үү.`,
+        );
         return false;
       }
 

@@ -12,6 +12,10 @@ interface DeleteConfirmModalProps {
   title: string;
   message: string;
   onConfirm: () => Promise<void>;
+  /** Батлах товчны бичиг (анхдагч «Устгах»), ж: «Салгах» */
+  confirmLabel?: string;
+  /** Толгойн дүрс (анхдагч хогийн сав) */
+  icon?: React.ReactNode;
 }
 
 export default function DeleteConfirmModal({
@@ -20,6 +24,8 @@ export default function DeleteConfirmModal({
   title,
   message,
   onConfirm,
+  confirmLabel = "Устгах",
+  icon,
 }: DeleteConfirmModalProps) {
   const constraintsRef = React.useRef<HTMLDivElement | null>(null);
   const dragControls = useDragControls();
@@ -54,10 +60,10 @@ export default function DeleteConfirmModal({
               onPointerDown={(e) => dragControls.start(e)}
             >
               <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-danger/10 mb-4">
-                <Trash2 className="h-6 w-6 text-danger" />
+                {icon ?? <Trash2 className="h-6 w-6 text-danger" />}
               </div>
               <h3 className="text-[11px] font-medium mb-2">{title}</h3>
-              <p className="text-[11px] mb-6 font-normal opacity-85">
+              <p className="text-[11px] mb-6 font-normal opacity-85 whitespace-pre-line">
                 {message}
               </p>
               <div className="flex justify-center gap-3">
@@ -77,7 +83,7 @@ export default function DeleteConfirmModal({
                   className="btn-minimal btn-cancel btn-minimal-sm px-4 py-2 !text-[11px]"
                   data-modal-primary
                 >
-                  Устгах
+                  {confirmLabel}
                 </button>
               </div>
             </div>

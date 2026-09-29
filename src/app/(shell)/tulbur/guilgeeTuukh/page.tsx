@@ -3904,7 +3904,7 @@ export default function DansniiKhuulga() {
         show={isKhungulultOpen}
         onClose={() => setIsKhungulultOpen(false)}
         token={token || ""}
-        baiguullagiinId={ajiltan?.baiguullagiinId || undefined}
+        baiguullagiinId={ajiltan?.baiguullagiinId || baiguullaga?._id || undefined}
         barilgiinId={effectiveBarilgiinId}
         onSuccess={() => {
           revalidateTulburCaches();

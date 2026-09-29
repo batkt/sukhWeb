@@ -442,6 +442,33 @@ export default function Camera() {
   const [isExiting, setIsExiting] = useState(false);
   const [isRegModalOpen, setIsRegModalOpen] = useState(false);
   const [pageSize, setPageSize] = useState(500);
+
+  // Камер / хүснэгт 50:50 — камерын хэсгийн дээд ирмэгээс цонхны ёроол хүртэлх
+  // зайн ТАЛЫГ камерт өгнө; үлдсэнийг хүснэгт (fillHeight) өөрөө дүүргэнэ.
+  // xl-ээс бага дэлгэцэнд хоёр камер доошоо давхарладаг тул тус бүр нь талын тал.
+  const kameriinKhesegRef = useRef<HTMLDivElement>(null);
+  const [kameriinUndur, setKameriinUndur] = useState<number | null>(null);
+  useEffect(() => {
+    const khemjikh = () => {
+      const el = kameriinKhesegRef.current;
+      if (!el) return;
+      const deed = el.getBoundingClientRect().top + window.scrollY;
+      const bolomjit = document.documentElement.clientHeight - deed - 16;
+      const tal = bolomjit / 2 - 8;
+      const davkharlasan = window.innerWidth < 1280;
+      const next = Math.max(120, Math.round(davkharlasan ? tal / 2 - 6 : tal));
+      setKameriinUndur((prev) => (prev != null && Math.abs(prev - next) <= 1 ? prev : next));
+    };
+    khemjikh();
+    window.addEventListener("resize", khemjikh);
+    // Дээд талын агуулга (толгой, мэдэгдэл) ачаалагдаж байрлал өөрчлөгдөхөд.
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(khemjikh) : null;
+    ro?.observe(document.body);
+    return () => {
+      window.removeEventListener("resize", khemjikh);
+      ro?.disconnect();
+    };
+  }, []);
   const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
   const pageSizeRef = useRef<HTMLDivElement>(null);
   const [durationFilter, setDurationFilter] = useState("latest_out");
@@ -2117,7 +2144,7 @@ export default function Camera() {
     <div className="w-full bg-[color:var(--surface-bg)]">
       <div className="px-4 pt-2 pb-2 lg:px-6 lg:pb-2 space-y-2">
         {/* Camera Streaming Sections */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+        <div ref={kameriinKhesegRef} className="grid grid-cols-1 xl:grid-cols-2 gap-3">
           {/* Entry Camera Stream */}
           <div className="relative group/camera overflow-hidden rounded-2xl bg-black shadow-lg transition-all duration-500">
             {/* Top-Right Badge and Selection Dropdown */}
@@ -2156,7 +2183,10 @@ export default function Camera() {
               </div>
             )}
 
-            <div className="relative h-[clamp(110px,17vh,190px)]">
+            <div
+              className="relative h-[clamp(110px,17vh,190px)]"
+              style={kameriinUndur ? { height: kameriinUndur } : undefined}
+            >
               {entryCameras.length === 0 ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-[color:var(--panel)] border border-white/5">
                   <VideoOff className="w-8 h-8 text-[color:var(--panel-text)] mb-2" />
@@ -2237,7 +2267,10 @@ export default function Camera() {
               </div>
             )}
 
-            <div className="relative h-[clamp(110px,17vh,190px)]">
+            <div
+              className="relative h-[clamp(110px,17vh,190px)]"
+              style={kameriinUndur ? { height: kameriinUndur } : undefined}
+            >
               {exitCameras.length === 0 ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-[color:var(--panel)] border border-white/5">
                   <VideoOff className="w-8 h-8 text-[color:var(--panel-text)] mb-2" />

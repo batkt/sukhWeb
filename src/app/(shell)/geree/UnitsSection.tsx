@@ -175,7 +175,7 @@ export default function UnitsSection({
     // Нэг үйлдэл, нэг мэдэгдэл: эхлээд эзэмшигчээс салгаж (чимээгүй), дараа нь
     // дугаарыг устгана. Өмнө нь салгахад "амжилттай", устгахад хуучин гэрээний
     // жагсаалтаар "идэвхтэй гэрээ байна" гэж зөрүүтэй хоёр мэдэгдэл гардаг байв.
-    const salgasan = await actions.handleUnlinkFromUnit(resident, unit, propertyTab, { chimeegui: true });
+    const salgasan = await actions.handleUnlinkFromUnit(resident, unit, propertyTab, { chimeegui: true, davkhar: floor });
     if (salgasan && actions.deleteUnit) {
       // Амжилтгүй бол deleteUnit өөрөө шалтгааныг харуулна.
       await actions.deleteUnit(floor, unit, propertyTab, {
@@ -184,6 +184,22 @@ export default function UnitsSection({
       });
     }
     setHolbootoiUstgakh(null);
+  };
+
+  // Холбоос салгах — шууд салгахгүй, юу болохыг тайлбарлаж батлуулна.
+  const [salgakhAsuult, setSalgakhAsuult] = useState<{
+    floor: string;
+    unit: string;
+    ner: string;
+    resident: any;
+    tolsen: boolean;
+    nekhemjlekhIlgeesen: boolean;
+  } | null>(null);
+  const salgakhBatlakh = async () => {
+    if (!salgakhAsuult) return;
+    const { resident, unit, floor } = salgakhAsuult;
+    await actions.handleUnlinkFromUnit(resident, unit, propertyTab, { davkhar: floor });
+    setSalgakhAsuult(null);
   };
 
   const [deleteUnitsConfirm, setDeleteUnitsConfirm] = useState<{
@@ -1207,9 +1223,9 @@ export default function UnitsSection({
         try {
           const d = new Date(rawDate);
           if (!isNaN(d.getTime())) {
-            dateStr = `${String(d.getMonth() + 1).padStart(2, "0")}/${String(
+            dateStr = `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(
               d.getDate()
-            ).padStart(2, "0")}/${d.getFullYear()}`;
+            ).padStart(2, "0")}`;
           }
         } catch (e) { }
       }
@@ -1254,7 +1270,6 @@ export default function UnitsSection({
   const zogsoolColumns: ColumnsType<any> = useMemo(
     () => [
       { title: "№", dataIndex: "index", key: "index", width: 40, align: "center" },
-      { title: "Огноо", dataIndex: "ognoo", key: "ognoo" },
       {
         // Гараж/агуулахын дугаар ба эзэмшигчийн байрны тоот — нэг баганад.
         title: propertyTab === "Зогсоол" ? "Гараж · Байрны тоот" : "Агуулах · Байрны тоот",
@@ -1263,13 +1278,16 @@ export default function UnitsSection({
         width: 170,
         render: (v: any, row: any) => (
           <span className="inline-flex items-center gap-2 whitespace-nowrap">
-            <span className="inline-flex h-6 min-w-[36px] items-center justify-center rounded-md bg-theme/10 px-2 font-medium text-brand">
+            {/* Гаражийн дугаар — мөрийн ногоон дэвсгэрээс ялгарах цэнхэр шошго;
+                байрны тоот — тод бичвэр. */}
+            <span className="inline-flex h-6 min-w-[36px] items-center justify-center rounded-md border border-sky-500/30 bg-sky-500/10 px-2 font-semibold text-sky-700 dark:text-sky-300">
               {v}
             </span>
             {row.toot && row.toot !== "-" ? (
-              <span className="text-[color:var(--muted-text)]">
-                → {row.orts && row.orts !== "-" ? `${row.orts} орц · ` : ""}
-                {row.toot} тоот
+              <span className="text-[color:var(--panel-text)]">
+                <span className="text-[color:var(--muted-text)]">→ </span>
+                {row.orts && row.orts !== "-" ? `${row.orts} орц · ` : ""}
+                <span className="font-medium">{row.toot}</span> тоот
               </span>
             ) : (
               <span className="text-[color:var(--muted-text)]">—</span>
@@ -1346,6 +1364,16 @@ export default function UnitsSection({
         ),
       },
       {
+        title: "Огноо",
+        dataIndex: "ognoo",
+        key: "ognoo",
+        width: 92,
+        align: "center",
+        render: (v: any) => (
+          <span className="whitespace-nowrap text-[12px] tabular-nums text-[color:var(--muted-text)]">{v || "-"}</span>
+        ),
+      },
+      {
         title: "Үйлдэл",
         key: "action",
         width: 148,
@@ -1355,10 +1383,13 @@ export default function UnitsSection({
           // байхаар 2 + 1 байрлалтай тор ашиглана.
           const iconBtn =
             "inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-transparent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-theme/60";
+          // Баруун байрлал нь үргэлж «хасах» үйлдэл: холбогдсон бол «Салгах»,
+          // чөлөөтэй бол «Устгах». Холбогдсон дугаарт хогийн сав харагдахгүй —
+          // эхлээд салгасны дараа л устгах боломжтой болно.
           return (
             <div className="mx-auto grid w-[124px] grid-cols-[92px_26px] items-center gap-1.5">
               {row.isOccupied ? (
-                <div className="flex items-center justify-end gap-1">
+                <div className="flex items-center justify-end">
                   <button
                     type="button"
                     onClick={() =>
@@ -1369,28 +1400,6 @@ export default function UnitsSection({
                     aria-label="Нэхэмжлэх илгээх"
                   >
                     <Send className="h-[15px] w-[15px]" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      if (!row.resident) return;
-                      if (
-                        !confirm(
-                          `Тоот ${row.zogsoolDugaar}-аас ${row.ner}-г хасах уу?`,
-                        )
-                      )
-                        return;
-                      await actions.handleUnlinkFromUnit(
-                        row.resident,
-                        row.id,
-                        propertyTab,
-                      );
-                    }}
-                    className={`${iconBtn} text-warning hover:border-warning/30 hover:bg-warning/10`}
-                    title="Холбоос хасах"
-                    aria-label="Холбоос хасах"
-                  >
-                    <UserX className="h-[15px] w-[15px]" />
                   </button>
                 </div>
               ) : (
@@ -1408,26 +1417,37 @@ export default function UnitsSection({
                   <span>Бүртгэх</span>
                 </button>
               )}
-              {/* Холбогдсон тоот: шууд устгахгүй — «холбоосыг салгаад устгах уу?»
-                  гэж асууж, батлавал хоёуланг нь дараалан хийнэ. */}
-              <button
-                type="button"
-                onClick={() =>
-                  row.isOccupied && row.resident
-                    ? setHolbootoiUstgakh({
-                        floor: selectedFloor || "",
-                        unit: row.id,
-                        ner: row.ner || "Оршин суугч",
-                        resident: row.resident,
-                      })
-                    : onDeleteUnit(selectedFloor || "", row.id)
-                }
-                className={`${iconBtn} text-[color:var(--muted-text)] hover:border-danger/30 hover:bg-danger/10 hover:text-danger`}
-                title={row.isOccupied ? `${row.ner || "Оршин суугч"} холбогдсон — салгаад устгана` : "Устгах"}
-                aria-label="Устгах"
-              >
-                <Trash2 className="h-[15px] w-[15px]" />
-              </button>
+              {row.isOccupied ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!row.resident) return;
+                    setSalgakhAsuult({
+                      floor: selectedFloor || "",
+                      unit: row.id,
+                      ner: row.ner || "Эзэмшигч",
+                      resident: row.resident,
+                      tolsen: !!row.tolsenEsekh,
+                      nekhemjlekhIlgeesen: !!row.isInvoiceSent,
+                    });
+                  }}
+                  className={`${iconBtn} text-warning hover:border-warning/30 hover:bg-warning/10`}
+                  title={`${row.ner || "Эзэмшигч"}-г салгах — салгасны дараа дугаарыг устгах боломжтой`}
+                  aria-label="Холбоос салгах"
+                >
+                  <UserX className="h-[15px] w-[15px]" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => onDeleteUnit(selectedFloor || "", row.id)}
+                  className={`${iconBtn} text-[color:var(--muted-text)] hover:border-danger/30 hover:bg-danger/10 hover:text-danger`}
+                  title="Устгах"
+                  aria-label="Устгах"
+                >
+                  <Trash2 className="h-[15px] w-[15px]" />
+                </button>
+              )}
             </div>
           );
         },
@@ -1901,6 +1921,38 @@ export default function UnitsSection({
         title={confirmModal.title}
         message={confirmModal.message}
         onConfirm={confirmModal.onConfirm}
+      />
+      <DeleteConfirmModal
+        show={!!salgakhAsuult}
+        onClose={() => setSalgakhAsuult(null)}
+        title="Холбоосыг салгах уу?"
+        confirmLabel="Салгах"
+        icon={<UserX className="h-6 w-6 text-warning" />}
+        message={
+          salgakhAsuult
+            ? (() => {
+                const h = salgakhAsuult;
+                const negj =
+                  propertyTab === "Тоот"
+                    ? `${selectedOrts ? `${selectedOrts}-р орц, ` : ""}${h.floor ? `${h.floor} давхрын ` : ""}${h.unit} тоот`
+                    : `${propertyTab === "Зогсоол" ? "Гараж" : "Агуулах"} ${h.floor ? `${h.floor} давхрын ` : ""}${h.unit} дугаар`;
+                const toots: any[] = Array.isArray(h.resident?.toots) ? h.resident.toots : [];
+                const bairToo = toots.filter((t: any) => {
+                  const tt = String(t?.turul || "Орон сууц").trim();
+                  return tt === "Орон сууц" || tt === "Тоот";
+                }).length;
+                const anhaaruulga: string[] = [];
+                if (h.nekhemjlekhIlgeesen && !h.tolsen)
+                  anhaaruulga.push("• Энэ сарын нэхэмжлэх илгээгдсэн, төлөгдөөгүй байна. Салгахаас өмнө төлбөрийг шалгана уу.");
+                if (propertyTab === "Тоот" && bairToo <= 1)
+                  anhaaruulga.push(`• Энэ нь «${h.ner}»-ийн цорын ганц орон сууцны тоот — салгасны дараа тоотгүй үлдэнэ.`);
+                return `${negj}-аас «${h.ner}»-г салгана. Дугаар өөрөө жагсаалтад үлдэж, чөлөөтэй болно.${
+                  anhaaruulga.length ? `\n\n${anhaaruulga.join("\n")}` : ""
+                }`;
+              })()
+            : ""
+        }
+        onConfirm={salgakhBatlakh}
       />
       <DeleteConfirmModal
         show={!!holbootoiUstgakh}

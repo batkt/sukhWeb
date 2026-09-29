@@ -7,7 +7,6 @@ import {
   ChevronsRight,
   Database,
   HelpCircle,
-  MessageCircle,
   X,
 } from "lucide-react";
 import ThemedLogo from "@/components/ui/ThemedLogo";
@@ -29,8 +28,8 @@ interface Props {
   storageLabel: string | null;
   /** «Ерөнхий тусламж» — зааврын таб дээр нээнэ. */
   onOpenHelp: () => void;
-  /** «Шууд чат» — чатботын таб дээр нээнэ. */
-  onOpenChat: () => void;
+  /** «Шууд чат» — чатботын таб дээр нээнэ (цэсэнд тусдаа мөр байхаа больсон). */
+  onOpenChat?: () => void;
 }
 
 /** One line of the licence / storage readout at the foot of the sidebar. */
@@ -151,32 +150,17 @@ export default function Sidebar({
             таб тул цэсний доод хэсэгт зэрэгцүүлж, үндсэн цэстэй ижил
             мөрийн загвараар (`shell-nav-item`) харуулав — ингэснээр rail
             горимд ч бусад иконтойгоо нэг тэнхлэгт, нэг хэмжээтэй эгнэнэ. */}
-        <button
-          type="button"
-          onClick={() => {
-            onOpenChat();
-            if (!isDesktop) closeDrawer();
-          }}
-          aria-label="Шууд чат"
-          title="Шууд чат"
-          className="shell-nav-item"
-        >
-          <MessageCircle
-            className="shell-nav-icon"
-            strokeWidth={ICON_STROKE}
-            aria-hidden
-          />
-          <span className="shell-label flex-1 text-left">Шууд чат</span>
-        </button>
-
+        {/* «Шууд чат» ба «Ерөнхий тусламж» нь нэг модалын хоёр таб байсан тул
+            нэг «Тусламж» мөр болгов. Модал дотор: системийн заавар, энэ
+            хуудасны зааварчилгаа, шууд чат. */}
         <button
           type="button"
           onClick={() => {
             onOpenHelp();
             if (!isDesktop) closeDrawer();
           }}
-          aria-label="Ерөнхий тусламж"
-          title="Ерөнхий тусламж"
+          aria-label="Тусламж"
+          title="Тусламж — заавар, шууд чат"
           className="shell-nav-item"
         >
           <HelpCircle
@@ -184,7 +168,7 @@ export default function Sidebar({
             strokeWidth={ICON_STROKE}
             aria-hidden
           />
-          <span className="shell-label flex-1 text-left">Ерөнхий тусламж</span>
+          <span className="shell-label flex-1 text-left">Тусламж</span>
         </button>
 
         {isDesktop && (

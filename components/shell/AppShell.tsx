@@ -4,7 +4,6 @@ import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from "react
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
 import { useRegisterTourSteps } from "@/context/TourContext";
-import TourReplayButton from "@/components/ui/TourReplayButton";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import RouteProgress from "./RouteProgress";
@@ -181,7 +180,8 @@ function ShellBody({ children }: { children: React.ReactNode }) {
         <div className="shell-surface">{children}</div>
       </main>
 
-      <TourReplayButton />
+      {/* Баруун доорх хөвөгч «?» товчийг цэсийн «Тусламж» руу шилжүүлэв —
+          хуудасны зааварчилгааны үйлдлүүд HelpModal дотор байна. */}
 
       <Suspense fallback={null}>
         {notificationsOpen && (

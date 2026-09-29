@@ -322,9 +322,11 @@ export default function HongololtTool({
   const [history, setHistory] = useState<DiscountHistoryRow[]>([]);
   const histSearch = searchTerm;
   const [histDavkhar, setHistDavkhar] = useState("");
+  // Анхдагч нь ЭНЭ САР — өмнө нь өнөөдөр–өнөөдөр байсан тул түүх нээхэд зөвхөн
+  // өнөөдөр бүртгэсэн хөнгөлөлт харагдаж, бусад нь «алга» мэт санагддаг байв.
   const [histDateRange, setHistDateRange] = useState<[string | null, string | null]>([
-    dayjs().format("YYYY-MM-DD"),
-    dayjs().format("YYYY-MM-DD"),
+    dayjs().startOf("month").format("YYYY-MM-DD"),
+    dayjs().endOf("month").format("YYYY-MM-DD"),
   ]);
   const [histPage, setHistPage] = useState(1);
   const [histPageSize, setHistPageSize] = useState(100);
@@ -500,8 +502,10 @@ export default function HongololtTool({
   }, [token, baiguullagiinId, barilgiinId]);
 
   /* ── Load discount history ── */
+  const histReqRef = React.useRef(0);
   const loadHistory = useCallback(async () => {
     if (!token || !baiguullagiinId) return;
+    const khuseltiinDugaar = ++histReqRef.current;
     try {
       setHistFetching(true);
       // Шинэ бүртгэлтэй хөнгөлөлтүүд + өмнөх (бүртгэлгүй) хуучин мөрүүд
@@ -518,7 +522,8 @@ export default function HongololtTool({
                 khungulultiinTuukhId: { $exists: false },
                 ...(barilgiinId ? { barilgiinId } : {}),
               }),
-              sort: JSON.stringify({ ognoo: -1, createdAt: -1 }),
+              // Сервер зөвхөн `order`-ийг уншдаг (`sort` үл хэрэгсэгддэг байв).
+              order: JSON.stringify({ ognoo: -1, createdAt: -1 }),
               khuudasniiKhemjee: 1000,
             },
           })
@@ -583,7 +588,10 @@ export default function HongololtTool({
         (a, b) =>
           new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime(),
       );
+      // Барилга хурдан солиход хуучин хүсэлтийн хариу шинийг дарж бичихгүй.
+      if (khuseltiinDugaar !== histReqRef.current) return;
       setHistory(murnuud);
+      setHistPage(1);
     } catch {
       toast.error("Хөнгөлөлтийн түүх татахад алдаа гарлаа");
     } finally {
@@ -660,15 +668,21 @@ export default function HongololtTool({
     return history.filter((h) => {
       if (histDavkhar && String(h.davkhar || "") !== histDavkhar) return false;
 
-      const rowDate = h.ognoo || h.createdAt;
-      if (rowDate && histDateRange[0] && histDateRange[1]) {
-        const dStr = dayjs(rowDate).format("YYYY-MM-DD");
-        if (dStr < histDateRange[0] || dStr > histDateRange[1]) {
-          return false;
-        }
-      } else if (rowDate && histDateRange[0]) {
-        const dStr = dayjs(rowDate).format("YYYY-MM-DD");
-        if (dStr < histDateRange[0]) return false;
+      // Хөнгөлсөн САР-аар шүүнэ (ekhlekh–duusakh муж сонгосон мужтай давхцвал).
+      // Шинэ бичлэг «бүртгэсэн огноо», хуучин мөр «хөнгөлсөн сар»-аар өөр өөр
+      // шүүгддэг байсныг нэг болгов.
+      const ekh = String(h.ekhlekhOgnoo || "").slice(0, 7);
+      const duus = String(h.duusakhOgnoo || h.ekhlekhOgnoo || "").slice(0, 7);
+      const r0 = histDateRange[0] ? histDateRange[0].slice(0, 7) : null;
+      const r1 = histDateRange[1] ? histDateRange[1].slice(0, 7) : null;
+      if (ekh && (r0 || r1)) {
+        if (r0 && duus < r0) return false;
+        if (r1 && ekh > r1) return false;
+      } else {
+        const rowDate = h.ognoo || h.createdAt;
+        const dStr = rowDate ? dayjs(rowDate).format("YYYY-MM-DD") : "";
+        if (dStr && histDateRange[0] && dStr < histDateRange[0]) return false;
+        if (dStr && histDateRange[1] && dStr > histDateRange[1]) return false;
       }
 
       if (!q) return true;

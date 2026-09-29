@@ -1,7 +1,8 @@
 "use client";
 
 import { Suspense, lazy, useEffect, useState } from "react";
-import { HelpCircle, MessageSquare, X } from "lucide-react";
+import { EyeOff, HelpCircle, MessageSquare, RotateCcw, X } from "lucide-react";
+import { useTour } from "@/context/TourContext";
 import { ModalPortal } from "./ModalPortal";
 import { ICON_STROKE } from "./navConfig";
 
@@ -38,6 +39,8 @@ export default function HelpModal({
   initialTab?: "instructions" | "chat";
 }) {
   const [tab, setTab] = useState<"instructions" | "chat">(initialTab);
+  // Өмнө нь баруун доорх хөвөгч «?» товчинд байсан хуудасны зааварчилгааны үйлдлүүд.
+  const { start, disable, enable, disabled } = useTour();
 
   useEffect(() => {
     if (!open) return;
@@ -48,8 +51,8 @@ export default function HelpModal({
 
   if (!open) return null;
 
-  const garchig = tab === "chat" ? "Шууд чат" : "Ерөнхий тусламж";
-  const GarchigIcon = tab === "chat" ? MessageSquare : HelpCircle;
+  const garchig = "Тусламж";
+  const GarchigIcon = HelpCircle;
 
   const tabs = [
     {
@@ -117,6 +120,45 @@ export default function HelpModal({
                 </button>
               );
             })}
+          </div>
+
+          {/* Энэ хуудасны алхам алхмаар зааварчилгаа */}
+          <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-[color:var(--panel-text)]/10 bg-[color:var(--panel-text)]/[0.03] px-6 py-2.5">
+            <span className="text-[13px] text-[color:var(--panel-text)]/70">
+              Энэ хуудасны алхам алхмаар зааварчилгаа
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  // Модал хаагдсаны дараа зааварчилгааны тодруулга зөв байрлалд гарна.
+                  setTimeout(() => start(undefined, true), 150);
+                }}
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-theme px-3 text-[13px] font-medium !text-white transition-opacity hover:opacity-90"
+              >
+                <RotateCcw className="h-3.5 w-3.5" strokeWidth={ICON_STROKE} />
+                Эхлүүлэх
+              </button>
+              <button
+                type="button"
+                onClick={() => (disabled ? enable() : disable())}
+                title={disabled ? "Хуудас нээхэд зааварчилгааг автоматаар харуулна" : "Хуудас нээхэд зааварчилгааг автоматаар харуулахгүй"}
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[color:var(--panel-text)]/15 px-3 text-[13px] text-[color:var(--panel-text)]/80 transition-colors hover:bg-[color:var(--panel-text)]/5"
+              >
+                {disabled ? (
+                  <>
+                    <HelpCircle className="h-3.5 w-3.5" strokeWidth={ICON_STROKE} />
+                    Автоматаар харуулах
+                  </>
+                ) : (
+                  <>
+                    <EyeOff className="h-3.5 w-3.5" strokeWidth={ICON_STROKE} />
+                    Дахиж харуулахгүй
+                  </>
+                )}
+              </button>
+            </div>
           </div>
 
           <div className="scrollable min-h-[480px] flex-1 overflow-y-auto">
