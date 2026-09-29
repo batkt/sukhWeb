@@ -733,6 +733,8 @@ export default function UnitsSection({
     if (!selectedFloor || deleteUnitsConfirm.units.length === 0) return;
     try {
       if (actions?.deleteUnits) {
+        // Гэрээний үндсэн тоот бол хориглоно; зөвхөн нэмэлт тоотод үлдсэн
+        // (салгасан) бичлэгийг устгаад гэрээнээс нь хасна (deleteUnits дотор).
         const ok = await actions.deleteUnits(
           selectedFloor,
           deleteUnitsConfirm.units,
@@ -1885,7 +1887,7 @@ export default function UnitsSection({
                           variant="danger"
                           size="sm"
                           leftIcon={<Trash2 className="w-3.5 h-3.5" />}
-                          className="rounded-xl cursor-pointer shrink-0"
+                          className="rounded-xl cursor-pointer shrink-0 !bg-danger hover:!bg-danger/90 !text-white !border-danger"
                         >
                           Устгах ({checkedUnits.length})
                         </Button>

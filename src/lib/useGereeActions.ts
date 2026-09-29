@@ -752,6 +752,11 @@ export function useGereeActions(
       floor: string,
       units: string[],
       turul: "Тоот" | "Зогсоол" | "Агуулах" = "Тоот",
+      // gereeShalgakhgui: дуудсан тал (Өмч бүртгэл) эзэмшигчийн ОДООГИЙН тоотоор
+      // чөлөөтэйг нь аль хэдийн шүүсэн. Гэрээний `nemeltTootnuud`-д салгасан
+      // гаражийн хуучин бичлэг үлддэг тул дахин шалгавал чөлөөтэй дугаарыг ч
+      // «идэвхтэй гэрээтэй» гэж хориглодог байв.
+      opts?: { gereeShalgakhgui?: boolean },
     ) => {
       if (!units || units.length === 0) return false;
       const propName =
@@ -817,7 +822,9 @@ export function useGereeActions(
 
         // Check active contracts among target units
         const occupiedUnits = new Set<string>();
-        if (contracts && Array.isArray(contracts)) {
+        const gereeniiEzen: Record<string, string> = {};
+        const nemeltiinUldegdel = new Set<string>();
+        if (!opts?.gereeShalgakhgui && contracts && Array.isArray(contracts)) {
           contracts.forEach((c: any) => {
             const isCancelled =
               String(c.tuluv || c.status || "")
@@ -839,6 +846,8 @@ export function useGereeActions(
 
             if (floorMatch && ortsMatch && targetUnitsSet.has(cToot)) {
               occupiedUnits.add(cToot);
+              const ezen = [c.ovog ? `${String(c.ovog).charAt(0)}.` : "", c.ner || ""].filter(Boolean).join(" ");
+              if (ezen) gereeniiEzen[cToot] = ezen;
             }
 
             if (Array.isArray(c.nemeltTootnuud)) {
@@ -846,7 +855,11 @@ export function useGereeActions(
                 const nToot = String(n.toot || "").trim();
                 const nFloor = String(n.davkhar || cFloor).trim();
                 if (nFloor === String(floor).trim() && targetUnitsSet.has(nToot)) {
-                  occupiedUnits.add(nToot);
+                  // Гараж/агуулах: гэрээний нэмэлт тоотод л үлдсэн (эзэмшигчээс
+                  // салгасан ч цэвэрлэгдээгүй) бичлэг — устгахыг хориглохгүй,
+                  // устгасны дараа гэрээнээс нь хасна.
+                  if (turul === "Тоот") occupiedUnits.add(nToot);
+                  else nemeltiinUldegdel.add(nToot);
                 }
               });
             }
@@ -854,8 +867,11 @@ export function useGereeActions(
         }
 
         if (occupiedUnits.size > 0) {
+          const jagsaalt = Array.from(occupiedUnits)
+            .map((u) => (gereeniiEzen[u] ? `${u} («${gereeniiEzen[u]}»)` : u))
+            .join(", ");
           openErrorOverlay(
-            `${selectedOrts ? `${selectedOrts}-р орц, ` : ""}${floor} давхрын ${Array.from(occupiedUnits).join(", ")} ${turul === "Тоот" ? "тоот" : "дугаар"} дээр идэвхтэй гэрээ байгаа тул устгах боломжгүй. Эдгээрийг сонголтоос хасах эсвэл эхлээд гэрээг цуцлах / эзэмшигчийг салгаад дахин устгана уу.`,
+            `${selectedOrts ? `${selectedOrts}-р орц, ` : ""}${floor} давхрын ${jagsaalt} ${turul === "Тоот" ? "тоот" : "дугаар"} дээр идэвхтэй гэрээ байгаа тул устгах боломжгүй. Эдгээрийг сонголтоос хасах эсвэл эхлээд гэрээг цуцлах / эзэмшигчийг салгаад дахин устгана уу.`,
           );
           return false;
         }
@@ -892,7 +908,35 @@ export function useGereeActions(
         await updateMethod("baiguullaga", token, payload);
         await baiguullagaMutate?.();
         const deletedCount = currentUnits.length - updatedUnits.length;
-        openSuccessOverlay(`${deletedCount} ${turul} устгагдлаа`);
+
+        // Устгасан дугаар идэвхтэй гэрээний нэмэлт тоотод үлдсэн бол гэрээнээс
+        // нь хасна — эс тэгвээс гэрээ байхгүй дугаарыг заасаар үлдэнэ.
+        let zasagdsanGeree = 0;
+        if (nemeltiinUldegdel.size > 0 && turul !== "Тоот") {
+          try {
+            const r = await uilchilgee(token).post("/gereeNemeltTootKhasya", {
+              baiguullagiinId: baiguullaga._id,
+              barilgiinId: effectiveBarilgiinId,
+              turul,
+              davkhar: floor,
+              tootuud: Array.from(nemeltiinUldegdel),
+            });
+            zasagdsanGeree = Number(r?.data?.zasagdsanGeree) || 0;
+            mutate(
+              (k: any) => Array.isArray(k) && k[0] === "/geree",
+              undefined,
+              { revalidate: true },
+            );
+          } catch (err) {
+            openErrorOverlay(
+              `Дугаар устгагдсан ч гэрээнээс хасахад алдаа гарлаа: ${getErrorMessage(err)}`,
+            );
+          }
+        }
+        openSuccessOverlay(
+          `${deletedCount} ${turul === "Зогсоол" ? "гаражийн дугаар" : turul === "Агуулах" ? "агуулахын дугаар" : "тоот"} устгагдлаа` +
+            (zasagdsanGeree > 0 ? ` · ${zasagdsanGeree} гэрээнээс хасагдлаа` : ""),
+        );
         return true;
       } catch (err) {
         openErrorOverlay(getErrorMessage(err));
@@ -911,6 +955,7 @@ export function useGereeActions(
       selectedOrts,
       composeKeyFn,
       contracts,
+      mutate,
     ],
   );
 
