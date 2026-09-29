@@ -4,7 +4,7 @@ import React, { useMemo } from "react";
 import { ShuultuurTolgoi } from "@/components/ui/table/ShuultuurTolgoi";
 import Table from "@/components/ui/table";
 import type { ColumnsType } from "@/components/ui/table";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, SquareParking, UserRound } from "lucide-react";
 
 export interface FloorItem {
   orts?: string;
@@ -202,15 +202,34 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
           // тойм (дэлгэрэнгүй жагсаалт нь «Гараж» таб дээр).
           if (record.turul === "Зогсоол" && propertyTab === "Тоот") {
             const too = record.units?.length || 0;
-            return too === 0 ? (
-              <span className="text-[color:var(--muted-text)]">
-                Гаражийн дугаар алга — «+» дарж нэмнэ
-              </span>
-            ) : (
-              <span className="text-[color:var(--panel-text)]">
-                {too} гаражийн дугаар
-                <span className="text-[color:var(--muted-text)]"> · {record.activeToots.size} бүртгэлтэй</span>
-              </span>
+            const ezlegdsen = record.activeToots.size;
+            if (too === 0) {
+              return (
+                <span className="inline-flex items-center gap-1.5 text-[color:var(--muted-text)]">
+                  <SquareParking className="h-4 w-4" strokeWidth={1.75} />
+                  Дугааргүй
+                </span>
+              );
+            }
+            const khuvi = Math.round((ezlegdsen / too) * 100);
+            return (
+              <div
+                className="inline-flex items-center gap-3"
+                title={`${too} гаражийн дугаар · ${ezlegdsen} бүртгэлтэй · ${too - ezlegdsen} чөлөөтэй`}
+              >
+                <span className="inline-flex items-center gap-1.5 text-[color:var(--panel-text)]" aria-label={`${too} гаражийн дугаар`}>
+                  <SquareParking className="h-4 w-4 text-[color:var(--muted-text)]" strokeWidth={1.75} />
+                  <span className="font-medium tabular-nums">{too}</span>
+                </span>
+                <span className="h-4 w-px bg-[color:var(--surface-border)]" aria-hidden="true" />
+                <span className="inline-flex items-center gap-1.5 text-[color:var(--panel-text)]" aria-label={`${ezlegdsen} бүртгэлтэй`}>
+                  <UserRound className="h-4 w-4 text-brand" strokeWidth={1.75} />
+                  <span className="font-medium tabular-nums">{ezlegdsen}</span>
+                </span>
+                <span className="h-1.5 w-20 overflow-hidden rounded-full bg-[color:var(--surface-hover)]" aria-hidden="true">
+                  <span className="block h-full rounded-full bg-theme" style={{ width: `${khuvi}%` }} />
+                </span>
+              </div>
             );
           }
           if (!filteredUnits || filteredUnits.length === 0) {
@@ -292,8 +311,6 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
           >
             <Plus className="w-4 h-4 text-brand" />
           </button>
-          {/* Гаражийн давхрын мөрөнд давхар устгах товчгүй (зөвхөн «+»). */}
-          {!(record.turul === "Зогсоол" && propertyTab === "Тоот") && (
           <button
             className={`p-1.5 rounded-md action-delete hover-surface transition-colors hover:bg-danger/10 ${
               record.units.length === 0
@@ -303,7 +320,9 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
             title={
               record.units.length === 0
                 ? "Устгах тоот байхгүй"
-                : "Давхрын тоотуудыг устгах"
+                : record.turul === "Зогсоол"
+                  ? "Давхрын гаражийн дугааруудыг устгах"
+                  : "Давхрын тоотуудыг устгах"
             }
             onClick={(e) => {
               e.stopPropagation();
@@ -315,10 +334,6 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
           >
             <Trash2 className="w-4 h-4 text-danger" />
           </button>
-          )}
-          {record.turul === "Зогсоол" && propertyTab === "Тоот" && (
-            <span className="inline-block h-7 w-7" aria-hidden="true" />
-          )}
         </div>
       ),
     });

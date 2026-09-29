@@ -41,6 +41,7 @@ import {
 
   Receipt,
   CalendarCheck,
+  Banknote,
   AlertTriangle,
 } from "lucide-react";
 import { ConfigProvider } from "antd";
@@ -67,6 +68,7 @@ import { toast } from "react-hot-toast";
 import Button from "@/components/ui/Button";
 import { tulburiinZadargaaBodyo } from "@/lib/tulburiinZadargaa";
 import UdriinKhaaltModal from "./UdriinKhaaltModal";
+import GaraarOrlogoModal from "./GaraarOrlogoModal";
 
 const RealTimeDuration = ({
   orsonTsag,
@@ -285,6 +287,7 @@ export default function Camera() {
   const [discountAmount, setDiscountAmount] = useState("");
   const [discountMinutes, setDiscountMinutes] = useState("");
   const [revenueModalOpen, setRevenueModalOpen] = useState(false);
+  const [orlogoOpen, setOrlogoOpen] = useState(false);
   const [khaaltOpen, setKhaaltOpen] = useState(false);
   const [revenueDateRange, setRevenueDateRange] = useState<[string | null, string | null] | undefined>(undefined);
   const [revenueListData, setRevenueListData] = useState<any>(null);
@@ -1366,6 +1369,10 @@ export default function Camera() {
             handleManualExit(transactions[0], "free");
           }
           break;
+        case "F9":
+          e.preventDefault();
+          setOrlogoOpen(true);
+          break;
         case "F8":
         case "+":
           e.preventDefault();
@@ -2131,6 +2138,17 @@ export default function Camera() {
               className="w-full sm:w-[284px]"
             />
             <div className="flex flex-wrap items-center gap-2">
+              {/* Гараар орлого — камерт бүртгэгдээгүй машины дугаар, дүн (F9) */}
+              <button
+                type="button"
+                onClick={() => setOrlogoOpen(true)}
+                className="btn-minimal inline-flex h-9 items-center gap-1.5 !px-3"
+                title="Орлого оруулах (F9)"
+              >
+                <Banknote className="h-4 w-4" />
+                Орлого
+                <kbd className="ml-0.5 rounded border border-[color:var(--surface-border)] px-1 text-[10px] text-[color:var(--muted-text)]">F9</kbd>
+              </button>
               <button
                 type="button"
                 onClick={() => setKhaaltOpen(true)}
@@ -3117,6 +3135,13 @@ export default function Camera() {
             baiguullagiinId={ajiltan?.baiguullagiinId}
             barilgiinId={effectiveBarilgiinId}
             onClose={() => setKhaaltOpen(false)}
+          />
+        )}
+        {orlogoOpen && (
+          <GaraarOrlogoModal
+            token={token || ""}
+            barilgiinId={effectiveBarilgiinId}
+            onClose={() => setOrlogoOpen(false)}
           />
         )}
 

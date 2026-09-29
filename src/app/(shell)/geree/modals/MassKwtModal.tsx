@@ -80,6 +80,11 @@ export default function MassKwtModal({
   const [loading, setLoading] = useState<boolean>(false);
   const [residents, setResidents] = useState<ResidentUnitRow[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>("");
+  /**
+   * «Зөвхөн оруулаагүй» шүүлт. Асаах үеийн оруулаагүй мөрүүдийн агшин зураг —
+   * бичиж эхлэнгүүт мөр алга болж, курсор үсрэхээс сэргийлнэ.
+   */
+  const [dutuuIdnuud, setDutuuIdnuud] = useState<Set<string> | null>(null);
   const [excelMenuOpen, setExcelMenuOpen] = useState<boolean>(false);
   const [bulkInputValue, setBulkInputValue] = useState<string>("");
 
@@ -452,9 +457,10 @@ export default function MassKwtModal({
   };
 
   const filteredResidents = useMemo(() => {
-    if (!searchTerm.trim()) return residents;
+    const suuri = dutuuIdnuud ? residents.filter((r) => dutuuIdnuud.has(r._id)) : residents;
+    if (!searchTerm.trim()) return suuri;
     const term = searchTerm.toLowerCase().trim();
-    return residents.filter(
+    return suuri.filter(
       (r) =>
         r.toot.toLowerCase().includes(term) ||
         (r.davkhar && r.davkhar.toLowerCase().includes(term)) ||
@@ -462,7 +468,7 @@ export default function MassKwtModal({
         (r.ovog && r.ovog.toLowerCase().includes(term)) ||
         (r.utas && r.utas.includes(term))
     );
-  }, [residents, searchTerm]);
+  }, [residents, searchTerm, dutuuIdnuud]);
 
   // Footer summary — same "filled" rule as handleSubmit
   const summary = useMemo(() => {
@@ -551,25 +557,27 @@ export default function MassKwtModal({
             dragConstraints={constraintsRef}
             dragMomentum={false}
             onClick={(e) => e.stopPropagation()}
-            className="w-full !max-w-[1260px] max-h-[100vh] flex flex-col modal-surface rounded-2xl shadow-xl p-5 sm:p-6 text-sm relative"
-            style={{ maxWidth: "1260px", width: "100%" }}
+            className="w-full max-h-[92vh] flex flex-col overflow-hidden modal-surface rounded-2xl shadow-2xl text-sm relative"
+            style={{ maxWidth: 880, width: "100%" }}
           >
-            {/* Header */}
+            {/* Толгой — нягт: дүрс, гарчиг, товч тайлбар, хаах */}
             <div
-              className="flex items-start justify-between gap-3 border-b border-[color:var(--surface-border)] pb-4 cursor-move select-none"
+              className="flex items-center justify-between gap-3 border-b border-[color:var(--surface-border)] px-5 py-3.5 cursor-move select-none"
               onPointerDown={(e) => dragControls.start(e)}
             >
-              <div className="flex items-start gap-3 min-w-0">
-                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-warning/10 text-warning">
-                  <Zap className="h-5 w-5" aria-hidden="true" />
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-warning/10 text-warning">
+                  <Zap className="h-[18px] w-[18px]" aria-hidden="true" />
                 </span>
                 <div className="min-w-0">
-                  <h3 className="text-base font-medium text-[color:var(--panel-text)]">
-                    Цахилгааны (кВт) заалт оруулах
+                  <h3 className="text-[15px] font-semibold leading-tight text-[color:var(--panel-text)]">
+                    Цахилгааны заалт оруулах
                   </h3>
-                  <p className="mt-0.5 text-[13px] text-[color:var(--muted-text)]">
-                    Тоот бүрийн шинэ заалтыг оруулаад «Хадгалах» товчийг дарна уу.
-                    Enter эсвэл ↑ ↓ товчоор дараагийн мөр рүү шилжинэ.
+                  <p className="mt-0.5 text-[12px] text-[color:var(--muted-text)]">
+                    Шинэ заалтаа оруулаад хадгална уу ·{" "}
+                    <kbd className="rounded border border-[color:var(--surface-border)] px-1 text-[11px]">Enter</kbd>{" "}
+                    <kbd className="rounded border border-[color:var(--surface-border)] px-1 text-[11px]">↑</kbd>{" "}
+                    <kbd className="rounded border border-[color:var(--surface-border)] px-1 text-[11px]">↓</kbd> дараагийн мөр
                   </p>
                 </div>
               </div>
@@ -580,72 +588,98 @@ export default function MassKwtModal({
                 disabled={loading}
                 title="Хаах"
                 aria-label="Хаах"
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-[color:var(--muted-text)] transition-colors hover:bg-[color:var(--surface-hover)] hover:text-[color:var(--panel-text)] disabled:opacity-50"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[color:var(--muted-text)] transition-colors hover:bg-[color:var(--surface-hover)] hover:text-[color:var(--panel-text)] disabled:opacity-50"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Search, Excel & bulk value toolbar */}
-            <div className="py-3 flex flex-wrap items-end justify-between gap-3 border-b border-[color:var(--surface-border)]">
-              <label className="flex-1 min-w-[220px]">
-                <span className="mb-1 block text-[13px] text-[color:var(--muted-text)]">
-                  Хайх
-                </span>
-                <span className="relative block">
-                  <Search
-                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--muted-text)]"
-                    aria-hidden="true"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Тоот, давхар, нэр эсвэл утас"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="stg-input !h-10 !pl-9 !text-sm"
-                  />
-                </span>
+            {/* Хайх · Зөвхөн оруулаагүй · Бүгдэд ижил заалт · Excel — НЭГ мөр, ижил 40px өндөр */}
+            <div className="px-5 py-2.5 flex flex-wrap items-center gap-2 border-b border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]/40">
+              <label className="relative min-w-[220px] flex-1">
+                <span className="sr-only">Хайх</span>
+                <Search
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--muted-text)]"
+                  aria-hidden="true"
+                />
+                <input
+                  type="text"
+                  placeholder="Тоот, давхар, нэр эсвэл утасаар хайх"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="stg-input !h-10 !pl-9 !text-sm"
+                />
               </label>
 
-              <div className="flex flex-wrap items-end gap-3">
-                {/* Bulk value */}
-                <div>
-                  <span className="mb-1 block text-[13px] text-[color:var(--muted-text)]">
-                    Бүх тоотод ижил заалт
+              <button
+                type="button"
+                onClick={() =>
+                  setDutuuIdnuud((v) =>
+                    v
+                      ? null
+                      : new Set(
+                          residents
+                            .filter((r) => r.newKwt === "" || isNaN(parseFloat(r.newKwt)))
+                            .map((r) => r._id),
+                        ),
+                  )
+                }
+                aria-pressed={!!dutuuIdnuud}
+                disabled={!dutuuIdnuud && summary.missing === 0}
+                className={`inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-sm transition-colors disabled:opacity-50 ${
+                  dutuuIdnuud
+                    ? "border-warning/50 bg-warning/10 text-warning"
+                    : "border-[color:var(--surface-border)] text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"
+                }`}
+                title="Заалт оруулаагүй тоотуудыг л харуулах"
+              >
+                Оруулаагүй
+                <span
+                  className={`min-w-5 rounded-full px-1.5 text-center text-[12px] tabular-nums ${
+                    dutuuIdnuud ? "bg-warning text-white" : "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]"
+                  }`}
+                >
+                  {summary.missing}
+                </span>
+              </button>
+
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Бүгдэд ижил заалт — нэг бүлэг (утга + товч) */}
+                <div className="flex h-10 items-stretch overflow-hidden rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] focus-within:border-theme/60">
+                  <span className="flex items-center border-r border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] px-3 text-[13px] text-[color:var(--muted-text)] whitespace-nowrap">
+                    Бүгдэд
                   </span>
-                  <div className="flex items-center gap-2">
-                    <div className="relative w-36">
-                      <input
-                        type="number"
-                        step="any"
-                        min="0"
-                        inputMode="decimal"
-                        placeholder="0"
-                        aria-label="Бүх тоотод оруулах кВт заалт"
-                        value={bulkInputValue}
-                        onChange={(e) => setBulkInputValue(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            handleApplyBulkValue();
-                          }
-                        }}
-                        className="stg-input !h-10 !pr-11 !text-sm text-right tabular-nums"
-                      />
-                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[13px] text-[color:var(--muted-text)]">
-                        кВт
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleApplyBulkValue}
-                      disabled={!bulkInputValue.trim()}
-                      className="stg-btn stg-btn-ghost !h-10 !text-sm"
-                      title="Энэ утгыг бүх тоотод оруулах"
-                    >
-                      Бүгдэд оруулах
-                    </button>
+                  <div className="relative w-28">
+                    <input
+                      type="number"
+                      step="any"
+                      min="0"
+                      inputMode="decimal"
+                      placeholder="0"
+                      aria-label="Бүх тоотод оруулах кВт заалт"
+                      value={bulkInputValue}
+                      onChange={(e) => setBulkInputValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleApplyBulkValue();
+                        }
+                      }}
+                      className="h-full w-full bg-transparent pl-3 pr-10 text-right text-sm tabular-nums outline-none text-[color:var(--panel-text)]"
+                    />
+                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[12px] text-[color:var(--muted-text)]">
+                      кВт
+                    </span>
                   </div>
+                  <button
+                    type="button"
+                    onClick={handleApplyBulkValue}
+                    disabled={!bulkInputValue.trim()}
+                    className="border-l border-[color:var(--surface-border)] px-3 text-sm font-medium text-brand transition-colors hover:bg-theme/10 disabled:cursor-not-allowed disabled:text-[color:var(--muted-text)] disabled:hover:bg-transparent"
+                    title="Энэ утгыг бүх тоотод оруулах"
+                  >
+                    Оруулах
+                  </button>
                 </div>
 
                 {/* Excel dropdown */}
@@ -700,8 +734,8 @@ export default function MassKwtModal({
               </div>
             </div>
 
-            {/* Resident list table */}
-            <div className="flex-1 overflow-y-auto min-h-[260px] max-h-[50vh] border border-[color:var(--surface-border)] rounded-xl relative my-3 bg-[color:var(--surface-bg)]">
+            {/* Жагсаалт — хүрээгүй, бүтэн өргөнтэй, нягт мөр */}
+            <div className="flex-1 min-h-[240px] overflow-y-auto custom-scrollbar">
               {fetching ? (
                 <div className="flex items-center justify-center h-48 text-sm text-[color:var(--muted-text)] gap-2">
                   <Loader2 className="w-5 h-5 animate-spin text-brand" aria-hidden="true" />
@@ -710,80 +744,71 @@ export default function MassKwtModal({
               ) : filteredResidents.length === 0 ? (
                 <div className="flex flex-col items-center justify-center gap-1 h-48 px-4 text-center">
                   <p className="text-sm text-[color:var(--panel-text)]">
-                    {searchTerm.trim()
-                      ? "Хайлтад тохирох тоот олдсонгүй."
+                    {searchTerm.trim() || dutuuIdnuud
+                      ? "Тохирох тоот олдсонгүй."
                       : "Орон сууцны тоот олдсонгүй."}
                   </p>
-                  <p className="text-[13px] text-[color:var(--muted-text)]">
-                    {searchTerm.trim()
-                      ? "Хайх үгээ өөрчилж дахин оролдоно уу."
+                  <p className="text-[12px] text-[color:var(--muted-text)]">
+                    {searchTerm.trim() || dutuuIdnuud
+                      ? "Хайлт эсвэл шүүлтээ өөрчилнө үү."
                       : "Энэ барилгад идэвхтэй гэрээтэй эсвэл бүртгэлтэй тоот алга байна."}
                   </p>
                 </div>
               ) : (
-                <table className="w-full text-left text-sm border-separate border-spacing-0 table-fixed">
+                <table className="w-full text-left text-[13px] border-separate border-spacing-0 table-fixed">
                   <thead>
-                    <tr className="text-[13px] text-[color:var(--muted-text)]">
-                      <th className="sticky top-0 z-20 h-10 px-3 font-normal text-right w-[6%] border-b border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] rounded-tl-xl">
-                        №
-                      </th>
-                      <th className="sticky top-0 z-20 h-10 px-3 font-normal text-left w-[24%] border-b border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]">
-                        Нэр
-                      </th>
-                      <th className="sticky top-0 z-20 h-10 px-3 font-normal text-left w-[11%] border-b border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]">
-                        Тоот
-                      </th>
-                      <th className="sticky top-0 z-20 h-10 px-3 font-normal text-left w-[10%] border-b border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]">
-                        Давхар
-                      </th>
-                      <th className="sticky top-0 z-20 h-10 px-3 font-normal text-left w-[15%] border-b border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]">
-                        Утас
-                      </th>
-                      <th className="sticky top-0 z-20 h-10 px-3 font-normal text-right w-[15%] border-b border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]">
-                        Өмнөх заалт
-                      </th>
-                      <th className="sticky top-0 z-20 h-10 px-3 font-normal text-right w-[19%] border-b border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] rounded-tr-xl">
-                        Шинэ заалт
-                      </th>
+                    <tr className="text-[12px] text-[color:var(--muted-text)]">
+                      {[
+                        { t: "№", c: "w-12 text-right" },
+                        { t: "Тоот", c: "w-24" },
+                        { t: "Эзэмшигч", c: "" },
+                        { t: "Давхар", c: "w-20" },
+                        { t: "Өмнөх", c: "w-28 text-right" },
+                        { t: "Шинэ заалт", c: "w-40 text-right" },
+                        { t: "Зөрүү", c: "w-28 text-right pr-5" },
+                      ].map((h) => (
+                        <th
+                          key={h.t}
+                          className={`sticky top-0 z-20 h-9 px-3 font-medium border-b border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] ${h.c}`}
+                        >
+                          {h.t}
+                        </th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody>
                     {filteredResidents.map((r, index) => {
-                      const isMissing =
-                        r.newKwt === "" || isNaN(parseFloat(r.newKwt));
+                      const isMissing = r.newKwt === "" || isNaN(parseFloat(r.newKwt));
+                      const zoruu = isMissing ? null : parseFloat(r.newKwt) - (Number(r.currentKwt) || 0);
                       return (
                         <tr
                           key={r._id}
-                          className={`h-12 transition-colors ${
-                            isMissing
-                              ? "bg-warning/5 hover:bg-warning/10"
-                              : "hover:bg-[color:var(--surface-hover)]"
-                          }`}
+                          className="group h-10 transition-colors hover:bg-[color:var(--surface-hover)]"
                         >
-                          <td className="px-3 text-right tabular-nums text-[13px] text-[color:var(--muted-text)] border-b border-[color:var(--surface-border)]">
+                          <td
+                            className={`px-3 text-right tabular-nums text-[12px] text-[color:var(--muted-text)] border-b border-[color:var(--surface-border)] ${
+                              isMissing ? "border-l-[3px] border-l-warning" : "border-l-[3px] border-l-transparent"
+                            }`}
+                          >
                             {index + 1}
                           </td>
-                          <td
-                            className="px-3 text-left text-[color:var(--panel-text)] border-b border-[color:var(--surface-border)] truncate"
-                            title={r.ner}
-                          >
-                            {r.ner}
-                          </td>
-                          <td className="px-3 text-left text-[color:var(--panel-text)] border-b border-[color:var(--surface-border)] truncate">
+                          <td className="px-3 font-semibold tabular-nums text-[color:var(--panel-text)] border-b border-[color:var(--surface-border)] truncate">
                             {r.toot}
                           </td>
-                          <td className="px-3 text-left text-[color:var(--muted-text)] border-b border-[color:var(--surface-border)] truncate">
+                          <td className="px-3 border-b border-[color:var(--surface-border)] truncate" title={r.ner}>
+                            <span className="text-[color:var(--panel-text)]">{r.ner}</span>
+                            {r.utas && (
+                              <span className="ml-2 tabular-nums text-[12px] text-[color:var(--muted-text)]">{r.utas}</span>
+                            )}
+                          </td>
+                          <td className="px-3 text-[color:var(--muted-text)] border-b border-[color:var(--surface-border)] truncate">
                             {r.davkhar || "—"}
                           </td>
-                          <td className="px-3 text-left tabular-nums text-[color:var(--muted-text)] border-b border-[color:var(--surface-border)] truncate">
-                            {r.utas || "—"}
-                          </td>
                           <td className="px-3 text-right tabular-nums text-[color:var(--muted-text)] border-b border-[color:var(--surface-border)] whitespace-nowrap">
-                            {r.currentKwt.toLocaleString("mn-MN")}{" "}
-                            <span className="text-[13px]">кВт</span>
+                            {Number(r.currentKwt || 0).toLocaleString("mn-MN")}
                           </td>
                           <td className="px-3 py-1 text-right border-b border-[color:var(--surface-border)]">
-                            <div className="relative ml-auto w-full max-w-[160px]">
+                            <div className="relative ml-auto w-full max-w-[132px]">
                               <input
                                 data-kwt-index={index}
                                 type="number"
@@ -793,17 +818,32 @@ export default function MassKwtModal({
                                 value={r.newKwt}
                                 onChange={(e) => handleKwtChange(r._id, e.target.value)}
                                 onKeyDown={(e) => handleKeyDown(e, index)}
-                                placeholder="Оруулаагүй"
+                                onFocus={(e) => e.currentTarget.select()}
+                                placeholder="—"
                                 aria-label={`${r.toot} тоотын шинэ кВт заалт`}
                                 aria-invalid={isMissing || undefined}
-                                className={`stg-input !h-10 !pr-11 !text-sm text-right tabular-nums ${
-                                  isMissing ? "!border-warning/60" : ""
+                                className={`h-8 w-full rounded-lg border bg-[color:var(--surface-bg)] pl-2 pr-10 text-right text-[13px] tabular-nums text-[color:var(--panel-text)] outline-none transition-colors placeholder:text-[color:var(--muted-text)] focus:border-theme focus:ring-2 focus:ring-theme/15 ${
+                                  isMissing ? "border-warning/50" : "border-[color:var(--surface-border)]"
                                 }`}
                               />
-                              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[13px] text-[color:var(--muted-text)]">
+                              <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] text-[color:var(--muted-text)]">
                                 кВт
                               </span>
                             </div>
+                          </td>
+                          <td className="px-3 pr-5 text-right tabular-nums border-b border-[color:var(--surface-border)] whitespace-nowrap">
+                            {zoruu === null ? (
+                              <span className="text-[color:var(--muted-text)]">—</span>
+                            ) : zoruu < 0 ? (
+                              // Өмнөхөөсөө бага — шалгах шаардлагатай
+                              <span className="text-danger" title="Шинэ заалт өмнөхөөсөө бага байна">
+                                {zoruu.toLocaleString("mn-MN")}
+                              </span>
+                            ) : (
+                              <span className="text-[color:var(--panel-text)]">
+                                +{zoruu.toLocaleString("mn-MN")}
+                              </span>
+                            )}
                           </td>
                         </tr>
                       );
@@ -813,31 +853,36 @@ export default function MassKwtModal({
               )}
             </div>
 
-            {/* Footer: summary + actions */}
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-[color:var(--surface-border)]">
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-[13px] text-[color:var(--muted-text)]">
-                <span>
-                  Заалт оруулсан:{" "}
-                  <span className="tabular-nums text-[color:var(--panel-text)]">
-                    {summary.filled} / {residents.length}
-                  </span>{" "}
-                  тоот
+            {/* Хөл — явцын мөр + үйлдэл */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--surface-border)] px-5 py-3">
+              <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-[color:var(--muted-text)]">
+                <span className="flex items-center gap-2">
+                  <span className="h-1.5 w-24 overflow-hidden rounded-full bg-[color:var(--surface-hover)]" aria-hidden="true">
+                    <span
+                      className="block h-full rounded-full bg-theme transition-all"
+                      style={{ width: `${residents.length ? Math.round((summary.filled / residents.length) * 100) : 0}%` }}
+                    />
+                  </span>
+                  <span>
+                    <span className="tabular-nums font-medium text-[color:var(--panel-text)]">
+                      {summary.filled}/{residents.length}
+                    </span>{" "}
+                    оруулсан
+                  </span>
                 </span>
                 {summary.missing > 0 && (
-                  <span className="text-warning">
-                    Оруулаагүй: <span className="tabular-nums">{summary.missing}</span> тоот
-                  </span>
+                  <span className="text-warning tabular-nums">{summary.missing} дутуу</span>
                 )}
                 <span>
-                  Нийт заалт:{" "}
-                  <span className="tabular-nums text-[color:var(--panel-text)]">
+                  Нийт{" "}
+                  <span className="tabular-nums font-medium text-[color:var(--panel-text)]">
                     {summary.totalKwt.toLocaleString("mn-MN")}
                   </span>{" "}
                   кВт
                 </span>
-                {searchTerm.trim() && (
+                {(searchTerm.trim() || dutuuIdnuud) && (
                   <span>
-                    Харагдаж буй: <span className="tabular-nums">{filteredResidents.length}</span> тоот
+                    Харагдаж буй <span className="tabular-nums">{filteredResidents.length}</span>
                   </span>
                 )}
               </div>
@@ -847,7 +892,7 @@ export default function MassKwtModal({
                   type="button"
                   onClick={onClose}
                   disabled={loading}
-                  className="stg-btn stg-btn-ghost !h-10 !text-sm"
+                  className="stg-btn stg-btn-ghost !h-9 !text-[13px]"
                 >
                   Болих
                 </button>
@@ -855,7 +900,7 @@ export default function MassKwtModal({
                   type="button"
                   onClick={handleSubmit}
                   disabled={loading || fetching}
-                  className="stg-btn stg-btn-primary !h-10 !px-6 !text-sm"
+                  className="stg-btn stg-btn-primary !h-9 !px-5 !text-[13px]"
                 >
                   {loading && <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}
                   <span>{loading ? "Хадгалж байна…" : "Хадгалах"}</span>

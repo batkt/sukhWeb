@@ -32,6 +32,20 @@ export default function UdriinKhaaltModal({ token, baiguullagiinId, barilgiinId,
   const [khaalt, setKhaalt] = useState<any | null>(null);
   const [khaaj, setKhaaj] = useState(false);
   const [batalgaa, setBatalgaa] = useState(false);
+  /** Камер кассаас ГАРААР оруулсан орлого (машины тоо + дүн) */
+  const [garaar, setGaraar] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!token || !udur) return;
+    let khuchintei = true;
+    uilchilgee(token)
+      .get("/zogsoolGaraarOrlogo", { params: { barilgiinId: barilgiinId || undefined, udur } })
+      .then((r) => khuchintei && setGaraar(Array.isArray(r.data?.jagsaalt) ? r.data.jagsaalt : []))
+      .catch(() => khuchintei && setGaraar([]));
+    return () => {
+      khuchintei = false;
+    };
+  }, [token, barilgiinId, udur]);
 
   useEffect(() => {
     if (!token || !udur) return;
@@ -108,7 +122,25 @@ export default function UdriinKhaaltModal({ token, baiguullagiinId, barilgiinId,
       if (tul <= 0) unegui += 1;
       else ebarimt += Number(t?.ebarimtAvsanDun ?? mur?.ebarimtAvsanDun) || 0;
     });
+    // Гараар орлого: нийт орлогод нэмэгдэж, хэлбэр тус бүр тусдаа мөр
+    const GARAAR_NER: Record<string, string> = { belen: "Бэлэн", khaan: "Карт", khariltsakh: "Дансаар", qpay: "QPay" };
+    const garaarKhelber = new Map<string, { count: number; amount: number }>();
+    let garaarDun = 0;
+    let garaarMashin = 0;
+    garaar.forEach((o) => {
+      const d = Number(o?.dun) || 0;
+      garaarDun += d;
+      garaarMashin += 1;
+      const ner = `Гараар · ${GARAAR_NER[o?.khelber] || o?.khelber || "Бэлэн"}`;
+      const kh = garaarKhelber.get(ner) || { count: 0, amount: 0 };
+      kh.count += 1;
+      kh.amount += d;
+      garaarKhelber.set(ner, kh);
+    });
+    tulsun += garaarDun;
     return {
+      garaarDun,
+      garaarMashin,
       niit: jagsaalt.length,
       garsan,
       dotor: jagsaalt.length - garsan,
@@ -119,9 +151,17 @@ export default function UdriinKhaaltModal({ token, baiguullagiinId, barilgiinId,
       tulugdugui,
       ebarimt,
       unegui,
-      khelber: tulburiinZadargaaBodyo(jagsaalt).items.filter((i) => i.amount > 0),
+      khelber: [
+        ...tulburiinZadargaaBodyo(jagsaalt).items.filter((i) => i.amount > 0),
+        ...Array.from(garaarKhelber.entries()).map(([name, v]) => ({
+          key: name,
+          name,
+          count: v.count,
+          amount: v.amount,
+        })),
+      ],
     };
-  }, [jagsaalt]);
+  }, [jagsaalt, garaar]);
 
   const udurKhaakh = async () => {
     setKhaaj(true);
@@ -170,7 +210,7 @@ export default function UdriinKhaaltModal({ token, baiguullagiinId, barilgiinId,
       ${dun.turluud.map(([k, v]) => mur(k, String(v))).join("")}</table>
       <h3>Төлбөрийн хэлбэр</h3><table>${dun.khelber.map((i) => mur(`${i.name} (${i.count})`, mnt(i.amount))).join("")}</table>
       <h3>Дүн</h3><table>${mur("Нийт бодогдсон", mnt(dun.bodogdson))}${mur("Хөнгөлөлт", mnt(dun.khungulult))}
-      ${mur("Төлөөгүй", mnt(dun.tulugdugui))}${mur("И-баримт", mnt(dun.ebarimt))}${mur("Үнэгүй машин", String(dun.unegui))}
+      ${mur("Төлөөгүй", mnt(dun.tulugdugui))}${mur("И-баримт", mnt(dun.ebarimt))}${mur("Үнэгүй машин", String(dun.unegui))}${dun.garaarDun > 0 ? mur(`Гараар орлого${dun.garaarMashin ? ` (${dun.garaarMashin} машин)` : ""}`, mnt(dun.garaarDun)) : ""}
       <tr class="b"><td>Нийт орлого</td><td style="text-align:right">${mnt(dun.tulsun)}</td></tr></table>
       <p style="margin-top:28px">Хүлээлгэн өгсөн: ____________ &nbsp; Хүлээн авсан: ____________</p>
       </body></html>`);
@@ -192,10 +232,12 @@ export default function UdriinKhaaltModal({ token, baiguullagiinId, barilgiinId,
       onClick={onClose}
     >
       <div
-        className="modal-surface w-full max-w-[520px] overflow-hidden rounded-2xl shadow-2xl"
+        className="modal-surface w-full overflow-hidden rounded-2xl shadow-2xl"
+        // Өргөнийг inline-аар — ангийн (max-w-[…]) дүрэм дарагдаж бүтэн өргөнөөр гардаг байв.
+        style={{ maxWidth: 420, width: "100%" }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between gap-3 border-b border-[color:var(--surface-border)] px-5 py-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[color:var(--surface-border)] px-4 py-3">
           <div>
             <h2 className="text-[15px] text-[color:var(--panel-text)]">Өдрийн хаалт</h2>
             <p className="text-[12px] text-[color:var(--muted-text)]">Машин болон төлбөрийн дүн автоматаар бодогдоно</p>
@@ -213,7 +255,7 @@ export default function UdriinKhaaltModal({ token, baiguullagiinId, barilgiinId,
           </div>
         </div>
 
-        <div className="max-h-[65vh] space-y-4 overflow-y-auto px-5 py-4">
+        <div className="max-h-[65vh] space-y-3 overflow-y-auto px-4 py-3">
           {khaalt && (
             <div className="flex items-start gap-2.5 rounded-xl bg-success/10 px-3.5 py-2.5 text-[13px] text-[color:var(--panel-text)]">
               <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
@@ -267,12 +309,15 @@ export default function UdriinKhaaltModal({ token, baiguullagiinId, barilgiinId,
                 <Mur k="Төлөөгүй" v={mnt(dun.tulugdugui)} tod={dun.tulugdugui > 0 ? "text-danger" : undefined} />
                 <Mur k="И-баримт" v={mnt(dun.ebarimt)} />
                 <Mur k="Үнэгүй машин" v={dun.unegui} />
+                {dun.garaarDun > 0 && (
+                  <Mur k={`Гараар орлого${dun.garaarMashin ? ` · ${dun.garaarMashin} машин` : ""}`} v={mnt(dun.garaarDun)} tod="text-brand" />
+                )}
               </section>
             </>
           )}
         </div>
 
-        <div className="flex items-center justify-between gap-3 border-t border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] px-5 py-3">
+        <div className="flex items-center justify-between gap-2 border-t border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] px-4 py-3">
           <div>
             <div className="text-[11px] text-[color:var(--muted-text)]">Нийт орлого</div>
             <div className="text-[17px] tabular-nums text-brand">{mnt(dun.tulsun)}</div>
@@ -306,8 +351,8 @@ export default function UdriinKhaaltModal({ token, baiguullagiinId, barilgiinId,
               <button
                 type="button"
                 onClick={() => setBatalgaa(true)}
-                disabled={achaalj || dun.niit === 0}
-                title={dun.niit === 0 ? "Энэ өдөр машин ороогүй" : "Өдрийн дүнг хадгалж хаана"}
+                disabled={achaalj || (dun.niit === 0 && dun.garaarDun === 0)}
+                title={dun.niit === 0 && dun.garaarDun === 0 ? "Энэ өдөр машин ороогүй" : "Өдрийн дүнг хадгалж хаана"}
                 className="inline-flex h-10 items-center gap-1.5 rounded-[10px] bg-theme px-4 text-[14px] !text-white disabled:opacity-50"
               >
                 <Lock className="h-4 w-4" />

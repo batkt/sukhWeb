@@ -367,7 +367,12 @@ export default function GereeModals() {
         show={state.showDeleteFloorModal}
         onClose={() => state.setShowDeleteFloorModal(false)}
         title="Давхрын тоотуудыг устгах уу?"
-        message={`Та ${state.floorToDelete}-р давхрын бүх тоотыг устгах гэж байна. Энэ үйлдэл буцаах боломжгүй.`}
+        message={(() => {
+          const t = state.floorToDeleteTurul || state.propertyTab;
+          const davkhar = /^b/i.test(String(state.floorToDelete || "")) ? `${state.floorToDelete} давхрын` : `${state.floorToDelete}-р давхрын`;
+          const negj = t === "Зогсоол" ? "гаражийн дугаарыг" : t === "Агуулах" ? "агуулахын дугаарыг" : "тоотыг";
+          return `Та ${davkhar} бүх ${negj} устгах гэж байна. Энэ үйлдэл буцаах боломжгүй.`;
+        })()}
         onConfirm={async () => {
           if (state.floorToDelete) {
             if (actions.deleteFloor) {
