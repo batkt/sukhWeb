@@ -664,7 +664,7 @@ export function useGereeActions(
 
         // Check if there are active contracts for this unit
         if (!opts?.gereeShalgakhgui && contracts && Array.isArray(contracts)) {
-          const hasActiveContract = contracts.some((c: any) => {
+          const hasActiveContract = contracts.find((c: any) => {
             const isCancelled =
               String(c.tuluv || c.status || "")
                 .toLowerCase()
@@ -690,8 +690,15 @@ export function useGereeActions(
           });
 
           if (hasActiveContract) {
+            // Аль орц, аль давхрын аль тоот, хэний гэрээ — юу хийхийг хамт хэлнэ.
+            const c: any = hasActiveContract;
+            const negj =
+              turul === "Тоот"
+                ? `${selectedOrts ? `${selectedOrts}-р орц, ` : ""}${floor ? `${floor} давхрын ` : ""}${unitStr} тоот`
+                : `${turul === "Зогсоол" ? "Гараж" : "Агуулах"} ${floor ? `${floor} давхрын ` : ""}${unitStr} дугаар`;
+            const ezen = [c.ovog ? `${String(c.ovog).charAt(0)}.` : "", c.ner || ""].filter(Boolean).join(" ");
             openErrorOverlay(
-              "Энэ тоот дээр идэвхтэй гэрээ байна. Устгах боломжгүй.",
+              `${negj} дээр${ezen ? ` «${ezen}»-ийн` : ""} идэвхтэй гэрээ${c.gereeniiDugaar ? ` (№${c.gereeniiDugaar})` : ""} байна. Эхлээд гэрээг цуцлах эсвэл эзэмшигчийг тоотоос салгаад дахин устгана уу.`,
             );
             return false;
           }
@@ -848,7 +855,7 @@ export function useGereeActions(
 
         if (occupiedUnits.size > 0) {
           openErrorOverlay(
-            `Дараах тоотууд дээр идэвхтэй гэрээ байгаа тул устгах боломжгүй: ${Array.from(occupiedUnits).join(", ")}`,
+            `${selectedOrts ? `${selectedOrts}-р орц, ` : ""}${floor} давхрын ${Array.from(occupiedUnits).join(", ")} ${turul === "Тоот" ? "тоот" : "дугаар"} дээр идэвхтэй гэрээ байгаа тул устгах боломжгүй. Эдгээрийг сонголтоос хасах эсвэл эхлээд гэрээг цуцлах / эзэмшигчийг салгаад дахин устгана уу.`,
           );
           return false;
         }
@@ -990,7 +997,7 @@ export function useGereeActions(
 
         // Check if there are any active contracts on this floor
         if (contracts && Array.isArray(contracts)) {
-          const hasActiveContract = contracts.some((c: any) => {
+          const idevkhteiGereenuud = contracts.filter((c: any) => {
             const isCancelled =
               String(c.tuluv || c.status || "")
                 .toLowerCase()
@@ -1018,9 +1025,13 @@ export function useGereeActions(
             return false;
           });
 
-          if (hasActiveContract) {
+          if (idevkhteiGereenuud.length > 0) {
+            // Аль давхрын аль тоотууд идэвхтэй гэрээтэйг нэрлэнэ.
+            const tootuud = Array.from(
+              new Set(idevkhteiGereenuud.map((c: any) => String(c.toot || "").trim()).filter(Boolean)),
+            );
             openErrorOverlay(
-              "Энэ давхарт идэвхтэй гэрээтэй тоот байна. Устгах боломжгүй.",
+              `${selectedOrts ? `${selectedOrts}-р орц, ` : ""}${floor} давхарт идэвхтэй гэрээтэй ${tootuud.length > 0 ? `${tootuud.join(", ")} тоот` : "тоот"} байна. Давхрыг устгахын өмнө эдгээр гэрээг цуцлах эсвэл оршин суугчийг тоотоос салгана уу.`,
             );
             return;
           }

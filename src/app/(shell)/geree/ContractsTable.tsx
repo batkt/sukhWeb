@@ -299,6 +299,10 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
               >
                 <Edit className="w-4 h-4 text-brand" />
               </button>
+              {/* Устгах товчгүй мөрөнд ч хоосон зай үлдээж, дүрсүүд мөр бүрт ижил байрлалд байна. */}
+              {isAdmin && handleAdminDelete && !isCancelled && (
+                <span className="inline-block w-7 h-7" aria-hidden="true" />
+              )}
               {isCancelled && isAdmin && handleAdminDelete && (
                 <button
                   onClick={() => handleAdminDelete(record)}

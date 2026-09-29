@@ -2572,8 +2572,8 @@ export default function HistoryModal({
                                     <td colSpan={4} className="sticky bottom-[37px] z-10 bg-[color:var(--surface-bg)] border-t border-r border-[color:var(--surface-border)]"></td>
                                   </tr>
                                 )}
-                                <tr className="history-print-total-row bg-[color:var(--surface-bg)]">
-                                  
+                                <tr className="history-print-total-row hm-niit-mur bg-[color:var(--surface-bg)]">
+
                                 <td
                                   colSpan={3}
                                   className="sticky bottom-0 z-10 bg-[color:var(--surface-bg)] py-1 px-2 text-[13px] font-medium text-[color:var(--panel-text)] text-left border-t-2 border-r border-[color:var(--surface-border)]"
@@ -2615,14 +2615,14 @@ export default function HistoryModal({
                                   data-print-balance={
                                     balance < 0.01 ? "ok" : "due"
                                   }
-                                  className={`sticky bottom-0 z-10 bg-[color:var(--surface-hover)] py-1 px-2 text-[13px] font-medium text-right whitespace-nowrap border-t-2 border-r border-[color:var(--surface-border)] cursor-pointer rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-theme/80 hover:bg-[color:var(--panel)] transition-colors ${balanceClass}`}
+                                  className={`sticky bottom-0 z-10 py-1 px-2 text-[14px] font-semibold text-right whitespace-nowrap border-t-2 border-r border-[color:var(--surface-border)] cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme/80 transition-colors ${balanceClass}`}
                                   title="Дэлгэрэнгүй харах"
                                 >
                                   {formatCurrency(balance)} ₮
                                 </td>
                                 <td
                                   colSpan={4}
-                                  className="sticky bottom-0 z-10 bg-[color:var(--surface-hover)] border-t-2 border-r border-[color:var(--surface-border)]"
+                                  className="sticky bottom-0 z-10 border-t-2 border-r border-[color:var(--surface-border)]"
                                 ></td>
                               </tr>
                             </>

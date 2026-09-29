@@ -213,13 +213,21 @@ export default function KhariltsagchModal({
 
       const isGarageOrStorage =
         unit.turul === "Гараж" || unit.turul === "Агуулах";
+      // Гараж B1-10 ба B2-10 нь өөр нэгж — давхрыг түлхүүрт оруулна.
       const ortsVal = isGarageOrStorage ? "1" : unit.orts?.trim() || "";
-      const davkharVal = isGarageOrStorage ? "" : unit.davkhar?.trim() || "";
-      const key = `${ortsVal}-${davkharVal}-${tootVal}`;
+      const davkharVal = unit.davkhar?.trim() || "";
+      const key = `${unit.turul || ""}-${ortsVal}-${davkharVal}-${tootVal}`;
       if (uniqueUnitKeys.has(key)) {
         newErrors.push(`units.${index}.duplicate`);
       } else {
         uniqueUnitKeys.add(key);
+      }
+      // Гараар бичсэн дугаар өөр хүнд идэвхтэй бүртгэлтэй эсэх
+      if (
+        isGarageOrStorage &&
+        isTootOccupied(tootVal, unit.davkhar || "", unit.turul === "Гараж" ? "Зогсоол" : "Агуулах")
+      ) {
+        newErrors.push(`units.${index}.occupied`);
       }
     });
 
@@ -255,14 +263,33 @@ export default function KhariltsagchModal({
         return false;
       }
 
+      /** «Гараж B1 давхрын 40 дугаар» — алдааг тодорхой нэгжээр нь нэрлэнэ. */
+      const negjiinNer = (i: number) => {
+        const u = units[i] || {};
+        const turulNer = u.turul === "Агуулах" ? "Агуулах" : u.turul === "Гараж" ? "Гараж" : "Тоот";
+        return `${turulNer}${u.davkhar ? ` ${u.davkhar} давхрын` : ""}${u.toot ? ` ${String(u.toot).trim()} дугаар` : ""}`;
+      };
+
+      // Эзэмшигчтэй дугаар — бөглөөгүй талбараас өөр төрлийн алдаа тул тусад нь.
+      const ezemshigchtei = busadAldaa.filter((e) => e.endsWith(".occupied"));
+      if (ezemshigchtei.length > 0) {
+        const i = parseInt(ezemshigchtei[0].split(".")[1]);
+        const u = units[i] || {};
+        openErrorOverlay(
+          `${negjiinNer(i)} ${ezemshigchiinDelgerengui(String(u.toot || "").trim(), u.davkhar || "")}-д идэвхтэй бүртгэлтэй. Сул дугаар сонгох эсвэл эхлээд тухайн эзэмшигчээс салгана уу.`,
+        );
+        return false;
+      }
+
       const missingFields = busadAldaa
         .map((e) => {
           if (e.startsWith("units.")) {
             const parts = e.split(".");
+            const i = parseInt(parts[1]);
             const field = parts[2];
             if (field === "duplicate")
-              return `Мөр ${parseInt(parts[1]) + 1}: Давхардсан тоот`;
-            return `Мөр ${parseInt(parts[1]) + 1}: ${fieldNames[field] || field}`;
+              return `${negjiinNer(i)} хоёр удаа сонгогдсон — нэгийг нь хасна уу`;
+            return `${negjiinNer(i)}: ${fieldNames[field] || field}`;
           }
           return fieldNames[e] || e;
         })
@@ -713,15 +740,47 @@ export default function KhariltsagchModal({
     [isTootOccupied, currentResidents, editingClient],
   );
 
+  /** Эзэмшигчийн дэлгэрэнгүй — «Б. Бат (302 тоот, 99112233)» */
+  const ezemshigchiinDelgerengui = React.useCallback(
+    (tootVal: string, floorVal: string): string => {
+      const uDavkhar = String(floorVal || "").trim().toLowerCase();
+      const uToot = String(tootVal || "").trim().toLowerCase();
+      const r = (currentResidents || []).find((x: any) => {
+        if (editingClient && String(editingClient._id || "") === String(x._id || "")) return false;
+        const units = Array.isArray(x.toots) && x.toots.length ? x.toots : [x];
+        return units.some(
+          (u: any) =>
+            String(u.davkhar || "").trim().toLowerCase() === uDavkhar &&
+            String(u.toot || "").trim().toLowerCase() === uToot,
+        );
+      });
+      if (!r) return "өөр эзэмшигч";
+      const ner = [r.ovog ? `${String(r.ovog).charAt(0)}.` : "", r.ner || ""].filter(Boolean).join(" ") || "Нэргүй";
+      const units = Array.isArray(r.toots) && r.toots.length ? r.toots : [r];
+      const bair = units.find((u: any) => {
+        const t = String(u?.turul || "").trim();
+        return !t || t === "Орон сууц" || t === "Тоот";
+      });
+      const utas = Array.isArray(r.utas) ? r.utas[0] : r.utas;
+      const nemelt = [bair?.toot ? `${bair.toot} тоот` : "", utas || ""].filter(Boolean).join(", ");
+      return nemelt ? `«${ner}» (${nemelt})` : `«${ner}»`;
+    },
+    [isTootOccupied, currentResidents, editingClient],
+  );
+
   /** Дугаарын сонголтууд — сул нь эхэнд, эзэмшигчтэй нь нэртэйгээ доор */
   const dugaariinSongolt = (davkhar: string, turul: "Зогсоол" | "Агуулах") => {
     const jagsaalt = getTootOptions("1", davkhar || "", turul).map((t) => {
       const ezen = tootEzemshigch(t, davkhar || "", turul);
+      const turulNer = turul === "Зогсоол" ? "Гараж" : "Агуулах";
       return {
         value: t,
         label: ezen ? `${t}  ·  ${ezen}` : t,
         isOccupied: !!ezen,
         title: ezen ? `${t} — ${ezen} эзэмшдэг` : `${t} — сул`,
+        occupiedNote: ezen
+          ? `${turulNer} ${davkhar ? `${davkhar} давхрын ` : ""}${t} дугаар ${ezemshigchiinDelgerengui(t, davkhar || "")}-д идэвхтэй бүртгэлтэй. Сул дугаар сонгох эсвэл эхлээд тухайн эзэмшигчээс салгана уу.`
+          : undefined,
       };
     });
     return [...jagsaalt.filter((o) => !o.isOccupied), ...jagsaalt.filter((o) => o.isOccupied)];
@@ -1227,7 +1286,7 @@ export default function KhariltsagchModal({
                               </div>
                               <div className={`tusgai-wrapper min-w-0 flex-1 flex items-center ${errors.includes(`units.${gFlatIdx}.toot`) ? "input-error" : ""}`}>
                                 <TusgaiZagvar value={garage.toot || ""} onChange={(val: string) => updateGarageField(gIdx, "toot", val)}
-                                  options={dugaariinSongolt(garage.davkhar || "", "Зогсоол")} className="w-full h-full" placeholder="Дугаар" disabled={!garage.davkhar} allowCustomInput={true} />
+                                  options={dugaariinSongolt(garage.davkhar || "", "Зогсоол")} className="w-full h-full" placeholder="Дугаар" disabled={!garage.davkhar} allowCustomInput={true} blockOccupied />
                               </div>
                               <button type="button" onClick={() => removeGarage(gIdx)}
                                 title="Хасах" aria-label="Хасах"
@@ -1271,7 +1330,7 @@ export default function KhariltsagchModal({
                               </div>
                               <div className={`tusgai-wrapper min-w-0 flex-1 flex items-center ${errors.includes(`units.${sFlatIdxNested}.toot`) ? "input-error" : ""}`}>
                                 <TusgaiZagvar value={storage.toot || ""} onChange={(val: string) => updateStorageField(sIdx, "toot", val)}
-                                  options={dugaariinSongolt(storage.davkhar || "", "Агуулах")} className="w-full h-full" placeholder="Дугаар" disabled={!storage.davkhar} allowCustomInput={true} />
+                                  options={dugaariinSongolt(storage.davkhar || "", "Агуулах")} className="w-full h-full" placeholder="Дугаар" disabled={!storage.davkhar} allowCustomInput={true} blockOccupied />
                               </div>
                               <button type="button" onClick={() => removeStorage(sIdx)}
                                 title="Хасах" aria-label="Хасах"

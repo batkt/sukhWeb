@@ -660,7 +660,7 @@ export default function UnitsSection({
 
     if (occupiedList.length > 0) {
       title = `Сонгосон ${freeList.length} ${typeLabel} устгах уу?`;
-      message = `Сонгосон ${checkedUnits.length} тоотын ${occupiedList.length} нь идэвхтэй гэрээтэй тул зөвхөн чөлөөтэй ${freeList.length} тоотыг устгах боломжтой. Энэ үйлдэл буцаах боломжгүй.`;
+      message = `Сонгосон ${checkedUnits.length}-аас ${selectedFloor ? `${selectedFloor} давхрын ` : ""}${occupiedList.join(", ")} нь идэвхтэй холбогдсон тул алгасна. Зөвхөн чөлөөтэй ${freeList.length}-г устгана. Холбогдсоныг жагсаалтын устгах товчоор нэг бүрчлэн салгаад устгана уу. Энэ үйлдэл буцаах боломжгүй.`;
     } else {
       title = `Сонгосон ${freeList.length} ${typeLabel} устгах уу?`;
       message = `Та сонгосон ${freeList.length} ${typeLabel} устгах гэж байна. Энэ үйлдэл буцаах боломжгүй.`;
@@ -1303,7 +1303,6 @@ export default function UnitsSection({
             {Number(v || 0).toLocaleString("mn-MN", {
               minimumFractionDigits: 2,
             })}
-            ₮
           </span>
         ),
       },
@@ -1349,75 +1348,89 @@ export default function UnitsSection({
       {
         title: "Үйлдэл",
         key: "action",
-        width: 96,
+        width: 148,
         align: "center",
-        render: (_: any, row: any) => (
-          <div className="flex items-center justify-center gap-1">
-            {row.isOccupied ? (
-              <>
-                <button
-                  onClick={() =>
-                    handleSendSingleUnitInvoice(row.resident, row.id)
-                  }
-                  className="cursor-pointer rounded-lg p-1.5 text-brand transition hover:bg-theme/10 dark:hover:bg-theme/30"
-                  title="Нэхэмжлэх/авлага илгээх"
-                >
-                  <Send className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={async () => {
-                    if (!row.resident) return;
-                    if (
-                      !confirm(
-                        `Тоот ${row.zogsoolDugaar}-аас ${row.ner}-г хасах уу?`,
+        render: (_: any, row: any) => {
+          // Товч бүр ижил хэмжээтэй (28px); мөр бүрт устгах товч нэг баганад
+          // байхаар 2 + 1 байрлалтай тор ашиглана.
+          const iconBtn =
+            "inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-transparent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-theme/60";
+          return (
+            <div className="mx-auto grid w-[124px] grid-cols-[92px_26px] items-center gap-1.5">
+              {row.isOccupied ? (
+                <div className="flex items-center justify-end gap-1">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleSendSingleUnitInvoice(row.resident, row.id)
+                    }
+                    className={`${iconBtn} text-brand hover:border-theme/30 hover:bg-theme/10`}
+                    title="Нэхэмжлэх/авлага илгээх"
+                    aria-label="Нэхэмжлэх илгээх"
+                  >
+                    <Send className="h-[15px] w-[15px]" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!row.resident) return;
+                      if (
+                        !confirm(
+                          `Тоот ${row.zogsoolDugaar}-аас ${row.ner}-г хасах уу?`,
+                        )
                       )
-                    )
-                      return;
-                    await actions.handleUnlinkFromUnit(
-                      row.resident,
-                      row.id,
-                      propertyTab,
-                    );
-                  }}
-                  className="cursor-pointer rounded-lg p-1.5 text-warning transition hover:bg-warning/10"
-                  title="Холбоос хасах"
+                        return;
+                      await actions.handleUnlinkFromUnit(
+                        row.resident,
+                        row.id,
+                        propertyTab,
+                      );
+                    }}
+                    className={`${iconBtn} text-warning hover:border-warning/30 hover:bg-warning/10`}
+                    title="Холбоос хасах"
+                    aria-label="Холбоос хасах"
+                  >
+                    <UserX className="h-[15px] w-[15px]" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setQuickRegister({ unit: row.id, floor: selectedFloor || "" })
+                  }
+                  className="inline-flex h-[26px] w-[92px] min-w-0 cursor-pointer items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-lg border border-theme/30 bg-theme/5 px-1.5 text-[12px] font-medium leading-none text-brand transition-colors hover:bg-theme/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-theme/60"
+                  title="Энэ дугаарт эзэмшигч бүртгэх"
                 >
-                  <UserX className="h-4 w-4" />
+                  {/* Шошгыг span-д хийнэ: зөвхөн дүрстэй товчийг 26px болгодог
+                      .zt-table дүрэм (svg:only-child) энд хамаарахгүй. */}
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>Бүртгэх</span>
                 </button>
-              </>
-            ) : (
+              )}
+              {/* Холбогдсон тоот: шууд устгахгүй — «холбоосыг салгаад устгах уу?»
+                  гэж асууж, батлавал хоёуланг нь дараалан хийнэ. */}
               <button
+                type="button"
                 onClick={() =>
-                  setQuickRegister({ unit: row.id, floor: selectedFloor || "" })
+                  row.isOccupied && row.resident
+                    ? setHolbootoiUstgakh({
+                        floor: selectedFloor || "",
+                        unit: row.id,
+                        ner: row.ner || "Оршин суугч",
+                        resident: row.resident,
+                      })
+                    : onDeleteUnit(selectedFloor || "", row.id)
                 }
-                className="cursor-pointer rounded-lg p-1.5 text-brand transition hover:bg-theme/10 dark:hover:bg-theme/30"
-                title="Бүртгэх"
+                className={`${iconBtn} text-[color:var(--muted-text)] hover:border-danger/30 hover:bg-danger/10 hover:text-danger`}
+                title={row.isOccupied ? `${row.ner || "Оршин суугч"} холбогдсон — салгаад устгана` : "Устгах"}
+                aria-label="Устгах"
               >
-                <Plus className="h-4 w-4" />
+                <Trash2 className="h-[15px] w-[15px]" />
               </button>
-            )}
-            {/* Холбогдсон тоот: шууд устгахгүй — «холбоосыг салгаад устгах уу?»
-                гэж асууж, батлавал хоёуланг нь дараалан хийнэ. */}
-            <button
-              type="button"
-              onClick={() =>
-                row.isOccupied && row.resident
-                  ? setHolbootoiUstgakh({
-                      floor: selectedFloor || "",
-                      unit: row.id,
-                      ner: row.ner || "Оршин суугч",
-                      resident: row.resident,
-                    })
-                  : onDeleteUnit(selectedFloor || "", row.id)
-              }
-              className="cursor-pointer rounded-lg p-1.5 text-danger transition hover:bg-danger/10"
-              title={row.isOccupied ? `${row.ner || "Оршин суугч"} холбогдсон — салгаад устгана` : "Устгах"}
-              aria-label="Устгах"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
-          </div>
-        ),
+            </div>
+          );
+        },
       },
     ],
 
@@ -1895,7 +1908,15 @@ export default function UnitsSection({
         title="Холбоосыг салгаад устгах уу?"
         message={
           holbootoiUstgakh
-            ? `${holbootoiUstgakh.unit} дугаар дээр «${holbootoiUstgakh.ner}» холбогдсон байна. Батлавал эхлээд холбоосыг салгаж, дараа нь ${holbootoiUstgakh.unit}-г устгана. Энэ үйлдлийг буцаах боломжгүй.`
+            ? (() => {
+                // «1-р орц, 4 давхрын 401 тоот» / «Гараж B1 давхрын 40 дугаар»
+                const h = holbootoiUstgakh;
+                const negj =
+                  propertyTab === "Тоот"
+                    ? `${selectedOrts ? `${selectedOrts}-р орц, ` : ""}${h.floor ? `${h.floor} давхрын ` : ""}${h.unit} тоот`
+                    : `${propertyTab === "Зогсоол" ? "Гараж" : "Агуулах"} ${h.floor ? `${h.floor} давхрын ` : ""}${h.unit} дугаар`;
+                return `${negj} дээр «${h.ner}» идэвхтэй холбогдсон байна. Батлавал эхлээд «${h.ner}»-г энэ ${propertyTab === "Тоот" ? "тоотоос" : "дугаараас"} салгаж, дараа нь устгана. Энэ үйлдлийг буцаах боломжгүй.`;
+              })()
             : ""
         }
         onConfirm={holbootoiUstgakhBatlakh}

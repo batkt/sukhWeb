@@ -183,13 +183,22 @@ export default function ResidentModal({
         }
         if (!unit.toot?.trim()) newErrors.push(`units.${index}.toot`);
         
+        // Гараж B1-10 ба B2-10 нь өөр нэгж — давхрыг түлхүүрт оруулна.
         const ortsVal = isGarageOrStorage ? "1" : (unit.orts?.trim() || "");
-        const davkharVal = isGarageOrStorage ? "" : (unit.davkhar?.trim() || "");
-        const key = `${ortsVal}-${davkharVal}-${unit.toot?.trim()}`;
+        const davkharVal = unit.davkhar?.trim() || "";
+        const key = `${unit.turul || "Орон сууц"}-${ortsVal}-${davkharVal}-${unit.toot?.trim()}`;
         if (uniqueUnitKeys.has(key)) {
           newErrors.push(`units.${index}.duplicate`);
         } else {
           uniqueUnitKeys.add(key);
+        }
+        // Гараж/агуулахын дугаар өөр хүнд идэвхтэй бүртгэлтэй эсэх (гараар бичсэн ч)
+        if (
+          isGarageOrStorage &&
+          unit.toot?.trim() &&
+          isTootOccupied(unit.toot.trim(), unit.davkhar || "", "1", unit.turul === "Гараж" ? "Зогсоол" : "Агуулах")
+        ) {
+          newErrors.push(`units.${index}.occupied`);
         }
       });
     }
@@ -211,20 +220,53 @@ export default function ResidentModal({
         duusakhOgnoo: "Гэрээ дуусах огноо",
       };
       
+      /** «Гараж B1 давхрын 40 дугаар» / «Орон сууц 1-р орц 3 давхрын 302 тоот» */
+      const negjiinNer = (i: number) => {
+        const u = units[i] || {};
+        const toot = String(u.toot || "").trim();
+        if (u.turul === "Гараж" || u.turul === "Агуулах") {
+          return `${u.turul}${u.davkhar ? ` ${u.davkhar} давхрын` : ""}${toot ? ` ${toot} дугаар` : ""}`;
+        }
+        return `Орон сууц${u.orts ? ` ${u.orts}-р орц` : ""}${u.davkhar ? ` ${u.davkhar} давхрын` : ""}${toot ? ` ${toot} тоот` : ""}`;
+      };
+
+      // Эзэмшигчтэй дугаар — хэн эзэмшдэг, юу хийхийг хэлнэ.
+      const ezemshigchtei = newErrors.find((e) => e.endsWith(".occupied"));
+      if (ezemshigchtei) {
+        const i = parseInt(ezemshigchtei.split(".")[1]);
+        const u = units[i] || {};
+        openErrorOverlay(
+          `${negjiinNer(i)} ${ezemshigchiinDelgerengui(String(u.toot || "").trim(), u.davkhar || "", u.turul === "Гараж" ? "Зогсоол" : "Агуулах")}-д идэвхтэй бүртгэлтэй. Сул дугаар сонгох эсвэл эхлээд тухайн эзэмшигчээс салгана уу.`,
+        );
+        return false;
+      }
+
+      const davkhardsan = newErrors.filter((e) => e.endsWith(".duplicate"));
+      if (davkhardsan.length > 0 && davkhardsan.length === newErrors.length) {
+        openErrorOverlay(
+          `${davkhardsan.map((e) => negjiinNer(parseInt(e.split(".")[1]))).join(", ")} хоёр удаа сонгогдсон байна. Давхардсан мөрийг хасна уу.`,
+        );
+        return false;
+      }
+
+      const unitFieldNames: Record<string, string> = { orts: "орц", davkhar: "давхар", toot: "тоот/дугаар" };
       const missingFields = newErrors
+        .filter((e) => !e.endsWith(".duplicate"))
         .map((e) => {
           if (e.startsWith("units.")) {
             const parts = e.split(".");
-            const field = parts[2];
-            if (field === "duplicate") return `Мөр ${parseInt(parts[1]) + 1}: Давхардсан тоот (Орц/Давхар/Тоот)`;
-            return `Мөр ${parseInt(parts[1]) + 1}: ${fieldNames[field] || field}`;
+            const i = parseInt(parts[1]);
+            return `${negjiinNer(i)} — ${unitFieldNames[parts[2]] || parts[2]}`;
           }
           return fieldNames[e] || e;
         })
         .join(", ");
 
       openErrorOverlay(
-        `Дараах талбарууд бөглөх шаардлагатай: ${missingFields}`,
+        `Дараах талбаруудыг бөглөнө үү: ${missingFields}.` +
+          (davkhardsan.length > 0
+            ? ` Мөн ${davkhardsan.map((e) => negjiinNer(parseInt(e.split(".")[1]))).join(", ")} давхардсан байна.`
+            : ""),
       );
       return false;
     }
@@ -706,6 +748,36 @@ export default function ResidentModal({
       });
     },
     [currentResidents, editingResident]
+  );
+
+  /** Гараж/агуулахын дугаарыг эзэмшиж буй хүн — «Б. Бат (302 тоот, 99112233)» */
+  const ezemshigchiinDelgerengui = React.useCallback(
+    (tootVal: string, floorVal: string, propertyType: "Зогсоол" | "Агуулах"): string => {
+      const uDavkhar = String(floorVal || "").trim().toLowerCase();
+      const uToot = String(tootVal || "").trim().toLowerCase();
+      const turuluud = propertyType === "Зогсоол" ? ["гараж", "зогсоол", "parking", "garage"] : ["агуулах", "storage"];
+      const r = (Array.isArray(currentResidents) ? currentResidents : []).find((x: any) => {
+        if (editingResident && String(editingResident._id || "") === String(x._id || "")) return false;
+        const units = Array.isArray(x.toots) && x.toots.length ? x.toots : [x];
+        return units.some(
+          (u: any) =>
+            String(u.davkhar || "").trim().toLowerCase() === uDavkhar &&
+            String(u.toot || "").trim().toLowerCase() === uToot &&
+            turuluud.includes(String(u.turul || "").trim().toLowerCase()),
+        );
+      });
+      if (!r) return "өөр эзэмшигч";
+      const ner = [r.ovog ? `${String(r.ovog).charAt(0)}.` : "", r.ner || ""].filter(Boolean).join(" ") || "Нэргүй";
+      const units = Array.isArray(r.toots) && r.toots.length ? r.toots : [r];
+      const bair = units.find((u: any) => {
+        const t = String(u?.turul || "").trim();
+        return !t || t === "Орон сууц" || t === "Тоот";
+      });
+      const utas = Array.isArray(r.utas) ? r.utas[0] : r.utas;
+      const nemelt = [bair?.toot ? `${bair.toot} тоот` : "", utas || ""].filter(Boolean).join(", ");
+      return nemelt ? `«${ner}» (${nemelt})` : `«${ner}»`;
+    },
+    [currentResidents, editingResident],
   );
 
   if (!show) return null;
@@ -1409,15 +1481,22 @@ export default function ResidentModal({
                                               <TusgaiZagvar
                                                 value={u.toot || ""}
                                                 onChange={(val: string) => shinechlekh("toot", val)}
-                                                options={opts.map((t) => ({
-                                                  value: t,
-                                                  label: t,
-                                                  isOccupied: isTootOccupied(t, u.davkhar || "", "1", turul),
-                                                }))}
+                                                options={opts.map((t) => {
+                                                  const ezemshigchtei = isTootOccupied(t, u.davkhar || "", "1", turul);
+                                                  return {
+                                                    value: t,
+                                                    label: t,
+                                                    isOccupied: ezemshigchtei,
+                                                    occupiedNote: ezemshigchtei
+                                                      ? `${garash ? "Гараж" : "Агуулах"} ${u.davkhar ? `${u.davkhar} давхрын ` : ""}${t} дугаар ${ezemshigchiinDelgerengui(t, u.davkhar || "", turul)}-д идэвхтэй бүртгэлтэй. Сул дугаар сонгох эсвэл эхлээд тухайн эзэмшигчээс салгана уу.`
+                                                      : undefined,
+                                                  };
+                                                })}
                                                 className="w-full h-full"
                                                 placeholder="Дугаар"
                                                 disabled={!u.davkhar}
                                                 allowCustomInput={true}
+                                                blockOccupied
                                               />
                                             </div>
                                             <button

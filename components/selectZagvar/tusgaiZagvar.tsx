@@ -9,6 +9,8 @@ interface Option {
   disabled?: boolean;
   title?: string;
   isOccupied?: boolean;
+  /** blockOccupied үед дарахад харуулах тайлбар (ж: «40 — Б. Бат идэвхтэй эзэмшдэг») */
+  occupiedNote?: string;
 }
 
 interface CustomSelectProps {
@@ -29,6 +31,8 @@ interface CustomSelectProps {
   // and use neutral colors for better contrast.
   tone?: "theme" | "neutral";
   allowCustomInput?: boolean;
+  /** Эзэмшигчтэй (isOccupied) сонголтыг сонгуулахгүй — дарахад шалтгааныг харуулна. */
+  blockOccupied?: boolean;
 }
 
 export default function TusgaiZagvar({
@@ -46,8 +50,14 @@ export default function TusgaiZagvar({
   disabled = false,
   tone = "theme",
   allowCustomInput = false,
+  blockOccupied = false,
 }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
+  /** Хаагдсан (эзэмшигчтэй) сонголт дээр дарахад гарах тайлбар */
+  const [khaaltTailbar, setKhaaltTailbar] = useState<string | null>(null);
+  useEffect(() => {
+    if (!isOpen) setKhaaltTailbar(null);
+  }, [isOpen]);
   const ref = useRef<HTMLDivElement>(null);
   const portalRef = useRef<HTMLDivElement | null>(null);
   const instanceId = useRef<string>(
@@ -302,9 +312,17 @@ export default function TusgaiZagvar({
                   : ""
               } ${dropdownClassName}`}
             >
+              {khaaltTailbar && (
+                <div
+                  role="alert"
+                  className="border-b border-[color:var(--surface-border)] bg-danger/10 px-4 py-2 text-[12px] leading-snug text-danger whitespace-normal"
+                >
+                  {khaaltTailbar}
+                </div>
+              )}
               <ul
                 className="py-2 overflow-y-auto custom-scrollbar"
-                style={{ maxHeight: portalStyle?.maxHeight ?? 240 }}
+                style={{ maxHeight: (portalStyle?.maxHeight ?? 240) - (khaaltTailbar ? 56 : 0) }}
               >
                 {typedCustomEntry && (
                   <li key="__custom__">
@@ -333,15 +351,25 @@ export default function TusgaiZagvar({
                       role="option"
                       aria-selected={opt.value === value}
                       disabled={opt.disabled}
+                      aria-disabled={blockOccupied && opt.isOccupied ? true : undefined}
                       title={opt.title}
                       onClick={() => {
                         if (opt.disabled) return;
+                        if (blockOccupied && opt.isOccupied) {
+                          setKhaaltTailbar(
+                            opt.occupiedNote ||
+                              `${opt.value} идэвхтэй эзэмшигчтэй тул сонгох боломжгүй. Сул дугаар сонгоно уу.`,
+                          );
+                          return;
+                        }
                         onChange(opt.value);
                         setIsOpen(false);
                       }}
                       className={`w-full text-left px-4 py-2 text-sm transition-all truncate ${
                         opt.disabled
                           ? "opacity-50 cursor-not-allowed text-[color:var(--muted-text)]"
+                          : blockOccupied && opt.isOccupied
+                          ? "cursor-not-allowed text-[color:var(--muted-text)] opacity-60 before:mr-2 before:inline-block before:h-2 before:w-2 before:rounded-full before:bg-danger before:align-middle before:content-['']"
                           : opt.isOccupied
                           ? "text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] before:mr-2 before:inline-block before:h-2 before:w-2 before:rounded-full before:bg-warning before:align-middle before:content-['']"
                           : tone === "neutral"

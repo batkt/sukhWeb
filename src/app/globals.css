@@ -8190,3 +8190,20 @@ body:not(:has(#tour-replay-fab)) .ai-launcher-wrap { right: 24px; }
   box-shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.3);
 }
 .ant-tooltip .ant-tooltip-arrow::before { background: var(--surface-bg) !important; }
+
+/* Түүхийн хүснэгтийн «Нийт» хөл мөр — тунгалаг биш (доогуур гүйх мөрүүд
+   харагдахгүй), жагсаалтаас ялгарах өнгөтэй. */
+.hm-niit-mur > td {
+  background-color: color-mix(in srgb, hsl(var(--zt-primary)) 12%, var(--surface-bg)) !important;
+  border-top-color: color-mix(in srgb, hsl(var(--zt-primary)) 45%, var(--surface-border)) !important;
+  box-shadow: 0 -4px 8px -6px rgba(15, 23, 42, 0.25);
+}
+.hm-niit-mur > td[role="button"]:hover {
+  background-color: color-mix(in srgb, hsl(var(--zt-primary)) 20%, var(--surface-bg)) !important;
+}
+@media print {
+  .hm-niit-mur > td {
+    background-color: transparent !important;
+    box-shadow: none;
+  }
+}

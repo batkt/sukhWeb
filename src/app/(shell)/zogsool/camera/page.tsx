@@ -319,6 +319,27 @@ const FilterPopover = ({
   );
 };
 
+/**
+ * Хөнгөлөлтийн төрөл эсэх — «khungulult», «discount», «Хөнгөлөлт»-өөс гадна
+ * тохиргоонд нэрлэсэн («Хөнгөлөлт/ 24 цаг», «Хөнгөлөлт/ 2 цаг» г.м.) болон
+ * хамтрагчийн хөнгөлөлтүүдийг ч (сервер /zogsooliinTulburTulye-тэй ижил) тооцно.
+ * Эдгээрээр «төлсөн» мөр бодит төлбөр биш тул и-баримт гарахгүй.
+ */
+function khungulultTurulEsekh(turul: any): boolean {
+  const t = String(turul || "").trim();
+  if (!t) return false;
+  const l = t.toLowerCase();
+  return (
+    l === "khungulult" ||
+    l === "discount" ||
+    l.includes("хөнгөлөлт") ||
+    t.includes("Божон") ||
+    t === "Соёолж Ц/Д" ||
+    t === "Fitness" ||
+    l.includes("ugaalga")
+  );
+}
+
 function tulburuudiigTsugluulya(transaction: any): any[] {
   const payHistory: any[] = (transaction?.tuukh || []).flatMap((th: any) => {
     const raw = th?.tulbur;
@@ -327,11 +348,7 @@ function tulburuudiigTsugluulya(transaction: any): any[] {
     return [];
   });
   return payHistory.filter(
-    (pay: any) =>
-      (pay?.dun ?? 0) > 0 &&
-      pay?.turul !== "khungulult" &&
-      pay?.turul !== "discount" &&
-      pay?.turul !== "Хөнгөлөлт",
+    (pay: any) => (pay?.dun ?? 0) > 0 && !khungulultTurulEsekh(pay?.turul),
   );
 }
 
@@ -364,12 +381,7 @@ function murNiiluulye(transaction: any) {
     0,
   );
   const discountTotal = tulburArr
-    .filter(
-      (pay: any) =>
-        pay?.turul === "khungulult" ||
-        pay?.turul === "discount" ||
-        pay?.turul === "Хөнгөлөлт",
-    )
+    .filter((pay: any) => khungulultTurulEsekh(pay?.turul))
     .reduce((sum: number, pay: any) => sum + Math.abs(pay?.dun ?? 0), 0);
   const effectiveOwed = Math.max(0, niitDun - discountTotal);
   // Бүрэн хөнгөлсөн: хөнгөлөлт нь нийт дүнг бүрэн нөхөж, бодит төлбөр 0 —
@@ -2103,15 +2115,15 @@ export default function Camera() {
 
   return (
     <div className="w-full bg-[color:var(--surface-bg)]">
-      <div className="px-4 pt-3 pb-2 lg:px-6 lg:pb-2 space-y-4">
+      <div className="px-4 pt-2 pb-2 lg:px-6 lg:pb-2 space-y-2">
         {/* Camera Streaming Sections */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
           {/* Entry Camera Stream */}
-          <div className="relative group/camera overflow-hidden rounded-3xl bg-black shadow-2xl transition-all duration-500">
+          <div className="relative group/camera overflow-hidden rounded-2xl bg-black shadow-lg transition-all duration-500">
             {/* Top-Right Badge and Selection Dropdown */}
             {entryCameras.length > 0 && (
-              <div className="absolute top-4 right-4 z-40 flex flex-col items-end gap-2">
-                <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10">
+              <div className="absolute top-2 right-2 z-40 flex flex-col items-end gap-1">
+                <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-2 py-1 rounded-lg border border-white/10">
                   <div className="w-1.5 h-1.5 rounded-full bg-theme animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div>
                   <span className="text-[11px] font-medium !text-white">
                     Орох Камер
@@ -2126,7 +2138,7 @@ export default function Camera() {
                     <select
                       value={activeEntryIP}
                       onChange={(e) => setActiveEntryIP(e.target.value)}
-                      className="appearance-none bg-black/60 backdrop-blur-xl border border-white/20 rounded-full px-5 py-2 pr-10 text-[11px] font-medium !text-white cursor-pointer hover:bg-black/80 transition-all outline-none"
+                      className="appearance-none bg-black/60 backdrop-blur-xl border border-white/20 rounded-full px-3 py-1 pr-8 text-[11px] font-medium !text-white cursor-pointer hover:bg-black/80 transition-all outline-none"
                     >
                       {entryCameras.map((cam) => (
                         <option
@@ -2138,16 +2150,16 @@ export default function Camera() {
                         </option>
                       ))}
                     </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-white/60 pointer-events-none group-hover/dropdown:text-white transition-colors" />
+                    <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-white/60 pointer-events-none group-hover/dropdown:text-white transition-colors" />
                   </div>
                 )}
               </div>
             )}
 
-            <div className="relative h-[clamp(170px,26vh,280px)]">
+            <div className="relative h-[clamp(110px,17vh,190px)]">
               {entryCameras.length === 0 ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-[color:var(--panel)] border border-white/5">
-                  <VideoOff className="w-12 h-12 text-[color:var(--panel-text)] mb-4" />
+                  <VideoOff className="w-8 h-8 text-[color:var(--panel-text)] mb-2" />
                   <p className="text-[11px] font-medium text-[color:var(--muted-text)]">
                     Тохиргоогүй байна
                   </p>
@@ -2188,11 +2200,11 @@ export default function Camera() {
           </div>
 
           {/* Exit Camera Stream */}
-          <div className="relative group/camera overflow-hidden rounded-3xl bg-black shadow-2xl transition-all duration-500">
+          <div className="relative group/camera overflow-hidden rounded-2xl bg-black shadow-lg transition-all duration-500">
             {/* Top-Right Badge and Selection Dropdown */}
             {exitCameras.length > 0 && (
-              <div className="absolute top-4 right-4 z-40 flex flex-col items-end gap-2">
-                <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10">
+              <div className="absolute top-2 right-2 z-40 flex flex-col items-end gap-1">
+                <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-2 py-1 rounded-lg border border-white/10">
                   <div className="w-1.5 h-1.5 rounded-full bg-danger animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]"></div>
                   <span className="text-[11px] font-medium !text-white">
                     Гарах Камер
@@ -2207,7 +2219,7 @@ export default function Camera() {
                     <select
                       value={activeExitIP}
                       onChange={(e) => setActiveExitIP(e.target.value)}
-                      className="appearance-none bg-black/60 backdrop-blur-xl border border-white/20 rounded-full px-5 py-2 pr-10 text-[11px] font-medium !text-white cursor-pointer hover:bg-black/80 transition-all outline-none"
+                      className="appearance-none bg-black/60 backdrop-blur-xl border border-white/20 rounded-full px-3 py-1 pr-8 text-[11px] font-medium !text-white cursor-pointer hover:bg-black/80 transition-all outline-none"
                     >
                       {exitCameras.map((cam) => (
                         <option
@@ -2219,16 +2231,16 @@ export default function Camera() {
                         </option>
                       ))}
                     </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-white/60 pointer-events-none group-hover/dropdown:text-white transition-colors" />
+                    <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-white/60 pointer-events-none group-hover/dropdown:text-white transition-colors" />
                   </div>
                 )}
               </div>
             )}
 
-            <div className="relative h-[clamp(170px,26vh,280px)]">
+            <div className="relative h-[clamp(110px,17vh,190px)]">
               {exitCameras.length === 0 ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-[color:var(--panel)] border border-white/5">
-                  <VideoOff className="w-12 h-12 text-[color:var(--panel-text)] mb-4" />
+                  <VideoOff className="w-8 h-8 text-[color:var(--panel-text)] mb-2" />
                   <p className="text-[11px] font-medium text-[color:var(--muted-text)]">
                     Тохиргоогүй байна
                   </p>
@@ -2270,7 +2282,7 @@ export default function Camera() {
         </div>
 
         {/* Transactions Table Section */}
-        <div className="space-y-4">
+        <div className="space-y-2">
           {/* ─── Top Bar: зүүн талд огноо, баруун талд үйлдлүүд ─── */}
           <div className="relative z-30 flex flex-wrap items-center justify-between gap-2">
             <FilterDatePicker
@@ -2598,7 +2610,7 @@ export default function Camera() {
                   const boditTulsunDun = newEntries.reduce(
                     (s: number, t: any) =>
                       s +
-                      (Number(t?.dun) > 0 && !["khungulult", "discount", "Хөнгөлөлт"].includes(t?.turul)
+                      (Number(t?.dun) > 0 && !khungulultTurulEsekh(t?.turul)
                         ? Number(t.dun)
                         : 0),
                     0,
