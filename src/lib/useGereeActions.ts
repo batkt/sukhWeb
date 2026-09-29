@@ -756,8 +756,14 @@ export function useGereeActions(
       // чөлөөтэйг нь аль хэдийн шүүсэн. Гэрээний `nemeltTootnuud`-д салгасан
       // гаражийн хуучин бичлэг үлддэг тул дахин шалгавал чөлөөтэй дугаарыг ч
       // «идэвхтэй гэрээтэй» гэж хориглодог байв.
-      opts?: { gereeShalgakhgui?: boolean },
-    ) => {
+      opts?: {
+        gereeShalgakhgui?: boolean;
+        /** Эдгээр гэрээг (дөнгөж цуцалсан) шалгалтад тооцохгүй. */
+        tootsokhguiGereenuud?: string[];
+        /** Үндсэн тоотоор идэвхтэй гэрээ олдвол алдаа биш, жагсаалтыг буцаана. */
+        tsutslakhAsuukh?: boolean;
+      },
+    ): Promise<boolean | { tsutslakh: { toot: string; gereeniiId: string; ezen: string; dugaar?: string }[] }> => {
       if (!units || units.length === 0) return false;
       const propName =
         turul === "Зогсоол"
@@ -824,6 +830,7 @@ export function useGereeActions(
         const occupiedUnits = new Set<string>();
         const gereeniiEzen: Record<string, string> = {};
         const nemeltiinUldegdel = new Set<string>();
+        const tsutslakhJagsaalt: { toot: string; gereeniiId: string; ezen: string; dugaar?: string }[] = [];
         if (!opts?.gereeShalgakhgui && contracts && Array.isArray(contracts)) {
           contracts.forEach((c: any) => {
             const isCancelled =
@@ -835,6 +842,7 @@ export function useGereeActions(
                 .includes("идэвхгүй") ||
               String(c.tuluv || c.status || "").toLowerCase() === "tsutlsasan";
             if (isCancelled) return;
+            if (opts?.tootsokhguiGereenuud?.includes(String(c._id))) return;
 
             const cFloor = String(c.davkhar || "").trim();
             const cToot = String(c.toot || "").trim();
@@ -846,8 +854,10 @@ export function useGereeActions(
 
             if (floorMatch && ortsMatch && targetUnitsSet.has(cToot)) {
               occupiedUnits.add(cToot);
+              if (c._id) tsutslakhJagsaalt.push({ toot: cToot, gereeniiId: String(c._id), ezen: "", dugaar: c.gereeniiDugaar });
               const ezen = [c.ovog ? `${String(c.ovog).charAt(0)}.` : "", c.ner || ""].filter(Boolean).join(" ");
               if (ezen) gereeniiEzen[cToot] = ezen;
+              if (tsutslakhJagsaalt.length) tsutslakhJagsaalt[tsutslakhJagsaalt.length - 1].ezen = ezen;
             }
 
             if (Array.isArray(c.nemeltTootnuud)) {
@@ -866,6 +876,11 @@ export function useGereeActions(
           });
         }
 
+        if (occupiedUnits.size > 0 && opts?.tsutslakhAsuukh && turul !== "Тоот" && tsutslakhJagsaalt.length > 0) {
+          // Дуудсан тал «Гэрээг цуцлаад устгах уу?» гэж асууна.
+          setIsSavingUnits?.(false);
+          return { tsutslakh: tsutslakhJagsaalt };
+        }
         if (occupiedUnits.size > 0) {
           const jagsaalt = Array.from(occupiedUnits)
             .map((u) => (gereeniiEzen[u] ? `${u} («${gereeniiEzen[u]}»)` : u))

@@ -70,17 +70,6 @@ export const FilterPopover = ({
     );
   }, []);
 
-  const neekh = () => {
-    if (tsagKhemjigch.current) clearTimeout(tsagKhemjigch.current);
-    tsagKhemjigch.current = setTimeout(() => setOpen(true), 90);
-  };
-  // Тригер ба попапын хооронд зай байгаа тул хулгана гарангуут хаавал
-  // анивчина — хойшлуулж хаана.
-  const khaakh = () => {
-    if (tsagKhemjigch.current) clearTimeout(tsagKhemjigch.current);
-    tsagKhemjigch.current = setTimeout(() => setOpen(false), 130);
-  };
-
   useEffect(() => {
     if (!open) {
       setPos((p) => (p.kharagdakh ? { ...p, kharagdakh: false } : p));
@@ -131,8 +120,7 @@ export const FilterPopover = ({
   return (
     <div
       ref={triggerRef}
-      onMouseEnter={neekh}
-      onMouseLeave={khaakh}
+      // Зөвхөн дарахад нээгдэнэ (hover-оор нээгддэггүй); гадна дарах / Esc хаана.
       onClick={(e) => {
         // Эрэмбэтэй баганад толгойн дарлт эрэмбэ солихгүй — зөвхөн шүүлтүүр нээнэ.
         e.stopPropagation();
@@ -157,12 +145,12 @@ export const FilterPopover = ({
               visibility: pos.kharagdakh ? "visible" : "hidden",
             }}
             className="w-52 max-w-[calc(100vw-1rem)] overflow-hidden rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--panel)] p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.18)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.55)]"
-            onMouseEnter={neekh}
-            onMouseLeave={khaakh}
           >
             <div className="mb-1 px-3 py-2 text-[11px] text-[color:var(--muted-text)]">
               {label} сонгох
             </div>
+            {/* Урт жагсаалт (ж: 20 давхар) цонхноос хэтрэхгүй — дотроо гүйнэ. */}
+            <div className="max-h-[min(60vh,360px)] overflow-y-auto overscroll-contain custom-scrollbar pr-0.5">
             {options.map((opt, idx, arr) => {
               const songogdson = current === opt.value;
               return (
@@ -184,7 +172,7 @@ export const FilterPopover = ({
                         setOpen(false);
                       }
                     }}
-                    className={`flex cursor-pointer items-center justify-between rounded-xl px-3 py-2.5 text-left text-[11px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-theme/40 ${
+                    className={`flex cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-left text-[11px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-theme/40 ${
                       songogdson
                         ? "bg-theme/10 font-medium text-brand"
                         : "text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"
@@ -196,11 +184,12 @@ export const FilterPopover = ({
                     )}
                   </div>
                   {idx < arr.length - 1 && (
-                    <div className="mx-2 my-1 h-px bg-[color:var(--surface-border)]" />
+                    <div className="mx-2 my-0.5 h-px bg-[color:var(--surface-border)]" />
                   )}
                 </div>
               );
             })}
+            </div>
           </div>,
           document.body,
         )}

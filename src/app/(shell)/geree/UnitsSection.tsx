@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState, useEffect } from "react";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
+import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { ShuultuurTolgoi } from "@/components/ui/table/ShuultuurTolgoi";
 import { Plus, Trash2, Info, User, Phone, X, Send, UserX } from "lucide-react";
 import { Tooltip } from "antd";
@@ -22,6 +23,7 @@ import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
 import { useSearch } from "@/context/SearchContext";
 import uilchilgee from "@/lib/uilchilgee";
+import { useSWRConfig } from "swr";
 
 interface UnitsSectionProps {
   davkharOptions: string[];
@@ -729,23 +731,66 @@ export default function UnitsSection({
     });
   };
 
+  // Эзэмшигчээс салгагдсан ч идэвхтэй үлдсэн гэрээтэй дугаар — «цуцлаад устгах уу?»
+  const [tsutslakhAsuult, setTsutslakhAsuult] = useState<{
+    floor: string;
+    units: string[];
+    gereenuud: { toot: string; gereeniiId: string; ezen: string; dugaar?: string }[];
+  } | null>(null);
+
   const handleConfirmMassDelete = async () => {
     if (!selectedFloor || deleteUnitsConfirm.units.length === 0) return;
     try {
       if (actions?.deleteUnits) {
-        // Гэрээний үндсэн тоот бол хориглоно; зөвхөн нэмэлт тоотод үлдсэн
-        // (салгасан) бичлэгийг устгаад гэрээнээс нь хасна (deleteUnits дотор).
+        // Гэрээний үндсэн тоот бол «цуцлаад устгах уу?» гэж асууна; зөвхөн нэмэлт
+        // тоотод үлдсэн (салгасан) бичлэгийг устгаад гэрээнээс нь хасна.
         const ok = await actions.deleteUnits(
           selectedFloor,
           deleteUnitsConfirm.units,
           propertyTab,
+          { tsutslakhAsuukh: true },
         );
-        if (ok) {
+        if (ok && typeof ok === "object" && "tsutslakh" in ok) {
+          setTsutslakhAsuult({ floor: selectedFloor, units: deleteUnitsConfirm.units, gereenuud: ok.tsutslakh });
+        } else if (ok) {
           setCheckedUnits([]);
         }
       }
     } finally {
       setDeleteUnitsConfirm({ show: false, units: [], title: "", message: "" });
+    }
+  };
+
+  const { mutate: swrMutate } = useSWRConfig();
+  const tsutslaadUstgakh = async () => {
+    if (!tsutslakhAsuult || !actions?.deleteUnits) return;
+    const { floor, units, gereenuud } = tsutslakhAsuult;
+    try {
+      const r = await uilchilgee(token || undefined).post("/gereeTsutslakh", {
+        baiguullagiinId: baiguullaga?._id,
+        gereeniiIdnuud: Array.from(new Set(gereenuud.map((g) => g.gereeniiId))),
+        shaltgaan: `${propertyTab === "Зогсоол" ? "Гараж" : "Агуулах"} ${floor} давхрын ${Array.from(new Set(gereenuud.map((g) => g.toot))).join(", ")} дугаар устгасан`,
+      });
+      const tsutslagdsan: string[] = r?.data?.tsutslagdsan || [];
+      // Гэрээний жагсаалт (Гүйлгээний түүх, Гэрээ хуудас) шинэчлэгдэнэ.
+      swrMutate((k: any) => Array.isArray(k) && typeof k[0] === "string" && k[0].startsWith("/geree"), undefined, { revalidate: true });
+      const uldegdeltei: { gereeniiId: string; uldegdel: number }[] = r?.data?.uldegdeltei || [];
+      const ok = await actions.deleteUnits(floor, units, propertyTab, {
+        tootsokhguiGereenuud: gereenuud.map((g) => g.gereeniiId),
+      });
+      if (ok) {
+        setCheckedUnits([]);
+        if (uldegdeltei.length > 0) {
+          const niit = uldegdeltei.reduce((s, u) => s + (Number(u.uldegdel) || 0), 0);
+          openSuccessOverlay(
+            `${tsutslagdsan.length} гэрээ цуцлагдлаа. ${uldegdeltei.length} гэрээний ${Math.round(niit).toLocaleString("mn-MN")}₮ үлдэгдэл Гүйлгээний түүхийн «Цуцалсан гэрээний авлага»-д шилжлээ.`,
+          );
+        }
+      }
+    } catch (err: any) {
+      openErrorOverlay(err?.response?.data?.message || err?.message || "Гэрээ цуцлахад алдаа гарлаа");
+    } finally {
+      setTsutslakhAsuult(null);
     }
   };
 
@@ -1598,7 +1643,13 @@ export default function UnitsSection({
     setSelectedDawkhar && davkharOptions.length > 0
       ? {
           current: selectedDawkhar || "all",
-          options: [{ label: "Бүгд", value: "all" }, ...davkharOptions.map((d) => ({ label: `${d}-р давхар`, value: String(d) }))],
+          options: [
+            { label: "Бүгд", value: "all" },
+            ...davkharOptions.map((d) => ({
+              label: /^b/i.test(String(d)) ? `${d} давхар` : `${d}-р давхар`,
+              value: String(d),
+            })),
+          ],
           onSelect: (v: string) => {
             setSelectedDawkhar(v === "all" ? "" : v);
             setUnitPage(1);
@@ -2131,6 +2182,20 @@ export default function UnitsSection({
         title={confirmModal.title}
         message={confirmModal.message}
         onConfirm={confirmModal.onConfirm}
+      />
+      <DeleteConfirmModal
+        show={!!tsutslakhAsuult}
+        onClose={() => setTsutslakhAsuult(null)}
+        title="Идэвхтэй гэрээг цуцлаад устгах уу?"
+        confirmLabel="Цуцлаад устгах"
+        message={
+          tsutslakhAsuult
+            ? `${tsutslakhAsuult.gereenuud
+                .map((g) => `${g.toot}${g.ezen ? ` — «${g.ezen}»` : ""}${g.dugaar ? ` (гэрээ №${g.dugaar})` : ""}`)
+                .join("\n")}\n\nЭдгээр дугаар эзэмшигчээсээ салгагдсан ч гэрээ нь идэвхтэй үлдсэн байна. Батлавал гэрээг цуцалж (идэвхгүй болгож), дараа нь дугаарыг устгана. Үлдэгдэлтэй гэрээний авлага устахгүй — Гүйлгээний түүхийн «Цуцалсан гэрээний авлага»-д шилжинэ.`
+            : ""
+        }
+        onConfirm={tsutslaadUstgakh}
       />
       <DeleteConfirmModal
         show={!!salgakhAsuult}
