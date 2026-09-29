@@ -1221,7 +1221,7 @@ export default function UnitsSection({
           activeContract?.tulburiinDun ||
           activeContract?.dun ||
           resident?.zogsoolTulbur ||
-          50000
+          0
         ) || 0)
         : 0;
 
@@ -1363,6 +1363,16 @@ export default function UnitsSection({
   const zogsoolColumns: ColumnsType<any> = useMemo(
     () => [
       { title: "№", dataIndex: "index", key: "index", width: 48, align: "center" },
+      
+      {
+        title: "Эзэмшигч",
+        dataIndex: "ner",
+        key: "ner",
+        width: 100,
+        render: (v: any, row: any) => (
+          <span className={row.isOccupied ? "" : "text-[color:var(--muted-text)]"}>{v}</span>
+        ),
+      },
       {
         title: "Гараж",
         dataIndex: "zogsoolDugaar",
@@ -1374,15 +1384,6 @@ export default function UnitsSection({
           <span className="inline-flex h-6 min-w-[36px] items-center justify-center rounded-md border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-2 font-semibold text-[color:var(--panel-text)]">
             {v}
           </span>
-        ),
-      },
-      {
-        title: "Эзэмшигч",
-        dataIndex: "ner",
-        key: "ner",
-        width: 200,
-        render: (v: any, row: any) => (
-          <span className={row.isOccupied ? "" : "text-[color:var(--muted-text)]"}>{v}</span>
         ),
       },
       {
@@ -1883,7 +1884,6 @@ export default function UnitsSection({
                             <div className="stat-card">
                               <div className={`stat-card-value tabular-nums ${k.unguClass}`}>{k.utga}</div>
                               <div className="stat-card-title">{k.ner}</div>
-                              <div className="mt-1 text-[11px] text-[color:var(--muted-text)]">{k.tailbar}</div>
                             </div>
                           </Tag>
                         );
@@ -1961,7 +1961,7 @@ export default function UnitsSection({
                         leftIcon={<Plus className="w-3.5 h-3.5" />}
                         className="rounded-xl !bg-theme hover:!bg-theme cursor-pointer shrink-0"
                       >
-                        Дугаар нэмэх
+                        Тоот
                       </Button>
                     </div>
                   </div>

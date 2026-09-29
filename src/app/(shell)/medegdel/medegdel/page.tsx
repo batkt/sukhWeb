@@ -730,7 +730,7 @@ function MedegdelContent() {
               initial={{ opacity: 0, x: -16 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.35 }}
-              className="rounded-2xl border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] p-4 shadow-[var(--ctl-shadow)] flex flex-col min-w-0 min-h-0 lg:order-3"
+              className="rounded-2xl border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] p-4 shadow-[var(--ctl-shadow)] flex flex-col min-w-0 min-h-0 overflow-hidden lg:order-3"
               id="medegdel-channels-section"
             >
 
@@ -886,7 +886,7 @@ function MedegdelContent() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, delay: 0.05 }}
-              className="rounded-2xl border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] p-4 shadow-[var(--ctl-shadow)] flex flex-col min-w-0 min-h-0 lg:order-1"
+              className="rounded-2xl border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] p-4 shadow-[var(--ctl-shadow)] flex flex-col min-w-0 min-h-0 overflow-hidden lg:order-1"
             >
               <div className="flex items-center justify-between mb-3">
                 <h3 className="flex items-center gap-2 text-[13px] font-medium text-[color:var(--panel-text)]">
@@ -991,7 +991,7 @@ function MedegdelContent() {
               initial={{ opacity: 0, x: 16 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.35, delay: 0.1 }}
-              className="rounded-2xl border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] p-4 shadow-[var(--ctl-shadow)] flex flex-col min-w-0 min-h-0 lg:order-2"
+              className="rounded-2xl border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] p-4 shadow-[var(--ctl-shadow)] flex flex-col min-w-0 min-h-0 overflow-hidden lg:order-2"
             >
               <AnimatePresence mode="wait">
                 {(
@@ -1004,7 +1004,9 @@ function MedegdelContent() {
                     className="flex flex-col gap-4 flex-1 min-h-0"
                   >
 
-                    <div className="flex flex-col gap-3 flex-1 min-h-0">
+                    <div className="flex flex-col gap-3 flex-1 min-h-0 overflow-hidden">
+                      {/* Scrollable form body */}
+                      <div className="flex flex-col gap-3 flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-0.5">
                       {/* Суваг */}
                       <div id="medegdel-channels" className="grid h-9 grid-cols-3 gap-0.5 rounded-[10px] border border-[color:var(--ctl-border)] p-0.5">
                         {(["App", "Мессеж", "Mail"] as const).map((m) => {
@@ -1126,13 +1128,14 @@ function MedegdelContent() {
                           </div>
                         ))}
                       </div>
+                      </div>{/* end scrollable form body */}
                       <Button
                         id="medegdel-new-btn"
                         type="primary"
                         onClick={send}
                         loading={loading}
                         disabled={songogdsonKhariltsagch.length === 0 || !title || (!msj && attachImages.length === 0 && !composerTemplateImage)}
-                        className="mt-auto w-full !h-10 !rounded-[10px]"
+                        className="mt-2 w-full !h-10 !rounded-[10px] shrink-0"
                       >
                         Илгээх
                       </Button>

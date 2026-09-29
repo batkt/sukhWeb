@@ -233,25 +233,69 @@ export default function UdriinKhaaltModal({ token, baiguullagiinId, barilgiinId,
     >
       <div
         className="modal-surface w-full overflow-hidden rounded-2xl shadow-2xl"
-        // Өргөнийг inline-аар — ангийн (max-w-[…]) дүрэм дарагдаж бүтэн өргөнөөр гардаг байв.
-        style={{ maxWidth: 420, width: "100%" }}
+        style={{ maxWidth: 440, width: "100%" }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[color:var(--surface-border)] px-4 py-3">
-          <div>
-            <h2 className="text-[15px] text-[color:var(--panel-text)]">Өдрийн хаалт</h2>
-            <p className="text-[12px] text-[color:var(--muted-text)]">Машин болон төлбөрийн дүн автоматаар бодогдоно</p>
+        {/* ── Header ── */}
+        <div
+          className="relative overflow-hidden border-b border-[color:var(--surface-border)] px-5 pb-4 pt-5"
+          style={{
+            background:
+              "linear-gradient(135deg, color-mix(in srgb, var(--theme-color,#6366f1) 8%, transparent) 0%, transparent 60%)",
+          }}
+        >
+          {/* Decorative accent bar */}
+          <div
+            className="absolute inset-x-0 top-0 h-[3px] rounded-t-2xl"
+            style={{
+              background:
+                "linear-gradient(90deg, var(--theme-color,#6366f1), color-mix(in srgb, var(--theme-color,#6366f1) 40%, #a855f7))",
+            }}
+          />
+
+          <div className="flex items-start justify-between gap-3">
+            {/* Left: icon + title */}
+            <div className="flex items-center gap-3">
+              <div
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                style={{
+                  background:
+                    "linear-gradient(135deg, var(--theme-color,#6366f1), color-mix(in srgb, var(--theme-color,#6366f1) 60%, #a855f7))",
+                  boxShadow: "0 4px 12px color-mix(in srgb, var(--theme-color,#6366f1) 35%, transparent)",
+                }}
+              >
+                <Lock className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <h2 className="text-[16px] font-semibold leading-tight text-[color:var(--panel-text)]">
+                  Өдрийн хаалт
+                </h2>
+                <p className="mt-0.5 text-[12px] text-[color:var(--muted-text)]">
+                  Машин болон төлбөрийн дүн автоматаар бодогдоно
+                </p>
+              </div>
+            </div>
+
+            {/* Right: close */}
+            <button
+              type="button"
+              onClick={onClose}
+              className="mt-0.5 shrink-0 rounded-lg p-1.5 text-[color:var(--muted-text)] transition-colors hover:bg-[color:var(--surface-hover)] hover:text-[color:var(--panel-text)]"
+              aria-label="Хаах"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
-          <div className="flex items-center gap-2">
+
+          {/* Date picker row */}
+          <div className="mt-4 flex items-center gap-2">
+            <span className="text-[12px] text-[color:var(--muted-text)]">Огноо:</span>
             <FilterDatePicker
               single
               value={udur}
               allowClear={false}
               onChange={(_, s) => s && setUdur(s)}
             />
-            <button type="button" onClick={onClose} className="btn-minimal inline-flex h-9 w-9 items-center justify-center !p-0" aria-label="Хаах">
-              <X className="h-4 w-4" />
-            </button>
           </div>
         </div>
 

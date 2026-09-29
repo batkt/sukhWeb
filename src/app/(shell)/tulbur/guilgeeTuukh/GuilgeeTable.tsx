@@ -170,20 +170,32 @@ export default function GuilgeeTable({
 
   // Build Ant Design columns from visibleColumns
   const columns = useMemo(() => {
-    /** Мөрийн оршин суугч + үлдэгдэл — үйлдлийн товч ба үлдэгдлийн нүд хуваалцана */
-    const murniiMedeelel = (record: any) => {
-      const resident =
-        (record?.orshinSuugchId &&
-          residentsById[String(record.orshinSuugchId)]) ||
-        (record?.orshinSuugch && typeof record.orshinSuugch === "object"
-          ? record.orshinSuugch
-          : undefined);
+    /** Мөрийн гэрээ болон эзэмшигч (оршин суугч/харилцагч)-ийн мэдээллийг найдвартай олох */
+    const resolveResident = (record: any) => {
       const ct =
         (record?.gereeniiId &&
           contractsById[String(record.gereeniiId)]) ||
         (record?.gereeniiDugaar &&
           contractsByNumber[String(record.gereeniiDugaar)]) ||
         undefined;
+      const resId =
+        record?.orshinSuugchId ||
+        record?.khariltsagchId ||
+        record?.residentId ||
+        ct?.khariltsagchId ||
+        ct?.orshinSuugchId ||
+        ct?.residentId;
+      const resident =
+        (resId && residentsById[String(resId)]) ||
+        (record?.orshinSuugch && typeof record.orshinSuugch === "object"
+          ? record.orshinSuugch
+          : undefined);
+      return { ct, resident, resId };
+    };
+
+    /** Мөрийн оршин суугч + үлдэгдэл — үйлдлийн товч ба үлдэгдлийн нүд хуваалцана */
+    const murniiMedeelel = (record: any) => {
+      const { ct, resident, resId } = resolveResident(record);
       const dugaar = String(
         record?.gereeniiDugaar || ct?.gereeniiDugaar || "-",
       );
@@ -192,7 +204,7 @@ export default function GuilgeeTable({
           .map((v) => (v ? String(v).trim() : ""))
           .filter(Boolean)
           .join(" ") || "-"
-        : [record.ner]
+        : [record.ner || ct?.ner]
           .map((v) => (v ? String(v).trim() : ""))
           .filter(Boolean)
           .join(" ") || "-";
@@ -219,16 +231,17 @@ export default function GuilgeeTable({
             return String(resident.utas);
           }
         }
-        if (record?.utas) {
-          if (Array.isArray(record.utas) && record.utas.length > 0) {
-            const first = record.utas[0];
+        const recUtas = record?.utas || ct?.utas;
+        if (recUtas) {
+          if (Array.isArray(recUtas) && recUtas.length > 0) {
+            const first = recUtas[0];
             if (first !== undefined && first !== null)
               return String(first);
           } else if (
-            typeof record.utas === "string" &&
-            record.utas.trim() !== ""
+            typeof recUtas === "string" &&
+            recUtas.trim() !== ""
           ) {
-            return String(record.utas);
+            return String(recUtas);
           }
         }
         return "-";
@@ -251,7 +264,7 @@ export default function GuilgeeTable({
           gereeniiId: gid || record?.gereeniiId || ct?._id,
         }
         : {
-          _id: record?.orshinSuugchId,
+          _id: resId || record?.orshinSuugchId,
           ner: ner,
           toot: contractToot || toot,
           utas: utas,
@@ -317,18 +330,13 @@ export default function GuilgeeTable({
           return {
             ...baseColumn,
             render: (_: any, record: any) => {
-              const resident =
-                (record?.orshinSuugchId &&
-                  residentsById[String(record.orshinSuugchId)]) ||
-                (record?.orshinSuugch && typeof record.orshinSuugch === "object"
-                  ? record.orshinSuugch
-                  : undefined);
+              const { ct, resident } = resolveResident(record);
               const ner = resident
                 ? [resident.ner]
                   .map((v) => (v ? String(v).trim() : ""))
                   .filter(Boolean)
                   .join(" ") || "-"
-                : [record.ner]
+                : [record.ner || ct?.ner]
                   .map((v) => (v ? String(v).trim() : ""))
                   .filter(Boolean)
                   .join(" ") || "-";
@@ -343,18 +351,7 @@ export default function GuilgeeTable({
           return {
             ...baseColumn,
             render: (_: any, record: any) => {
-              const resident =
-                (record?.orshinSuugchId &&
-                  residentsById[String(record.orshinSuugchId)]) ||
-                (record?.orshinSuugch && typeof record.orshinSuugch === "object"
-                  ? record.orshinSuugch
-                  : undefined);
-              const ct =
-                (record?.gereeniiId &&
-                  contractsById[String(record.gereeniiId)]) ||
-                (record?.gereeniiDugaar &&
-                  contractsByNumber[String(record.gereeniiDugaar)]) ||
-                undefined;
+              const { ct, resident } = resolveResident(record);
               const residentToot =
                 Array.isArray(resident?.toots) && resident.toots.length > 0
                   ? resident.toots[0]?.toot
@@ -373,12 +370,7 @@ export default function GuilgeeTable({
           return {
             ...baseColumn,
             render: (_: any, record: any) => {
-              const resident =
-                (record?.orshinSuugchId &&
-                  residentsById[String(record.orshinSuugchId)]) ||
-                (record?.orshinSuugch && typeof record.orshinSuugch === "object"
-                  ? record.orshinSuugch
-                  : undefined);
+              const { ct, resident } = resolveResident(record);
               const utas = (() => {
                 if (resident?.utas) {
                   if (
@@ -395,16 +387,17 @@ export default function GuilgeeTable({
                     return String(resident.utas);
                   }
                 }
-                if (record?.utas) {
-                  if (Array.isArray(record.utas) && record.utas.length > 0) {
-                    const first = record.utas[0];
+                const recUtas = record?.utas || ct?.utas;
+                if (recUtas) {
+                  if (Array.isArray(recUtas) && recUtas.length > 0) {
+                    const first = recUtas[0];
                     if (first !== undefined && first !== null)
                       return String(first);
                   } else if (
-                    typeof record.utas === "string" &&
-                    record.utas.trim() !== ""
+                    typeof recUtas === "string" &&
+                    recUtas.trim() !== ""
                   ) {
-                    return String(record.utas);
+                    return String(recUtas);
                   }
                 }
                 return "-";
@@ -422,22 +415,11 @@ export default function GuilgeeTable({
           return {
             ...baseColumn,
             render: (_: any, record: any) => {
-              const resident =
-                (record?.orshinSuugchId &&
-                  residentsById[String(record.orshinSuugchId)]) ||
-                (record?.orshinSuugch && typeof record.orshinSuugch === "object"
-                  ? record.orshinSuugch
-                  : undefined);
+              const { ct, resident } = resolveResident(record);
               const residentOrts =
                 Array.isArray(resident?.toots) && resident.toots.length > 0
                   ? resident.toots[0]?.orts
                   : null;
-              const ct =
-                (record?.gereeniiId &&
-                  contractsById[String(record.gereeniiId)]) ||
-                (record?.gereeniiDugaar &&
-                  contractsByNumber[String(record.gereeniiDugaar)]) ||
-                undefined;
               return (
                 <span className="text-[color:var(--panel-text)] dark:text-white">
                   {String(
@@ -464,22 +446,11 @@ export default function GuilgeeTable({
           return {
             ...baseColumn,
             render: (_: any, record: any) => {
-              const resident =
-                (record?.orshinSuugchId &&
-                  residentsById[String(record.orshinSuugchId)]) ||
-                (record?.orshinSuugch && typeof record.orshinSuugch === "object"
-                  ? record.orshinSuugch
-                  : undefined);
+              const { ct, resident } = resolveResident(record);
               const residentDavkhar =
                 Array.isArray(resident?.toots) && resident.toots.length > 0
                   ? resident.toots[0]?.davkhar
                   : resident?.davkhar;
-              const ct =
-                (record?.gereeniiId &&
-                  contractsById[String(record.gereeniiId)]) ||
-                (record?.gereeniiDugaar &&
-                  contractsByNumber[String(record.gereeniiDugaar)]) ||
-                undefined;
               return (
                 <span className="text-[color:var(--panel-text)] dark:text-white">
                   {String(ct?.davkhar ?? record?.davkhar ?? residentDavkhar ?? "-")}

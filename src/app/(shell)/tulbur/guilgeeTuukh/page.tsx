@@ -13,6 +13,7 @@ import HongololtTool from "../khungulult/HongololtTool";
 import { useAuth } from "@/lib/useAuth";
 import { hasPermission } from "@/lib/permissionUtils";
 import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
+import { useKhariltsagchJagsaalt } from "@/lib/useKhariltsagch";
 import { useGereeJagsaalt } from "@/lib/useGeree";
 import uilchilgee from "@/lib/uilchilgee";
 import toast from "react-hot-toast";
@@ -721,6 +722,49 @@ export default function DansniiKhuulga() {
     emptyQuery,
     effectiveBarilgiinId,
   );
+  const { KhariltsagchGaralt } = useKhariltsagchJagsaalt(
+    token || "",
+    ajiltan?.baiguullagiinId || "",
+    emptyQuery,
+    effectiveBarilgiinId,
+  );
+
+  const clientsList = useMemo(() => {
+    return (KhariltsagchGaralt?.jagsaalt || []) as any[];
+  }, [KhariltsagchGaralt?.jagsaalt]);
+
+  const clientIds = useMemo(() => {
+    const set = new Set<string>();
+    clientsList.forEach((c) => {
+      if (c?._id) set.add(String(c._id));
+      if (c?.id) set.add(String(c.id));
+    });
+    return set;
+  }, [clientsList]);
+
+  const orshinSuugchIds = useMemo(() => {
+    const set = new Set<string>();
+    ((orshinSuugchGaralt?.jagsaalt || []) as any[]).forEach((r) => {
+      if (r?._id) set.add(String(r._id));
+      if (r?.id) set.add(String(r.id));
+    });
+    return set;
+  }, [orshinSuugchGaralt?.jagsaalt]);
+
+  const clientTootSet = useMemo(() => {
+    const set = new Set<string>();
+    clientsList.forEach((c) => {
+      const mainToot = String(c?.toot || "").trim().toLowerCase();
+      if (mainToot) set.add(mainToot);
+      if (Array.isArray(c?.toots)) {
+        c.toots.forEach((t: any) => {
+          const tVal = String(t?.toot || "").trim().toLowerCase();
+          if (tVal) set.add(tVal);
+        });
+      }
+    });
+    return set;
+  }, [clientsList]);
 
   const contractsById = useMemo(() => {
     const list = (gereeGaralt?.jagsaalt || []) as any[];
@@ -747,7 +791,23 @@ export default function DansniiKhuulga() {
     return map;
   }, [gereeGaralt?.jagsaalt]);
 
-  /** Мөрийн эзэмшигч харилцагч уу (гэрээнд khariltsagchId байвал), оршин суугч уу. */
+  const residentsById = useMemo(() => {
+    const list = (orshinSuugchGaralt?.jagsaalt || []) as any[];
+    const map: Record<string, any> = {};
+    list.forEach((r) => {
+      if (r?._id) map[String(r._id)] = r;
+    });
+    clientsList.forEach((c) => {
+      if (c?._id) {
+        if (!map[String(c._id)]) {
+          map[String(c._id)] = { ...c, _isKhariltsagch: true };
+        }
+      }
+    });
+    return map;
+  }, [orshinSuugchGaralt?.jagsaalt, clientsList]);
+
+  /** Мөрийн эзэмшигч харилцагч уу (гэрээнд khariltsagchId байвал, эсвэл харилцагчийн бүртгэлтэй бол), оршин суугч уу. */
   const ezemshigchiinTurul = useCallback(
     (it: any): "orshinSuugch" | "khariltsagch" => {
       const cId = String(it?.gereeniiId ?? it?.gereeId ?? "").trim();
@@ -755,9 +815,56 @@ export default function DansniiKhuulga() {
         (cId && (contractsById as any)[cId]) ||
         (it?.gereeniiDugaar && (contractsByNumber as any)[String(it.gereeniiDugaar)]) ||
         null;
-      return c?.khariltsagchId || it?.khariltsagchId ? "khariltsagch" : "orshinSuugch";
+
+      // 1. Шууд khariltsagchId талбартай бол харилцагч
+      if (c?.khariltsagchId || it?.khariltsagchId) return "khariltsagch";
+
+      // 2. Эзэмшигчийн ID нь харилцагчийн баазад бүртгэлтэй бол
+      const pId = String(
+        c?.khariltsagchId ||
+        it?.khariltsagchId ||
+        c?.orshinSuugchId ||
+        it?.orshinSuugchId ||
+        it?.residentId ||
+        c?.residentId ||
+        ""
+      ).trim();
+      if (pId && clientIds.has(pId)) return "khariltsagch";
+      if (pId && residentsById[pId]?._isKhariltsagch) return "khariltsagch";
+
+      // 3. Гэрээ эсвэл мөрийн төрөл нь харилцагч / түрээслэгч / байгууллага бол
+      const turul = String(c?.turul || it?.turul || "").trim().toLowerCase();
+      if (
+        turul === "харилцагч" ||
+        turul === "khariltsagch" ||
+        turul === "байгууллага" ||
+        turul === "түрээслэгч" ||
+        turul === "түрээс"
+      ) {
+        return "khariltsagch";
+      }
+
+      // 4. Гараж / Зогсоол / Агуулах төрөлтэй гэрээ бөгөөд оршин суугчийн ID тохирохгүй бол
+      if (turul === "гараж" || turul === "зогсоол" || turul === "агуулах") {
+        if (!pId || clientIds.has(pId) || !orshinSuugchIds.has(pId)) {
+          return "khariltsagch";
+        }
+      }
+
+      // 5. Тоот нь харилцагчийн тооттой тохирч, оршин суугчийн биш бол
+      const toot = String(c?.toot || it?.toot || it?.medeelel?.toot || "").trim().toLowerCase();
+      if (toot && clientTootSet.has(toot) && (!pId || !orshinSuugchIds.has(pId))) {
+        return "khariltsagch";
+      }
+
+      // 6. Хэрэв ID нь orshinSuugch-д огт байхгүй бөгөөд нэргүй бие даасан гэрээ байвал
+      if (pId && !orshinSuugchIds.has(pId) && clientIds.size > 0) {
+        return "khariltsagch";
+      }
+
+      return "orshinSuugch";
     },
-    [contractsById, contractsByNumber],
+    [contractsById, contractsByNumber, clientIds, residentsById, orshinSuugchIds, clientTootSet],
   );
 
   // Орц / Давхар / Тоотын dropdown сонголтууд — гэрээнүүдээс
@@ -779,15 +886,6 @@ export default function DansniiKhuulga() {
         .map((v) => ({ value: v, label: v }));
     return { ortsSongolt: jagsaalt(orts), davkharSongolt: jagsaalt(davkhar), tootSongolt: jagsaalt(toot) };
   }, [gereeGaralt]);
-
-  const residentsById = useMemo(() => {
-    const list = (orshinSuugchGaralt?.jagsaalt || []) as any[];
-    const map: Record<string, any> = {};
-    list.forEach((r) => {
-      if (r?._id) map[String(r._id)] = r;
-    });
-    return map;
-  }, [orshinSuugchGaralt?.jagsaalt]);
 
   const buildingHistoryItems = useMemo(() => {
     const bid = String(effectiveBarilgiinId || "");
