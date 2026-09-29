@@ -573,12 +573,7 @@ export default function MassKwtModal({
                   <h3 className="text-[15px] font-semibold leading-tight text-[color:var(--panel-text)]">
                     Цахилгааны заалт оруулах
                   </h3>
-                  <p className="mt-0.5 text-[12px] text-[color:var(--muted-text)]">
-                    Шинэ заалтаа оруулаад хадгална уу ·{" "}
-                    <kbd className="rounded border border-[color:var(--surface-border)] px-1 text-[11px]">Enter</kbd>{" "}
-                    <kbd className="rounded border border-[color:var(--surface-border)] px-1 text-[11px]">↑</kbd>{" "}
-                    <kbd className="rounded border border-[color:var(--surface-border)] px-1 text-[11px]">↓</kbd> дараагийн мөр
-                  </p>
+                  
                 </div>
               </div>
               <button
@@ -599,7 +594,7 @@ export default function MassKwtModal({
               <label className="relative min-w-[220px] flex-1">
                 <span className="sr-only">Хайх</span>
                 <Search
-                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--muted-text)]"
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-[color:var(--muted-text)]"
                   aria-hidden="true"
                 />
                 <input
@@ -611,37 +606,7 @@ export default function MassKwtModal({
                 />
               </label>
 
-              <button
-                type="button"
-                onClick={() =>
-                  setDutuuIdnuud((v) =>
-                    v
-                      ? null
-                      : new Set(
-                          residents
-                            .filter((r) => r.newKwt === "" || isNaN(parseFloat(r.newKwt)))
-                            .map((r) => r._id),
-                        ),
-                  )
-                }
-                aria-pressed={!!dutuuIdnuud}
-                disabled={!dutuuIdnuud && summary.missing === 0}
-                className={`inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-sm transition-colors disabled:opacity-50 ${
-                  dutuuIdnuud
-                    ? "border-warning/50 bg-warning/10 text-warning"
-                    : "border-[color:var(--surface-border)] text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"
-                }`}
-                title="Заалт оруулаагүй тоотуудыг л харуулах"
-              >
-                Оруулаагүй
-                <span
-                  className={`min-w-5 rounded-full px-1.5 text-center text-[12px] tabular-nums ${
-                    dutuuIdnuud ? "bg-warning text-white" : "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]"
-                  }`}
-                >
-                  {summary.missing}
-                </span>
-              </button>
+              
 
               <div className="flex flex-wrap items-center gap-2">
                 {/* Бүгдэд ижил заалт — нэг бүлэг (утга + товч) */}

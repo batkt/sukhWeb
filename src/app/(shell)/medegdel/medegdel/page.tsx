@@ -323,29 +323,8 @@ function MedegdelContent() {
 
   const attachPreviewUrlsRef = useRef<string[]>([]);
 
-  // Том дэлгэцэд гурван багана цонхны ҮЛДСЭН өндрийг бүтнээр эзэлнэ.
-  // `100vh - 13rem` гэх мэт тогтмол тооцоо нь толгой/томруулалтаас хамаарч
-  // доор нь хоосон зай үлдээдэг байв — дээд байрлалыг хэмжиж бодно.
+  // gridRef kept for any downstream refs but height is now CSS-driven
   const gridRef = useRef<HTMLDivElement>(null);
-  const [gridUndur, setGridUndur] = useState<number | null>(null);
-  useEffect(() => {
-    const bodyo = () => {
-      const el = gridRef.current;
-      if (!el || window.innerWidth < 1024) {
-        setGridUndur(null);
-        return;
-      }
-      const top = el.getBoundingClientRect().top;
-      setGridUndur(Math.max(420, Math.floor(window.innerHeight - top - 24)));
-    };
-    bodyo();
-    const t = setTimeout(bodyo, 150);
-    window.addEventListener("resize", bodyo);
-    return () => {
-      clearTimeout(t);
-      window.removeEventListener("resize", bodyo);
-    };
-  }, []);
 
   const { orshinSuugchGaralt, isValidating, setOrshinSuugchKhuudaslalt } =
     useOrshinSuugchJagsaalt(
@@ -673,7 +652,14 @@ function MedegdelContent() {
   const channelIcons = { App: Smartphone, Мессеж: MessageSquare, Mail: Mail } as const;
 
   return (
-    <div className="flex min-h-0 flex-col gap-3 pb-14">
+    <div
+      className="flex flex-col gap-3"
+      style={{
+        // Fill exactly the remaining viewport: topbar + shell padding (top ~top-h+1rem, bottom 1.5rem, surface padding 1rem)
+        height: "calc(100dvh - var(--shell-topbar-h, 3.5rem) - 4rem)",
+        minHeight: 420,
+      }}
+    >
       {/* Header */}
       <motion.header
         initial={{ opacity: 0, y: -12 }}
@@ -722,7 +708,6 @@ function MedegdelContent() {
             exit={{ opacity: 0, scale: 0.98 }}
             transition={{ duration: 0.2 }}
             ref={gridRef}
-            style={gridUndur ? { height: gridUndur } : undefined}
             className="grid flex-1 min-h-0 grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_minmax(280px,0.75fr)]"
           >
             {/* Left: Channel & Templates */}
