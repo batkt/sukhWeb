@@ -31,6 +31,8 @@ export default function GereeModals() {
     useGereeContext();
 
   // Permissions Modal State
+  /** Үлдэгдэлтэй оршин суугчийг устгах гэхэд серверийн анхааруулга (админд) */
+  const [uldegdelAnkhaaruulga, setUldegdelAnkhaaruulga] = useState<string | null>(null);
   const [showPermissionsModal, setShowPermissionsModal] = useState(false);
   const [permissionsEmployee, setPermissionsEmployee] = useState<any>(null);
 
@@ -295,15 +297,30 @@ export default function GereeModals() {
       {/* Delete Resident Modal */}
       <DeleteConfirmModal
         show={state.showDeleteResidentModal}
-        onClose={() => state.setShowDeleteResidentModal(false)}
-        title="Оршин суугчийг устгах уу?"
-        message={`Та ${state.residentToDelete?.ovog || ""} ${state.residentToDelete?.ner || ""}-г устгах гэж байна. Энэ үйлдэл буцаах боломжгүй.`}
+        onClose={() => {
+          state.setShowDeleteResidentModal(false);
+          setUldegdelAnkhaaruulga(null);
+        }}
+        title={uldegdelAnkhaaruulga ? "Үлдэгдэлтэй оршин суугч" : "Оршин суугчийг устгах уу?"}
+        message={
+          uldegdelAnkhaaruulga
+            ? `${uldegdelAnkhaaruulga} Устгавал гэрээ нь цуцлагдаж, авлага нь төлөгдөхгүй үлдэнэ. Та админ тул зориуд устгаж болно — итгэлтэй байна уу?`
+            : `Та ${state.residentToDelete?.ovog || ""} ${state.residentToDelete?.ner || ""}-г устгах гэж байна. Идэвхтэй гэрээ нь цуцлагдана. Энэ үйлдэл буцаах боломжгүй.`
+        }
         onConfirm={async () => {
-          if (state.residentToDelete) {
-            await actions.handleDeleteResident(state.residentToDelete);
-            state.setShowDeleteResidentModal(false);
-            state.setResidentToDelete(null);
+          if (!state.residentToDelete) return;
+          // Эхний удаа сервер үлдэгдлийг шалгана; админд анхааруулга гарвал
+          // хоёр дахь баталгаагаар л албадан устгана.
+          const ur = await actions.handleDeleteResident(state.residentToDelete, {
+            albadakh: !!uldegdelAnkhaaruulga,
+          });
+          if (ur && typeof ur === "object" && ur.code === "uldegdeltei") {
+            setUldegdelAnkhaaruulga(ur.message);
+            return;
           }
+          setUldegdelAnkhaaruulga(null);
+          state.setShowDeleteResidentModal(false);
+          state.setResidentToDelete(null);
         }}
       />
 

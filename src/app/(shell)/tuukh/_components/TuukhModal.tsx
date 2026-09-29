@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useMemo } from "react";
-import { ArrowRight, FilePen, Trash2, X } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { ArrowRight, ChevronDown, FilePen, Trash2, X } from "lucide-react";
 import { ModalPortal } from "../../../../../components/shell/ModalPortal";
 import useModalHotkeys from "@/lib/useModalHotkeys";
 import { auditAngilalNer } from "@/lib/auditTurluud";
@@ -69,6 +69,27 @@ export default function TuukhModal({ mur, turul, idNer = {}, onClose }: Props) {
       .filter((c) => dedUurchlultuud(c.umnukh, null) === null)
       .sort((x, y) => erembe(x.talbar) - erembe(y.talbar));
   }, [mur, zassan]);
+
+  // Устгасан: гол талбарууд шууд, бусад нь «Бусад мэдээлэл» дотор нуугдана.
+  const [busadNeelttei, setBusadNeelttei] = useState(false);
+  const golMur = zassan ? [] : uurchlultuud.filter((c) => GOL_TALBAR.includes(c.talbar));
+  const busadMur = zassan ? [] : uurchlultuud.filter((c) => !GOL_TALBAR.includes(c.talbar));
+
+  const TalbarJagsaalt = ({ jagsaalt }: { jagsaalt: typeof uurchlultuud }) => (
+    <dl className="divide-y divide-[color:var(--ctl-border)]">
+      {jagsaalt.map((c, i) => (
+        <div
+          key={`${c.talbar}-${i}`}
+          className="grid grid-cols-[minmax(0,140px)_minmax(0,1fr)] gap-3 px-4 py-2.5 text-[13px]"
+        >
+          <dt className="text-[color:var(--muted-text)]">{c.label}</dt>
+          <dd className="min-w-0 text-[color:var(--panel-text)]">
+            <Utga utga={kharuul(c.umnukh)} />
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
 
   if (!mur) return null;
   const garchig = mur.ner || mur.dugaar || "-";
@@ -142,7 +163,41 @@ export default function TuukhModal({ mur, turul, idNer = {}, onClose }: Props) {
               </div>
             )}
 
-            {uurchlultuud.length === 0 ? (
+            {!zassan ? (
+              uurchlultuud.length === 0 ? (
+                <div className="py-10 text-center text-[13px] text-[color:var(--muted-text)]">
+                  Устгасан баримтын мэдээлэл алга
+                </div>
+              ) : (
+                <>
+                  {golMur.length > 0 && (
+                    <div className="overflow-hidden rounded-xl border border-[color:var(--ctl-border)]">
+                      <TalbarJagsaalt jagsaalt={golMur} />
+                    </div>
+                  )}
+                  {busadMur.length > 0 && (
+                    <div className="overflow-hidden rounded-xl border border-[color:var(--ctl-border)]">
+                      <button
+                        type="button"
+                        onClick={() => setBusadNeelttei((v) => !v)}
+                        aria-expanded={busadNeelttei}
+                        className="flex w-full items-center justify-between px-4 py-2.5 text-[13px] text-[color:var(--muted-text)] transition-colors hover:bg-[color:var(--surface-hover)]"
+                      >
+                        <span>Бусад мэдээлэл ({busadMur.length})</span>
+                        <ChevronDown
+                          className={`h-4 w-4 transition-transform ${busadNeelttei ? "rotate-180" : ""}`}
+                        />
+                      </button>
+                      {busadNeelttei && (
+                        <div className="border-t border-[color:var(--ctl-border)]">
+                          <TalbarJagsaalt jagsaalt={busadMur} />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
+              )
+            ) : uurchlultuud.length === 0 ? (
                 <div className="py-10 text-center text-[13px] text-[color:var(--muted-text)]">
                   {zassan ? "Мэдэгдэхүйц өөрчлөлт алга" : "Устгасан баримтын мэдээлэл алга"}
                 </div>
@@ -177,7 +232,7 @@ export default function TuukhModal({ mur, turul, idNer = {}, onClose }: Props) {
                               >
                                 <span className="text-[color:var(--muted-text)] [overflow-wrap:anywhere]">{d.label}</span>
                                 <span className="text-danger">
-                                  <Utga utga={kharuul(d.umnukh)} className="line-through decoration-danger/60" />
+                                  <Utga utga={kharuul(d.umnukh)} />
                                 </span>
                                 <span className="text-success">
                                   {zassan ? <Utga utga={kharuul(d.shine)} /> : <Ustsan />}
@@ -189,7 +244,7 @@ export default function TuukhModal({ mur, turul, idNer = {}, onClose }: Props) {
                       ) : (
                         <div className="grid grid-cols-1 items-stretch gap-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
                           <div className="min-w-0 rounded-lg bg-danger/10 px-3 py-2 text-[13px] text-danger">
-                            <Utga utga={kharuul(c.umnukh)} className="line-through decoration-danger/60" />
+                            <Utga utga={kharuul(c.umnukh)} />
                           </div>
                           <ArrowRight className="hidden h-4 w-4 self-center text-[color:var(--muted-text)] sm:block" />
                           <div

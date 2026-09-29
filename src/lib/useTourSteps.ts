@@ -296,14 +296,6 @@ export function useTourSteps(activeTab: string): DriverStep[] {
           },
         },
         {
-          element: "#feedback-search",
-          popover: {
-            title: "Хайлт",
-            description: "Тодорхой нэг санал гомдлыг гарчгаар нь эндээс хайж олно.",
-            side: "bottom",
-          },
-        },
-        {
           element: "#feedback-filters",
           popover: {
             title: "Шүүлтүүрүүд",
@@ -327,14 +319,6 @@ export function useTourSteps(activeTab: string): DriverStep[] {
           popover: {
             title: "Төрөл сонгох",
             description: "Эндээс Мэдэгдэл илгээх эсвэл Нийтлэл оруулах хэсэг рүү шилжинэ.",
-            side: "bottom",
-          },
-        },
-        {
-          element: "#niitlel-search",
-          popover: {
-            title: "Нийтлэл хайх",
-            description: "Гарчиг эсвэл агуулгаар нь нийтлэлүүдийг хайж олох боломжтой.",
             side: "bottom",
           },
         },

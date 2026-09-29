@@ -779,6 +779,7 @@ const INVOICE_ANGILAL_DARAALAL = [
   "ekhnii",
   "ashiglalt",
   "zogsool",
+  "aguulakh",
   "avlaga",
   "khungulult",
 ] as const;
@@ -789,6 +790,7 @@ const INVOICE_ANGILAL_NER: Record<InvoiceAngilal, string> = {
   ekhnii: "Эхний үлдэгдэл",
   ashiglalt: "Ашиглалтын зардлууд",
   zogsool: "Зогсоолын төлбөр",
+  aguulakh: "Агуулахын төлбөр",
   avlaga: "Авлага",
   khungulult: "Хөнгөлөлт",
 };
@@ -838,9 +840,13 @@ function nekhemjlekhiinAngilal(
     source === "zogsool" ||
     turul.includes("зогсоол") ||
     turul.includes("zogsool") ||
-    ner.includes("зогсоол")
+    ner.includes("зогсоол") ||
+    ner.includes("гараж")
   ) {
     return "zogsool";
+  }
+  if (source === "aguulakh" || turul.includes("агуулах") || ner.includes("агуулах")) {
+    return "aguulakh";
   }
   if (
     source === "zardal" ||
@@ -1289,7 +1295,7 @@ export default function InvoiceModal({
       // «Төлсөн дүн» баганад харагдана.
       gRows.forEach((g: any) => {
         const angilal = nekhemjlekhiinAngilal(g, "avlaga");
-        if (angilal !== "zogsool" && angilal !== "khungulult") {
+        if (angilal !== "zogsool" && angilal !== "aguulakh" && angilal !== "khungulult") {
           if (guilgeeTulultEsekh(g)) return;
           if (String(g?.turul || "").toLowerCase().includes("төлбөр")) return;
         }

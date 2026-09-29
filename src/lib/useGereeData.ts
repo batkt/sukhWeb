@@ -807,13 +807,8 @@ export function useGereeData(
           status.toLowerCase() === "tsutlsasan" ||
           status === "Идэвхгүй" ||
           status.toLowerCase() === "идэвхгүй";
-        const isActive =
-          !isCancelled &&
-          (status === "Идэвхтэй" ||
-            status.toLowerCase() === "идэвхтэй" ||
-            !status ||
-            status === "");
-        if (statusFilter === "active") return isActive;
+        // Дашбоардын тоотой ижил: цуцлагдаагүй бүх гэрээ идэвхтэй.
+        if (statusFilter === "active") return !isCancelled;
         if (statusFilter === "cancelled") return isCancelled;
         return true;
       });

@@ -239,24 +239,6 @@ export default function GereeHeader({
                           </div>
                         </div>
                       )}
-                      <div className="flex items-center gap-1.5">
-                        <div>
-                          <FilterSelect
-                            label="Төлөв"
-                            value={statusFilter === "all" ? "" : statusFilter}
-                            onChange={(val) =>
-                              setStatusFilter(
-                                (val || "all") as "all" | "active" | "cancelled",
-                              )
-                            }
-                            options={[
-                              { value: "active", label: "Идэвхтэй" },
-                              { value: "cancelled", label: "Цуцлагдсан" },
-                            ]}
-                            className="max-w-[200px]"
-                          />
-                        </div>
-                      </div>
                     </>
                   )}
 
@@ -620,20 +602,6 @@ export default function GereeHeader({
                     />
                   </div>
                 )}
-                <div className="flex flex-col gap-1 col-span-2">
-                  <FilterSelect
-                    label="Төлөв"
-                    value={statusFilter === "all" ? "" : statusFilter}
-                    onChange={(val) =>
-                      setStatusFilter((val || "all") as "all" | "active" | "cancelled")
-                    }
-                    options={[
-                      { value: "active", label: "Идэвхтэй" },
-                      { value: "cancelled", label: "Цуцлагдсан" },
-                    ]}
-                    className="w-full"
-                  />
-                </div>
               </>
             )}
 

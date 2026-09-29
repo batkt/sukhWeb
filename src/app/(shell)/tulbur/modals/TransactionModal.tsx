@@ -204,6 +204,10 @@ export interface TransactionData {
     | "busad";
   /** «Бусад» төрлийн дэд ангилал (одоогоор зөвхөн "barter"). */
   busadTurul?: string;
+  /** Авлагын ангилал: энгийн, зогсоол (гараж), агуулах. */
+  avlagiinAngilal?: "engiin" | "zogsool" | "aguulakh";
+  /** Зогсоол/агуулахын дугаар (оршин суугчид бүртгэлтэй бол). */
+  avlagiinToot?: string;
   date: string;
   amount: number;
   residentId?: string;
@@ -300,6 +304,9 @@ export default function TransactionModal({
    * жагсаалт нь өсөх бодолтой тул эхнээсээ dropdown хэлбэрээр.
    */
   const [busadTurul, setBusadTurul] = useState("barter");
+  /** Авлагын ангилал — зогсоол, агуулахын авлагыг тусад нь үүсгэнэ. */
+  const [avlagiinAngilal, setAvlagiinAngilal] = useState<"engiin" | "zogsool" | "aguulakh">("engiin");
+  const [avlagiinToot, setAvlagiinToot] = useState("");
   const [transactionDate, setTransactionDate] = useState(
     new Date().toISOString().split("T")[0],
   );
@@ -439,6 +446,8 @@ export default function TransactionModal({
     setDiscountValue("");
     setDiscountReason("");
     setKhungulultAldaa({});
+    setAvlagiinAngilal("engiin");
+    setAvlagiinToot("");
   };
 
   const handleClose = () => {
@@ -783,6 +792,9 @@ export default function TransactionModal({
     const data: TransactionData = {
       type: transactionType,
       ...(transactionType === "busad" ? { busadTurul } : {}),
+      ...(transactionType === "avlaga" && !ekhniiUldegdel && avlagiinAngilal !== "engiin"
+        ? { avlagiinAngilal, avlagiinToot: avlagiinToot || undefined }
+        : {}),
       date: transactionDate,
       amount: parseFloat(amount.replace(/,/g, "")) || 0,
       residentId: resident?._id || resident?.orshinSuugchId,
@@ -940,6 +952,66 @@ export default function TransactionModal({
                     </div>
                   )}
                 </div>
+
+                {/* Авлагын ангилал — зогсоол, агуулахын авлагыг тусад нь үүсгэнэ */}
+                {transactionType === "avlaga" && !ekhniiUldegdel && (() => {
+                  const turulNer = avlagiinAngilal === "zogsool" ? ["Гараж", "Зогсоол"] : ["Агуулах"];
+                  const tootuud: string[] = Array.from(
+                    new Set(
+                      (Array.isArray(resident?.toots) ? resident.toots : [])
+                        .filter((t: any) => turulNer.includes(String(t?.turul || "")))
+                        .map((t: any) => String(t?.toot || "").trim())
+                        .filter(Boolean),
+                    ),
+                  );
+                  return (
+                    <div className="space-y-2">
+                      <span className="block text-xs text-[color:var(--panel-text)]">Авлагын төрөл</span>
+                      <div className="grid grid-cols-3 gap-1 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-1" role="radiogroup" aria-label="Авлагын төрөл">
+                        {([
+                          { key: "engiin", ner: "Энгийн" },
+                          { key: "zogsool", ner: "Зогсоол" },
+                          { key: "aguulakh", ner: "Агуулах" },
+                        ] as const).map((a) => (
+                          <button
+                            key={a.key}
+                            type="button"
+                            role="radio"
+                            aria-checked={avlagiinAngilal === a.key}
+                            disabled={isProcessing}
+                            onClick={() => {
+                              setAvlagiinAngilal(a.key);
+                              setAvlagiinToot("");
+                            }}
+                            className={`h-9 rounded-xl text-[13px] font-medium transition-colors ${
+                              avlagiinAngilal === a.key
+                                ? "bg-theme !text-white shadow-sm"
+                                : "text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)]"
+                            }`}
+                          >
+                            {a.ner}
+                          </button>
+                        ))}
+                      </div>
+                      {avlagiinAngilal !== "engiin" && tootuud.length > 0 && (
+                        <select
+                          value={avlagiinToot}
+                          onChange={(e) => setAvlagiinToot(e.target.value)}
+                          disabled={isProcessing}
+                          aria-label={`${avlagiinAngilal === "zogsool" ? "Зогсоолын" : "Агуулахын"} дугаар`}
+                          className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] text-sm"
+                        >
+                          <option value="">{avlagiinAngilal === "zogsool" ? "Зогсоолын" : "Агуулахын"} дугаар (сонголтоор)</option>
+                          {tootuud.map((t) => (
+                            <option key={t} value={t}>
+                              {t}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* Initial Balance Checkbox - only for avlaga type */}
                 <AnimatePresence>

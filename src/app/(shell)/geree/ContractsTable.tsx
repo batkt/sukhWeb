@@ -360,7 +360,14 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
                 );
               }
             },
+            // Цуцалсан (идэвхгүй) гэрээг шүүлтүүргүйгээр улаан дэвсгэрээр ялгана.
             className: `cursor-pointer${
+              ["цуцалсан", "идэвхгүй"].includes(
+                String(record?.tuluv || record?.status || "").trim().toLowerCase(),
+              )
+                ? " zt-row-error"
+                : ""
+            }${
               selectedContracts.includes(String(record._id))
                 ? " zt-row-selected"
                 : ""

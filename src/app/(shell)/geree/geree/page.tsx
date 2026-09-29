@@ -18,7 +18,7 @@ export default function GereeGereePage() {
   const [adminUstgakhGeree, setAdminUstgakhGeree] = useState<any | null>(null);
 
   // Дашбоард: Бүгд / Идэвхтэй / Идэвхгүй — дарахад жагсаалтыг шүүнэ.
-  // (Цуцалсан гэрээ = Идэвхгүй; шүүлтүүрийн логиктой ижил ангилал.)
+  // (Цуцалсан гэрээ = Идэвхгүй; «Бүгд» дээр цуцалсан нь улаан дэвсгэртэй.)
   const toonuud = useMemo(() => {
     const jagsaalt: any[] = Array.isArray(data.contracts) ? data.contracts : [];
     let idevkhgui = 0;
@@ -66,19 +66,19 @@ export default function GereeGereePage() {
     <>
       <div className="stat-cards-grid mb-3 grid grid-cols-1 sm:grid-cols-3" role="tablist" aria-label="Гэрээний төлөв">
         {kartuud.map((k) => {
-          const idevkhtei = (state.statusFilter || "all") === k.key;
+          const songogdson = (state.statusFilter || "all") === k.key;
           return (
             <button
               key={k.key}
               type="button"
               role="tab"
-              aria-selected={idevkhtei}
+              aria-selected={songogdson}
               onClick={() => {
                 state.setStatusFilter(k.key);
                 state.setCurrentPage?.(1);
               }}
-              className={`relative rounded-2xl neu-panel text-left transition-all select-none ${
-                idevkhtei ? "ring-2 ring-theme shadow-lg" : "hover:bg-[color:var(--surface-hover)]"
+              className={`relative rounded-2xl neu-panel text-left transition-all select-none cursor-pointer ${
+                songogdson ? "ring-2 ring-theme shadow-lg" : "hover:bg-[color:var(--surface-hover)]"
               }`}
             >
               <div className="stat-card">

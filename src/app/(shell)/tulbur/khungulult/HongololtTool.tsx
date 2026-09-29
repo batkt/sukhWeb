@@ -117,8 +117,13 @@ interface HongololtToolProps {
 
 /* ─── Helpers ────────────────────────────────────────────────────────────── */
 
+// Мөнгөн дүнг мянгатын таслалтай (1,312,340.00) — програмын бусад хэсэгтэй ижил.
+// "mn-MN" нь зарим хөтөч дээр орон ялгахгүй эсвэл зайгаар ялгадаг байв.
 const fmt = (n: number) =>
-  n.toLocaleString("mn-MN", { minimumFractionDigits: 0 });
+  (Number(n) || 0).toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 
 const fmt2 = (n: number) =>
   (Number(n) || 0).toLocaleString("en-US", {
@@ -964,6 +969,8 @@ export default function HongololtTool({
   // Хайлт/шүүлтээр нуугдсан ч сонгосон мөр тооцоонд орно
   const summaryRows = residents.filter((r) => selectedIds.has(r._id));
   const totalDun = summaryRows.reduce((s, r) => s + computeDiscount(r), 0);
+  /** Сонгосон мөрүүдийн хөнгөлөлтийн ӨМНӨХ үлдэгдэл (хураангуйд хөдөлдөггүй) */
+  const tukhainSariinUldegdel = summaryRows.reduce((s, r) => s + murUldegdel(r), 0);
   /** Сонгосон оршин суугчдын үлдэгдлээс хөнгөлөлтийг хассан дүн */
   const niitUldegdel = summaryRows.reduce(
     (s, r) => s + murUldegdel(r) - computeDiscount(r),
@@ -1566,16 +1573,18 @@ export default function HongololtTool({
                 </div>
               </Mur>
 
-              <div className="space-y-1.5">
-                <span className="text-[13px] text-[color:var(--muted-text)]">
+              {/* Шалтгаан — бусад талбартай нэг эгнээнд (шошго зүүн, талбар баруун) */}
+              <div className="grid grid-cols-[112px_1fr] items-start gap-3">
+                <label htmlFor="khungulult-shaltgaan" className="pt-2 text-[13px] text-[color:var(--muted-text)]">
                   <span className="mr-0.5 text-danger">*</span>Шалтгаан:
-                </span>
+                </label>
                 <textarea
-                  rows={6}
+                  id="khungulult-shaltgaan"
+                  rows={4}
                   placeholder="Хөнгөлөлт олгох шалтгаанаа бичнэ үү"
                   value={shaltgaan}
                   onChange={(e) => setShaltgaan(e.target.value)}
-                  className={`${TALBAR} !h-auto min-h-[140px] resize-y py-2 leading-relaxed`}
+                  className={`${TALBAR} !h-auto min-h-[96px] resize-y py-2 leading-relaxed`}
                 />
               </div>
             </div>
@@ -1586,6 +1595,14 @@ export default function HongololtTool({
                 <span className="text-[color:var(--muted-text)]">Нийт хөнгөлөх тоо:</span>
                 <span className="font-medium tabular-nums text-[color:var(--panel-text)]">
                   {summaryRows.length}
+                </span>
+              </div>
+              {/* Хөнгөлөлт оруулахаас үл хамааран хөдөлдөггүй — сонгосон мөрүүдийн
+                  тухайн сарын үлдэгдэл (хөнгөлөлтийн өмнөх). */}
+              <div className="flex justify-between">
+                <span className="text-[color:var(--muted-text)]">Тухайн сарын үлдэгдэл:</span>
+                <span className="font-medium tabular-nums text-[color:var(--panel-text)]">
+                  {fmt(summaryRows.length ? tukhainSariinUldegdel : 0)}
                 </span>
               </div>
               <div className="flex justify-between">

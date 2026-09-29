@@ -249,10 +249,13 @@ export function useGereeActions(
   );
 
   const handleDeleteResident = useCallback(
-    async (p: any) => {
+    async (
+      p: any,
+      opts?: { albadakh?: boolean },
+    ): Promise<boolean | { code: "uldegdeltei"; message: string }> => {
       if (!token) {
         openErrorOverlay("Нэвтрэх шаардлагатай");
-        return;
+        return false;
       }
 
       let residentId: string | undefined = undefined;
@@ -271,11 +274,14 @@ export function useGereeActions(
         residentId === "null"
       ) {
         openErrorOverlay("Оршин суугчийн ID олдсонгүй эсвэл буруу байна");
-        return;
+        return false;
       }
 
       try {
-        await deleteMethod("orshinSuugch", token, residentId);
+        // Сервер үлдэгдэлтэй оршин суугчийг зогсооно (409); админ зориуд устгавал albadakh=1.
+        await uilchilgee(token).delete(`/orshinSuugch/${residentId}`, {
+          params: opts?.albadakh ? { albadakh: 1 } : undefined,
+        });
         openSuccessOverlay("Устгагдлаа");
 
         try {
@@ -299,12 +305,19 @@ export function useGereeActions(
         }
 
         return true;
-      } catch (e) {
-        openErrorOverlay("Устгахад алдаа гарлаа");
+      } catch (e: any) {
+        const data = e?.response?.data;
+        if (e?.response?.status === 409 && data?.code === "ULDEGDELTEI") {
+          const admin = String(ajiltan?.erkh || "").toLowerCase() === "admin";
+          if (admin) return { code: "uldegdeltei", message: String(data.message || "") };
+          openErrorOverlay(`${data.message} Админ л үлдэгдэлтэй оршин суугчийг устгаж чадна.`);
+          return false;
+        }
+        openErrorOverlay(data?.message || getErrorMessage(e) || "Устгахад алдаа гарлаа");
         return false;
       }
     },
-    [token],
+    [token, ajiltan],
   );
 
   const handleEditResident = useCallback(

@@ -996,11 +996,16 @@ export default function DansniiKhuulga() {
       const isResidentPaid = currentBalance < 0.01;
       const isPartiallyPaid = !isResidentPaid && paidAmount > 0.1;
 
-      if (tuluvFilter === "paid") {
-        return isResidentPaid;
-      }
-      if (tuluvFilter === "partiallyPaid") {
-        return isPartiallyPaid;
+      if (tuluvFilter === "paid" || tuluvFilter === "partiallyPaid") {
+        // Цуцалсан гэрээ зөвхөн «Цуцалсан гэрээний авлага» таб дээр.
+        const itGereeId = String(it?.gereeniiId || it?.gereeId || "");
+        const itGereeDugaar = String(it?.gereeniiDugaar || "");
+        if (
+          (itGereeId && cancelledGereeIds.has(itGereeId)) ||
+          (itGereeDugaar && cancelledGereeDugaars.has(itGereeDugaar))
+        )
+          return false;
+        return tuluvFilter === "paid" ? isResidentPaid : isPartiallyPaid;
       }
       if (tuluvFilter === "unpaid") {
         const itGereeId = String(it?.gereeniiId || it?.gereeId || "");
@@ -1491,9 +1496,9 @@ export default function DansniiKhuulga() {
       (r: any) => ezemshigchFilter === "all" || ezemshigchiinTurul(r) === ezemshigchFilter,
     );
 
-    // FINAL PASS: Apply tuluvFilter at the resident level based on their aggregated performance/balance
-    if (!tuluvFilter || tuluvFilter === "all") return result;
-
+    // FINAL PASS: Apply tuluvFilter at the resident level based on their aggregated performance/balance.
+    // Цуцалсан гэрээ зөвхөн «Цуцалсан гэрээний авлага» таб дээр харагдана —
+    // Нийт / Төлсөн / Төлөөгүй-д орохгүй.
     const cancelledGereeIds = new Set<string>();
     const cancelledGereeDugaars = new Set<string>();
     allGerees.forEach((g: any) => {
@@ -1531,12 +1536,12 @@ export default function DansniiKhuulga() {
         (r?.gereeniiDugaar &&
           cancelledGereeDugaars.has(String(r.gereeniiDugaar)));
 
-      if (tuluvFilter === "paid") return isResidentPaid;
-      if (tuluvFilter === "unpaid")
-        return !isResidentPaid && !isPartiallyPaid && !isLinkedToCancelledGeree;
-      if (tuluvFilter === "partiallyPaid") return isPartiallyPaid;
       if (tuluvFilter === "overdue")
         return !isResidentPaid && isLinkedToCancelledGeree;
+      if (isLinkedToCancelledGeree) return false;
+      if (tuluvFilter === "paid") return isResidentPaid;
+      if (tuluvFilter === "unpaid") return !isResidentPaid && !isPartiallyPaid;
+      if (tuluvFilter === "partiallyPaid") return isPartiallyPaid;
 
       return true;
     });
@@ -2169,20 +2174,33 @@ export default function DansniiKhuulga() {
 
   /** Эзэмшигчийн бүлэг бүрийн тоо — жагсаалтын мөрүүдээс (бүлгийн шүүлтүүрээс үл хамаарна). */
   const ezemshigchToo = useMemo(() => {
+    // Жагсаалттай ижил: цуцалсан гэрээ зөвхөн «Цуцалсан» таб дээр тоологдоно.
+    const tsutsalsanId = new Set<string>();
+    const tsutsalsanDugaar = new Set<string>();
+    ((gereeGaralt?.jagsaalt || []) as any[]).forEach((g: any) => {
+      const t = String(g?.tuluv || g?.status || "").trim().toLowerCase();
+      if (t === "цуцалсан" || t === "tsutlsasan") {
+        if (g?._id) tsutsalsanId.add(String(g._id));
+        if (g?.gereeniiDugaar) tsutsalsanDugaar.add(String(g.gereeniiDugaar));
+      }
+    });
+    const tsutsalsanTab = tuluvFilter === "overdue";
+    let all = 0;
     let khariltsagch = 0;
     deduplicatedResidentsAllRaw.forEach((r: any) => {
+      const gid = String(r?._gereeniiId ?? r?.gereeniiId ?? r?.gereeId ?? "").trim();
+      const tsutsalsan =
+        (gid && tsutsalsanId.has(gid)) ||
+        (r?.gereeniiDugaar && tsutsalsanDugaar.has(String(r.gereeniiDugaar)));
+      if (!tsutsalsanTab && tsutsalsan) return;
+      all++;
       if (ezemshigchiinTurul(r) === "khariltsagch") khariltsagch++;
     });
-    return {
-      all: deduplicatedResidentsAllRaw.length,
-      khariltsagch,
-      orshinSuugch: deduplicatedResidentsAllRaw.length - khariltsagch,
-    };
-  }, [deduplicatedResidentsAllRaw, ezemshigchiinTurul]);
+    return { all, khariltsagch, orshinSuugch: all - khariltsagch };
+  }, [deduplicatedResidentsAllRaw, ezemshigchiinTurul, gereeGaralt?.jagsaalt, tuluvFilter]);
 
   // Stats use deduplicatedResidentsAll so dashboard numbers stay fixed when clicking filters
   const stats = useMemo(() => {
-    const residentCount = deduplicatedResidentsAll.length;
 
     const cancelledGereeIdsFromGereeList = new Set<string>();
     const cancelledGereeDugaarsFromGereeList = new Set<string>();
@@ -2225,16 +2243,17 @@ export default function DansniiKhuulga() {
           (r?.gereeniiDugaar &&
             cancelledGereeDugaarsFromGereeList.has(String(r.gereeniiDugaar)));
 
+        // Цуцалсан гэрээ зөвхөн «Цуцалсан гэрээний авлага»-д тоологдоно.
+        if (isLinkedToCancelledGeree) return acc;
+        acc.niit++;
         if (isResidentPaid) {
           acc.paid++;
-        } else if (isLinkedToCancelledGeree) {
-          // «Цуцалсан гэрээний авлага» тусад нь — энд бүлэглэхгүй
         } else if (!isPartiallyPaid) {
           acc.unpaid++;
         }
         return acc;
       },
-      { paid: 0, unpaid: 0 },
+      { niit: 0, paid: 0, unpaid: 0 },
     );
 
     // Сонгосон хугацааны хөнгөлөлтийн нийт дүн (сонгосон эзэмшигчийн бүлгээр).
@@ -2255,7 +2274,7 @@ export default function DansniiKhuulga() {
             : ezemshigchFilter === "orshinSuugch"
               ? "Оршин суугч"
               : "Нийт",
-        value: residentCount,
+        value: counts.niit,
       },
       { title: "Цуцалсан гэрээний авлага", value: cancelledGereesWithUnpaid },
       { title: "Төлсөн", value: counts.paid },
@@ -2901,9 +2920,20 @@ export default function DansniiKhuulga() {
           (data.ekhniiUldegdel
             ? `Эхний үлдэгдэл - ${data.date}`
             : `${data.type === "avlaga" ? "Авлага" : data.type === "ashiglalt" ? "Цахилгаан" : data.type === "torguuli" ? "Торгууль" : isBusad ? busadNer : data.type} - ${data.date}`);
-        const normalizedTailbar = isAshiglalt
-          ? String(baseTailbar).replace(/^(ашиглалт|ashiglalt)/i, "Цахилгаан")
-          : baseTailbar;
+        // Зогсоол / агуулахын авлага: нэр, тайлбарт ангиллын үгийг заавал оруулна —
+        // нэхэмжлэх, хөнгөлөлт, давхардлын шалгалт энэ үгээр ангилдаг.
+        const angilliinNer =
+          data.avlagiinAngilal === "zogsool" ? "Зогсоол" : data.avlagiinAngilal === "aguulakh" ? "Агуулах" : null;
+        const angilalTailbar = angilliinNer
+          ? `${angilliinNer}${data.avlagiinToot ? ` ${data.avlagiinToot}` : ""}${
+              data.tailbar ? ` · ${data.tailbar}` : ""
+            } - ${data.date}`
+          : null;
+        const normalizedTailbar = angilalTailbar
+          ? angilalTailbar
+          : isAshiglalt
+            ? String(baseTailbar).replace(/^(ашиглалт|ashiglalt)/i, "Цахилгаан")
+            : baseTailbar;
         // All non-payment types (avlaga, ashiglalt, torguuli) are charges: positive dun, tulukhDun
         const response = await uilchilgee(token).post("/guilgeeAvlaguud", {
           baiguullagiinId: ajiltan.baiguullagiinId,
@@ -2918,6 +2948,9 @@ export default function DansniiKhuulga() {
               : isBusad
                 ? busadNer
                 : undefined,
+          ...(angilliinNer
+            ? { zardliinNer: angilliinNer, ...(data.avlagiinToot ? { toot: data.avlagiinToot } : {}) }
+            : {}),
           tulukhDun: data.amount,
           tulsunDun: 0,
           dun: data.amount,
