@@ -291,6 +291,8 @@ export default function Camera() {
   const [khaaltOpen, setKhaaltOpen] = useState(false);
   const [revenueDateRange, setRevenueDateRange] = useState<[string | null, string | null] | undefined>(undefined);
   const [revenueListData, setRevenueListData] = useState<any>(null);
+  /** Орлого тайланд: камер кассаас гараар оруулсан орлого (F9) */
+  const [revenueGaraar, setRevenueGaraar] = useState<any[]>([]);
   const [revenueLoading, setRevenueLoading] = useState(false);
 
   const [dateRange, setDateRange] = useState<
@@ -1320,6 +1322,14 @@ export default function Camera() {
         },
       });
       setRevenueListData(resp.data);
+      try {
+        const g = await uilchilgee(token).get("/zogsoolGaraarOrlogo", {
+          params: { barilgiinId: effectiveBarilgiinId || undefined, ekhlekh: start, duusakh: end },
+        });
+        setRevenueGaraar(Array.isArray(g.data?.jagsaalt) ? g.data.jagsaalt : []);
+      } catch {
+        setRevenueGaraar([]);
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -1333,9 +1343,21 @@ export default function Camera() {
     if (start && end) fetchRevenueData(start, end);
   }, [revenueModalOpen, revenueDateRange, fetchRevenueData]);
 
+  // Гараар орлогыг төлбөрийн мөр болгон нэмнэ — хэлбэр (belen/khaan/…) нь
+  // камерын төлбөртэй ижил бүлэгт нийлж, «Нийт орлого»-д шууд орно.
   const revenueModalBreakdown = useMemo(
-    () => tulburiinZadargaaBodyo(revenueListData?.jagsaalt || []),
-    [revenueListData],
+    () =>
+      tulburiinZadargaaBodyo([
+        ...(revenueListData?.jagsaalt || []),
+        ...revenueGaraar.map((o) => ({
+          tuukh: [{ tulbur: [{ turul: o.khelber || "belen", dun: Number(o.dun) || 0 }] }],
+        })),
+      ]),
+    [revenueListData, revenueGaraar],
+  );
+  const revenueGaraarNiit = useMemo(
+    () => revenueGaraar.reduce((s, o) => s + (Number(o.dun) || 0), 0),
+    [revenueGaraar],
   );
 
 
@@ -3123,6 +3145,14 @@ export default function Camera() {
                     {formatNumber(revenueModalBreakdown.totalAmount)}₮
                   </span>
                 </div>
+                {revenueGaraarNiit > 0 && (
+                  <p className="mt-1.5 px-1 text-right text-[11px] text-[color:var(--muted-text)]">
+                    Үүнээс гараар оруулсан ({revenueGaraar.length} машин):{" "}
+                    <span className="font-[family-name:var(--font-mono)] text-[color:var(--panel-text)]">
+                      {formatNumber(revenueGaraarNiit)}₮
+                    </span>
+                  </p>
+                )}
               </div>
             </div>
           </div>,
