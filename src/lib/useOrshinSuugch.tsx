@@ -80,6 +80,8 @@ const fetcherJagsaalt = async ([
         { register: { $regex: khuudaslalt.search, $options: "i" } },
         { utas: { $regex: khuudaslalt.search, $options: "i" } },
         { toot: { $regex: khuudaslalt.search, $options: "i" } },
+        // Олон тоот (гараж/агуулах ч) — зөвхөн үндсэн тоотоор биш
+        { "toots.toot": { $regex: khuudaslalt.search, $options: "i" } },
         { khayag: { $regex: khuudaslalt.search, $options: "i" } },
       ];
     }

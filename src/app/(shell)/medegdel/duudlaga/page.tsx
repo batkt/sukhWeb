@@ -147,6 +147,11 @@ export default function TaskManagementSystem() {
   const { searchTerm } = useSearch();
   const [expandedNames, setExpandedNames] = useState<Set<string>>(new Set());
   const [mockData, setMockData] = useState<DuudlagaItem[]>(MOCK_CALLS);
+  // Цуцлах шалтгаан — prompt()-ийн оронд шалтгааныг заавал бичих жижиг цонх;
+  // хоосон бол талбар улаанаар тодорч доор нь анхааруулга гарна.
+  const [tsutslakhId, setTsutslakhId] = useState<string | null>(null);
+  const [tsutslakhShaltgaan, setTsutslakhShaltgaan] = useState("");
+  const [tsutslakhAldaa, setTsutslakhAldaa] = useState(false);
 
   const toggleNameExpansion = (name: string) => {
     setExpandedNames((prev) => {
@@ -559,11 +564,9 @@ export default function TaskManagementSystem() {
                             whileTap={{ scale: 0.95 }}
                             className="flex-1 px-3 py-2 rounded-xl bg-gradient-to-r from-danger/20 to-danger/20 text-white text-xs  cursor-pointer text-center"
                             onClick={() => {
-                              const reason = prompt(
-                                "Цуцлах шалтгааныг бичнэ үү:"
-                              );
-                              if (reason)
-                                updateTaskStatus(item._id, -1, reason);
+                              setTsutslakhShaltgaan("");
+                              setTsutslakhAldaa(false);
+                              setTsutslakhId(item._id);
                             }}
                           >
                             Цуцлах
@@ -606,6 +609,73 @@ export default function TaskManagementSystem() {
           )}
         </motion.div>
       </div>
+
+      {tsutslakhId && (
+        <div className="fixed inset-0 z-[1300] flex items-center justify-center p-4">
+          <button
+            type="button"
+            aria-label="Хаах"
+            onClick={() => setTsutslakhId(null)}
+            className="absolute inset-0 cursor-default bg-black/40"
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Дуудлага цуцлах"
+            className="relative w-full max-w-sm rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-5 shadow-2xl"
+          >
+            <h3 className="text-[15px] font-medium text-[color:var(--panel-text)]">Дуудлага цуцлах уу?</h3>
+            <label htmlFor="tsutslakh-shaltgaan" className="mt-3 block text-[12px] text-[color:var(--muted-text)]">
+              <span className="mr-0.5 text-danger">*</span>Цуцлах шалтгаан
+            </label>
+            <textarea
+              id="tsutslakh-shaltgaan"
+              autoFocus
+              rows={3}
+              value={tsutslakhShaltgaan}
+              aria-invalid={tsutslakhAldaa || undefined}
+              onChange={(e) => {
+                setTsutslakhShaltgaan(e.target.value);
+                if (tsutslakhAldaa && e.target.value.trim()) setTsutslakhAldaa(false);
+              }}
+              placeholder="Жишээ: Оршин суугч өөрөө шийдсэн"
+              className={`mt-1 w-full resize-none rounded-xl border bg-[color:var(--surface-hover)] px-3 py-2 text-[13px] text-[color:var(--panel-text)] outline-none transition-colors ${
+                tsutslakhAldaa ? "border-danger ring-2 ring-danger/20" : "border-[color:var(--surface-border)] focus:border-theme"
+              }`}
+            />
+            {tsutslakhAldaa && (
+              <p role="alert" className="mt-1 text-[12px] text-danger">
+                Цуцлах шалтгааныг заавал бичнэ.
+              </p>
+            )}
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setTsutslakhId(null)}
+                className="btn-minimal inline-flex h-9 items-center !px-4 text-[13px]"
+              >
+                Болих
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const reason = tsutslakhShaltgaan.trim();
+                  if (!reason) {
+                    setTsutslakhAldaa(true);
+                    document.getElementById("tsutslakh-shaltgaan")?.focus();
+                    return;
+                  }
+                  updateTaskStatus(tsutslakhId, -1, reason);
+                  setTsutslakhId(null);
+                }}
+                className="inline-flex h-9 items-center rounded-[10px] bg-danger px-4 text-[13px] !text-white hover:opacity-90"
+              >
+                Цуцлах
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

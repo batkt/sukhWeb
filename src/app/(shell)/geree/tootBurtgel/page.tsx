@@ -31,8 +31,9 @@ export default function ӨмчБүртгэлPage() {
   }, [ajiltan, router]);
 
   return (
-    <div className="p-6 bg-[color:var(--surface-bg)] min-h-full w-full">
-      <div className="flex space-x-4 mb-6 border-b border-[color:var(--surface-border)]">
+    <div className="px-4 pt-2 pb-4 bg-[color:var(--surface-bg)] min-h-full w-full">
+      {/* Жижиг дэлгэцэнд таб энд; том дэлгэцэнд толгойн мөрөнд (GereeHeader). */}
+      <div className="flex space-x-4 mb-3 border-b border-[color:var(--surface-border)] md:hidden">
         {["Тоот", "Зогсоол", "Агуулах"].map((tab) => (
           <button
             key={tab}
@@ -53,6 +54,8 @@ export default function ӨмчБүртгэлPage() {
         ortsOptions={data.ortsOptions}
         selectedOrts={state.selectedOrts}
         setSelectedOrts={state.setSelectedOrts}
+        selectedDawkhar={state.selectedDawkhar}
+        setSelectedDawkhar={state.setSelectedDawkhar}
         selectedBarilga={data.selectedBarilga}
         contracts={data.contracts}
         residentsById={data.residentsById}
@@ -72,19 +75,22 @@ export default function ӨмчБүртгэлPage() {
         sortOrder={state.sortOrder}
         composeKey={data.composeKey}
         propertyTab={state.propertyTab}
-        onAddUnit={(floor) => {
+        onAddUnit={(floor, turul) => {
           state.setAddTootFloor(floor);
+          state.setAddTootTurul(turul || null);
           state.setAddTootValue("");
           state.setShowAddTootModal(true);
         }}
-        onDeleteUnit={(floor, unit) => {
-          state.setUnitToDelete({ floor, unit });
+        onDeleteUnit={(floor, unit, turul) => {
+          state.setUnitToDelete({ floor, unit, turul });
           state.setShowDeleteUnitModal(true);
         }}
-        onDeleteFloor={(floor) => {
+        onDeleteFloor={(floor, turul) => {
           state.setFloorToDelete(floor);
+          state.setFloorToDeleteTurul(turul || null);
           state.setShowDeleteFloorModal(true);
         }}
+        garageFloorsList={data.garageFloorsList}
         residentsList={data.residentsList}
         clientsList={data.clientsList}
         onAssignToUnit={actions.handleAssignToUnit}

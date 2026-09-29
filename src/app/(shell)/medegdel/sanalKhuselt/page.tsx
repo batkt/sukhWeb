@@ -870,8 +870,16 @@ export default function SanalKhuselt() {
     });
   };
 
+  const [tatgalzakhAldaa, setTatgalzakhAldaa] = useState(false);
   const confirmStatusChange = async () => {
     if (!pendingStatusChange) return;
+    // Татгалзахад шалтгаан заавал — toast биш, талбарыг улаанаар тодруулна.
+    if (pendingStatusChange.newStatus !== "done" && !tailbarText.trim()) {
+      setTatgalzakhAldaa(true);
+      document.getElementById("sanal-tailbar")?.focus();
+      return;
+    }
+    setTatgalzakhAldaa(false);
 
     try {
       // Find the current item to get its data
@@ -1500,11 +1508,21 @@ export default function SanalKhuselt() {
                           </span>
                         </div>
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                          <label className="filter-field min-w-0 flex-1">
+                          <div className="min-w-0 flex-1">
+                          <label
+                            className={`filter-field w-full ${
+                              tatgalzakhAldaa ? "!border-danger ring-2 ring-danger/20" : ""
+                            }`}
+                          >
                             <input
+                              id="sanal-tailbar"
                               type="text"
                               value={tailbarText}
-                              onChange={(e) => setTailbarText(e.target.value)}
+                              aria-invalid={tatgalzakhAldaa || undefined}
+                              onChange={(e) => {
+                                setTailbarText(e.target.value);
+                                if (tatgalzakhAldaa && e.target.value.trim()) setTatgalzakhAldaa(false);
+                              }}
                               onKeyDown={(e) => {
                                 if (e.key === "Enter") {
                                   e.preventDefault();
@@ -1519,12 +1537,19 @@ export default function SanalKhuselt() {
                               autoFocus
                             />
                           </label>
+                          {tatgalzakhAldaa && (
+                            <p role="alert" className="mt-1 text-[12px] text-danger">
+                              {t("Татгалзсан шалтгааныг заавал бичнэ.")}
+                            </p>
+                          )}
+                          </div>
                           <div className="flex shrink-0 items-center justify-end gap-2">
                             <button
                               type="button"
                               onClick={() => {
                                 setPendingStatusChange(null);
                                 setTailbarText("");
+                                setTatgalzakhAldaa(false);
                               }}
                               className="btn-minimal h-9 !px-3 text-[13px]"
                             >

@@ -52,7 +52,11 @@ export function useGereeState(searchParams: any, didInitRef: any) {
 
   const [residentToDelete, setResidentToDelete] = useState<any | null>(null);
   const [employeeToDelete, setEmployeeToDelete] = useState<any | null>(null);
-  const [unitToDelete, setUnitToDelete] = useState<{ floor: string; unit: string } | null>(null);
+  // `turul` — «Тоот» таб дээр гаражийн мөр ч харагддаг тул аль жагсаалтаас
+  // устгахыг табаас биш мөрөөс нь мэднэ.
+  const [unitToDelete, setUnitToDelete] = useState<{ floor: string; unit: string; turul?: "Тоот" | "Зогсоол" | "Агуулах" } | null>(null);
+  const [addTootTurul, setAddTootTurul] = useState<"Тоот" | "Зогсоол" | "Агуулах" | null>(null);
+  const [floorToDeleteTurul, setFloorToDeleteTurul] = useState<"Тоот" | "Зогсоол" | "Агуулах" | null>(null);
   const [floorToDelete, setFloorToDelete] = useState<string | null>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -278,6 +282,10 @@ export function useGereeState(searchParams: any, didInitRef: any) {
     setShowAvlagaModal,
     addTootFloor,
     setAddTootFloor,
+    addTootTurul,
+    setAddTootTurul,
+    floorToDeleteTurul,
+    setFloorToDeleteTurul,
     addTootValue,
     setAddTootValue,
     selectedContracts,

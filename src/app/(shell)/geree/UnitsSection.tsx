@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState, useEffect } from "react";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
+import { ShuultuurTolgoi } from "@/components/ui/table/ShuultuurTolgoi";
 import { Plus, Trash2, Info, User, Phone, X, Send, UserX } from "lucide-react";
 import { Tooltip } from "antd";
 import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
@@ -27,11 +28,16 @@ interface UnitsSectionProps {
   ortsOptions: string[];
   selectedOrts: string;
   setSelectedOrts: (orts: string) => void;
+  /** Давхрын шүүлт — хүснэгтийн толгойноос */
+  selectedDawkhar?: string;
+  setSelectedDawkhar?: (d: string) => void;
   selectedBarilga: any;
   contracts: any[];
   residentsById: Record<string, any>;
   currentFloors: string[];
   floorsList: string[];
+  /** Гаражийн давхрууд (B1, B2…) — «Тоот» таб дээр нэмэлт мөр болж харагдана. */
+  garageFloorsList?: string[];
   unitPage: number;
   unitPageSize: number;
   unitTotalPages: number;
@@ -50,9 +56,9 @@ interface UnitsSectionProps {
     floor: string,
     turul?: "Тоот" | "Зогсоол" | "Агуулах",
   ) => string[];
-  onAddUnit: (floor: string) => void;
-  onDeleteUnit: (floor: string, unit: string) => void;
-  onDeleteFloor: (floor: string) => void;
+  onAddUnit: (floor: string, turul?: "Тоот" | "Зогсоол" | "Агуулах") => void;
+  onDeleteUnit: (floor: string, unit: string, turul?: "Тоот" | "Зогсоол" | "Агуулах") => void;
+  onDeleteFloor: (floor: string, turul?: "Тоот" | "Зогсоол" | "Агуулах") => void;
   residentsList: any[];
   clientsList: any[];
   onAssignToUnit: (
@@ -67,16 +73,23 @@ interface UnitsSectionProps {
   ) => Promise<boolean>;
 }
 
+/** Эрэмбэ: тоо агуулсан мөрийг (10 < 101, B1 < B2) натурал дарааллаар. */
+const tooEremb = (a: any, b: any) =>
+  String(a ?? "").localeCompare(String(b ?? ""), undefined, { numeric: true, sensitivity: "base" });
+
 export default function UnitsSection({
   davkharOptions,
   ortsOptions,
   selectedOrts,
   setSelectedOrts,
+  selectedDawkhar = "",
+  setSelectedDawkhar,
   selectedBarilga,
   contracts,
   residentsById,
   currentFloors,
   floorsList,
+  garageFloorsList = [],
   unitPage,
   unitPageSize,
   unitTotalPages,
@@ -100,7 +113,8 @@ export default function UnitsSection({
 }: UnitsSectionProps) {
   const [selectedFloor, setSelectedFloor] = useState<string | null>(null);
   const [selectedUnit, setSelectedUnit] = useState<string | null>(null);
-  const [quickRegister, setQuickRegister] = useState<{ unit: string; floor: string } | null>(null);
+  // `turul` — «Тоот» таб дээрх гаражийн жагсаалтаас бүртгэхэд табаас биш мөрөөс.
+  const [quickRegister, setQuickRegister] = useState<{ unit: string; floor: string; turul?: "Тоот" | "Зогсоол" | "Агуулах" } | null>(null);
   const [activeUnitDetails, setActiveUnitDetails] = useState<{ unit: string; floor: string; resident: any } | null>(null);
   const [checkedUnits, setCheckedUnits] = useState<string[]>([]);
   const [selectionMode, setSelectionMode] = useState(false);
@@ -194,11 +208,12 @@ export default function UnitsSection({
     resident: any;
     tolsen: boolean;
     nekhemjlekhIlgeesen: boolean;
+    turul?: "Тоот" | "Зогсоол" | "Агуулах";
   } | null>(null);
   const salgakhBatlakh = async () => {
     if (!salgakhAsuult) return;
     const { resident, unit, floor } = salgakhAsuult;
-    await actions.handleUnlinkFromUnit(resident, unit, propertyTab, { davkhar: floor });
+    await actions.handleUnlinkFromUnit(resident, unit, salgakhAsuult.turul || propertyTab, { davkhar: floor });
     setSalgakhAsuult(null);
   };
 
@@ -244,15 +259,11 @@ export default function UnitsSection({
 
     const allFloorData: FloorItem[] = [];
 
-    const effectiveFloors =
-      propertyTab === "Зогсоол"
-        ? floorsList.filter((f) => isGarageFloor(f))
-        : floorsList;
+    /** Нэг (орц, давхар, төрөл)-ийн мөрийг бодно. */
+    const murBodokh = (orts: string, floor: string, turul: "Тоот" | "Зогсоол" | "Агуулах") => {
 
-    targetOrtsList.forEach((orts) => {
-      effectiveFloors.forEach((floor) => {
         const key = composeKey(orts, floor);
-        const units = getTootOptions(orts, floor, propertyTab);
+        const units = getTootOptions(orts, floor, turul);
         /** Тухайн давхарт БОДИТООР байгаа тоотууд — O(1) шалгалтад. */
         const unitsSet = new Set(units.map((u) => String(u).trim()));
 
@@ -285,9 +296,9 @@ export default function UnitsSection({
 
           if (!hasTootsArray) {
             const cTurul = String(c?.turul || "").trim();
-            if (propertyTab === "Зогсоол") {
+            if (turul === "Зогсоол") {
               if (cTurul !== "Зогсоол" && cTurul !== "Гараж") return;
-            } else if (propertyTab === "Агуулах") {
+            } else if (turul === "Агуулах") {
               if (cTurul !== "Агуулах") return;
             } else {
               // "Тоот" tab
@@ -302,9 +313,9 @@ export default function UnitsSection({
           ) {
             resident.toots.forEach((rt: any) => {
               const rtTurul = String(rt.turul || "Орон сууц").trim();
-              if (propertyTab === "Зогсоол") {
+              if (turul === "Зогсоол") {
                 if (rtTurul !== "Гараж" && rtTurul !== "Зогсоол") return;
-              } else if (propertyTab === "Агуулах") {
+              } else if (turul === "Агуулах") {
                 if (rtTurul !== "Агуулах") return;
               } else {
                 // "Тоот" tab
@@ -403,6 +414,7 @@ export default function UnitsSection({
         }
 
         allFloorData.push({
+          turul,
           orts,
           floor,
           units,
@@ -410,8 +422,31 @@ export default function UnitsSection({
           activeToots,
           unitToResident,
         });
-      });
+    };
+
+    const effectiveFloors =
+      propertyTab === "Зогсоол"
+        ? floorsList.filter((f) => isGarageFloor(f))
+        : floorsList;
+
+    targetOrtsList.forEach((orts) => {
+      effectiveFloors.forEach((floor) => murBodokh(orts, floor, propertyTab));
     });
+
+    // «Тоот» таб: барилгын тохиргооны гаражийн давхрууд (B1, B2…) давхар бүр НЭГ
+    // мөр болж «+»-ээр гаражийн дугаар нэмэгдэнэ (дугаар хоосон ч харагдана).
+    const garajiinMuruud: FloorItem[] = [];
+    if (propertyTab === "Тоот" && garageFloorsList.length > 0) {
+      const garajiinOrts = selectedOrts ? [selectedOrts] : ortsOptions;
+      garageFloorsList.forEach((floor) => {
+        const ekhlel = allFloorData.length;
+        garajiinOrts.forEach((orts) => murBodokh(orts, floor, "Зогсоол"));
+        const shine = allFloorData.splice(ekhlel);
+        // Орц бүрээр давтагдахгүй — дугаартай эхнийхийг, эсвэл эхний хоосныг авна.
+        const songolt = shine.find((m) => m.units.length > 0) || shine[0];
+        if (songolt) garajiinMuruud.push(songolt);
+      });
+    }
 
     // Apply Sorting
     allFloorData.sort((a, b) => {
@@ -438,9 +473,13 @@ export default function UnitsSection({
       return 0;
     });
 
-    return allFloorData;
+    garajiinMuruud.sort((x, y) =>
+      String(x.floor).localeCompare(String(y.floor), undefined, { numeric: true }),
+    );
+    return [...allFloorData, ...garajiinMuruud];
   }, [
     floorsList,
+    garageFloorsList,
     selectedOrts,
     contracts,
     residentsById,
@@ -1249,6 +1288,13 @@ export default function UnitsSection({
       };
     });
 
+    // Бүртгэлтэй (идэвхтэй) дугаарууд эхэнд, дотроо дугаарын дарааллаар; № дахин дугаарлана.
+    rows.sort(
+      (x: any, y: any) =>
+        Number(y.isOccupied) - Number(x.isOccupied) ||
+        String(x.zogsoolDugaar).localeCompare(String(y.zogsoolDugaar), undefined, { numeric: true }),
+    );
+    rows.forEach((r: any, i: number) => (r.index = i + 1));
     if (!zogsoolSearch.trim()) return rows;
     const q = zogsoolSearch.toLowerCase();
     return rows.filter(
@@ -1269,29 +1315,17 @@ export default function UnitsSection({
   // Зогсоол/агуулахын хүснэгтийн багана.
   const zogsoolColumns: ColumnsType<any> = useMemo(
     () => [
-      { title: "№", dataIndex: "index", key: "index", width: 40, align: "center" },
+      { title: "№", dataIndex: "index", key: "index", width: 48, align: "center" },
       {
-        // Гараж/агуулахын дугаар ба эзэмшигчийн байрны тоот — нэг баганад.
-        title: propertyTab === "Зогсоол" ? "Гараж · Байрны тоот" : "Агуулах · Байрны тоот",
+        title: "Гараж",
         dataIndex: "zogsoolDugaar",
         key: "zogsoolDugaar",
-        width: 170,
-        render: (v: any, row: any) => (
-          <span className="inline-flex items-center gap-2 whitespace-nowrap">
-            {/* Гаражийн дугаар — мөрийн ногоон дэвсгэрээс ялгарах цэнхэр шошго;
-                байрны тоот — тод бичвэр. */}
-            <span className="inline-flex h-6 min-w-[36px] items-center justify-center rounded-md border border-sky-500/30 bg-sky-500/10 px-2 font-semibold text-sky-700 dark:text-sky-300">
-              {v}
-            </span>
-            {row.toot && row.toot !== "-" ? (
-              <span className="text-[color:var(--panel-text)]">
-                <span className="text-[color:var(--muted-text)]">→ </span>
-                {row.orts && row.orts !== "-" ? `${row.orts} орц · ` : ""}
-                <span className="font-medium">{row.toot}</span> тоот
-              </span>
-            ) : (
-              <span className="text-[color:var(--muted-text)]">—</span>
-            )}
+        sorter: (x: any, y: any) => tooEremb(x.zogsoolDugaar, y.zogsoolDugaar),
+        width: 90,
+        align: "center",
+        render: (v: any) => (
+          <span className="inline-flex h-6 min-w-[36px] items-center justify-center rounded-md border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-2 font-semibold text-[color:var(--panel-text)]">
+            {v}
           </span>
         ),
       },
@@ -1299,9 +1333,30 @@ export default function UnitsSection({
         title: "Эзэмшигч",
         dataIndex: "ner",
         key: "ner",
+        width: 200,
         render: (v: any, row: any) => (
           <span className={row.isOccupied ? "" : "text-[color:var(--muted-text)]"}>{v}</span>
         ),
+      },
+      {
+        // Эзэмшигчийн байрны тоот
+        title: "Тоот",
+        dataIndex: "toot",
+        key: "toot",
+        sorter: (x: any, y: any) => tooEremb(x.toot === "-" ? "" : x.toot, y.toot === "-" ? "" : y.toot),
+        width: 120,
+        align: "center",
+        render: (v: any, row: any) =>
+          v && v !== "-" ? (
+            <span className="whitespace-nowrap text-[color:var(--panel-text)]">
+              {row.orts && row.orts !== "-" ? (
+                <span className="text-[color:var(--muted-text)]">{row.orts} орц · </span>
+              ) : null}
+              <span className="font-medium">{v}</span>
+            </span>
+          ) : (
+            <span className="text-[color:var(--muted-text)]">—</span>
+          ),
       },
       {
         title: "Утас",
@@ -1315,6 +1370,8 @@ export default function UnitsSection({
         title: "Төлбөр",
         dataIndex: "tulbur",
         key: "tulbur",
+        sorter: (x: any, y: any) => (Number(x.tulbur) || 0) - (Number(y.tulbur) || 0),
+        width: 110,
         align: "right",
         render: (v: number) => (
           <span>
@@ -1327,41 +1384,59 @@ export default function UnitsSection({
       {
         title: "Нэхэмжлэх",
         key: "isInvoiceSent",
-        width: 110,
+        // Чөлөөтэй < илгээгээгүй < илгээсэн
+        sorter: (x: any, y: any) =>
+          (x.isOccupied ? (x.isInvoiceSent ? 2 : 1) : 0) - (y.isOccupied ? (y.isInvoiceSent ? 2 : 1) : 0),
+        width: 116,
         align: "center",
-        render: (_: any, row: any) => (
-          <span
-            className={`inline-block rounded-full px-2.5 py-0.5 text-xs ${!row.isOccupied
-              ? "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]"
-              : row.isInvoiceSent
-                ? "bg-success/10 text-success"
-                : "bg-warning/10 text-warning"
+        render: (_: any, row: any) =>
+          !row.isOccupied ? (
+            <span className="text-[color:var(--muted-text)]">—</span>
+          ) : (
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[12px] ${
+                row.isInvoiceSent ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
               }`}
-          >
-            {row.isOccupied
-              ? row.isInvoiceSent
-                ? "Илгээгдсэн"
-                : "Илгээгдээгүй"
-              : "-"}
-          </span>
-        ),
+            >
+              <span className={`h-1.5 w-1.5 rounded-full ${row.isInvoiceSent ? "bg-success" : "bg-warning"}`} />
+              {row.isInvoiceSent ? "Илгээсэн" : "Илгээгээгүй"}
+            </span>
+          ),
       },
       {
-        title: "Төлөв",
-        key: "tolsenEsekh",
-        align: "center",
-        render: (_: any, row: any) => (
-          <span
-            className={`inline-block rounded-full px-2.5 py-0.5 ${!row.isOccupied
-              ? "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]"
-              : row.tolsenEsekh
-                ? "bg-success/10 text-success"
-                : "bg-warning/10 text-warning"
-              }`}
-          >
-            {row.isOccupied ? (row.tolsenEsekh ? "Төлсөн" : "Төлөөгүй") : "-"}
-          </span>
+        title: setUnitStatusFilter ? (
+          <ShuultuurTolgoi
+            label="Төлөв"
+            current={unitStatusFilter || "all"}
+            options={[
+              { label: "Бүгд", value: "all" },
+              { label: "Бүртгэлтэй", value: "occupied" },
+              { label: "Чөлөөтэй", value: "free" },
+            ]}
+            onSelect={(v) => setUnitStatusFilter(v as "all" | "occupied" | "free")}
+          />
+        ) : (
+          "Төлөв"
         ),
+        key: "tolsenEsekh",
+        // Чөлөөтэй < төлөөгүй < төлсөн
+        sorter: (x: any, y: any) =>
+          (x.isOccupied ? (x.tolsenEsekh ? 2 : 1) : 0) - (y.isOccupied ? (y.tolsenEsekh ? 2 : 1) : 0),
+        width: 150,
+        align: "center",
+        render: (_: any, row: any) =>
+          !row.isOccupied ? (
+            <span className="text-[color:var(--muted-text)]">Чөлөөтэй</span>
+          ) : (
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[12px] ${
+                row.tolsenEsekh ? "bg-success/10 text-success" : "bg-danger/10 text-danger"
+              }`}
+            >
+              <span className={`h-1.5 w-1.5 rounded-full ${row.tolsenEsekh ? "bg-success" : "bg-danger"}`} />
+              {row.tolsenEsekh ? "Төлсөн" : "Төлөөгүй"}
+            </span>
+          ),
       },
       {
         title: "Огноо",
@@ -1376,45 +1451,38 @@ export default function UnitsSection({
       {
         title: "Үйлдэл",
         key: "action",
-        width: 148,
+        width: 96,
         align: "center",
         render: (_: any, row: any) => {
           // Товч бүр ижил хэмжээтэй (28px); мөр бүрт устгах товч нэг баганад
           // байхаар 2 + 1 байрлалтай тор ашиглана.
           const iconBtn =
             "inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-transparent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-theme/60";
-          // Баруун байрлал нь үргэлж «хасах» үйлдэл: холбогдсон бол «Салгах»,
-          // чөлөөтэй бол «Устгах». Холбогдсон дугаарт хогийн сав харагдахгүй —
-          // эхлээд салгасны дараа л устгах боломжтой болно.
+          // Мөр бүр ЯГ 2 ижил хэмжээтэй дүрс товчтой — багана хэзээ ч шүд
+          // шиг зигзаг болохгүй. Зүүн: гол үйлдэл (илгээх / бүртгэх), баруун:
+          // хасах үйлдэл (салгах / устгах). Холбогдсон дугаарт хогийн сав
+          // харагдахгүй — эхлээд салгасны дараа устгана.
           return (
-            <div className="mx-auto grid w-[124px] grid-cols-[92px_26px] items-center gap-1.5">
+            <div className="flex items-center justify-center gap-1.5">
               {row.isOccupied ? (
-                <div className="flex items-center justify-end">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleSendSingleUnitInvoice(row.resident, row.id)
-                    }
-                    className={`${iconBtn} text-brand hover:border-theme/30 hover:bg-theme/10`}
-                    title="Нэхэмжлэх/авлага илгээх"
-                    aria-label="Нэхэмжлэх илгээх"
-                  >
-                    <Send className="h-[15px] w-[15px]" />
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => handleSendSingleUnitInvoice(row.resident, row.id)}
+                  className={`${iconBtn} text-brand hover:border-theme/30 hover:bg-theme/10`}
+                  title="Нэхэмжлэх/авлага илгээх"
+                  aria-label="Нэхэмжлэх илгээх"
+                >
+                  <Send className="h-[15px] w-[15px]" />
+                </button>
               ) : (
                 <button
                   type="button"
-                  onClick={() =>
-                    setQuickRegister({ unit: row.id, floor: selectedFloor || "" })
-                  }
-                  className="inline-flex h-[26px] w-[92px] min-w-0 cursor-pointer items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-lg border border-theme/30 bg-theme/5 px-1.5 text-[12px] font-medium leading-none text-brand transition-colors hover:bg-theme/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-theme/60"
-                  title="Энэ дугаарт эзэмшигч бүртгэх"
+                  onClick={() => setQuickRegister({ unit: row.id, floor: selectedFloor || "" })}
+                  className={`${iconBtn} text-brand hover:border-theme/30 hover:bg-theme/10`}
+                  title="Эзэмшигч бүртгэх"
+                  aria-label="Эзэмшигч бүртгэх"
                 >
-                  {/* Шошгыг span-д хийнэ: зөвхөн дүрстэй товчийг 26px болгодог
-                      .zt-table дүрэм (svg:only-child) энд хамаарахгүй. */}
-                  <Plus className="h-3.5 w-3.5" />
-                  <span>Бүртгэх</span>
+                  <Plus className="h-4 w-4" />
                 </button>
               )}
               {row.isOccupied ? (
@@ -1442,7 +1510,7 @@ export default function UnitsSection({
                   type="button"
                   onClick={() => onDeleteUnit(selectedFloor || "", row.id)}
                   className={`${iconBtn} text-[color:var(--muted-text)] hover:border-danger/30 hover:bg-danger/10 hover:text-danger`}
-                  title="Устгах"
+                  title="Дугаарыг устгах"
                   aria-label="Устгах"
                 >
                   <Trash2 className="h-[15px] w-[15px]" />
@@ -1454,7 +1522,7 @@ export default function UnitsSection({
       },
     ],
 
-    [propertyTab, selectedFloor],
+    [propertyTab, selectedFloor, unitStatusFilter, setUnitStatusFilter],
   );
 
   if (davkharOptions.length === 0) {
@@ -1465,6 +1533,83 @@ export default function UnitsSection({
       </div>
     );
   }
+
+  // «Тоот» таб: орон сууцны давхрууд хүснэгтэд, гаражууд доор жагсаалтаар.
+  const bairniiMuruud = floorData.filter((f) => f.turul !== "Зогсоол");
+  const [garajiinDavkhar, setGarajiinDavkhar] = useState<string>("");
+  const garajiinJagsaalt = useMemo(() => {
+    const uzsen = new Set<string>();
+    const muruud: {
+      floor: string;
+      unit: string;
+      ezlegdsen: boolean;
+      resident: any;
+    }[] = [];
+    floorData
+      .filter((f) => f.turul === "Зогсоол")
+      .forEach((f) => {
+        f.filteredUnits.forEach((u) => {
+          const unit = String(u).trim();
+          const tulkhuur = `${f.floor}::${unit}`;
+          if (uzsen.has(tulkhuur)) return;
+          uzsen.add(tulkhuur);
+          muruud.push({
+            floor: f.floor,
+            unit,
+            ezlegdsen: f.activeToots.has(unit),
+            resident: f.unitToResident[unit] || null,
+          });
+        });
+      });
+    // Бүртгэлтэй (идэвхтэй) гаражууд эхэнд, дараа нь чөлөөтэй; дотроо давхар → дугаар.
+    muruud.sort(
+      (a, b) =>
+        Number(b.ezlegdsen) - Number(a.ezlegdsen) ||
+        a.floor.localeCompare(b.floor, undefined, { numeric: true }) ||
+        a.unit.localeCompare(b.unit, undefined, { numeric: true }),
+    );
+    return muruud;
+  }, [floorData]);
+  const garajiinDavkhruud = useMemo(
+    () => Array.from(new Set(garajiinJagsaalt.map((g) => g.floor))),
+    [garajiinJagsaalt],
+  );
+
+  // Хүснэгтийн толгойн шүүлтүүрүүд (дээд талын Орц/Давхар/Төлөв сонгуурын оронд).
+  const tuluvSongolt = [
+    { label: "Бүгд", value: "all" },
+    { label: "Бүртгэлтэй", value: "occupied" },
+    { label: "Чөлөөтэй", value: "free" },
+  ];
+  const ortsShuultuur =
+    ortsOptions.length > 1
+      ? {
+          current: selectedOrts || "all",
+          options: [{ label: "Бүгд", value: "all" }, ...ortsOptions.map((o) => ({ label: `${o}-р орц`, value: String(o) }))],
+          onSelect: (v: string) => {
+            setSelectedOrts(v === "all" ? "" : v);
+            setUnitPage(1);
+          },
+        }
+      : undefined;
+  const davkharShuultuur =
+    setSelectedDawkhar && davkharOptions.length > 0
+      ? {
+          current: selectedDawkhar || "all",
+          options: [{ label: "Бүгд", value: "all" }, ...davkharOptions.map((d) => ({ label: `${d}-р давхар`, value: String(d) }))],
+          onSelect: (v: string) => {
+            setSelectedDawkhar(v === "all" ? "" : v);
+            setUnitPage(1);
+          },
+        }
+      : undefined;
+  const tuluvShuultuur = setUnitStatusFilter
+    ? {
+        current: unitStatusFilter || "all",
+        options: tuluvSongolt,
+        onSelect: (v: string) => setUnitStatusFilter(v as "all" | "occupied" | "free"),
+      }
+    : undefined;
 
   return (
     <div>
@@ -1485,17 +1630,33 @@ export default function UnitsSection({
         {selectedOrts !== undefined && (
           <>
             {propertyTab === "Тоот" && (
-              <div className="w-full space-y-6">
+              <div className="w-full">
+                <div className="min-w-0 space-y-4">
+
                 {(() => {
                   // Group floorData by orts
                   const ortsGroups: Record<string, typeof floorData> = {};
-                  for (const item of floorData) {
+                  for (const item of bairniiMuruud) {
                     const key = item.orts || "";
                     if (!ortsGroups[key]) ortsGroups[key] = [];
                     ortsGroups[key].push(item);
                   }
+                  // Гаражийн давхрууд (B1, B2…): орц нэг бол ижил хүснэгтийн доод
+                  // талд, олон орцтой бол тусдаа «Гараж» бүлэгт.
+                  const garajDavkhruud = floorData.filter((f) => f.turul === "Зогсоол");
+                  if (garajDavkhruud.length > 0) {
+                    const bairniiTulkhuur = Object.keys(ortsGroups);
+                    if (bairniiTulkhuur.length <= 1) {
+                      const k = bairniiTulkhuur[0] ?? "";
+                      ortsGroups[k] = [...(ortsGroups[k] || []), ...garajDavkhruud];
+                    } else {
+                      ortsGroups["__garaj"] = garajDavkhruud;
+                    }
+                  }
 
                   const groupKeys = Object.keys(ortsGroups).sort((a, b) => {
+                    if (a === "__garaj") return 1;
+                    if (b === "__garaj") return -1;
                     const aNum = parseInt(a);
                     const bNum = parseInt(b);
                     if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
@@ -1510,7 +1671,7 @@ export default function UnitsSection({
                   // pageSize × орц мөр гаргаад, сүүлийн хуудсуудыг хоосон
                   // үлдээж, нийт тоотойгоо зөрдөг байв.
                   const khuudasniiMuruud = new Set(
-                    floorData.slice(
+                    bairniiMuruud.slice(
                       (unitPage - 1) * unitPageSize,
                       unitPage * unitPageSize,
                     ),
@@ -1518,8 +1679,9 @@ export default function UnitsSection({
 
                   return groupKeys.map((ortsKey) => {
                     const groupItems = ortsGroups[ortsKey];
-                    const paginatedItems = groupItems.filter((f) =>
-                      khuudasniiMuruud.has(f),
+                    // Гаражийн давхрын мөр хуудаслалтад орохгүй — хуудас бүрийн доор.
+                    const paginatedItems = groupItems.filter(
+                      (f) => f.turul === "Зогсоол" || khuudasniiMuruud.has(f),
                     );
 
                     // Энэ хуудсанд тухайн орцоос мөр огт байхгүй бол хоосон
@@ -1533,10 +1695,10 @@ export default function UnitsSection({
                           <div className="flex items-center gap-3 mb-3">
                             <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-theme/10 border border-theme/30">
                               <span className="text-sm font-medium text-brand">
-                                {ortsKey ? `${ortsKey}-р орц` : "Орцгүй"}
+                                {ortsKey === "__garaj" ? "Гараж" : ortsKey ? `${ortsKey}-р орц` : "Орцгүй"}
                               </span>
                               <span className="text-xs text-brand font-medium">
-                                ({groupItems.reduce((s, f) => s + f.units.length, 0)} тоот,{" "}
+                                ({groupItems.reduce((s, f) => s + f.units.length, 0)} {ortsKey === "__garaj" ? "дугаар" : "тоот"},{" "}
                                 {groupItems.reduce((s, f) => s + f.activeToots.size, 0)} бүртгэлтэй)
                               </span>
                             </div>
@@ -1559,6 +1721,11 @@ export default function UnitsSection({
                             selectedFloor={selectedFloor}
                             onSelectFloor={setSelectedFloor}
                             bugdiigKharuulakh={hasMultipleOrts}
+                            ortsShuultuur={ortsShuultuur}
+                            davkharShuultuur={davkharShuultuur}
+                            tuluvShuultuur={tuluvShuultuur}
+                            chipiinKhyazgaar={12}
+
                           />
                         </div>
                       </div>
@@ -1568,7 +1735,7 @@ export default function UnitsSection({
                 <div id="units-pagination">
                   <StandardPagination
                     current={unitPage}
-                    total={floorData.length}
+                    total={bairniiMuruud.length}
                     pageSize={unitPageSize}
                     onChange={setUnitPage}
                     onPageSizeChange={(v) => {
@@ -1577,128 +1744,172 @@ export default function UnitsSection({
                     }}
                   />
                 </div>
+                </div>
+
               </div>
             )}
 
-            {/* Table layout for garage and storage */}
+            {/* Гараж / Агуулах: ижил хүснэгт (№ | Гараж | Эзэмшигч | Тоот | Утас | Төлбөр | Нэхэмжлэх | Төлөв | Огноо | Үйлдэл) */}
             {selectedFloorData && propertyTab !== "Тоот" && (
               <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-4">
-                {/* Stats Cards */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {/* Stat картууд нь сэдвийн токеноос өнгөө уншина. Өмнө нь
-                      blue/orange/emerald/amber хатуу бичигдсэн тул сэдэв
-                      сольсон ч хөдөлдөггүй байв. «Нийт» нь брэндийн өнгө
-                      (`theme`), бусад нь семантик (warning/success/info). */}
-                  <button
-                    onClick={() => setUnitStatusFilter?.("all")}
-                    className={`text-center select-none cursor-pointer rounded-2xl p-4 shadow-xs border transition-all duration-200 active:scale-[0.98] ${unitStatusFilter === "all"
-                      ? "bg-theme/10 border-theme/40 ring-2 ring-theme/40 shadow-md"
-                      : "bg-[color:var(--surface-bg)] border-[color:var(--surface-border)] opacity-70 hover:opacity-100"
-                      }`}
-                  >
-                    <p className="text-xs text-[color:var(--muted-text)] mb-1">
-                      {propertyTab === "Зогсоол" ? "Гаражийн нийт дугаар" : propertyTab === "Агуулах" ? "Агуулахын нийт дугаар" : "Нийт тоот"}
-                    </p>
-                    <p className="text-2xl text-[color:var(--panel-text)] tabular-nums">{stats.total}</p>
-                  </button>
+                {/* ── Дашбоард: дарахад жагсаалтыг шүүнэ (Гэрээ хуудастай ижил загвар) ── */}
+                {(() => {
+                  const ezlegdsenKhuvi = stats.total > 0 ? Math.round((stats.occupied / stats.total) * 100) : 0;
+                  const ilgeegeegui = zogsoolTableRows.filter((r: any) => r.isOccupied && !r.isInvoiceSent).length;
+                  const nekhemjlegdsenDun = zogsoolTableRows
+                    .filter((r: any) => r.isOccupied && r.isInvoiceSent)
+                    .reduce((sum: number, r: any) => sum + (Number(r.tulbur) || 0), 0);
+                  const negjNer = propertyTab === "Зогсоол" ? "гараж" : "агуулах";
+                  const kartuud: {
+                    key: "all" | "occupied" | "free" | null;
+                    ner: string;
+                    utga: string;
+                    tailbar: React.ReactNode;
+                    unguClass: string;
+                  }[] = [
+                    {
+                      key: "all",
+                      ner: `Нийт ${negjNer}`,
+                      utga: stats.total.toLocaleString("mn-MN"),
+                      tailbar: `${selectedFloor ? `${selectedFloor} давхарт ${selectedFloorData.filteredUnits.length}` : "Бүх давхар"}`,
+                      unguClass: "text-[color:var(--panel-text)]",
+                    },
+                    {
+                      key: "occupied",
+                      ner: "Бүртгэлтэй",
+                      utga: stats.occupied.toLocaleString("mn-MN"),
+                      tailbar: (
+                        <span className="flex items-center gap-2">
+                          <span className="h-1.5 w-16 overflow-hidden rounded-full bg-[color:var(--surface-hover)]">
+                            <span className="block h-full rounded-full bg-success" style={{ width: `${ezlegdsenKhuvi}%` }} />
+                          </span>
+                          {ezlegdsenKhuvi}% эзлэгдсэн
+                        </span>
+                      ),
+                      unguClass: "text-success",
+                    },
+                    {
+                      key: "free",
+                      ner: "Чөлөөтэй",
+                      utga: stats.free.toLocaleString("mn-MN"),
+                      tailbar: "Эзэмшигч бүртгэх боломжтой",
+                      unguClass: "text-warning",
+                    },
+                    {
+                      key: null,
+                      ner: "Сарын төлбөр",
+                      // Энэ сард нэхэмжлэгдсэн (илгээсэн) төлбөрийн нийт дүн
+                      utga: `${nekhemjlegdsenDun.toLocaleString("mn-MN")}₮`,
+                      tailbar:
+                        ilgeegeegui > 0
+                          ? `${ilgeegeegui} нэхэмжлэх илгээгээгүй · нийт ${totalZogsoolAmount.toLocaleString("mn-MN")}₮`
+                          : `Нийт ${totalZogsoolAmount.toLocaleString("mn-MN")}₮ нэхэмжлэгдсэн`,
+                      unguClass: "text-brand",
+                    },
+                  ];
+                  return (
+                    <div className="stat-cards-grid grid grid-cols-2 gap-3 lg:grid-cols-4" role="tablist" aria-label="Төлөв">
+                      {kartuud.map((k) => {
+                        const songogdson = k.key !== null && (unitStatusFilter || "all") === k.key;
+                        const Tag = k.key ? "button" : "div";
+                        return (
+                          <Tag
+                            key={k.ner}
+                            {...(k.key
+                              ? {
+                                  type: "button" as const,
+                                  role: "tab",
+                                  "aria-selected": songogdson,
+                                  onClick: () => setUnitStatusFilter?.(k.key as any),
+                                }
+                              : {})}
+                            className={`relative rounded-2xl neu-panel text-left transition-all select-none ${
+                              k.key ? "cursor-pointer" : ""
+                            } ${songogdson ? "ring-2 ring-theme shadow-lg" : k.key ? "hover:bg-[color:var(--surface-hover)]" : ""}`}
+                          >
+                            <div className="stat-card">
+                              <div className={`stat-card-value tabular-nums ${k.unguClass}`}>{k.utga}</div>
+                              <div className="stat-card-title">{k.ner}</div>
+                              <div className="mt-1 text-[11px] text-[color:var(--muted-text)]">{k.tailbar}</div>
+                            </div>
+                          </Tag>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
 
-                  <button
-                    onClick={() => setUnitStatusFilter?.("free")}
-                    className={`text-center select-none cursor-pointer rounded-2xl p-4 shadow-xs border transition-all duration-200 active:scale-[0.98] ${unitStatusFilter === "free"
-                      ? "bg-warning/15 border-warning/40 ring-2 ring-warning/40 shadow-md"
-                      : "bg-warning/5 border-warning/15 opacity-70 hover:opacity-100"
-                      }`}
-                  >
-                    <p className="text-xs mb-1 text-warning">Чөлөөтэй</p>
-                    <p className="text-2xl text-warning tabular-nums">{stats.free}</p>
-                  </button>
-
-                  <button
-                    onClick={() => setUnitStatusFilter?.("occupied")}
-                    className={`text-center select-none cursor-pointer rounded-2xl p-4 shadow-xs border transition-all duration-200 active:scale-[0.98] ${unitStatusFilter === "occupied"
-                      ? "bg-success/15 border-success/40 ring-2 ring-success/40 shadow-md"
-                      : "bg-success/5 border-success/15 opacity-70 hover:opacity-100"
-                      }`}
-                  >
-                    <p className="text-xs mb-1 text-success">Бүртгэлтэй</p>
-                    <p className="text-2xl text-success tabular-nums">{stats.occupied}</p>
-                  </button>
-
-                  <div className="bg-info/5 rounded-2xl border border-info/15 p-4 shadow-xs text-center">
-                    <p className="text-xs text-info mb-1">Тухайн давхрын тоотууд</p>
-                    <p className="text-2xl text-info tabular-nums">{selectedFloorData.filteredUnits.length}</p>
-                  </div>
-                </div>
-
-                {/* Table Component Box */}
-                <div className="space-y-4">
-                  {/* Header Bar */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[color:var(--surface-border)]">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-base text-[color:var(--panel-text)]">
-                        {propertyTab === "Зогсоол" ? "Гараж — давхрын дугаарууд" : "Агуулах — давхрын дугаарууд"}
-                      </h3>
-                      {uniqueSortedFloorOptions.length > 0 && (
-                        <div className="flex items-center gap-1.5 ml-2">
-                          {uniqueSortedFloorOptions.map((opt) => (
-                            <button
-                              key={opt.value}
-                              type="button"
-                              onClick={() => setSelectedFloor(opt.value)}
-                              className={`px-2.5 py-1 rounded-lg text-xs transition cursor-pointer ${selectedFloor === opt.value
-                                ? "bg-theme/20 text-brand border border-theme/40"
-                                : "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] border border-transparent"
-                                }`}
-                            >
-                              {opt.label}-р давхар
-                            </button>
-                          ))}
-                          {selectedFloor && (
-                            <button
-                              type="button"
-                              onClick={() => onDeleteFloor?.(selectedFloor)}
-                              title={`${selectedFloor}-р давхрын бүх тоотуудыг устгах`}
-                              className="p-1 rounded-lg text-[color:var(--muted-text)] hover:text-danger hover:bg-danger/10 transition cursor-pointer"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </div>
-                      )}
+                {/* ── Хүснэгтийн хэрэгслийн мөр: давхар сонгох + үйлдлүүд ── */}
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex min-w-0 flex-wrap items-center gap-3">
+                      {/* «Гараж — B1 давхар ▾»: давхрыг dropdown-оор солино (тусдаа Давхар багана байхгүй). */}
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-[15px] font-medium text-[color:var(--panel-text)]">
+                          {propertyTab === "Зогсоол" ? "Гараж" : "Агуулах"} —
+                        </h3>
+                        {uniqueSortedFloorOptions.length > 0 ? (
+                          <div className="tusgai-wrapper w-[150px]">
+                            <TusgaiZagvar
+                              value={selectedFloor || ""}
+                              onChange={(v: string) => setSelectedFloor(v)}
+                              options={uniqueSortedFloorOptions.map((opt) => ({
+                                value: opt.value,
+                                label: /^b/i.test(String(opt.label)) ? `${opt.label} давхар` : `${opt.label}-р давхар`,
+                              }))}
+                              placeholder="Давхар"
+                              className="w-full h-full"
+                            />
+                          </div>
+                        ) : (
+                          <span className="text-[13px] text-[color:var(--muted-text)]">давхар тохируулаагүй</span>
+                        )}
+                        {selectedFloor && (
+                          <button
+                            type="button"
+                            onClick={() => onDeleteFloor?.(selectedFloor)}
+                            title={`${selectedFloor} давхрын бүх ${propertyTab === "Зогсоол" ? "гараж" : "агуулах"}ийг устгах`}
+                            aria-label="Давхрыг устгах"
+                            className="grid h-8 w-8 place-items-center rounded-lg text-[color:var(--muted-text)] transition hover:bg-danger/10 hover:text-danger cursor-pointer"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-2.5 w-full sm:w-auto">
-                      <Button
-                        onClick={() => onAddUnit(selectedFloor || "")}
-                        variant="secondary"
-                        size="sm"
-                        leftIcon={<Plus className="w-3.5 h-3.5" />}
-                        className="rounded-xl cursor-pointer shrink-0"
-                      >
-                        Тоот
-                      </Button>
-
-                      <Button
-                        onClick={handleSendCheckedInvoices}
-                        variant="primary"
-                        size="sm"
-                        leftIcon={<Send className="w-3.5 h-3.5" />}
-                        className="rounded-xl !bg-theme hover:!bg-theme cursor-pointer shrink-0"
-                      >
-                        Илгээх ({checkedUnits.length})
-                      </Button>
-
+                    <div className="flex items-center gap-2">
                       {checkedUnits.length > 0 && (
                         <Button
                           onClick={handleOpenMassDeleteModal}
                           variant="danger"
                           size="sm"
                           leftIcon={<Trash2 className="w-3.5 h-3.5" />}
-                          className="rounded-xl !bg-danger hover:!bg-danger !text-white cursor-pointer shrink-0"
+                          className="rounded-xl cursor-pointer shrink-0"
                         >
                           Устгах ({checkedUnits.length})
                         </Button>
                       )}
+                      <Button
+                        onClick={handleSendCheckedInvoices}
+                        variant="secondary"
+                        size="sm"
+                        leftIcon={<Send className="w-3.5 h-3.5" />}
+                        className="rounded-xl cursor-pointer shrink-0"
+                        disabled={checkedUnits.length === 0}
+                        title={checkedUnits.length === 0 ? "Мөр сонгож нэхэмжлэх илгээнэ" : undefined}
+                      >
+                        Нэхэмжлэх илгээх{checkedUnits.length > 0 ? ` (${checkedUnits.length})` : ""}
+                      </Button>
+                      <Button
+                        onClick={() => onAddUnit(selectedFloor || "")}
+                        variant="primary"
+                        size="sm"
+                        leftIcon={<Plus className="w-3.5 h-3.5" />}
+                        className="rounded-xl !bg-theme hover:!bg-theme cursor-pointer shrink-0"
+                      >
+                        Дугаар нэмэх
+                      </Button>
                     </div>
                   </div>
 
@@ -1706,6 +1917,8 @@ export default function UnitsSection({
                   <Table<any>
                     columns={zogsoolColumns}
                     dataSource={zogsoolTableRows}
+                    // Багана бүр тогтсон өргөнтэй — нэг багана (ж: Төлбөр) илүү зай эзлэхгүй.
+                    fitContent
                     rowKey={(row) => row.id}
                     pagination={false}
                     scroll={{ x: "max-content" }}
@@ -1721,13 +1934,6 @@ export default function UnitsSection({
                     }}
                   />
 
-                  {/* Summary Footer Row */}
-                  <div className="flex items-center justify-between pt-3 border-t border-[color:var(--surface-border)] text-sm text-[color:var(--panel-text)] dark:text-white">
-                    <span>Нийт дүн:</span>
-                    <span className="text-brand text-base">
-                      {totalZogsoolAmount.toLocaleString("mn-MN", { minimumFractionDigits: 2 })}₮
-                    </span>
-                  </div>
                 </div>
               </div>
             )}
@@ -1742,22 +1948,23 @@ export default function UnitsSection({
         unit={quickRegister?.unit || null}
         floor={quickRegister?.floor || null}
         orts={selectedOrts}
-        propertyTab={propertyTab}
+        propertyTab={quickRegister?.turul || propertyTab}
         residentsList={residentsList}
         clientsList={clientsList}
         contracts={contracts}
         onAssign={async (personId, type, gereeniiId, linkedAptToot) => {
           if (!quickRegister) return false;
           const { unit, floor } = quickRegister;
-          return await onAssignToUnit(personId, type, selectedOrts, floor, unit, propertyTab, gereeniiId, linkedAptToot);
+          return await onAssignToUnit(personId, type, selectedOrts, floor, unit, quickRegister.turul || propertyTab, gereeniiId, linkedAptToot);
         }}
         onRegisterNewOrshinSuugch={() => {
           if (!quickRegister) return;
           const { unit, floor } = quickRegister;
+          const tab = quickRegister.turul || propertyTab;
           const unitTurul =
-            propertyTab === "Зогсоол"
+            tab === "Зогсоол"
               ? "Гараж"
-              : propertyTab === "Агуулах"
+              : tab === "Агуулах"
                 ? "Агуулах"
                 : "Орон сууц";
           actions.handleShowResidentModal?.({
@@ -1770,10 +1977,11 @@ export default function UnitsSection({
         onRegisterNewKhariltsagch={() => {
           if (!quickRegister) return;
           const { unit, floor } = quickRegister;
+          const tab = quickRegister.turul || propertyTab;
           const unitTurul =
-            propertyTab === "Зогсоол"
+            tab === "Зогсоол"
               ? "Гараж"
-              : propertyTab === "Агуулах"
+              : tab === "Агуулах"
                 ? "Агуулах"
                 : "Орон сууц";
           actions.handleShowClientModal?.({
@@ -1932,10 +2140,11 @@ export default function UnitsSection({
           salgakhAsuult
             ? (() => {
                 const h = salgakhAsuult;
+                const tab = h.turul || propertyTab;
                 const negj =
-                  propertyTab === "Тоот"
+                  tab === "Тоот"
                     ? `${selectedOrts ? `${selectedOrts}-р орц, ` : ""}${h.floor ? `${h.floor} давхрын ` : ""}${h.unit} тоот`
-                    : `${propertyTab === "Зогсоол" ? "Гараж" : "Агуулах"} ${h.floor ? `${h.floor} давхрын ` : ""}${h.unit} дугаар`;
+                    : `${tab === "Зогсоол" ? "Гараж" : "Агуулах"} ${h.floor ? `${h.floor} давхрын ` : ""}${h.unit} дугаар`;
                 const toots: any[] = Array.isArray(h.resident?.toots) ? h.resident.toots : [];
                 const bairToo = toots.filter((t: any) => {
                   const tt = String(t?.turul || "Орон сууц").trim();
@@ -1944,7 +2153,7 @@ export default function UnitsSection({
                 const anhaaruulga: string[] = [];
                 if (h.nekhemjlekhIlgeesen && !h.tolsen)
                   anhaaruulga.push("• Энэ сарын нэхэмжлэх илгээгдсэн, төлөгдөөгүй байна. Салгахаас өмнө төлбөрийг шалгана уу.");
-                if (propertyTab === "Тоот" && bairToo <= 1)
+                if (tab === "Тоот" && bairToo <= 1)
                   anhaaruulga.push(`• Энэ нь «${h.ner}»-ийн цорын ганц орон сууцны тоот — салгасны дараа тоотгүй үлдэнэ.`);
                 return `${negj}-аас «${h.ner}»-г салгана. Дугаар өөрөө жагсаалтад үлдэж, чөлөөтэй болно.${
                   anhaaruulga.length ? `\n\n${anhaaruulga.join("\n")}` : ""

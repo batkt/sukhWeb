@@ -170,6 +170,12 @@ export default function PaymentModal({
   const [tinResolving, setTinResolving] = useState(false);
   const [tinError, setTinError] = useState<string | null>(null);
   const [discountReason, setDiscountReason] = useState("");
+  /** Тайлбар хоосон — toast биш, талбарыг улаанаар тодруулж анхааруулна. */
+  const [reasonAldaa, setReasonAldaa] = useState(false);
+  const tailbarDutuu = () => {
+    setReasonAldaa(true);
+    setTimeout(() => document.getElementById("zogsool-khungulult-tailbar")?.focus(), 0);
+  };
   const [activeMethod, setActiveMethod] = useState<string>("belen");
   const [qpayData, setQpayData] = useState<any>(null);
 
@@ -225,8 +231,8 @@ export default function PaymentModal({
         return;
       }
 
-      if (turul === "khungulult" && !discountReason) {
-        toast.error("Хөнгөлөлтийн тайлбар оруулна уу");
+      if (turul === "khungulult" && !discountReason.trim()) {
+        tailbarDutuu();
         return;
       }
 
@@ -404,8 +410,8 @@ export default function PaymentModal({
       if (!ensureTinResolved()) return;
 
       if (activeMethod === "khungulult") {
-        if (!discountReason) {
-          toast.error("Хөнгөлөлтийн тайлбар оруулна уу");
+        if (!discountReason.trim()) {
+          tailbarDutuu();
           return;
         }
         const entry: TulburEntry = {
@@ -682,7 +688,10 @@ export default function PaymentModal({
                         onClick={() => {
                           setActiveMethod(method.id);
                           if (!isProcessing) {
-                            if (!discountReason) return;
+                            if (!discountReason.trim()) {
+                              tailbarDutuu();
+                              return;
+                            }
                             turulruuTooKhiikhFunction(method.id);
                           }
                         }}
@@ -707,17 +716,37 @@ export default function PaymentModal({
 
               {/* Discount Reason Input */}
               {activeMethod === "khungulult" && (
-                <div className="rounded-2xl border border-danger/30 bg-danger/[0.05] p-4 space-y-2.5 animate-in fade-in slide-in-from-top-2 duration-200">
-                  <span className="text-[11px] text-danger ">
-                    Хөнгөлөлтийн тайлбар
-                  </span>
+                <div
+                  className={`rounded-2xl border p-4 space-y-2 animate-in fade-in slide-in-from-top-2 duration-200 ${
+                    reasonAldaa
+                      ? "border-danger/40 bg-danger/[0.05]"
+                      : "border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]"
+                  }`}
+                >
+                  <label htmlFor="zogsool-khungulult-tailbar" className={`text-[11px] ${reasonAldaa ? "text-danger" : "text-[color:var(--muted-text)]"}`}>
+                    <span className="mr-0.5 text-danger">*</span>Хөнгөлөлтийн тайлбар
+                  </label>
                   <input
+                    id="zogsool-khungulult-tailbar"
                     type="text"
                     placeholder="Жишээ: Лояалти, Удирдлагын зөвшөөрөл..."
                     value={discountReason}
-                    onChange={(e) => setDiscountReason(e.target.value)}
-                    className="w-full h-10 px-4 rounded-xl border border-danger/30 bg-white dark:bg-white/[0.04] text-[13px]  text-[color:var(--panel-text)] dark:text-white placeholder:text-danger dark:placeholder:text-danger focus:ring-2 focus:ring-danger/20 focus:border-danger/50 outline-none transition-all"
+                    aria-invalid={reasonAldaa || undefined}
+                    onChange={(e) => {
+                      setDiscountReason(e.target.value);
+                      if (reasonAldaa && e.target.value.trim()) setReasonAldaa(false);
+                    }}
+                    className={`w-full h-10 px-4 rounded-xl border bg-white dark:bg-white/[0.04] text-[13px] text-[color:var(--panel-text)] dark:text-white outline-none transition-all ${
+                      reasonAldaa
+                        ? "border-danger ring-2 ring-danger/20"
+                        : "border-[color:var(--surface-border)] focus:ring-2 focus:ring-theme/20 focus:border-theme/50"
+                    }`}
                   />
+                  {reasonAldaa && (
+                    <p role="alert" className="text-[12px] text-danger">
+                      Хөнгөлөлтийн тайлбарыг заавал бичнэ.
+                    </p>
+                  )}
                 </div>
               )}
 

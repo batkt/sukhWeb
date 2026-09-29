@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
+import { ShuultuurTolgoi } from "@/components/ui/table/ShuultuurTolgoi";
 import Table from "@/components/ui/table";
 import type { ColumnsType } from "@/components/ui/table";
 import { Plus, Trash2 } from "lucide-react";
@@ -12,6 +13,8 @@ export interface FloorItem {
   filteredUnits: string[];
   activeToots: Set<string>;
   unitToResident: Record<string, any>;
+  /** Мөрийн төрөл — «Тоот» таб дээр гаражийн давхар ч мөр болж орно. */
+  turul?: "Тоот" | "Зогсоол" | "Агуулах";
 }
 
 interface UnitsTableProps {
@@ -20,9 +23,9 @@ interface UnitsTableProps {
   loading?: boolean;
   page?: number;
   pageSize?: number;
-  onAddUnit?: (floor: string) => void;
-  onDeleteUnit?: (floor: string, unit: string) => void;
-  onDeleteFloor?: (floor: string) => void;
+  onAddUnit?: (floor: string, turul?: "Тоот" | "Зогсоол" | "Агуулах") => void;
+  onDeleteUnit?: (floor: string, unit: string, turul?: "Тоот" | "Зогсоол" | "Агуулах") => void;
+  onDeleteFloor?: (floor: string, turul?: "Тоот" | "Зогсоол" | "Агуулах") => void;
   sortKey?: string;
   sortOrder?: "asc" | "desc";
   propertyTab?: "Тоот" | "Зогсоол" | "Агуулах";
@@ -36,7 +39,21 @@ interface UnitsTableProps {
    * гүйлтийг унтраана.
    */
   bugdiigKharuulakh?: boolean;
+  /** Баганын толгойн шүүлтүүр — өгвөл тухайн баганын толгой шүүлтүүр болж, эрэмбэ хасагдана. */
+  ortsShuultuur?: TolgoinShuultuur;
+  davkharShuultuur?: TolgoinShuultuur;
+  tuluvShuultuur?: TolgoinShuultuur;
+  /** Нэг мөрөнд багтах чипийн тоо (хагас өргөнтэй үед бага). */
+  chipiinKhyazgaar?: number;
+  /** Эцэг сав өөрөө гүйдэг (босоо 50/50) үед хүснэгт цонхны өндрөөр хэмжигдэхгүй. */
+  ondoriinKhyazgaargui?: boolean;
 }
+
+type TolgoinShuultuur = {
+  current: string;
+  options: { label: string; value: string }[];
+  onSelect: (v: string) => void;
+};
 
 export const UnitsTable: React.FC<UnitsTableProps> = ({
   data,
@@ -53,6 +70,11 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
   selectedFloor = null,
   onSelectFloor,
   bugdiigKharuulakh = false,
+  ortsShuultuur,
+  davkharShuultuur,
+  tuluvShuultuur,
+  chipiinKhyazgaar = 12,
+  ondoriinKhyazgaargui = false,
 }) => {
   const columns: ColumnsType<FloorItem> = useMemo(() => {
     const cols: ColumnsType<FloorItem> = [
@@ -87,42 +109,60 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
         ),
       },
       {
-        title: <span className="text-[color:var(--panel-text)]">Орц</span>,
+        title: ortsShuultuur ? (
+          <ShuultuurTolgoi label="Орц" {...ortsShuultuur} />
+        ) : (
+          <span className="text-[color:var(--panel-text)]">Орц</span>
+        ),
         dataIndex: "orts",
         key: "orts",
         align: "center",
-        width: 75,
-        sorter: true,
-        sortOrder:
-          sortKey === "orts"
-            ? sortOrder === "asc"
-              ? "ascend"
-              : "descend"
-            : null,
-        render: (val: string) => (
-          <span className="text-[color:var(--panel-text)] whitespace-nowrap">
-            {val ? `${val}-р орц` : "-"}
-          </span>
-        ),
+        width: ortsShuultuur ? 110 : 75,
+        ...(ortsShuultuur
+          ? {}
+          : {
+              sorter: true,
+              sortOrder:
+                sortKey === "orts"
+                  ? sortOrder === "asc"
+                    ? ("ascend" as const)
+                    : ("descend" as const)
+                  : null,
+            }),
+        render: (val: string, record: FloorItem) =>
+          record.turul === "Зогсоол" ? (
+            // «Тоот» таб дээрх гаражийн давхрын мөр
+            <span className="text-[color:var(--panel-text)] whitespace-nowrap">Гараж</span>
+          ) : (
+            <span className="text-[color:var(--panel-text)] whitespace-nowrap">
+              {val ? `${val}-р орц` : "-"}
+            </span>
+          ),
       },
       {
-        title: (
+        title: davkharShuultuur ? (
+          <ShuultuurTolgoi label="Давхар" {...davkharShuultuur} />
+        ) : (
           <span className="text-[color:var(--panel-text)]">Давхар</span>
         ),
         dataIndex: "floor",
         key: "floor",
         align: "center",
-        width: 95,
-        sorter: true,
-        sortOrder:
-          sortKey === "floor"
-            ? sortOrder === "asc"
-              ? "ascend"
-              : "descend"
-            : null,
+        width: davkharShuultuur ? 120 : 95,
+        ...(davkharShuultuur
+          ? {}
+          : {
+              sorter: true,
+              sortOrder:
+                sortKey === "floor"
+                  ? sortOrder === "asc"
+                    ? ("ascend" as const)
+                    : ("descend" as const)
+                  : null,
+            }),
         render: (val: string) => (
           <span className="text-[color:var(--panel-text)] whitespace-nowrap">
-            {val}-р давхар
+            {/^b/i.test(String(val || "")) ? `${val} давхар` : `${val}-р давхар`}
           </span>
         ),
       },
@@ -134,11 +174,18 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
       (max, row) => Math.max(max, row.filteredUnits?.length || 0),
       0,
     );
-    const tootuudWidth = Math.max(200, maxUnits * 54 + 16);
+    // Хэт олон дугаартай (ж: 45 гараж) мөр хүснэгтийг хэвтээ сунгахгүй —
+    // 12 чипээс цааш дараагийн мөрөнд шилжинэ. Бүх хүснэгт ижил өргөнтэй.
+    const tootuudWidth = Math.max(200, Math.min(maxUnits, chipiinKhyazgaar) * 54 + 16);
 
     cols.push({
       width: tootuudWidth,
-      title: (
+      title: tuluvShuultuur ? (
+        <ShuultuurTolgoi
+          label={propertyTab === "Зогсоол" ? "Гаражийн дугаарууд" : propertyTab === "Агуулах" ? "Агуулахын дугаарууд" : "Тоотууд"}
+          {...tuluvShuultuur}
+        />
+      ) : (
         <span className={`text-[color:var(--panel-text)] text-center block ${propertyTab === "Зогсоол" ? "" : "font-medium"}`}>
           {propertyTab === "Зогсоол"
             ? "Гаражийн дугаарууд"
@@ -151,6 +198,21 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
       key: "filteredUnits",
       align: "center",
         render: (filteredUnits: string[], record: FloorItem) => {
+          // «Тоот» таб дээрх гаражийн давхрын мөр: дугаарын чип биш, товч
+          // тойм (дэлгэрэнгүй жагсаалт нь «Гараж» таб дээр).
+          if (record.turul === "Зогсоол" && propertyTab === "Тоот") {
+            const too = record.units?.length || 0;
+            return too === 0 ? (
+              <span className="text-[color:var(--muted-text)]">
+                Гаражийн дугаар алга — «+» дарж нэмнэ
+              </span>
+            ) : (
+              <span className="text-[color:var(--panel-text)]">
+                {too} гаражийн дугаар
+                <span className="text-[color:var(--muted-text)]"> · {record.activeToots.size} бүртгэлтэй</span>
+              </span>
+            );
+          }
           if (!filteredUnits || filteredUnits.length === 0) {
             return (
               <span className="italic text-[color:var(--muted-text)]">
@@ -159,30 +221,36 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
             );
           }
           return (
-            <div className="flex flex-nowrap items-center justify-center gap-1.5 py-0.5">
+            <div
+              className="mx-auto flex flex-wrap items-center justify-center gap-1.5 py-0.5"
+              style={{ maxWidth: chipiinKhyazgaar * 54 }}
+            >
               {filteredUnits.map((unit) => {
                 const unitStr = String(unit).trim();
                 const hasActive = record.activeToots.has(unitStr);
+                const garaj = record.turul === "Зогсоол" && propertyTab === "Тоот";
                 return (
                   <div
                     key={unitStr}
+                    title={garaj ? `Гараж ${record.floor}-${unitStr}${hasActive ? " · бүртгэлтэй" : " · чөлөөтэй"}` : undefined}
                     className={`group relative flex items-center justify-center w-[48px] h-[28px] rounded-lg border transition-all duration-150 ${
+                      // Ногоон дэвсгэргүй: бүртгэлтэй тоот нь хүрээ + тод бичиг + цэгээр ялгарна.
                       hasActive
-                        ? "border-theme bg-theme/50 shadow-sm ring-1 ring-theme/10"
-                        : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] hover:border-theme shadow-sm"
+                          ? "border-theme bg-[color:var(--surface-bg)] shadow-sm"
+                          : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] hover:border-theme shadow-sm"
                     }`}
                   >
                     <span
                       className={`${propertyTab === "Зогсоол" ? "" : "font-medium"} ${
                         hasActive
-                          ? "text-brand"
+                          ? "text-brand font-semibold"
                           : "text-[color:var(--muted-text)]"
                       }`}
                     >
                       {unitStr}
                     </span>
                     {hasActive && (
-                      <div className="absolute top-1 left-1 w-1 h-1 rounded-full bg-success animate-pulse" />
+                      <div className="absolute top-1 left-1 w-1.5 h-1.5 rounded-full bg-theme" />
                     )}
                     {/* Холбогдсон тоотод устгах «×» гаргахгүй — alert-аар
                         хориглохын оронд үйлдлийг ерөөсөө санал болгохгүй. */}
@@ -193,7 +261,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
                         title="Устгах"
                         onClick={(e) => {
                           e.stopPropagation();
-                          onDeleteUnit?.(record.floor, unitStr);
+                          onDeleteUnit?.(record.floor, unitStr, record.turul);
                         }}
                       >
                         <span className="leading-none">×</span>
@@ -216,14 +284,16 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
         <div className="flex items-center justify-center gap-1">
           <button
             className="p-1.5 rounded-md hover-surface transition-colors hover:bg-theme/10 dark:hover:bg-theme/30"
-            title="Шинэ тоот нэмэх"
+            title={record.turul === "Зогсоол" ? "Гаражийн дугаар нэмэх" : "Шинэ тоот нэмэх"}
             onClick={(e) => {
               e.stopPropagation();
-              onAddUnit?.(record.floor);
+              onAddUnit?.(record.floor, record.turul);
             }}
           >
             <Plus className="w-4 h-4 text-brand" />
           </button>
+          {/* Гаражийн давхрын мөрөнд давхар устгах товчгүй (зөвхөн «+»). */}
+          {!(record.turul === "Зогсоол" && propertyTab === "Тоот") && (
           <button
             className={`p-1.5 rounded-md action-delete hover-surface transition-colors hover:bg-danger/10 ${
               record.units.length === 0
@@ -238,13 +308,17 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
             onClick={(e) => {
               e.stopPropagation();
               if (record.units.length > 0) {
-                onDeleteFloor?.(record.floor);
+                onDeleteFloor?.(record.floor, record.turul);
               }
             }}
             disabled={record.units.length === 0}
           >
             <Trash2 className="w-4 h-4 text-danger" />
           </button>
+          )}
+          {record.turul === "Зогсоол" && propertyTab === "Тоот" && (
+            <span className="inline-block h-7 w-7" aria-hidden="true" />
+          )}
         </div>
       ),
     });
@@ -253,6 +327,10 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
   }, [
     // Баганын өргөн нь мөрүүдийн тоотын тооноос хамаардаг тул `data` хэрэгтэй.
     data,
+    ortsShuultuur,
+    davkharShuultuur,
+    tuluvShuultuur,
+    chipiinKhyazgaar,
     page,
     pageSize,
     onAddUnit,
@@ -268,7 +346,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
       <Table
         dataSource={data}
         columns={columns}
-        rowKey={(record) => `${record.orts || ""}-${record.floor}`}
+        rowKey={(record) => `${record.turul || ""}-${record.orts || ""}-${record.floor}`}
         pagination={false}
         loading={loading}
         onChange={(_: any, __: any, sorter: any) => {
@@ -287,7 +365,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
           },
         })}
         scroll={
-          bugdiigKharuulakh
+          bugdiigKharuulakh || ondoriinKhyazgaargui
             ? { x: "max-content", y: "none" }
             : { x: "max-content" }
         }

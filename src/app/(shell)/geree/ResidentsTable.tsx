@@ -6,6 +6,8 @@ import Table from "@/components/ui/table";
 import type { ColumnsType } from "@/components/ui/table";
 import { Edit, Eye, Trash2, ChevronUp, ChevronDown, X } from "lucide-react";
 import { getPaymentStatusLabel } from "@/lib/utils";
+import { isGarageFloor } from "@/lib/useGereeData";
+import DeleteConfirmModal from "./modals/DeleteModal";
 import {
   getResidentToot,
   getResidentDavkhar,
@@ -25,6 +27,19 @@ export interface ResidentItem {
   [key: string]: any;
 }
 
+/**
+ * Нэгжийн жинхэнэ төрөл. «Зогсоол» гэж хадгалсан, эсвэл төрөлгүй ч B1/B2
+ * давхарт байгаа нэгж нь гараж — өмнө нь зөвхөн «Гараж» гэсэн утгыг таньдаг
+ * тул ийм гаражийг «Орон сууц» гэж Тоот баганад харуулдаг байв.
+ */
+const negjiinTurul = (t: any): "Орон сууц" | "Гараж" | "Агуулах" => {
+  const turul = String(t?.turul || "").trim().toLowerCase();
+  if (turul === "агуулах" || turul === "storage") return "Агуулах";
+  if (["гараж", "зогсоол", "garage", "parking"].includes(turul)) return "Гараж";
+  if ((!turul || turul === "орон сууц" || turul === "тоот") && isGarageFloor(String(t?.davkhar || ""))) return "Гараж";
+  return "Орон сууц";
+};
+
 type SortKey = string;
 type SortOrder = "asc" | "desc";
 
@@ -40,7 +55,7 @@ interface ResidentsTableProps {
   /** Оршин суугчийн БҮХ мэдээллийг нэг модалаас харах. */
   onView?: (resident: ResidentItem) => void;
   onDelete?: (resident: ResidentItem) => void;
-  onRemoveToot?: (residentId: string, baiguullagiinId: string, barilgiinId: string, toot: string) => void;
+  onRemoveToot?: (residentId: string, baiguullagiinId: string, barilgiinId: string, toot: string, turul?: string) => void;
   onSort?: (key: SortKey, order?: "ascend" | "descend" | null) => void;
 }
 
@@ -58,6 +73,8 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
   onRemoveToot,
   onSort,
 }) => {
+  // Тоот хасахаас өмнө батлуулах (window.confirm-ийн оронд).
+  const [khasakhAsuult, setKhasakhAsuult] = React.useState<{ record: ResidentItem; t: any } | null>(null);
   const columns: ColumnsType<ResidentItem> = useMemo(
     () => [
       // ... (index and ner columns omitted for brevity, keeping them as they are)
@@ -164,7 +181,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
           }
 
           // Only show main housing units
-          toots = toots.filter((t: any) => t.turul !== "Гараж" && t.turul !== "Агуулах");
+          toots = toots.filter((t: any) => negjiinTurul(t) === "Орон сууц");
 
           // Deduplicate toots array
           const seenToots = new Set<string>();
@@ -180,7 +197,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
           const tooltipContent = (
             <div className="space-y-1.5 p-1.5 max-w-[220px]">
               {toots.map((t: any, idx: number) => {
-                const label = t.turul === "Гараж" ? "Гараж" : t.turul === "Агуулах" ? "Агуулах" : "Орон сууц";
+                const label = negjiinTurul(t);
                 return (
                   <div key={idx} className="flex items-center justify-between gap-3 py-0.5">
                     <span className="font-medium text-[color:var(--panel-text)]">Тоот {t.toot} {label}</span>
@@ -188,14 +205,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (window.confirm(`${t.toot} тоотыг хасах уу?`)) {
-                          onRemoveToot?.(
-                            String(record._id),
-                            t.baiguullagiinId,
-                            t.barilgiinId,
-                            t.toot,
-                          );
-                        }
+                        setKhasakhAsuult({ record, t });
                       }}
                       className="p-0.5 text-danger hover:text-danger rounded hover:bg-danger/30 transition-colors"
                       title="Хасах"
@@ -246,14 +256,14 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
           }
 
           // Only show Garage or Storage
-          toots = toots.filter((t: any) => t.turul === "Гараж" || t.turul === "Агуулах");
+          toots = toots.filter((t: any) => negjiinTurul(t) !== "Орон сууц");
 
           if (toots.length === 0) return "-";
 
           const tooltipContent = (
             <div className="space-y-1.5 p-1.5 max-w-[220px]">
               {toots.map((t: any, idx: number) => {
-                const label = t.turul === "Гараж" ? "Гараж" : "Агуулах";
+                const label = negjiinTurul(t);
                 return (
                   <div key={idx} className="flex items-center justify-between gap-3 py-0.5">
                     <span className="font-medium text-[color:var(--panel-text)]">Тоот {t.toot} {label}</span>
@@ -261,14 +271,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (window.confirm(`${t.toot} тоотыг хасах уу?`)) {
-                          onRemoveToot?.(
-                            String(record._id),
-                            t.baiguullagiinId,
-                            t.barilgiinId,
-                            t.toot,
-                          );
-                        }
+                        setKhasakhAsuult({ record, t });
                       }}
                       className="p-0.5 text-danger hover:text-danger rounded hover:bg-danger/30 transition-colors"
                       title="Хасах"
@@ -414,6 +417,35 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
           }}
         />
       </div>
+      <DeleteConfirmModal
+        show={!!khasakhAsuult}
+        onClose={() => setKhasakhAsuult(null)}
+        title="Та итгэлтэй байна уу?"
+        confirmLabel="Хасах"
+        message={
+          khasakhAsuult
+            ? (() => {
+                const { record, t } = khasakhAsuult;
+                const turul = negjiinTurul(t);
+                const nerRaw: any = record.ner;
+                const ner = [record.ovog ? `${String(record.ovog).charAt(0)}.` : "", typeof nerRaw === "string" ? nerRaw : nerRaw?.ner || ""]
+                  .filter(Boolean)
+                  .join(" ");
+                const negj =
+                  turul === "Орон сууц"
+                    ? `${t.orts ? `${t.orts}-р орц, ` : ""}${t.davkhar ? `${t.davkhar} давхрын ` : ""}${t.toot} тоот`
+                    : `${turul} ${t.davkhar ? `${t.davkhar} давхрын ` : ""}${t.toot} дугаар`;
+                return `${ner ? `«${ner}»-ийн ` : ""}${negj}ыг хасна. Дугаар өөрөө жагсаалтад үлдэж, чөлөөтэй болно.`;
+              })()
+            : ""
+        }
+        onConfirm={async () => {
+          if (!khasakhAsuult) return;
+          const { record, t } = khasakhAsuult;
+          await onRemoveToot?.(String(record._id), t.baiguullagiinId, t.barilgiinId, t.toot, t.turul);
+          setKhasakhAsuult(null);
+        }}
+      />
     </div>
   );
 });

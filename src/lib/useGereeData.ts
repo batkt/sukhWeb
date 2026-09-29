@@ -16,6 +16,33 @@ import {
   getResidentOrtsuud,
 } from "@/lib/residentDataHelper";
 
+/**
+ * Оршин суугч / харилцагчийн хайлтын нийлмэл бичвэр. Олон тоот (орон сууц,
+ * гараж, агуулах), машины дугаар ч хамаарна — өмнө нь зөвхөн үндсэн `toot`-оор
+ * хайдаг байсан тул хэд хэдэн тоотой хүнийг 2 дахь тоотоор нь олдоггүй байв.
+ */
+const khailtiinTekst = (r: any): string => {
+  const toots = Array.isArray(r?.toots) ? r.toots : [];
+  const mashinuud = Array.isArray(r?.mashinuud)
+    ? r.mashinuud
+    : Array.isArray(r?.mashiniiDugaar)
+      ? r.mashiniiDugaar
+      : [r?.mashiniiDugaar];
+  return [
+    r?.ner,
+    r?.ovog,
+    Array.isArray(r?.utas) ? r.utas.join(" ") : r?.utas,
+    r?.toot,
+    r?.register,
+    r?.mail,
+    ...toots.map((t: any) => `${t?.toot ?? ""} ${t?.davkhar ?? ""}`),
+    ...mashinuud.map((m: any) => (typeof m === "string" ? m : m?.dugaar || m?.mashiniiDugaar || "")),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+};
+
 export const isGarageFloor = (floor: string): boolean => {
   const f = String(floor || "").trim().toLowerCase();
   return (
@@ -576,20 +603,7 @@ export function useGereeData(
     // Apply search filter if searchTerm exists
     if (searchTerm && searchTerm.trim() !== "") {
       const term = searchTerm.toLowerCase().trim();
-      filtered = filtered.filter((r: any) => {
-        const ner = String(r?.ner || "").toLowerCase();
-        const ovog = String(r?.ovog || "").toLowerCase();
-        const utas = String(r?.utas || "").toLowerCase();
-        const toot = String(r?.toot || "").toLowerCase();
-        const register = String(r?.register || "").toLowerCase();
-        return (
-          ner.includes(term) ||
-          ovog.includes(term) ||
-          utas.includes(term) ||
-          toot.includes(term) ||
-          register.includes(term)
-        );
-      });
+      filtered = filtered.filter((r: any) => khailtiinTekst(r).includes(term));
     }
 
     // Apply sorting
@@ -672,20 +686,7 @@ export function useGereeData(
 
     if (searchTerm && searchTerm.trim() !== "") {
       const term = searchTerm.toLowerCase().trim();
-      filtered = filtered.filter((r: any) => {
-        const ner = String(r?.ner || "").toLowerCase();
-        const ovog = String(r?.ovog || "").toLowerCase();
-        const utas = String(r?.utas || "").toLowerCase();
-        const toot = String(r?.toot || "").toLowerCase();
-        const register = String(r?.register || "").toLowerCase();
-        return (
-          ner.includes(term) ||
-          ovog.includes(term) ||
-          utas.includes(term) ||
-          toot.includes(term) ||
-          register.includes(term)
-        );
-      });
+      filtered = filtered.filter((r: any) => khailtiinTekst(r).includes(term));
     }
 
     filtered.sort((a: any, b: any) => {
@@ -966,9 +967,11 @@ export function useGereeData(
 
   // Compute floors list from davkharOptions and selectedDawkhar filter
   // For Зогсоол and Агуулах, derive floors from their map keys instead
-  const floorsList = useMemo(() => {
+  // Давхрын жагсаалтыг таб бүрээр бодно. «Тоот» таб дээр гаражийн давхрууд
+  // (B1, B2…) нэмэлт мөр болж харагддаг тул гаражийн жагсаалтыг табаас үл
+  // хамааран тусад нь гаргана (`garageFloorsList`).
+  const floorsFor = (activeTab: "Тоот" | "Зогсоол" | "Агуулах", davkharShuult: boolean) => {
     let list: string[] = [];
-    const activeTab = propertyTab || "Тоот";
 
     if (activeTab === "Тоот") {
       // Show non-basement floors from davkharOptions, and fallback to maps.outToot keys if none configured
@@ -1077,11 +1080,26 @@ export function useGereeData(
     });
 
     const sel = String(selectedDawkhar || "").trim();
-    if (sel) {
+    if (sel && davkharShuult) {
       list = list.filter((d) => String(d) === sel);
     }
     return list;
-  }, [davkharOptions, selectedDawkhar, propertyTab, maps]);
+  };
+  const floorsList = useMemo(
+    () => floorsFor((propertyTab || "Тоот") as any, true),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [davkharOptions, selectedDawkhar, propertyTab, maps, contracts],
+  );
+  const garageFloorsList = useMemo(
+    () => {
+      const sel = String(selectedDawkhar || "").trim();
+      // Давхрын шүүлт сонгосон бол зөвхөн тэр давхар (гаражийн давхар байвал).
+      const list = floorsFor("Зогсоол", false);
+      return sel ? list.filter((d) => String(d) === sel) : list;
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [davkharOptions, selectedDawkhar, maps, contracts],
+  );
 
   // Paginate floors
   const unitTotalPages = Math.max(
@@ -1135,6 +1153,7 @@ export function useGereeData(
     filteredEmployees,
     currentFloors,
     floorsList,
+    garageFloorsList,
     unitTotalPages,
   };
 }

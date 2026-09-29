@@ -302,6 +302,8 @@ export default function HongololtTool({
   const [hongololtTurul, setHongololtTurul] = useState<HongololtTurul>("percent");
   const [hongololtUtga, setHongololtUtga] = useState("");
   const [shaltgaan, setShaltgaan] = useState("");
+  /** Шалтгаан хоосон — toast биш, талбарыг улаанаар тодруулж доор нь анхааруулна. */
+  const [shaltgaanAldaa, setShaltgaanAldaa] = useState(false);
   /** Зардал/хоногоор хөнгөлөх сонголтыг маягтаас хассан — нийт төлбөрөөс, сараар. */
   const zardliinId = "";
   const khonogTootsokh = false;
@@ -1021,7 +1023,8 @@ export default function HongololtTool({
       return;
     }
     if (!shaltgaan.trim()) {
-      toast.error("Хөнгөлөлт олгох шалтгаанаа бичнэ үү — түүх дээр харагдана");
+      setShaltgaanAldaa(true);
+      document.getElementById("khungulult-shaltgaan")?.focus();
       return;
     }
     if (hongololtTurul === "percent" && suuriAchaalj) {
@@ -1592,14 +1595,28 @@ export default function HongololtTool({
                 <label htmlFor="khungulult-shaltgaan" className="pt-2 text-[13px] text-[color:var(--muted-text)]">
                   <span className="mr-0.5 text-danger">*</span>Шалтгаан:
                 </label>
-                <textarea
-                  id="khungulult-shaltgaan"
-                  rows={4}
-                  placeholder="Хөнгөлөлт олгох шалтгаанаа бичнэ үү"
-                  value={shaltgaan}
-                  onChange={(e) => setShaltgaan(e.target.value)}
-                  className={`${TALBAR} !h-auto min-h-[96px] resize-y py-2 leading-relaxed`}
-                />
+                <div className="min-w-0">
+                  <textarea
+                    id="khungulult-shaltgaan"
+                    rows={4}
+                    placeholder="Хөнгөлөлт олгох шалтгаанаа бичнэ үү"
+                    value={shaltgaan}
+                    aria-invalid={shaltgaanAldaa || undefined}
+                    aria-describedby={shaltgaanAldaa ? "khungulult-shaltgaan-aldaa" : undefined}
+                    onChange={(e) => {
+                      setShaltgaan(e.target.value);
+                      if (shaltgaanAldaa && e.target.value.trim()) setShaltgaanAldaa(false);
+                    }}
+                    className={`${TALBAR} !h-auto min-h-[96px] resize-y py-2 leading-relaxed ${
+                      shaltgaanAldaa ? "!border-danger ring-2 ring-danger/20" : ""
+                    }`}
+                  />
+                  {shaltgaanAldaa && (
+                    <p id="khungulult-shaltgaan-aldaa" role="alert" className="mt-1 text-[12px] text-danger">
+                      Шалтгаан заавал бичнэ — хөнгөлөлтийн түүх дээр харагдана.
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -1957,8 +1974,14 @@ function UstgakhBatalgaa({ onConfirm }: { onConfirm: (tailbar: string) => Promis
     };
   }, [neelttei]);
 
+  const [shaltgaanAldaa, setShaltgaanAldaa] = useState(false);
   const batalgaajuulakh = async () => {
-    if (!shaltgaan.trim() || ustgaj) return;
+    if (ustgaj) return;
+    // Хоосон бол товчийг идэвхгүй болгохын оронд талбарыг улаанаар тодруулна.
+    if (!shaltgaan.trim()) {
+      setShaltgaanAldaa(true);
+      return;
+    }
     setUstgaj(true);
     const ok = await onConfirm(shaltgaan.trim());
     setUstgaj(false);
@@ -1997,11 +2020,20 @@ function UstgakhBatalgaa({ onConfirm }: { onConfirm: (tailbar: string) => Promis
           <input
             autoFocus
             value={shaltgaan}
-            onChange={(e) => setShaltgaan(e.target.value)}
+            aria-invalid={shaltgaanAldaa || undefined}
+            onChange={(e) => {
+              setShaltgaan(e.target.value);
+              if (shaltgaanAldaa && e.target.value.trim()) setShaltgaanAldaa(false);
+            }}
             onKeyDown={(e) => e.key === "Enter" && batalgaajuulakh()}
             placeholder="Устгах шалтгаан (заавал)"
-            className="stg-input mt-2.5 !h-9 text-[13px]"
+            className={`stg-input mt-2.5 !h-9 text-[13px] ${shaltgaanAldaa ? "!border-danger ring-2 ring-danger/20" : ""}`}
           />
+          {shaltgaanAldaa && (
+            <p role="alert" className="mt-1 text-[12px] text-danger">
+              Устгах шалтгааныг заавал бичнэ.
+            </p>
+          )}
           <div className="mt-2.5 flex justify-end gap-2">
             <button
               type="button"
@@ -2013,7 +2045,7 @@ function UstgakhBatalgaa({ onConfirm }: { onConfirm: (tailbar: string) => Promis
             <button
               type="button"
               onClick={batalgaajuulakh}
-              disabled={!shaltgaan.trim() || ustgaj}
+              disabled={ustgaj}
               className="inline-flex h-9 items-center gap-1.5 rounded-[10px] bg-danger px-3 text-[13px] !text-white disabled:opacity-50"
             >
               <Trash2 className="h-3.5 w-3.5" />
@@ -2081,9 +2113,15 @@ function ZasakhBatalgaa({
   }, [neelttei]);
 
   const too = Number(String(utga).replace(/,/g, ""));
-  const zuv = too > 0 && (!khuvi || too <= 100) && shaltgaan.trim().length > 0;
+  const utgaZuv = too > 0 && (!khuvi || too <= 100);
+  const [shaltgaanAldaa, setShaltgaanAldaa] = useState(false);
   const khadgalakh = async () => {
-    if (!zuv || khadgalj) return;
+    if (!utgaZuv || khadgalj) return;
+    // Шалтгаан хоосон бол товчийг хаахын оронд талбарыг улаанаар тодруулна.
+    if (!shaltgaan.trim()) {
+      setShaltgaanAldaa(true);
+      return;
+    }
     setKhadgalj(true);
     const ok = await onConfirm(too, shaltgaan.trim());
     setKhadgalj(false);
@@ -2138,11 +2176,20 @@ function ZasakhBatalgaa({
           </div>
           <input
             value={shaltgaan}
-            onChange={(e) => setShaltgaan(e.target.value)}
+            aria-invalid={shaltgaanAldaa || undefined}
+            onChange={(e) => {
+              setShaltgaan(e.target.value);
+              if (shaltgaanAldaa && e.target.value.trim()) setShaltgaanAldaa(false);
+            }}
             onKeyDown={(e) => e.key === "Enter" && khadgalakh()}
             placeholder="Засах шалтгаан (заавал)"
-            className="stg-input mt-2 !h-9 text-[13px]"
+            className={`stg-input mt-2 !h-9 text-[13px] ${shaltgaanAldaa ? "!border-danger ring-2 ring-danger/20" : ""}`}
           />
+          {shaltgaanAldaa && (
+            <p role="alert" className="mt-1 text-[12px] text-danger">
+              Засах шалтгааныг заавал бичнэ.
+            </p>
+          )}
           <div className="mt-2.5 flex justify-end gap-2">
             <button
               type="button"
@@ -2154,7 +2201,7 @@ function ZasakhBatalgaa({
             <button
               type="button"
               onClick={khadgalakh}
-              disabled={!zuv || khadgalj}
+              disabled={!utgaZuv || khadgalj}
               className="inline-flex h-9 items-center rounded-[10px] bg-theme px-3 text-[13px] !text-white disabled:opacity-50"
             >
               {khadgalj ? "Хадгалж байна..." : "Хадгалах"}

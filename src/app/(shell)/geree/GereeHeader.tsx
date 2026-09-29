@@ -7,6 +7,7 @@ import {
   Download,
   FileDown,
   FileUp,
+  Plus,
   LayoutTemplate,
   UserPlus,
   Settings2,
@@ -121,6 +122,8 @@ export default function GereeHeader({
 
   const context = useGereeContext();
   const activePropertyTab = context?.state?.propertyTab || "Тоот";
+
+
 
   const davkharOptions = React.useMemo(() => {
     if (activeTab === "units" && activePropertyTab === "Тоот") {
@@ -242,59 +245,24 @@ export default function GereeHeader({
                     </>
                   )}
 
-                  {activeTab === "units" && (
-                    <>
-                      <div className="flex items-center gap-1.5">
-                        <div>
-                          <FilterSelect
-                            label="Орц"
-                            value={selectedOrts || ""}
-                            onChange={(val) => setSelectedOrts(val)}
-                            options={[
-                              ...ortsOptions.map((o) => ({
-                                value: o,
-                                label: o,
-                              })),
-                            ]}
-                            className="max-w-[200px]"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <div>
-                          <FilterSelect
-                            label="Давхар"
-                            value={selectedDawkhar || ""}
-                            onChange={(val) => setSelectedDawkhar(val)}
-                            options={[
-                              ...davkharOptions.map((d) => ({
-                                value: String(d),
-                                label: String(d),
-                              })),
-                            ]}
-                            className="max-w-[200px]"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <div>
-                          <FilterSelect
-                            label="Төлөв"
-                            value={unitStatusFilter === "all" ? "" : unitStatusFilter}
-                            onChange={(val) =>
-                              setUnitStatusFilter(
-                                ((val || "all") as "all" | "occupied" | "free") || "all",
-                              )
-                            }
-                            options={[
-                              { value: "occupied", label: "Идэвхтэй" },
-                              { value: "free", label: "Идэвхгүй" },
-                            ]}
-                            className="max-w-[200px]"
-                          />
-                        </div>
-                      </div>
-                    </>
+                  {/* Тоот бүртгэл: Тоот / Гараж / Агуулах таб — үйлдлийн товчтой НЭГ мөрөнд
+                      (дээр нь хоосон зай үлдээхгүй). Орц/Давхар/Төлөв шүүлтүүр
+                      хүснэгтийн баганын толгойд байна. */}
+                  {activeTab === "units" && context?.state?.setPropertyTab && (
+                    <div className="stg-segment" role="tablist" aria-label="Өмчийн төрөл">
+                      {(["Тоот", "Зогсоол", "Агуулах"] as const).map((t) => (
+                        <button
+                          key={t}
+                          type="button"
+                          role="tab"
+                          aria-selected={activePropertyTab === t}
+                          onClick={() => context.state.setPropertyTab(t)}
+                          className={`stg-segment-item inline-flex min-h-9 items-center ${activePropertyTab === t ? "is-active" : ""}`}
+                        >
+                          {t === "Зогсоол" ? "Гараж" : t}
+                        </button>
+                      ))}
+                    </div>
                   )}
                 </div>
               )}
@@ -605,54 +573,7 @@ export default function GereeHeader({
               </>
             )}
 
-            {activeTab === "units" && (
-              <>
-                <div className="flex flex-col gap-1">
-                  <FilterSelect
-                    label="Орц"
-                    value={selectedOrts || ""}
-                    onChange={(val) => setSelectedOrts(val)}
-                    options={[
-                      ...ortsOptions.map((o) => ({
-                        value: o,
-                        label: o,
-                      })),
-                    ]}
-                    className="w-full"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <FilterSelect
-                    label="Давхар"
-                    value={selectedDawkhar || ""}
-                    onChange={(val) => setSelectedDawkhar(val)}
-                    options={[
-                      ...davkharOptions.map((o) => ({
-                        value: String(o),
-                        label: String(o),
-                      })),
-                    ]}
-                    className="w-full"
-                  />
-                </div>
-                <div className="flex flex-col gap-1 col-span-2">
-                  <FilterSelect
-                    label="Төлөв"
-                    value={unitStatusFilter === "all" ? "" : unitStatusFilter}
-                    onChange={(val) =>
-                      setUnitStatusFilter(
-                        ((val || "all") as "all" | "occupied" | "free") || "all",
-                      )
-                    }
-                    options={[
-                      { value: "occupied", label: "Идэвхтэй" },
-                      { value: "free", label: "Идэвхгүй" },
-                    ]}
-                    className="w-full"
-                  />
-                </div>
-              </>
-            )}
+
           </div>
         )}
 

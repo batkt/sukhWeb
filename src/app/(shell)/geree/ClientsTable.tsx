@@ -118,7 +118,8 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
       toots = toots.filter((t: any) => String(t.baiguullagiinId) === String(currentBaiguullagiinId));
     const seen = new Set<string>();
     return toots.filter((t: any) => {
-      if (t.turul !== "Гараж" && t.turul !== "Агуулах") return false;
+      // «Зогсоол» гэж хадгалсан гаражийг ч тооцно
+      if (t.turul !== "Гараж" && t.turul !== "Зогсоол" && t.turul !== "Агуулах") return false;
       const k = `${t.toot}_${t.barilgiinId || ""}_${t.turul}`;
       if (seen.has(k)) return false;
       seen.add(k);
@@ -222,7 +223,7 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
           }
 
           // Only show Zogsool or Aguulakh
-          toots = toots.filter((t: any) => t.turul === "Гараж" || t.turul === "Агуулах");
+          toots = toots.filter((t: any) => t.turul === "Гараж" || t.turul === "Зогсоол" || t.turul === "Агуулах");
 
           // Deduplicate toots array
           const seenToots = new Set<string>();
@@ -244,13 +245,13 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
 
 
           // Оршин суугчийн бүртгэлтэй адил: эхний дугаар + «+N», бүгдийг hover-оор.
-          const ner = (t: any) => (t.turul === "Гараж" ? "Гараж" : "Агуулах");
+          const ner = (t: any) => (t.turul === "Гараж" || t.turul === "Зогсоол" ? "Гараж" : "Агуулах");
           const tooltipContent = (
             <div className="space-y-1 p-1 min-w-[180px]">
               {toots.map((t: any, idx: number) => (
                 <div key={idx} className="flex items-center justify-between gap-3 py-0.5">
                   <span className="inline-flex items-center gap-1.5 font-medium">
-                    {t.turul === "Гараж" ? (
+                    {t.turul === "Гараж" || t.turul === "Зогсоол" ? (
                       <Car className="h-3.5 w-3.5 text-brand" />
                     ) : (
                       <Warehouse className="h-3.5 w-3.5 text-indigo-500" />

@@ -246,7 +246,7 @@ export default function GereeModals() {
         value={state.addTootValue}
         setValue={state.setAddTootValue}
         onSubmit={async (floor: string, values: string[]) => {
-          await actions.addUnit(floor, values, state.propertyTab);
+          await actions.addUnit(floor, values, state.addTootTurul || state.propertyTab);
         }}
       />
 
@@ -346,14 +346,14 @@ export default function GereeModals() {
         show={state.showDeleteUnitModal}
         onClose={() => state.setShowDeleteUnitModal(false)}
         title="Тоотыг устгах уу?"
-        message={`Та ${state.unitToDelete?.floor}-р давхрын ${state.unitToDelete?.unit} тоотыг устгах гэж байна. Энэ үйлдэл буцаах боломжгүй.`}
+        message={`Та ${state.unitToDelete?.floor}-р давхрын ${state.unitToDelete?.unit} ${(state.unitToDelete?.turul || state.propertyTab) === "Тоот" ? "тоот" : (state.unitToDelete?.turul || state.propertyTab) === "Зогсоол" ? "гаражийн дугаар" : "агуулахын дугаар"}ыг устгах гэж байна. Энэ үйлдэл буцаах боломжгүй.`}
         onConfirm={async () => {
           if (state.unitToDelete) {
             if (actions.deleteUnit) {
               await actions.deleteUnit(
                 state.unitToDelete.floor,
                 state.unitToDelete.unit,
-                state.propertyTab,
+                state.unitToDelete.turul || state.propertyTab,
               );
             }
             state.setShowDeleteUnitModal(false);
@@ -371,7 +371,7 @@ export default function GereeModals() {
         onConfirm={async () => {
           if (state.floorToDelete) {
             if (actions.deleteFloor) {
-              await actions.deleteFloor(state.floorToDelete, state.propertyTab);
+              await actions.deleteFloor(state.floorToDelete, state.floorToDeleteTurul || state.propertyTab);
             }
             state.setShowDeleteFloorModal(false);
             state.setFloorToDelete(null);

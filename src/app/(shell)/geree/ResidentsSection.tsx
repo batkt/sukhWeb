@@ -19,7 +19,7 @@ interface ResidentsSectionProps {
   onEditResident: (resident: any) => void;
   onViewResident?: (resident: any) => void;
   onRequestDeleteResident: (resident: any) => void;
-  onRemoveToot?: (residentId: string, baiguullagiinId: string, barilgiinId: string, toot: string) => void;
+  onRemoveToot?: (residentId: string, baiguullagiinId: string, barilgiinId: string, toot: string, turul?: string) => void;
   currentBaiguullagiinId?: string;
   setResPageSize: (size: number) => void;
   setResPage: (page: number) => void;

@@ -340,6 +340,8 @@ export default function Jagsaalt() {
   };
 
   // ── Машин блоклох ─────────────────────────────────────────────────────────
+  /** Блоклох шалтгаан хоосон — toast биш, талбарыг улаанаар тодруулна. */
+  const [blokShaltgaanAldaa, setBlokShaltgaanAldaa] = useState(false);
   const [blockModal, setBlockModal] = useState<{
     dugaar: string;
     tailbar: string;
@@ -590,7 +592,8 @@ export default function Jagsaalt() {
     }
     const tailbar = blockModal.tailbar.trim();
     if (!tailbar) {
-      toast.error("Блоклох шалтгааныг заавал бөглөнө үү");
+      setBlokShaltgaanAldaa(true);
+      document.getElementById("blok-shaltgaan")?.focus();
       return;
     }
     if (blockedMap.has(dugaar)) {
@@ -1411,7 +1414,10 @@ return (
           <div className="flex items-center gap-3 flex-1 justify-end">
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setBlockModal({ dugaar: "", tailbar: "" })}
+                onClick={() => {
+                  setBlokShaltgaanAldaa(false);
+                  setBlockModal({ dugaar: "", tailbar: "" });
+                }}
                 className="flex items-center justify-center gap-1.5 h-8.5 w-32 rounded-xl bg-danger hover:bg-danger/90 active:bg-danger text-white text-xs font-medium shadow-sm transition-all whitespace-nowrap flex-shrink-0"
               >
                 <Ban className="w-3.5 h-3.5" />
@@ -1596,18 +1602,27 @@ return (
                     Шалтгаан <span className="text-danger">*</span>
                   </label>
                   <input
+                    id="blok-shaltgaan"
                     value={blockModal.tailbar}
-                    onChange={(e) =>
-                      setBlockModal((st) =>
-                        st ? { ...st, tailbar: e.target.value } : st,
-                      )
-                    }
+                    aria-invalid={blokShaltgaanAldaa || undefined}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setBlockModal((st) => (st ? { ...st, tailbar: v } : st));
+                      if (blokShaltgaanAldaa && v.trim()) setBlokShaltgaanAldaa(false);
+                    }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") blokloyo();
                     }}
                     placeholder="Төлбөрөө төлөөгүй"
-                    className="w-full h-10 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] px-4 text-[12px] text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] outline-none focus:border-danger transition-colors"
+                    className={`w-full h-10 rounded-2xl border bg-[color:var(--surface-hover)] px-4 text-[12px] text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] outline-none transition-colors ${
+                      blokShaltgaanAldaa ? "border-danger ring-2 ring-danger/20" : "border-[color:var(--surface-border)] focus:border-danger"
+                    }`}
                   />
+                  {blokShaltgaanAldaa && (
+                    <p role="alert" className="text-[11px] text-danger">
+                      Блоклох шалтгааныг заавал бичнэ.
+                    </p>
+                  )}
                 </div>
                 <button
                   onClick={blokloyo}

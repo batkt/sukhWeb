@@ -170,7 +170,7 @@ export default function DansniiKhuulga() {
     null,
   ]);
   const [tuluvFilter, setTuluvFilter] = useState<
-    "all" | "paid" | "unpaid" | "partiallyPaid" | "overdue"
+    "all" | "paid" | "unpaid" | "partiallyPaid" | "overdue" | "khungulult"
   >("all");
   /** Эзэмшигчийн төрлөөр ялгах: оршин суугч эсвэл харилцагч (гараж/агуулах түрээслэгч). */
   const [ezemshigchFilter, setEzemshigchFilter] = useState<
@@ -996,6 +996,10 @@ export default function DansniiKhuulga() {
       const isResidentPaid = currentBalance < 0.01;
       const isPartiallyPaid = !isResidentPaid && paidAmount > 0.1;
 
+      // «Хөнгөлөлт» карт: сонгосон хугацаанд хөнгөлөлт авсан гэрээнүүд.
+      if (tuluvFilter === "khungulult") {
+        return !!gid && Number(monthKhungulultByGereeId[gid] ?? 0) > 0;
+      }
       if (tuluvFilter === "paid" || tuluvFilter === "partiallyPaid") {
         // Цуцалсан гэрээ зөвхөн «Цуцалсан гэрээний авлага» таб дээр.
         const itGereeId = String(it?.gereeniiId || it?.gereeId || "");
@@ -1049,6 +1053,7 @@ export default function DansniiKhuulga() {
     ezemshigchiinTurul,
     tableDisplayBalances,
     monthPaidByGereeId,
+    monthKhungulultByGereeId,
   ]);
 
   // Same as filteredItems but WITHOUT tuluvFilter - for stats (dashboard numbers stay fixed)
@@ -1536,6 +1541,8 @@ export default function DansniiKhuulga() {
         (r?.gereeniiDugaar &&
           cancelledGereeDugaars.has(String(r.gereeniiDugaar)));
 
+      if (tuluvFilter === "khungulult")
+        return !!gid && Number(monthKhungulultByGereeId[gid] ?? 0) > 0;
       if (tuluvFilter === "overdue")
         return !isResidentPaid && isLinkedToCancelledGeree;
       if (isLinkedToCancelledGeree) return false;
@@ -1558,6 +1565,7 @@ export default function DansniiKhuulga() {
     searchTerm,
     tuluvFilter,
     monthPaidByGereeId,
+    monthKhungulultByGereeId,
     tableDisplayBalances,
     ezemshigchFilter,
     ezemshigchiinTurul,
@@ -2185,19 +2193,47 @@ export default function DansniiKhuulga() {
       }
     });
     const tsutsalsanTab = tuluvFilter === "overdue";
+    const khungulultTab = tuluvFilter === "khungulult";
     let all = 0;
     let khariltsagch = 0;
+    // Бүлэг бүрийн нийт үлдэгдэл — дашбоардын картад
+    let orshinSuugchUldegdel = 0;
+    let khariltsagchUldegdel = 0;
     deduplicatedResidentsAllRaw.forEach((r: any) => {
-      const gid = String(r?._gereeniiId ?? r?.gereeniiId ?? r?.gereeId ?? "").trim();
+      const gid =
+        String(r?._gereeniiId ?? r?.gereeniiId ?? r?.gereeId ?? "").trim() ||
+        (r?._id && String(r._id)) ||
+        "";
       const tsutsalsan =
         (gid && tsutsalsanId.has(gid)) ||
         (r?.gereeniiDugaar && tsutsalsanDugaar.has(String(r.gereeniiDugaar)));
-      if (!tsutsalsanTab && tsutsalsan) return;
+      if (khungulultTab) {
+        if (!(gid && Number(monthKhungulultByGereeId[gid] ?? 0) > 0)) return;
+      } else if (!tsutsalsanTab && tsutsalsan) return;
       all++;
-      if (ezemshigchiinTurul(r) === "khariltsagch") khariltsagch++;
+      const uldegdel = Number(tableDisplayBalances[gid] ?? r?.uldegdel ?? 0) || 0;
+      if (ezemshigchiinTurul(r) === "khariltsagch") {
+        khariltsagch++;
+        khariltsagchUldegdel += uldegdel;
+      } else {
+        orshinSuugchUldegdel += uldegdel;
+      }
     });
-    return { all, khariltsagch, orshinSuugch: all - khariltsagch };
-  }, [deduplicatedResidentsAllRaw, ezemshigchiinTurul, gereeGaralt?.jagsaalt, tuluvFilter]);
+    return {
+      all,
+      khariltsagch,
+      orshinSuugch: all - khariltsagch,
+      orshinSuugchUldegdel,
+      khariltsagchUldegdel,
+    };
+  }, [
+    deduplicatedResidentsAllRaw,
+    ezemshigchiinTurul,
+    gereeGaralt?.jagsaalt,
+    tuluvFilter,
+    monthKhungulultByGereeId,
+    tableDisplayBalances,
+  ]);
 
   // Stats use deduplicatedResidentsAll so dashboard numbers stay fixed when clicking filters
   const stats = useMemo(() => {
@@ -2256,24 +2292,24 @@ export default function DansniiKhuulga() {
       { niit: 0, paid: 0, unpaid: 0 },
     );
 
-    // Сонгосон хугацааны хөнгөлөлтийн нийт дүн (сонгосон эзэмшигчийн бүлгээр).
+    // Сонгосон хугацааны хөнгөлөлтийн нийт дүн ба хөнгөлөлт авсан гэрээний тоо
+    // (сонгосон эзэмшигчийн бүлгээр).
+    let khungulultToo = 0;
     const khungulultNiit = deduplicatedResidentsAll.reduce((sum, r) => {
       const gid =
         String(r?.gereeniiId ?? r?.gereeId ?? "").trim() ||
         (r?.gereeniiDugaar &&
           String((contractsByNumber as any)[String(r.gereeniiDugaar)]?._id || "")) ||
         "";
-      return sum + (gid ? Number(monthKhungulultByGereeId[gid] ?? 0) : 0);
+      const dun = gid ? Number(monthKhungulultByGereeId[gid] ?? 0) : 0;
+      if (dun > 0) khungulultToo++;
+      return sum + dun;
     }, 0);
 
     return [
       {
-        title:
-          ezemshigchFilter === "khariltsagch"
-            ? "Харилцагч"
-            : ezemshigchFilter === "orshinSuugch"
-              ? "Оршин суугч"
-              : "Нийт",
+        // Эзэмшигчийн бүлэг тусдаа карттай болсон тул «Нийт» нэрээ хадгална.
+        title: "Нийт",
         value: counts.niit,
       },
       { title: "Цуцалсан гэрээний авлага", value: cancelledGereesWithUnpaid },
@@ -2282,6 +2318,7 @@ export default function DansniiKhuulga() {
       {
         title: "Хөнгөлөлт",
         value: `${Math.round(khungulultNiit).toLocaleString("mn-MN")}₮`,
+        sub: `${khungulultToo} гэрээ`,
       },
     ];
   }, [
@@ -3509,30 +3546,8 @@ export default function DansniiKhuulga() {
       </div> */}
 
       <div className="space-y-3">
-        {/* Эзэмшигчээр ялгах: Бүгд / Оршин суугч / Харилцагч */}
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="stg-segment" role="tablist" aria-label="Эзэмшигчийн төрөл">
-            {([
-              { key: "all", ner: "Бүгд", too: ezemshigchToo.all },
-              { key: "orshinSuugch", ner: "Оршин суугч", too: ezemshigchToo.orshinSuugch },
-              { key: "khariltsagch", ner: "Харилцагч", too: ezemshigchToo.khariltsagch },
-            ] as const).map((b) => (
-              <button
-                key={b.key}
-                type="button"
-                role="tab"
-                aria-selected={ezemshigchFilter === b.key}
-                onClick={() => { setEzemshigchFilter(b.key); setPage(1); }}
-                className={`stg-segment-item inline-flex min-h-9 items-center gap-2 ${ezemshigchFilter === b.key ? "is-active" : ""}`}
-              >
-                {b.ner}
-                <span className="rounded-full bg-[color:var(--surface-hover)] px-1.5 text-[11px] text-[color:var(--muted-text)]">
-                  {b.too}
-                </span>
-              </button>
-            ))}
-          </div>
-          {canAddDiscount && (
+        {canAddDiscount && (
+          <div className="flex justify-end">
             <button
               type="button"
               onClick={() => setIsKhungulultOpen(true)}
@@ -3541,17 +3556,50 @@ export default function DansniiKhuulga() {
               <Tag className="h-4 w-4" />
               Хөнгөлөлт оруулах
             </button>
-          )}
-        </div>
+          </div>
+        )}
         <div
           id="guilgee-status-filter"
-          className="stat-cards-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5"
+          className="stat-cards-grid grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-7"
         >
+          {/* Эзэмшигчийн төрлийн картууд — дарвал тухайн бүлгээр шүүнэ, дахин
+              дарвал бүгд рүү буцна. Бусад картуудтай хослон ажиллана. */}
+          {([
+            { key: "orshinSuugch", ner: "Оршин суугч", too: ezemshigchToo.orshinSuugch, uldegdel: ezemshigchToo.orshinSuugchUldegdel },
+            { key: "khariltsagch", ner: "Харилцагч", too: ezemshigchToo.khariltsagch, uldegdel: ezemshigchToo.khariltsagchUldegdel },
+          ] as const).map((b) => {
+            const songogdson = ezemshigchFilter === b.key;
+            return (
+              <div
+                key={b.key}
+                role="button"
+                tabIndex={0}
+                aria-pressed={songogdson}
+                onClick={() => { setEzemshigchFilter(songogdson ? "all" : b.key); setPage(1); }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setEzemshigchFilter(songogdson ? "all" : b.key);
+                    setPage(1);
+                  }
+                }}
+                title={`${b.ner} — үлдэгдэл ${Math.round(b.uldegdel).toLocaleString("mn-MN")}₮`}
+                className={`relative group rounded-2xl neu-panel transition-all cursor-pointer ${
+                  songogdson ? "ring-2 ring-theme shadow-lg" : "hover:bg-[color:var(--surface-hover)] hover:scale-105"
+                }`}
+              >
+                <div className="stat-card">
+                  <div className="stat-card-value">{b.too.toLocaleString("mn-MN")}</div>
+                  <div className="stat-card-title">{b.ner}</div>
+                </div>
+              </div>
+            );
+          })}
           {stats.map((stat, idx) => {
             // Map stat titles to filter values
             const getFilterValue = (
               title: string,
-            ): "all" | "paid" | "unpaid" | "overdue" | null => {
+            ): "all" | "paid" | "unpaid" | "overdue" | "khungulult" | null => {
               if (
                 title === "Оршин суугч" ||
                 title === "Харилцагч" ||
@@ -3562,6 +3610,8 @@ export default function DansniiKhuulga() {
               if (title === "Төлсөн") return "paid";
               if (title === "Төлөөгүй") return "unpaid";
               if (title === "Цуцалсан гэрээний авлага") return "overdue";
+              // Хөнгөлөлт: модал нээхгүй — хөнгөлөлт авсан эзэмшигчдээр жагсаалтыг шүүнэ.
+              if (title === "Хөнгөлөлт") return "khungulult";
               return null;
             };
 
@@ -3573,12 +3623,14 @@ export default function DansniiKhuulga() {
                 key={idx}
                 onClick={() => {
                   if (filterValue) {
-                    setTuluvFilter(filterValue);
-                  } else if (stat.title === "Хөнгөлөлт" && canAddDiscount) {
-                    setIsKhungulultOpen(true);
+                    // Идэвхтэй картыг дахин дарвал «Нийт» руу буцна.
+                    setTuluvFilter(tuluvFilter === filterValue && filterValue !== "all" ? "all" : filterValue);
+                    // «Нийт» нь эзэмшигчийн шүүлтийг ч цэвэрлэнэ.
+                    if (filterValue === "all") setEzemshigchFilter("all");
+                    setPage(1);
                   }
                 }}
-                title={stat.title === "Хөнгөлөлт" ? "Сонгосон хугацааны нийт хөнгөлөлт" + (canAddDiscount ? " — дарж хөнгөлөлт оруулна" : "") : undefined}
+                title={stat.title === "Хөнгөлөлт" ? "Сонгосон хугацаанд хөнгөлөлт авсан эзэмшигчдийг харуулна" : undefined}
                 className={`relative group rounded-2xl neu-panel transition-all cursor-pointer ${
                   isActive
                     ? "ring-2 ring-theme shadow-lg"
@@ -3591,6 +3643,9 @@ export default function DansniiKhuulga() {
                   </div>
                   <div className="stat-card-title">
                     {stat.title}
+                    {(stat as any).sub ? (
+                      <span className="ml-1 text-[color:var(--muted-text)]">· {(stat as any).sub}</span>
+                    ) : null}
                   </div>
                 </div>
               </div>
