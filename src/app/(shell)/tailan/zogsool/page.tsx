@@ -695,7 +695,7 @@ export default function ZogsoolTailanPage() {
     <div className="print-container flex w-full flex-col gap-3 pb-14">
       <PrintStyles />
 
-      <div className="flex flex-wrap items-center gap-2 no-print">
+      <div className="order-2 flex flex-wrap items-center gap-2 no-print">
         <FilterDatePicker
           id="zogsool-date"
           value={dateRange}
@@ -733,7 +733,7 @@ export default function ZogsoolTailanPage() {
       </div>
 
       {/* ── Хураангуй ── */}
-      <div className="grid grid-cols-2 gap-3 no-print md:grid-cols-3 xl:grid-cols-5">
+      <div className="order-1 grid grid-cols-2 gap-3 no-print md:grid-cols-3 xl:grid-cols-5">
         {[
           { nershil: "Урьсан машин", utga: formatNumber(niit.urisanMachinToo, 0), ungu: "text-[color:var(--panel-text)]" },
           { nershil: "Нийт төлөх", utga: formatNumber(niit.niitTulbur), ungu: "text-[color:var(--panel-text)]" },
@@ -752,7 +752,7 @@ export default function ZogsoolTailanPage() {
       </div>
 
       {activeTab === "residentSummary" && (
-        <div className="allow-overflow">
+        <div className="order-3 allow-overflow">
           <div>
             <Table
               dataSource={residentSummary}
@@ -825,7 +825,7 @@ export default function ZogsoolTailanPage() {
       )}
 
       {activeTab === "guestCarList" && (
-        <div className="allow-overflow">
+        <div className="order-3 allow-overflow">
           <div>
             <Table
               dataSource={guestCarList}

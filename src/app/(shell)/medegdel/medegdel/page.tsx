@@ -228,13 +228,10 @@ function MedegdelContent() {
   };
 
   const markAsRead = async (item: any) => {
-    console.log("[markAsRead] Called with item:", item?._id, "title:", item?.title, "kharsanEsekh:", item?.kharsanEsekh);
     if (!item || !token || !baiguullagiinId) {
-      console.log("[markAsRead] Missing requirements:", { hasItem: !!item, hasToken: !!token, baiguullagiinId });
       return;
     }
     try {
-      console.log("[markAsRead] Sending POST request for:", item._id);
       let res;
       try {
         res = await uilchilgee(token).post(
@@ -244,10 +241,8 @@ function MedegdelContent() {
             params: { baiguullagiinId },
           }
         );
-        console.log("[markAsRead] POST response:", res.data);
       } catch (postErr: any) {
         if (postErr?.response?.status === 404 || postErr?.response?.status === 405) {
-          console.log("[markAsRead] POST not supported, falling back to PATCH");
           res = await uilchilgee(token).patch(
             `/medegdel/${item._id}/kharsanEsekh`,
             {},
@@ -255,7 +250,6 @@ function MedegdelContent() {
               params: { baiguullagiinId },
             }
           );
-          console.log("[markAsRead] PATCH response:", res.data);
         } else {
           throw postErr;
         }
@@ -269,7 +263,6 @@ function MedegdelContent() {
       );
 
       // Revalidate count in sidebar dropdown and unread lists instantly
-      console.log("[markAsRead] Mutating SWR counts...");
       mutate((k: unknown) => Array.isArray(k) && k[0] === "/medegdel/unreadCount", undefined, { revalidate: true });
       mutate((k: unknown) => Array.isArray(k) && k[0] === "/medegdel/unreadList", undefined, { revalidate: true });
     } catch (err) {
@@ -278,11 +271,6 @@ function MedegdelContent() {
   };
 
   useEffect(() => {
-    console.log("[useEffect selectedTulult] Triggered:", {
-      activeTab,
-      hasSelected: !!selectedTulult,
-      kharsanEsekh: selectedTulult?.kharsanEsekh
-    });
     if (activeTab === "tulult" && selectedTulult && !selectedTulult.kharsanEsekh) {
       markAsRead(selectedTulult);
     }

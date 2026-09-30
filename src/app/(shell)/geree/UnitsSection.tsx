@@ -24,6 +24,7 @@ import { useBuilding } from "@/context/BuildingContext";
 import { useSearch } from "@/context/SearchContext";
 import uilchilgee from "@/lib/uilchilgee";
 import { useSWRConfig } from "swr";
+import ZogsoolAguulakhExcel from "./ZogsoolAguulakhExcel";
 
 interface UnitsSectionProps {
   davkharOptions: string[];
@@ -1584,44 +1585,6 @@ export default function UnitsSection({
 
   // «Тоот» таб: орон сууцны давхрууд хүснэгтэд, гаражууд доор жагсаалтаар.
   const bairniiMuruud = floorData.filter((f) => f.turul !== "Зогсоол");
-  const [garajiinDavkhar, setGarajiinDavkhar] = useState<string>("");
-  const garajiinJagsaalt = useMemo(() => {
-    const uzsen = new Set<string>();
-    const muruud: {
-      floor: string;
-      unit: string;
-      ezlegdsen: boolean;
-      resident: any;
-    }[] = [];
-    floorData
-      .filter((f) => f.turul === "Зогсоол")
-      .forEach((f) => {
-        f.filteredUnits.forEach((u) => {
-          const unit = String(u).trim();
-          const tulkhuur = `${f.floor}::${unit}`;
-          if (uzsen.has(tulkhuur)) return;
-          uzsen.add(tulkhuur);
-          muruud.push({
-            floor: f.floor,
-            unit,
-            ezlegdsen: f.activeToots.has(unit),
-            resident: f.unitToResident[unit] || null,
-          });
-        });
-      });
-    // Бүртгэлтэй (идэвхтэй) гаражууд эхэнд, дараа нь чөлөөтэй; дотроо давхар → дугаар.
-    muruud.sort(
-      (a, b) =>
-        Number(b.ezlegdsen) - Number(a.ezlegdsen) ||
-        a.floor.localeCompare(b.floor, undefined, { numeric: true }) ||
-        a.unit.localeCompare(b.unit, undefined, { numeric: true }),
-    );
-    return muruud;
-  }, [floorData]);
-  const garajiinDavkhruud = useMemo(
-    () => Array.from(new Set(garajiinJagsaalt.map((g) => g.floor))),
-    [garajiinJagsaalt],
-  );
 
   // Хүснэгтийн толгойн шүүлтүүрүүд (дээд талын Орц/Давхар/Төлөв сонгуурын оронд).
   const tuluvSongolt = [
@@ -1943,6 +1906,7 @@ export default function UnitsSection({
                           Устгах ({checkedUnits.length})
                         </Button>
                       )}
+                      <ZogsoolAguulakhExcel turul={propertyTab} />
                       <Button
                         onClick={handleSendCheckedInvoices}
                         variant="secondary"

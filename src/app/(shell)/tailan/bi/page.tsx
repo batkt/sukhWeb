@@ -640,11 +640,6 @@ export default function BiTailanPage() {
           {isLoading && (
             <Loader2 className="h-4 w-4 animate-spin text-theme" />
           )}
-          <FilterDatePicker
-            value={dateRange}
-            onChange={setDateRange}
-            className="w-full sm:w-[284px]"
-          />
           <ExcelButton
             onClick={csvTatya}
             title="Бүх үзүүлэлтийг CSV-ээр татах"
@@ -706,6 +701,14 @@ export default function BiTailanPage() {
           utga={dunFormat(kpi?.zogsoolOrlogo || 0)}
           icon={<Car className="h-4 w-4" />}
           ungu={UNGU.shar}
+        />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <FilterDatePicker
+          value={dateRange}
+          onChange={setDateRange}
+          className="w-full sm:w-[284px]"
         />
       </div>
 

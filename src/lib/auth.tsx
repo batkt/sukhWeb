@@ -273,9 +273,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Call systemiinMedeelelAvya when first logging in
       uilchilgee(loginToken)
         .get("/systemiinMedeelelAvya")
-        .then((systemRes) => {
-          console.log("System memory information response:", systemRes.data);
-        })
         .catch((sysErr) => {
           console.error("Failed to fetch system information:", sysErr);
         });

@@ -155,7 +155,7 @@ function AuditTuukhAgguulga({ turul }: { turul: TuukhTurul }) {
       {
         key: "ajiltan",
         title: "Ажилтан",
-        width: 180,
+        width: 100,
         sorter: (a, b) => textEremb(a.ajiltniiNer, b.ajiltniiNer),
         render: (_: unknown, r) => (
           <span className="text-[color:var(--panel-text)]">{r.ajiltniiNer}</span>
@@ -281,7 +281,7 @@ function AuditTuukhAgguulga({ turul }: { turul: TuukhTurul }) {
 
   return (
     <div className="flex w-full flex-col gap-3 pb-14">
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex w-full flex-wrap items-center gap-2">
         <FilterDatePicker
           id={`tuukh-${turul}-ognoo`}
           value={dateRange}
@@ -298,30 +298,32 @@ function AuditTuukhAgguulga({ turul }: { turul: TuukhTurul }) {
           }}
           className="w-full sm:w-[284px]"
         />
-        <FilterSelect
-          label="Ажилтан"
-          value={ajiltniiId}
-          onChange={(v) => {
-            setAjiltniiId(v);
-            shineerEkhlekh();
-          }}
-          options={ajiltanOptions}
-          searchable
-          searchPlaceholder="Ажилтан хайх..."
-          className="max-w-[260px]"
-        />
-        <FilterSelect
-          label="Төрөл"
-          value={model}
-          onChange={(v) => {
-            setModel(v);
-            shineerEkhlekh();
-          }}
-          options={turulOptions}
-          searchable
-          searchPlaceholder="Төрөл хайх..."
-          className="max-w-[260px]"
-        />
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+          <FilterSelect
+            label="Ажилтан"
+            value={ajiltniiId}
+            onChange={(v) => {
+              setAjiltniiId(v);
+              shineerEkhlekh();
+            }}
+            options={ajiltanOptions}
+            searchable
+            searchPlaceholder="Ажилтан хайх..."
+            className="w-[160px] shrink-0"
+          />
+          <FilterSelect
+            label="Төрөл"
+            value={model}
+            onChange={(v) => {
+              setModel(v);
+              shineerEkhlekh();
+            }}
+            options={turulOptions}
+            searchable
+            searchPlaceholder="Төрөл хайх..."
+            className="w-[160px] shrink-0"
+          />
+        </div>
       </div>
 
       <Table<AuditMur>

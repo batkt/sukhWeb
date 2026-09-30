@@ -50,18 +50,15 @@ export default function GereeModals() {
   React.useEffect(() => {
     if (typeof window !== "undefined") {
       (window as any).__openPermissionsModal = (employee: any) => {
-        console.log("🚀 Opening permissions modal for employee:", employee);
         setPermissionsEmployee(employee);
         setShowPermissionsModal(true);
       };
 
       (window as any).__openHistoryModal = (contract: any) => {
-        console.log("📜 Opening history modal for contract:", contract);
         state.setHistoryContract(contract);
         state.setShowHistoryModal(true);
       };
 
-      console.log("✅ Global modal functions registered");
     }
     return () => {
       if (typeof window !== "undefined") {
@@ -89,8 +86,6 @@ export default function GereeModals() {
           barilguud: permissionsEmployee.barilguud, // Preserve existing buildings
         },
       );
-      console.log("✅ Employee permissions updated via Tsonkhnii Medeelel");
-
       // Reload limits
       reloadPermissions();
 
@@ -99,9 +94,7 @@ export default function GereeModals() {
       // User requested "dont call it in modal", so commenting out/removing.
       // await uilchilgee(token).post("/erkhiinMedeelelAvya");
 
-      console.log("3️⃣ Refreshing employee list...");
       await data.ajiltniiJagsaaltMutate();
-      console.log("✅ Employee list refreshed");
 
       openSuccessOverlay("Эрх амжилттай хадгалагдлаа");
     } catch (error: any) {

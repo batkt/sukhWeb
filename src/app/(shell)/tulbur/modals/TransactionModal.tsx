@@ -484,7 +484,6 @@ export default function TransactionModal({
 
     setIsFetchingLatest(true);
     try {
-      console.log("[LATEST] Fetching latest reading for:", resident._id);
       const res = await uilchilgee(token!).get("/latestZaaltAvya", {
         params: {
           baiguullagiinId,
@@ -496,7 +495,6 @@ export default function TransactionModal({
 
       if (res.data?.success && res.data.data) {
         const d = res.data.data;
-        console.log("[LATEST] Found:", d);
         if (d.umnukhZaalt != null) setUmnukhZaalt(String(d.umnukhZaalt));
         if (d.suuliinZaalt != null) setSuuliinZaalt(String(d.suuliinZaalt));
       }
@@ -563,7 +561,6 @@ export default function TransactionModal({
 
     setIsCalculatingTsakhilgaan(true);
     try {
-      console.log("[CALC] Sending request:", payload);
       const res = await uilchilgee(token).post<{
         success: boolean;
         niitDun?: number;
@@ -578,7 +575,6 @@ export default function TransactionModal({
       }>("/tsakhilgaanTootsool", payload);
 
       if (res.data?.success && typeof res.data.niitDun === "number") {
-        console.log("[CALC] Received response:", res.data);
         const formatted = formatAmount(res.data.niitDun);
         setAmount(formatted);
 

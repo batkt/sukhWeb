@@ -456,7 +456,7 @@ export default function NekhemjlekhiinTuukhPage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="no-print">
+      <form onSubmit={handleSubmit} className="order-2 no-print">
         <div className="flex flex-wrap items-center gap-2 no-print">
           <FilterDatePicker
             value={dateRange}
@@ -588,7 +588,7 @@ export default function NekhemjlekhiinTuukhPage() {
       {error && <div className="text-danger">Алдаа: {error}</div>}
 
       {/* Дүнгийн хураангуй */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="order-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           {
             label: "Нийт нэхэмжилсэн",
@@ -635,6 +635,7 @@ export default function NekhemjlekhiinTuukhPage() {
 
       {/* Стандарт хүснэгт */}
       <Table<any>
+        className="order-3"
         columns={tuukhColumns}
         dataSource={data.slice(
           (currentPage - 1) * pageSize,
@@ -678,7 +679,7 @@ export default function NekhemjlekhiinTuukhPage() {
         }
       />
 
-      <div className="flex items-center justify-between no-print">
+      <div className="order-3 flex items-center justify-between no-print">
         <div className="text-sm text-theme">Нийт: {data.length}</div>
         <div className="flex items-center gap-3">
           <PageSongokh

@@ -18,7 +18,6 @@ if (R2WPlayer && typeof (R2WPlayer as any).AJAX === "function" && !(R2WPlayer as
     if (isR2WRequest) {
       // 1. Rewrite the URL from /answer to /stream for Go RTSPtoWebRTC server
       const newUrl = urlStr.replace(/\/answer$/, "/stream");
-      console.log(`[R2WPlayer.AJAX Patch] Intercepting request. URL: ${urlStr} -> ${newUrl}`);
 
       // 2. Format payload as application/x-www-form-urlencoded
       const formData = new URLSearchParams();

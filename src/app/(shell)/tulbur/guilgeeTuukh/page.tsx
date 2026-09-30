@@ -1944,6 +1944,25 @@ export default function DansniiKhuulga() {
           )) ||
         "";
 
+      const getContract = (it: any) => {
+        const gid = getGid(it);
+        return (
+          (gid && contractsById[gid]) ||
+          (it?.gereeniiDugaar && contractsByNumber[String(it.gereeniiDugaar)]) ||
+          null
+        );
+      };
+      const getResident = (it: any, contract: any) => {
+        const rid =
+          it?.orshinSuugchId ||
+          it?.khariltsagchId ||
+          it?.residentId ||
+          contract?.khariltsagchId ||
+          contract?.orshinSuugchId ||
+          contract?.residentId;
+        return (rid && residentsById[String(rid)]) || it?.orshinSuugch || null;
+      };
+
       if (sortField === "uldegdel" || sortField === "paid") {
         if (sortField === "paid") {
           const gidA = getGid(a);
@@ -2010,6 +2029,68 @@ export default function DansniiKhuulga() {
         };
         aVal = getTootVal(a);
         bVal = getTootVal(b);
+      } else if (sortField === "ner") {
+        const getName = (it: any) => {
+          const contract = getContract(it);
+          const resident = getResident(it, contract);
+          return String(resident?.ner || it?.ner || contract?.ner || "");
+        };
+        aVal = getName(a);
+        bVal = getName(b);
+      } else if (sortField === "gereeniiDugaar") {
+        aVal = String(a?.gereeniiDugaar || getContract(a)?.gereeniiDugaar || "");
+        bVal = String(b?.gereeniiDugaar || getContract(b)?.gereeniiDugaar || "");
+      } else if (sortField === "utas") {
+        const getPhone = (it: any) => {
+          const contract = getContract(it);
+          const resident = getResident(it, contract);
+          const raw = resident?.utas || it?.utas || contract?.utas || "";
+          return String(Array.isArray(raw) ? raw[0] || "" : raw);
+        };
+        aVal = getPhone(a);
+        bVal = getPhone(b);
+      } else if (sortField === "davkhar") {
+        const getFloor = (it: any) => {
+          const contract = getContract(it);
+          const resident = getResident(it, contract);
+          return String(
+            contract?.davkhar ||
+              it?.davkhar ||
+              resident?.toots?.[0]?.davkhar ||
+              "",
+          );
+        };
+        aVal = getFloor(a);
+        bVal = getFloor(b);
+      } else if (sortField === "sariinTurees") {
+        const getRent = (it: any) => {
+          const contract = getContract(it);
+          return Number(
+            it?.sariinTurees ||
+              contract?.sariinTurees ||
+              contract?.sariinTulbur ||
+              contract?.tulburiinDun ||
+              0,
+          );
+        };
+        aVal = getRent(a);
+        bVal = getRent(b);
+      } else if (sortField === "ekhniiUldegdel") {
+        const getInitialBalance = (it: any) =>
+          Number(it?.ekhniiUldegdel || getContract(it)?.ekhniiUldegdel || 0);
+        aVal = getInitialBalance(a);
+        bVal = getInitialBalance(b);
+      } else if (sortField === "tuluv") {
+        aVal = String(a?.tuluv || a?.status || getContract(a)?.tuluv || "");
+        bVal = String(b?.tuluv || b?.status || getContract(b)?.tuluv || "");
+      } else if (sortField === "lastLog") {
+        const getLastLogTime = (it: any) => {
+          const raw = it?.tulsunOgnoo || it?.paidAt || it?.ognoo || it?.nekhemjlekhiinOgnoo || it?.createdAt;
+          const time = raw ? new Date(raw).getTime() : NaN;
+          return Number.isFinite(time) ? time : null;
+        };
+        aVal = getLastLogTime(a);
+        bVal = getLastLogTime(b);
       } else {
         aVal = a[sortField];
         bVal = b[sortField];
@@ -3485,18 +3566,6 @@ export default function DansniiKhuulga() {
         return false;
       });
 
-      console.log("📜 History filter result:", {
-        resident: {
-          id: residentId,
-          gereeId: residentGereeId,
-          gereeDugaar: residentGereeDugaar,
-          toot: residentToot,
-          ner: residentNer,
-        },
-        totalItems: list.length,
-        matchedItems: residentInvoices.length,
-      });
-
       setHistoryItems(residentInvoices);
     } catch (e) {
       openErrorOverlay(getErrorMessage(e));
@@ -3643,22 +3712,10 @@ export default function DansniiKhuulga() {
         </div>
       </div> */}
 
-      <div className="space-y-3">
-        {canAddDiscount && (
-          <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={() => setIsKhungulultOpen(true)}
-              className="btn-minimal inline-flex h-9 items-center gap-1.5 !px-3"
-            >
-              <Tag className="h-4 w-4" />
-              Хөнгөлөлт оруулах
-            </button>
-          </div>
-        )}
+      <div className="flex flex-col gap-3">
         <div
           id="guilgee-status-filter"
-          className="stat-cards-grid grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-7"
+          className="stat-cards-grid order-1 grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-7"
         >
           {/* Эзэмшигчийн төрлийн картууд — дарвал тухайн бүлгээр шүүнэ, дахин
               дарвал бүгд рүү буцна. Бусад картуудтай хослон ажиллана. */}
@@ -3750,7 +3807,7 @@ export default function DansniiKhuulga() {
             );
           })}
         </div>
-        <div className="relative z-30 rounded-2xl">
+        <div className="relative z-30 order-2 rounded-2xl">
           <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
             {/* Шүүлтүүр — нэгдсэн `.btn-minimal` / `.filter-field` загвар (globals.css) */}
             <div className="flex w-full flex-wrap items-center gap-2 xl:w-auto">
@@ -3759,7 +3816,6 @@ export default function DansniiKhuulga() {
                 picker="month"
                 value={ekhlekhOgnoo}
                 onChange={(dates) => {
-                  // Сараар шүүнэ: эхлэх сарын 1 → дуусах сарын сүүлийн өдөр
                   const [a, b] = (dates || []) as [any, any];
                   setEkhlekhOgnoo(
                     a && b
@@ -3777,14 +3833,14 @@ export default function DansniiKhuulga() {
                 value={selectedOrtsFilter}
                 onChange={setSelectedOrtsFilter}
                 options={ortsSongolt}
-                className="max-w-[180px]"
+                className="w-[180px] shrink-0"
               />
               <FilterSelect
                 label="Давхар"
                 value={selectedDavkharFilter}
                 onChange={setSelectedDavkharFilter}
                 options={davkharSongolt}
-                className="max-w-[180px]"
+                className="w-[180px] shrink-0"
               />
               <FilterSelect
                 label="Тоот"
@@ -3793,7 +3849,7 @@ export default function DansniiKhuulga() {
                 options={tootSongolt}
                 searchable
                 searchPlaceholder="Тоот хайх..."
-                className="max-w-[180px]"
+                className="w-[180px] shrink-0"
               />
             </div>
 
@@ -3985,9 +4041,8 @@ export default function DansniiKhuulga() {
             </div>
           </div>
         </div>
-
         {/* Стандарт хүснэгт */}
-        <div className="w-full">
+        <div className="order-3 w-full">
           <div className="allow-overflow no-scrollbar">
             <GuilgeeTable
               data={paginated}

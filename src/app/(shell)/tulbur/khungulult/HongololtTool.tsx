@@ -71,6 +71,7 @@ interface DiscountHistoryRow {
   duusakhOgnoo?: string;
   davkhar?: string;
   orts?: string;
+  angilal?: string;
   khungulukhTurul?: string;
   tulukhDun?: number;
   tulsunDun?: number;
@@ -324,6 +325,7 @@ export default function HongololtTool({
   const [history, setHistory] = useState<DiscountHistoryRow[]>([]);
   const histSearch = searchTerm;
   const [histDavkhar, setHistDavkhar] = useState("");
+  const [histAngilal, setHistAngilal] = useState("");
   // Анхдагч нь ЭНЭ САР — өмнө нь өнөөдөр–өнөөдөр байсан тул түүх нээхэд зөвхөн
   // өнөөдөр бүртгэсэн хөнгөлөлт харагдаж, бусад нь «алга» мэт санагддаг байв.
   const [histDateRange, setHistDateRange] = useState<[string | null, string | null]>([
@@ -546,6 +548,7 @@ export default function HongololtTool({
             ner: k.ner || "—",
             gereeniiDugaar: k.gereeniiDugaar || "—",
             orts: k.orts || "",
+            angilal: angilalTaniya(t.angilal || ""),
             davkhar: k.davkhar || "",
             toot: k.toot || "—",
             ekhlekhOgnoo: t.ekhlekhSar,
@@ -577,6 +580,7 @@ export default function HongololtTool({
           ner: h.ner || "—",
           gereeniiDugaar: h.gereeniiDugaar || "—",
           toot: h.toot || "—",
+          angilal: angilalTaniya(`${h.zardliinNer || ""} ${h.tailbar || ""}`),
           ekhlekhOgnoo: sar,
           duusakhOgnoo: sar,
           tulukhDun: 0,
@@ -613,6 +617,7 @@ export default function HongololtTool({
       setActiveTab("oruulakh");
       setHistory([]);
       setHistDavkhar("");
+      setHistAngilal("");
       setHistPage(1);
     }
     // loadResidents нь token/байгууллага/барилгаас хамаарна — F5 дарахад эдгээр
@@ -669,6 +674,7 @@ export default function HongololtTool({
     const q = histSearch.trim().toLowerCase();
     return history.filter((h) => {
       if (histDavkhar && String(h.davkhar || "") !== histDavkhar) return false;
+      if (histAngilal && (h.angilal || "Орон сууц") !== histAngilal) return false;
 
       // Хөнгөлсөн САР-аар шүүнэ (ekhlekh–duusakh муж сонгосон мужтай давхцвал).
       // Шинэ бичлэг «бүртгэсэн огноо», хуучин мөр «хөнгөлсөн сар»-аар өөр өөр
@@ -693,11 +699,12 @@ export default function HongololtTool({
         (h.toot || "").toLowerCase().includes(q) ||
         (h.gereeniiDugaar || "").toLowerCase().includes(q) ||
         (h.tailbar || "").toLowerCase().includes(q) ||
+        (h.angilal || "").toLowerCase().includes(q) ||
         (h.guilgeeKhiisenAjiltniiNer || "").toLowerCase().includes(q) ||
         (h.turul || "").toLowerCase().includes(q)
       );
     });
-  }, [history, histSearch, histDavkhar, histDateRange]);
+  }, [history, histSearch, histDavkhar, histAngilal, histDateRange]);
 
   const { totalTulukhDun, totalKhungulukhDun } = useMemo(() => {
     let tTulukh = 0;
@@ -1261,7 +1268,7 @@ export default function HongololtTool({
           const discountDun = computeDiscount(r);
           return isTarget && discountDun > 0 ? (
             <span className="font-medium tabular-nums whitespace-nowrap text-brand">
-              -{fmt(discountDun)}
+              {fmt(discountDun)}
             </span>
           ) : (
             <span className="tabular-nums text-[color:var(--muted-text)]">0</span>
@@ -1279,7 +1286,7 @@ export default function HongololtTool({
       {
         title: "Огноо",
         key: "ognoo",
-        width: 150,
+        width: 100,
         sorter: (a: any, b: any) =>
           new Date(a.createdAt || a.ognoo || 0).getTime() - new Date(b.createdAt || b.ognoo || 0).getTime(),
         render: (_: any, h: any) => {
@@ -1287,7 +1294,6 @@ export default function HongololtTool({
           return (
             <div className="leading-tight tabular-nums">
               <div className="text-[13px] text-[color:var(--panel-text)]">{udur || "—"}</div>
-              {tsag && <div className="text-[12px] text-[color:var(--muted-text)]">{tsag}</div>}
             </div>
           );
         },
@@ -1296,7 +1302,7 @@ export default function HongololtTool({
         // Нэр, гэрээ, орц, тоот — нэг баганад: хэн болохыг нэг харцаар
         title: "Оршин суугч",
         key: "ner",
-        width: 240,
+        width: 180,
         sorter: (a: any, b: any) => String(a.ner || "").localeCompare(String(b.ner || "")),
         render: (_: any, h: any) => (
           <div className="min-w-0 leading-tight">
@@ -1312,7 +1318,8 @@ export default function HongololtTool({
       {
         title: "Хугацаа",
         key: "khugatsaa",
-        width: 200,
+        width: 150,
+        sorter: (a: any, b: any) => String(a.ekhlekhOgnoo || "").localeCompare(String(b.ekhlekhOgnoo || "")),
         render: (_: any, h: any) => (
           <span className="whitespace-nowrap text-[13px] tabular-nums text-[color:var(--panel-text)]">
             {h.ekhlekhOgnoo || "—"}
@@ -1326,6 +1333,16 @@ export default function HongololtTool({
               <span className="ml-1.5 text-[12px] text-[color:var(--muted-text)]">· {h.bichlegiinToo} сар</span>
             )}
           </span>
+        ),
+      },
+      {
+        title: "Ангилал",
+        dataIndex: "angilal",
+        key: "angilal",
+        width: 105,
+        sorter: (a: any, b: any) => String(a.angilal || "").localeCompare(String(b.angilal || "")),
+        render: (v: any) => (
+          <span className="whitespace-nowrap text-[13px] text-[color:var(--panel-text)]">{v || "Орон сууц"}</span>
         ),
       },
       {
@@ -1345,7 +1362,7 @@ export default function HongololtTool({
         align: "right" as const,
         sorter: (a: any, b: any) => Math.abs(a.dun || 0) - Math.abs(b.dun || 0),
         render: (v: any) => (
-          <span className="whitespace-nowrap tabular-nums text-brand">−{fmt2(Math.abs(v || 0))}</span>
+          <span className="whitespace-nowrap tabular-nums text-brand">{fmt2(Math.abs(v || 0))}</span>
         ),
       },
       {
@@ -1353,6 +1370,7 @@ export default function HongololtTool({
         key: "turul",
         width: 120,
         align: "center" as const,
+        sorter: (a: any, b: any) => String(a.turul || "").localeCompare(String(b.turul || "")),
         render: (_: any, h: any) => (
           <span className="inline-flex rounded-full bg-theme/10 px-2 py-0.5 text-[12px] text-brand whitespace-nowrap">
             {h.turul || "—"}
@@ -1363,6 +1381,7 @@ export default function HongololtTool({
         title: "Шалтгаан",
         key: "tailbar",
         width: 200,
+        sorter: (a: any, b: any) => String(a.tailbar || "").localeCompare(String(b.tailbar || "")),
         render: (_: any, h: any) => (
           <span
             className="block truncate text-[13px] text-[color:var(--muted-text)]"
@@ -1375,7 +1394,8 @@ export default function HongololtTool({
       {
         title: "Ажилтан",
         key: "ajiltan",
-        width: 150,
+        width: 100,
+        sorter: (a: any, b: any) => String(a.guilgeeKhiisenAjiltniiNer || "").localeCompare(String(b.guilgeeKhiisenAjiltniiNer || "")),
         render: (_: any, h: any) => (
           <div className="min-w-0 leading-tight">
             <div className="truncate text-[13px] text-[color:var(--panel-text)]">
@@ -1388,9 +1408,9 @@ export default function HongololtTool({
         ),
       },
       {
-        title: "",
+        title: "Үйлдэл",
         key: "action",
-        width: 88,
+        width: 60,
         align: "center" as const,
         // Засах функц бэлэн болоогүй тул зөвхөн устгах. Устгахад шалтгаан
         // заавал — мөрийн хажууд жижиг баталгаажуулах хэсэг гарна.
@@ -1723,59 +1743,14 @@ export default function HongololtTool({
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden pt-3 px-2">
           <div className="flex-1 flex flex-col min-h-0">
             {/* Toolbar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 pb-3 shrink-0">
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <FilterDatePicker
-                  value={
-                      histDateRange[0] && histDateRange[1]
-                        ? [histDateRange[0], histDateRange[1]]
-                        : undefined
-                    }
-                  onChange={(_: any, dateStrings: [string, string]) => {
-                      if (dateStrings && Array.isArray(dateStrings) && (dateStrings[0] || dateStrings[1])) {
-                        setHistDateRange([dateStrings[0] || null, dateStrings[1] || null]);
-                      } else {
-                        setHistDateRange([null, null]);
-                      }
-                      setHistPage(1);
-                    }}
-                  format="YYYY-MM-DD"
-                  placeholder={["Эхлэх огноо", "Дуусах огноо"]}
-                  className="w-full sm:w-[284px]"
-                />
-                <FilterSelect
-                  label="Давхар"
-                  value={histDavkhar}
-                  onChange={(v) => {
-                    setHistDavkhar(v);
-                    setHistPage(1);
-                  }}
-                  options={davkharOptions.map((d) => ({ value: String(d), label: `${d} давхар` }))}
-                />
-                <button
-                  type="button"
-                  onClick={loadHistory}
-                  disabled={histFetching}
-                  className="btn-minimal inline-flex h-9 w-9 items-center justify-center !p-0"
-                  title="Дахин ачааллах"
-                  aria-label="Дахин ачааллах"
-                >
-                  <RefreshCw className={`h-4 w-4 ${histFetching ? "animate-spin" : ""}`} />
-                </button>
-              </div>
-
-              <div>
-                <ExcelButton onClick={handleExportExcel} />
-              </div>
-            </div>
 
             {/* Хураангуй — шүүсэн хугацааны хөнгөлөлт нэг харцаар */}
-            <div className="mb-3 grid shrink-0 grid-cols-2 gap-2 sm:grid-cols-4">
+            <div className="order-1 mb-3 grid shrink-0 grid-cols-2 gap-2 sm:grid-cols-3">
               {[
                 { ner: "Хөнгөлөлт", utga: String(tuukhKhuraangui.too), tailbar: "удаа" },
                 { ner: "Хамрагдсан", utga: String(tuukhKhuraangui.suugch), tailbar: "оршин суугч" },
                 { ner: "Нийт хөнгөлсөн", utga: fmt2(totalKhungulukhDun), tailbar: "₮", brand: true },
-                { ner: "Дундаж", utga: fmt2(tuukhKhuraangui.dundaj), tailbar: "₮ / оршин суугч" },
+                // { ner: "Дундаж", utga: fmt2(tuukhKhuraangui.dundaj), tailbar: "₮ / оршин суугч" },
               ].map((k) => (
                 <div key={k.ner} className="rounded-xl border border-[color:var(--surface-border)] px-3.5 py-2.5">
                   <div className="text-[12px] text-[color:var(--muted-text)]">{k.ner}</div>
@@ -1788,9 +1763,54 @@ export default function HongololtTool({
                 </div>
               ))}
             </div>
-
+<div className="order-2 flex shrink-0 flex-wrap items-center gap-2 pb-3">
+              <FilterDatePicker
+                value={
+                  histDateRange[0] && histDateRange[1]
+                    ? [histDateRange[0], histDateRange[1]]
+                    : undefined
+                }
+                onChange={(_: any, dateStrings: [string, string]) => {
+                  if (dateStrings && (dateStrings[0] || dateStrings[1])) {
+                    setHistDateRange([dateStrings[0] || null, dateStrings[1] || null]);
+                  } else {
+                    setHistDateRange([null, null]);
+                  }
+                  setHistPage(1);
+                }}
+                format="YYYY-MM-DD"
+                placeholder={["Эхлэх огноо", "Дуусах огноо"]}
+                className="w-full sm:w-[284px]"
+              />
+              <div className="ml-auto flex items-center gap-2">
+                <FilterSelect
+                  label="Давхар"
+                  value={histDavkhar}
+                  onChange={(v) => {
+                    setHistDavkhar(v);
+                    setHistPage(1);
+                  }}
+                  options={davkharOptions.map((d) => ({ value: String(d), label: `${d} давхар` }))}
+                  className="w-[130px] shrink-0"
+                />
+                <FilterSelect
+                  label="Ангилал"
+                  value={histAngilal}
+                  onChange={(v) => {
+                    setHistAngilal(v);
+                    setHistPage(1);
+                  }}
+                  options={["Орон сууц", "Зогсоол", "Агуулах"].map((angilal) => ({
+                    value: angilal,
+                    label: angilal,
+                  }))}
+                  className="w-[130px] shrink-0"
+                />
+              </div>
+              <ExcelButton onClick={handleExportExcel} />
+            </div>
             {/* History table — гүйлгэлтийг хүснэгт өөрөө хариуцна */}
-            <div className="min-h-0 flex-1">
+            <div className="order-3 min-h-0 flex-1">
               <Table<any>
                   className=""
                   columns={tuukhiinColumns}
@@ -1812,7 +1832,7 @@ export default function HongololtTool({
                         {fmt2(totalTulukhDun)}
                       </Table.Summary.Cell>
                       <Table.Summary.Cell align="right" className="tabular-nums whitespace-nowrap">
-                        <span className="text-brand">−{fmt2(totalKhungulukhDun)}</span>
+                        <span className="text-brand">{fmt2(totalKhungulukhDun)}</span>
                       </Table.Summary.Cell>
                       <Table.Summary.Cell align="right" className="tabular-nums whitespace-nowrap">
                       </Table.Summary.Cell>
@@ -1823,7 +1843,8 @@ export default function HongololtTool({
             </div>
 
             {/* Pagination Footer */}
-            <div className="flex items-center justify-end gap-3 px-1 pt-3 text-[13px] text-[color:var(--muted-text)] shrink-0">
+          </div>
+          <div className="flex items-center justify-end gap-3 px-1 pt-3 text-[13px] text-[color:var(--muted-text)] shrink-0">
               <div className="flex items-center gap-1">
                 <button
                   type="button"
@@ -1859,7 +1880,6 @@ export default function HongololtTool({
                 <option value={200}>200 / хуудас</option>
               </select>
             </div>
-          </div>
         </div>
       )}
     </>

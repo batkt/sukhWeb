@@ -398,15 +398,6 @@ export function useGereeActions(
         }
       }
 
-      console.log(`[DEBUG] Opening Resident Modal:`, {
-        name: `${p.ovog} ${p.ner}`,
-        units: Array.isArray(p.toots)
-          ? p.toots.map((t: any) => ({
-            toot: t.toot,
-            balance: t.ekhniiUldegdel,
-          }))
-          : "no toots",
-      });
       setNewResident({
         ovog: p.ovog || "",
         ner: p.ner || "",

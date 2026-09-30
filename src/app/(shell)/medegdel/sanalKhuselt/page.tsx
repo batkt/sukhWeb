@@ -157,12 +157,6 @@ export default function SanalKhuselt() {
       });
       if (res.data?.data && Array.isArray(res.data.data)) {
         setThreadMessages(res.data.data);
-        console.log(
-          "[sanalKhuselt] fetchThread ok rootId=",
-          rootId,
-          "count=",
-          res.data.data.length,
-        );
 
         // Fetch any missing residents in thread messages
         const threadIds = [
@@ -188,11 +182,6 @@ export default function SanalKhuselt() {
                     params: { baiguullagiinId: ajiltan.baiguullagiinId },
                   },
                 );
-                console.log(
-                  "[sanalKhuselt] thread orshinSuugch raw",
-                  id,
-                  rRes.data,
-                );
                 r = rRes.data;
               } catch {
                 // ignore, try fallback
@@ -204,11 +193,6 @@ export default function SanalKhuselt() {
                     {
                       params: { baiguullagiinId: ajiltan.baiguullagiinId },
                     },
-                  );
-                  console.log(
-                    "[sanalKhuselt] thread khariltsagch raw",
-                    id,
-                    rRes.data,
                   );
                   r = rRes.data;
                 } catch {
@@ -364,10 +348,6 @@ export default function SanalKhuselt() {
     baiguullagiinId: string,
     options?: { keepSelection?: boolean },
   ) => {
-    console.log(
-      "[sanalKhuselt] fetchMedegdelData start baiguullagiinId=",
-      baiguullagiinId,
-    );
     setLoading(true);
     try {
       const response = await uilchilgee(token || undefined).get("/medegdel", {
@@ -421,7 +401,6 @@ export default function SanalKhuselt() {
                     params: { baiguullagiinId },
                   },
                 );
-                console.log("[sanalKhuselt] orshinSuugch raw", id, rRes.data);
                 r = rRes.data;
               } catch {
                 // ignore, try fallback
@@ -435,7 +414,6 @@ export default function SanalKhuselt() {
                       params: { baiguullagiinId },
                     },
                   );
-                  console.log("[sanalKhuselt] khariltsagch raw", id, rRes.data);
                   r = rRes.data;
                 } catch {
                   // ignore
@@ -457,10 +435,6 @@ export default function SanalKhuselt() {
           setResidentsMap(map);
         }
 
-        console.log(
-          "[sanalKhuselt] fetchMedegdelData ok count=",
-          filteredData.length,
-        );
         const rootIdToKeep = keepSelectionRootIdRef.current;
         if (
           options?.keepSelection &&
@@ -501,19 +475,10 @@ export default function SanalKhuselt() {
     if (!socket || !ajiltan?.baiguullagiinId) return;
     const event = "baiguullagiin" + ajiltan.baiguullagiinId;
     const bId = ajiltan.baiguullagiinId;
-    console.log("[sanalKhuselt] SUBSCRIBE socket event=", event);
     const handler = (payload: {
       type?: string;
       data?: { parentId?: unknown; rootId?: string };
     }) => {
-      console.log(
-        "[sanalKhuselt] RECV socket",
-        event,
-        "payload.type=",
-        payload?.type,
-        "payload=",
-        payload,
-      );
       // Real-time seen: update list, selection, and thread so "seen" shows without refresh
       if (payload?.type === "medegdelSeen") {
         const rootId =
@@ -1145,70 +1110,11 @@ export default function SanalKhuselt() {
     <>
     <div className="flex w-full flex-col gap-3 pb-14 text-[color:var(--panel-text)]">
       {/* Toolbar */}
-      <div className={`flex-wrap items-center gap-2 ${showDetail ? "hidden md:flex" : "flex"}`}>
-        <div id="feedback-filters" className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-          <FilterDatePicker
-            value={dateRange}
-            onChange={(_dates, strs) =>
-              setDateRange(strs && strs[0] && strs[1] ? [strs[0], strs[1]] : null)
-            }
-            className="w-full sm:w-[284px]"
-          />
-          <FilterSelect
-            id="feedback-filter-type-select"
-            label={t("Төрөл")}
-            value={filterType === "all" ? "" : filterType}
-            onChange={(v) => setFilterType(v || "all")}
-            options={[
-              { value: "sanal", label: t("Санал") },
-              { value: "gomdol", label: t("Гомдол") },
-            ]}
-            className="max-w-[220px]"
-          />
-          <FilterSelect
-            id="feedback-filter-status-select"
-            label={t("Төлөв")}
-            value={filterStatus === "all" ? "" : filterStatus}
-            onChange={(v) => setFilterStatus(v || "all")}
-            options={[
-              { value: "pending", label: t("Хүлээгдэж байна") },
-              { value: "done", label: t("Шийдэгдсэн") },
-              { value: "rejected", label: t("Татгалзсан") },
-            ]}
-            className="max-w-[240px]"
-          />
-        </div>
-        <div className="ml-auto flex items-center gap-2">
-          {hasActiveFilters && (
-            <button
-              type="button"
-              onClick={resetFilters}
-              className="btn-minimal inline-flex h-9 items-center gap-1.5 !px-3 text-[13px]"
-            >
-              <X className="h-3.5 w-3.5" />
-              {t("Цэвэрлэх")}
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() =>
-              ajiltan?.baiguullagiinId &&
-              fetchMedegdelData(ajiltan.baiguullagiinId, { keepSelection: true })
-            }
-            disabled={loading}
-            className="btn-minimal inline-flex h-9 items-center gap-1.5 !px-3 text-[13px] disabled:opacity-50"
-            title={t("Шинэчлэх")}
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
-            <span className="hidden sm:inline">{t("Шинэчлэх")}</span>
-          </button>
-        </div>
-      </div>
 
       {/* KPI cards: click to filter by status */}
       <div
         id="feedback-stats"
-        className={`grid-cols-2 gap-3 lg:grid-cols-4 ${showDetail ? "hidden md:grid" : "grid"}`}
+        className={`order-1 grid-cols-2 gap-3 lg:grid-cols-4 ${showDetail ? "hidden md:grid" : "grid"}`}
       >
         {kpiCards.map((k) => {
           const active =
@@ -1247,9 +1153,72 @@ export default function SanalKhuselt() {
           );
         })}
       </div>
+      <div className={`order-2 flex-wrap items-center gap-2 ${showDetail ? "hidden md:flex" : "flex"}`}>
+        <div id="feedback-filters" className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+          <FilterDatePicker
+            value={dateRange}
+            onChange={(_dates, strs) =>
+              setDateRange(strs && strs[0] && strs[1] ? [strs[0], strs[1]] : null)
+            }
+            className="w-full sm:w-[284px]"
+          />
+        </div>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <div className="flex shrink-0 items-end gap-2">
+          <FilterSelect
+            id="feedback-filter-type-select"
+            label={t("Төрөл")}
+            value={filterType === "all" ? "" : filterType}
+            onChange={(v) => setFilterType(v || "all")}
+            options={[
+              { value: "sanal", label: t("Санал") },
+              { value: "gomdol", label: t("Гомдол") },
+            ]}
+            className="w-[130px] shrink-0"
+          />
+          <FilterSelect
+            id="feedback-filter-status-select"
+            label={t("Төлөв")}
+            value={filterStatus === "all" ? "" : filterStatus}
+            onChange={(v) => setFilterStatus(v || "all")}
+            options={[
+              { value: "pending", label: t("Хүлээгдэж байна") },
+              { value: "done", label: t("Шийдэгдсэн") },
+              { value: "rejected", label: t("Татгалзсан") },
+            ]}
+            className="w-[130px] shrink-0"
+          />
+          </div>
+          <div className="flex items-center gap-2">
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="btn-minimal inline-flex h-9 items-center gap-1.5 !px-3 text-[13px]"
+              >
+                <X className="h-3.5 w-3.5" />
+                {t("Цэвэрлэх")}
+              </button>
+            )}
+            {/* <button
+              type="button"
+              onClick={() =>
+                ajiltan?.baiguullagiinId &&
+                fetchMedegdelData(ajiltan.baiguullagiinId, { keepSelection: true })
+              }
+              disabled={loading}
+              className="btn-minimal inline-flex h-9 items-center gap-1.5 !px-3 text-[13px] disabled:opacity-50"
+              title={t("Шинэчлэх")}
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+              <span className="hidden sm:inline">{t("Шинэчлэх")}</span>
+            </button> */}
+          </div>
+        </div>
+      </div>
 
       {/* Master / detail */}
-      <div className="flex min-h-0 gap-3 md:h-[calc(100vh-17rem)] md:min-h-[520px]">
+      <div className="order-3 flex min-h-0 gap-3 md:h-[calc(100vh-17rem)] md:min-h-[520px]">
         {/* List */}
         <div
           className={`w-full md:w-[340px] lg:w-[380px] shrink-0 flex-col overflow-hidden rounded-2xl border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] shadow-[var(--ctl-shadow)] ${showDetail ? "hidden md:flex" : "flex"}`}

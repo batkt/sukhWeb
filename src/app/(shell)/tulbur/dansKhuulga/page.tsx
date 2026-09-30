@@ -788,8 +788,8 @@ export default function DansniiKhuulga() {
   return (
     <>
       <div className="flex flex-col pb-14">
-        <div className="space-y-3">
-          <div className="stat-cards-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="flex flex-col gap-3">
+          <div className="stat-cards-grid order-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             {stats.map((stat, idx) => (
               <div
                 key={idx}
@@ -813,17 +813,17 @@ export default function DansniiKhuulga() {
           </div>
 
           {/* Шүүлтүүр — нэгдсэн `.btn-minimal` загвар (globals.css); үлдэгдэл баруун талд */}
-          <div className="relative z-30 flex flex-wrap items-center gap-2">
+          <div className="relative z-30 order-2 flex flex-wrap items-center gap-2">
             <FilterDatePicker
               id="dans-date"
               value={ekhlekhOgnoo}
               onChange={(_dates, dateStrings) => {
-                  const [s, e] = (dateStrings || []) as [
-                    string | undefined,
-                    string | undefined,
-                  ];
-                  setEkhlekhOgnoo([s || null, e || null]);
-                }}
+                const [s, e] = (dateStrings || []) as [
+                  string | undefined,
+                  string | undefined,
+                ];
+                setEkhlekhOgnoo([s || null, e || null]);
+              }}
               placeholder="Огноо сонгох"
               className="w-full sm:w-[284px]"
             />
@@ -894,7 +894,7 @@ export default function DansniiKhuulga() {
             </div>
           </div>
 
-          <div className="w-full">
+          <div className="order-3 w-full">
             <div className="allow-overflow no-scrollbar" id="dans-table">
               <DansKhuulgaTable
                 data={paginated}

@@ -283,8 +283,6 @@ export function useTulburFooterTotals(
 
     tuluvUnpaidCount = activeUnpaidGids.size;
 
-    console.log(`📊 [TOTALS CALC] FINAL:`, { totalPaid, totalUldegdel, totalBilled, totalEkhniiUldegdel });
-
     return { 
       totalPaid, 
       totalUldegdel, 

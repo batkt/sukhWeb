@@ -174,7 +174,6 @@ export function GereeProvider({ children }: { children: React.ReactNode }) {
     // Listen for global payment/billing updates
     const paymentEvent = `tulburUpdated:${ajiltan.baiguullagiinId}`;
     const paymentHandler = () => {
-      console.log("💰 Payment update received via socket, refreshing resident data...");
       data.orshinSuugchJagsaaltMutate?.();
       data.gereeJagsaaltMutate?.();
     };

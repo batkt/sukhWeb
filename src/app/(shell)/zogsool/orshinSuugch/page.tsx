@@ -34,7 +34,6 @@ import ResidentRegistrationModal from "./ResidentRegistrationModal";
 import ExcelImportModal from "./ExcelImportModal";
 import deleteMethod from "../../../../../tools/function/deleteMethod";
 import { getResidentToot } from "@/lib/residentDataHelper";
-import Button from "@/components/ui/Button";
 import ExcelButton from "@/components/ui/ExcelButton";
 import ZogsoolOrshinSuugchTable from "./ZogsoolOrshinSuugchTable";
 import { StandardPagination } from "@/components/ui/StandardTable";
@@ -310,64 +309,54 @@ export default function OrshinSuugch() {
   };
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
-      <div className="p-4 sm:p-8 max-w-[1700px] mx-auto w-full flex-1 flex flex-col gap-6 overflow-hidden bg-transparent">
-
-
+    <div className="flex h-full min-h-0 flex-col overflow-y-auto custom-scrollbar">
+      <div className="mx-auto flex min-h-0 w-full max-w-[1700px] flex-1 flex-col gap-3 px-4 py-4 pb-8">
         {/* Category Filter Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+        <div className="stat-cards-grid grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-7">
           {categoryStats.map((stat) => {
             const isActive = turulFilter === stat.value;
             return (
-              <div
+              <button
                 key={stat.value}
+                type="button"
+                aria-pressed={isActive}
                 onClick={() => {
                   setTurulFilter(stat.value);
                   setPage(1);
                 }}
-                className={`relative group rounded-2xl transition-all duration-300 cursor-pointer border bg-[color:var(--surface-bg)] ${
+                className={`relative cursor-pointer rounded-2xl neu-panel text-left transition-all select-none ${
                   isActive
-                    ? "border-theme shadow-md shadow-theme/10 scale-[1.02]"
-                    : "border-[color:var(--surface-border)] dark:border-white/5 shadow-sm hover:shadow-md hover:border-[color:var(--surface-border)] dark:hover:border-white/10"
+                    ? "ring-2 ring-theme shadow-lg"
+                    : "hover:bg-[color:var(--surface-hover)]"
                 }`}
               >
-                <div className="relative p-5 overflow-hidden flex flex-col h-full justify-between">
-                  <div
-                    className={`text-3xl font-sans mb-1 transition-colors ${
-                      isActive ? "text-brand font-medium" : "text-[color:var(--panel-text)]"
-                    }`}
-                  >
+                <div className="stat-card">
+                  <div className={`stat-card-value ${isActive ? "text-brand" : "text-[color:var(--panel-text)]"}`}>
                     {stat.count || "0"}
                   </div>
-                  <div
-                    className={`text-[13px] font-sans leading-tight transition-colors ${
-                      isActive ? "text-brand/80 font-medium" : "text-[color:var(--muted-text)]"
-                    }`}
-                  >
-                    {stat.label}
-                  </div>
+                  <div className="stat-card-title">{stat.label}</div>
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
 
         {/* Table Actions */}
-        <div className="flex items-center justify-end gap-3 px-1">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <ExcelButton
             label="Excel"
             title="Excel-ээр машин бүртгэх"
             onClick={() => setShowExcelImport(true)}
           />
-          <Button
+          <button
+            type="button"
             id="resident-new-btn"
             onClick={() => setShowRegistrationModal(true)}
-            variant="primary"
-            leftIcon={<Plus className="w-4 h-4" />}
-            className="h-9 px-4 rounded-[10px] text-[13px]"
+            className="inline-flex h-9 shrink-0 items-center gap-2 rounded-[10px] bg-theme px-4 text-[13px] font-medium text-white shadow-sm transition-all hover:bg-theme active:scale-95"
           >
+            <Plus className="h-3.5 w-3.5" />
             Нэмэх
-          </Button>
+          </button>
         </div>
 
         {showDeleteModal && itemToDelete && (
@@ -455,7 +444,7 @@ export default function OrshinSuugch() {
         )}
 
         {/* Content Table */}
-        <div className="mt-2 flex-1 min-h-0">
+        <div className="min-h-0 flex-1">
           <ZogsoolOrshinSuugchTable
             data={residents}
             loading={!residentsData && !residents.length}

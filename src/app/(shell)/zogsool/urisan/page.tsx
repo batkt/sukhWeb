@@ -957,118 +957,64 @@ export default function UrisanTuukh() {
   ];
 
   return (
-    <div className="h-full overflow-y-auto custom-scrollbar">
-      <div className="flex-1 flex flex-col gap-4 px-4 py-4 max-w-[1700px] mx-auto w-full pb-8">
+    <div className="flex h-full min-h-0 flex-col overflow-y-auto custom-scrollbar">
+      <div className="mx-auto flex min-h-0 w-full max-w-[1700px] flex-1 flex-col gap-3 px-4 py-4 pb-8">
         {/* Filter bar */}
-        <div className="relative z-30 px-5 py-3 rounded-2xl bg-white dark:bg-[color:var(--panel)] border border-[color:var(--surface-border)] shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4 shrink-0">
-              <FilterDatePicker
-                value={dateRange ?? undefined}
-                onChange={(_: any, dateString: [string, string]) => {
-                    setDateRange(dateString);
-                    setPage(1);
-                  }}
-                format="YYYY-MM-DD"
-                className="w-full sm:w-[284px]"
-              />
-            </div>
-          </div>
-
+        <div className="relative z-30 order-2 flex flex-wrap items-center gap-2">
+          <FilterDatePicker
+            value={dateRange ?? undefined}
+            onChange={(_: any, dateString: [string, string]) => {
+              setDateRange(dateString);
+              setPage(1);
+            }}
+            format="YYYY-MM-DD"
+            className="w-full sm:w-[284px]"
+          />
           {statusFilter !== "all" && (
-            <div className="flex flex-wrap items-center gap-2 mt-2.5 pt-2.5 border-t border-[color:var(--surface-border)]">
-              <span className="text-[11px] text-[color:var(--muted-text)] ">Шүүлт:</span>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-theme/10 text-brand text-[11px] rounded-full border border-theme/30">
-                Төлөв: {
-                  { urisan: "Урьсан", neesen: "Нээсэн" }[statusFilter] || statusFilter
-                }
-                <button
-                  onClick={() => { setStatusFilter("all"); setPage(1); }}
-                  className="ml-0.5 hover:text-brand dark:hover:text-brand transition-colors"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            </div>
+            <span className="inline-flex items-center gap-1 rounded-xl border border-theme/30 bg-theme/10 px-2.5 py-1 text-xs text-brand">
+              Төлөв: {{ urisan: "Урьсан", neesen: "Нээсэн" }[statusFilter] || statusFilter}
+              <button
+                type="button"
+                onClick={() => { setStatusFilter("all"); setPage(1); }}
+                className="ml-0.5 transition-colors hover:text-brand"
+                aria-label="Төлөвийн шүүлтүүр арилгах"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </span>
           )}
         </div>
 
         {/* Dashboard Section */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
-          <div className="p-3 rounded-2xl border border-[color:var(--surface-border)] bg-white dark:bg-[color:var(--panel)] shadow-sm flex items-center gap-3 hover:shadow-md transition-all">
-            <div className="w-9 h-9 rounded-xl bg-theme/10 flex items-center justify-center text-brand shrink-0">
-              <BarChart2 className="w-4 h-4" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[11px] text-[color:var(--muted-text)] font-medium truncate">Нийт хандалт</p>
-              <p className="text-base font-medium text-[color:var(--panel-text)] dark:text-white leading-tight mt-0.5">{counts.total}</p>
-            </div>
-          </div>
-          
-          <div className="p-3 rounded-2xl border border-[color:var(--surface-border)] bg-white dark:bg-[color:var(--panel)] shadow-sm flex items-center gap-3 hover:shadow-md transition-all">
-            <div className="w-9 h-9 rounded-xl bg-warning/10 flex items-center justify-center text-warning shrink-0">
-              <Users className="w-4 h-4" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[11px] text-[color:var(--muted-text)] font-medium truncate">Урьсан</p>
-              <p className="text-base font-medium text-[color:var(--panel-text)] dark:text-white leading-tight mt-0.5">{counts.urisan}</p>
-            </div>
-          </div>
-
-          <div className="p-3 rounded-2xl border border-[color:var(--surface-border)] bg-white dark:bg-[color:var(--panel)] shadow-sm flex items-center gap-3 hover:shadow-md transition-all">
-            <div className="w-9 h-9 rounded-xl bg-theme/10 flex items-center justify-center text-theme shrink-0">
-              <Key className="w-4 h-4" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[11px] text-[color:var(--muted-text)] font-medium truncate">Нээсэн</p>
-              <p className="text-base font-medium text-[color:var(--panel-text)] dark:text-white leading-tight mt-0.5">{counts.neesen}</p>
-            </div>
-          </div>
-
-          <div className="p-3 rounded-2xl border border-[color:var(--surface-border)] bg-white dark:bg-[color:var(--panel)] shadow-sm flex items-center gap-3 hover:shadow-md transition-all">
-            <div className="w-9 h-9 rounded-xl bg-theme/10 flex items-center justify-center text-theme shrink-0">
-              <Monitor className="w-4 h-4" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[11px] text-[color:var(--muted-text)] font-medium truncate">Идэвхтэй камер</p>
-              <p className="text-base font-medium text-[color:var(--panel-text)] dark:text-white leading-tight mt-0.5">{topGates.length}</p>
-            </div>
-          </div>
-
-          <div className="p-3 rounded-2xl border border-[color:var(--surface-border)] bg-white dark:bg-[color:var(--panel)] shadow-sm flex items-center gap-3 hover:shadow-md transition-all">
-            <div className="w-9 h-9 rounded-xl bg-warning/10 flex items-center justify-center text-warning shrink-0">
-              <Wallet className="w-4 h-4" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[11px] text-[color:var(--muted-text)] font-medium truncate">Хуримтлагдсан авлага</p>
-              <div className="flex items-baseline gap-1 mt-0.5">
-                <p className="text-base font-medium text-warning leading-tight truncate">
-                  {avlagaNiit.dun.toLocaleString("mn-MN")}₮
-                </p>
-                {avlagaNiit.too > 0 && (
-                  <span className="text-[11px] text-[color:var(--muted-text)] whitespace-nowrap">
-                    ({avlagaNiit.too})
-                  </span>
-                )}
+        <div className="stat-cards-grid order-1 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+          {[
+            { label: "Нийт хандалт", value: counts.total },
+            { label: "Урьсан", value: counts.urisan },
+            { label: "Нээсэн", value: counts.neesen },
+            { label: "Идэвхтэй камер", value: topGates.length },
+            {
+              label: "Хуримтлагдсан авлага",
+              value: `${avlagaNiit.dun.toLocaleString("mn-MN")}₮`,
+              sub: avlagaNiit.too > 0 ? `${avlagaNiit.too} авлага` : undefined,
+            },
+            { label: "ParkEase зогсоол", value: parkEaseNiit },
+          ].map((stat) => (
+            <div key={stat.label} className="rounded-2xl neu-panel">
+              <div className="stat-card">
+                <div className="stat-card-value tabular-nums">{stat.value}</div>
+                <div className="stat-card-title">
+                  {stat.label}
+                  {stat.sub && <span className="ml-1 text-[color:var(--muted-text)]">· {stat.sub}</span>}
+                </div>
               </div>
             </div>
-          </div>
-
-          <div className="p-3 rounded-2xl border border-[color:var(--surface-border)] bg-white dark:bg-[color:var(--panel)] shadow-sm flex items-center gap-3 hover:shadow-md transition-all">
-            <div className="w-9 h-9 rounded-xl bg-theme/10 flex items-center justify-center text-brand shrink-0">
-              <ParkingCircle className="w-4 h-4" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[11px] text-[color:var(--muted-text)] font-medium truncate">ParkEase зогсоол</p>
-              <p className="text-base font-medium text-[color:var(--panel-text)] dark:text-white leading-tight mt-0.5">{parkEaseNiit}</p>
-            </div>
-          </div>
+          ))}
         </div>
 
 
 
         {/* Table */}
-        <div className="min-h-0 flex-1">
+        <div className="order-3 min-h-0 flex-1">
           <Table<any>
             columns={urisanColumns}
             dataSource={logs}
@@ -1087,12 +1033,14 @@ export default function UrisanTuukh() {
 
         {/* Pagination */}
         {totalCount > pageSize && (
-          <StandardPagination
-            current={page}
-            total={totalCount}
-            pageSize={pageSize}
-            onChange={setPage}
-          />
+          <div className="order-3">
+            <StandardPagination
+              current={page}
+              total={totalCount}
+              pageSize={pageSize}
+              onChange={setPage}
+            />
+          </div>
         )}
       </div>
 

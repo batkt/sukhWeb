@@ -1,24 +1,19 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import FilterSelect from "@/components/ui/FilterSelect";
 import { useGereeContext } from "./GereeContext";
 import {
   Download,
   FileDown,
   FileUp,
   Plus,
-  LayoutTemplate,
   UserPlus,
-  Settings2,
   ChevronDown,
   Zap,
 } from "lucide-react";
 import { hasPermission } from "@/lib/permissionUtils";
-import { ALL_COLUMNS } from "./columns";
 import Link from "next/link";
 import ExcelButton from "@/components/ui/ExcelButton";
-import ZogsoolAguulakhExcel from "./ZogsoolAguulakhExcel";
 
 interface GereeHeaderProps {
   activeTab: "contracts" | "residents" | "employees" | "units" | "clients";
@@ -26,28 +21,13 @@ interface GereeHeaderProps {
     tab: "contracts" | "residents" | "employees" | "units" | "clients",
   ) => void;
   onShowMassKwtModal?: () => void;
-  ortsOptions: string[];
-  selectedOrts: string;
-  setSelectedOrts: (val: string) => void;
-  davkharOptions: string[];
-  selectedDawkhar: string;
-  setSelectedDawkhar: (val: string) => void;
-  selectedOrtsForContracts: string;
-  setSelectedOrtsForContracts: (val: string) => void;
   statusFilter: "all" | "active" | "cancelled";
   setStatusFilter: (val: "all" | "active" | "cancelled") => void;
   unitStatusFilter: "all" | "occupied" | "free";
   setUnitStatusFilter: (val: "all" | "occupied" | "free") => void;
   ajiltan: any;
   selectedContracts: string[];
-  showColumnSelector: boolean;
-  setShowColumnSelector: (show: boolean | ((prev: boolean) => boolean)) => void;
-  visibleColumns: string[];
-  setVisibleColumns: (cols: string[] | ((prev: string[]) => string[])) => void;
-  columnMenuRef: React.RefObject<HTMLDivElement | null>;
-  DEFAULT_HIDDEN: string[];
   onShowAvlagaModal: () => void;
-  onShowList2Modal: () => void;
   onSendInvoices: () => void;
   onShowResidentModal: () => void;
   onShowClientModal: () => void;
@@ -73,26 +53,12 @@ interface GereeHeaderProps {
 export default function GereeHeader({
   activeTab,
   setActiveTab,
-  ortsOptions,
-  selectedOrts,
-  setSelectedOrts,
-  davkharOptions: originalDavkharOptions,
-  selectedDawkhar,
-  setSelectedDawkhar,
-  selectedOrtsForContracts,
-  setSelectedOrtsForContracts,
   statusFilter,
   setStatusFilter,
   unitStatusFilter,
   setUnitStatusFilter,
   ajiltan,
-  showColumnSelector,
-  setShowColumnSelector,
-  visibleColumns,
-  setVisibleColumns,
-  columnMenuRef,
   onShowAvlagaModal,
-  onShowList2Modal,
   onSendInvoices,
   onShowResidentModal,
   onShowMassKwtModal,
@@ -124,20 +90,6 @@ export default function GereeHeader({
   const activePropertyTab = context?.state?.propertyTab || "Тоот";
 
 
-
-  const davkharOptions = React.useMemo(() => {
-    if (activeTab === "units" && activePropertyTab === "Тоот") {
-      return originalDavkharOptions.filter((d) => !String(d).trim().toLowerCase().startsWith("b"));
-    }
-    return originalDavkharOptions;
-  }, [originalDavkharOptions, activeTab, activePropertyTab]);
-
-  // Debugging
-  useEffect(() => {
-    if (ajiltan) {
-      console.log("👤 GereeHeader received ajiltan:", ajiltan);
-    }
-  }, [ajiltan]);
 
   const hasGereeBase =
     hasPermission(ajiltan, "/geree") || hasPermission(ajiltan, "geree");
@@ -201,50 +153,8 @@ export default function GereeHeader({
       <div className="flex items-start justify-between px-4 pt-3 pb-1 gap-4 mb-1 w-full">
         <div className="flex-1 min-w-0 w-full">
           <div className="flex items-center justify-between gap-3">
-            {/* Шүүлтүүрүүд — гарчиг авагдсан тул үйлдлийн товчтой нэг мөрөнд */}
-            {(activeTab === "contracts" || activeTab === "units") && (
+            {activeTab === "units" && (
               <div className="hidden md:flex items-center gap-2 flex-wrap min-w-0">
-                  {activeTab === "contracts" && (
-                    <>
-                      {ortsOptions.length > 0 && (
-                        <div className="flex items-center gap-1.5">
-                          <div>
-                            <FilterSelect
-                              label="Орц"
-                              value={selectedOrtsForContracts || ""}
-                              onChange={(val) => setSelectedOrtsForContracts(val)}
-                              options={[
-                                ...ortsOptions.map((o) => ({
-                                  value: o,
-                                  label: o,
-                                })),
-                              ]}
-                              className="max-w-[200px]"
-                            />
-                          </div>
-                        </div>
-                      )}
-                      {davkharOptions.length > 0 && (
-                        <div className="flex items-center gap-1.5">
-                          <div>
-                            <FilterSelect
-                              label="Давхар"
-                              value={selectedDawkhar || ""}
-                              onChange={(val) => setSelectedDawkhar(val)}
-                              options={[
-                                ...davkharOptions.map((d) => ({
-                                  value: d,
-                                  label: d,
-                                })),
-                              ]}
-                              className="max-w-[200px]"
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  )}
-
                   {/* Тоот бүртгэл: Тоот / Гараж / Агуулах таб — үйлдлийн товчтой НЭГ мөрөнд
                       (дээр нь хоосон зай үлдээхгүй). Орц/Давхар/Төлөв шүүлтүүр
                       хүснэгтийн баганын толгойд байна. */}
@@ -269,73 +179,6 @@ export default function GereeHeader({
 
             {/* Desktop: top-right actions per tab */}
             <div className="hidden md:flex items-center gap-2 ml-auto">
-              {activeTab === "contracts" && (
-                <>
-                  <button
-                    id="geree-templates-btn"
-                    onClick={onShowList2Modal}
-                    className="btn-minimal h-10"
-                    aria-label="Гэрээний загварууд"
-                    title="Гэрээний загварууд"
-                  >
-                    <LayoutTemplate className="w-5 h-5" />
-                    <span className="hidden sm:inline text-xs ml-1">
-                      Загвар үүсгэх
-                    </span>
-                  </button>
-                  <div className="relative flex-shrink-0" ref={columnMenuRef}>
-                    <button
-                      id="geree-columns-btn"
-                      onClick={() => setShowColumnSelector((s) => !s)}
-                      className="btn-minimal h-10 flex items-center gap-2"
-                      aria-label="Багана сонгох"
-                      title="Багана сонгох"
-                    >
-                      <Settings2 className="w-5 h-5" />
-                      <span className="hidden sm:inline text-xs ml-1">
-                        Багана
-                      </span>
-                    </button>
-                    {showColumnSelector && (
-                      <div className="absolute right-0 top-full mt-2 z-[100] min-w-[200px] menu-surface rounded-xl shadow-lg overflow-hidden p-2">
-                        <div className="text-xs font-medium text-theme px-2 py-1 border-b border-white/10 mb-1">
-                          Баганууд
-                        </div>
-                        {visibleColumns &&
-                          ALL_COLUMNS.map((col) => {
-                            const isVisible = visibleColumns.includes(col.key);
-                            return (
-                              <label
-                                key={col.key}
-                                className="flex items-center gap-2 px-2 py-1.5 hover:bg-white/10 rounded-lg cursor-pointer transition-colors"
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={isVisible}
-                                  onChange={() => {
-                                    if (isVisible) {
-                                      setVisibleColumns((prev) =>
-                                        prev.filter((k) => k !== col.key),
-                                      );
-                                    } else {
-                                      setVisibleColumns((prev) => [
-                                        ...prev,
-                                        col.key,
-                                      ]);
-                                    }
-                                  }}
-                                  className="w-4 h-4 rounded border border-theme/30 accent-theme"
-                                />
-                                <span className="text-sm">{col.label}</span>
-                              </label>
-                            );
-                          })}
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-
               {activeTab === "residents" && (
                 <div className="flex items-center gap-2">
                   <button
@@ -434,14 +277,6 @@ export default function GereeHeader({
                 </button>
               )}
 
-              {activeTab === "units" &&
-                (activePropertyTab === "Зогсоол" ||
-                  activePropertyTab === "Агуулах") && (
-                  <div className="flex items-center gap-2">
-                    <ZogsoolAguulakhExcel turul={activePropertyTab} />
-                  </div>
-                )}
-
               {activeTab === "units" && activePropertyTab === "Тоот" && (
                 <div className="flex items-center gap-2">
                   <button
@@ -539,44 +374,6 @@ export default function GereeHeader({
           </div>
         </div>
 
-        {/* Mobile: filters in grid layout */}
-        {(activeTab === "contracts" || activeTab === "units") && (
-          <div className="mt-3 md:hidden grid grid-cols-2 gap-2">
-            {activeTab === "contracts" && (
-              <>
-                {ortsOptions.length > 0 && (
-                  <div className="flex flex-col gap-1">
-                    <FilterSelect
-                      label="Орц"
-                      value={selectedOrtsForContracts || ""}
-                      onChange={(val) => setSelectedOrtsForContracts(val)}
-                      options={[
-                        ...ortsOptions.map((o) => ({ value: o, label: o })),
-                      ]}
-                      className="w-full"
-                    />
-                  </div>
-                )}
-                {davkharOptions.length > 0 && (
-                  <div className="flex flex-col gap-1">
-                    <FilterSelect
-                      label="Давхар"
-                      value={selectedDawkhar || ""}
-                      onChange={(val) => setSelectedDawkhar(val)}
-                      options={[
-                        ...davkharOptions.map((d) => ({ value: d, label: d })),
-                      ]}
-                      className="w-full"
-                    />
-                  </div>
-                )}
-              </>
-            )}
-
-
-          </div>
-        )}
-
       {/* Mobile / small screens: keep actions below as before */}
       <div className="flex gap-2 flex-wrap px-4 md:hidden">
         {activeTab === "residents" && (
@@ -663,11 +460,6 @@ export default function GereeHeader({
             <span className="hidden sm:inline text-xs ml-1">Ажилтан нэмэх</span>
           </button>
         )}
-        {activeTab === "units" &&
-          (activePropertyTab === "Зогсоол" ||
-            activePropertyTab === "Агуулах") && (
-            <ZogsoolAguulakhExcel turul={activePropertyTab} idPrefix="mobile-" />
-          )}
         {activeTab === "units" && activePropertyTab === "Тоот" && (
           <>
             <button

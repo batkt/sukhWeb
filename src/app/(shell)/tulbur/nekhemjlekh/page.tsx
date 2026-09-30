@@ -1619,9 +1619,9 @@ export default function InvoicingZardluud() {
         Зардлын нэхэмжлэл
       </motion.h1>
 
-      <div className="space-y-8">
+      <div className="flex flex-col gap-8">
         {/* Enhanced Dashboard with Borders */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="order-1 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {(() => {
             const totalResidents = displayResidents.length;
             const paidCount = displayResidents.filter((r: any) => {
@@ -1692,7 +1692,7 @@ export default function InvoicingZardluud() {
         </div>
 
         <motion.div
-          className="rounded-3xl p-8 bg-[color:var(--panel)]/90 backdrop-blur-xl shadow-xl border border-[color:var(--surface-border)]"
+          className="order-2 rounded-3xl border border-[color:var(--surface-border)] bg-[color:var(--panel)]/90 p-8 shadow-xl backdrop-blur-xl"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
@@ -1830,6 +1830,7 @@ export default function InvoicingZardluud() {
 
         {/* Стандарт хүснэгт */}
         <motion.div
+          className="order-3"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}

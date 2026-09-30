@@ -971,9 +971,7 @@ export default function OrlogoAvlagaPage() {
             ))}
           </div>
         </div>
-        <div className="flex gap-3">
-          <ExcelButton onClick={exportToExcel} />
-        </div>
+        
       </div>
 
       {/* Dashboard Totals removed as requested */}
@@ -985,22 +983,27 @@ export default function OrlogoAvlagaPage() {
           onChange={setDateRange}
           className="w-full sm:w-[284px]"
         />
-        <FilterSelect
-          label="Тоот"
-          value={filters.toot}
-          onChange={(v) => setFilters((p) => ({ ...p, toot: v }))}
-          options={tootSongolt}
-          searchable
-          searchPlaceholder="Тоот хайх..."
-          className="max-w-[200px]"
-        />
-        <FilterSelect
-          label="Давхар"
-          value={filters.davkhar}
-          onChange={(v) => setFilters((p) => ({ ...p, davkhar: v }))}
-          options={davkharSongolt}
-          className="max-w-[200px]"
-        />
+        <div className="ml-auto flex items-center gap-2">
+          <FilterSelect
+            label="Тоот"
+            value={filters.toot}
+            onChange={(v) => setFilters((p) => ({ ...p, toot: v }))}
+            options={tootSongolt}
+            searchable
+            searchPlaceholder="Тоот хайх..."
+            className="w-[130px] shrink-0"
+          />
+          <FilterSelect
+            label="Давхар"
+            value={filters.davkhar}
+            onChange={(v) => setFilters((p) => ({ ...p, davkhar: v }))}
+            options={davkharSongolt}
+            className="w-[130px] shrink-0"
+          />
+        </div>
+        <div className="flex gap-3">
+          <ExcelButton onClick={exportToExcel} />
+        </div>
       </div>
 
       {/* ── Table ───────────────────────────────────────────────── */}

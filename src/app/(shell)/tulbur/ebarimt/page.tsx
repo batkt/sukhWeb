@@ -66,7 +66,6 @@ function sokhiinBarimtEsekh(it: any): boolean {
     Boolean(it?.guilgeeniiId || it?.tulultiinId)
   );
 }
-
 export default function Ebarimt() {
   const router = useRouter();
   const { token, ajiltan, barilgiinId } = useAuth();
@@ -81,6 +80,7 @@ export default function Ebarimt() {
       }
     }
   }, [ajiltan, router]);
+
   const { baiguullaga } = useBaiguullaga(
     token || null,
     ajiltan?.baiguullagiinId || null,
@@ -92,6 +92,8 @@ export default function Ebarimt() {
     return [new Date(start), new Date(end)];
   });
   const { searchTerm } = useSearch();
+
+
   const [uilchilgeeAvi, setUilchilgeeAvi] = useState<string | undefined>(
     undefined,
   );
@@ -630,9 +632,9 @@ export default function Ebarimt() {
 
   return (
     <div className="flex flex-col pb-14">
-        <div className="space-y-3">
+        <div className="flex flex-col gap-3">
           {/* Stats Cards */}
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+          <div className="order-1 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
             {stats.map((stat) => {
               const idevkhtei = activeStatFilter === stat.shuult && stat.shuult !== "all";
               return (
@@ -668,23 +670,22 @@ export default function Ebarimt() {
           </div>
 
           {/* Filters Section */}
-          <div className="rounded-2xl">
+          <div className="order-2 rounded-2xl">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
                 <FilterDatePicker
                   id="ebarimt-date"
                   value={ekhlekhOgnoo ?? undefined}
                   onChange={(v) => {
-                      const [s, e] = (v || [null, null]) as [any, any];
-                      setEkhlekhOgnoo([
-                        s ? new Date(s.valueOf()) : null,
-                        e ? new Date(e.valueOf()) : null,
-                      ]);
-                    }}
+                    const [s, e] = (v || [null, null]) as [any, any];
+                    setEkhlekhOgnoo([
+                      s ? new Date(s.valueOf()) : null,
+                      e ? new Date(e.valueOf()) : null,
+                    ]);
+                  }}
                   placeholder="Огноо сонгох"
                   className="w-full sm:w-[284px]"
                 />
-
                 <FilterSelect
                   label="Үйлчилгээ"
                   value={uilchilgeeAvi ?? ""}
@@ -731,7 +732,7 @@ export default function Ebarimt() {
             />
           )}
 
-          <div className="w-full">
+          <div className="order-3 w-full">
             <div className="allow-overflow no-scrollbar" id="ebarimt-table">
               <EbarimtTable
                 data={statFilteredData}

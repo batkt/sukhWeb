@@ -10,7 +10,7 @@
  * Одоо байгаа дугаарыг хэзээ ч хасахгүй — зөвхөн нэмнэ.
  */
 import React from "react";
-import { FileDown, FileUp, X } from "lucide-react";
+import { ChevronDown, Download, FileUp, X } from "lucide-react";
 import { useSWRConfig } from "swr";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
@@ -19,6 +19,7 @@ import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { ModalPortal } from "../../../../components/shell/ModalPortal";
 import { useGereeContext } from "./GereeContext";
+import ExcelButton from "@/components/ui/ExcelButton";
 import {
   EzemshikhTurul,
   Ezen,
@@ -77,11 +78,13 @@ export default function ZogsoolAguulakhExcel({
   const { data } = useGereeContext();
   const { mutate } = useSWRConfig();
   const inputRef = React.useRef<HTMLInputElement | null>(null);
+  const menuRef = React.useRef<HTMLDivElement | null>(null);
 
   const effectiveBarilgiinId = String(selectedBuildingId || barilgiinId || "");
   const baiguullagiinId = String(baiguullaga?._id || ajiltan?.baiguullagiinId || "");
 
   const [busy, setBusy] = React.useState<null | string>(null);
+  const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const [plan, setPlan] = React.useState<PlanItem[] | null>(null);
   const [errors, setErrors] = React.useState<RowIssue[]>([]);
   const [warnings, setWarnings] = React.useState<RowIssue[]>([]);
@@ -101,6 +104,22 @@ export default function ZogsoolAguulakhExcel({
     () => buildOwnerMap(data.residentsList, data.clientsList, effectiveBarilgiinId),
     [data.residentsList, data.clientsList, effectiveBarilgiinId],
   );
+
+  React.useEffect(() => {
+    if (!isMenuOpen) return;
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) setIsMenuOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsMenuOpen(false);
+    };
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [isMenuOpen]);
 
   const isOpen = plan !== null || results !== null || busy === "check";
   const close = () => {
@@ -422,28 +441,42 @@ export default function ZogsoolAguulakhExcel({
 
   return (
     <>
-      <button
-        onClick={handleDownload}
-        className="btn-minimal h-10"
-        id={`${idPrefix}units-owner-download-template-btn`}
-        aria-label="Загвар татах"
-        title={`${btnLabel} эзэмшигчийн Excel загвар татах`}
-        disabled={!!busy}
-      >
-        <FileDown className="w-5 h-5" />
-        <span className="hidden sm:inline text-xs ml-1">Загвар татах</span>
-      </button>
-      <button
-        onClick={() => inputRef.current?.click()}
-        className="btn-minimal h-10"
-        id={`${idPrefix}units-owner-upload-template-btn`}
-        aria-label="Excel-ээс импортлох"
-        title={`${btnLabel} эзэмшигчийг Excel-ээс оруулах`}
-        disabled={!!busy}
-      >
-        <FileUp className="w-5 h-5" />
-        <span className="hidden sm:inline text-xs ml-1">Загвар оруулах</span>
-      </button>
+      <div className="relative" ref={menuRef}>
+        <ExcelButton
+          id={`${idPrefix}units-owner-excel-btn`}
+          label="Excel"
+          title={`${btnLabel} эзэмшигчийн загвар татах, Excel-ээс оруулах`}
+          disabled={!!busy}
+          onClick={() => setIsMenuOpen((open) => !open)}
+          suffix={<ChevronDown className={`h-4 w-4 transition-transform ${isMenuOpen ? "rotate-180" : ""}`} />}
+        />
+        {isMenuOpen && (
+          <div className="menu-surface absolute left-0 top-full z-50 mt-1.5 w-52 overflow-hidden rounded-xl p-1 shadow-lg">
+            <button
+              type="button"
+              onClick={() => {
+                setIsMenuOpen(false);
+                void handleDownload();
+              }}
+              className="flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-left text-sm text-[color:var(--panel-text)] transition-colors hover:bg-[color:var(--surface-hover)]"
+            >
+              <Download className="h-4 w-4 shrink-0 text-brand" />
+              Загвар татах
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsMenuOpen(false);
+                inputRef.current?.click();
+              }}
+              className="flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-left text-sm text-[color:var(--panel-text)] transition-colors hover:bg-[color:var(--surface-hover)]"
+            >
+              <FileUp className="h-4 w-4 shrink-0 text-success" />
+              Загвар оруулах
+            </button>
+          </div>
+        )}
+      </div>
       <input
         ref={inputRef}
         type="file"

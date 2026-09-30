@@ -1598,8 +1598,8 @@ export default function Khynalt() {
     <>
       <div className="h-full flex flex-col overflow-y-auto custom-scrollbar">
         <div className="flex flex-col flex-1 min-h-full pl-4 pt-4 pb-8 pr-0">
-          <div className="flex flex-row items-center justify-between gap-4 mb-6 pr-4 flex-shrink-0 relative z-30">
-            <div className="flex flex-row items-center gap-3 shrink-0">
+          <div className="contents">
+            <div className="relative z-30 order-3 flex flex-row items-center gap-3 shrink-0">
               {/* Огноо сонгох */}
               <FilterDatePicker
                 id="khynalt-date"
@@ -1924,13 +1924,13 @@ export default function Khynalt() {
               )}
             </div>
 
-            <h1 className="text-2xl font-medium text-[color:var(--panel-text)] leading-tight">
+            <h1 className="order-1 text-2xl font-medium text-[color:var(--panel-text)] leading-tight">
               Сайн байна уу{ajiltan?.ner ? `, ${ajiltan.ner}` : ""}
             </h1>
           </div>
           <div
             id="khynalt-stats"
-            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-4 pr-4 w-full flex-shrink-0"
+            className="order-2 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-4 pr-4 w-full flex-shrink-0"
           >
             {kpiCards.map((card, index) => {
               const Icon = (card as any).icon;
@@ -2019,7 +2019,7 @@ export default function Khynalt() {
             })}
           </div>
 
-          <div className="w-full min-w-0 pr-4 py-2 space-y-5">
+          <div className="order-4 w-full min-w-0 pr-4 py-2 space-y-5">
 
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 w-full min-w-0 items-stretch">

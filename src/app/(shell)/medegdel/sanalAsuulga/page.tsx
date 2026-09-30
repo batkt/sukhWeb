@@ -702,7 +702,7 @@ export default function SanalAsuulgaPage() {
           )}
           <button type="button" onClick={shineUusgeye} className={btnPrimary}>
             <Plus className="h-4 w-4" />
-            Шинэ асуулга үүсгэх
+              Асуулга үүсгэх
           </button>
           </div>
         </div>

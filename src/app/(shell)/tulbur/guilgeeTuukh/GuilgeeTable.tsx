@@ -290,8 +290,7 @@ export default function GuilgeeTable({
           width: col.minWidth || col.width,
           minWidth: col.minWidth,
           align: col.align || "center",
-          sorter:
-            ["uldegdel", "paid", "toot", "orts", "khungulult"].includes(col.key),
+          sorter: !["index", "action"].includes(col.key),
           fixed: col.sticky ? ("left" as const) : undefined,
           onCell: () => ({
             className:
@@ -799,16 +798,6 @@ export default function GuilgeeTable({
       </Table.Summary>
     );
   };
-
-  console.info("%c📊 [DASHBOARD SUMMARY] FINAL:", "color: purple; font-weight: bold;", {
-    residents: deduplicatedResidents.length,
-    paid: Object.values(monthPaidByGereeId).reduce((a, b) => a + (b || 0), 0),
-    balance: deduplicatedResidents.reduce((s, it) => {
-      const gid = getGereeId(it);
-      const historyAggregate = Number(it?._totalTulbur || 0) - Number(it?._totalTulsun || 0);
-      return s + (bestKnownBalances[gid] ?? (historyScopedByDate ? historyAggregate : (historyAggregate || Number(it?.uldegdel ?? 0))));
-    }, 0)
-  });
 
   return (
     <div className="w-full overflow-hidden">

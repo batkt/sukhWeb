@@ -59,6 +59,7 @@ export default function FilterSelect({
   const popoverRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const jagsaaltId = useId();
+  const defaultWidthClass = /(^|\s)w-/.test(className) ? "" : "w-[180px]";
 
   const songogdson = options.find((o) => o.value === value);
 
@@ -164,7 +165,7 @@ export default function FilterSelect({
           }
         }}
         style={neelttei && khaaltUrgun ? { width: khaaltUrgun } : undefined}
-        className={`filter-field cursor-pointer text-left ${value && allowClear ? "is-active" : ""} ${className}`}
+        className={`filter-field cursor-pointer text-left ${value && allowClear ? "is-active" : ""} ${defaultWidthClass} ${className}`}
       >
         {label && !(searchable && neelttei) && <span className="filter-field-label">{label}</span>}
         {searchable && neelttei ? (

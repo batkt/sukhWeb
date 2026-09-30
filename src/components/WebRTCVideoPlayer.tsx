@@ -21,7 +21,6 @@ const DISCONNECT_GRACE_MS = 6000;
 const ICE_GATHER_TIMEOUT_MS = 1500;
 
 // Flip to false in production once you've confirmed the pattern in the console.
-const DEBUG = true;
 
 // ICE configuration.
 //
@@ -93,14 +92,7 @@ export default function WebRTCVideoPlayer({
   useEffect(() => { tokenRef.current = token; }, [token]);
   useEffect(() => { rtspRef.current = rtspUrl; }, [rtspUrl]);
 
-  const log = useCallback(
-    (...args: any[]) => {
-      if (DEBUG) {
-        console.log(`[webrtc ${barilgiinId}]`, new Date().toISOString(), ...args);
-      }
-    },
-    [barilgiinId]
-  );
+  const log = useCallback((..._args: any[]) => undefined, []);
 
   const clearTimers = useCallback(() => {
     if (retryTimeoutRef.current) {
