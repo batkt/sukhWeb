@@ -1299,20 +1299,16 @@ export default function HongololtTool({
         },
       },
       {
-        // Нэр, гэрээ, орц, тоот — нэг баганад: хэн болохыг нэг харцаар
         title: "Оршин суугч",
         key: "ner",
-        width: 180,
+        width: 260,
         sorter: (a: any, b: any) => String(a.ner || "").localeCompare(String(b.ner || "")),
         render: (_: any, h: any) => (
-          <div className="min-w-0 leading-tight">
-            <div className="truncate text-[13px] text-[color:var(--panel-text)]">{h.ner || "—"}</div>
-            <div className="truncate text-[12px] text-[color:var(--muted-text)]">
-              {[h.gereeniiDugaar, h.orts ? `${h.orts}-р орц` : "", h.toot ? `${h.toot} тоот` : ""]
-                .filter(Boolean)
-                .join(" · ") || "—"}
-            </div>
-          </div>
+          <span className="whitespace-nowrap text-[13px] text-[color:var(--panel-text)]">
+            {[h.ner, h.gereeniiDugaar, h.orts ? `${h.orts}-р орц` : "", h.toot ? `${h.toot} тоот` : ""]
+              .filter(Boolean)
+              .join(" · ") || "—"}
+          </span>
         ),
       },
       {
@@ -1745,7 +1741,7 @@ export default function HongololtTool({
             {/* Toolbar */}
 
             {/* Хураангуй — шүүсэн хугацааны хөнгөлөлт нэг харцаар */}
-            <div className="order-1 mb-3 grid shrink-0 grid-cols-2 gap-2 sm:grid-cols-3">
+            <div className="order-1 mb-3 grid shrink-0 grid-cols-3 gap-2">
               {[
                 { ner: "Хөнгөлөлт", utga: String(tuukhKhuraangui.too), tailbar: "удаа" },
                 { ner: "Хамрагдсан", utga: String(tuukhKhuraangui.suugch), tailbar: "оршин суугч" },
@@ -1763,7 +1759,8 @@ export default function HongololtTool({
                 </div>
               ))}
             </div>
-<div className="order-2 flex shrink-0 flex-wrap items-center gap-2 pb-3">
+
+            <div className="order-2 flex shrink-0 flex-nowrap items-center justify-between gap-2 pb-3 overflow-x-auto">
               <FilterDatePicker
                 value={
                   histDateRange[0] && histDateRange[1]
@@ -1780,9 +1777,9 @@ export default function HongololtTool({
                 }}
                 format="YYYY-MM-DD"
                 placeholder={["Эхлэх огноо", "Дуусах огноо"]}
-                className="w-full sm:w-[284px]"
+                className="w-[280px] shrink-0"
               />
-              <div className="ml-auto flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <FilterSelect
                   label="Давхар"
                   value={histDavkhar}
@@ -1806,8 +1803,8 @@ export default function HongololtTool({
                   }))}
                   className="w-[100px] shrink-0"
                 />
+                <ExcelButton onClick={handleExportExcel} />
               </div>
-              <ExcelButton onClick={handleExportExcel} />
             </div>
             {/* History table — гүйлгэлтийг хүснэгт өөрөө хариуцна */}
             <div className="order-3 min-h-0 flex-1">

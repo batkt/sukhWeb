@@ -96,9 +96,12 @@ export default function FilterSelect({
       if (e.key === "Escape") khaakh();
     };
     const onMove = (e: Event) => {
-      // Жагсаалт доторх гүйлт popover-ыг хаах ёсгүй
-      if (popoverRef.current?.contains(e.target as Node)) return;
-      khaakh();
+      const t = e.target as Node;
+      if (popoverRef.current?.contains(t) || triggerRef.current?.contains(t)) return;
+      if (triggerRef.current) {
+        const r = triggerRef.current.getBoundingClientRect();
+        setBairlal({ top: r.bottom + 6, left: r.left, width: Math.max(r.width, 200) });
+      }
     };
     document.addEventListener("mousedown", onDown);
     document.addEventListener("keydown", onKey);
@@ -236,7 +239,7 @@ export default function FilterSelect({
             ref={popoverRef}
             id={jagsaaltId}
             role="listbox"
-            style={{ position: "fixed", top: bairlal.top, left: bairlal.left, width: bairlal.width, zIndex: 9999 }}
+            style={{ position: "fixed", top: bairlal.top, left: bairlal.left, width: bairlal.width, zIndex: 100050 }}
             className="rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-1.5 shadow-xl"
           >
             <div className="max-h-64 overflow-y-auto">

@@ -1234,25 +1234,103 @@ export function useGereeActions(
   }, [token, ajiltan, selectedBuildingId, barilgiinId, onLoadingChange]);
 
   const handleDownloadResidentsTemplate = useCallback(async () => {
-    if (!token || !ajiltan?.baiguullagiinId) {
-      openErrorOverlay("Нэвтэрсэн эсэхээ шалгана уу");
-      return;
-    }
-
     onLoadingChange?.(true);
     try {
-      const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
-      const resp = await uilchilgee(token).get("/orshinSuugchExcelTemplate", {
-        params: {
-          baiguullagiinId: ajiltan.baiguullagiinId,
-          ...(effectiveBarilgiinId
-            ? { barilgiinId: effectiveBarilgiinId }
-            : {}),
-        },
-        responseType: "blob" as any,
+      const ExcelJSMod: any = await import("exceljs");
+      const ExcelJS = ExcelJSMod.default || ExcelJSMod;
+      const wb = new ExcelJS.Workbook();
+      const ws = wb.addWorksheet("Оршин суугч бүртгэл", {
+        views: [{ state: "frozen", ySplit: 1 }],
       });
 
-      const blob = new Blob([resp.data], {
+      const cols = [
+        { header: "Овог", key: "ovog", width: 16, dark: false },
+        { header: "Нэр", key: "ner", width: 16, dark: true },
+        { header: "Утас", key: "utas", width: 16, dark: true },
+        { header: "Имэйл", key: "email", width: 22, dark: false },
+        { header: "Орц", key: "orts", width: 10, dark: true },
+        { header: "Давхар", key: "davkhar", width: 10, dark: true },
+        { header: "Тоот", key: "toot", width: 12, dark: true },
+        { header: "Машины дугаар", key: "mashin", width: 18, dark: false },
+        { header: "Гараж тоот", key: "garaazToot", width: 16, dark: false },
+        { header: "Агуулах тоот", key: "aguulakhToot", width: 16, dark: false },
+        { header: "Эхний үлдэгдэл", key: "ekhniiUldegdel", width: 18, dark: false },
+        { header: "Цахилгаан кВт", key: "tsakhilgaan", width: 16, dark: false },
+        { header: "Хоногоор бодох", key: "khonogoorBodokh", width: 18, dark: false },
+        { header: "Ашиглах хоног", key: "ashiglakhKhonog", width: 18, dark: false },
+      ];
+
+      ws.columns = cols.map((c) => ({
+        header: c.header,
+        key: c.key,
+        width: c.width,
+      }));
+
+      const headerRow = ws.getRow(1);
+      headerRow.height = 28;
+
+      cols.forEach((col, idx) => {
+        const cell = headerRow.getCell(idx + 1);
+        if (col.dark) {
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FF047857" }, // Dark emerald green
+          };
+          cell.font = {
+            name: "Segoe UI",
+            bold: true,
+            color: { argb: "FFFFFFFF" },
+            size: 11,
+          };
+        } else {
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FFD1FAE5" }, // Light mint green
+          };
+          cell.font = {
+            name: "Segoe UI",
+            bold: true,
+            color: { argb: "FF065F46" },
+            size: 11,
+          };
+        }
+        cell.alignment = { vertical: "middle", horizontal: "center" };
+        cell.border = {
+          top: { style: "thin", color: { argb: "FF059669" } },
+          left: { style: "thin", color: { argb: "FF059669" } },
+          bottom: { style: "thin", color: { argb: "FF059669" } },
+          right: { style: "thin", color: { argb: "FF059669" } },
+        };
+      });
+
+      // Sample row
+      const sampleRow = ws.addRow({
+        ovog: "Бат",
+        ner: "Болд",
+        utas: "99112233",
+        email: "bold@example.com",
+        orts: "1",
+        davkhar: "2",
+        toot: "101",
+        mashin: "1234УБА",
+        garaazToot: "Г-01",
+        aguulakhToot: "А-01",
+        ekhniiUldegdel: "0",
+        tsakhilgaan: "0",
+        khonogoorBodokh: "Үгүй",
+        ashiglakhKhonog: "",
+      });
+      sampleRow.height = 22;
+      cols.forEach((_, idx) => {
+        const cell = sampleRow.getCell(idx + 1);
+        cell.font = { name: "Segoe UI", size: 10, italic: true };
+        cell.alignment = { vertical: "middle", horizontal: "center" };
+      });
+
+      const buffer = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
       const url = window.URL.createObjectURL(blob);
@@ -1263,13 +1341,13 @@ export function useGereeActions(
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      openSuccessOverlay("Загвар татагдлаа");
+      openSuccessOverlay("Загвар амжилттай татагдлаа");
     } catch (err) {
       openErrorOverlay(getErrorMessage(err));
     } finally {
       onLoadingChange?.(false);
     }
-  }, [token, ajiltan, selectedBuildingId, barilgiinId, onLoadingChange]);
+  }, [onLoadingChange]);
 
   const handleResidentsExcelImportClick = useCallback(() => {
     residentExcelInputRef?.current?.click();
