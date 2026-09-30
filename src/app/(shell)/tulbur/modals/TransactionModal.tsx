@@ -1047,7 +1047,7 @@ export default function TransactionModal({
                 {((transactionType === "avlaga" && !ekhniiUldegdel) || transactionType === "tulult") && (() => {
                   const categoryOptions = [
                     { key: "engiin" as const, ner: transactionType === "tulult" ? "Орон сууц" : "Энгийн", category: "Орон сууц" as const },
-                    { key: "zogsool" as const, ner: transactionType === "tulult" ? "Гараж / Зогсоол" : "Зогсоол", category: "Зогсоол" as const },
+                    { key: "zogsool" as const, ner: "Гараж", category: "Зогсоол" as const },
                     { key: "aguulakh" as const, ner: "Агуулах", category: "Агуулах" as const },
                   ];
                   const visibleOptions = categoryOptions;
@@ -1064,7 +1064,7 @@ export default function TransactionModal({
                     label: `${transactionType === "tulult" ? "Орон сууц" : "Энгийн"}${resident?.toot ? ` (${resident.toot})` : ""}`,
                   });
 
-                  // Зогсоол / Гараж
+                  // Гараж
                   const zogsoolTootuud: string[] = Array.from(
                     new Set(
                       (Array.isArray(resident?.toots) ? resident.toots : [])
@@ -1077,18 +1077,13 @@ export default function TransactionModal({
                   if (zogsoolTootuud.length === 0) {
                     dropdownOptions.push({
                       value: "zogsool",
-                      label: transactionType === "tulult" ? "Гараж / Зогсоол" : "Зогсоол",
+                      label: "Гараж",
                     });
                   } else {
-                    dropdownOptions.push({
-                      value: "zogsool",
-                      label: transactionType === "tulult" ? "Гараж / Зогсоол (Ерөнхий)" : "Зогсоол (Ерөнхий)",
-                    });
                     zogsoolTootuud.forEach((t: string) => {
                       dropdownOptions.push({
                         value: `zogsool:${t}`,
-                        label: "Гараж / Зогсоол",
-                        tailbar: `Тоот: ${t}`,
+                        label: `Гараж (${t})`,
                       });
                     });
                   }
@@ -1109,15 +1104,10 @@ export default function TransactionModal({
                       label: "Агуулах",
                     });
                   } else {
-                    dropdownOptions.push({
-                      value: "aguulakh",
-                      label: "Агуулах (Ерөнхий)",
-                    });
                     aguulakhTootuud.forEach((t: string) => {
                       dropdownOptions.push({
                         value: `aguulakh:${t}`,
-                        label: "Агуулах",
-                        tailbar: `Тоот: ${t}`,
+                        label: `Агуулах (${t})`,
                       });
                     });
                   }
