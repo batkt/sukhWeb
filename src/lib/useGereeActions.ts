@@ -2806,6 +2806,7 @@ export function useGereeActions(
           const isDuplicate = existingToots.some(
             (t: any) =>
               String(t.toot).trim() === String(unit).trim() &&
+              (t.turul ? String(t.turul).trim() === String(unitTurul).trim() : unitTurul === "Орон сууц") &&
               String(t.barilgiinId) === String(effectiveBid) &&
               String(t.baiguullagiinId) === String(baiguullaga._id)
           );
@@ -2909,6 +2910,7 @@ export function useGereeActions(
           const isDuplicate = existingToots.some(
             (t: any) =>
               String(t.toot).trim() === String(unit).trim() &&
+              (t.turul ? String(t.turul).trim() === String(unitTurul).trim() : unitTurul === "Орон сууц") &&
               String(t.barilgiinId) === String(effectiveBid) &&
               String(t.baiguullagiinId) === String(baiguullaga._id)
           );

@@ -122,6 +122,7 @@ export default function UnitsSection({
   const [activeUnitDetails, setActiveUnitDetails] = useState<{ unit: string; floor: string; resident: any } | null>(null);
   const [checkedUnits, setCheckedUnits] = useState<string[]>([]);
   const [selectionMode, setSelectionMode] = useState(false);
+  const [residentTypeFilter, setResidentTypeFilter] = useState<"all" | "client" | "resident">("all");
   const { searchTerm: zogsoolSearch } = useSearch();
 
   const { token, baiguullaga } = useAuth();
@@ -149,7 +150,7 @@ export default function UnitsSection({
         return [];
       }
     },
-    { revalidateOnFocus: false, dedupingInterval: 15000 }
+    { revalidateOnFocus: true, dedupingInterval: 3000 }
   );
 
   // Fetch invoice history records to check if invoices were sent this month
@@ -173,8 +174,48 @@ export default function UnitsSection({
         return [];
       }
     },
-    { revalidateOnFocus: false, dedupingInterval: 15000 }
+    { revalidateOnFocus: true, dedupingInterval: 3000 }
   );
+
+  // Fetch server-computed balances per contract — same source as guilgeeniiTuukh
+  const contractBalancesRef = React.useRef<Record<string, number>>({});
+  const [contractBalances, setContractBalances] = React.useState<Record<string, number>>({});
+  const fetchContractBalances = React.useCallback(async (contractIds: string[]) => {
+    if (!token || !baiguullaga?._id || contractIds.length === 0) return;
+    const results: Record<string, number> = {};
+    await Promise.all(
+      contractIds.map(async (gid) => {
+        try {
+          const resp = await uilchilgee(token).post("/uldegdelBodyo", {
+            baiguullagiinId: baiguullaga._id,
+            barilgiinId: effectiveBid || undefined,
+            gereeniiId: gid,
+            summaryOnly: true,
+          });
+          const summary = resp.data?.summary;
+          if (summary?.uldegdel != null && Number.isFinite(Number(summary.uldegdel))) {
+            results[gid] = Number(summary.uldegdel);
+          }
+        } catch { }
+      })
+    );
+    contractBalancesRef.current = { ...contractBalancesRef.current, ...results };
+    setContractBalances((prev) => ({ ...prev, ...results }));
+  }, [token, baiguullaga, effectiveBid]);
+  // Fetch server balances whenever contracts/avlaguudData change (garage/storage only)
+  React.useEffect(() => {
+    if (propertyTab !== "Зогсоол" && propertyTab !== "Агуулах") return;
+    const ids = (contracts || [])
+      .filter((c: any) => {
+        const status = String(c?.tuluv || c?.status || "Идэвхтэй").trim();
+        return status !== "Цуцалсан" && status !== "Идэвхгүй";
+      })
+      .map((c: any) => c?._id ? String(c._id) : null)
+      .filter(Boolean) as string[];
+    const unique = [...new Set(ids)];
+    if (unique.length > 0) fetchContractBalances(unique);
+  }, [avlaguudData, propertyTab, contracts, fetchContractBalances]);
+
 
   useEffect(() => {
     setCheckedUnits([]);
@@ -710,6 +751,11 @@ export default function UnitsSection({
           });
         }
         setCheckedUnits([]);
+        swrMutate(
+          (k: any) => Array.isArray(k) && (k[0] === "/guilgeeAvlaguud" || k[0] === "/nekhemjlekhiinTuukh"),
+          undefined,
+          { revalidate: true }
+        );
       }
     });
   };
@@ -1102,6 +1148,11 @@ export default function UnitsSection({
             });
           }
           setActiveUnitDetails(null);
+          swrMutate(
+            (k: any) => Array.isArray(k) && (k[0] === "/guilgeeAvlaguud" || k[0] === "/nekhemjlekhiinTuukh"),
+            undefined,
+            { revalidate: true }
+          );
         }
       });
     } else {
@@ -1111,7 +1162,7 @@ export default function UnitsSection({
 
   const zogsoolTableRows = useMemo(() => {
     if (!selectedFloorData) return [];
-    const rows = selectedFloorData.filteredUnits.map((unitStr, idx) => {
+    let rows = selectedFloorData.filteredUnits.map((unitStr, idx) => {
       const isOccupied = selectedFloorData.activeToots.has(unitStr);
       const resident = selectedFloorData.unitToResident[unitStr];
 
@@ -1340,7 +1391,9 @@ export default function UnitsSection({
             const categoryText = String(a.zardliinNer || a.tailbar || a.ner || "");
             const categoryMatch = /зогсоол|гараж|агуулах/i.test(categoryText);
 
-            return tootMatch || (refMatch && categoryMatch);
+            // Must belong to the CURRENT resident/contract (avoid matching old avlaga for previous occupant)
+            if (!refMatch) return false;
+            return tootMatch || categoryMatch;
           });
           if (hasAvlaga) {
             isInvoiceSent = true;
@@ -1382,7 +1435,41 @@ export default function UnitsSection({
         } catch (e) { }
       }
 
-      const uldegdel = isOccupied && isInvoiceSent ? (isPaid ? 0 : amount) : 0;
+      // For garage/storage, use server-computed balance from /uldegdelBodyo (same as guilgeeniiTuukh)
+      let uldegdel = 0;
+      if (isOccupied && isInvoiceSent) {
+        const cId = activeContract?._id ? String(activeContract._id) : "";
+        const serverBalance = cId ? contractBalances[cId] : undefined;
+        if (serverBalance != null) {
+          uldegdel = Math.max(0, serverBalance);
+        } else if ((propertyTab === "Зогсоол" || propertyTab === "Агуулах") && Array.isArray(avlaguudData)) {
+          // Fallback: compute from avlaguudData if server balance not yet loaded
+          const contractId = cId;
+          const resId = resident?._id ? String(resident._id) : "";
+          const categoryPattern = propertyTab === "Зогсоол" ? /зогсоол|гараж/i : /агуулах/i;
+          let chargeSum = 0;
+          let paymentSum = 0;
+          avlaguudData.forEach((a: any) => {
+            if (!isSameMonth(a.ognoo || a.createdAt)) return;
+            const aToot = String(a.toot || "").trim();
+            const aGId = String(a.gereeniiId || "").trim();
+            const aRId = String(a.orshinSuugchId || "").trim();
+            const categoryText = String(a.zardliinNer || a.tailbar || a.ner || "");
+            const tootMatch = aToot === unitStr;
+            const refMatch = (contractId && aGId === contractId) || (resId && aRId === resId);
+            const categoryMatch = categoryPattern.test(categoryText);
+            if (!refMatch) return;
+            if (tootMatch || categoryMatch) {
+              const dun = Number(a.dun) || 0;
+              if (dun > 0) chargeSum += dun;
+              else if (dun < 0) paymentSum += Math.abs(dun);
+            }
+          });
+          uldegdel = Math.max(0, chargeSum - paymentSum);
+        } else if (!isPaid) {
+          uldegdel = amount;
+        }
+      }
 
       return {
         key: unitStr,
@@ -1410,6 +1497,14 @@ export default function UnitsSection({
         String(x.zogsoolDugaar).localeCompare(String(y.zogsoolDugaar), undefined, { numeric: true }),
     );
     rows.forEach((r: any, i: number) => (r.index = i + 1));
+    
+    // Resident type filter
+    if (residentTypeFilter === "client") {
+      rows = rows.filter((r) => r.isOccupied && r.resident && clientsList.some((c: any) => String(c._id) === String(r.resident._id)));
+    } else if (residentTypeFilter === "resident") {
+      rows = rows.filter((r) => r.isOccupied && r.resident && !clientsList.some((c: any) => String(c._id) === String(r.resident._id)));
+    }
+
     if (!zogsoolSearch.trim()) return rows;
     const q = zogsoolSearch.toLowerCase();
     return rows.filter(
@@ -1421,7 +1516,7 @@ export default function UnitsSection({
         r.dugaar.toLowerCase().includes(q) ||
         (r.isInvoiceSent ? "илгээгдсэн" : "илгээгдээгүй").includes(q)
     );
-  }, [selectedFloorData, contracts, zogsoolSearch, avlaguudData, nekhemjlekhData, propertyTab]);
+  }, [selectedFloorData, contracts, zogsoolSearch, avlaguudData, nekhemjlekhData, propertyTab, residentTypeFilter, clientsList]);
 
   const totalZogsoolAmount = useMemo(() => {
     return zogsoolTableRows.reduce((sum, r) => sum + (r.tulbur || 0), 0);
@@ -1892,45 +1987,85 @@ export default function UnitsSection({
                       tailbar: "Эзэмшигч бүртгэх боломжтой",
                       unguClass: "text-warning",
                     },
+                    ];
+                  const clientCount = zogsoolTableRows.filter((r: any) => r.isOccupied && r.resident && clientsList.some((c: any) => String(c._id) === String(r.resident._id))).length;
+                  const residentCount = zogsoolTableRows.filter((r: any) => r.isOccupied && r.resident && !clientsList.some((c: any) => String(c._id) === String(r.resident._id))).length;
+
+                  const allKartuud: {
+                    key: string;
+                    ner: string;
+                    utga: string;
+                    unguClass: string;
+                    onClick?: () => void;
+                    active?: boolean;
+                    clickable: boolean;
+                  }[] = [
                     {
-                      key: null,
-                      ner: "Сарын төлбөр",
-                      // Энэ сард нэхэмжлэгдсэн (илгээсэн) төлбөрийн нийт дүн
-                      utga: `${nekhemjlegdsenDun.toLocaleString("mn-MN")}₮`,
-                      tailbar:
-                        ilgeegeegui > 0
-                          ? `${ilgeegeegui} нэхэмжлэх илгээгээгүй · нийт ${totalZogsoolAmount.toLocaleString("mn-MN")}₮`
-                          : `Нийт ${totalZogsoolAmount.toLocaleString("mn-MN")}₮ нэхэмжлэгдсэн`,
-                      unguClass: "text-brand",
+                      key: "all",
+                      ner: `Нийт ${negjNer}`,
+                      utga: stats.total.toLocaleString("mn-MN"),
+                      unguClass: "text-[color:var(--panel-text)]",
+                      active: (unitStatusFilter || "all") === "all",
+                      onClick: () => { setUnitStatusFilter?.("all"); setResidentTypeFilter("all"); },
+                      clickable: true,
+                    },
+                    {
+                      key: "occupied",
+                      ner: "Бүртгэлтэй",
+                      utga: stats.occupied.toLocaleString("mn-MN"),
+                      unguClass: "text-success",
+                      active: (unitStatusFilter || "all") === "occupied",
+                      onClick: () => setUnitStatusFilter?.("occupied"),
+                      clickable: true,
+                    },
+                    {
+                      key: "free",
+                      ner: "Чөлөөтэй",
+                      utga: stats.free.toLocaleString("mn-MN"),
+                      unguClass: "text-warning",
+                      active: (unitStatusFilter || "all") === "free",
+                      onClick: () => setUnitStatusFilter?.("free"),
+                      clickable: true,
+                    },
+                    {
+                      key: "client",
+                      ner: "Харилцагч",
+                      utga: clientCount.toLocaleString("mn-MN"),
+                      unguClass: "text-info",
+                      active: residentTypeFilter === "client",
+                      onClick: () => { setResidentTypeFilter(residentTypeFilter === "client" ? "all" : "client"); setUnitStatusFilter?.("all"); },
+                      clickable: true,
+                    },
+                    {
+                      key: "resident",
+                      ner: "Оршин суугч",
+                      utga: residentCount.toLocaleString("mn-MN"),
+                      unguClass: "text-success",
+                      active: residentTypeFilter === "resident",
+                      onClick: () => { setResidentTypeFilter(residentTypeFilter === "resident" ? "all" : "resident"); setUnitStatusFilter?.("all"); },
+                      clickable: true,
                     },
                   ];
+
                   return (
-                    <div className="stat-cards-grid grid grid-cols-2 gap-3 lg:grid-cols-4" role="tablist" aria-label="Төлөв">
-                      {kartuud.map((k) => {
-                        const songogdson = k.key !== null && (unitStatusFilter || "all") === k.key;
-                        const Tag = k.key ? "button" : "div";
-                        return (
-                          <Tag
-                            key={k.ner}
-                            {...(k.key
-                              ? {
-                                  type: "button" as const,
-                                  role: "tab",
-                                  "aria-selected": songogdson,
-                                  onClick: () => setUnitStatusFilter?.(k.key as any),
-                                }
-                              : {})}
-                            className={`relative rounded-2xl neu-panel text-left transition-all select-none ${
-                              k.key ? "cursor-pointer" : ""
-                            } ${songogdson ? "ring-2 ring-theme shadow-lg" : k.key ? "hover:bg-[color:var(--surface-hover)]" : ""}`}
-                          >
-                            <div className="stat-card">
-                              <div className={`stat-card-value tabular-nums ${k.unguClass}`}>{k.utga}</div>
-                              <div className="stat-card-title">{k.ner}</div>
-                            </div>
-                          </Tag>
-                        );
-                      })}
+                    <div className="stat-cards-grid grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5" role="tablist" aria-label="Төлөв">
+                      {allKartuud.map((k) => (
+                        <button
+                          key={k.key}
+                          type="button"
+                          role="tab"
+                          aria-selected={k.active}
+                          onClick={k.onClick}
+                          className={`relative rounded-2xl neu-panel text-left transition-all select-none cursor-pointer ${
+                            k.active ? "ring-2 ring-theme shadow-lg" : "hover:bg-[color:var(--surface-hover)]"
+                          }`}
+                        >
+                          <div className="stat-card">
+                            <div className={`stat-card-value tabular-nums ${k.unguClass}`}>{k.utga}</div>
+                            <div className="stat-card-title">{k.ner}</div>
+                          </div>
+                        </button>
+                      ))}
                     </div>
                   );
                 })()}
