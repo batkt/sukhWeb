@@ -1334,7 +1334,7 @@ export default function UnitsSection({
         avlaguudData.forEach((a: any) => {
           const aToot = String(a.toot || "").trim();
           const aGId = String(a.gereeniiId || "").trim();
-          const aRId = String(a.orshinSuugchId || "").trim();
+          const aRId = String(a.orshinSuugchId || a.khariltsagchId || "").trim();
           const categoryText = String(a.zardliinNer || a.tailbar || a.ner || a.turul || "");
 
           const isOwnerMatch = (contractId && aGId === contractId) || (resId && aRId === resId);
@@ -1347,9 +1347,12 @@ export default function UnitsSection({
           if (aToot ? !isTootMatch : !isCategoryMatch) return;
 
           hasAvlagaTransactions = true;
-          const dun = Number(a.dun) || 0;
-          if (dun > 0) chargeSum += dun;
-          else if (dun < 0) paymentSum += Math.abs(dun);
+
+          const chargeVal = Number(a.tulukhDun || (Number(a.dun) > 0 ? a.dun : 0)) || 0;
+          const paidVal = Number(a.tulsunDun || (Number(a.dun) < 0 ? Math.abs(a.dun) : 0)) || 0;
+
+          if (chargeVal > 0) chargeSum += chargeVal;
+          if (paidVal > 0) paymentSum += paidVal;
         });
       }
 
@@ -1394,21 +1397,22 @@ export default function UnitsSection({
         } catch (e) { }
       }
 
+      // Effective invoice amount for this unit
+      const invoiceAmount = chargeSum > 0 ? chargeSum : (isInvoiceSent ? amount : 0);
+
       // Remaining balance (uldegdel) for this garage/storage unit only
       let uldegdel = 0;
       if (isOccupied && isInvoiceSent) {
-        if (chargeSum > 0 || paymentSum > 0) {
-          uldegdel = Math.max(0, chargeSum - paymentSum);
-        } else {
-          uldegdel = amount;
+        if (invoiceAmount > 0) {
+          uldegdel = Math.max(0, invoiceAmount - paymentSum);
         }
       }
 
-      // Is paid: if occupied and either marked paid or paid amount covers all charges
-      const isPaid = isOccupied && (
+      // Is paid: if occupied, invoice is sent, and remaining balance is 0 (with full payment made)
+      const isPaid = isOccupied && isInvoiceSent && (
         contractIsPaid ||
-        (chargeSum > 0 && paymentSum >= chargeSum - 0.01) ||
-        (isInvoiceSent && uldegdel === 0 && (paymentSum > 0 || chargeSum === 0))
+        (invoiceAmount > 0 && paymentSum >= invoiceAmount - 0.01) ||
+        (uldegdel === 0 && (paymentSum > 0 || invoiceAmount === 0))
       );
 
       return {

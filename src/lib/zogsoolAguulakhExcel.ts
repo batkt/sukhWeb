@@ -192,22 +192,6 @@ export async function buildTemplate(opts: {
     };
   }
 
-  // Жишээ мөрүүд — бодит тохиргооноос дугаар авна
-  const f0 = floors[turul][0] || "B1";
-  const opts0 = tootOptions(getTootOptions, f0, turul);
-  const ex1 = opts0.slice(0, 2).join(", ") || "12, 13";
-  const ex2 = opts0[2] || opts0[0] || "14";
-  const examples = [
-    { ovog: "Бат", ner: "Жишээ Болд", utas: "99112233", turul: turulNer(turul), davkhar: f0, dugaar: ex1, mashin: "1234УБА, 5678УНА", tailbar: JISHEE_TEMDEG },
-    { ovog: "Бат", ner: "Жишээ Болд", utas: "99112233", turul: turulNer(turul), davkhar: f0, dugaar: ex2, mashin: "", tailbar: JISHEE_TEMDEG },
-  ];
-  examples.forEach((r) => {
-    const row = ws.addRow(r);
-    for (let c = 1; c <= COLS; c++) {
-      row.getCell(c).font = { italic: true, color: { argb: "FF9CA3AF" } };
-    }
-  });
-
   // Сонголтын жагсаалтууд — нуусан хуудсанд
   const list = wb.addWorksheet("Жагсаалт", { state: "veryHidden" });
   const allFloors = Array.from(new Set([...floors["Зогсоол"], ...floors["Агуулах"]]));

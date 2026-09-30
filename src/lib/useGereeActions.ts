@@ -1306,30 +1306,6 @@ export function useGereeActions(
         };
       });
 
-      // Sample row
-      const sampleRow = ws.addRow({
-        ovog: "Бат",
-        ner: "Болд",
-        utas: "99112233",
-        email: "bold@example.com",
-        orts: "1",
-        davkhar: "2",
-        toot: "101",
-        mashin: "1234УБА",
-        garaazToot: "Г-01",
-        aguulakhToot: "А-01",
-        ekhniiUldegdel: "0",
-        tsakhilgaan: "0",
-        khonogoorBodokh: "Үгүй",
-        ashiglakhKhonog: "",
-      });
-      sampleRow.height = 22;
-      cols.forEach((_, idx) => {
-        const cell = sampleRow.getCell(idx + 1);
-        cell.font = { name: "Segoe UI", size: 10, italic: true };
-        cell.alignment = { vertical: "middle", horizontal: "center" };
-      });
-
       const buffer = await wb.xlsx.writeBuffer();
       const blob = new Blob([buffer], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
