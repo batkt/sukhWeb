@@ -55,6 +55,12 @@ interface FormData {
   gadaaStickerAshiglakhEsekh?: boolean;
   tokiBolonStickerAshiglakhEsekh?: boolean;
   barilgaTusBur?: boolean;
+  /// Зогсоол БҮХ барилгад хамаарах эсэх.
+  ///
+  /// Нэг зогсоол хэд хэдэн барилгад үйлчилж болно (нийтийн доод хэсэг,
+  /// хамтарсан хашаа). Тэмдэглэхгүй бол зогсоол зөвхөн өөрийн барилгын
+  /// сонголт дор харагдана.
+  bukhBarilgadEsekh?: boolean;
   togtmolTulburEsekh?: boolean;
   togtmolTulburiinDun?: number | string;
   mashinGargakhKhugatsaa?: number | string;
@@ -93,6 +99,10 @@ function ZogsoolBurtgekh(
     tokiBolonStickerAshiglakhEsekh:
       data?.tokiBolonStickerAshiglakhEsekh || false,
     barilgaTusBur: data?.barilgaTusBur || false,
+    // `tokhirgoo` (Mixed) дотор хадгална: `Parking` схем нь sukhParking-v1
+    // багц дотор байдаг тул шинэ талбар нэмэх нь багцыг дахин нийтлэхийг
+    // шаардана.
+    bukhBarilgadEsekh: data?.tokhirgoo?.bukhBarilgadEsekh || false,
     togtmolTulburEsekh: data?.togtmolTulburEsekh || false,
     togtmolTulburiinDun: data?.togtmolTulburiinDun || "",
     mashinGargakhKhugatsaa: data?.mashinGargakhKhugatsaa || "",
@@ -113,8 +123,12 @@ function ZogsoolBurtgekh(
         }
 
         setLoading(true);
+        // `bukhBarilgadEsekh` нь формд ХАВТГАЙ байдаг (Switch нь зөвхөн
+        // хавтгай талбартай ажилладаг), харин санд `tokhirgoo` дотор орно.
+        const { bukhBarilgadEsekh, ...formiinBusad } = formData;
         const body = {
-          ...formData,
+          ...formiinBusad,
+          tokhirgoo: { ...(data?.tokhirgoo || {}), bukhBarilgadEsekh },
           tokiNer: formData.tokiBolonStickerAshiglakhEsekh
             ? formData.ner
             : undefined,
@@ -388,6 +402,7 @@ function ZogsoolBurtgekh(
               { label: "Гадаа Sticker QR ашиглах", field: "gadaaStickerAshiglakhEsekh" },
               { label: "Toki болон Sticker ашиглах", field: "tokiBolonStickerAshiglakhEsekh" },
               { label: "Барилгаар хязгаарлах", field: "barilgaTusBur" },
+              { label: "Бүх барилгад хамаарах", field: "bukhBarilgadEsekh" },
               { 
                 label: "Тогтмол төлбөр бодогдох", 
                 field: "togtmolTulburEsekh",

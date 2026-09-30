@@ -358,6 +358,13 @@ export default function Camera() {
       cameraType: "entry" | "exit";
       cameraName?: string;
       gateName?: string;
+      /// Камер хамаарах ЗОГСООЛЫН барилга.
+      ///
+      /// Сонгосон барилгатай ижил байх шаардлагагүй: бүх барилгад хамаарах
+      /// нийтийн зогсоол нь өөр барилгын сонголт дор ч харагдана. Урсгалын
+      /// зам (`{barilgiinId}/{ip}`) нь ЗОГСООЛЫН барилгаар бүтдэг тул
+      /// сонгосон барилгыг дамжуулбал WHEP 404 авна.
+      parkBarilgiinId?: string;
       cameraUsername?: string;
       cameraPassword?: string;
       root?: string; // Stream path (ROOT from tokhirgoo)
@@ -402,6 +409,9 @@ export default function Camera() {
                   cameraPassword: password,
                   tokhirgoo: cam.tokhirgoo,
                   root: cam.tokhirgoo?.ROOT || "stream", // Use ROOT from tokhirgoo, default to "stream"
+                  parkBarilgiinId: parking?.barilgiinId
+                    ? String(parking.barilgiinId)
+                    : undefined,
                 });
               }
             });
@@ -2051,7 +2061,7 @@ export default function Camera() {
                           gateName={camera.gateName}
                           cameraType="entry"
                           onOpenGate={khaalgaNeey}
-                          barilgiinId={effectiveBarilgiinId}
+                          barilgiinId={camera.parkBarilgiinId || effectiveBarilgiinId}
                           token={token || undefined}
                         />
                       </div>
@@ -2135,7 +2145,7 @@ export default function Camera() {
                           gateName={camera.gateName}
                           cameraType="exit"
                           onOpenGate={khaalgaNeey}
-                          barilgiinId={effectiveBarilgiinId}
+                          barilgiinId={camera.parkBarilgiinId || effectiveBarilgiinId}
                           token={token || undefined}
                         />
                       </div>
