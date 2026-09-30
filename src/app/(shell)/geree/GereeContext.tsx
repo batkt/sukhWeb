@@ -56,7 +56,11 @@ export function GereeProvider({ children }: { children: React.ReactNode }) {
           setPermissionsData(res.data);
         })
         .catch((e) => {
-          console.error("❌ Failed to load permissions:", e);
+          if (e?.response?.status === 401) {
+            console.warn("⚠️ Session expired or unauthorized (401)");
+          } else {
+            console.error("❌ Failed to load permissions:", e);
+          }
         });
     }
   }, [token]);

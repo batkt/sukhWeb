@@ -3000,6 +3000,17 @@ export default function DansniiKhuulga() {
           burtgesenAjiltaniiNer: ajiltan.ner,
           guilgeeKhiisenAjiltniiNer: ajiltan.ner,
           turul: "tulult",
+          ...(data.avlagiinAngilal
+            ? {
+                zardliinNer:
+                  data.avlagiinAngilal === "zogsool"
+                    ? "Зогсоол"
+                    : data.avlagiinAngilal === "aguulakh"
+                      ? "Агуулах"
+                      : "Орон сууц",
+                ...(data.avlagiinToot ? { toot: data.avlagiinToot } : {}),
+              }
+            : {}),
           // Хэлбэрийг нь ялгаж үлдээнэ — хүснэгт, тайлан эндээс уншина.
           ...(barterEsekh
             ? { khelber: "Бартер", zardliinTurul: "Бартер" }
@@ -3833,14 +3844,14 @@ export default function DansniiKhuulga() {
                 value={selectedOrtsFilter}
                 onChange={setSelectedOrtsFilter}
                 options={ortsSongolt}
-                className="w-[180px] shrink-0"
+                className="shrink-0"
               />
               <FilterSelect
                 label="Давхар"
                 value={selectedDavkharFilter}
                 onChange={setSelectedDavkharFilter}
                 options={davkharSongolt}
-                className="w-[180px] shrink-0"
+                className="shrink-0"
               />
               <FilterSelect
                 label="Тоот"
@@ -3849,7 +3860,7 @@ export default function DansniiKhuulga() {
                 options={tootSongolt}
                 searchable
                 searchPlaceholder="Тоот хайх..."
-                className="w-[180px] shrink-0"
+                className="shrink-0"
               />
             </div>
 

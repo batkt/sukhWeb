@@ -260,7 +260,7 @@ export default function TransactionsPage() {
             { value: "income", label: "Орлого" },
             { value: "expense", label: "Зарлага" },
           ]}
-          className="max-w-[220px]"
+          className="w-auto"
         />
         <FilterSelect
           label="Төлөв"
@@ -270,7 +270,7 @@ export default function TransactionsPage() {
             { value: "approved", label: "Батлагдсан" },
             { value: "pending", label: "Хүлээгдэж буй" },
           ]}
-          className="max-w-[220px]"
+          className="w-auto"
         />
 
         <label

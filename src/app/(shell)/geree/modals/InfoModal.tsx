@@ -1,45 +1,30 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import { ModalPortal } from "../../../../../components/shell/ModalPortal";
-import { Send } from "lucide-react";
+import { Info } from "lucide-react";
 import useModalHotkeys from "@/lib/useModalHotkeys";
 
-interface SendInvoiceConfirmModalProps {
+interface InfoModalProps {
   show: boolean;
   onClose: () => void;
   title: string;
   message: string;
-  onConfirm: () => Promise<void>;
 }
 
-export default function SendInvoiceConfirmModal({
+export default function InfoModal({
   show,
   onClose,
   title,
   message,
-  onConfirm,
-}: SendInvoiceConfirmModalProps) {
+}: InfoModalProps) {
   const constraintsRef = React.useRef<HTMLDivElement | null>(null);
   const dragControls = useDragControls();
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useModalHotkeys({ isOpen: show, onClose });
 
   if (!show) return null;
-
-  const handleConfirm = async () => {
-    try {
-      setIsSubmitting(true);
-      await onConfirm();
-      onClose();
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   return (
     <AnimatePresence>
@@ -70,7 +55,7 @@ export default function SendInvoiceConfirmModal({
             >
               {/* Icon */}
               <div className="mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-theme/10 text-brand mb-4 shadow-sm shadow-theme/10">
-                <Send className="h-6 w-6" />
+                <Info className="h-6 w-6" />
               </div>
 
               {/* Title */}
@@ -88,26 +73,10 @@ export default function SendInvoiceConfirmModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  disabled={isSubmitting}
-                  className="px-5 py-2.5 rounded-2xl text-sm font-medium text-[color:var(--muted-text)] bg-[color:var(--surface-hover)] border border-[color:var(--surface-border)] transition-all duration-200 cursor-pointer disabled:opacity-50"
-                >
-                  Үгүй, цуцлах
-                </button>
-                <button
-                  type="button"
-                  onClick={handleConfirm}
-                  disabled={isSubmitting}
-                  className="px-5 py-2.5 rounded-2xl text-sm font-medium text-white bg-[color:var(--theme)] hover:opacity-90 shadow-md shadow-theme/20 hover:shadow-theme/30 transition-all duration-200 cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                  className="px-5 py-2.5 rounded-2xl text-sm font-medium text-white bg-[color:var(--theme)] hover:opacity-90 shadow-md shadow-theme/20 hover:shadow-theme/30 transition-all duration-200 cursor-pointer flex items-center gap-2"
                   data-modal-primary
                 >
-                  {isSubmitting ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                      Илгээж байна...
-                    </>
-                  ) : (
-                    "Тийм, илгээх"
-                  )}
+                  Ойлголоо
                 </button>
               </div>
             </div>

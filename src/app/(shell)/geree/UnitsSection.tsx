@@ -14,6 +14,7 @@ import Table from "@/components/ui/table";
 import type { ColumnsType } from "@/components/ui/table";
 import QuickRegisterModal from "./modals/QuickRegisterModal";
 import SendInvoiceConfirmModal from "./modals/SendInvoiceConfirmModal";
+import InfoModal from "./modals/InfoModal";
 import DeleteConfirmModal from "./modals/DeleteModal";
 import { ModalPortal } from "../../../../components/shell/ModalPortal";
 import useModalHotkeys from "@/lib/useModalHotkeys";
@@ -243,6 +244,11 @@ export default function UnitsSection({
     message: "",
     onConfirm: async () => { },
   });
+
+  const [infoModal, setInfoModal] = useState<{ show: boolean; title: string; message: string }>({
+    show: false, title: "", message: "",
+  });
+  const showInfo = (title: string, message: string) => setInfoModal({ show: true, title, message });
 
   // Keyboard shortcuts for inline modals
   useModalHotkeys({
@@ -565,10 +571,27 @@ export default function UnitsSection({
   const handleSendCheckedInvoices = async () => {
     if (!selectedFloor || !selectedFloorData || checkedUnits.length === 0) return;
 
+    // Filter out units that already have an invoice/charge sent this month
+    const alreadySentUnits = checkedUnits.filter((u) => {
+      const row = zogsoolTableRows.find((r: any) => String(r.id) === String(u));
+      return row?.isInvoiceSent === true;
+    });
+    const eligibleUnits = checkedUnits.filter((u) => {
+      const row = zogsoolTableRows.find((r: any) => String(r.id) === String(u));
+      return !row?.isInvoiceSent;
+    });
+
+    if (eligibleUnits.length === 0) {
+      showInfo("Боломжгүй", `Сонгосон бүх тоотод (${alreadySentUnits.join(", ")}) энэ сарын нэхэмжлэх/авлага хэдийн илгээгдсэн байна.`);
+      return;
+    }
+
     const tootsBilled = new Set<string>();
     const dedicatedIds: string[] = [];
     const nestedIds: string[] = [];
     const nestedTootsMap: Record<string, string[]> = {};
+    // Only process eligible (not-yet-sent) units
+    const effectiveCheckedUnits = eligibleUnits;
 
     contracts.forEach((c) => {
       const status = String(c?.tuluv || c?.status || "Идэвхтэй").trim();
@@ -586,7 +609,7 @@ export default function UnitsSection({
 
       const matchFloor = cFloor === selectedFloor;
       const matchOrts = selectedOrts ? cOrts === selectedOrts : true;
-      const matchToot = checkedUnits.includes(cToot);
+      const matchToot = effectiveCheckedUnits.includes(cToot);
 
       // Check primary matching
       let matchPrimary = false;
@@ -628,10 +651,10 @@ export default function UnitsSection({
           const rToots = String(rt.toot || "").split(",").map((x) => x.trim()).filter(Boolean);
           const matchOrtsNested = selectedOrts ? rOrts === selectedOrts : true;
           const matchFloorNested = rFloor === selectedFloor;
-          const matchTootsNested = rToots.some((t) => checkedUnits.includes(t));
+          const matchTootsNested = rToots.some((t) => effectiveCheckedUnits.includes(t));
 
           if (matchOrtsNested && matchFloorNested && matchTootsNested) {
-            rToots.forEach((t) => { if (checkedUnits.includes(t)) tootsBilled.add(t); });
+            rToots.forEach((t) => { if (effectiveCheckedUnits.includes(t)) tootsBilled.add(t); });
             return true;
           }
           return false;
@@ -650,7 +673,7 @@ export default function UnitsSection({
               const rFloor = String(rt.davkhar || "").trim();
               if (rFloor !== selectedFloor) return;
               String(rt.toot || "").split(",").map((x: string) => x.trim()).filter(Boolean)
-                .forEach((t: string) => { if (checkedUnits.includes(t)) matchedToots.push(t); });
+                .forEach((t: string) => { if (effectiveCheckedUnits.includes(t)) matchedToots.push(t); });
             });
             if (matchedToots.length) nestedTootsMap[contractId] = matchedToots;
           } else {
@@ -662,7 +685,7 @@ export default function UnitsSection({
 
     const totalCount = dedicatedIds.length + nestedIds.length;
     if (totalCount === 0) {
-      alert(`Сонгосон тоотуудад идэвхтэй ${propertyTab === "Зогсоол" ? "Гараж" : propertyTab === "Агуулах" ? "Агуулах" : "Орон сууц/Тоот"} гэрээ олдсонгүй.`);
+      showInfo("Гэрээ олдсонгүй", `Сонгосон тоотуудад идэвхтэй ${propertyTab === "Зогсоол" ? "Гараж" : propertyTab === "Агуулах" ? "Агуулах" : "Орон сууц/Тоот"} гэрээ олдсонгүй.`);
       return;
     }
 
@@ -670,7 +693,9 @@ export default function UnitsSection({
     setConfirmModal({
       show: true,
       title: `Сонгосон тоотуудад ${propertyTab === "Зогсоол" || propertyTab === "Агуулах" ? "авлага нэмэх" : "нэхэмжлэх илгээх"}`,
-      message: `Сонгосон ${tootsBilled.size} тоотын ${typeLabel} гэрээнүүдэд ${propertyTab === "Зогсоол" || propertyTab === "Агуулах" ? "авлага нэмэх" : "нэхэмжлэх илгээх"} үү?`,
+      message: `${tootsBilled.size} тоотын ${typeLabel} гэрээнүүдэд ${propertyTab === "Зогсоол" || propertyTab === "Агуулах" ? "авлага нэмэх" : "нэхэмжлэх илгээх"} үү?${
+        alreadySentUnits.length > 0 ? ` (${alreadySentUnits.length} тоот хэдийн илгээгдсэн тул алгасна)` : ""
+      }`,
       onConfirm: async () => {
         if (propertyTab === "Зогсоол" || propertyTab === "Агуулах") {
           await actions.handleAddGarageChargesForContracts(
@@ -892,7 +917,7 @@ export default function UnitsSection({
 
     const totalCount = dedicatedIds.length + nestedIds.length;
     if (totalCount === 0) {
-      alert(`Энэ давхарт идэвхтэй ${propertyTab === "Зогсоол" ? "Гараж" : propertyTab === "Агуулах" ? "Агуулах" : "Орон сууц/Тоот"} гэрээ олдсонгүй.`);
+      showInfo("Гэрээ олдсонгүй", `Энэ давхарт идэвхтэй ${propertyTab === "Зогсоол" ? "Гараж" : propertyTab === "Агуулах" ? "Агуулах" : "Орон сууц/Тоот"} гэрээ олдсонгүй.`);
       return;
     }
 
@@ -985,7 +1010,7 @@ export default function UnitsSection({
 
     const totalCount = dedicatedIds.length + nestedIds.length;
     if (totalCount === 0) {
-      alert(`Идэвхтэй ${propertyTab === "Зогсоол" ? "Гараж" : propertyTab === "Агуулах" ? "Агуулах" : "Орон сууц/Тоот"} гэрээ олдсонгүй.`);
+      showInfo("Гэрээ олдсонгүй", `Идэвхтэй ${propertyTab === "Зогсоол" ? "Гараж" : propertyTab === "Агуулах" ? "Агуулах" : "Орон сууц/Тоот"} гэрээ олдсонгүй.`);
       return;
     }
 
@@ -1010,8 +1035,12 @@ export default function UnitsSection({
     });
   };
 
-  const handleSendSingleUnitInvoice = async (resident: any, unit: string) => {
+  const handleSendSingleUnitInvoice = async (resident: any, unit: string, isAlreadySent?: boolean) => {
     if (!resident) return;
+    if (isAlreadySent) {
+      showInfo("Боломжгүй", "Энэ сарын нэхэмжлэх/авлага хэдийн илгээгдсэн байна.");
+      return;
+    }
 
     const residentId = resident._id;
     const activeContract = contracts.find(c => {
@@ -1076,7 +1105,7 @@ export default function UnitsSection({
         }
       });
     } else {
-      alert("Энэ тоотод холбоотой идэвхтэй гэрээ олдсонгүй.");
+      showInfo("Гэрээ олдсонгүй", "Энэ тоотод холбоотой идэвхтэй гэрээ олдсонгүй.");
     }
   };
 
@@ -1226,26 +1255,60 @@ export default function UnitsSection({
         ) || 0)
         : 0;
 
-      const isPaid = Boolean(
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth();
+      const isSameMonth = (dRaw: any) => {
+        if (!dRaw) return false;
+        const d = new Date(dRaw);
+        if (isNaN(d.getTime())) return false;
+        return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
+      };
+
+      const contractIsPaid = Boolean(
         activeContract?.tulbarTulogdson ||
         activeContract?.tulburTulogdson ||
         activeContract?.tuluv === "Төлөгдсөн"
       );
+      const isPaid = (() => {
+        if (contractIsPaid) return true;
+        if (propertyTab !== "Зогсоол" && propertyTab !== "Агуулах") return false;
+        if (!Array.isArray(avlaguudData)) return false;
+
+        const categoryPattern = propertyTab === "Зогсоол" ? /зогсоол|гараж/i : /агуулах/i;
+        const contractId = String(activeContract?._id || "");
+        const residentId = String(resident?._id || "");
+        let chargeTotal = 0;
+        let paidTotal = 0;
+
+        avlaguudData.forEach((entry: any) => {
+          if (!isSameMonth(entry.ognoo || entry.createdAt)) return;
+          const categoryName = String(entry.zardliinNer || entry.tailbar || "");
+          if (!categoryPattern.test(categoryName)) return;
+
+          const entryToot = String(entry.toot || "").trim();
+          if (entryToot && entryToot !== unitStr) return;
+
+          const entryContractId = String(entry.gereeniiId || "");
+          const entryResidentId = String(entry.orshinSuugchId || "");
+          if (
+            (contractId && entryContractId && entryContractId !== contractId) ||
+            (residentId && entryResidentId && entryResidentId !== residentId)
+          ) {
+            return;
+          }
+
+          const dun = Number(entry.dun) || 0;
+          if (dun > 0) chargeTotal += dun;
+          else if (dun < 0) paidTotal += Math.abs(dun);
+        });
+
+        return chargeTotal > 0 && paidTotal >= chargeTotal - 0.01;
+      })();
 
       // Check if this month's invoice / charge was sent to the user
       let isInvoiceSent = false;
       if (isOccupied) {
-        const now = new Date();
-        const currentYear = now.getFullYear();
-        const currentMonth = now.getMonth();
-
-        const isSameMonth = (dRaw: any) => {
-          if (!dRaw) return false;
-          const d = new Date(dRaw);
-          if (isNaN(d.getTime())) return false;
-          return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
-        };
-
         // 1. Direct contract / resident fields
         if (
           activeContract?.nekhemjlekhIlgeesen === true ||
@@ -1272,10 +1335,12 @@ export default function UnitsSection({
             const aGId = String(a.gereeniiId || "").trim();
             const aRId = String(a.orshinSuugchId || "").trim();
 
-            const tootMatch = aToot === unitStr || (tootStr !== "-" && aToot === tootStr);
+            const tootMatch = aToot === unitStr;
             const refMatch = (contractId && aGId === contractId) || (resId && aRId === resId);
+            const categoryText = String(a.zardliinNer || a.tailbar || a.ner || "");
+            const categoryMatch = /зогсоол|гараж|агуулах/i.test(categoryText);
 
-            return tootMatch || (refMatch && /зогсоол|гараж|агуулах/i.test(a.tailbar || ""));
+            return tootMatch || (refMatch && categoryMatch);
           });
           if (hasAvlaga) {
             isInvoiceSent = true;
@@ -1317,6 +1382,8 @@ export default function UnitsSection({
         } catch (e) { }
       }
 
+      const uldegdel = isOccupied && isInvoiceSent ? (isPaid ? 0 : amount) : 0;
+
       return {
         key: unitStr,
         id: unitStr,
@@ -1327,7 +1394,7 @@ export default function UnitsSection({
         toot: tootStr,
         dugaar: phone,
         zogsoolDugaar: unitStr,
-        tulbur: amount,
+        tulbur: uldegdel,
         isInvoiceSent,
         tolsenEsekh: isPaid,
         isOccupied,
@@ -1354,7 +1421,7 @@ export default function UnitsSection({
         r.dugaar.toLowerCase().includes(q) ||
         (r.isInvoiceSent ? "илгээгдсэн" : "илгээгдээгүй").includes(q)
     );
-  }, [selectedFloorData, contracts, zogsoolSearch, avlaguudData, nekhemjlekhData]);
+  }, [selectedFloorData, contracts, zogsoolSearch, avlaguudData, nekhemjlekhData, propertyTab]);
 
   const totalZogsoolAmount = useMemo(() => {
     return zogsoolTableRows.reduce((sum, r) => sum + (r.tulbur || 0), 0);
@@ -1416,7 +1483,7 @@ export default function UnitsSection({
         render: (v: any) => <span className="text-center">{v || "-"}</span>,
       },
       {
-        title: "Төлбөр",
+        title: "Үлдэгдэл",
         dataIndex: "tulbur",
         key: "tulbur",
         sorter: (x: any, y: any) => (Number(x.tulbur) || 0) - (Number(y.tulbur) || 0),
@@ -1516,10 +1583,23 @@ export default function UnitsSection({
               {row.isOccupied ? (
                 <button
                   type="button"
-                  onClick={() => handleSendSingleUnitInvoice(row.resident, row.id)}
-                  className={`${iconBtn} text-brand hover:border-theme/30 hover:bg-theme/10`}
-                  title="Нэхэмжлэх/авлага илгээх"
+                  disabled={!!row.isInvoiceSent}
+                  onClick={(e) => {
+                    if (row.isInvoiceSent) { e.preventDefault(); e.stopPropagation(); return; }
+                    handleSendSingleUnitInvoice(row.resident, row.id, false);
+                  }}
+                  className={`${iconBtn} ${
+                    row.isInvoiceSent
+                      ? "opacity-30 pointer-events-none text-[color:var(--muted-text)]"
+                      : "text-brand hover:border-theme/30 hover:bg-theme/10"
+                  }`}
+                  title={
+                    row.isInvoiceSent
+                      ? "Энэ сарын нэхэмжлэх/авлага хэдийн илгээгдсэн байна"
+                      : "Нэхэмжлэх/авлага илгээх"
+                  }
                   aria-label="Нэхэмжлэх илгээх"
+                  aria-disabled={!!row.isInvoiceSent}
                 >
                   <Send className="h-[15px] w-[15px]" />
                 </button>
@@ -1865,7 +1945,7 @@ export default function UnitsSection({
                           {propertyTab === "Зогсоол" ? "Гараж" : "Агуулах"} —
                         </h3>
                         {uniqueSortedFloorOptions.length > 0 ? (
-                          <div className="tusgai-wrapper w-[150px]">
+                          <div className="tusgai-wrapper w-[130px]">
                             <TusgaiZagvar
                               value={selectedFloor || ""}
                               onChange={(v: string) => setSelectedFloor(v)}
@@ -2090,18 +2170,36 @@ export default function UnitsSection({
                     </div>
 
                     {/* Action Button: Send Manual Invoice */}
-                    <Button
-                      onClick={async () => {
-                        await handleSendSingleUnitInvoice(activeUnitDetails.resident, activeUnitDetails.unit);
-                      }}
-                      variant="secondary"
-                      fullWidth
-                      className="!bg-warning hover:!bg-warning !text-white rounded-2xl shadow-md shadow-warning/10"
-                    >
-                      {propertyTab === "Зогсоол"
-                        ? "Гаражийн нэхэмжлэх илгээх"
-                        : "Агуулахын нэхэмжлэх илгээх"}
-                    </Button>
+                    {(() => {
+                      const detailRow = zogsoolTableRows.find((r: any) => String(r.id) === String(activeUnitDetails.unit));
+                      const alreadySent = detailRow?.isInvoiceSent ?? false;
+                      return (
+                        <div className="space-y-1">
+                          <Button
+                            disabled={alreadySent}
+                            onClick={async () => {
+                              await handleSendSingleUnitInvoice(activeUnitDetails.resident, activeUnitDetails.unit, alreadySent);
+                            }}
+                            variant="secondary"
+                            fullWidth
+                            className={`rounded-2xl shadow-md ${
+                              alreadySent
+                                ? "!bg-[color:var(--surface-hover)] !text-[color:var(--muted-text)] opacity-50 cursor-not-allowed shadow-none"
+                                : "!bg-warning hover:!bg-warning !text-white shadow-warning/10"
+                            }`}
+                          >
+                            {propertyTab === "Зогсоол"
+                              ? "Гаражийн нэхэмжлэх илгээх"
+                              : "Агуулахын нэхэмжлэх илгээх"}
+                          </Button>
+                          {alreadySent && (
+                            <p className="text-center text-[11px] text-[color:var(--muted-text)]">
+                              ✓ Энэ сарын нэхэмжлэх хэдийн илгээгдсэн байна
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })()}
                     {/* Action Button: Unlink User */}
                     <Button
                       onClick={async () => {
@@ -2146,6 +2244,12 @@ export default function UnitsSection({
         title={confirmModal.title}
         message={confirmModal.message}
         onConfirm={confirmModal.onConfirm}
+      />
+      <InfoModal
+        show={infoModal.show}
+        onClose={() => setInfoModal((prev) => ({ ...prev, show: false }))}
+        title={infoModal.title}
+        message={infoModal.message}
       />
       <DeleteConfirmModal
         show={!!tsutslakhAsuult}

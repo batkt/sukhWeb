@@ -991,14 +991,14 @@ export default function OrlogoAvlagaPage() {
             options={tootSongolt}
             searchable
             searchPlaceholder="Тоот хайх..."
-            className="w-[130px] shrink-0"
+            className="w-[70px] shrink-0"
           />
           <FilterSelect
             label="Давхар"
             value={filters.davkhar}
             onChange={(v) => setFilters((p) => ({ ...p, davkhar: v }))}
             options={davkharSongolt}
-            className="w-[130px] shrink-0"
+            className="w-[100px] shrink-0"
           />
         </div>
         <div className="flex gap-3">
