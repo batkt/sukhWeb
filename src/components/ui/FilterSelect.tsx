@@ -36,6 +36,7 @@ interface FilterSelectProps {
   searchable?: boolean;
   searchPlaceholder?: string;
   className?: string;
+  style?: React.CSSProperties;
   id?: string;
 }
 
@@ -50,6 +51,7 @@ export default function FilterSelect({
   searchable = false,
   searchPlaceholder = "Хайх...",
   className = "",
+  style,
   id,
 }: FilterSelectProps) {
   const [neelttei, setNeelttei] = useState(false);
@@ -59,7 +61,7 @@ export default function FilterSelect({
   const popoverRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const jagsaaltId = useId();
-  const defaultWidthClass = /(^|\s)w-/.test(className) ? "" : "w-[180px]";
+  const defaultWidthClass = /(^|\s)(w|min-w|max-w)-/.test(className) ? "" : "w-fit";
 
   const songogdson = options.find((o) => o.value === value);
 
@@ -164,7 +166,10 @@ export default function FilterSelect({
             neekh();
           }
         }}
-        style={neelttei && khaaltUrgun ? { width: khaaltUrgun } : undefined}
+        style={{
+          ...style,
+          ...(neelttei && khaaltUrgun ? { width: khaaltUrgun } : {}),
+        }}
         className={`filter-field cursor-pointer text-left ${value && allowClear ? "is-active" : ""} ${defaultWidthClass} ${className}`}
       >
         {label && !(searchable && neelttei) && <span className="filter-field-label">{label}</span>}
@@ -185,13 +190,15 @@ export default function FilterSelect({
             className="min-w-0 flex-1 cursor-text"
           />
         ) : (
-          <span
-            className={`min-w-0 truncate text-[13px] ${label ? "" : "flex-1"} ${
-              songogdson ? "text-[color:var(--panel-text)]" : "text-[color:var(--muted-text)]"
-            }`}
-          >
-            {songogdson?.label || placeholder}
-          </span>
+          (songogdson?.label || placeholder) ? (
+            <span
+              className={`min-w-0 flex-1 truncate text-[13px] ${
+                songogdson ? "text-[color:var(--panel-text)]" : "text-[color:var(--muted-text)]"
+              }`}
+            >
+              {songogdson?.label || placeholder}
+            </span>
+          ) : null
         )}
         {value && allowClear ? (
           <span
@@ -215,7 +222,7 @@ export default function FilterSelect({
                 khaakh();
               }
             }}
-            className={`h-4 w-4 shrink-0 text-[color:var(--muted-text)] transition-transform ${
+            className={`h-3.5 w-3.5 shrink-0 text-[color:var(--muted-text)] transition-transform ${
               neelttei ? "rotate-180" : ""
             }`}
           />

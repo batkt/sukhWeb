@@ -1226,26 +1226,60 @@ export default function UnitsSection({
         ) || 0)
         : 0;
 
-      const isPaid = Boolean(
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth();
+      const isSameMonth = (dRaw: any) => {
+        if (!dRaw) return false;
+        const d = new Date(dRaw);
+        if (isNaN(d.getTime())) return false;
+        return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
+      };
+
+      const contractIsPaid = Boolean(
         activeContract?.tulbarTulogdson ||
         activeContract?.tulburTulogdson ||
         activeContract?.tuluv === "Төлөгдсөн"
       );
+      const isPaid = (() => {
+        if (contractIsPaid) return true;
+        if (propertyTab !== "Зогсоол" && propertyTab !== "Агуулах") return false;
+        if (!Array.isArray(avlaguudData)) return false;
+
+        const categoryPattern = propertyTab === "Зогсоол" ? /зогсоол|гараж/i : /агуулах/i;
+        const contractId = String(activeContract?._id || "");
+        const residentId = String(resident?._id || "");
+        let chargeTotal = 0;
+        let paidTotal = 0;
+
+        avlaguudData.forEach((entry: any) => {
+          if (!isSameMonth(entry.ognoo || entry.createdAt)) return;
+          const categoryName = String(entry.zardliinNer || entry.tailbar || "");
+          if (!categoryPattern.test(categoryName)) return;
+
+          const entryToot = String(entry.toot || "").trim();
+          if (entryToot && entryToot !== unitStr) return;
+
+          const entryContractId = String(entry.gereeniiId || "");
+          const entryResidentId = String(entry.orshinSuugchId || "");
+          if (
+            (contractId && entryContractId && entryContractId !== contractId) ||
+            (residentId && entryResidentId && entryResidentId !== residentId)
+          ) {
+            return;
+          }
+
+          const dun = Number(entry.dun) || 0;
+          if (dun > 0) chargeTotal += dun;
+          else if (dun < 0) paidTotal += Math.abs(dun);
+        });
+
+        return chargeTotal > 0 && paidTotal >= chargeTotal - 0.01;
+      })();
 
       // Check if this month's invoice / charge was sent to the user
       let isInvoiceSent = false;
       if (isOccupied) {
-        const now = new Date();
-        const currentYear = now.getFullYear();
-        const currentMonth = now.getMonth();
-
-        const isSameMonth = (dRaw: any) => {
-          if (!dRaw) return false;
-          const d = new Date(dRaw);
-          if (isNaN(d.getTime())) return false;
-          return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
-        };
-
         // 1. Direct contract / resident fields
         if (
           activeContract?.nekhemjlekhIlgeesen === true ||
@@ -1865,7 +1899,7 @@ export default function UnitsSection({
                           {propertyTab === "Зогсоол" ? "Гараж" : "Агуулах"} —
                         </h3>
                         {uniqueSortedFloorOptions.length > 0 ? (
-                          <div className="tusgai-wrapper w-[150px]">
+                          <div className="tusgai-wrapper w-[130px]">
                             <TusgaiZagvar
                               value={selectedFloor || ""}
                               onChange={(v: string) => setSelectedFloor(v)}

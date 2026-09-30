@@ -1174,7 +1174,7 @@ export default function SanalKhuselt() {
               { value: "sanal", label: t("Санал") },
               { value: "gomdol", label: t("Гомдол") },
             ]}
-            className="w-[130px] shrink-0"
+            className="w-[100px] shrink-0"
           />
           <FilterSelect
             id="feedback-filter-status-select"
@@ -1186,7 +1186,7 @@ export default function SanalKhuselt() {
               { value: "done", label: t("Шийдэгдсэн") },
               { value: "rejected", label: t("Татгалзсан") },
             ]}
-            className="w-[130px] shrink-0"
+            className="w-[100px] shrink-0"
           />
           </div>
           <div className="flex items-center gap-2">

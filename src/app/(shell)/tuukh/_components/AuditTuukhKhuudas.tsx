@@ -309,7 +309,7 @@ function AuditTuukhAgguulga({ turul }: { turul: TuukhTurul }) {
             options={ajiltanOptions}
             searchable
             searchPlaceholder="Ажилтан хайх..."
-            className="w-[160px] shrink-0"
+            className="w-[100px] shrink-0"
           />
           <FilterSelect
             label="Төрөл"
@@ -321,7 +321,7 @@ function AuditTuukhAgguulga({ turul }: { turul: TuukhTurul }) {
             options={turulOptions}
             searchable
             searchPlaceholder="Төрөл хайх..."
-            className="w-[160px] shrink-0"
+            className="w-[100px] shrink-0"
           />
         </div>
       </div>

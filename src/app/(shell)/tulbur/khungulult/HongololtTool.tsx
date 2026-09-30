@@ -1791,7 +1791,7 @@ export default function HongololtTool({
                     setHistPage(1);
                   }}
                   options={davkharOptions.map((d) => ({ value: String(d), label: `${d} давхар` }))}
-                  className="w-[130px] shrink-0"
+                  className="w-[100px] shrink-0"
                 />
                 <FilterSelect
                   label="Ангилал"
@@ -1804,7 +1804,7 @@ export default function HongololtTool({
                     value: angilal,
                     label: angilal,
                   }))}
-                  className="w-[130px] shrink-0"
+                  className="w-[100px] shrink-0"
                 />
               </div>
               <ExcelButton onClick={handleExportExcel} />

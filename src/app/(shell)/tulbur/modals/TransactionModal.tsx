@@ -219,6 +219,9 @@ export interface TransactionData {
   reason?: string;
 }
 
+type PaymentCategory = "Орон сууц" | "Зогсоол" | "Агуулах";
+type PaymentCategoryBalances = Record<PaymentCategory, number>;
+
 /** 1234567.5 -> "1,234,567.50" */
 const mungunDunFormat = (n: number) =>
   (Number(n) || 0).toLocaleString("en-US", {
@@ -345,6 +348,8 @@ export default function TransactionModal({
     selectedCharge?: string;
   } | null>(null);
   const [residentBalance, setResidentBalance] = useState<number | null>(null);
+  const [paymentCategoryBalances, setPaymentCategoryBalances] = useState<PaymentCategoryBalances | null>(null);
+  const [isFetchingPaymentCategories, setIsFetchingPaymentCategories] = useState(false);
   const [isFetchingBalance, setIsFetchingBalance] = useState(false);
   const [isFetchingLatest, setIsFetchingLatest] = useState(false);
   const [showConfirmClose, setShowConfirmClose] = useState(false);
@@ -354,6 +359,13 @@ export default function TransactionModal({
   // Determine if umnukhZaalt is editable (if initial value is 0 or undefined)
   const initialUmnukhVal = resident?.umnukhZaalt ?? resident?.suuliinZaalt;
   const isUmnukhEditable = !initialUmnukhVal || Number(initialUmnukhVal) === 0;
+  const paymentGereeniiId = String(resident?.gereeniiId || resident?.gereeId || "");
+  const paymentCategoryName = avlagiinAngilal === "zogsool"
+    ? "Зогсоол"
+    : avlagiinAngilal === "aguulakh"
+      ? "Агуулах"
+      : "Орон сууц";
+  const paymentAvailableBalance = paymentCategoryBalances?.[paymentCategoryName] ?? null;
 
   const formatAmount = (val: number | string): string => {
     const clean = String(val).replace(/,/g, "");
@@ -619,8 +631,8 @@ export default function TransactionModal({
   };
 
   const fillAmountWithBalance = () => {
-    if (residentBalance !== null && transactionType === "tulult") {
-      const amountToFill = Math.max(0, residentBalance);
+    if (paymentAvailableBalance !== null && transactionType === "tulult") {
+      const amountToFill = Math.max(0, paymentAvailableBalance || 0);
       setAmount(formatAmount(amountToFill));
     }
   };
@@ -631,6 +643,57 @@ export default function TransactionModal({
       setResidentBalance(bal);
     }
   }, [show, resident]);
+
+  React.useEffect(() => {
+    if (
+      !show ||
+      transactionType !== "tulult" ||
+      !token ||
+      !baiguullagiinId ||
+      !paymentGereeniiId
+    ) {
+      setPaymentCategoryBalances(null);
+      setIsFetchingPaymentCategories(false);
+      return;
+    }
+
+    let active = true;
+    setIsFetchingPaymentCategories(true);
+    uilchilgee(token)
+      .post("/khungulultSuuriAvya", {
+        baiguullagiinId,
+        barilgiinId: barilgiinId || undefined,
+        gereeniiIdnuud: [paymentGereeniiId],
+      })
+      .then((response: any) => {
+        if (!active) return;
+        const categories = response?.data?.uldegdelAngilal?.[paymentGereeniiId] || {};
+        const balances: PaymentCategoryBalances = {
+          "Орон сууц": Number(categories["Орон сууц"]) || 0,
+          "Зогсоол": Number(categories["Зогсоол"]) || 0,
+          "Агуулах": Number(categories["Агуулах"]) || 0,
+        };
+        setPaymentCategoryBalances(balances);
+        const total = Number(response?.data?.uldegdel?.[paymentGereeniiId]);
+        if (Number.isFinite(total)) setResidentBalance(total);
+        setAvlagiinAngilal((current) => {
+          const currentName = current === "zogsool" ? "Зогсоол" : current === "aguulakh" ? "Агуулах" : "Орон сууц";
+          if (balances[currentName] > 0) return current;
+          const availableName = (Object.keys(balances) as PaymentCategory[]).find((name) => balances[name] > 0);
+          return availableName === "Зогсоол" ? "zogsool" : availableName === "Агуулах" ? "aguulakh" : "engiin";
+        });
+      })
+      .catch(() => {
+        if (active) setPaymentCategoryBalances(null);
+      })
+      .finally(() => {
+        if (active) setIsFetchingPaymentCategories(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [show, transactionType, token, baiguullagiinId, barilgiinId, paymentGereeniiId]);
 
   React.useEffect(() => {
     if (
@@ -750,6 +813,24 @@ export default function TransactionModal({
       return;
     }
 
+    if (transactionType === "tulult" && (!paymentCategoryBalances || isFetchingPaymentCategories)) {
+      messageApi.warning("Авлагын төрлийн үлдэгдэл ачаалж байна. Түр хүлээнэ үү.");
+      return;
+    }
+    if (transactionType === "tulult") {
+      const paymentAmount = parseFloat(amount.replace(/,/g, "")) || 0;
+      if (paymentAvailableBalance === null || paymentAvailableBalance <= 0) {
+        messageApi.warning(`${paymentCategoryName} авлагын үлдэгдэлгүй байна.`);
+        return;
+      }
+      if (paymentAmount > paymentAvailableBalance) {
+        messageApi.warning(
+          `${paymentCategoryName} авлагын үлдэгдлээс (${mungunDunFormat(paymentAvailableBalance)}₮) их төлөх боломжгүй.`,
+        );
+        return;
+      }
+    }
+
     let finalTailbar = tailbar;
     if (
       transactionType === "ashiglalt" &&
@@ -788,7 +869,7 @@ export default function TransactionModal({
     const data: TransactionData = {
       type: transactionType,
       ...(transactionType === "busad" ? { busadTurul } : {}),
-      ...(transactionType === "avlaga" && !ekhniiUldegdel && avlagiinAngilal !== "engiin"
+      ...((transactionType === "avlaga" && !ekhniiUldegdel && avlagiinAngilal !== "engiin") || transactionType === "tulult"
         ? { avlagiinAngilal, avlagiinToot: avlagiinToot || undefined }
         : {}),
       date: transactionDate,
@@ -949,9 +1030,21 @@ export default function TransactionModal({
                   )}
                 </div>
 
-                {/* Авлагын ангилал — зогсоол, агуулахын авлагыг тусад нь үүсгэнэ */}
-                {transactionType === "avlaga" && !ekhniiUldegdel && (() => {
-                  const turulNer = avlagiinAngilal === "zogsool" ? ["Гараж", "Зогсоол"] : ["Агуулах"];
+                {/* Авлагын ангилал сонгох, төлөлтөд үлдэгдлийг харуулах */}
+                {((transactionType === "avlaga" && !ekhniiUldegdel) || transactionType === "tulult") && (() => {
+                  const categoryOptions = [
+                    { key: "engiin" as const, ner: transactionType === "tulult" ? "Орон сууц" : "Энгийн", category: "Орон сууц" as const },
+                    { key: "zogsool" as const, ner: "Зогсоол", category: "Зогсоол" as const },
+                    { key: "aguulakh" as const, ner: "Агуулах", category: "Агуулах" as const },
+                  ];
+                  const visibleOptions = transactionType === "tulult" && paymentCategoryBalances
+                    ? categoryOptions.filter((option) => paymentCategoryBalances[option.category] > 0)
+                    : categoryOptions;
+                  const turulNer = avlagiinAngilal === "zogsool"
+                    ? ["Гараж", "Зогсоол"]
+                    : avlagiinAngilal === "aguulakh"
+                      ? ["Агуулах"]
+                      : ["Орон сууц", "Тоот"];
                   const tootuud: string[] = Array.from(
                     new Set(
                       (Array.isArray(resident?.toots) ? resident.toots : [])
@@ -961,34 +1054,47 @@ export default function TransactionModal({
                     ),
                   );
                   return (
-                    <div className="space-y-2">
-                      <span className="block text-xs text-[color:var(--panel-text)]">Авлагын төрөл</span>
-                      <div className="grid grid-cols-3 gap-1 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-1" role="radiogroup" aria-label="Авлагын төрөл">
-                        {([
-                          { key: "engiin", ner: "Энгийн" },
-                          { key: "zogsool", ner: "Зогсоол" },
-                          { key: "aguulakh", ner: "Агуулах" },
-                        ] as const).map((a) => (
+                    <div className="space-y-1.5">
+                      <span className="block text-[11px] font-medium uppercase tracking-wide text-[color:var(--muted-text)]">
+                        {transactionType === "tulult" ? "Төлөх авлагын төрөл" : "Авлагын төрөл"}
+                      </span>
+                      <div
+                        className="flex gap-0.5 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] p-1"
+                        role="radiogroup"
+                        aria-label="Авлагын төрөл"
+                      >
+                        {visibleOptions.map((a) => {
+                          const available = paymentCategoryBalances?.[a.category] ?? 0;
+                          const disabled = isProcessing || (transactionType === "tulult" && (isFetchingPaymentCategories || !paymentCategoryBalances || available <= 0));
+                          const isActive = avlagiinAngilal === a.key;
+                          return (
                           <button
                             key={a.key}
                             type="button"
                             role="radio"
-                            aria-checked={avlagiinAngilal === a.key}
-                            disabled={isProcessing}
+                            aria-checked={isActive}
+                            disabled={disabled}
                             onClick={() => {
                               setAvlagiinAngilal(a.key);
                               setAvlagiinToot("");
                             }}
-                            className={`h-9 rounded-xl text-[13px] font-medium transition-colors ${
-                              avlagiinAngilal === a.key
+                            className={`relative flex flex-1 items-center justify-center min-h-9 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-40 ${
+                              isActive
                                 ? "bg-theme !text-white shadow-sm"
-                                : "text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)]"
+                                : "text-[color:var(--muted-text)] hover:bg-[color:var(--surface-bg)] hover:text-[color:var(--panel-text)]"
                             }`}
                           >
-                            {a.ner}
+                            <span>{a.ner}</span>
                           </button>
-                        ))}
+                          );
+                        })}
                       </div>
+                      {transactionType === "tulult" && !isFetchingPaymentCategories && paymentCategoryBalances && visibleOptions.length === 0 && (
+                        <p className="text-xs text-[color:var(--muted-text)]">Төлөх авлагын үлдэгдэл алга.</p>
+                      )}
+                      {transactionType === "tulult" && isFetchingPaymentCategories && (
+                        <p className="text-xs text-[color:var(--muted-text)]">Авлагын төрлийн үлдэгдэл татаж байна…</p>
+                      )}
                       {avlagiinAngilal !== "engiin" && tootuud.length > 0 && (
                         <select
                           value={avlagiinToot}
@@ -1261,24 +1367,22 @@ export default function TransactionModal({
                         <label className="block text-xs text-[color:var(--panel-text)]">
                           Дүн
                         </label>
-                        {residentBalance !== null &&
-                          transactionType === "tulult" && (
+                        {transactionType === "tulult" && (
                             <motion.div
                               initial={{ opacity: 0, x: 5 }}
                               animate={{ opacity: 1, x: 0 }}
                               onDoubleClick={fillAmountWithBalance}
+                              aria-disabled={paymentAvailableBalance === null || paymentAvailableBalance <= 0}
                               title="Хоёр товшиж дүнг оруулах"
                               className={`text-[11px] font-medium px-2 py-0.5 rounded-2xl border cursor-pointer transition-all select-none ${
-                                isFetchingBalance
+                                isFetchingPaymentCategories
                                   ? "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)] border-[color:var(--surface-border)] animate-pulse"
-                                  : "bg-warning/10 text-warning border-warning/30 hover:bg-warning/10 active:scale-95"
+                                  : paymentAvailableBalance !== null && paymentAvailableBalance > 0
+                                    ? "bg-warning/10 text-warning border-warning/30 hover:bg-warning/10 active:scale-95"
+                                    : "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)] border-[color:var(--surface-border)]"
                               }`}
                             >
-                              Үлдэгдэл:{" "}
-                              {residentBalance.toLocaleString("en-US", {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              })}
+                              {paymentCategoryName} үлдэгдэл: {isFetchingPaymentCategories ? "…" : mungunDunFormat(paymentAvailableBalance || 0)}
                             </motion.div>
                           )}
                       </div>
