@@ -416,6 +416,42 @@ export default function UnitsSection({
           });
         });
 
+        // Also ensure all units directly in residentsList and clientsList are included in activeToots and unitToResident
+        const allPersons = [...(residentsList || []), ...(clientsList || [])];
+        allPersons.forEach((p: any) => {
+          if (Array.isArray(p.toots) && p.toots.length > 0) {
+            p.toots.forEach((rt: any) => {
+              const rtTurul = String(rt.turul || "Орон сууц").trim();
+              if (turul === "Зогсоол") {
+                if (rtTurul !== "Гараж" && rtTurul !== "Зогсоол") return;
+              } else if (turul === "Агуулах") {
+                if (rtTurul !== "Агуулах") return;
+              } else {
+                if (rtTurul !== "Орон сууц" && rtTurul !== "Тоот") return;
+              }
+
+              const rOrts = String(rt.orts || "1").trim();
+              const rFloor = String(rt.davkhar || "").trim();
+              const matchOrts = !rOrts || rOrts === orts;
+              const matchFloor = !rFloor || rFloor === floor;
+              if (!matchOrts || !matchFloor) return;
+
+              const rToots = String(rt.toot || "")
+                .split(",")
+                .map((x: string) => x.trim())
+                .filter(Boolean);
+              rToots.forEach((toot) => {
+                if (unitsSet.has(toot)) {
+                  activeToots.add(toot);
+                  if (!unitToResident[toot]) {
+                    unitToResident[toot] = p;
+                  }
+                }
+              });
+            });
+          }
+        });
+
         // Filter units based on unitStatusFilter
         let filteredUnits: string[];
         if (unitStatusFilter === "occupied") {
