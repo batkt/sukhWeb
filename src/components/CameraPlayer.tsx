@@ -1,7 +1,8 @@
 "use client";
 import { useCallback, useState } from "react";
 import WebRTCVideoPlayer from "./WebRTCVideoPlayer";
-import WhepVideoPlayer, { urgasniiZam } from "./WhepVideoPlayer";
+import WhepVideoPlayer from "./WhepVideoPlayer";
+import { urgasniiZam, WHEP_IDEVKHTEI } from "@/lib/urgatsSan";
 
 /**
  * Камерын плеерийн НЭГ оролт — шинэ (WHEP) ба хуучин (P2P) замыг
@@ -31,8 +32,6 @@ interface CameraPlayerProps {
   className?: string;
   style?: React.CSSProperties;
 }
-
-const WHEP_IDEVKHTEI = !!process.env.NEXT_PUBLIC_WHEP_BASE;
 
 /** Зам → «WHEP дээр байхгүй». Хуудас дахин ачаалахад цэвэрлэгдэнэ. */
 const shiljeeguiZamuud = new Set<string>();

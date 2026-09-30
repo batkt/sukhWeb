@@ -4,7 +4,12 @@ import { useEffect, useRef } from "react";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
 import uilchilgee from "@/lib/uilchilgee";
-import { beltgeye, kameriinRtsp, urgasniiZam } from "@/lib/urgatsSan";
+import {
+  beltgeye,
+  kameriinRtsp,
+  urgasniiZam,
+  WHEP_IDEVKHTEI,
+} from "@/lib/urgatsSan";
 
 /**
  * Нэвтрэхэд камеруудын урсгалыг УРЬДЧИЛЖ асаана.
@@ -33,10 +38,8 @@ const KHUUCHIN_NUUTS = "Admin123";
 /** Хэдэн камер урьдчилж асаах. `0` бол хязгаарлахгүй. */
 const BELTGEKH_DEED = (() => {
   const utga = Number(process.env.NEXT_PUBLIC_URGATS_BELTGEKH);
-  return Number.isFinite(utga) && utga >= 0 ? utga : 12;
+  return Number.isFinite(utga) && utga >= 0 ? utga : 4;
 })();
-
-const WHEP_IDEVKHTEI = !!process.env.NEXT_PUBLIC_WHEP_BASE;
 
 interface SokhKamer {
   ip?: string;

@@ -26,7 +26,25 @@
  * хэзээ ч хаахгүй.
  */
 
-const WHEP_BASE = process.env.NEXT_PUBLIC_WHEP_BASE ?? "";
+const WHEP_BASE = (process.env.NEXT_PUBLIC_WHEP_BASE ?? "").replace(/\/+$/, "");
+
+/**
+ * WHEP-ийн УНТРААЛГА.
+ *
+ * `NEXT_PUBLIC_WHEP=0` (эсвэл `false` / `off` / `no`) бол бүх камер
+ * хуучин P2P замаар явна. `NEXT_PUBLIC_WHEP_BASE`-ыг устгах бас
+ * ижил нөлөөтэй, гэхдээ тэгвэл тохиргоог бүрэн алдах тул буцааж
+ * асаахад дахин бичих шаардлагатай болно.
+ *
+ * АНХААР: `NEXT_PUBLIC_*` нь build-time бөгөөд Next тэднийг
+ * bundle дотор шигтгэдэг. Сольсны дараа `next build` ЗААВАЛ
+ * — зүгээр restart хийвэл хүчинтэй болохгүй.
+ */
+export const WHEP_IDEVKHTEI = (() => {
+  if (!WHEP_BASE) return false;
+  const untraa = (process.env.NEXT_PUBLIC_WHEP ?? "").trim().toLowerCase();
+  return !["0", "false", "off", "no"].includes(untraa);
+})();
 
 /** Host candidate агшин зуур бэлэн болдог — энэ хүлээлт мэдэгдэхгүй. */
 const ICE_TIMEOUT_MS = 800;
@@ -36,18 +54,47 @@ const DISCONNECT_GRACE_MS = 4000;
 
 const MAX_BACKOFF_MS = 8000;
 
-/** Урьдчилан асаахад хооронд нь хэдэн мс зай авах. */
-const SHATLAKH_MS = 700;
+/**
+ * ЗЭРЭГ явуулах WHEP хүсэлтийн дээд тоо.
+ *
+ * Камерын хуудас 30+ плеерийг нэг мөчид mount хийдэг. Бүгд зэрэг хүсэлт
+ * явуулбал:
+ *
+ *   • Хөтөч нэг origin-д HTTP/1.1-ээр 6 холболт л барьдаг тул 7-оос
+ *     хойшхи нь дараалалд гацна (devtools тэр хүлээлтийг хугацаанд
+ *     тоолдог — «whep 20.1 s» мөрүүдийн дийлэнх нь үнэндээ хүлээлт).
+ *   • POST бүр MediaMTX-ийн `runOnDemand` хүйтэн асаалтыг хүлээдэг:
+ *     backend → socket → worker → ffmpeg → RTSP. Хэдэн арваныг зэрэг
+ *     өдөөвөл барилгын PC дээр ffmpeg-үүд бөөнөөр асаж, NVR-ын сессийн
+ *     хязгаарт тулж, гинж бүхэлдээ удааширна.
+ *
+ * Тиймээс оролдлогыг дараалалд оруулж, зэрэг цөөхнийг л явуулна. Хүсэлт
+ * дуусмагц (SDP хариу авмагц) дараагийнх нь шууд эхэлнэ — ICE холбогдохыг
+ * хүлээхгүй тул энэ нь нийт хугацааг уртасгахгүй.
+ */
+const KHOLBOKH_ZERGTSEE = (() => {
+  const utga = Number(process.env.NEXT_PUBLIC_URGATS_KHOLBOKH);
+  return Number.isFinite(utga) && utga >= 1 ? utga : 2;
+})();
 
 /**
  * Зэрэг нээлттэй байж болох урсгалын дээд тоо.
  *
- * `NEXT_PUBLIC_URGATS_ZERGTSEE=0` бол хязгаарлахгүй — барилгын upload
- * хүрэлцэхээр бол л тэгж тохируул.
+ * ӨГӨГДМӨЛ 4 нь таамаг биш, ХЭМЖСЭН тоо. Найрамдал дээр 31 камерыг зэрэг
+ * өдөөхөд MediaMTX-ийн логт ердөө 5 нь `is publishing` хүртэл явж, 4 нь
+ * тогтвортой үлдээд бусад нь `connection reset by peer` болов. Шалтгаан
+ * нь зурвас бус: 31 ffmpeg НЭГ NVR (192.168.1.243) рүү зэрэг холбогдохыг
+ * оролдоход NVR-ын зэрэг татах сессийн хязгаарт тулдаг. Өмнө нь Dahua
+ * дээр яг ижил зүйл 16 холболт дээр 401 болж гарсан.
+ *
+ * Хязгаарыг өсгөхийн тулд эхлээд NVR-ын substream-ийг хөнгөвчилж
+ * (640×360 / 15fps / 384 kbps) тэр хязгаарыг шалгах нь зөв дараалал.
+ *
+ * `NEXT_PUBLIC_URGATS_ZERGTSEE=0` бол хязгаарлахгүй.
  */
 const ZERGTSEE = (() => {
   const utga = Number(process.env.NEXT_PUBLIC_URGATS_ZERGTSEE);
-  return Number.isFinite(utga) && utga >= 0 ? utga : 12;
+  return Number.isFinite(utga) && utga >= 0 ? utga : 4;
 })();
 
 export type Tuluv =
@@ -79,6 +126,8 @@ interface Urgats extends UrgatsToyim {
   kheregtseeTs: number;
   /** Дараалсан алдааны тоо — нөөц зам руу шилжих шийдэлд. */
   aldaaToo: number;
+  /** Холбогдох дараалалд хүлээж байгаа эсэх — давхардлыг сэргийлнэ. */
+  daraalaldBaigaa: boolean;
 }
 
 const san = new Map<string, Urgats>();
@@ -228,7 +277,7 @@ function dakhinTseglee(u: Urgats) {
   u.tuluv = "retrying";
   medegdey(u);
   u.retryTimer = setTimeout(() => {
-    void kholbogdoyo(u);
+    tseglee(u);
   }, delay);
 }
 
@@ -258,12 +307,42 @@ function zaiGargaya() {
   }
 }
 
+// ─── Холбогдох оролдлогын дараалал ──────────────────────────────────────
+
+let yavajBaigaa = 0;
+const daraalal: Urgats[] = [];
+
+/** Дараалалд оруулна. Аль хэдийн дараалалд байвал давхардуулахгүй. */
+function tseglee(u: Urgats) {
+  if (u.daraalaldBaigaa) return;
+  u.daraalaldBaigaa = true;
+  daraalal.push(u);
+  khudulgeye();
+}
+
+function khudulgeye() {
+  while (yavajBaigaa < KHOLBOKH_ZERGTSEE && daraalal.length > 0) {
+    const u = daraalal.shift()!;
+    u.daraalaldBaigaa = false;
+
+    // Хүлээж байх зуур хэрэгцээгүй болсон байж магадгүй.
+    if (u.tuluv === "bolomjgui") continue;
+
+    yavajBaigaa += 1;
+    void kholbogdoyo(u).finally(() => {
+      yavajBaigaa -= 1;
+      khudulgeye();
+    });
+  }
+}
+
 async function kholbogdoyo(u: Urgats) {
   if (u.tuluv === "bolomjgui") return;
 
-  if (!WHEP_BASE) {
-    u.tuluv = "failed";
-    u.aldaa = "NEXT_PUBLIC_WHEP_BASE тохируулаагүй байна";
+  if (!WHEP_IDEVKHTEI) {
+    // Унтраалттай үед оролдохгүй — дуудагч нь хуучин зам руу шилжинэ.
+    u.tuluv = "bolomjgui";
+    u.aldaa = "WHEP унтраалттай";
     medegdey(u);
     return;
   }
@@ -402,6 +481,7 @@ function bichlegAvya(zam: string): Urgats {
     bichigchid: new Set(),
     kheregtseeTs: Date.now(),
     aldaaToo: 0,
+    daraalaldBaigaa: false,
   };
   san.set(zam, shine);
   return shine;
@@ -419,8 +499,13 @@ export function nekhye(zam: string): UrgatsToyim {
   }
   const u = bichlegAvya(zam);
   u.kheregtseeTs = Date.now();
-  if (!u.pc && u.tuluv !== "bolomjgui" && !u.retryTimer) {
-    void kholbogdoyo(u);
+  if (
+    !u.pc &&
+    u.tuluv !== "bolomjgui" &&
+    !u.retryTimer &&
+    !u.daraalaldBaigaa
+  ) {
+    tseglee(u);
   }
   return toyim(u);
 }
@@ -450,7 +535,7 @@ export function shineeerOroldoyo(zam: string) {
   u.aldaaToo = 0;
   u.tuluv = "connecting";
   u.aldaa = "";
-  void kholbogdoyo(u);
+  tseglee(u);
 }
 
 /** LRU-д «сүүлд харагдсан» гэж тэмдэглэнэ. */
@@ -471,10 +556,12 @@ export function beltgeye(zamuud: string[]) {
   // гэхдээ хуудас хооронд дуудагдахад ижил зам хоёр удаа орж магадгүй.
   const jagsaalt = [...new Set(zamuud.filter((z) => !!z))];
 
-  jagsaalt.forEach((zam, i) => {
-    setTimeout(() => {
-      nekhye(zam);
-    }, i * SHATLAKH_MS);
+  // Цаг хойшлуулахгүй — дарааллыг `KHOLBOKH_ZERGTSEE` өөрөө сааруулна.
+  // Ингэснээр эхний хэд нь ТЭР ДОРОО эхэлж, дараагийнх нь өмнөх хүсэлт
+  // дуусмагц шууд орно. Тогтмол зай авбал сүлжээ сул байсан ч дэмий
+  // хүлээдэг байсан.
+  jagsaalt.forEach((zam) => {
+    nekhye(zam);
   });
 }
 
