@@ -1,5 +1,13 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import {
+  bichiglekhye,
+  kheregtseeTemdegley,
+  nekhye,
+  shineeerOroldoyo,
+  urgasniiZam,
+  type UrgatsToyim,
+} from "@/lib/urgatsSan";
 
 /**
  * Камерын урсгалыг VPS дээрх MediaMTX-ээс WHEP-ээр авч тоглуулна.
@@ -10,17 +18,23 @@ import { useCallback, useEffect, useRef, useState } from "react";
  * тусдаа RTSP сесс нээдэг, доголдол бүрт 3–15 секунд хүлээж бүхэлд нь
  * дахин барьдаг байсан — «Холбогдож байна» давтагдахын үндсэн шалтгаан.
  *
- * Одоо нөгөө тал нь НИЙТИЙН тогтмол хаягтай сервер. Тиймээс:
+ * Одоо нөгөө тал нь НИЙТИЙН тогтмол хаягтай сервер: ICE-ийн бүх хүлээлт
+ * устаж, камер дээрх ачаалал үзэгчийн тооноос хамаарахаа болив.
  *
- *   • ICE-ийн бүх хүлээлт УСТСАН — relay candidate хүлээх, 1.5s таслалт,
- *     TURN тохиргоо аль нь ч хэрэггүй. Хөтөч зөвхөн host candidate-аар
- *     серверийн нийтийн хаяг руу шалгалт явуулахад сервер эх хаягийг нь
- *     peer-reflexive болгон таньдаг.
- *   • Камер дээрх ачаалал үзэгчийн тооноос хамаарахаа болино.
+ * ── Холболт нь ЭНД БАЙХГҮЙ ──────────────────────────────────────────────
+ * `RTCPeerConnection` нь `@/lib/urgatsSan` дотор, React-ийн ажлын циклээс
+ * гадна байна. Энэ компонент зөвхөн `MediaStream`-ийг залгаж харуулна.
+ * Иймд:
+ *
+ *   • Гүйлгэж харагдахаа болиход урсгал ТАСРАХГҮЙ — буцаж ирэхэд зураг
+ *     шууд байна, «Холбогдож байна» гэж дахин хүлээхгүй.
+ *   • Хуудас солиход холболт хэвээр — камер рүү буцахад хүлээлт үгүй.
+ *   • Нэвтрэхэд `beltgeye` нь урьдчилан асаасан байвал энэ компонент
+ *     mount болохдоо бэлэн урсгалыг л авна.
  *
  * ── Хаягийг хэрхэн бодох вэ ─────────────────────────────────────────────
- * Урсгалын зам нь `{barilgiinId}/{камерын-ip-зураастай}`. Rust worker-ийн
- * `Config::stream_path` ЯГ ижил дүрмээр нийтэлдэг тул шинэ API, шинэ
+ * Урсгалын зам нь `{barilgiinId}/{камерын-ip-зураастай}[-суваг]`. Rust
+ * worker болон Flutter апп ЯГ ижил дүрмээр боддог тул шинэ API, шинэ
  * өгөгдлийн талбар хэрэггүй — IP нь өгөгдсөн `rtspUrl` дотор аль хэдийн бий.
  */
 
@@ -40,60 +54,9 @@ interface WhepVideoPlayerProps {
   onUnavailable?: () => void;
 }
 
-type Status = "connecting" | "connected" | "failed" | "retrying";
-
-/** Жишээ: `https://amarhome.mn/whep` */
-const WHEP_BASE = (process.env.NEXT_PUBLIC_WHEP_BASE || "").replace(/\/+$/, "");
-
-/**
- * ICE цуглуулгын дээд хүлээлт.
- *
- * Хуучин P2P урсгалд relay candidate хүлээх ёстой байсан тул 1.5s байв.
- * Сервер нийтийн болсон учир host candidate хангалттай — энэ нь ердөө
- * хамгаалалтын тааз, ихэвчлэн хэдхэн миллисекундэд дуусна.
- */
-const ICE_TIMEOUT_MS = 800;
-
-/** «disconnected» нь ихэвчлэн өөрөө эдгэрдэг — шууд нурааж барихгүй. */
-const DISCONNECT_GRACE_MS = 4000;
-
-/** Дахин холбох хүлээлтийн дээд хязгаар (холбогдох нь хурдан болсон). */
-const MAX_BACKOFF_MS = 8000;
-
-/** `rtsp://user:pass@192.168.1.110:554/...` → `192.168.1.110` */
-export function rtspIpAvya(rtspUrl: string): string {
-  const m = /^rtsps?:\/\/(?:[^@/]*@)?([^:/?#]+)/i.exec(String(rtspUrl || "").trim());
-  return m ? m[1] : "";
-}
-
-/**
- * RTSP хаягаас СУВГИЙН дугаарыг салгана.
- *
- * NVR бол НЭГ IP дээр олон камер: зөвхөн IP-гээр зам нэрлэвэл бүх суваг нэг
- * зам руу орж, бие биенээ түлхэнэ.
- *
- * Зогсоолын ANPR камерын `root` нь `tokhirgoo.ROOT || "stream"` бөгөөд
- * сувгийн дугаар агуулдаггүй. Тиймээс "суваг олдвол л дагавар нэмэх" дүрэм
- * нь одоо ажиллаж байгаа замуудыг ХЭВЭЭР үлдээнэ.
- *
- * `Streaming/Channels/102` → "102"   ·   `?channel=2` → "2"   ·   `stream` → ""
- */
-export function rtspSuvagAvya(rtspUrl: string): string {
-  const u = String(rtspUrl || "").trim();
-  const hik = /\/Channels\/(\d+)/.exec(u);
-  if (hik) return hik[1];
-  const query = /[?&]channel=(\d+)/.exec(u);
-  if (query) return query[1];
-  return "";
-}
-
-/** Rust worker-ийн `Config::nemelt_zam` / `stream_path`-тай ижил дүрэм. */
-export function urgasniiZam(barilgiinId: string, rtspUrl: string): string {
-  const ip = rtspIpAvya(rtspUrl);
-  if (!barilgiinId || !ip) return "";
-  const suvag = rtspSuvagAvya(rtspUrl);
-  return `${barilgiinId}/${ip.replace(/\./g, "-")}${suvag ? `-${suvag}` : ""}`;
-}
+// Замын дүрмийг санд нэгтгэсэн. Одоо байгаа дуудагчид (`CameraPlayer`)
+// эндээс импортолдог тул дахин экспортолно.
+export { rtspIpAvya, rtspSuvagAvya, urgasniiZam } from "@/lib/urgatsSan";
 
 export default function WhepVideoPlayer({
   rtspUrl,
@@ -104,246 +67,71 @@ export default function WhepVideoPlayer({
 }: WhepVideoPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const pcRef = useRef<RTCPeerConnection | null>(null);
-  /** WHEP сессийн хаяг — салахдаа DELETE явуулна. */
-  const resourceRef = useRef<string | null>(null);
-  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const graceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const retryCountRef = useRef(0);
-  const mountedRef = useRef(true);
-  /** Хуучирсан оролдлогын хариу ирвэл таньж хаяхад. */
-  const attemptRef = useRef(0);
-  /** Дараалан амжилтгүй болсон тоо — нөөц зам руу шилжих шийдэлд. */
-  const aldaaRef = useRef(0);
   /** Дуудагчид нэгээс олон удаа мэдэгдэхгүй. */
   const medegdsenRef = useRef(false);
 
-  const [status, setStatus] = useState<Status>("connecting");
-  const [errorMsg, setErrorMsg] = useState("");
-  const [isVisible, setIsVisible] = useState(false);
-
   const zam = urgasniiZam(barilgiinId, rtspUrl);
 
-  const clearTimers = useCallback(() => {
-    if (retryTimerRef.current) {
-      clearTimeout(retryTimerRef.current);
-      retryTimerRef.current = null;
-    }
-    if (graceTimerRef.current) {
-      clearTimeout(graceTimerRef.current);
-      graceTimerRef.current = null;
-    }
-  }, []);
+  const [toyim, setToyim] = useState<UrgatsToyim>(() => ({
+    tuluv: "connecting",
+    stream: null,
+    aldaa: "",
+    dakhin: 0,
+  }));
 
-  const stop = useCallback(() => {
-    clearTimers();
-    attemptRef.current += 1;
-
-    const pc = pcRef.current;
-    pcRef.current = null;
-    if (pc) {
-      // Хаахаас ӨМНӨ дэгээг салгана — эс бөгөөс `closed` нь дахин
-      // холбогдох оролдлого өдөөнө.
-      pc.onconnectionstatechange = null;
-      pc.ontrack = null;
-      try {
-        pc.close();
-      } catch {
-        /* аль хэдийн хаагдсан */
-      }
-    }
-
-    const res = resourceRef.current;
-    resourceRef.current = null;
-    if (res) {
-      // Сесс цэвэрлэх нь "хийвэл сайн" — амжилтгүй болсон ч хэрэглэгчид
-      // нөлөөлөхгүй, сервер өөрөө хугацаагаар цэвэрлэнэ.
-      fetch(res, { method: "DELETE", keepalive: true }).catch(() => {});
-    }
-
-    if (videoRef.current) videoRef.current.srcObject = null;
-  }, [clearTimers]);
-
-  const connectRef = useRef<() => void>(() => {});
-
-  /**
-   * Энэ камерыг WHEP-ээр үзэх боломжгүй гэдгийг дуудагчид НЭГ УДАА хэлнэ.
-   *
-   * 404 бол эцсийн хариу: тухайн зам MediaMTX дээр огт байхгүй, өөрөөр
-   * хэлбэл тэр барилгын компьютер хараахан шилжээгүй байна — дахин
-   * оролдох нь утгагүй. Бусад алдааг (сүлжээ, 502) хоёр удаа оролдсоны
-   * дараа л эцэслэнэ, учир нь тэдгээр нь түр зуурын байж болно.
-   */
-  const bolomjgui = useCallback(() => {
-    if (medegdsenRef.current || !onUnavailable) return false;
-    medegdsenRef.current = true;
-    clearTimers();
-    onUnavailable();
-    return true;
-  }, [onUnavailable, clearTimers]);
-
-  const scheduleRetry = useCallback(() => {
-    if (!mountedRef.current) return;
-    clearTimers();
-    retryCountRef.current += 1;
-    const delay = Math.min(1000 * 2 ** (retryCountRef.current - 1), MAX_BACKOFF_MS);
-    setStatus("retrying");
-    retryTimerRef.current = setTimeout(() => connectRef.current(), delay);
-  }, [clearTimers]);
-
-  const connect = useCallback(async () => {
-    if (!mountedRef.current) return;
-
-    if (!WHEP_BASE) {
-      setErrorMsg("NEXT_PUBLIC_WHEP_BASE тохируулаагүй байна");
-      setStatus("failed");
-      return;
-    }
-    if (!zam) {
-      setErrorMsg("Камерын хаягаас IP олдсонгүй");
-      setStatus("failed");
-      return;
-    }
-
-    stop();
-    const attempt = attemptRef.current;
-    setStatus(retryCountRef.current > 0 ? "retrying" : "connecting");
-    setErrorMsg("");
-
-    try {
-      // Сервер нийтийн тул STUN/TURN шаардлагагүй.
-      const pc = new RTCPeerConnection({ iceServers: [] });
-      pcRef.current = pc;
-
-      pc.addTransceiver("video", { direction: "recvonly" });
-
-      pc.ontrack = (e) => {
-        if (videoRef.current && e.streams[0]) {
-          videoRef.current.srcObject = e.streams[0];
-          videoRef.current.play().catch(() => {});
-        }
-      };
-
-      pc.onconnectionstatechange = () => {
-        if (!mountedRef.current || pcRef.current !== pc) return;
-        switch (pc.connectionState) {
-          case "connected":
-            if (graceTimerRef.current) {
-              clearTimeout(graceTimerRef.current);
-              graceTimerRef.current = null;
-            }
-            retryCountRef.current = 0;
-            aldaaRef.current = 0;
-            setStatus("connected");
-            break;
-          case "disconnected":
-            // Түр зуурын саатал — өөрөө эдгэрэх боломж өгнө.
-            if (!graceTimerRef.current) {
-              graceTimerRef.current = setTimeout(() => {
-                graceTimerRef.current = null;
-                if (pcRef.current === pc && pc.connectionState !== "connected") {
-                  scheduleRetry();
-                }
-              }, DISCONNECT_GRACE_MS);
-            }
-            break;
-          case "failed":
-          case "closed":
-            scheduleRetry();
-            break;
-        }
-      };
-
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-
-      // WHEP нь нэг удаагийн offer/answer. Host candidate агшин зуур
-      // бэлэн болдог тул энэ хүлээлт бараг мэдэгдэхгүй.
-      await new Promise<void>((resolve) => {
-        if (pc.iceGatheringState === "complete") return resolve();
-        const done = () => {
-          pc.removeEventListener("icegatheringstatechange", onState);
-          clearTimeout(timer);
-          resolve();
-        };
-        const onState = () => {
-          if (pc.iceGatheringState === "complete") done();
-        };
-        pc.addEventListener("icegatheringstatechange", onState);
-        const timer = setTimeout(done, ICE_TIMEOUT_MS);
-      });
-
-      const whepUrl = `${WHEP_BASE}/${zam}/whep`;
-      const res = await fetch(whepUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/sdp" },
-        body: pc.localDescription!.sdp,
-      });
-
-      if (attempt !== attemptRef.current || !mountedRef.current) return;
-
-      if (!res.ok) {
-        // 404 = тухайн зам сервер дээр байхгүй. Барилга шилжээгүй байна.
-        if (res.status === 404 && bolomjgui()) return;
-        throw new Error(
-          res.status === 404
-            ? "Урсгал олдсонгүй — камер нийтлэгдээгүй байна"
-            : `WHEP ${res.status}`,
-        );
-      }
-
-      // Сессийн хаяг. Харьцангуй бол бүтэн хаяг болгоно.
-      const loc = res.headers.get("location");
-      if (loc) resourceRef.current = new URL(loc, whepUrl).toString();
-
-      const answer = await res.text();
-      if (attempt !== attemptRef.current || !mountedRef.current) return;
-      await pc.setRemoteDescription({ type: "answer", sdp: answer });
-    } catch (err: any) {
-      if (attempt !== attemptRef.current || !mountedRef.current) return;
-      aldaaRef.current += 1;
-      // Сервер огт хүрэхгүй байвал хуучин зам ажиллаж магадгүй — хоёр
-      // оролдсоны дараа тэр рүү шилжинэ.
-      if (aldaaRef.current >= 2 && bolomjgui()) return;
-      setErrorMsg(err?.message || "Холболт амжилтгүй");
-      scheduleRetry();
-    }
-  }, [zam, stop, scheduleRetry, bolomjgui]);
-
+  // Санд бичиглээд урсгалыг шаардана. Цэвэрлэгээ нь ЗӨВХӨН бичиглэлийг
+  // цуцална — холболт үлдэнэ.
   useEffect(() => {
-    connectRef.current = connect;
-  }, [connect]);
+    if (!zam) {
+      setToyim({
+        tuluv: "failed",
+        stream: null,
+        aldaa: "Камерын хаягаас IP олдсонгүй",
+        dakhin: 0,
+      });
+      return;
+    }
+    medegdsenRef.current = false;
+    const salya = bichiglekhye(zam, setToyim);
+    setToyim(nekhye(zam));
+    return salya;
+  }, [zam]);
 
-  // Харагдахгүй байгаа плеер урсгал татах шаардлагагүй — нэг хуудсанд
-  // хэд хэдэн камер байхад энэ нь мэдэгдэхүйц ялгаа гаргана.
+  // Харагдаж байгааг санд мэдэгдэнэ. Урсгалыг ХААХГҮЙ — хязгаар хэтрэхэд
+  // аль урсгалыг хаях шийдэлд л хэрэглэгдэнэ (сүүлд харагдсан нь үлдэнэ).
   useEffect(() => {
     const el = containerRef.current;
-    if (!el || typeof IntersectionObserver === "undefined") {
-      setIsVisible(true);
-      return;
-    }
+    if (!el || !zam || typeof IntersectionObserver === "undefined") return;
     const io = new IntersectionObserver(
-      ([entry]) => setIsVisible(entry.isIntersecting),
+      ([entry]) => {
+        if (entry.isIntersecting) kheregtseeTemdegley(zam);
+      },
       { threshold: 0.05 },
     );
     io.observe(el);
     return () => io.disconnect();
-  }, []);
+  }, [zam]);
 
+  // Урсгалыг видео элементэд залгана.
   useEffect(() => {
-    mountedRef.current = true;
-    if (isVisible) {
-      retryCountRef.current = 0;
-      connect();
-    } else {
-      stop();
-      setStatus("connecting");
+    const el = videoRef.current;
+    if (!el) return;
+    if (el.srcObject !== toyim.stream) {
+      el.srcObject = toyim.stream;
+      if (toyim.stream) el.play().catch(() => {});
     }
-    return () => {
-      mountedRef.current = false;
-      stop();
-    };
-  }, [zam, isVisible, connect, stop]);
+  }, [toyim.stream]);
+
+  // 404 = тэр зам сервер дээр огт байхгүй. Дуудагчид нэг л удаа хэлнэ.
+  useEffect(() => {
+    if (toyim.tuluv !== "bolomjgui" || medegdsenRef.current) return;
+    medegdsenRef.current = true;
+    onUnavailable?.();
+  }, [toyim.tuluv, onUnavailable]);
+
+  const kholbogdson = toyim.tuluv === "connected";
+  const kholbogdoj = toyim.tuluv === "connecting" || toyim.tuluv === "retrying";
+  const unasan = toyim.tuluv === "failed" || toyim.tuluv === "bolomjgui";
 
   return (
     <div
@@ -360,25 +148,25 @@ export default function WhepVideoPlayer({
         style={{
           // `display:none` нь элементийг урсгалаас гаргадаг тул буцаж
           // харагдахад хөтөч autoPlay-г чимээгүй татгалздаг.
-          opacity: status === "connected" ? 1 : 0,
-          visibility: status === "connected" ? "visible" : "hidden",
-          position: status === "connected" ? "relative" : "absolute",
+          opacity: kholbogdson ? 1 : 0,
+          visibility: kholbogdson ? "visible" : "hidden",
+          position: kholbogdson ? "relative" : "absolute",
         }}
       />
 
-      {status !== "connected" && (
+      {!kholbogdson && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-white/60">
-          {(status === "connecting" || status === "retrying") && (
+          {kholbogdoj && (
             <>
               <div className="w-6 h-6 border-2 border-white/30 border-t-white/80 rounded-full animate-spin" />
               <span className="text-[11px] font-mono">
-                {status === "retrying"
-                  ? `Дахин холбогдож байна... (${retryCountRef.current})`
+                {toyim.tuluv === "retrying"
+                  ? `Дахин холбогдож байна... (${toyim.dakhin})`
                   : "Холбогдож байна..."}
               </span>
             </>
           )}
-          {status === "failed" && (
+          {unasan && (
             <>
               <svg
                 className="w-8 h-8 text-danger"
@@ -394,13 +182,10 @@ export default function WhepVideoPlayer({
                 />
               </svg>
               <span className="text-[11px] font-mono text-center px-2 text-danger line-clamp-2">
-                {errorMsg || "Холболт амжилтгүй"}
+                {toyim.aldaa || "Холболт амжилтгүй"}
               </span>
               <button
-                onClick={() => {
-                  retryCountRef.current = 0;
-                  connect();
-                }}
+                onClick={() => shineeerOroldoyo(zam)}
                 className="mt-1 px-4 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-[11px] transition-colors"
               >
                 Дахин оролдох

@@ -11,6 +11,7 @@ import { SidebarProvider, useSidebar } from "./SidebarContext";
 import { NAV_ITEMS, filterNavByPermission } from "./navConfig";
 import { useShellNotifications } from "./useShellNotifications";
 import { applyStoredFontSize } from "./fontSize";
+import UrgatsBeltgegch from "./UrgatsBeltgegch";
 
 // Split out of the shell bundle — none of these are needed to paint a page.
 const NotificationsPanel = lazy(() => import("./NotificationsPanel"));
@@ -150,6 +151,11 @@ function ShellBody({ children }: { children: React.ReactNode }) {
   return (
     <div className="shell-root">
       <RouteProgress />
+
+      {/* Нэвтрэхэд камерын урсгалыг урьдчилж асаана. Юу ч зурахгүй —
+          шошгоны ажил нь `urgatsSan` дотор явна. Шелл нь навигац
+          хооронд амьд тул энэ нэг л удаа ажиллана. */}
+      <UrgatsBeltgegch />
 
       {/* Desktop: persistent rail/panel. Mobile: off-canvas drawer. */}
       {isDesktop

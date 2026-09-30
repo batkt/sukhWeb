@@ -14,6 +14,7 @@ import { parseCookies, setCookie, destroyCookie } from "nookies";
 import uilchilgee, { aldaaBarigch } from "@/lib/uilchilgee";
 import useBaiguullaga from "@/lib/useBaiguullaga";
 import { Baiguullaga } from "@/types/baiguullaga";
+import { bukhniigKhaaya } from "@/lib/urgatsSan";
 import { AxiosError } from "axios";
 
 export interface Ajiltan {
@@ -350,6 +351,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       },
       garya: () => {
+        // Камерын урсгалуудыг цэвэрлэнэ. Доор `window.location` нь бүх
+        // JS төлөвийг аль хэдийн устгадаг боловч үүнгүйгээр WHEP сессүүд
+        // сервер дээр хугацаа дуустал үлдэж, барилгын upload-ыг дэмий
+        // зарцуулна.
+        bukhniigKhaaya();
         setTokenState(null);
         setAjiltan(null);
         destroyCookie(null, "tureestoken", { path: "/" });
