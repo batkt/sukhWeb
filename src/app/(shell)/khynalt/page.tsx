@@ -1636,7 +1636,7 @@ export default function Khynalt() {
         <div className="flex flex-col flex-1 min-h-full px-4 sm:px-6 pt-5 pb-10 max-w-[1700px] w-full mx-auto space-y-5">
           
           {/* iOS Top Control Bar: Date & Building Selector */}
-          <div className="flex flex-wrap items-center justify-between gap-4 p-3 rounded-[24px] bg-white/80 dark:bg-[#1c1c1e]/80 backdrop-blur-2xl border border-black/[0.05] dark:border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+          <div className="relative z-40 flex flex-wrap items-center justify-between gap-4 p-3 rounded-[24px] bg-white/80 dark:bg-[#1c1c1e]/80 backdrop-blur-2xl border border-black/[0.05] dark:border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-theme/10 flex items-center justify-center text-brand shrink-0">
                 <BarChart3 className="w-5 h-5" />
@@ -1667,7 +1667,7 @@ export default function Khynalt() {
 
               {/* Building Selector / Compare Input */}
               {allBuildings.length > 0 && (
-                <div className="relative shrink-0" ref={buildingDropdownRef}>
+                <div className="relative z-50 shrink-0" ref={buildingDropdownRef}>
                   <button
                     type="button"
                     id="khynalt-building-compare"

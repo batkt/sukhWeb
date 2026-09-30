@@ -219,32 +219,36 @@ export default function EmployeePermissionsModal({
       <div
         key={perm.id}
         onClick={() => erkhSolikh(perm.id)}
-        className={`flex cursor-pointer items-center gap-3 px-4 transition-colors hover:bg-[color:var(--surface-hover)] ${
-          khuukhed ? "py-2 pl-9" : "bg-theme/5 py-2.5"
+        className={`flex cursor-pointer items-center gap-3 px-4 transition-all ${
+          khuukhed
+            ? `py-2 pl-9 ${songogdson ? "hover:bg-[color:var(--surface-hover)]" : "opacity-40 hover:opacity-70 hover:bg-[color:var(--surface-hover)]"}`
+            : `py-2.5 ${songogdson ? "bg-theme/8 hover:bg-theme/12" : "bg-[color:var(--surface-hover)]/40 hover:bg-[color:var(--surface-hover)]"}`
         }`}
       >
         {khuukhed ? (
-          <span className="w-3 shrink-0 text-[color:var(--muted-text)]">
-            —
-          </span>
+          <span className="w-3 shrink-0 text-[color:var(--muted-text)]">—</span>
         ) : (
           <span
-            className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-              songogdson ? "bg-theme" : "bg-[color:var(--panel)]"
+            className={`h-2 w-2 shrink-0 rounded-full transition-colors ${
+              songogdson ? "bg-theme shadow-sm shadow-theme/30" : "bg-[color:var(--surface-border)]"
             }`}
           />
         )}
         <span
-          className={`min-w-0 flex-1 truncate ${
+          className={`min-w-0 flex-1 truncate transition-colors ${
             khuukhed
-              ? "text-xs text-[color:var(--muted-text)]"
-              : "text-[13px] font-medium text-[color:var(--panel-text)]"
+              ? `text-xs ${songogdson ? "text-[color:var(--panel-text)]" : "text-[color:var(--muted-text)]"}`
+              : `text-[13px] font-semibold ${songogdson ? "text-[color:var(--panel-text)]" : "text-[color:var(--muted-text)]"}`
           }`}
         >
           {perm.label}
         </span>
         {khuukhdiinToo !== null && (
-          <span className="shrink-0 rounded-md bg-[color:var(--surface-hover)] px-1.5 py-0.5 font-mono text-[11px] text-[color:var(--muted-text)] dark:bg-white/10">
+          <span className={`shrink-0 rounded-md px-1.5 py-0.5 font-mono text-[11px] transition-colors ${
+            songogdson
+              ? "bg-theme/15 text-theme font-medium"
+              : "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]"
+          }`}>
             {khuukhdiinToo}
           </span>
         )}
