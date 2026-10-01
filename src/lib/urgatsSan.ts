@@ -55,6 +55,23 @@ const DISCONNECT_GRACE_MS = 4000;
 const MAX_BACKOFF_MS = 8000;
 
 /**
+ * Сесс байгуулагдсанаас хойш медиа ирэхийг хүлээх дээд хугацаа.
+ *
+ * ── Яагаад шаардлагатай ─────────────────────────────────────────────────
+ * Камер тус бүрийн нөөцлөлт нь «WHEP 404 → хуучин P2P зам» дүрэм дээр
+ * тогтсон. Гэвч MediaMTX-д `all_others` дээр `runOnDemand` тохируулсан тул
+ * зам БҮР байгаа юм шиг харагдана: сервер 404 биш, 201 буцаагаад публишер
+ * гарч ирэхийг `runOnDemandStartTimeout` (20с) хүртэл хүлээдэг.
+ *
+ * Иймд шилжээгүй барилгын камер хуучин зам руу хэзээ ч буухгүй — 20 секунд
+ * хоосон эргэлдээд дахин оролдоно. Хэрэглэгчийн хувьд «юу ч болохгүй».
+ *
+ * Серверийн 20 секундээс БАГА байх нь чухал: бид өмнө нь шийдвэрээ гаргаж,
+ * хуучин зам руу шилжинэ.
+ */
+const MEDIA_MS = 8000;
+
+/**
  * ЗЭРЭГ явуулах WHEP хүсэлтийн дээд тоо.
  *
  * Камерын хуудас 30+ плеерийг нэг мөчид mount хийдэг. Бүгд зэрэг хүсэлт
@@ -121,6 +138,8 @@ interface Urgats extends UrgatsToyim {
   oroldlogo: number;
   retryTimer: ReturnType<typeof setTimeout> | null;
   graceTimer: ReturnType<typeof setTimeout> | null;
+  /** Сесс байгуулагдсан ч медиа ирэхгүй байгааг барих цаг. */
+  mediaTimer: ReturnType<typeof setTimeout> | null;
   bichigchid: Set<(t: UrgatsToyim) => void>;
   /** LRU — хамгийн сүүлд хэрэгцээтэй байсан хугацаа. */
   kheregtseeTs: number;
@@ -238,6 +257,10 @@ function tsagAriltgaya(u: Urgats) {
     clearTimeout(u.graceTimer);
     u.graceTimer = null;
   }
+  if (u.mediaTimer) {
+    clearTimeout(u.mediaTimer);
+    u.mediaTimer = null;
+  }
 }
 
 /** Холболтыг таслана. Санд бичлэг үлдэнэ (тулуv-ыг л сольдог). */
@@ -264,7 +287,7 @@ function salgaya(u: Urgats) {
   if (res) {
     // Сесс цэвэрлэх нь "хийвэл сайн" — амжилтгүй болсон ч хэрэглэгчид
     // нөлөөлөхгүй, сервер өөрөө хугацаагаар цэвэрлэнэ.
-    fetch(res, { method: "DELETE", keepalive: true }).catch(() => {});
+    fetch(res, { method: "DELETE", keepalive: true }).catch(() => { });
   }
 
   u.stream = null;
@@ -376,6 +399,10 @@ async function kholbogdoyo(u: Urgats) {
             clearTimeout(u.graceTimer);
             u.graceTimer = null;
           }
+          if (u.mediaTimer) {
+            clearTimeout(u.mediaTimer);
+            u.mediaTimer = null;
+          }
           u.dakhin = 0;
           u.aldaaToo = 0;
           u.tuluv = "connected";
@@ -446,6 +473,18 @@ async function kholbogdoyo(u: Urgats) {
     const answer = await res.text();
     if (oroldlogo !== u.oroldlogo) return;
     await pc.setRemoteDescription({ type: "answer", sdp: answer });
+
+    // Сесс байгуулагдлаа. Одоо медиа ирэхийг хүлээнэ — ирэхгүй бол тэр
+    // барилга шилжээгүй гэж тооцож хуучин зам руу шилжүүлнэ.
+    if (u.mediaTimer) clearTimeout(u.mediaTimer);
+    u.mediaTimer = setTimeout(() => {
+      u.mediaTimer = null;
+      if (u.pc !== pc || u.tuluv === "connected") return;
+      salgaya(u);
+      u.tuluv = "bolomjgui";
+      u.aldaa = "Урсгал ирсэнгүй — камер нийтлэгдээгүй байна";
+      medegdey(u);
+    }, MEDIA_MS);
   } catch (err: unknown) {
     if (oroldlogo !== u.oroldlogo) return;
     u.aldaaToo += 1;
@@ -478,6 +517,7 @@ function bichlegAvya(zam: string): Urgats {
     oroldlogo: 0,
     retryTimer: null,
     graceTimer: null,
+    mediaTimer: null,
     bichigchid: new Set(),
     kheregtseeTs: Date.now(),
     aldaaToo: 0,
@@ -515,7 +555,7 @@ export function nekhye(zam: string): UrgatsToyim {
  * цуцална — холболт хэвээр үлдэнэ.
  */
 export function bichiglekhye(zam: string, cb: (t: UrgatsToyim) => void): () => void {
-  if (!zam) return () => {};
+  if (!zam) return () => { };
   const u = bichlegAvya(zam);
   u.bichigchid.add(cb);
   return () => {
