@@ -454,9 +454,25 @@ async function kholbogdoyo(u: Urgats) {
     if (oroldlogo !== u.oroldlogo) return;
 
     if (!res.ok) {
-      // 404 = тухайн зам сервер дээр байхгүй. Барилга шилжээгүй байна —
-      // дахин оролдох нь утгагүй, нөөц зам руу шилжинэ.
-      if (res.status === 404) {
+      // ЭЦСИЙН хариу эсэхийг шийднэ.
+      //
+      // 404 — тухайн зам сервер дээр огт байхгүй.
+      //
+      // 400 `source ... has timed out` — зам байна, гэвч нийтлэгч
+      // гараагүй. MediaMTX үүнийг `runOnDemandStartTimeout`
+      // дууссаны ДАРАА буцаадаг — одоогийн тохиргоонд 20 секунд.
+      // Үүнийг түр зуурын алдаа гэж тооцвол дахин оролдож ДАХИН 20
+      // секунд зарцуулна — хэрэглэгч 40 секунд хараад байна.
+      // Тиймээс энэ двуулгыг ШУУД эцслэж, нөөц зам руу шилжүүлнэ.
+      let bie = "";
+      if (res.status === 400) {
+        bie = await res.text().catch(() => "");
+      }
+      const etsesleye =
+        res.status === 404 ||
+        (res.status === 400 && /timed out|not found|no one is publishing/i.test(bie));
+
+      if (etsesleye) {
         salgaya(u);
         u.tuluv = "bolomjgui";
         u.aldaa = "Урсгал олдсонгүй — камер нийтлэгдээгүй байна";
