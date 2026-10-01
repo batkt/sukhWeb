@@ -161,7 +161,10 @@ export default function ResidentChatPanel() {
             ? data
             : [];
         setMessejuud(
-          [...jagsaalt].sort(
+          // Хуучин аппын автомат «чат нээлээ» мессежийг харуулахгүй
+          [...jagsaalt]
+            .filter((m) => String(m?.message || "").trim() !== "Оршин суугч чат нээлээ.")
+            .sort(
             (a, b) =>
               new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
           ),

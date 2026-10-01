@@ -156,7 +156,13 @@ export default function SanalKhuselt() {
         params,
       });
       if (res.data?.data && Array.isArray(res.data.data)) {
-        setThreadMessages(res.data.data);
+        // Хуучин аппын автомат «чат нээлээ» мессежийг харуулахгүй
+        setThreadMessages(
+          res.data.data.filter(
+            (m: MedegdelItem) =>
+              String(m?.message || "").trim() !== "Оршин суугч чат нээлээ.",
+          ),
+        );
 
         // Fetch any missing residents in thread messages
         const threadIds = [
@@ -1319,7 +1325,8 @@ export default function SanalKhuselt() {
                           <div className="mt-0.5 truncate text-[13px] text-[color:var(--panel-text)]">
                             {item.title}
                           </div>
-                          {item.message && (
+                          {item.message &&
+                            item.message.trim() !== "Оршин суугч чат нээлээ." && (
                             <div className="mt-0.5 line-clamp-1 text-xs text-[color:var(--muted-text)]">
                               {item.message}
                             </div>
