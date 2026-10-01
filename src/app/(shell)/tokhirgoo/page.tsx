@@ -196,7 +196,7 @@ function Tokhirgoo() {
       comingSoon: boolean;
     }[] = [
       { perm: "tokhirgoo.barilga", text: "Барилгын тохиргоо", tailbar: "СӨХ-ийн мэдээлэл, барилга, орц, давхар", buleg: "Байгууллага", Icon: Building2, tsonkh: BarilgiinTokhirgoo, tolgoi: true, comingSoon: false },
-      { perm: "tokhirgoo.nemelt", text: "Нэмэлт тохиргоо", tailbar: "Нэхэмжлэх, гараж ба агуулах, зогсоол, зочин, лифт", buleg: "Байгууллага", Icon: SlidersHorizontal, tsonkh: NemeltTokhirgoo, tolgoi: true, comingSoon: false },
+      { perm: "tokhirgoo.nemelt", text: "Нэмэлт тохиргоо", tailbar: "Нэхэмжлэх, гараж ба агуулах, лифт, гэр бүл", buleg: "Байгууллага", Icon: SlidersHorizontal, tsonkh: NemeltTokhirgoo, tolgoi: true, comingSoon: false },
       { perm: "tokhirgoo.ashiglaltiinZardal", text: "Ашиглалтын зардал", tailbar: "Сар бүр бодогдох зардлууд", buleg: "Төлбөр", Icon: ListChecks, tsonkh: AshiglaltiinZardal, tolgoi: true, comingSoon: false },
       { perm: "tokhirgoo.dans", text: "Данс", tailbar: "Төлбөр хүлээн авах данс", buleg: "Төлбөр", Icon: Landmark, tsonkh: Dans, tolgoi: true, comingSoon: false },
       { perm: "tokhirgoo.ebarimt", text: "И-Баримт", tailbar: "Татварын баримтын тохиргоо", buleg: "Төлбөр", Icon: Receipt, tsonkh: EbarimtTokhirgoo, tolgoi: true, comingSoon: false },

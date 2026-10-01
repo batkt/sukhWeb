@@ -7,11 +7,17 @@
  */
 
 import React, { lazy, Suspense, useState } from "react";
-import { Camera, Car } from "lucide-react";
+import { Camera, Car, UserPlus } from "lucide-react";
 import { hasPermission } from "@/lib/permissionUtils";
 
 const Zogsool = lazy(() => import("./Zogsool"));
 const KameriinTokhirgoo = lazy(() => import("./KameriinTokhirgoo"));
+const NemeltTokhirgoo = lazy(() => import("./NemeltTokhirgoo"));
+
+/** Хаалт нээх эрх, машины хязгаар, зочны эрх — Нэмэлт тохиргооноос шилжүүлсэн */
+function ZochinMashin() {
+  return <NemeltTokhirgoo kheseg="zogsool" />;
+}
 
 const KHADGALAKH_TULKHUUR = "tokhirgoo_zogsool_kheseg";
 
@@ -20,6 +26,7 @@ export default function ZogsoolTokhirgoo(props: any) {
   const admin = String(ajiltan?.erkh || "").toLowerCase() === "admin";
   const khesguud = [
     { key: "zogsool", label: "Зогсоол ба тариф", Icon: Car, Tsonkh: Zogsool, perm: "tokhirgoo.zogsool" },
+    { key: "zochin", label: "Зочин ба машин", Icon: UserPlus, Tsonkh: ZochinMashin, perm: "tokhirgoo.zogsool" },
     { key: "kamer", label: "Камер", Icon: Camera, Tsonkh: KameriinTokhirgoo, perm: "tokhirgoo.kamer" },
   ].filter((k) => admin || hasPermission(ajiltan, k.perm));
 

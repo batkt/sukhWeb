@@ -41,7 +41,15 @@ import {
   Switch,
 } from "./SettingsRow";
 
-export default function NemeltTokhirgoo() {
+/**
+ * kheseg="undsen"  — Тохиргоо → Нэмэлт: нэхэмжлэх, гараж/агуулах, байр.
+ * kheseg="zogsool" — Тохиргоо → Зогсоол → «Зочин ба машин» таб: хаалт нээх
+ *                    эрх, машины хязгаар, зочин.
+ * Хоёр хэсэг ижил өгөгдөл, хадгалах логиктой тул нэг компонент.
+ */
+export default function NemeltTokhirgoo({
+  kheseg = "undsen",
+}: { kheseg?: "undsen" | "zogsool" } = {}) {
   const { token, ajiltan, barilgiinId, baiguullaga, baiguullagaMutate } =
     useAuth();
   const { selectedBuildingId } = useBuilding();
@@ -1128,6 +1136,12 @@ export default function NemeltTokhirgoo() {
     talbaruud.some((k) => k in suuri && suuri[k] !== odoo[k]);
 
   /** Тохиргоо бүр ба түүнийг хадгалах үйлдэл */
+  const ZOGSOOLIIN_TALBAR = new Set([
+    "residentGateOpenEnabled",
+    "residentCarLimit",
+    "clientCarLimit",
+    "guestConfigEnabled",
+  ]);
   const khesguud: { talbar: string[]; khadgal: () => Promise<unknown> }[] = [
     { talbar: ["invoiceActive", "invoiceDay"], khadgal: () => saveInvoiceSchedule() },
     {
@@ -1169,7 +1183,12 @@ export default function NemeltTokhirgoo() {
     },
   ];
 
-  const uurchlugdsunKhesguud = khesguud.filter((k) => uurchlugdsun(...k.talbar));
+  // Зөвхөн энэ дэлгэцэнд харагдах тохиргоонуудыг тоолж, хадгална
+  const enaKheseg = (k: { talbar: string[] }) =>
+    ZOGSOOLIIN_TALBAR.has(k.talbar[0]) === (kheseg === "zogsool");
+  const uurchlugdsunKhesguud = khesguud.filter(
+    (k) => enaKheseg(k) && uurchlugdsun(...k.talbar),
+  );
   const uurchlugdsunToo = uurchlugdsunKhesguud.length;
 
   // Хадгалаагүй өөрчлөлттэй хуудсаа хаахад сануулна
@@ -1252,7 +1271,9 @@ export default function NemeltTokhirgoo() {
   return (
     <div id="nemelt-panel" className="w-full">
       <div className="allow-overflow">
-        <div className="stg-page">
+        <div className="stg-page stg-page-grid">
+          {kheseg === "undsen" ? (
+            <>
           {/* ── 1. Нэхэмжлэх ба тооцоолол ─────────────────────────────── */}
           <SettingsCard
             id="nemelt-invoice-box"
@@ -1451,6 +1472,73 @@ export default function NemeltTokhirgoo() {
             />
           </SettingsCard>
 
+          {/* ── 5. Оршин суугч ба байр ────────────────────────────────── */}
+          <SettingsCard
+            className="stg-card-wide"
+            icon={<Building2 />}
+            title="Оршин суугч ба байр"
+            subtitle="Лифтний чөлөөлөлт, гэр бүлийн гишүүд"
+          >
+            <SettingsItem
+              id="nemelt-lift-settings"
+              icon={<ArrowUpDown />}
+              title="Лифтний төлбөрөөс чөлөөлөх"
+              changed={uurchlugdsun("liftEnabled", "liftBulkInput")}
+              desc={
+                liftEnabled
+                  ? "Бичсэн давхрын оршин суугчид лифтний төлбөр төлөхгүй."
+                  : "Унтраалттай. Бүх давхар лифтний төлбөр төлнө."
+              }
+              control={
+                <Switch
+                  checked={liftEnabled}
+                  onChange={(e) => setLiftEnabled(e.currentTarget.checked)}
+                  label="Лифтний төлбөрөөс чөлөөлөх"
+                />
+              }
+            >
+              {liftEnabled ? (
+                <div className="stg-inline">
+                  <span>Давхар</span>
+                  <MTextInput
+                    placeholder="Жишээ: 1-3, 5, 7"
+                    value={liftBulkInput}
+                    onChange={(e) => setLiftBulkInput(e.currentTarget.value)}
+                    size="sm"
+                    className="w-48"
+                    aria-label="Чөлөөлөх давхрууд"
+                  />
+                  {liftBulkInput ? (
+                    <span className="stg-inline-hint">
+                      {parseBulk(liftBulkInput).length} давхар
+                    </span>
+                  ) : null}
+                </div>
+              ) : null}
+            </SettingsItem>
+
+            <SettingsItem
+              id="nemelt-gerbul-box"
+              icon={<Users />}
+              title="Гэр бүлийн гишүүн урих"
+              changed={uurchlugdsun("gerBuliinGishuunEnabled")}
+              desc={
+                gerBuliinGishuunEnabled
+                  ? "Оршин суугч аппаар гишүүн урьж, гишүүн нь нэхэмжлэх, төлбөрөө харна."
+                  : "Шинэ урилга үүсэхгүй. Бүртгэлтэй гишүүд хэвээр үлдэнэ."
+              }
+              control={
+                <Switch
+                  checked={gerBuliinGishuunEnabled}
+                  onChange={(e) => setGerBuliinGishuunEnabled(e.currentTarget.checked)}
+                  label="Гэр бүлийн гишүүн урих"
+                />
+              }
+            />
+          </SettingsCard>
+            </>
+          ) : (
+            <>
           {/* ── 3. Зогсоол ────────────────────────────────────────────── */}
           <SettingsCard
             id="nemelt-zogsool-box"
@@ -1601,69 +1689,8 @@ export default function NemeltTokhirgoo() {
             </SettingsItem>
           </SettingsCard>
 
-          {/* ── 5. Оршин суугч ба байр ────────────────────────────────── */}
-          <SettingsCard
-            icon={<Building2 />}
-            title="Оршин суугч ба байр"
-            subtitle="Лифтний чөлөөлөлт, гэр бүлийн гишүүд"
-          >
-            <SettingsItem
-              id="nemelt-lift-settings"
-              icon={<ArrowUpDown />}
-              title="Лифтний төлбөрөөс чөлөөлөх"
-              changed={uurchlugdsun("liftEnabled", "liftBulkInput")}
-              desc={
-                liftEnabled
-                  ? "Бичсэн давхрын оршин суугчид лифтний төлбөр төлөхгүй."
-                  : "Унтраалттай. Бүх давхар лифтний төлбөр төлнө."
-              }
-              control={
-                <Switch
-                  checked={liftEnabled}
-                  onChange={(e) => setLiftEnabled(e.currentTarget.checked)}
-                  label="Лифтний төлбөрөөс чөлөөлөх"
-                />
-              }
-            >
-              {liftEnabled ? (
-                <div className="stg-inline">
-                  <span>Давхар</span>
-                  <MTextInput
-                    placeholder="Жишээ: 1-3, 5, 7"
-                    value={liftBulkInput}
-                    onChange={(e) => setLiftBulkInput(e.currentTarget.value)}
-                    size="sm"
-                    className="w-48"
-                    aria-label="Чөлөөлөх давхрууд"
-                  />
-                  {liftBulkInput ? (
-                    <span className="stg-inline-hint">
-                      {parseBulk(liftBulkInput).length} давхар
-                    </span>
-                  ) : null}
-                </div>
-              ) : null}
-            </SettingsItem>
-
-            <SettingsItem
-              id="nemelt-gerbul-box"
-              icon={<Users />}
-              title="Гэр бүлийн гишүүн урих"
-              changed={uurchlugdsun("gerBuliinGishuunEnabled")}
-              desc={
-                gerBuliinGishuunEnabled
-                  ? "Оршин суугч аппаар гишүүн урьж, гишүүн нь нэхэмжлэх, төлбөрөө харна."
-                  : "Шинэ урилга үүсэхгүй. Бүртгэлтэй гишүүд хэвээр үлдэнэ."
-              }
-              control={
-                <Switch
-                  checked={gerBuliinGishuunEnabled}
-                  onChange={(e) => setGerBuliinGishuunEnabled(e.currentTarget.checked)}
-                  label="Гэр бүлийн гишүүн урих"
-                />
-              }
-            />
-          </SettingsCard>
+            </>
+          )}
         </div>
 
         {/* Нэг хадгалах мөр — өөрчлөлт гарахад л харагдана */}
@@ -1671,7 +1698,7 @@ export default function NemeltTokhirgoo() {
           <div className="stg-savebar" role="status">
             <span className="stg-savebar-text">
               <span className="stg-savebar-dot" />
-              {uurchlugdsunToo} тохиргоо өөрчлөгдсөн, хадгалаагүй байна
+              {uurchlugdsunToo} өөрчлөлт хадгалаагүй
             </span>
             <div className="stg-savebar-actions">
               <button

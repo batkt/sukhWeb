@@ -20,9 +20,12 @@ export function SettingsCard({
   saveId,
   saving,
   stickyHead,
+  className,
   children,
 }: {
   id?: string;
+  /** Нэмэлт класс — жишээ нь «stg-card-wide» (хоёр багана эзэлнэ) */
+  className?: string;
   icon?: ReactNode;
   title: string;
   subtitle?: ReactNode;
@@ -38,7 +41,7 @@ export function SettingsCard({
   children?: ReactNode;
 }) {
   return (
-    <section id={id} className="stg-card">
+    <section id={id} className={className ? `stg-card ${className}` : "stg-card"}>
       <header className={stickyHead ? "stg-card-head stg-card-head-sticky" : "stg-card-head"}>
         {icon ? <span className="stg-icon">{icon}</span> : null}
         <div className="stg-card-titles">
