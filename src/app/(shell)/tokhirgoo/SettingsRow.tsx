@@ -74,6 +74,7 @@ export function SettingsItem({
   title,
   desc,
   control,
+  changed,
   children,
 }: {
   id?: string;
@@ -81,14 +82,19 @@ export function SettingsItem({
   title: string;
   desc?: ReactNode;
   control?: ReactNode;
+  /** Хадгалаагүй өөрчлөлттэй эсэх — «Өөрчлөгдсөн» шошго гарна */
+  changed?: boolean;
   children?: ReactNode;
 }) {
   return (
-    <div id={id} className="stg-item">
+    <div id={id} className={changed ? "stg-item is-changed" : "stg-item"}>
       <div className="stg-item-main">
         {icon ? <span className="stg-item-icon">{icon}</span> : null}
         <div className="stg-item-titles">
-          <p className="stg-item-title">{title}</p>
+          <p className="stg-item-title">
+            {title}
+            {changed ? <span className="stg-chip">Өөрчлөгдсөн</span> : null}
+          </p>
           {desc ? <p className="stg-item-desc">{desc}</p> : null}
         </div>
         {control ? <div className="stg-item-control">{control}</div> : null}

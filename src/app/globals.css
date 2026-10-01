@@ -8218,3 +8218,69 @@ body:not(:has(#tour-replay-fab)) .ai-launcher-wrap { right: 24px; }
     box-shadow: none;
   }
 }
+
+/* ── Нэмэлт тохиргоо: өөрчлөлт, мөрийн доторх оролт, нэг хадгалах мөр ── */
+.stg-item {
+  box-shadow: inset 0 0 0 1px transparent;
+  transition: box-shadow 0.15s ease;
+}
+.stg-item.is-changed {
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--theme), transparent 55%);
+}
+.stg-chip {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  font-size: 0.625rem;
+  line-height: 1.1rem;
+  vertical-align: middle;
+  background: color-mix(in oklch, var(--theme), transparent 85%);
+  color: var(--theme);
+}
+.stg-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--panel-text);
+}
+.stg-inline-gap { margin-left: 0.75rem; }
+.stg-inline-hint {
+  font-size: 0.75rem;
+  color: var(--muted-text);
+}
+.stg-savebar {
+  position: sticky;
+  bottom: 0.75rem;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+  padding: 0.625rem 0.75rem 0.625rem 1rem;
+  border: 1px solid color-mix(in oklch, var(--theme), transparent 70%);
+  border-radius: 0.875rem;
+  background: var(--surface-bg);
+  box-shadow: 0 8px 24px -12px rgb(0 0 0 / 0.25);
+}
+.stg-savebar-text {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--panel-text);
+}
+.stg-savebar-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--theme);
+}
+.stg-savebar-actions {
+  display: flex;
+  gap: 0.5rem;
+}

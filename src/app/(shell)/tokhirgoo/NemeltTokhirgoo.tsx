@@ -22,6 +22,12 @@ import {
   Building2,
   Car,
   Warehouse,
+  CalendarClock,
+  DoorOpen,
+  CarFront,
+  UserPlus,
+  ArrowUpDown,
+  Users,
 } from "lucide-react";
 import uilchilgee from "@/lib/uilchilgee";
 import deleteMethod from "../../../../tools/function/deleteMethod";
@@ -42,6 +48,33 @@ export default function NemeltTokhirgoo() {
   const { showSpinner, hideSpinner } = useSpinner();
 
   const lastInitializedKeyRef = useRef<string>("");
+
+  // Хадгалах үед гарсан алдааг тоолно — алдаа гарсан бол «хадгалагдлаа» гэж
+  // хуурамчаар мэдэгдэхгүй.
+  const aldaaToo = useRef(0);
+  const aldaaGargay = (zurvas: string) => {
+    aldaaToo.current += 1;
+    openErrorOverlay(zurvas);
+  };
+
+  /**
+   * Хадгалсан (серверийн) утгууд — өөрчлөлтийг илрүүлэх суурь.
+   * Ачаалагч бүр өөрийн бүлгийг («invoice», «lift», «org») тэмдэглэхэд
+   * дараагийн рендер дээр тухайн бүлгийн одоогийн утгыг суурь болгоно.
+   */
+  const [suuri, setSuuri] = useState<Record<string, unknown>>({});
+  // Бүлэг → тэмдгийн дугаар. Ачаалагч утгаа setState хийсэн рендер нь
+  // ЭНЭ дугаартай болсон үед л суурийг авна — эс бөгөөс ижил effect-ийн
+  // давалгаанд хуучин (анхдагч) утгыг суурь болгож, бүх тохиргоо
+  // «Өөрчлөгдсөн» гэж харагддаг байв.
+  const khuleegdejBuiBuleg = useRef<Map<string, number>>(new Map());
+  const temdegRef = useRef(0);
+  const [suuriTemdeg, setSuuriTemdeg] = useState(0);
+  const suuriTemdeglekh = (buleg: string) => {
+    temdegRef.current += 1;
+    khuleegdejBuiBuleg.current.set(buleg, temdegRef.current);
+    setSuuriTemdeg(temdegRef.current);
+  };
 
   // Invoice states
   const [invoiceDay, setInvoiceDay] = useState<number | null>(null);
@@ -145,6 +178,7 @@ export default function NemeltTokhirgoo() {
             setInvoiceDay(latestSchedule.nekhemjlekhUusgekhOgnoo);
             setInvoiceActive(latestSchedule.idevkhitei ?? true);
             setInvoiceScheduleId(latestSchedule._id);
+            suuriTemdeglekh("invoice");
             return;
           }
         }
@@ -153,10 +187,12 @@ export default function NemeltTokhirgoo() {
       setInvoiceDay(null);
       setInvoiceActive(true);
       setInvoiceScheduleId(null);
+      suuriTemdeglekh("invoice");
     } catch (error) {
       setInvoiceDay(null);
       setInvoiceActive(true);
       setInvoiceScheduleId(null);
+      suuriTemdeglekh("invoice");
     }
   };
 
@@ -164,11 +200,11 @@ export default function NemeltTokhirgoo() {
     const isOverrideBool = typeof overrideActive === "boolean";
     const isActive = isOverrideBool ? overrideActive : invoiceActive;
     if (!token || !ajiltan?.baiguullagiinId) {
-      openErrorOverlay("Нэвтрэх шаардлагатай");
+      aldaaGargay("Нэвтрэх шаардлагатай");
       return;
     }
     if (isActive && (!invoiceDay || invoiceDay < 1 || invoiceDay > 31)) {
-      openErrorOverlay("Огноог 1-31 хооронд сонгоно уу");
+      aldaaGargay("Огноог 1-31 хооронд сонгоно уу");
       return;
     }
 
@@ -204,7 +240,7 @@ export default function NemeltTokhirgoo() {
       amjilt("Нэхэмжлэх илгээх тохиргоог хадгаллаа");
       await fetchInvoiceSchedule();
     } catch (e) {
-      openErrorOverlay("Нэхэмжлэх тохиргоо илгээхэд алдаа гарлаа");
+      aldaaGargay("Нэхэмжлэх тохиргоо илгээхэд алдаа гарлаа");
     } finally {
       hideSpinner();
     }
@@ -256,6 +292,7 @@ export default function NemeltTokhirgoo() {
         setLiftBulkInput("");
         setLiftEnabled(false);
         setLiftFloors([]);
+        suuriTemdeglekh("lift");
         return;
       }
 
@@ -264,11 +301,13 @@ export default function NemeltTokhirgoo() {
       setLiftFloors(sortedFloors);
       setLiftShalgayaId(chosen?._id ?? null);
       setLiftEnabled(true);
+      suuriTemdeglekh("lift");
     } catch (error) {
       setLiftBulkInput("");
       setLiftEnabled(false);
       setLiftFloors([]);
       setLiftShalgayaId(null);
+      suuriTemdeglekh("lift");
     }
   };
 
@@ -277,13 +316,13 @@ export default function NemeltTokhirgoo() {
     skipFetch = false,
   ) => {
     if (!token || !ajiltan?.baiguullagiinId) {
-      openErrorOverlay("Нэвтрэх шаардлагатай");
+      aldaaGargay("Нэвтрэх шаардлагатай");
       return;
     }
 
     const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
     if (!effectiveBarilgiinId) {
-      openErrorOverlay("Барилга сонгоогүй байна");
+      aldaaGargay("Барилга сонгоогүй байна");
       return;
     }
 
@@ -317,7 +356,7 @@ export default function NemeltTokhirgoo() {
         await fetchLiftFloors();
       }
     } catch (error) {
-      openErrorOverlay("Лифт тохиргоо хадгалах үед алдаа гарлаа");
+      aldaaGargay("Лифт тохиргоо хадгалах үед алдаа гарлаа");
     } finally {
       hideSpinner();
     }
@@ -436,6 +475,7 @@ export default function NemeltTokhirgoo() {
 
     // Тодорхойгүй бол хуучин зан төлөв — заалтаар бодно.
     setZaaltaarBodokh(find("zaaltaarTsakhilgaanBodokhEsekh", true) !== false);
+    suuriTemdeglekh("org");
   }, [baiguullaga, selectedBuildingId, barilgiinId]);
 
   const fetchGuestSettings = async () => {
@@ -456,7 +496,7 @@ export default function NemeltTokhirgoo() {
     shineTalbaruud: Record<string, any>,
   ) => {
     if (!token || !ajiltan?.baiguullagiinId) {
-      openErrorOverlay("Нэвтрэх шаардлагатай");
+      aldaaGargay("Нэвтрэх шаардлагатай");
       return false;
     }
     showSpinner();
@@ -531,7 +571,7 @@ export default function NemeltTokhirgoo() {
       amjilt("Амжилттай хадгаллаа");
       return true;
     } catch (error: any) {
-      openErrorOverlay(error?.message || "  хадгалахад алдаа гарлаа");
+      aldaaGargay(error?.message || "  хадгалахад алдаа гарлаа");
       return false;
     } finally {
       hideSpinner();
@@ -560,11 +600,11 @@ export default function NemeltTokhirgoo() {
     const khariltsagch = Number(clientCarLimit);
 
     if (!Number.isFinite(orshinSuugch) || orshinSuugch < 1) {
-      openErrorOverlay("Оршин суугчийн машины хязгаар 1-ээс багагүй байх ёстой");
+      aldaaGargay("Оршин суугчийн машины хязгаар 1-ээс багагүй байх ёстой");
       return;
     }
     if (!Number.isFinite(khariltsagch) || khariltsagch < 1) {
-      openErrorOverlay("Харилцагчийн машины хязгаар 1-ээс багагүй байх ёстой");
+      aldaaGargay("Харилцагчийн машины хязгаар 1-ээс багагүй байх ёстой");
       return;
     }
 
@@ -576,7 +616,7 @@ export default function NemeltTokhirgoo() {
 
   const saveGaragePaymentSettings = async (overrideEnabled?: boolean) => {
     if (!token || !ajiltan?.baiguullagiinId) {
-      openErrorOverlay("Нэвтрэх шаардлагатай");
+      aldaaGargay("Нэвтрэх шаардлагатай");
       return;
     }
     showSpinner();
@@ -628,7 +668,7 @@ export default function NemeltTokhirgoo() {
         amjilt("Грашийн төлбөрийн тохиргоо хадгалагдлаа");
       }
     } catch (error: any) {
-      openErrorOverlay(error?.message || "Хадгалахад алдаа гарлаа");
+      aldaaGargay(error?.message || "Хадгалахад алдаа гарлаа");
     } finally {
       hideSpinner();
     }
@@ -636,7 +676,7 @@ export default function NemeltTokhirgoo() {
 
   const saveStoragePaymentSettings = async (overrideEnabled?: boolean) => {
     if (!token || !ajiltan?.baiguullagiinId) {
-      openErrorOverlay("Нэвтрэх шаардлагатай");
+      aldaaGargay("Нэвтрэх шаардлагатай");
       return;
     }
     showSpinner();
@@ -688,72 +728,7 @@ export default function NemeltTokhirgoo() {
         amjilt("Агуулахын төлбөрийн тохиргоо хадгалагдлаа");
       }
     } catch (error: any) {
-      openErrorOverlay(error?.message || "Хадгалахад алдаа гарлаа");
-    } finally {
-      hideSpinner();
-    }
-  };
-
-  const saveCombinedPaymentSettings = async (overrideEnabled?: boolean) => {
-    if (!token || !ajiltan?.baiguullagiinId) {
-      openErrorOverlay("Нэвтрэх шаардлагатай");
-      return;
-    }
-    showSpinner();
-    try {
-      const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
-      const resp = await uilchilgee(token).get(
-        `/baiguullaga/${ajiltan.baiguullagiinId}`,
-        {
-          headers: { "X-Org-Only": "1" },
-        },
-      );
-      const freshOrg = resp.data;
-      let payload: any = JSON.parse(JSON.stringify(freshOrg));
-
-      const isOverrideBool = typeof overrideEnabled === "boolean";
-      const isEnabled = isOverrideBool
-        ? overrideEnabled
-        : (garagePaymentEnabled || storagePaymentEnabled);
-
-      const combinedData = {
-        garsiinTolborEnabled: isEnabled,
-        garsiinTolborArga: "Тогтмол",
-        garsiinTolborUtga: Number(garagePaymentValue) || 0,
-        aguulakhTolborEnabled: isEnabled,
-        aguulakhTolborArga: "Тогтмол",
-        aguulakhTolborUtga: Number(storagePaymentValue) || 0,
-      };
-
-      if (effectiveBarilgiinId && payload.barilguud) {
-        payload.barilguud = payload.barilguud.map((b: any) => {
-          const bId = b._id || b.id;
-          if (String(bId).trim() === String(effectiveBarilgiinId).trim()) {
-            return {
-              ...b,
-              tokhirgoo: {
-                ...(b.tokhirgoo || {}),
-                ...combinedData,
-              },
-            };
-          }
-          return b;
-        });
-      } else {
-        payload.tokhirgoo = {
-          ...(payload.tokhirgoo || {}),
-          ...combinedData,
-        };
-      }
-
-      const result = await updateMethod("baiguullaga", token, payload);
-      if (result?.data) {
-        await baiguullagaMutate(result.data.result || result.data, false);
-        await baiguullagaMutate();
-        amjilt("Агуулах, гражийн төлбөрийн тохиргоо хадгалагдлаа");
-      }
-    } catch (error: any) {
-      openErrorOverlay(error?.message || "Хадгалахад алдаа гарлаа");
+      aldaaGargay(error?.message || "Хадгалахад алдаа гарлаа");
     } finally {
       hideSpinner();
     }
@@ -761,7 +736,7 @@ export default function NemeltTokhirgoo() {
 
   const saveCalculationSettings = async (overrideEnabled?: boolean) => {
     if (!token || !ajiltan?.baiguullagiinId) {
-      openErrorOverlay("Нэвтрэх шаардлагатай");
+      aldaaGargay("Нэвтрэх шаардлагатай");
       return;
     }
     showSpinner();
@@ -813,7 +788,7 @@ export default function NemeltTokhirgoo() {
         amjilt("Амжилттай хадгаллаа");
       }
     } catch (error: any) {
-      openErrorOverlay(error?.message || "Хадгалахад алдаа гарлаа");
+      aldaaGargay(error?.message || "Хадгалахад алдаа гарлаа");
     } finally {
       hideSpinner();
     }
@@ -821,7 +796,7 @@ export default function NemeltTokhirgoo() {
 
   const saveResidentGateOpenSettings = async (overrideEnabled?: boolean) => {
     if (!token || !ajiltan?.baiguullagiinId) {
-      openErrorOverlay("Нэвтрэх шаардлагатай");
+      aldaaGargay("Нэвтрэх шаардлагатай");
       return;
     }
     showSpinner();
@@ -871,7 +846,7 @@ export default function NemeltTokhirgoo() {
         amjilt("Оршин суугч хаалга нээх эрхийн тохиргоо хадгалагдлаа");
       }
     } catch (error: any) {
-      openErrorOverlay(error?.message || "Хадгалахад алдаа гарлаа");
+      aldaaGargay(error?.message || "Хадгалахад алдаа гарлаа");
     } finally {
       hideSpinner();
     }
@@ -885,7 +860,7 @@ export default function NemeltTokhirgoo() {
    */
   const saveGerBuliinGishuunSettings = async (utga: boolean) => {
     if (!token || !ajiltan?.baiguullagiinId) {
-      openErrorOverlay("Нэвтрэх шаардлагатай");
+      aldaaGargay("Нэвтрэх шаардлагатай");
       return;
     }
 
@@ -940,7 +915,7 @@ export default function NemeltTokhirgoo() {
       );
     } catch (error: any) {
       setGerBuliinGishuunEnabled(umnukh);
-      openErrorOverlay(error?.message || "Хадгалахад алдаа гарлаа");
+      aldaaGargay(error?.message || "Хадгалахад алдаа гарлаа");
     } finally {
       hideSpinner();
     }
@@ -948,7 +923,7 @@ export default function NemeltTokhirgoo() {
 
   const saveZaaltaarBodokhSettings = async (utga: boolean) => {
     if (!token || !ajiltan?.baiguullagiinId) {
-      openErrorOverlay("Нэвтрэх шаардлагатай");
+      aldaaGargay("Нэвтрэх шаардлагатай");
       return;
     }
 
@@ -1001,7 +976,7 @@ export default function NemeltTokhirgoo() {
       }
     } catch (error: any) {
       setZaaltaarBodokh(umnukh);
-      openErrorOverlay(error?.message || "Хадгалахад алдаа гарлаа");
+      aldaaGargay(error?.message || "Хадгалахад алдаа гарлаа");
     } finally {
       hideSpinner();
     }
@@ -1094,9 +1069,8 @@ export default function NemeltTokhirgoo() {
     }
   };
 
-  // Нэг хэсэгт хэд хэдэн тохиргоо байвал хадгалахад амжилтын мэдэгдэл
-  // тус бүрд нь гарах ёсгүй — дуугүй горимоор дараалуулж, эцэст нь нэг удаа.
-  // Алдааны мэдэгдэл дуугүй болохгүй.
+  // Хадгалах үед хэсэг бүрийн амжилтын мэдэгдэл гарах ёсгүй — дуугүй
+  // горимоор дараалуулж, эцэст нь нэг удаа. Алдааны мэдэгдэл дуугүй болохгүй.
   const chimeeguiRef = useRef(false);
   const amjilt = (zurvas: string) => {
     if (!chimeeguiRef.current) openSuccessOverlay(zurvas);
@@ -1104,36 +1078,176 @@ export default function NemeltTokhirgoo() {
 
   const [khadgalj, setKhadgalj] = useState(false);
 
-  const khesegKhadgalya = async (uildluud: Array<() => Promise<unknown>>) => {
-    if (uildluud.length === 0) return;
+  /* ── Өөрчлөлт илрүүлэх ─────────────────────────────────────────────── */
+  const too = (v: unknown) => (v === "" || v == null ? 0 : Number(v) || 0);
+
+  /** Харьцуулахад зориулсан одоогийн утгууд (хэлбэрийг нэгтгэсэн) */
+  const odoo: Record<string, unknown> = {
+    invoiceActive,
+    invoiceDay: too(invoiceDay),
+    calculationEnabled,
+    calculationMethod,
+    fixedDayCount: too(fixedDayCount),
+    zaaltaarBodokh,
+    garagePaymentEnabled,
+    garagePaymentValue: too(garagePaymentValue),
+    storagePaymentEnabled,
+    storagePaymentValue: too(storagePaymentValue),
+    residentGateOpenEnabled,
+    residentCarLimit: too(residentCarLimit),
+    clientCarLimit: too(clientCarLimit),
+    guestConfigEnabled,
+    guestFrequencyType,
+    guestFrequencyValue: too(guestFrequencyValue),
+    guestInvoiceEnabled,
+    guestLimit: too(guestLimit),
+    guestFreeMinutes: too(guestFreeMinutes),
+    liftEnabled,
+    liftBulkInput: parseBulk(liftBulkInput || "").join(","),
+    gerBuliinGishuunEnabled,
+  };
+
+  useEffect(() => {
+    const bulguud = khuleegdejBuiBuleg.current;
+    if (bulguud.size === 0) return;
+    const shine: Record<string, unknown> = {};
+    let bui = false;
+    bulguud.forEach((temdeg, b) => {
+      // Энэ рендерт тухайн бүлгийн шинэ утга хараахан ороогүй
+      if (temdeg > suuriTemdeg) return;
+      (TOKHIRGOONII_BULEG[b] || []).forEach((k) => {
+        shine[k] = odoo[k];
+      });
+      bulguud.delete(b);
+      bui = true;
+    });
+    if (bui) setSuuri((umnukh) => ({ ...umnukh, ...shine }));
+  }, [suuriTemdeg]);
+
+  const uurchlugdsun = (...talbaruud: string[]) =>
+    talbaruud.some((k) => k in suuri && suuri[k] !== odoo[k]);
+
+  /** Тохиргоо бүр ба түүнийг хадгалах үйлдэл */
+  const khesguud: { talbar: string[]; khadgal: () => Promise<unknown> }[] = [
+    { talbar: ["invoiceActive", "invoiceDay"], khadgal: () => saveInvoiceSchedule() },
+    {
+      talbar: ["calculationEnabled", "calculationMethod", "fixedDayCount"],
+      khadgal: () => saveCalculationSettings(),
+    },
+    { talbar: ["zaaltaarBodokh"], khadgal: () => saveZaaltaarBodokhSettings(zaaltaarBodokh) },
+    {
+      talbar: ["garagePaymentEnabled", "garagePaymentValue"],
+      khadgal: () => saveGaragePaymentSettings(),
+    },
+    {
+      talbar: ["storagePaymentEnabled", "storagePaymentValue"],
+      khadgal: () => saveStoragePaymentSettings(),
+    },
+    {
+      talbar: ["residentGateOpenEnabled"],
+      khadgal: () => saveResidentGateOpenSettings(residentGateOpenEnabled),
+    },
+    { talbar: ["residentCarLimit", "clientCarLimit"], khadgal: saveResidentCarLimit },
+    {
+      talbar: [
+        "guestConfigEnabled",
+        "guestFrequencyType",
+        "guestFrequencyValue",
+        "guestInvoiceEnabled",
+        "guestLimit",
+        "guestFreeMinutes",
+      ],
+      khadgal: () => saveGuestSettings(),
+    },
+    {
+      talbar: ["liftEnabled", "liftBulkInput"],
+      khadgal: () => (liftEnabled ? handleSaveFloors() : handleDeleteAllFloors()),
+    },
+    {
+      talbar: ["gerBuliinGishuunEnabled"],
+      khadgal: () => saveGerBuliinGishuunSettings(gerBuliinGishuunEnabled),
+    },
+  ];
+
+  const uurchlugdsunKhesguud = khesguud.filter((k) => uurchlugdsun(...k.talbar));
+  const uurchlugdsunToo = uurchlugdsunKhesguud.length;
+
+  // Хадгалаагүй өөрчлөлттэй хуудсаа хаахад сануулна
+  useEffect(() => {
+    if (uurchlugdsunToo === 0) return;
+    const sanuulga = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", sanuulga);
+    return () => window.removeEventListener("beforeunload", sanuulga);
+  }, [uurchlugdsunToo]);
+
+  /** Өөрчлөгдсөн бүх тохиргоог нэг дор хадгална */
+  const bugdiigKhadgalya = async () => {
+    if (uurchlugdsunToo === 0) return;
+    const ilgeesen = { ...odoo };
+    const amjilttai: Record<string, unknown> = {};
     setKhadgalj(true);
     chimeeguiRef.current = true;
+    aldaaToo.current = 0;
     try {
-      for (const uildel of uildluud) await uildel();
+      for (const k of uurchlugdsunKhesguud) {
+        const umnukhAldaa = aldaaToo.current;
+        await k.khadgal();
+        if (aldaaToo.current === umnukhAldaa) {
+          k.talbar.forEach((t) => (amjilttai[t] = ilgeesen[t]));
+        }
+      }
     } finally {
       chimeeguiRef.current = false;
       setKhadgalj(false);
     }
-    openSuccessOverlay("Тохиргоо хадгалагдлаа");
+    setSuuri((umnukh) => ({ ...umnukh, ...amjilttai }));
+    if (aldaaToo.current === 0) openSuccessOverlay("Тохиргоо хадгалагдлаа");
   };
 
-  const nekhemjlekhKhesegKhadgalya = () =>
-    khesegKhadgalya([
-      ...(invoiceActive ? [() => saveInvoiceSchedule()] : []),
-      ...(calculationEnabled ? [() => saveCalculationSettings()] : []),
-    ]);
+  /** Хадгалаагүй өөрчлөлтийг хаяж, хадгалсан утга руу буцаана */
+  const butsaay = () => {
+    const v = (k: string) => suuri[k] as any;
+    const bui = (k: string) => k in suuri;
+    if (bui("invoiceActive")) {
+      setInvoiceActive(v("invoiceActive"));
+      setInvoiceDay(v("invoiceDay") || null);
+    }
+    if (bui("liftEnabled")) {
+      setLiftEnabled(v("liftEnabled"));
+      setLiftBulkInput(v("liftBulkInput") || "");
+      setLiftFloors(String(v("liftBulkInput") || "").split(",").filter(Boolean));
+    }
+    if (bui("calculationEnabled")) {
+      setCalculationEnabled(v("calculationEnabled"));
+      setCalculationMethod(v("calculationMethod"));
+      setFixedDayCount(v("fixedDayCount") || 30);
+      setZaaltaarBodokh(v("zaaltaarBodokh"));
+      setGaragePaymentEnabled(v("garagePaymentEnabled"));
+      setGaragePaymentValue(v("garagePaymentValue") || "");
+      setStoragePaymentEnabled(v("storagePaymentEnabled"));
+      setStoragePaymentValue(v("storagePaymentValue") || "");
+      setResidentGateOpenEnabled(v("residentGateOpenEnabled"));
+      setResidentCarLimit(v("residentCarLimit"));
+      setClientCarLimit(v("clientCarLimit"));
+      setGuestConfigEnabled(v("guestConfigEnabled"));
+      setGuestFrequencyType(v("guestFrequencyType"));
+      setGuestFrequencyValue(v("guestFrequencyValue") || "");
+      setGuestInvoiceEnabled(v("guestInvoiceEnabled"));
+      setGuestLimit(v("guestLimit"));
+      setGuestFreeMinutes(v("guestFreeMinutes"));
+      setGerBuliinGishuunEnabled(v("gerBuliinGishuunEnabled"));
+    }
+  };
 
-  const bairKhesegKhadgalya = () =>
-    khesegKhadgalya(liftEnabled ? [handleSaveFloors] : []);
+  const toogoor = (setter: (v: number | string) => void) => (val: number | string) =>
+    setter(val !== "" ? val : "");
 
-  const zogsoolKhesegKhadgalya = () =>
-    khesegKhadgalya([
-      ...(guestConfigEnabled ? [() => saveGuestSettings()] : []),
-      saveResidentCarLimit,
-      ...(garagePaymentEnabled || storagePaymentEnabled
-        ? [() => saveCombinedPaymentSettings()]
-        : []),
-    ]);
+  const zochniiKhuraangui = guestConfigEnabled
+    ? `${DAVTAMJ_NER[guestFrequencyType] || ""} ${too(guestLimit)} зочин, тус бүр ${too(guestFreeMinutes)} минут үнэгүй`
+    : "Оршин суугч зочин урих боломжгүй.";
 
   return (
     <div id="nemelt-panel" className="w-full">
@@ -1144,284 +1258,301 @@ export default function NemeltTokhirgoo() {
             id="nemelt-invoice-box"
             icon={<FileText />}
             title="Нэхэмжлэх ба тооцоолол"
-            subtitle="Сар бүрийн төлбөрийн нэхэмжлэхтэй холбоотой тохиргоо"
-            onSave={nekhemjlekhKhesegKhadgalya}
-            saveId="nemelt-invoice-save"
-            saving={khadgalj}
+            subtitle="Сарын нэхэмжлэх хэзээ, хэрхэн бодогдох"
           >
             <SettingsItem
               id="nemelt-invoice-settings"
-              title="Нэхэмжлэх илгээх"
-              desc="Сар бүрийн хэдний өдөр нэхэмжлэх автоматаар илгээхийг тохируулна"
-              control={
-                <>
-                  {invoiceActive ? (
-                    <MNumberInput
-                      min={1}
-                      max={31}
-                      placeholder="1-31"
-                      value={invoiceDay ?? undefined}
-                      onChange={(v) => setInvoiceDay((v as number) ?? null)}
-                      size="sm"
-                      className="w-20"
-                    />
-                  ) : null}
-                  <Switch
-                    checked={invoiceActive}
-                    onChange={(e) => {
-                      const val = e.currentTarget.checked;
-                      setInvoiceActive(val);
-                      if (!val) saveInvoiceSchedule(false);
-                    }}
-                    label="Нэхэмжлэх идэвхжүүлэх"
-                  />
-                </>
-              }
-            />
-
-            <SettingsItem
-              id="nemelt-tsakhilgaan-box"
-              title="Заалтаар цахилгаан бодох"
+              icon={<CalendarClock />}
+              title="Нэхэмжлэх автоматаар илгээх"
+              changed={uurchlugdsun("invoiceActive", "invoiceDay")}
               desc={
-                zaaltaarBodokh
-                  ? "Өдөр, шөнө, өмнөх заалтыг Excel-ээр оруулахад зөрүүг нь кВт тарифаар үржүүлж систем өөрөө бодно."
-                  : "Систем цахилгааныг бодохгүй. Тоот тус бүрийн эцсийн дүнг Excel-д бичиж оруулна."
+                invoiceActive
+                  ? invoiceDay
+                    ? `Сар бүрийн ${invoiceDay}-ны өдөр бүх оршин суугчид илгээгдэнэ.`
+                    : "Илгээх өдрөө сонгоно уу."
+                  : "Унтраалттай. Нэхэмжлэхийг гараар илгээнэ."
               }
               control={
                 <Switch
-                  checked={zaaltaarBodokh}
-                  onChange={(e) =>
-                    saveZaaltaarBodokhSettings(e.currentTarget.checked)
-                  }
-                  label="Заалтаар цахилгаан бодох"
+                  checked={invoiceActive}
+                  onChange={(e) => setInvoiceActive(e.currentTarget.checked)}
+                  label="Нэхэмжлэх автоматаар илгээх"
                 />
               }
-            />
+            >
+              {invoiceActive ? (
+                <div className="stg-inline">
+                  <span>Сар бүрийн</span>
+                  <MNumberInput
+                    min={1}
+                    max={31}
+                    placeholder="1-31"
+                    value={invoiceDay ?? undefined}
+                    onChange={(v) => setInvoiceDay(v === "" ? null : Number(v))}
+                    size="sm"
+                    className="w-20"
+                    aria-label="Илгээх өдөр"
+                  />
+                  <span>-ны өдөр</span>
+                </div>
+              ) : null}
+            </SettingsItem>
 
             <SettingsItem
               id="nemelt-calculation-box"
-              title="Төлбөр тооцох арга"
-              desc="Сарын төлбөрийг хоногоор хувааж тооцох тохиргоо"
+              icon={<Calculator />}
+              title="Хоногоор хувааж бодох"
+              changed={uurchlugdsun("calculationEnabled", "calculationMethod", "fixedDayCount")}
+              desc={
+                !calculationEnabled
+                  ? "Унтраалттай. Сарын төлбөрийг бүтнээр нь бодно."
+                  : calculationMethod === "Хуанли"
+                    ? "Тухайн сарын хоногт (28–31) хувааж бодно."
+                    : `Сар бүрийг ${too(fixedDayCount) || 30} хоногт хувааж бодно.`
+              }
               control={
                 <Switch
                   checked={calculationEnabled}
-                  onChange={(e) => {
-                    const val = e.currentTarget.checked;
-                    setCalculationEnabled(val);
-                    if (!val) saveCalculationSettings(false);
-                  }}
-                  label="Төлбөр тооцох арга идэвхжүүлэх"
+                  onChange={(e) => setCalculationEnabled(e.currentTarget.checked)}
+                  label="Хоногоор хувааж бодох"
                 />
               }
             >
               {calculationEnabled ? (
-                <>
-                  <div className="stg-editor">
-                    <div className="stg-segment">
+                <div className="stg-inline">
+                  <div className="stg-segment">
+                    {(["Хуанли", "Тогтмол"] as const).map((arga) => (
                       <button
+                        key={arga}
                         type="button"
-                        onClick={() => setCalculationMethod("Хуанли")}
+                        onClick={() => setCalculationMethod(arga)}
                         className={
-                          calculationMethod === "Хуанли"
+                          calculationMethod === arga
                             ? "stg-segment-item is-active"
                             : "stg-segment-item"
                         }
                       >
-                        Хуанли
+                        {arga === "Хуанли" ? "Хуанлийн хоног" : "Тогтмол хоног"}
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => setCalculationMethod("Тогтмол")}
-                        className={
-                          calculationMethod === "Тогтмол"
-                            ? "stg-segment-item is-active"
-                            : "stg-segment-item"
-                        }
-                      >
-                        Тогтмол
-                      </button>
-                    </div>
-                    {calculationMethod === "Тогтмол" ? (
+                    ))}
+                  </div>
+                  {calculationMethod === "Тогтмол" ? (
+                    <>
                       <MNumberInput
-                        value={
-                          fixedDayCount === ""
-                            ? undefined
-                            : Number(fixedDayCount)
-                        }
-                        onChange={(val) =>
-                          setFixedDayCount(val !== "" ? val : "")
-                        }
+                        value={fixedDayCount === "" ? undefined : Number(fixedDayCount)}
+                        onChange={toogoor(setFixedDayCount)}
                         placeholder="30"
                         min={1}
                         max={31}
                         size="sm"
-                        className="w-24"
+                        className="w-20"
+                        aria-label="Хоногийн тоо"
                       />
-                    ) : null}
-                  </div>
-                  <p className="stg-note">
-                    {calculationMethod === "Хуанли"
-                      ? "Тухайн сарын нийт хоногт хувааж бодно (28, 30, 31)"
-                      : "Заасан хоногт тогтмол хувааж бодно"}
-                  </p>
-                </>
+                      <span>хоног</span>
+                    </>
+                  ) : null}
+                </div>
               ) : null}
             </SettingsItem>
+
+            <SettingsItem
+              id="nemelt-tsakhilgaan-box"
+              icon={<Zap />}
+              title="Цахилгааныг заалтаар бодох"
+              changed={uurchlugdsun("zaaltaarBodokh")}
+              desc={
+                zaaltaarBodokh
+                  ? "Excel-ийн заалтын зөрүүг кВт тарифаар үржүүлж систем бодно."
+                  : "Систем бодохгүй. Тоот бүрийн эцсийн дүнг Excel-ээр оруулна."
+              }
+              control={
+                <Switch
+                  checked={zaaltaarBodokh}
+                  onChange={(e) => setZaaltaarBodokh(e.currentTarget.checked)}
+                  label="Цахилгааныг заалтаар бодох"
+                />
+              }
+            />
           </SettingsCard>
 
-          {/* ── 2. Байрны үйлчилгээ ───────────────────────────────────── */}
+          {/* ── 2. Гараж ба агуулах ───────────────────────────────────── */}
           <SettingsCard
-            icon={<Building2 />}
-            title="Байрны үйлчилгээ"
-            subtitle="Лифт, хаалт, гэр бүлийн гишүүдтэй холбоотой тохиргоо"
-            onSave={liftEnabled ? bairKhesegKhadgalya : undefined}
-            saveId="nemelt-lift-save"
-            saving={khadgalj}
+            id="nemelt-garaj-box"
+            icon={<Warehouse />}
+            title="Гараж ба агуулахын төлбөр"
+            subtitle="Эзэн холбогдоход энэ дүнгээр сар бүр нэхэмжлэгдэнэ"
           >
             <SettingsItem
-              id="nemelt-lift-settings"
-              title="Лифт хөнгөлөлт"
+              id="nemelt-garage-storage-box"
+              icon={<Car />}
+              title="Гараж"
+              changed={uurchlugdsun("garagePaymentEnabled", "garagePaymentValue")}
               desc={
-                liftEnabled
-                  ? `${liftFloors.length} давхар тохируулсан. Жишээ: 1-3, 5, 7 эсвэл 1, 2, 3`
-                  : `${liftFloors.length} давхар тохируулсан`
+                garagePaymentEnabled
+                  ? "Сарын төлбөр нэхэмжлэгдэнэ."
+                  : "Унтраалттай. Гаражид төлбөр нэхэмжлэхгүй."
               }
               control={
                 <>
-                  {liftEnabled ? (
-                    <>
-                      <MTextInput
-                        placeholder="1-3,5,7"
-                        value={liftBulkInput}
-                        onChange={(e) => setLiftBulkInput(e.currentTarget.value)}
-                        className="w-28"
-                      />
-                      <button
-                        type="button"
-                        className="stg-btn stg-btn-ghost stg-btn-icon"
-                        onClick={handleDeleteAllFloors}
-                        title="Бүгдийг устгах"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </>
+                  {garagePaymentEnabled ? (
+                    <MNumberInput
+                      value={garagePaymentValue === "" ? undefined : Number(garagePaymentValue)}
+                      onChange={toogoor(setGaragePaymentValue)}
+                      placeholder="0"
+                      min={0}
+                      size="sm"
+                      thousandSeparator=","
+                      rightSection={<span className="stg-unit">₮</span>}
+                      className="w-36"
+                      aria-label="Гаражийн сарын төлбөр"
+                    />
                   ) : null}
                   <Switch
-                    checked={liftEnabled}
-                    onChange={(event) => {
-                      const enabled = event.currentTarget.checked;
-                      setLiftEnabled(enabled);
-                      if (!enabled) {
-                        saveLiftSettings(null);
-                      }
-                    }}
-                    label="Лифт идэвхжүүлэх"
+                    checked={garagePaymentEnabled}
+                    onChange={(e) => setGaragePaymentEnabled(e.currentTarget.checked)}
+                    label="Гаражийн төлбөр"
                   />
                 </>
               }
             />
 
             <SettingsItem
-              id="nemelt-resident-gate-box"
-              title="Оршин суугчийн хаалт нээх эрх"
+              id="nemelt-storage-box"
+              icon={<Warehouse />}
+              title="Агуулах"
+              changed={uurchlugdsun("storagePaymentEnabled", "storagePaymentValue")}
               desc={
-                residentGateOpenEnabled
-                  ? "Оршин суугчийн гар утасны аппликейшн дээр хаалт нээх товч харагдана."
-                  : "Оршин суугчийн гар утасны аппликейшн дээр хаалт нээх товч харагдахгүй."
+                storagePaymentEnabled
+                  ? "Сарын төлбөр нэхэмжлэгдэнэ."
+                  : "Унтраалттай. Агуулахад төлбөр нэхэмжлэхгүй."
               }
               control={
-                <Switch
-                  checked={residentGateOpenEnabled}
-                  onChange={(e) => {
-                    const val = e.currentTarget.checked;
-                    setResidentGateOpenEnabled(val);
-                    saveResidentGateOpenSettings(val);
-                  }}
-                  label="Хаалт нээх эрх идэвхжүүлэх"
-                />
-              }
-            />
-
-            <SettingsItem
-              id="nemelt-gerbul-box"
-              title="Гэр бүлийн гишүүн урих"
-              desc={
-                gerBuliinGishuunEnabled
-                  ? "Оршин суугч аппаараа гэр бүлийн гишүүн урьж, гишүүн нь тоот, нэхэмжлэх, төлбөрийг харна."
-                  : "Урих боломж хаагдсан. Шинэ урилга үүсэхгүй, бүртгэлтэй гишүүд хэвээр байна."
-              }
-              control={
-                <Switch
-                  checked={gerBuliinGishuunEnabled}
-                  onChange={(e) =>
-                    saveGerBuliinGishuunSettings(e.currentTarget.checked)
-                  }
-                  label="Гэр бүлийн гишүүн урих боломж идэвхжүүлэх"
-                />
+                <>
+                  {storagePaymentEnabled ? (
+                    <MNumberInput
+                      value={storagePaymentValue === "" ? undefined : Number(storagePaymentValue)}
+                      onChange={toogoor(setStoragePaymentValue)}
+                      placeholder="0"
+                      min={0}
+                      size="sm"
+                      thousandSeparator=","
+                      rightSection={<span className="stg-unit">₮</span>}
+                      className="w-36"
+                      aria-label="Агуулахын сарын төлбөр"
+                    />
+                  ) : null}
+                  <Switch
+                    checked={storagePaymentEnabled}
+                    onChange={(e) => setStoragePaymentEnabled(e.currentTarget.checked)}
+                    label="Агуулахын төлбөр"
+                  />
+                </>
               }
             />
           </SettingsCard>
 
-          {/* ── 3. Зогсоол болон зочин ────────────────────────────────── */}
+          {/* ── 3. Зогсоол ────────────────────────────────────────────── */}
           <SettingsCard
-            id="nemelt-visitor-box"
+            id="nemelt-zogsool-box"
             icon={<Car />}
-            title="Зогсоол болон зочин"
-            subtitle="Зочны эрх, машины хязгаар, граш болон агуулахын төлбөр"
-            onSave={zogsoolKhesegKhadgalya}
-            saving={khadgalj}
+            title="Зогсоол"
+            subtitle="Хаалт нээх эрх, машины хязгаар"
           >
             <SettingsItem
-              title="Зочны тохиргоо"
-              desc="Шинэ оршин суугчдад автоматаар зогсоолын эрх үүсгэх"
+              id="nemelt-resident-gate-box"
+              icon={<DoorOpen />}
+              title="Оршин суугч хаалт нээх"
+              changed={uurchlugdsun("residentGateOpenEnabled")}
+              desc={
+                residentGateOpenEnabled
+                  ? "Апп дээр хаалт нээх товч харагдана."
+                  : "Апп дээр хаалт нээх товч харагдахгүй."
+              }
+              control={
+                <Switch
+                  checked={residentGateOpenEnabled}
+                  onChange={(e) => setResidentGateOpenEnabled(e.currentTarget.checked)}
+                  label="Оршин суугч хаалт нээх"
+                />
+              }
+            />
+
+            <SettingsItem
+              id="nemelt-mashin-box"
+              icon={<CarFront />}
+              title="Машины дээд тоо"
+              changed={uurchlugdsun("residentCarLimit", "clientCarLimit")}
+              desc="Нэг эзэн дээр бүртгэж болох машин. Бүртгэх цонх, Excel импорт хоёулаа дагана."
+            >
+              <div className="stg-inline">
+                <span>Оршин суугч</span>
+                <MNumberInput
+                  value={residentCarLimit === "" ? undefined : Number(residentCarLimit)}
+                  onChange={toogoor(setResidentCarLimit)}
+                  placeholder="1"
+                  min={1}
+                  size="sm"
+                  className="w-20"
+                  aria-label="Оршин суугчийн машины дээд тоо"
+                />
+                <span className="stg-inline-gap">Харилцагч</span>
+                <MNumberInput
+                  value={clientCarLimit === "" ? undefined : Number(clientCarLimit)}
+                  onChange={toogoor(setClientCarLimit)}
+                  placeholder="1"
+                  min={1}
+                  size="sm"
+                  className="w-20"
+                  aria-label="Харилцагчийн машины дээд тоо"
+                />
+              </div>
+            </SettingsItem>
+          </SettingsCard>
+
+          {/* ── 4. Зочин ──────────────────────────────────────────────── */}
+          <SettingsCard
+            id="nemelt-visitor-box"
+            icon={<UserPlus />}
+            title="Зочин"
+            subtitle="Оршин суугчийн урих зочны зогсоолын эрх"
+          >
+            <SettingsItem
+              icon={<UserPlus />}
+              title="Зочин урих эрх"
+              changed={uurchlugdsun(...khesguud[7].talbar)}
+              desc={zochniiKhuraangui}
               control={
                 <Switch
                   checked={guestConfigEnabled}
-                  onChange={(e) => {
-                    const val = e.currentTarget.checked;
-                    setGuestConfigEnabled(val);
-                    if (!val) saveGuestSettings(false);
-                  }}
-                  label="Зочны тохиргоо идэвхжүүлэх"
+                  onChange={(e) => setGuestConfigEnabled(e.currentTarget.checked)}
+                  label="Зочин урих эрх"
                 />
               }
             >
               {guestConfigEnabled ? (
                 <div className="stg-grid">
-                  <SettingsField label="Давтамж">
+                  <SettingsField label="Эрх шинэчлэгдэх">
                     <select
                       value={guestFrequencyType}
                       onChange={(e) => setGuestFrequencyType(e.target.value)}
                       className="stg-select"
                     >
-                      <option value="udruur">Өдөр бүр</option>
-                      <option value="7khonogoor">Долоо хоног бүр</option>
-                      <option value="saraar">Сар бүр</option>
-                      <option value="jileer">Жил бүр</option>
+                      {Object.entries(DAVTAMJ_NER).map(([utga, ner]) => (
+                        <option key={utga} value={utga}>
+                          {ner}
+                        </option>
+                      ))}
                     </select>
                   </SettingsField>
 
-                  {guestFrequencyType === "saraar" ||
-                  guestFrequencyType === "jileer" ? (
+                  {guestFrequencyType === "saraar" || guestFrequencyType === "jileer" ? (
                     <SettingsField
-                      label={
-                        guestFrequencyType === "saraar"
-                          ? "Хэдний өдөр"
-                          : "Хэддүгээр сар"
-                      }
+                      label={guestFrequencyType === "saraar" ? "Хэдний өдөр" : "Хэддүгээр сар"}
                     >
                       <MNumberInput
-                        value={
-                          guestFrequencyValue === ""
-                            ? undefined
-                            : Number(guestFrequencyValue)
-                        }
-                        onChange={(val) =>
-                          setGuestFrequencyValue(val !== "" ? val : "")
-                        }
-                        placeholder={
-                          guestFrequencyType === "saraar" ? "1-31" : "1-12"
-                        }
+                        value={guestFrequencyValue === "" ? undefined : Number(guestFrequencyValue)}
+                        onChange={toogoor(setGuestFrequencyValue)}
+                        placeholder={guestFrequencyType === "saraar" ? "1-31" : "1-12"}
                         min={1}
                         max={guestFrequencyType === "saraar" ? 31 : 12}
                         size="sm"
@@ -1430,168 +1561,173 @@ export default function NemeltTokhirgoo() {
                     </SettingsField>
                   ) : null}
 
-                  <SettingsField label="Нэхэмжлэх дээр нэмэх эсэх">
+                  <SettingsField label="Зочны тоо">
+                    <MNumberInput
+                      value={guestLimit === "" ? undefined : Number(guestLimit)}
+                      onChange={toogoor(setGuestLimit)}
+                      placeholder="0"
+                      min={0}
+                      size="sm"
+                      className="w-full"
+                    />
+                  </SettingsField>
+
+                  <SettingsField label="Үнэгүй минут (зочин бүрт)">
+                    <MNumberInput
+                      value={guestFreeMinutes === "" ? undefined : Number(guestFreeMinutes)}
+                      onChange={toogoor(setGuestFreeMinutes)}
+                      placeholder="0"
+                      min={0}
+                      size="sm"
+                      className="w-full"
+                    />
+                  </SettingsField>
+
+                  <SettingsField label="Илүү хугацааны төлбөр">
                     <div className="stg-subrow">
                       <span className="stg-subrow-text">
-                        {guestInvoiceEnabled
-                          ? 'Идэвхтэй ("Би даана")'
-                          : "Зочин өөрөө төлнө"}
+                        {guestInvoiceEnabled ? "Оршин суугч төлж болно" : "Зочин өөрөө төлнө"}
                       </span>
                       <Switch
                         checked={guestInvoiceEnabled}
-                        onChange={(e) =>
-                          setGuestInvoiceEnabled(e.currentTarget.checked)
-                        }
-                        label="Нэхэмжлэх дээр нэмэх"
+                        onChange={(e) => setGuestInvoiceEnabled(e.currentTarget.checked)}
+                        label="Оршин суугчийн нэхэмжлэхэд нэмэх"
                         size="sm"
                       />
                     </div>
                   </SettingsField>
+                </div>
+              ) : null}
+            </SettingsItem>
+          </SettingsCard>
 
-                  <SettingsField label="Эрхийн тоо">
-                    <MNumberInput
-                      value={guestLimit === "" ? undefined : Number(guestLimit)}
-                      onChange={(val) => setGuestLimit(val !== "" ? val : "")}
-                      placeholder="0"
-                      min={0}
-                      size="sm"
-                      className="w-full"
-                    />
-                  </SettingsField>
-
-                  <SettingsField label="Үнэгүй минут (тус бүр)">
-                    <MNumberInput
-                      value={
-                        guestFreeMinutes === ""
-                          ? undefined
-                          : Number(guestFreeMinutes)
-                      }
-                      onChange={(val) =>
-                        setGuestFreeMinutes(val !== "" ? val : "")
-                      }
-                      placeholder="0"
-                      min={0}
-                      size="sm"
-                      className="w-full"
-                    />
-                  </SettingsField>
+          {/* ── 5. Оршин суугч ба байр ────────────────────────────────── */}
+          <SettingsCard
+            icon={<Building2 />}
+            title="Оршин суугч ба байр"
+            subtitle="Лифтний чөлөөлөлт, гэр бүлийн гишүүд"
+          >
+            <SettingsItem
+              id="nemelt-lift-settings"
+              icon={<ArrowUpDown />}
+              title="Лифтний төлбөрөөс чөлөөлөх"
+              changed={uurchlugdsun("liftEnabled", "liftBulkInput")}
+              desc={
+                liftEnabled
+                  ? "Бичсэн давхрын оршин суугчид лифтний төлбөр төлөхгүй."
+                  : "Унтраалттай. Бүх давхар лифтний төлбөр төлнө."
+              }
+              control={
+                <Switch
+                  checked={liftEnabled}
+                  onChange={(e) => setLiftEnabled(e.currentTarget.checked)}
+                  label="Лифтний төлбөрөөс чөлөөлөх"
+                />
+              }
+            >
+              {liftEnabled ? (
+                <div className="stg-inline">
+                  <span>Давхар</span>
+                  <MTextInput
+                    placeholder="Жишээ: 1-3, 5, 7"
+                    value={liftBulkInput}
+                    onChange={(e) => setLiftBulkInput(e.currentTarget.value)}
+                    size="sm"
+                    className="w-48"
+                    aria-label="Чөлөөлөх давхрууд"
+                  />
+                  {liftBulkInput ? (
+                    <span className="stg-inline-hint">
+                      {parseBulk(liftBulkInput).length} давхар
+                    </span>
+                  ) : null}
                 </div>
               ) : null}
             </SettingsItem>
 
             <SettingsItem
-              id="nemelt-mashin-box"
-              title="Машины бүртгэлийн хязгаар"
-              desc="Нэг эзэн дээр бүртгэж болох машины дээд тоо. Оршин суугч, харилцагч тусдаа. Бүртгэх цонх, Excel импорт хоёулаа үүнийг дагана."
-            >
-              <div className="stg-grid">
-                <SettingsField label="Оршин суугч">
-                  <MNumberInput
-                    value={
-                      residentCarLimit === ""
-                        ? undefined
-                        : Number(residentCarLimit)
-                    }
-                    onChange={(val) =>
-                      setResidentCarLimit(val !== "" ? val : "")
-                    }
-                    placeholder="1"
-                    min={1}
-                    size="sm"
-                    className="w-full"
-                  />
-                </SettingsField>
-
-                <SettingsField label="Харилцагч">
-                  <MNumberInput
-                    value={
-                      clientCarLimit === "" ? undefined : Number(clientCarLimit)
-                    }
-                    onChange={(val) => setClientCarLimit(val !== "" ? val : "")}
-                    placeholder="1"
-                    min={1}
-                    size="sm"
-                    className="w-full"
-                  />
-                </SettingsField>
-              </div>
-            </SettingsItem>
-
-            <SettingsItem
-              id="nemelt-garage-storage-box"
-              title="Агуулах төлбөр бодох арга"
-              desc="Граш болон агуулахын төлбөрийг нэгтгэсэн байдлаар тооцно"
+              id="nemelt-gerbul-box"
+              icon={<Users />}
+              title="Гэр бүлийн гишүүн урих"
+              changed={uurchlugdsun("gerBuliinGishuunEnabled")}
+              desc={
+                gerBuliinGishuunEnabled
+                  ? "Оршин суугч аппаар гишүүн урьж, гишүүн нь нэхэмжлэх, төлбөрөө харна."
+                  : "Шинэ урилга үүсэхгүй. Бүртгэлтэй гишүүд хэвээр үлдэнэ."
+              }
               control={
                 <Switch
-                  checked={garagePaymentEnabled || storagePaymentEnabled}
-                  onChange={(e) => {
-                    const val = e.currentTarget.checked;
-                    setGaragePaymentEnabled(val);
-                    setStoragePaymentEnabled(val);
-                    if (!val) saveCombinedPaymentSettings(false);
-                  }}
-                  label="Граж, агуулах төлбөр идэвхжүүлэх"
+                  checked={gerBuliinGishuunEnabled}
+                  onChange={(e) => setGerBuliinGishuunEnabled(e.currentTarget.checked)}
+                  label="Гэр бүлийн гишүүн урих"
                 />
               }
-            >
-              {garagePaymentEnabled || storagePaymentEnabled ? (
-                <>
-                  <div className="stg-grid">
-                    <SettingsField label="Граш төлбөр">
-                      <MNumberInput
-                        value={
-                          garagePaymentValue === ""
-                            ? undefined
-                            : Number(garagePaymentValue)
-                        }
-                        onChange={(val) =>
-                          setGaragePaymentValue(val !== "" ? val : "")
-                        }
-                        placeholder="0"
-                        min={0}
-                        size="sm"
-                        thousandSeparator=","
-                        rightSection={<span className="stg-unit">₮</span>}
-                        className="w-full"
-                      />
-                    </SettingsField>
-
-                    <SettingsField label="Агуулах төлбөр">
-                      <MNumberInput
-                        value={
-                          storagePaymentValue === ""
-                            ? undefined
-                            : Number(storagePaymentValue)
-                        }
-                        onChange={(val) =>
-                          setStoragePaymentValue(val !== "" ? val : "")
-                        }
-                        placeholder="0"
-                        min={0}
-                        size="sm"
-                        thousandSeparator=","
-                        rightSection={<span className="stg-unit">₮</span>}
-                        className="w-full"
-                      />
-                    </SettingsField>
-                  </div>
-
-                  <div className="stg-total">
-                    <span className="stg-total-label">Нийт төлбөр</span>
-                    <span className="stg-total-value">
-                      {(
-                        (Number(garagePaymentValue) || 0) +
-                        (Number(storagePaymentValue) || 0)
-                      ).toLocaleString()}{" "}
-                      ₮
-                    </span>
-                  </div>
-                </>
-              ) : null}
-            </SettingsItem>
+            />
           </SettingsCard>
         </div>
+
+        {/* Нэг хадгалах мөр — өөрчлөлт гарахад л харагдана */}
+        {uurchlugdsunToo > 0 || khadgalj ? (
+          <div className="stg-savebar" role="status">
+            <span className="stg-savebar-text">
+              <span className="stg-savebar-dot" />
+              {uurchlugdsunToo} тохиргоо өөрчлөгдсөн, хадгалаагүй байна
+            </span>
+            <div className="stg-savebar-actions">
+              <button
+                type="button"
+                className="stg-btn stg-btn-ghost"
+                onClick={butsaay}
+                disabled={khadgalj}
+              >
+                Буцаах
+              </button>
+              <button
+                id="nemelt-invoice-save"
+                type="button"
+                className="stg-btn stg-btn-primary"
+                onClick={bugdiigKhadgalya}
+                disabled={khadgalj}
+              >
+                {khadgalj ? "Хадгалж байна…" : "Хадгалах"}
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );
 }
+
+/** Ачаалагч бүрийн хариуцдаг талбарууд — өөрчлөлтийн суурь шинэчлэхэд */
+const TOKHIRGOONII_BULEG: Record<string, string[]> = {
+  invoice: ["invoiceActive", "invoiceDay"],
+  lift: ["liftEnabled", "liftBulkInput"],
+  org: [
+    "calculationEnabled",
+    "calculationMethod",
+    "fixedDayCount",
+    "zaaltaarBodokh",
+    "garagePaymentEnabled",
+    "garagePaymentValue",
+    "storagePaymentEnabled",
+    "storagePaymentValue",
+    "residentGateOpenEnabled",
+    "residentCarLimit",
+    "clientCarLimit",
+    "guestConfigEnabled",
+    "guestFrequencyType",
+    "guestFrequencyValue",
+    "guestInvoiceEnabled",
+    "guestLimit",
+    "guestFreeMinutes",
+    "gerBuliinGishuunEnabled",
+  ],
+};
+
+const DAVTAMJ_NER: Record<string, string> = {
+  udruur: "Өдөр бүр",
+  "7khonogoor": "Долоо хоног бүр",
+  saraar: "Сар бүр",
+  jileer: "Жил бүр",
+};

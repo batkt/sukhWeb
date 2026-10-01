@@ -935,6 +935,15 @@ export default function HongololtTool({
     return Number(s.sariinDun) || 0;
   };
 
+  /**
+   * Хувиар хөнгөлөх суурь — мөрийн бодит ҮЛДЭГДЭЛ (дүнгээр хөнгөлөхтэй адил
+   * үлдэгдэл дээр тулгуурлана). Сервер ижил суурийг ашиглана.
+   */
+  const khuviinSuuri = (r: ResidentRow): number => Math.max(0, murUldegdel(r));
+
+  /** Сарын дээд хязгаар — сервертэй ижил: сарын төлбөр, байхгүй бол үлдэгдэл */
+  const sariinDeed = (r: ResidentRow): number => sariinTulbur(r) || khuviinSuuri(r);
+
   /** Сар бүрийн хөнгөлөх дүн — сервер ижил томьёогоор дахин бодно */
   const sarBureer = (r: ResidentRow): Record<string, number> => {
     const val = parseFloat(hongololtUtga) || 0;
@@ -942,7 +951,7 @@ export default function HongololtTool({
     if (val <= 0) return out;
     const sariin =
       hongololtTurul === "percent"
-        ? Math.round((sariinTulbur(r) * val) / 100)
+        ? Math.min(Math.round((khuviinSuuri(r) * val) / 100), sariinDeed(r))
         : Math.round(val);
     saruud.forEach((sar) => {
       out[sar] = sariin;
@@ -973,7 +982,7 @@ export default function HongololtTool({
       // Хоногийн горимд сарын төлбөрийг 30 хоногт хувааж авна.
       if (khonogTootsokh) {
         if (khonog <= 0) return 0;
-        return Math.round(((sariinTulbur(r) * val) / 100 / 30) * khonog);
+        return Math.round(((khuviinSuuri(r) * val) / 100 / 30) * khonog);
       }
       // Сар бүрийн бодит төлбөрөөс хувь — нийлбэр нь сарын үржүүлэгчийг
       // өөрөө агуулна.
@@ -1082,7 +1091,7 @@ export default function HongololtTool({
         gereeguiToo === applyTo.length
           ? "Сонгосон оршин суугчид гэрээгүй тул хөнгөлөлт оруулах боломжгүй"
           : hongololtTurul === "percent"
-            ? "Сонгосон оршин суугчдын гэрээнд сарын төлбөр тохируулаагүй тул хувиар хөнгөлөх суурь 0₮ байна. Дүнгээр хөнгөлнө үү."
+            ? "Сонгосон оршин суугчид үлдэгдэлгүй тул хувиар хөнгөлөх дүн 0₮ байна."
             : "Хөнгөлөх дүн бодогдсонгүй. Дүнгээ шалгана уу.",
       );
       return;
@@ -1555,7 +1564,11 @@ export default function HongololtTool({
               <Mur shoshgo="Хөнгөлөх төрөл">
                 <FilterSelect
                   value={hongololtTurul}
-                  onChange={(v) => setHongololtTurul(v as HongololtTurul)}
+                  onChange={(v) => {
+                    // Хувь ↔ дүн солиход өмнөх утга (10% → 10₮) буруу утгаар үлдэхгүй
+                    if (v !== hongololtTurul) setHongololtUtga("");
+                    setHongololtTurul(v as HongololtTurul);
+                  }}
                   options={[
                     { value: "percent", label: "Хувь (%)" },
                     { value: "amount", label: "Дүн (₮)" },

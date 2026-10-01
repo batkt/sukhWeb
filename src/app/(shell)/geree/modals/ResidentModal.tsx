@@ -702,6 +702,12 @@ export default function ResidentModal({
 
 
 
+  /** Орон сууцны давхрууд — гараж/агуулахын (B1, B2…) давхрыг хасна */
+  const oronSuutsniiDavkhruud = React.useMemo(
+    () => davkharOptions.filter((d) => !/^B\d+$/i.test(String(d).trim())),
+    [davkharOptions],
+  );
+
   const additionalFloors = React.useMemo(() => {
     const filtered = davkharOptions.filter((d) => /^B\d+$/i.test(d));
     return filtered.length > 0 ? filtered : ["B1", "B2", "B3"];
@@ -1298,7 +1304,10 @@ export default function ResidentModal({
                                   <TusgaiZagvar
                                     value={mainUnit.davkhar || ""}
                                     onChange={(val: string) => updateMainUnitRow(index, "davkhar", val)}
-                                    options={davkharOptions.map((d) => ({ value: d, label: d }))}
+                                    options={(mainUnit.davkhar && !oronSuutsniiDavkhruud.includes(mainUnit.davkhar)
+                                      ? [...oronSuutsniiDavkhruud, mainUnit.davkhar]
+                                      : oronSuutsniiDavkhruud
+                                    ).map((d) => ({ value: d, label: d }))}
                                     className="w-full h-full"
                                     placeholder="Давхар..."
                                   />
