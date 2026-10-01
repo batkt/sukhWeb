@@ -8,6 +8,7 @@ import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import SafeLottie from "@/components/ui/SafeLottie";
+import NuutsUgMartsan from "@/components/login/NuutsUgMartsan";
 import ӨнгөнийЗагварСонгох from "../../../components/ungu/unguSongokh";
 
 /** Зүүн талд солигдох танилцуулга текстүүд. */
@@ -39,6 +40,7 @@ export default function LoginPage() {
   const [isDesktop, setIsDesktop] = useState<boolean>(false);
   const [slide, setSlide] = useState<number>(0);
   const [reduceMotion, setReduceMotion] = useState<boolean>(false);
+  const [nuutsUgMartsan, setNuutsUgMartsan] = useState<boolean>(false);
   const slideTimer = useRef<number | null>(null);
 
   // Load saved username on first mount
@@ -382,6 +384,16 @@ export default function LoginPage() {
                   />
                   <span>Намайг сана</span>
                 </label>
+
+                <button
+                  type="button"
+                  onClick={() => setNuutsUgMartsan(true)}
+                  disabled={loading}
+                  className="text-sm underline-offset-4 transition-opacity hover:underline hover:opacity-80 disabled:opacity-50"
+                  style={{ color: "var(--muted-text)" }}
+                >
+                  Нууц үг мартсан?
+                </button>
               </div>
 
               <button
@@ -432,6 +444,14 @@ export default function LoginPage() {
           </div>
         </section>
       </div>
+
+      {/* Нэвтрэх формд бичсэн нэрийг дамжуулна — нэг утсан дээр хэд хэдэн
+          ажилтны данс байвал аль нь болохыг урьдчилж таана. */}
+      <NuutsUgMartsan
+        nee={nuutsUgMartsan}
+        khaaya={() => setNuutsUgMartsan(false)}
+        ekhniiNevtrekhNer={email}
+      />
     </div>
   );
 }
