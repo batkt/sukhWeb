@@ -2739,6 +2739,74 @@ export function useGereeActions(
     [token, baiguullaga, mutate, selectedBuildingId, barilgiinId],
   );
 
+  /**
+   * Гараж/агуулахын ЭНЭ САРЫН нэхэмжлэхийг backend дээр ЖИНХЭНЭЭР үүсгэнэ
+   * (POST /zogsoolAguulakhAvlagaUusgey — сард нэг удаа, дүн нь тохиргооноос).
+   * Эзэмшигч холбох болон «Нэхэмжлэх илгээх» товч хоёулаа үүнийг ашиглана.
+   */
+  const zogsoolNekhemjlekhIlgeeye = useCallback(
+    async (p: {
+      turul: "Зогсоол" | "Агуулах";
+      toot: string;
+      gereeniiId?: string;
+      orshinSuugchId?: string;
+      khariltsagchId?: string;
+    }): Promise<{ success: boolean; alreadyExists?: boolean; dun?: number; message?: string }> => {
+      if (!token || !baiguullaga?._id) return { success: false, message: "Нэвтрэх шаардлагатай" };
+      try {
+        const res = await uilchilgee(token).post("/zogsoolAguulakhAvlagaUusgey", {
+          baiguullagiinId: baiguullaga._id,
+          barilgiinId: selectedBuildingId || barilgiinId,
+          ...p,
+        });
+        mutate(
+          (key: any) =>
+            Array.isArray(key) &&
+            (key[0] === "/zogsoolAguulakhTuluv" || key[0] === "/guilgeeAvlaguud" || key[0] === "/nekhemjlekhiinTuukh"),
+          undefined,
+          { revalidate: true },
+        );
+        return res.data || { success: true };
+      } catch (err: any) {
+        return {
+          success: false,
+          message: err?.response?.data?.message || getErrorMessage(err),
+        };
+      }
+    },
+    [token, baiguullaga, selectedBuildingId, barilgiinId, mutate],
+  );
+
+  /** Холбосны дараах мэдэгдэл — гараж/агуулах бол нэхэмжлэхийг шууд илгээнэ */
+  const kholbosniiDaraa = useCallback(
+    async (
+      unitTurul: string,
+      unit: string,
+      ezen: { orshinSuugchId?: string; khariltsagchId?: string },
+      gereeniiId?: string,
+    ) => {
+      if (unitTurul !== "Гараж" && unitTurul !== "Агуулах") {
+        openSuccessOverlay("Амжилттай холбогдлоо");
+        return;
+      }
+      const turul = unitTurul === "Агуулах" ? "Агуулах" : "Зогсоол";
+      const ur = await zogsoolNekhemjlekhIlgeeye({ turul, toot: unit, gereeniiId, ...ezen });
+      const ner = turul === "Агуулах" ? "Агуулахын" : "Гаражийн";
+      if (ur.success && !ur.alreadyExists) {
+        openSuccessOverlay(
+          `Амжилттай холбогдлоо. ${ner} нэхэмжлэх илгээгдлээ — ${Number(ur.dun || 0).toLocaleString("mn-MN")}₮`,
+        );
+      } else if (ur.success && ur.alreadyExists) {
+        openSuccessOverlay(`Амжилттай холбогдлоо. Энэ сарын ${ner.toLowerCase()} нэхэмжлэх өмнө нь илгээгдсэн байна.`);
+      } else {
+        openWarningOverlay(
+          `Эзэмшигч холбогдлоо, гэхдээ ${ner.toLowerCase()} нэхэмжлэх илгээгдсэнгүй: ${ur.message || "алдаа гарлаа"}`,
+        );
+      }
+    },
+    [zogsoolNekhemjlekhIlgeeye],
+  );
+
   const handleAssignToUnit = useCallback(
     async (
       personId: string,
@@ -2863,7 +2931,7 @@ export function useGereeActions(
             _id: personId,
           });
 
-          openSuccessOverlay("Амжилттай холбогдлоо");
+          await kholbosniiDaraa(unitTurul, unit, { orshinSuugchId: personId }, gereeniiId);
           mutate(
             (key: any) =>
               Array.isArray(key) &&
@@ -2939,7 +3007,7 @@ export function useGereeActions(
 
           await uilchilgee(token).put(`/khariltsagch/${personId}`, payload);
 
-          openSuccessOverlay("Амжилттай холбогдлоо");
+          await kholbosniiDaraa(unitTurul, unit, { khariltsagchId: personId }, gereeniiId);
           mutate(
             (key: any) =>
               Array.isArray(key) &&
@@ -2957,7 +3025,7 @@ export function useGereeActions(
         return false;
       }
     },
-    [token, baiguullaga, selectedBuildingId, barilgiinId, mutate],
+    [token, baiguullaga, selectedBuildingId, barilgiinId, mutate, kholbosniiDaraa],
   );
 
   const handleShowClientModal = useCallback((initialUnit?: { orts?: string; davkhar?: string; toot?: string; turul?: string }) => {
@@ -3000,44 +3068,11 @@ export function useGereeActions(
         return;
       }
       try {
-        const barilga = baiguullaga.barilguud?.find(
-          (b: any) => String(b._id || b.id) === String(effectiveBarilgiinId),
-        );
-        const tok = barilga?.tokhirgoo || {};
+        // Нэхэмжлэхийг backend (POST /zogsoolAguulakhAvlagaUusgey) үүсгэнэ — дүн,
+        // тохиргоо, сарын давхардлын шалгалт, нэхэмжлэхэд холбох бүгд серверт.
         const isGarage = chargeType === "Зогсоол";
-        const enabled = isGarage ? !!tok.garsiinTolborEnabled : !!tok.aguulakhTolborEnabled;
-        const method = isGarage ? (tok.garsiinTolborArga || "Тогтмол") : (tok.aguulakhTolborArga || "Тогтмол");
-        const value = isGarage ? (Number(tok.garsiinTolborUtga) || 0) : (Number(tok.aguulakhTolborUtga) || 0);
-
-        if (!enabled || method !== "Тогтмол" || value <= 0) {
-          openErrorOverlay("Сонгосон төрлийн төлбөрийн тохиргоо идэвхгүй байна");
-          return;
-        }
-
-        // Billing cycle bounds
-        let cronDay = 1;
-        try {
-          const cronRes = await uilchilgee(token).get(`/nekhemjlekhCron/${baiguullaga._id}`, {
-            params: effectiveBarilgiinId ? { barilgiinId: effectiveBarilgiinId } : {}
-          });
-          const schedules = cronRes.data?.data || cronRes.data || [];
-          const schedule = Array.isArray(schedules) ? schedules[schedules.length - 1] : schedules;
-          if (schedule?.nekhemjlekhUusgekhOgnoo) cronDay = Number(schedule.nekhemjlekhUusgekhOgnoo);
-        } catch { }
-
-        const now = new Date();
-        let csYear = now.getFullYear(), csMonth = now.getMonth();
-        if (now.getDate() < cronDay) { csMonth--; if (csMonth < 0) { csMonth = 11; csYear--; } }
-        const cycleStart = new Date(csYear, csMonth, cronDay);
-        const ceMonth = csMonth === 11 ? 0 : csMonth + 1;
-        const ceYear = csMonth === 11 ? csYear + 1 : csYear;
-        const cycleEnd = new Date(ceYear, ceMonth, cronDay - 1 || 0);
-        const cycleStartStr = cycleStart.toISOString().split("T")[0];
-        const cycleEndStr = cycleEnd.toISOString().split("T")[0];
-
-        const today = now.toISOString().split("T")[0];
-        const tailbarKeyword = isGarage ? "зогсоол" : "агуулах";
-        let added = 0, skipped = 0;
+        let added = 0, skipped = 0, failed = 0, niitDun = 0;
+        const aldaanuud: string[] = [];
 
         for (const id of contractIds) {
           const c = (contracts || []).find((x: any) => String(x._id) === id);
@@ -3048,7 +3083,6 @@ export function useGereeActions(
           const unitToots: string[] = [];
 
           if (contractTootsMap?.[id]?.length) {
-            // Caller explicitly provided the toot numbers (e.g. from resident.toots for nested units)
             unitToots.push(...contractTootsMap[id]);
           } else if (isGarage && (cTurul === "Зогсоол" || cTurul === "Гараж")) {
             unitToots.push(String(c.toot || ""));
@@ -3063,69 +3097,43 @@ export function useGereeActions(
             }
           }
 
-          if (unitToots.length === 0) continue;
-
-          // Fetch existing avlaga for this contract once
-          let contractAvlaga: any[] = [];
-          try {
-            const checkRes = await uilchilgee(token).get("/guilgeeAvlaguud", {
-              params: {
-                baiguullagiinId: baiguullaga._id,
-                query: JSON.stringify({ gereeniiId: String(c._id) }),
-                khuudasniiDugaar: 1, khuudasniiKhemjee: 200,
-              },
-            });
-            contractAvlaga = checkRes.data?.data || checkRes.data || [];
-            if (!Array.isArray(contractAvlaga)) contractAvlaga = [];
-          } catch { }
-
-          const inCycle = (r: any) => {
-            const raw = r.ognoo || r.createdAt || "";
-            const s = typeof raw === "string" ? raw.slice(0, 10) : new Date(raw).toISOString().slice(0, 10);
-            return s >= cycleStartStr && s <= cycleEndStr;
-          };
-
-          for (const toot of unitToots) {
-            const alreadyBilled = contractAvlaga.some(
-              (r: any) => new RegExp(tailbarKeyword, "i").test(r.tailbar || "") && String(r.toot || "") === toot && inCycle(r)
-            );
-            if (alreadyBilled) { skipped++; continue; }
+          for (const toot of unitToots.filter(Boolean)) {
             try {
-              await uilchilgee(token).post("/guilgeeAvlaguud", {
+              const res = await uilchilgee(token).post("/zogsoolAguulakhAvlagaUusgey", {
                 baiguullagiinId: baiguullaga._id,
                 barilgiinId: effectiveBarilgiinId,
-                orshinSuugchId: c.orshinSuugchId || c.khariltsagchId || "",
-                gereeniiId: String(c._id),
-                gereeniiDugaar: c.gereeniiDugaar || "",
+                turul: chargeType,
                 toot,
-                turul: "avlaga",
-                tulukhDun: value,
-                tulsunDun: 0,
-                dun: value,
-                tailbar: `${chargeType} (тоот ${toot})`,
-                ognoo: today,
-                guilgeeKhiisenAjiltniiId: ajiltan?._id,
-                guilgeeKhiisenAjiltniiNer: `${ajiltan?.ovog || ""} ${ajiltan?.ner || ""}`.trim(),
+                gereeniiId: String(c._id),
+                ...(c.orshinSuugchId
+                  ? { orshinSuugchId: String(c.orshinSuugchId) }
+                  : c.khariltsagchId
+                    ? { khariltsagchId: String(c.khariltsagchId) }
+                    : {}),
               });
-              added++;
+              if (res.data?.alreadyExists) skipped++;
+              else {
+                added++;
+                niitDun += Number(res.data?.dun || 0);
+              }
             } catch (e: any) {
-              if (e?.response?.status === 409) { skipped++; } else { throw e; }
+              failed++;
+              const msg = e?.response?.data?.message || getErrorMessage(e);
+              if (msg && !aldaanuud.includes(msg)) aldaanuud.push(msg);
             }
           }
         }
 
-        if (added > 0 && skipped > 0) {
-          openSuccessOverlay(`${added} төлбөр амжилттай нэмэгдлээ. ${skipped} нь энэ сард аль хэдийн бүртгэгдсэн тул алгасав.`);
-        } else if (added > 0) {
-          openSuccessOverlay(`${added} төлбөр амжилттай нэмэгдлээ.`);
-        } else if (skipped > 0) {
-          openWarningOverlay(`${skipped} нь энэ сард аль хэдийн бүртгэгдсэн тул бүгд алгасав.`);
-        } else {
-          openWarningOverlay(`Нэмэх тоот олдсонгүй.`);
-        }
+        const khesguud: string[] = [];
+        if (added > 0) khesguud.push(`${added} нэхэмжлэх илгээгдлээ (нийт ${niitDun.toLocaleString("mn-MN")}₮)`);
+        if (skipped > 0) khesguud.push(`${skipped} нь энэ сард аль хэдийн илгээгдсэн тул алгасав`);
+        if (failed > 0) khesguud.push(`${failed} илгээгдсэнгүй: ${aldaanuud.join("; ")}`);
+        if (added > 0 && failed === 0) openSuccessOverlay(khesguud.join(". ") + ".");
+        else if (khesguud.length) openWarningOverlay(khesguud.join(". ") + ".");
+        else openWarningOverlay("Илгээх тоот олдсонгүй.");
 
         mutate(
-          (key: any) => Array.isArray(key) && ["/guilgeeAvlaguud", "/nekhemjlekhiinTuukh", "/orshinSuugch"].includes(key[0]),
+          (key: any) => Array.isArray(key) && ["/guilgeeAvlaguud", "/nekhemjlekhiinTuukh", "/orshinSuugch", "/zogsoolAguulakhTuluv"].includes(key[0]),
           undefined, { revalidate: true },
         );
       } catch (error: any) {
@@ -3243,6 +3251,7 @@ export function useGereeActions(
     deleteFloor,
     addUnit,
     handleAssignToUnit,
+    zogsoolNekhemjlekhIlgeeye,
     handleUnlinkFromUnit,
   };
 }
