@@ -125,6 +125,8 @@ function MedegdelContent() {
     total: number;
     turul: string;
     failedUsers: { ner: string; toot?: string; shaltgaan?: string }[];
+    /** Апп дотор хүргэгдсэн ч утсанд push очоогүй (анхааруулга, алдаа биш) */
+    pushOchoogui?: { ner: string; toot?: string; shaltgaan?: string }[];
   } | null>(null);
 
   const hasPhone = (u: Geree) => {
@@ -447,6 +449,7 @@ function MedegdelContent() {
       let sentCount = 0;
       let failedCount = 0;
       let failedList: { ner: string; toot?: string; shaltgaan?: string }[] = [];
+      let pushOchooguiList: { ner: string; toot?: string; shaltgaan?: string }[] = [];
 
       if (turul === "Мессеж") {
         const withPhone = songogdsonKhariltsagch.filter(hasPhone);
@@ -463,21 +466,60 @@ function MedegdelContent() {
           const phoneNumbers = Array.isArray(user.utas)
             ? user.utas
             : [user.utas];
+          // Утас нь тоо хэлбэрээр хадгалагдсан байж болно — String болгоно
           return phoneNumbers
-            .filter((phone) => phone && phone.trim() !== "")
+            .map((phone) => String(phone ?? "").trim())
+            .filter((phone) => phone !== "")
             .map((phone) => ({
               to: phone,
               text: `${title}\n${msj}`,
               gereeniiId: user._id,
+              ner: user.ner || "Оршин суугч",
+              toot: user.toot || "",
             }));
         });
 
         if (msgnuud.length > 0) {
-          await uilchilgee(token).post("/msgIlgeeye", {
+          const smsRes = await uilchilgee(token).post("/msgIlgeeye", {
             baiguullagiinId: baiguullagiinId,
             barilgiinId: barilgiinId,
-            msgnuud: msgnuud,
+            // Мэдэгдлийн SMS — төлбөрийн SMS-ийн хаалтад хамаарахгүй
+            turul: "medegdel",
+            msgnuud: msgnuud.map(({ ner, toot, ...m }) => m),
           });
+          // Бодит үр дүнгээр тоолно (өмнө нь хариуг үл тоон бүгдийг «амжилттай» гэдэг байв)
+          const ur: any[] = Array.isArray(smsRes?.data) ? smsRes.data : [];
+          const disabled = ur.find((r) => r?.Result === "DISABLED" || r?.status === "DISABLED");
+          if (disabled) {
+            sentCount = 0;
+            failedCount = songogdsonKhariltsagch.length;
+            failedList = [
+              ...failedList,
+              ...msgnuud.map((m) => ({
+                ner: m.ner,
+                toot: m.toot,
+                shaltgaan: disabled.message || "SMS үйлчилгээ түр хаалттай",
+              })),
+            ];
+          } else {
+            const aldaatai = ur.filter((r) => r?.status === "ERROR");
+            if (aldaatai.length) {
+              const aldaataiDugaar = new Set(aldaatai.map((r) => String(r.to || "")));
+              const aldaataiMsg = msgnuud.filter((m) => aldaataiDugaar.has(m.to));
+              sentCount = Math.max(0, sentCount - new Set(aldaataiMsg.map((m) => m.gereeniiId)).size);
+              failedCount += new Set(aldaataiMsg.map((m) => m.gereeniiId)).size;
+              failedList = [
+                ...failedList,
+                ...aldaataiMsg.map((m) => ({
+                  ner: m.ner,
+                  toot: m.toot,
+                  shaltgaan:
+                    aldaatai.find((r) => String(r.to) === m.to)?.message ||
+                    "SMS илгээгдсэнгүй",
+                })),
+              ];
+            }
+          }
         }
       } else if (turul === "Mail") {
         const withMail = songogdsonKhariltsagch.filter(hasEmail);
@@ -560,7 +602,14 @@ function MedegdelContent() {
           respData = res.data;
         }
 
-        sentCount = respData?.pushSentCount ?? withApp.length;
+        // Шинэ backend: апп доторх жагсаалтад хүргэгдсэнийг «илгээсэн» гэж,
+        // push очоогүйг анхааруулга гэж тоолно (өмнө нь токенгүй бүх хүнийг
+        // «Апп холбогдоогүй — амжилтгүй» гэж буруу харуулдаг байв).
+        if (typeof respData?.appDotorKhurgesen === "number") {
+          pushOchooguiList = Array.isArray(respData.pushOchoogui) ? respData.pushOchoogui : [];
+        }
+        sentCount =
+          respData?.appDotorKhurgesen ?? respData?.pushSentCount ?? withApp.length;
         failedCount = respData?.pushFailedCount ?? withoutApp.length;
         if (respData?.pushFailedList && Array.isArray(respData.pushFailedList)) {
           failedList = respData.pushFailedList;
@@ -580,6 +629,7 @@ function MedegdelContent() {
         total: totalCount,
         turul: turul,
         failedUsers: failedList,
+        pushOchoogui: pushOchooguiList,
       });
       // Үр дүнг (илгээсэн/илгээгээгүй тоо) зөвхөн result modal-аар харуулна —
       // давхар success overlay нь sent=0 үед ч "амжилттай" гэж харагддаг байсан.
@@ -947,9 +997,9 @@ function MedegdelContent() {
                           (turul === "Mail" && !hasEmail(mur))) && (
                           <span
                             className="shrink-0 rounded-full bg-warning/10 px-1.5 py-0.5 text-[11px] text-warning"
-                            title={turul === "App" ? "Апп суулгаагүй — мэдэгдэл хүрэхгүй" : "И-мэйлгүй"}
+                            title={turul === "App" ? "Утсанд push очихгүй — мэдэгдэл апп-ын «Мэдэгдэл» хэсэгт харагдана" : "И-мэйлгүй"}
                           >
-                            {turul === "App" ? "Апп-гүй" : "Мэйлгүй"}
+                            {turul === "App" ? "Push-гүй" : "Мэйлгүй"}
                           </span>
                         )}
                       </motion.div>
@@ -1293,7 +1343,7 @@ function MedegdelContent() {
                 {lastSendResult?.sent ?? 0}
               </span>
               <span className="text-[11px] sm:text-xs font-medium text-[color:var(--muted-text)] text-center">
-                Амжилттай илгээсэн
+                {lastSendResult?.turul === "App" ? "Апп-д хүргэсэн" : "Амжилттай илгээсэн"}
               </span>
             </div>
 
@@ -1302,7 +1352,7 @@ function MedegdelContent() {
                 {lastSendResult?.failed ?? 0}
               </span>
               <span className="text-[11px] sm:text-xs font-medium text-[color:var(--muted-text)] text-center">
-                Амжилтгүй болсон
+                {lastSendResult?.turul === "App" ? "Хүргэгдээгүй" : "Амжилтгүй болсон"}
               </span>
             </div>
           </div>
@@ -1317,13 +1367,40 @@ function MedegdelContent() {
                 {lastSendResult.failedUsers.map((u, i) => (
                   <div
                     key={i}
-                    className="flex items-center justify-between px-2.5 py-1 rounded-md bg-danger/70 text-[color:var(--panel-text)]"
+                    className="flex items-center justify-between px-2.5 py-1 rounded-md bg-danger/10 text-[color:var(--panel-text)]"
                   >
                     <span className="font-medium truncate mr-2">
                       {u.ner} {u.toot ? `(${u.toot})` : ""}
                     </span>
                     <span className="text-danger text-[11px] shrink-0">
                       {u.shaltgaan || "Алдаа"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Апп дотор хүргэгдсэн ч утсанд push очоогүй — анхааруулга */}
+          {lastSendResult?.pushOchoogui && lastSendResult.pushOchoogui.length > 0 && (
+            <div className="mt-3 pt-2.5 border-t border-[color:var(--surface-border)] dark:border-white/10">
+              <span className="text-[11px] font-medium text-warning block mb-0.5">
+                Утсанд push очоогүй ({lastSendResult.pushOchoogui.length})
+              </span>
+              <span className="text-[11px] text-[color:var(--muted-text)] block mb-1.5">
+                Эдгээр оршин суугчид мэдэгдлээ апп-ын «Мэдэгдэл» хэсгээс харна. Апп-аа шинэчилж нээхэд push автоматаар идэвхжинэ.
+              </span>
+              <div className="max-h-28 overflow-y-auto space-y-1 pr-1 text-[11px]">
+                {lastSendResult.pushOchoogui.map((u, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between gap-2 px-2.5 py-1 rounded-md bg-warning/10 text-[color:var(--panel-text)]"
+                  >
+                    <span className="font-medium truncate">
+                      {u.ner} {u.toot ? `(${u.toot})` : ""}
+                    </span>
+                    <span className="text-warning text-[10.5px] text-right">
+                      {(u.shaltgaan || "").replace(/^Апп дотор харагдана — /, "")}
                     </span>
                   </div>
                 ))}

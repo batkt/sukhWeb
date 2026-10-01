@@ -1632,7 +1632,7 @@ export default function Khynalt() {
 
   return (
     <>
-      <div className="h-full flex flex-col overflow-y-auto custom-scrollbar bg-slate-50/50 dark:bg-[#121214]">
+      <div className="h-full flex flex-col overflow-y-auto custom-scrollbar bg-slate-50/50 dark:bg-transparent">
         <div className="flex flex-col flex-1 min-h-full px-4 sm:px-6 pt-5 pb-10 max-w-[1700px] w-full mx-auto space-y-5">
           
           {/* iOS Top Control Bar: Date & Building Selector */}

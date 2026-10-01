@@ -309,7 +309,7 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
           }}
           locale={{
             emptyText: (
-              <div className="py-8 text-center bg-[color:var(--surface-bg)]">
+              <div className="py-8 text-center">
                 <span className="text-[color:var(--muted-text)]">
                   Гүйлгээний мэдээлэл олдсонгүй
                 </span>

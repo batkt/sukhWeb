@@ -481,6 +481,8 @@ export default function SanalAsuulgaPage() {
           asuult: a.asuult.trim(),
           turul: a.turul,
           zaavalEsekh: a.zaavalEsekh,
+          // «Бусад (текст хариулт)» — өмнө нь илгээгддэггүй тул хадгалагдахгүй байв
+          busadTekst: a.turul !== "tekst" && !!a.busadTekst,
           songoltuud:
             a.turul === "tekst"
               ? []

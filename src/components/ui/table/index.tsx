@@ -450,7 +450,7 @@ function SummaryRow({
   return (
     <tr
       className={cn(
-        "border-t border-[hsl(var(--zt-border))] bg-[hsl(var(--zt-muted)/0.4)] font-medium",
+        "border-t border-[hsl(var(--zt-border))] bg-[hsl(var(--zt-muted)/0.4)] font-medium text-[hsl(var(--zt-fg))]",
         className,
       )}
     >
