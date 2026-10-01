@@ -71,16 +71,49 @@ type LedgerDetailSelection =
       totalPayments: number;
     };
 
-/** ISO instant → UTC өдрийн YYYY-MM-DD (жишээ нь 2026-02-01T04:00:00.000Z → 2026-02-01, Америкийн TZ-д local Date-ээр 1.31 болдоггүй) */
+/**
+ * Улаанбаатарын цагнаас хойшлох хуви (UTC+8), миллисекундээр.
+ *
+ * Монгол зуны цагт шилждэггүй тул тогтмол 8 цаг.
+ */
+const UB_OFFSET_MS = 8 * 60 * 60 * 1000;
+
+/**
+ * ISO instant → УЛААНБААТАРЫН өдрийн YYYY-MM-DD.
+ *
+ * ── Яагаад +8 ──────────────────────────────────────────────
+ * Өмнө үүнийг ЦАГААР UTC өдрөөр боддог байв — хөтчийн цагийн
+ * бүсээс хамаарахгүй болгох зорилготой. Гэвч автомат нэхэмжлэхийн
+ * cron нь ҮБ-ийн 01:01-д гүйдэг бөгөөд тэр нь UTC-гээр ӨМНӨХ
+ * өдрийн 17:01 — иймээс 10-р сарын 1-ний нэхэмжлэх үргэлж
+ * `09.30` гэж зурагдаж байсан.
+ *
+ * УЛААНБААТАРЫН өдрөөр бодвол хөтчөөс хамаарахгүй байдал хэвээр
+ * бөгөөд хэрэглэгчийн хардаг өдөртэй таарна.
+ *
+ * ЧУХАЛ: шүүлтийн тулхуур (`ledgerRowKeyMatchingDisplayColumn`) бас энэ
+ * функцийг дууддаг тул харагдах өдөр ба сарын шүүлт хоёулаа
+ * ЗЭРЭГ шилжинэ — тэд хоорондоо зөрөхгүй.
+ *
+ * Өдөр барих (`YYYY-MM-DD`) бичвэрт цаг байхгүй тул тэрийг
+ * хөдөлгөхгүй — шилжүүлбэл өөрөө өдөр болно.
+ */
 function ledgerInstantToUtcYmd(raw: unknown): string | null {
   if (raw == null || raw === "") return null;
+
+  const ubYmd = (t: number): string => {
+    const x = new Date(t + UB_OFFSET_MS);
+    return (
+      `${x.getUTCFullYear()}-` +
+      `${String(x.getUTCMonth() + 1).padStart(2, "0")}-` +
+      `${String(x.getUTCDate()).padStart(2, "0")}`
+    );
+  };
+
   if (raw instanceof Date) {
     const t = raw.getTime();
     if (Number.isNaN(t)) return null;
-    const y = raw.getUTCFullYear();
-    const m = String(raw.getUTCMonth() + 1).padStart(2, "0");
-    const d = String(raw.getUTCDate()).padStart(2, "0");
-    return `${y}-${m}-${d}`;
+    return ubYmd(t);
   }
   const s = String(raw).trim();
   if (!s) return null;
@@ -90,8 +123,7 @@ function ledgerInstantToUtcYmd(raw: unknown): string | null {
   }
   const t = new Date(s).getTime();
   if (Number.isNaN(t)) return null;
-  const x = new Date(t);
-  return `${x.getUTCFullYear()}-${String(x.getUTCMonth() + 1).padStart(2, "0")}-${String(x.getUTCDate()).padStart(2, "0")}`;
+  return ubYmd(t);
 }
 
 /** RangePicker заримдаа Dayjs дамжуулдаг; жагсаалтын `setState`-ээр string биш орсон ч шүүлт зөв ажиллана. */
