@@ -71,14 +71,15 @@ const Shiljuurch: React.FC<{
       e.stopPropagation();
       onChange();
     }}
-    className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${
-      idevkhitei ? "bg-theme" : "bg-[color:var(--panel)]"
+    className={`relative h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ease-in-out cursor-pointer ${
+      idevkhitei ? "bg-theme" : "bg-slate-300 dark:bg-slate-600"
     }`}
   >
     <span
-      className={`absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-[color:var(--surface-bg)] shadow transition-all ${
-        idevkhitei ? "left-[18px]" : "left-0.5"
+      className={`absolute top-0.5 h-4 w-4 rounded-full !bg-white shadow transition-all duration-200 ease-in-out ${
+        idevkhitei ? "left-[17px]" : "left-0.5"
       }`}
+      style={{ backgroundColor: "white" }}
     />
   </button>
 );
@@ -219,10 +220,8 @@ export default function EmployeePermissionsModal({
       <div
         key={perm.id}
         onClick={() => erkhSolikh(perm.id)}
-        className={`flex cursor-pointer items-center gap-3 px-4 transition-all ${
-          khuukhed
-            ? `py-2 pl-9 ${songogdson ? "hover:bg-[color:var(--surface-hover)]" : "opacity-40 hover:opacity-70 hover:bg-[color:var(--surface-hover)]"}`
-            : `py-2.5 ${songogdson ? "bg-theme/8 hover:bg-theme/12" : "bg-[color:var(--surface-hover)]/40 hover:bg-[color:var(--surface-hover)]"}`
+        className={`flex cursor-pointer items-center gap-3 px-4 transition-colors hover:bg-[color:var(--surface-hover)] ${
+          khuukhed ? "py-2 pl-9" : "py-2.5"
         }`}
       >
         {khuukhed ? (
@@ -230,15 +229,15 @@ export default function EmployeePermissionsModal({
         ) : (
           <span
             className={`h-2 w-2 shrink-0 rounded-full transition-colors ${
-              songogdson ? "bg-theme shadow-sm shadow-theme/30" : "bg-[color:var(--surface-border)]"
+              songogdson ? "bg-theme shadow-sm shadow-theme/30" : "bg-slate-300 dark:bg-slate-600"
             }`}
           />
         )}
         <span
           className={`min-w-0 flex-1 truncate transition-colors ${
             khuukhed
-              ? `text-xs ${songogdson ? "text-[color:var(--panel-text)]" : "text-[color:var(--muted-text)]"}`
-              : `text-[13px] font-semibold ${songogdson ? "text-[color:var(--panel-text)]" : "text-[color:var(--muted-text)]"}`
+              ? `text-xs ${songogdson ? "text-[color:var(--panel-text)] font-medium" : "text-[color:var(--muted-text)]"}`
+              : `text-[13px] ${songogdson ? "text-[color:var(--panel-text)] font-semibold" : "text-[color:var(--muted-text)] font-normal"}`
           }`}
         >
           {perm.label}
@@ -246,8 +245,8 @@ export default function EmployeePermissionsModal({
         {khuukhdiinToo !== null && (
           <span className={`shrink-0 rounded-md px-1.5 py-0.5 font-mono text-[11px] transition-colors ${
             songogdson
-              ? "bg-theme/15 text-theme font-medium"
-              : "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]"
+              ? "bg-theme/10 text-theme font-medium"
+              : "bg-slate-100 dark:bg-slate-800 text-[color:var(--muted-text)]"
           }`}>
             {khuukhdiinToo}
           </span>

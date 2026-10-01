@@ -177,44 +177,7 @@ export default function UnitsSection({
     { revalidateOnFocus: true, dedupingInterval: 3000 }
   );
 
-  // Fetch server-computed balances per contract — same source as guilgeeniiTuukh
-  const contractBalancesRef = React.useRef<Record<string, number>>({});
-  const [contractBalances, setContractBalances] = React.useState<Record<string, number>>({});
-  const fetchContractBalances = React.useCallback(async (contractIds: string[]) => {
-    if (!token || !baiguullaga?._id || contractIds.length === 0) return;
-    const results: Record<string, number> = {};
-    await Promise.all(
-      contractIds.map(async (gid) => {
-        try {
-          const resp = await uilchilgee(token).post("/uldegdelBodyo", {
-            baiguullagiinId: baiguullaga._id,
-            barilgiinId: effectiveBid || undefined,
-            gereeniiId: gid,
-            summaryOnly: true,
-          });
-          const summary = resp.data?.summary;
-          if (summary?.uldegdel != null && Number.isFinite(Number(summary.uldegdel))) {
-            results[gid] = Number(summary.uldegdel);
-          }
-        } catch { }
-      })
-    );
-    contractBalancesRef.current = { ...contractBalancesRef.current, ...results };
-    setContractBalances((prev) => ({ ...prev, ...results }));
-  }, [token, baiguullaga, effectiveBid]);
-  // Fetch server balances whenever contracts/avlaguudData change (garage/storage only)
-  React.useEffect(() => {
-    if (propertyTab !== "Зогсоол" && propertyTab !== "Агуулах") return;
-    const ids = (contracts || [])
-      .filter((c: any) => {
-        const status = String(c?.tuluv || c?.status || "Идэвхтэй").trim();
-        return status !== "Цуцалсан" && status !== "Идэвхгүй";
-      })
-      .map((c: any) => c?._id ? String(c._id) : null)
-      .filter(Boolean) as string[];
-    const unique = [...new Set(ids)];
-    if (unique.length > 0) fetchContractBalances(unique);
-  }, [avlaguudData, propertyTab, contracts, fetchContractBalances]);
+
 
 
   useEffect(() => {
@@ -451,6 +414,42 @@ export default function UnitsSection({
               unitToResident[toot] = resident;
             }
           });
+        });
+
+        // Also ensure all units directly in residentsList and clientsList are included in activeToots and unitToResident
+        const allPersons = [...(residentsList || []), ...(clientsList || [])];
+        allPersons.forEach((p: any) => {
+          if (Array.isArray(p.toots) && p.toots.length > 0) {
+            p.toots.forEach((rt: any) => {
+              const rtTurul = String(rt.turul || "Орон сууц").trim();
+              if (turul === "Зогсоол") {
+                if (rtTurul !== "Гараж" && rtTurul !== "Зогсоол") return;
+              } else if (turul === "Агуулах") {
+                if (rtTurul !== "Агуулах") return;
+              } else {
+                if (rtTurul !== "Орон сууц" && rtTurul !== "Тоот") return;
+              }
+
+              const rOrts = String(rt.orts || "1").trim();
+              const rFloor = String(rt.davkhar || "").trim();
+              const matchOrts = !rOrts || rOrts === orts;
+              const matchFloor = !rFloor || rFloor === floor;
+              if (!matchOrts || !matchFloor) return;
+
+              const rToots = String(rt.toot || "")
+                .split(",")
+                .map((x: string) => x.trim())
+                .filter(Boolean);
+              rToots.forEach((toot) => {
+                if (unitsSet.has(toot)) {
+                  activeToots.add(toot);
+                  if (!unitToResident[toot]) {
+                    unitToResident[toot] = p;
+                  }
+                }
+              });
+            });
+          }
         });
 
         // Filter units based on unitStatusFilter
@@ -1321,103 +1320,66 @@ export default function UnitsSection({
         activeContract?.tulburTulogdson ||
         activeContract?.tuluv === "Төлөгдсөн"
       );
-      const isPaid = (() => {
-        if (contractIsPaid) return true;
-        if (propertyTab !== "Зогсоол" && propertyTab !== "Агуулах") return false;
-        if (!Array.isArray(avlaguudData)) return false;
 
+      // Compute charges and payments specific to this garage/storage unit
+      let chargeSum = 0;
+      let paymentSum = 0;
+      let hasAvlagaTransactions = false;
+
+      if ((propertyTab === "Зогсоол" || propertyTab === "Агуулах") && Array.isArray(avlaguudData)) {
+        const contractId = activeContract?._id ? String(activeContract._id) : "";
+        const resId = resident?._id ? String(resident._id) : "";
         const categoryPattern = propertyTab === "Зогсоол" ? /зогсоол|гараж/i : /агуулах/i;
-        const contractId = String(activeContract?._id || "");
-        const residentId = String(resident?._id || "");
-        let chargeTotal = 0;
-        let paidTotal = 0;
 
-        avlaguudData.forEach((entry: any) => {
-          if (!isSameMonth(entry.ognoo || entry.createdAt)) return;
-          const categoryName = String(entry.zardliinNer || entry.tailbar || "");
-          if (!categoryPattern.test(categoryName)) return;
+        avlaguudData.forEach((a: any) => {
+          const aToot = String(a.toot || "").trim();
+          const aGId = String(a.gereeniiId || "").trim();
+          const aRId = String(a.orshinSuugchId || a.khariltsagchId || "").trim();
+          const categoryText = String(a.zardliinNer || a.tailbar || a.ner || a.turul || "");
 
-          const entryToot = String(entry.toot || "").trim();
-          if (entryToot && entryToot !== unitStr) return;
+          const isOwnerMatch = (contractId && aGId === contractId) || (resId && aRId === resId);
+          if (!isOwnerMatch) return;
 
-          const entryContractId = String(entry.gereeniiId || "");
-          const entryResidentId = String(entry.orshinSuugchId || "");
-          if (
-            (contractId && entryContractId && entryContractId !== contractId) ||
-            (residentId && entryResidentId && entryResidentId !== residentId)
-          ) {
-            return;
-          }
+          const isTootMatch = aToot === unitStr;
+          const isCategoryMatch = categoryPattern.test(categoryText);
 
-          const dun = Number(entry.dun) || 0;
-          if (dun > 0) chargeTotal += dun;
-          else if (dun < 0) paidTotal += Math.abs(dun);
+          // If entry has a toot, it must match this unit's toot. Otherwise it must match the category.
+          if (aToot ? !isTootMatch : !isCategoryMatch) return;
+
+          hasAvlagaTransactions = true;
+
+          const chargeVal = Number(a.tulukhDun || (Number(a.dun) > 0 ? a.dun : 0)) || 0;
+          const paidVal = Number(a.tulsunDun || (Number(a.dun) < 0 ? Math.abs(a.dun) : 0)) || 0;
+
+          if (chargeVal > 0) chargeSum += chargeVal;
+          if (paidVal > 0) paymentSum += paidVal;
         });
+      }
 
-        return chargeTotal > 0 && paidTotal >= chargeTotal - 0.01;
-      })();
-
-      // Check if this month's invoice / charge was sent to the user
+      // Check if invoice / charge was sent
       let isInvoiceSent = false;
       if (isOccupied) {
-        // 1. Direct contract / resident fields
-        if (
+        if (hasAvlagaTransactions && chargeSum > 0) {
+          isInvoiceSent = true;
+        } else if (
           activeContract?.nekhemjlekhIlgeesen === true ||
           activeContract?.invoiceSent === true ||
           activeContract?.isInvoiceSent === true ||
-          activeContract?.nekhemjlekhStatus === "Илгээгдсэн" ||
-          isSameMonth(activeContract?.nekhemjlekhiinOgnoo || activeContract?.suuldNekhemjlekhIlgeesenOgnoo || activeContract?.ilgeesenOgnoo)
+          activeContract?.nekhemjlekhStatus === "Илгээгдсэн"
         ) {
           isInvoiceSent = true;
-        }
-
-        // 2. If already paid, the invoice was naturally sent
-        if (!isInvoiceSent && isPaid) {
-          isInvoiceSent = true;
-        }
-
-        // 3. Check avlaguudData (charges added this month for this unit)
-        if (!isInvoiceSent && Array.isArray(avlaguudData) && avlaguudData.length > 0) {
-          const contractId = activeContract?._id ? String(activeContract._id) : "";
-          const resId = resident?._id ? String(resident._id) : "";
-          const hasAvlaga = avlaguudData.some((a: any) => {
-            if (!isSameMonth(a.ognoo || a.createdAt)) return false;
-            const aToot = String(a.toot || "").trim();
-            const aGId = String(a.gereeniiId || "").trim();
-            const aRId = String(a.orshinSuugchId || "").trim();
-
-            const tootMatch = aToot === unitStr;
-            const refMatch = (contractId && aGId === contractId) || (resId && aRId === resId);
-            const categoryText = String(a.zardliinNer || a.tailbar || a.ner || "");
-            const categoryMatch = /зогсоол|гараж|агуулах/i.test(categoryText);
-
-            // Must belong to the CURRENT resident/contract (avoid matching old avlaga for previous occupant)
-            if (!refMatch) return false;
-            return tootMatch || categoryMatch;
-          });
-          if (hasAvlaga) {
-            isInvoiceSent = true;
-          }
-        }
-
-        // 4. Check nekhemjlekhData (invoices generated this month)
-        if (!isInvoiceSent && Array.isArray(nekhemjlekhData) && nekhemjlekhData.length > 0) {
+        } else if (Array.isArray(nekhemjlekhData) && nekhemjlekhData.length > 0) {
           const contractId = activeContract?._id ? String(activeContract._id) : "";
           const resId = resident?._id ? String(resident._id) : "";
           const hasInv = nekhemjlekhData.some((inv: any) => {
-            if (!isSameMonth(inv.ognoo || inv.createdAt || inv.nekhemjlekhiinOgnoo)) return false;
             const iToot = String(inv.toot || "").trim();
             const iGId = String(inv.gereeniiId || inv.gereeId || "").trim();
             const iRId = String(inv.orshinSuugchId || "").trim();
-
             const tootMatch = iToot === unitStr || (tootStr !== "-" && iToot === tootStr);
             const refMatch = (contractId && iGId === contractId) || (resId && iRId === resId);
-
             return (refMatch || tootMatch) && (inv.tuluv !== "Цуцалсан");
           });
-          if (hasInv) {
-            isInvoiceSent = true;
-          }
+          if (hasInv) isInvoiceSent = true;
         }
       }
 
@@ -1435,41 +1397,23 @@ export default function UnitsSection({
         } catch (e) { }
       }
 
-      // For garage/storage, use server-computed balance from /uldegdelBodyo (same as guilgeeniiTuukh)
+      // Effective invoice amount for this unit
+      const invoiceAmount = chargeSum > 0 ? chargeSum : (isInvoiceSent ? amount : 0);
+
+      // Remaining balance (uldegdel) for this garage/storage unit only
       let uldegdel = 0;
       if (isOccupied && isInvoiceSent) {
-        const cId = activeContract?._id ? String(activeContract._id) : "";
-        const serverBalance = cId ? contractBalances[cId] : undefined;
-        if (serverBalance != null) {
-          uldegdel = Math.max(0, serverBalance);
-        } else if ((propertyTab === "Зогсоол" || propertyTab === "Агуулах") && Array.isArray(avlaguudData)) {
-          // Fallback: compute from avlaguudData if server balance not yet loaded
-          const contractId = cId;
-          const resId = resident?._id ? String(resident._id) : "";
-          const categoryPattern = propertyTab === "Зогсоол" ? /зогсоол|гараж/i : /агуулах/i;
-          let chargeSum = 0;
-          let paymentSum = 0;
-          avlaguudData.forEach((a: any) => {
-            if (!isSameMonth(a.ognoo || a.createdAt)) return;
-            const aToot = String(a.toot || "").trim();
-            const aGId = String(a.gereeniiId || "").trim();
-            const aRId = String(a.orshinSuugchId || "").trim();
-            const categoryText = String(a.zardliinNer || a.tailbar || a.ner || "");
-            const tootMatch = aToot === unitStr;
-            const refMatch = (contractId && aGId === contractId) || (resId && aRId === resId);
-            const categoryMatch = categoryPattern.test(categoryText);
-            if (!refMatch) return;
-            if (tootMatch || categoryMatch) {
-              const dun = Number(a.dun) || 0;
-              if (dun > 0) chargeSum += dun;
-              else if (dun < 0) paymentSum += Math.abs(dun);
-            }
-          });
-          uldegdel = Math.max(0, chargeSum - paymentSum);
-        } else if (!isPaid) {
-          uldegdel = amount;
+        if (invoiceAmount > 0) {
+          uldegdel = Math.max(0, invoiceAmount - paymentSum);
         }
       }
+
+      // Is paid: if occupied, invoice is sent, and remaining balance is 0 (with full payment made)
+      const isPaid = isOccupied && isInvoiceSent && (
+        contractIsPaid ||
+        (invoiceAmount > 0 && paymentSum >= invoiceAmount - 0.01) ||
+        (uldegdel === 0 && (paymentSum > 0 || invoiceAmount === 0))
+      );
 
       return {
         key: unitStr,
@@ -1537,7 +1481,7 @@ export default function UnitsSection({
         ),
       },
       {
-        title: "Гараж",
+        title: propertyTab === "Агуулах" ? "Агуулах" : "Гараж",
         dataIndex: "zogsoolDugaar",
         key: "zogsoolDugaar",
         sorter: (x: any, y: any) => tooEremb(x.zogsoolDugaar, y.zogsoolDugaar),

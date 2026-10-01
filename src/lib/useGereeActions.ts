@@ -92,43 +92,44 @@ export function useGereeActions(
           (b: any) => String(b._id || b.id) === String(effectiveBid),
         );
 
-        // Unit validation: Ensure the toot exists in the building configuration
-        const davkhariinToonuud = selectedBarilga?.tokhirgoo?.davkhariinToonuud;
-        if (davkhariinToonuud && typeof davkhariinToonuud === "object") {
-          const o = String(newResident.orts || "").trim();
-          const f = String(newResident.davkhar || "").trim();
-          const key = composeKey ? composeKey(o, f) : f;
+        // Unit validation: Ensure the toot exists in the building configuration (apartments, garages, storages)
+        const davkhariinToonuud = selectedBarilga?.tokhirgoo?.davkhariinToonuud || {};
+        const davkhariinZogsoolnuud = selectedBarilga?.tokhirgoo?.davkhariinZogsoolnuud || {};
+        const davkhariinAguulakhnuud = selectedBarilga?.tokhirgoo?.davkhariinAguulakhnuud || {};
 
-          // Use the same splitting logic as the data layer
-          const getUnitsAsArray = (val: any): string[] => {
-            if (Array.isArray(val)) {
-              return val.flatMap((v) =>
-                String(v)
-                  .split(/[\s,;|]+/)
-                  .filter(Boolean),
-              );
-            }
-            if (typeof val === "string")
-              return val.split(/[\s,;|]+/).filter(Boolean);
-            return [];
-          };
+        const o = String(newResident.orts || "").trim();
+        const f = String(newResident.davkhar || "").trim();
+        const key = composeKey ? composeKey(o, f) : f;
 
-          const hasEntranceKeys = Object.keys(davkhariinToonuud).some((k) =>
-            k.includes("::"),
-          );
+        const getUnitsAsArray = (val: any): string[] => {
+          if (Array.isArray(val)) {
+            return val.flatMap((v) =>
+              String(v)
+                .split(/[\s,;|]+/)
+                .filter(Boolean),
+            );
+          }
+          if (typeof val === "string")
+            return val.split(/[\s,;|]+/).filter(Boolean);
+          return [];
+        };
 
-          const validUnits = [
-            ...getUnitsAsArray(davkhariinToonuud[key]),
-            ...((!o || !hasEntranceKeys) ? getUnitsAsArray(davkhariinToonuud[f]) : []),
-          ];
+        const validUnits = [
+          ...getUnitsAsArray(davkhariinToonuud[key]),
+          ...getUnitsAsArray(davkhariinToonuud[f]),
+          ...getUnitsAsArray(davkhariinZogsoolnuud[key]),
+          ...getUnitsAsArray(davkhariinZogsoolnuud[f]),
+          ...getUnitsAsArray(davkhariinAguulakhnuud[key]),
+          ...getUnitsAsArray(davkhariinAguulakhnuud[f]),
+        ];
 
-          if (validUnits.length > 0) {
-            const inputToot = String(newResident.toot || "").trim();
-            // Normalize comparison to handle special characters consistently with getTootOptions
-            const normalize = (s: string) =>
-              String(s || "").replace(/[^0-9A-Za-zА-Яа-яӨөҮүёЁ-]/g, "");
-            const normInput = normalize(inputToot);
+        if (validUnits.length > 0) {
+          const inputToot = String(newResident.toot || "").trim();
+          const normalize = (s: string) =>
+            String(s || "").replace(/[^0-9A-Za-zА-Яа-яӨөҮүёЁ-]/g, "");
+          const normInput = normalize(inputToot);
 
+          if (normInput) {
             const exists = validUnits.some(
               (u: any) => normalize(String(u)).trim() === normInput,
             );
@@ -1303,30 +1304,6 @@ export function useGereeActions(
           bottom: { style: "thin", color: { argb: "FF059669" } },
           right: { style: "thin", color: { argb: "FF059669" } },
         };
-      });
-
-      // Sample row
-      const sampleRow = ws.addRow({
-        ovog: "Бат",
-        ner: "Болд",
-        utas: "99112233",
-        email: "bold@example.com",
-        orts: "1",
-        davkhar: "2",
-        toot: "101",
-        mashin: "1234УБА",
-        garaazToot: "Г-01",
-        aguulakhToot: "А-01",
-        ekhniiUldegdel: "0",
-        tsakhilgaan: "0",
-        khonogoorBodokh: "Үгүй",
-        ashiglakhKhonog: "",
-      });
-      sampleRow.height = 22;
-      cols.forEach((_, idx) => {
-        const cell = sampleRow.getCell(idx + 1);
-        cell.font = { name: "Segoe UI", size: 10, italic: true };
-        cell.alignment = { vertical: "middle", horizontal: "center" };
       });
 
       const buffer = await wb.xlsx.writeBuffer();
