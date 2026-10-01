@@ -795,6 +795,14 @@ const INVOICE_ANGILAL_NER: Record<InvoiceAngilal, string> = {
   khungulult: "Хөнгөлөлт",
 };
 
+const KHUNGULULT_MUR_ID = "angilal-khungulult";
+
+/** Хуулгын мөр хөнгөлөлт мөн үү (төлсөн дүнтэй хадгалагддаг). */
+function khungulultMurEsekh(r: any): boolean {
+  const t = `${r?.turul || ""} ${r?.zardliinTurul || ""} ${r?.khelber || ""}`.toLowerCase();
+  return t.includes("хөнгөлөлт") || t.includes("khungulult") || r?.source === "khungulult";
+}
+
 /** Мөр төлөлт мөн үү — төлөлтийг нэхэмжлэхийн мөрөнд хольж болохгүй. */
 function guilgeeTulultEsekh(g: any): boolean {
   const t = String(g?.turul || "").toLowerCase();
@@ -1627,7 +1635,10 @@ export default function InvoiceModal({
   }, [invoices, searchTerm, dateRange]);
 
   const invoiceTotal = useMemo(() => {
-    const linesSum = expenseRows.reduce((s, r) => s + (Number(r?.dun) || 0), 0);
+    const linesSum = expenseRows.reduce(
+      (s, r) => (r?._id === KHUNGULULT_MUR_ID ? s : s + (Number(r?.dun) || 0)),
+      0,
+    );
     const official = Number(
       selectedInvoice?.niitTulbur ?? selectedInvoice?.niitDun ?? 0,
     );
@@ -1706,10 +1717,6 @@ export default function InvoiceModal({
 
     // Хөнгөлөлтийн мөр нь «төлсөн» дүнтэй хадгалагддаг тул өмнө нь «Төлсөн
     // дүн»-д орж, хөнгөлөлт төлбөр мэт харагддаг байв — тусад нь тооцно.
-    const khungulultMurEsekh = (r: any) => {
-      const t = `${r?.turul || ""} ${r?.zardliinTurul || ""} ${r?.khelber || ""}`.toLowerCase();
-      return t.includes("хөнгөлөлт") || t.includes("khungulult") || r?.source === "khungulult";
-    };
     const monthTulukh = roundInvoiceMoney(
       monthRows.reduce((s, r) => {
         if (khungulultMurEsekh(r)) return s;
@@ -1774,6 +1781,75 @@ export default function InvoiceModal({
       sortedAsc,
     };
   }, [ledgerRawRows, selectedInvoice, nekhemjlekhiinCycleStartDay]);
+
+  /**
+   * Хөнгөлөлтийг «Төлсөн»-д биш, мөр бүрийн тусдаа «Хөнгөлөлт» баганад
+   * харуулна. Хуулгын хөнгөлөлтийн мөрийг ангиллаар нь (зогсоол / агуулах /
+   * бусад нь ашиглалт) хуваарилж, мөрийн дүнгээс хэтрүүлэхгүй; үлдсэнийг
+   * дараагийн мөрүүдэд шилжүүлнэ.
+   */
+  const khungulultBaganaar = useMemo(() => {
+    const murnuud = expenseRows.filter((r) => r?._id !== KHUNGULULT_MUR_ID);
+    const angilalaar = new Map<string, number>();
+    let niit = 0;
+    const nemey = (angilal: string, dun: number) => {
+      if (!(dun > 0)) return;
+      angilalaar.set(angilal, (angilalaar.get(angilal) || 0) + dun);
+      niit += dun;
+    };
+
+    const ledgerKhungulult = invoiceLedgerBreakdown.monthRows.filter(khungulultMurEsekh);
+    if (ledgerKhungulult.length > 0) {
+      ledgerKhungulult.forEach((r: any) => {
+        const t = `${r?.zardliinNer || ""} ${r?.zardliinTurul || ""} ${r?.tailbar || ""}`.toLowerCase();
+        const angilal =
+          t.includes("зогсоол") || t.includes("гараж")
+            ? "zogsool"
+            : t.includes("агуулах")
+              ? "aguulakh"
+              : "ashiglalt";
+        nemey(angilal, Math.abs(Number(r?.dun ?? r?.tulsunDun ?? 0) || 0));
+      });
+    } else {
+      const mur = expenseRows.find((r) => r?._id === KHUNGULULT_MUR_ID);
+      nemey("ashiglalt", Math.abs(Number(mur?.dun || 0)));
+    }
+
+    const mururKhungulult = new Map<string, number>();
+    let uldsen = 0;
+    // 1-р алхам: өөрийн ангиллын мөрт
+    murnuud.forEach((r) => {
+      const angilal = String(r?._id || "").replace(/^angilal-/, "");
+      const khuvi = angilalaar.get(angilal) || 0;
+      if (!khuvi) return;
+      const dun = Math.max(0, Number(r?.dun) || 0);
+      const avakh = Math.min(dun, khuvi);
+      mururKhungulult.set(r._id, avakh);
+      angilalaar.set(angilal, khuvi - avakh);
+    });
+    angilalaar.forEach((v) => (uldsen += v));
+    // 2-р алхам: тохирох мөргүй үлдэгдлийг дарааллаар нь
+    for (const r of murnuud) {
+      if (uldsen <= 0.005) break;
+      const dun = Math.max(0, Number(r?.dun) || 0);
+      const bui = mururKhungulult.get(r._id) || 0;
+      const avakh = Math.min(dun - bui, uldsen);
+      if (avakh > 0) {
+        mururKhungulult.set(r._id, bui + avakh);
+        uldsen -= avakh;
+      }
+    }
+
+    return { murnuud, mururKhungulult, niit: roundInvoiceMoney(niit) };
+  }, [expenseRows, invoiceLedgerBreakdown.monthRows]);
+
+  const tulukhNiit = roundInvoiceMoney(
+    (Number(invoiceTotal) || 0) - khungulultBaganaar.niit,
+  );
+
+  /** Хамгийн доор харуулах одоогийн нийт төлөх дүн. */
+  const odoogiinNiitTulukh =
+    invoiceLedgerBreakdown.balEndMonth ?? resolvedHistoryLedgerBalance ?? null;
 
   const showLedgerSummaryRows = Boolean(
     selectedInvoice &&
@@ -2115,16 +2191,22 @@ export default function InvoiceModal({
                               <td className="border-r border-[color:var(--surface-border)] py-2 px-1 w-16">
                                 Сүүлийн заалт
                               </td>
-                              {/* <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right w-24">Хөнгөлөлт</td> */}
                               <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center w-24">
                                 Дүн
+                              </td>
+                              <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center w-24">
+                                Хөнгөлөлт
+                              </td>
+                              <td className="py-2 px-2 text-center w-24">
+                                Төлөх дүн
                               </td>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-[color:var(--surface-border)]">
-                            {expenseRows.map((row, idx) => {
+                            {khungulultBaganaar.murnuud.map((row, idx) => {
                               const total = Number(row.dun || 0);
-                              const discount = Number(row.khungulult || 0);
+                              const discount =
+                                khungulultBaganaar.mururKhungulult.get(row._id) || 0;
 
                               return (
                                 <tr
@@ -2154,9 +2236,14 @@ export default function InvoiceModal({
                                         : "";
                                     })()}
                                   </td>
-                                  {/* <td className="border-r border-[color:var(--surface-border)] py-1.5 px-2 text-right">{discount > 0 ? formatNumber(discount, 2) : "0.00"}</td> */}
-                                  <td className="border-r border-[color:var(--surface-border)] py-1.5 px-2 text-right font-medium">
+                                  <td className="border-r border-[color:var(--surface-border)] py-1.5 px-2 text-right">
                                     {formatNumber(total, 2)}
+                                  </td>
+                                  <td className="border-r border-[color:var(--surface-border)] py-1.5 px-2 text-right text-success">
+                                    {discount > 0.005 ? `−${formatNumber(discount, 2)}` : "—"}
+                                  </td>
+                                  <td className="py-1.5 px-2 text-right font-medium">
+                                    {formatNumber(roundInvoiceMoney(total - discount), 2)}
                                   </td>
                                 </tr>
                               );
@@ -2168,63 +2255,59 @@ export default function InvoiceModal({
                                 colSpan={2}
                                 className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center font-normal"
                               >
-                                {numberToMongolianWords(Number(invoiceTotal))}
+                                {numberToMongolianWords(tulukhNiit)}
                               </td>
                               <td
                                 colSpan={2}
-                                className="border-r font-bold-f border-[color:var(--surface-border)] py-2 px-2 text-center "
+                                className="border-r border-[color:var(--surface-border)] font-bold-f py-2 px-2 text-center"
                               >
                                 Нийт дүн
                               </td>
-                              <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right ">
+                              <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right">
                                 {formatNumber(Number(invoiceTotal), 2)}
+                              </td>
+                              <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right text-success">
+                                {khungulultBaganaar.niit > 0.005
+                                  ? `−${formatNumber(khungulultBaganaar.niit, 2)}`
+                                  : "—"}
+                              </td>
+                              <td className="py-2 px-2 text-right">
+                                {formatNumber(tulukhNiit, 2)}
                               </td>
                             </tr>
 
-                            {showLedgerSummaryRows ? (
+                            {showLedgerSummaryRows &&
+                            invoiceLedgerBreakdown.invoiceYm &&
+                            invoiceLedgerBreakdown.invoiceYmLabel ? (
                               <>
-                                {invoiceLedgerBreakdown.invoiceYm &&
-                                invoiceLedgerBreakdown.invoiceYmLabel ? (
-                                  <>
-                                    {invoiceLedgerBreakdown.monthKhungulult > 0.005 && (
-                                      <tr className="border-t border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]/5">
-                                        <td colSpan={4} className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center text-[12px] text-[color:var(--panel-text)]">
-                                          Хөнгөлөлт
-                                        </td>
-                                        <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right font-medium text-success">
-                                          −{formatNumber(invoiceLedgerBreakdown.monthKhungulult, 2)}
-                                        </td>
-                                      </tr>
-                                    )}
-                                    <tr className="border-t border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]/5">
-                                      <td colSpan={4} className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center text-[12px] text-[color:var(--panel-text)]">
-                                        Төлсөн дүн
-                                      </td>
-                                      <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right font-medium text-theme dark:text-white">
-                                        {formatNumber(invoiceLedgerBreakdown.monthTulsun, 2)}
-                                      </td>
-                                    </tr>
-                                    <tr className="border-t border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]/5">
-                                      <td colSpan={4} className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center text-[12px] text-[color:var(--panel-text)]">
-                                        Энэ сарын үлдэгдэл
-                                      </td>
-                                      <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right font-medium text-theme dark:text-white">
-                                        {formatNumber(invoiceLedgerBreakdown.monthUldegdel, 2)}
-                                      </td>
-                                    </tr>
-                                    {invoiceLedgerBreakdown.balEndMonth != null ? (
-                                      <tr className="border-t-2 border-[color:var(--panel-text)]/30 bg-theme/10">
-                                        <td colSpan={4} className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center text-[13px] font-semibold text-[color:var(--panel-text)]">
-                                          Одоогийн нийт төлөх дүн
-                                        </td>
-                                        <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right text-[14px] font-semibold text-theme dark:text-white">
-                                          {formatNumber(invoiceLedgerBreakdown.balEndMonth, 2)}
-                                        </td>
-                                      </tr>
-                                    ) : null}
-                                  </>
-                                ) : null}
+                                <tr className="border-t border-[color:var(--surface-border)]">
+                                  <td colSpan={6} className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center text-[12px] text-[color:var(--panel-text)]">
+                                    Төлсөн дүн
+                                  </td>
+                                  <td className="py-2 px-2 text-right font-medium text-theme dark:text-white">
+                                    {formatNumber(invoiceLedgerBreakdown.monthTulsun, 2)}
+                                  </td>
+                                </tr>
+                                <tr className="border-t border-[color:var(--surface-border)]">
+                                  <td colSpan={6} className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center text-[12px] text-[color:var(--panel-text)]">
+                                    Энэ сарын үлдэгдэл
+                                  </td>
+                                  <td className="py-2 px-2 text-right font-medium text-theme dark:text-white">
+                                    {formatNumber(invoiceLedgerBreakdown.monthUldegdel, 2)}
+                                  </td>
+                                </tr>
                               </>
+                            ) : null}
+
+                            {odoogiinNiitTulukh != null ? (
+                              <tr className="border-t-2 border-[color:var(--panel-text)]/30 bg-theme/10">
+                                <td colSpan={6} className="border-r border-[color:var(--surface-border)] py-2.5 px-2 text-center text-[13px] font-semibold text-[color:var(--panel-text)]">
+                                  Одоогийн нийт төлөх дүн
+                                </td>
+                                <td className="py-2.5 px-2 text-right text-[14px] font-semibold text-theme dark:text-white">
+                                  {formatNumber(odoogiinNiitTulukh, 2)}
+                                </td>
+                              </tr>
                             ) : null}
                           </tfoot>
                         </table>
