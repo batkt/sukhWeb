@@ -2,7 +2,7 @@
 
 import { ReactNode, useEffect, useState } from "react";
 import { MantineProvider, createTheme } from "@mantine/core";
-import { ConfigProvider } from "antd";
+import { ConfigProvider, theme as antdTheme } from "antd";
 import mn_MN from "antd/lib/locale/mn_MN";
 import { Toaster } from "sonner";
 import "@mantine/core/styles.css";
@@ -92,10 +92,24 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
     },
   };
 
+  // antd-ийн бүх бүрэлдэхүүн (confirm, popconfirm, dropdown, message...)
+  // харанхуй горимд хар үсэгтэй харагддаг байв — <html class="dark">-ийг
+  // ажиглаж antd-ийн өөрийн харанхуй алгоритмыг асаана.
+  const [kharankhui, setKharankhui] = useState(false);
+  useEffect(() => {
+    const root = document.documentElement;
+    const shinechlekh = () => setKharankhui(root.classList.contains("dark"));
+    shinechlekh();
+    const ajiglagch = new MutationObserver(shinechlekh);
+    ajiglagch.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => ajiglagch.disconnect();
+  }, []);
+
   return (
     <ConfigProvider
       locale={mongolianLocale}
       theme={{
+        algorithm: kharankhui ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
         token: {
           fontFamily: '"Segoe UI", sans-serif',
           fontSize: 13,

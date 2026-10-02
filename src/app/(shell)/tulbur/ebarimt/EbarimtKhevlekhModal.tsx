@@ -168,7 +168,7 @@ export default function EbarimtKhevlekhModal({
 
           {/* Баримт */}
           <div className="overflow-y-auto flex-1 min-h-0 bg-[color:var(--surface-hover)] p-4">
-            <div className="ebarimt-print bg-[color:var(--surface-bg)] text-black mx-auto w-full max-w-[300px] px-4 py-4 font-[family-name:var(--font-mono)] text-[11px] leading-[1.5]">
+            <div className="ebarimt-print bg-white text-black mx-auto w-full max-w-[300px] px-4 py-4 font-[family-name:var(--font-mono)] text-[11px] leading-[1.5]">
               <div className="text-center">
                 <p className="text-[12px] font-medium ">
                   {baiguullagiinNer || "-"}

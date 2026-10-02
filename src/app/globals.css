@@ -3926,7 +3926,7 @@ body .mantine-Month-weekday {
   .ant-picker-cell-in-view.ant-picker-cell-selected
   .ant-picker-cell-inner,
 .dark .ant-picker-cell-in-view.ant-picker-cell-selected .ant-picker-cell-inner {
-  color: #000000 !important;
+  color: #ffffff !important;
 }
 [data-mode="dark"] .ant-picker-header,
 .dark .ant-picker-header,
@@ -4142,11 +4142,11 @@ body .mantine-Month-weekday {
   color: var(--danger) !important;
 }
 
-/* Selected day: theme accent background, black text */
+/* Selected day: theme accent background, white text (ногоон дээр хар үсэг уншигдахгүй) */
 .rdp-day_selected .rdp-day_button {
   background-color: var(--tab-accent, var(--theme)) !important;
   background: var(--tab-accent, var(--theme)) !important;
-  color: #000000 !important;
+  color: #ffffff !important;
 }
 
 /* Range selection: in-range with transparent accent */
@@ -4167,11 +4167,11 @@ body .mantine-Month-weekday {
   color: #ffffff !important;
 }
 
-/* Range start/end: stronger accent, black text (like selected) */
+/* Range start/end: stronger accent, white text (like selected) */
 .rdp-day_range_start .rdp-day_button,
 .rdp-day_range_end .rdp-day_button {
   background-color: var(--tab-accent, var(--theme)) !important;
-  color: #000000 !important;
+  color: #ffffff !important;
 }
 
 /* Clean toggle switch with green-blue theme */
@@ -4732,7 +4732,7 @@ a:active {
 /* Header style */
 .guilgee-table .ant-table-thead > tr > th {
   background-color: var(--panel) !important; /* bg-gray-100 */
-  color: black !important;
+  color: var(--panel-text) !important;
   font-weight: 600 !important;
 }
 
