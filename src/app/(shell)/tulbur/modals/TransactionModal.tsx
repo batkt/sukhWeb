@@ -5,7 +5,7 @@ import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import { X, Calendar, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import uilchilgee from "@/lib/uilchilgee";
-import { message } from "antd";
+import { message, Modal } from "antd";
 import Button from "@/components/ui/Button";
 import { ConfirmCloseDialog } from "@/components/ui/ConfirmCloseDialog";
 import { ModalPortal } from "../../../../../components/shell/ModalPortal";
@@ -825,11 +825,24 @@ export default function TransactionModal({
         messageApi.warning("Төлөх дүнгээ оруулна уу.");
         return;
       }
-      if (paymentAvailableBalance !== null && paymentAvailableBalance > 0 && paymentAmount > paymentAvailableBalance) {
-        messageApi.warning(
-          `${paymentCategoryName} авлагын үлдэгдлээс (${mungunDunFormat(paymentAvailableBalance)}₮) их төлөх боломжгүй.`,
-        );
-        return;
+      // Илүү төлөлтийг ХОРИГЛОХГҮЙ — илүү дүн урьдчилгаа болж дараагийн
+      // нэхэмжлэхээс хасагдана. Санамсаргүй (жишээ нь 122,450 ↔ 122,440.90)
+      // алдаанаас сэргийлж л баталгаажуулна.
+      if (paymentAvailableBalance !== null && paymentAvailableBalance > 0 && paymentAmount > paymentAvailableBalance + 0.005) {
+        const iluu = paymentAmount - paymentAvailableBalance;
+        const zuvshuursun = await new Promise<boolean>((resolve) => {
+          Modal.confirm({
+            title: "Илүү төлөлт бүртгэх үү?",
+            content: `${paymentCategoryName} үлдэгдэл ${mungunDunFormat(paymentAvailableBalance)}₮. ${mungunDunFormat(iluu)}₮ илүү төлөлт болж, дараагийн нэхэмжлэхээс хасагдана.`,
+            okText: "Бүртгэх",
+            cancelText: "Буцах",
+            zIndex: 13000,
+            centered: true,
+            onOk: () => resolve(true),
+            onCancel: () => resolve(false),
+          });
+        });
+        if (!zuvshuursun) return;
       }
     }
 
