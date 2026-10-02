@@ -69,6 +69,7 @@ import Button from "@/components/ui/Button";
 import { tulburiinZadargaaBodyo } from "@/lib/tulburiinZadargaa";
 import UdriinKhaaltModal from "./UdriinKhaaltModal";
 import GaraarOrlogoModal from "./GaraarOrlogoModal";
+import { mashiniiDugaarTseverle } from "@/lib/mashiniiDugaar";
 
 const RealTimeDuration = ({
   orsonTsag,
@@ -231,6 +232,17 @@ export default function Camera() {
     {},
   );
   const latestPlatesRef = useRef<Record<string, string>>({});
+  const [liveCameraEvents, setLiveCameraEvents] = useState<
+    Record<
+      string,
+      {
+        mashiniiDugaar: string;
+        turul?: string;
+        cameraIP: string;
+        time: string;
+      }
+    >
+  >({});
   const [activeEntryIP, setActiveEntryIP] = useState<string>("");
   const [activeExitIP, setActiveExitIP] = useState<string>("");
   const [confirmExitId, setConfirmExitId] = useState<string | null>(null);
@@ -332,6 +344,101 @@ export default function Camera() {
       revalidateOnReconnect: false,
     },
   );
+
+  // Fetch registered residents / vehicles database to identify vehicles on camera
+  const { data: registeredCarsRaw } = useSWR(
+    shouldFetch
+      ? [
+          "/zochinJagsaalt",
+          token,
+          ajiltan?.baiguullagiinId,
+          effectiveBarilgiinId,
+          "camera_registry",
+        ]
+      : null,
+    async ([url, tkn, bId, barId]): Promise<any> => {
+      const resp = await uilchilgee(tkn).get(url, {
+        params: {
+          baiguullagiinId: bId,
+          ...(barId ? { barilgiinId: barId } : {}),
+          khuudasniiDugaar: 1,
+          khuudasniiKhemjee: 10000,
+        },
+      });
+      return resp.data;
+    },
+    {
+      revalidateOnFocus: false,
+      revalidateIfStale: false,
+      dedupingInterval: 60000,
+    },
+  );
+
+  const registeredCarsMap = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        mashiniiDugaar: string;
+        ner: string;
+        utas: string;
+        toot: string;
+        orts: string;
+        turul: string;
+        mashiniiToo?: number;
+      }
+    >();
+
+    const list: any[] = Array.isArray(registeredCarsRaw?.jagsaalt)
+      ? registeredCarsRaw.jagsaalt
+      : Array.isArray(registeredCarsRaw)
+        ? registeredCarsRaw
+        : [];
+
+    list.forEach((item: any) => {
+      const ner = item.ner || item.orshinSuugchNer || "";
+      const utas = item.utas || item.ezemshigchiinUtas || "";
+      const toot = item.toot || item.ezenToot || "";
+      const orts = item.orts || "";
+      const turul = item.zochinTurul || item.turul || "Оршин суугч";
+      const mashiniiToo =
+        item.mashiniiToo ||
+        (Array.isArray(item.ezniiMashinuud) ? item.ezniiMashinuud.length : 1);
+
+      const addPlate = (rawPlate: string) => {
+        if (!rawPlate || rawPlate === "БҮРТГЭЛГҮЙ") return;
+        const clean = mashiniiDugaarTseverle(rawPlate);
+        const simple = String(rawPlate).replace(/\s/g, "").toUpperCase();
+        const entry = {
+          mashiniiDugaar: rawPlate,
+          ner,
+          utas,
+          toot,
+          orts,
+          turul,
+          mashiniiToo,
+        };
+        if (clean && !map.has(clean)) map.set(clean, entry);
+        if (simple && !map.has(simple)) map.set(simple, entry);
+      };
+
+      addPlate(item.mashiniiDugaar);
+      addPlate(item.dugaar);
+
+      if (Array.isArray(item.ezniiMashinuud)) {
+        item.ezniiMashinuud.forEach((p: any) => {
+          if (typeof p === "string") addPlate(p);
+        });
+      }
+      if (Array.isArray(item.mashinuud)) {
+        item.mashinuud.forEach((p: any) => {
+          const str = typeof p === "string" ? p : p?.ulsiinDugaar || p?.dugaar;
+          if (str) addPlate(str);
+        });
+      }
+    });
+
+    return map;
+  }, [registeredCarsRaw]);
 
   /** Зогсоолын нийт багтаамж — `parking.too`-ийн нийлбэр */
   const zogsooliinBagtaamj = useMemo(() => {
@@ -752,6 +859,141 @@ export default function Camera() {
     return fallbackActive;
   }, [listData, liveUpdates]);
 
+  const getVehicleInfoForCamera = useCallback(
+    (ip: string, cameraType: "entry" | "exit") => {
+      if (!ip) return null;
+
+      // 1. Check real-time live event for this camera IP
+      const liveEvt = liveCameraEvents[ip];
+      let plate = liveEvt?.mashiniiDugaar || latestPlatesRef.current[ip] || "";
+      let matchedTurul = liveEvt?.turul;
+      let matchingTx: any = null;
+
+      // 2. Fallback: Search in listData and liveUpdates
+      let list: any[] = [];
+      if (Array.isArray(listData?.jagsaalt)) list = listData.jagsaalt;
+      else if (Array.isArray(listData?.list)) list = listData.list;
+      else if (Array.isArray(listData?.data)) list = listData.data;
+      else if (Array.isArray(listData)) list = listData;
+
+      const allTxMap = new Map<string, any>();
+      list.forEach((item, index) => {
+        const key = item._id || `list_${index}_${item.mashiniiDugaar || "unknown"}`;
+        allTxMap.set(key, item);
+      });
+      Object.values(liveUpdates).forEach((update: any) => {
+        const key = update._id || update.mashiniiDugaar;
+        if (key) allTxMap.set(key, update);
+      });
+
+      const allTx = Array.from(allTxMap.values());
+
+      // Filter transactions matching this specific camera IP
+      const ipMatches = allTx.filter((t: any) => {
+        const lastTuukh = t.tuukh?.[0];
+        if (cameraType === "entry") {
+          return lastTuukh?.orsonKhaalga === ip;
+        } else {
+          return lastTuukh?.garsanKhaalga === ip;
+        }
+      });
+
+      ipMatches.sort((a: any, b: any) => {
+        const timeA = new Date(
+          a.createdAt || a.tuukh?.[0]?.tsagiinTuukh?.[0]?.orsonTsag || 0,
+        ).getTime();
+        const timeB = new Date(
+          b.createdAt || b.tuukh?.[0]?.tsagiinTuukh?.[0]?.orsonTsag || 0,
+        ).getTime();
+        return timeB - timeA;
+      });
+
+      if (ipMatches.length > 0) {
+        matchingTx = ipMatches[0];
+        if (!plate) {
+          plate = matchingTx.mashiniiDugaar || "";
+          matchedTurul = matchingTx.turul;
+        }
+      }
+
+      // If still no plate, check general latest active entry or exited
+      if (!plate) {
+        const generalFallback = allTx.find((t: any) => {
+          const lastTuukh = t.tuukh?.[0];
+          if (cameraType === "entry") {
+            return !lastTuukh?.garsanKhaalga && t.mashiniiDugaar;
+          } else {
+            return !!lastTuukh?.garsanKhaalga && t.mashiniiDugaar;
+          }
+        });
+        if (generalFallback) {
+          matchingTx = generalFallback;
+          plate = generalFallback.mashiniiDugaar || "";
+          matchedTurul = generalFallback.turul;
+        }
+      }
+
+      if (!plate) return null;
+
+      const cleanPlate = mashiniiDugaarTseverle(plate);
+      const simplePlate = String(plate).replace(/\s/g, "").toUpperCase();
+      const reg =
+        (cleanPlate ? registeredCarsMap.get(cleanPlate) : undefined) ||
+        (simplePlate ? registeredCarsMap.get(simplePlate) : undefined);
+
+      const authorizedTuruls = [
+        "Оршин суугч",
+        "Ажилтан",
+        "Зочин",
+        "Түрээслэгч",
+        "СӨХ",
+        "Харилцагч",
+      ];
+
+      const isRegistered =
+        !!reg ||
+        (!!matchedTurul && authorizedTuruls.includes(matchedTurul)) ||
+        (!!matchingTx?.turul && authorizedTuruls.includes(matchingTx.turul));
+
+      const finalTurul =
+        reg?.turul ||
+        matchedTurul ||
+        matchingTx?.turul ||
+        (isRegistered ? "Оршин суугч" : "Үйлчлүүлэгч");
+
+      const ownerName =
+        reg?.ner ||
+        matchingTx?.orshinSuugchiinNer ||
+        matchingTx?.mashin?.ezemshigchiinNer ||
+        "";
+
+      const toot =
+        reg?.toot ||
+        matchingTx?.toot ||
+        matchingTx?.mashin?.ezenToot ||
+        "";
+
+      const phone =
+        reg?.utas ||
+        matchingTx?.mashin?.ezemshigchiinUtas ||
+        "";
+
+      const orts = reg?.orts || "";
+
+      return {
+        plateNumber: plate,
+        isRegistered,
+        type: finalTurul,
+        ownerName,
+        toot,
+        phone,
+        orts,
+        mashiniiToo: reg?.mashiniiToo,
+      };
+    },
+    [liveCameraEvents, listData, liveUpdates, registeredCarsMap],
+  );
+
   const khaalgaNeey = useCallback(
     (ip: string) => {
       if (!ip) return;
@@ -928,6 +1170,15 @@ export default function Camera() {
           return;
         if (data.cameraIP && data.mashiniiDugaar) {
           latestPlatesRef.current[data.cameraIP] = data.mashiniiDugaar;
+          setLiveCameraEvents((prev) => ({
+            ...prev,
+            [data.cameraIP]: {
+              mashiniiDugaar: data.mashiniiDugaar,
+              turul: data.turul,
+              cameraIP: data.cameraIP,
+              time: new Date().toISOString(),
+            },
+          }));
         }
         khaalgaNeey(data.cameraIP);
       };
@@ -961,9 +1212,27 @@ export default function Camera() {
         if (data.mashiniiDugaar) {
           if (lastTuukh?.garsanKhaalga) {
             latestPlatesRef.current[lastTuukh.garsanKhaalga] = data.mashiniiDugaar;
+            setLiveCameraEvents((prev) => ({
+              ...prev,
+              [lastTuukh.garsanKhaalga]: {
+                mashiniiDugaar: data.mashiniiDugaar,
+                turul: data.turul,
+                cameraIP: lastTuukh.garsanKhaalga,
+                time: new Date().toISOString(),
+              },
+            }));
           }
           if (lastTuukh?.orsonKhaalga) {
             latestPlatesRef.current[lastTuukh.orsonKhaalga] = data.mashiniiDugaar;
+            setLiveCameraEvents((prev) => ({
+              ...prev,
+              [lastTuukh.orsonKhaalga]: {
+                mashiniiDugaar: data.mashiniiDugaar,
+                turul: data.turul,
+                cameraIP: lastTuukh.orsonKhaalga,
+                time: new Date().toISOString(),
+              },
+            }));
           }
         }
 
@@ -996,6 +1265,15 @@ export default function Camera() {
 
       if (data.cameraIP && data.mashiniiDugaar) {
         latestPlatesRef.current[data.cameraIP] = data.mashiniiDugaar;
+        setLiveCameraEvents((prev) => ({
+          ...prev,
+          [data.cameraIP]: {
+            mashiniiDugaar: data.mashiniiDugaar,
+            turul: data.turul,
+            cameraIP: data.cameraIP,
+            time: new Date().toISOString(),
+          },
+        }));
       }
 
       if (!data?.oruulakhguiEsekh) {
@@ -1010,11 +1288,6 @@ export default function Camera() {
             _id: plate, // Use plate as stable ID for synthetic entry
             mashiniiDugaar: plate,
             baiguullagiinId: data.baiguullagiinId,
-            // Socket нь машины төрлийг АЛЬ ХЭДИЙН илгээдэг (sdkService →
-            // `zogsoolOroh`) атлаа энд хаягддаг байв. Улмаар дөнгөж орсон
-            // оршин суугч REST дахин татах хүртэл «Үйлчлүүлэгч» гэж
-            // харагддаг байсан — `getVehicleType` нь төрөлгүй мөрийг
-            // тэгж нөхдөг.
             turul: data.turul || undefined,
             createdAt: new Date().toISOString(),
             tuukh: [
@@ -1044,6 +1317,15 @@ export default function Camera() {
       const exitIP = u.tuukh?.[0]?.garsanKhaalga;
       if (exitIP && u.mashiniiDugaar) {
         latestPlatesRef.current[exitIP] = u.mashiniiDugaar;
+        setLiveCameraEvents((prev) => ({
+          ...prev,
+          [exitIP]: {
+            mashiniiDugaar: u.mashiniiDugaar,
+            turul: u.turul,
+            cameraIP: exitIP,
+            time: new Date().toISOString(),
+          },
+        }));
       }
 
       let niit = u?.niitDun || 0;
@@ -1079,6 +1361,15 @@ export default function Camera() {
         return;
       if (data.cameraIP && data.mashiniiDugaar) {
         latestPlatesRef.current[data.cameraIP] = data.mashiniiDugaar;
+        setLiveCameraEvents((prev) => ({
+          ...prev,
+          [data.cameraIP]: {
+            mashiniiDugaar: data.mashiniiDugaar,
+            turul: data.turul,
+            cameraIP: data.cameraIP,
+            time: new Date().toISOString(),
+          },
+        }));
       }
       khaalgaNeey(data.cameraIP);
       fetchList();
@@ -2063,6 +2354,7 @@ export default function Camera() {
                           onOpenGate={khaalgaNeey}
                           barilgiinId={camera.parkBarilgiinId || effectiveBarilgiinId}
                           token={token || undefined}
+                          vehicleInfo={getVehicleInfoForCamera(camera.cameraIP, "entry")}
                         />
                       </div>
                     ))}
@@ -2147,6 +2439,7 @@ export default function Camera() {
                           onOpenGate={khaalgaNeey}
                           barilgiinId={camera.parkBarilgiinId || effectiveBarilgiinId}
                           token={token || undefined}
+                          vehicleInfo={getVehicleInfoForCamera(camera.cameraIP, "exit")}
                         />
                       </div>
                     ))}
@@ -3215,6 +3508,7 @@ const CameraStream = React.memo(
     onOpenGate,
     barilgiinId,
     token,
+    vehicleInfo,
   }: {
     ip: string;
     port: number;
@@ -3227,6 +3521,16 @@ const CameraStream = React.memo(
     onOpenGate?: (ip: string) => void;
     barilgiinId?: string;
     token?: string;
+    vehicleInfo?: {
+      plateNumber: string;
+      isRegistered: boolean;
+      type: string;
+      ownerName?: string;
+      toot?: string;
+      phone?: string;
+      orts?: string;
+      mashiniiToo?: number;
+    } | null;
   }) => {
     const [error, setError] = useState(false);
     const [connectionState, setConnectionState] = useState<string>("");
@@ -3418,6 +3722,94 @@ const CameraStream = React.memo(
             <div className="absolute inset-0 rounded-full bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
           </button>
         </div>
+
+        {/* Vehicle Detection Overlay Banner */}
+        {vehicleInfo && vehicleInfo.plateNumber && (
+          <div className="absolute bottom-3 left-[106px] z-40 max-w-[calc(100%-114px)] pointer-events-auto">
+            <div
+              className={`
+                flex items-center flex-wrap gap-2 px-3.5 py-1.5 rounded-full
+                text-[12px] font-medium
+                backdrop-blur-xl border
+                shadow-2xl transition-all duration-500
+                animate-in fade-in slide-in-from-bottom-2
+                ${
+                  vehicleInfo.isRegistered
+                    ? "bg-emerald-950/90 border-emerald-500/60 text-emerald-100 shadow-[0_0_20px_rgba(16,185,129,0.35)]"
+                    : "bg-rose-950/90 border-rose-500/60 text-rose-100 shadow-[0_0_20px_rgba(244,63,94,0.35)]"
+                }
+              `}
+            >
+              {/* Pulse status indicator */}
+              <div className="relative flex items-center justify-center shrink-0">
+                <span
+                  className={`absolute w-3.5 h-3.5 rounded-full animate-ping opacity-75 ${
+                    vehicleInfo.isRegistered ? "bg-emerald-400" : "bg-rose-400"
+                  }`}
+                />
+                <span
+                  className={`relative w-2 h-2 rounded-full ${
+                    vehicleInfo.isRegistered
+                      ? "bg-emerald-400 shadow-[0_0_10px_#10b981]"
+                      : "bg-rose-400 shadow-[0_0_10px_#f43f5e]"
+                  }`}
+                />
+              </div>
+
+              {/* Status & Plate Number */}
+              <div className="flex items-center gap-1.5 font-bold tracking-wide">
+                <span
+                  className={`text-[12px] uppercase ${
+                    vehicleInfo.isRegistered ? "text-emerald-300 font-semibold" : "text-rose-300 font-semibold"
+                  }`}
+                >
+                  {vehicleInfo.isRegistered ? "Бүртгэлтэй" : "Бүртгэлгүй"} :
+                </span>
+                <span className="font-mono text-white text-[13px] bg-black/60 px-2 py-0.5 rounded border border-white/15 tracking-wider font-extrabold shadow-inner">
+                  {vehicleInfo.plateNumber}
+                </span>
+              </div>
+
+              {/* Vehicle Type Pill */}
+              <span
+                className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider border ${
+                  vehicleInfo.isRegistered
+                    ? "bg-emerald-500/25 text-emerald-200 border-emerald-400/40"
+                    : "bg-rose-500/25 text-rose-200 border-rose-400/40"
+                }`}
+              >
+                {vehicleInfo.type || (vehicleInfo.isRegistered ? "Оршин суугч" : "Үйлчлүүлэгч")}
+              </span>
+
+              {/* Resident / Owner Metadata if registered */}
+              {vehicleInfo.isRegistered &&
+                (vehicleInfo.ownerName || vehicleInfo.toot || vehicleInfo.phone) && (
+                  <div className="flex items-center gap-1.5 text-[11px] text-white/90 pl-1.5 border-l border-white/20">
+                    {vehicleInfo.ownerName && (
+                      <span className="font-semibold text-white truncate max-w-[120px]">
+                        {vehicleInfo.ownerName}
+                      </span>
+                    )}
+                    {vehicleInfo.toot && (
+                      <span className="text-white/80 bg-white/10 px-1.5 py-0.5 rounded text-[10px]">
+                        {vehicleInfo.toot}
+                      </span>
+                    )}
+                    {vehicleInfo.orts && (
+                      <span className="text-white/70 text-[10px]">
+                        {vehicleInfo.orts}-р орц
+                      </span>
+                    )}
+                    {vehicleInfo.phone && (
+                      <span className="text-white/60 font-mono text-[10px] hidden md:inline">
+                        {vehicleInfo.phone}
+                      </span>
+                    )}
+                  </div>
+                )}
+            </div>
+          </div>
+        )}
 
         {/* Fullscreen Button */}
         <button
