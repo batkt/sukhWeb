@@ -1989,9 +1989,9 @@ export default function Camera() {
         <div ref={kameriinKhesegRef} className="grid grid-cols-1 xl:grid-cols-2 gap-3">
           {/* Entry Camera Stream */}
           <div className="relative group/camera overflow-hidden rounded-2xl bg-black shadow-lg transition-all duration-500">
-            {/* Top-Right Badge and Selection Dropdown */}
+            {/* Top-Left Badge and Selection Dropdown */}
             {entryCameras.length > 0 && (
-              <div className="absolute top-2 right-2 z-40 flex flex-col items-end gap-1">
+              <div className="absolute top-2 left-2 z-40 flex flex-col items-start gap-1">
                 <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-2 py-1 rounded-lg border border-white/10">
                   <div className="w-1.5 h-1.5 rounded-full bg-theme animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div>
                   <span className="text-[11px] font-medium !text-white">
@@ -2073,9 +2073,9 @@ export default function Camera() {
 
           {/* Exit Camera Stream */}
           <div className="relative group/camera overflow-hidden rounded-2xl bg-black shadow-lg transition-all duration-500">
-            {/* Top-Right Badge and Selection Dropdown */}
+            {/* Top-Left Badge and Selection Dropdown */}
             {exitCameras.length > 0 && (
-              <div className="absolute top-2 right-2 z-40 flex flex-col items-end gap-1">
+              <div className="absolute top-2 left-2 z-40 flex flex-col items-start gap-1">
                 <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-2 py-1 rounded-lg border border-white/10">
                   <div className="w-1.5 h-1.5 rounded-full bg-danger animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]"></div>
                   <span className="text-[11px] font-medium !text-white">
