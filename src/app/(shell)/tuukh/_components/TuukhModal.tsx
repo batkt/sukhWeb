@@ -9,6 +9,7 @@ import {
   type AuditMur,
   USTGASAN_NUUKH_TALBAR,
   dedUurchlultuud,
+  massiviinUurchlult,
   objectIdEsekh,
   ognooKharuulakh,
   talbariinNer,
@@ -203,6 +204,41 @@ export default function TuukhModal({ mur, turul, idNer = {}, onClose }: Props) {
                 </div>
               ) : (
                 uurchlultuud.map((c, i) => {
+                  // Тоотууд г.м. жагсаалт: зөвхөн нэмсэн / хассан / өөрчилсөн
+                  const massiv = massiviinUurchlult(c.umnukh, c.shine);
+                  if (massiv) {
+                    const khooson =
+                      massiv.nemsen.length + massiv.khassan.length + massiv.uurchlugdsun.length === 0;
+                    if (khooson) return null;
+                    return (
+                      <div
+                        key={`${c.talbar}-${i}`}
+                        className="min-w-0 space-y-1.5 rounded-xl border border-[color:var(--ctl-border)] px-3.5 py-3"
+                      >
+                        <div className="mb-1 text-[13px] font-medium text-[color:var(--panel-text)]">{c.label}</div>
+                        {massiv.nemsen.map((t, j) => (
+                          <div key={`n${j}`} className="rounded-lg bg-success/10 px-3 py-2 text-[13px] text-success">
+                            <span className="font-medium">Нэмсэн:</span> {t}
+                          </div>
+                        ))}
+                        {massiv.khassan.map((t, j) => (
+                          <div key={`k${j}`} className="rounded-lg bg-danger/10 px-3 py-2 text-[13px] text-danger">
+                            <span className="font-medium">Хассан:</span> {t}
+                          </div>
+                        ))}
+                        {massiv.uurchlugdsun.map((d) => (
+                          <div
+                            key={d.zam + d.label}
+                            className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)] gap-2 rounded-lg bg-[color:var(--surface-hover)] px-3 py-2 text-[12px]"
+                          >
+                            <span className="text-[color:var(--muted-text)] [overflow-wrap:anywhere]">{d.label}</span>
+                            <span className="text-danger"><Utga utga={kharuul(d.umnukh)} /></span>
+                            <span className="text-success"><Utga utga={kharuul(d.shine)} /></span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  }
                   const ded = dedUurchlultuud(c.umnukh, c.shine);
                   return (
                     <div

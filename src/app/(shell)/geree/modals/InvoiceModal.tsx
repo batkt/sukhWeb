@@ -2250,6 +2250,31 @@ export default function InvoiceModal({
                             })}
                           </tbody>
                           <tfoot>
+
+                            {showLedgerSummaryRows &&
+                            invoiceLedgerBreakdown.invoiceYm &&
+                            invoiceLedgerBreakdown.invoiceYmLabel ? (
+                              <>
+                                <tr className="border-t border-[color:var(--surface-border)]">
+                                  <td colSpan={6} className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center text-[12px] text-[color:var(--panel-text)]">
+                                    Төлсөн дүн
+                                  </td>
+                                  <td className="py-2 px-2 text-right font-medium text-theme dark:text-white">
+                                    {formatNumber(invoiceLedgerBreakdown.monthTulsun, 2)}
+                                  </td>
+                                </tr>
+                                <tr className="border-t border-[color:var(--surface-border)]">
+                                  <td colSpan={6} className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center text-[12px] text-[color:var(--panel-text)]">
+                                    Энэ сарын үлдэгдэл
+                                  </td>
+                                  <td className="py-2 px-2 text-right font-medium text-theme dark:text-white">
+                                    {formatNumber(invoiceLedgerBreakdown.monthUldegdel, 2)}
+                                  </td>
+                                </tr>
+                              </>
+                            ) : null}
+
+                            {/* Нийт дүн — доод хэсэгт (төлсөн, үлдэгдлийн дараа) */}
                             <tr className="border-t border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]/30 force-bold">
                               <td
                                 colSpan={2}
@@ -2275,29 +2300,6 @@ export default function InvoiceModal({
                                 {formatNumber(tulukhNiit, 2)}
                               </td>
                             </tr>
-
-                            {showLedgerSummaryRows &&
-                            invoiceLedgerBreakdown.invoiceYm &&
-                            invoiceLedgerBreakdown.invoiceYmLabel ? (
-                              <>
-                                <tr className="border-t border-[color:var(--surface-border)]">
-                                  <td colSpan={6} className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center text-[12px] text-[color:var(--panel-text)]">
-                                    Төлсөн дүн
-                                  </td>
-                                  <td className="py-2 px-2 text-right font-medium text-theme dark:text-white">
-                                    {formatNumber(invoiceLedgerBreakdown.monthTulsun, 2)}
-                                  </td>
-                                </tr>
-                                <tr className="border-t border-[color:var(--surface-border)]">
-                                  <td colSpan={6} className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center text-[12px] text-[color:var(--panel-text)]">
-                                    Энэ сарын үлдэгдэл
-                                  </td>
-                                  <td className="py-2 px-2 text-right font-medium text-theme dark:text-white">
-                                    {formatNumber(invoiceLedgerBreakdown.monthUldegdel, 2)}
-                                  </td>
-                                </tr>
-                              </>
-                            ) : null}
 
                             {odoogiinNiitTulukh != null ? (
                               <tr className="border-t-2 border-[color:var(--panel-text)]/30 bg-theme/10">

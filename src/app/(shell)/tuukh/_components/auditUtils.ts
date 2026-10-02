@@ -267,6 +267,82 @@ export function dedUurchlultuud(umnukhRaw: unknown, shineRaw: unknown): DedUurch
     .filter((d) => d.umnukh !== d.shine);
 }
 
+/* -------------------------- массивын өөрчлөлт -------------------------- */
+
+export interface MassiviinUurchlult {
+  /** Шинээр нэмэгдсэн мөрүүдийн товч тайлбар */
+  nemsen: string[];
+  /** Хасагдсан мөрүүдийн товч тайлбар */
+  khassan: string[];
+  /** Хэвээр үлдсэн мөрүүдийн өөрчлөгдсөн талбарууд */
+  uurchlugdsun: DedUurchlult[];
+}
+
+/** Мөр бүрийг хүнд ойлгомжтой нэг мөр болгох (Орон сууц 201 · 2-р орц · 2 давхар) */
+function murTovch(m: Record<string, unknown>): string {
+  const u = (k: string) => utgaFormat(m[k]);
+  const khesguud = [
+    u("turul"),
+    u("toot") || u("dugaar") || u("mashiniiDugaar") || u("ner"),
+    u("orts") ? `${u("orts")}-р орц` : null,
+    u("davkhar") ? `${u("davkhar")} давхар` : null,
+    Number(m.ekhniiUldegdel) ? `эхний үлдэгдэл ${u("ekhniiUldegdel")}` : null,
+  ].filter(Boolean);
+  return khesguud.length ? khesguud.join(" · ") : "Мөр";
+}
+
+/** Мөрийг таних түлхүүр — дарааллаас биш, утгаар нь тааруулна */
+function murTulkhuur(m: Record<string, unknown>, i: number): string {
+  const id = [m.turul, m.toot ?? m.dugaar ?? m.mashiniiDugaar ?? m.ner, m.barilgiinId]
+    .map((x) => (x == null ? "" : String(x).trim()))
+    .join("|");
+  return id.replace(/\|/g, "") ? id : `#${i}`;
+}
+
+/** Хадгалахад автоматаар цэвэрлэгддэг/дүүргэгддэг талбарууд — өөрчлөлт биш */
+const AUTO_TALBAR = new Set([
+  "duureg", "horoo", "horoo.ner", "horoo.kod", "bairniiNer", "soh", "sohNer",
+  "source", "sukhBairshil",
+]);
+
+/**
+ * Объектын массив (Тоотууд г.м.) бол мөрүүдийг утгаар нь тааруулж зөвхөн
+ * нэмэгдсэн / хасагдсан / өөрчлөгдсөн хэсгийг буцаана. Массив биш бол null.
+ */
+export function massiviinUurchlult(umnukhRaw: unknown, shineRaw: unknown): MassiviinUurchlult | null {
+  const a = jsonZadlakh(umnukhRaw);
+  const b = jsonZadlakh(shineRaw);
+  const objMassiv = (v: unknown) =>
+    Array.isArray(v) && v.length > 0 && v.every((x) => x && typeof x === "object");
+  if (!(objMassiv(a) || objMassiv(b))) return null;
+  if ((a != null && !Array.isArray(a)) || (b != null && !Array.isArray(b))) return null;
+
+  const umnukh = new Map<string, Record<string, unknown>>();
+  ((a as Record<string, unknown>[]) || []).forEach((m, i) => umnukh.set(murTulkhuur(m, i), m));
+  const shine = new Map<string, Record<string, unknown>>();
+  ((b as Record<string, unknown>[]) || []).forEach((m, i) => shine.set(murTulkhuur(m, i), m));
+
+  const nemsen: string[] = [];
+  const khassan: string[] = [];
+  const uurchlugdsun: DedUurchlult[] = [];
+  shine.forEach((m, k) => {
+    if (!umnukh.has(k)) nemsen.push(murTovch(m));
+  });
+  umnukh.forEach((m, k) => {
+    const s2 = shine.get(k);
+    if (!s2) {
+      khassan.push(murTovch(m));
+      return;
+    }
+    const ded = dedUurchlultuud(m, s2) || [];
+    ded
+      // Автомат талбар хоосорсон бол засвар биш
+      .filter((d) => !(AUTO_TALBAR.has(d.zam) && d.shine === null))
+      .forEach((d) => uurchlugdsun.push({ ...d, label: `${murTovch(s2)} · ${d.label}` }));
+  });
+  return { nemsen, khassan, uurchlugdsun };
+}
+
 /* ------------------------------- утгууд ------------------------------- */
 
 const ISO_OGNOO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
