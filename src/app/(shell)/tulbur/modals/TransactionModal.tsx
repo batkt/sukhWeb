@@ -298,6 +298,8 @@ export default function TransactionModal({
   canAddDiscount = true,
 }: TransactionModalProps) {
   const [messageApi, contextHolder] = message.useMessage();
+  // React 19 дээр antd-ийн статик Modal.confirm харагддаггүй — hook хувилбар
+  const [modalApi, modalContextHolder] = Modal.useModal();
   const modalRef = React.useRef<HTMLDivElement>(null);
   const constraintsRef = React.useRef<HTMLDivElement>(null);
   const amountInputRef = React.useRef<HTMLInputElement>(null);
@@ -831,7 +833,7 @@ export default function TransactionModal({
       if (paymentAvailableBalance !== null && paymentAvailableBalance > 0 && paymentAmount > paymentAvailableBalance + 0.005) {
         const iluu = paymentAmount - paymentAvailableBalance;
         const zuvshuursun = await new Promise<boolean>((resolve) => {
-          Modal.confirm({
+          modalApi.confirm({
             title: "Илүү төлөлт бүртгэх үү?",
             content: `${paymentCategoryName} үлдэгдэл ${mungunDunFormat(paymentAvailableBalance)}₮. ${mungunDunFormat(iluu)}₮ илүү төлөлт болж, дараагийн нэхэмжлэхээс хасагдана.`,
             okText: "Бүртгэх",
@@ -919,6 +921,7 @@ export default function TransactionModal({
         <AnimatePresence>
           <div ref={constraintsRef} className="fixed inset-0 z-[12000]">
             {contextHolder}
+            {modalContextHolder}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
