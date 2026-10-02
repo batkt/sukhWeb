@@ -992,16 +992,6 @@ function MedegdelContent() {
                               : mur.utas}
                           </div>
                         </div>
-                        {/* Сонгосон сувгаар хүрэх боломжгүй бол анхааруулна */}
-                        {((turul === "App" && !hasApp(mur)) ||
-                          (turul === "Mail" && !hasEmail(mur))) && (
-                          <span
-                            className="shrink-0 rounded-full bg-warning/10 px-1.5 py-0.5 text-[11px] text-warning"
-                            title={turul === "App" ? "Утсанд push очихгүй — мэдэгдэл апп-ын «Мэдэгдэл» хэсэгт харагдана" : "И-мэйлгүй"}
-                          >
-                            {turul === "App" ? "Push-гүй" : "Мэйлгүй"}
-                          </span>
-                        )}
                       </motion.div>
                     );
                   })
