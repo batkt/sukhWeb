@@ -10,6 +10,7 @@ import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import SafeLottie from "@/components/ui/SafeLottie";
 import NuutsUgMartsan from "@/components/login/NuutsUgMartsan";
 import ӨнгөнийЗагварСонгох from "../../../components/ungu/unguSongokh";
+import packageInfo from "../../../package.json";
 
 /** Зүүн талд солигдох танилцуулга текстүүд. */
 const SLIDES: { title: string; text: string }[] = [
@@ -183,6 +184,16 @@ export default function LoginPage() {
           style={{ color: "var(--panel-text)" }}
         >
           Amarhome
+        </span>
+        <span
+          className="rounded-full px-2 py-0.5 text-[11px] font-mono font-medium border"
+          style={{
+            borderColor: "var(--surface-border)",
+            color: "var(--muted-text)",
+            background: "var(--surface-bg)",
+          }}
+        >
+          v{packageInfo.version}
         </span>
       </div>
 
@@ -439,7 +450,7 @@ export default function LoginPage() {
               className="text-center text-xs mt-6"
               style={{ color: "var(--muted-text)" }}
             >
-              ЗЭВТАБС © Хөгжүүлэв
+              ЗЭВТАБС © Хөгжүүлэв · v{packageInfo.version}
             </p>
           </div>
         </section>
