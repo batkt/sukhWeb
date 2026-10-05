@@ -9,6 +9,8 @@ import { message } from "antd";
 import { useAuth } from "@/lib/useAuth";
 import Button from "@/components/ui/Button";
 import { ModalPortal } from "../../../../../components/shell/ModalPortal";
+import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
+import FilterSelect from "@/components/ui/FilterSelect";
 
 interface InitialBalanceExcelModalProps {
   show: boolean;
@@ -35,6 +37,23 @@ export default function InitialBalanceExcelModal({
   );
   const [isUploading, setIsUploading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  // Эхний үлдэгдлийг аль ашиглалтын зардлаар бүртгэх («» = ерөнхий эхний үлдэгдэл)
+  const [zardal, setZardal] = useState<string>("");
+  const { zardluud } = useAshiglaltiinZardluud({
+    token: token || "",
+    baiguullagiinId,
+    barilgiinId,
+  });
+  const zardliinSongolt = [
+    { value: "", label: "Эхний үлдэгдэл (ерөнхий)" },
+    ...Array.from(
+      new Map(
+        (Array.isArray(zardluud) ? zardluud : [])
+          .filter((z) => z?.ner)
+          .map((z) => [String(z.ner), { value: String(z.ner), label: String(z.ner) }]),
+      ).values(),
+    ),
+  ];
 
   useModalHotkeys({
     isOpen: show,
@@ -81,6 +100,11 @@ export default function InitialBalanceExcelModal({
       formData.append("baiguullagiinId", baiguullagiinId);
       if (barilgiinId) formData.append("barilgiinId", barilgiinId);
       formData.append("ognoo", selectedDate);
+      if (zardal) {
+        const z = (Array.isArray(zardluud) ? zardluud : []).find((x) => x?.ner === zardal);
+        formData.append("zardliinNer", zardal);
+        if (z?.zardliinTurul || z?.turul) formData.append("zardliinTurul", String(z.zardliinTurul || z.turul));
+      }
 
       const response = await uilchilgee(token || "").post(
         "/importInitialBalanceFromExcel",
@@ -159,7 +183,7 @@ export default function InitialBalanceExcelModal({
               </Button>
             </div>
             <div className="flex flex-col gap-2 mb-8">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <input
                     type="date"
@@ -168,9 +192,21 @@ export default function InitialBalanceExcelModal({
                     className="px-4 py-2 border border-[color:var(--surface-border)] bg-transparent rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-theme/20"
                   />
                 </div>
+                {/* Ашиглалтын зардал сонгох — сонгосон бол Excel-ийн дүн тэр зардлаар бүртгэгдэнэ */}
+                <div className="min-w-0 flex-1 max-w-[240px]">
+                  <FilterSelect
+                    value={zardal}
+                    onChange={(v) => setZardal(String(v || ""))}
+                    options={zardliinSongolt}
+                    bugdLabel={null}
+                    allowClear={false}
+                  />
+                </div>
               </div>
               <p className="text-[11px] text-[color:var(--muted-text)] italic">
-                * Сонгосон огноогоор эхний үлдэгдэл бүртгэгдэнэ.
+                {zardal
+                  ? `* Сонгосон огноогоор «${zardal}» зардлаар эхний үлдэгдэл бүртгэгдэнэ.`
+                  : "* Сонгосон огноогоор эхний үлдэгдэл бүртгэгдэнэ."}
               </p>
             </div>
 
