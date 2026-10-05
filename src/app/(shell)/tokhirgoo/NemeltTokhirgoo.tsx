@@ -1223,6 +1223,15 @@ export default function NemeltTokhirgoo({
         "guestInvoiceEnabled",
         "guestLimit",
         "guestFreeMinutes",
+        // Харилцагчийнх нь ЭНД БАС байх ёстой — эс бөгөөс харилцагчийн
+        // утгыг өөрчлөхөд хадгалах мөр тоолохгүй, Хадгалах дарахад ч
+        // `saveGuestSettings` дуудагдахгүй өнгөрнө.
+        "khGuestEnabled",
+        "khGuestFrequencyType",
+        "khGuestFrequencyValue",
+        "khGuestInvoiceEnabled",
+        "khGuestLimit",
+        "khGuestFreeMinutes",
       ],
       khadgal: () => saveGuestSettings(),
     },
