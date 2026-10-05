@@ -406,10 +406,11 @@ export default function Camera() {
 
       const addPlate = (rawPlate: string) => {
         if (!rawPlate || rawPlate === "БҮРТГЭЛГҮЙ") return;
-        const clean = mashiniiDugaarTseverle(rawPlate);
-        const simple = String(rawPlate).replace(/\s/g, "").toUpperCase();
+        const stripped = String(rawPlate).replace(/^(blocked|блок)\s*/i, "").trim();
+        const clean = mashiniiDugaarTseverle(stripped);
+        const simple = stripped.replace(/\s/g, "").toUpperCase();
         const entry = {
-          mashiniiDugaar: rawPlate,
+          mashiniiDugaar: clean || stripped,
           ner,
           utas,
           toot,
@@ -817,10 +818,11 @@ export default function Camera() {
   const getLatestPlateForCamera = useCallback((ip: string) => {
     // 1. Check our live socket updates cache first (most real-time)
     if (latestPlatesRef.current[ip]) {
-      return latestPlatesRef.current[ip];
+      const stripped = String(latestPlatesRef.current[ip]).replace(/^(blocked|блок)\s*/i, "").trim();
+      return mashiniiDugaarTseverle(stripped) || stripped;
     }
 
-    // 2. Fallback: Search in active transactions from listData and liveUpdates
+    // 2. Fallback: Search in active transactions from listData and liveUpdates matching this camera IP
     let list: Uilchluulegch[] = [];
     if (Array.isArray(listData?.jagsaalt)) list = listData.jagsaalt;
     else if (Array.isArray(listData?.list)) list = listData.list;
@@ -851,12 +853,12 @@ export default function Camera() {
       });
 
     if (matchingTx.length > 0) {
-      return matchingTx[0].mashiniiDugaar || "";
+      const stripped = String(matchingTx[0].mashiniiDugaar || "").replace(/^(blocked|блок)\s*/i, "").trim();
+      return mashiniiDugaarTseverle(stripped) || stripped;
     }
 
-    // 3. Fallback to the general latest active car
-    const fallbackActive = listData?.jagsaalt?.find((t: any) => !t.tuukh?.[0]?.garsanKhaalga)?.mashiniiDugaar || "";
-    return fallbackActive;
+    // Do NOT fallback to random other gates
+    return "";
   }, [listData, liveUpdates]);
 
   const getVehicleInfoForCamera = useCallback(
@@ -865,11 +867,9 @@ export default function Camera() {
 
       // 1. Check real-time live event for this camera IP
       const liveEvt = liveCameraEvents[ip];
-      let plate = liveEvt?.mashiniiDugaar || latestPlatesRef.current[ip] || "";
-      let matchedTurul = liveEvt?.turul;
-      let matchingTx: any = null;
+      let rawPlate = liveEvt?.mashiniiDugaar || latestPlatesRef.current[ip] || "";
 
-      // 2. Fallback: Search in listData and liveUpdates
+      // 2. Search in listData and liveUpdates matching this camera IP
       let list: any[] = [];
       if (Array.isArray(listData?.jagsaalt)) list = listData.jagsaalt;
       else if (Array.isArray(listData?.list)) list = listData.list;
@@ -888,7 +888,7 @@ export default function Camera() {
 
       const allTx = Array.from(allTxMap.values());
 
-      // Filter transactions matching this specific camera IP
+      // Filter transactions matching this specific camera IP and type
       const ipMatches = allTx.filter((t: any) => {
         const lastTuukh = t.tuukh?.[0];
         if (cameraType === "entry") {
@@ -908,80 +908,33 @@ export default function Camera() {
         return timeB - timeA;
       });
 
-      if (ipMatches.length > 0) {
-        matchingTx = ipMatches[0];
-        if (!plate) {
-          plate = matchingTx.mashiniiDugaar || "";
-          matchedTurul = matchingTx.turul;
-        }
+      if (!rawPlate && ipMatches.length > 0) {
+        rawPlate = ipMatches[0].mashiniiDugaar || "";
       }
 
-      // If still no plate, check general latest active entry or exited
-      if (!plate) {
-        const generalFallback = allTx.find((t: any) => {
-          const lastTuukh = t.tuukh?.[0];
-          if (cameraType === "entry") {
-            return !lastTuukh?.garsanKhaalga && t.mashiniiDugaar;
-          } else {
-            return !!lastTuukh?.garsanKhaalga && t.mashiniiDugaar;
-          }
-        });
-        if (generalFallback) {
-          matchingTx = generalFallback;
-          plate = generalFallback.mashiniiDugaar || "";
-          matchedTurul = generalFallback.turul;
-        }
-      }
+      // DO NOT fallback to random transactions from other gates (strictly isolates entry and exit)
+      if (!rawPlate) return null;
 
-      if (!plate) return null;
+      // Strip "Blocked" prefix from plate
+      const strippedPlate = String(rawPlate).replace(/^(blocked|блок)\s*/i, "").trim();
+      const cleanPlate = mashiniiDugaarTseverle(strippedPlate);
+      const simplePlate = strippedPlate.replace(/\s/g, "").toUpperCase();
 
-      const cleanPlate = mashiniiDugaarTseverle(plate);
-      const simplePlate = String(plate).replace(/\s/g, "").toUpperCase();
       const reg =
         (cleanPlate ? registeredCarsMap.get(cleanPlate) : undefined) ||
         (simplePlate ? registeredCarsMap.get(simplePlate) : undefined);
 
-      const authorizedTuruls = [
-        "Оршин суугч",
-        "Ажилтан",
-        "Зочин",
-        "Түрээслэгч",
-        "СӨХ",
-        "Харилцагч",
-      ];
+      // Only registered if actually in registered cars map
+      const isRegistered = !!reg;
 
-      const isRegistered =
-        !!reg ||
-        (!!matchedTurul && authorizedTuruls.includes(matchedTurul)) ||
-        (!!matchingTx?.turul && authorizedTuruls.includes(matchingTx.turul));
-
-      const finalTurul =
-        reg?.turul ||
-        matchedTurul ||
-        matchingTx?.turul ||
-        (isRegistered ? "Оршин суугч" : "Үйлчлүүлэгч");
-
-      const ownerName =
-        reg?.ner ||
-        matchingTx?.orshinSuugchiinNer ||
-        matchingTx?.mashin?.ezemshigchiinNer ||
-        "";
-
-      const toot =
-        reg?.toot ||
-        matchingTx?.toot ||
-        matchingTx?.mashin?.ezenToot ||
-        "";
-
-      const phone =
-        reg?.utas ||
-        matchingTx?.mashin?.ezemshigchiinUtas ||
-        "";
-
+      const finalTurul = reg?.turul || (isRegistered ? "Оршин суугч" : "Үйлчлүүлэгч");
+      const ownerName = reg?.ner || "";
+      const toot = reg?.toot || "";
+      const phone = reg?.utas || "";
       const orts = reg?.orts || "";
 
       return {
-        plateNumber: plate,
+        plateNumber: cleanPlate || strippedPlate,
         isRegistered,
         type: finalTurul,
         ownerName,
@@ -1169,11 +1122,12 @@ export default function Camera() {
         )
           return;
         if (data.cameraIP && data.mashiniiDugaar) {
-          latestPlatesRef.current[data.cameraIP] = data.mashiniiDugaar;
+          const stripped = String(data.mashiniiDugaar).replace(/^(blocked|блок)\s*/i, "").trim();
+          latestPlatesRef.current[data.cameraIP] = stripped;
           setLiveCameraEvents((prev) => ({
             ...prev,
             [data.cameraIP]: {
-              mashiniiDugaar: data.mashiniiDugaar,
+              mashiniiDugaar: stripped,
               turul: data.turul,
               cameraIP: data.cameraIP,
               time: new Date().toISOString(),
@@ -1210,24 +1164,26 @@ export default function Camera() {
         // Cache recognized plate mapping
         const lastTuukh = data.tuukh?.[0];
         if (data.mashiniiDugaar) {
+          const stripped = String(data.mashiniiDugaar).replace(/^(blocked|блок)\s*/i, "").trim();
           if (lastTuukh?.garsanKhaalga) {
-            latestPlatesRef.current[lastTuukh.garsanKhaalga] = data.mashiniiDugaar;
+            // Exit update: ONLY update exit camera IP
+            latestPlatesRef.current[lastTuukh.garsanKhaalga] = stripped;
             setLiveCameraEvents((prev) => ({
               ...prev,
               [lastTuukh.garsanKhaalga]: {
-                mashiniiDugaar: data.mashiniiDugaar,
+                mashiniiDugaar: stripped,
                 turul: data.turul,
                 cameraIP: lastTuukh.garsanKhaalga,
                 time: new Date().toISOString(),
               },
             }));
-          }
-          if (lastTuukh?.orsonKhaalga) {
-            latestPlatesRef.current[lastTuukh.orsonKhaalga] = data.mashiniiDugaar;
+          } else if (lastTuukh?.orsonKhaalga) {
+            // Entry update: ONLY update entry camera IP
+            latestPlatesRef.current[lastTuukh.orsonKhaalga] = stripped;
             setLiveCameraEvents((prev) => ({
               ...prev,
               [lastTuukh.orsonKhaalga]: {
-                mashiniiDugaar: data.mashiniiDugaar,
+                mashiniiDugaar: stripped,
                 turul: data.turul,
                 cameraIP: lastTuukh.orsonKhaalga,
                 time: new Date().toISOString(),
@@ -1264,11 +1220,12 @@ export default function Camera() {
         return;
 
       if (data.cameraIP && data.mashiniiDugaar) {
-        latestPlatesRef.current[data.cameraIP] = data.mashiniiDugaar;
+        const stripped = String(data.mashiniiDugaar).replace(/^(blocked|блок)\s*/i, "").trim();
+        latestPlatesRef.current[data.cameraIP] = stripped;
         setLiveCameraEvents((prev) => ({
           ...prev,
           [data.cameraIP]: {
-            mashiniiDugaar: data.mashiniiDugaar,
+            mashiniiDugaar: stripped,
             turul: data.turul,
             cameraIP: data.cameraIP,
             time: new Date().toISOString(),
@@ -1316,11 +1273,12 @@ export default function Camera() {
 
       const exitIP = u.tuukh?.[0]?.garsanKhaalga;
       if (exitIP && u.mashiniiDugaar) {
-        latestPlatesRef.current[exitIP] = u.mashiniiDugaar;
+        const stripped = String(u.mashiniiDugaar).replace(/^(blocked|блок)\s*/i, "").trim();
+        latestPlatesRef.current[exitIP] = stripped;
         setLiveCameraEvents((prev) => ({
           ...prev,
           [exitIP]: {
-            mashiniiDugaar: u.mashiniiDugaar,
+            mashiniiDugaar: stripped,
             turul: u.turul,
             cameraIP: exitIP,
             time: new Date().toISOString(),
@@ -1342,7 +1300,6 @@ export default function Camera() {
       }
       if (niit < 0) niit = 0;
 
-
       if (u?.turul === "Үнэгүй" || niit === 0) {
         if (u?.tuukh?.[0]?.garsanKhaalga) {
           khaalgaNeey(u.tuukh[0].garsanKhaalga);
@@ -1360,11 +1317,12 @@ export default function Camera() {
       )
         return;
       if (data.cameraIP && data.mashiniiDugaar) {
-        latestPlatesRef.current[data.cameraIP] = data.mashiniiDugaar;
+        const stripped = String(data.mashiniiDugaar).replace(/^(blocked|блок)\s*/i, "").trim();
+        latestPlatesRef.current[data.cameraIP] = stripped;
         setLiveCameraEvents((prev) => ({
           ...prev,
           [data.cameraIP]: {
-            mashiniiDugaar: data.mashiniiDugaar,
+            mashiniiDugaar: stripped,
             turul: data.turul,
             cameraIP: data.cameraIP,
             time: new Date().toISOString(),
