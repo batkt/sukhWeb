@@ -861,91 +861,6 @@ export default function Camera() {
     return "";
   }, [listData, liveUpdates]);
 
-  const getVehicleInfoForCamera = useCallback(
-    (ip: string, cameraType: "entry" | "exit") => {
-      if (!ip) return null;
-
-      // 1. Check real-time live event for this camera IP
-      const liveEvt = liveCameraEvents[ip];
-      let rawPlate = liveEvt?.mashiniiDugaar || latestPlatesRef.current[ip] || "";
-
-      // 2. Search in listData and liveUpdates matching this camera IP
-      let list: any[] = [];
-      if (Array.isArray(listData?.jagsaalt)) list = listData.jagsaalt;
-      else if (Array.isArray(listData?.list)) list = listData.list;
-      else if (Array.isArray(listData?.data)) list = listData.data;
-      else if (Array.isArray(listData)) list = listData;
-
-      const allTxMap = new Map<string, any>();
-      list.forEach((item, index) => {
-        const key = item._id || `list_${index}_${item.mashiniiDugaar || "unknown"}`;
-        allTxMap.set(key, item);
-      });
-      Object.values(liveUpdates).forEach((update: any) => {
-        const key = update._id || update.mashiniiDugaar;
-        if (key) allTxMap.set(key, update);
-      });
-
-      const allTx = Array.from(allTxMap.values());
-
-      // Filter transactions matching this specific camera IP and type
-      const ipMatches = allTx.filter((t: any) => {
-        const lastTuukh = t.tuukh?.[0];
-        if (cameraType === "entry") {
-          return lastTuukh?.orsonKhaalga === ip;
-        } else {
-          return lastTuukh?.garsanKhaalga === ip;
-        }
-      });
-
-      ipMatches.sort((a: any, b: any) => {
-        const timeA = new Date(
-          a.createdAt || a.tuukh?.[0]?.tsagiinTuukh?.[0]?.orsonTsag || 0,
-        ).getTime();
-        const timeB = new Date(
-          b.createdAt || b.tuukh?.[0]?.tsagiinTuukh?.[0]?.orsonTsag || 0,
-        ).getTime();
-        return timeB - timeA;
-      });
-
-      if (!rawPlate && ipMatches.length > 0) {
-        rawPlate = ipMatches[0].mashiniiDugaar || "";
-      }
-
-      // DO NOT fallback to random transactions from other gates (strictly isolates entry and exit)
-      if (!rawPlate) return null;
-
-      // Strip "Blocked" prefix from plate
-      const strippedPlate = String(rawPlate).replace(/^(blocked|блок)\s*/i, "").trim();
-      const cleanPlate = mashiniiDugaarTseverle(strippedPlate);
-      const simplePlate = strippedPlate.replace(/\s/g, "").toUpperCase();
-
-      const reg =
-        (cleanPlate ? registeredCarsMap.get(cleanPlate) : undefined) ||
-        (simplePlate ? registeredCarsMap.get(simplePlate) : undefined);
-
-      // Only registered if actually in registered cars map
-      const isRegistered = !!reg;
-
-      const finalTurul = reg?.turul || (isRegistered ? "Оршин суугч" : "Үйлчлүүлэгч");
-      const ownerName = reg?.ner || "";
-      const toot = reg?.toot || "";
-      const phone = reg?.utas || "";
-      const orts = reg?.orts || "";
-
-      return {
-        plateNumber: cleanPlate || strippedPlate,
-        isRegistered,
-        type: finalTurul,
-        ownerName,
-        toot,
-        phone,
-        orts,
-        mashiniiToo: reg?.mashiniiToo,
-      };
-    },
-    [liveCameraEvents, listData, liveUpdates, registeredCarsMap],
-  );
 
   const khaalgaNeey = useCallback(
     (ip: string) => {
@@ -2312,7 +2227,6 @@ export default function Camera() {
                           onOpenGate={khaalgaNeey}
                           barilgiinId={camera.parkBarilgiinId || effectiveBarilgiinId}
                           token={token || undefined}
-                          vehicleInfo={getVehicleInfoForCamera(camera.cameraIP, "entry")}
                         />
                       </div>
                     ))}
@@ -2397,7 +2311,6 @@ export default function Camera() {
                           onOpenGate={khaalgaNeey}
                           barilgiinId={camera.parkBarilgiinId || effectiveBarilgiinId}
                           token={token || undefined}
-                          vehicleInfo={getVehicleInfoForCamera(camera.cameraIP, "exit")}
                         />
                       </div>
                     ))}
@@ -3466,7 +3379,6 @@ const CameraStream = React.memo(
     onOpenGate,
     barilgiinId,
     token,
-    vehicleInfo,
   }: {
     ip: string;
     port: number;
@@ -3479,16 +3391,6 @@ const CameraStream = React.memo(
     onOpenGate?: (ip: string) => void;
     barilgiinId?: string;
     token?: string;
-    vehicleInfo?: {
-      plateNumber: string;
-      isRegistered: boolean;
-      type: string;
-      ownerName?: string;
-      toot?: string;
-      phone?: string;
-      orts?: string;
-      mashiniiToo?: number;
-    } | null;
   }) => {
     const [error, setError] = useState(false);
     const [connectionState, setConnectionState] = useState<string>("");
@@ -3681,93 +3583,6 @@ const CameraStream = React.memo(
           </button>
         </div>
 
-        {/* Vehicle Detection Overlay Banner */}
-        {vehicleInfo && vehicleInfo.plateNumber && (
-          <div className="absolute bottom-3 left-[106px] z-40 max-w-[calc(100%-114px)] pointer-events-auto">
-            <div
-              className={`
-                flex items-center flex-wrap gap-2 px-3.5 py-1.5 rounded-full
-                text-[12px] font-medium
-                backdrop-blur-xl border
-                shadow-2xl transition-all duration-500
-                animate-in fade-in slide-in-from-bottom-2
-                ${
-                  vehicleInfo.isRegistered
-                    ? "bg-emerald-950/90 border-emerald-500/60 text-emerald-100 shadow-[0_0_20px_rgba(16,185,129,0.35)]"
-                    : "bg-rose-950/90 border-rose-500/60 text-rose-100 shadow-[0_0_20px_rgba(244,63,94,0.35)]"
-                }
-              `}
-            >
-              {/* Pulse status indicator */}
-              <div className="relative flex items-center justify-center shrink-0">
-                <span
-                  className={`absolute w-3.5 h-3.5 rounded-full animate-ping opacity-75 ${
-                    vehicleInfo.isRegistered ? "bg-emerald-400" : "bg-rose-400"
-                  }`}
-                />
-                <span
-                  className={`relative w-2 h-2 rounded-full ${
-                    vehicleInfo.isRegistered
-                      ? "bg-emerald-400 shadow-[0_0_10px_#10b981]"
-                      : "bg-rose-400 shadow-[0_0_10px_#f43f5e]"
-                  }`}
-                />
-              </div>
-
-              {/* Status & Plate Number */}
-              <div className="flex items-center gap-1.5 font-bold tracking-wide">
-                <span
-                  className={`text-[12px] uppercase ${
-                    vehicleInfo.isRegistered ? "text-emerald-300 font-semibold" : "text-rose-300 font-semibold"
-                  }`}
-                >
-                  {vehicleInfo.isRegistered ? "Бүртгэлтэй" : "Бүртгэлгүй"} :
-                </span>
-                <span className="font-mono text-white text-[13px] bg-black/60 px-2 py-0.5 rounded border border-white/15 tracking-wider font-extrabold shadow-inner">
-                  {vehicleInfo.plateNumber}
-                </span>
-              </div>
-
-              {/* Vehicle Type Pill */}
-              <span
-                className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider border ${
-                  vehicleInfo.isRegistered
-                    ? "bg-emerald-500/25 text-emerald-200 border-emerald-400/40"
-                    : "bg-rose-500/25 text-rose-200 border-rose-400/40"
-                }`}
-              >
-                {vehicleInfo.type || (vehicleInfo.isRegistered ? "Оршин суугч" : "Үйлчлүүлэгч")}
-              </span>
-
-              {/* Resident / Owner Metadata if registered */}
-              {vehicleInfo.isRegistered &&
-                (vehicleInfo.ownerName || vehicleInfo.toot || vehicleInfo.phone) && (
-                  <div className="flex items-center gap-1.5 text-[11px] text-white/90 pl-1.5 border-l border-white/20">
-                    {vehicleInfo.ownerName && (
-                      <span className="font-semibold text-white truncate max-w-[120px]">
-                        {vehicleInfo.ownerName}
-                      </span>
-                    )}
-                    {vehicleInfo.toot && (
-                      <span className="text-white/80 bg-white/10 px-1.5 py-0.5 rounded text-[10px]">
-                        {vehicleInfo.toot}
-                      </span>
-                    )}
-                    {vehicleInfo.orts && (
-                      <span className="text-white/70 text-[10px]">
-                        {vehicleInfo.orts}-р орц
-                      </span>
-                    )}
-                    {vehicleInfo.phone && (
-                      <span className="text-white/60 font-mono text-[10px] hidden md:inline">
-                        {vehicleInfo.phone}
-                      </span>
-                    )}
-                  </div>
-                )}
-            </div>
-          </div>
-        )}
 
         {/* Fullscreen Button */}
         <button
