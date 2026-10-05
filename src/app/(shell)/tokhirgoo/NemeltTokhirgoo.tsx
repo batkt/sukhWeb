@@ -99,6 +99,17 @@ export default function NemeltTokhirgoo({
 
   // Guest settings states
   const [guestConfigEnabled, setGuestConfigEnabled] = useState<boolean>(false);
+
+  // Зочны тохиргоо нь ЭЗЭМШИГЧИЙН ТӨРЛӨӨР салсан: оршин суугч, харилцагч
+  // хоёр өөр тооны зочин урьдаг. Дэлгэц дээр нэг л багц талбар байх ба
+  // доорх сонголт нь аль багцыг засаж байгааг шийднэ.
+  const [zochinKharagch, setZochinKharagch] = useState<"orshinSuugch" | "khariltsagch">("orshinSuugch");
+  const [khGuestEnabled, setKhGuestEnabled] = useState<boolean>(false);
+  const [khGuestLimit, setKhGuestLimit] = useState<number | string>("");
+  const [khGuestFreeMinutes, setKhGuestFreeMinutes] = useState<number | string>("");
+  const [khGuestInvoiceEnabled, setKhGuestInvoiceEnabled] = useState<boolean>(false);
+  const [khGuestFrequencyType, setKhGuestFrequencyType] = useState<string>("saraar");
+  const [khGuestFrequencyValue, setKhGuestFrequencyValue] = useState<number | string>("");
   const [guestNotes, setGuestNotes] = useState<any[]>([]);
   const [guestLimit, setGuestLimit] = useState<number | string>("");
   const [guestFreeMinutes, setGuestFreeMinutes] = useState<number | string>("");
@@ -462,6 +473,26 @@ export default function NemeltTokhirgoo({
       ),
     );
     setGuestInvoiceEnabled(find("zochinNekhemjlekhEsekh", false) === true);
+
+    // Харилцагчийнх: тусад нь тохируулаагүй талбар нь оршин суугчийнхаар
+    // харагдана — backend ч яг ийм нөхөлт хийдэг
+    // (`utils/zochinTokhirgoo.js`), тул дэлгэц үнэнийг харуулна.
+    const kh = (find("khariltsagch", null) || {}) as Record<string, any>;
+    const khFind = (talbar: string, suuri: any) =>
+      kh[talbar] !== undefined && kh[talbar] !== null && kh[talbar] !== ""
+        ? kh[talbar]
+        : suuri;
+
+    setKhGuestEnabled(!!khFind("zochinUrikhEsekh", isEnabled));
+    setKhGuestLimit(khFind("zochinErkhiinToo", find("zochinErkhiinToo", "")));
+    setKhGuestFreeMinutes(
+      khFind("zochinTusBurUneguiMinut", find("zochinTusBurUneguiMinut", "")),
+    );
+    setKhGuestInvoiceEnabled(
+      khFind("zochinNekhemjlekhEsekh", find("zochinNekhemjlekhEsekh", false)) === true,
+    );
+    setKhGuestFrequencyType(khFind("davtamjiinTurul", find("davtamjiinTurul", "saraar")));
+    setKhGuestFrequencyValue(khFind("davtamjUtga", find("davtamjUtga", "")));
     setGuestNote(find("zochinTailbar", ""));
     setGuestFrequencyType(find("davtamjiinTurul", "saraar"));
     setGuestFrequencyValue(find("davtamjUtga", ""));
@@ -588,7 +619,13 @@ export default function NemeltTokhirgoo({
 
   const saveGuestSettings = async (overrideEnabled?: boolean) => {
     const isOverrideBool = typeof overrideEnabled === "boolean";
-    const isEnabled = isOverrideBool ? overrideEnabled : !!guestConfigEnabled;
+    // Унтраах/асаах нь ЗӨВХӨН сонгогдсон төрөлд үйлчилнэ — харилцагчийг
+    // унтраахад оршин суугчийнх асаалттайгаа үлдэнэ, ба эсрэгээрээ.
+    const khSongoson = zochinKharagch === "khariltsagch";
+    const isEnabled =
+      isOverrideBool && !khSongoson ? overrideEnabled : !!guestConfigEnabled;
+    const khEnabled =
+      isOverrideBool && khSongoson ? overrideEnabled : !!khGuestEnabled;
 
     await zochinTokhirgooKhadgalya({
       zochinUrikhEsekh: isEnabled,
@@ -599,6 +636,16 @@ export default function NemeltTokhirgoo({
       zochinTailbar: guestNote || "",
       davtamjiinTurul: guestFrequencyType,
       davtamjUtga: Number(guestFrequencyValue) || null,
+      // Харилцагчийнхыг ҮРГЭЛЖ хамт бичнэ — аль таб нээлттэй байхаас
+      // үл хамаарч хоёр багц хоёулаа хадгалагдана.
+      khariltsagch: {
+        zochinUrikhEsekh: khEnabled,
+        zochinErkhiinToo: Number(khGuestLimit) || 0,
+        zochinTusBurUneguiMinut: Number(khGuestFreeMinutes) || 0,
+        zochinNekhemjlekhEsekh: !!khGuestInvoiceEnabled,
+        davtamjiinTurul: khGuestFrequencyType,
+        davtamjUtga: Number(khGuestFrequencyValue) || null,
+      },
     });
   };
 
@@ -1110,6 +1157,12 @@ export default function NemeltTokhirgoo({
     guestInvoiceEnabled,
     guestLimit: too(guestLimit),
     guestFreeMinutes: too(guestFreeMinutes),
+    khGuestEnabled,
+    khGuestFrequencyType,
+    khGuestFrequencyValue: too(khGuestFrequencyValue),
+    khGuestInvoiceEnabled,
+    khGuestLimit: too(khGuestLimit),
+    khGuestFreeMinutes: too(khGuestFreeMinutes),
     liftEnabled,
     liftBulkInput: parseBulk(liftBulkInput || "").join(","),
     gerBuliinGishuunEnabled,
@@ -1257,6 +1310,12 @@ export default function NemeltTokhirgoo({
       setGuestInvoiceEnabled(v("guestInvoiceEnabled"));
       setGuestLimit(v("guestLimit"));
       setGuestFreeMinutes(v("guestFreeMinutes"));
+      setKhGuestEnabled(v("khGuestEnabled"));
+      setKhGuestFrequencyType(v("khGuestFrequencyType"));
+      setKhGuestFrequencyValue(v("khGuestFrequencyValue") || "");
+      setKhGuestInvoiceEnabled(v("khGuestInvoiceEnabled"));
+      setKhGuestLimit(v("khGuestLimit"));
+      setKhGuestFreeMinutes(v("khGuestFreeMinutes"));
       setGerBuliinGishuunEnabled(v("gerBuliinGishuunEnabled"));
     }
   };
@@ -1264,9 +1323,35 @@ export default function NemeltTokhirgoo({
   const toogoor = (setter: (v: number | string) => void) => (val: number | string) =>
     setter(val !== "" ? val : "");
 
-  const zochniiKhuraangui = guestConfigEnabled
-    ? `${DAVTAMJ_NER[guestFrequencyType] || ""} ${too(guestLimit)} зочин, тус бүр ${too(guestFreeMinutes)} минут үнэгүй`
-    : "Оршин суугч зочин урих боломжгүй.";
+  // Зочны квот нь эзэмшигчийн ТӨРЛӨӨР салсан. Дэлгэц дээр ганц багц
+  // талбар байх ба доорх сонголт аль багцыг засахыг шийднэ; хоёул санах
+  // ойд зэрэг байж, хадгалахад хамт явна.
+  const zochinKhEsekh = zochinKharagch === "khariltsagch";
+  const zEnabled = zochinKhEsekh ? khGuestEnabled : guestConfigEnabled;
+  const setZEnabled = zochinKhEsekh ? setKhGuestEnabled : setGuestConfigEnabled;
+  const zLimit = zochinKhEsekh ? khGuestLimit : guestLimit;
+  const setZLimit = zochinKhEsekh ? setKhGuestLimit : setGuestLimit;
+  const zFreeMinutes = zochinKhEsekh ? khGuestFreeMinutes : guestFreeMinutes;
+  const setZFreeMinutes = zochinKhEsekh
+    ? setKhGuestFreeMinutes
+    : setGuestFreeMinutes;
+  const zInvoice = zochinKhEsekh ? khGuestInvoiceEnabled : guestInvoiceEnabled;
+  const setZInvoice = zochinKhEsekh
+    ? setKhGuestInvoiceEnabled
+    : setGuestInvoiceEnabled;
+  const zFreqType = zochinKhEsekh ? khGuestFrequencyType : guestFrequencyType;
+  const setZFreqType = zochinKhEsekh
+    ? setKhGuestFrequencyType
+    : setGuestFrequencyType;
+  const zFreqValue = zochinKhEsekh ? khGuestFrequencyValue : guestFrequencyValue;
+  const setZFreqValue = zochinKhEsekh
+    ? setKhGuestFrequencyValue
+    : setGuestFrequencyValue;
+  const zEzenNer = zochinKhEsekh ? "Харилцагч" : "Оршин суугч";
+
+  const zochniiKhuraangui = zEnabled
+    ? `${zEzenNer}: ${DAVTAMJ_NER[zFreqType] || ""} ${too(zLimit)} зочин, тус бүр ${too(zFreeMinutes)} минут үнэгүй`
+    : `${zEzenNer} зочин урих боломжгүй.`;
 
   return (
     <div id="nemelt-panel" className="w-full">
@@ -1611,18 +1696,33 @@ export default function NemeltTokhirgoo({
               desc={zochniiKhuraangui}
               control={
                 <Switch
-                  checked={guestConfigEnabled}
-                  onChange={(e) => setGuestConfigEnabled(e.currentTarget.checked)}
+                  checked={zEnabled}
+                  onChange={(e) => setZEnabled(e.currentTarget.checked)}
                   label="Зочин урих эрх"
                 />
               }
             >
-              {guestConfigEnabled ? (
+              {zEnabled ? (
                 <div className="stg-grid">
+                  <SettingsField label="Хэнд хамаарах">
+                    <select
+                      value={zochinKharagch}
+                      onChange={(e) =>
+                        setZochinKharagch(
+                          e.target.value as "orshinSuugch" | "khariltsagch",
+                        )
+                      }
+                      className="stg-select"
+                    >
+                      <option value="orshinSuugch">Оршин суугч</option>
+                      <option value="khariltsagch">Харилцагч</option>
+                    </select>
+                  </SettingsField>
+
                   <SettingsField label="Эрх шинэчлэгдэх">
                     <select
-                      value={guestFrequencyType}
-                      onChange={(e) => setGuestFrequencyType(e.target.value)}
+                      value={zFreqType}
+                      onChange={(e) => setZFreqType(e.target.value)}
                       className="stg-select"
                     >
                       {Object.entries(DAVTAMJ_NER).map(([utga, ner]) => (
@@ -1633,16 +1733,16 @@ export default function NemeltTokhirgoo({
                     </select>
                   </SettingsField>
 
-                  {guestFrequencyType === "saraar" || guestFrequencyType === "jileer" ? (
+                  {zFreqType === "saraar" || zFreqType === "jileer" ? (
                     <SettingsField
-                      label={guestFrequencyType === "saraar" ? "Хэдний өдөр" : "Хэддүгээр сар"}
+                      label={zFreqType === "saraar" ? "Хэдний өдөр" : "Хэддүгээр сар"}
                     >
                       <MNumberInput
-                        value={guestFrequencyValue === "" ? undefined : Number(guestFrequencyValue)}
-                        onChange={toogoor(setGuestFrequencyValue)}
-                        placeholder={guestFrequencyType === "saraar" ? "1-31" : "1-12"}
+                        value={zFreqValue === "" ? undefined : Number(zFreqValue)}
+                        onChange={toogoor(setZFreqValue)}
+                        placeholder={zFreqType === "saraar" ? "1-31" : "1-12"}
                         min={1}
-                        max={guestFrequencyType === "saraar" ? 31 : 12}
+                        max={zFreqType === "saraar" ? 31 : 12}
                         size="sm"
                         className="w-full"
                       />
@@ -1651,8 +1751,8 @@ export default function NemeltTokhirgoo({
 
                   <SettingsField label="Зочны тоо">
                     <MNumberInput
-                      value={guestLimit === "" ? undefined : Number(guestLimit)}
-                      onChange={toogoor(setGuestLimit)}
+                      value={zLimit === "" ? undefined : Number(zLimit)}
+                      onChange={toogoor(setZLimit)}
                       placeholder="0"
                       min={0}
                       size="sm"
@@ -1662,8 +1762,8 @@ export default function NemeltTokhirgoo({
 
                   <SettingsField label="Үнэгүй минут (зочин бүрт)">
                     <MNumberInput
-                      value={guestFreeMinutes === "" ? undefined : Number(guestFreeMinutes)}
-                      onChange={toogoor(setGuestFreeMinutes)}
+                      value={zFreeMinutes === "" ? undefined : Number(zFreeMinutes)}
+                      onChange={toogoor(setZFreeMinutes)}
                       placeholder="0"
                       min={0}
                       size="sm"
@@ -1674,11 +1774,11 @@ export default function NemeltTokhirgoo({
                   <SettingsField label="Илүү хугацааны төлбөр">
                     <div className="stg-subrow">
                       <span className="stg-subrow-text">
-                        {guestInvoiceEnabled ? "Оршин суугч төлж болно" : "Зочин өөрөө төлнө"}
+                        {zInvoice ? `${zEzenNer} төлж болно` : "Зочин өөрөө төлнө"}
                       </span>
                       <Switch
-                        checked={guestInvoiceEnabled}
-                        onChange={(e) => setGuestInvoiceEnabled(e.currentTarget.checked)}
+                        checked={zInvoice}
+                        onChange={(e) => setZInvoice(e.currentTarget.checked)}
                         label="Оршин суугчийн нэхэмжлэхэд нэмэх"
                         size="sm"
                       />
@@ -1748,6 +1848,12 @@ const TOKHIRGOONII_BULEG: Record<string, string[]> = {
     "guestInvoiceEnabled",
     "guestLimit",
     "guestFreeMinutes",
+    "khGuestEnabled",
+    "khGuestFrequencyType",
+    "khGuestFrequencyValue",
+    "khGuestInvoiceEnabled",
+    "khGuestLimit",
+    "khGuestFreeMinutes",
     "gerBuliinGishuunEnabled",
   ],
 };
