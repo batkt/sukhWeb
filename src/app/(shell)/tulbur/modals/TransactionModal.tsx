@@ -376,7 +376,8 @@ export default function TransactionModal({
   const paymentAvailableBalance = paymentCategoryBalances?.[paymentCategoryName] ?? null;
 
   // «Бүгдийг төлөх» — бүх ангиллын үлдэгдлийг нэг дор, ангилал бүрт тусад нь
-  const [bugdiigTulukh, setBugdiigTulukh] = useState(false);
+  // Анхдагчаар бүгдийг төлнө; «Тус бүрээр төлөх» чагтлахад ангилал сонгоно
+  const [bugdiigTulukh, setBugdiigTulukh] = useState(true);
   const tulukhAngilluud = (
     paymentCategoryBalances
       ? (Object.entries(paymentCategoryBalances) as [PaymentCategory, number][])
@@ -384,13 +385,18 @@ export default function TransactionModal({
   ).filter(([, v]) => v > 0.005);
   const bugdiinDun =
     Math.round(tulukhAngilluud.reduce((a, [, v]) => a + v, 0) * 100) / 100;
+  const bugdNegDor =
+    transactionType === "tulult" && bugdiigTulukh && tulukhAngilluud.length > 0;
   React.useEffect(() => {
-    if (transactionType !== "tulult") setBugdiigTulukh(false);
+    setBugdiigTulukh(true);
   }, [transactionType]);
+  const umnukhBugdNegDor = React.useRef(bugdNegDor);
   React.useEffect(() => {
-    if (bugdiigTulukh) setAmount(formatAmount(bugdiinDun));
+    if (bugdNegDor) setAmount(formatAmount(bugdiinDun));
+    else if (umnukhBugdNegDor.current) setAmount("");
+    umnukhBugdNegDor.current = bugdNegDor;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bugdiigTulukh, bugdiinDun]);
+  }, [bugdNegDor, bugdiinDun]);
 
   const formatAmount = (val: number | string): string => {
     const clean = String(val).replace(/,/g, "");
@@ -485,7 +491,7 @@ export default function TransactionModal({
     setKhungulultAldaa({});
     setAvlagiinAngilal("engiin");
     setAvlagiinToot("");
-    setBugdiigTulukh(false);
+    setBugdiigTulukh(true);
   };
 
   const handleClose = () => {
@@ -841,7 +847,7 @@ export default function TransactionModal({
 
     // Бүгдийг төлөх: ангилал бүрийн яг үлдэгдлээр тус тусад нь төлөлт бүртгэнэ —
     // ингэснээр ангилал бүр 0 болж, нэргүй төлөлт ангиллын хооронд шилжихгүй.
-    if (transactionType === "tulult" && bugdiigTulukh) {
+    if (bugdNegDor) {
       if (tulukhAngilluud.length === 0) {
         messageApi.warning("Төлөх үлдэгдэл алга.");
         return;
@@ -1176,7 +1182,7 @@ export default function TransactionModal({
                       <label className="block text-[11px] font-semibold uppercase tracking-wide text-[color:var(--muted-text)]">
                         {transactionType === "tulult" ? "Төлөх авлагын төрөл / Тоот" : "Авлагын төрөл / Тоот"}
                       </label>
-                      <div className={bugdiigTulukh ? "pointer-events-none opacity-50" : undefined}>
+                      {!bugdNegDor && (
                       <FilterSelect
                         value={currentValue}
                         onChange={(val) => {
@@ -1195,23 +1201,18 @@ export default function TransactionModal({
                         placeholder="Сонгох..."
                         className="w-full"
                       />
-                      </div>
+                      )}
 
                       {transactionType === "tulult" && tulukhAngilluud.length > 0 && (
                         <label className="mt-1 flex cursor-pointer items-center gap-2 rounded-xl bg-[color:var(--surface-hover)] px-3 py-2 text-[13px] text-[color:var(--panel-text)]">
                           <input
                             type="checkbox"
-                            checked={bugdiigTulukh}
-                            onChange={(e) => setBugdiigTulukh(e.target.checked)}
+                            checked={!bugdiigTulukh}
+                            onChange={(e) => setBugdiigTulukh(!e.target.checked)}
                             disabled={isProcessing}
                             className="h-4 w-4 accent-[color:var(--theme)]"
                           />
-                          <span className="flex-1">Бүгдийг төлөх</span>
-                          <span className="tabular-nums text-[color:var(--muted-text)]">
-                            {tulukhAngilluud
-                              .map(([n, v]) => `${n === "Зогсоол" ? "Гараж" : n} ${mungunDunFormat(v)}`)
-                              .join(" + ")}
-                          </span>
+                          <span className="flex-1">Тус бүрээр төлөх</span>
                         </label>
                       )}
                       {transactionType === "tulult" && !isFetchingPaymentCategories && paymentCategoryBalances && visibleOptions.length === 0 && (
@@ -1499,7 +1500,7 @@ export default function TransactionModal({
                         <label className="block text-xs text-[color:var(--panel-text)]">
                           Дүн
                         </label>
-                        {transactionType === "tulult" && (
+                        {transactionType === "tulult" && !bugdNegDor && (
                             <motion.div
                               initial={{ opacity: 0, x: 5 }}
                               animate={{ opacity: 1, x: 0 }}
@@ -1534,7 +1535,7 @@ export default function TransactionModal({
                               setAmount(formatAmount(amount));
                             }
                           }}
-                          disabled={isProcessing || bugdiigTulukh}
+                          disabled={isProcessing || bugdNegDor}
                           placeholder="0.00"
                           className="w-full px-3 py-2.5 pr-[38px] border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-right tracking-wide text-lg font-medium"
                         />
