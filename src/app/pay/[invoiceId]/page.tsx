@@ -167,7 +167,20 @@ export default function PaymentLandingPage() {
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-center p-4 font-sans selection:bg-theme/30 text-[color:var(--muted-text)] relative overflow-x-hidden overflow-y-auto"
-      style={{ background: "radial-gradient(circle at top right, #1e1b4b 0%, #09090b 100%)" }}
+      style={
+        {
+          background: "radial-gradient(circle at top right, #1e1b4b 0%, #09090b 100%)",
+          // Нийтэд нээлттэй төлбөрийн хуудас — админы СЭДВЭЭС ҮЛ ХАМААРНА.
+          //
+          // Энэ хуудас бараан загвартай (`text-white`, `border-white/5`) ч
+          // `--panel` нь цайвар горимд бараг цагаан (#f5faf7) болдог тул
+          // карт цагаан дээр цагаан бичигтэй болж УНШИГДАХГҮЙ байв.
+          // Оршин суугч сэдэв сонгодоггүй тул энд бараан өнгийг ТОГТООНО.
+          "--panel": "var(--dark-panel)",
+          "--panel-text": "var(--dark-text)",
+          "--muted-text": "var(--dark-muted)",
+        } as React.CSSProperties
+      }
     >
       {/* Dynamic background glow shapes (only rendered on desktop to avoid mobile rendering lag) */}
       <span className="hidden sm:block pointer-events-none absolute -top-48 -left-48 w-96 h-96 rounded-full bg-theme/10 blur-[100px]" />
