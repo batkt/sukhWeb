@@ -40,6 +40,19 @@ interface FilterSelectProps {
   id?: string;
 }
 
+/**
+ * Жагсаалтын байрлал — талбараас нарийхан бол ч уншигдахуйц өргөнтэй, баруун
+ * захад байгаа талбарын жагсаалт дэлгэцнээс гарахгүй (баруун ирмэгээр нь
+ * тэгшилнэ).
+ */
+function bairlalBodokh(r: DOMRect) {
+  const zai = 8;
+  const width = Math.min(Math.max(r.width, 240), window.innerWidth - zai * 2);
+  let left = r.left;
+  if (left + width > window.innerWidth - zai) left = Math.max(zai, r.right - width);
+  return { top: r.bottom + 6, left, width };
+}
+
 export default function FilterSelect({
   label = "",
   value,
@@ -79,9 +92,7 @@ export default function FilterSelect({
   };
   useLayoutEffect(() => {
     if (!neelttei || !triggerRef.current) return;
-    const r = triggerRef.current.getBoundingClientRect();
-    // Жагсаалт талбартайгаа ижил өргөнтэй — «сунах» мэт харагдахгүй
-    setBairlal({ top: r.bottom + 6, left: r.left, width: Math.max(r.width, 200) });
+    setBairlal(bairlalBodokh(triggerRef.current.getBoundingClientRect()));
   }, [neelttei]);
 
   useEffect(() => {
@@ -99,8 +110,7 @@ export default function FilterSelect({
       const t = e.target as Node;
       if (popoverRef.current?.contains(t) || triggerRef.current?.contains(t)) return;
       if (triggerRef.current) {
-        const r = triggerRef.current.getBoundingClientRect();
-        setBairlal({ top: r.bottom + 6, left: r.left, width: Math.max(r.width, 200) });
+        setBairlal(bairlalBodokh(triggerRef.current.getBoundingClientRect()));
       }
     };
     document.addEventListener("mousedown", onDown);

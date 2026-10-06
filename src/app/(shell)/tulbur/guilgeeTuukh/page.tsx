@@ -281,6 +281,11 @@ export default function DansniiKhuulga() {
     Record<string, number | null>
   >({});
   const latestRowUldegdelRequestedRef = useRef<Set<string>>(new Set());
+  // Мөрийн үлдэгдлийг ДАХИН татуулах дохио. Кэш цэвэрлэсний дараа доорх
+  // effect зөвхөн оршин суугчийн жагсаалт өөрчлөгдвөл ажилладаг байсан —
+  // SWR ижил өгөгдөл буцаавал ажиллахгүй тул төлөлтийн дараа хүснэгтийн
+  // «Үлдэгдэл» refresh хийтэл шинэчлэгддэггүй байв.
+  const [murUldegdelDokhio, setMurUldegdelDokhio] = useState(0);
 
   // Selection state for "Send Invoice"
   const [selectedGereeIds, setSelectedGereeIds] = useState<string[]>([]);
@@ -635,6 +640,7 @@ export default function DansniiKhuulga() {
       void revalidateTulburCaches();
       setLatestRowUldegdelByGereeId({});
       latestRowUldegdelRequestedRef.current.clear();
+      setMurUldegdelDokhio((d) => d + 1);
       setInvoiceRefreshTrigger((t) => t + 1);
     };
     socket.on(event, handler);
@@ -2300,6 +2306,7 @@ export default function DansniiKhuulga() {
     deduplicatedResidentsAll,
     effectiveBarilgiinId,
     billingCycleRangeKey,
+    murUldegdelDokhio,
     // ЧУХАЛ: дээр хамгаалалт болгон уншдаг тул ЗААВАЛ энд байх ёстой.
     // Үгүй бол nekhemjlekhCron ачаалж дуусаагүй байхад effect нэг л удаа
     // ажиллаад таслагдаж, дахин ажиллахгүй үлддэг - uldegdelBodyo огт эсвэл
@@ -3024,6 +3031,10 @@ export default function DansniiKhuulga() {
               : "Төлөлт амжилттай бүртгэгдлээ",
           );
           setIsTransactionModalOpen(false);
+          // Хадгалагдсан даруйд түгжээг авна — доорх кэш/оршин суугч дахин
+          // ачаалал хэдэн секунд үргэлжилж, тэр хооронд цонхыг дахин нээхэд
+          // бүх таб (Төлөлт г.м.) идэвхгүй хэвээр байв.
+          setIsProcessingTransaction(false);
           setSelectedTransactionResident(null);
 
           // Instant UI Update: Clear local caches for this contract so they refetch immediately
@@ -3035,6 +3046,7 @@ export default function DansniiKhuulga() {
               delete (updated as any)[gid];
               return updated;
             });
+            setMurUldegdelDokhio((d) => d + 1);
           }
 
           await revalidateTulburCaches();
@@ -3093,6 +3105,10 @@ export default function DansniiKhuulga() {
         if (isTransactionHttpOk(response)) {
           toast.success("Хөнгөлөлт амжилттай бүртгэгдлээ");
           setIsTransactionModalOpen(false);
+          // Хадгалагдсан даруйд түгжээг авна — доорх кэш/оршин суугч дахин
+          // ачаалал хэдэн секунд үргэлжилж, тэр хооронд цонхыг дахин нээхэд
+          // бүх таб (Төлөлт г.м.) идэвхгүй хэвээр байв.
+          setIsProcessingTransaction(false);
           setSelectedTransactionResident(null);
 
           if (data.gereeniiId) {
@@ -3103,6 +3119,7 @@ export default function DansniiKhuulga() {
               delete (updated as any)[gid];
               return updated;
             });
+            setMurUldegdelDokhio((d) => d + 1);
           }
 
           await revalidateTulburCaches();
@@ -3194,6 +3211,10 @@ export default function DansniiKhuulga() {
         if (isTransactionHttpOk(response)) {
           toast.success("Гүйлгээ амжилттай бүртгэгдлээ");
           setIsTransactionModalOpen(false);
+          // Хадгалагдсан даруйд түгжээг авна — доорх кэш/оршин суугч дахин
+          // ачаалал хэдэн секунд үргэлжилж, тэр хооронд цонхыг дахин нээхэд
+          // бүх таб (Төлөлт г.м.) идэвхгүй хэвээр байв.
+          setIsProcessingTransaction(false);
           setSelectedTransactionResident(null);
 
           // Instant UI Update: Clear local caches for this contract so they refetch immediately
@@ -3205,6 +3226,7 @@ export default function DansniiKhuulga() {
               delete (updated as any)[gid];
               return updated;
             });
+            setMurUldegdelDokhio((d) => d + 1);
           }
 
           await revalidateTulburCaches();
