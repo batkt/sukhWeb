@@ -413,20 +413,28 @@ export default function UnitsSection({
             }
           }
 
+          const cleanFloor = (f: any) =>
+            String(f || "")
+              .replace(/\s*давхар\s*/gi, "")
+              .replace(/^[вВ]/, "B")
+              .trim()
+              .toUpperCase();
+
           // Add to activeToots if they match the current orts and floor
           tootsList.forEach((tItem) => {
             if (!tItem.t) return;
 
-            const matchOrts = tItem.o === orts || !tItem.o;
-            const matchFloor = tItem.f === floor || !tItem.f;
+            const isBasementProperty = turul === "Зогсоол" || turul === "Агуулах";
+            const cItemFloor = cleanFloor(tItem.f);
+            const cCurFloor = cleanFloor(floor);
+
+            const matchOrts = isBasementProperty || tItem.o === orts || !tItem.o;
+            const matchFloor =
+              cItemFloor === cCurFloor ||
+              !tItem.f ||
+              (isBasementProperty && !cItemFloor.startsWith("B"));
             if (!matchOrts || !matchFloor) return;
 
-            // ── ЧУХАЛ: тоот тухайн давхарт БАЙХ ёстой ──────────────────
-            // Орц/давхар нь хоосон бичлэг (`!tItem.o`, `!tItem.f`) нь
-            // БҮХ орц, БҮХ давхарт таардаг. Иймд «903» гэсэн тоот 1-р
-            // давхрын Set-д ч нэмэгдэж, толгойн «N бүртгэлтэй» тоо
-            // хөөрөгддөг байв — хайрцаг нь `units`-д байгаа тоотыг л
-            // зурдаг тул дэлгэцтэй зөрдөг.
             const toot = String(tItem.t).trim();
             if (!unitsSet.has(toot)) return;
 
@@ -436,6 +444,13 @@ export default function UnitsSection({
             }
           });
         });
+
+        const cleanFloor = (f: any) =>
+          String(f || "")
+            .replace(/\s*давхар\s*/gi, "")
+            .replace(/^[вВ]/, "B")
+            .trim()
+            .toUpperCase();
 
         // Also ensure all units directly in residentsList and clientsList are included in activeToots and unitToResident
         const allPersons = [...(residentsList || []), ...(clientsList || [])];
@@ -451,10 +466,16 @@ export default function UnitsSection({
                 if (rtTurul !== "Орон сууц" && rtTurul !== "Тоот") return;
               }
 
+              const isBasementProperty = turul === "Зогсоол" || turul === "Агуулах";
               const rOrts = String(rt.orts || "1").trim();
-              const rFloor = String(rt.davkhar || "").trim();
-              const matchOrts = !rOrts || rOrts === orts;
-              const matchFloor = !rFloor || rFloor === floor;
+              const cRFloor = cleanFloor(rt.davkhar);
+              const cCurFloor = cleanFloor(floor);
+
+              const matchOrts = isBasementProperty || !rOrts || rOrts === orts;
+              const matchFloor =
+                cRFloor === cCurFloor ||
+                !rt.davkhar ||
+                (isBasementProperty && !cRFloor.startsWith("B"));
               if (!matchOrts || !matchFloor) return;
 
               const rToots = String(rt.toot || "")
@@ -707,11 +728,14 @@ export default function UnitsSection({
           }
           if (!matchesTab) return false;
 
+          const isBasementTab = propertyTab === "Зогсоол" || propertyTab === "Агуулах";
           const rOrts = String(rt.orts || "").trim();
           const rFloor = String(rt.davkhar || "").trim();
           const rToots = String(rt.toot || "").split(",").map((x) => x.trim()).filter(Boolean);
-          const matchOrtsNested = selectedOrts ? rOrts === selectedOrts : true;
-          const matchFloorNested = rFloor === selectedFloor;
+          const matchOrtsNested = isBasementTab || (selectedOrts ? rOrts === selectedOrts : true);
+          const matchFloorNested =
+            cleanFloor(rFloor) === cleanFloor(selectedFloor) ||
+            (isBasementTab && !cleanFloor(rFloor).startsWith("B"));
           const matchTootsNested = rToots.some((t) => effectiveCheckedUnits.includes(t));
 
           if (matchOrtsNested && matchFloorNested && matchTootsNested) {
@@ -731,8 +755,9 @@ export default function UnitsSection({
             const matchedToots: string[] = [];
             resident.toots.forEach((rt: any) => {
               if (!nestedTurul.includes(String(rt.turul || "").trim())) return;
-              const rFloor = String(rt.davkhar || "").trim();
-              if (rFloor !== selectedFloor) return;
+              const rFloorClean = cleanFloor(rt.davkhar);
+              const selFloorClean = cleanFloor(selectedFloor);
+              if (rFloorClean !== selFloorClean && rFloorClean.startsWith("B")) return;
               String(rt.toot || "").split(",").map((x: string) => x.trim()).filter(Boolean)
                 .forEach((t: string) => { if (effectiveCheckedUnits.includes(t)) matchedToots.push(t); });
             });
@@ -947,11 +972,14 @@ export default function UnitsSection({
           }
           if (!matchesTab) return false;
 
+          const isBasementTab = propertyTab === "Зогсоол" || propertyTab === "Агуулах";
           const rOrts = String(rt.orts || "").trim();
           const rFloor = String(rt.davkhar || "").trim();
           const rToots = String(rt.toot || "").split(",").map((x) => x.trim()).filter(Boolean);
-          const matchOrtsNested = selectedOrts ? rOrts === selectedOrts : true;
-          const matchFloorNested = rFloor === selectedFloor;
+          const matchOrtsNested = isBasementTab || (selectedOrts ? rOrts === selectedOrts : true);
+          const matchFloorNested =
+            cleanFloor(rFloor) === cleanFloor(selectedFloor) ||
+            (isBasementTab && !cleanFloor(rFloor).startsWith("B"));
           const matchTootsNested = rToots.some((t) => selectedFloorData.activeToots.has(t));
 
           if (matchOrtsNested && matchFloorNested && matchTootsNested) {
@@ -969,7 +997,9 @@ export default function UnitsSection({
             const matchedToots: string[] = [];
             resident.toots.forEach((rt: any) => {
               if (!nestedTurul.includes(String(rt.turul || "").trim())) return;
-              if (String(rt.davkhar || "").trim() !== selectedFloor) return;
+              const rFloorClean = cleanFloor(rt.davkhar);
+              const selFloorClean = cleanFloor(selectedFloor);
+              if (rFloorClean !== selFloorClean && rFloorClean.startsWith("B")) return;
               String(rt.toot || "").split(",").map((x: string) => x.trim()).filter(Boolean)
                 .forEach((t: string) => { if (selectedFloorData.activeToots.has(t)) matchedToots.push(t); });
             });
