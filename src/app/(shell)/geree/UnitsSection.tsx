@@ -81,6 +81,13 @@ interface UnitsSectionProps {
 const tooEremb = (a: any, b: any) =>
   String(a ?? "").localeCompare(String(b ?? ""), undefined, { numeric: true, sensitivity: "base" });
 
+const cleanFloor = (f: any) =>
+  String(f || "")
+    .replace(/\s*давхар\s*/gi, "")
+    .replace(/^[вВ]/, "B")
+    .trim()
+    .toUpperCase();
+
 export default function UnitsSection({
   davkharOptions,
   ortsOptions,
