@@ -420,13 +420,6 @@ export default function UnitsSection({
             }
           }
 
-          const cleanFloor = (f: any) =>
-            String(f || "")
-              .replace(/\s*давхар\s*/gi, "")
-              .replace(/^[вВ]/, "B")
-              .trim()
-              .toUpperCase();
-
           // Add to activeToots if they match the current orts and floor
           tootsList.forEach((tItem) => {
             if (!tItem.t) return;
