@@ -308,12 +308,15 @@ export function useGereeActions(
         return true;
       } catch (e: any) {
         const data = e?.response?.data;
-        if (e?.response?.status === 409 && data?.code === "ULDEGDELTEI") {
-          const admin = String(ajiltan?.erkh || "").toLowerCase() === "admin";
-          if (admin) return { code: "uldegdeltei", message: String(data.message || "") };
-          openErrorOverlay(`${data.message} Админ л үлдэгдэлтэй оршин суугчийг устгаж чадна.`);
-          return false;
-        }
+        // Алдааг ҮРГЭЛЖ харуулна — ЧИМЭЭГҮЙ унахаас сэргийлж.
+        //
+        // Өмнө нь 409 `ULDEGDELTEI` үед АДМИН бол юу ч харуулалгүй
+        // `{ code: "uldegdeltei" }` буцаадаг байв. Түүнийг зөвхөн НЭГ
+        // дуудагч (GereeModals) боловсруулдаг тул бусад газраас устгахад
+        // хариу нь мессежтэй мөртлөө дэлгэцэнд ЮУ Ч гарахгүй байв.
+        //
+        // Сервер талын үлдэгдлийн хориг мөн АВАГДСАН
+        // (controller/orshinSuugch.js) тул энэ салаа ч хэрэггүй болсон.
         openErrorOverlay(data?.message || getErrorMessage(e) || "Устгахад алдаа гарлаа");
         return false;
       }

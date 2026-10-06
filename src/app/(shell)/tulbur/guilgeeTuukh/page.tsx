@@ -607,15 +607,18 @@ export default function DansniiKhuulga() {
       mutateReceivable?.(),
       mutatePaymentRecords?.(),
     ]);
-    await mutate(
-      (key: any) => {
-        if (!Array.isArray(key)) return false;
-        const prefix = String(key[0] || "");
-        return prefix === "/geree" || prefix === "/orshinSuugch";
-      },
-      undefined,
-      { revalidate: true },
-    );
+    // Кэшийг ХООСЛОХГҮЙ, зөвхөн шинэчилнэ.
+    //
+    // Өмнө нь өгөгдлийн байранд `undefined` дамжуулдаг байсан нь /geree,
+    // /orshinSuugch кэш БҮГДИЙГ хоосолж, тэдгээрээс тэжээгддэг багана
+    // хоосроод дахин дүүрдэг — хүснэгт бүхэлдээ "дахин ачаалагдаж"
+    // байгаа мэт харагддаг байв. Зөвхөн түлхүүрээр дуудвал SWR нь
+    // ХУУЧИН утгыг хадгалж, шинэ өгөгдөл ирмэгц ЧИМЭЭГҮЙ солино.
+    await mutate((key: any) => {
+      if (!Array.isArray(key)) return false;
+      const prefix = String(key[0] || "");
+      return prefix === "/geree" || prefix === "/orshinSuugch";
+    });
   }, [
     mutate,
     mutateHistory,
