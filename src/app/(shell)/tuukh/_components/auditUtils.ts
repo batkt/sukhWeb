@@ -527,15 +527,50 @@ function uurchlultuudAvya(r: AnyRec): { jagsaalt: AuditUurchlult[]; niit: number
   return { jagsaalt, niit: raw.length };
 }
 
+const jsonUnshikh = (v: unknown): unknown => {
+  if (typeof v !== "string") return v;
+  try {
+    return JSON.parse(v);
+  } catch {
+    return v;
+  }
+};
+
+/** Барилгуудын ялгаа зөвхөн tokhirgoo дотор байгаа эсэх */
+function barilguudTokhirgooOnlyEsekh(umnukh: unknown, shine: unknown): boolean {
+  const a = jsonUnshikh(umnukh);
+  const b = jsonUnshikh(shine);
+  if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+  const tsever = (x: any) => {
+    if (!x || typeof x !== "object") return JSON.stringify(x);
+    const { tokhirgoo: _t, updatedAt: _u, ...busad } = x;
+    return JSON.stringify(busad);
+  };
+  return a.every((x, i) => tsever(x) === tsever(b[i]));
+}
+
+/** Байгууллагын засвар зөвхөн тохиргоо өөрчилсөн бол «Тохиргоо» төрөлд оруулна */
+function tokhirgooZasvarEsekh(turul: string, uurchlultuud: AuditUurchlult[]): boolean {
+  if (turul !== "baiguullaga" || uurchlultuud.length === 0) return false;
+  return uurchlultuud.every(
+    (c) =>
+      c.talbar === "tokhirgoo" ||
+      c.talbar.startsWith("tokhirgoo.") ||
+      /^barilguud\.\d+\.tokhirgoo(\.|$)/.test(c.talbar) ||
+      (c.talbar === "barilguud" && barilguudTokhirgooOnlyEsekh(c.umnukh, c.shine)),
+  );
+}
+
 export function murKhevjuulekh(r: AnyRec): AuditMur {
   const deletedData =
     (r.deletedData || r.deletedDocument || null) as Record<string, unknown> | null;
   const { jagsaalt, niit } = uurchlultuudAvya(r);
   const dugaar = str(r.classDugaar);
   const ner = str(r.classNer) || nerDataaas(deletedData) || nerUurchlultaas(r);
+  const turul = str(r.classType || r.modelName || r.className);
   return {
     _id: str(r._id),
-    turul: str(r.classType || r.modelName || r.className),
+    turul: tokhirgooZasvarEsekh(turul, jagsaalt) ? "tokhirgoo" : turul,
     ner,
     dugaar,
     bichlegiinOgnoo: ognooStr(

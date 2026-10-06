@@ -10,7 +10,7 @@ import FilterSelect from "@/components/ui/FilterSelect";
 import PermissionGuard from "@/components/PermissionGuard";
 import uilchilgee from "@/lib/uilchilgee";
 import { useAuth } from "@/lib/useAuth";
-import { auditAngilalNer, useAuditTurluud } from "@/lib/auditTurluud";
+import { auditAngilalNer, auditServerModel, useAuditTurluud } from "@/lib/auditTurluud";
 import TuukhModal from "./TuukhModal";
 import {
   type AuditMur,
@@ -108,7 +108,7 @@ function AuditTuukhAgguulga({ turul }: { turul: TuukhTurul }) {
         khuudasniiDugaar: 1,
         khuudasniiKhemjee: 10000,
       };
-      if (m) params.modelName = m;
+      if (m) params.modelName = auditServerModel(m);
       if (aj) params.ajiltniiId = aj;
       if (ekh && duus) {
         params.ekhlekhOgnoo = `${ekh} 00:00:00`;
@@ -146,7 +146,16 @@ function AuditTuukhAgguulga({ turul }: { turul: TuukhTurul }) {
   }, [data, model, ajiltniiId, turul]);
 
   const turulOptions = useMemo(
-    () => angilaluud.map((a) => ({ value: a.value, label: a.label, tailbar: String(a.too) })),
+    () =>
+      angilaluud.map((a) => ({
+        value: a.value,
+        label: a.label,
+        // Байгууллага/Тохиргоо нэг model тул серверийн тоо нь салгагдаагүй
+        tailbar:
+          a.too > 0 && a.value !== "baiguullaga" && a.value !== "tokhirgoo"
+            ? String(a.too)
+            : undefined,
+      })),
     [angilaluud],
   );
 

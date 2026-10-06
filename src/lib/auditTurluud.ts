@@ -13,6 +13,7 @@ import uilchilgee from "@/lib/uilchilgee";
  * харуулна.
  */
 export const AUDIT_ANGILAL_NER: Record<string, string> = {
+  tokhirgoo: "Тохиргоо",
   geree: "Гэрээ",
   orshinSuugch: "Оршин суугч",
   khariltsagch: "Харилцагч",
@@ -29,7 +30,7 @@ export const AUDIT_ANGILAL_NER: Record<string, string> = {
   bankniiGuilgee: "Банкны гүйлгээ",
   dans: "Данс",
   accountNumber: "Дансны дугаар",
-  ebarimt: "И-баримт",
+  ebarimt: "И-баримт (хуучин)",
   ebarimtShine: "И-баримт",
   ashiglaltiinZardluud: "Ашиглалтын зардал",
   uilchilgeeniiZardluud: "Үйлчилгээний зардал",
@@ -93,6 +94,64 @@ export function auditAngilalNer(modelName?: string | null): string {
   );
 }
 
+/**
+ * Шүүлтүүрт үргэлж харагдах бүх төрөл — тухайн хугацаанд бичлэггүй ч
+ * сонгох боломжтой. «tokhirgoo» нь тусдаа model биш: байгууллагын зөвхөн
+ * тохиргооны талбар (tokhirgoo, barilguud[].tokhirgoo) өөрчлөгдсөн засвар.
+ */
+export const BUKH_AUDIT_TURLUUD = [
+  "tokhirgoo",
+  "ashiglaltiinZardluud",
+  "uilchilgeeniiZardluud",
+  "nekhemjlekhCron",
+  "liftShalgaya",
+  "nekhemjlekhiinZagvar",
+  "gereeniiZagvar",
+  "gereeniiZaalt",
+  "dans",
+  "accountNumber",
+  "tatvariinAlba",
+  "baiguullaga",
+  "ajiltan",
+  "geree",
+  "orshinSuugch",
+  "khariltsagch",
+  "tootBurtgel",
+  "nekhemjlekhiinTuukh",
+  "guilgeeAvlaguud",
+  "bankniiGuilgee",
+  "khungulultiinTuukh",
+  "ebarimtShine",
+  "ebarimt",
+  "zaaltUnshlalt",
+  "ashiglaltiinExcel",
+  "uilchilgeeniiExcel",
+  "udriinKhaalt",
+  "zogsool",
+  "mashin",
+  "orshinSuugchMashin",
+  "khariltsagchMashin",
+  "uneguiMashin",
+  "zochinZogsooliinTuukh",
+  "ezenUrisanMashin",
+  "uilchluulegch",
+  "zogsoolGaraarOrlogo",
+  "kassCameraKhaalt",
+  "medegdel",
+  "sonorduulga",
+  "blog",
+  "sanalAsuulga",
+  "sanalAsuulgiinKhariult",
+  "gerBuliinUrilga",
+  "tseverlegee",
+  "walletInvoice",
+  "walletPayment",
+  "qpayObject",
+];
+
+/** Серверт илгээх model-ийн нэр (виртуал төрлийг жинхэнэ model руу) */
+export const auditServerModel = (m: string) => (m === "tokhirgoo" ? "baiguullaga" : m);
+
 export interface AuditAngilal {
   value: string;
   label: string;
@@ -129,11 +188,13 @@ export function useAuditTurluud(
     { revalidateOnFocus: false },
   );
 
-  const angilaluud: AuditAngilal[] = (data || []).map((r) => ({
-    value: r.modelName,
-    label: auditAngilalNer(r.modelName),
-    too: r.too,
-  }));
-  const niit = angilaluud.reduce((s, a) => s + a.too, 0);
+  // Бичлэгтэй төрлүүд эхэнд (олноос нь), дараа нь бусад бүх төрөл
+  const tooMap = new Map((data || []).map((r) => [r.modelName, r.too]));
+  const niit = (data || []).reduce((s, r) => s + r.too, 0);
+  const angilaluud: AuditAngilal[] = Array.from(
+    new Set([...BUKH_AUDIT_TURLUUD, ...(data || []).map((r) => r.modelName)]),
+  )
+    .map((value) => ({ value, label: auditAngilalNer(value), too: tooMap.get(value) || 0 }))
+    .sort((a, b) => b.too - a.too || a.label.localeCompare(b.label, "mn"));
   return { angilaluud, niit, isLoading };
 }
