@@ -445,13 +445,6 @@ export default function UnitsSection({
           });
         });
 
-        const cleanFloor = (f: any) =>
-          String(f || "")
-            .replace(/\s*давхар\s*/gi, "")
-            .replace(/^[вВ]/, "B")
-            .trim()
-            .toUpperCase();
-
         // Also ensure all units directly in residentsList and clientsList are included in activeToots and unitToResident
         const allPersons = [...(residentsList || []), ...(clientsList || [])];
         allPersons.forEach((p: any) => {
