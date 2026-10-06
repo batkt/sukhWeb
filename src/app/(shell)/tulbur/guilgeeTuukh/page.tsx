@@ -601,7 +601,7 @@ export default function DansniiKhuulga() {
 
   /** Жагсаалтын SWR түлхүүрүүдийг шууд revalidate — global mutate заримдаа бүрэн ажиллахгүй (тусгайлбал ашиглалт) */
   /** Сарын хязгаар: эхний сарын 1-ний өдрөөс сүүлийн сарын сүүлийн өдөр хүртэл (YYYY-MM-DD). */
-  const revalidateTulburCaches = useCallback(async () => {
+  const revalidateTulburCachesShuud = useCallback(async () => {
     await Promise.all([
       mutateHistory?.(),
       mutateReceivable?.(),
@@ -623,6 +623,47 @@ export default function DansniiKhuulga() {
     mutatePaymentRecords,
     mutateMonthlyMatrix,
   ]);
+
+  /**
+   * Дахин ачаалалтыг НЭГТГЭНЭ.
+   *
+   * Нэг үйлдэл (жишээ нь «Гүйлгээ хийх» цонхны хадгалалт) ХОЁР удаа
+   * дуудаж байв: эхлээд хадгалсны дараа шууд, дараа нь серверийн
+   * `tulburUpdated` сокет ирэхэд. Улмаас хүснэгт хоёр удаа анивчдаг.
+   *
+   * Хоёр дуудлага хоёулаа ХЭРЭГТЭЙ (нэг нь шуурхай, нөгөө нь бусад
+   * хэрэглэгчийн өөрчлөлтийг барина) тул аль нэгийг нь хасахгүй —
+   * дараалсан дуудлагуудыг НЭГ ажиллагаа болгон нийлүүлнэ.
+   */
+  const revalidateTovlosonRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+
+  useEffect(() => {
+    return () => {
+      if (revalidateTovlosonRef.current) {
+        clearTimeout(revalidateTovlosonRef.current);
+        revalidateTovlosonRef.current = null;
+      }
+    };
+  }, []);
+
+  const revalidateTulburCaches = useCallback(async () => {
+    // Аль хэдийн товлогдсон бол дахин товлохгүй — товлогдсон ажиллагаа нь
+    // ХАМГИЙН СҮҮЛИЙН өөрчлөлтийг багтаана.
+    if (revalidateTovlosonRef.current) return;
+
+    await new Promise<void>((resolve) => {
+      revalidateTovlosonRef.current = setTimeout(async () => {
+        revalidateTovlosonRef.current = null;
+        try {
+          await revalidateTulburCachesShuud();
+        } finally {
+          resolve();
+        }
+      }, 400);
+    });
+  }, [revalidateTulburCachesShuud]);
 
   // No transition effect needed — SWR keys are stable (no date params), date filtering is client-side.
 
