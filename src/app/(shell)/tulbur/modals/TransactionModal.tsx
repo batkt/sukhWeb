@@ -390,10 +390,24 @@ export default function TransactionModal({
   React.useEffect(() => {
     setBugdiigTulukh(true);
   }, [transactionType]);
+  // Track whether user manually edited the amount after auto-fill so we don't
+  // override their edits every time bugdiinDun re-computes (e.g. after fetch).
+  const userEditedAmountRef = React.useRef(false);
   const umnukhBugdNegDor = React.useRef(bugdNegDor);
   React.useEffect(() => {
-    if (bugdNegDor) setAmount(formatAmount(bugdiinDun));
-    else if (umnukhBugdNegDor.current) setAmount("");
+    const transitionedIn = bugdNegDor && !umnukhBugdNegDor.current;
+    const transitionedOut = !bugdNegDor && umnukhBugdNegDor.current;
+    if (transitionedIn) {
+      // Just switched to pay-all mode — auto-fill with total and reset edit flag
+      setAmount(formatAmount(bugdiinDun));
+      userEditedAmountRef.current = false;
+    } else if (bugdNegDor && !userEditedAmountRef.current) {
+      // Still in pay-all mode and user hasn't edited yet (e.g. balances just loaded)
+      setAmount(formatAmount(bugdiinDun));
+    } else if (transitionedOut) {
+      setAmount("");
+      userEditedAmountRef.current = false;
+    }
     umnukhBugdNegDor.current = bugdNegDor;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bugdNegDor, bugdiinDun]);
@@ -460,6 +474,8 @@ export default function TransactionModal({
     const nonCommaBeforeCursor = raw.slice(0, cursor).replace(/,/g, "").length;
     const formatted = formatWhileTyping(raw);
     setAmount(formatted);
+    // Mark that the user has manually edited the amount so we don't auto-override
+    if (bugdNegDor) userEditedAmountRef.current = true;
 
     requestAnimationFrame(() => {
       const el = amountInputRef.current;
@@ -492,6 +508,7 @@ export default function TransactionModal({
     setAvlagiinAngilal("engiin");
     setAvlagiinToot("");
     setBugdiigTulukh(true);
+    userEditedAmountRef.current = false;
   };
 
   const handleClose = () => {
@@ -852,17 +869,60 @@ export default function TransactionModal({
         messageApi.warning("Төлөх үлдэгдэл алга.");
         return;
       }
+      const r2 = (v: number) => Math.round(v * 100) / 100;
+      const orsonDun = r2(parseFloat(amount.replace(/,/g, "")) || 0);
+      if (orsonDun <= 0) {
+        messageApi.warning("Төлөх дүнгээ оруулна уу.");
+        return;
+      }
+      // Илүү төлөлт — илүү нь Орон сууцны урьдчилгаа болно
+      if (orsonDun > bugdiinDun + 0.005) {
+        const iluu = r2(orsonDun - bugdiinDun);
+        const zuvshuursun = await new Promise<boolean>((resolve) => {
+          modalApi.confirm({
+            title: "Илүү төлөлт бүртгэх үү?",
+            content: `Нийт үлдэгдэл ${mungunDunFormat(bugdiinDun)}₮. ${mungunDunFormat(iluu)}₮ илүү төлөлт болж, дараагийн нэхэмжлэхээс хасагдана.`,
+            okText: "Бүртгэх",
+            cancelText: "Буцах",
+            zIndex: 13000,
+            centered: true,
+            onOk: () => resolve(true),
+            onCancel: () => resolve(false),
+          });
+        });
+        if (!zuvshuursun) return;
+      }
       const angilliinKod = (k: PaymentCategory) =>
         k === "Зогсоол" ? "zogsool" : k === "Агуулах" ? "aguulakh" : "engiin";
-      for (const [ner, dun] of tulukhAngilluud) {
+      // Оруулсан дүнг Орон сууц → Гараж → Агуулах дарааллаар үлдэгдлээр нь
+      // хуваана; дутуу бол сүүлийнх нь дутна, илүү бол Орон сууцанд нэмэгдэнэ.
+      const DARAALAL: PaymentCategory[] = ["Орон сууц", "Зогсоол", "Агуулах"] as PaymentCategory[];
+      const erembelsen = [...tulukhAngilluud].sort(
+        ([a], [b]) => DARAALAL.indexOf(a) - DARAALAL.indexOf(b),
+      );
+      let uldsen = orsonDun;
+      const khuvaarilalt = new Map<PaymentCategory, number>();
+      for (const [ner, dun] of erembelsen) {
+        const avakh = r2(Math.min(dun, uldsen));
+        if (avakh > 0) khuvaarilalt.set(ner, avakh);
+        uldsen = r2(uldsen - avakh);
+      }
+      if (uldsen > 0) {
+        const oron = "Орон сууц" as PaymentCategory;
+        khuvaarilalt.set(oron, r2((khuvaarilalt.get(oron) || 0) + uldsen));
+      }
+      const bugdTulsun = orsonDun >= bugdiinDun - 0.005;
+      for (const [ner, dun] of khuvaarilalt) {
         await onSubmit({
           type: "tulult",
           avlagiinAngilal: angilliinKod(ner) as any,
           date: transactionDate,
-          amount: Math.round(dun * 100) / 100,
+          amount: dun,
           residentId: resident?._id || resident?.orshinSuugchId,
           gereeniiId: resident?.gereeniiId,
-          tailbar: tailbar || `Бүгдийг төлсөн (${ner === "Зогсоол" ? "Гараж" : ner})`,
+          tailbar:
+            tailbar ||
+            `${bugdTulsun ? "Бүгдийг төлсөн" : "Төлөлт"} (${ner === "Зогсоол" ? "Гараж" : ner})`,
           ekhniiUldegdel: false,
         });
       }
@@ -1500,6 +1560,21 @@ export default function TransactionModal({
                         <label className="block text-xs text-[color:var(--panel-text)]">
                           Дүн
                         </label>
+                        {transactionType === "tulult" && bugdNegDor && (
+                          <motion.div
+                            initial={{ opacity: 0, x: 5 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className={`text-[11px] font-medium px-2 py-0.5 rounded-2xl border select-none ${
+                              isFetchingPaymentCategories
+                                ? "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)] border-[color:var(--surface-border)] animate-pulse"
+                                : bugdiinDun > 0
+                                  ? "bg-warning/10 text-warning border-warning/30"
+                                  : "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)] border-[color:var(--surface-border)]"
+                            }`}
+                          >
+                            Нийт үлдэгдэл: {isFetchingPaymentCategories ? "…" : mungunDunFormat(bugdiinDun)}
+                          </motion.div>
+                        )}
                         {transactionType === "tulult" && !bugdNegDor && (
                             <motion.div
                               initial={{ opacity: 0, x: 5 }}
@@ -1535,7 +1610,7 @@ export default function TransactionModal({
                               setAmount(formatAmount(amount));
                             }
                           }}
-                          disabled={isProcessing || bugdNegDor}
+                          disabled={isProcessing}
                           placeholder="0.00"
                           className="w-full px-3 py-2.5 pr-[38px] border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-right tracking-wide text-lg font-medium"
                         />
