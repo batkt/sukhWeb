@@ -2,6 +2,13 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // Build-ийн гаралтын хавтас.
+  //
+  // Шинэчлэлт хийхэд АЖИЛЛАЖ байгаа .next дээр дарж build хийвэл сервер нь
+  // хагас бичигдсэн файлуудыг түгээж, хэрэглэгчид "Application error: a
+  // client-side exception" хардаг. Тусдаа хавтсанд build хийгээд дараа нь
+  // солихын тулд энэ утгыг орчноос авна (deploy/shinechlelt-front.sh).
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   // Build үед ESLint ажиллуулахгүй (Next 16-тай адил) — хамгийн удаан алхам
   // нь энэ байсан. Шалгахдаа `npm run lint`-ийг тусад нь ажиллуулна.
   // TypeScript-ийн шалгалт хэвээр — төрлийн алдаа production руу гарахгүй.
