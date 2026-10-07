@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="mn">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Шинэчилж байна — Amarhome</title>
+    <meta name="robots" content="noindex" />
+    <!--
+      СТАТИК «Шинэчилж байна» хуудас.
+
+      ЯАГААД ХЭРЭГТЭЙ ВЭ: аппын дотор байрлуулсан мэдэгдэл (src/components/
+      ShinechleltMedegdel.tsx) нь вэб сервер АЖИЛЛАЖ байх үед л харагдана.
+      Харин `pm2 restart` хийх хэдэн секундэд сервер өөрөө унтарсан байдаг
+      тул nginx 502 буцаана — тэр агшинд ЗӨВХӨН энэ файл туслана.
+
+      nginx тохиргоо:
+        error_page 502 503 504 /shinechlelt.html;
+        location = /shinechlelt.html {
+          root /var/www;
+          internal;
+        }
+
+      Файлыг /var/www/shinechlelt.html болгон хуулна. Гадаад сан (фонт,
+      зураг) ЗӨВХӨН энэ файлд агуулагдана — сүлжээнээс юу ч татахгүй,
+      учир нь сервер унтарсан үед татах газар ч байхгүй.
+    -->
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+      }
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        background: radial-gradient(
+          circle at top right,
+          #1e1b4b 0%,
+          #09090b 100%
+        );
+        color: #fff;
+        font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      }
+      .khairtsag {
+        width: 100%;
+        max-width: 384px;
+        padding: 32px;
+        text-align: center;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.04);
+      }
+      .ergelt {
+        width: 40px;
+        height: 40px;
+        margin: 0 auto 20px;
+        border: 2px solid rgba(255, 255, 255, 0.15);
+        border-top-color: rgba(255, 255, 255, 0.7);
+        border-radius: 50%;
+        animation: ergey 0.9s linear infinite;
+      }
+      @keyframes ergey {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      /* Хөдөлгөөн багасгахыг хүссэн хэрэглэгчид эргэлт харуулахгүй. */
+      @media (prefers-reduced-motion: reduce) {
+        .ergelt {
+          animation: none;
+        }
+      }
+      h1 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 500;
+      }
+      p {
+        margin: 8px 0 0;
+        font-size: 14px;
+        line-height: 1.6;
+        color: rgba(255, 255, 255, 0.6);
+      }
+    </style>
+  </head>
+  <body>
+    <main class="khairtsag" role="status" aria-live="polite">
+      <div class="ergelt" aria-hidden="true"></div>
+      <h1>Шинэчилж байна</h1>
+      <p>Систем шинэчлэгдэж байна. Хэдхэн минутын дараа өөрөө үргэлжилнэ.</p>
+    </main>
+    <!--
+      Сервер дахин асмагц өөрөө буцаж орохын тулд 10 секунд тутам оролдоно.
+      Хэрэглэгч гараараа сэргээх шаардлагагүй.
+    -->
+    <script>
+      setTimeout(function () {
+        location.reload();
+      }, 10000);
+    </script>
+  </body>
+</html>
