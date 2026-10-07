@@ -2,6 +2,7 @@ import "./globals.css";
 import type { Metadata } from "next";
 import ClientLayout from "./ClientLayout";
 import { AuthProvider } from "@/lib/useAuth";
+import ShinechleltMedegdel from "@/components/ShinechleltMedegdel";
 import Script from "next/script";
 
 export const metadata: Metadata = {
@@ -40,6 +41,9 @@ var fs=localStorage.getItem('fontSizeIndex');if(fs!==null){var sizes=['10px','11
         <AuthProvider>
           <ClientLayout>{children}</ClientLayout>
         </AuthProvider>
+
+        {/* Систем шинэчлэгдэж байх үед дэлгэцийг хаана. */}
+        <ShinechleltMedegdel />
 
         <div id="portal-root" />
       </body>
