@@ -20,12 +20,18 @@ import { url } from "@/lib/uilchilgee";
  */
 const DAVTAKH_MS = 20000;
 
+// Хэдэн удаа дараалан амжилтгүй болбол давхаргыг БУУЛГАХ вэ.
+// Бэкийг шинэчлэх үед API хэдэн арван секунд алга болдог тул тэр
+// хугацаанд давхарга хэвээр байх ёстой — гэхдээ ҮҮРД биш.
+const KHAMGIIN_IKH_ALDAA = 6;
+
 export default function ShinechleltMedegdel() {
   const [ajillaj, setAjillaj] = useState(false);
 
   useEffect(() => {
     let amid = true;
     let tsag: ReturnType<typeof setTimeout> | null = null;
+    let aldaaToo = 0;
 
     const shalgaya = async () => {
       try {
@@ -35,11 +41,24 @@ export default function ShinechleltMedegdel() {
         if (!amid) return;
         if (khariu.ok) {
           const ur = await khariu.json();
+          aldaaToo = 0;
+          // `ajillaj` нь «сайтыг хаах шаардлагатай юу» гэсэн утгатай.
+          // Бэкенд энэ шийдвэрийг өөрөө гаргана (routes/
+          // shinechleltRoute.js) — ФРОНТЫН build явж байхад сайт
+          // хэвийн тул `false` ирнэ.
           setAjillaj(!!ur?.ajillaj);
         }
       } catch (_aldaa) {
         // Сүлжээний алдааг МЭДЭГДЭЛ болгож харуулахгүй: энгийн тасалдлыг
         // шинэчлэлт гэж андуурвал хэрэглэгчийг дэмий хаана.
+        //
+        // ГЭХДЭЭ төлвийг хөндөхгүй орхивол давхарга СҮҮЛИЙН утгандаа
+        // ГАЦНА: нэг удаа `true` уншчихаад дараа нь сүлжээ тасарвал
+        // хэзээ ч буухгүй. Иймд дараалсан алдааг тоолж, тэвчихээ
+        // болиход нь буулгана.
+        if (!amid) return;
+        aldaaToo += 1;
+        if (aldaaToo >= KHAMGIIN_IKH_ALDAA) setAjillaj(false);
       } finally {
         if (amid) tsag = setTimeout(shalgaya, DAVTAKH_MS);
       }
