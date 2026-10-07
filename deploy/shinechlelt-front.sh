@@ -31,8 +31,16 @@ echo "→ Хавтас: $APP_ZAM (pm2: $PM2_NER)"
 echo "→ git pull"
 git pull
 
-echo "→ npm i"
-npm i
+# ЗААВАЛ --include=dev. next build нь typescript, @types/*, tailwindcss,
+# @tailwindcss/postcss зэргийг ШААРДДАГ атлаа эдгээр нь package.json-ий
+# devDependencies дотор байдаг. Энэ скриптийг самбараас ажиллуулахад
+# pm2 -> sukhBackv2 -> exec() гинжээр NODE_ENV=production өвлөгдөж, npm
+# нь dev багцуудыг алгасдаг. Улмаар build нь
+#     Error: Cannot find module '@tailwindcss/postcss'
+# гэж унана. Гараас ажиллуулахад NODE_ENV хоосон тул ХЭВИЙН болдог нь
+# оношлоход төөрөгдүүлдэг — иймд орчноос ХАМААРУУЛАХГҮЙ шууд зааж өгнө.
+echo "→ npm i --include=dev"
+npm i --include=dev
 
 # Өмнөх амжилтгүй оролдлогын үлдэгдлийг цэвэрлэнэ.
 rm -rf "$SHINE_DIR"
