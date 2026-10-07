@@ -20,6 +20,10 @@ type UriidchilsanMur = {
   toot: string;
   dun: number;
   tailbar: string;
+  /** Төлөлтийн горимд сервер тооцож өгнө; авлагад null. */
+  umnukhUldegdel: number | null;
+  shineUldegdel: number | null;
+  aldaa: string | null;
 };
 
 interface InitialBalanceExcelModalProps {
@@ -56,8 +60,14 @@ export default function InitialBalanceExcelModal({
   // боломж өгнө.
   const [uriidchilsan, setUriidchilsan] = useState<UriidchilsanMur[]>([]);
   const [khoosonToo, setKhoosonToo] = useState(0);
+  const [uriidchilj, setUriidchilj] = useState(false);
   const dunBaganiinNer = tulultEsekh ? "Төлөлт" : "Эхний үлдэгдэл";
-  const niitDun = uriidchilsan.reduce((d, m) => d + (m.dun || 0), 0);
+  // Алдаатай мөр бичигдэхгүй тул нийлбэрт оруулахгүй.
+  const niitDun = uriidchilsan.reduce(
+    (d, m) => d + (m.aldaa ? 0 : m.dun || 0),
+    0,
+  );
+  const aldaataiToo = uriidchilsan.filter((m) => m.aldaa).length;
   // Эхний үлдэгдлийг аль ашиглалтын зардлаар бүртгэх («» = ерөнхий эхний үлдэгдэл)
   const [zardal, setZardal] = useState<string>("");
   const { zardluud } = useAshiglaltiinZardluud({
@@ -114,7 +124,61 @@ export default function InitialBalanceExcelModal({
    * 2-р мөр хоосон бол тайлбарын мөр гэж алгасна) — эс бөгөөс урьдчилсан
    * харагдац нь бодит импортоос зөрнө.
    */
+  /**
+   * ТӨЛӨЛТ — серверээс урьдчилан харна.
+   *
+   * Гэрээг хайх, үлдэгдлийг бодохыг хөтөч дээр давтах аргагүй (тааруулалт
+   * нь утас/дугаар/тоот + барилгаар явагддаг). Иймд импорттой ЯГ ИЖИЛ
+   * кодоор сервер тооцоод буцаана — урьдчилсан зураг нь бодит үр дүнгээс
+   * зөрөхгүй.
+   */
+  const serverEesUriidchileye = async (songosonFile: File) => {
+    const formData = new FormData();
+    formData.append("file", songosonFile);
+    formData.append("baiguullagiinId", baiguullagiinId);
+    if (barilgiinId) formData.append("barilgiinId", barilgiinId);
+
+    const khariu = await uilchilgee(token || "").post(
+      "/uriidchlekhTulultExcel",
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } },
+    );
+
+    const muruud: UriidchilsanMur[] = (khariu.data?.muruud || []).map(
+      (m: any) => ({
+        mur: m.rowNumber,
+        ner: m.ner || "",
+        gereeniiDugaar: m.gereeniiDugaar || "",
+        toot: m.toot || "",
+        dun: Number(m.dun) || 0,
+        tailbar: m.tailbar || "",
+        umnukhUldegdel:
+          m.umnukhUldegdel === null ? null : Number(m.umnukhUldegdel),
+        shineUldegdel:
+          m.shineUldegdel === null ? null : Number(m.shineUldegdel),
+        aldaa: m.aldaa || null,
+      }),
+    );
+
+    setUriidchilsan(muruud);
+    setKhoosonToo(Number(khariu.data?.khooson) || 0);
+  };
+
   const uriidchilanKharuulya = async (songosonFile: File) => {
+    if (tulultEsekh) {
+      try {
+        setUriidchilj(true);
+        await serverEesUriidchileye(songosonFile);
+      } catch (_aldaa) {
+        setUriidchilsan([]);
+        setKhoosonToo(0);
+        message.error("Урьдчилан харах боломжгүй байна");
+      } finally {
+        setUriidchilj(false);
+      }
+      return;
+    }
+
     try {
       const XLSX = await import("xlsx");
       const buf = await songosonFile.arrayBuffer();
@@ -169,6 +233,11 @@ export default function InitialBalanceExcelModal({
           toot: String(obj["Тоот"] ?? "").trim(),
           dun: isNaN(dun) ? 0 : dun,
           tailbar: String(obj["Тайлбар"] ?? "").trim(),
+          // Авлагын горимд үлдэгдлийг урьдчилж тооцохгүй — энэ нь зөвхөн
+          // файлыг зөв уншсан эсэхийг шалгах зорилготой.
+          umnukhUldegdel: null,
+          shineUldegdel: null,
+          aldaa: null,
         });
       });
 
@@ -267,7 +336,7 @@ export default function InitialBalanceExcelModal({
           dragControls={dragControls}
           dragConstraints={constraintsRef}
           dragMomentum={false}
-          className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 bg-[color:var(--surface-bg)] rounded-[32px] shadow-2xl w-[min(560px,95vw)] overflow-hidden"
+          className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 bg-[color:var(--surface-bg)] rounded-[32px] shadow-2xl w-[min(1040px,96vw)] overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="p-8">
@@ -399,69 +468,104 @@ export default function InitialBalanceExcelModal({
             </div>
 
             {/* Урьдчилан харах — импортлогдох мөрүүд */}
-            {uriidchilsan.length > 0 && (
+            {uriidchilj && (
+              <p className="mt-6 text-center text-xs text-[color:var(--muted-text)]">
+                Урьдчилан бодож байна...
+              </p>
+            )}
+
+            {!uriidchilj && uriidchilsan.length > 0 && (
               <div className="mt-6">
-                <div className="mb-2 flex items-center justify-between text-xs">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs">
                   <span className="text-[color:var(--panel-text)]">
-                    Импортлогдох {uriidchilsan.length} мөр
+                    Импортлогдох {uriidchilsan.filter((m) => !m.aldaa).length} мөр
+                    {aldaataiToo > 0 ? ` · ${aldaataiToo} алдаатай` : ""}
                     {khoosonToo > 0 ? ` · ${khoosonToo} хоосон мөр алгасна` : ""}
                   </span>
-                  <span className="font-medium text-[color:var(--panel-text)] tabular-nums">
+                  <span className="font-medium tabular-nums text-[color:var(--panel-text)]">
                     Нийт {niitDun.toLocaleString("mn-MN")}₮
                   </span>
                 </div>
+
                 <div className="overflow-hidden rounded-xl border border-[color:var(--surface-border)] dark:border-white/10">
-                  <div className="custom-scrollbar max-h-[260px] overflow-y-auto overflow-x-auto">
-                    <table className="w-full border-collapse text-left text-[13px]">
-                      <thead className="sticky top-0 z-10 bg-[color:var(--surface-hover)]">
+                  <div className="custom-scrollbar max-h-[320px] overflow-auto">
+                    {/*
+                      ТОЛГОЙГ НААЛТТАЙ байлгахын тулд `border-collapse` БИШ
+                      `border-separate` хэрэглэнэ: collapse үед хөтөч нь
+                      `position: sticky`-г thead/th дээр үл тоодог тул толгой
+                      гүйлгэхэд дагаж алга болдог байв.
+                    */}
+                    <table className="w-full border-separate border-spacing-0 text-left text-[13px]">
+                      <thead>
                         <tr>
-                          <th className="w-12 px-3 py-2 text-center text-xs text-[color:var(--panel-text)]">
-                            №
-                          </th>
-                          <th className="px-3 py-2 text-xs text-[color:var(--panel-text)]">
-                            Нэр
-                          </th>
-                          <th className="px-3 py-2 text-xs text-[color:var(--panel-text)]">
-                            Гэрээ
-                          </th>
-                          <th className="px-3 py-2 text-xs text-[color:var(--panel-text)]">
-                            Тоот
-                          </th>
-                          <th className="px-3 py-2 text-right text-xs text-[color:var(--panel-text)]">
-                            {dunBaganiinNer}
-                          </th>
-                          {tulultEsekh && (
-                            <th className="px-3 py-2 text-xs text-[color:var(--panel-text)]">
-                              Тайлбар
+                          {[
+                            { ner: "№", kl: "w-12 text-center" },
+                            { ner: "Нэр", kl: "" },
+                            { ner: "Гэрээ", kl: "" },
+                            { ner: "Тоот", kl: "" },
+                            { ner: dunBaganiinNer, kl: "text-right" },
+                            ...(tulultEsekh
+                              ? [
+                                  { ner: "Өмнөх үлдэгдэл", kl: "text-right" },
+                                  { ner: "Шинэ үлдэгдэл", kl: "text-right" },
+                                  { ner: "Тайлбар", kl: "" },
+                                ]
+                              : []),
+                          ].map((b) => (
+                            <th
+                              key={b.ner}
+                              className={`sticky top-0 z-10 border-b border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] px-3 py-2 text-xs font-medium text-[color:var(--panel-text)] dark:border-white/10 ${b.kl}`}
+                            >
+                              {b.ner}
                             </th>
-                          )}
+                          ))}
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-[color:var(--surface-border)] dark:divide-white/5">
+                      <tbody>
                         {uriidchilsan.map((m) => (
                           <tr
                             key={m.mur}
-                            className={m.dun === 0 ? "bg-danger/40" : ""}
+                            className={m.aldaa ? "bg-danger/30" : ""}
                           >
-                            <td className="px-3 py-2 text-center text-xs text-[color:var(--muted-text)]">
+                            <td className="border-b border-[color:var(--surface-border)] px-3 py-2 text-center text-xs text-[color:var(--muted-text)] dark:border-white/5">
                               {m.mur}
                             </td>
-                            <td className="px-3 py-2 text-[color:var(--panel-text)]">
+                            <td className="border-b border-[color:var(--surface-border)] px-3 py-2 text-[color:var(--panel-text)] dark:border-white/5">
                               {m.ner || "—"}
                             </td>
-                            <td className="px-3 py-2 text-[color:var(--panel-text)]">
+                            <td className="border-b border-[color:var(--surface-border)] px-3 py-2 text-[color:var(--panel-text)] dark:border-white/5">
                               {m.gereeniiDugaar || "—"}
                             </td>
-                            <td className="px-3 py-2 text-[color:var(--panel-text)]">
+                            <td className="border-b border-[color:var(--surface-border)] px-3 py-2 text-[color:var(--panel-text)] dark:border-white/5">
                               {m.toot || "—"}
                             </td>
-                            <td className="px-3 py-2 text-right tabular-nums text-[color:var(--panel-text)]">
+                            <td className="border-b border-[color:var(--surface-border)] px-3 py-2 text-right tabular-nums text-[color:var(--panel-text)] dark:border-white/5">
                               {m.dun.toLocaleString("mn-MN")}
                             </td>
+
                             {tulultEsekh && (
-                              <td className="px-3 py-2 text-[color:var(--muted-text)]">
-                                {m.tailbar || `Төлөлт - ${m.toot} тоот`}
-                              </td>
+                              <>
+                                <td className="border-b border-[color:var(--surface-border)] px-3 py-2 text-right tabular-nums text-[color:var(--muted-text)] dark:border-white/5">
+                                  {m.umnukhUldegdel === null
+                                    ? "—"
+                                    : m.umnukhUldegdel.toLocaleString("mn-MN")}
+                                </td>
+                                <td
+                                  className={`border-b border-[color:var(--surface-border)] px-3 py-2 text-right font-medium tabular-nums dark:border-white/5 ${
+                                    m.shineUldegdel !== null &&
+                                    m.shineUldegdel < 0
+                                      ? "text-danger"
+                                      : "text-[color:var(--panel-text)]"
+                                  }`}
+                                >
+                                  {m.shineUldegdel === null
+                                    ? "—"
+                                    : m.shineUldegdel.toLocaleString("mn-MN")}
+                                </td>
+                                <td className="border-b border-[color:var(--surface-border)] px-3 py-2 text-[color:var(--muted-text)] dark:border-white/5">
+                                  {m.aldaa || m.tailbar || "—"}
+                                </td>
+                              </>
                             )}
                           </tr>
                         ))}
@@ -469,9 +573,11 @@ export default function InitialBalanceExcelModal({
                     </table>
                   </div>
                 </div>
+
                 <p className="mt-2 text-[11px] italic text-[color:var(--muted-text)]">
-                  * Улаан мөр нь дүн нь 0 буюу танигдаагүй — сервер түүнийг
-                  алдаатай гэж буцаана.
+                  {tulultEsekh
+                    ? "* «Шинэ үлдэгдэл» нь энэ файлыг хадгалсны дараах үлдэгдэл. Сөрөг бол илүү төлөлт."
+                    : "* Улаан мөр нь дүн нь 0 буюу танигдаагүй — сервер түүнийг алдаатай гэж буцаана."}
                 </p>
               </div>
             )}
