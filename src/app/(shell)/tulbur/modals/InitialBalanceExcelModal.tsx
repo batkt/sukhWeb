@@ -5,7 +5,7 @@ import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import { X, Upload, Download, FileSpreadsheet } from "lucide-react";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import uilchilgee from "@/lib/uilchilgee";
-import { message } from "antd";
+import { toast } from "sonner";
 import { useAuth } from "@/lib/useAuth";
 import Button from "@/components/ui/Button";
 import { ModalPortal } from "../../../../../components/shell/ModalPortal";
@@ -113,7 +113,7 @@ export default function InitialBalanceExcelModal({
       link.remove();
     } catch (error) {
       console.error("Error downloading template:", error);
-      message.error("Загвар татахад алдаа гарлаа");
+      toast.error("Загвар татахад алдаа гарлаа");
     }
   };
 
@@ -172,7 +172,7 @@ export default function InitialBalanceExcelModal({
       } catch (_aldaa) {
         setUriidchilsan([]);
         setKhoosonToo(0);
-        message.error("Урьдчилан харах боломжгүй байна");
+        toast.error("Урьдчилан харах боломжгүй байна");
       } finally {
         setUriidchilj(false);
       }
@@ -246,7 +246,7 @@ export default function InitialBalanceExcelModal({
     } catch (_aldaa) {
       setUriidchilsan([]);
       setKhoosonToo(0);
-      message.error("Excel файлыг уншиж чадсангүй");
+      toast.error("Excel файлыг уншиж чадсангүй");
     }
   };
 
@@ -260,7 +260,7 @@ export default function InitialBalanceExcelModal({
 
   const handleUpload = async () => {
     if (!file) {
-      message.warning("Excel файл сонгоно уу");
+      toast.warning("Excel файл сонгоно уу");
       return;
     }
 
@@ -290,18 +290,18 @@ export default function InitialBalanceExcelModal({
       );
 
       if (response.data.success) {
-        message.success(response.data.message || "Амжилттай импортлогдлоо");
+        toast.success(response.data.message || "Амжилттай импортлогдлоо");
         onSuccess();
         onClose();
         setFile(null);
         setUriidchilsan([]);
         setKhoosonToo(0);
       } else {
-        message.error(response.data.message || "Импортлоход алдаа гарлаа");
+        toast.error(response.data.message || "Импортлоход алдаа гарлаа");
       }
     } catch (error: any) {
       console.error("Error uploading excel:", error);
-      message.error(
+      toast.error(
         error.response?.data?.message || "Импортлоход алдаа гарлаа",
       );
     } finally {
