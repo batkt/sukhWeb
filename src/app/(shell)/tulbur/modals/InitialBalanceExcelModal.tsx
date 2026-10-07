@@ -37,6 +37,10 @@ export default function InitialBalanceExcelModal({
   );
   const [isUploading, setIsUploading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  // Горим: АВЛАГА (эхний үлдэгдэл) эсвэл ТӨЛӨЛТ. Анхдагч нь авлага —
+  // энэ модал анх зөвхөн түүнд зориулагдсан тул хуучин зан төлөв хэвээр.
+  const [gorim, setGorim] = useState<"avlaga" | "tulult">("avlaga");
+  const tulultEsekh = gorim === "tulult";
   // Эхний үлдэгдлийг аль ашиглалтын зардлаар бүртгэх («» = ерөнхий эхний үлдэгдэл)
   const [zardal, setZardal] = useState<string>("");
   const { zardluud } = useAshiglaltiinZardluud({
@@ -64,14 +68,19 @@ export default function InitialBalanceExcelModal({
   const handleDownloadTemplate = async () => {
     try {
       const resp = await uilchilgee(token || "").post(
-        "/generateInitialBalanceTemplate",
+        tulultEsekh
+          ? "/generateTulultTemplate"
+          : "/generateInitialBalanceTemplate",
         { baiguullagiinId, barilgiinId },
         { responseType: "blob" },
       );
       const url = window.URL.createObjectURL(new Blob([resp.data]));
       const link = document.createElement("a");
+      link.setAttribute(
+        "download",
+        `${tulultEsekh ? "Төлөлт" : "Эхний үлдэгдэл"} загвар_${Date.now()}.xlsx`,
+      );
       link.href = url;
-      link.setAttribute("download", `Эхний үлдэгдэл загвар_${Date.now()}.xlsx`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -100,14 +109,16 @@ export default function InitialBalanceExcelModal({
       formData.append("baiguullagiinId", baiguullagiinId);
       if (barilgiinId) formData.append("barilgiinId", barilgiinId);
       formData.append("ognoo", selectedDate);
-      if (zardal) {
+      // Ашиглалтын зардал нь ЗӨВХӨН авлагад хамаарна — төлөлт нь аль
+      // нэхэмжлэхэд хуваарилагдахаа дэвтрийн дарааллаар өөрөө шийднэ.
+      if (!tulultEsekh && zardal) {
         const z = (Array.isArray(zardluud) ? zardluud : []).find((x) => x?.ner === zardal);
         formData.append("zardliinNer", zardal);
         if (z?.zardliinTurul || z?.turul) formData.append("zardliinTurul", String(z.zardliinTurul || z.turul));
       }
 
       const response = await uilchilgee(token || "").post(
-        "/importInitialBalanceFromExcel",
+        tulultEsekh ? "/importTulultFromExcel" : "/importInitialBalanceFromExcel",
         formData,
         {
           headers: {
@@ -171,7 +182,7 @@ export default function InitialBalanceExcelModal({
               className="-mt-2 mb-6 px-1 py-1 flex items-center justify-between cursor-move select-none"
             >
               <div className="text-sm font-medium text-[color:var(--panel-text)] dark:text-white">
-                Эхний үлдэгдэл импорт (Excel)
+                Гүйлгээ импорт (Excel)
               </div>
               <Button
                 onPointerDown={(e) => e.stopPropagation()}
@@ -182,6 +193,34 @@ export default function InitialBalanceExcelModal({
                 <X className="w-5 h-5 text-[color:var(--muted-text)]" />
               </Button>
             </div>
+            {/* Горим сонголт. Авлага = эхний үлдэгдэл (хуучин зан төлөв),
+                Төлөлт = оршин суугчийн төлсөн мөнгийг бүртгэнэ. */}
+            <div
+              className="mb-5 inline-flex rounded-2xl border border-[color:var(--surface-border)] p-1"
+              role="tablist"
+              aria-label="Гүйлгээний төрөл"
+            >
+              {([
+                { utga: "avlaga", shoshgo: "Авлага" },
+                { utga: "tulult", shoshgo: "Төлөлт" },
+              ] as const).map((s) => (
+                <button
+                  key={s.utga}
+                  type="button"
+                  role="tab"
+                  aria-selected={gorim === s.utga}
+                  onClick={() => setGorim(s.utga)}
+                  className={`rounded-xl px-5 py-1.5 text-sm transition-colors ${
+                    gorim === s.utga
+                      ? "bg-theme text-white"
+                      : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+                  }`}
+                >
+                  {s.shoshgo}
+                </button>
+              ))}
+            </div>
+
             <div className="flex flex-col gap-2 mb-8">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
@@ -192,21 +231,25 @@ export default function InitialBalanceExcelModal({
                     className="px-4 py-2 border border-[color:var(--surface-border)] bg-transparent rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-theme/20"
                   />
                 </div>
-                {/* Ашиглалтын зардал сонгох — сонгосон бол Excel-ийн дүн тэр зардлаар бүртгэгдэнэ */}
-                <div className="min-w-0 flex-1 max-w-[240px]">
-                  <FilterSelect
-                    value={zardal}
-                    onChange={(v) => setZardal(String(v || ""))}
-                    options={zardliinSongolt}
-                    bugdLabel={null}
-                    allowClear={false}
-                  />
-                </div>
+                {/* Ашиглалтын зардал сонгох — ЗӨВХӨН авлагад хамаарна. */}
+                {!tulultEsekh && (
+                  <div className="min-w-0 flex-1 max-w-[240px]">
+                    <FilterSelect
+                      value={zardal}
+                      onChange={(v) => setZardal(String(v || ""))}
+                      options={zardliinSongolt}
+                      bugdLabel={null}
+                      allowClear={false}
+                    />
+                  </div>
+                )}
               </div>
               <p className="text-[11px] text-[color:var(--muted-text)] italic">
-                {zardal
-                  ? `* Сонгосон огноогоор «${zardal}» зардлаар эхний үлдэгдэл бүртгэгдэнэ.`
-                  : "* Сонгосон огноогоор эхний үлдэгдэл бүртгэгдэнэ."}
+                {tulultEsekh
+                  ? "* Сонгосон огноогоор төлөлт бүртгэгдэж, нэхэмжлэхийн төлөв автоматаар шинэчлэгдэнэ."
+                  : zardal
+                    ? `* Сонгосон огноогоор «${zardal}» зардлаар эхний үлдэгдэл бүртгэгдэнэ.`
+                    : "* Сонгосон огноогоор эхний үлдэгдэл бүртгэгдэнэ."}
               </p>
             </div>
 
@@ -248,7 +291,7 @@ export default function InitialBalanceExcelModal({
                     : "Excel файл аа чирч оруулах эсвэл сонгоно уу"}
                 </p>
                 <p className="text-sm text-[color:var(--muted-text)]">
-                  Эхний үлдэгдэл excel файл
+                  {tulultEsekh ? "Төлөлтийн" : "Эхний үлдэгдэл"} excel файл
                 </p>
               </div>
             </div>
@@ -260,7 +303,7 @@ export default function InitialBalanceExcelModal({
                 className="text-sm flex items-center gap-2"
               >
                 <Download className="w-4 h-4" />
-                Эхний үлдэгдэл загвар татах
+                {tulultEsekh ? "Төлөлтийн" : "Эхний үлдэгдэл"} загвар татах
               </Button>
 
               <div className="flex gap-3">

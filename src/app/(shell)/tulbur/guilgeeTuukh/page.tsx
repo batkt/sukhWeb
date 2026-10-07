@@ -4003,13 +4003,13 @@ export default function DansniiKhuulga() {
                   </div>
                 )}
               </div>
-              <Tooltip title="Эхний үлдэгдэл">
+              <Tooltip title="Гүйлгээ">
                 <motion.div
                 >
                   <IconTextButton
                     onClick={() => setIsInitialBalanceModalOpen(true)}
                     icon={<Upload className="h-4 w-4" />}
-                    label="Эхний үлдэгдэл"
+                    label="Гүйлгээ"
                     className="btn-minimal inline-flex h-9 min-w-9 items-center justify-center gap-1 !px-2 disabled:cursor-not-allowed disabled:opacity-40 [&>span]:hidden"
                   />
                 </motion.div>
