@@ -514,7 +514,7 @@ export default function InitialBalanceExcelModal({
                           ].map((b) => (
                             <th
                               key={b.ner}
-                              className={`sticky top-0 z-10 border-b border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] px-3 py-2 text-xs font-medium text-[color:var(--panel-text)] dark:border-white/10 ${b.kl}`}
+                              className={`sticky top-0 z-10 border-b border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] [background-image:linear-gradient(var(--surface-hover),var(--surface-hover))] px-3 py-2 text-xs font-medium text-[color:var(--panel-text)] dark:border-white/10 ${b.kl}`}
                             >
                               {b.ner}
                             </th>
