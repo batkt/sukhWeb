@@ -12,6 +12,16 @@ import { ModalPortal } from "../../../../../components/shell/ModalPortal";
 import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
 import FilterSelect from "@/components/ui/FilterSelect";
 
+/** Файлаас уншсан, импортлогдох гэж буй нэг мөр. */
+type UriidchilsanMur = {
+  mur: number;
+  ner: string;
+  gereeniiDugaar: string;
+  toot: string;
+  dun: number;
+  tailbar: string;
+};
+
 interface InitialBalanceExcelModalProps {
   show: boolean;
   onClose: () => void;
@@ -41,6 +51,13 @@ export default function InitialBalanceExcelModal({
   // энэ модал анх зөвхөн түүнд зориулагдсан тул хуучин зан төлөв хэвээр.
   const [gorim, setGorim] = useState<"avlaga" | "tulult">("avlaga");
   const tulultEsekh = gorim === "tulult";
+  // Урьдчилан харах — файлыг сонгомогц ХӨТӨЧ дээр задалж харуулна.
+  // Сервер рүү илгээхээс өмнө буруу файл/хоосон багана сонгосныг анзаарах
+  // боломж өгнө.
+  const [uriidchilsan, setUriidchilsan] = useState<UriidchilsanMur[]>([]);
+  const [khoosonToo, setKhoosonToo] = useState(0);
+  const dunBaganiinNer = tulultEsekh ? "Төлөлт" : "Эхний үлдэгдэл";
+  const niitDun = uriidchilsan.reduce((d, m) => d + (m.dun || 0), 0);
   // Эхний үлдэгдлийг аль ашиглалтын зардлаар бүртгэх («» = ерөнхий эхний үлдэгдэл)
   const [zardal, setZardal] = useState<string>("");
   const { zardluud } = useAshiglaltiinZardluud({
@@ -90,9 +107,85 @@ export default function InitialBalanceExcelModal({
     }
   };
 
+  /**
+   * Excel-ийг задалж урьдчилан харуулна.
+   *
+   * Задлалт нь СЕРВЕРИЙНХТЭЙ ИЖИЛ дүрэмтэй байх ёстой (эхний мөр толгой,
+   * 2-р мөр хоосон бол тайлбарын мөр гэж алгасна) — эс бөгөөс урьдчилсан
+   * харагдац нь бодит импортоос зөрнө.
+   */
+  const uriidchilanKharuulya = async (songosonFile: File) => {
+    try {
+      const XLSX = await import("xlsx");
+      const buf = await songosonFile.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array" });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const bukhMur: any[][] = XLSX.utils.sheet_to_json(ws, {
+        raw: false,
+        header: 1,
+      });
+
+      const tolgoi: string[] = (bukhMur[0] || []).map((x: any) =>
+        String(x ?? "").trim(),
+      );
+
+      const khoyrdugaar = bukhMur[1];
+      const khoyrdugaarKhooson =
+        !khoyrdugaar ||
+        !khoyrdugaar.some(
+          (c: any) => c !== undefined && c !== null && c !== "",
+        );
+      const ekhlel = khoyrdugaarKhooson ? 2 : 1;
+
+      const muruud: UriidchilsanMur[] = [];
+      let khooson = 0;
+
+      bukhMur.slice(ekhlel).forEach((r: any[], i: number) => {
+        if (
+          !r ||
+          !r.some((c: any) => c !== undefined && c !== null && c !== "")
+        ) {
+          return;
+        }
+
+        const obj: Record<string, any> = {};
+        tolgoi.forEach((k, idx) => {
+          if (k) obj[k] = r[idx] ?? "";
+        });
+
+        const dunText = String(obj[dunBaganiinNer] ?? "").trim();
+        if (!dunText) {
+          khooson += 1;
+          return;
+        }
+
+        // Excel-ээс «500,000.00» гэх мэтээр ирдэг тул тоонд хөрвүүлнэ.
+        const dun = Number(dunText.replace(/[^0-9.-]/g, ""));
+
+        muruud.push({
+          mur: ekhlel + i + 1,
+          ner: String(obj["Нэр"] ?? "").trim(),
+          gereeniiDugaar: String(obj["Гэрээний дугаар"] ?? "").trim(),
+          toot: String(obj["Тоот"] ?? "").trim(),
+          dun: isNaN(dun) ? 0 : dun,
+          tailbar: String(obj["Тайлбар"] ?? "").trim(),
+        });
+      });
+
+      setUriidchilsan(muruud);
+      setKhoosonToo(khooson);
+    } catch (_aldaa) {
+      setUriidchilsan([]);
+      setKhoosonToo(0);
+      message.error("Excel файлыг уншиж чадсангүй");
+    }
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+      const songoson = e.target.files[0];
+      setFile(songoson);
+      uriidchilanKharuulya(songoson);
     }
   };
 
@@ -132,6 +225,8 @@ export default function InitialBalanceExcelModal({
         onSuccess();
         onClose();
         setFile(null);
+        setUriidchilsan([]);
+        setKhoosonToo(0);
       } else {
         message.error(response.data.message || "Импортлоход алдаа гарлаа");
       }
@@ -209,7 +304,14 @@ export default function InitialBalanceExcelModal({
                   type="button"
                   role="tab"
                   aria-selected={gorim === s.utga}
-                  onClick={() => setGorim(s.utga)}
+                  onClick={() => {
+                    // Багана нь өөр тул хуучин файл/урьдчилсан харагдац
+                    // хүчингүй болно.
+                    setGorim(s.utga);
+                    setFile(null);
+                    setUriidchilsan([]);
+                    setKhoosonToo(0);
+                  }}
                   className={`rounded-xl px-5 py-1.5 text-sm transition-colors ${
                     gorim === s.utga
                       ? "bg-theme text-white"
@@ -295,6 +397,84 @@ export default function InitialBalanceExcelModal({
                 </p>
               </div>
             </div>
+
+            {/* Урьдчилан харах — импортлогдох мөрүүд */}
+            {uriidchilsan.length > 0 && (
+              <div className="mt-6">
+                <div className="mb-2 flex items-center justify-between text-xs">
+                  <span className="text-[color:var(--panel-text)]">
+                    Импортлогдох {uriidchilsan.length} мөр
+                    {khoosonToo > 0 ? ` · ${khoosonToo} хоосон мөр алгасна` : ""}
+                  </span>
+                  <span className="font-medium text-[color:var(--panel-text)] tabular-nums">
+                    Нийт {niitDun.toLocaleString("mn-MN")}₮
+                  </span>
+                </div>
+                <div className="overflow-hidden rounded-xl border border-[color:var(--surface-border)] dark:border-white/10">
+                  <div className="custom-scrollbar max-h-[260px] overflow-y-auto overflow-x-auto">
+                    <table className="w-full border-collapse text-left text-[13px]">
+                      <thead className="sticky top-0 z-10 bg-[color:var(--surface-hover)]">
+                        <tr>
+                          <th className="w-12 px-3 py-2 text-center text-xs text-[color:var(--panel-text)]">
+                            №
+                          </th>
+                          <th className="px-3 py-2 text-xs text-[color:var(--panel-text)]">
+                            Нэр
+                          </th>
+                          <th className="px-3 py-2 text-xs text-[color:var(--panel-text)]">
+                            Гэрээ
+                          </th>
+                          <th className="px-3 py-2 text-xs text-[color:var(--panel-text)]">
+                            Тоот
+                          </th>
+                          <th className="px-3 py-2 text-right text-xs text-[color:var(--panel-text)]">
+                            {dunBaganiinNer}
+                          </th>
+                          {tulultEsekh && (
+                            <th className="px-3 py-2 text-xs text-[color:var(--panel-text)]">
+                              Тайлбар
+                            </th>
+                          )}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[color:var(--surface-border)] dark:divide-white/5">
+                        {uriidchilsan.map((m) => (
+                          <tr
+                            key={m.mur}
+                            className={m.dun === 0 ? "bg-danger/40" : ""}
+                          >
+                            <td className="px-3 py-2 text-center text-xs text-[color:var(--muted-text)]">
+                              {m.mur}
+                            </td>
+                            <td className="px-3 py-2 text-[color:var(--panel-text)]">
+                              {m.ner || "—"}
+                            </td>
+                            <td className="px-3 py-2 text-[color:var(--panel-text)]">
+                              {m.gereeniiDugaar || "—"}
+                            </td>
+                            <td className="px-3 py-2 text-[color:var(--panel-text)]">
+                              {m.toot || "—"}
+                            </td>
+                            <td className="px-3 py-2 text-right tabular-nums text-[color:var(--panel-text)]">
+                              {m.dun.toLocaleString("mn-MN")}
+                            </td>
+                            {tulultEsekh && (
+                              <td className="px-3 py-2 text-[color:var(--muted-text)]">
+                                {m.tailbar || `Төлөлт - ${m.toot} тоот`}
+                              </td>
+                            )}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <p className="mt-2 text-[11px] italic text-[color:var(--muted-text)]">
+                  * Улаан мөр нь дүн нь 0 буюу танигдаагүй — сервер түүнийг
+                  алдаатай гэж буцаана.
+                </p>
+              </div>
+            )}
 
             <div className="mt-8 flex items-center justify-between">
               <Button
