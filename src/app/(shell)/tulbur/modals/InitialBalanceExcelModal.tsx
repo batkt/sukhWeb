@@ -495,8 +495,8 @@ export default function InitialBalanceExcelModal({
               {tulultEsekh
                 ? "* Сонгосон огноогоор төлөлт бүртгэгдэж, нэхэмжлэхийн төлөв автоматаар шинэчлэгдэнэ."
                 : selectedZardluud.length > 0
-                  ? `* Сонгосон ${selectedZardluud.length} зардлаар («${selectedZardluud.slice(0, 3).join(", ")}${selectedZardluud.length > 3 ? "..." : ""}») эхний үлдэгдлийн баганууд үүснэ.`
-                  : "* Зардал сонгоогүй үед ерөнхий «Эхний үлдэгдэл» баганаар загвар үүсэж бүртгэгдэнэ."}
+                  ? `* Үндсэн «Эхний үлдэгдэл» баганы хамт сонгосон ${selectedZardluud.length} зардлын («${selectedZardluud.slice(0, 3).join(", ")}${selectedZardluud.length > 3 ? "..." : ""}») баганууд тарифын дүнтэй хамт загварт үүснэ.`
+                  : "* Үндсэн «Эхний үлдэгдэл» баганатай загвар үүснэ. (Хүсвэл зардлууд нэмж сонгох боломжтой)"}
             </p>
 
             {/* Hidden file input */}
