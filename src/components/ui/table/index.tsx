@@ -1211,7 +1211,7 @@ function Table<T extends object = any>({
           ref={bodyRef}
           className={cn(
             fitContent ? "w-fit max-w-full" : "w-full",
-            "overflow-x-auto rounded-md border border-[hsl(var(--zt-border))] bg-[hsl(var(--zt-card))]",
+            "overflow-x-auto rounded-md border border-[hsl(var(--zt-border))] bg-[hsl(var(--zt-card))] custom-scrollbar",
             effectiveY != null && "overflow-y-auto",
           )}
           style={

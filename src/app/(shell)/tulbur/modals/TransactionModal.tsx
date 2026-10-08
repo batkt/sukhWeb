@@ -959,7 +959,39 @@ export default function TransactionModal({
         const oron = "Орон сууц" as PaymentCategory;
         khuvaarilalt.set(oron, r2((khuvaarilalt.get(oron) || 0) + uldsen));
       }
-      const bugdTulsun = orsonDun >= bugdiinDun - 0.005;
+      /**
+       * Авлагын мөрийн тайлбар — «Орон сууц (43)», «Гараж (12)» хэлбэртэй.
+       *
+       * Ангиллын сонголтын жагсаалттай ЯГ ИЖИЛ бичиглэл (доорх
+       * `dropdownOptions`-ыг үз) — хоёр газар өөр харагдвал хүснэгт дээрээс
+       * аль мөр юу болохыг тааварлах хэрэг гарна.
+       *
+       * Өмнө нь «Бүгдийг төлсөн / Төлөлт» гэж бичдэг байсан нь ЯМАР тоотын
+       * төлөлт болохыг огт хэлдэггүй байв — нэг хүн хэд хэдэн гараж,
+       * агуулахтай байхад ялгах аргагүй.
+       */
+      const tootuudAvya = (turluud: string[]) =>
+        Array.from(
+          new Set(
+            (Array.isArray(resident?.toots) ? resident.toots : [])
+              .filter((t: any) => turluud.includes(String(t?.turul || "")))
+              .map((t: any) => String(t?.toot || "").trim())
+              .filter(Boolean),
+          ),
+        );
+
+      const angilliinShoshgo = (k: PaymentCategory) => {
+        if (k === "Зогсоол") {
+          const toots = tootuudAvya(["Гараж", "Зогсоол"]);
+          return toots.length ? `Гараж (Тоот ${toots.join(", ")})` : "Гараж";
+        }
+        if (k === "Агуулах") {
+          const toots = tootuudAvya(["Агуулах"]);
+          return toots.length ? `Агуулах (Тоот ${toots.join(", ")})` : "Агуулах";
+        }
+        return resident?.toot ? `Орон сууц (Тоот ${resident.toot})` : "Орон сууц";
+      };
+
       for (const [ner, dun] of khuvaarilalt) {
         await onSubmit({
           type: "tulult",
@@ -968,9 +1000,7 @@ export default function TransactionModal({
           amount: dun,
           residentId: resident?._id || resident?.orshinSuugchId,
           gereeniiId: resident?.gereeniiId,
-          tailbar:
-            tailbar ||
-            `${bugdTulsun ? "Бүгдийг төлсөн" : "Төлөлт"} (${ner === "Зогсоол" ? "Гараж" : ner})`,
+          tailbar: tailbar || angilliinShoshgo(ner),
           ekhniiUldegdel: false,
         });
       }

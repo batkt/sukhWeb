@@ -19,6 +19,7 @@ import { useTourSteps } from "@/lib/useTourSteps";
 import { useRegisterTourSteps } from "@/context/TourContext";
 import { useSocket } from "@/context/SocketContext";
 import { ognooTsagBogino, ognooTsagButen } from "@/lib/ognoo";
+import { smsKhemjeeBodoyo } from "@/lib/smsUrt";
 interface Geree {
   _id: string;
   ner: string;
@@ -420,11 +421,59 @@ function MedegdelContent() {
     setKhariltsagch(mur);
   };
 
+  // SMS-ийн урт. Гарчиг, агуулга ХОЁУЛАА орно — илгээхдээ
+  // `${title}\n${msj}` гэж нийлүүлдэг.
+  const smsKhemjee = smsKhemjeeBodoyo(title, msj);
+
+  /** Мессэжийн гарчгийн дээд урт — лавлагаа загвартай ижил. */
+  const GARCHGIIN_URT = 50;
+
+  /**
+   * Мессэжийн агуулгыг хязгаарт нь ТААРУУЛЖ тайрна.
+   *
+   * Зөвхөн сануулга өгөөд цааш бичүүлбэл хэрэглэгч хэдэн мөр бичсэнийхээ
+   * дараа л баруун доод булангийн тооноос мэдэх тул энд шууд зогсооно.
+   *
+   * ЯАГААД ДАВТАЛТААР ТАЙРАХ ВЭ: кирилл ганц үсэг нэмэгдэхэд хязгаар нь
+   * 160-аас 80 болж БУУРДАГ. Тэр үед өмнө нь зөв байсан текст гэнэт
+   * хэтэрдэг тул «үлдсэн зай»-г нэг удаа бодоод тайрах нь хангалтгүй.
+   * Эхлээд хязгаараар нь ойролцоогоор тайрснаар давталт 160-аас хэтрэхгүй
+   * (урт зүйл буулгахад ч хурдан).
+   */
+  const msjSoliyo = (oruulsan: string) => {
+    if (turul !== "Мессеж") {
+      setMsj(oruulsan);
+      return;
+    }
+
+    const urdchilsan = smsKhemjeeBodoyo(title, oruulsan);
+    let text = oruulsan.slice(0, Math.max(0, urdchilsan.khyazgaar));
+    while (text.length > 0 && smsKhemjeeBodoyo(title, text).khetersen) {
+      text = text.slice(0, -1);
+    }
+    setMsj(text);
+  };
+
   const send = async () => {
     const hasImage = attachImages.length > 0 || !!composerTemplateImage;
     if (!title || (!msj && !hasImage)) {
       notification.warning({
         message: "Гарчиг оруулна уу. Мөн агуулга эсвэл зураг нэмнэ үү",
+        style: { zIndex: 99999 },
+      });
+      return;
+    }
+
+    // Хэт урт мессэжийг СЕРВЕР рүү огт явуулахгүй: үйлчилгээ үзүүлэгч нь
+    // хэд хуваан илгээж, төлбөр нь хэдэн дахин нэмэгдэнэ.
+    if (turul === "Мессеж" && smsKhemjee.khetersen) {
+      notification.warning({
+        message: `Мессэж ${smsKhemjee.khyazgaar} тэмдэгтээс ихгүй байх ёстой`,
+        description: `Одоо ${smsKhemjee.urt} тэмдэгт байна${
+          smsKhemjee.unicode
+            ? " (кирилл бичигт 1 үсэг 2 тэмдэгт эзэлнэ)"
+            : ""
+        }. Гарчиг нь мөн тооцогдоно.`,
         style: { zIndex: 99999 },
       });
       return;
@@ -1054,18 +1103,69 @@ function MedegdelContent() {
                         id="medegdel-title-input"
                         placeholder="Гарчиг"
                         value={title}
+                        // Гарчиг нь мөн SMS-д ордог. Хязгааргүй байвал
+                        // агуулгад үлдэх зай 0 болж, юу ч бичигдэхгүй
+                        // болох тул энд таслана.
+                        maxLength={turul === "Мессеж" ? GARCHGIIN_URT : undefined}
+                        showCount={turul === "Мессеж"}
                         onChange={(e) => setTitle(e.target.value)}
                         className="!h-10 !rounded-[10px] text-[13px]"
                       />
                       <Input.TextArea
                         id="medegdel-content-input"
                         rows={8}
-                        showCount={turul === "Мессеж" ? { formatter: ({ count }) => `${count} / 160 тэмдэгт` } : false}
+                        // Тоолуур нь доорх мөрөнд бий — antd-ийнхийг
+                        // үлдээвэл ижил тоо хоёр газар давхардана.
+                        showCount={false}
                         placeholder="Мэдэгдлийн агуулга бичих..."
                         value={msj}
-                        onChange={(e) => setMsj(e.target.value)}
+                        onChange={(e) => msjSoliyo(e.target.value)}
                         className="!min-h-[140px] !resize-none !rounded-[10px] text-[13px]"
                       />
+                      {turul === "Мессеж" && (
+                        <div className="space-y-1.5">
+                          {/*
+                            Хүрээтэй «анхааруулах» хайрцаг байсныг авлаа:
+                            бүх зүйл хэвийн үед ч улаан/шар хүрээ зурж,
+                            алдаа гарсан мэт харагддаг байв. Одоо хэвийн
+                            үед зүгээр л нимгэн зураас + тайлбар, харин
+                            хязгаарт хүрсэн үед л өнгө оруулна.
+                          */}
+                          <div className="h-1 w-full overflow-hidden rounded-full bg-[color:var(--surface-hover)]">
+                            <div
+                              className={`h-full rounded-full transition-all duration-300 ${
+                                smsKhemjee.khuvi >= 100
+                                  ? "bg-warning"
+                                  : "bg-brand"
+                              }`}
+                              style={{ width: `${smsKhemjee.khuvi}%` }}
+                            />
+                          </div>
+
+                          <div className="flex items-baseline justify-between gap-4">
+                            <p className="m-0 min-w-0 text-[11px] leading-relaxed text-[color:var(--muted-text)]">
+                              {smsKhemjee.unicode
+                                ? "Кирилл бичигт 1 үсэг = 2 тэмдэгт. Гарчиг нь мөн тооцогдоно."
+                                : "Латин бичиг. Кирилл үсэг нэмэгдвэл хязгаар 80 болно."}
+                            </p>
+                            <span
+                              className={`shrink-0 text-[12px] font-medium tabular-nums ${
+                                smsKhemjee.khuvi >= 100
+                                  ? "text-warning"
+                                  : "text-[color:var(--muted-text)]"
+                              }`}
+                            >
+                              {smsKhemjee.urt} / {smsKhemjee.khyazgaar}
+                            </span>
+                          </div>
+
+                          {smsKhemjee.khuvi >= 100 && (
+                            <p className="m-0 text-[11px] font-medium text-warning">
+                              Хязгаарт хүрлээ — цааш бичигдэхгүй.
+                            </p>
+                          )}
+                        </div>
+                      )}
                       <div className="flex items-center gap-2 flex-wrap">
                         <input
                           ref={attachInputRef}

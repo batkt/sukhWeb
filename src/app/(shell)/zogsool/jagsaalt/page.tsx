@@ -1018,46 +1018,53 @@ export default function Jagsaalt() {
     options: { label: string; value: string }[],
     onSelect: (v: string) => void,
   ) => (
-    <div
-      className="group/f relative flex cursor-pointer items-center justify-center gap-2"
-      onClick={() => setOpenFilter(openFilter === id ? null : id)}
-    >
-      <Filter
-        className={`h-3 w-3 transition-colors ${current !== "all" && current !== undefined
-          ? "text-brand"
-          : "text-[color:var(--muted-text)] group-hover/f:text-brand"
-          }`}
-      />
-      {label}
-      <div
-        className={`absolute top-full left-1/2 z-[100] mt-3 w-48 -translate-x-1/2 overflow-hidden rounded-2xl border border-white/5 bg-[color:var(--wall-panel)] p-2 text-white shadow-[0_20px_50px_rgba(0,0,0,0.5)] ring-1 ring-white/10 backdrop-blur-2xl transition-all duration-300 ${openFilter === id
-          ? "visible translate-y-0 opacity-100"
-          : "invisible translate-y-3 opacity-0 pointer-events-none"
-          }`}
+    <div className="relative inline-flex items-center justify-center gap-1.5">
+      <span>{label}</span>
+      <span
+        title="Шүүлтүүр"
+        className="group/f relative inline-flex items-center justify-center p-0.5 rounded hover:bg-white/10 transition-colors cursor-pointer"
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpenFilter(openFilter === id ? null : id);
+        }}
       >
-        <div className="relative z-10 flex flex-col gap-1">
-          <div className="mb-1 border-b border-white/5 px-3 py-1.5 text-[11px] text-[color:var(--muted-text)]">
-            Сонгох
-          </div>
-          {options.map((opt) => (
-            <div
-              key={opt.value}
-              onClick={(e) => {
-                e.stopPropagation();
-                onSelect(opt.value);
-                setPage(1);
-                setOpenFilter(null);
-              }}
-              className={`flex cursor-pointer items-center justify-between rounded-xl px-4 py-2.5 text-left text-[11px] transition-all duration-200 ${current === opt.value
-                ? "bg-theme text-white shadow-lg shadow-theme/40"
-                : "text-[color:var(--muted-text)] hover:bg-white/10 hover:text-white"
-                }`}
-            >
-              <span>{opt.label}</span>
+        <Filter
+          className={`h-3 w-3 transition-colors ${current !== "all" && current !== undefined
+            ? "text-brand"
+            : "text-[color:var(--muted-text)] group-hover/f:text-brand"
+            }`}
+        />
+        <div
+          className={`absolute top-full left-1/2 z-[100] mt-3 w-48 -translate-x-1/2 overflow-hidden rounded-2xl border border-white/5 bg-[color:var(--wall-panel)] p-2 text-white shadow-[0_20px_50px_rgba(0,0,0,0.5)] ring-1 ring-white/10 backdrop-blur-2xl transition-all duration-300 ${openFilter === id
+            ? "visible translate-y-0 opacity-100 pointer-events-auto"
+            : "invisible translate-y-3 opacity-0 pointer-events-none"
+            }`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="relative z-10 flex flex-col gap-1">
+            <div className="mb-1 border-b border-white/5 px-3 py-1.5 text-[11px] text-[color:var(--muted-text)]">
+              Сонгох
             </div>
-          ))}
+            {options.map((opt) => (
+              <div
+                key={opt.value}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelect(opt.value);
+                  setPage(1);
+                  setOpenFilter(null);
+                }}
+                className={`flex cursor-pointer items-center justify-between rounded-xl px-4 py-2.5 text-left text-[11px] transition-all duration-200 ${current === opt.value
+                  ? "bg-theme text-white shadow-lg shadow-theme/40"
+                  : "text-[color:var(--muted-text)] hover:bg-white/10 hover:text-white"
+                  }`}
+              >
+                <span>{opt.label}</span>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      </span>
     </div>
   );
 
@@ -1083,6 +1090,11 @@ export default function Jagsaalt() {
       key: "orson",
       width: 110,
       align: "center",
+      sorter: (a: any, b: any) => {
+        const aT = murNiiluulye(a).orsonTsag ? new Date(murNiiluulye(a).orsonTsag).getTime() : 0;
+        const bT = murNiiluulye(b).orsonTsag ? new Date(murNiiluulye(b).orsonTsag).getTime() : 0;
+        return aT - bT;
+      },
       render: (_: any, transaction: any) => {
         const { orsonTsag } = murNiiluulye(transaction);
         return (
@@ -1097,6 +1109,11 @@ export default function Jagsaalt() {
       key: "garsan",
       width: 110,
       align: "center",
+      sorter: (a: any, b: any) => {
+        const aT = murNiiluulye(a).garsanTsag ? new Date(murNiiluulye(a).garsanTsag).getTime() : 0;
+        const bT = murNiiluulye(b).garsanTsag ? new Date(murNiiluulye(b).garsanTsag).getTime() : 0;
+        return aT - bT;
+      },
       render: (_: any, transaction: any) => {
         const { garsanTsag } = murNiiluulye(transaction);
         return (
@@ -1122,8 +1139,10 @@ export default function Jagsaalt() {
           setTypeFilter,
         ),
       key: "turul",
-      width: 95,
+      width: 110,
       align: "center",
+      sorter: (a: any, b: any) =>
+        getVehicleType(a).localeCompare(getVehicleType(b)),
       render: (_: any, transaction: any) => {
         const type = getVehicleType(transaction);
         return renderTypeBadge(type);
@@ -1134,6 +1153,8 @@ export default function Jagsaalt() {
       key: "dugaar",
       width: 130,
       align: "center",
+      sorter: (a: any, b: any) =>
+        (a.mashiniiDugaar || "").localeCompare(b.mashiniiDugaar || ""),
       render: (_: any, transaction: any) => {
         const blockRecord = blockolsonEsekh(transaction.mashiniiDugaar);
         return (
@@ -1171,8 +1192,27 @@ export default function Jagsaalt() {
           setDurationFilter,
         ),
       key: "duration",
-      width: 105,
+      width: 125,
       align: "center",
+      sorter: (a: any, b: any) => {
+        const aMur = murNiiluulye(a);
+        const bMur = murNiiluulye(b);
+        const aDur =
+          aMur.mur?.niitKhugatsaa ??
+          (aMur.orsonTsag
+            ? aMur.garsanTsag
+              ? new Date(aMur.garsanTsag).getTime() - new Date(aMur.orsonTsag).getTime()
+              : Date.now() - new Date(aMur.orsonTsag).getTime()
+            : 0);
+        const bDur =
+          bMur.mur?.niitKhugatsaa ??
+          (bMur.orsonTsag
+            ? bMur.garsanTsag
+              ? new Date(bMur.garsanTsag).getTime() - new Date(bMur.orsonTsag).getTime()
+              : Date.now() - new Date(bMur.orsonTsag).getTime()
+            : 0);
+        return aDur - bDur;
+      },
       render: (_: any, transaction: any) => {
         const { mur, orsonTsag, garsanTsag, getStatusColor } =
           murNiiluulye(transaction);
@@ -1195,6 +1235,7 @@ export default function Jagsaalt() {
       key: "calc",
       width: 100,
       align: "center",
+      sorter: (a: any, b: any) => (a.niitDun || 0) - (b.niitDun || 0),
       render: (_: any, transaction: any) => (
         <span className="font-[family-name:var(--font-mono)]">
           {formatNumber(transaction.niitDun || 0, 2)}
@@ -1217,8 +1258,19 @@ export default function Jagsaalt() {
           setPaymentMethodFilter,
         ),
       key: "payment",
-      width: 85,
+      width: 105,
       align: "center",
+      sorter: (a: any, b: any) => {
+        const aPaid = tulburTuukhAvya(a, "tulult").reduce(
+          (sum: number, pay: any) => sum + (pay.dun || 0),
+          0,
+        );
+        const bPaid = tulburTuukhAvya(b, "tulult").reduce(
+          (sum: number, pay: any) => sum + (pay.dun || 0),
+          0,
+        );
+        return aPaid - bPaid;
+      },
       render: (_: any, transaction: any) => {
         const paymentHistory = tulburTuukhAvya(transaction, "tulult");
         if (!paymentHistory.length) return <span />;
@@ -1243,6 +1295,17 @@ export default function Jagsaalt() {
       key: "discount",
       width: 110,
       align: "center",
+      sorter: (a: any, b: any) => {
+        const aDisc = tulburTuukhAvya(a, "khungulult").reduce(
+          (sum: number, pay: any) => sum + Math.abs(pay.dun || 0),
+          0,
+        );
+        const bDisc = tulburTuukhAvya(b, "khungulult").reduce(
+          (sum: number, pay: any) => sum + Math.abs(pay.dun || 0),
+          0,
+        );
+        return aDisc - bDisc;
+      },
       render: (_: any, transaction: any) => {
         const discountHistory = tulburTuukhAvya(transaction, "khungulult");
         if (!discountHistory.length) return <span />;
@@ -1269,6 +1332,10 @@ export default function Jagsaalt() {
       key: "ebarimt",
       width: 110,
       align: "center",
+      sorter: (a: any, b: any) =>
+        String(murNiiluulye(a).mur?.ebarimtId || "").localeCompare(
+          String(murNiiluulye(b).mur?.ebarimtId || ""),
+        ),
       render: (_: any, transaction: any) => (
         <span className="">
           {murNiiluulye(transaction).mur?.ebarimtId || ""}
@@ -1291,8 +1358,15 @@ export default function Jagsaalt() {
           setStatusFilter,
         ),
       key: "status",
-      width: 105,
+      width: 115,
       align: "center",
+      sorter: (a: any, b: any) => {
+        const aMur = murNiiluulye(a);
+        const bMur = murNiiluulye(b);
+        const aVal = aMur.isCurrentlyIn ? 100 : (aMur.tuluv ?? 0);
+        const bVal = bMur.isCurrentlyIn ? 100 : (bMur.tuluv ?? 0);
+        return aVal - bVal;
+      },
       render: (_: any, transaction: any) => {
         const {
           tuluv,
@@ -1338,6 +1412,8 @@ export default function Jagsaalt() {
       width: 150,
       align: "center",
       ellipsis: true,
+      sorter: (a: any, b: any) =>
+        String(a.zurchil || "").localeCompare(String(b.zurchil || "")),
       render: (v: any) => (
         <span className="italic opacity-70">{v || ""}</span>
       ),
@@ -1347,53 +1423,56 @@ export default function Jagsaalt() {
       key: "staff",
       width: 120,
       align: "center",
-          render: (_: any, transaction: any) => (
-            <span className="">
-              {murNiiluulye(transaction).mur?.burtgesenAjiltaniiNer || ""}
-            </span>
-          ),
+      sorter: (a: any, b: any) =>
+        String(murNiiluulye(a).mur?.burtgesenAjiltaniiNer || "").localeCompare(
+          String(murNiiluulye(b).mur?.burtgesenAjiltaniiNer || ""),
+        ),
+      render: (_: any, transaction: any) => (
+        <span className="">
+          {murNiiluulye(transaction).mur?.burtgesenAjiltaniiNer || ""}
+        </span>
+      ),
     },
-{
-  title: "Блок",
-    key: "block",
+    {
+      title: "Блок",
+      key: "block",
       width: 84,
-        align: "center",
-          render: (_: any, transaction: any) => {
-            const blockRecord = blockolsonEsekh(transaction.mashiniiDugaar);
-            return blockRecord ? (
-              <button
-                onClick={() => blockGargaya(blockRecord)}
-                title={
-                  blockRecord.tailbar
-                    ? `Блокоос гаргах — ${blockRecord.tailbar}`
-                    : "Блокоос гаргах"
-                }
-                className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-danger text-white shadow-sm transition-all hover:bg-danger active:bg-danger"
-              >
-                <ShieldCheck className="h-4 w-4" />
-              </button>
-            ) : (
-              <button
-                onClick={() =>
-                  setBlockModal({
-                    dugaar: mashiniiDugaarTseverle(transaction.mashiniiDugaar || ""),
-                    tailbar: "",
-                  })
-                }
-                disabled={!transaction.mashiniiDugaar}
-                title="Машиныг блоклох"
-                className="inline-flex h-6 w-6 items-center justify-center rounded-full text-[color:var(--muted-text)] opacity-40 transition-all hover:bg-danger/10 hover:text-danger focus:opacity-100 disabled:cursor-not-allowed disabled:opacity-30"
-              >
-                <Ban className="h-4 w-4" />
-              </button>
-            );
-          },
+      align: "center",
+      render: (_: any, transaction: any) => {
+        const blockRecord = blockolsonEsekh(transaction.mashiniiDugaar);
+        return blockRecord ? (
+          <button
+            onClick={() => blockGargaya(blockRecord)}
+            title={
+              blockRecord.tailbar
+                ? `Блокоос гаргах — ${blockRecord.tailbar}`
+                : "Блокоос гаргах"
+            }
+            className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-danger text-white shadow-sm transition-all hover:bg-danger active:bg-danger"
+          >
+            <ShieldCheck className="h-4 w-4" />
+          </button>
+        ) : (
+          <button
+            onClick={() =>
+              setBlockModal({
+                dugaar: mashiniiDugaarTseverle(transaction.mashiniiDugaar || ""),
+                tailbar: "",
+              })
+            }
+            disabled={!transaction.mashiniiDugaar}
+            title="Машиныг блоклох"
+            className="inline-flex h-6 w-6 items-center justify-center rounded-full text-[color:var(--muted-text)] opacity-40 transition-all hover:bg-danger/10 hover:text-danger focus:opacity-100 disabled:cursor-not-allowed disabled:opacity-30"
+          >
+            <Ban className="h-4 w-4" />
+          </button>
+        );
+      },
     },
   ];
 
-return (
-  <div className="flex flex-col h-[calc(100dvh-var(--shell-topbar-h)-3.5rem-2px)] min-h-[420px] overflow-hidden">
-    <div className="flex-1 min-h-0 flex flex-col gap-4 max-w-[1700px] mx-auto w-full overflow-hidden">
+  return (
+    <div className="flex flex-col min-h-0 flex-1 gap-4 max-w-[1700px] mx-auto w-full">
       <div className="relative z-30 flex-shrink-0 px-1">
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
           {/* Left: Date picker + Search */}
@@ -1445,12 +1524,12 @@ return (
       </div>
       <div className="min-h-0 flex-1 flex flex-col">
         <Table<any>
-          className="zt-fill-table"
           columns={mashiniiColumns}
           dataSource={displayVehicles}
           rowKey={(t, idx) => t._id || idx}
           pagination={false}
-          scroll={{ x: 1300, y: "100%" }}
+          scroll={{ x: 1300 }}
+          fillHeight
           locale={{
             emptyText: (
               <div className="flex flex-col items-center gap-2">
@@ -1972,6 +2051,5 @@ return (
         document.body
       )}
     </div>
-  </div>
-);
+  );
 }
