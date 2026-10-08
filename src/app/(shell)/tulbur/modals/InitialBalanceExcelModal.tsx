@@ -258,6 +258,16 @@ export default function InitialBalanceExcelModal({
     }
   };
 
+  const handleRemoveFile = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setFile(null);
+    setUriidchilsan([]);
+    setKhoosonToo(0);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const handleUpload = async () => {
     if (!file) {
       toast.warning("Excel файл сонгоно уу");
@@ -357,115 +367,128 @@ export default function InitialBalanceExcelModal({
                 <X className="w-5 h-5 text-[color:var(--muted-text)]" />
               </Button>
             </div>
-            {/* Горим сонголт. Авлага = эхний үлдэгдэл (хуучин зан төлөв),
-                Төлөлт = оршин суугчийн төлсөн мөнгийг бүртгэнэ. */}
-            <div
-              className="mb-5 inline-flex rounded-2xl border border-[color:var(--surface-border)] p-1"
-              role="tablist"
-              aria-label="Гүйлгээний төрөл"
-            >
-              {([
-                { utga: "avlaga", shoshgo: "Авлага" },
-                { utga: "tulult", shoshgo: "Төлөлт" },
-              ] as const).map((s) => (
-                <button
-                  key={s.utga}
-                  type="button"
-                  role="tab"
-                  aria-selected={gorim === s.utga}
-                  onClick={() => {
-                    // Багана нь өөр тул хуучин файл/урьдчилсан харагдац
-                    // хүчингүй болно.
-                    setGorim(s.utga);
-                    setFile(null);
-                    setUriidchilsan([]);
-                    setKhoosonToo(0);
-                  }}
-                  className={`rounded-xl px-5 py-1.5 text-sm transition-colors ${
-                    gorim === s.utga
-                      ? "bg-theme text-white"
-                      : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
-                  }`}
+            {/* Нэг мөрөнд: Горим сонголт, Огноо, Зардал сонголт */}
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Горим сонголт */}
+                <div
+                  className="inline-flex rounded-2xl border border-[color:var(--surface-border)] p-1 bg-[color:var(--surface-hover)]"
+                  role="tablist"
+                  aria-label="Гүйлгээний төрөл"
                 >
-                  {s.shoshgo}
-                </button>
-              ))}
-            </div>
+                  {([
+                    { utga: "avlaga", shoshgo: "Авлага" },
+                    { utga: "tulult", shoshgo: "Төлөлт" },
+                  ] as const).map((s) => (
+                    <button
+                      key={s.utga}
+                      type="button"
+                      role="tab"
+                      aria-selected={gorim === s.utga}
+                      onClick={() => {
+                        setGorim(s.utga);
+                        handleRemoveFile();
+                      }}
+                      className={`rounded-xl px-4 py-1.5 text-xs font-medium transition-colors ${
+                        gorim === s.utga
+                          ? "bg-theme text-white shadow-sm"
+                          : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+                      }`}
+                    >
+                      {s.shoshgo}
+                    </button>
+                  ))}
+                </div>
 
-            <div className="flex flex-col gap-2 mb-8">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <input
-                    type="date"
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                    className="px-4 py-2 border border-[color:var(--surface-border)] bg-transparent rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-theme/20"
+                {/* Огноо */}
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="px-3.5 py-1.5 border border-[color:var(--surface-border)] bg-transparent rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-theme/20 h-[34px]"
+                />
+              </div>
+
+              {/* Ашиглалтын зардал сонгох — ЗӨВХӨН авлагад хамаарна */}
+              {!tulultEsekh && (
+                <div className="min-w-0 flex-1 max-w-[240px]">
+                  <FilterSelect
+                    value={zardal}
+                    onChange={(v) => setZardal(String(v || ""))}
+                    options={zardliinSongolt}
+                    bugdLabel={null}
+                    allowClear={false}
                   />
                 </div>
-                {/* Ашиглалтын зардал сонгох — ЗӨВХӨН авлагад хамаарна. */}
-                {!tulultEsekh && (
-                  <div className="min-w-0 flex-1 max-w-[240px]">
-                    <FilterSelect
-                      value={zardal}
-                      onChange={(v) => setZardal(String(v || ""))}
-                      options={zardliinSongolt}
-                      bugdLabel={null}
-                      allowClear={false}
-                    />
+              )}
+            </div>
+
+            <p className="-mt-1 mb-4 text-[11px] text-[color:var(--muted-text)] italic">
+              {tulultEsekh
+                ? "* Сонгосон огноогоор төлөлт бүртгэгдэж, нэхэмжлэхийн төлөв автоматаар шинэчлэгдэнэ."
+                : zardal
+                  ? `* Сонгосон огноогоор «${zardal}» зардлаар эхний үлдэгдэл бүртгэгдэнэ.`
+                  : "* Сонгосон огноогоор эхний үлдэгдэл бүртгэгдэнэ."}
+            </p>
+
+            {/* Hidden file input */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept=".xlsx, .xls, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+              className="hidden"
+            />
+
+            {/* Excel файл оруулах хэсэг — сонгосон бол нэг мөрийн авсаархан харагдац, устгах товчтой */}
+            {file ? (
+              <div className="flex items-center justify-between gap-3 rounded-2xl border border-theme/40 bg-theme/10 dark:bg-theme/20 px-4 py-2.5 transition-all">
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer"
+                  title="Өөр файл сонгох бол дарна уу"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-success/20 text-success flex items-center justify-center shrink-0">
+                    <FileSpreadsheet size={18} />
                   </div>
-                )}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-[color:var(--panel-text)] truncate">
+                      {file.name}
+                    </p>
+                    <p className="text-[11px] text-[color:var(--muted-text)]">
+                      {(file.size / 1024).toFixed(1)} KB · {tulultEsekh ? "Төлөлтийн" : "Эхний үлдэгдэл"} excel · Солих бол дарна уу
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleRemoveFile}
+                  className="p-1.5 rounded-xl text-[color:var(--muted-text)] hover:text-danger hover:bg-danger/10 transition-colors shrink-0"
+                  title="Файлыг хасах"
+                  aria-label="Файлыг хасах"
+                >
+                  <X size={18} />
+                </button>
               </div>
-              <p className="text-[11px] text-[color:var(--muted-text)] italic">
-                {tulultEsekh
-                  ? "* Сонгосон огноогоор төлөлт бүртгэгдэж, нэхэмжлэхийн төлөв автоматаар шинэчлэгдэнэ."
-                  : zardal
-                    ? `* Сонгосон огноогоор «${zardal}» зардлаар эхний үлдэгдэл бүртгэгдэнэ.`
-                    : "* Сонгосон огноогоор эхний үлдэгдэл бүртгэгдэнэ."}
-              </p>
-            </div>
-
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className={`
-                group relative border-2 border-dashed rounded-[24px] p-12
-                flex flex-col items-center justify-center gap-4 cursor-pointer
-                transition-all duration-300
-                ${
-                  file
-                    ? "border-theme/30 bg-theme/50"
-                    : "border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] hover:border-theme hover:bg-theme/30 dark:hover:border-theme/50"
-                }
-              `}
-            >
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                accept=".xlsx, .xls, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
-                className="hidden"
-              />
-
+            ) : (
               <div
-                className={`
-                w-16 h-16 rounded-2xl flex items-center justify-center mb-2
-                transition-transform duration-300 group-hover:scale-110
-                ${file ? "bg-success/10 text-success" : "bg-info/10 text-info"}
-              `}
+                onClick={() => fileInputRef.current?.click()}
+                className="group relative border-2 border-dashed rounded-2xl p-4 flex items-center justify-center gap-3 cursor-pointer border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] hover:border-theme hover:bg-theme/10 transition-all duration-200"
               >
-                {file ? <FileSpreadsheet size={32} /> : <Upload size={32} />}
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-info/10 text-info transition-transform duration-200 group-hover:scale-110 shrink-0">
+                  <Upload size={18} />
+                </div>
+                <div className="text-left">
+                  <p className="text-xs font-medium text-[color:var(--panel-text)]">
+                    Excel файл аа чирч оруулах эсвэл дарж сонгоно уу
+                  </p>
+                  <p className="text-[11px] text-[color:var(--muted-text)]">
+                    {tulultEsekh ? "Төлөлтийн" : "Эхний үлдэгдэл"} excel загвар (.xlsx, .xls)
+                  </p>
+                </div>
               </div>
-
-              <div className="text-center">
-                <p className="text-lg  text-[color:var(--panel-text)] mb-1">
-                  {file
-                    ? file.name
-                    : "Excel файл аа чирч оруулах эсвэл сонгоно уу"}
-                </p>
-                <p className="text-sm text-[color:var(--muted-text)]">
-                  {tulultEsekh ? "Төлөлтийн" : "Эхний үлдэгдэл"} excel файл
-                </p>
-              </div>
-            </div>
+            )}
 
             {/* Урьдчилан харах — импортлогдох мөрүүд */}
             {uriidchilj && (
@@ -475,7 +498,7 @@ export default function InitialBalanceExcelModal({
             )}
 
             {!uriidchilj && uriidchilsan.length > 0 && (
-              <div className="mt-6">
+              <div className="mt-4">
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs">
                   <span className="text-[color:var(--panel-text)]">
                     Импортлогдох {uriidchilsan.filter((m) => !m.aldaa).length} мөр
@@ -488,7 +511,7 @@ export default function InitialBalanceExcelModal({
                 </div>
 
                 <div className="overflow-hidden rounded-xl border border-[color:var(--surface-border)] dark:border-white/10">
-                  <div className="custom-scrollbar max-h-[320px] overflow-auto">
+                  <div className="custom-scrollbar max-h-[360px] overflow-auto">
                     {/*
                       ТОЛГОЙГ НААЛТТАЙ байлгахын тулд `border-collapse` БИШ
                       `border-separate` хэрэглэнэ: collapse үед хөтөч нь
