@@ -10,7 +10,9 @@ import { useAuth } from "@/lib/useAuth";
 import Button from "@/components/ui/Button";
 import { ModalPortal } from "../../../../../components/shell/ModalPortal";
 import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
-import FilterSelect from "@/components/ui/FilterSelect";
+import MultiFilterSelect, {
+  MultiFilterSelectOption,
+} from "@/components/ui/MultiFilterSelect";
 
 /** Файлаас уншсан, импортлогдох гэж буй нэг мөр. */
 type UriidchilsanMur = {
@@ -70,22 +72,28 @@ export default function InitialBalanceExcelModal({
   );
   const aldaataiToo = uriidchilsan.filter((m) => m.aldaa).length;
   // Эхний үлдэгдлийг аль ашиглалтын зардлаар бүртгэх («» = ерөнхий эхний үлдэгдэл)
-  const [zardal, setZardal] = useState<string>("");
+  const [selectedZardluud, setSelectedZardluud] = useState<string[]>([]);
   const { zardluud } = useAshiglaltiinZardluud({
     token: token || "",
     baiguullagiinId,
     barilgiinId,
   });
-  const zardliinSongolt = [
-    { value: "", label: "Эхний үлдэгдэл (ерөнхий)" },
-    ...Array.from(
+  const zardliinSongolt: MultiFilterSelectOption[] = React.useMemo(() => {
+    return Array.from(
       new Map(
         (Array.isArray(zardluud) ? zardluud : [])
           .filter((z) => z?.ner)
-          .map((z) => [String(z.ner), { value: String(z.ner), label: String(z.ner) }]),
+          .map((z) => [
+            String(z.ner),
+            {
+              value: String(z.ner),
+              label: String(z.ner),
+              tailbar: z.tariff ? `${z.tariff.toLocaleString()}₮` : undefined,
+            },
+          ]),
       ).values(),
-    ),
-  ];
+    );
+  }, [zardluud]);
 
   useModalHotkeys({
     isOpen: show,
@@ -99,14 +107,25 @@ export default function InitialBalanceExcelModal({
         tulultEsekh
           ? "/generateTulultTemplate"
           : "/generateInitialBalanceTemplate",
-        { baiguullagiinId, barilgiinId },
+        {
+          baiguullagiinId,
+          barilgiinId,
+          zardluud:
+            !tulultEsekh && selectedZardluud.length > 0
+              ? selectedZardluud
+              : undefined,
+        },
         { responseType: "blob" },
       );
       const url = window.URL.createObjectURL(new Blob([resp.data]));
       const link = document.createElement("a");
+      const zardalSuffix =
+        !tulultEsekh && selectedZardluud.length > 0
+          ? `_${selectedZardluud.length}зардал`
+          : "";
       link.setAttribute(
         "download",
-        `${tulultEsekh ? "Төлөлт" : "Эхний үлдэгдэл"} загвар_${Date.now()}.xlsx`,
+        `${tulultEsekh ? "Төлөлт" : "Эхний үлдэгдэл"}${zardalSuffix} загвар_${Date.now()}.xlsx`,
       );
       link.href = url;
       document.body.appendChild(link);
@@ -203,6 +222,29 @@ export default function InitialBalanceExcelModal({
         );
       const ekhlel = khoyrdugaarKhooson ? 2 : 1;
 
+      // Тодорхой мета багануудаас бусад нь зардлын баганууд
+      const metaHeaders = new Set([
+        "Нэр",
+        "Гэрээний дугаар",
+        "Утас",
+        "Орц",
+        "Давхар",
+        "Тоот",
+        "Тайлбар",
+        "Огноо",
+        "ognoo",
+        "toot",
+        "utas",
+        "ner",
+        "orts",
+        "davkhar",
+      ]);
+
+      let expenseHeaders = tolgoi.filter((k) => k && !metaHeaders.has(k));
+      if (expenseHeaders.length === 0) {
+        expenseHeaders = [dunBaganiinNer];
+      }
+
       const muruud: UriidchilsanMur[] = [];
       let khooson = 0;
 
@@ -219,22 +261,39 @@ export default function InitialBalanceExcelModal({
           if (k) obj[k] = r[idx] ?? "";
         });
 
-        const dunText = String(obj[dunBaganiinNer] ?? "").trim();
-        if (!dunText) {
+        let rowDun = 0;
+        let hasAnyValue = false;
+        const zadargaa: string[] = [];
+
+        expenseHeaders.forEach((col) => {
+          const rawVal = String(obj[col] ?? "").trim();
+          if (rawVal) {
+            const parsed = Number(rawVal.replace(/[^0-9.-]/g, ""));
+            if (!isNaN(parsed) && parsed !== 0) {
+              hasAnyValue = true;
+              rowDun += parsed;
+              if (expenseHeaders.length > 1) {
+                zadargaa.push(`${col}: ${parsed.toLocaleString("mn-MN")}₮`);
+              }
+            }
+          }
+        });
+
+        if (!hasAnyValue) {
           khooson += 1;
           return;
         }
 
-        // Excel-ээс «500,000.00» гэх мэтээр ирдэг тул тоонд хөрвүүлнэ.
-        const dun = Number(dunText.replace(/[^0-9.-]/g, ""));
+        const customTailbar = String(obj["Тайлбар"] ?? "").trim();
+        const displayTailbar = customTailbar || zadargaa.join(", ");
 
         muruud.push({
           mur: ekhlel + i + 1,
           ner: String(obj["Нэр"] ?? "").trim(),
           gereeniiDugaar: String(obj["Гэрээний дугаар"] ?? "").trim(),
           toot: String(obj["Тоот"] ?? "").trim(),
-          dun: isNaN(dun) ? 0 : dun,
-          tailbar: String(obj["Тайлбар"] ?? "").trim(),
+          dun: rowDun,
+          tailbar: displayTailbar,
           // Авлагын горимд үлдэгдлийг урьдчилж тооцохгүй — энэ нь зөвхөн
           // файлыг зөв уншсан эсэхийг шалгах зорилготой.
           umnukhUldegdel: null,
@@ -285,10 +344,16 @@ export default function InitialBalanceExcelModal({
       formData.append("ognoo", selectedDate);
       // Ашиглалтын зардал нь ЗӨВХӨН авлагад хамаарна — төлөлт нь аль
       // нэхэмжлэхэд хуваарилагдахаа дэвтрийн дарааллаар өөрөө шийднэ.
-      if (!tulultEsekh && zardal) {
-        const z = (Array.isArray(zardluud) ? zardluud : []).find((x) => x?.ner === zardal);
-        formData.append("zardliinNer", zardal);
-        if (z?.zardliinTurul || z?.turul) formData.append("zardliinTurul", String(z.zardliinTurul || z.turul));
+      if (!tulultEsekh && selectedZardluud.length > 0) {
+        if (selectedZardluud.length === 1) {
+          const z = (Array.isArray(zardluud) ? zardluud : []).find(
+            (x) => x?.ner === selectedZardluud[0],
+          );
+          formData.append("zardliinNer", selectedZardluud[0]);
+          if (z?.zardliinTurul || z?.turul) {
+            formData.append("zardliinTurul", String(z.zardliinTurul || z.turul));
+          }
+        }
       }
 
       const response = await uilchilgee(token || "").post(
@@ -389,6 +454,7 @@ export default function InitialBalanceExcelModal({
                       aria-selected={gorim === s.utga}
                       onClick={() => {
                         setGorim(s.utga);
+                        setSelectedZardluud([]);
                         handleRemoveFile();
                       }}
                       className={`rounded-xl px-4 py-1.5 text-xs font-medium transition-colors ${
@@ -413,13 +479,13 @@ export default function InitialBalanceExcelModal({
 
               {/* Ашиглалтын зардал сонгох — ЗӨВХӨН авлагад хамаарна */}
               {!tulultEsekh && (
-                <div className="min-w-0 flex-1 max-w-[240px]">
-                  <FilterSelect
-                    value={zardal}
-                    onChange={(v) => setZardal(String(v || ""))}
+                <div className="min-w-0 flex-1 max-w-[280px]">
+                  <MultiFilterSelect
+                    value={selectedZardluud}
+                    onChange={(v) => setSelectedZardluud(v)}
                     options={zardliinSongolt}
-                    bugdLabel={null}
-                    allowClear={false}
+                    placeholder="Ашиглалтын зардал сонгох"
+                    allSelectedLabel="Бүх зардал сонгогдсон"
                   />
                 </div>
               )}
@@ -428,9 +494,9 @@ export default function InitialBalanceExcelModal({
             <p className="-mt-1 mb-4 text-[11px] text-[color:var(--muted-text)] italic">
               {tulultEsekh
                 ? "* Сонгосон огноогоор төлөлт бүртгэгдэж, нэхэмжлэхийн төлөв автоматаар шинэчлэгдэнэ."
-                : zardal
-                  ? `* Сонгосон огноогоор «${zardal}» зардлаар эхний үлдэгдэл бүртгэгдэнэ.`
-                  : "* Сонгосон огноогоор эхний үлдэгдэл бүртгэгдэнэ."}
+                : selectedZardluud.length > 0
+                  ? `* Сонгосон ${selectedZardluud.length} зардлаар («${selectedZardluud.slice(0, 3).join(", ")}${selectedZardluud.length > 3 ? "..." : ""}») эхний үлдэгдлийн баганууд үүснэ.`
+                  : "* Зардал сонгоогүй үед ерөнхий «Эхний үлдэгдэл» баганаар загвар үүсэж бүртгэгдэнэ."}
             </p>
 
             {/* Hidden file input */}
@@ -538,7 +604,7 @@ export default function InitialBalanceExcelModal({
                                   { ner: "Шинэ үлдэгдэл", kl: "text-right" },
                                   { ner: "Тайлбар", kl: "" },
                                 ]
-                              : []),
+                              : [{ ner: "Тайлбар / Зардал", kl: "" }]),
                           ].map((b) => (
                             <th
                               key={b.ner}
@@ -578,7 +644,7 @@ export default function InitialBalanceExcelModal({
                               {m.dun.toLocaleString("mn-MN")}
                             </td>
 
-                            {tulultEsekh && (
+                            {tulultEsekh ? (
                               <>
                                 <td className="border-b border-[color:var(--surface-border)] px-3 py-2 text-right tabular-nums text-[color:var(--muted-text)] dark:border-white/5">
                                   {m.umnukhUldegdel === null
@@ -601,6 +667,13 @@ export default function InitialBalanceExcelModal({
                                   {m.aldaa || m.tailbar || "—"}
                                 </td>
                               </>
+                            ) : (
+                              <td
+                                className="border-b border-[color:var(--surface-border)] px-3 py-2 text-xs text-[color:var(--muted-text)] dark:border-white/5 max-w-[260px] truncate"
+                                title={m.tailbar || ""}
+                              >
+                                {m.tailbar || "—"}
+                              </td>
                             )}
                           </tr>
                         ))}

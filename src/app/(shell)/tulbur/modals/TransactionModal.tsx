@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import { motion, AnimatePresence, useDragControls } from "framer-motion";
-import { X, Calendar, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { X, Calendar, ChevronsLeft, ChevronsRight, Check, Search } from "lucide-react";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import uilchilgee from "@/lib/uilchilgee";
 import { message, Modal } from "antd";
@@ -343,6 +343,51 @@ export default function TransactionModal({
 
   // Ашиглалтын зардал – additional fields when type === "ashiglalt"
   const [ashiglaltZardal, setAshiglaltZardal] = useState<string>("");
+  const [selectedAshiglaltIds, setSelectedAshiglaltIds] = useState<string[]>([]);
+  const [ashiglaltKhaikh, setAshiglaltKhaikh] = useState<string>("");
+
+  const availableAshiglaltZardluud = useMemo(() => {
+    if (!Array.isArray(zardluud)) return [];
+    return zardluud.filter(
+      (z) => z && z.ner && String(z._id || z.ner) !== "tsakhilgaan_kv"
+    );
+  }, [zardluud]);
+
+  const filteredAshiglaltZardluud = useMemo(() => {
+    if (!ashiglaltKhaikh.trim()) return availableAshiglaltZardluud;
+    const q = ashiglaltKhaikh.trim().toLowerCase();
+    return availableAshiglaltZardluud.filter((z) =>
+      z.ner.toLowerCase().includes(q)
+    );
+  }, [availableAshiglaltZardluud, ashiglaltKhaikh]);
+
+  const selectedAshiglaltTotal = useMemo(() => {
+    return availableAshiglaltZardluud
+      .filter((z) => selectedAshiglaltIds.includes(String(z._id || z.ner)))
+      .reduce((sum, z) => {
+        const itemDun = Number(
+          z.tariff ?? z.dun ?? z.suuriKhuraamj ?? z.togtmolUtga ?? 0
+        );
+        return sum + itemDun;
+      }, 0);
+  }, [availableAshiglaltZardluud, selectedAshiglaltIds]);
+
+  const toggleAshiglaltZardal = (key: string) => {
+    setSelectedAshiglaltIds((prev) =>
+      prev.includes(key) ? prev.filter((id) => id !== key) : [...prev, key]
+    );
+  };
+
+  const handleSelectAllAshiglalt = () => {
+    if (selectedAshiglaltIds.length === availableAshiglaltZardluud.length) {
+      setSelectedAshiglaltIds([]);
+    } else {
+      setSelectedAshiglaltIds(
+        availableAshiglaltZardluud.map((z) => String(z._id || z.ner))
+      );
+    }
+  };
+
   const [umnukhZaalt, setUmnukhZaalt] = useState("");
   const [suuliinZaalt, setSuuliinZaalt] = useState("");
   const [showUsageOnInvoice, setShowUsageOnInvoice] = useState(true);
@@ -495,6 +540,8 @@ export default function TransactionModal({
     setTailbar("");
     setEkhniiUldegdel(false);
     setAshiglaltZardal("");
+    setSelectedAshiglaltIds([]);
+    setAshiglaltKhaikh("");
     setUmnukhZaalt("");
     setSuuliinZaalt("");
     setShowUsageOnInvoice(true);
@@ -521,6 +568,7 @@ export default function TransactionModal({
   const hasChanges =
     (amount !== "" && amount !== "0" && amount !== "0.00") ||
     tailbar.trim() !== "" ||
+    selectedAshiglaltIds.length > 0 ||
     umnukhZaalt.trim() !== "" ||
     suuliinZaalt.trim() !== "" ||
     discountValue.trim() !== "" ||
@@ -957,38 +1005,42 @@ export default function TransactionModal({
       }
     }
 
-    let finalTailbar = tailbar;
-    if (transactionType === "ashiglalt" && ashiglaltZardal && ashiglaltZardal !== "tsakhilgaan_kv") {
-      const foundZardal = Array.isArray(zardluud)
-        ? zardluud.find((z) => String(z._id || z.ner) === ashiglaltZardal || z.ner === ashiglaltZardal)
-        : null;
-      const zardalNer = foundZardal?.ner || ashiglaltZardal;
-      if (!finalTailbar) {
-        finalTailbar = zardalNer;
-      } else if (!finalTailbar.includes(zardalNer)) {
-        finalTailbar = `${zardalNer} - ${finalTailbar}`;
+    if (transactionType === "ashiglalt") {
+      if (selectedAshiglaltIds.length === 0) {
+        messageApi.warning("Зардлын төрөл сонгоно уу.");
+        return;
       }
+
+      const selectedItems = availableAshiglaltZardluud.filter((z) =>
+        selectedAshiglaltIds.includes(String(z._id || z.ner))
+      );
+
+      if (selectedItems.length === 0) {
+        messageApi.warning("Сонгосон зардал олдсонгүй.");
+        return;
+      }
+
+      for (const item of selectedItems) {
+        const itemDun = Number(
+          item.tariff ?? item.dun ?? item.suuriKhuraamj ?? item.togtmolUtga ?? 0
+        );
+
+        await onSubmit({
+          type: "ashiglalt",
+          date: transactionDate,
+          amount: itemDun,
+          residentId: resident?._id || resident?.orshinSuugchId,
+          gereeniiId: resident?.gereeniiId,
+          tailbar: item.ner,
+          ekhniiUldegdel: false,
+        });
+      }
+
+      resetForm();
+      return;
     }
 
-    if (
-      transactionType === "ashiglalt" &&
-      ashiglaltZardal === "tsakhilgaan_kv" &&
-      showUsageOnInvoice
-    ) {
-      const parts: string[] = [];
-      if (umnukhZaalt.trim()) {
-        parts.push(`Өмнөх заалт: ${umnukhZaalt.trim()}`);
-      }
-      if (suuliinZaalt.trim()) {
-        parts.push(`Нийт (одоо): ${suuliinZaalt.trim()}`);
-      }
-      const usageText = parts.join(", ");
-      if (usageText) {
-        finalTailbar = finalTailbar
-          ? `${finalTailbar} | ${usageText}`
-          : usageText;
-      }
-    }
+    let finalTailbar = tailbar;
 
     if (ekhniiUldegdel) {
       const dateStr = transactionDate.replace(/-/g, ".");
@@ -1125,6 +1177,8 @@ export default function TransactionModal({
                             setTailbar("");
                             setEkhniiUldegdel(false);
                             setAshiglaltZardal("");
+                            setSelectedAshiglaltIds([]);
+                            setAshiglaltKhaikh("");
                             setUmnukhZaalt("");
                             setSuuliinZaalt("");
                             setDiscountValue("");
@@ -1461,84 +1515,112 @@ export default function TransactionModal({
                           className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm"
                         />
                       </div>
-                      <div className="space-y-1.5 relative group">
-                        <div className="flex justify-between items-end mb-1.5">
-                          <label className="block text-xs text-[color:var(--panel-text)]">
-                            Дүн
-                          </label>
-                        </div>
-                        <div className="relative w-full group/input">
-                          <input
-                            type="text"
-                            ref={amountInputRef}
-                            value={amount}
-                            inputMode="decimal"
-                            onChange={handleAmountInputChange}
-                            onBlur={() => {
-                              if (amount) setAmount(formatAmount(amount));
-                            }}
-                            disabled={isProcessing}
-                            placeholder="0.00"
-                            className="w-full px-3 py-2.5 pr-[38px] border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-right tracking-wide text-lg font-medium"
-                          />
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[color:var(--muted-text)] text-xs pointer-events-none select-none font-medium" />
+                      <div className="space-y-1.5">
+                        <label className="block text-xs text-[color:var(--panel-text)] mb-1.5">
+                          Нийт дүн
+                        </label>
+                        <div className="w-full px-3.5 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]/40 rounded-2xl flex items-center justify-between text-sm min-h-[42px]">
+                          <span className="text-xs text-[color:var(--muted-text)] font-medium">
+                            Сонгогдсон:{" "}
+                            <strong className="text-[color:var(--panel-text)] font-semibold">
+                              {selectedAshiglaltIds.length}
+                            </strong>{" "}
+                            зардал
+                          </span>
+                          <span className="text-base font-bold text-brand tabular-nums">
+                            {selectedAshiglaltTotal.toLocaleString()}₮
+                          </span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="space-y-1.5">
-                      <label className="block text-xs text-[color:var(--panel-text)] mb-1.5">
-                        Зардлын төрөл
-                      </label>
-                      <select
-                        value={ashiglaltZardal}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setAshiglaltZardal(val);
-                          if (val && val !== "tsakhilgaan_kv") {
-                            const found = Array.isArray(zardluud)
-                              ? zardluud.find((z) => String(z._id || z.ner) === val || String(z.ner) === val)
-                              : null;
-                            if (found) {
-                              const defaultDun = found.tariff || found.dun || found.suuriKhuraamj;
-                              if (defaultDun && (!amount || amount === "0.00")) {
-                                setAmount(formatAmount(defaultDun));
-                              }
-                              if (!tailbar) {
-                                setTailbar(found.ner);
-                              }
-                            }
-                          }
-                        }}
-                        disabled={isProcessing}
-                        className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm"
-                      >
-                        <option value="">Сонгоно уу</option>
-                        <option value="tsakhilgaan_kv">Цахилгаан кВ (Заалтаар)</option>
-                        {Array.isArray(zardluud) &&
-                          zardluud.map((z) => {
-                            const valKey = String(z._id || z.ner);
-                            if (valKey === "tsakhilgaan_kv") return null;
-                            return (
-                              <option key={valKey} value={valKey}>
-                                {z.ner} {z.tariff ? `(${z.tariff.toLocaleString()}₮)` : ""}
-                              </option>
-                            );
-                          })}
-                      </select>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-[color:var(--muted-text)]">
-                        Суурь хураамж:{" "}
-                        {(calcBreakdown?.suuriKhuraamj ?? 0).toLocaleString(
-                          "en-US",
-                          {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          },
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-xs font-medium text-[color:var(--panel-text)]">
+                          Зардлын төрөл сонгох
+                        </label>
+                        {availableAshiglaltZardluud.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={handleSelectAllAshiglalt}
+                            disabled={isProcessing}
+                            className="text-xs text-brand hover:underline font-medium transition-colors"
+                          >
+                            {selectedAshiglaltIds.length === availableAshiglaltZardluud.length
+                              ? "Бүгдийг арилгах"
+                              : "Бүгдийг сонгох"}
+                          </button>
                         )}
-                      </span>
+                      </div>
+
+                      {availableAshiglaltZardluud.length > 4 && (
+                        <div className="relative">
+                          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--muted-text)] pointer-events-none" />
+                          <input
+                            type="text"
+                            placeholder="Зардал хайх..."
+                            value={ashiglaltKhaikh}
+                            onChange={(e) => setAshiglaltKhaikh(e.target.value)}
+                            disabled={isProcessing}
+                            className="w-full pl-8 pr-3 py-1.5 text-xs bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-xl focus:outline-none focus:ring-1 focus:ring-[color:var(--theme)] text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
+                          />
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto p-1.5 border border-[color:var(--surface-border)] rounded-2xl bg-[color:var(--surface-bg)]">
+                        {filteredAshiglaltZardluud.length === 0 ? (
+                          <div className="col-span-1 sm:col-span-2 py-6 text-center text-xs text-[color:var(--muted-text)]">
+                            {availableAshiglaltZardluud.length === 0
+                              ? "Бүртгэлтэй ашиглалтын зардал олдсонгүй."
+                              : "Хайлтад тохирох зардал олдсонгүй."}
+                          </div>
+                        ) : (
+                          filteredAshiglaltZardluud.map((z) => {
+                            const valKey = String(z._id || z.ner);
+                            const isSelected = selectedAshiglaltIds.includes(valKey);
+                            const itemDun = Number(
+                              z.tariff ?? z.dun ?? z.suuriKhuraamj ?? z.togtmolUtga ?? 0
+                            );
+
+                            return (
+                              <div
+                                key={valKey}
+                                onClick={() => !isProcessing && toggleAshiglaltZardal(valKey)}
+                                className={`flex items-center justify-between p-2.5 rounded-xl border cursor-pointer select-none transition-all ${
+                                  isSelected
+                                    ? "border-theme bg-theme/10 text-[color:var(--panel-text)] shadow-sm ring-1 ring-theme/30"
+                                    : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] hover:bg-[color:var(--surface-hover)] text-[color:var(--panel-text)]"
+                                } ${isProcessing ? "opacity-60 cursor-not-allowed" : ""}`}
+                              >
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  <div
+                                    className={`w-4 h-4 rounded-md border flex items-center justify-center transition-colors shrink-0 ${
+                                      isSelected
+                                        ? "bg-theme border-theme text-white"
+                                        : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]"
+                                    }`}
+                                  >
+                                    {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                                  </div>
+                                  <span
+                                    className="text-xs font-medium truncate"
+                                    title={z.ner}
+                                  >
+                                    {z.ner}
+                                  </span>
+                                </div>
+                                <span
+                                  className={`text-xs font-semibold tabular-nums ml-2 shrink-0 ${
+                                    isSelected ? "text-brand" : "text-[color:var(--muted-text)]"
+                                  }`}
+                                >
+                                  {itemDun > 0 ? `${itemDun.toLocaleString()}₮` : "0₮"}
+                                </span>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
                     </div>
                   </div>
                 ) : (
