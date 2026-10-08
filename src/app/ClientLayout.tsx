@@ -4,7 +4,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { MantineProvider, createTheme } from "@mantine/core";
 import { ConfigProvider, theme as antdTheme } from "antd";
 import mn_MN from "antd/lib/locale/mn_MN";
-import { Toaster } from "sonner";
+import { Toaster, toast } from "sonner";
 import "@mantine/core/styles.css";
 // Removed Mantine dates styles; using custom DatePicker component
 import dayjs from "dayjs";
@@ -15,7 +15,7 @@ import { SpinnerProvider, useSpinner } from "../../src/context/SpinnerContext";
 import { SuccessOverlayHost } from "@/components/ui/SuccessOverlay";
 import { ErrorOverlayHost } from "@/components/ui/ErrorOverlay";
 import { mutate } from "swr";
-import { socket } from "@/lib/uilchilgee";
+import { socket, OOR_TOKHOOROMJ_TULKHUUR } from "@/lib/uilchilgee";
 import { SocketProvider } from "../context/SocketContext";
 import { SearchProvider } from "@/context/SearchContext";
 import { BuildingProvider } from "@/context/BuildingContext";
@@ -95,6 +95,21 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
   // antd-ийн бүх бүрэлдэхүүн (confirm, popconfirm, dropdown, message...)
   // харанхуй горимд хар үсэгтэй харагддаг байв — <html class="dark">-ийг
   // ажиглаж antd-ийн өөрийн харанхуй алгоритмыг асаана.
+  // Өөр төхөөрөмжөөс нэвтэрсний улмаас гарсан бол тэр мэдэгдлийг ЭНД
+  // харуулна. `uilchilgee.ts` нь гаргахдаа чиглүүлэлт хийдэг тул тэнд
+  // харуулсан toast агшин зуур алга болно — иймд sessionStorage-оор
+  // дамжуулж, шинэ хуудсан дээр нь нэг удаа гаргана.
+  useEffect(() => {
+    try {
+      const medegdel = sessionStorage.getItem(OOR_TOKHOOROMJ_TULKHUUR);
+      if (!medegdel) return;
+      sessionStorage.removeItem(OOR_TOKHOOROMJ_TULKHUUR);
+      toast.error(medegdel, { duration: 10000 });
+    } catch (_aldaa) {
+      // sessionStorage хаалттай байж болно.
+    }
+  }, []);
+
   const [kharankhui, setKharankhui] = useState(false);
   useEffect(() => {
     const root = document.documentElement;

@@ -2,6 +2,7 @@ import axios, { AxiosInstance, InternalAxiosRequestConfig } from "axios";
 import { io, Socket } from "socket.io-client";
 import { t } from "i18next";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
+import { destroyCookie } from "nookies";
 
 // Use environment variable for API URL
 // In production with nginx proxy, use /api (relative path)
@@ -329,11 +330,59 @@ const uilchilgee = (token?: string): AxiosInstance => {
   // Remove offline queueing: if a request fails, just propagate the error
   instance.interceptors.response.use(
     (resp) => resp,
-    async (error) => Promise.reject(error),
+    async (error) => {
+      // ӨӨР ТӨХӨӨРӨМЖӨӨС НЭВТЭРСЭН.
+      //
+      // Сервер (middleware/negSession.js) нэг эрхээр нэг л төхөөрөмж
+      // зарчмыг хэрэгжүүлдэг: шинэ нэвтрэлт хуучныг идэвхгүй болгоно.
+      // Хуучин төхөөрөмж дараагийн хүсэлт дээрээ энэ хариуг авна.
+      //
+      // Энд барьж авснаар аль ч хуудас, аль ч хүсэлтээс гарах нь
+      // ижилхэн ажиллана — хуудас бүрт тусад нь бичих шаардлагагүй.
+      if (error?.response?.status === 401 && error?.response?.data?.kod === "OOR_TOKHOOROMJ") {
+        garyaOorTokhooromj(error.response.data.message);
+      }
+      return Promise.reject(error);
+    },
   );
 
   return instance;
 };
+
+/**
+ * Өөр төхөөрөмжөөс нэвтэрсэн тул ГАРГАНА.
+ *
+ * Олон хүсэлт зэрэг унаж болох тул НЭГ л удаа ажиллана — эс бөгөөс олон
+ * чиглүүлэлт, давхардсан мэдэгдэл үүснэ.
+ *
+ * Мэдэгдлийг ШУУД харуулахгүй: доорх чиглүүлэлт хуудсыг бүхэлд нь сольдог
+ * тул toast агшин зуур алга болно. Иймд санах ойд үлдээгээд нэвтрэх
+ * хуудсан дээр харуулна (ClientLayout).
+ */
+let garchBaigaa = false;
+
+export const OOR_TOKHOOROMJ_TULKHUUR = "oorTokhooromjMedegdel";
+
+function garyaOorTokhooromj(medegdel?: string) {
+  if (garchBaigaa) return;
+  garchBaigaa = true;
+
+  try {
+    sessionStorage.setItem(
+      OOR_TOKHOOROMJ_TULKHUUR,
+      medegdel ||
+        "Таны эрхээр өөр төхөөрөмжөөс нэвтэрсэн тул системээс гарлаа.",
+    );
+  } catch (_aldaa) {
+    // sessionStorage хаалттай байж болно — мэдэгдэлгүй ч гаргах нь чухал.
+  }
+
+  // `useAuth.garya`-тай ИЖИЛ түлхүүрүүд. Өөр нэр хэрэглэвэл токен үлдэж,
+  // дахин нэвтрэх мөчлөгт орно.
+  destroyCookie(null, "tureestoken", { path: "/" });
+  destroyCookie(null, "barilgiinId", { path: "/" });
+  window.location.href = "/";
+}
 
 export default uilchilgee;
 
