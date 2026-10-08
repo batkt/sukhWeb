@@ -15,6 +15,7 @@ import FilterSelect from "@/components/ui/FilterSelect";
 /** Файлаас уншсан, импортлогдох гэж буй нэг мөр. */
 type UriidchilsanMur = {
   mur: number;
+  ognoo?: string | Date | null;
   ner: string;
   gereeniiDugaar: string;
   toot: string;
@@ -147,6 +148,7 @@ export default function InitialBalanceExcelModal({
     const muruud: UriidchilsanMur[] = (khariu.data?.muruud || []).map(
       (m: any) => ({
         mur: m.rowNumber,
+        ognoo: m.ognoo || null,
         ner: m.ner || "",
         gereeniiDugaar: m.gereeniiDugaar || "",
         toot: m.toot || "",
@@ -523,6 +525,9 @@ export default function InitialBalanceExcelModal({
                         <tr>
                           {[
                             { ner: "№", kl: "w-12 text-center" },
+                            ...(tulultEsekh
+                              ? [{ ner: "Огноо", kl: "w-28 text-center whitespace-nowrap" }]
+                              : []),
                             { ner: "Нэр", kl: "" },
                             { ner: "Гэрээ", kl: "" },
                             { ner: "Тоот", kl: "" },
@@ -553,6 +558,13 @@ export default function InitialBalanceExcelModal({
                             <td className="border-b border-[color:var(--surface-border)] px-3 py-2 text-center text-xs text-[color:var(--muted-text)] dark:border-white/5">
                               {m.mur}
                             </td>
+                            {tulultEsekh && (
+                              <td className="border-b border-[color:var(--surface-border)] px-3 py-2 text-center text-xs font-mono text-[color:var(--muted-text)] dark:border-white/5 whitespace-nowrap">
+                                {m.ognoo
+                                  ? new Date(m.ognoo).toISOString().split("T")[0]
+                                  : selectedDate}
+                              </td>
+                            )}
                             <td className="border-b border-[color:var(--surface-border)] px-3 py-2 text-[color:var(--panel-text)] dark:border-white/5">
                               {m.ner || "—"}
                             </td>
