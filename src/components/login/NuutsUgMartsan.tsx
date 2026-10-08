@@ -440,14 +440,14 @@ export default function NuutsUgMartsan({
           <button
             type="submit"
             disabled={achaalj}
-            className="relative mt-2 flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-2xl transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-60"
+            className="relative mt-2 flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-2xl font-medium text-white shadow-lg transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-60"
             style={{
               background:
-                "linear-gradient(180deg, var(--glass-tint), var(--glass-tint-2))",
-              color: "var(--panel-text)",
-              border: "1px solid var(--surface-border, rgba(15,23,42,0.12))",
+                "linear-gradient(135deg, var(--theme), color-mix(in srgb, var(--theme) 80%, #000))",
+              border:
+                "1px solid color-mix(in srgb, var(--theme) 50%, rgba(255,255,255,0.2))",
               boxShadow:
-                "0 12px 28px var(--glass-shadow), inset 0 1px 0 var(--glass-highlight)",
+                "0 10px 24px color-mix(in srgb, var(--theme) 35%, transparent), inset 0 1px 0 rgba(255,255,255,0.3)",
             }}
           >
             {achaalj && (

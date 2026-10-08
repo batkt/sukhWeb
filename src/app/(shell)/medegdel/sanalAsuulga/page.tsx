@@ -1703,7 +1703,7 @@ export default function SanalAsuulgaPage() {
                 <div className="relative mx-auto w-full max-w-[310px]">
                   <div className="relative flex h-[620px] w-full flex-col overflow-hidden rounded-[42px] border-[7px] border-[color:var(--ctl-border-hover)] bg-[color:var(--surface-bg)] shadow-[var(--ctl-shadow)]">
                     {/* Dynamic island */}
-                    <div className="absolute left-1/2 top-2 z-30 h-5 w-24 -translate-x-1/2 rounded-full bg-[color:var(--panel-text)] opacity-90" />
+                    <div className="absolute left-1/2 top-2 z-30 h-5 w-24 -translate-x-1/2 rounded-full bg-slate-900 dark:bg-black" />
                     {/* Status bar */}
                     <div className="flex shrink-0 items-center justify-between px-6 pb-1 pt-2.5 text-[11px] font-medium text-[color:var(--panel-text)]">
                       <span>09:41</span>

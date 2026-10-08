@@ -430,7 +430,7 @@
    or move specific colored borders to their respective data-themes. */
 @media (prefers-color-scheme: dark) {
   html:not([data-mode]) :root {
-    --card: #fcfbf899;
+    --card: var(--dark-panel);
     --button: #1a1a1a;
     --primary: #0f6fec;
   }
@@ -439,9 +439,9 @@
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
-  --card: #fcfbf899;
+  --card: var(--dark-panel);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
+  --popover: var(--dark-panel);
   --popover-foreground: oklch(0.985 0 0);
   --primary: oklch(0.922 0 0);
   --primary-foreground: oklch(0.205 0 0);
@@ -485,13 +485,50 @@
 
   --muted-text: var(--dark-muted);
 
+  --gradient-bg: var(--dark-gradient);
+  --glass-tint: var(--dark-glass);
+  --glass-tint-2: var(--dark-glass-2);
+  --glass-border: var(--dark-glass-border);
+  --glass-highlight: rgba(255, 255, 255, 0.16);
+  --glass-shadow: rgba(0, 0, 0, 0.45);
+
+  --ctl-border: var(--dark-border);
+  --ctl-border-hover: rgba(255, 255, 255, 0.22);
+  --ctl-hover-bg: var(--dark-hover);
+  --ctl-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+
   /* Семантик өнгө (харанхуй) — бараан гадаргуу дээр 600-шээ хэт бүдэг тул
      400-шээ болгож тодруулна. */
   --success: #34d399; /* emerald-400 */
   --danger: #f87171; /* red-400 */
   --warning: #fbbf24; /* amber-400 */
   --info: #60a5fa; /* blue-400 */
-  --neutral: #4b5563; /* gray-600 — цагаан текстэй 7.6:1 */
+  --neutral: #9ca3af; /* gray-400 */
+}
+
+[data-mode="dark"] {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: var(--dark-panel);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: var(--dark-panel);
+  --popover-foreground: oklch(0.985 0 0);
+  --surface-bg: var(--dark-bg);
+  --panel: var(--dark-panel);
+  --surface-border: var(--dark-border);
+  --surface-hover: var(--dark-hover);
+  --panel-text: var(--dark-text);
+  --muted-text: var(--dark-muted);
+  --gradient-bg: var(--dark-gradient);
+  --glass-tint: var(--dark-glass);
+  --glass-tint-2: var(--dark-glass-2);
+  --glass-border: var(--dark-glass-border);
+  --glass-highlight: rgba(255, 255, 255, 0.16);
+  --glass-shadow: rgba(0, 0, 0, 0.45);
+  --ctl-border: var(--dark-border);
+  --ctl-border-hover: rgba(255, 255, 255, 0.22);
+  --ctl-hover-bg: var(--dark-hover);
+  --ctl-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 @layer base {
   html {
@@ -1346,32 +1383,50 @@ html[data-mode="dark"]:not([data-theme]),
   --glass-shadow: rgba(3, 6, 12, 0.38);
 }
 
-/* Controls follow dark tokens automatically when data-mode="dark" */
+/* Controls follow dark tokens automatically when data-mode="dark" or .dark */
 [data-mode="dark"] input,
+.dark input,
 [data-mode="dark"] textarea,
+.dark textarea,
 [data-mode="dark"] select,
+.dark select,
 [data-mode="dark"] .ant-input,
+.dark .ant-input,
 [data-mode="dark"] .ant-input-affix-wrapper,
+.dark .ant-input-affix-wrapper,
 [data-mode="dark"] .ant-input-number,
+.dark .ant-input-number,
 [data-mode="dark"] .ant-input-number-input,
+.dark .ant-input-number-input,
 [data-mode="dark"] .ant-select-selector,
+.dark .ant-select-selector,
 [data-mode="dark"] .ant-picker,
-[data-mode="dark"] .mantine-Input-input {
+.dark .ant-picker,
+[data-mode="dark"] .mantine-Input-input,
+.dark .mantine-Input-input {
   background: var(--surface-bg) !important;
   color: var(--panel-text) !important;
   border-color: var(--surface-border) !important;
   caret-color: var(--panel-text) !important;
 }
 [data-mode="dark"] input::placeholder,
+.dark input::placeholder,
 [data-mode="dark"] textarea::placeholder,
+.dark textarea::placeholder,
 [data-mode="dark"] .mantine-Input-input::placeholder,
-[data-mode="dark"] .ant-select-selection-placeholder {
+.dark .mantine-Input-input::placeholder,
+[data-mode="dark"] .ant-select-selection-placeholder,
+.dark .ant-select-selection-placeholder {
   color: rgba(229, 231, 235, 0.7) !important;
 }
 [data-mode="dark"] .ant-select-dropdown,
+.dark .ant-select-dropdown,
 [data-mode="dark"] .ant-dropdown .ant-dropdown-menu,
+.dark .ant-dropdown .ant-dropdown-menu,
 [data-mode="dark"] .mantine-Combobox-dropdown,
-[data-mode="dark"] .mantine-Popover-dropdown {
+.dark .mantine-Combobox-dropdown,
+[data-mode="dark"] .mantine-Popover-dropdown,
+.dark .mantine-Popover-dropdown {
   background: var(--surface-bg) !important;
   color: var(--panel-text) !important;
   border-color: var(--surface-border) !important;
@@ -1381,10 +1436,59 @@ html[data-mode="dark"]:not([data-theme]),
   max-width: min(96vw, 720px) !important;
 }
 [data-mode="dark"] .ant-select-item,
+.dark .ant-select-item,
 [data-mode="dark"] .ant-dropdown-menu-item,
+.dark .ant-dropdown-menu-item,
 [data-mode="dark"] .ant-dropdown-menu-submenu-title,
-[data-mode="dark"] .mantine-Combobox-option {
+.dark .ant-dropdown-menu-submenu-title,
+[data-mode="dark"] .mantine-Combobox-option,
+.dark .mantine-Combobox-option {
   color: var(--panel-text) !important;
+}
+
+/* Ant Design Modal, Card, Popover in dark mode */
+[data-mode="dark"] .ant-modal-content,
+.dark .ant-modal-content,
+[data-mode="dark"] .ant-card,
+.dark .ant-card {
+  background: var(--surface-bg) !important;
+  color: var(--panel-text) !important;
+  border: 1px solid var(--surface-border) !important;
+}
+[data-mode="dark"] .ant-modal-header,
+.dark .ant-modal-header {
+  background: transparent !important;
+  color: var(--panel-text) !important;
+}
+[data-mode="dark"] .ant-modal-title,
+.dark .ant-modal-title {
+  color: var(--panel-text) !important;
+}
+[data-mode="dark"] .ant-modal-close,
+.dark .ant-modal-close {
+  color: var(--muted-text) !important;
+}
+[data-mode="dark"] .ant-modal-close:hover,
+.dark .ant-modal-close:hover {
+  color: var(--panel-text) !important;
+}
+[data-mode="dark"] .ant-popover-inner,
+.dark .ant-popover-inner {
+  background: var(--surface-bg) !important;
+  color: var(--panel-text) !important;
+  border: 1px solid var(--surface-border) !important;
+}
+[data-mode="dark"] .ant-popconfirm-title,
+.dark .ant-popconfirm-title,
+[data-mode="dark"] .ant-popconfirm-description,
+.dark .ant-popconfirm-description {
+  color: var(--panel-text) !important;
+}
+[data-mode="dark"] .ant-notification-notice,
+.dark .ant-notification-notice {
+  background: var(--surface-bg) !important;
+  color: var(--panel-text) !important;
+  border: 1px solid var(--surface-border) !important;
 }
 
 /* ================== Edge toggler (FAB + arc trail) ================== */

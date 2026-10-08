@@ -90,7 +90,7 @@ function ResidentVotesList({
 
   if (responses.length === 0) {
     return (
-      <div className="py-4 text-center text-xs text-[color:var(--panel-text)]/50 bg-[color:var(--surface-hover)]/50 rounded-xl">
+      <div className="py-4 text-center text-xs text-[color:var(--muted-text)] bg-[color:var(--surface-hover)]/50 rounded-xl">
         Хараахан санал өгсөн оршин суугч байхгүй байна
       </div>
     );
@@ -136,7 +136,7 @@ function ResidentVotesList({
               </div>
             </div>
 
-            <div className="text-[10px] text-[color:var(--panel-text)]/40 shrink-0 text-right">
+            <div className="text-[10px] text-[color:var(--muted-text)] shrink-0 text-right">
               {item.createdAt
                 ? new Date(item.createdAt).toLocaleTimeString("mn-MN", {
                     hour: "2-digit",
@@ -267,22 +267,22 @@ export default function SanalAsuulgaTracker() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.93, y: -8 }}
             transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute top-full right-0 mt-3 z-[1100] w-[340px] sm:w-[400px] rounded-2xl border border-[color:var(--surface-border)]/90 bg-white/95 backdrop-blur-xl shadow-2xl text-[color:var(--panel-text)] overflow-hidden"
+            className="absolute top-full right-0 mt-3 z-[1100] w-[340px] sm:w-[400px] rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] backdrop-blur-xl shadow-2xl text-[color:var(--panel-text)] overflow-hidden"
           >
             {/* Upward Pointing Arrow Pointer */}
-            <div className="absolute -top-2 right-5 w-4 h-4 rotate-45 border-t border-l border-[color:var(--surface-border)]/90 bg-[color:var(--surface-bg)] z-10" />
+            <div className="absolute -top-2 right-5 w-4 h-4 rotate-45 border-t border-l border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] z-10" />
 
             {/* Modal Header */}
-            <div className="relative z-20 flex items-center justify-between px-4 py-3 border-b border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]/70">
+            <div className="relative z-20 flex items-center justify-between px-4 py-3 border-b border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 rounded-lg bg-warning/10 text-warning">
                   <Radio className="h-4 w-4 animate-pulse" strokeWidth={ICON_STROKE} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-normal tracking-tight text-[color:var(--panel-text)]">
+                  <h3 className="text-sm font-medium tracking-tight text-[color:var(--panel-text)]">
                     Санал асуулгын хяналт
                   </h3>
-                  <p className="text-[11px] text-[color:var(--panel-text)]/50">
+                  <p className="text-[11px] text-[color:var(--muted-text)]">
                     Оршин суугчдын оролцоо
                   </p>
                 </div>
@@ -294,7 +294,7 @@ export default function SanalAsuulgaTracker() {
                   onClick={() => mutate()}
                   disabled={isValidating}
                   title="Шинэчлэх"
-                  className="p-1.5 rounded-lg hover:bg-[color:var(--panel)]/60 dark:hover:bg-white/10 text-[color:var(--panel-text)]/60 hover:text-[color:var(--panel-text)] transition cursor-pointer"
+                  className="p-1.5 rounded-lg hover:bg-[color:var(--panel)]/60 dark:hover:bg-white/10 text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] transition cursor-pointer"
                 >
                   <RefreshCw
                     className={`h-3.5 w-3.5 ${isValidating ? "animate-spin" : ""}`}
@@ -305,7 +305,7 @@ export default function SanalAsuulgaTracker() {
                   type="button"
                   onClick={() => setIsOpen(false)}
                   title="Хаах"
-                  className="p-1.5 rounded-lg hover:bg-[color:var(--panel)]/60 dark:hover:bg-white/10 text-[color:var(--panel-text)]/60 hover:text-[color:var(--panel-text)] transition cursor-pointer"
+                  className="p-1.5 rounded-lg hover:bg-[color:var(--panel)]/60 dark:hover:bg-white/10 text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] transition cursor-pointer"
                 >
                   <X className="h-3.5 w-3.5" strokeWidth={ICON_STROKE} />
                 </button>
@@ -313,47 +313,47 @@ export default function SanalAsuulgaTracker() {
             </div>
 
             {/* Quick Metrics Bar: Явагдаж буй/Идэвхтэй = Шар, Дууссан = Ногоон */}
-            <div className="relative z-20 grid grid-cols-3 gap-2 px-4 py-2.5 bg-[color:var(--surface-hover)]/50 border-b border-[color:var(--surface-border)] text-center">
+            <div className="relative z-20 grid grid-cols-3 gap-2 px-4 py-2.5 bg-[color:var(--surface-hover)]/40 border-b border-[color:var(--surface-border)] text-center">
               {/* ИДЭВХТЭЙ — ШАР / AMBER */}
-              <div className="p-2 rounded-xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)]/60 shadow-xs">
-                <span className="block text-[10px] font-normal text-[color:var(--panel-text)]/50 uppercase tracking-wider">
+              <div className="p-2 rounded-xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] shadow-xs">
+                <span className="block text-[10px] font-normal text-[color:var(--muted-text)] uppercase tracking-wider">
                   Идэвхтэй
                 </span>
-                <span className="text-base font-normal text-warning">
+                <span className="text-base font-semibold text-warning">
                   {activePolls.length}
                 </span>
               </div>
 
               {/* НИЙТ САНАЛ — BLUE */}
-              <div className="p-2 rounded-xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)]/60 shadow-xs">
-                <span className="block text-[10px] font-normal text-[color:var(--panel-text)]/50 uppercase tracking-wider">
+              <div className="p-2 rounded-xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] shadow-xs">
+                <span className="block text-[10px] font-normal text-[color:var(--muted-text)] uppercase tracking-wider">
                   Нийт санал
                 </span>
-                <span className="text-base font-normal text-brand">
+                <span className="text-base font-semibold text-brand">
                   {totalResponses}
                 </span>
               </div>
 
               {/* ДУУССАН — НОГООН / EMERALD */}
-              <div className="p-2 rounded-xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)]/60 shadow-xs">
-                <span className="block text-[10px] font-normal text-[color:var(--panel-text)]/50 uppercase tracking-wider">
+              <div className="p-2 rounded-xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] shadow-xs">
+                <span className="block text-[10px] font-normal text-[color:var(--muted-text)] uppercase tracking-wider">
                   Дууссан
                 </span>
-                <span className="text-base font-normal text-brand">
+                <span className="text-base font-semibold text-brand">
                   {finishedPolls.length}
                 </span>
               </div>
             </div>
 
             {/* Modal Tabs: Polls vs Voting Residents */}
-            <div className="flex border-b border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]/50 px-3 pt-2">
+            <div className="flex border-b border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]/30 px-3 pt-2">
               <button
                 type="button"
                 onClick={() => setActiveTab("polls")}
-                className={`flex-1 pb-2 text-xs font-normal border-b-2 transition duration-150 flex items-center justify-center gap-1.5 cursor-pointer ${
+                className={`flex-1 pb-2 text-xs font-medium border-b-2 transition duration-150 flex items-center justify-center gap-1.5 cursor-pointer ${
                   activeTab === "polls"
                     ? "border-theme text-brand"
-                    : "border-transparent text-[color:var(--panel-text)]/50 hover:text-[color:var(--panel-text)]"
+                    : "border-transparent text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
                 }`}
               >
                 <Vote className="h-3.5 w-3.5" />
@@ -362,10 +362,10 @@ export default function SanalAsuulgaTracker() {
               <button
                 type="button"
                 onClick={() => setActiveTab("residents")}
-                className={`flex-1 pb-2 text-xs font-normal border-b-2 transition duration-150 flex items-center justify-center gap-1.5 cursor-pointer ${
+                className={`flex-1 pb-2 text-xs font-medium border-b-2 transition duration-150 flex items-center justify-center gap-1.5 cursor-pointer ${
                   activeTab === "residents"
                     ? "border-theme text-brand"
-                    : "border-transparent text-[color:var(--panel-text)]/50 hover:text-[color:var(--panel-text)]"
+                    : "border-transparent text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
                 }`}
               >
                 <UserCheck className="h-3.5 w-3.5" />
@@ -379,7 +379,7 @@ export default function SanalAsuulgaTracker() {
                 {polls.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-8 text-center">
                     <Inbox className="h-8 w-8 text-[color:var(--muted-text)] mb-2" />
-                    <p className="text-xs font-normal text-[color:var(--panel-text)]/60">
+                    <p className="text-xs font-normal text-[color:var(--muted-text)]">
                       Санал асуулга бүртгэгдээгүй байна
                     </p>
                   </div>
@@ -409,7 +409,7 @@ export default function SanalAsuulgaTracker() {
                           </span>
                         </div>
 
-                        <div className="flex items-center justify-between text-[11px] text-[color:var(--panel-text)]/60">
+                        <div className="flex items-center justify-between text-[11px] text-[color:var(--muted-text)]">
                           <button
                             type="button"
                             onClick={() =>
@@ -440,7 +440,7 @@ export default function SanalAsuulgaTracker() {
                         {isExpanded && (
                           <div className="mt-2 p-2 rounded-xl bg-[color:var(--surface-hover)] border border-[color:var(--surface-border)]">
                             <div className="flex items-center justify-between mb-1.5 pb-1 border-b border-[color:var(--surface-border)]/50">
-                              <span className="text-[11px] font-normal text-[color:var(--panel-text)]">
+                              <span className="text-[11px] font-medium text-[color:var(--panel-text)]">
                                 Санал өгсөн иргэдийн жагсаалт
                               </span>
                               <span className="text-[10px] text-[color:var(--muted-text)]">
@@ -460,10 +460,10 @@ export default function SanalAsuulgaTracker() {
                   })
                 ) : (
                   <div className="py-4 text-center">
-                    <p className="text-xs text-[color:var(--panel-text)]/60">
+                    <p className="text-xs text-[color:var(--muted-text)]">
                       Одоогоор идэвхтэй санал асуулга байхгүй байна
                     </p>
-                    <p className="text-[11px] text-[color:var(--panel-text)]/40 mt-1">
+                    <p className="text-[11px] text-[color:var(--muted-text)] mt-1">
                       Нийт {polls.length} санал асуулга хадгалагдсан
                     </p>
                   </div>
@@ -492,7 +492,7 @@ export default function SanalAsuulgaTracker() {
                     />
                   </div>
                 ) : (
-                  <div className="py-6 text-center text-xs text-[color:var(--panel-text)]/50">
+                  <div className="py-6 text-center text-xs text-[color:var(--muted-text)]">
                     Сонгосон санал асуулга олдсонгүй
                   </div>
                 )}

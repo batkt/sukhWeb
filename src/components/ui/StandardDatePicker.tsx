@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { DatePicker, ConfigProvider } from "antd";
+import { DatePicker, ConfigProvider, theme as antdTheme } from "antd";
 import type { DatePickerProps } from "antd";
 import dayjs, { Dayjs } from "dayjs";
 import "dayjs/locale/mn";
@@ -80,13 +80,17 @@ export function StandardDatePicker({
   // Monitor dark mode
   const [isDark, setIsDark] = React.useState(false);
   React.useEffect(() => {
-    setIsDark(document.documentElement.classList.contains("dark"));
-    const observer = new MutationObserver(() => {
-      setIsDark(document.documentElement.classList.contains("dark"));
-    });
-    observer.observe(document.documentElement, {
+    const root = document.documentElement;
+    const checkDark = () =>
+      setIsDark(
+        root.classList.contains("dark") ||
+          root.getAttribute("data-mode") === "dark"
+      );
+    checkDark();
+    const observer = new MutationObserver(checkDark);
+    observer.observe(root, {
       attributes: true,
-      attributeFilter: ["class"],
+      attributeFilter: ["class", "data-mode"],
     });
     return () => observer.disconnect();
   }, []);
@@ -95,6 +99,7 @@ export function StandardDatePicker({
     <ConfigProvider
       locale={mn_MN}
       theme={{
+        algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
         token: {
           colorBgContainer: "transparent",
           // Dark mode specific tokens

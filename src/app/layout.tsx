@@ -34,7 +34,7 @@ var fs=localStorage.getItem('fontSizeIndex');if(fs!==null){var sizes=['10px','11
         </Script>
       </head>
       <body
-        className="min-h-screen bg-card text-foreground"
+        className="min-h-screen text-foreground"
         style={{ fontFamily: '"Segoe UI", sans-serif' }}
         suppressHydrationWarning
       >

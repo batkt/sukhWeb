@@ -9,6 +9,7 @@ import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import SafeLottie from "@/components/ui/SafeLottie";
 import NuutsUgMartsan from "@/components/login/NuutsUgMartsan";
+import ThemeModeToggler from "@/components/ui/ThemeModeToggler";
 import ӨнгөнийЗагварСонгох from "../../../components/ungu/unguSongokh";
 import packageInfo from "../../../package.json";
 
@@ -197,8 +198,9 @@ export default function LoginPage() {
         </span>
       </div>
 
-      {/* Theme Selector */}
-      <div className="absolute top-5 right-5 z-20 sm:top-6 sm:right-8">
+      {/* Theme & Mode Selectors */}
+      <div className="absolute top-5 right-5 z-20 flex items-center gap-2 sm:top-6 sm:right-8">
+        <ThemeModeToggler buttonClassName="group relative inline-flex items-center justify-center h-10 w-10 neu-panel text-[color:var(--panel-text)] hover:scale-105 duration-300" />
         <ӨнгөнийЗагварСонгох />
       </div>
 
@@ -410,14 +412,14 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-12 rounded-2xl transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-6 relative overflow-hidden"
+                className="w-full h-12 rounded-2xl transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-6 relative overflow-hidden font-medium text-white shadow-lg"
                 style={{
                   background:
-                    "linear-gradient(180deg, var(--glass-tint), var(--glass-tint-2))",
-                  color: "var(--panel-text)",
-                  border: "1px solid var(--surface-border, rgba(15,23,42,0.12))",
+                    "linear-gradient(135deg, var(--theme), color-mix(in srgb, var(--theme) 80%, #000))",
+                  border:
+                    "1px solid color-mix(in srgb, var(--theme) 50%, rgba(255,255,255,0.2))",
                   boxShadow:
-                    "0 12px 28px var(--glass-shadow), inset 0 1px 0 var(--glass-highlight)",
+                    "0 10px 24px color-mix(in srgb, var(--theme) 35%, transparent), inset 0 1px 0 rgba(255,255,255,0.3)",
                 }}
               >
                 {loading && (

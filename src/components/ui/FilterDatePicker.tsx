@@ -145,24 +145,22 @@ export default function FilterDatePicker(props: FilterDatePickerProps) {
   return (
     <div id={id} className={burkhuul}>
       <Calendar className="mr-2 h-4 w-4 shrink-0 text-[color:var(--muted-text)]" />
-      <ConfigProvider theme={{ token: { fontSize: 13 } }}>
-        <StandardDatePicker
-          isRange={!props.single}
-          picker={picker}
-          value={props.value ?? null}
-          onChange={props.onChange}
-          format={format}
-          placeholder={placeholder ?? ankhdagchPlaceholder}
-          allowClear={false}
-          disabled={disabled}
-          disabledDate={disabledDate}
-          getPopupContainer={getPopupContainer}
-          variant="borderless"
-          suffixIcon={null}
-          style={{ padding: 0, height: "100%", minWidth: 0, flex: 1, fontSize: 13 }}
-          className="!h-full min-w-0 flex-1 !rounded-none !border-0 !px-0 !shadow-none text-[13px]"
-        />
-      </ConfigProvider>
+      <StandardDatePicker
+        isRange={!props.single}
+        picker={picker}
+        value={props.value ?? null}
+        onChange={props.onChange}
+        format={format}
+        placeholder={placeholder ?? ankhdagchPlaceholder}
+        allowClear={false}
+        disabled={disabled}
+        disabledDate={disabledDate}
+        getPopupContainer={getPopupContainer}
+        variant="borderless"
+        suffixIcon={null}
+        style={{ padding: 0, height: "100%", minWidth: 0, flex: 1, fontSize: 13 }}
+        className="!h-full min-w-0 flex-1 !rounded-none !border-0 !px-0 !shadow-none text-[13px]"
+      />
       {allowClear && utgatai && !disabled && (
         <button
           type="button"

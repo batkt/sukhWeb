@@ -98,10 +98,17 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
   const [kharankhui, setKharankhui] = useState(false);
   useEffect(() => {
     const root = document.documentElement;
-    const shinechlekh = () => setKharankhui(root.classList.contains("dark"));
+    const shinechlekh = () =>
+      setKharankhui(
+        root.classList.contains("dark") ||
+          root.getAttribute("data-mode") === "dark"
+      );
     shinechlekh();
     const ajiglagch = new MutationObserver(shinechlekh);
-    ajiglagch.observe(root, { attributes: true, attributeFilter: ["class"] });
+    ajiglagch.observe(root, {
+      attributes: true,
+      attributeFilter: ["class", "data-mode"],
+    });
     return () => ajiglagch.disconnect();
   }, []);
 
@@ -116,7 +123,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
         },
       }}
     >
-      <MantineProvider theme={theme}>
+      <MantineProvider theme={theme} forceColorScheme={kharankhui ? "dark" : "light"}>
         <SpinnerProvider>
           <TourProvider>
             <TourHost />
