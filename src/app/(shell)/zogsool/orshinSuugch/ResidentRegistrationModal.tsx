@@ -133,8 +133,8 @@ export default function ResidentRegistrationModal({
     baigaaMashinuud.length >= mashiniiKhyazgaar;
 
   /** Эзний бүртгэлтэй машинуудыг утсаар татна. */
-  const baigaaMashinuudAvya = async (utas: string) => {
-    if (!utas || !baiguullagiinId) return;
+  const baigaaMashinuudAvya = async (utas?: string, ownerId?: string, turul?: string) => {
+    if (!baiguullagiinId) return;
     try {
       const resp = await uilchilgee(token).get("/zochinJagsaalt", {
         params: {
@@ -142,8 +142,8 @@ export default function ResidentRegistrationModal({
           ...(barilgiinId ? { barilgiinId } : {}),
           khuudasniiDugaar: 1,
           khuudasniiKhemjee: 200,
-          search: utas,
-          turul: "Оршин суугч",
+          search: utas || undefined,
+          turul: turul && turul !== "Бүгд" ? turul : undefined,
         },
       });
 
@@ -162,7 +162,14 @@ export default function ResidentRegistrationModal({
           /\s/g,
           "",
         );
-        if (ezniiUtas !== String(utas).replace(/\s/g, "")) return;
+        const samePhone = Boolean(utas && ezniiUtas && ezniiUtas === String(utas).replace(/\s/g, ""));
+        const sameId = Boolean(
+          ownerId &&
+            (String(r?._id) === String(ownerId) ||
+              String(r?.ezemshigchiinId) === String(ownerId) ||
+              String(r?.orshinSuugchiinId) === String(ownerId))
+        );
+        if (!samePhone && !sameId) return;
 
         const dugaar = String(r?.mashiniiDugaar || r?.dugaar || "")
           .trim()
@@ -174,10 +181,20 @@ export default function ResidentRegistrationModal({
         }
       });
 
-      setBaigaaMashinuud(Array.from(tseverlesen.values()));
+      const list = Array.from(tseverlesen.values());
+      if (editData?.mashiniiDugaar && editData.mashiniiDugaar !== "БҮРТГЭЛГҮЙ" && editData.mashiniiDugaar !== "-") {
+        const curPlate = editData.mashiniiDugaar.trim().toUpperCase();
+        if (!list.some((m) => m.mashiniiDugaar === curPlate)) {
+          list.unshift({ _id: String(editData._id), mashiniiDugaar: curPlate });
+        }
+      }
+      setBaigaaMashinuud(list);
     } catch {
-      // Тоолж чадаагүй ч бүртгэлийг хаахгүй — backend талдаа шалгана.
-      setBaigaaMashinuud([]);
+      if (editData?.mashiniiDugaar && editData.mashiniiDugaar !== "БҮРТГЭЛГҮЙ" && editData.mashiniiDugaar !== "-") {
+        setBaigaaMashinuud([{ _id: String(editData._id), mashiniiDugaar: editData.mashiniiDugaar.trim().toUpperCase() }]);
+      } else {
+        setBaigaaMashinuud([]);
+      }
     }
   };
 
@@ -209,7 +226,7 @@ export default function ResidentRegistrationModal({
       if (resp.data?.success) {
         toast.success(resp.data.message || "Машины бүртгэл устгагдлаа");
         if (zasajBuiMashiniiId === mashin._id) shineMashinNemey();
-        await baigaaMashinuudAvya(formData.phone);
+        await baigaaMashinuudAvya(formData.phone, editData?.ezemshigchiinId || editData?._id, formData.orshinSuugchTurul || formData.type);
         onSuccess?.();
       } else {
         toast.error(resp.data?.aldaa || "Устгахад алдаа гарлаа");
@@ -226,8 +243,15 @@ export default function ResidentRegistrationModal({
   };
 
   useEffect(() => {
-    if (editData && formData.phone) {
-      baigaaMashinuudAvya(formData.phone);
+    if (editData) {
+      baigaaMashinuudAvya(
+        editData.utas,
+        editData.ezemshigchiinId || editData._id,
+        editData.orshinSuugchTurul || editData.zochinTurul || editData.turul,
+      );
+      if (editData.mashiniiDugaar && editData.mashiniiDugaar !== "БҮРТГЭЛГҮЙ" && editData.mashiniiDugaar !== "-") {
+        setBaigaaMashinuud([{ _id: String(editData._id), mashiniiDugaar: editData.mashiniiDugaar.trim().toUpperCase() }]);
+      }
     }
   }, []);
 
@@ -379,15 +403,22 @@ export default function ResidentRegistrationModal({
   };
 
   const handleManualProceed = () => {
-    if (!formData.phone || formData.phone.length !== 8) {
-      toast.error("Утасны дугаар 8 оронтой байх ёстой");
+    const isClient = formData.orshinSuugchTurul === "Харилцагч" || formData.type === "Харилцагч";
+    if (isClient && !formData.phone) {
+      setStep(2);
       return;
+    }
+    if (!isClient) {
+      if (!formData.phone || formData.phone.length !== 8) {
+        toast.error("Утасны дугаар 8 оронтой байх ёстой");
+        return;
+      }
     }
     handleSearch(formData.phone);
   };
 
   const handleSave = async () => {
-    // Validate individual fields and show separate errors
+    const isClient = formData.orshinSuugchTurul === "Харилцагч" || formData.type === "Харилцагч";
     let hasError = false;
 
     if (!formData.name?.trim()) {
@@ -395,12 +426,15 @@ export default function ResidentRegistrationModal({
       hasError = true;
     }
 
-    if (!formData.phone?.trim()) {
-      toast.error("Утасны дугаар заавал оруулна уу");
-      hasError = true;
-    } else if (formData.phone.trim().length !== 8) {
-      toast.error("Утасны дугаар 8 оронтой байх ёстой");
-      hasError = true;
+    // Харилцагч бол утас заавал шаардахгүй — дугааргүй харилцагч дээр ч машин бүртгэх/засах боломжтой
+    if (!isClient) {
+      if (!formData.phone?.trim()) {
+        toast.error("Утасны дугаар заавал оруулна уу");
+        hasError = true;
+      } else if (formData.phone.trim().length !== 8) {
+        toast.error("Утасны дугаар 8 оронтой байх ёстой");
+        hasError = true;
+      }
     }
 
     if (hasError) return;
@@ -510,14 +544,14 @@ export default function ResidentRegistrationModal({
                   {step === 1
                     ? "Хайлт"
                     : editData
-                      ? "Засах"
+                      ? (zasajBuiMashiniiId ? "Машин засах" : "Шинээр машин бүртгэх")
                       : "Машин бүртгэл"}
                 </h2>
                 <p className="text-xs  text-[color:var(--muted-text)] mt-1">
                   {step === 1
                     ? "Утасны дугаараар хайх"
                     : editData
-                      ? "Оршин суугчийн мэдээлэл засах"
+                      ? (zasajBuiMashiniiId ? "Бүртгэлтэй машины дугаар засах" : "Тухайн эзэн дээр шинээр машин нэмэх")
                       : "Шинээр оршин суугч болон тээврийн хэрэгсэл нэмэх"}
                 </p>
               </div>
@@ -592,7 +626,7 @@ export default function ResidentRegistrationModal({
                     !searching ? <ArrowRight className="w-4 h-4" /> : undefined
                   }
                 >
-                  {formData.phone ? "Үргэлжлүүлэх" : "Хайх"}
+                  {formData.phone ? "Үргэлжлүүлэх" : (formData.orshinSuugchTurul === "Харилцагч" || formData.type === "Харилцагч") ? "Үргэлжлүүлэх (Утасгүй)" : "Хайх"}
                 </Button>
               </div>
             </div>
@@ -615,13 +649,13 @@ export default function ResidentRegistrationModal({
                     <div className="space-y-5">
                       <InputField
                         icon={Phone}
-                        label="Утас"
+                        label={(formData.orshinSuugchTurul === "Харилцагч" || formData.type === "Харилцагч") ? "Утас (заавал биш)" : "Утас"}
                         value={formData.phone}
                         type="tel"
                         onChange={(v) =>
                           setFormData({ ...formData, phone: v })
                         }
-                        placeholder="88888888"
+                        placeholder={(formData.orshinSuugchTurul === "Харилцагч" || formData.type === "Харилцагч") ? "Заавал биш" : "88888888"}
                       />
 
                       {!["СӨХ", "Ажилтан", "Үнэгүй", "Дотоод", "Харилцагч"].includes(formData.orshinSuugchTurul) && (
@@ -738,12 +772,12 @@ export default function ResidentRegistrationModal({
                         </label>
                       </div>
 
-                      {/* Эзэн дээр бүртгэлтэй машинууд — тус бүрд засах/устгах */}
-                      {baigaaMashinuud.length > 0 && (
+                      {/* Эзэн дээр бүртгэлтэй машинууд болон шинэ машин нэмэх үйлдэл */}
+                      {(baigaaMashinuud.length > 0 || editData) && (
                         <div className="rounded-2xl border border-[color:var(--surface-border)] dark:border-white/10 bg-[color:var(--surface-hover)] dark:bg-white/[0.03] p-4">
                           <div className="flex items-center justify-between mb-2.5">
                             <span className="text-[11px] font-medium text-[color:var(--muted-text)]">
-                              Бүртгэлтэй машин
+                              Машины бүртгэл / үйлдэл
                             </span>
                             {mashiniiKhyazgaar > 0 && (
                               <span className="text-[11px] font-medium text-[color:var(--muted-text)]">
@@ -752,62 +786,64 @@ export default function ResidentRegistrationModal({
                             )}
                           </div>
 
-                          <div className="flex flex-col gap-2">
-                            {baigaaMashinuud.map((mashin) => {
-                              const zasajBui =
-                                zasajBuiMashiniiId === mashin._id;
-                              const ustgaj = mashinUstgaj === mashin._id;
+                          {baigaaMashinuud.length > 0 && (
+                            <div className="flex flex-col gap-2 mb-3">
+                              {baigaaMashinuud.map((mashin) => {
+                                const zasajBui =
+                                  zasajBuiMashiniiId === mashin._id;
+                                const ustgaj = mashinUstgaj === mashin._id;
 
-                              return (
-                                <div
-                                  key={mashin._id}
-                                  className={`flex items-center gap-2 pl-3 pr-2 py-2 rounded-xl border transition-colors ${
-                                    zasajBui
-                                      ? "border-theme bg-theme/10"
-                                      : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]"
-                                  }`}
-                                >
-                                  <Car className="w-4 h-4 text-[color:var(--muted-text)] shrink-0" />
-                                  <span className="flex-1 text-sm font-mono font-medium tracking-wider text-[color:var(--panel-text)]">
-                                    {mashin.mashiniiDugaar}
-                                  </span>
-
-                                  {zasajBui && (
-                                    <span className="text-[11px] font-medium text-brand">
-                                      Засаж байна
+                                return (
+                                  <div
+                                    key={mashin._id}
+                                    className={`flex items-center gap-2 pl-3 pr-2 py-2 rounded-xl border transition-colors ${
+                                      zasajBui
+                                        ? "border-theme bg-theme/10"
+                                        : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]"
+                                    }`}
+                                  >
+                                    <Car className="w-4 h-4 text-[color:var(--muted-text)] shrink-0" />
+                                    <span className="flex-1 text-sm font-mono font-medium tracking-wider text-[color:var(--panel-text)]">
+                                      {mashin.mashiniiDugaar}
                                     </span>
-                                  )}
 
-                                  <button
-                                    type="button"
-                                    onClick={() => mashinZasaya(mashin)}
-                                    disabled={ustgaj}
-                                    title="Дугаарыг засах"
-                                    className="p-1.5 rounded-lg text-[color:var(--muted-text)] hover:text-brand hover:bg-theme/10 dark:hover:bg-theme/10 disabled:opacity-40 transition-colors"
-                                  >
-                                    <Pencil className="w-4 h-4" />
-                                  </button>
-
-                                  <button
-                                    type="button"
-                                    onClick={() => mashinUstgaya(mashin)}
-                                    disabled={ustgaj}
-                                    title="Машины бүртгэлийг устгах"
-                                    className="p-1.5 rounded-lg text-[color:var(--muted-text)] hover:text-danger hover:bg-danger/10 disabled:opacity-40 transition-colors"
-                                  >
-                                    {ustgaj ? (
-                                      <Loader2 className="w-4 h-4 animate-spin" />
-                                    ) : (
-                                      <Trash2 className="w-4 h-4" />
+                                    {zasajBui && (
+                                      <span className="text-[11px] font-medium text-brand">
+                                        Засаж байна
+                                      </span>
                                     )}
-                                  </button>
-                                </div>
-                              );
-                            })}
-                          </div>
 
-                          {/* Засах горимоос гарч шинэ машин нэмэх */}
-                          {zasajBuiMashiniiId ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => mashinZasaya(mashin)}
+                                      disabled={ustgaj}
+                                      title="Дугаарыг засах"
+                                      className="p-1.5 rounded-lg text-[color:var(--muted-text)] hover:text-brand hover:bg-theme/10 dark:hover:bg-theme/10 disabled:opacity-40 transition-colors cursor-pointer"
+                                    >
+                                      <Pencil className="w-4 h-4" />
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => mashinUstgaya(mashin)}
+                                      disabled={ustgaj}
+                                      title="Машины бүртгэлийг устгах"
+                                      className="p-1.5 rounded-lg text-[color:var(--muted-text)] hover:text-danger hover:bg-danger/10 disabled:opacity-40 transition-colors cursor-pointer"
+                                    >
+                                      {ustgaj ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                      ) : (
+                                        <Trash2 className="w-4 h-4" />
+                                      )}
+                                    </button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {/* Үйлдлийн товчнууд: Шинээр машин бүртгэх / Бүртгэлтэй машин засах */}
+                          <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-[color:var(--surface-border)] dark:border-white/5">
                             <button
                               type="button"
                               onClick={shineMashinNemey}
@@ -815,23 +851,47 @@ export default function ResidentRegistrationModal({
                                 mashiniiKhyazgaar > 0 &&
                                 baigaaMashinuud.length >= mashiniiKhyazgaar
                               }
-                              className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-brand hover:underline disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
+                              className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-medium border transition-all inline-flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                                !zasajBuiMashiniiId
+                                  ? "border-theme bg-theme text-white shadow-xs"
+                                  : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] hover:border-theme/40"
+                              }`}
                             >
                               <Plus className="w-3.5 h-3.5" />
-                              Шинэ машин нэмэх
+                              <span>Шинээр машин бүртгэх</span>
                               {mashiniiKhyazgaar > 0 &&
                                 baigaaMashinuud.length >= mashiniiKhyazgaar &&
                                 " (хязгаар дүүрсэн)"}
                             </button>
-                          ) : (
-                            khyazgaarDuurenEsekh && (
-                              <p className="mt-3 text-[11px] leading-relaxed text-warning">
-                                Хязгаар дүүрсэн байна. Шинэ машин нэмэхийн тулд
-                                дээрхээс нэгийг устгах, эсвэл Тохиргоо → Нэмэлт
-                                тохиргоо → «Машины бүртгэлийн хязгаар»-аас дээд
-                                тоог өсгөнө.
-                              </p>
-                            )
+
+                            {editData && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const targetId = baigaaMashinuud[0]?._id || String(editData._id);
+                                  const targetPlate = baigaaMashinuud[0]?.mashiniiDugaar || editData.mashiniiDugaar || "";
+                                  setZasajBuiMashiniiId(targetId);
+                                  setFormData((prev) => ({ ...prev, plate: targetPlate === "БҮРТГЭЛГҮЙ" ? "" : targetPlate }));
+                                }}
+                                className={`py-1.5 px-3 rounded-xl text-xs font-medium border transition-all inline-flex items-center justify-center gap-1.5 cursor-pointer ${
+                                  zasajBuiMashiniiId
+                                    ? "border-theme bg-theme text-white shadow-xs"
+                                    : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] hover:border-theme/40"
+                                }`}
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                                <span>Бүртгэлтэй машин засах</span>
+                              </button>
+                            )}
+                          </div>
+
+                          {!zasajBuiMashiniiId && khyazgaarDuurenEsekh && (
+                            <p className="mt-3 text-[11px] leading-relaxed text-warning">
+                              Хязгаар дүүрсэн байна. Шинэ машин нэмэхийн тулд
+                              дээрхээс нэгийг устгах, эсвэл Тохиргоо → Нэмэлт
+                              тохиргоо → «Машины бүртгэлийн хязгаар»-аас дээд
+                              тоог өсгөнө.
+                            </p>
                           )}
                         </div>
                       )}
@@ -841,9 +901,7 @@ export default function ResidentRegistrationModal({
                         <label className="text-xs font-medium text-[color:var(--muted-text)] mb-2">
                           {zasajBuiMashiniiId
                             ? "Улсын дугаар засах (4 тоо + 3 кирилл үсэг)"
-                            : baigaaMashinuud.length > 0
-                              ? "ШИНЭ машины улсын дугаар"
-                              : "Улсын дугаар (4 тоо + 3 Монгол кирилл үсэг)"}
+                            : "ШИНЭЭР бүртгэх машины улсын дугаар (4 тоо + 3 кирилл үсэг)"}
                         </label>
                         <div className="relative w-64 h-[68px] bg-[color:var(--surface-bg)] rounded-xl border-2 border-[color:var(--surface-border)] flex items-center shadow-md transform group-hover:scale-102 transition-transform duration-300">
                           <input
