@@ -40,6 +40,7 @@ interface KhariltsagchModalProps {
   selectedBarilga: any;
   baiguullaga: any;
   currentResidents: any[];
+  contracts?: any[];
   onSubmit: (e: React.FormEvent) => Promise<any>;
   token: string | null;
 }
@@ -56,6 +57,7 @@ export default function KhariltsagchModal({
   selectedBarilga,
   baiguullaga,
   currentResidents,
+  contracts = [],
   onSubmit,
   token,
 }: KhariltsagchModalProps) {
@@ -385,6 +387,21 @@ export default function KhariltsagchModal({
           }
         }
 
+        const clientUnits = Array.isArray(newClient.units) ? newClient.units : [];
+        for (const u of clientUnits) {
+          const tVal = String(u.toot || "").trim();
+          if (!tVal) continue;
+          const pType: "Зогсоол" | "Агуулах" = u.turul === "Агуулах" ? "Агуулах" : "Зогсоол";
+          if (isTootOccupied(tVal, u.davkhar || "", pType)) {
+            const ezen = ezemshigchiinDelgerengui(tVal, u.davkhar || "", pType);
+            openErrorOverlay(
+              `${u.turul || "Гараж"}${u.davkhar ? ` ${u.davkhar} давхрын` : ""} ${tVal} дугаар ${ezen}-д идэвхтэй бүртгэлтэй байна. Сул дугаар сонгох эсвэл өмнөх эзэмшигчээс салгана уу.`
+            );
+            setIsSubmitting(false);
+            return;
+          }
+        }
+
         const success = await onSubmit(e);
         if (!success) {
           setIsSubmitting(false);
@@ -674,103 +691,172 @@ export default function KhariltsagchModal({
     return filtered.length > 0 ? filtered : ["B1", "B2", "B3"];
   }, [davkharOptions]);
 
-  const isTootOccupied = React.useCallback(
+  const cleanFloorStr = (f: any) =>
+    String(f || "")
+      .replace(/\s*давхар\s*/gi, "")
+      .replace(/^[вВ]/, "B")
+      .replace(/^-/, "B")
+      .replace(/^B-/, "B")
+      .trim()
+      .toUpperCase();
+
+  const normalizeTootStr = (t: any) =>
+    String(t || "")
+      .trim()
+      .toLowerCase()
+      .replace(/^0+/, "");
+
+  const matchesToot = (candidate: any, target: string) => {
+    if (!candidate || !target) return false;
+    const targetNorm = normalizeTootStr(target);
+    const parts = String(candidate)
+      .split(/[\s,;|]+/)
+      .map(normalizeTootStr)
+      .filter(Boolean);
+    return parts.includes(targetNorm);
+  };
+
+  /**
+   * Тухайн тоот/зогсоол/агуулахыг эзэмшиж буй этгээдийг олно
+   * (currentResidents болон active contracts хоёуланг шалгана)
+   */
+  const findOccupant = React.useCallback(
     (tootVal: string, floorVal: string, propertyType: "Зогсоол" | "Агуулах") => {
-      if (!Array.isArray(currentResidents)) return false;
-      const uOrts = "1";
-      const uDavkhar = String(floorVal || "").trim().toLowerCase();
-      const uToot = String(tootVal || "").trim().toLowerCase();
-      if (!uToot) return false;
+      const uToot = String(tootVal || "").trim();
+      if (!uToot) return null;
+      const uFloorClean = cleanFloorStr(floorVal);
 
-      return currentResidents.some((r: any) => {
-        if (editingClient && String(editingClient._id || "") === String(r._id || "")) {
-          return false;
-        }
-
-        const existingUnits =
-          Array.isArray(r.toots) && r.toots.length > 0
-            ? r.toots
-            : [{ orts: r.orts, davkhar: r.davkhar, toot: r.toot, turul: r.turul }];
-
-        return existingUnits.some((rt: any) => {
-          const rtOrts = String(rt.orts || "1").trim().toLowerCase();
-          const rtDavkhar = String(rt.davkhar || "").trim().toLowerCase();
-          const rtToot = String(rt.toot || "").trim().toLowerCase();
-          const rtTurul = String(rt.turul || "Орон сууц").trim().toLowerCase();
-
-          let rtPropertyType = "";
-          if (rtTurul === "гараж" || rtTurul === "зогсоол" || rtTurul === "parking" || rtTurul === "garage") {
-            rtPropertyType = "Зогсоол";
-          } else if (rtTurul === "агуулах" || rtTurul === "storage") {
-            rtPropertyType = "Агуулах";
-          } else {
-            rtPropertyType = "Тоот";
+      // 1. Оршин суугчид болон харилцагчдын жагсаалтаас шалгах
+      if (Array.isArray(currentResidents)) {
+        for (const r of currentResidents) {
+          if (editingClient && String(editingClient._id || "") === String(r._id || "")) {
+            continue;
           }
 
-          return (
-            rtOrts === uOrts &&
-            rtDavkhar === uDavkhar &&
-            rtToot === uToot &&
-            rtPropertyType === propertyType
-          );
-        });
-      });
+          const existingUnits =
+            Array.isArray(r.toots) && r.toots.length > 0
+              ? r.toots
+              : [{ orts: r.orts, davkhar: r.davkhar, toot: r.toot, turul: r.turul, linkedAptToot: r.linkedAptToot }];
+
+          for (const rt of existingUnits) {
+            const rtTurul = String(rt.turul || "").trim().toLowerCase();
+            let isTypeMatch = false;
+            if (propertyType === "Зогсоол") {
+              isTypeMatch =
+                rtTurul === "гараж" ||
+                rtTurul === "зогсоол" ||
+                rtTurul === "parking" ||
+                rtTurul === "garage";
+            } else if (propertyType === "Агуулах") {
+              isTypeMatch = rtTurul === "агуулах" || rtTurul === "storage";
+            }
+
+            if (!isTypeMatch) continue;
+
+            const tootMatch = matchesToot(rt.toot, uToot) || matchesToot(rt.linkedAptToot, uToot);
+            if (!tootMatch) continue;
+
+            const rtFloorClean = cleanFloorStr(rt.davkhar);
+            const floorMatch = !uFloorClean || !rtFloorClean || uFloorClean === rtFloorClean;
+            if (floorMatch) {
+              return { person: r, unit: rt, source: "resident" };
+            }
+          }
+        }
+      }
+
+      // 2. Идэвхтэй гэрээнүүдээс шалгах (contracts)
+      if (Array.isArray(contracts)) {
+        for (const c of contracts) {
+          const status = String(c?.tuluv || c?.status || "Идэвхтэй").trim();
+          if (status === "Цуцалсан" || status === "Идэвхгүй") continue;
+
+          if (editingClient && String(c.khariltsagchId || "") === String(editingClient._id || "")) {
+            continue;
+          }
+
+          const cTurul = String(c.turul || "").trim().toLowerCase();
+          let isTypeMatch = false;
+          if (propertyType === "Зогсоол") {
+            isTypeMatch =
+              cTurul === "гараж" ||
+              cTurul === "зогсоол" ||
+              cTurul === "parking" ||
+              cTurul === "garage";
+          } else if (propertyType === "Агуулах") {
+            isTypeMatch = cTurul === "агуулах" || cTurul === "storage";
+          }
+
+          if (!isTypeMatch) continue;
+
+          const tootMatch = matchesToot(c.toot, uToot) || matchesToot(c.linkedAptToot, uToot);
+          if (!tootMatch) continue;
+
+          const cFloorClean = cleanFloorStr(c.davkhar);
+          const floorMatch = !uFloorClean || !cFloorClean || uFloorClean === cFloorClean;
+          if (floorMatch) {
+            return {
+              person: {
+                _id: c.orshinSuugchId || c.khariltsagchId,
+                ner: c.ner || c.khariutsagchNer,
+                ovog: c.ovog,
+                utas: c.utas,
+                toot: c.toot,
+              },
+              unit: c,
+              source: "contract",
+            };
+          }
+        }
+      }
+
+      return null;
     },
-    [currentResidents, editingClient]
+    [currentResidents, editingClient, contracts],
+  );
+
+  const isTootOccupied = React.useCallback(
+    (tootVal: string, floorVal: string, propertyType: "Зогсоол" | "Агуулах") => {
+      return Boolean(findOccupant(tootVal, floorVal, propertyType));
+    },
+    [findOccupant],
   );
 
   /** Тоотыг эзэмшиж буй хүний нэр (өөр харилцагч/оршин суугч) — байхгүй бол null */
   const tootEzemshigch = React.useCallback(
     (tootVal: string, floorVal: string, propertyType: "Зогсоол" | "Агуулах"): string | null => {
-      if (!isTootOccupied(tootVal, floorVal, propertyType)) return null;
-      const uDavkhar = String(floorVal || "").trim().toLowerCase();
-      const uToot = String(tootVal || "").trim().toLowerCase();
-      const r = (currentResidents || []).find((x: any) => {
-        if (editingClient && String(editingClient._id || "") === String(x._id || "")) return false;
-        const units = Array.isArray(x.toots) && x.toots.length ? x.toots : [x];
-        return units.some(
-          (u: any) =>
-            String(u.davkhar || "").trim().toLowerCase() === uDavkhar &&
-            String(u.toot || "").trim().toLowerCase() === uToot,
-        );
-      });
+      const occupant = findOccupant(tootVal, floorVal, propertyType);
+      if (!occupant) return null;
+      const r = occupant.person;
       const ner = [r?.ovog ? `${String(r.ovog).charAt(0)}.` : "", r?.ner || ""].filter(Boolean).join(" ");
       return ner || "эзэмшигчтэй";
     },
-    [isTootOccupied, currentResidents, editingClient],
+    [findOccupant],
   );
 
   /** Эзэмшигчийн дэлгэрэнгүй — «Б. Бат (302 тоот, 99112233)» */
   const ezemshigchiinDelgerengui = React.useCallback(
-    (tootVal: string, floorVal: string): string => {
-      const uDavkhar = String(floorVal || "").trim().toLowerCase();
-      const uToot = String(tootVal || "").trim().toLowerCase();
-      const r = (currentResidents || []).find((x: any) => {
-        if (editingClient && String(editingClient._id || "") === String(x._id || "")) return false;
-        const units = Array.isArray(x.toots) && x.toots.length ? x.toots : [x];
-        return units.some(
-          (u: any) =>
-            String(u.davkhar || "").trim().toLowerCase() === uDavkhar &&
-            String(u.toot || "").trim().toLowerCase() === uToot,
-        );
-      });
-      if (!r) return "өөр эзэмшигч";
+    (tootVal: string, floorVal: string, propertyType: "Зогсоол" | "Агуулах" = "Зогсоол"): string => {
+      const occupant = findOccupant(tootVal, floorVal, propertyType);
+      if (!occupant) return "өөр эзэмшигч";
+      const r = occupant.person;
       const ner = [r.ovog ? `${String(r.ovog).charAt(0)}.` : "", r.ner || ""].filter(Boolean).join(" ") || "Нэргүй";
       const units = Array.isArray(r.toots) && r.toots.length ? r.toots : [r];
       const bair = units.find((u: any) => {
         const t = String(u?.turul || "").trim();
         return !t || t === "Орон сууц" || t === "Тоот";
       });
+      const aptToot = bair?.toot || occupant.unit?.linkedAptToot;
       const utas = Array.isArray(r.utas) ? r.utas[0] : r.utas;
-      const nemelt = [bair?.toot ? `${bair.toot} тоот` : "", utas || ""].filter(Boolean).join(", ");
+      const nemelt = [aptToot ? `${aptToot} тоот` : "", utas || ""].filter(Boolean).join(", ");
       return nemelt ? `«${ner}» (${nemelt})` : `«${ner}»`;
     },
-    [isTootOccupied, currentResidents, editingClient],
+    [findOccupant],
   );
 
   /** Дугаарын сонголтууд — сул нь эхэнд, эзэмшигчтэй нь нэртэйгээ доор */
   const dugaariinSongolt = (davkhar: string, turul: "Зогсоол" | "Агуулах") => {
-    const jagsaalt = getTootOptions("1", davkhar || "", turul).map((t) => {
+    const jagsaalt = getTootOptions("", davkhar || "", turul).map((t) => {
       const ezen = tootEzemshigch(t, davkhar || "", turul);
       const turulNer = turul === "Зогсоол" ? "Гараж" : "Агуулах";
       return {
@@ -779,7 +865,7 @@ export default function KhariltsagchModal({
         isOccupied: !!ezen,
         title: ezen ? `${t} — ${ezen} эзэмшдэг` : `${t} — сул`,
         occupiedNote: ezen
-          ? `${turulNer} ${davkhar ? `${davkhar} давхрын ` : ""}${t} дугаар ${ezemshigchiinDelgerengui(t, davkhar || "")}-д идэвхтэй бүртгэлтэй. Сул дугаар сонгох эсвэл эхлээд тухайн эзэмшигчээс салгана уу.`
+          ? `${turulNer} ${davkhar ? `${davkhar} давхрын ` : ""}${t} дугаар ${ezemshigchiinDelgerengui(t, davkhar || "", turul)}-д идэвхтэй бүртгэлтэй. Сул дугаар сонгох эсвэл эхлээд тухайн эзэмшигчээс салгана уу.`
           : undefined,
       };
     });

@@ -181,6 +181,7 @@ export default function GereeModals() {
         selectedBarilga={data.selectedBarilga}
         baiguullaga={baiguullaga}
         currentResidents={combinedResidentsAndClients}
+        contracts={data.contracts}
         onSubmit={async (e) => {
           const success = await actions.handleCreateClient(
             e,

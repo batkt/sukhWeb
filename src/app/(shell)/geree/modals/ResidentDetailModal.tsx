@@ -144,13 +144,13 @@ export const ResidentDetailModal: React.FC<Props> = ({
 
     const utga = (isKhariltsagch || medeelel?.erkh === "khariltsagch" || medeelel?.erkh === "Khariltsagch")
       ? (barilga?.tokhirgoo?.zochinTokhirgoo?.khariltsagchMashiniiLimit ??
-         barilga?.zochinTokhirgoo?.khariltsagchMashiniiLimit ??
-         org?.tokhirgoo?.zochinTokhirgoo?.khariltsagchMashiniiLimit ??
-         org?.zochinTokhirgoo?.khariltsagchMashiniiLimit)
+        barilga?.zochinTokhirgoo?.khariltsagchMashiniiLimit ??
+        org?.tokhirgoo?.zochinTokhirgoo?.khariltsagchMashiniiLimit ??
+        org?.zochinTokhirgoo?.khariltsagchMashiniiLimit)
       : (barilga?.tokhirgoo?.zochinTokhirgoo?.orshinSuugchMashiniiLimit ??
-         barilga?.zochinTokhirgoo?.orshinSuugchMashiniiLimit ??
-         org?.tokhirgoo?.zochinTokhirgoo?.orshinSuugchMashiniiLimit ??
-         org?.zochinTokhirgoo?.orshinSuugchMashiniiLimit);
+        barilga?.zochinTokhirgoo?.orshinSuugchMashiniiLimit ??
+        org?.tokhirgoo?.zochinTokhirgoo?.orshinSuugchMashiniiLimit ??
+        org?.zochinTokhirgoo?.orshinSuugchMashiniiLimit);
 
     const toon = Number(utga);
     return Number.isFinite(toon) && toon > 0 ? Math.floor(toon) : 0;
@@ -1323,112 +1323,111 @@ export const ResidentDetailModal: React.FC<Props> = ({
                           const zasvarZuv =
                             MASHINII_DUGAARIIN_ZAGVAR.test(zasakhDugaar);
                           return (
-                          <div
-                            key={m._id || idx}
-                            className="flex items-center justify-between rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] px-3.5 py-2.5"
-                          >
-                            <div className="flex items-center gap-3 min-w-0 flex-1">
-                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-theme/15 text-brand">
-                                <Car className="h-4 w-4" />
-                              </div>
-                              {zasajBaina ? (
-                                <div className="min-w-0 flex-1">
-                                  <input
-                                    autoFocus
-                                    value={zasakhDugaar}
-                                    onChange={(e) =>
-                                      setZasakhDugaar(
-                                        mashiniiDugaarTseverle(e.target.value),
-                                      )
-                                    }
-                                    onKeyDown={(e) => {
-                                      if (e.key === "Enter") {
-                                        e.preventDefault();
-                                        mashinZasvarKhadgalya();
-                                      }
-                                      if (e.key === "Escape") {
-                                        e.preventDefault();
-                                        mashinZasvarBoliya();
-                                      }
-                                    }}
-                                    placeholder="1234УБА"
-                                    maxLength={7}
-                                    className={`h-8 w-full min-w-0 rounded-lg border bg-[color:var(--surface-bg)] px-2.5 text-xs font-medium tracking-wide text-[color:var(--panel-text)] uppercase focus:outline-none ${
-                                      zasakhDugaar && !zasvarZuv
-                                        ? "border-danger focus:border-danger"
-                                        : "border-[color:var(--surface-border)] focus:border-theme"
-                                    }`}
-                                  />
-                                  {zasakhDugaar.length > 0 && !zasvarZuv && (
-                                    <p className="mt-1 text-[11px] text-danger">
-                                      4 тоо + 3 монгол кирилл үсэг
-                                    </p>
-                                  )}
+                            <div
+                              key={m._id || idx}
+                              className="flex items-center justify-between rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] px-3.5 py-2.5"
+                            >
+                              <div className="flex items-center gap-3 min-w-0 flex-1">
+                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-theme/15 text-brand">
+                                  <Car className="h-4 w-4" />
                                 </div>
-                              ) : (
-                                <div className="min-w-0">
-                                  <h4 className="text-xs sm:text-sm font-medium text-[color:var(--panel-text)] dark:text-white truncate">
-                                    {tekst(m.mashiniiDugaar)}
-                                  </h4>
-                                  {m.ezenToot && (
-                                    <p className="text-[11px] text-[color:var(--muted-text)]">
-                                      Тоот: {m.ezenToot}
-                                    </p>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-
-                            <div className="flex shrink-0 items-center gap-1">
-                              {zasajBaina ? (
-                                <>
-                                  <button
-                                    type="button"
-                                    onClick={mashinZasvarKhadgalya}
-                                    disabled={!zasvarZuv || mashinUnshijBaina}
-                                    className="flex h-7 w-7 items-center justify-center rounded-lg text-brand transition cursor-pointer hover:bg-theme/10 disabled:cursor-not-allowed disabled:opacity-40"
-                                    title="Хадгалах"
-                                  >
-                                    {mashinUnshijBaina ? (
-                                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                    ) : (
-                                      <Check className="h-3.5 w-3.5" />
+                                {zasajBaina ? (
+                                  <div className="min-w-0 flex-1">
+                                    <input
+                                      autoFocus
+                                      value={zasakhDugaar}
+                                      onChange={(e) =>
+                                        setZasakhDugaar(
+                                          mashiniiDugaarTseverle(e.target.value),
+                                        )
+                                      }
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter") {
+                                          e.preventDefault();
+                                          mashinZasvarKhadgalya();
+                                        }
+                                        if (e.key === "Escape") {
+                                          e.preventDefault();
+                                          mashinZasvarBoliya();
+                                        }
+                                      }}
+                                      placeholder="1234УБА"
+                                      maxLength={7}
+                                      className={`h-8 w-full min-w-0 rounded-lg border bg-[color:var(--surface-bg)] px-2.5 text-xs font-medium tracking-wide text-[color:var(--panel-text)] uppercase focus:outline-none ${zasakhDugaar && !zasvarZuv
+                                          ? "border-danger focus:border-danger"
+                                          : "border-[color:var(--surface-border)] focus:border-theme"
+                                        }`}
+                                    />
+                                    {zasakhDugaar.length > 0 && !zasvarZuv && (
+                                      <p className="mt-1 text-[11px] text-danger">
+                                        4 тоо + 3 монгол кирилл үсэг
+                                      </p>
                                     )}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={mashinZasvarBoliya}
-                                    disabled={mashinUnshijBaina}
-                                    className="flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--muted-text)] transition cursor-pointer hover:text-[color:var(--panel-text)] disabled:opacity-40"
-                                    title="Болих"
-                                  >
-                                    <X className="h-3.5 w-3.5" />
-                                  </button>
-                                </>
-                              ) : (
-                                <>
-                                  <button
-                                    type="button"
-                                    onClick={() => mashinZasajEkhleye(idx)}
-                                    disabled={mashinUnshijBaina}
-                                    className="flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--muted-text)] transition cursor-pointer hover:text-brand disabled:cursor-not-allowed disabled:opacity-40"
-                                    title="Засах"
-                                  >
-                                    <Pencil className="h-3.5 w-3.5" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => mashinUstgakh(idx)}
-                                    disabled={mashinUnshijBaina}
-                                    className="flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--muted-text)] hover:text-danger transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                                    title="Устгах"
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </button>
-                                </>
-                              )}
+                                  </div>
+                                ) : (
+                                  <div className="min-w-0">
+                                    <h4 className="text-xs sm:text-sm font-medium text-[color:var(--panel-text)] dark:text-white truncate">
+                                      {tekst(m.mashiniiDugaar)}
+                                    </h4>
+                                    {m.ezenToot && (
+                                      <p className="text-[11px] text-[color:var(--muted-text)]">
+                                        Тоот: {m.ezenToot}
+                                      </p>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="flex shrink-0 items-center gap-1">
+                                {zasajBaina ? (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={mashinZasvarKhadgalya}
+                                      disabled={!zasvarZuv || mashinUnshijBaina}
+                                      className="flex h-7 w-7 items-center justify-center rounded-lg text-brand transition cursor-pointer hover:bg-theme/10 disabled:cursor-not-allowed disabled:opacity-40"
+                                      title="Хадгалах"
+                                    >
+                                      {mashinUnshijBaina ? (
+                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                      ) : (
+                                        <Check className="h-3.5 w-3.5" />
+                                      )}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={mashinZasvarBoliya}
+                                      disabled={mashinUnshijBaina}
+                                      className="flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--muted-text)] transition cursor-pointer hover:text-[color:var(--panel-text)] disabled:opacity-40"
+                                      title="Болих"
+                                    >
+                                      <X className="h-3.5 w-3.5" />
+                                    </button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => mashinZasajEkhleye(idx)}
+                                      disabled={mashinUnshijBaina}
+                                      className="flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--muted-text)] transition cursor-pointer hover:text-brand disabled:cursor-not-allowed disabled:opacity-40"
+                                      title="Засах"
+                                    >
+                                      <Pencil className="h-3.5 w-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => mashinUstgakh(idx)}
+                                      disabled={mashinUnshijBaina}
+                                      className="flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--muted-text)] hover:text-danger transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                                      title="Устгах"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </button>
+                                  </>
+                                )}
+                              </div>
                             </div>
-                          </div>
                           );
                         })
                       )}
@@ -1613,15 +1612,15 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                 type="button"
                                 onClick={() => setOmchFilter(tab.key)}
                                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer shrink-0 ${isActive
-                                    ? "bg-theme/10 text-brand border border-theme/30"
-                                    : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] border border-transparent"
+                                  ? "bg-theme/10 text-brand border border-theme/30"
+                                  : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] border border-transparent"
                                   }`}
                               >
                                 <span>{tab.label}</span>
                                 <span
                                   className={`text-[11px] px-1.5 py-0.2 rounded-full ${isActive
-                                      ? "bg-theme text-white"
-                                      : "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]"
+                                    ? "bg-theme text-white"
+                                    : "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]"
                                     }`}
                                 >
                                   {tab.count}
@@ -1705,7 +1704,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                       {/* Гараж or Агуулах: rename Байр into Тоот and show associated Орон сууц тоот. For Орон сууц: remove it completely */}
                                       {category !== "Орон сууц" && (
                                         <div className="flex items-center justify-between">
-                                          <span className="text-[color:var(--muted-text)]">Байрны тоот</span>
+                                          <span className="text-[color:var(--muted-text)]">Тоот</span>
                                           <span className="text-[color:var(--panel-text)] font-medium">
                                             {associatedToot
                                               ? associatedToot.toLowerCase().includes("тоот")
@@ -2100,7 +2099,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
                                             <ShieldCheck className="h-3.5 w-3.5 text-theme" />
                                             <span>
                                               {(g.gishuuniiErkh || g.erkh) === "Зөвхөн харах" ||
-                                              (g.gishuuniiErkh || g.erkh) === "Харах"
+                                                (g.gishuuniiErkh || g.erkh) === "Харах"
                                                 ? "«Харах + Төлөх» болгох"
                                                 : "«Зөвхөн харах» болгох"}
                                             </span>

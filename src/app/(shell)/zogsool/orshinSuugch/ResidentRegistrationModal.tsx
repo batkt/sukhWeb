@@ -192,8 +192,9 @@ export default function ResidentRegistrationModal({
 
   const [zasajBuiMashiniiId, setZasajBuiMashiniiId] = useState<string | null>(
     editData?._id &&
-      String(editData._id) !== String(editData?.ezemshigchiinId) &&
-      editData?.mashiniiDugaar
+      editData?.mashiniiDugaar &&
+      editData.mashiniiDugaar !== "БҮРТГЭЛГҮЙ" &&
+      editData.mashiniiDugaar !== "-"
       ? String(editData._id)
       : null,
   );
@@ -545,6 +546,11 @@ export default function ResidentRegistrationModal({
     try {
       const plateToUse = formData.plate.trim().toUpperCase() || "БҮРТГЭЛГҮЙ";
 
+      const effectiveOwnerId =
+        editData?.ezemshigchiinId ||
+        editData?.orshinSuugchiinId ||
+        (isClient ? editData?._id : undefined);
+
       const payload = {
         baiguullagiinId,
         barilgiinId,
@@ -552,7 +558,7 @@ export default function ResidentRegistrationModal({
         ezemshigchiinUtas: formData.phone,
         turul: formData.orshinSuugchTurul || formData.type,
         khariltsagchMedeelel: {
-          _id: editData?.ezemshigchiinId,
+          _id: effectiveOwnerId,
           ner: formData.name,
           ovog: formData.ovog || formData.name,
           register: formData.register || "00000000",
@@ -582,7 +588,7 @@ export default function ResidentRegistrationModal({
           barilgiinId,
           orshinSuugchTurul: formData.orshinSuugchTurul || undefined,
         },
-        ezemshigchiinId: editData?.ezemshigchiinId || undefined,
+        ezemshigchiinId: effectiveOwnerId,
         tukhainBaaziinKholbolt: null,
       };
 

@@ -263,6 +263,15 @@ export function useGereeData(
     return o ? `${o}::${f}` : f;
   }, []);
 
+  const cleanFloorKey = (f: any) =>
+    String(f || "")
+      .replace(/\s*давхар\s*/gi, "")
+      .replace(/^[вВ]/, "B")
+      .replace(/^-/, "B")
+      .replace(/^B-/, "B")
+      .trim()
+      .toUpperCase();
+
   const getTootOptions = useCallback(
     (
       orts: string,
@@ -278,34 +287,42 @@ export function useGereeData(
         if (turul === "Зогсоол") activeMap = maps.outZogsool;
         else if (turul === "Агуулах") activeMap = maps.outAguulakh;
 
-        const hasEntranceKeys = Object.keys(activeMap).some((k) =>
-          k.includes("::"),
-        );
+        const isGarageOrStorage = turul === "Зогсоол" || turul === "Агуулах";
 
         let candidates: string[] = [];
+
+        // 1. Direct entrance::floor or floor key match
         if (
           activeMap[key] &&
           Array.isArray(activeMap[key]) &&
           activeMap[key].length > 0
         ) {
           candidates = activeMap[key].slice();
-        } else if (
-          (!o || !hasEntranceKeys) &&
-          f &&
-          activeMap[f] &&
-          Array.isArray(activeMap[f]) &&
-          activeMap[f].length > 0
-        ) {
+        }
+
+        // 2. Direct floor match
+        if (candidates.length === 0 && f && activeMap[f] && Array.isArray(activeMap[f]) && activeMap[f].length > 0) {
           candidates = activeMap[f].slice();
-        } else if (!f && (turul === "Зогсоол" || turul === "Агуулах")) {
-          // If no floor is specified, aggregate all configured units across all floors
+        }
+
+        // 3. Normalized floor match across keys (especially for B1 vs b1 vs В1 vs -1)
+        if (candidates.length === 0 && f) {
+          const normF = cleanFloorKey(f);
+          for (const [k, val] of Object.entries(activeMap)) {
+            const kFloor = k.includes("::") ? k.split("::").pop() : k;
+            if (cleanFloorKey(kFloor) === normF && Array.isArray(val) && val.length > 0) {
+              candidates.push(...val);
+            }
+          }
+        }
+
+        // 4. For garage or storage: if no floor specified or candidates still empty, aggregate all units
+        if (candidates.length === 0 && isGarageOrStorage) {
           Object.values(activeMap).forEach((val) => {
             if (Array.isArray(val)) {
               candidates.push(...val);
             }
           });
-        } else {
-          return [];
         }
 
         const normalized = Array.from(
