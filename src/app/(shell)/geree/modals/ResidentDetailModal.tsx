@@ -36,6 +36,7 @@ type Props = {
   token?: string | null;
   baiguullagiinId?: string | null;
   onEdit?: (resident: any) => void;
+  isKhariltsagch?: boolean;
 };
 
 const ognooKharuul = (utga: unknown) => {
@@ -108,6 +109,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
   token,
   baiguullagiinId,
   onEdit,
+  isKhariltsagch = false,
 }) => {
   const [medeelel, setMedeelel] = useState<any>(null);
   const [unshij, setUnshij] = useState(false);
@@ -140,15 +142,19 @@ export const ResidentDetailModal: React.FC<Props> = ({
         String(b?._id || b?.id) === String(medeelel?.barilgiinId || ""),
     );
 
-    const utga =
-      barilga?.tokhirgoo?.zochinTokhirgoo?.orshinSuugchMashiniiLimit ??
-      barilga?.zochinTokhirgoo?.orshinSuugchMashiniiLimit ??
-      org?.tokhirgoo?.zochinTokhirgoo?.orshinSuugchMashiniiLimit ??
-      org?.zochinTokhirgoo?.orshinSuugchMashiniiLimit;
+    const utga = (isKhariltsagch || medeelel?.erkh === "khariltsagch" || medeelel?.erkh === "Khariltsagch")
+      ? (barilga?.tokhirgoo?.zochinTokhirgoo?.khariltsagchMashiniiLimit ??
+         barilga?.zochinTokhirgoo?.khariltsagchMashiniiLimit ??
+         org?.tokhirgoo?.zochinTokhirgoo?.khariltsagchMashiniiLimit ??
+         org?.zochinTokhirgoo?.khariltsagchMashiniiLimit)
+      : (barilga?.tokhirgoo?.zochinTokhirgoo?.orshinSuugchMashiniiLimit ??
+         barilga?.zochinTokhirgoo?.orshinSuugchMashiniiLimit ??
+         org?.tokhirgoo?.zochinTokhirgoo?.orshinSuugchMashiniiLimit ??
+         org?.zochinTokhirgoo?.orshinSuugchMashiniiLimit);
 
     const toon = Number(utga);
     return Number.isFinite(toon) && toon > 0 ? Math.floor(toon) : 0;
-  }, [baiguullaga, medeelel?.barilgiinId]);
+  }, [baiguullaga, medeelel?.barilgiinId, medeelel?.erkh, isKhariltsagch]);
 
   /**
    * Гэр бүлийн гишүүн урих боломжтой эсэх.
@@ -206,26 +212,54 @@ export const ResidentDetailModal: React.FC<Props> = ({
     setUnshij(true);
     setAldaa(null);
     try {
-      const resp = await uilchilgee(token).get(`/orshinSuugch/${residentId}`, {
-        params: { baiguullagiinId, delgerengui: true },
-      });
+      const primaryPath = isKhariltsagch ? `/khariltsagch/${residentId}` : `/orshinSuugch/${residentId}`;
+      let resp;
+      try {
+        resp = await uilchilgee(token).get(primaryPath, {
+          params: { baiguullagiinId, delgerengui: true },
+        });
+      } catch (err: any) {
+        // Fallback to alternative endpoint if 404
+        if (err?.response?.status === 404) {
+          const fallbackPath = isKhariltsagch ? `/orshinSuugch/${residentId}` : `/khariltsagch/${residentId}`;
+          resp = await uilchilgee(token).get(fallbackPath, {
+            params: { baiguullagiinId, delgerengui: true },
+          });
+        } else {
+          throw err;
+        }
+      }
       const data = resp.data;
       setMedeelel(data);
       setMashinJagsaalt(Array.isArray(data?.mashinuud) ? data.mashinuud : []);
       setMashinOorchlogdson(false);
-      setTootJagsaalt(Array.isArray(data?.toots) ? data.toots : []);
+      const toots = Array.isArray(data?.toots) ? data.toots : [];
+      setTootJagsaalt(toots);
+
+      // Default omchFilter to the first category that actually has items
+      const hasOronSuuts = toots.some((t: any) => getTurulCategory(t) === "Орон сууц");
+      const hasGaraj = toots.some((t: any) => getTurulCategory(t) === "Гараж");
+      const hasAguulakh = toots.some((t: any) => getTurulCategory(t) === "Агуулах");
+      if (hasOronSuuts) {
+        setOmchFilter("Орон сууц");
+      } else if (hasGaraj) {
+        setOmchFilter("Гараж");
+      } else if (hasAguulakh) {
+        setOmchFilter("Агуулах");
+      } else {
+        setOmchFilter("Бүгд");
+      }
     } catch {
       setAldaa("Мэдээлэл татахад алдаа гарлаа");
     } finally {
       setUnshij(false);
     }
-  }, [token, residentId, baiguullagiinId]);
+  }, [token, residentId, baiguullagiinId, isKhariltsagch]);
 
   useEffect(() => {
     if (show) {
       tataya();
       setZasajBuiToot(false);
-      setOmchFilter("Орон сууц");
       setShineMashiniiDugaar("");
       setShineMashinToot("");
       setTovchMenuGishuunId(null);
@@ -750,7 +784,10 @@ export const ResidentDetailModal: React.FC<Props> = ({
         mail: khuviinMedeelel.mail.trim(),
         tailbar: khuviinMedeelel.tailbar.trim(),
       };
-      await uilchilgee(token).put(`/orshinSuugch/${residentId}`, {
+      const endpoint = (isKhariltsagch || medeelel?.erkh === "khariltsagch" || medeelel?.erkh === "Khariltsagch")
+        ? `/khariltsagch/${residentId}`
+        : `/orshinSuugch/${residentId}`;
+      await uilchilgee(token).put(endpoint, {
         ...shinechlelt,
         baiguullagiinId,
       });
@@ -768,7 +805,10 @@ export const ResidentDetailModal: React.FC<Props> = ({
   const tootKhadgalya = async (): Promise<boolean> => {
     if (!token || !residentId) return false;
     try {
-      await uilchilgee(token).put(`/orshinSuugch/${residentId}`, {
+      const endpoint = (isKhariltsagch || medeelel?.erkh === "khariltsagch" || medeelel?.erkh === "Khariltsagch")
+        ? `/khariltsagch/${residentId}`
+        : `/orshinSuugch/${residentId}`;
+      await uilchilgee(token).put(endpoint, {
         toots: tootJagsaalt,
         baiguullagiinId,
       });
@@ -1153,7 +1193,9 @@ export const ResidentDetailModal: React.FC<Props> = ({
                         <p className="text-xs font-normal text-[color:var(--panel-text)] mt-0.5">
                           {medeelel.erkh === "OrshinSuugch"
                             ? "Оршин суугч"
-                            : tekst(medeelel.erkh)}
+                            : medeelel.erkh === "khariltsagch" || medeelel.erkh === "Khariltsagch" || isKhariltsagch
+                              ? "Харилцагч"
+                              : tekst(medeelel.erkh)}
                         </p>
                       </div>
 

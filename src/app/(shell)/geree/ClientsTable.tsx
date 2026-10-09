@@ -4,7 +4,7 @@ import React, { useMemo, useState } from "react";
 import Table from "@/components/ui/table";
 import { Tooltip } from "antd";
 import type { ColumnsType } from "@/components/ui/table";
-import { Edit, Trash2, ChevronUp, ChevronDown, X, Car, Warehouse } from "lucide-react";
+import { Edit, Trash2, ChevronUp, ChevronDown, X, Car, Warehouse, Eye } from "lucide-react";
 import { ConfirmCloseDialog } from "@/components/ui/ConfirmCloseDialog";
 import { getPaymentStatusLabel } from "@/lib/utils";
 import useSWR from "swr";
@@ -45,6 +45,7 @@ interface ClientsTableProps {
   sortKey?: SortKey;
   sortOrder?: SortOrder;
   currentBaiguullagiinId?: string;
+  onView?: (Client: ClientItem) => void;
   onEdit?: (Client: ClientItem) => void;
   onDelete?: (Client: ClientItem) => void;
   onRemoveToot?: (ClientId: string, baiguullagiinId: string, barilgiinId: string, toot: string) => void;
@@ -59,6 +60,7 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
   sortKey = "createdAt",
   sortOrder = "desc",
   currentBaiguullagiinId,
+  onView,
   onEdit,
   onDelete,
   onRemoveToot,
@@ -396,6 +398,15 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
           <div className="flex gap-1 justify-center">
             <button
               type="button"
+              onClick={() => onView?.(record)}
+              className="p-1.5 rounded-md hover-surface transition-colors hover:bg-theme/10 dark:hover:bg-theme/30"
+              id={index === 0 ? "Client-view-btn" : undefined}
+              title="Бүх мэдээлэл харах"
+            >
+              <Eye className="w-4 h-4 text-brand" />
+            </button>
+            <button
+              type="button"
               onClick={() => onEdit?.(record)}
               className="p-1.5 rounded-md action-edit hover-surface transition-colors hover:bg-theme/10 dark:hover:bg-theme/30"
               id={index === 0 ? "Client-edit-btn" : undefined}
@@ -421,6 +432,7 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
       pageSize,
       sortKey,
       sortOrder,
+      onView,
       onEdit,
       onDelete,
       onRemoveToot,

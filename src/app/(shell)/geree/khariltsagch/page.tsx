@@ -3,7 +3,9 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ClientsSection from "../ClientsSection";
+import ResidentDetailModal from "../modals/ResidentDetailModal";
 import { useGereeContext } from "../GereeContext";
+import { useAuth } from "@/lib/useAuth";
 import { hasPermission } from "@/lib/permissionUtils";
 import { useTourSteps } from "@/lib/useTourSteps";
 import { useRegisterTourSteps } from "@/context/TourContext";
@@ -12,7 +14,9 @@ import { ConfirmCloseDialog } from "@/components/ui/ConfirmCloseDialog";
 export default function khariltsagchPage() {
   const router = useRouter();
   const { state, data, actions, ajiltan } = useGereeContext();
+  const { token } = useAuth();
   const [clientToDelete, setClientToDelete] = useState<any>(null);
+  const [kharakhId, setKharakhId] = useState<string | null>(null);
 
   const tourSteps = useTourSteps("residents");
   useRegisterTourSteps("/geree/khariltsagch", tourSteps);
@@ -43,6 +47,7 @@ export default function khariltsagchPage() {
         sortKey={state.sortKey}
         sortOrder={state.sortOrder}
         toggleSortFor={actions.toggleSortFor}
+        onViewClient={(client) => setKharakhId(client?._id || null)}
         onEditClient={(client) => {
           actions.handleEditClient(
             client,
@@ -56,6 +61,24 @@ export default function khariltsagchPage() {
         currentBaiguullagiinId={ajiltan?.baiguullagiinId}
         setResPageSize={state.setResPageSize}
         setResPage={state.setResPage}
+      />
+
+      <ResidentDetailModal
+        show={!!kharakhId}
+        onClose={() => setKharakhId(null)}
+        residentId={kharakhId}
+        token={token}
+        baiguullagiinId={ajiltan?.baiguullagiinId}
+        isKhariltsagch={true}
+        onEdit={(client) => {
+          setKharakhId(null);
+          actions.handleEditClient(
+            client,
+            state.setEditingClient,
+            state.setNewClient,
+            state.setShowClientModal,
+          );
+        }}
       />
 
       <ConfirmCloseDialog
