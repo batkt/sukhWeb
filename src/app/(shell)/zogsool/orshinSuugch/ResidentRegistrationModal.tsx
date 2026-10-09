@@ -774,8 +774,8 @@ export default function ResidentRegistrationModal({
 
                       {/* Эзэн дээр бүртгэлтэй машинууд болон шинэ машин нэмэх үйлдэл */}
                       {(baigaaMashinuud.length > 0 || editData) && (
-                        <div className="rounded-2xl border border-[color:var(--surface-border)] dark:border-white/10 bg-[color:var(--surface-hover)] dark:bg-white/[0.03] p-4">
-                          <div className="flex items-center justify-between mb-2.5">
+                        <div className="space-y-2.5">
+                          <div className="flex items-center justify-between">
                             <span className="text-[11px] font-medium text-[color:var(--muted-text)]">
                               Машины бүртгэл / үйлдэл
                             </span>
@@ -787,7 +787,7 @@ export default function ResidentRegistrationModal({
                           </div>
 
                           {baigaaMashinuud.length > 0 && (
-                            <div className="flex flex-col gap-2 mb-3">
+                            <div className="flex flex-col gap-2">
                               {baigaaMashinuud.map((mashin) => {
                                 const zasajBui =
                                   zasajBuiMashiniiId === mashin._id;
@@ -799,7 +799,7 @@ export default function ResidentRegistrationModal({
                                     className={`flex items-center gap-2 pl-3 pr-2 py-2 rounded-xl border transition-colors ${
                                       zasajBui
                                         ? "border-theme bg-theme/10"
-                                        : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]"
+                                        : "border-[color:var(--surface-border)] dark:border-white/10 bg-[color:var(--surface-hover)]"
                                     }`}
                                   >
                                     <Car className="w-4 h-4 text-[color:var(--muted-text)] shrink-0" />
@@ -843,7 +843,39 @@ export default function ResidentRegistrationModal({
                           )}
 
                           {/* Үйлдлийн товчнууд: Шинээр машин бүртгэх / Бүртгэлтэй машин засах */}
-                          <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-[color:var(--surface-border)] dark:border-white/5">
+                          <div className="grid grid-cols-2 gap-2 pt-0.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const target =
+                                  baigaaMashinuud.find(
+                                    (m) => m._id === zasajBuiMashiniiId,
+                                  ) || baigaaMashinuud[0];
+                                const targetId =
+                                  target?._id || String(editData?._id || "");
+                                const targetPlate =
+                                  target?.mashiniiDugaar ||
+                                  editData?.mashiniiDugaar ||
+                                  "";
+                                if (targetId) setZasajBuiMashiniiId(targetId);
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  plate:
+                                    targetPlate === "БҮРТГЭЛГҮЙ"
+                                      ? ""
+                                      : targetPlate,
+                                }));
+                              }}
+                              className={`h-9.5 px-3 rounded-xl text-xs font-medium border transition-all inline-flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                                zasajBuiMashiniiId
+                                  ? "border-theme bg-theme text-white shadow-xs font-semibold"
+                                  : "border-[color:var(--surface-border)] dark:border-white/10 bg-[color:var(--surface-hover)] text-[color:var(--panel-text)] hover:border-theme/40"
+                              }`}
+                            >
+                              <Pencil className="w-3.5 h-3.5 shrink-0" />
+                              <span className="truncate">Бүртгэлтэй машин засах</span>
+                            </button>
+
                             <button
                               type="button"
                               onClick={shineMashinNemey}
@@ -851,42 +883,19 @@ export default function ResidentRegistrationModal({
                                 mashiniiKhyazgaar > 0 &&
                                 baigaaMashinuud.length >= mashiniiKhyazgaar
                               }
-                              className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-medium border transition-all inline-flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                              className={`h-9.5 px-3 rounded-xl text-xs font-medium border transition-all inline-flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
                                 !zasajBuiMashiniiId
-                                  ? "border-theme bg-theme text-white shadow-xs"
-                                  : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] hover:border-theme/40"
+                                  ? "border-theme bg-theme text-white shadow-xs font-semibold"
+                                  : "border-[color:var(--surface-border)] dark:border-white/10 bg-[color:var(--surface-hover)] text-[color:var(--panel-text)] hover:border-theme/40"
                               }`}
                             >
-                              <Plus className="w-3.5 h-3.5" />
-                              <span>Шинээр машин бүртгэх</span>
-                              {mashiniiKhyazgaar > 0 &&
-                                baigaaMashinuud.length >= mashiniiKhyazgaar &&
-                                " (хязгаар дүүрсэн)"}
+                              <Plus className="w-3.5 h-3.5 shrink-0" />
+                              <span className="truncate">Шинээр машин бүртгэх</span>
                             </button>
-
-                            {editData && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const targetId = baigaaMashinuud[0]?._id || String(editData._id);
-                                  const targetPlate = baigaaMashinuud[0]?.mashiniiDugaar || editData.mashiniiDugaar || "";
-                                  setZasajBuiMashiniiId(targetId);
-                                  setFormData((prev) => ({ ...prev, plate: targetPlate === "БҮРТГЭЛГҮЙ" ? "" : targetPlate }));
-                                }}
-                                className={`py-1.5 px-3 rounded-xl text-xs font-medium border transition-all inline-flex items-center justify-center gap-1.5 cursor-pointer ${
-                                  zasajBuiMashiniiId
-                                    ? "border-theme bg-theme text-white shadow-xs"
-                                    : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] hover:border-theme/40"
-                                }`}
-                              >
-                                <Pencil className="w-3.5 h-3.5" />
-                                <span>Бүртгэлтэй машин засах</span>
-                              </button>
-                            )}
                           </div>
 
                           {!zasajBuiMashiniiId && khyazgaarDuurenEsekh && (
-                            <p className="mt-3 text-[11px] leading-relaxed text-warning">
+                            <p className="mt-1 text-[11px] leading-relaxed text-warning">
                               Хязгаар дүүрсэн байна. Шинэ машин нэмэхийн тулд
                               дээрхээс нэгийг устгах, эсвэл Тохиргоо → Нэмэлт
                               тохиргоо → «Машины бүртгэлийн хязгаар»-аас дээд
