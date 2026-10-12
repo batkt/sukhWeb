@@ -1032,8 +1032,7 @@ export default function Camera() {
         if (
           !data ||
           !data?.mashiniiDugaar ||
-          !data?.baiguullagiinId ||
-          data?.baiguullagiinId !== baiguullaga?._id
+          (data?.baiguullagiinId && data?.baiguullagiinId !== baiguullaga?._id)
         )
           return;
         if (data.cameraIP && data.mashiniiDugaar) {
