@@ -26,25 +26,31 @@ interface Props {
   onOpenMedegdel: (item: MedegdelItem) => void;
 }
 
+/**
+ * Мэдэгдлийн огноо — НЭГ хэлбэр: `YYYY.MM.DD HH:mm`.
+ *
+ * ── Яагаад харьцангуй цагийг хасав ──────────────────────
+ * Өмнө таван өөр хэлбэр зэрэг гардаг байсан: «Дөнгөж сая»,
+ * «N мин өмнө», «N цагийн өмнө», «Өчигдөр», ба огноо. Жагсаалт дээр
+ * тэд холилдож, аль нь хэзээ болсныг харьцуулах боломжгүй байв.
+ *
+ * ── Яагаад `toLocale*` хэрэглэхгүй вэ ──────────────────────
+ * `toLocaleDateString("mn-MN", …)` нь хөтөч дээр mn-MN локаль байхгүй үед
+ * англи руу унаж `Oct 9, 05:32 PM` гэж зурдаг — хэрэглэгч бүр өөр
+ * зүйл харна. Гараар угсавал хөтчөөс хамаарахгүй болно.
+ *
+ * Хэлбэр нь апп доторх `Бүртгэсэн огноо` баганатай нэг ижил.
+ */
 const formatRelativeTime = (value?: string | Date) => {
   if (!value) return null;
   const d = new Date(value);
   if (isNaN(d.getTime())) return null;
 
-  const now = new Date();
-  const diffSec = Math.floor((now.getTime() - d.getTime()) / 1000);
-
-  if (diffSec < 60) return "Дөнгөж сая";
-  if (diffSec < 3600) return `${Math.floor(diffSec / 60)} мин өмнө`;
-  if (diffSec < 86400) return `${Math.floor(diffSec / 3600)} цагийн өмнө`;
-  if (diffSec < 172800) return "Өчигдөр";
-
-  return d.toLocaleDateString("mn-MN", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const tt = (n: number) => String(n).padStart(2, "0");
+  return (
+    `${d.getFullYear()}.${tt(d.getMonth() + 1)}.${tt(d.getDate())}` +
+    ` ${tt(d.getHours())}:${tt(d.getMinutes())}`
+  );
 };
 
 const isSanalType = (t?: string) => {

@@ -1060,19 +1060,24 @@ export default function SanalKhuselt() {
     return (parts.length > 1 ? parts[parts.length - 1][0] : n[0]).toUpperCase();
   };
 
-  const formatListTime = (d: string) => {
-    const m = moment(d);
-    if (m.isSame(moment(), "day")) return m.format("HH:mm");
-    if (m.isSame(moment(), "year")) return m.format("MM/DD");
-    return m.format("YYYY-MM-DD");
-  };
+  /**
+   * Мөрийн цаг — НЭГ хэлбэр: `YYYY.MM.DD HH:mm`.
+   *
+   * Өмнө өнөөдрийнх нь `HH:mm`, энэ жилийнх нь `MM/DD`, бусад нь
+   * `YYYY-MM-DD` гэж ГУРАВ салдаг байсан — нэг жагсаалт дээр тэд
+   * холилдвол аль нь хэзээ болсныг харьцуулах боломжгүй.
+   *
+   * Мэдэгдлийн panel болон `Бүртгэсэн огноо` баганатай ижил конвенц.
+   */
+  const formatListTime = (d: string) => moment(d).format("YYYY.MM.DD HH:mm");
 
-  const formatDayLabel = (d: string) => {
-    const m = moment(d);
-    if (m.isSame(moment(), "day")) return t("Өнөөдөр");
-    if (m.isSame(moment().subtract(1, "day"), "day")) return t("Өчигдөр");
-    return m.format("YYYY-MM-DD");
-  };
+  /**
+   * Өдрийн тусгаарлагч — ижил конвенц, зөвхөн цаггүй.
+   *
+   * «Өнөөдөр / Өчигдөр» гэсэн харьцангуй шошгыг авсан: тэд бусад
+   * бүлэгтэй өөр хэлбэртэй байсан тул яг тэр холимогийг үүсгэдэг байв.
+   */
+  const formatDayLabel = (d: string) => moment(d).format("YYYY.MM.DD");
 
   const statusOptions: { value: string; label: string; icon: React.ReactNode; active: string }[] = [
     {
