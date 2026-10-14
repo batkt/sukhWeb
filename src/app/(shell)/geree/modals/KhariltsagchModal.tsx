@@ -23,6 +23,7 @@ import {
   getResidentDavkhauraud,
   getResidentOrtsuud,
 } from "@/lib/residentDataHelper";
+import { negjiinTurul, negjiinTulkhuur } from "@/lib/negjiinTurul";
 
 interface KhariltsagchModalProps {
   show: boolean;
@@ -119,9 +120,9 @@ export default function KhariltsagchModal({
       .map(str)
       .filter(Boolean);
     const units = (Array.isArray(c.units) ? c.units : [])
-      .filter((u: any) => u?.turul === "Гараж" || u?.turul === "Агуулах")
+      .filter((u: any) => negjiinTurul(u) !== "Орон сууц")
       .map((u: any) => [
-        u.turul,
+        negjiinTurul(u),
         str(u.davkhar),
         str(u.toot),
         Number(u.ekhniiUldegdel || 0),
@@ -213,12 +214,11 @@ export default function KhariltsagchModal({
       const tootVal = unit.toot?.trim() || "";
       if (!tootVal) return;
 
-      const isGarageOrStorage =
-        unit.turul === "Гараж" || unit.turul === "Агуулах";
+      const isGarageOrStorage = negjiinTurul(unit) !== "Орон сууц";
       // Гараж B1-10 ба B2-10 нь өөр нэгж — давхрыг түлхүүрт оруулна.
-      const ortsVal = isGarageOrStorage ? "1" : unit.orts?.trim() || "";
-      const davkharVal = unit.davkhar?.trim() || "";
-      const key = `${unit.turul || ""}-${ortsVal}-${davkharVal}-${tootVal}`;
+      // Түлхүүрийг ХЭВШҮҮЛНЭ: «Гараж»/«Зогсоол», `B1`/`в1`, `40`/`040` нь
+      // ижил нэгж тул өмнө нь нэг маягтаас давхар тоот гарч чаддаг байв.
+      const key = negjiinTulkhuur({ ...unit, orts: isGarageOrStorage ? "1" : unit.orts });
       if (uniqueUnitKeys.has(key)) {
         newErrors.push(`units.${index}.duplicate`);
       } else {
@@ -227,7 +227,7 @@ export default function KhariltsagchModal({
       // Гараар бичсэн дугаар өөр хүнд идэвхтэй бүртгэлтэй эсэх
       if (
         isGarageOrStorage &&
-        isTootOccupied(tootVal, unit.davkhar || "", unit.turul === "Гараж" ? "Зогсоол" : "Агуулах")
+        isTootOccupied(tootVal, unit.davkhar || "", negjiinTurul(unit) === "Гараж" ? "Зогсоол" : "Агуулах")
       ) {
         newErrors.push(`units.${index}.occupied`);
       }
@@ -268,7 +268,8 @@ export default function KhariltsagchModal({
       /** «Гараж B1 давхрын 40 дугаар» — алдааг тодорхой нэгжээр нь нэрлэнэ. */
       const negjiinNer = (i: number) => {
         const u = units[i] || {};
-        const turulNer = u.turul === "Агуулах" ? "Агуулах" : u.turul === "Гараж" ? "Гараж" : "Тоот";
+        const t = negjiinTurul(u);
+        const turulNer = t === "Орон сууц" ? "Тоот" : t;
         return `${turulNer}${u.davkhar ? ` ${u.davkhar} давхрын` : ""}${u.toot ? ` ${String(u.toot).trim()} дугаар` : ""}`;
       };
 
@@ -614,8 +615,10 @@ export default function KhariltsagchModal({
   React.useEffect(() => {
     if (show) {
       const units = Array.isArray(newClient.units) ? newClient.units : [];
-      const allGarages = units.filter((u: any) => u.turul === "Гараж");
-      const allStorages = units.filter((u: any) => u.turul === "Агуулах");
+      // `negjiinTurul` — «Зогсоол» гэж хадгалсан гараж энд унаж, модал дээр
+      // огт харагдахгүй, хадгалахад устдаг байв.
+      const allGarages = units.filter((u: any) => negjiinTurul(u) === "Гараж");
+      const allStorages = units.filter((u: any) => negjiinTurul(u) === "Агуулах");
 
       setGarages(allGarages.map((g: any) => ({ ...g })));
       setStorages(allStorages.map((s: any) => ({ ...s })));
@@ -654,13 +657,22 @@ export default function KhariltsagchModal({
     if (!show) return;
     const activeUnits: any[] = [];
     
+    // Барилга/байгууллагын id нь ЗАСВАРТ хадгалагдана — backend нь алга бол
+    // одоогийн барилгынхаар дүүргэдэг тул өөр барилгын тоот зөөгдөж, тоот
+    // давхардах шалтгаан болдог байв.
+    const kholboos = (u: any) => ({
+      ...(u.barilgiinId ? { barilgiinId: u.barilgiinId } : {}),
+      ...(u.baiguullagiinId ? { baiguullagiinId: u.baiguullagiinId } : {}),
+    });
     garages.forEach((g: any) => {
       activeUnits.push({ orts: "1", davkhar: g.davkhar || "", toot: g.toot || "", turul: "Гараж",
+        ...kholboos(g),
         ekhniiUldegdel: Number(g.ekhniiUldegdel || 0), tsahilgaaniiZaalt: Number(g.tsahilgaaniiZaalt || 0),
         khonogoorBodokhEsekh: !!g.khonogoorBodokhEsekh, bodokhKhonog: Number(g.bodokhKhonog || 0) });
     });
     storages.forEach((s: any) => {
       activeUnits.push({ orts: "1", davkhar: s.davkhar || "", toot: s.toot || "", turul: "Агуулах",
+        ...kholboos(s),
         ekhniiUldegdel: Number(s.ekhniiUldegdel || 0), tsahilgaaniiZaalt: Number(s.tsahilgaaniiZaalt || 0),
         khonogoorBodokhEsekh: !!s.khonogoorBodokhEsekh, bodokhKhonog: Number(s.bodokhKhonog || 0) });
     });
@@ -739,17 +751,12 @@ export default function KhariltsagchModal({
               : [{ orts: r.orts, davkhar: r.davkhar, toot: r.toot, turul: r.turul, linkedAptToot: r.linkedAptToot }];
 
           for (const rt of existingUnits) {
-            const rtTurul = String(rt.turul || "").trim().toLowerCase();
-            let isTypeMatch = false;
-            if (propertyType === "Зогсоол") {
-              isTypeMatch =
-                rtTurul === "гараж" ||
-                rtTurul === "зогсоол" ||
-                rtTurul === "parking" ||
-                rtTurul === "garage";
-            } else if (propertyType === "Агуулах") {
-              isTypeMatch = rtTurul === "агуулах" || rtTurul === "storage";
-            }
+            // Төрлийг ХЭВШҮҮЛЖ харьцуулна — «Зогсоол» гэж, эсвэл төрөлгүй ч
+            // B1 давхарт хадгалсан гараж нь өмнө нь "эзэнгүй" мэт харагдаж,
+            // сул дугаар гэж дахин олгогдох шалтгаан болдог байв.
+            const isTypeMatch =
+              negjiinTurul(rt) ===
+              (propertyType === "Агуулах" ? "Агуулах" : "Гараж");
 
             if (!isTypeMatch) continue;
 
@@ -775,17 +782,9 @@ export default function KhariltsagchModal({
             continue;
           }
 
-          const cTurul = String(c.turul || "").trim().toLowerCase();
-          let isTypeMatch = false;
-          if (propertyType === "Зогсоол") {
-            isTypeMatch =
-              cTurul === "гараж" ||
-              cTurul === "зогсоол" ||
-              cTurul === "parking" ||
-              cTurul === "garage";
-          } else if (propertyType === "Агуулах") {
-            isTypeMatch = cTurul === "агуулах" || cTurul === "storage";
-          }
+          const isTypeMatch =
+            negjiinTurul(c) ===
+            (propertyType === "Агуулах" ? "Агуулах" : "Гараж");
 
           if (!isTypeMatch) continue;
 

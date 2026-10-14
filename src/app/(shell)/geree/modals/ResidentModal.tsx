@@ -6,6 +6,7 @@ import { ModalPortal } from "../../../../../components/shell/ModalPortal";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import TusgaiZagvar from "../../../../../components/selectZagvar/tusgaiZagvar";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
+import { negjiinTurul } from "@/lib/negjiinTurul";
 import { ConfirmCloseDialog } from "@/components/ui/ConfirmCloseDialog";
 import Button from "@/components/ui/Button";
 import { Plus, Calendar, Car, ChevronDown, Home, Trash2, Warehouse, X } from "lucide-react";
@@ -593,8 +594,14 @@ export default function ResidentModal({
     // дугаарыг барилгын гараж/агуулахын жагсаалтаас таньж зөв төрлийг сэргээнэ
     // — хадгалахад зөв төрөл баазад бичигдэнэ.
     const turulTaniya = (u: any) => {
+      // Төрөл нь ТОДОРХОЙ бичигдсэн бол түүнийг хэвшүүлээд дуусав. «Зогсоол»
+      // гэж хадгалсан гараж нь доошхи давхрын хэвшилд (`^b\d*$`) таарахгүй
+      // бол (`в1`, `-1`) засагдалгүй өнгөрөөд үндсэн тоотын бүлэгт ордог байв.
       const t = String(u?.turul || "").trim();
-      if (t === "Гараж" || t === "Агуулах") return u;
+      if (t) {
+        const turulOdoo = negjiinTurul({ turul: t });
+        if (turulOdoo !== "Орон сууц") return { ...u, turul: turulOdoo };
+      }
       const davkhar = String(u?.davkhar || "").trim();
       const toot = String(u?.toot || "").trim();
       if (!/^b\d*$/i.test(davkhar) || !toot) return u;

@@ -12,6 +12,7 @@ import dayjs from "dayjs";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
 import uilchilgee from "@/lib/uilchilgee";
+import { negjiinTurul, negjiinTulkhuur } from "@/lib/negjiinTurul";
 import {
   getResidentToot,
   getResidentDavkhar,
@@ -225,12 +226,15 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
           }
 
           // Only show Zogsool or Aguulakh
-          toots = toots.filter((t: any) => t.turul === "Гараж" || t.turul === "Зогсоол" || t.turul === "Агуулах");
+          toots = toots.filter((t: any) => negjiinTurul(t) !== "Орон сууц");
 
-          // Deduplicate toots array
+          // Давхардал арилгах. Түлхүүрийг ХЭВШҮҮЛНЭ — «Гараж» ба «Зогсоол»,
+          // `B1` ба `в1`, `40` ба `040` нь НЭГ ижил нэгж боловч өмнө нь
+          // түүхий утгаар нь харьцуулдаг тул нэг гараж хоёр мөр болж
+          // харагддаг байв.
           const seenToots = new Set<string>();
           toots = toots.filter((t: any) => {
-            const key = `${t.toot}_${t.barilgiinId || ""}_${t.turul || ""}`;
+            const key = negjiinTulkhuur(t);
             if (seenToots.has(key)) return false;
             seenToots.add(key);
             return true;
@@ -239,21 +243,21 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
           if (toots.length === 0) return "-";
           // Гараж эхэнд, дараа нь агуулах — дугаараар нь эрэмбэлнэ.
           toots = [...toots].sort((a: any, b: any) =>
-            a.turul === b.turul
+            negjiinTurul(a) === negjiinTurul(b)
               ? String(a.toot).localeCompare(String(b.toot), undefined, { numeric: true })
-              : a.turul === "Гараж" ? -1 : 1,
+              : negjiinTurul(a) === "Гараж" ? -1 : 1,
           );
 
 
 
           // Оршин суугчийн бүртгэлтэй адил: эхний дугаар + «+N», бүгдийг hover-оор.
-          const ner = (t: any) => (t.turul === "Гараж" || t.turul === "Зогсоол" ? "Гараж" : "Агуулах");
+          const ner = (t: any) => negjiinTurul(t);
           const tooltipContent = (
             <div className="space-y-1 p-1 min-w-[180px]">
               {toots.map((t: any, idx: number) => (
                 <div key={idx} className="flex items-center justify-between gap-3 py-0.5">
                   <span className="inline-flex items-center gap-1.5 font-medium">
-                    {t.turul === "Гараж" || t.turul === "Зогсоол" ? (
+                    {negjiinTurul(t) === "Гараж" ? (
                       <Car className="h-3.5 w-3.5 text-brand" />
                     ) : (
                       <Warehouse className="h-3.5 w-3.5 text-indigo-500" />
@@ -288,10 +292,10 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
             <Tooltip title={tooltipContent} placement="top" trigger="hover">
               <span
                 className={`inline-flex h-6 cursor-pointer items-center gap-1 rounded-md px-2 leading-none ${
-                  ekhnii.turul === "Гараж" ? "zt-chip-garash" : "zt-chip-aguulakh"
+                  negjiinTurul(ekhnii) === "Гараж" ? "zt-chip-garash" : "zt-chip-aguulakh"
                 }`}
               >
-                {ekhnii.turul === "Гараж" ? <Car className="h-3 w-3 shrink-0" /> : <Warehouse className="h-3 w-3 shrink-0" />}
+                {negjiinTurul(ekhnii) === "Гараж" ? <Car className="h-3 w-3 shrink-0" /> : <Warehouse className="h-3 w-3 shrink-0" />}
                 <span>{ekhnii.toot}</span>
                 {toots.length > 1 && <span className="opacity-70">+{toots.length - 1}</span>}
               </span>

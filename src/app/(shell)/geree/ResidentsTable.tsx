@@ -6,7 +6,7 @@ import Table from "@/components/ui/table";
 import type { ColumnsType } from "@/components/ui/table";
 import { Edit, Eye, Trash2, ChevronUp, ChevronDown, X } from "lucide-react";
 import { getPaymentStatusLabel } from "@/lib/utils";
-import { isGarageFloor } from "@/lib/useGereeData";
+import { negjiinTurul, negjiinTulkhuur } from "@/lib/negjiinTurul";
 import DeleteConfirmModal from "./modals/DeleteModal";
 import {
   getResidentToot,
@@ -27,18 +27,6 @@ export interface ResidentItem {
   [key: string]: any;
 }
 
-/**
- * Нэгжийн жинхэнэ төрөл. «Зогсоол» гэж хадгалсан, эсвэл төрөлгүй ч B1/B2
- * давхарт байгаа нэгж нь гараж — өмнө нь зөвхөн «Гараж» гэсэн утгыг таньдаг
- * тул ийм гаражийг «Орон сууц» гэж Тоот баганад харуулдаг байв.
- */
-const negjiinTurul = (t: any): "Орон сууц" | "Гараж" | "Агуулах" => {
-  const turul = String(t?.turul || "").trim().toLowerCase();
-  if (turul === "агуулах" || turul === "storage") return "Агуулах";
-  if (["гараж", "зогсоол", "garage", "parking"].includes(turul)) return "Гараж";
-  if ((!turul || turul === "орон сууц" || turul === "тоот") && isGarageFloor(String(t?.davkhar || ""))) return "Гараж";
-  return "Орон сууц";
-};
 
 type SortKey = string;
 type SortOrder = "asc" | "desc";
@@ -186,7 +174,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
           // Deduplicate toots array
           const seenToots = new Set<string>();
           toots = toots.filter((t: any) => {
-            const key = `${t.toot}_${t.barilgiinId || ""}_${t.turul || "Орон сууц"}`;
+            const key = negjiinTulkhuur(t);
             if (seenToots.has(key)) return false;
             seenToots.add(key);
             return true;

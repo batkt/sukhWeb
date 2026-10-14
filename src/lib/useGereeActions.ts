@@ -13,6 +13,7 @@ import {
   explainRegisterRule,
   explainPhoneRule,
 } from "@/lib/validation";
+import { negjiinTurul } from "@/lib/negjiinTurul";
 
 export function useGereeActions(
   token: string | null,
@@ -2606,7 +2607,15 @@ export function useGereeActions(
               orts: t.orts || "1",
               davkhar: t.davkhar || "",
               toot: t.toot || "",
-              turul: t.turul || "Орон сууц",
+              // «Зогсоол» гэж хадгалсан, эсвэл төрөлгүй ч B1 давхарт байгаа
+              // гаражийг «Орон сууц» болгочихдог тул модал түүнийг
+              // харуулахгүй орхиод, хадгалахад чимээгүй устгадаг байв.
+              turul: negjiinTurul(t),
+              // Барилга/байгууллагын id-г АЛДАХГҮЙ дамжуулна — эс бөгөөс
+              // backend нь одоогийн барилгынхаар дарж бичиж, өөр барилгын
+              // тоотыг энэ барилга руу зөөдөг.
+              ...(t.barilgiinId ? { barilgiinId: t.barilgiinId } : {}),
+              ...(t.baiguullagiinId ? { baiguullagiinId: t.baiguullagiinId } : {}),
               ekhniiUldegdel: t.ekhniiUldegdel || 0,
               tsahilgaaniiZaalt: t.tsahilgaaniiZaalt || 0,
               khonogoorBodokhEsekh: t.khonogoorBodokhEsekh || false,
