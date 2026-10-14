@@ -6,21 +6,17 @@ import useSWR from "swr";
 import { QRCodeSVG } from "qrcode.react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Building,
-  User,
+  Building2,
+  UserRound,
   Hash,
-  Calendar,
-  CheckCircle2,
-  AlertTriangle,
-  Copy,
+  CalendarDays,
+  Check,
+  TriangleAlert,
   QrCode,
   Smartphone,
   RefreshCw,
-  ArrowRight,
-  ExternalLink
 } from "lucide-react";
 import { getApiUrl } from "@/lib/uilchilgee";
-import { toast } from "sonner";
 
 // Fetcher helper
 const fetcher = async (url: string) => {
@@ -32,68 +28,155 @@ const fetcher = async (url: string) => {
   return res.json();
 };
 
+/**
+ * Нийтэд нээлттэй төлбөрийн хуудас — админы СЭДВЭЭС ҮЛ ХАМААРНА.
+ *
+ * Хуудас бүхэлдээ бараан загвартай ч `--panel`, `--muted-text` зэрэг нь
+ * цайвар горимд бараг цагаан болдог тул карт цагаан дээр цагаан бичигтэй
+ * болж УНШИГДАХГҮЙ байв. Оршин суугч сэдэв сонгодоггүй тул энд бараан
+ * өнгийг ТОГТООНО. `--surface-border`-ыг ч мөн адил — өмнө нь зөвхөн гурав
+ * нь тогтоогдсон тул QR-ын хүрээ сэдвээс хамаарч алга болдог байв.
+ */
+const BARAAN_TOKEN = {
+  "--panel": "var(--dark-panel)",
+  "--panel-text": "var(--dark-text)",
+  "--muted-text": "var(--dark-muted)",
+  "--surface-border": "var(--dark-border)",
+} as React.CSSProperties;
+
+/** Нарийн ширхэгт «мана» — тэгш хавтгай бараан гадаргууг амьдруулна. */
+const MANA_URL =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E\")";
+
+/**
+ * Гурван дэлгэц (алдаа, ачаалалт, нэхэмжлэх) НЭГ ижил дэвсгэртэй байна.
+ * Өмнө нь тус бүр өөр радиал градиенттай байсан тул ачаалагдах явцад
+ * дэвсгэр хоёр удаа «үсэрдэг» байв.
+ */
+function Devsger({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-x-hidden px-4 py-10 font-sans text-[color:var(--muted-text)] selection:bg-theme/30"
+      style={{ ...BARAAN_TOKEN, background: "var(--dark-gradient)" }}
+    >
+      {/* Брэнд өнгийн гэрэлтэлт — зөвхөн өргөн дэлгэцэнд, гар утсанд blur
+          нь удаашруулдаг. */}
+      <span className="pointer-events-none absolute -left-40 -top-40 hidden h-96 w-96 rounded-full bg-theme/10 blur-[110px] sm:block" />
+      <span className="pointer-events-none absolute -bottom-48 -right-40 hidden h-[26rem] w-[26rem] rounded-full bg-theme/[0.07] blur-[130px] sm:block" />
+      {/* Ширхэглэл — өнгөний туузлалыг эвдэж, гадаргууг «хэвлэмэл» болгоно. */}
+      <span
+        aria-hidden
+        className="pointer-events-none fixed inset-0 opacity-[0.035] mix-blend-overlay"
+        style={{ backgroundImage: MANA_URL }}
+      />
+
+      <main className="relative z-10 w-full max-w-md">
+        <header className="mb-7 flex items-center justify-center gap-2">
+          <img
+            src="/logo.png"
+            alt=""
+            className="h-7 w-7 shrink-0 object-contain"
+          />
+          <span className="text-sm font-semibold tracking-[0.18em] text-white/90">
+            AMARHOME
+          </span>
+        </header>
+
+        {children}
+
+        <footer className="mt-7 text-center text-[11px] leading-relaxed text-[color:var(--muted-text)]/70">
+          ЗЭВТАБС · Amarhome төлбөрийн систем
+        </footer>
+      </main>
+    </div>
+  );
+}
+
+/** Нэхэмжлэхийн нэг мөр — хоёр дэлгэц НЭГ ижил бүтэцтэй байхын тулд. */
+function Mur({
+  dugaar,
+  ner,
+  utga,
+  mono,
+}: {
+  dugaar?: React.ReactNode;
+  ner: string;
+  utga: React.ReactNode;
+  mono?: boolean;
+}) {
+  return (
+    <div className="flex flex-col gap-0.5 border-b border-white/5 py-2.5 last:border-0 last:pb-0 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
+      <dt className="flex shrink-0 items-center gap-1.5 text-[13px] text-[color:var(--muted-text)]">
+        {dugaar}
+        {ner}
+      </dt>
+      <dd
+        className={`text-[13px] font-medium text-white sm:max-w-[62%] sm:text-right ${
+          mono ? "font-mono tracking-tight tabular-nums" : "break-words"
+        }`}
+      >
+        {utga}
+      </dd>
+    </div>
+  );
+}
+
 export default function PaymentLandingPage() {
   const params = useParams();
   const invoiceId = params?.invoiceId as string;
   const [activeTab, setActiveTab] = useState<"deeplink" | "qrcode">("deeplink");
-  const [copied, setCopied] = useState(false);
 
   const baseUrl = getApiUrl().replace(/\/$/, "");
   const fetchUrl = invoiceId ? `${baseUrl}/pay/info/${invoiceId}` : null;
 
   // SWR hook for querying payment status & details
   // Automatically poll every 3 seconds if the invoice is unpaid
-  const { data, error, mutate, isValidating } = useSWR(
-    fetchUrl,
-    fetcher,
-    {
-      refreshInterval: (data) => {
-        if (data?.success && data?.invoice?.tuluv !== "Төлсөн") {
-          return 3000; // Poll every 3s if unpaid
-        }
-        return 0; // Stop polling if paid
-      },
-      revalidateOnFocus: true,
-      shouldRetryOnError: false
-    }
-  );
+  const { data, error, mutate, isValidating } = useSWR(fetchUrl, fetcher, {
+    refreshInterval: (data) => {
+      if (data?.success && data?.invoice?.tuluv !== "Төлсөн") {
+        return 3000; // Poll every 3s if unpaid
+      }
+      return 0; // Stop polling if paid
+    },
+    revalidateOnFocus: true,
+    shouldRetryOnError: false,
+  });
 
   const invoice = data?.invoice;
-  
+
   // One-time payment link: if ANY payment has been made, show as paid
   const hasPayment = Number(invoice?.tulsunDun || 0) > 0;
-  const remainingAmount = invoice?.uldegdel !== undefined && invoice?.uldegdel !== null 
-    ? Number(invoice.uldegdel) 
-    : Number(invoice?.niitTulbur || 0) - Number(invoice?.tulsunDun || 0);
-  const actualIsPaid = invoice?.tuluv === "Төлсөн" || hasPayment || remainingAmount <= 0.01;
-  const displayAmount = actualIsPaid ? Number(invoice?.niitTulbur || 0) : remainingAmount;
+  const remainingAmount =
+    invoice?.uldegdel !== undefined && invoice?.uldegdel !== null
+      ? Number(invoice.uldegdel)
+      : Number(invoice?.niitTulbur || 0) - Number(invoice?.tulsunDun || 0);
+  const actualIsPaid =
+    invoice?.tuluv === "Төлсөн" || hasPayment || remainingAmount <= 0.01;
+  const displayAmount = actualIsPaid
+    ? Number(invoice?.niitTulbur || 0)
+    : remainingAmount;
   const isPaid = actualIsPaid;
 
   // Handle mobile detection to set default tab
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-        navigator.userAgent
-      );
+      const isMobile =
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent,
+        );
       if (!isMobile) {
         setActiveTab("qrcode");
       }
     }
   }, []);
 
-  const handleCopyLink = () => {
-    if (typeof window !== "undefined" && invoice?.qpayUrl) {
-      navigator.clipboard.writeText(invoice.qpayUrl);
-      setCopied(true);
-      toast.success("Төлбөрийн линк хуулагдлаа");
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  // Format currency
-  const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat("mn-MN").format(amount) + " ₮";
-  };
+  /**
+   * Дүнг зөвхөн ТОО болгоно. `₮` тэмдгийг тусад нь, ЖИЖИГ хэмжээтэй
+   * байрлуулдаг тул энд оруулахгүй — ингэснээр дүн өөрөө хуудсын хамгийн
+   * том элемент хэвээр үлдэнэ.
+   */
+  const formatToo = (amount: number) =>
+    new Intl.NumberFormat("mn-MN").format(amount);
 
   // Format date
   const formatDate = (dateStr: string) => {
@@ -108,383 +191,336 @@ export default function PaymentLandingPage() {
 
   if (error) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center p-4"
-        style={{ background: "radial-gradient(circle at center, #1e293b 0%, #0f172a 100%)" }}
-      >
-        <div className="w-full max-w-md p-8 rounded-3xl backdrop-blur-xl bg-[color:var(--panel)] border border-danger/20 shadow-2xl text-center space-y-6">
-          <div className="mx-auto w-16 h-16 rounded-full bg-danger/10 flex items-center justify-center border border-danger/20">
-            <AlertTriangle className="w-8 h-8 text-danger" />
+      <Devsger>
+        <div className="space-y-6 rounded-3xl border border-danger/20 bg-[color:var(--panel)]/80 p-7 text-center shadow-2xl backdrop-blur-xl">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-danger/20 bg-danger/10">
+            <TriangleAlert className="h-7 w-7 text-danger" />
           </div>
           <div className="space-y-2">
-            <h1 className="text-xl font-medium text-white">Алдаа гарлаа</h1>
-            <p className="text-sm text-[color:var(--muted-text)]">
-              {error.message || "Нэхэмжлэх олоход алдаа гарлаа. Холбоос буруу эсвэл нэхэмжлэх устгагдсан байж магадгүй."}
+            <h1 className="text-lg font-semibold tracking-tight text-white">
+              Нэхэмжлэх нээгдсэнгүй
+            </h1>
+            <p className="text-pretty text-[13px] leading-relaxed text-[color:var(--muted-text)]">
+              {error.message ||
+                "Холбоос буруу эсвэл нэхэмжлэх устгагдсан байж магадгүй."}
             </p>
           </div>
           <button
             onClick={() => mutate()}
-            className="w-full h-12 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-medium transition-all flex items-center justify-center gap-2"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 text-sm font-medium text-white transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand active:translate-y-px"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className="h-4 w-4" />
             Дахин ачааллах
           </button>
         </div>
-      </div>
+      </Devsger>
     );
   }
 
   if (!data) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center p-4"
-        style={{ background: "radial-gradient(circle at center, #1e293b 0%, #0f172a 100%)" }}
-      >
-        {/* Skeleton pulse loading */}
-        <div className="w-full max-w-lg rounded-3xl p-6 sm:p-8 backdrop-blur-xl bg-[color:var(--panel)] border border-white/5 space-y-8 animate-pulse">
-          <div className="flex justify-between items-center">
-            <div className="h-6 w-28 bg-[color:var(--panel)] rounded-lg" />
-            <div className="h-6 w-16 bg-[color:var(--panel)] rounded-lg" />
+      <Devsger>
+        {/* Араг яс — блокууд нь картаасаа ЦАЙВАР байх ёстой. Өмнө нь карттай
+            ижил `--panel` өнгөтэй байсан тул ачаалалт огт харагддаггүй байв. */}
+        <div
+          className="space-y-7 rounded-3xl border border-white/5 bg-[color:var(--panel)]/80 p-7 shadow-2xl backdrop-blur-xl"
+          aria-busy="true"
+          aria-label="Нэхэмжлэх ачаалж байна"
+        >
+          <div className="animate-pulse space-y-3 text-center">
+            <div className="mx-auto h-3 w-28 rounded-full bg-white/10" />
+            <div className="mx-auto h-10 w-48 rounded-xl bg-white/[0.14]" />
+            <div className="mx-auto h-6 w-36 rounded-full bg-white/10" />
           </div>
-          <div className="space-y-4">
-            <div className="mx-auto h-12 w-48 bg-[color:var(--panel)] rounded-xl" />
-            <div className="h-20 bg-[color:var(--panel)] rounded-2xl" />
-          </div>
-          <div className="space-y-3">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="flex justify-between">
-                <div className="h-4 w-24 bg-[color:var(--panel)] rounded" />
-                <div className="h-4 w-32 bg-[color:var(--panel)] rounded" />
+          <div className="animate-pulse space-y-3 rounded-2xl bg-white/[0.03] p-4">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="flex justify-between gap-6">
+                <div className="h-3 w-24 rounded-full bg-white/10" />
+                <div className="h-3 flex-1 max-w-[9rem] rounded-full bg-white/[0.07]" />
               </div>
             ))}
           </div>
-          <div className="h-24 bg-[color:var(--panel)] rounded-2xl" />
+          <div className="h-12 animate-pulse rounded-full bg-white/[0.06]" />
+          <div className="h-44 animate-pulse rounded-2xl bg-white/[0.04]" />
         </div>
-      </div>
+      </Devsger>
     );
   }
 
+  /** Хоёр дэлгэц хуваалцах нэхэмжлэхийн задаргаа. */
+  const delgerengui = (
+    <dl className="rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-1">
+      <Mur
+        dugaar={<Building2 className="h-3.5 w-3.5 opacity-60" />}
+        ner="СӨХ"
+        utga={invoice.baiguullagiinNer}
+      />
+      <Mur
+        dugaar={<UserRound className="h-3.5 w-3.5 opacity-60" />}
+        ner="Оршин суугч"
+        utga={invoice.ner || "Тодорхойгүй"}
+      />
+      {invoice.toot && (
+        <Mur
+          dugaar={<Hash className="h-3.5 w-3.5 opacity-60" />}
+          ner="Тоот"
+          utga={`${invoice.toot} тоот`}
+        />
+      )}
+      <Mur
+        dugaar={<Hash className="h-3.5 w-3.5 opacity-60" />}
+        ner="Нэхэмжлэх №"
+        utga={invoice.nekhemjlekhiinDugaar}
+        mono
+      />
+      {invoice.ognoo && (
+        <Mur
+          dugaar={<CalendarDays className="h-3.5 w-3.5 opacity-60" />}
+          ner="Огноо"
+          utga={formatDate(invoice.ognoo)}
+          mono
+        />
+      )}
+    </dl>
+  );
+
   return (
-    <div
-      className="min-h-screen flex flex-col items-center justify-center p-4 font-sans selection:bg-theme/30 text-[color:var(--muted-text)] relative overflow-x-hidden overflow-y-auto"
-      style={
-        {
-          background: "radial-gradient(circle at top right, #1e1b4b 0%, #09090b 100%)",
-          // Нийтэд нээлттэй төлбөрийн хуудас — админы СЭДВЭЭС ҮЛ ХАМААРНА.
-          //
-          // Энэ хуудас бараан загвартай (`text-white`, `border-white/5`) ч
-          // `--panel` нь цайвар горимд бараг цагаан (#f5faf7) болдог тул
-          // карт цагаан дээр цагаан бичигтэй болж УНШИГДАХГҮЙ байв.
-          // Оршин суугч сэдэв сонгодоггүй тул энд бараан өнгийг ТОГТООНО.
-          "--panel": "var(--dark-panel)",
-          "--panel-text": "var(--dark-text)",
-          "--muted-text": "var(--dark-muted)",
-        } as React.CSSProperties
-      }
-    >
-      {/* Dynamic background glow shapes (only rendered on desktop to avoid mobile rendering lag) */}
-      <span className="hidden sm:block pointer-events-none absolute -top-48 -left-48 w-96 h-96 rounded-full bg-theme/10 blur-[100px]" />
-      <span className="hidden sm:block pointer-events-none absolute -bottom-48 -right-48 w-[450px] h-[450px] rounded-full bg-theme/10 blur-[120px]" />
+    <Devsger>
+      <AnimatePresence mode="wait">
+        {isPaid ? (
+          /* SUCCESS / PAID STATE SCREEN */
+          <motion.div
+            key="paid-state"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.25 }}
+            className="space-y-6 rounded-3xl border border-theme/20 bg-[color:var(--panel)]/80 p-6 shadow-2xl backdrop-blur-xl sm:p-7"
+          >
+            <div className="space-y-4 text-center">
+              <motion.div
+                initial={{ scale: 0.4, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.1, type: "spring", stiffness: 220, damping: 16 }}
+                className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-theme/25 bg-theme/10"
+              >
+                <Check className="h-8 w-8 text-brand" strokeWidth={2.5} />
+              </motion.div>
 
-      <div className="w-full max-w-lg relative z-10 my-8">
-
-        {/* Brand logo header */}
-        <div className="flex flex-col items-center gap-2 mb-6">
-          <div className="flex items-center gap-2">
-            <img src="/logo.png" alt="AMARHOME Logo" className="w-8 h-8 object-contain shrink-0" />
-            <span className="text-base text-[color:var(--muted-text)] text-white">AMARHOME</span>
-          </div>
-        </div>
-
-        <AnimatePresence mode="wait">
-          {isPaid ? (
-            /* SUCCESS / PAID STATE SCREEN */
-            <motion.div
-              key="paid-state"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="rounded-3xl p-6 sm:p-8 backdrop-blur-xl bg-[color:var(--panel)] border border-theme/20 shadow-2xl text-center space-y-6"
-            >
-              <div className="mx-auto w-20 h-20 rounded-full bg-theme/10 flex items-center justify-center border border-theme/20 relative">
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 0.15, type: "spring", stiffness: 200 }}
-                >
-                  <CheckCircle2 className="w-10 h-10 text-brand" />
-                </motion.div>
-                <span className="absolute inset-0 rounded-full bg-theme/5 animate-ping" />
-              </div>
-
-              <div className="space-y-2">
-                <h1 className="text-2xl font-medium text-white">Нэхэмжлэх төлөгдсөн</h1>
-                <p className="text-sm text-brand font-medium bg-theme/10 px-3 py-1 rounded-full inline-block border border-theme/15">
-                  Төлбөр амжилттай баталгаажлаа
+              <div className="space-y-1.5">
+                <h1 className="text-xl font-semibold tracking-tight text-white">
+                  Төлбөр хүлээн авлаа
+                </h1>
+                <p className="text-[13px] text-[color:var(--muted-text)]">
+                  Энэ нэхэмжлэх бүрэн төлөгдсөн байна.
                 </p>
               </div>
 
-              {/* Receipt Summary */}
-              <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 text-left space-y-3">
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-4 text-sm py-1 border-b border-white/5">
-                  <span className="text-[color:var(--muted-text)] shrink-0">Хүлээн авагч</span>
-                  <span className="font-medium text-white sm:text-right break-words sm:max-w-[65%]">
-                    {invoice.baiguullagiinNer}
-                  </span>
+              {/* Төлсөн дүн — хуудсын гол мэдээлэл. */}
+              <div className="rounded-2xl border border-white/5 bg-black/30 px-4 py-5">
+                <div className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--muted-text)]">
+                  Төлсөн дүн
                 </div>
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-4 text-sm py-1 border-b border-white/5">
-                  <span className="text-[color:var(--muted-text)] shrink-0">Төлөгч оршин суугч</span>
-                  <span className="font-medium text-white sm:text-right break-words sm:max-w-[65%]">
-                    {invoice.ner || "Тодорхойгүй"}
+                <div className="mt-1.5 flex items-baseline justify-center gap-1.5">
+                  <span className="text-[2.1rem] font-semibold leading-none tracking-tight tabular-nums text-white">
+                    {formatToo(
+                      Number(invoice.tulsunDun) || Number(invoice.niitTulbur),
+                    )}
                   </span>
-                </div>
-                <div className="flex justify-between items-center gap-4 text-sm py-1 border-b border-white/5">
-                  <span className="text-[color:var(--muted-text)] shrink-0">Тоот</span>
-                  <span className="font-medium text-white text-right">
-                    {invoice.toot ? `${invoice.toot} тоот` : "Тодорхойгүй"}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center gap-4 text-sm py-1 border-b border-white/5">
-                  <span className="text-[color:var(--muted-text)] shrink-0">Нэхэмжлэхийн дугаар</span>
-                  <span className="font-medium text-white text-right font-mono">
-                    {invoice.nekhemjlekhiinDugaar}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center gap-4 text-sm py-1">
-                  <span className="text-[color:var(--muted-text)] shrink-0">Төлсөн огноо</span>
-                  <span className="font-medium text-white text-right">
-                    {formatDate(new Date().toISOString())}
+                  <span className="text-lg font-medium text-[color:var(--muted-text)]">
+                    ₮
                   </span>
                 </div>
               </div>
+            </div>
 
-              <div className="pt-2">
-                <div className="text-[color:var(--muted-text)] text-xs py-2">
-                  Нийт төлсөн дүн:
-                </div>
-                <div className="text-3xl font-medium text-white bg-black/40 p-4 rounded-2xl border border-white/5">
-                  {formatAmount(Number(invoice.tulsunDun) || Number(invoice.niitTulbur))}
-                </div>
+            {delgerengui}
+
+            <p className="text-pretty text-center text-[11px] leading-relaxed text-[color:var(--muted-text)]/80">
+              Баримттай холбоотой лавлах зүйл байвал СӨХ-тэйгээ холбогдоно уу.
+            </p>
+          </motion.div>
+        ) : (
+          /* UNPAID / BILL SELECT STATE SCREEN */
+          <motion.div
+            key="unpaid-state"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.25 }}
+            className="space-y-5 rounded-3xl border border-white/5 bg-[color:var(--panel)]/80 p-6 shadow-2xl backdrop-blur-xl sm:p-7"
+          >
+            {/* Төлөх дүн — хуудсанд хамгийн түрүүнд уншигдах зүйл. */}
+            <div className="space-y-2.5 text-center">
+              <div className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--muted-text)]">
+                Төлөх дүн
               </div>
+              <div className="flex items-baseline justify-center gap-2">
+                <h1 className="text-[2.6rem] font-semibold leading-none tracking-tighter tabular-nums text-white">
+                  {formatToo(displayAmount)}
+                </h1>
+                <span className="text-xl font-medium text-[color:var(--muted-text)]">
+                  ₮
+                </span>
+              </div>
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-warning/20 bg-warning/10 px-2.5 py-1 text-[11px] font-medium text-warning">
+                <span className="h-1.5 w-1.5 rounded-full bg-warning" />
+                Төлөгдөөгүй
+              </div>
+            </div>
 
-              <p className="text-xs text-[color:var(--muted-text)]">
-                Баримттай холбоотой лавлах зүйл байвал сөх-тэй холбогдоно уу.
-              </p>
-            </motion.div>
-          ) : (
-            /* UNPAID / BILL SELECT STATE SCREEN */
-            <motion.div
-              key="unpaid-state"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="rounded-3xl p-6 sm:p-8 backdrop-blur-xl bg-[color:var(--panel)] border border-white/5 shadow-2xl space-y-6"
+            {delgerengui}
+
+            {/* Selector Tabs (Deep Link vs QR Code) */}
+            <div
+              role="tablist"
+              aria-label="Төлөх арга"
+              className="flex gap-1 rounded-full border border-white/5 bg-white/[0.03] p-1"
             >
-              {/* Header section with amount */}
-              <div className="text-center space-y-2 pb-2">
-                <span className="text-xs text-[color:var(--muted-text)] uppercase tracking-widest">{actualIsPaid ? 'Төлсөн нийт дүн' : 'Төлөх нийт дүн'}</span>
-                <h2 className="text-4xl font-medium text-white tracking-tight">
-                  {formatAmount(displayAmount)}
-                </h2>
-                {actualIsPaid ? (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-theme/10 border border-theme/20 text-brand text-xs">
-                    <span className="w-1.5 h-1.5 rounded-full bg-theme" />
-                    Төлбөр төлөгдсөн
-                  </div>
-                ) : (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-warning/10 border border-warning/20 text-warning text-xs">
-                    <span className="w-1.5 h-1.5 rounded-full bg-warning animate-pulse" />
-                    Төлбөр хүлээгдэж байна
-                  </div>
-                )}
-              </div>
-
-              {/* Invoice breakdown details */}
-              <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 text-xs sm:text-sm space-y-2.5">
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-4">
-                  <span className="text-[color:var(--muted-text)] flex items-center gap-1.5 shrink-0">
-                    <Building className="w-3.5 h-3.5 text-[color:var(--muted-text)]" /> СӨХ-ийн нэр
-                  </span>
-                  <span className="font-medium text-white sm:text-right break-words sm:max-w-[65%]">
-                    {invoice.baiguullagiinNer}
-                  </span>
-                </div>
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-4">
-                  <span className="text-[color:var(--muted-text)] flex items-center gap-1.5 shrink-0">
-                    <User className="w-3.5 h-3.5 text-[color:var(--muted-text)]" /> Оршин суугч
-                  </span>
-                  <span className="font-medium text-white sm:text-right break-words sm:max-w-[65%]">
-                    {invoice.ner || "Тодорхойгүй"}
-                  </span>
-                </div>
-                {invoice.toot && (
-                  <div className="flex justify-between items-center gap-4">
-                    <span className="text-[color:var(--muted-text)] flex items-center gap-1.5 shrink-0">
-                      <Hash className="w-3.5 h-3.5 text-[color:var(--muted-text)]" /> Тоот
-                    </span>
-                    <span className="font-medium text-white text-right">
-                      {invoice.toot} тоот
-                    </span>
-                  </div>
-                )}
-                <div className="flex justify-between items-center gap-4">
-                  <span className="text-[color:var(--muted-text)] flex items-center gap-1.5 shrink-0">
-                    <Hash className="w-3.5 h-3.5 text-[color:var(--muted-text)]" /> Нэхэмжлэх №
-                  </span>
-                  <span className="font-medium text-white text-right font-mono">
-                    {invoice.nekhemjlekhiinDugaar}
-                  </span>
-                </div>
-                {invoice.ognoo && (
-                  <div className="flex justify-between items-center gap-4">
-                    <span className="text-[color:var(--muted-text)] flex items-center gap-1.5 shrink-0">
-                      <Calendar className="w-3.5 h-3.5 text-[color:var(--muted-text)]" /> Огноо
-                    </span>
-                    <span className="font-medium text-white text-right">
-                      {formatDate(invoice.ognoo)}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Selector Tabs (Deep Link vs QR Code) */}
-              <div className="flex p-1 rounded-full bg-white/[0.03] border border-white/5">
-                <button
-                  onClick={() => setActiveTab("deeplink")}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 ${activeTab === "deeplink"
-                    ? "bg-[color:var(--theme)] text-white shadow-lg shadow-[#10b981]/15"
-                    : "text-[color:var(--muted-text)] hover:text-white"
+              {(
+                [
+                  { id: "deeplink", ner: "Банкны апп", Dugaar: Smartphone },
+                  { id: "qrcode", ner: "QR код", Dugaar: QrCode },
+                ] as const
+              ).map(({ id, ner, Dugaar }) => {
+                const idevkhtei = activeTab === id;
+                return (
+                  <button
+                    key={id}
+                    role="tab"
+                    type="button"
+                    aria-selected={idevkhtei}
+                    onClick={() => setActiveTab(id)}
+                    className={`flex flex-1 items-center justify-center gap-2 rounded-full py-2.5 text-[13px] font-medium transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
+                      idevkhtei
+                        ? "bg-theme text-white shadow-lg shadow-theme/20"
+                        : "text-[color:var(--muted-text)] hover:text-white"
                     }`}
-                >
-                  <Smartphone className="w-4 h-4" />
-                  Банкны Апп
-                </button>
-                <button
-                  onClick={() => setActiveTab("qrcode")}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 ${activeTab === "qrcode"
-                    ? "bg-[color:var(--theme)] text-white shadow-lg shadow-[#10b981]/15"
-                    : "text-[color:var(--muted-text)] hover:text-white"
-                    }`}
-                >
-                  <QrCode className="w-4 h-4" />
-                  QR Код
-                </button>
-              </div>
+                  >
+                    <Dugaar className="h-4 w-4" />
+                    {ner}
+                  </button>
+                );
+              })}
+            </div>
 
-              {/* Dynamic View container */}
-              <div className="min-h-[250px]">
-                {activeTab === "deeplink" ? (
-                  /* DEEP LINKS LIST (FOR MOBILE DIRECT LAUNCH) */
-                  <div className="space-y-4">
-                    <div className="text-center py-1 text-[color:var(--muted-text)] text-xs">
-                      Та өөрийн ашигладаг банкны аппликейшнийг сонгон төлбөрөө төлнө үү.
-                    </div>
-                    {invoice.qpayUrls && invoice.qpayUrls.length > 0 ? (
-                      <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
-                        {invoice.qpayUrls.map((bank: any) => (
-                          <a
-                            href={bank.link}
-                            key={bank.name}
-                            className="relative flex items-center gap-2.5 p-3 rounded-2xl bg-white/[0.02] hover:bg-white/[0.06] active:bg-white/[0.1] border border-white/5 hover:border-white/10 transition-all group overflow-hidden"
-                          >
-                            <div className="absolute inset-0 bg-gradient-to-r from-theme/5 to-theme/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                            {bank.logo ? (
-                              <img
-                                src={bank.logo}
-                                alt={bank.name}
-                                className="w-8 h-8 rounded-xl object-contain shrink-0"
-                                onError={(e) => {
-                                  e.currentTarget.style.display = "none";
-                                }}
-                              />
-                            ) : (
-                              <div className="w-8 h-8 rounded-xl bg-[color:var(--panel)] flex items-center justify-center font-medium text-xs shrink-0">
-                                {bank.name?.charAt(0)}
-                              </div>
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <div className="text-xs font-medium text-white truncate group-hover:text-brand transition-colors">
-                                {bank.description || bank.name}
-                              </div>
-                              <span className="text-[9px] text-[color:var(--muted-text)] block">
-                                Нээх
-                              </span>
+            {/* Dynamic View container */}
+            <div>
+              {activeTab === "deeplink" ? (
+                /* DEEP LINKS LIST (FOR MOBILE DIRECT LAUNCH) */
+                <div className="space-y-3">
+                  <p className="text-center text-[12px] leading-relaxed text-[color:var(--muted-text)]">
+                    Ашигладаг банкаа сонгоход апп шууд нээгдэнэ.
+                  </p>
+                  {invoice.qpayUrls && invoice.qpayUrls.length > 0 ? (
+                    <div className="custom-scrollbar grid max-h-[17rem] grid-cols-2 gap-2 overflow-y-auto pr-1">
+                      {invoice.qpayUrls.map((bank: any) => (
+                        <a
+                          href={bank.link}
+                          key={bank.name}
+                          className="group flex items-center gap-2.5 rounded-2xl border border-white/5 bg-white/[0.02] p-2.5 transition-colors hover:border-white/10 hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand active:translate-y-px"
+                        >
+                          {bank.logo ? (
+                            <img
+                              src={bank.logo}
+                              alt=""
+                              className="h-9 w-9 shrink-0 rounded-xl object-contain"
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none";
+                              }}
+                            />
+                          ) : (
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-xs font-semibold text-white">
+                              {bank.name?.charAt(0)}
                             </div>
-                            <ArrowRight className="w-3.5 h-3.5 text-[color:var(--muted-text)] group-hover:text-white transition-colors" />
-                          </a>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center py-8 text-center space-y-2 bg-white/[0.02] border border-white/5 rounded-2xl">
-                        <AlertTriangle className="w-8 h-8 text-warning opacity-60" />
-                        <div className="text-xs text-[color:var(--muted-text)] px-4">
-                          Банкны апп холбоос олдсонгүй. Баруун талын &quot;QR Код&quot; сонголтыг ашиглан төлнө үү.
+                          )}
+                          <span className="min-w-0 flex-1 truncate text-[12px] font-medium leading-snug text-white/90 transition-colors group-hover:text-white">
+                            {bank.description || bank.name}
+                          </span>
+                        </a>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2 rounded-2xl border border-white/5 bg-white/[0.02] px-5 py-8 text-center">
+                      <TriangleAlert className="h-7 w-7 text-warning/70" />
+                      <p className="text-[12px] leading-relaxed text-[color:var(--muted-text)]">
+                        Банкны апп холбоос олдсонгүй. «QR код» сонголтыг ашиглан
+                        төлнө үү.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* QR CODE DISPLAY (FOR SCANNING) */
+                <div className="flex flex-col items-center gap-4">
+                  <p className="text-center text-[12px] leading-relaxed text-[color:var(--muted-text)]">
+                    Банкны апп-ынхаа QR уншуулагчаар доорх кодыг уншуулна уу.
+                  </p>
+
+                  {invoice.qpayUrl ? (
+                    // QR-ын хүрээ нь ҮРГЭЛЖ цагаан — уншигдах контраст нь
+                    // сэдвээс хамаарч болохгүй (`--surface-bg` нь бараан
+                    // сэдэвт хар болж, код уншигдахгүй болдог байв).
+                    <div className="relative rounded-3xl bg-white p-4 shadow-xl">
+                      <div className="relative flex h-40 w-40 items-center justify-center sm:h-44 sm:w-44">
+                        {invoice.qpayUrl.startsWith("data:image/") ||
+                        invoice.qpayUrl.length > 500 ? (
+                          <img
+                            src={
+                              invoice.qpayUrl.startsWith("data:image/")
+                                ? invoice.qpayUrl
+                                : `data:image/png;base64,${invoice.qpayUrl}`
+                            }
+                            alt="QPay QR код"
+                            className="h-full w-full object-contain"
+                          />
+                        ) : (
+                          <QRCodeSVG
+                            value={invoice.qpayUrl}
+                            size={176}
+                            bgColor="#ffffff"
+                            fgColor="#09090b"
+                            level="M"
+                            className="h-full w-full"
+                          />
+                        )}
+                        {/* Overlay Amarhome logo in center */}
+                        <div className="absolute left-1/2 top-1/2 flex h-9 w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-xl border-2 border-white bg-white p-1 shadow-md">
+                          <img
+                            src="/logo.png"
+                            alt=""
+                            className="h-full w-full object-contain"
+                          />
                         </div>
                       </div>
-                    )}
-                  </div>
-                ) : (
-                  /* QR CODE DISPLAY (FOR SCANNING) */
-                  <div className="flex flex-col items-center space-y-6 py-2">
-                    <div className="text-center text-[color:var(--muted-text)] text-xs max-w-sm">
-                      Гар утасныхаа банкны апп-ын QR уншуулагчаар доорх кодыг уншуулна уу.
                     </div>
+                  ) : (
+                    <div className="flex h-48 w-48 flex-col items-center justify-center gap-2 rounded-3xl border border-white/10 bg-white/[0.02]">
+                      <TriangleAlert className="h-6 w-6 text-[color:var(--muted-text)]" />
+                      <span className="text-[11px] text-[color:var(--muted-text)]">
+                        QR код олдсонгүй
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
-                    {invoice.qpayUrl ? (
-                      <div className="relative p-5 bg-[color:var(--surface-bg)] rounded-3xl shadow-xl flex items-center justify-center">
-                        {invoice.qpayUrl.startsWith("data:image/") || invoice.qpayUrl.length > 500 ? (
-                          <div className="relative w-36 h-36 sm:w-44 sm:h-44 flex items-center justify-center">
-                            <img
-                              src={invoice.qpayUrl.startsWith("data:image/") ? invoice.qpayUrl : `data:image/png;base64,${invoice.qpayUrl}`}
-                              alt="QPay QR Code"
-                              className="w-36 h-36 sm:w-44 sm:h-44 object-contain"
-                            />
-                            {/* Overlay Amarhome logo in center */}
-                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-[color:var(--surface-bg)] border-2 border-[color:var(--surface-border)] flex items-center justify-center shadow-lg p-0.5">
-                              <img src="/logo.png" alt="Amarhome Logo" className="w-full h-full object-contain" />
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="relative w-36 h-36 sm:w-44 sm:h-44 flex items-center justify-center">
-                            <QRCodeSVG
-                              value={invoice.qpayUrl}
-                              size={144}
-                              bgColor="#ffffff"
-                              fgColor="#09090b"
-                              level="M"
-                              className="w-36 h-36 sm:w-44 sm:h-44"
-                            />
-                            {/* Overlay Amarhome logo in center */}
-                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-[color:var(--surface-bg)] border-2 border-[color:var(--surface-border)] flex items-center justify-center shadow-lg p-0.5">
-                              <img src="/logo.png" alt="Amarhome Logo" className="w-full h-full object-contain" />
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="w-44 h-44 rounded-3xl bg-[color:var(--panel)] border border-[color:var(--surface-border)] flex flex-col items-center justify-center gap-2">
-                        <AlertTriangle className="w-6 h-6 text-[color:var(--muted-text)]" />
-                        <span className="text-[10px] text-[color:var(--muted-text)]">QR код олдсонгүй</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Status footer spinner */}
-              <div className="flex items-center justify-center gap-2 text-[10px] text-[color:var(--muted-text)] border-t border-white/5 pt-4">
-                <span className="w-2 h-2 rounded-full bg-theme animate-ping shrink-0" />
-                <span>Төлбөрийг автоматаар шалгаж байна...</span>
-                {isValidating && <RefreshCw className="w-3 h-3 animate-spin text-[color:var(--muted-text)]" />}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <p className="text-center text-[10px] text-[color:var(--muted-text)] mt-6 tracking-wide">
-          ЗЭВТАБС © Amarhome Төлбөрийн Систем
-        </p>
-      </div>
-    </div>
+            {/* Status footer spinner */}
+            <div
+              aria-live="polite"
+              className="flex items-center justify-center gap-2 border-t border-white/5 pt-4 text-[11px] text-[color:var(--muted-text)]"
+            >
+              <span className="relative flex h-1.5 w-1.5 shrink-0">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-theme opacity-75" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-theme" />
+              </span>
+              Төлбөрийг автоматаар шалгаж байна
+              {isValidating && <RefreshCw className="h-3 w-3 animate-spin" />}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </Devsger>
   );
 }

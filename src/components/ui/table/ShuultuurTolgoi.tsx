@@ -207,25 +207,44 @@ export function ShuultuurTolgoi({
   current,
   options,
   onSelect,
+  anKhdagchUtga = "all",
+  utgaKharuulakh = true,
 }: {
   label: string;
   current: string;
   options: { label: string; value: string }[];
   onSelect: (v: string) => void;
+  /**
+   * Аль утга нь «шүүлтгүй» гэж тооцогдох вэ. Ихэнх баганад `"all"` боловч
+   * ЭРЭМБЭ сонгогч (ж: Хугацаа/мин) нь `"all"`-гүй, анхдагч нь жинхэнэ нэг
+   * сонголт байдаг — тэгвэл эхнээсээ «идэвхтэй» гэж тодроод, сонгосон
+   * утгынхаа нэрийг толгойдоо гаргачихдаг байв.
+   */
+  anKhdagchUtga?: string;
+  /**
+   * Сонгосон утгын нэрийг толгой дээр шошго болгон харуулах эсэх. Нарийн
+   * баганад (110-125px) шошго нь мөр тасалж, дүрсийг түлхдэг тул унтраана.
+   */
+  utgaKharuulakh?: boolean;
 }) {
-  const idevkhtei = !!current && current !== "all";
-  const songogdsonNer = idevkhtei ? options.find((o) => o.value === current)?.label : null;
+  const idevkhtei = !!current && current !== anKhdagchUtga;
+  const songogdsonNer =
+    utgaKharuulakh && idevkhtei
+      ? options.find((o) => o.value === current)?.label
+      : null;
   return (
-    <FilterPopover label={label} options={options} current={current || "all"} onSelect={onSelect}>
-      <div className="group/f flex h-full cursor-pointer items-center justify-center gap-1.5">
+    <FilterPopover label={label} options={options} current={current || anKhdagchUtga} onSelect={onSelect}>
+      <div className="group/f flex h-full cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap">
         <Filter
-          className={`h-3.5 w-3.5 transition-colors ${
+          className={`h-3.5 w-3.5 shrink-0 transition-colors ${
             idevkhtei ? "text-brand" : "text-[color:var(--muted-text)] group-hover/f:text-brand"
           }`}
         />
         <span>{label}</span>
         {songogdsonNer && (
-          <span className="rounded-md bg-theme/10 px-1.5 text-[11px] font-medium text-brand">{songogdsonNer}</span>
+          <span className="max-w-[9rem] truncate rounded-md bg-theme/10 px-1.5 text-[11px] font-medium text-brand">
+            {songogdsonNer}
+          </span>
         )}
       </div>
     </FilterPopover>

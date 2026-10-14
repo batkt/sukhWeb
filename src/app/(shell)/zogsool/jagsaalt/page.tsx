@@ -21,7 +21,6 @@ import {
   Car,
   Copy,
   Clock,
-  Filter,
   ArrowUpDown,
   Calendar,
   ChevronDown,
@@ -52,6 +51,7 @@ import { LiquidGlassCard } from "@/components/ui/liquid-glass";
 import { StandardPagination } from "@/components/ui/StandardTable";
 import { PaymentPopup } from "../camera/PaymentPopup";
 import Table from "@/components/ui/table";
+import { ShuultuurTolgoi } from "@/components/ui/table/ShuultuurTolgoi";
 import type { ColumnsType } from "@/components/ui/table";
 import { TULBURIIN_BULEG_UTGUUD } from "@/lib/tulburiinTurul";
 import { tulburiinZadargaaBodyo } from "@/lib/tulburiinZadargaa";
@@ -324,7 +324,6 @@ export default function Jagsaalt() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [paymentMethodFilter, setPaymentMethodFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
-  const [openFilter, setOpenFilter] = useState<string | null>(null);
 
   const [revenueModalOpen, setRevenueModalOpen] = useState(false);
   const [revenueDateRange, setRevenueDateRange] = useState<[string | null, string | null] | undefined>(() => {
@@ -1011,61 +1010,45 @@ export default function Jagsaalt() {
   // ── Машины жагсаалтын багана ────────────────────────────────────────────
   // Шүүлтүүрийн цэс нь өмнөх зан төлөвтэй адил — толгойн доторх агуулга
   // хэвээр, зөвхөн хүснэгтийн их бие стандарт бүрдэл рүү шилжив.
+  /**
+   * Баганын шүүлтүүрийн толгой.
+   *
+   * Өмнө нь энэ хуудас ӨӨРИЙН хуулбартай байв: попапыг `<th>` дотор
+   * `absolute`-аар байрлуулдаг тул
+   *   • хүснэгтийн `overflow-x-auto` бүрхүүл түүнийг ТАСАЛЖ, доошоо
+   *     багтахгүй үед огт харагддаггүй,
+   *   • нийлбэрийн мөр (`sticky bottom-0 z-10`) нь дээрээс нь будна,
+   *   • сонголтууд `--muted-text`-ээр будагддаг ч панел нь албадсан
+   *     бараан өнгөтэй тул ЦАЙВАР горимд бараг үл үзэгдэнэ.
+   *
+   * Нийтийн `ShuultuurTolgoi` нь попапыг `document.body` руу portal-аар
+   * гаргаж (`position: fixed`, `z-index: 99999`), доош багтахгүй бол дээш
+   * эргэж, Escape/гадна дарахад хаагдана. Жагсаалт, камер, тоотын хүснэгт
+   * бүгд түүнийг хэрэглэдэг тул энд ч мөн адил.
+   */
   const shuultuuriinTolgoi = (
-    id: string,
+    _id: string,
     label: string,
     current: string,
     options: { label: string; value: string }[],
     onSelect: (v: string) => void,
+    /** «Шүүлтгүй» гэж тооцох утга — ЭРЭМБЭ сонгогч дээр `"all"` биш. */
+    anKhdagchUtga = "all",
   ) => (
-    <div className="relative inline-flex items-center justify-center gap-1.5">
-      <span>{label}</span>
-      <span
-        title="Шүүлтүүр"
-        className="group/f relative inline-flex items-center justify-center p-0.5 rounded hover:bg-white/10 transition-colors cursor-pointer"
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpenFilter(openFilter === id ? null : id);
-        }}
-      >
-        <Filter
-          className={`h-3 w-3 transition-colors ${current !== "all" && current !== undefined
-            ? "text-brand"
-            : "text-[color:var(--muted-text)] group-hover/f:text-brand"
-            }`}
-        />
-        <div
-          className={`absolute top-full left-1/2 z-[100] mt-3 w-48 -translate-x-1/2 overflow-hidden rounded-2xl border border-white/5 bg-[color:var(--wall-panel)] p-2 text-white shadow-[0_20px_50px_rgba(0,0,0,0.5)] ring-1 ring-white/10 backdrop-blur-2xl transition-all duration-300 ${openFilter === id
-            ? "visible translate-y-0 opacity-100 pointer-events-auto"
-            : "invisible translate-y-3 opacity-0 pointer-events-none"
-            }`}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="relative z-10 flex flex-col gap-1">
-            <div className="mb-1 border-b border-white/5 px-3 py-1.5 text-[11px] text-[color:var(--muted-text)]">
-              Сонгох
-            </div>
-            {options.map((opt) => (
-              <div
-                key={opt.value}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelect(opt.value);
-                  setPage(1);
-                  setOpenFilter(null);
-                }}
-                className={`flex cursor-pointer items-center justify-between rounded-xl px-4 py-2.5 text-left text-[11px] transition-all duration-200 ${current === opt.value
-                  ? "bg-theme text-white shadow-lg shadow-theme/40"
-                  : "text-[color:var(--muted-text)] hover:bg-white/10 hover:text-white"
-                  }`}
-              >
-                <span>{opt.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </span>
-    </div>
+    <ShuultuurTolgoi
+      label={label}
+      current={current}
+      options={options}
+      anKhdagchUtga={anKhdagchUtga}
+      // Баганууд нь 105-125px — сонгосон утгын нэр багтахгүй тул мөр
+      // таслаж, шүүлтүүрийн дүрсийг түлхэж гаргадаг. Идэвхтэй эсэхийг
+      // дүрсний өнгө харуулна.
+      utgaKharuulakh={false}
+      onSelect={(v) => {
+        onSelect(v);
+        setPage(1);
+      }}
+    />
   );
 
   const mashiniiColumns: ColumnsType<any> = [
@@ -1190,6 +1173,7 @@ export default function Jagsaalt() {
             { label: "Сүүлд гарсан эхэнд", value: "latest_out" },
           ],
           setDurationFilter,
+          "latest_out",
         ),
       key: "duration",
       width: 125,

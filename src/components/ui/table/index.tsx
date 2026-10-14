@@ -878,14 +878,21 @@ function Table<T extends object = any>({
         <span className="inline-flex flex-nowrap items-center justify-center gap-0.5">
           {typeof col.title === "function" ? col.title({}) : col.title}
           {col.sorter && (
-            <span className="ml-0.5 inline-flex flex-col items-center leading-none">
+            /* Заагч нь 6px өндөр, 40% тунгалаг байсан тул багана
+               эрэмбэлэгддэг нь огт мэдэгдэхгүй — «эрэмбэ байхгүй» гэж
+               ойлгогддог байв. Томруулж, идэвхгүй төлөвийг тодруулж,
+               толгойг hover хийхэд бүрэн тодордог болгов. */
+            <span
+              aria-hidden
+              className="ml-1 inline-flex shrink-0 flex-col items-center gap-[2px] leading-none"
+            >
               <svg
                 viewBox="0 0 24 10"
                 className={cn(
-                  "h-1.5 w-2.5",
+                  "h-[5px] w-[9px] transition-colors",
                   sorted === "ascend"
                     ? "text-[hsl(var(--zt-primary))]"
-                    : "text-[hsl(var(--zt-muted-fg)/0.4)]",
+                    : "text-[hsl(var(--zt-muted-fg)/0.75)]",
                 )}
                 fill="currentColor"
               >
@@ -894,10 +901,10 @@ function Table<T extends object = any>({
               <svg
                 viewBox="0 0 24 10"
                 className={cn(
-                  "h-1.5 w-2.5",
+                  "h-[5px] w-[9px] transition-colors",
                   sorted === "descend"
                     ? "text-[hsl(var(--zt-primary))]"
-                    : "text-[hsl(var(--zt-muted-fg)/0.4)]",
+                    : "text-[hsl(var(--zt-muted-fg)/0.75)]",
                 )}
                 fill="currentColor"
               >
