@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useImperativeHandle, useState } from "react";
+import React, { useImperativeHandle, useState, useEffect } from "react";
 import {
   TextInput as MTextInput,
   NumberInput as MNumberInput,
@@ -27,6 +27,8 @@ import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import createMethod from "../../../../tools/function/createMethod";
 import updateMethod from "../../../../tools/function/updateMethod";
+import uilchilgee from "@/lib/uilchilgee";
+import { DANS_ENDPOINT } from "@/lib/endpoints";
 
 interface ZogsoolBurtgekhProps {
   data?: any;
@@ -113,6 +115,22 @@ function ZogsoolBurtgekh(
 
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"general" | "gates" | "tariffs" | "switches">("general");
+  const [dansOptions, setDansOptions] = useState<{ value: string; label: string }[]>([]);
+
+  useEffect(() => {
+    if (!token) return;
+    uilchilgee(token)
+      .get(DANS_ENDPOINT)
+      .then((res) => {
+        const list = Array.isArray(res.data) ? res.data : res.data?.items || [];
+        const opts = list.map((d: any) => ({
+          value: String(d.dugaar || ""),
+          label: `${d.dugaar} (${d.bank || "Данс"}${d.dansniiNer ? ` - ${d.dansniiNer}` : ""})`,
+        }));
+        setDansOptions(opts);
+      })
+      .catch(() => {});
+  }, [token]);
 
   useImperativeHandle(ref, () => ({
     async khadgalya() {
@@ -302,24 +320,41 @@ function ZogsoolBurtgekh(
             <SectionHeader icon={CreditCard} title="Санхүүгийн тохиргоо" description="Дансны мэдээлэл" colorClass="bg-theme/10 text-brand" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="block text-[13px] text-[color:var(--panel-text)] opacity-80">Үндсэн данс</label>
+                <div className="flex items-center justify-between">
+                  <label className="block text-[13px] text-[color:var(--panel-text)] opacity-80">Үндсэн данс</label>
+                  <span className="text-[11px] text-[color:var(--muted-text)]">Хоосон бол үндсэн данс (Fallback)</span>
+                </div>
                 <MTextInput
                   value={formData.zogsooliinDans}
                   onChange={(e) => updateField("zogsooliinDans", e.currentTarget.value)}
-                  placeholder="Дансны дугаар"
+                  placeholder="Дансны дугаар (сонголттой)"
+                  list="zogsool-dans-list"
                   classNames={{ input: "!h-10 !min-h-10 !rounded-[10px] !text-sm bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:border-theme transition-colors text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
                 />
               </div>
               <div className="space-y-2">
-                <label className="block text-[13px] text-[color:var(--panel-text)] opacity-80">Sticker данс (QR)</label>
+                <div className="flex items-center justify-between">
+                  <label className="block text-[13px] text-[color:var(--panel-text)] opacity-80">Sticker данс (QR)</label>
+                  <span className="text-[11px] text-[color:var(--muted-text)]">Хоосон бол үндсэн данс</span>
+                </div>
                 <MTextInput
                   value={formData.zogsooliinDansSticker}
                   onChange={(e) => updateField("zogsooliinDansSticker", e.currentTarget.value)}
-                  placeholder="Дансны дугаар"
+                  placeholder="Дансны дугаар (сонголттой)"
+                  list="zogsool-dans-list"
                   classNames={{ input: "!h-10 !min-h-10 !rounded-[10px] !text-sm bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:border-theme transition-colors text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
                 />
               </div>
             </div>
+            {dansOptions.length > 0 && (
+              <datalist id="zogsool-dans-list">
+                {dansOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </datalist>
+            )}
             
             {formData.togtmolTulburEsekh && (
               <div className="mt-4 p-4 rounded-xl bg-theme/5 border border-theme/30">
