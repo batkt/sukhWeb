@@ -4,7 +4,7 @@ import React, { useMemo } from "react";
 import { Tooltip } from "antd";
 import Table from "@/components/ui/table";
 import type { ColumnsType } from "@/components/ui/table";
-import { Edit, Eye, Trash2, ChevronUp, ChevronDown, X } from "lucide-react";
+import { Edit, Eye, Trash2, ChevronUp, ChevronDown, X, KeyRound } from "lucide-react";
 import { getPaymentStatusLabel } from "@/lib/utils";
 import { negjiinTurul, negjiinTulkhuur } from "@/lib/negjiinTurul";
 import DeleteConfirmModal from "./modals/DeleteModal";
@@ -43,6 +43,7 @@ interface ResidentsTableProps {
   /** Оршин суугчийн БҮХ мэдээллийг нэг модалаас харах. */
   onView?: (resident: ResidentItem) => void;
   onDelete?: (resident: ResidentItem) => void;
+  onResetPassword?: (resident: ResidentItem) => void;
   onRemoveToot?: (residentId: string, baiguullagiinId: string, barilgiinId: string, toot: string, turul?: string) => void;
   onSort?: (key: SortKey, order?: "ascend" | "descend" | null) => void;
 }
@@ -58,6 +59,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
   onEdit,
   onView,
   onDelete,
+  onResetPassword,
   onRemoveToot,
   onSort,
 }) => {
@@ -330,7 +332,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
         title: "Үйлдэл",
         key: "action",
         align: "center",
-        width: 96,
+        width: 120,
         render: (_: any, record: ResidentItem, index: number) => (
           <div className="flex gap-1 justify-center">
             <button
@@ -351,6 +353,17 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
             >
               <Edit className="w-4 h-4 text-brand" />
             </button>
+            {onResetPassword && (
+              <button
+                type="button"
+                onClick={() => onResetPassword(record)}
+                className="p-1.5 rounded-md hover-surface transition-colors hover:bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                id={index === 0 ? "resident-reset-pass-btn" : undefined}
+                title="Нууц үг сэргээх"
+              >
+                <KeyRound className="w-4 h-4" />
+              </button>
+            )}
             <button
               type="button"
               onClick={() => onDelete?.(record)}
@@ -372,6 +385,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
       onEdit,
       onView,
       onDelete,
+      onResetPassword,
       onRemoveToot,
       onSort,
     ],

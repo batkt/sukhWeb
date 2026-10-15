@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ClientsSection from "../ClientsSection";
 import ResidentDetailModal from "../modals/ResidentDetailModal";
+import NuutsUgSergeekhModal from "../modals/NuutsUgSergeekhModal";
 import { useGereeContext } from "../GereeContext";
 import { useAuth } from "@/lib/useAuth";
 import { hasPermission } from "@/lib/permissionUtils";
@@ -17,6 +18,7 @@ export default function khariltsagchPage() {
   const { token } = useAuth();
   const [clientToDelete, setClientToDelete] = useState<any>(null);
   const [kharakhId, setKharakhId] = useState<string | null>(null);
+  const [resetPasswordClient, setResetPasswordClient] = useState<any>(null);
 
   const tourSteps = useTourSteps("residents");
   useRegisterTourSteps("/geree/khariltsagch", tourSteps);
@@ -61,6 +63,7 @@ export default function khariltsagchPage() {
         currentBaiguullagiinId={ajiltan?.baiguullagiinId}
         setResPageSize={state.setResPageSize}
         setResPage={state.setResPage}
+        onResetPasswordClient={(client) => setResetPasswordClient(client)}
       />
 
       <ResidentDetailModal
@@ -79,6 +82,15 @@ export default function khariltsagchPage() {
             state.setShowClientModal,
           );
         }}
+      />
+
+      <NuutsUgSergeekhModal
+        show={!!resetPasswordClient}
+        onClose={() => setResetPasswordClient(null)}
+        userId={resetPasswordClient?._id}
+        ner={typeof resetPasswordClient?.ner === "object" ? resetPasswordClient?.ner?.ner : resetPasswordClient?.ner}
+        utas={Array.isArray(resetPasswordClient?.utas) ? resetPasswordClient?.utas[0] : (resetPasswordClient?.utas || "")}
+        isKhariltsagch={true}
       />
 
       <ConfirmCloseDialog

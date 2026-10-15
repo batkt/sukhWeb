@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ResidentsSection from "../ResidentsSection";
 import ResidentDetailModal from "../modals/ResidentDetailModal";
+import NuutsUgSergeekhModal from "../modals/NuutsUgSergeekhModal";
 import { useGereeContext } from "../GereeContext";
 import { useAuth } from "@/lib/useAuth";
 import { hasPermission } from "@/lib/permissionUtils";
@@ -18,6 +19,7 @@ export default function OrshinSuugchPage() {
   // "Үйлдэл" багана дахь нүдний товч — оршин суугчийн бүх мэдээллийг нэг
   // модалаас харуулна (гэрээ, тоот, гэр бүл, зогсоол, гүйлгээ, эрсдэл).
   const [kharakhId, setKharakhId] = useState<string | null>(null);
+  const [resetPasswordResident, setResetPasswordResident] = useState<any>(null);
 
   const tourSteps = useTourSteps("residents");
   useRegisterTourSteps("/geree/orshinSuugch", tourSteps);
@@ -65,6 +67,7 @@ export default function OrshinSuugchPage() {
       setResPageSize={state.setResPageSize}
       setResPage={state.setResPage}
       onViewResident={(resident) => setKharakhId(resident?._id || null)}
+      onResetPasswordResident={(resident) => setResetPasswordResident(resident)}
     />
     <ResidentDetailModal
       show={!!kharakhId}
@@ -81,6 +84,14 @@ export default function OrshinSuugchPage() {
           state.setShowResidentModal,
         );
       }}
+    />
+    <NuutsUgSergeekhModal
+      show={!!resetPasswordResident}
+      onClose={() => setResetPasswordResident(null)}
+      userId={resetPasswordResident?._id}
+      ner={typeof resetPasswordResident?.ner === "object" ? resetPasswordResident?.ner?.ner : resetPasswordResident?.ner}
+      utas={Array.isArray(resetPasswordResident?.utas) ? resetPasswordResident?.utas[0] : (resetPasswordResident?.utas || "")}
+      isKhariltsagch={false}
     />
     </>
   );

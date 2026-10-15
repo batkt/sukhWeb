@@ -4,7 +4,7 @@ import React, { useMemo, useState } from "react";
 import Table from "@/components/ui/table";
 import { Tooltip } from "antd";
 import type { ColumnsType } from "@/components/ui/table";
-import { Edit, Trash2, ChevronUp, ChevronDown, X, Car, Warehouse, Eye } from "lucide-react";
+import { Edit, Trash2, ChevronUp, ChevronDown, X, Car, Warehouse, Eye, KeyRound } from "lucide-react";
 import { ConfirmCloseDialog } from "@/components/ui/ConfirmCloseDialog";
 import { getPaymentStatusLabel } from "@/lib/utils";
 import useSWR from "swr";
@@ -49,6 +49,7 @@ interface ClientsTableProps {
   onView?: (Client: ClientItem) => void;
   onEdit?: (Client: ClientItem) => void;
   onDelete?: (Client: ClientItem) => void;
+  onResetPassword?: (Client: ClientItem) => void;
   onRemoveToot?: (ClientId: string, baiguullagiinId: string, barilgiinId: string, toot: string) => void;
   onSort?: (key: SortKey, order?: "ascend" | "descend" | null) => void;
 }
@@ -64,6 +65,7 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
   onView,
   onEdit,
   onDelete,
+  onResetPassword,
   onRemoveToot,
   onSort,
 }) => {
@@ -397,7 +399,7 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
         title: "Үйлдэл",
         key: "action",
         align: "center",
-        width: 96,
+        width: 120,
         render: (_: any, record: ClientItem, index: number) => (
           <div className="flex gap-1 justify-center">
             <button
@@ -418,6 +420,17 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
             >
               <Edit className="w-4 h-4 text-brand" />
             </button>
+            {onResetPassword && (
+              <button
+                type="button"
+                onClick={() => onResetPassword(record)}
+                className="p-1.5 rounded-md hover-surface transition-colors hover:bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                id={index === 0 ? "client-reset-pass-btn" : undefined}
+                title="Нууц үг сэргээх"
+              >
+                <KeyRound className="w-4 h-4" />
+              </button>
+            )}
             <button
               type="button"
               onClick={() => onDelete?.(record)}
@@ -439,6 +452,7 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
       onView,
       onEdit,
       onDelete,
+      onResetPassword,
       onRemoveToot,
       onSort,
       setPendingTootRemove,

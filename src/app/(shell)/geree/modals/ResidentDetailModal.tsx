@@ -21,6 +21,7 @@ import {
   ChevronDown,
   ShieldCheck,
   Eye,
+  KeyRound,
 } from "lucide-react";
 import uilchilgee from "@/lib/uilchilgee";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
@@ -28,6 +29,7 @@ import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import formatNumber from "../../../../../tools/function/formatNumber";
 import { ModalPortal } from "../../../../../components/shell/ModalPortal";
 import { useAuth } from "@/lib/useAuth";
+import NuutsUgSergeekhModal from "./NuutsUgSergeekhModal";
 
 type Props = {
   show: boolean;
@@ -114,6 +116,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
   const [medeelel, setMedeelel] = useState<any>(null);
   const [unshij, setUnshij] = useState(false);
   const [aldaa, setAldaa] = useState<string | null>(null);
+  const [showNuutsUgModal, setShowNuutsUgModal] = useState(false);
 
   // Car addition state (direct input)
   const [shineMashiniiDugaar, setShineMashiniiDugaar] = useState("");
@@ -1041,15 +1044,26 @@ export const ResidentDetailModal: React.FC<Props> = ({
                           Хувийн мэдээлэл
                         </h3>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          zasajBuiKhuvi ? setZasajBuiKhuvi(false) : khuviiZasya()
-                        }
-                        className="rounded-lg px-2 py-1 text-[11px] font-medium text-theme transition hover:bg-theme/10 dark:hover:bg-theme/20"
-                      >
-                        {zasajBuiKhuvi ? "Болих" : "Засах"}
-                      </button>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setShowNuutsUgModal(true)}
+                          className="flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium text-amber-600 dark:text-amber-400 transition hover:bg-amber-500/10 cursor-pointer"
+                          title="Аппын нууц үг сэргээх"
+                        >
+                          <KeyRound className="h-3.5 w-3.5" />
+                          <span>Нууц үг сэргээх</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            zasajBuiKhuvi ? setZasajBuiKhuvi(false) : khuviiZasya()
+                          }
+                          className="rounded-lg px-2 py-1 text-[11px] font-medium text-theme transition hover:bg-theme/10 dark:hover:bg-theme/20"
+                        >
+                          {zasajBuiKhuvi ? "Болих" : "Засах"}
+                        </button>
+                      </div>
                     </div>
 
                     {/* Засах горим. Уншигдах хүснэгтийг нуугаад форм гаргана —
@@ -2172,6 +2186,14 @@ export const ResidentDetailModal: React.FC<Props> = ({
           </div>
         </div>
       </div>
+      <NuutsUgSergeekhModal
+        show={showNuutsUgModal}
+        onClose={() => setShowNuutsUgModal(false)}
+        userId={residentId}
+        ner={typeof medeelel?.ner === "object" ? medeelel?.ner?.ner : medeelel?.ner}
+        utas={Array.isArray(medeelel?.utas) ? medeelel?.utas[0] : (medeelel?.utas || "")}
+        isKhariltsagch={isKhariltsagch}
+      />
     </ModalPortal>
   );
 };

@@ -18,6 +18,7 @@ interface ClientsSectionProps {
   toggleSortFor?: (key: string, order?: any) => void;
   onViewClient?: (Client: any) => void;
   onEditClient: (Client: any) => void;
+  onResetPasswordClient?: (Client: any) => void;
   onRequestDeleteClient: (Client: any) => void;
   onRemoveToot?: (ClientId: string, baiguullagiinId: string, barilgiinId: string, toot: string) => void;
   currentBaiguullagiinId?: string;
@@ -37,6 +38,7 @@ const ClientsSection: React.FC<ClientsSectionProps> = ({
   toggleSortFor,
   onViewClient,
   onEditClient,
+  onResetPasswordClient,
   onRequestDeleteClient,
   onRemoveToot,
   currentBaiguullagiinId,
@@ -62,6 +64,7 @@ const ClientsSection: React.FC<ClientsSectionProps> = ({
               currentBaiguullagiinId={currentBaiguullagiinId}
               onView={onViewClient}
               onEdit={onEditClient}
+              onResetPassword={onResetPasswordClient}
               onDelete={onRequestDeleteClient}
               onRemoveToot={onRemoveToot}
               onSort={(key, order) => toggleSortFor?.(key, order)}
