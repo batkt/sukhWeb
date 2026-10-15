@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Banknote, Loader2, Trash2, X } from "lucide-react";
+import { Banknote, Check, Loader2, Trash2, X } from "lucide-react";
 import dayjs from "dayjs";
 import { toast } from "react-hot-toast";
 import uilchilgee from "@/lib/uilchilgee";
@@ -66,17 +66,29 @@ export default function GaraarOrlogoModal({
   }, [onClose]);
 
   const dunToo = Number(String(dun).replace(/[^\d]/g, "")) || 0;
+  const isDugaarZuv = dugaarZuvEsekh(mashiniiDugaar);
 
   const khadgalakh = async () => {
     if (khadgalj) return;
     const dugaar = mashiniiDugaarTseverle(mashiniiDugaar);
-    if (!dugaar || !dugaarZuvEsekh(dugaar)) {
-      setAldaa({ dugaar: dugaar ? "Дугаар 4 тоо + 3 үсэг байна (ж: 1234УБА)." : "Машины дугаарыг оруулна уу." });
+    if (!dugaar) {
+      setAldaa((prev) => ({ ...prev, dugaar: "Машины дугаарыг оруулна уу." }));
       dugaarRef.current?.focus();
       return;
     }
-    if (dunToo <= 0) {
-      setAldaa({ dun: "Орлогын дүнг оруулна уу." });
+    if (!dugaarZuvEsekh(dugaar)) {
+      setAldaa((prev) => ({
+        ...prev,
+        dugaar:
+          dugaar.length < 4
+            ? "Эхний 4 орон тоо байх ёстой (ж: 1234УБА)"
+            : "Сүүлийн 3 орон монгол үсэг байх ёстой (ж: 1234УБА)",
+      }));
+      dugaarRef.current?.focus();
+      return;
+    }
+    if (dunToo < 0 || (dun === "" && dunToo === 0)) {
+      setAldaa((prev) => ({ ...prev, dun: "Орлогын дүнг оруулна уу." }));
       dunRef.current?.focus();
       return;
     }
@@ -90,7 +102,7 @@ export default function GaraarOrlogoModal({
         khelber,
         tailbar: tailbar.trim(),
       });
-      toast.success(`${mnt(dunToo)} орлого бүртгэгдлээ`);
+      toast.success(`${dugaar} машин амжилттай бүртгэгдлээ`);
       setMashiniiDugaar("");
       setDun("");
       setTailbar("");
@@ -158,26 +170,44 @@ export default function GaraarOrlogoModal({
             khadgalakh();
           }}
         >
-          <div className="grid grid-cols-[1fr_1.4fr] gap-2">
+          <div className="grid grid-cols-[1.1fr_1.3fr] gap-2">
             <label className="block">
-              <span className="mb-1 block text-[11px] text-[color:var(--muted-text)]">
-                <span className="mr-0.5 text-danger">*</span>Машины дугаар
-              </span>
+              <div className="mb-1 flex items-center justify-between">
+                <span className="text-[11px] text-[color:var(--muted-text)]">
+                  <span className="mr-0.5 text-danger">*</span>Машины дугаар
+                </span>
+                {isDugaarZuv ? (
+                  <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                    <Check className="h-3 w-3" /> Зөв
+                  </span>
+                ) : mashiniiDugaar.length > 0 ? (
+                  <span className="text-[10px] text-[color:var(--muted-text)] font-medium">
+                    {mashiniiDugaar.length < 4
+                      ? `${mashiniiDugaar.length}/4 тоо`
+                      : `${mashiniiDugaar.length - 4}/3 үсэг`}
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-[color:var(--muted-text)]">4 тоо + 3 үсэг</span>
+                )}
+              </div>
               <input
                 ref={dugaarRef}
                 autoFocus
                 value={mashiniiDugaar}
                 maxLength={7}
                 onChange={(e) => {
-                  setMashiniiDugaar(e.target.value.toUpperCase());
-                  if (aldaa.dugaar) setAldaa({});
+                  const val = mashiniiDugaarTseverle(e.target.value);
+                  setMashiniiDugaar(val);
+                  if (aldaa.dugaar) setAldaa((prev) => ({ ...prev, dugaar: undefined }));
                 }}
                 placeholder="1234УБА"
                 aria-invalid={!!aldaa.dugaar || undefined}
-                className={`h-10 w-full rounded-xl border bg-[color:var(--surface-bg)] px-3 text-center text-[14px] font-medium tracking-widest font-[family-name:var(--font-mono)] text-[color:var(--panel-text)] outline-none placeholder:font-normal placeholder:tracking-normal ${
+                className={`h-10 w-full rounded-xl border bg-[color:var(--surface-bg)] px-3 text-center text-[14px] font-bold tracking-widest font-[family-name:var(--font-mono)] text-[color:var(--panel-text)] outline-none placeholder:font-normal placeholder:tracking-normal ${
                   aldaa.dugaar
                     ? "border-danger ring-2 ring-danger/20"
-                    : "border-[color:var(--surface-border)] focus:border-theme focus:ring-2 focus:ring-theme/15"
+                    : isDugaarZuv
+                      ? "border-emerald-500/70 text-emerald-600 dark:text-emerald-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15"
+                      : "border-[color:var(--surface-border)] focus:border-theme focus:ring-2 focus:ring-theme/15"
                 }`}
               />
             </label>
@@ -192,7 +222,7 @@ export default function GaraarOrlogoModal({
                   value={dunToo ? dunToo.toLocaleString("mn-MN") : dun === "" ? "" : "0"}
                   onChange={(e) => {
                     setDun(e.target.value);
-                    if (aldaa.dun) setAldaa({});
+                    if (aldaa.dun) setAldaa((prev) => ({ ...prev, dun: undefined }));
                   }}
                   placeholder="0"
                   aria-invalid={!!aldaa.dun || undefined}

@@ -3355,6 +3355,7 @@ export default function Camera() {
             token={token || ""}
             barilgiinId={effectiveBarilgiinId}
             onClose={() => setOrlogoOpen(false)}
+            onSaved={() => fetchList()}
           />
         )}
 
