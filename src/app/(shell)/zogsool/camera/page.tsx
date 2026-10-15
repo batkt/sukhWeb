@@ -2670,6 +2670,10 @@ export default function Camera() {
                         "/ebarimtShivye",
                         {
                           id: selectedTransaction._id,
+                          zogsooliinId:
+                            selectedTransaction?.zogsooliinId ||
+                            selectedTransaction?.tuukh?.[0]?.zogsooliinId ||
+                            undefined,
                           type: extraData.ebarimt.type,
                           register: extraData.ebarimt.register,
                         },

@@ -21,7 +21,8 @@ import {
   Layers,
   Activity,
   ChevronRight,
-  ShieldCheck
+  ShieldCheck,
+  Receipt
 } from "lucide-react";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
@@ -69,6 +70,11 @@ interface FormData {
   mashinUstgakhKhugatsaa?: number | string;
   tulburuud?: any[];
   khaalga?: any[];
+  ebarimtAshiglakhEsekh?: boolean;
+  ebarimtMerchantTin?: string;
+  ebarimtDistrictCode?: string;
+  ebarimtNuatTulukhEsekh?: boolean;
+  ebarimtShineUrl?: string;
 }
 
 function ZogsoolBurtgekh(
@@ -111,6 +117,25 @@ function ZogsoolBurtgekh(
     mashinUstgakhKhugatsaa: data?.mashinUstgakhKhugatsaa || "",
     tulburuud: data?.tulburuud || [],
     khaalga: data?.khaalga || [],
+    ebarimtAshiglakhEsekh:
+      data?.tokhirgoo?.ebarimtAshiglakhEsekh ??
+      Boolean(data?.tokhirgoo?.merchantTin || data?.tokhirgoo?.ebarimtMerchantTin || data?.merchantTin),
+    ebarimtMerchantTin:
+      data?.tokhirgoo?.merchantTin ||
+      data?.tokhirgoo?.ebarimtMerchantTin ||
+      data?.merchantTin ||
+      "",
+    ebarimtDistrictCode:
+      data?.tokhirgoo?.districtCode ||
+      data?.tokhirgoo?.ebarimtDistrictCode ||
+      data?.districtCode ||
+      "",
+    ebarimtNuatTulukhEsekh:
+      data?.tokhirgoo?.nuatTulukhEsekh ??
+      data?.tokhirgoo?.ebarimtNuatTulukhEsekh ??
+      true,
+    ebarimtShineUrl:
+      data?.tokhirgoo?.ebarimtShineUrl || "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -140,13 +165,34 @@ function ZogsoolBurtgekh(
           return;
         }
 
-        setLoading(true);
-        // `bukhBarilgadEsekh` нь формд ХАВТГАЙ байдаг (Switch нь зөвхөн
-        // хавтгай талбартай ажилладаг), харин санд `tokhirgoo` дотор орно.
-        const { bukhBarilgadEsekh, ...formiinBusad } = formData;
+        // `bukhBarilgadEsekh` болон И-Баримтын тохиргоонууд формд ХАВТГАЙ
+        // байдаг (Switch/Input нь хавтгай талбартай ажилладаг), харин санд
+        // `tokhirgoo` (Mixed) дотор хадгална.
+        const {
+          bukhBarilgadEsekh,
+          ebarimtAshiglakhEsekh,
+          ebarimtMerchantTin,
+          ebarimtDistrictCode,
+          ebarimtNuatTulukhEsekh,
+          ebarimtShineUrl,
+          ...formiinBusad
+        } = formData;
+
+        const parkingTokhirgoo = {
+          ...(data?.tokhirgoo || {}),
+          bukhBarilgadEsekh,
+          ebarimtAshiglakhEsekh: !!ebarimtAshiglakhEsekh,
+          merchantTin: ebarimtMerchantTin?.trim() || "",
+          districtCode: ebarimtDistrictCode?.trim() || "",
+          nuatTulukhEsekh: ebarimtNuatTulukhEsekh ?? true,
+          ebarimtShineUrl: ebarimtShineUrl?.trim() || "",
+        };
+
         const body = {
           ...formiinBusad,
-          tokhirgoo: { ...(data?.tokhirgoo || {}), bukhBarilgadEsekh },
+          merchantTin: ebarimtMerchantTin?.trim() || undefined,
+          districtCode: ebarimtDistrictCode?.trim() || undefined,
+          tokhirgoo: parkingTokhirgoo,
           tokiNer: formData.tokiBolonStickerAshiglakhEsekh
             ? formData.ner
             : undefined,
@@ -369,6 +415,101 @@ function ZogsoolBurtgekh(
                 />
               </div>
             )}
+          </section>
+
+          {/* E-Barimt Settings */}
+          <section className="rounded-xl border border-[color:var(--surface-border)] p-4 sm:p-5">
+            <SectionHeader
+              icon={Receipt}
+              title="И-Баримт тохиргоо"
+              description="Зогсоолын тусдаа И-Баримтын ТТД, дүүргийн тохиргоо"
+              colorClass="bg-emerald-500/10 text-emerald-500"
+            />
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3.5 rounded-xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)]">
+                <div className="pr-4">
+                  <div className="text-[13px] font-medium text-[color:var(--panel-text)]">
+                    Зогсоолын тусдаа И-Баримт ашиглах
+                  </div>
+                  <div className="text-[12px] text-[color:var(--muted-text)] mt-0.5">
+                    Идэвхжүүлээгүй эсвэл ТТД хоосон үед барилгын үндсэн И-Баримт (СӨХ)-ийн тохиргоог ашиглана (Fallback)
+                  </div>
+                </div>
+                <Switch
+                  label="Зогсоолын тусдаа И-Баримт ашиглах"
+                  checked={!!formData.ebarimtAshiglakhEsekh}
+                  onChange={(e) =>
+                    updateField("ebarimtAshiglakhEsekh", e.currentTarget.checked)
+                  }
+                />
+              </div>
+
+              {formData.ebarimtAshiglakhEsekh && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-[13px] text-[color:var(--panel-text)] opacity-80">
+                        Байгууллагын ТТД (Регистр)
+                      </label>
+                      <span className="text-[11px] text-[color:var(--muted-text)]">
+                        Жишээ: МРЖ ХХК ТТД
+                      </span>
+                    </div>
+                    <MTextInput
+                      value={formData.ebarimtMerchantTin}
+                      onChange={(e) =>
+                        updateField("ebarimtMerchantTin", e.currentTarget.value)
+                      }
+                      placeholder="Жишээ: 37900846788"
+                      classNames={{
+                        input:
+                          "!h-10 !min-h-10 !rounded-[10px] !text-sm bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:border-theme transition-colors text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]",
+                      }}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-[13px] text-[color:var(--panel-text)] opacity-80">
+                        Дүүргийн код
+                      </label>
+                      <span className="text-[11px] text-[color:var(--muted-text)]">
+                        4 оронтой тоо
+                      </span>
+                    </div>
+                    <MTextInput
+                      value={formData.ebarimtDistrictCode}
+                      onChange={(e) =>
+                        updateField("ebarimtDistrictCode", e.currentTarget.value)
+                      }
+                      placeholder="Жишээ: 0023 (Хан-Уул), 0024 (Баянзүрх)"
+                      classNames={{
+                        input:
+                          "!h-10 !min-h-10 !rounded-[10px] !text-sm bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:border-theme transition-colors text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]",
+                      }}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between p-3.5 rounded-xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] md:col-span-2">
+                    <div>
+                      <div className="text-[13px] font-medium text-[color:var(--panel-text)]">
+                        НӨАТ суутгагч эсэх
+                      </div>
+                      <div className="text-[12px] text-[color:var(--muted-text)] mt-0.5">
+                        НӨАТ-ын 10% суутгах эсвэл чөлөөлөгдөх тохиргоо (Тийм: VAT_ABLE, Үгүй: VAT_FREE)
+                      </div>
+                    </div>
+                    <Switch
+                      label="НӨАТ суутгагч эсэх"
+                      checked={formData.ebarimtNuatTulukhEsekh ?? true}
+                      onChange={(e) =>
+                        updateField("ebarimtNuatTulukhEsekh", e.currentTarget.checked)
+                      }
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           </section>
 
           {/* Operational Settings */}
