@@ -28,6 +28,7 @@ import {
   UserPlus,
   ArrowUpDown,
   Users,
+  MessageSquare,
 } from "lucide-react";
 import uilchilgee from "@/lib/uilchilgee";
 import deleteMethod from "../../../../tools/function/deleteMethod";
@@ -90,6 +91,8 @@ export default function NemeltTokhirgoo({
   const [invoiceScheduleId, setInvoiceScheduleId] = useState<string | null>(
     null,
   );
+  // SMS Notification state (payment/invoice SMS)
+  const [messejYavuulakhEsekh, setMessejYavuulakhEsekh] = useState<boolean>(true);
 
   // Lift states
   const [liftEnabled, setLiftEnabled] = useState<boolean>(false);
@@ -514,6 +517,7 @@ export default function NemeltTokhirgoo({
 
     // Тодорхойгүй бол хуучин зан төлөв — заалтаар бодно.
     setZaaltaarBodokh(find("zaaltaarTsakhilgaanBodokhEsekh", true) !== false);
+    setMessejYavuulakhEsekh(find("messejYavuulakhEsekh", true) !== false);
     suuriTemdeglekh("org");
   }, [baiguullaga, selectedBuildingId, barilgiinId]);
 
@@ -849,6 +853,64 @@ export default function NemeltTokhirgoo({
     }
   };
 
+  const saveMessejYavuulakhSettings = async (overrideEnabled?: boolean) => {
+    if (!token || !ajiltan?.baiguullagiinId) {
+      aldaaGargay("Нэвтрэх шаардлагатай");
+      return;
+    }
+    const isOverrideBool = typeof overrideEnabled === "boolean";
+    const isEnabled = isOverrideBool ? overrideEnabled : messejYavuulakhEsekh;
+
+    showSpinner();
+    try {
+      const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
+      const resp = await uilchilgee(token).get(
+        `/baiguullaga/${ajiltan.baiguullagiinId}`,
+        {
+          headers: { "X-Org-Only": "1" },
+        },
+      );
+      const freshOrg = resp.data;
+      let payload: any = JSON.parse(JSON.stringify(freshOrg));
+
+      const messejData = {
+        messejYavuulakhEsekh: isEnabled,
+      };
+
+      if (effectiveBarilgiinId && payload.barilguud) {
+        payload.barilguud = payload.barilguud.map((b: any) => {
+          const bId = b._id || b.id;
+          if (String(bId).trim() === String(effectiveBarilgiinId).trim()) {
+            return {
+              ...b,
+              tokhirgoo: {
+                ...(b.tokhirgoo || {}),
+                ...messejData,
+              },
+            };
+          }
+          return b;
+        });
+      } else {
+        payload.tokhirgoo = {
+          ...(payload.tokhirgoo || {}),
+          ...messejData,
+        };
+      }
+
+      const result = await updateMethod("baiguullaga", token, payload);
+      if (result?.data) {
+        await baiguullagaMutate(result.data.result || result.data, false);
+        await baiguullagaMutate();
+        amjilt("Мессеж явуулах тохиргоо хадгалагдлаа");
+      }
+    } catch (error: any) {
+      aldaaGargay(error?.message || "Хадгалахад алдаа гарлаа");
+    } finally {
+      hideSpinner();
+    }
+  };
+
   const saveResidentGateOpenSettings = async (overrideEnabled?: boolean) => {
     if (!token || !ajiltan?.baiguullagiinId) {
       aldaaGargay("Нэвтрэх шаардлагатай");
@@ -1166,6 +1228,7 @@ export default function NemeltTokhirgoo({
     liftEnabled,
     liftBulkInput: parseBulk(liftBulkInput || "").join(","),
     gerBuliinGishuunEnabled,
+    messejYavuulakhEsekh,
   };
 
   useEffect(() => {
@@ -1197,6 +1260,7 @@ export default function NemeltTokhirgoo({
   ]);
   const khesguud: { talbar: string[]; khadgal: () => Promise<unknown> }[] = [
     { talbar: ["invoiceActive", "invoiceDay"], khadgal: () => saveInvoiceSchedule() },
+    { talbar: ["messejYavuulakhEsekh"], khadgal: () => saveMessejYavuulakhSettings(messejYavuulakhEsekh) },
     {
       talbar: ["calculationEnabled", "calculationMethod", "fixedDayCount"],
       khadgal: () => saveCalculationSettings(),
@@ -1326,6 +1390,7 @@ export default function NemeltTokhirgoo({
       setKhGuestLimit(v("khGuestLimit"));
       setKhGuestFreeMinutes(v("khGuestFreeMinutes"));
       setGerBuliinGishuunEnabled(v("gerBuliinGishuunEnabled"));
+      setMessejYavuulakhEsekh(v("messejYavuulakhEsekh") !== false);
     }
   };
 
@@ -1412,6 +1477,25 @@ export default function NemeltTokhirgoo({
                 </div>
               ) : null}
             </SettingsItem>
+
+            <SettingsItem
+              id="nemelt-sms-settings"
+              icon={<MessageSquare />}
+              title="Мессеж явуулах эсэх"
+              changed={uurchlugdsun("messejYavuulakhEsekh")}
+              desc={
+                messejYavuulakhEsekh
+                  ? "Асаалттай. Нэхэмжлэх үүсэх, төлбөр төлөгдөх зэрэг төлбөрийн мессеж илгээгдэнэ."
+                  : "Унтраалттай. Төлбөр, нэхэмжлэхийн мессеж илгээгдэхгүй (нэвтрэх, баталгаажуулах код хэвийн илгээгдэнэ)."
+              }
+              control={
+                <Switch
+                  checked={messejYavuulakhEsekh}
+                  onChange={(e) => setMessejYavuulakhEsekh(e.currentTarget.checked)}
+                  label="Мессеж явуулах эсэх"
+                />
+              }
+            />
 
             <SettingsItem
               id="nemelt-calculation-box"
@@ -1864,6 +1948,7 @@ const TOKHIRGOONII_BULEG: Record<string, string[]> = {
     "khGuestLimit",
     "khGuestFreeMinutes",
     "gerBuliinGishuunEnabled",
+    "messejYavuulakhEsekh",
   ],
 };
 

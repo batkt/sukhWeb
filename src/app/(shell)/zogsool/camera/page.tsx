@@ -169,7 +169,7 @@ function murNiiluulye(transaction: any) {
   const tuluv = mur?.tuluv;
   const niitDun = transaction?.niitDun || 0;
   const isCurrentlyIn = !mur?.garsanKhaalga;
-  const isFreeExit = !!mur?.uneguiGarsan && tuluv !== -2 && tuluv !== -1;
+  const isFreeExit = (!!mur?.uneguiGarsan || tuluv === -1) && tuluv !== -2;
   const isPaid = tuluv === 1;
   const isDebt =
     !isFreeExit &&
@@ -197,6 +197,7 @@ function murNiiluulye(transaction: any) {
   const bureenKhungulsun =
     !isCurrentlyIn && niitDun > 0 && discountTotal >= niitDun && boditTulsun <= 0;
   const hasRemainingBalance =
+    !isFreeExit &&
     tuluv === 1 &&
     effectiveOwed > 0 &&
     !isCurrentlyIn &&
@@ -215,7 +216,7 @@ function murNiiluulye(transaction: any) {
     discountTotal,
     hasRemainingBalance,
     isActive: isCurrentlyIn,
-    showActionBtn: isCurrentlyIn || isDebt || hasRemainingBalance,
+    showActionBtn: !isFreeExit && (isCurrentlyIn || isDebt || hasRemainingBalance),
   };
 }
 
@@ -687,7 +688,7 @@ export default function Camera() {
       // хөнгөлсөн (дүнтэй боловч төлбөр 0) машин ирэхгүй — нарийн шүүлтийг
       // доорх клиент талын шүүлт (`bureenKhungulsun`) хийнэ.
       query["tuukh.garsanKhaalga"] = { $exists: true };
-      query["tuukh.0.tuluv"] = { $nin: [-1, -2] };
+      query["tuukh.0.tuluv"] = { $nin: [-2] };
     }
 
     const sortObj =
@@ -951,6 +952,7 @@ export default function Camera() {
         "tuukh.0.uneguiGarsan": reason,
         "tuukh.0.burtgesenAjiltaniiId": ajiltan?._id || "",
         "tuukh.0.burtgesenAjiltaniiNer": ajiltan?.ner || "CAdmin",
+        niitDun: 0,
       };
 
       const resp = await uilchilgee(token || undefined).put(
@@ -1360,8 +1362,8 @@ export default function Camera() {
         }
         if (statusFilter === "free") {
           // Үнэгүй: Exited with no payment, excluding violations
-          if (murNiiluulye(t).bureenKhungulsun) return true;
-          return !isCurrentlyIn && niitDun === 0 && tuluv !== -2 && tuluv !== -1;
+          if (murNiiluulye(t).bureenKhungulsun || murNiiluulye(t).isFreeExit) return true;
+          return !isCurrentlyIn && (niitDun === 0 || tuluv === -1) && tuluv !== -2;
         }
         return true;
       });
@@ -1775,9 +1777,9 @@ export default function Camera() {
         } = murNiiluulye(transaction);
         // Хугацааны өнгө нь Төлөв баганын өнгөтэй ЯГ ижил дарааллаар бодогдоно.
         const getStatusColor = () => {
-          if (tuluv === -2 || tuluv === -1) return "bg-danger border-danger";
+          if (tuluv === -2) return "bg-danger border-danger";
+          if (isFreeExit || tuluv === -1) return "bg-slate-400 border-slate-400";
           if (hasRemainingBalance) return "bg-warning border-warning";
-          if (isFreeExit) return "bg-slate-400 border-slate-400";
           if (tuluv === 1)
             return isCurrentlyIn && niitDun === 0
               ? "bg-sky-500 border-sky-500"
@@ -1962,13 +1964,13 @@ export default function Camera() {
         );
 
         if (!showActionBtn) {
-          if (isFreeExit) return badge("bg-slate-400 border-slate-400", "Үнэгүй");
+          if (isFreeExit || tuluv === -1) return badge("bg-slate-400 border-slate-400", "Үнэгүй");
+          if (tuluv === -2)
+            return badge("bg-danger border-danger", "Зөрчилтэй");
           if (tuluv === 1)
             return isCurrentlyIn && niitDun === 0
               ? badge("bg-sky-500 border-sky-500", "Идэвхтэй")
               : badge("bg-success border-success", "Төлсөн");
-          if (tuluv === -2 || tuluv === -1)
-            return badge("bg-danger border-danger", "Зөрчилтэй");
           if (hasRemainingBalance)
             return badge("bg-warning border-warning", "Төлбөртэй");
           if (!isCurrentlyIn && (niitDun > 0 || isDebt))
@@ -1998,22 +2000,26 @@ export default function Camera() {
                 }
               }}
               className={`mx-auto flex w-[100px] max-w-[100px] min-w-[100px] cursor-pointer flex-nowrap items-center justify-center overflow-hidden rounded-[6px] border px-2 py-0.5 whitespace-nowrap ${
-                hasRemainingBalance
-                  ? "bg-warning border-warning"
-                  : !isCurrentlyIn && isDebt
+                isFreeExit || tuluv === -1
+                  ? "bg-slate-400 border-slate-400"
+                  : hasRemainingBalance
                     ? "bg-warning border-warning"
-                    : tuluv === -1 || tuluv === -2
-                      ? "bg-danger border-danger"
-                      : "bg-sky-500 border-sky-500"
+                    : !isCurrentlyIn && isDebt
+                      ? "bg-warning border-warning"
+                      : tuluv === -2
+                        ? "bg-danger border-danger"
+                        : "bg-sky-500 border-sky-500"
               }`}
               style={{ color: "white" }}
             >
               {!isCurrentlyIn
-                ? hasRemainingBalance
-                  ? "Төлбөр"
-                  : isDebt
-                    ? "Төлбөртэй"
-                    : "Дууссан"
+                ? isFreeExit || tuluv === -1
+                  ? "Үнэгүй"
+                  : hasRemainingBalance
+                    ? "Төлбөр"
+                    : isDebt
+                      ? "Төлбөртэй"
+                      : "Дууссан"
                 : isPaid && niitDun > 0
                   ? "Төлсөн"
                   : tuluv === 2

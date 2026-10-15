@@ -187,7 +187,7 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
           const niitDun = record.niitDun || 0;
           const tuluv = mur?.tuluv;
           const isCurrentlyIn = !mur?.garsanKhaalga;
-          const isFreeExit = !!mur?.uneguiGarsan && tuluv !== -2 && tuluv !== -1;
+          const isFreeExit = (!!mur?.uneguiGarsan || tuluv === -1) && tuluv !== -2;
           const isDebt =
             !isFreeExit &&
             (tuluv === -4 || (tuluv === 0 && niitDun > 0 && !isCurrentlyIn));
@@ -195,7 +195,10 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
           const badgeClass =
             "flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-0.5 rounded-[6px] overflow-hidden border !text-white whitespace-nowrap";
           const getStatusColor = () => {
-            if (isFreeExit) {
+            if (tuluv === -2) {
+              return "bg-danger border-danger";
+            }
+            if (isFreeExit || tuluv === -1) {
               return "bg-[color:var(--panel)] border-[color:var(--surface-border)]";
             }
             if (tuluv === 1) {
@@ -205,9 +208,6 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
             }
             if (!isCurrentlyIn && (niitDun > 0 || isDebt)) {
               return "bg-warning border-warning";
-            }
-            if (tuluv === -2 || tuluv === -1) {
-              return "bg-danger border-danger";
             }
             if (!isCurrentlyIn && niitDun === 0) {
               return "bg-[color:var(--panel)] border-[color:var(--surface-border)]";
@@ -365,10 +365,13 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
           const niitDun = record.niitDun || 0;
           const garsanTsag = mur?.tsagiinTuukh?.[0]?.garsanTsag;
           const isCurrentlyIn = !mur?.garsanKhaalga;
+          const isFreeExit =
+            (!!mur?.uneguiGarsan || tuluv === -1) && tuluv !== -2;
           const isPaid = tuluv === 1;
           const isDebt =
-            tuluv === -4 || (tuluv === 0 && niitDun > 0 && !isCurrentlyIn);
-          const showActionBtn = isCurrentlyIn || isDebt;
+            !isFreeExit &&
+            (tuluv === -4 || (tuluv === 0 && niitDun > 0 && !isCurrentlyIn));
+          const showActionBtn = !isFreeExit && (isCurrentlyIn || isDebt);
           const badgeClass =
             "flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-0.5 rounded-[6px] overflow-hidden border !text-white whitespace-nowrap";
 
@@ -378,13 +381,17 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
                 ? "bg-success border-success"
                 : !isCurrentlyIn && isDebt
                   ? "bg-warning border-warning"
-                  : tuluv === -1 || tuluv === -2
+                  : tuluv === -2
                     ? "bg-danger border-danger"
-                    : "bg-theme border-theme";
+                    : isFreeExit || tuluv === -1
+                      ? "bg-[color:var(--panel)] border-[color:var(--surface-border)]"
+                      : "bg-theme border-theme";
             const actionText = !isCurrentlyIn
-              ? isDebt
-                ? "Төлбөртэй"
-                : "Дууссан"
+              ? isFreeExit || tuluv === -1
+                ? "Үнэгүй"
+                : isDebt
+                  ? "Төлбөртэй"
+                  : "Дууссан"
               : isPaid && niitDun > 0
                 ? "Төлсөн"
                 : tuluv === 2
@@ -410,6 +417,26 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
             );
           }
 
+          if (isFreeExit || tuluv === -1) {
+            return (
+              <div
+                className={`${badgeClass} bg-[color:var(--panel)] border-[color:var(--surface-border)]`}
+                style={{ color: "white" }}
+              >
+                Үнэгүй
+              </div>
+            );
+          }
+          if (tuluv === -2) {
+            return (
+              <div
+                className={`${badgeClass} bg-danger border-danger`}
+                style={{ color: "white" }}
+              >
+                Зөрчилтэй
+              </div>
+            );
+          }
           if (tuluv === 1) {
             return (
               <div
@@ -427,16 +454,6 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
                 style={{ color: "white" }}
               >
                 Төлбөртэй
-              </div>
-            );
-          }
-          if (tuluv === -2 || tuluv === -1) {
-            return (
-              <div
-                className={`${badgeClass} bg-danger border-danger`}
-                style={{ color: "white" }}
-              >
-                Зөрчилтэй
               </div>
             );
           }

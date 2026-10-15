@@ -209,7 +209,7 @@ function murNiiluulye(transaction: any) {
   const tuluv = mur?.tuluv;
   const niitDun = transaction?.niitDun || 0;
   const isCurrentlyIn = !mur?.garsanKhaalga;
-  const isFreeExit = !!mur?.uneguiGarsan && tuluv !== -2 && tuluv !== -1;
+  const isFreeExit = (!!mur?.uneguiGarsan || tuluv === -1) && tuluv !== -2;
   const rawTulbur = mur?.tulbur;
   const tulburArr: any[] = Array.isArray(rawTulbur)
     ? rawTulbur
@@ -233,6 +233,7 @@ function murNiiluulye(transaction: any) {
     !isFreeExit &&
     (tuluv === -4 || (tuluv === 0 && niitDun > 0 && !isCurrentlyIn));
   const hasRemainingBalance =
+    !isFreeExit &&
     tuluv === 1 &&
     effectiveOwed > 0 &&
     !isCurrentlyIn &&
@@ -240,9 +241,9 @@ function murNiiluulye(transaction: any) {
 
   // Төлвийн өнгө — Хугацаа болон Төлөв багана хоёулаа үүнийг хуваалцана.
   const getStatusColor = () => {
-    if (tuluv === -2 || tuluv === -1) return "bg-danger border-danger";
+    if (tuluv === -2) return "bg-danger border-danger";
+    if (isFreeExit || tuluv === -1) return "bg-neutral border-neutral";
     if (hasRemainingBalance) return "bg-warning border-warning";
-    if (isFreeExit) return "bg-neutral border-neutral";
     if (tuluv === 1)
       return isCurrentlyIn && niitDun === 0
         ? "bg-theme border-theme"
@@ -422,9 +423,7 @@ export default function Jagsaalt() {
       } else if (status === "cancelled") {
         query.$or = [
           { "tuukh.tuluv": -2 },
-          { "tuukh.tuluv": -1 },
           { "tuukh.0.tuluv": -2 },
-          { "tuukh.0.tuluv": -1 },
           { gereeniiTuluv: "Цуцлагдсан" },
           { "geree.gereeniiTuluv": "Цуцлагдсан" }
         ];
@@ -445,8 +444,7 @@ export default function Jagsaalt() {
         ];
       } else if (status === "free") {
         query["tuukh.garsanKhaalga"] = { $exists: true };
-        query.niitDun = 0;
-        query["tuukh.0.tuluv"] = { $nin: [-1, -2] };
+        query["tuukh.0.tuluv"] = { $nin: [-2] };
       }
 
       if (payMethod && payMethod !== "all") {
@@ -1362,12 +1360,12 @@ export default function Jagsaalt() {
           getStatusColor,
         } = murNiiluulye(transaction);
         const label =
-          tuluv === -2 || tuluv === -1
+          tuluv === -2
             ? "Зөрчилтэй"
-            : hasRemainingBalance
-              ? "Төлбөр"
-              : isFreeExit
-                ? "Төлсөн"
+            : isFreeExit || tuluv === -1
+              ? "Үнэгүй"
+              : hasRemainingBalance
+                ? "Төлбөр"
                 : tuluv === 1
                   ? isCurrentlyIn && niitDun === 0
                     ? "Идэвхтэй"
