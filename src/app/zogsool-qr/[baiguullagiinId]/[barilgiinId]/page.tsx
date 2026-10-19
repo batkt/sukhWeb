@@ -5,15 +5,11 @@
  *
  * QR: /zogsool-qr/<baiguullagiinId>/<barilgiinId>
  *
- * Урсгал:
- *   1. Машины дугаар бичих
- *   2. Төлбөр харуулах
- *   3. QPay-ээр төлөх
- *
- * Гэрлийн/харанхуй загварыг root layout-ийн theme-init скрипт <html> дээр
- * `.dark` класс тавьж шийддэг тул энд `dark:` вариантууд ажиллана. Бүх текстэд
- * ХОЁУЛАНГИЙН өнгийг зааж өгнө - эс тэгвээс body-ийн `text-foreground`
- * өвлөгдөж, картны дэвсгэртэй нийлээд уншигдахгүй болно.
+ * Мобайл хэрэглэгчид зориулсан сайжруулсан responsive загвар:
+ *   - 100dvh ба safe-area-inset зохицуулалт (гар утсан дээр дэлгэцнээс халихгүй)
+ *   - Банкны аппаар шууд нээх болон QR-аар уншуулах таб
+ *   - Тав тухтай товчнууд, хялбар дугаар цэвэрлэх (X) товч
+ *   - И-Баримтын дижитал тасалбар + Сугалаа/ДДТД нэг товшилтоор хуулах
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -32,6 +28,11 @@ import {
   Receipt,
   Building2,
   User,
+  X,
+  Copy,
+  Check,
+  Smartphone,
+  QrCode,
 } from "lucide-react";
 import ThemedLogo from "@/components/ui/ThemedLogo";
 import uilchilgee, { socket } from "@/lib/uilchilgee";
@@ -64,26 +65,14 @@ const QPAY_KHUGATSAA_MIN = 5;
 /** "X минут дотор гарна уу" гэж мэдэгдэх хэвийн хугацаа */
 const GARAKH_KHUGATSAA_STANDART = 30;
 
-/**
- * Зогсоолын `garakhTsag` минутаар хадгалагддаг ч зарим бааз дээр бодит бус
- * том утга (жнь 900 = 15 цаг) тавигдсан байдаг. Наалтын мэдэгдэлд ойлгомжтой
- * хүрээнд л хэрэглэж, бусад тохиолдолд стандарт 30 минутыг харуулна.
- */
 const garakhKhugatsaaAvya = (n?: number): number => {
   const t = Number(n);
   return Number.isFinite(t) && t > 0 && t <= 120 ? t : GARAKH_KHUGATSAA_STANDART;
 };
 
-/**
- * Монгол улсын автомашины дугаар: 4 тоо + 3 кирил үсэг (жнь 1234УБА).
- * Ё, Ө, Ү нь [А-Я] хүрээнд ороогүй тул тусад нь заана.
- */
+/** Монгол улсын автомашины дугаар: 4 тоо + 3 кирил үсэг (жнь 1234УБА). */
 const DUGAARIIN_KHELBER = /^[0-9]{4}[А-ЯЁӨҮ]{3}$/u;
 
-/**
- * Оруулах үед зөвшөөрөгдөөгүй тэмдэгтийг хаяж, 4 тоо + 3 үсгийн хэлбэрт
- * шахна. Ингэснээр жолооч буруу тэмдэгт бичих боломжгүй болно.
- */
 const dugaarTseverleye = (v: string): string => {
   const tom = v.toUpperCase();
   const toonuud = tom.replace(/[^0-9]/g, "").slice(0, 4);
@@ -91,10 +80,6 @@ const dugaarTseverleye = (v: string): string => {
   return toonuud + useguud;
 };
 
-/**
- * QPay-ийн хариунаас QR-ийн текстийг авна. Талбарын нэр QPay-ийн
- * хувилбараас хамаарч `qr_code` эсвэл `qr_text` байдаг.
- */
 const qrTekstAvya = (q: any): string => q?.qr_code || q?.qr_text || "";
 
 export default function ZogsoolQrPage() {
@@ -115,9 +100,8 @@ export default function ZogsoolQrPage() {
   const [aldaa, setAldaa] = useState<string | null>(null);
 
   const [qpay, setQpay] = useState<any>(null);
-  const [zakhialgiinDugaar, setZakhialgiinDugaar] = useState<string | null>(
-    null,
-  );
+  const [qpayTab, setQpayTab] = useState<"apps" | "qr">("apps");
+  const [zakhialgiinDugaar, setZakhialgiinDugaar] = useState<string | null>(null);
   const [uldsenSekund, setUldsenSekund] = useState(QPAY_KHUGATSAA_MIN * 60);
 
   // ── И-Баримт төлөв ────────────────────────────────────────────────────
@@ -127,6 +111,15 @@ export default function ZogsoolQrPage() {
   const [ebarimtLoading, setEbarimtLoading] = useState(false);
   const [ebarimtAldaa, setEbarimtAldaa] = useState<string | null>(null);
 
+  // Санах ойд хуулсан төлөв
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+  const copyText = (txt: string, field: string) => {
+    if (!txt) return;
+    navigator.clipboard.writeText(txt);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 2000);
+  };
+
   const garakhKhugatsaa = garakhKhugatsaaAvya(tokhirgoo?.garakhTsag);
 
   // ── Хуудас ачаалах: зочны token + зогсоолын мэдээлэл ──────────────────
@@ -135,8 +128,6 @@ export default function ZogsoolQrPage() {
     let khuchintei = true;
 
     (async () => {
-      // Зочны token — QPay нэхэмжлэх гаргахад л хэрэгтэй тул унасан ч
-      // хуудсыг бүтнээр унагахгүй.
       try {
         const { data } = await uilchilgee().get(
           `/zochiniiTokenAvya/${baiguullagiinId}`,
@@ -144,7 +135,7 @@ export default function ZogsoolQrPage() {
         if (khuchintei)
           setToken(typeof data === "string" ? data : data?.token || null);
       } catch {
-        /* QPay хэсэгт дахин мэдэгдэнэ */
+        /* нөөц token */
       }
 
       try {
@@ -247,7 +238,6 @@ export default function ZogsoolQrPage() {
     const onTulugdluu = () => qpayTulugdlee(Number(mashin?.pay_amount || 0));
     s.on(suvag, onTulugdluu);
 
-    // Socket алдаж мэдэх тул нөөцөөр 4 секунд тутам шалгана
     const invoiceId = qpay?.id || qpay?.invoice_id;
     const shalgakh = setInterval(async () => {
       if (!invoiceId || !token) return;
@@ -259,7 +249,7 @@ export default function ZogsoolQrPage() {
       } catch {
         /* дараагийн шалгалтад дахин үзнэ */
       }
-    }, 4000);
+    }, 3500);
 
     return () => {
       s.off(suvag, onTulugdluu);
@@ -275,7 +265,7 @@ export default function ZogsoolQrPage() {
     qpayTulugdlee,
   ]);
 
-  // ── QPay хүлээх countdown (QPay-ийн expiry_date-аар) ─────────────────
+  // ── QPay countdown timer ─────────────────────────────────────────────
   useEffect(() => {
     if (alkham !== "qpay") return;
     const duusakhMs = qpay?.expiry_date
@@ -289,7 +279,7 @@ export default function ZogsoolQrPage() {
       setUldsenSekund(uldsen);
       if (uldsen <= 0) {
         clearInterval(timer);
-        setAldaa("Хугацаа дууслаа. Дахин үүсгэнэ үү.");
+        setAldaa("Хугацаа дууслаа. Дахин нэхэмжлэх үүсгэнэ үү.");
         setAlkham("songolt");
       }
     }, 1000);
@@ -308,9 +298,7 @@ export default function ZogsoolQrPage() {
   const mashinKhaiya = async () => {
     const tseverDugaar = dugaarTseverleye(dugaar);
     if (!DUGAARIIN_KHELBER.test(tseverDugaar)) {
-      setAldaa(
-        "Дугаарыг 4 тоо, 3 кирил үсгээр бичнэ үү. Жишээ: 1234УБА",
-      );
+      setAldaa("Дугаарыг 4 тоо, 3 кирил үсгээр бичнэ үү (жнь: 1234УБА)");
       return;
     }
     setAldaa(null);
@@ -322,8 +310,6 @@ export default function ZogsoolQrPage() {
       );
       if (data?.success && data?.data?.pay_amount > 0) {
         setMashin(data.data);
-        // Нэг барилгад хэд хэдэн зогсоол байж болох тул тухайн машины бодит
-        // зогсоолын мэдээллийг (данс, гарах хугацаа) дахин авна.
         if (data.data.parking_id && data.data.parking_id !== tokhirgoo?._id) {
           try {
             const { data: shine } = await uilchilgee().get(
@@ -331,16 +317,14 @@ export default function ZogsoolQrPage() {
               { params: { zogsooliinId: data.data.parking_id } },
             );
             if (shine?.success) setTokhirgoo(shine.data);
-          } catch {
-            /* мэдээлэл авахгүй бол өмнөхөөр үргэлжилнэ */
-          }
+          } catch {}
         }
         setAlkham("songolt");
       } else {
         setAldaa(data?.message || "Тухайн машинд төлбөр бодогдоогүй байна");
       }
     } catch {
-      setAldaa("Машин хайхад алдаа гарлаа");
+      setAldaa("Машин хайхад алдаа гарлаа. Дахин оролдоно уу");
     } finally {
       setAjillaj(false);
     }
@@ -377,6 +361,8 @@ export default function ZogsoolQrPage() {
         return;
       }
       setQpay(data);
+      // Утсаар нээж буй тул банкуудын жагсаалтыг эхэнд нь тавина
+      setQpayTab(data.urls?.length > 0 ? "apps" : "qr");
       setZakhialgiinDugaar(shineZakhialga);
       setAlkham("qpay");
     } catch {
@@ -402,15 +388,15 @@ export default function ZogsoolQrPage() {
   if (ekhniiAldaa) {
     return (
       <Khuudas>
-        <div className="space-y-5 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-danger/10 ring-1 ring-danger">
-            <AlertTriangle className="h-8 w-8 text-danger" />
+        <div className="space-y-4 text-center py-6">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-danger/10 ring-1 ring-danger">
+            <AlertTriangle className="h-7 w-7 text-danger" />
           </div>
-          <h1 className="text-lg font-medium text-[color:var(--panel-text)] dark:text-white">
+          <h1 className="text-base font-semibold text-[color:var(--panel-text)] dark:text-white">
             {ekhniiAldaa}
           </h1>
-          <p className="text-sm text-[color:var(--muted-text)]">
-            QR холбоос буруу байж магадгүй. Ажилтанд хандана уу.
+          <p className="text-xs text-[color:var(--muted-text)]">
+            QR холбоос буруу эсвэл түр саатсан байж магадгүй.
           </p>
         </div>
       </Khuudas>
@@ -420,10 +406,10 @@ export default function ZogsoolQrPage() {
   if (!tokhirgoo) {
     return (
       <Khuudas>
-        <div className="flex flex-col items-center gap-4 py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-brand" />
-          <p className="text-sm text-[color:var(--muted-text)]">
-            Ачаалж байна...
+        <div className="flex flex-col items-center gap-3 py-16">
+          <Loader2 className="h-7 w-7 animate-spin text-brand" />
+          <p className="text-xs font-medium text-[color:var(--muted-text)]">
+            Зогсоолын мэдээлэл ачаалж байна...
           </p>
         </div>
       </Khuudas>
@@ -432,61 +418,80 @@ export default function ZogsoolQrPage() {
 
   return (
     <Khuudas>
-      {/* ── Толгой: лого + зогсоолын нэр ── */}
-      <div className="mb-6 flex flex-col items-center gap-3 text-center">
-        <ThemedLogo size={52} withBg={false} alt="AmarHome" />
+      {/* ── Толгой хэсэг: авсаархан, мобайлд эвтэйхэн ── */}
+      <div className="mb-4 sm:mb-5 flex flex-col items-center gap-2 text-center">
+        <ThemedLogo size={40} withBg={false} alt="AmarHome" />
         <div>
-          <h1 className="text-lg font-medium tracking-tight text-[color:var(--panel-text)] dark:text-white">
+          <h1 className="text-base sm:text-lg font-bold tracking-tight text-[color:var(--panel-text)] dark:text-white">
             {tokhirgoo.ner || "Зогсоол"}
           </h1>
-          <p className="mt-1 text-xs text-[color:var(--muted-text)]">
-            Зогсоолын төлбөр
+          <p className="text-[11px] text-[color:var(--muted-text)]">
+            Төлбөр төлөх хуудас
           </p>
         </div>
-        <div className="flex items-center gap-1.5 rounded-full bg-theme/10 px-3 py-1.5 ring-1 ring-theme/20">
-          <Clock className="h-3.5 w-3.5 shrink-0 text-brand" />
+        <div className="inline-flex items-center gap-1.5 rounded-full bg-theme/10 px-3 py-1 ring-1 ring-theme/20">
+          <Clock className="h-3 w-3 shrink-0 text-brand" />
           <span className="text-[11px] font-medium text-brand">
-            Төлснөөс хойш {garakhKhugatsaa} минут дотор гарна уу
+            Төлснөөс хойш {garakhKhugatsaa} мин дотор гарна
           </span>
         </div>
       </div>
 
       {aldaa && (
-        <div className="mb-4 flex items-start gap-2 rounded-2xl bg-danger/10 p-3 ring-1 ring-danger">
+        <div className="mb-3.5 flex items-start gap-2 rounded-xl bg-danger/10 p-3 ring-1 ring-danger text-left">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-danger" />
-          <p className="text-xs text-danger">{aldaa}</p>
+          <p className="text-xs text-danger font-medium leading-relaxed">{aldaa}</p>
         </div>
       )}
 
-      {/* ── 1. Машины дугаар ── */}
+      {/* ── 1. Машины дугаар оруулах шат ── */}
       {alkham === "dugaar" && (
         <div className="space-y-4">
-          <div className="flex items-baseline justify-between gap-2">
-            <label
-              htmlFor="mashinii-dugaar"
-              className="text-xs font-medium text-[color:var(--muted-text)]"
-            >
-              Машины дугаар
-            </label>
-            <span className="text-[10px] text-[color:var(--muted-text)]">
-              4 тоо + 3 үсэг
-            </span>
+          <div className="space-y-1.5 text-left">
+            <div className="flex items-center justify-between">
+              <label
+                htmlFor="mashinii-dugaar"
+                className="text-xs font-semibold text-[color:var(--panel-text)] dark:text-white"
+              >
+                Машины улсын дугаар
+              </label>
+              <span className="text-[11px] text-[color:var(--muted-text)]">
+                4 тоо + 3 үсэг
+              </span>
+            </div>
+
+            <div className="relative flex items-center">
+              <input
+                id="mashinii-dugaar"
+                value={dugaar}
+                onChange={(e) => setDugaar(dugaarTseverleye(e.target.value))}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") mashinKhaiya();
+                }}
+                placeholder="1234УБА"
+                autoFocus
+                inputMode="text"
+                autoCapitalize="characters"
+                autoCorrect="off"
+                enterKeyHint="search"
+                maxLength={7}
+                autoComplete="off"
+                spellCheck={false}
+                className="h-14 sm:h-16 w-full rounded-2xl bg-[color:var(--surface-hover)] px-4 text-center text-2xl font-bold tracking-[0.18em] text-[color:var(--panel-text)] ring-1 ring-[color:var(--surface-border)] transition-all placeholder:font-normal placeholder:tracking-normal placeholder:text-[color:var(--muted-text)] focus:ring-2 focus:ring-theme focus:outline-none dark:bg-white/5 dark:text-white dark:ring-white/10"
+              />
+              {dugaar && (
+                <button
+                  type="button"
+                  onClick={() => setDugaar("")}
+                  className="absolute right-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/5 text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] active:scale-95 dark:bg-white/10 dark:hover:text-white"
+                  title="Арилгах"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
           </div>
-          <input
-            id="mashinii-dugaar"
-            value={dugaar}
-            onChange={(e) => setDugaar(dugaarTseverleye(e.target.value))}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") mashinKhaiya();
-            }}
-            placeholder="1234УБА"
-            autoFocus
-            inputMode="text"
-            maxLength={7}
-            autoComplete="off"
-            spellCheck={false}
-            className="h-16 w-full rounded-2xl bg-[color:var(--surface-hover)] px-4 text-center text-2xl font-medium tracking-[0.2em] text-[color:var(--panel-text)] ring-1 ring-[color:var(--surface-border)] transition-shadow placeholder:font-normal placeholder:tracking-normal placeholder:text-[color:var(--muted-text)] focus:ring-2 focus:ring-theme focus:outline-none dark:bg-white/5 dark:text-white dark:ring-white/10 dark:placeholder:text-[color:var(--muted-text)]"
-          />
+
           <Tovch
             onClick={mashinKhaiya}
             ajillaj={ajillaj}
@@ -497,25 +502,25 @@ export default function ZogsoolQrPage() {
         </div>
       )}
 
-      {/* ── 2. Төлбөр ── */}
+      {/* ── 2. Төлбөрийн дүн ба И-Баримт сонгох шат ── */}
       {alkham === "songolt" && mashin && (
-        <div className="space-y-5">
+        <div className="space-y-4">
           <MashiniiKhuudas mashin={mashin} />
 
           {/* И-Баримт сонголт */}
-          <div className="space-y-3 rounded-3xl bg-[color:var(--surface-hover)] p-4 ring-1 ring-[color:var(--surface-border)] dark:bg-white/5 dark:ring-white/10">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Receipt className="h-4 w-4 text-brand" />
-                <span className="text-xs font-medium text-[color:var(--panel-text)] dark:text-white">
-                  И-Баримт авах
+          <div className="space-y-2.5 rounded-2xl bg-[color:var(--surface-hover)] p-3.5 ring-1 ring-[color:var(--surface-border)] dark:bg-white/5 dark:ring-white/10 text-left">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5">
+                <Receipt className="h-4 w-4 text-brand shrink-0" />
+                <span className="text-xs font-semibold text-[color:var(--panel-text)] dark:text-white">
+                  И-Баримт
                 </span>
               </div>
               <div className="flex rounded-xl bg-[color:var(--surface-bg)] p-0.5 ring-1 ring-[color:var(--surface-border)] dark:ring-white/10">
                 <button
                   type="button"
                   onClick={() => setEbarimtTurul("1")}
-                  className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
+                  className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
                     ebarimtTurul === "1"
                       ? "bg-theme text-white shadow-sm"
                       : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] dark:hover:text-white"
@@ -527,7 +532,7 @@ export default function ZogsoolQrPage() {
                 <button
                   type="button"
                   onClick={() => setEbarimtTurul("3")}
-                  className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
+                  className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
                     ebarimtTurul === "3"
                       ? "bg-theme text-white shadow-sm"
                       : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] dark:hover:text-white"
@@ -540,21 +545,22 @@ export default function ZogsoolQrPage() {
             </div>
 
             {ebarimtTurul === "3" ? (
-              <div className="space-y-1 pt-1">
+              <div className="space-y-1 pt-0.5">
                 <label className="text-[11px] font-medium text-[color:var(--muted-text)]">
                   Байгууллагын регистрийн дугаар (РД)
                 </label>
                 <input
                   type="text"
+                  inputMode="numeric"
                   value={ebarimtRegister}
                   onChange={(e) => setEbarimtRegister(e.target.value.trim())}
-                  placeholder="Байгууллагын РД (ж: 1234567)"
+                  placeholder="Байгууллагын 7 оронтой РД"
                   maxLength={10}
-                  className="h-10 w-full rounded-xl bg-[color:var(--surface-bg)] px-3 text-sm text-[color:var(--panel-text)] ring-1 ring-[color:var(--surface-border)] placeholder:text-[color:var(--muted-text)] focus:ring-2 focus:ring-theme focus:outline-none dark:bg-white/5 dark:text-white dark:ring-white/10"
+                  className="h-10 w-full rounded-xl bg-[color:var(--surface-bg)] px-3 text-xs sm:text-sm text-[color:var(--panel-text)] ring-1 ring-[color:var(--surface-border)] placeholder:text-[color:var(--muted-text)] focus:ring-2 focus:ring-theme focus:outline-none dark:bg-white/5 dark:text-white dark:ring-white/10"
                 />
               </div>
             ) : (
-              <div className="space-y-1 pt-1">
+              <div className="space-y-1 pt-0.5">
                 <label className="text-[11px] font-medium text-[color:var(--muted-text)]">
                   Иргэний бүртгэл / Утас (заавал биш)
                 </label>
@@ -562,9 +568,9 @@ export default function ZogsoolQrPage() {
                   type="text"
                   value={ebarimtRegister}
                   onChange={(e) => setEbarimtRegister(e.target.value.trim())}
-                  placeholder="Утасны дугаар эсвэл РД"
+                  placeholder="Утас эсвэл регистрийн дугаар"
                   maxLength={15}
-                  className="h-10 w-full rounded-xl bg-[color:var(--surface-bg)] px-3 text-sm text-[color:var(--panel-text)] ring-1 ring-[color:var(--surface-border)] placeholder:text-[color:var(--muted-text)] focus:ring-2 focus:ring-theme focus:outline-none dark:bg-white/5 dark:text-white dark:ring-white/10"
+                  className="h-10 w-full rounded-xl bg-[color:var(--surface-bg)] px-3 text-xs sm:text-sm text-[color:var(--panel-text)] ring-1 ring-[color:var(--surface-border)] placeholder:text-[color:var(--muted-text)] focus:ring-2 focus:ring-theme focus:outline-none dark:bg-white/5 dark:text-white dark:ring-white/10"
                 />
               </div>
             )}
@@ -575,65 +581,92 @@ export default function ZogsoolQrPage() {
             ajillaj={ajillaj}
             icon={<Wallet className="h-4 w-4" />}
           >
-            Төлөх
+            Төлбөр төлөх
           </Tovch>
           <Butsakh onClick={ekhleeseeKhiiye} />
         </div>
       )}
 
-      {/* ── 3. QPay ── */}
+      {/* ── 3. QPay төлбөр төлөх шат ── */}
       {alkham === "qpay" && mashin && (
-        <div className="space-y-5">
-          <div className="text-center">
-            <p className="text-xs text-[color:var(--muted-text)]">
-              Төлөх дүн
+        <div className="space-y-3.5">
+          {/* Дүн ба хугацаа */}
+          <div className="rounded-2xl bg-[color:var(--surface-hover)] p-3 text-center ring-1 ring-[color:var(--surface-border)] dark:bg-white/5 dark:ring-white/10">
+            <p className="text-[11px] font-medium text-[color:var(--muted-text)]">
+              Төлөх нийт дүн
             </p>
-            <p className="text-3xl font-medium text-[color:var(--panel-text)] dark:text-white">
+            <p className="text-2xl sm:text-3xl font-bold tracking-tight text-[color:var(--panel-text)] dark:text-white">
               {dunFormat(mashin.pay_amount)}
             </p>
-            <p
-              className={`mt-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-mono text-xs font-medium ${
-                tsagDuusch
-                  ? "animate-pulse bg-danger/10 text-danger ring-1 ring-danger"
-                  : "bg-warning/10 text-warning ring-1 ring-warning"
-              }`}
-            >
-              <Clock className="h-3 w-3" />
-              {tsagniiKhelber}
-            </p>
+            <div className="mt-1.5 flex items-center justify-center gap-1.5">
+              <span
+                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-mono text-[11px] font-semibold ${
+                  tsagDuusch
+                    ? "animate-pulse bg-danger/10 text-danger ring-1 ring-danger"
+                    : "bg-warning/10 text-warning ring-1 ring-warning"
+                }`}
+              >
+                <Clock className="h-3 w-3" />
+                {tsagniiKhelber}
+              </span>
+            </div>
           </div>
 
-          {qrTekstAvya(qpay) && (
-            <div className="mx-auto w-fit rounded-3xl bg-[color:var(--surface-bg)] p-4 ring-1 ring-[color:var(--surface-border)] dark:ring-white/10">
-              <QRCodeSVG value={qrTekstAvya(qpay)} size={200} level="M" />
+          {/* Таб сонголт: Банкны аппаар шууд нээх vs QR зураг */}
+          {Array.isArray(qpay?.urls) && qpay.urls.length > 0 && qrTekstAvya(qpay) && (
+            <div className="grid grid-cols-2 rounded-xl bg-[color:var(--surface-hover)] p-1 ring-1 ring-[color:var(--surface-border)] dark:bg-white/5 dark:ring-white/10">
+              <button
+                type="button"
+                onClick={() => setQpayTab("apps")}
+                className={`flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-semibold transition-all ${
+                  qpayTab === "apps"
+                    ? "bg-theme text-white shadow-sm"
+                    : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] dark:hover:text-white"
+                }`}
+              >
+                <Smartphone className="h-3.5 w-3.5" />
+                Банкны апп
+              </button>
+              <button
+                type="button"
+                onClick={() => setQpayTab("qr")}
+                className={`flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-semibold transition-all ${
+                  qpayTab === "qr"
+                    ? "bg-theme text-white shadow-sm"
+                    : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] dark:hover:text-white"
+                }`}
+              >
+                <QrCode className="h-3.5 w-3.5" />
+                QR уншуулах
+              </button>
             </div>
           )}
 
-          {Array.isArray(qpay?.urls) && qpay.urls.length > 0 && (
-            <div className="space-y-2">
+          {/* 1. Банкны аппуудын жагсаалт (Гар утсан дээр дараад шууд апп руугаа үсрэнэ) */}
+          {qpayTab === "apps" && Array.isArray(qpay?.urls) && qpay.urls.length > 0 && (
+            <div className="space-y-1.5">
               <p className="text-center text-[11px] text-[color:var(--muted-text)]">
-                Эсвэл банкны аппаа шууд сонгоно уу
+                Ашигладаг банкныхаа апп дээр товшиж төлнө үү:
               </p>
-              {/* QPay бүх банк/хэтэвчийг буцаадаг - бүгдийг харуулна */}
-              <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-[320px] overflow-y-auto p-1">
                 {qpay.urls.map((u: any, i: number) => (
                   <a
                     key={`${u?.name || u?.link || i}`}
                     href={u?.link}
-                    className="flex flex-col items-center gap-1 rounded-2xl bg-[color:var(--surface-hover)] p-2 text-center ring-1 ring-[color:var(--surface-border)] transition-colors hover:bg-[color:var(--surface-hover)] dark:bg-white/5 dark:ring-white/10 dark:hover:bg-white/10"
+                    className="flex flex-col items-center justify-center gap-1 rounded-xl bg-[color:var(--surface-hover)] p-2 text-center ring-1 ring-[color:var(--surface-border)] transition-all hover:ring-theme active:scale-95 dark:bg-white/5 dark:ring-white/10 dark:hover:ring-theme min-h-[72px]"
                   >
                     {u?.logo ? (
                       <img
                         src={u.logo}
                         alt={u?.description || u?.name || ""}
-                        className="h-8 w-8 rounded-lg object-contain"
+                        className="h-8 w-8 rounded-lg object-contain shrink-0"
                       />
                     ) : (
-                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[color:var(--panel)] text-[10px] text-[color:var(--panel-text)] dark:bg-white/10 dark:text-white">
-                        {String(u?.description || u?.name || "").charAt(0)}
+                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-theme/10 text-xs font-bold text-brand shrink-0">
+                        {String(u?.description || u?.name || "B").charAt(0)}
                       </span>
                     )}
-                    <span className="line-clamp-2 text-[9px] leading-tight text-[color:var(--muted-text)]">
+                    <span className="line-clamp-1 text-[10px] font-medium leading-tight text-[color:var(--panel-text)] dark:text-white">
                       {u?.description || u?.name}
                     </span>
                   </a>
@@ -642,44 +675,63 @@ export default function ZogsoolQrPage() {
             </div>
           )}
 
-          <p className="flex items-center justify-center gap-1.5 text-center text-[11px] text-[color:var(--muted-text)]">
-            <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-brand" />
-            Төлөгдмөгц автоматаар шалгагдана
-          </p>
+          {/* 2. QR код (Зэрэгцээ суугаа хүн эсвэл хоёр дахь төхөөрөмжөөр уншуулах үед) */}
+          {(qpayTab === "qr" || !qpay?.urls?.length) && qrTekstAvya(qpay) && (
+            <div className="flex flex-col items-center gap-2 py-1">
+              <div className="rounded-2xl bg-white p-3.5 shadow-md ring-1 ring-black/10">
+                <QRCodeSVG value={qrTekstAvya(qpay)} size={180} level="M" />
+              </div>
+              <p className="text-[11px] text-[color:var(--muted-text)]">
+                Утсаараа эсвэл банкны аппаараа QR-ийг уншуулна уу
+              </p>
+            </div>
+          )}
+
+          <div className="flex items-center justify-center gap-1.5 pt-1 text-[11px] text-[color:var(--muted-text)]">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75"></span>
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-success"></span>
+            </span>
+            <ShieldCheck className="h-3.5 w-3.5 text-brand" />
+            <span>Төлөгдмөгц автоматаар шалгагдана</span>
+          </div>
 
           <Butsakh onClick={() => setAlkham("songolt")} />
         </div>
       )}
 
-      {/* ── 4. Амжилттай ── */}
+      {/* ── 4. Амжилттай шат: Төлбөр + И-Баримт ── */}
       {alkham === "amjilttai" && (
-        <div className="space-y-5 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-theme/10 ring-1 ring-theme/20">
-            <CheckCircle2 className="h-8 w-8 text-brand" />
+        <div className="space-y-4 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-theme/10 ring-1 ring-theme/20">
+            <CheckCircle2 className="h-7 w-7 text-brand" />
           </div>
           <div>
-            <h2 className="text-xl font-medium text-[color:var(--panel-text)] dark:text-white">
-              Төлбөр бүртгэгдлээ
+            <h2 className="text-lg sm:text-xl font-bold text-[color:var(--panel-text)] dark:text-white">
+              Төлбөр амжилттай бүртгэгдлээ
             </h2>
-            <p className="mt-1 text-2xl font-medium text-brand">
+            <p className="mt-0.5 text-2xl font-bold text-brand">
               {dunFormat(tulsunDun)}
             </p>
-            <p className="mt-2 text-xs text-[color:var(--muted-text)]">
-              {garakhKhugatsaa} минут дотор гарна уу.
-            </p>
+            <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-theme/10 px-3 py-1 ring-1 ring-theme/20">
+              <Clock className="h-3 w-3 text-brand" />
+              <span className="text-[11px] font-semibold text-brand">
+                {garakhKhugatsaa} минутын дотор гарна уу
+              </span>
+            </div>
           </div>
 
-          {/* И-Баримт хэсэг */}
-          <div className="rounded-3xl bg-[color:var(--surface-hover)] p-4 text-left ring-1 ring-[color:var(--surface-border)] dark:bg-white/5 dark:ring-white/10">
+          {/* И-Баримтын дижитал тасалбар */}
+          <div className="rounded-2xl bg-[color:var(--surface-hover)] p-3.5 text-left ring-1 ring-[color:var(--surface-border)] dark:bg-white/5 dark:ring-white/10">
             <div className="flex items-center justify-between border-b border-[color:var(--surface-border)] pb-2.5 dark:border-white/10">
-              <div className="flex items-center gap-2">
-                <Receipt className="h-4 w-4 text-brand" />
-                <span className="text-xs font-semibold text-[color:var(--panel-text)] dark:text-white">
-                  И-Баримт
+              <div className="flex items-center gap-1.5">
+                <Receipt className="h-4 w-4 text-brand shrink-0" />
+                <span className="text-xs font-bold text-[color:var(--panel-text)] dark:text-white">
+                  И-Баримт (НӨАТ)
                 </span>
               </div>
-              <span className="rounded-full bg-theme/10 px-2.5 py-0.5 text-[10px] font-medium text-brand ring-1 ring-theme/20">
-                {ebarimtTurul === "3" ? "Байгууллага (Б2Б)" : "Хувь хүн"}
+              <span className="rounded-full bg-theme/10 px-2 py-0.5 text-[10px] font-semibold text-brand ring-1 ring-theme/20">
+                {ebarimtTurul === "3" ? "Байгууллага" : "Хувь хүн"}
               </span>
             </div>
 
@@ -693,39 +745,81 @@ export default function ZogsoolQrPage() {
             )}
 
             {!ebarimtLoading && ebarimtData && (
-              <div className="space-y-3 pt-3">
+              <div className="space-y-2.5 pt-3">
                 {ebarimtData.qrData && (
-                  <div className="mx-auto my-1 flex w-fit justify-center rounded-2xl bg-white p-3 shadow-sm ring-1 ring-black/5">
-                    <QRCodeSVG value={ebarimtData.qrData} size={130} level="M" />
+                  <div className="mx-auto my-1 flex w-fit justify-center rounded-xl bg-white p-2.5 shadow-sm ring-1 ring-black/5">
+                    <QRCodeSVG value={ebarimtData.qrData} size={120} level="M" />
                   </div>
                 )}
+
                 <div className="space-y-1.5 text-xs">
                   {ebarimtData.lottery && (
-                    <div className="flex items-center justify-between rounded-xl bg-[color:var(--surface-bg)] p-2.5 ring-1 ring-[color:var(--surface-border)] dark:ring-white/10">
-                      <span className="text-[color:var(--muted-text)]">
-                        Сугалааны дугаар:
-                      </span>
-                      <span className="font-mono text-base font-bold text-brand">
-                        {ebarimtData.lottery}
-                      </span>
+                    <div className="flex items-center justify-between rounded-xl bg-[color:var(--surface-bg)] p-2 ring-1 ring-[color:var(--surface-border)] dark:ring-white/10">
+                      <div>
+                        <p className="text-[10px] text-[color:var(--muted-text)] leading-none">
+                          Сугалааны дугаар:
+                        </p>
+                        <p className="font-mono text-base font-bold text-brand mt-0.5">
+                          {ebarimtData.lottery}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => copyText(ebarimtData.lottery, "lottery")}
+                        className="flex items-center gap-1 rounded-lg bg-theme/10 px-2 py-1 text-[11px] font-medium text-brand hover:bg-theme/20 active:scale-95"
+                      >
+                        {copiedField === "lottery" ? (
+                          <>
+                            <Check className="h-3 w-3" />
+                            <span>Хуулагдлаа</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Хуулах</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                   )}
+
                   {(ebarimtData.receiptId || ebarimtData.id) && (
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between py-0.5">
                       <span className="text-[color:var(--muted-text)]">ДДТД:</span>
-                      <span className="font-mono font-medium text-[color:var(--panel-text)] dark:text-white">
-                        {ebarimtData.receiptId || ebarimtData.id}
-                      </span>
+                      <div className="flex items-center gap-1">
+                        <span className="font-mono font-medium text-[color:var(--panel-text)] dark:text-white">
+                          {ebarimtData.receiptId || ebarimtData.id}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            copyText(
+                              ebarimtData.receiptId || ebarimtData.id,
+                              "ddtd",
+                            )
+                          }
+                          className="text-[color:var(--muted-text)] hover:text-brand p-0.5"
+                          title="Хуулах"
+                        >
+                          {copiedField === "ddtd" ? (
+                            <Check className="h-3 w-3 text-success" />
+                          ) : (
+                            <Copy className="h-3 w-3" />
+                          )}
+                        </button>
+                      </div>
                     </div>
                   )}
-                  <div className="flex items-center justify-between">
+
+                  <div className="flex items-center justify-between py-0.5">
                     <span className="text-[color:var(--muted-text)]">Төлсөн дүн:</span>
                     <span className="font-semibold text-[color:var(--panel-text)] dark:text-white">
                       {dunFormat(ebarimtData.totalAmount || tulsunDun)}
                     </span>
                   </div>
+
                   {ebarimtRegister && (
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between py-0.5">
                       <span className="text-[color:var(--muted-text)]">
                         {ebarimtTurul === "3" ? "Байгууллагын РД:" : "Бүртгэл:"}
                       </span>
@@ -734,8 +828,9 @@ export default function ZogsoolQrPage() {
                       </span>
                     </div>
                   )}
+
                   {ebarimtData.date && (
-                    <div className="flex items-center justify-between text-[11px] text-[color:var(--muted-text)]">
+                    <div className="flex items-center justify-between pt-1 border-t border-[color:var(--surface-border)] dark:border-white/10 text-[10px] text-[color:var(--muted-text)]">
                       <span>Огноо:</span>
                       <span>{ebarimtData.date}</span>
                     </div>
@@ -745,16 +840,17 @@ export default function ZogsoolQrPage() {
             )}
 
             {!ebarimtLoading && !ebarimtData && ebarimtAldaa && (
-              <div className="space-y-2 pt-3">
-                <div className="flex items-start gap-2 rounded-xl bg-danger/10 p-2.5 ring-1 ring-danger">
+              <div className="space-y-2 pt-2 text-center">
+                <div className="flex items-start gap-1.5 rounded-xl bg-danger/10 p-2 text-left ring-1 ring-danger">
                   <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-danger" />
-                  <p className="text-xs text-danger">{ebarimtAldaa}</p>
+                  <p className="text-[11px] text-danger font-medium">{ebarimtAldaa}</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => ebarimtDuudya()}
-                  className="w-full rounded-xl bg-theme/10 py-2 text-xs font-medium text-brand transition-colors hover:bg-theme/20"
+                  className="inline-flex items-center gap-1 rounded-xl bg-theme/10 px-3 py-1.5 text-xs font-semibold text-brand hover:bg-theme/20 active:scale-95"
                 >
+                  <RefreshCw className="h-3 w-3" />
                   И-Баримт дахин авах
                 </button>
               </div>
@@ -765,7 +861,7 @@ export default function ZogsoolQrPage() {
                 <button
                   type="button"
                   onClick={() => ebarimtDuudya()}
-                  className="rounded-xl bg-theme/10 px-4 py-2 text-xs font-medium text-brand transition-colors hover:bg-theme/20"
+                  className="rounded-xl bg-theme/10 px-4 py-2 text-xs font-semibold text-brand hover:bg-theme/20 active:scale-95"
                 >
                   И-Баримт үүсгэх
                 </button>
@@ -775,10 +871,10 @@ export default function ZogsoolQrPage() {
 
           <button
             onClick={ekhleeseeKhiiye}
-            className="mx-auto flex items-center gap-2 text-xs text-[color:var(--muted-text)] transition-colors hover:text-[color:var(--panel-text)] dark:hover:text-white"
+            className="mx-auto flex items-center justify-center gap-1.5 text-xs font-medium text-[color:var(--muted-text)] transition-colors hover:text-[color:var(--panel-text)] dark:hover:text-white py-2"
           >
             <RefreshCw className="h-3.5 w-3.5" />
-            Дахин төлөх
+            Өөр машин хайх / Дахин төлөх
           </button>
         </div>
       )}
@@ -789,8 +885,8 @@ export default function ZogsoolQrPage() {
 /* ─── Жижиг дэд компонентууд ─────────────────────────────────────────── */
 
 const Khuudas: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="flex min-h-screen items-center justify-center bg-[color:var(--surface-hover)] p-4">
-    <div className="w-full max-w-md rounded-3xl bg-[color:var(--surface-bg)] p-6 shadow-xl ring-1 ring-[color:var(--surface-border)] dark:ring-white/10">
+  <div className="flex min-h-[100dvh] w-full flex-col justify-start sm:justify-center items-center bg-[color:var(--surface-hover)] dark:bg-neutral-950 px-3 py-4 sm:px-4 sm:py-8 pb-[calc(2rem+env(safe-area-inset-bottom))]">
+    <div className="w-full max-w-md my-auto rounded-2xl sm:rounded-3xl bg-[color:var(--surface-bg)] dark:bg-neutral-900/90 p-4 sm:p-6 shadow-xl ring-1 ring-[color:var(--surface-border)] dark:ring-white/10 backdrop-blur-xl">
       {children}
     </div>
   </div>
@@ -805,7 +901,7 @@ const Tovch: React.FC<{
   <button
     onClick={onClick}
     disabled={ajillaj}
-    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-theme py-4 text-sm font-medium text-white transition-colors hover:bg-theme disabled:opacity-40 dark:hover:bg-theme"
+    className="flex h-12 sm:h-14 w-full items-center justify-center gap-2 rounded-2xl bg-theme text-sm sm:text-base font-semibold text-white transition-all hover:bg-theme active:scale-[0.98] disabled:opacity-50 shadow-md shadow-theme/20"
   >
     {ajillaj ? <Loader2 className="h-4 w-4 animate-spin" /> : icon}
     {children}
@@ -815,7 +911,7 @@ const Tovch: React.FC<{
 const Butsakh: React.FC<{ onClick: () => void }> = ({ onClick }) => (
   <button
     onClick={onClick}
-    className="mx-auto flex items-center gap-1.5 text-xs text-[color:var(--muted-text)] transition-colors hover:text-[color:var(--panel-text)] dark:hover:text-white"
+    className="mx-auto flex items-center gap-1.5 text-xs font-medium text-[color:var(--muted-text)] transition-colors hover:text-[color:var(--panel-text)] dark:hover:text-white py-1"
   >
     <ArrowLeft className="h-3.5 w-3.5" />
     Буцах
@@ -832,8 +928,8 @@ const Mur: React.FC<{ nert: string; utga: string; tom?: boolean }> = ({
     <span
       className={
         tom
-          ? "text-lg font-medium text-brand"
-          : "text-sm font-medium text-[color:var(--panel-text)] dark:text-white"
+          ? "text-xl sm:text-2xl font-bold text-brand"
+          : "text-xs sm:text-sm font-semibold text-[color:var(--panel-text)] dark:text-white"
       }
     >
       {utga}
@@ -844,18 +940,20 @@ const Mur: React.FC<{ nert: string; utga: string; tom?: boolean }> = ({
 const MashiniiKhuudas: React.FC<{ mashin: MashiniiMedeelel }> = ({
   mashin,
 }) => (
-  <div className="space-y-3 rounded-3xl bg-[color:var(--surface-hover)] p-4 ring-1 ring-[color:var(--surface-border)] dark:bg-white/5 dark:ring-white/10">
-    <div className="flex items-center gap-2">
-      <CarFront className="h-4 w-4 shrink-0 text-brand" />
-      <span className="text-base font-medium tracking-wider text-[color:var(--panel-text)] dark:text-white">
-        {mashin.plate_number}
-      </span>
+  <div className="space-y-2.5 rounded-2xl bg-[color:var(--surface-hover)] p-3.5 ring-1 ring-[color:var(--surface-border)] dark:bg-white/5 dark:ring-white/10">
+    <div className="flex items-center justify-between">
+      <div className="inline-flex items-center gap-2 rounded-xl border border-black/15 bg-white dark:bg-neutral-800 px-3 py-1 shadow-sm">
+        <CarFront className="h-4 w-4 text-brand" />
+        <span className="font-mono text-base font-bold tracking-widest text-neutral-900 dark:text-white">
+          {mashin.plate_number}
+        </span>
+      </div>
+      <div className="flex items-center gap-1 text-[11px] text-[color:var(--muted-text)]">
+        <Clock className="h-3 w-3 shrink-0" />
+        {mashin.enter_date}
+      </div>
     </div>
-    <div className="flex items-center gap-2 text-xs text-[color:var(--muted-text)]">
-      <Clock className="h-3.5 w-3.5 shrink-0" />
-      Орсон: {mashin.enter_date}
-    </div>
-    <div className="border-t border-[color:var(--surface-border)] pt-3 dark:border-white/10">
+    <div className="border-t border-[color:var(--surface-border)] pt-2 dark:border-white/10">
       <Mur nert="Төлөх дүн" utga={dunFormat(mashin.pay_amount)} tom />
     </div>
   </div>
