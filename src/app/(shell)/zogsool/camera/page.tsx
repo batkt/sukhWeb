@@ -170,20 +170,17 @@ function murNiiluulye(transaction: any) {
   const niitDun = transaction?.niitDun || 0;
   const isCurrentlyIn = !mur?.garsanKhaalga;
   const isFreeExit = (!!mur?.uneguiGarsan || tuluv === -1) && tuluv !== -2;
-  const isPaid = tuluv === 1;
-  const isDebt =
-    !isFreeExit &&
-    (tuluv === -4 || (tuluv === 0 && niitDun > 0 && !isCurrentlyIn));
   const rawTulbur = mur?.tulbur;
   const tulburArr: any[] = Array.isArray(rawTulbur)
     ? rawTulbur
     : rawTulbur
       ? [rawTulbur]
       : [];
-  const positivePaid = tulburArr.reduce(
-    (sum: number, pay: any) => sum + (pay?.dun > 0 ? pay.dun : 0),
-    0,
-  );
+  const positivePaid =
+    tulburArr.reduce(
+      (sum: number, pay: any) => sum + (pay?.dun > 0 ? pay.dun : 0),
+      0,
+    ) || Number(mur?.tulsunDun || transaction?.tulsunDun || 0);
   const discountTotal = tulburArr
     .filter((pay: any) => khungulultTurulEsekh(pay?.turul))
     .reduce((sum: number, pay: any) => sum + Math.abs(pay?.dun ?? 0), 0);
@@ -196,6 +193,12 @@ function murNiiluulye(transaction: any) {
   );
   const bureenKhungulsun =
     !isCurrentlyIn && niitDun > 0 && discountTotal >= niitDun && boditTulsun <= 0;
+  const isPaid =
+    tuluv === 1 || (positivePaid >= effectiveOwed && effectiveOwed > 0);
+  const isDebt =
+    !isFreeExit &&
+    (tuluv === -4 ||
+      (tuluv === 0 && niitDun > 0 && !isCurrentlyIn && positivePaid < effectiveOwed));
   const hasRemainingBalance =
     !isFreeExit &&
     tuluv === 1 &&
@@ -1126,6 +1129,21 @@ export default function Camera() {
     s.on(`zogsool${bId}`, handleGeneralUpdate);
     cleanup.push(() => s.off(`zogsool${bId}`, handleGeneralUpdate));
 
+    const handleParkingEntry = (data: any) => {
+      const u = data?.uilchluulegch || data;
+      if (u && (u._id || u.mashiniiDugaar)) {
+        handleGeneralUpdate(u);
+      }
+    };
+    s.on(`parkingEntry/${bId}`, handleParkingEntry);
+    cleanup.push(() => s.off(`parkingEntry/${bId}`, handleParkingEntry));
+    if (effectiveBarilgiinId) {
+      s.on(`parkingEntry/${bId}/${effectiveBarilgiinId}`, handleParkingEntry);
+      cleanup.push(() =>
+        s.off(`parkingEntry/${bId}/${effectiveBarilgiinId}`, handleParkingEntry),
+      );
+    }
+
     const handleOroh = (data: any) => {
       if (
         !data ||
@@ -1842,16 +1860,21 @@ export default function Camera() {
       width: 120,
       align: "right",
       render: (_: any, transaction: any) => {
-        // Гарах хүртэл төлбөр/хөнгөлөлт/и-баримт тодорхойгүй — хоосон
-        if (murNiiluulye(transaction).isCurrentlyIn) return "";
-        const tulsunDun = transaction.tuukh?.[0]?.tulsunDun || 0;
+        const tulsunDun =
+          transaction.tuukh?.[0]?.tulsunDun || transaction.tulsunDun || 0;
         // Төрлийн шүүлтүүрээс үл хамааран бүх түүхээс төлбөрийг нэгтгэнэ.
         const payOnly = tulburuudiigTsugluulya(transaction);
+        const totalPaid =
+          payOnly.length > 0
+            ? payOnly.reduce(
+                (sum: number, pay: any) => sum + (pay.dun || 0),
+                0,
+              )
+            : tulsunDun;
+
+        if (murNiiluulye(transaction).isCurrentlyIn && totalPaid <= 0) return "";
+
         if (payOnly.length > 0) {
-          const totalPaid = payOnly.reduce(
-            (sum: number, pay: any) => sum + (pay.dun || 0),
-            0,
-          );
           const uniqueTypes = [
             ...new Set(payOnly.map((pay: any) => pay.turul).filter(Boolean)),
           ] as string[];
@@ -1865,7 +1888,7 @@ export default function Camera() {
         }
         return (
           <span className="font-[family-name:var(--font-mono)]">
-            {formatNumber(tulsunDun || 0, 2)}
+            {formatNumber(totalPaid || 0, 2)}
           </span>
         );
       },
@@ -1892,7 +1915,6 @@ export default function Camera() {
       align: "right",
       render: (_: any, transaction: any) => {
         const { isCurrentlyIn, bureenKhungulsun } = murNiiluulye(transaction);
-        if (isCurrentlyIn) return "";
         if (bureenKhungulsun) return "-";
         const mur = transaction.tuukh?.[0] as any;
         const ebarimtId =
@@ -1911,6 +1933,7 @@ export default function Camera() {
               {ebarimtId}
             </span>
           );
+        if (isCurrentlyIn) return "";
         const ebDun =
           (mur?.ebarimtAvsanDun ?? transaction?.ebarimtAvsanDun) || 0;
         return (

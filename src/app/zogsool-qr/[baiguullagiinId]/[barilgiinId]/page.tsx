@@ -29,6 +29,9 @@ import {
   ArrowLeft,
   RefreshCw,
   ShieldCheck,
+  Receipt,
+  Building2,
+  User,
 } from "lucide-react";
 import ThemedLogo from "@/components/ui/ThemedLogo";
 import uilchilgee, { socket } from "@/lib/uilchilgee";
@@ -117,6 +120,13 @@ export default function ZogsoolQrPage() {
   );
   const [uldsenSekund, setUldsenSekund] = useState(QPAY_KHUGATSAA_MIN * 60);
 
+  // ── И-Баримт төлөв ────────────────────────────────────────────────────
+  const [ebarimtTurul, setEbarimtTurul] = useState<"1" | "3">("1");
+  const [ebarimtRegister, setEbarimtRegister] = useState("");
+  const [ebarimtData, setEbarimtData] = useState<any>(null);
+  const [ebarimtLoading, setEbarimtLoading] = useState(false);
+  const [ebarimtAldaa, setEbarimtAldaa] = useState<string | null>(null);
+
   const garakhKhugatsaa = garakhKhugatsaaAvya(tokhirgoo?.garakhTsag);
 
   // ── Хуудас ачаалах: зочны token + зогсоолын мэдээлэл ──────────────────
@@ -159,11 +169,75 @@ export default function ZogsoolQrPage() {
     };
   }, [baiguullagiinId, barilgiinId]);
 
+  // ── И-Баримт шивэх функц ──────────────────────────────────────────────
+  const ebarimtDuudya = useCallback(
+    async (sessionId?: string, dun?: number) => {
+      const sId = sessionId || mashin?.session_id;
+      if (!sId) return;
+      setEbarimtLoading(true);
+      setEbarimtAldaa(null);
+      try {
+        let authTkn = token;
+        if (!authTkn) {
+          try {
+            const { data: tData } = await uilchilgee().get(
+              `/zochiniiTokenAvya/${baiguullagiinId}`,
+            );
+            authTkn =
+              typeof tData === "string" ? tData : tData?.token || null;
+            if (authTkn) setToken(authTkn);
+          } catch {}
+        }
+
+        const { data } = await uilchilgee(authTkn || "").post("/ebarimtShivye", {
+          id: sId,
+          type: ebarimtTurul,
+          register: ebarimtRegister.trim(),
+          baiguullagiinId,
+          barilgiinId,
+          zogsooliinId: mashin?.parking_id || tokhirgoo?._id,
+        });
+
+        if (data?.success || data?.lottery || data?.qrData) {
+          setEbarimtData(data);
+        } else {
+          setEbarimtAldaa(
+            data?.error || data?.message || "И-Баримт үүсгэж чадсангүй",
+          );
+        }
+      } catch (err: any) {
+        setEbarimtAldaa(
+          err?.response?.data?.error ||
+            err?.response?.data?.message ||
+            "И-Баримт үүсгэхэд алдаа гарлаа",
+        );
+      } finally {
+        setEbarimtLoading(false);
+      }
+    },
+    [
+      mashin?.session_id,
+      mashin?.parking_id,
+      token,
+      baiguullagiinId,
+      barilgiinId,
+      tokhirgoo?._id,
+      ebarimtTurul,
+      ebarimtRegister,
+    ],
+  );
+
   // ── QPay төлөгдсөнийг socket + poll-оор хянах ─────────────────────────
-  const qpayTulugdlee = useCallback((dun: number) => {
-    setTulsunDun(dun);
-    setAlkham("amjilttai");
-  }, []);
+  const qpayTulugdlee = useCallback(
+    (dun: number) => {
+      setTulsunDun(dun);
+      setAlkham("amjilttai");
+      if (mashin?.session_id) {
+        ebarimtDuudya(mashin.session_id, dun);
+      }
+    },
+    [mashin?.session_id, ebarimtDuudya],
+  );
 
   useEffect(() => {
     if (alkham !== "qpay" || !zakhialgiinDugaar) return;
@@ -319,6 +393,9 @@ export default function ZogsoolQrPage() {
     setQpay(null);
     setZakhialgiinDugaar(null);
     setAldaa(null);
+    setEbarimtData(null);
+    setEbarimtAldaa(null);
+    setEbarimtLoading(false);
   };
 
   // ── Ачаалах / эхний алдаа ────────────────────────────────────────────
@@ -424,6 +501,75 @@ export default function ZogsoolQrPage() {
       {alkham === "songolt" && mashin && (
         <div className="space-y-5">
           <MashiniiKhuudas mashin={mashin} />
+
+          {/* И-Баримт сонголт */}
+          <div className="space-y-3 rounded-3xl bg-[color:var(--surface-hover)] p-4 ring-1 ring-[color:var(--surface-border)] dark:bg-white/5 dark:ring-white/10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Receipt className="h-4 w-4 text-brand" />
+                <span className="text-xs font-medium text-[color:var(--panel-text)] dark:text-white">
+                  И-Баримт авах
+                </span>
+              </div>
+              <div className="flex rounded-xl bg-[color:var(--surface-bg)] p-0.5 ring-1 ring-[color:var(--surface-border)] dark:ring-white/10">
+                <button
+                  type="button"
+                  onClick={() => setEbarimtTurul("1")}
+                  className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
+                    ebarimtTurul === "1"
+                      ? "bg-theme text-white shadow-sm"
+                      : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] dark:hover:text-white"
+                  }`}
+                >
+                  <User className="h-3 w-3" />
+                  Хувь хүн
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEbarimtTurul("3")}
+                  className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
+                    ebarimtTurul === "3"
+                      ? "bg-theme text-white shadow-sm"
+                      : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] dark:hover:text-white"
+                  }`}
+                >
+                  <Building2 className="h-3 w-3" />
+                  Байгууллага
+                </button>
+              </div>
+            </div>
+
+            {ebarimtTurul === "3" ? (
+              <div className="space-y-1 pt-1">
+                <label className="text-[11px] font-medium text-[color:var(--muted-text)]">
+                  Байгууллагын регистрийн дугаар (РД)
+                </label>
+                <input
+                  type="text"
+                  value={ebarimtRegister}
+                  onChange={(e) => setEbarimtRegister(e.target.value.trim())}
+                  placeholder="Байгууллагын РД (ж: 1234567)"
+                  maxLength={10}
+                  className="h-10 w-full rounded-xl bg-[color:var(--surface-bg)] px-3 text-sm text-[color:var(--panel-text)] ring-1 ring-[color:var(--surface-border)] placeholder:text-[color:var(--muted-text)] focus:ring-2 focus:ring-theme focus:outline-none dark:bg-white/5 dark:text-white dark:ring-white/10"
+                />
+              </div>
+            ) : (
+              <div className="space-y-1 pt-1">
+                <label className="text-[11px] font-medium text-[color:var(--muted-text)]">
+                  Иргэний бүртгэл / Утас (заавал биш)
+                </label>
+                <input
+                  type="text"
+                  value={ebarimtRegister}
+                  onChange={(e) => setEbarimtRegister(e.target.value.trim())}
+                  placeholder="Утасны дугаар эсвэл РД"
+                  maxLength={15}
+                  className="h-10 w-full rounded-xl bg-[color:var(--surface-bg)] px-3 text-sm text-[color:var(--panel-text)] ring-1 ring-[color:var(--surface-border)] placeholder:text-[color:var(--muted-text)] focus:ring-2 focus:ring-theme focus:outline-none dark:bg-white/5 dark:text-white dark:ring-white/10"
+                />
+              </div>
+            )}
+          </div>
+
           <Tovch
             onClick={qpayAvya}
             ajillaj={ajillaj}
@@ -508,8 +654,8 @@ export default function ZogsoolQrPage() {
       {/* ── 4. Амжилттай ── */}
       {alkham === "amjilttai" && (
         <div className="space-y-5 text-center">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-theme/10 ring-1 ring-theme/20">
-            <CheckCircle2 className="h-10 w-10 text-brand" />
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-theme/10 ring-1 ring-theme/20">
+            <CheckCircle2 className="h-8 w-8 text-brand" />
           </div>
           <div>
             <h2 className="text-xl font-medium text-[color:var(--panel-text)] dark:text-white">
@@ -522,6 +668,111 @@ export default function ZogsoolQrPage() {
               {garakhKhugatsaa} минут дотор гарна уу.
             </p>
           </div>
+
+          {/* И-Баримт хэсэг */}
+          <div className="rounded-3xl bg-[color:var(--surface-hover)] p-4 text-left ring-1 ring-[color:var(--surface-border)] dark:bg-white/5 dark:ring-white/10">
+            <div className="flex items-center justify-between border-b border-[color:var(--surface-border)] pb-2.5 dark:border-white/10">
+              <div className="flex items-center gap-2">
+                <Receipt className="h-4 w-4 text-brand" />
+                <span className="text-xs font-semibold text-[color:var(--panel-text)] dark:text-white">
+                  И-Баримт
+                </span>
+              </div>
+              <span className="rounded-full bg-theme/10 px-2.5 py-0.5 text-[10px] font-medium text-brand ring-1 ring-theme/20">
+                {ebarimtTurul === "3" ? "Байгууллага (Б2Б)" : "Хувь хүн"}
+              </span>
+            </div>
+
+            {ebarimtLoading && (
+              <div className="flex flex-col items-center justify-center gap-2 py-6">
+                <Loader2 className="h-6 w-6 animate-spin text-brand" />
+                <p className="text-xs text-[color:var(--muted-text)]">
+                  И-Баримт үүсгэж байна...
+                </p>
+              </div>
+            )}
+
+            {!ebarimtLoading && ebarimtData && (
+              <div className="space-y-3 pt-3">
+                {ebarimtData.qrData && (
+                  <div className="mx-auto my-1 flex w-fit justify-center rounded-2xl bg-white p-3 shadow-sm ring-1 ring-black/5">
+                    <QRCodeSVG value={ebarimtData.qrData} size={130} level="M" />
+                  </div>
+                )}
+                <div className="space-y-1.5 text-xs">
+                  {ebarimtData.lottery && (
+                    <div className="flex items-center justify-between rounded-xl bg-[color:var(--surface-bg)] p-2.5 ring-1 ring-[color:var(--surface-border)] dark:ring-white/10">
+                      <span className="text-[color:var(--muted-text)]">
+                        Сугалааны дугаар:
+                      </span>
+                      <span className="font-mono text-base font-bold text-brand">
+                        {ebarimtData.lottery}
+                      </span>
+                    </div>
+                  )}
+                  {(ebarimtData.receiptId || ebarimtData.id) && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-[color:var(--muted-text)]">ДДТД:</span>
+                      <span className="font-mono font-medium text-[color:var(--panel-text)] dark:text-white">
+                        {ebarimtData.receiptId || ebarimtData.id}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <span className="text-[color:var(--muted-text)]">Төлсөн дүн:</span>
+                    <span className="font-semibold text-[color:var(--panel-text)] dark:text-white">
+                      {dunFormat(ebarimtData.totalAmount || tulsunDun)}
+                    </span>
+                  </div>
+                  {ebarimtRegister && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-[color:var(--muted-text)]">
+                        {ebarimtTurul === "3" ? "Байгууллагын РД:" : "Бүртгэл:"}
+                      </span>
+                      <span className="font-mono text-[color:var(--panel-text)] dark:text-white">
+                        {ebarimtRegister}
+                      </span>
+                    </div>
+                  )}
+                  {ebarimtData.date && (
+                    <div className="flex items-center justify-between text-[11px] text-[color:var(--muted-text)]">
+                      <span>Огноо:</span>
+                      <span>{ebarimtData.date}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {!ebarimtLoading && !ebarimtData && ebarimtAldaa && (
+              <div className="space-y-2 pt-3">
+                <div className="flex items-start gap-2 rounded-xl bg-danger/10 p-2.5 ring-1 ring-danger">
+                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-danger" />
+                  <p className="text-xs text-danger">{ebarimtAldaa}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => ebarimtDuudya()}
+                  className="w-full rounded-xl bg-theme/10 py-2 text-xs font-medium text-brand transition-colors hover:bg-theme/20"
+                >
+                  И-Баримт дахин авах
+                </button>
+              </div>
+            )}
+
+            {!ebarimtLoading && !ebarimtData && !ebarimtAldaa && (
+              <div className="pt-2 text-center">
+                <button
+                  type="button"
+                  onClick={() => ebarimtDuudya()}
+                  className="rounded-xl bg-theme/10 px-4 py-2 text-xs font-medium text-brand transition-colors hover:bg-theme/20"
+                >
+                  И-Баримт үүсгэх
+                </button>
+              </div>
+            )}
+          </div>
+
           <button
             onClick={ekhleeseeKhiiye}
             className="mx-auto flex items-center gap-2 text-xs text-[color:var(--muted-text)] transition-colors hover:text-[color:var(--panel-text)] dark:hover:text-white"

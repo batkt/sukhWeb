@@ -43,7 +43,7 @@ import {
 import { ConfigProvider } from "antd";
 import moment from "moment";
 import useSWR from "swr";
-import uilchilgee from "@/lib/uilchilgee";
+import uilchilgee, { socket as getSocket } from "@/lib/uilchilgee";
 import { getDefaultDateRange } from "@/lib/utils";
 import formatNumber from "../../../../../tools/function/formatNumber";
 import { toast } from "react-hot-toast";
@@ -225,13 +225,15 @@ function murNiiluulye(transaction: any) {
     )
     .reduce((sum: number, pay: any) => sum + Math.abs(pay?.dun ?? 0), 0);
   const effectiveOwed = Math.max(0, niitDun - discountTotal);
-  const positivePaid = tulburArr.reduce(
-    (sum: number, pay: any) => sum + (pay?.dun > 0 ? pay.dun : 0),
-    0,
-  );
+  const positivePaid =
+    tulburArr.reduce(
+      (sum: number, pay: any) => sum + (pay?.dun > 0 ? pay.dun : 0),
+      0,
+    ) || Number(mur?.tulsunDun || transaction?.tulsunDun || 0);
   const isDebt =
     !isFreeExit &&
-    (tuluv === -4 || (tuluv === 0 && niitDun > 0 && !isCurrentlyIn));
+    (tuluv === -4 ||
+      (tuluv === 0 && niitDun > 0 && !isCurrentlyIn && positivePaid < effectiveOwed));
   const hasRemainingBalance =
     !isFreeExit &&
     tuluv === 1 &&
@@ -244,7 +246,7 @@ function murNiiluulye(transaction: any) {
     if (tuluv === -2) return "bg-danger border-danger";
     if (isFreeExit || tuluv === -1) return "bg-neutral border-neutral";
     if (hasRemainingBalance) return "bg-warning border-warning";
-    if (tuluv === 1)
+    if (tuluv === 1 || (positivePaid >= effectiveOwed && effectiveOwed > 0))
       return isCurrentlyIn && niitDun === 0
         ? "bg-theme border-theme"
         : "bg-success border-success";
@@ -521,6 +523,28 @@ export default function Jagsaalt() {
       mutate();
     }
   }, [searchTerm, mutate, shouldFetch]);
+
+  // Real-time synchronization via Socket.IO
+  useEffect(() => {
+    const bId = ajiltan?.baiguullagiinId;
+    if (!bId) return;
+    const s = getSocket();
+    const handleUpdate = () => {
+      mutate();
+    };
+    s.on(`zogsool${bId}`, handleUpdate);
+    s.on(`parkingEntry/${bId}`, handleUpdate);
+    if (effectiveBarilgiinId) {
+      s.on(`parkingEntry/${bId}/${effectiveBarilgiinId}`, handleUpdate);
+    }
+    return () => {
+      s.off(`zogsool${bId}`, handleUpdate);
+      s.off(`parkingEntry/${bId}`, handleUpdate);
+      if (effectiveBarilgiinId) {
+        s.off(`parkingEntry/${bId}/${effectiveBarilgiinId}`, handleUpdate);
+      }
+    };
+  }, [ajiltan?.baiguullagiinId, effectiveBarilgiinId, mutate]);
 
   // Vehicles are already filtered by search on the API side
 
@@ -1255,11 +1279,22 @@ export default function Jagsaalt() {
       },
       render: (_: any, transaction: any) => {
         const paymentHistory = tulburTuukhAvya(transaction, "tulult");
-        if (!paymentHistory.length) return <span />;
-        const totalPaid = paymentHistory.reduce(
-          (sum: number, pay: any) => sum + (pay.dun || 0),
-          0,
-        );
+        const tulsunDun =
+          transaction.tuukh?.[0]?.tulsunDun || transaction.tulsunDun || 0;
+        if (!paymentHistory.length) {
+          return tulsunDun > 0 ? (
+            <span className="font-[family-name:var(--font-mono)]">
+              {formatNumber(tulsunDun, 2)}
+            </span>
+          ) : (
+            <span />
+          );
+        }
+        const totalPaid =
+          paymentHistory.reduce(
+            (sum: number, pay: any) => sum + (pay.dun || 0),
+            0,
+          ) || tulsunDun;
         const uniqueTypes = [
           ...new Set(paymentHistory.map((pay: any) => pay.turul).filter(Boolean)),
         ] as string[];
