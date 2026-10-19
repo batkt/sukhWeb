@@ -6,6 +6,8 @@ import { useTsonkh } from "@/lib/useTsonkh";
 import { HelpCircle, Info, BookOpen, AlertCircle, Loader2 } from "lucide-react";
 import { useTour } from "@/context/TourContext";
 
+import AdminZaavar from "@/components/shell/AdminZaavar";
+
 type Props = {
   ajiltan?: any;
   baiguullaga?: any;
@@ -66,6 +68,16 @@ export default function TuslamjTokhirgoo(props: Props) {
     return found?.t ?? null;
   }, [pathname, tsonkhList]);
 
+  const isDashboard = useMemo(() => {
+    const path = pathname?.replace(/\/$/, "") || "";
+    return (
+      !path ||
+      path === "/tokhirgoo" ||
+      currentTsonkh?.ner === "Хяналт" ||
+      currentTsonkh?.zaavar?.includes("Хяналт")
+    );
+  }, [pathname, currentTsonkh]);
+
   const hasContent = !!(
     currentTsonkh &&
     (currentTsonkh.zaavar || currentTsonkh.tailbar || currentTsonkh.ner)
@@ -85,17 +97,19 @@ export default function TuslamjTokhirgoo(props: Props) {
             </div>
             <div>
               <h2 className="text-[16px] text-[color:var(--panel-text)]">
-                {currentTsonkh?.ner || "Хуудасны зааварчилгаа"}
+                {isDashboard ? "Амархоум админ — хэрэглэх заавар" : (currentTsonkh?.ner || "Хуудасны зааварчилгаа")}
               </h2>
               <p className="text-[13px] text-[color:var(--muted-text)]">
-                {currentTsonkh?.ner ? "Энэ хуудасны тухай дэлгэрэнгүй мэдээлэл" : "Мэдээлэл байхгүй байна"}
+                {isDashboard ? "Системийн үндсэн зааварчилгаа, видео болон алхамчилсан тайлбар" : (currentTsonkh?.ner ? "Энэ хуудасны тухай дэлгэрэнгүй мэдээлэл" : "Мэдээлэл байхгүй байна")}
               </p>
             </div>
           </div>
 
           {/* Content Area */}
           <div className={`flex-1 min-h-0 overflow-y-auto custom-scrollbar p-5 text-[14px] leading-relaxed ${compact ? "" : "max-h-[calc(100dvh-280px)]"}`}>
-            {tsonkhLoading ? (
+            {isDashboard ? (
+              <AdminZaavar />
+            ) : tsonkhLoading ? (
               <div className="flex flex-col items-center justify-center py-20 text-[color:var(--muted-text)]">
                 <Loader2 className="w-10 h-10 animate-spin mb-4 text-brand" />
                 <p className="text-sm font-medium">Уншиж байна...</p>

@@ -1,17 +1,17 @@
 "use client";
 
 import { Suspense, lazy, useEffect, useState } from "react";
-import { EyeOff, HelpCircle, MessageSquare, RotateCcw, X } from "lucide-react";
-import { useTour } from "@/context/TourContext";
+import { HelpCircle, MessageSquare, X } from "lucide-react";
 import { ModalPortal } from "./ModalPortal";
 import { ICON_STROKE } from "./navConfig";
 
-const TuslamjTokhirgoo = lazy(() => import("@/app/(shell)/tokhirgoo/TuslamjTokhirgoo"));
+const AdminZaavar = lazy(() => import("@/components/shell/AdminZaavar"));
 const ChatWidget = lazy(() => import("@/components/ChatWidget"));
 
 function BodyFallback() {
   return (
-    <div className="space-y-3 p-8" aria-busy="true">
+    <div className="space-y-4 p-8" aria-busy="true">
+      <div className="h-64 w-full animate-pulse rounded-2xl bg-[color:var(--panel-text)]/5" />
       {[92, 76, 84, 60].map((w, i) => (
         <div
           key={i}
@@ -30,17 +30,9 @@ export default function HelpModal({
 }: {
   open: boolean;
   onClose: () => void;
-  /**
-   * Аль табаар нээгдэх. Хажуугийн цэсэнд «Шууд чат» ба «Ерөнхий тусламж»
-   * тус тусдаа мөр болсон тул дуудсан тал аль хуудсыг хүсэж байгаагаа
-   * шийднэ. Модал хаагдахдаа бүрэн unmount болдог тул дараагийн нээлт
-   * үргэлж шинэ `initialTab`-аас эхэлнэ.
-   */
   initialTab?: "instructions" | "chat";
 }) {
   const [tab, setTab] = useState<"instructions" | "chat">(initialTab);
-  // Өмнө нь баруун доорх хөвөгч «?» товчинд байсан хуудасны зааварчилгааны үйлдлүүд.
-  const { start, disable, enable, disabled } = useTour();
 
   useEffect(() => {
     if (!open) return;
@@ -51,7 +43,7 @@ export default function HelpModal({
 
   if (!open) return null;
 
-  const garchig = "Тусламж";
+  const garchig = "Тусламж ба заавар";
   const GarchigIcon = HelpCircle;
 
   const tabs = [
@@ -65,23 +57,23 @@ export default function HelpModal({
 
   return (
     <ModalPortal>
-      <div className="fixed inset-0 z-[1300] flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-[1300] flex items-center justify-center p-3 sm:p-5">
         <button
           type="button"
           aria-label="Хаах"
           onClick={onClose}
-          className="absolute inset-0 cursor-default bg-black/45"
+          className="absolute inset-0 cursor-default bg-black/55 backdrop-blur-sm"
         />
         <div
           role="dialog"
           aria-modal="true"
           aria-label={garchig}
-          className="shell-dialog relative flex max-h-[88vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-[color:var(--panel-text)]/12 bg-[color:var(--surface-bg)] shadow-[0_32px_80px_-24px_rgba(0,0,0,0.5)]"
+          className="shell-dialog relative flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-[color:var(--panel-text)]/12 bg-[color:var(--surface-bg)] shadow-[0_32px_80px_-24px_rgba(0,0,0,0.6)]"
         >
-          <header className="flex shrink-0 items-center justify-between border-b border-[color:var(--panel-text)]/10 px-6 py-4">
-            <h2 className="flex items-center gap-2 text-lg font-semibold tracking-[-0.015em] text-[color:var(--panel-text)]">
+          <header className="flex shrink-0 items-center justify-between border-b border-[color:var(--panel-text)]/10 px-5 sm:px-6 py-3.5 sm:py-4">
+            <h2 className="flex items-center gap-2.5 text-base sm:text-lg font-bold tracking-tight text-[color:var(--panel-text)]">
               <GarchigIcon
-                className="h-5 w-5 text-[color:var(--theme)]"
+                className="h-5 w-5 text-brand"
                 strokeWidth={ICON_STROKE}
               />
               {garchig}
@@ -90,7 +82,7 @@ export default function HelpModal({
               type="button"
               onClick={onClose}
               aria-label="Хаах"
-              className="grid h-9 w-9 place-items-center rounded-lg text-[color:var(--panel-text)]/60 transition-colors duration-200 hover:bg-[color:var(--panel-text)]/8 hover:text-[color:var(--panel-text)]"
+              className="grid h-9 w-9 place-items-center rounded-xl text-[color:var(--panel-text)]/60 transition-colors duration-200 hover:bg-[color:var(--panel-text)]/8 hover:text-[color:var(--panel-text)]"
             >
               <X className="h-5 w-5" strokeWidth={ICON_STROKE} />
             </button>
@@ -98,7 +90,7 @@ export default function HelpModal({
 
           <div
             role="tablist"
-            className="flex shrink-0 gap-1 border-b border-[color:var(--panel-text)]/10 px-4 py-2.5"
+            className="flex shrink-0 gap-1 border-b border-[color:var(--panel-text)]/10 px-4 py-2"
           >
             {tabs.map(({ key, label, icon: Icon }) => {
               const active = tab === key;
@@ -109,10 +101,10 @@ export default function HelpModal({
                   aria-selected={active}
                   type="button"
                   onClick={() => setTab(key)}
-                  className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 ${
+                  className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition-all duration-200 ${
                     active
-                      ? "bg-[color:var(--panel-text)]/8 text-[color:var(--panel-text)]"
-                      : "text-[color:var(--panel-text)]/55 hover:bg-[color:var(--panel-text)]/5 hover:text-[color:var(--panel-text)]/85"
+                      ? "bg-theme text-white shadow-sm"
+                      : "text-[color:var(--panel-text)]/60 hover:bg-[color:var(--panel-text)]/5 hover:text-[color:var(--panel-text)]"
                   }`}
                 >
                   <Icon className="h-4 w-4" strokeWidth={ICON_STROKE} />
@@ -122,49 +114,10 @@ export default function HelpModal({
             })}
           </div>
 
-          {/* Энэ хуудасны алхам алхмаар зааварчилгаа */}
-          <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-[color:var(--panel-text)]/10 bg-[color:var(--panel-text)]/[0.03] px-6 py-2.5">
-            <span className="text-[13px] text-[color:var(--panel-text)]/70">
-              Энэ хуудасны алхам алхмаар зааварчилгаа
-            </span>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  onClose();
-                  // Модал хаагдсаны дараа зааварчилгааны тодруулга зөв байрлалд гарна.
-                  setTimeout(() => start(undefined, true), 150);
-                }}
-                className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-theme px-3 text-[13px] font-medium !text-white transition-opacity hover:opacity-90"
-              >
-                <RotateCcw className="h-3.5 w-3.5" strokeWidth={ICON_STROKE} />
-                Эхлүүлэх
-              </button>
-              <button
-                type="button"
-                onClick={() => (disabled ? enable() : disable())}
-                title={disabled ? "Хуудас нээхэд зааварчилгааг автоматаар харуулна" : "Хуудас нээхэд зааварчилгааг автоматаар харуулахгүй"}
-                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[color:var(--panel-text)]/15 px-3 text-[13px] text-[color:var(--panel-text)]/80 transition-colors hover:bg-[color:var(--panel-text)]/5"
-              >
-                {disabled ? (
-                  <>
-                    <HelpCircle className="h-3.5 w-3.5" strokeWidth={ICON_STROKE} />
-                    Автоматаар харуулах
-                  </>
-                ) : (
-                  <>
-                    <EyeOff className="h-3.5 w-3.5" strokeWidth={ICON_STROKE} />
-                    Дахиж харуулахгүй
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-
-          <div className="scrollable min-h-[480px] flex-1 overflow-y-auto">
+          <div className="scrollable min-h-[480px] flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar">
             <Suspense fallback={<BodyFallback />}>
               {tab === "instructions" ? (
-                <TuslamjTokhirgoo compact />
+                <AdminZaavar />
               ) : (
                 <ChatWidget inline />
               )}
