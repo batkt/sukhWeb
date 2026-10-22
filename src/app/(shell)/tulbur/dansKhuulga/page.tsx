@@ -25,6 +25,8 @@ import matchesSearch from "@/tools/function/matchesSearch";
 import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
 import { DansKhuulgaTable } from "./DansKhuulgaTable";
 import { StandardPagination } from "@/components/ui/StandardTable";
+import BankStatementImportModal from "./BankStatementImportModal";
+import { Upload } from "lucide-react";
 
 type TableItem = {
   id: string | number;
@@ -98,6 +100,7 @@ export default function DansniiKhuulga() {
 
   // States for transaction linking (гүйлгээ холбох)
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+  const [isExcelImportModalOpen, setIsExcelImportModalOpen] = useState(false);
   const [selectedGuilgee, setSelectedGuilgee] = useState<TableItem | null>(null);
   const [searchContractQuery, setSearchContractQuery] = useState("");
   const [contractsList, setContractsList] = useState<any[]>([]);
@@ -891,6 +894,15 @@ export default function DansniiKhuulga() {
               loading={excelTatajBaina}
               onClick={khuulgaExcelTatya}
             />
+            <Button
+              className="flex items-center gap-1.5 h-9"
+              variant="secondary"
+              onClick={() => setIsExcelImportModalOpen(true)}
+              title="Дансны хуулгыг Excel-ээр оруулах & тулгах"
+            >
+              <Upload className="w-4 h-4" />
+              <span>Хуулга оруулах</span>
+            </Button>
             </div>
           </div>
 
@@ -1111,6 +1123,18 @@ export default function DansniiKhuulga() {
         onCancel={() => setPendingUnlink(null)}
         onConfirm={confirmUnlinkTransaction}
       />
+      {ajiltan?.baiguullagiinId && (
+        <BankStatementImportModal
+          opened={isExcelImportModalOpen}
+          onClose={() => setIsExcelImportModalOpen(false)}
+          baiguullagiinId={String(ajiltan.baiguullagiinId)}
+          barilgiinId={barilgiinId || undefined}
+          selectedDansId={selectedDansId}
+          onSuccess={() => {
+            fetchBankTransfers();
+          }}
+        />
+      )}
     </>
   );
 }
