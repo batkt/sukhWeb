@@ -68,6 +68,7 @@ import TransactionModal, {
 import HistoryModal from "../../geree/modals/HistoryModal";
 import InvoiceModal from "../../geree/modals/InvoiceModal";
 import InitialBalanceExcelModal from "../modals/InitialBalanceExcelModal";
+import BankStatementImportModal from "../modals/BankStatementImportModal";
 import { useGereeActions } from "@/lib/useGereeActions";
 import { StandardPagination } from "@/components/ui/StandardTable";
 import {
@@ -274,6 +275,8 @@ export default function DansniiKhuulga() {
     useState<any>(null);
   const [isProcessingTransaction, setIsProcessingTransaction] = useState(false);
   const [isInitialBalanceModalOpen, setIsInitialBalanceModalOpen] =
+    useState(false);
+  const [isBankStatementModalOpen, setIsBankStatementModalOpen] =
     useState(false);
   const [invoiceRefreshTrigger, setInvoiceRefreshTrigger] = useState(0);
   // Map gereeId -> latest row uldegdel from history ledger
@@ -4014,6 +4017,16 @@ export default function DansniiKhuulga() {
                   />
                 </motion.div>
               </Tooltip>
+              <Tooltip title="Дансны хуулга оруулах & тулгах">
+                <motion.div>
+                  <IconTextButton
+                    onClick={() => setIsBankStatementModalOpen(true)}
+                    icon={<FileSpreadsheet className="h-4 w-4" />}
+                    label="Хуулга оруулах"
+                    className="btn-minimal inline-flex h-9 items-center justify-center gap-1.5 px-3"
+                  />
+                </motion.div>
+              </Tooltip>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -4303,6 +4316,35 @@ export default function DansniiKhuulga() {
           );
           setLatestRowUldegdelByGereeId({});
           latestRowUldegdelRequestedRef.current.clear();
+        }}
+      />
+
+      {/* Bank Statement Import & Auto-Match Modal */}
+      <BankStatementImportModal
+        show={isBankStatementModalOpen}
+        onClose={() => setIsBankStatementModalOpen(false)}
+        baiguullagiinId={ajiltan?.baiguullagiinId || ""}
+        barilgiinId={selectedBuildingId || barilgiinId || undefined}
+        onSuccess={() => {
+          mutate(
+            (key: any) =>
+              Array.isArray(key) && key[0] === "/nekhemjlekhiinTuukh",
+            undefined,
+            { revalidate: true },
+          );
+          mutate(
+            (key: any) => Array.isArray(key) && key[0] === "/geree",
+            undefined,
+            { revalidate: true },
+          );
+          mutate(
+            (key: any) => Array.isArray(key) && key[0] === "/guilgeeAvlaguud",
+            undefined,
+            { revalidate: true },
+          );
+          setLatestRowUldegdelByGereeId({});
+          latestRowUldegdelRequestedRef.current.clear();
+          setInvoiceRefreshTrigger((t) => t + 1);
         }}
       />
 
