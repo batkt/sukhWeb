@@ -14,6 +14,7 @@ import {
   Search,
   Check,
   RefreshCw,
+  Calendar,
 } from "lucide-react";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import uilchilgee from "@/lib/uilchilgee";
@@ -106,6 +107,10 @@ export default function BankStatementImportModal({
   >("ALL");
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Date filters: selected month and specific day
+  const [selectedMonth, setSelectedMonth] = useState<string>("ALL");
+  const [selectedDay, setSelectedDay] = useState<string>("");
+
   useModalHotkeys({
     isOpen: show,
     onClose,
@@ -137,10 +142,33 @@ export default function BankStatementImportModal({
         const parsedRows: PreviewRow[] = resp.data.rows || [];
         setRows(parsedRows);
 
-        // Pre-select rows that are EXACT or MULTI for import
+        // Calculate available months from rows
+        const monthsFound = new Set<string>();
+        parsedRows.forEach((r) => {
+          const m = (r.date || "").replace(/-/g, ".").substring(0, 7);
+          if (/^\d{4}\.\d{2}$/.test(m)) monthsFound.add(m);
+        });
+        const sortedMonths = Array.from(monthsFound).sort().reverse();
+
+        // Default to October (2026.10) if present in the data, or current month, or latest month
+        const now = new Date();
+        const curM = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, "0")}`;
+        const defaultM = sortedMonths.includes("2026.10")
+          ? "2026.10"
+          : sortedMonths.includes(curM)
+          ? curM
+          : sortedMonths[0] || "ALL";
+
+        setSelectedMonth(defaultM);
+        setSelectedDay("");
+
+        // Pre-select rows that are EXACT or MULTI for import in that default month
         const autoSelected = new Set<number>();
         parsedRows.forEach((r) => {
+          const rMonth = (r.date || "").replace(/-/g, ".").substring(0, 7);
+          const inDefault = defaultM === "ALL" || rMonth === defaultM;
           if (
+            inDefault &&
             (r.status === "EXACT" || r.status === "MULTI") &&
             r.action === "IMPORT_AND_PAY"
           ) {
@@ -148,17 +176,119 @@ export default function BankStatementImportModal({
           }
         });
         setSelectedRowIds(autoSelected);
+
         toast.success(
           `Хуулга уншигдлаа: ${parsedRows.length} мөрөөс ${resp.data.summary?.exactCount} гүйлгээ автоматаар таарлаа.`
         );
       } else {
-        toast.error(resp.data?.message || "Файл задлахад алдаа гарлаа");
+        toast.error(resp.data?.aldaa || resp.data?.message || "Файл задлахад алдаа гарлаа");
       }
     } catch (err: any) {
       console.error("Preview error:", err);
-      toast.error(err.response?.data?.message || err.message || "Серверт алдаа гарлаа");
+      toast.error(
+        err.response?.data?.aldaa ||
+          err.response?.data?.message ||
+          err.message ||
+          "Серверт алдаа гарлаа"
+      );
     } finally {
       setLoadingPreview(false);
+    }
+  };
+
+  // Available unique months sorted descending (e.g. 2026.10, 2026.09, ...)
+  const availableMonths = useMemo(() => {
+    const set = new Set<string>();
+    rows.forEach((r) => {
+      const m = (r.date || "").replace(/-/g, ".").substring(0, 7);
+      if (/^\d{4}\.\d{2}$/.test(m)) set.add(m);
+    });
+    return Array.from(set).sort().reverse();
+  }, [rows]);
+
+  // Format month to readable label: e.g. "2026 он - 10-р сар"
+  const formatMonthLabel = (m: string) => {
+    if (m === "ALL") return "Бүх сарууд";
+    const [year, month] = m.split(".");
+    const mNum = parseInt(month, 10);
+    return `${year} он - ${mNum}-р сар`;
+  };
+
+  // Determine min and max date from rows for date picker range
+  const { minDate, maxDate } = useMemo(() => {
+    if (rows.length === 0) return { minDate: undefined, maxDate: undefined };
+    let min = "9999-99-99";
+    let max = "0000-00-00";
+    rows.forEach((r) => {
+      const d = (r.date || "").replace(/\./g, "-").substring(0, 10);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+        if (d < min) min = d;
+        if (d > max) max = d;
+      }
+    });
+    return {
+      minDate: min !== "9999-99-99" ? min : undefined,
+      maxDate: max !== "0000-00-00" ? max : undefined,
+    };
+  }, [rows]);
+
+  // Handle month selection change
+  const handleMonthChange = (newMonth: string) => {
+    setSelectedMonth(newMonth);
+    setSelectedDay("");
+
+    // Automatically update selections for the newly active month
+    const newSelected = new Set<number>();
+    rows.forEach((r) => {
+      const rMonth = (r.date || "").replace(/-/g, ".").substring(0, 7);
+      const inMonth = newMonth === "ALL" || rMonth === newMonth;
+      if (
+        inMonth &&
+        (r.status === "EXACT" || r.status === "MULTI") &&
+        r.action === "IMPORT_AND_PAY"
+      ) {
+        newSelected.add(r.rowNumber);
+      }
+    });
+    setSelectedRowIds(newSelected);
+  };
+
+  // Handle specific day selection change
+  const handleDayChange = (newDay: string) => {
+    setSelectedDay(newDay);
+    if (newDay) {
+      const m = newDay.substring(0, 7).replace(/-/g, ".");
+      if (availableMonths.includes(m)) {
+        setSelectedMonth(m);
+      }
+      const selDayNorm = newDay.replace(/\./g, "-");
+      const newSelected = new Set<number>();
+      rows.forEach((r) => {
+        const rDateNorm = (r.date || "").replace(/\./g, "-");
+        if (
+          rDateNorm.startsWith(selDayNorm) &&
+          (r.status === "EXACT" || r.status === "MULTI") &&
+          r.action === "IMPORT_AND_PAY"
+        ) {
+          newSelected.add(r.rowNumber);
+        }
+      });
+      setSelectedRowIds(newSelected);
+    } else {
+      // If cleared, revert selections to the currently selected month
+      const newSelected = new Set<number>();
+      rows.forEach((r) => {
+        const rMonth = (r.date || "").replace(/-/g, ".").substring(0, 7);
+        const inMonth = selectedMonth === "ALL" || rMonth === selectedMonth;
+        if (
+          inMonth &&
+          (r.status === "EXACT" || r.status === "MULTI") &&
+          r.action === "IMPORT_AND_PAY"
+        ) {
+          newSelected.add(r.rowNumber);
+        }
+      });
+      setSelectedRowIds(newSelected);
     }
   };
 
@@ -206,9 +336,60 @@ export default function BankStatementImportModal({
     );
   };
 
-  // Filtered rows
-  const filteredRows = useMemo(() => {
+  // Rows filtered by Date (Month & Day)
+  const dateFilteredRows = useMemo(() => {
     return rows.filter((r) => {
+      // If a specific day is selected (e.g. 2026-10-21)
+      if (selectedDay) {
+        const rowDateNorm = (r.date || "").replace(/\./g, "-");
+        const selDayNorm = selectedDay.replace(/\./g, "-");
+        if (!rowDateNorm.startsWith(selDayNorm)) return false;
+      } else if (selectedMonth && selectedMonth !== "ALL") {
+        // If a month is selected (e.g. 2026.10)
+        const rowMonthNorm = (r.date || "").replace(/-/g, ".").substring(0, 7);
+        const selMonthNorm = selectedMonth.replace(/-/g, ".").substring(0, 7);
+        if (rowMonthNorm !== selMonthNorm) return false;
+      }
+      return true;
+    });
+  }, [rows, selectedMonth, selectedDay]);
+
+  // Statistics for the currently selected Date / Month
+  const currentViewStats = useMemo(() => {
+    let exactCount = 0;
+    let multiCount = 0;
+    let unmatchedCount = 0;
+    let alreadyImportedCount = 0;
+    let skipCount = 0;
+    let totalIncome = 0;
+    let totalExpense = 0;
+
+    dateFilteredRows.forEach((r) => {
+      if (r.status === "EXACT") exactCount++;
+      else if (r.status === "MULTI") multiCount++;
+      else if (r.status === "UNMATCHED") unmatchedCount++;
+      else if (r.status === "ALREADY_IMPORTED") alreadyImportedCount++;
+      else if (r.status === "SKIP") skipCount++;
+
+      if (r.orlogo > 0) totalIncome += r.orlogo;
+      if (r.zarlaga > 0) totalExpense += r.zarlaga;
+    });
+
+    return {
+      totalRows: dateFilteredRows.length,
+      exactCount,
+      multiCount,
+      unmatchedCount,
+      alreadyImportedCount,
+      skipCount,
+      totalIncome,
+      totalExpense,
+    };
+  }, [dateFilteredRows]);
+
+  // Rows after Tab + Search filters
+  const filteredRows = useMemo(() => {
+    return dateFilteredRows.filter((r) => {
       // Tab filter
       if (activeTab === "EXACT" && r.status !== "EXACT") return false;
       if (activeTab === "MULTI" && r.status !== "MULTI") return false;
@@ -243,7 +424,7 @@ export default function BankStatementImportModal({
 
       return true;
     });
-  }, [rows, activeTab, searchQuery]);
+  }, [dateFilteredRows, activeTab, searchQuery]);
 
   // Selected Amount Total
   const selectedTotalAmount = useMemo(() => {
@@ -292,11 +473,16 @@ export default function BankStatementImportModal({
         onSuccess();
         onClose();
       } else {
-        toast.error(resp.data?.message || "Бүртгэхэд алдаа гарлаа");
+        toast.error(resp.data?.aldaa || resp.data?.message || "Бүртгэхэд алдаа гарлаа");
       }
     } catch (err: any) {
       console.error("Confirm import error:", err);
-      toast.error(err.response?.data?.message || err.message || "Алдаа гарлаа");
+      toast.error(
+        err.response?.data?.aldaa ||
+          err.response?.data?.message ||
+          err.message ||
+          "Алдаа гарлаа"
+      );
     } finally {
       setSubmitting(false);
     }
@@ -389,7 +575,7 @@ export default function BankStatementImportModal({
                   </div>
                 ) : (
                   <>
-                    {/* Summary Stats Cards */}
+                    {/* Summary Stats Cards (Updates based on selected Date / Month) */}
                     <div className="grid grid-cols-2 md:grid-cols-6 gap-2.5">
                       <div
                         onClick={() => setActiveTab("ALL")}
@@ -400,9 +586,9 @@ export default function BankStatementImportModal({
                         }`}
                       >
                         <div className="text-[11px] text-[color:var(--muted-text)] font-medium">Нийт гүйлгээ</div>
-                        <div className="text-lg font-bold mt-0.5">{summary.totalRows}</div>
+                        <div className="text-lg font-bold mt-0.5">{currentViewStats.totalRows}</div>
                         <div className="text-[10px] text-[color:var(--muted-text)] mt-0.5">
-                          {formatNumber(summary.totalIncome)}₮
+                          {formatNumber(currentViewStats.totalIncome)}₮
                         </div>
                       </div>
 
@@ -419,7 +605,7 @@ export default function BankStatementImportModal({
                           Таарсан
                         </div>
                         <div className="text-lg font-bold mt-0.5 text-emerald-600">
-                          {summary.exactCount}
+                          {currentViewStats.exactCount}
                         </div>
                         <div className="text-[10px] text-emerald-600/70 mt-0.5">
                           Шууд бүртгэхэд бэлэн
@@ -439,7 +625,7 @@ export default function BankStatementImportModal({
                           Олон гэрээтэй
                         </div>
                         <div className="text-lg font-bold mt-0.5 text-amber-600">
-                          {summary.multiCount}
+                          {currentViewStats.multiCount}
                         </div>
                         <div className="text-[10px] text-amber-600/70 mt-0.5">
                           Сонголт хийх
@@ -459,7 +645,7 @@ export default function BankStatementImportModal({
                           Таараагүй
                         </div>
                         <div className="text-lg font-bold mt-0.5 text-rose-600">
-                          {summary.unmatchedCount}
+                          {currentViewStats.unmatchedCount}
                         </div>
                         <div className="text-[10px] text-rose-600/70 mt-0.5">
                           Тоот тодорхойгүй
@@ -479,7 +665,7 @@ export default function BankStatementImportModal({
                           Өмнө нь орсон
                         </div>
                         <div className="text-lg font-bold mt-0.5 text-cyan-600">
-                          {summary.alreadyImportedCount}
+                          {currentViewStats.alreadyImportedCount}
                         </div>
                         <div className="text-[10px] text-cyan-600/70 mt-0.5">
                           Давхардахгүй
@@ -498,21 +684,22 @@ export default function BankStatementImportModal({
                           <Ban className="h-3.5 w-3.5" />
                           Шимтгэл / Зарлага
                         </div>
-                        <div className="text-lg font-bold mt-0.5">{summary.skipCount}</div>
+                        <div className="text-lg font-bold mt-0.5">{currentViewStats.skipCount}</div>
                         <div className="text-[10px] text-[color:var(--muted-text)] mt-0.5">
                           Алгасах
                         </div>
                       </div>
                     </div>
 
-                    {/* Filter & Search Bar */}
+                    {/* Filter & Date Picker Toolbar */}
                     <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-                      <div className="flex items-center gap-3 flex-1 min-w-[280px]">
-                        <div className="relative flex-1 max-w-md">
+                      {/* Left: Search input + Select visible button */}
+                      <div className="flex items-center gap-2.5 flex-1 min-w-[260px]">
+                        <div className="relative flex-1 max-w-sm">
                           <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                           <input
                             type="text"
-                            placeholder="Тоот, нэр, утга, дүн, журналаар хайх..."
+                            placeholder="Тоот, нэр, утга, дүн, журнал..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="w-full h-9 pl-9 pr-3 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-xs focus:outline-none focus:ring-2 focus:ring-theme/30"
@@ -521,14 +708,55 @@ export default function BankStatementImportModal({
 
                         <button
                           onClick={toggleSelectAllVisible}
-                          className="flex items-center gap-1.5 px-3 h-9 rounded-xl border border-[color:var(--surface-border)] hover:bg-theme/5 text-xs font-medium transition"
+                          className="flex items-center gap-1.5 px-3 h-9 rounded-xl border border-[color:var(--surface-border)] hover:bg-theme/5 text-xs font-medium transition shrink-0"
                         >
                           <Check className="h-3.5 w-3.5" />
                           Харагдаж буйг сонгох ({filteredRows.length})
                         </button>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      {/* Right: Date Filters (Month + Specific Day) + Change File */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {/* Month Selector */}
+                        <div className="flex items-center gap-1.5 px-3 h-9 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-xs font-medium shadow-sm hover:border-theme/40 transition">
+                          <Calendar className="h-3.5 w-3.5 text-theme shrink-0" />
+                          <select
+                            value={selectedMonth}
+                            onChange={(e) => handleMonthChange(e.target.value)}
+                            className="bg-transparent border-none text-xs font-semibold text-[color:var(--panel-text)] focus:outline-none cursor-pointer pr-1"
+                          >
+                            <option value="ALL">Бүх сарууд</option>
+                            {availableMonths.map((m) => (
+                              <option key={m} value={m}>
+                                {formatMonthLabel(m)}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Specific Day Picker */}
+                        <div className="relative flex items-center">
+                          <input
+                            type="date"
+                            value={selectedDay}
+                            min={minDate}
+                            max={maxDate}
+                            onChange={(e) => handleDayChange(e.target.value)}
+                            title="Тодорхой нэг өдрөөр нарийвчлан шүүх"
+                            className="h-9 px-3 pr-8 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-xs font-medium text-[color:var(--panel-text)] focus:outline-none focus:ring-2 focus:ring-theme/30 cursor-pointer shadow-sm"
+                          />
+                          {selectedDay ? (
+                            <button
+                              onClick={() => handleDayChange("")}
+                              title="Өдрийн шүүлтийг арилгах"
+                              className="absolute right-2.5 p-0.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          ) : null}
+                        </div>
+
+                        {/* File Replace */}
                         <input
                           ref={fileInputRef}
                           type="file"
@@ -538,12 +766,32 @@ export default function BankStatementImportModal({
                         />
                         <button
                           onClick={() => fileInputRef.current?.click()}
-                          className="flex items-center gap-1.5 px-3 h-9 rounded-xl border border-[color:var(--surface-border)] hover:bg-theme/5 text-xs text-[color:var(--panel-text)] font-medium transition"
+                          className="flex items-center gap-1.5 px-3 h-9 rounded-xl border border-[color:var(--surface-border)] hover:bg-theme/5 text-xs text-[color:var(--panel-text)] font-medium transition shrink-0"
                         >
                           <RefreshCw className="h-3.5 w-3.5" />
-                          Өөр файл сонгох
+                          Өөр файл
                         </button>
                       </div>
+                    </div>
+
+                    {/* Active Filter Indicator Badge */}
+                    <div className="flex items-center justify-between px-1 text-xs text-[color:var(--muted-text)] font-medium">
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-theme/10 text-theme font-semibold">
+                          <Calendar className="h-3.5 w-3.5" />
+                          {selectedDay
+                            ? `${selectedDay} өдрийн гүйлгээ`
+                            : selectedMonth !== "ALL"
+                            ? `${formatMonthLabel(selectedMonth)}ын гүйлгээ`
+                            : "Бүх хугацааны гүйлгээ"}
+                        </span>
+                        <span>Харагдаж буй: <strong className="text-[color:var(--panel-text)]">{filteredRows.length}</strong> гүйлгээ</span>
+                      </div>
+                      {selectedRowIds.size > 0 && (
+                        <div className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                          Импортлохоор сонгосон: {selectedRowIds.size} гүйлгээ ({formatNumber(selectedTotalAmount)}₮)
+                        </div>
+                      )}
                     </div>
 
                     {/* Table View */}
@@ -564,7 +812,7 @@ export default function BankStatementImportModal({
                           {filteredRows.length === 0 ? (
                             <tr>
                               <td colSpan={7} className="py-12 text-center text-[color:var(--muted-text)]">
-                                Илэрц олдсонгүй
+                                Сонгосон огноо / шүүлтүүрт тохирох гүйлгээ олдсонгүй
                               </td>
                             </tr>
                           ) : (
