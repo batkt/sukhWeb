@@ -32,6 +32,7 @@ interface ZardalItem {
   zaalt?: boolean;
   zaaltTariff?: number;
   zaaltDefaultDun?: number;
+  zoriulalt?: "orshinSuugch" | "khariltsagch";
 }
 
 interface UseAshiglaltiinZardluudReturn {
@@ -128,6 +129,7 @@ export function useAshiglaltiinZardluud(overrides?: {
       zaalt: zardalData.zaalt ?? false,
       zaaltTariff: zardalData.zaaltTariff ?? 0,
       zaaltDefaultDun: zardalData.zaaltDefaultDun ?? 0,
+      zoriulalt: zardalData.zoriulalt ?? "orshinSuugch",
     };
 
     await uilchilgee(token).post("/ashiglaltiinZardluud", payload);

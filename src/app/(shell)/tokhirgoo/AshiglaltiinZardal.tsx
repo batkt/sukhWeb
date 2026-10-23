@@ -40,6 +40,8 @@ import {
   AlertTriangle,
   Plus,
   CopyPlus,
+  User,
+  Building2,
 } from "lucide-react";
 import ExcelButton from "@/components/ui/ExcelButton";
 import uilchilgee from "@/lib/uilchilgee";
@@ -76,6 +78,7 @@ interface ZardalItem {
   // Electricity tiered pricing
   tariff150kv?: number;
   tariff150to300kv?: number;
+  zoriulalt?: "orshinSuugch" | "khariltsagch";
   tariff300pluskv?: number;
 }
 
@@ -96,6 +99,7 @@ interface ZardalFormData {
   // Electricity tiered pricing
   tariff150kv?: number;
   tariff150to300kv?: number;
+  zoriulalt?: "orshinSuugch" | "khariltsagch";
   tariff300pluskv?: number;
 }
 
@@ -233,6 +237,7 @@ export default function AshiglaltiinZardluud() {
   ]);
 
   const [pageSize] = useState(500);
+  const [activeOwnerTab, setActiveOwnerTab] = useState<"orshinSuugch" | "khariltsagch">("orshinSuugch");
   // Зардлын нэрээр хайх — дээд талын (Topbar) нэгдсэн хайлтаас.
   const { searchTerm: filterText } = useSearch();
   // Хүснэгтэд хэдэн зардал шууд харуулах вэ. Үүнээс олон бол «Бүгдийг харах»
@@ -260,10 +265,24 @@ export default function AshiglaltiinZardluud() {
   // Хоёр хүснэгт ижил шүүлтүүрийг мөр бүрт давтан бичдэг байсныг нэг дор
   // төвлөрүүлэв. Толгой дахь тоо, мөрүүд, нийт дүн гурав нь ижил жагсаалтаас
   // уншина.
-  const zardliigShuuye = (zardliinTurul: string) =>
+  const orshinSuugchZardluud = useMemo(
+    () => ashiglaltiinZardluud.filter((x) => x._id && x.zoriulalt !== "khariltsagch"),
+    [ashiglaltiinZardluud],
+  );
+  const khariltsagchZardluud = useMemo(
+    () => ashiglaltiinZardluud.filter((x) => x._id && x.zoriulalt === "khariltsagch"),
+    [ashiglaltiinZardluud],
+  );
+
+  const zardliigShuuye = (turul: string) =>
     ashiglaltiinZardluud
       .filter((x) => x._id)
-      .filter((x) => x.turul === zardliinTurul)
+      .filter((x) => x.turul === turul)
+      .filter((x) =>
+        activeOwnerTab === "khariltsagch"
+          ? x.zoriulalt === "khariltsagch"
+          : x.zoriulalt !== "khariltsagch",
+      )
       .filter((x) =>
         filterText.trim() === ""
           ? true
@@ -274,11 +293,11 @@ export default function AshiglaltiinZardluud() {
 
   const togtmolZardluud = useMemo(
     () => zardliigShuuye("Тогтмол"),
-    [ashiglaltiinZardluud, filterText],
+    [ashiglaltiinZardluud, filterText, activeOwnerTab],
   );
   const khuvisakhZardluud = useMemo(
     () => zardliigShuuye("Дурын"),
-    [ashiglaltiinZardluud, filterText],
+    [ashiglaltiinZardluud, filterText, activeOwnerTab],
   );
 
   const niitDungBodyo = (jagsaalt: ZardalItem[], tsakhilgaanShalgakh = true) =>
@@ -527,6 +546,16 @@ export default function AshiglaltiinZardluud() {
     { label: "Дулаан", name: "Дулаан", turul: "Тогтмол", zardliinTurul: "Энгийн", icon: Tag },
   ];
 
+  const KHARILTSAGCH_PRESETS = [
+    { label: "Түрээс", name: "Түрээсийн төлбөр", turul: "Тогтмол", zardliinTurul: "Энгийн", icon: Wallet },
+    { label: "Үйлчилгээний хураамж", name: "Үйлчилгээний хураамж", turul: "Тогтмол", zardliinTurul: "Энгийн", icon: Tag },
+    { label: "Харуул", name: "Харуул хамгаалалт", turul: "Тогтмол", zardliinTurul: "Энгийн", icon: Building },
+    { label: "Хог", name: "Хог", turul: "Тогтмол", zardliinTurul: "Энгийн", icon: Tag },
+    { label: "Цахилгаан", name: "Цахилгаан", turul: "Дурын", zardliinTurul: "Энгийн", icon: Zap, zaalt: true, tariffUsgeer: "кВт" },
+    { label: "Цэвэр ус", name: "Цэвэр ус", turul: "Дурын", zardliinTurul: "Энгийн", icon: Tag },
+    { label: "Дулаан", name: "Дулаан", turul: "Тогтмол", zardliinTurul: "Энгийн", icon: Tag },
+  ];
+
 
   const applyQuickPreset = (preset: (typeof QUICK_PRESETS)[number]) => {
     const isCakhilgaan = preset.name.toLowerCase().includes("цахилгаан");
@@ -563,6 +592,7 @@ export default function AshiglaltiinZardluud() {
       tariff150kv: 0,
       tariff150to300kv: 0,
       tariff300pluskv: 0,
+      zoriulalt: activeOwnerTab,
     });
     setTariffInputValue("");
     setSuuriKhuraamjInput("");
@@ -593,6 +623,7 @@ export default function AshiglaltiinZardluud() {
       tariff150kv: item.tariff150kv || 0,
       tariff150to300kv: item.tariff150to300kv || 0,
       tariff300pluskv: item.tariff300pluskv || 0,
+      zoriulalt: item.zoriulalt || "orshinSuugch",
     });
     setTariffInputValue(
       item.tariff ? formatNumber(item.tariff, 2) : "",
@@ -645,6 +676,7 @@ export default function AshiglaltiinZardluud() {
 
       let payload = {
         ...formData,
+        zoriulalt: formData.zoriulalt || activeOwnerTab || "orshinSuugch",
         barilgiinId: selectedBuildingId || barilgiinId || undefined,
       };
 
@@ -821,9 +853,14 @@ export default function AshiglaltiinZardluud() {
         dataIndex: "ner",
         key: "ner",
         width: "45%",
-        render: (v: any) => (
-          <div className="max-w-[260px] break-words text-[14px] leading-snug text-[color:var(--panel-text)] sm:max-w-[420px]">
-            {v}
+        render: (v: any, mur: any) => (
+          <div className="flex flex-wrap items-center gap-2 max-w-[260px] break-words text-[14px] leading-snug text-[color:var(--panel-text)] sm:max-w-[420px]">
+            <span>{v}</span>
+            {mur.zoriulalt === "khariltsagch" && (
+              <span className="inline-flex items-center rounded-md bg-theme/10 px-1.5 py-0.5 text-[11px] font-medium text-brand whitespace-nowrap">
+                Харилцагч
+              </span>
+            )}
           </div>
         ),
       },
@@ -1001,6 +1038,52 @@ export default function AshiglaltiinZardluud() {
           </div>
         </div>
 
+        {/* Оршин суугч / Харилцагч таб */}
+        <div className="flex items-center gap-1 rounded-xl bg-theme/5 p-1 border border-[color:var(--surface-border)] w-fit">
+          <button
+            type="button"
+            onClick={() => setActiveOwnerTab("orshinSuugch")}
+            className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-[13px] font-medium transition-all cursor-pointer ${
+              activeOwnerTab === "orshinSuugch"
+                ? "bg-theme text-white shadow-xs"
+                : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+            }`}
+          >
+            <User className="h-4 w-4" />
+            <span>Оршин суугч</span>
+            <span
+              className={`rounded-full px-2 py-0.2 text-[11px] font-semibold tabular-nums ${
+                activeOwnerTab === "orshinSuugch"
+                  ? "bg-white/20 text-white"
+                  : "bg-theme/10 text-brand"
+              }`}
+            >
+              {orshinSuugchZardluud.length}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveOwnerTab("khariltsagch")}
+            className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-[13px] font-medium transition-all cursor-pointer ${
+              activeOwnerTab === "khariltsagch"
+                ? "bg-theme text-white shadow-xs"
+                : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+            }`}
+          >
+            <Building2 className="h-4 w-4" />
+            <span>Харилцагч</span>
+            <span
+              className={`rounded-full px-2 py-0.2 text-[11px] font-semibold tabular-nums ${
+                activeOwnerTab === "khariltsagch"
+                  ? "bg-white/20 text-white"
+                  : "bg-theme/10 text-brand"
+              }`}
+            >
+              {khariltsagchZardluud.length}
+            </span>
+          </button>
+        </div>
+
         <div className="stg-stack">
           <SettingsCard
             icon={<CalendarCheck className="h-4 w-4" />}
@@ -1036,7 +1119,9 @@ export default function AshiglaltiinZardluud() {
                   emptyText: (
                     <div className="py-4">
                       <p className="text-[14px] text-[color:var(--panel-text)]">
-                        Тогтмол зардал одоогоор алга
+                        {activeOwnerTab === "khariltsagch"
+                          ? "Харилцагчийн тогтмол зардал одоогоор алга"
+                          : "Тогтмол зардал одоогоор алга"}
                       </p>
                       <p className="mt-1 text-[13px] text-[color:var(--muted-text)]">
                         Дээрх «Зардал нэмэх» товчийг дарж эхний зардлаа нэмнэ үү
@@ -1117,7 +1202,9 @@ export default function AshiglaltiinZardluud() {
                   emptyText: (
                     <div className="py-4">
                       <p className="text-[14px] text-[color:var(--panel-text)]">
-                        Хувьсах зардал одоогоор алга
+                        {activeOwnerTab === "khariltsagch"
+                          ? "Харилцагчийн хувьсах зардал одоогоор алга"
+                          : "Хувьсах зардал одоогоор алга"}
                       </p>
                       <p className="mt-1 text-[13px] text-[color:var(--muted-text)]">
                         Дээрх «Зардал нэмэх» товчийг дарж эхний зардлаа нэмнэ үү
@@ -1235,6 +1322,56 @@ export default function AshiglaltiinZardluud() {
                       !formData.ner.toLowerCase().includes("өмчлөл");
                     return (
                       <div className="overflow-y-auto custom-scrollbar space-y-4 px-6 py-5">
+                        {/* Зардлын зориулалт: Оршин суугч / Харилцагч таб */}
+                        <div className="az-row">
+                          <label className="az-label">
+                            Зориулалт <span className="text-danger">*</span>
+                          </label>
+                          <div className="min-w-0">
+                            <div className="flex rounded-xl bg-theme/5 p-1 border border-[color:var(--surface-border)]">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    zoriulalt: "orshinSuugch",
+                                  }))
+                                }
+                                className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-[13px] font-medium transition-all cursor-pointer ${
+                                  formData.zoriulalt !== "khariltsagch"
+                                    ? "bg-theme text-white shadow-xs"
+                                    : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+                                }`}
+                              >
+                                <User className="w-4 h-4" />
+                                <span>Оршин суугч</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    zoriulalt: "khariltsagch",
+                                  }))
+                                }
+                                className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-[13px] font-medium transition-all cursor-pointer ${
+                                  formData.zoriulalt === "khariltsagch"
+                                    ? "bg-theme text-white shadow-xs"
+                                    : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+                                }`}
+                              >
+                                <Building2 className="w-4 h-4" />
+                                <span>Харилцагч</span>
+                              </button>
+                            </div>
+                            <p className="mt-1.5 text-[12px] text-[color:var(--muted-text)]">
+                              {formData.zoriulalt === "khariltsagch"
+                                ? "Энэ зардал нь зөвхөн харилцагчийн гэрээнд уншигдана."
+                                : "Энэ зардал нь оршин суугчдын гэрээнд уншигдана."}
+                            </p>
+                          </div>
+                        </div>
+
                         <div className="az-row">
                           <label htmlFor="az-ner" className="az-label">
                             Зардлын нэр <span className="text-danger">*</span>
@@ -1266,7 +1403,7 @@ export default function AshiglaltiinZardluud() {
                             </div>
                             {!editingItem && (
                               <div className="mt-2 flex flex-wrap gap-1.5">
-                                {QUICK_PRESETS.map((preset) => {
+                                {(formData.zoriulalt === "khariltsagch" ? KHARILTSAGCH_PRESETS : QUICK_PRESETS).map((preset) => {
                                   const isActive = formData.ner.trim().toLowerCase() === preset.name.toLowerCase();
                                   return (
                                     <button
