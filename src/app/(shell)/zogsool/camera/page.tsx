@@ -43,6 +43,7 @@ import {
   CalendarCheck,
   Banknote,
   AlertTriangle,
+  Search,
 } from "lucide-react";
 import { ConfigProvider } from "antd";
 import moment from "moment";
@@ -227,7 +228,7 @@ export default function Camera() {
   const { token, ajiltan, baiguullaga, barilgiinId } = useAuth();
   const { selectedBuildingId, isInitialized } = useBuilding();
   const effectiveBarilgiinId = selectedBuildingId || barilgiinId || undefined;
-  const { searchTerm } = useSearch();
+  const { searchTerm, setSearchTerm } = useSearch();
   const [page, setPage] = useState(1);
   const [selectedTransaction, setSelectedTransaction] =
     useState<Uilchluulegch | null>(null);
@@ -592,7 +593,7 @@ export default function Camera() {
   // Reset live updates when filters or page change
   useEffect(() => {
     setLiveUpdates({});
-  }, [page, searchTerm, dateRange, effectiveBarilgiinId]);
+  }, [page, searchTerm, dateRange, effectiveBarilgiinId, durationFilter, typeFilter, statusFilter]);
 
   // Sync active camera IPs when cameras load
   useEffect(() => {
@@ -636,75 +637,107 @@ export default function Camera() {
 
   // Helper to fetch list via REST (as a fallback or for filters)
   const fetchList = useCallback(async () => {
-    if (!rangeStart || !rangeEnd || !token) return;
+    if (!token) return;
+
+    const hasSearch = !!searchTerm?.trim();
+    if (!hasSearch && (!rangeStart || !rangeEnd) && dateRange !== null && dateRange !== undefined) {
+      // Огноо цэвэрлэгдсэн бол эсвэл бүрэн тохируулагдаагүй бол
+      if (!rangeStart && !rangeEnd) {
+        // Хэрэглэгч огноог арилгасан бол бүх огноогоор татна
+      } else {
+        return;
+      }
+    }
 
     const query: any = {
       baiguullagiinId: ajiltan?.baiguullagiinId,
       barilgiinId: effectiveBarilgiinId || undefined,
-      createdAt: {
-        $gte: `${rangeStart} 00:00:00`,
-        $lte: `${rangeEnd} 23:59:59`,
-      },
     };
 
-    if (searchTerm) {
-      query.mashiniiDugaar = { $regex: searchTerm, $options: "i" };
+    const andConditions: any[] = [];
+
+    // 1. Огноо (Date) - Хайлт хийгээгүй үед л огноогоор шүүнэ. Хайх дээр огноо хамаарахгүй.
+    if (!hasSearch) {
+      if (rangeStart && rangeEnd) {
+        query.createdAt = {
+          $gte: `${rangeStart} 00:00:00`,
+          $lte: `${rangeEnd} 23:59:59`,
+        };
+      }
+    } else {
+      // Хайх дээр огноо хамаарахгүй: машины дугаараар бүх огнооноос хайна
+      const rawSearch = searchTerm.trim();
+      const cleanSearch = rawSearch.replace(/[\s\-_]/g, "");
+      andConditions.push({
+        $or: [
+          { mashiniiDugaar: { $regex: rawSearch, $options: "i" } },
+          { mashiniiDugaar: { $regex: cleanSearch, $options: "i" } },
+        ],
+      });
     }
 
+    // 2. Төрөл (Type Filter)
     if (typeFilter !== "all") {
       if (typeFilter === "Үйлчлүүлэгч") {
-        query.$or = [
-          { turul: "Үйлчлүүлэгч" },
-          { turul: { $exists: false } },
-          { turul: null },
-          { turul: "" },
-        ];
+        andConditions.push({
+          $or: [
+            { turul: "Үйлчлүүлэгч" },
+            { turul: { $exists: false } },
+            { turul: null },
+            { turul: "" },
+          ],
+        });
       } else {
         query.turul = typeFilter;
       }
     }
 
+    // 3. Төлөв (Status Filter)
     if (statusFilter === "active") {
-      // Идэвхтэй: Currently in (no exit) and no payment due
+      // Идэвхтэй: Одоо зогсоолд байгаа (гарц бичигдээгүй) машин
       query["tuukh.garsanKhaalga"] = { $exists: false };
       query["tuukh.tsagiinTuukh.garsanTsag"] = { $exists: false };
-      query.niitDun = 0;
     } else if (statusFilter === "paid") {
-      // Төлсөн: Payment completed (tuluv === 1 and exited, or tuluv === 2)
+      // Төлсөн: Payment completed
       query["tuukh.tuluv"] = { $in: [1, 2] };
     } else if (statusFilter === "unpaid") {
-      // Төлбөртэй: Has debt or unpaid amount
-      query.$and = [
-        {
-          $or: [
-            { "tuukh.tuluv": -4 },
-            {
-              "tuukh.tuluv": 0,
-              niitDun: { $gt: 0 },
-              "tuukh.garsanKhaalga": { $exists: true },
-            },
-          ],
-        },
-      ];
+      // Төлбөртэй / Төлөөгүй: Төлбөрийн үлдэгдэлтэй
+      andConditions.push({
+        $or: [
+          { "tuukh.tuluv": -4 },
+          {
+            "tuukh.tuluv": 0,
+            niitDun: { $gt: 0 },
+            "tuukh.garsanKhaalga": { $exists: true },
+          },
+        ],
+      });
     } else if (statusFilter === "free") {
-      // Үнэгүй: гарсан, зөрчилгүй. `niitDun = 0` гэж серверт шүүвэл бүрэн
-      // хөнгөлсөн (дүнтэй боловч төлбөр 0) машин ирэхгүй — нарийн шүүлтийг
-      // доорх клиент талын шүүлт (`bureenKhungulsun`) хийнэ.
+      // Үнэгүй: гарсан, зөрчилгүй
       query["tuukh.garsanKhaalga"] = { $exists: true };
       query["tuukh.0.tuluv"] = { $nin: [-2] };
+    }
+
+    // 4. "Сүүлд гарсан эхэнд" шүүлттэй үед (хэрэв хайлт хийгээгүй, "Идэвхтэй" төлөв биш бол)
+    // орох камерт уншигдсан (гарцгүй) машиныг харуулахгүй
+    if (!hasSearch && durationFilter === "latest_out" && statusFilter !== "active") {
+      andConditions.push({
+        $or: [
+          { "tuukh.garsanKhaalga": { $exists: true } },
+          { "tuukh.0.tsagiinTuukh.0.garsanTsag": { $exists: true, $ne: null } },
+        ],
+      });
+    }
+
+    if (andConditions.length > 0) {
+      query.$and = andConditions;
     }
 
     const sortObj =
       durationFilter === "longest"
         ? { "tuukh.0.niitKhugatsaa": -1 }
         : durationFilter === "latest_in"
-          ? {
-            "tuukh.tsagiinTuukh.garsanTsag": 1,
-            niitDun: 1,
-            "tuukh.tuluv": 1,
-            "tuukh.tsagiinTuukh.orsonTsag": -1,
-            zurchil: 1,
-          }
+          ? { "tuukh.0.tsagiinTuukh.0.orsonTsag": -1 }
           : { "tuukh.0.tsagiinTuukh.0.garsanTsag": -1 };
 
     try {
@@ -1323,26 +1356,45 @@ export default function Camera() {
       }
     });
 
-    Object.values(liveUpdates).forEach((update: any) => {
-      // If synthetic (id == plate) and we have a real record for this plate, skip the synthetic one
-      if (
-        update._id === update.mashiniiDugaar &&
-        platesWithRealId.has(update.mashiniiDugaar)
-      ) {
-        return;
-      }
-      const key = update._id || update.mashiniiDugaar;
-      if (key) {
-        const existing = transactionMap.get(key);
-        // Don't override a properly exited record (has garsanTsag) with a stale live update that lacks it
-        const existingGarsan = existing?.tuukh?.[0]?.tsagiinTuukh?.[0]?.garsanTsag;
-        const updateGarsan = update?.tuukh?.[0]?.tsagiinTuukh?.[0]?.garsanTsag;
-        if (existing && existingGarsan && !updateGarsan) return;
-        transactionMap.set(key, update);
-      }
-    });
+    // Check if live updates should be merged:
+    // Only merge live updates if viewing today (or no date restriction / search active)
+    const today = moment().format("YYYY-MM-DD");
+    const isTodayInRange = !rangeStart || !rangeEnd || (rangeStart <= today && today <= rangeEnd);
+
+    if (isTodayInRange || !!searchTerm?.trim()) {
+      Object.values(liveUpdates).forEach((update: any) => {
+        // If synthetic (id == plate) and we have a real record for this plate, skip the synthetic one
+        if (
+          update._id === update.mashiniiDugaar &&
+          platesWithRealId.has(update.mashiniiDugaar)
+        ) {
+          return;
+        }
+        const key = update._id || update.mashiniiDugaar;
+        if (key) {
+          const existing = transactionMap.get(key);
+          // Don't override a properly exited record (has garsanTsag) with a stale live update that lacks it
+          const existingGarsan = existing?.tuukh?.[0]?.tsagiinTuukh?.[0]?.garsanTsag;
+          const updateGarsan = update?.tuukh?.[0]?.tsagiinTuukh?.[0]?.garsanTsag;
+          if (existing && existingGarsan && !updateGarsan) return;
+          transactionMap.set(key, update);
+        }
+      });
+    }
 
     let merged = Array.from(transactionMap.values());
+
+    // Filter Search (Client-side plate search) - хайх дээр огноо хамаарахгүй
+    const hasSearch = !!searchTerm?.trim();
+    if (hasSearch) {
+      const rawSearch = searchTerm.trim().toLowerCase();
+      const cleanSearch = rawSearch.replace(/[\s\-_]/g, "");
+      merged = merged.filter((t) => {
+        const dugaar = (t.mashiniiDugaar || "").toLowerCase();
+        const cleanDugaar = dugaar.replace(/[\s\-_]/g, "");
+        return dugaar.includes(rawSearch) || cleanDugaar.includes(cleanSearch);
+      });
+    }
 
     // Filter Type
     if (typeFilter !== "all") {
@@ -1366,8 +1418,8 @@ export default function Camera() {
           tuluv === -4 || (tuluv === 0 && niitDun > 0 && !isCurrentlyIn);
 
         if (statusFilter === "active") {
-          // Идэвхтэй: Currently in and no payment due
-          return isCurrentlyIn && niitDun === 0;
+          // Идэвхтэй: Одоо зогсоолд байгаа машин
+          return isCurrentlyIn;
         }
         if (statusFilter === "paid") {
           // Төлсөн: Payment completed (tuluv === 1 and not currently in, or tuluv === 2)
@@ -1375,8 +1427,9 @@ export default function Camera() {
           return (tuluv === 1 && !isCurrentlyIn) || tuluv === 2;
         }
         if (statusFilter === "unpaid") {
-          // Төлбөртэй: Has debt or unpaid amount
-          return !isCurrentlyIn && (niitDun > 0 || isDebt);
+          // Төлбөртэй / Төлөөгүй: Has debt or unpaid amount
+          const { hasRemainingBalance } = murNiiluulye(t);
+          return !isCurrentlyIn && (niitDun > 0 || isDebt || hasRemainingBalance);
         }
         if (statusFilter === "free") {
           // Үнэгүй: Exited with no payment, excluding violations
@@ -1384,6 +1437,17 @@ export default function Camera() {
           return !isCurrentlyIn && (niitDun === 0 || tuluv === -1) && tuluv !== -2;
         }
         return true;
+      });
+    }
+
+    // "Сүүлд гарсан эхэнд" шүүлттэй байхад орох камерт уншигдсан (гараагүй) машиныг харуулахгүй
+    if (!hasSearch && durationFilter === "latest_out" && statusFilter !== "active") {
+      merged = merged.filter((t) => {
+        const mur = t.tuukh?.[0];
+        const tsag = mur?.tsagiinTuukh?.[0];
+        const garsanTsag = tsag?.garsanTsag;
+        const hasExited = !!mur?.garsanKhaalga || !!garsanTsag;
+        return hasExited;
       });
     }
 
@@ -1447,9 +1511,13 @@ export default function Camera() {
       } else if (durationFilter === "latest_in") {
         return getInTime(b) - getInTime(a);
       } else {
-        const timeA = getOutTime(a) || getInTime(a);
-        const timeB = getOutTime(b) || getInTime(b);
-        return timeB - timeA;
+        // latest_out: сүүлд гарсан эхэнд
+        const outA = getOutTime(a);
+        const outB = getOutTime(b);
+        if (outA && outB) return outB - outA;
+        if (outA) return -1;
+        if (outB) return 1;
+        return getInTime(b) - getInTime(a);
       }
     });
 
@@ -1471,6 +1539,9 @@ export default function Camera() {
     typeFilter,
     statusFilter,
     sortConfig,
+    searchTerm,
+    rangeStart,
+    rangeEnd,
   ]);
 
   const total = totalFiltered;
@@ -2350,17 +2421,50 @@ export default function Camera() {
 
         {/* Transactions Table Section */}
         <div className="space-y-2">
-          {/* ─── Top Bar: зүүн талд огноо, баруун талд үйлдлүүд ─── */}
+          {/* ─── Top Bar: зүүн талд огноо болон хайлт, баруун талд үйлдлүүд ─── */}
           <div className="relative z-30 flex flex-wrap items-center justify-between gap-2">
-            <FilterDatePicker
-              value={dateRange}
-              onChange={(_: any, dateStrings: [string, string]) => {
-                setDateRange(dateStrings);
-                setPage(1);
-              }}
-              format="YYYY-MM-DD"
-              className="w-full sm:w-[284px]"
-            />
+            <div className="flex flex-wrap items-center gap-2">
+              <FilterDatePicker
+                value={dateRange}
+                onChange={(_: any, dateStrings: [string, string]) => {
+                  setDateRange(dateStrings);
+                  setPage(1);
+                }}
+                format="YYYY-MM-DD"
+                className="w-full sm:w-[260px]"
+              />
+              <div className="relative flex items-center">
+                <Search className="pointer-events-none absolute left-2.5 h-3.5 w-3.5 text-[color:var(--muted-text)]" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setPage(1);
+                  }}
+                  placeholder="Машины дугаар хайх..."
+                  className="btn-minimal h-9 w-[170px] rounded-lg pl-8 pr-7 text-xs sm:w-[200px] focus:outline-none focus:ring-1 focus:ring-brand"
+                />
+                {searchTerm && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchTerm("");
+                      setPage(1);
+                    }}
+                    className="absolute right-2 text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+                    title="Цэвэрлэх"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+              {searchTerm && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-brand/10 px-2.5 py-0.5 text-[11px] font-medium text-brand">
+                  Бүх огноогоор
+                </span>
+              )}
+            </div>
             <div className="flex flex-wrap items-center gap-2">
               {/* Гараар орлого — камерт бүртгэгдээгүй машины дугаар, дүн (F9) */}
               <button

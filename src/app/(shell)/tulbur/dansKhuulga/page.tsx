@@ -24,6 +24,8 @@ import { useBuilding } from "@/context/BuildingContext";
 import matchesSearch from "@/tools/function/matchesSearch";
 import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
 import { DansKhuulgaTable } from "./DansKhuulgaTable";
+import { Upload } from "lucide-react";
+import BankStatementImportModal from "../modals/BankStatementImportModal";
 import { StandardPagination } from "@/components/ui/StandardTable";
 
 type TableItem = {
@@ -71,6 +73,7 @@ export default function DansniiKhuulga() {
   }, [ajiltan, router]);
 
   const [isFetchingStatement, setIsFetchingStatement] = useState(false);
+  const [showStatementModal, setShowStatementModal] = useState(false);
   const [uldegdel, setUldegdel] = useState<number | null>(null);
   const [isLoadingUldegdel, setIsLoadingUldegdel] = useState(false);
 
@@ -884,6 +887,15 @@ export default function DansniiKhuulga() {
               </div>
             )}
             {/* Excel — зөвхөн ТАТНА: шүүсэн, эрэмбэлсэн бүх мөр (хуудаслалтаас үл хамаарна) */}
+            <Button
+              variant="secondary"
+              onClick={() => setShowStatementModal(true)}
+              className="flex items-center gap-1.5 h-9 rounded-[10px] text-xs font-semibold px-3 shadow-[var(--ctl-shadow)] hover:border-emerald-500 transition"
+              title="Дансны хуулга (Excel) оруулж тулгах"
+            >
+              <Upload className="h-3.5 w-3.5 text-emerald-600" />
+              Хуулга оруулах
+            </Button>
             <ExcelButton
               id="dans-excel-btn"
               label={excelTatajBaina ? "Татаж байна..." : "Excel"}
@@ -1101,6 +1113,15 @@ export default function DansniiKhuulga() {
           </div>
         )}
       </Modal>
+      <BankStatementImportModal
+        show={showStatementModal}
+        onClose={() => setShowStatementModal(false)}
+        baiguullagiinId={ajiltan?.baiguullagiinId || ""}
+        barilgiinId={selectedBuildingId || barilgiinId || undefined}
+        onSuccess={() => {
+          fetchBankTransfers();
+        }}
+      />
       <ConfirmCloseDialog
         open={!!pendingUnlink}
         title="Холболт салгах уу?"

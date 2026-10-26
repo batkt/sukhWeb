@@ -409,7 +409,7 @@ export default function Jagsaalt() {
         baiguullagiinId: bId,
         barilgiinId: barId || undefined,
       };
-      if (start && end) {
+      if (!search && start && end) {
         query.createdAt = {
           $gte: `${start} 00:00:00`,
           $lte: `${end} 23:59:59`,
@@ -417,7 +417,12 @@ export default function Jagsaalt() {
       }
 
       if (search) {
-        query.mashiniiDugaar = { $regex: search, $options: "i" };
+        const rawSearch = search.trim();
+        const cleanSearch = rawSearch.replace(/[\s\-_]/g, "");
+        query.$or = [
+          { mashiniiDugaar: { $regex: rawSearch, $options: "i" } },
+          { mashiniiDugaar: { $regex: cleanSearch, $options: "i" } },
+        ];
       }
 
       if (status === "active") {

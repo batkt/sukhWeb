@@ -10,10 +10,17 @@
 
 # next.js
 /.next/
+/.next.build/
+/.next.khuuchin/
+.next.build/
+.next.khuuchin/
+*.khuuchin/
 /out/
 
 # production
 /build
+build/
+khuuchin/
 
 # misc
 .DS_Store
