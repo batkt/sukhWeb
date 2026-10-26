@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect, lazy, Suspense, Component, ReactNode } from "react";
+import { useMemo, useState, useEffect, useRef, lazy, Suspense, Component, ReactNode } from "react";
 import { Menu, Pin, PinOff } from "lucide-react";
 import { useAuth } from "@/lib/useAuth";
 import {
@@ -216,6 +216,19 @@ function Tokhirgoo() {
     () => tokhirgoo[selectedIndexInternal]?.tsonkh,
     [tokhirgoo, selectedIndexInternal]
   );
+
+  // `?tsonkh=<perm>` — өөр хуудаснаас тодорхой таб руу шууд нээх
+  // (жишээ: харилцагчийн цонхноос «Ашиглалтын зардал»). Нэг л удаа.
+  const urlTabKhereglesen = useRef(false);
+  useEffect(() => {
+    if (urlTabKhereglesen.current || tokhirgoo.length === 0) return;
+    urlTabKhereglesen.current = true;
+    try {
+      const perm = new URLSearchParams(window.location.search).get("tsonkh");
+      const i = perm ? tokhirgoo.findIndex((t) => t.perm === perm) : -1;
+      if (i >= 0) setSelectedIndex(i);
+    } catch (e) { }
+  }, [tokhirgoo]);
 
   // Clamp selected index when tabs change (e.g. non-admin loses permissions)
   useEffect(() => {

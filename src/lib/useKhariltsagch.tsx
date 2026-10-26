@@ -145,8 +145,15 @@ const fetcherJagsaalt = async ([
     // Client-side enforcement for org/branch (strict when branch is selected)
     const toStr = (v: any) => (v == null ? "" : String(v));
     const list = data.jagsaalt || [];
+    // Толгойн байгууллага өөр ч энэ байгууллагад тоот эзэмшдэг харилцагчийг
+    // хасахгүй — сервер ч `toots.baiguullagiinId`-аар шүүдэг.
     const orgOnly = (list || []).filter(
-      (it: any) => toStr(it?.baiguullagiinId) === toStr(baiguullagiinId)
+      (it: any) =>
+        toStr(it?.baiguullagiinId) === toStr(baiguullagiinId) ||
+        (Array.isArray(it?.toots) &&
+          it.toots.some(
+            (t: any) => toStr(t?.baiguullagiinId) === toStr(baiguullagiinId),
+          )),
     );
     const branchAware = orgOnly.filter((it: Khariltsagch) => {
       if (!barilgiinId) return true;

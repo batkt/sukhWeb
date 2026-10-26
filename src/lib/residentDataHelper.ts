@@ -59,24 +59,56 @@ export function getResidentToots(resident: any): string | null {
 
 /**
  * Get all davkhar values from resident as a comma-separated string
+ *
+ * `zuvkhunOronSuuts` — гараж/агуулахын давхрыг (B1, B2...) хасаж зөвхөн
+ * орон сууцны давхрыг буцаана. Оршин суугчийн жагсаалтад гаражийн давхар
+ * «5, B1» гэж холилдон харагдаж байсан.
  */
-export function getResidentDavkhauraud(resident: any): string | null {
+/**
+ * Гараж/агуулахын нэгж эсэх. `negjiinTurul`-тэй ижил дүрэм — тэр нь
+ * `useGereeData`-аас импортолдог тул энд шууд дуудвал тойрог импорт болно.
+ */
+function garajiinNegjUu(t: any): boolean {
+  const turul = String(t?.turul || "").trim().toLowerCase();
+  if (["агуулах", "storage", "гараж", "зогсоол", "garage", "parking"].includes(turul)) {
+    return true;
+  }
+  return (!turul || turul === "орон сууц" || turul === "тоот") && garajiinDavkharUu(t?.davkhar);
+}
+
+/** B1, В2 (кирилл), -1, «Гараж»... зэрэг зоорийн давхар эсэх. */
+function garajiinDavkharUu(davkhar: any): boolean {
+  const f = String(davkhar ?? "").trim().toLowerCase();
+  return /^[bв][-_]?\d*/.test(f) || /^-\d/.test(f) || /^(граш|гараж|зогсоол|garage|parking)/.test(f);
+}
+
+export function getResidentDavkhauraud(
+  resident: any,
+  options?: { zuvkhunOronSuuts?: boolean },
+): string | null {
   if (!resident) return null;
-  
+
+  const zuvkhunOronSuuts = !!options?.zuvkhunOronSuuts;
   const values: string[] = [];
-  
+
   if (Array.isArray(resident.toots) && resident.toots.length > 0) {
     resident.toots.forEach((t: any) => {
+      if (zuvkhunOronSuuts && garajiinNegjUu(t)) return;
       if (t.davkhar != null && t.davkhar !== '') {
         values.push(String(t.davkhar));
       }
     });
   }
-  
-  if (values.length === 0 && resident.davkhar != null && resident.davkhar !== '') {
+
+  if (
+    values.length === 0 &&
+    resident.davkhar != null &&
+    resident.davkhar !== '' &&
+    !(zuvkhunOronSuuts && garajiinDavkharUu(resident.davkhar))
+  ) {
     values.push(String(resident.davkhar));
   }
-  
+
   return values.length > 0 ? Array.from(new Set(values)).join(', ') : null;
 }
 

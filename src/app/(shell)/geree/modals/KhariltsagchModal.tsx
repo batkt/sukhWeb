@@ -8,7 +8,22 @@ import TusgaiZagvar from "../../../../../components/selectZagvar/tusgaiZagvar";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { ConfirmCloseDialog } from "@/components/ui/ConfirmCloseDialog";
 import Button from "@/components/ui/Button";
-import { Plus, Minus, X, Car, Warehouse, Building2 } from "lucide-react";
+import {
+  Plus,
+  Minus,
+  X,
+  Car,
+  Warehouse,
+  Users,
+  User,
+  Phone,
+  Building2,
+  FileText,
+  HelpCircle,
+  ChevronRight,
+  Check,
+} from "lucide-react";
+import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
 import {
   mashiniiDugaarTseverle,
   dugaarZuvEsekh,
@@ -137,6 +152,9 @@ export default function KhariltsagchModal({
       !!c.gadnaZogsoolEsekh,
       mashinuud,
       units,
+      Array.isArray(c.songosonZardluud)
+        ? c.songosonZardluud.map(String).sort()
+        : null,
     ]);
   };
 
@@ -912,6 +930,94 @@ export default function KhariltsagchModal({
     return [...jagsaalt.filter((o) => !o.isOccupied), ...jagsaalt.filter((o) => o.isOccupied)];
   };
 
+  // ── Ашиглалтын зардал ────────────────────────────────────────────────
+  // Барилгын «харилцагч» зориулалттай зардлуудаас энэ харилцагчид аль нь
+  // бодогдохыг сонгоно (`songosonZardluud`). Хэрэглэгч хөндөөгүй бол
+  // талбар тодорхойгүй хэвээр үлдэж, backend хуучин дүрмээр (тоотын төрөлд
+  // тохирохыг) бодно — доорх анхны сонголт яг тэр дүрмийг харуулна.
+  const { zardluud: barilgiinZardluud, isLoading: zardalAchaalj } =
+    useAshiglaltiinZardluud({
+      token: token || undefined,
+      baiguullagiinId: baiguullaga?._id,
+      barilgiinId: selectedBarilga?._id ?? null,
+    });
+
+  const khariltsagchiinZardluud = React.useMemo(
+    () =>
+      (barilgiinZardluud || []).filter(
+        (z: any) => z?._id && z.zoriulalt === "khariltsagch",
+      ),
+    [barilgiinZardluud],
+  );
+
+  const anhniiSongolt = React.useMemo(() => {
+    // Backend нь эхний үндсэн нэгжээр гэрээ үүсгэнэ: тоот/оффис байвал
+    // тэр, үгүй бол гараж, агуулах.
+    const turul =
+      mainUnits.length > 0
+        ? "Орон сууц"
+        : garages.length > 0
+          ? "Гараж"
+          : storages.length > 0
+            ? "Агуулах"
+            : "Гараж";
+    return khariltsagchiinZardluud
+      .filter((z: any) => {
+        const tekst = `${z.ner || ""} ${z.zardliinTurul || ""}`.toLowerCase();
+        const garajiinZardal = tekst.includes("гараж") || tekst.includes("зогсоол");
+        const aguulakhiinZardal = tekst.includes("агуулах");
+        if (turul === "Орон сууц") return !garajiinZardal && !aguulakhiinZardal;
+        if (turul === "Гараж") return garajiinZardal;
+        return aguulakhiinZardal;
+      })
+      .map((z: any) => String(z._id));
+  }, [khariltsagchiinZardluud, mainUnits.length, garages.length, storages.length]);
+
+  const songosonZardluud: string[] = Array.isArray(newClient?.songosonZardluud)
+    ? newClient.songosonZardluud.map(String)
+    : anhniiSongolt;
+
+  const zardalSongoyo = (id: string) => {
+    const shine = songosonZardluud.includes(id)
+      ? songosonZardluud.filter((x) => x !== id)
+      : [...songosonZardluud, id];
+    setNewClient((p: any) => ({ ...p, songosonZardluud: shine }));
+  };
+
+  const bukhZardalSongogdson =
+    khariltsagchiinZardluud.length > 0 &&
+    khariltsagchiinZardluud.every((z: any) =>
+      songosonZardluud.includes(String(z._id)),
+    );
+
+  const bukhZardalSolio = () => {
+    setNewClient((p: any) => ({
+      ...p,
+      songosonZardluud: bukhZardalSongogdson
+        ? []
+        : khariltsagchiinZardluud.map((z: any) => String(z._id)),
+    }));
+  };
+
+  /** Сард бодогдох дүн — тогтмол нь `dun`-д, бусад нь `tariff`-д. */
+  const zardliinDun = (z: any): number => {
+    for (const utga of [z?.dun, z?.tariff]) {
+      const n = Number(utga ?? 0);
+      if (Number.isFinite(n) && n > 0) return n;
+    }
+    return 0;
+  };
+  const tooUnshigdakh = (n: number) =>
+    n.toLocaleString("en-US", { maximumFractionDigits: 2 });
+
+  const songosonNiitDun = khariltsagchiinZardluud
+    .filter((z: any) => songosonZardluud.includes(String(z._id)) && !z.zaalt)
+    .reduce((niit: number, z: any) => niit + zardliinDun(z), 0);
+
+  const zardalTokhirgooNeey = () => {
+    window.open("/tokhirgoo?tsonkh=tokhirgoo.ashiglaltiinZardal", "_blank");
+  };
+
   if (!show) return null;
 
   return (
@@ -922,20 +1028,23 @@ export default function KhariltsagchModal({
         /* INPUTS AND TEXTAREAS - IDENTICAL STYLING */
         .modern-input,
         .modern-textarea {
-          height: 32px !important;
-          padding: 0 10px !important;
-          font-size: 0.75rem !important;
-          border-radius: 6px !important;
+          height: 40px !important;
+          padding: 0 12px !important;
+          font-size: 0.8125rem !important;
+          border-radius: 10px !important;
           border: 1px solid #d1d5db !important;
           transition: all 0.2s ease !important;
           background: #ffffff !important;
           color: #111827 !important;
         }
+        .modern-input.with-icon {
+          padding-left: 36px !important;
+        }
         .modern-input.pr-extra {
           padding-right: 32px !important;
         }
         .modern-textarea {
-          line-height: 32px !important;
+          line-height: 40px !important;
           overflow: hidden !important;
         }
         
@@ -1016,10 +1125,10 @@ export default function KhariltsagchModal({
         
         /* DROPDOWNS - SEPARATE THEME-BASED STYLING */
         .tusgai-wrapper {
-          height: 32px !important;
+          height: 40px !important;
           padding: 0 !important;
-          font-size: 0.75rem !important;
-          border-radius: 6px !important;
+          font-size: 0.8125rem !important;
+          border-radius: 10px !important;
           border: 1px solid #d1d5db !important;
           transition: all 0.2s ease !important;
           background: #ffffff !important;
@@ -1088,7 +1197,7 @@ export default function KhariltsagchModal({
           outline: none !important;
         }
         .tusgai-wrapper button span {
-          font-size: 0.75rem !important;
+          font-size: 0.8125rem !important;
           line-height: 1.5 !important;
         }
         .tusgai-wrapper svg {
@@ -1157,444 +1266,629 @@ export default function KhariltsagchModal({
               dragConstraints={constraintsRef}
               dragMomentum={false}
               onClick={(e) => e.stopPropagation()}
-              className="relative z-[12001] w-full max-w-2xl modal-surface modal-responsive rounded-xl shadow-2xl p-0 flex flex-col max-h-[85vh] overflow-hidden"
+              className="relative z-[12001] flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl p-0 shadow-2xl modal-surface modal-responsive"
             >
+              {/* Толгой */}
               <div
                 onPointerDown={(e) => dragControls.start(e)}
-                className="flex items-center justify-between px-4 py-3 border-b border-[color:var(--surface-border)] bg-gradient-to-r from-transparent via-white/5 to-transparent cursor-move select-none"
+                className="flex cursor-move select-none items-center justify-between gap-4 border-b border-[color:var(--surface-border)] px-6 py-4"
               >
-                <div className="flex items-center gap-3">
-                  <svg
-                    className="w-5 h-5 text-[color:var(--muted-text)]"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
-                  <h2 className="text-lg text-[color:var(--panel-text)] dark:text-white">
-                    {editingClient
-                      ? "Харилцагчийн мэдээлэл засах"
-                      : "Харилцагч нэмэх"}
-                  </h2>
+                <div className="flex min-w-0 items-center gap-4">
+                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-theme/10 text-brand">
+                    <Users className="h-6 w-6" />
+                  </span>
+                  <div className="min-w-0">
+                    <h2 className="truncate text-lg font-semibold text-[color:var(--panel-text)]">
+                      {editingClient
+                        ? "Харилцагчийн мэдээлэл засах"
+                        : "Харилцагч бүртгэх"}
+                    </h2>
+                    <p className="mt-0.5 truncate text-sm text-[color:var(--muted-text)]">
+                      Оффис түрээслэгч зэрэг оршин суугч биш харилцагчийг
+                      бүртгэнэ.
+                    </p>
+                  </div>
                 </div>
                 <button
+                  type="button"
                   onPointerDown={(e) => e.stopPropagation()}
                   onClick={requestClose}
-                  className="p-1.5 rounded-lg transition-all duration-200  active:scale-95"
+                  className="rounded-lg p-1.5 text-[color:var(--muted-text)] transition-all duration-200 hover:bg-[color:var(--surface-hover)] active:scale-95"
                   aria-label="Хаах"
                   title="Хаах"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 text-[color:var(--muted-text)]"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
+                  <X className="h-6 w-6" />
                 </button>
               </div>
 
               <form
                 onSubmit={handleLocalSubmit}
-                className="flex-1 flex flex-col min-h-0 overflow-hidden"
+                className="flex min-h-0 flex-1 flex-col overflow-hidden"
               >
-                <div className="flex-1 overflow-y-auto custom-scrollbar px-4 py-3">
-                  <div className="grid grid-cols-1 items-start gap-3 md:grid-cols-2">
-                    {/* Овог */}
-                    <div>
-                      <label className="block text-xs text-[color:var(--muted-text)] mb-1 transition-colors">
-                        Овог
-                      </label>
-                      <input
-                        type="text"
-                        value={newClient.ovog || ""}
-                        onChange={(e) => {
-                          const value = e.target.value.replace(
-                            /[^a-zA-Zа-яА-ЯөүёӨҮЁ-]/g,
-                            "",
-                          );
-                          setNewClient((p: any) => ({ ...p, ovog: value }));
-                        }}
-                        className="modern-input w-full"
-                      />
-                    </div>
+                <div className="custom-scrollbar flex-1 overflow-y-auto p-5">
+                  <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
+                    {/* ═══ Зүүн тал ═══ */}
+                    <div className="space-y-5">
+                      {/* Үндсэн мэдээлэл */}
+                      <section className="rounded-2xl border border-[color:var(--surface-border)] p-5">
+                        <div className="mb-4 flex items-center gap-3">
+                          <span className="grid h-10 w-10 place-items-center rounded-xl bg-theme/10 text-brand">
+                            <User className="h-5 w-5" />
+                          </span>
+                          <h3 className="text-base font-semibold text-[color:var(--panel-text)]">
+                            Үндсэн мэдээлэл
+                          </h3>
+                        </div>
 
-                    {/* Нэр */}
-                    <div>
-                      <label className="block text-xs text-[color:var(--muted-text)] mb-1 transition-colors">
-                        Нэр
-                      </label>
-                      <input
-                        type="text"
-                        value={newClient.ner || ""}
-                        onChange={(e) => {
-                          const value = e.target.value.replace(
-                            /[^a-zA-Zа-яА-ЯөүёӨҮЁ-]/g,
-                            "",
-                          );
-                          setNewClient((p: any) => ({ ...p, ner: value }));
-                        }}
-                        className={`modern-input w-full ${errors.includes("ner") ? "input-error" : ""}`}
-                      />
-                    </div>
-
-                    {/* Утас */}
-                    <div>
-                      <label className="block text-xs text-[color:var(--muted-text)] mb-1 transition-colors">
-                        Утас
-                      </label>
-                      <input
-                        type="tel"
-                        value={
-                          Array.isArray(newClient.utas)
-                            ? newClient.utas[0] || ""
-                            : newClient.utas || ""
-                        }
-                        onChange={(e) => {
-                          const value = e.target.value
-                            .replace(/[^0-9]/g, "")
-                            .slice(0, 8);
-                          setNewClient((p: any) => ({ ...p, utas: [value] }));
-                        }}
-                        className={`modern-input w-full ${errors.includes("utas") ? "input-error" : ""}`}
-                        placeholder="12345678"
-                        maxLength={8}
-                      />
-                    </div>
-
-                    {/* Машины дугаар — мөр тус бүрийн дэргэд товч:
-                        ЭХНИЙ мөрд «+» (нэмэх), нэмсэн мөрүүдэд «−» (хасах) */}
-                    <div>
-                      <label className="mb-1 block text-xs text-[color:var(--muted-text)] transition-colors">
-                        Машины дугаар
-                      </label>
-                      <div className="space-y-1.5">
-                        {mashinuud.map((dugaar, i) => (
-                          <div
-                            key={i}
-                            className="flex items-stretch gap-1.5"
-                          >
+                        <div className="grid grid-cols-1 items-start gap-x-4 gap-y-4 sm:grid-cols-2">
+                          {/* Овог */}
+                          <div>
+                            <label className="mb-1.5 block text-sm text-[color:var(--panel-text)]">
+                              Овог
+                            </label>
                             <input
                               type="text"
-                              value={dugaar}
+                              value={newClient.ovog || ""}
                               onChange={(e) => {
-                                const utga = mashiniiDugaarTseverle(
-                                  e.target.value,
+                                const value = e.target.value.replace(
+                                  /[^a-zA-Zа-яА-ЯөүёӨҮЁ-]/g,
+                                  "",
                                 );
-                                setMashinuud((prev) => {
-                                  const shine = [...prev];
-                                  shine[i] = utga;
-                                  return shine;
-                                });
+                                setNewClient((p: any) => ({ ...p, ovog: value }));
                               }}
-                              className={`modern-input min-w-0 flex-1 ${
-                                errors.includes(`mashin.${i}`)
-                                  ? "input-error"
-                                  : ""
-                              }`}
-                              placeholder="1234УБА"
-                              maxLength={7}
+                              className="modern-input w-full"
+                              placeholder="Овог оруулах"
                             />
-                            {i === 0 ? (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setMashinuud((prev) => [...prev, ""])
-                                }
-                                disabled={khyazgaartKhurev}
-                                className="grid w-9 shrink-0 place-items-center rounded-lg border border-theme/30 bg-theme/10 text-brand transition-colors hover:bg-theme/20 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-theme/10"
-                                title={
-                                  khyazgaartKhurev
-                                    ? `Машины хязгаар ${mashiniiKhyazgaar}`
-                                    : "Машин нэмэх"
-                                }
-                                aria-label="Машин нэмэх"
-                              >
-                                <Plus className="h-4 w-4" />
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setMashinuud((prev) =>
-                                    prev.filter((_, j) => j !== i),
-                                  )
-                                }
-                                className="grid w-9 shrink-0 place-items-center rounded-lg border border-danger/30 bg-danger/10 text-danger transition-colors hover:bg-danger/20"
-                                title="Хасах"
-                                aria-label="Хасах"
-                              >
-                                <Minus className="h-4 w-4" />
-                              </button>
-                            )}
                           </div>
-                        ))}
-                      </div>
-                    </div>
 
-                    {/* ── Гадна зогсоол ────────────────────────────────────
-                        Гадна зогсоол хэрэглэдэг харилцагч гараж/агуулах
-                        давхар эзэмшиж болно — тэмдэглэсэн ч тоот нэмэх
-                        боломжтой. Тоотгүй бол `syncResidentContracts` гэрээ
-                        үүсгэхгүй. */}
-                    <div className="md:col-span-2">
-                      <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] px-3 py-2.5 transition-colors hover:border-theme/40">
-                        <input
-                          type="checkbox"
-                          checked={!!newClient.gadnaZogsoolEsekh}
-                          onChange={(e) => {
-                            const asaav = e.target.checked;
-                            setNewClient((p: any) => ({
-                              ...p,
-                              gadnaZogsoolEsekh: asaav,
-                            }));
-                          }}
-                          className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-[color:var(--theme)]"
-                        />
-                        <span className="min-w-0">
-                          <span className="block text-xs text-[color:var(--panel-text)]">
-                            Гадна зогсоол
-                          </span>
-                          <span className="mt-0.5 block text-[11px] text-[color:var(--muted-text)]">
-                            Гараж / агуулахгүйгээр хадгалах, эсвэл давхар нэмж болно
-                          </span>
-                        </span>
-                      </label>
-                    </div>
+                          {/* Нэр */}
+                          <div>
+                            <label className="mb-1.5 block text-sm text-[color:var(--panel-text)]">
+                              Нэр <span className="text-danger">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={newClient.ner || ""}
+                              onChange={(e) => {
+                                const value = e.target.value.replace(
+                                  /[^a-zA-Zа-яА-ЯөүёӨҮЁ-]/g,
+                                  "",
+                                );
+                                setNewClient((p: any) => ({ ...p, ner: value }));
+                              }}
+                              className={`modern-input w-full ${errors.includes("ner") ? "input-error" : ""}`}
+                              placeholder="Нэр оруулах"
+                            />
+                          </div>
 
-                    {/* Тоот / Оффис / Талбай */}
-                    <div className="md:col-span-2 overflow-hidden rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]">
-                      <div className="flex items-center justify-between gap-2 px-3 py-2">
-                        <div className="flex items-center gap-2">
-                          <span className="grid h-6 w-6 place-items-center rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                            <Building2 className="h-3.5 w-3.5" />
-                          </span>
-                          <span className="text-xs font-medium text-[color:var(--panel-text)]">
-                            Тоот / Оффис / Талбай
-                            {mainUnits.length > 0 && (
-                              <span className="ml-1 text-[color:var(--muted-text)]">({mainUnits.length})</span>
-                            )}
-                          </span>
+                          {/* Утас */}
+                          <div>
+                            <label className="mb-1.5 block text-sm text-[color:var(--panel-text)]">
+                              Утас
+                            </label>
+                            <div className="relative">
+                              <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--muted-text)]" />
+                              <input
+                                type="tel"
+                                value={
+                                  Array.isArray(newClient.utas)
+                                    ? newClient.utas[0] || ""
+                                    : newClient.utas || ""
+                                }
+                                onChange={(e) => {
+                                  const value = e.target.value
+                                    .replace(/[^0-9]/g, "")
+                                    .slice(0, 8);
+                                  setNewClient((p: any) => ({ ...p, utas: [value] }));
+                                }}
+                                className={`modern-input with-icon w-full ${errors.includes("utas") ? "input-error" : ""}`}
+                                placeholder="Утасны дугаар"
+                                maxLength={8}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Машины дугаар — ЭХНИЙ мөрд «+», нэмсэн мөрүүдэд «−» */}
+                          <div>
+                            <label className="mb-1.5 block text-sm text-[color:var(--panel-text)]">
+                              Машины дугаар
+                            </label>
+                            <div className="space-y-2">
+                              {mashinuud.map((dugaar, i) => (
+                                <div key={i} className="flex items-stretch gap-2">
+                                  <div className="relative min-w-0 flex-1">
+                                    <Car className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--muted-text)]" />
+                                    <input
+                                      type="text"
+                                      value={dugaar}
+                                      onChange={(e) => {
+                                        const utga = mashiniiDugaarTseverle(
+                                          e.target.value,
+                                        );
+                                        setMashinuud((prev) => {
+                                          const shine = [...prev];
+                                          shine[i] = utga;
+                                          return shine;
+                                        });
+                                      }}
+                                      className={`modern-input with-icon w-full ${
+                                        errors.includes(`mashin.${i}`)
+                                          ? "input-error"
+                                          : ""
+                                      }`}
+                                      placeholder="Машины дугаар"
+                                      maxLength={7}
+                                    />
+                                  </div>
+                                  {i === 0 ? (
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setMashinuud((prev) => [...prev, ""])
+                                      }
+                                      disabled={khyazgaartKhurev}
+                                      className="grid w-10 shrink-0 place-items-center rounded-[10px] border border-theme/30 bg-theme/10 text-brand transition-colors hover:bg-theme/20 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-theme/10"
+                                      title={
+                                        khyazgaartKhurev
+                                          ? `Машины хязгаар ${mashiniiKhyazgaar}`
+                                          : "Машин нэмэх"
+                                      }
+                                      aria-label="Машин нэмэх"
+                                    >
+                                      <Plus className="h-4 w-4" />
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setMashinuud((prev) =>
+                                          prev.filter((_, j) => j !== i),
+                                        )
+                                      }
+                                      className="grid w-10 shrink-0 place-items-center rounded-[10px] border border-danger/30 bg-danger/10 text-danger transition-colors hover:bg-danger/20"
+                                      title="Хасах"
+                                      aria-label="Хасах"
+                                    >
+                                      <Minus className="h-4 w-4" />
+                                    </button>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Тайлбар */}
+                          <div className="sm:col-span-2">
+                            <label className="mb-1.5 block text-sm text-[color:var(--panel-text)]">
+                              Тайлбар
+                            </label>
+                            <textarea
+                              value={newClient.tailbar || ""}
+                              onChange={(e) => {
+                                setNewClient((p: any) => ({
+                                  ...p,
+                                  tailbar: e.target.value,
+                                }));
+                              }}
+                              className="modern-textarea w-full resize-none"
+                              placeholder="Тайлбар..."
+                            />
+                          </div>
                         </div>
-                        <Button
-                          type="button"
-                          onClick={addMainUnit}
-                          variant="secondary"
-                          size="sm"
-                          leftIcon={<Plus className="w-3.5 h-3.5" />}
-                        >
-                          Нэмэх
-                        </Button>
-                      </div>
-                      {mainUnits.map((mUnit: any, mIdx: number) => {
-                        const mFlatIdx = getMainUnitFlatIndex(mIdx);
-                        const oOptions = (ortsOptions && ortsOptions.length > 0 ? ortsOptions : ["1"]).map((o) => ({
-                          value: o,
-                          label: `${o}-р орц`,
-                        }));
-                        const dOptions = (davkharOptions && davkharOptions.length > 0 ? davkharOptions : ["1"]).map((d) => ({
-                          value: d,
-                          label: `${d} давхар`,
-                        }));
-                        const tOptions = getTootOptions
-                          ? getTootOptions(mUnit.orts || "1", mUnit.davkhar || "", "Тоот").map((t) => ({
-                              value: t,
-                              label: `${t} тоот`,
-                            }))
-                          : [];
-                        return (
-                          <div key={`main-${mIdx}`} className="flex flex-wrap md:flex-nowrap items-center gap-2 border-t border-[color:var(--surface-border)] px-3 py-2">
-                            <div className="tusgai-wrapper min-w-[90px] flex-1 flex items-center">
-                              <TusgaiZagvar
-                                value={mUnit.orts || "1"}
-                                onChange={(val: string) => updateMainUnitField(mIdx, "orts", val)}
-                                options={oOptions}
-                                className="w-full h-full"
-                                placeholder="Орц"
-                              />
-                            </div>
-                            <div className={`tusgai-wrapper min-w-[100px] flex-1 flex items-center ${errors.includes(`units.${mFlatIdx}.davkhar`) ? "input-error" : ""}`}>
-                              <TusgaiZagvar
-                                value={mUnit.davkhar || ""}
-                                onChange={(val: string) => updateMainUnitField(mIdx, "davkhar", val)}
-                                options={dOptions}
-                                className="w-full h-full"
-                                placeholder="Давхар"
-                              />
-                            </div>
-                            <div className={`tusgai-wrapper min-w-[110px] flex-[1.5] flex items-center ${errors.includes(`units.${mFlatIdx}.toot`) ? "input-error" : ""}`}>
-                              <TusgaiZagvar
-                                value={mUnit.toot || ""}
-                                onChange={(val: string) => updateMainUnitField(mIdx, "toot", val)}
-                                options={tOptions}
-                                className="w-full h-full"
-                                placeholder="Тоот дугаар"
-                                allowCustomInput={true}
-                              />
-                            </div>
+                      </section>
+
+                      {/* Тоот / Оффис / Талбай */}
+                      <section className="rounded-2xl border border-[color:var(--surface-border)] p-5">
+                        <div className="mb-4 flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <span className="grid h-10 w-10 place-items-center rounded-xl bg-theme/10 text-brand">
+                              <Building2 className="h-5 w-5" />
+                            </span>
+                            <h3 className="text-base font-semibold text-[color:var(--panel-text)]">
+                              Тоот / Оффис / Талбай
+                              {mainUnits.length > 1 && (
+                                <span className="ml-1 font-normal text-[color:var(--muted-text)]">({mainUnits.length})</span>
+                              )}
+                            </h3>
+                          </div>
+                          {mainUnits.length > 0 && (
                             <button
                               type="button"
-                              onClick={() => removeMainUnit(mIdx)}
-                              title="Хасах"
-                              aria-label="Хасах"
-                              className="shrink-0 rounded-md p-1 text-[color:var(--muted-text)] transition-colors hover:bg-danger/10 hover:text-danger"
+                              onClick={addMainUnit}
+                              className="inline-flex items-center gap-1 text-xs font-medium text-brand hover:underline"
                             >
-                              <X className="h-3.5 w-3.5" />
+                              <Plus className="h-3.5 w-3.5" /> Нэмэх
                             </button>
+                          )}
+                        </div>
+
+                        {mainUnits.length === 0 ? (
+                          <button
+                            type="button"
+                            onClick={addMainUnit}
+                            className="flex h-10 w-full items-center gap-2 rounded-[10px] border border-dashed border-[color:var(--surface-border)] px-3 text-sm text-[color:var(--muted-text)] transition-colors hover:border-theme/50 hover:text-brand"
+                          >
+                            <Building2 className="h-4 w-4" />
+                            Тоот / оффис нэмэх
+                            <Plus className="ml-auto h-4 w-4" />
+                          </button>
+                        ) : (
+                          <div className="space-y-2">
+                            {mainUnits.map((mUnit: any, mIdx: number) => {
+                              const mFlatIdx = getMainUnitFlatIndex(mIdx);
+                              const oOptions = (ortsOptions && ortsOptions.length > 0 ? ortsOptions : ["1"]).map((o) => ({
+                                value: o,
+                                label: `${o}-р орц`,
+                              }));
+                              const dOptions = (davkharOptions && davkharOptions.length > 0 ? davkharOptions : ["1"]).map((d) => ({
+                                value: d,
+                                label: `${d} давхар`,
+                              }));
+                              const tOptions = getTootOptions
+                                ? getTootOptions(mUnit.orts || "1", mUnit.davkhar || "", "Тоот").map((t) => ({
+                                    value: t,
+                                    label: `${t} тоот`,
+                                  }))
+                                : [];
+                              return (
+                                <div key={`main-${mIdx}`} className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
+                                  <div className="tusgai-wrapper flex min-w-[90px] flex-1 items-center">
+                                    <TusgaiZagvar
+                                      value={mUnit.orts || "1"}
+                                      onChange={(val: string) => updateMainUnitField(mIdx, "orts", val)}
+                                      options={oOptions}
+                                      className="h-full w-full"
+                                      placeholder="Орц"
+                                    />
+                                  </div>
+                                  <div className={`tusgai-wrapper flex min-w-[100px] flex-1 items-center ${errors.includes(`units.${mFlatIdx}.davkhar`) ? "input-error" : ""}`}>
+                                    <TusgaiZagvar
+                                      value={mUnit.davkhar || ""}
+                                      onChange={(val: string) => updateMainUnitField(mIdx, "davkhar", val)}
+                                      options={dOptions}
+                                      className="h-full w-full"
+                                      placeholder="Давхар"
+                                    />
+                                  </div>
+                                  <div className={`tusgai-wrapper flex min-w-[110px] flex-[1.5] items-center ${errors.includes(`units.${mFlatIdx}.toot`) ? "input-error" : ""}`}>
+                                    <TusgaiZagvar
+                                      value={mUnit.toot || ""}
+                                      onChange={(val: string) => updateMainUnitField(mIdx, "toot", val)}
+                                      options={tOptions}
+                                      className="h-full w-full"
+                                      placeholder="Тоот дугаар"
+                                      allowCustomInput={true}
+                                    />
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeMainUnit(mIdx)}
+                                    title="Хасах"
+                                    aria-label="Хасах"
+                                    className="shrink-0 rounded-md p-1 text-[color:var(--muted-text)] transition-colors hover:bg-danger/10 hover:text-danger"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              );
+                            })}
                           </div>
-                        );
-                      })}
+                        )}
+                      </section>
+
+                      {/* Гараж / Агуулах */}
+                      <section className="rounded-2xl border border-[color:var(--surface-border)] p-5">
+                        <div className="mb-4 flex items-center gap-3">
+                          <span className="grid h-10 w-10 place-items-center rounded-xl bg-theme/10 text-brand">
+                            <Building2 className="h-5 w-5" />
+                          </span>
+                          <h3 className="text-base font-semibold text-[color:var(--panel-text)]">
+                            Гараж/Агуулах
+                          </h3>
+                        </div>
+
+                        <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2">
+                          {/* Гараж */}
+                          <div>
+                            <div className="mb-1.5 flex items-center justify-between">
+                              <span className="text-sm text-[color:var(--panel-text)]">
+                                Гаражын тоот
+                                {garages.length > 1 && (
+                                  <span className="ml-1 text-[color:var(--muted-text)]">({garages.length})</span>
+                                )}
+                              </span>
+                              {garages.length > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={addGarage}
+                                  className="inline-flex items-center gap-1 text-xs font-medium text-brand hover:underline"
+                                >
+                                  <Plus className="h-3.5 w-3.5" /> Нэмэх
+                                </button>
+                              )}
+                            </div>
+                            {garages.length === 0 ? (
+                              <button
+                                type="button"
+                                onClick={addGarage}
+                                className="flex h-10 w-full items-center gap-2 rounded-[10px] border border-dashed border-[color:var(--surface-border)] px-3 text-sm text-[color:var(--muted-text)] transition-colors hover:border-theme/50 hover:text-brand"
+                              >
+                                <Car className="h-4 w-4" />
+                                Гаражын тоот сонгох
+                                <Plus className="ml-auto h-4 w-4" />
+                              </button>
+                            ) : (
+                              <div className="space-y-2">
+                                {garages.map((garage: any, gIdx: number) => {
+                                  const gFlatIdx = getGarageFlatIndex(gIdx);
+                                  return (
+                                    <div key={`garage-${gIdx}`} className="flex items-center gap-2">
+                                      <div className={`tusgai-wrapper flex w-[38%] shrink-0 items-center ${errors.includes(`units.${gFlatIdx}.davkhar`) ? "input-error" : ""}`}>
+                                        <TusgaiZagvar value={garage.davkhar || ""} onChange={(val: string) => updateGarageField(gIdx, "davkhar", val)}
+                                          options={additionalFloors.map((d) => ({ value: d, label: d }))} className="h-full w-full" placeholder="Давхар" />
+                                      </div>
+                                      <div className={`tusgai-wrapper flex min-w-0 flex-1 items-center ${errors.includes(`units.${gFlatIdx}.toot`) ? "input-error" : ""}`}>
+                                        <TusgaiZagvar value={garage.toot || ""} onChange={(val: string) => updateGarageField(gIdx, "toot", val)}
+                                          options={dugaariinSongolt(garage.davkhar || "", "Зогсоол")} className="h-full w-full" placeholder="Тоот" disabled={!garage.davkhar} allowCustomInput={true} blockOccupied />
+                                      </div>
+                                      <button type="button" onClick={() => removeGarage(gIdx)}
+                                        title="Хасах" aria-label="Хасах"
+                                        className="shrink-0 rounded-md p-1 text-[color:var(--muted-text)] transition-colors hover:bg-danger/10 hover:text-danger">
+                                        <X className="h-4 w-4" />
+                                      </button>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Агуулах */}
+                          <div>
+                            <div className="mb-1.5 flex items-center justify-between">
+                              <span className="text-sm text-[color:var(--panel-text)]">
+                                Агуулахын тоот
+                                {storages.length > 1 && (
+                                  <span className="ml-1 text-[color:var(--muted-text)]">({storages.length})</span>
+                                )}
+                              </span>
+                              {storages.length > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={addStorage}
+                                  className="inline-flex items-center gap-1 text-xs font-medium text-brand hover:underline"
+                                >
+                                  <Plus className="h-3.5 w-3.5" /> Нэмэх
+                                </button>
+                              )}
+                            </div>
+                            {storages.length === 0 ? (
+                              <button
+                                type="button"
+                                onClick={addStorage}
+                                className="flex h-10 w-full items-center gap-2 rounded-[10px] border border-dashed border-[color:var(--surface-border)] px-3 text-sm text-[color:var(--muted-text)] transition-colors hover:border-theme/50 hover:text-brand"
+                              >
+                                <Warehouse className="h-4 w-4" />
+                                Агуулахын тоот сонгох
+                                <Plus className="ml-auto h-4 w-4" />
+                              </button>
+                            ) : (
+                              <div className="space-y-2">
+                                {storages.map((storage: any, sIdx: number) => {
+                                  const sFlatIdx = getStorageFlatIndex(sIdx);
+                                  return (
+                                    <div key={`storage-${sIdx}`} className="flex items-center gap-2">
+                                      <div className={`tusgai-wrapper flex w-[38%] shrink-0 items-center ${errors.includes(`units.${sFlatIdx}.davkhar`) ? "input-error" : ""}`}>
+                                        <TusgaiZagvar value={storage.davkhar || ""} onChange={(val: string) => updateStorageField(sIdx, "davkhar", val)}
+                                          options={additionalFloors.map((d) => ({ value: d, label: d }))} className="h-full w-full" placeholder="Давхар" />
+                                      </div>
+                                      <div className={`tusgai-wrapper flex min-w-0 flex-1 items-center ${errors.includes(`units.${sFlatIdx}.toot`) ? "input-error" : ""}`}>
+                                        <TusgaiZagvar value={storage.toot || ""} onChange={(val: string) => updateStorageField(sIdx, "toot", val)}
+                                          options={dugaariinSongolt(storage.davkhar || "", "Агуулах")} className="h-full w-full" placeholder="Тоот" disabled={!storage.davkhar} allowCustomInput={true} blockOccupied />
+                                      </div>
+                                      <button type="button" onClick={() => removeStorage(sIdx)}
+                                        title="Хасах" aria-label="Хасах"
+                                        className="shrink-0 rounded-md p-1 text-[color:var(--muted-text)] transition-colors hover:bg-danger/10 hover:text-danger">
+                                        <X className="h-4 w-4" />
+                                      </button>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Гадна зогсоол — гараж/агуулахгүй ч хадгалж болно.
+                              Тоотгүй бол `syncResidentContracts` гэрээ үүсгэхгүй. */}
+                          <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] px-3 py-2.5 transition-colors hover:border-theme/40 sm:col-span-2">
+                            <input
+                              type="checkbox"
+                              checked={!!newClient.gadnaZogsoolEsekh}
+                              onChange={(e) => {
+                                const asaav = e.target.checked;
+                                setNewClient((p: any) => ({
+                                  ...p,
+                                  gadnaZogsoolEsekh: asaav,
+                                }));
+                              }}
+                              className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-[color:var(--theme)]"
+                            />
+                            <span className="min-w-0">
+                              <span className="block text-sm text-[color:var(--panel-text)]">
+                                Гадна зогсоол
+                              </span>
+                              <span className="mt-0.5 block text-xs text-[color:var(--muted-text)]">
+                                Гараж / агуулахгүйгээр хадгалах, эсвэл давхар нэмж болно
+                              </span>
+                            </span>
+                          </label>
+                        </div>
+                      </section>
                     </div>
 
-                    {/* Гараж | Агуулах — зэрэгцээ самбар. Гадна зогсоолтой ч
-                        давхар нэмж болно. */}
-                    <div className="md:col-span-2 grid grid-cols-1 items-start gap-3 md:grid-cols-2">
-                      <div className="overflow-hidden rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]">
-                        <div className="flex items-center justify-between gap-2 px-3 py-2">
-                          <div className="flex items-center gap-2">
-                            <span className="grid h-6 w-6 place-items-center rounded-md bg-theme/10 text-brand">
-                              <Car className="h-3.5 w-3.5" />
-                            </span>
-                            <span className="text-xs font-medium text-[color:var(--panel-text)]">
-                              Гараж
-                              {garages.length > 0 && (
-                                <span className="ml-1 text-[color:var(--muted-text)]">({garages.length})</span>
-                              )}
+                    {/* ═══ Баруун тал: Ашиглалтын зардал ═══ */}
+                    <aside className="space-y-4 rounded-2xl border border-theme/15 bg-theme/5 p-5">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-theme/10 text-brand">
+                            <FileText className="h-5 w-5" />
+                          </span>
+                          <h3 className="truncate text-base font-semibold text-[color:var(--panel-text)]">
+                            Ашиглалтын зардал
+                          </h3>
+                          <span
+                            className="shrink-0 text-[color:var(--muted-text)]"
+                            title="Барилгын «Харилцагч» зориулалттай ашиглалтын зардлуудаас энэ харилцагчид сар бүр бодогдохыг сонгоно. Зардлыг Тохиргоо → Ашиглалтын зардал хэсэгт бүртгэнэ."
+                          >
+                            <HelpCircle className="h-4 w-4" />
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={bukhZardalSongogdson}
+                          aria-label="Бүх зардлыг сонгох"
+                          title={bukhZardalSongogdson ? "Бүгдийг хасах" : "Бүгдийг сонгох"}
+                          onClick={bukhZardalSolio}
+                          disabled={khariltsagchiinZardluud.length === 0}
+                          className={`relative h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out disabled:cursor-not-allowed disabled:opacity-40 ${
+                            bukhZardalSongogdson ? "bg-theme" : "bg-slate-300 dark:bg-slate-600"
+                          }`}
+                        >
+                          <span
+                            className={`absolute top-0.5 h-5 w-5 rounded-full !bg-white shadow transition-all duration-200 ease-in-out ${
+                              bukhZardalSongogdson ? "left-[22px]" : "left-0.5"
+                            }`}
+                            style={{ backgroundColor: "white" }}
+                          />
+                        </button>
+                      </div>
+
+                      <p className="rounded-xl bg-theme/10 px-4 py-3 text-sm text-[color:var(--panel-text)]">
+                        Сонгосон зардлууд энэ харилцагчийн гэрээнд сар бүр
+                        бодогдож, нэхэмжлэхэд орно.
+                      </p>
+
+                      <button
+                        type="button"
+                        onClick={zardalTokhirgooNeey}
+                        className="flex w-full items-center gap-3 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-4 py-3 text-left text-sm font-medium text-[color:var(--panel-text)] transition-colors hover:border-theme/40"
+                      >
+                        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-theme/10 text-brand">
+                          <Plus className="h-5 w-5" />
+                        </span>
+                        <span className="flex-1">Ашиглалтын зардал бүртгэх</span>
+                        <ChevronRight className="h-4 w-4 text-[color:var(--muted-text)]" />
+                      </button>
+
+                      <div className="flex items-center justify-between pt-1">
+                        <h4 className="text-sm font-semibold text-[color:var(--panel-text)]">
+                          Бодогдох зардлууд
+                        </h4>
+                        <span className="text-sm font-medium text-brand">
+                          {songosonZardluud.filter((id) =>
+                            khariltsagchiinZardluud.some((z: any) => String(z._id) === id),
+                          ).length}{" "}
+                          / {khariltsagchiinZardluud.length} сонгосон
+                        </span>
+                      </div>
+
+                      <div className="overflow-hidden rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]">
+                        <div className="grid grid-cols-[1.5rem_minmax(0,1fr)_auto] gap-3 border-b border-[color:var(--surface-border)] px-4 py-2.5 text-xs text-[color:var(--muted-text)]">
+                          <span />
+                          <span>Зардлын нэр</span>
+                          <span className="text-right">Дүн</span>
+                        </div>
+
+                        {zardalAchaalj ? (
+                          <div className="px-4 py-6 text-center text-sm text-[color:var(--muted-text)]">
+                            Ачаалж байна...
+                          </div>
+                        ) : khariltsagchiinZardluud.length === 0 ? (
+                          <div className="px-4 py-6 text-center text-sm text-[color:var(--muted-text)]">
+                            Харилцагчийн зардал бүртгээгүй байна
+                          </div>
+                        ) : (
+                          <ul className="custom-scrollbar max-h-72 overflow-y-auto">
+                            {khariltsagchiinZardluud.map((z: any) => {
+                              const id = String(z._id);
+                              const songoson = songosonZardluud.includes(id);
+                              return (
+                                <li key={id}>
+                                  <button
+                                    type="button"
+                                    role="checkbox"
+                                    aria-checked={songoson}
+                                    onClick={() => zardalSongoyo(id)}
+                                    className="grid w-full grid-cols-[1.5rem_minmax(0,1fr)_auto] items-center gap-3 border-b border-[color:var(--surface-border)] px-4 py-2.5 text-left text-sm transition-colors last:border-b-0 hover:bg-[color:var(--surface-hover)]"
+                                  >
+                                    <span
+                                      className={`grid h-5 w-5 place-items-center rounded-md border transition-colors ${
+                                        songoson
+                                          ? "border-transparent bg-theme"
+                                          : "border-slate-300 dark:border-slate-600"
+                                      }`}
+                                    >
+                                      {songoson && (
+                                        <Check
+                                          className="h-3.5 w-3.5 !text-white"
+                                          strokeWidth={3}
+                                          style={{ color: "white" }}
+                                        />
+                                      )}
+                                    </span>
+                                    <span className="min-w-0">
+                                      <span className={`block truncate ${songoson ? "text-[color:var(--panel-text)]" : "text-[color:var(--muted-text)]"}`}>
+                                        {z.ner}
+                                      </span>
+                                      {z.zardliinTurul && (
+                                        <span className="block truncate text-xs text-[color:var(--muted-text)]">
+                                          {z.zardliinTurul}
+                                        </span>
+                                      )}
+                                    </span>
+                                    <span className={`text-right tabular-nums ${songoson ? "text-[color:var(--panel-text)]" : "text-[color:var(--muted-text)]"}`}>
+                                      {z.zaalt ? "Заалтаар" : tooUnshigdakh(zardliinDun(z))}
+                                    </span>
+                                  </button>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
+
+                        {khariltsagchiinZardluud.length > 0 && (
+                          <div className="flex items-center justify-between border-t border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] px-4 py-2.5 text-sm">
+                            <span className="text-[color:var(--muted-text)]">Сарын нийт</span>
+                            <span className="font-semibold tabular-nums text-[color:var(--panel-text)]">
+                              {tooUnshigdakh(songosonNiitDun)} ₮
                             </span>
                           </div>
-                          <Button
-                            type="button"
-                            onClick={addGarage}
-                            variant="secondary"
-                            size="sm"
-                            leftIcon={<Plus className="w-3.5 h-3.5" />}
-                          >
-                            Нэмэх
-                          </Button>
-                        </div>
-                        {garages.map((garage: any, gIdx: number) => {
-                          const gFlatIdx = getGarageFlatIndex(gIdx);
-                          return (
-                            <div key={`garage-${gIdx}`} className="flex items-center gap-2 border-t border-[color:var(--surface-border)] px-3 py-2">
-                              <div className={`tusgai-wrapper min-w-0 flex-1 flex items-center ${errors.includes(`units.${gFlatIdx}.davkhar`) ? "input-error" : ""}`}>
-                                <TusgaiZagvar value={garage.davkhar || ""} onChange={(val: string) => updateGarageField(gIdx, "davkhar", val)}
-                                  options={additionalFloors.map((d) => ({ value: d, label: d }))} className="w-full h-full" placeholder="Давхар" />
-                              </div>
-                              <div className={`tusgai-wrapper min-w-0 flex-1 flex items-center ${errors.includes(`units.${gFlatIdx}.toot`) ? "input-error" : ""}`}>
-                                <TusgaiZagvar value={garage.toot || ""} onChange={(val: string) => updateGarageField(gIdx, "toot", val)}
-                                  options={dugaariinSongolt(garage.davkhar || "", "Зогсоол")} className="w-full h-full" placeholder="Дугаар" disabled={!garage.davkhar} allowCustomInput={true} blockOccupied />
-                              </div>
-                              <button type="button" onClick={() => removeGarage(gIdx)}
-                                title="Хасах" aria-label="Хасах"
-                                className="shrink-0 rounded-md p-1 text-[color:var(--muted-text)] transition-colors hover:bg-danger/10 hover:text-danger">
-                                <X className="h-3.5 w-3.5" />
-                              </button>
-                            </div>
-                          );
-                        })}
+                        )}
                       </div>
-                      <div className="overflow-hidden rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]">
-                        <div className="flex items-center justify-between gap-2 px-3 py-2">
-                          <div className="flex items-center gap-2">
-                            <span className="grid h-6 w-6 place-items-center rounded-md bg-indigo-500/10 text-indigo-500">
-                              <Warehouse className="h-3.5 w-3.5" />
-                            </span>
-                            <span className="text-xs font-medium text-[color:var(--panel-text)]">
-                              Агуулах
-                              {storages.length > 0 && (
-                                <span className="ml-1 text-[color:var(--muted-text)]">({storages.length})</span>
-                              )}
-                            </span>
-                          </div>
-                          <Button
-                            type="button"
-                            onClick={addStorage}
-                            variant="secondary"
-                            size="sm"
-                            leftIcon={<Plus className="w-3.5 h-3.5" />}
-                          >
-                            Нэмэх
-                          </Button>
-                        </div>
-                        {storages.map((storage: any, sIdx: number) => {
-                          const sFlatIdxNested = getStorageFlatIndex(sIdx);
-                          return (
-                            <div key={`storage-${sIdx}`} className="flex items-center gap-2 border-t border-[color:var(--surface-border)] px-3 py-2">
-                              <div className={`tusgai-wrapper min-w-0 flex-1 flex items-center ${errors.includes(`units.${sFlatIdxNested}.davkhar`) ? "input-error" : ""}`}>
-                                <TusgaiZagvar value={storage.davkhar || ""} onChange={(val: string) => updateStorageField(sIdx, "davkhar", val)}
-                                  options={additionalFloors.map((d) => ({ value: d, label: d }))} className="w-full h-full" placeholder="Давхар" />
-                              </div>
-                              <div className={`tusgai-wrapper min-w-0 flex-1 flex items-center ${errors.includes(`units.${sFlatIdxNested}.toot`) ? "input-error" : ""}`}>
-                                <TusgaiZagvar value={storage.toot || ""} onChange={(val: string) => updateStorageField(sIdx, "toot", val)}
-                                  options={dugaariinSongolt(storage.davkhar || "", "Агуулах")} className="w-full h-full" placeholder="Дугаар" disabled={!storage.davkhar} allowCustomInput={true} blockOccupied />
-                              </div>
-                              <button type="button" onClick={() => removeStorage(sIdx)}
-                                title="Хасах" aria-label="Хасах"
-                                className="shrink-0 rounded-md p-1 text-[color:var(--muted-text)] transition-colors hover:bg-danger/10 hover:text-danger">
-                                <X className="h-3.5 w-3.5" />
-                              </button>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                    {/* Tailbar */}
-                    <div className="md:col-span-2">
-                      <label className="block text-xs text-[color:var(--muted-text)] mb-1 transition-colors">
-                        Тайлбар
-                      </label>
-                      <textarea
-                        value={newClient.tailbar || ""}
-                        onChange={(e) => {
-                          setNewClient((p: any) => ({
-                            ...p,
-                            tailbar: e.target.value,
-                          }));
-                        }}
-                        className="modern-textarea w-full resize-none"
-                        placeholder="Тайлбар..."
-                      />
-                    </div>
+                    </aside>
                   </div>
                 </div>
 
-                <div className="flex justify-end px-4 py-3 border-t border-[color:var(--surface-border)] gap-3 bg-gradient-to-r from-transparent via-white/5 to-transparent">
+                <div className="flex justify-end gap-3 border-t border-[color:var(--surface-border)] px-6 py-4">
                   <Button
                     type="button"
                     onClick={requestClose}
                     variant="secondary"
                     size="md"
-                    className="min-w-[80px]"
+                    className="min-w-[110px]"
                   >
-                    Хаах
+                    Болих
                   </Button>
                   <Button
                     type="submit"
                     variant="primary"
                     size="md"
-                    className="min-w-[80px]"
+                    className="min-w-[200px]"
                     data-modal-primary
                     disabled={isSubmitting}
                   >
-                    {isSubmitting
-                      ? "Түр хүлээнэ үү..."
-                      : editingClient
-                        ? "Хадгалах"
-                        : "Хадгалах"}
+                    {isSubmitting ? "Түр хүлээнэ үү..." : "Хадгалах"}
                   </Button>
                 </div>
               </form>

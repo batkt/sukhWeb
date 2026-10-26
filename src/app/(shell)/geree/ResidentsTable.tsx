@@ -135,7 +135,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
         align: "center",
         render: (_: any, record: ResidentItem) => (
           <span className="text-[color:var(--panel-text)] dark:text-white whitespace-nowrap">
-            {getResidentDavkhauraud(record) || "-"}
+            {getResidentDavkhauraud(record, { zuvkhunOronSuuts: true }) || "-"}
           </span>
         ),
       },
