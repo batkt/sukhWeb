@@ -85,6 +85,16 @@ export function useGereeActions(
           ? newResident.utas.find((p: any) => String(p || "").trim() !== "") ||
           ""
           : String(newResident.utas || "");
+        // Үндсэнээс бусад утаснууд — тоот бүрийн гэрээнд сонгож ашиглана
+        const nemeltUtas: string[] = Array.isArray(newResident.utas)
+          ? Array.from(
+              new Set<string>(
+                newResident.utas
+                  .map((p: any) => String(p || "").trim())
+                  .filter((p: string) => p && p !== firstPhone),
+              ),
+            )
+          : [];
 
         // Find the selected building from baiguullaga
         const effectiveBid =
@@ -148,6 +158,7 @@ export function useGereeActions(
           ovog: newResident.ovog,
           register: newResident.register,
           utas: firstPhone,
+          nemeltUtas,
           email: newResident.mail,
           mail: newResident.mail,
           khayag: newResident.khayag,
@@ -407,11 +418,17 @@ export function useGereeActions(
         ovog: p.ovog || "",
         ner: p.ner || "",
         register: p.register || "",
-        utas: Array.isArray(p.utas)
-          ? p.utas.map((u: any) => String(u))
-          : p.utas
-            ? [String(p.utas)]
-            : [""],
+        utas: (() => {
+          const undsen = Array.isArray(p.utas)
+            ? p.utas.map((u: any) => String(u))
+            : p.utas
+              ? [String(p.utas)]
+              : [""];
+          const nemelt = (Array.isArray(p.nemeltUtas) ? p.nemeltUtas : [])
+            .map((u: any) => String(u || "").trim())
+            .filter((u: string) => u && !undsen.includes(u));
+          return [...undsen, ...nemelt];
+        })(),
         mail: p.mail || p.email || "",
         khayag: p.khayag || "",
         aimag: p.aimag || "Улаанбаатар",
@@ -451,6 +468,8 @@ export function useGereeActions(
                 tsahilgaaniiZaalt: t.tsahilgaaniiZaalt ?? 0,
                 khonogoorBodokhEsekh: t.khonogoorBodokhEsekh || false,
                 bodokhKhonog: t.bodokhKhonog || 0,
+                gereeNer: t.gereeNer || "",
+                gereeUtas: t.gereeUtas || "",
               }))
             : [
               {

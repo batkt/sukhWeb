@@ -97,7 +97,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
               : "center";
 
         let colWidth: number | undefined = undefined;
-        if (columnKey === "ner") colWidth = 200;
+        if (columnKey === "ner") colWidth = 250;
         else if (columnKey === "horoo" || columnKey === "bairniiNer")
           colWidth = 150;
         else if (
@@ -231,11 +231,34 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
                   ? "ascend"
                   : "descend"
                 : null,
-            render: (_: any, record: any) => (
-              <span className="text-[color:var(--panel-text)] dark:text-white">
-                {renderCellValue(record, columnKey)}
-              </span>
-            ),
+            render: (_: any, record: any) => {
+              if (columnKey !== "ner") {
+                return (
+                  <span className="text-[color:var(--panel-text)] dark:text-white">
+                    {renderCellValue(record, columnKey)}
+                  </span>
+                );
+              }
+              // Харилцагчийн гэрээ khariltsagchId-тай үүсдэг
+              const khariltsagch = !!record?.khariltsagchId;
+              return (
+                <span className="inline-flex min-w-0 max-w-full items-center gap-1.5">
+                  <span
+                    className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium leading-none ${
+                      khariltsagch
+                        ? "bg-indigo-500/10 text-indigo-600 dark:text-indigo-300"
+                        : "bg-theme/10 text-brand"
+                    }`}
+                    title={khariltsagch ? "Харилцагчийн гэрээ" : "Оршин суугчийн гэрээ"}
+                  >
+                    {khariltsagch ? "Харилцагч" : "Оршин суугч"}
+                  </span>
+                  <span className="min-w-0 truncate text-[color:var(--panel-text)] dark:text-white">
+                    {renderCellValue(record, columnKey)}
+                  </span>
+                </span>
+              );
+            },
           };
         }
 
