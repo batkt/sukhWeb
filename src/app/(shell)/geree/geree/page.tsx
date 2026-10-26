@@ -20,6 +20,13 @@ export default function GereeGereePage() {
   // Админаар цуцлагдсан гэрээтэй харилцагчийг устгах цонх.
   const [adminUstgakhGeree, setAdminUstgakhGeree] = useState<any | null>(null);
 
+  // Шүүлттэй гэрээнүүдийн оршин суугч / харилцагч тоо (өнгөний тайлбарт)
+  const gereeniiToo = useMemo(() => {
+    const jagsaalt: any[] = (data as any).filteredContracts || [];
+    const khariltsagch = jagsaalt.filter((g) => !!g?.khariltsagchId).length;
+    return { khariltsagch, orshinSuugch: jagsaalt.length - khariltsagch };
+  }, [(data as any).filteredContracts]);
+
   // Дашбоард: Бүгд / Идэвхтэй / Идэвхгүй — дарахад жагсаалтыг шүүнэ.
   // (Цуцалсан гэрээ = Идэвхгүй; «Бүгд» дээр цуцалсан нь улаан дэвсгэртэй.)
   const toonuud = useMemo(() => {
@@ -110,6 +117,19 @@ export default function GereeGereePage() {
             options={data.davkharOptions.map((davkhar) => ({ value: davkhar, label: davkhar }))}
           />
         )}
+        {/* Нэрийн баганын өнгөний тайлбар */}
+        <div className="flex items-center gap-4 px-1 text-sm text-[color:var(--panel-text)]">
+          {[
+            { ner: "Оршин суугч", ungu: "rgb(59, 130, 246)", too: gereeniiToo.orshinSuugch },
+            { ner: "Харилцагч", ungu: "rgb(168, 85, 247)", too: gereeniiToo.khariltsagch },
+          ].map((t) => (
+            <span key={t.ner} className="inline-flex items-center gap-1.5 whitespace-nowrap">
+              {t.ner} :
+              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: t.ungu }} />
+              <span className="text-[color:var(--muted-text)]">({t.too})</span>
+            </span>
+          ))}
+        </div>
         <div className="ml-auto flex shrink-0 items-center gap-2">
           <button
             id="geree-templates-btn"

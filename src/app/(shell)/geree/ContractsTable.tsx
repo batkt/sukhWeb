@@ -241,18 +241,21 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
               }
               // Харилцагчийн гэрээ khariltsagchId-тай үүсдэг
               const khariltsagch = !!record?.khariltsagchId;
+              // Төрлийг шошгоор биш өнгөөр ялгана: оршин суугч — цэнхэр,
+              // харилцагч — нил ягаан (гэрээний дугаарын хэв маягтай ижил).
+              const ungu = khariltsagch ? "168, 85, 247" : "59, 130, 246";
               return (
-                <span className="inline-flex min-w-0 max-w-full items-center gap-1.5">
+                <span
+                  className="inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-md py-0.5 pl-1.5 pr-3"
+                  style={{
+                    background: `linear-gradient(90deg, rgba(${ungu}, 0.28) 0%, rgba(${ungu}, 0.10) 60%, rgba(${ungu}, 0) 100%)`,
+                  }}
+                  title={khariltsagch ? "Харилцагчийн гэрээ" : "Оршин суугчийн гэрээ"}
+                >
                   <span
-                    className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium leading-none ${
-                      khariltsagch
-                        ? "bg-indigo-500/10 text-indigo-600 dark:text-indigo-300"
-                        : "bg-theme/10 text-brand"
-                    }`}
-                    title={khariltsagch ? "Харилцагчийн гэрээ" : "Оршин суугчийн гэрээ"}
-                  >
-                    {khariltsagch ? "Харилцагч" : "Оршин суугч"}
-                  </span>
+                    className="h-2.5 w-2.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: `rgb(${ungu})` }}
+                  />
                   <span className="min-w-0 truncate text-[color:var(--panel-text)] dark:text-white">
                     {renderCellValue(record, columnKey)}
                   </span>

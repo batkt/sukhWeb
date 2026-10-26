@@ -1160,6 +1160,7 @@ export function useGereeData(
     // Computed data
     currentContracts,
     totalContracts: filteredContracts.length,
+    filteredContracts,
     startIndex: contractStartIndex,
     currentResidents,
     resTotalPages,
