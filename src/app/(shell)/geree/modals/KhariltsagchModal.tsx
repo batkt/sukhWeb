@@ -8,7 +8,7 @@ import TusgaiZagvar from "../../../../../components/selectZagvar/tusgaiZagvar";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { ConfirmCloseDialog } from "@/components/ui/ConfirmCloseDialog";
 import Button from "@/components/ui/Button";
-import { Plus, Minus, X, Car, Warehouse } from "lucide-react";
+import { Plus, Minus, X, Car, Warehouse, Building2 } from "lucide-react";
 import {
   mashiniiDugaarTseverle,
   dugaarZuvEsekh,
@@ -120,15 +120,13 @@ export default function KhariltsagchModal({
       .map(str)
       .filter(Boolean);
     const units = (Array.isArray(c.units) ? c.units : [])
-      .filter((u: any) => negjiinTurul(u) !== "Орон сууц")
       .map((u: any) => [
         negjiinTurul(u),
+        str(u.orts),
         str(u.davkhar),
         str(u.toot),
         Number(u.ekhniiUldegdel || 0),
       ])
-      // Модал тоотуудыг (гараж → агуулах) дахин эрэмбэлдэг тул дарааллаас
-      // үл хамааран харьцуулна — эс бөгөөс юу ч өөрчлөөгүй үед анхааруулга гарна.
       .map((x: any[]) => JSON.stringify(x))
       .sort();
     return JSON.stringify([
@@ -514,11 +512,36 @@ export default function KhariltsagchModal({
   /** Хязгаарт хүрсэн эсэх — «+» товчийг хаана. */
   const khyazgaartKhurev =
     mashiniiKhyazgaar > 0 && mashinuud.length >= mashiniiKhyazgaar;
+  const [mainUnits, setMainUnits] = React.useState<any[]>([]);
   const [garages, setGarages] = React.useState<any[]>([]);
   const [storages, setStorages] = React.useState<any[]>([]);
 
+  const emptyMainUnit = () => ({
+    orts: ortsOptions[0] || "1",
+    davkhar: davkharOptions.find((d) => !/^B\d+$/i.test(d)) || davkharOptions[0] || "1",
+    toot: "",
+    ekhniiUldegdel: 0,
+    tsahilgaaniiZaalt: 0,
+    khonogoorBodokhEsekh: false,
+    bodokhKhonog: 0,
+  });
   const emptyGarage = () => ({ davkhar: "", toot: "", ekhniiUldegdel: 0, tsahilgaaniiZaalt: 0, khonogoorBodokhEsekh: false, bodokhKhonog: 0 });
   const emptyStorage = () => ({ davkhar: "", toot: "", ekhniiUldegdel: 0, tsahilgaaniiZaalt: 0, khonogoorBodokhEsekh: false, bodokhKhonog: 0 });
+
+  // Main unit helpers
+  const addMainUnit = () => {
+    setMainUnits((prev) => [...prev, emptyMainUnit()]);
+  };
+  const removeMainUnit = (index: number) => {
+    setMainUnits((prev) => { const n = [...prev]; n.splice(index, 1); return n; });
+  };
+  const updateMainUnitField = (index: number, field: string, value: any) => {
+    setMainUnits((prev) => {
+      const n = [...prev];
+      n[index] = { ...n[index], [field]: value };
+      return n;
+    });
+  };
 
   // Garage helpers
   const addGarage = () => {
@@ -551,12 +574,15 @@ export default function KhariltsagchModal({
   };
 
   // Flat index calculators
+  const getMainUnitFlatIndex = (mainIndex: number) => {
+    return mainIndex;
+  };
   const getGarageFlatIndex = (garageIndex: number) => {
-    return garageIndex;
+    return mainUnits.length + garageIndex;
   };
   const getStorageFlatIndex = (storageIndex: number) => {
-    return garages.length + storageIndex;
-  }
+    return mainUnits.length + garages.length + storageIndex;
+  };
 
   const parseToNumber = (str: string) => {
     if (typeof str !== "string") return str || 0;
@@ -617,9 +643,11 @@ export default function KhariltsagchModal({
       const units = Array.isArray(newClient.units) ? newClient.units : [];
       // `negjiinTurul` — «Зогсоол» гэж хадгалсан гараж энд унаж, модал дээр
       // огт харагдахгүй, хадгалахад устдаг байв.
+      const allMains = units.filter((u: any) => negjiinTurul(u) !== "Гараж" && negjiinTurul(u) !== "Агуулах");
       const allGarages = units.filter((u: any) => negjiinTurul(u) === "Гараж");
       const allStorages = units.filter((u: any) => negjiinTurul(u) === "Агуулах");
 
+      setMainUnits(allMains.map((m: any) => ({ ...m, orts: m.orts || "1", turul: m.turul || "Тоот" })));
       setGarages(allGarages.map((g: any) => ({ ...g })));
       setStorages(allStorages.map((s: any) => ({ ...s })));
 
@@ -633,7 +661,7 @@ export default function KhariltsagchModal({
       const tseverleesen = baigaa.filter(Boolean);
       setMashinuud(tseverleesen.length > 0 ? tseverleesen : [""]);
       
-      const primary = allGarages[0] || allStorages[0] || {};
+      const primary = allMains[0] || allGarages[0] || allStorages[0] || {};
       setUldegdelInput(formatWithCommas(primary.ekhniiUldegdel) || "0");
       setZaaltInput(formatWithCommas(primary.tsahilgaaniiZaalt) || "0");
     }
@@ -663,6 +691,19 @@ export default function KhariltsagchModal({
     const kholboos = (u: any) => ({
       ...(u.barilgiinId ? { barilgiinId: u.barilgiinId } : {}),
       ...(u.baiguullagiinId ? { baiguullagiinId: u.baiguullagiinId } : {}),
+    });
+    mainUnits.forEach((m: any) => {
+      activeUnits.push({
+        orts: m.orts || "1",
+        davkhar: m.davkhar || "",
+        toot: m.toot || "",
+        turul: m.turul || "Тоот",
+        ...kholboos(m),
+        ekhniiUldegdel: Number(m.ekhniiUldegdel || 0),
+        tsahilgaaniiZaalt: Number(m.tsahilgaaniiZaalt || 0),
+        khonogoorBodokhEsekh: !!m.khonogoorBodokhEsekh,
+        bodokhKhonog: Number(m.bodokhKhonog || 0),
+      });
     });
     garages.forEach((g: any) => {
       activeUnits.push({ orts: "1", davkhar: g.davkhar || "", toot: g.toot || "", turul: "Гараж",
@@ -696,7 +737,7 @@ export default function KhariltsagchModal({
         bodokhKhonog: primary.bodokhKhonog || 0,
       };
     });
-  }, [garages, storages, show]);
+  }, [mainUnits, garages, storages, show]);
 
   const additionalFloors = React.useMemo(() => {
     const filtered = davkharOptions.filter((d) => /^B\d+$/i.test(d));
@@ -1333,6 +1374,90 @@ export default function KhariltsagchModal({
                           </span>
                         </span>
                       </label>
+                    </div>
+
+                    {/* Тоот / Оффис / Талбай */}
+                    <div className="md:col-span-2 overflow-hidden rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]">
+                      <div className="flex items-center justify-between gap-2 px-3 py-2">
+                        <div className="flex items-center gap-2">
+                          <span className="grid h-6 w-6 place-items-center rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                            <Building2 className="h-3.5 w-3.5" />
+                          </span>
+                          <span className="text-xs font-medium text-[color:var(--panel-text)]">
+                            Тоот / Оффис / Талбай
+                            {mainUnits.length > 0 && (
+                              <span className="ml-1 text-[color:var(--muted-text)]">({mainUnits.length})</span>
+                            )}
+                          </span>
+                        </div>
+                        <Button
+                          type="button"
+                          onClick={addMainUnit}
+                          variant="secondary"
+                          size="sm"
+                          leftIcon={<Plus className="w-3.5 h-3.5" />}
+                        >
+                          Нэмэх
+                        </Button>
+                      </div>
+                      {mainUnits.map((mUnit: any, mIdx: number) => {
+                        const mFlatIdx = getMainUnitFlatIndex(mIdx);
+                        const oOptions = (ortsOptions && ortsOptions.length > 0 ? ortsOptions : ["1"]).map((o) => ({
+                          value: o,
+                          label: `${o}-р орц`,
+                        }));
+                        const dOptions = (davkharOptions && davkharOptions.length > 0 ? davkharOptions : ["1"]).map((d) => ({
+                          value: d,
+                          label: `${d} давхар`,
+                        }));
+                        const tOptions = getTootOptions
+                          ? getTootOptions(mUnit.orts || "1", mUnit.davkhar || "", "Тоот").map((t) => ({
+                              value: t,
+                              label: `${t} тоот`,
+                            }))
+                          : [];
+                        return (
+                          <div key={`main-${mIdx}`} className="flex flex-wrap md:flex-nowrap items-center gap-2 border-t border-[color:var(--surface-border)] px-3 py-2">
+                            <div className="tusgai-wrapper min-w-[90px] flex-1 flex items-center">
+                              <TusgaiZagvar
+                                value={mUnit.orts || "1"}
+                                onChange={(val: string) => updateMainUnitField(mIdx, "orts", val)}
+                                options={oOptions}
+                                className="w-full h-full"
+                                placeholder="Орц"
+                              />
+                            </div>
+                            <div className={`tusgai-wrapper min-w-[100px] flex-1 flex items-center ${errors.includes(`units.${mFlatIdx}.davkhar`) ? "input-error" : ""}`}>
+                              <TusgaiZagvar
+                                value={mUnit.davkhar || ""}
+                                onChange={(val: string) => updateMainUnitField(mIdx, "davkhar", val)}
+                                options={dOptions}
+                                className="w-full h-full"
+                                placeholder="Давхар"
+                              />
+                            </div>
+                            <div className={`tusgai-wrapper min-w-[110px] flex-[1.5] flex items-center ${errors.includes(`units.${mFlatIdx}.toot`) ? "input-error" : ""}`}>
+                              <TusgaiZagvar
+                                value={mUnit.toot || ""}
+                                onChange={(val: string) => updateMainUnitField(mIdx, "toot", val)}
+                                options={tOptions}
+                                className="w-full h-full"
+                                placeholder="Тоот дугаар"
+                                allowCustomInput={true}
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removeMainUnit(mIdx)}
+                              title="Хасах"
+                              aria-label="Хасах"
+                              className="shrink-0 rounded-md p-1 text-[color:var(--muted-text)] transition-colors hover:bg-danger/10 hover:text-danger"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
 
                     {/* Гараж | Агуулах — зэрэгцээ самбар. Гадна зогсоолтой ч

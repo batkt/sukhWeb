@@ -4,7 +4,7 @@ import React, { useMemo, useState } from "react";
 import Table from "@/components/ui/table";
 import { Tooltip } from "antd";
 import type { ColumnsType } from "@/components/ui/table";
-import { Edit, Trash2, ChevronUp, ChevronDown, X, Car, Warehouse, Eye, KeyRound } from "lucide-react";
+import { Edit, Trash2, ChevronUp, ChevronDown, X, Car, Warehouse, Building2, Eye, KeyRound } from "lucide-react";
 import { ConfirmCloseDialog } from "@/components/ui/ConfirmCloseDialog";
 import { getPaymentStatusLabel } from "@/lib/utils";
 import useSWR from "swr";
@@ -116,16 +116,27 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
     },
     { revalidateOnFocus: false, dedupingInterval: 30000 },
   );
-  /** Харилцагчийн Зогсоол/Агуулахын тоотууд (давхардалгүй) */
+  /** Харилцагчийн нэгжүүд (давхардалгүй) */
   const zogsoolAguulakh = (record: ClientItem): any[] => {
-    let toots: any[] = Array.isArray(record.toots) ? record.toots : [];
+    let toots: any[] =
+      Array.isArray(record.toots) && record.toots.length > 0
+        ? record.toots
+        : record.toot
+        ? [
+            {
+              toot: record.toot,
+              baiguullagiinId: record.baiguullagiinId,
+              barilgiinId: record.barilgiinId,
+              turul: record.turul || "Тоот",
+            },
+          ]
+        : [];
     if (currentBaiguullagiinId)
       toots = toots.filter((t: any) => String(t.baiguullagiinId) === String(currentBaiguullagiinId));
     const seen = new Set<string>();
     return toots.filter((t: any) => {
-      // «Зогсоол» гэж хадгалсан гаражийг ч тооцно
-      if (t.turul !== "Гараж" && t.turul !== "Зогсоол" && t.turul !== "Агуулах") return false;
-      const k = `${t.toot}_${t.barilgiinId || ""}_${t.turul}`;
+      if (!t || !t.toot || String(t.toot).trim() === "" || String(t.toot).trim() === "-") return false;
+      const k = `${t.toot}_${t.barilgiinId || ""}_${t.turul || ""}`;
       if (seen.has(k)) return false;
       seen.add(k);
       return true;
@@ -195,7 +206,7 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
       },
 
       {
-        title: "Гараж / Агуулах",
+        title: "Тоот / Гараж / Агуулах",
         key: "garage_storage",
         // Машины дугаарын дараа, өөр өнгийн баганаар.
         onHeaderCell: () => ({ className: "zt-col-garash" }),
@@ -218,7 +229,7 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
                     toot: record.toot,
                     baiguullagiinId: record.baiguullagiinId,
                     barilgiinId: record.barilgiinId,
-                    turul: record.turul || "Орон сууц",
+                    turul: record.turul || "Тоот",
                   },
                 ];
           
@@ -227,13 +238,10 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
             toots = toots.filter((t: any) => String(t.baiguullagiinId) === String(currentBaiguullagiinId));
           }
 
-          // Only show Zogsool or Aguulakh
-          toots = toots.filter((t: any) => negjiinTurul(t) !== "Орон сууц");
+          // Хоосон тоотыг шүүнэ
+          toots = toots.filter((t: any) => t && t.toot && String(t.toot).trim() !== "" && String(t.toot).trim() !== "-");
 
-          // Давхардал арилгах. Түлхүүрийг ХЭВШҮҮЛНЭ — «Гараж» ба «Зогсоол»,
-          // `B1` ба `в1`, `40` ба `040` нь НЭГ ижил нэгж боловч өмнө нь
-          // түүхий утгаар нь харьцуулдаг тул нэг гараж хоёр мөр болж
-          // харагддаг байв.
+          // Давхардал арилгах. Түлхүүрийг ХЭВШҮҮЛНЭ
           const seenToots = new Set<string>();
           toots = toots.filter((t: any) => {
             const key = negjiinTulkhuur(t);
@@ -243,27 +251,47 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
           });
 
           if (toots.length === 0) return "-";
-          // Гараж эхэнд, дараа нь агуулах — дугаараар нь эрэмбэлнэ.
-          toots = [...toots].sort((a: any, b: any) =>
-            negjiinTurul(a) === negjiinTurul(b)
-              ? String(a.toot).localeCompare(String(b.toot), undefined, { numeric: true })
-              : negjiinTurul(a) === "Гараж" ? -1 : 1,
-          );
 
+          // Тоот эхэнд, дараа нь гараж, дараа нь агуулах — дугаараар нь эрэмбэлнэ.
+          const turulRank = (t: any) => {
+            const tr = negjiinTurul(t);
+            if (tr === "Орон сууц") return 1;
+            if (tr === "Гараж") return 2;
+            return 3;
+          };
 
+          toots = [...toots].sort((a: any, b: any) => {
+            const rankA = turulRank(a);
+            const rankB = turulRank(b);
+            if (rankA !== rankB) return rankA - rankB;
+            return String(a.toot).localeCompare(String(b.toot), undefined, { numeric: true });
+          });
 
-          // Оршин суугчийн бүртгэлтэй адил: эхний дугаар + «+N», бүгдийг hover-оор.
-          const ner = (t: any) => negjiinTurul(t);
+          const ner = (t: any) => {
+            const tr = negjiinTurul(t);
+            return tr === "Орон сууц" ? "Тоот" : tr;
+          };
+
+          const getTurulIcon = (t: any, sizeClass = "h-3.5 w-3.5") => {
+            const tr = negjiinTurul(t);
+            if (tr === "Гараж") return <Car className={`${sizeClass} text-brand`} />;
+            if (tr === "Агуулах") return <Warehouse className={`${sizeClass} text-indigo-500`} />;
+            return <Building2 className={`${sizeClass} text-emerald-600 dark:text-emerald-400`} />;
+          };
+
+          const getChipClass = (t: any) => {
+            const tr = negjiinTurul(t);
+            if (tr === "Гараж") return "zt-chip-garash";
+            if (tr === "Агуулах") return "zt-chip-aguulakh";
+            return "zt-chip-toot";
+          };
+
           const tooltipContent = (
             <div className="space-y-1 p-1 min-w-[180px]">
               {toots.map((t: any, idx: number) => (
                 <div key={idx} className="flex items-center justify-between gap-3 py-0.5">
                   <span className="inline-flex items-center gap-1.5 font-medium">
-                    {negjiinTurul(t) === "Гараж" ? (
-                      <Car className="h-3.5 w-3.5 text-brand" />
-                    ) : (
-                      <Warehouse className="h-3.5 w-3.5 text-indigo-500" />
-                    )}
+                    {getTurulIcon(t, "h-3.5 w-3.5")}
                     {t.toot}
                     <span className="font-normal text-[color:var(--muted-text)]">{ner(t)}</span>
                   </span>
@@ -293,11 +321,9 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
           return (
             <Tooltip title={tooltipContent} placement="top" trigger="hover">
               <span
-                className={`inline-flex h-6 cursor-pointer items-center gap-1 rounded-md px-2 leading-none ${
-                  negjiinTurul(ekhnii) === "Гараж" ? "zt-chip-garash" : "zt-chip-aguulakh"
-                }`}
+                className={`inline-flex h-6 cursor-pointer items-center gap-1 rounded-md px-2 leading-none ${getChipClass(ekhnii)}`}
               >
-                {negjiinTurul(ekhnii) === "Гараж" ? <Car className="h-3 w-3 shrink-0" /> : <Warehouse className="h-3 w-3 shrink-0" />}
+                {getTurulIcon(ekhnii, "h-3 w-3 shrink-0")}
                 <span>{ekhnii.toot}</span>
                 {toots.length > 1 && <span className="opacity-70">+{toots.length - 1}</span>}
               </span>

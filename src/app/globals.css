@@ -8294,8 +8294,13 @@ body:not(:has(#tour-replay-fab)) .ai-launcher-wrap { right: 24px; }
   color: #4f46e5;
   background: color-mix(in oklch, #6366f1, transparent 86%);
 }
+.zt-chip-toot {
+  color: #059669;
+  background: color-mix(in oklch, #10b981, transparent 86%);
+}
 :root[data-theme="dark"] .zt-chip-garash, .dark .zt-chip-garash { color: color-mix(in oklch, var(--theme), white 35%); }
 :root[data-theme="dark"] .zt-chip-aguulakh, .dark .zt-chip-aguulakh { color: #a5b4fc; }
+:root[data-theme="dark"] .zt-chip-toot, .dark .zt-chip-toot { color: #6ee7b7; }
 
 /* ── Ашиглалтын зардал модал: шошго зүүн, талбар баруун ─────────────── */
 .az-row {
