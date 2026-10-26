@@ -66,6 +66,11 @@ interface FormData {
   bukhBarilgadEsekh?: boolean;
   togtmolTulburEsekh?: boolean;
   togtmolTulburiinDun?: number | string;
+  burtgelguiMashindKhaaltNeekhEsekh?: boolean;
+  burtgelguiMashin24Tsag?: boolean;
+  burtgelguiMashinEkhlekhTsag?: string;
+  burtgelguiMashinDuusakhTsag?: string;
+  burtgelguiStandardDugaarEsekh?: boolean;
   mashinGargakhKhugatsaa?: number | string;
   mashinUstgakhKhugatsaa?: number | string;
   tulburuud?: any[];
@@ -113,6 +118,26 @@ function ZogsoolBurtgekh(
     bukhBarilgadEsekh: data?.tokhirgoo?.bukhBarilgadEsekh || false,
     togtmolTulburEsekh: data?.togtmolTulburEsekh || false,
     togtmolTulburiinDun: data?.togtmolTulburiinDun || "",
+    burtgelguiMashindKhaaltNeekhEsekh:
+      data?.burtgelguiMashindKhaaltNeekhEsekh ??
+      data?.tokhirgoo?.burtgelguiMashindKhaaltNeekhEsekh ??
+      false,
+    burtgelguiMashin24Tsag:
+      data?.burtgelguiMashin24Tsag ??
+      data?.tokhirgoo?.burtgelguiMashin24Tsag ??
+      false,
+    burtgelguiMashinEkhlekhTsag:
+      data?.burtgelguiMashinEkhlekhTsag ||
+      data?.tokhirgoo?.burtgelguiMashinEkhlekhTsag ||
+      "",
+    burtgelguiMashinDuusakhTsag:
+      data?.burtgelguiMashinDuusakhTsag ||
+      data?.tokhirgoo?.burtgelguiMashinDuusakhTsag ||
+      "",
+    burtgelguiStandardDugaarEsekh:
+      data?.burtgelguiStandardDugaarEsekh ??
+      data?.tokhirgoo?.burtgelguiStandardDugaarEsekh ??
+      false,
     mashinGargakhKhugatsaa: data?.mashinGargakhKhugatsaa || "",
     mashinUstgakhKhugatsaa: data?.mashinUstgakhKhugatsaa || "",
     tulburuud: data?.tulburuud || [],
@@ -181,6 +206,11 @@ function ZogsoolBurtgekh(
         const parkingTokhirgoo = {
           ...(data?.tokhirgoo || {}),
           bukhBarilgadEsekh,
+          burtgelguiMashindKhaaltNeekhEsekh: !!formData.burtgelguiMashindKhaaltNeekhEsekh,
+          burtgelguiMashin24Tsag: !!formData.burtgelguiMashin24Tsag,
+          burtgelguiMashinEkhlekhTsag: formData.burtgelguiMashinEkhlekhTsag || "",
+          burtgelguiMashinDuusakhTsag: formData.burtgelguiMashinDuusakhTsag || "",
+          burtgelguiStandardDugaarEsekh: !!formData.burtgelguiStandardDugaarEsekh,
           ebarimtAshiglakhEsekh: !!ebarimtAshiglakhEsekh,
           merchantTin: ebarimtMerchantTin?.trim() || "",
           districtCode: ebarimtDistrictCode?.trim() || "",
@@ -587,6 +617,20 @@ function ZogsoolBurtgekh(
                   if (!checked) updateField("togtmolTulburiinDun", "");
                 }
               },
+              {
+                label: "Бүртгэлгүй машинд хаалт нээгдэх эсэх",
+                field: "burtgelguiMashindKhaaltNeekhEsekh",
+                onChange: (checked: boolean) => {
+                  updateField("burtgelguiMashindKhaaltNeekhEsekh", checked);
+                },
+              },
+              {
+                label: "Зөвхөн стандарт дугаарт нээх (4 тоо 3 үсэг, ДК)",
+                field: "burtgelguiStandardDugaarEsekh",
+                onChange: (checked: boolean) => {
+                  updateField("burtgelguiStandardDugaarEsekh", checked);
+                },
+              },
             ].map((item: any) => (
               <div key={item.field} className="stg-item flex min-h-14 items-center justify-between gap-3">
                 <span className="text-[14px] text-[color:var(--panel-text)]">{item.label}</span>
@@ -598,6 +642,73 @@ function ZogsoolBurtgekh(
               </div>
             ))}
           </div>
+
+          {/* Бүртгэлгүй машинд хаалт нээгдэх цагийн тохиргоо (24/7 эсвэл цагийн интервал) */}
+          {formData.burtgelguiMashindKhaaltNeekhEsekh && (
+            <div className="mt-4 p-4 rounded-xl bg-[color:var(--surface-hover)] border border-[color:var(--surface-border)]">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-[color:var(--surface-border)]">
+                <div>
+                  <h4 className="text-[14px] font-medium text-[color:var(--panel-text)]">
+                    Бүртгэлгүй машинд хаалт нээгдэх цагийн тохиргоо
+                  </h4>
+                  <p className="text-[12px] text-[color:var(--muted-text)] mt-0.5">
+                    24 цаг тасралтгүй эсвэл тодорхой цагийн интервалд гарах хаалт автоматаар нээгдэнэ
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[13px] text-[color:var(--panel-text)]">24/7 ажиллах</span>
+                  <Switch
+                    label="24/7 ажиллах"
+                    checked={!!formData.burtgelguiMashin24Tsag}
+                    onChange={(e) => updateField("burtgelguiMashin24Tsag", e.currentTarget.checked)}
+                  />
+                </div>
+              </div>
+
+              {!formData.burtgelguiMashin24Tsag && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
+                  <div className="space-y-1.5">
+                    <label className="block text-[13px] text-[color:var(--panel-text)] opacity-80">
+                      Эхлэх цаг
+                    </label>
+                    <MTextInput
+                      type="time"
+                      value={formData.burtgelguiMashinEkhlekhTsag || ""}
+                      onChange={(e) => updateField("burtgelguiMashinEkhlekhTsag", e.currentTarget.value)}
+                      classNames={{ input: "!h-10 !min-h-10 !rounded-[10px] !text-sm bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:border-theme transition-colors text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="block text-[13px] text-[color:var(--panel-text)] opacity-80">
+                      Дуусах цаг
+                    </label>
+                    <MTextInput
+                      type="time"
+                      value={formData.burtgelguiMashinDuusakhTsag || ""}
+                      onChange={(e) => updateField("burtgelguiMashinDuusakhTsag", e.currentTarget.value)}
+                      classNames={{ input: "!h-10 !min-h-10 !rounded-[10px] !text-sm bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:border-theme transition-colors text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-[color:var(--surface-border)] mt-3">
+                <div>
+                  <span className="text-[13px] font-medium text-[color:var(--panel-text)]">
+                    Зөвхөн 4 тоо 3 үсэгтэй дугаарт нээх
+                  </span>
+                  <p className="text-[12px] text-[color:var(--muted-text)] mt-0.5">
+                    Буруу танигдсан (Unlicensed, дутуу оронтой г.м) дугаарт хаалт нээгдэхгүй
+                  </p>
+                </div>
+                <Switch
+                  label="Зөвхөн 4 тоо 3 үсэгтэй дугаарт нээх"
+                  checked={!!formData.burtgelguiStandardDugaarEsekh}
+                  onChange={(e) => updateField("burtgelguiStandardDugaarEsekh", e.currentTarget.checked)}
+                />
+              </div>
+            </div>
+          )}
         </section>
       )}
 
