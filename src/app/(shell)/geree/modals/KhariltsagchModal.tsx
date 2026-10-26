@@ -933,8 +933,7 @@ export default function KhariltsagchModal({
   // ── Ашиглалтын зардал ────────────────────────────────────────────────
   // Барилгын «харилцагч» зориулалттай зардлуудаас энэ харилцагчид аль нь
   // бодогдохыг сонгоно (`songosonZardluud`). Хэрэглэгч хөндөөгүй бол
-  // талбар тодорхойгүй хэвээр үлдэж, backend хуучин дүрмээр (тоотын төрөлд
-  // тохирохыг) бодно — доорх анхны сонголт яг тэр дүрмийг харуулна.
+  // талбар тодорхойгүй хэвээр үлдэж, backend анхны дүрмээрээ бодно.
   const { zardluud: barilgiinZardluud, isLoading: zardalAchaalj } =
     useAshiglaltiinZardluud({
       token: token || undefined,
@@ -950,28 +949,12 @@ export default function KhariltsagchModal({
     [barilgiinZardluud],
   );
 
-  const anhniiSongolt = React.useMemo(() => {
-    // Backend нь эхний үндсэн нэгжээр гэрээ үүсгэнэ: тоот/оффис байвал
-    // тэр, үгүй бол гараж, агуулах.
-    const turul =
-      mainUnits.length > 0
-        ? "Орон сууц"
-        : garages.length > 0
-          ? "Гараж"
-          : storages.length > 0
-            ? "Агуулах"
-            : "Гараж";
-    return khariltsagchiinZardluud
-      .filter((z: any) => {
-        const tekst = `${z.ner || ""} ${z.zardliinTurul || ""}`.toLowerCase();
-        const garajiinZardal = tekst.includes("гараж") || tekst.includes("зогсоол");
-        const aguulakhiinZardal = tekst.includes("агуулах");
-        if (turul === "Орон сууц") return !garajiinZardal && !aguulakhiinZardal;
-        if (turul === "Гараж") return garajiinZardal;
-        return aguulakhiinZardal;
-      })
-      .map((z: any) => String(z._id));
-  }, [khariltsagchiinZardluud, mainUnits.length, garages.length, storages.length]);
+  // Сонголт хийгээгүй үед backend харилцагчийн зориулалттай БҮХ зардлыг
+  // тоотын төрлөөс үл хамааран бодно — анхны сонголт ч тэр.
+  const anhniiSongolt = React.useMemo(
+    () => khariltsagchiinZardluud.map((z: any) => String(z._id)),
+    [khariltsagchiinZardluud],
+  );
 
   const songosonZardluud: string[] = Array.isArray(newClient?.songosonZardluud)
     ? newClient.songosonZardluud.map(String)
