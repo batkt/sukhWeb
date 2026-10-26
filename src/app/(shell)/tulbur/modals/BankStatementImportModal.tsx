@@ -12,9 +12,9 @@ import {
   Clock,
   Ban,
   Search,
-  Check,
   RefreshCw,
   Calendar,
+  Wallet,
 } from "lucide-react";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import uilchilgee from "@/lib/uilchilgee";
@@ -214,23 +214,34 @@ export default function BankStatementImportModal({
     return `${year} он - ${mNum}-р сар`;
   };
 
-  // Determine min and max date from rows for date picker range
-  const { minDate, maxDate } = useMemo(() => {
-    if (rows.length === 0) return { minDate: undefined, maxDate: undefined };
-    let min = "9999-99-99";
-    let max = "0000-00-00";
+  // Days that have transactions in the selected month, with counts
+  const availableDays = useMemo(() => {
+    if (selectedMonth === "ALL") return [] as { day: string; count: number }[];
+    const counts = new Map<string, number>();
     rows.forEach((r) => {
       const d = (r.date || "").replace(/\./g, "-").substring(0, 10);
-      if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
-        if (d < min) min = d;
-        if (d > max) max = d;
-      }
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return;
+      if (d.substring(0, 7).replace(/-/g, ".") !== selectedMonth) return;
+      counts.set(d, (counts.get(d) || 0) + 1);
     });
-    return {
-      minDate: min !== "9999-99-99" ? min : undefined,
-      maxDate: max !== "0000-00-00" ? max : undefined,
-    };
-  }, [rows]);
+    return Array.from(counts.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([day, count]) => ({ day, count }));
+  }, [rows, selectedMonth]);
+
+  // Short reconciliation status shown in the table
+  const cleanName = (s?: string) =>
+    (s || "").toLowerCase().replace(/[^a-zа-яөүё]/gi, "");
+  const isNameMismatch = (row: PreviewRow) => {
+    const acc = cleanName(row.accName);
+    const g = row.matchedGeree;
+    if (!acc || !g) return false;
+    const ner = cleanName(g.ner);
+    const ovog = cleanName(g.ovog);
+    if (ner && (acc.includes(ner) || ner.includes(acc))) return false;
+    if (ovog && (acc.includes(ovog) || ovog.includes(acc))) return false;
+    return true;
+  };
 
   // Handle month selection change
   const handleMonthChange = (newMonth: string) => {
@@ -302,20 +313,12 @@ export default function BankStatementImportModal({
   };
 
   const toggleSelectAllVisible = () => {
-    const visibleRowNumbers = filteredRows.map((r) => r.rowNumber);
-    const allSelected = visibleRowNumbers.every((num) => selectedRowIds.has(num));
-
     setSelectedRowIds((prev) => {
       const next = new Set(prev);
-      if (allSelected) {
-        visibleRowNumbers.forEach((num) => next.delete(num));
+      if (allVisibleSelected) {
+        selectableVisibleIds.forEach((num) => next.delete(num));
       } else {
-        visibleRowNumbers.forEach((num) => {
-          const row = rows.find((r) => r.rowNumber === num);
-          if (row && row.status !== "ALREADY_IMPORTED" && row.status !== "SKIP") {
-            next.add(num);
-          }
-        });
+        selectableVisibleIds.forEach((num) => next.add(num));
       }
       return next;
     });
@@ -426,12 +429,14 @@ export default function BankStatementImportModal({
     });
   }, [dateFilteredRows, activeTab, searchQuery]);
 
-  // Selected Amount Total
-  const selectedTotalAmount = useMemo(() => {
-    return rows
-      .filter((r) => selectedRowIds.has(r.rowNumber))
-      .reduce((sum, r) => sum + (r.orlogo || r.amount || 0), 0);
-  }, [rows, selectedRowIds]);
+  // Header checkbox state (only rows that can be selected)
+  const selectableVisibleIds = filteredRows
+    .filter((r) => r.status !== "ALREADY_IMPORTED" && r.status !== "SKIP")
+    .map((r) => r.rowNumber);
+  const allVisibleSelected =
+    selectableVisibleIds.length > 0 &&
+    selectableVisibleIds.every((id) => selectedRowIds.has(id));
+  const someVisibleSelected = selectableVisibleIds.some((id) => selectedRowIds.has(id));
 
   const handleConfirmImport = async () => {
     const selectedRows = rows.filter((r) => selectedRowIds.has(r.rowNumber));
@@ -524,14 +529,9 @@ export default function BankStatementImportModal({
                   <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-theme/15 text-theme">
                     <FileSpreadsheet className="h-5 w-5" />
                   </div>
-                  <div>
-                    <h2 className="text-base font-semibold tracking-tight text-[color:var(--panel-text)]">
-                      Дансны хуулга оруулах & Оршин суугчтай тулгах
-                    </h2>
-                    <p className="text-xs text-[color:var(--muted-text)]">
-                      И-Баримт болон банкны хуулгыг автоматаар уншиж, оршин суугчийн төлөлтөөр дэвтэрт бүртгэнэ
-                    </p>
-                  </div>
+                  <h2 className="text-base font-semibold tracking-tight text-[color:var(--panel-text)]">
+                    Дансны хуулга оруулах & Оршин суугчтай тулгах
+                  </h2>
                 </div>
                 <Button
                   onPointerDown={(e) => e.stopPropagation()}
@@ -587,9 +587,6 @@ export default function BankStatementImportModal({
                       >
                         <div className="text-[11px] text-[color:var(--muted-text)] font-medium">Нийт гүйлгээ</div>
                         <div className="text-lg font-bold mt-0.5">{currentViewStats.totalRows}</div>
-                        <div className="text-[10px] text-[color:var(--muted-text)] mt-0.5">
-                          {formatNumber(currentViewStats.totalIncome)}₮
-                        </div>
                       </div>
 
                       <div
@@ -607,28 +604,15 @@ export default function BankStatementImportModal({
                         <div className="text-lg font-bold mt-0.5 text-emerald-600">
                           {currentViewStats.exactCount}
                         </div>
-                        <div className="text-[10px] text-emerald-600/70 mt-0.5">
-                          Шууд бүртгэхэд бэлэн
-                        </div>
                       </div>
 
-                      <div
-                        onClick={() => setActiveTab("MULTI")}
-                        className={`p-3 rounded-2xl border cursor-pointer transition ${
-                          activeTab === "MULTI"
-                            ? "border-amber-500 bg-amber-50/50 dark:bg-amber-950/30"
-                            : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] hover:border-amber-300"
-                        }`}
-                      >
-                        <div className="flex items-center gap-1 text-[11px] text-amber-600 font-medium">
-                          <AlertCircle className="h-3.5 w-3.5" />
-                          Олон гэрээтэй
+                      <div className="p-3 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]">
+                        <div className="flex items-center gap-1 text-[11px] text-theme font-medium">
+                          <Wallet className="h-3.5 w-3.5" />
+                          Нийт дүн
                         </div>
-                        <div className="text-lg font-bold mt-0.5 text-amber-600">
-                          {currentViewStats.multiCount}
-                        </div>
-                        <div className="text-[10px] text-amber-600/70 mt-0.5">
-                          Сонголт хийх
+                        <div className="text-lg font-bold mt-0.5 text-theme truncate">
+                          {formatNumber(currentViewStats.totalIncome)}₮
                         </div>
                       </div>
 
@@ -647,9 +631,6 @@ export default function BankStatementImportModal({
                         <div className="text-lg font-bold mt-0.5 text-rose-600">
                           {currentViewStats.unmatchedCount}
                         </div>
-                        <div className="text-[10px] text-rose-600/70 mt-0.5">
-                          Тоот тодорхойгүй
-                        </div>
                       </div>
 
                       <div
@@ -667,9 +648,6 @@ export default function BankStatementImportModal({
                         <div className="text-lg font-bold mt-0.5 text-cyan-600">
                           {currentViewStats.alreadyImportedCount}
                         </div>
-                        <div className="text-[10px] text-cyan-600/70 mt-0.5">
-                          Давхардахгүй
-                        </div>
                       </div>
 
                       <div
@@ -685,71 +663,60 @@ export default function BankStatementImportModal({
                           Шимтгэл / Зарлага
                         </div>
                         <div className="text-lg font-bold mt-0.5">{currentViewStats.skipCount}</div>
-                        <div className="text-[10px] text-[color:var(--muted-text)] mt-0.5">
-                          Алгасах
-                        </div>
                       </div>
                     </div>
 
                     {/* Filter & Date Picker Toolbar */}
                     <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-                      {/* Left: Search input + Select visible button */}
-                      <div className="flex items-center gap-2.5 flex-1 min-w-[260px]">
-                        <div className="relative flex-1 max-w-sm">
-                          <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                          <input
-                            type="text"
-                            placeholder="Тоот, нэр, утга, дүн, журнал..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full h-9 pl-9 pr-3 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-xs focus:outline-none focus:ring-2 focus:ring-theme/30"
-                          />
-                        </div>
-
-                        <button
-                          onClick={toggleSelectAllVisible}
-                          className="flex items-center gap-1.5 px-3 h-9 rounded-xl border border-[color:var(--surface-border)] hover:bg-theme/5 text-xs font-medium transition shrink-0"
-                        >
-                          <Check className="h-3.5 w-3.5" />
-                          Харагдаж буйг сонгох ({filteredRows.length})
-                        </button>
+                      {/* Left: Search input */}
+                      <div className="relative flex-1 min-w-[220px] max-w-sm">
+                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                        <input
+                          type="text"
+                          placeholder="Тоот, нэр, утга, дүн..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="w-full h-9 pl-9 pr-3 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-xs focus:outline-none focus:ring-2 focus:ring-theme/30"
+                        />
                       </div>
 
-                      {/* Right: Date Filters (Month + Specific Day) + Change File */}
+                      {/* Right: Date filter (month + day in one control) + Change File */}
                       <div className="flex items-center gap-2 flex-wrap">
-                        {/* Month Selector */}
-                        <div className="flex items-center gap-1.5 px-3 h-9 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-xs font-medium shadow-sm hover:border-theme/40 transition">
-                          <Calendar className="h-3.5 w-3.5 text-theme shrink-0" />
+                        <div className="flex items-center h-9 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-xs shadow-sm focus-within:ring-2 focus-within:ring-theme/30 transition">
+                          <Calendar className="ml-3 h-3.5 w-3.5 text-theme shrink-0" />
                           <select
                             value={selectedMonth}
                             onChange={(e) => handleMonthChange(e.target.value)}
-                            className="bg-transparent border-none text-xs font-semibold text-[color:var(--panel-text)] focus:outline-none cursor-pointer pr-1"
+                            title="Сар"
+                            className="h-full bg-transparent border-none pl-2 pr-2 text-xs font-semibold text-[color:var(--panel-text)] focus:outline-none cursor-pointer"
                           >
-                            <option value="ALL">Бүх сарууд</option>
+                            <option value="ALL">Бүх сар</option>
                             {availableMonths.map((m) => (
                               <option key={m} value={m}>
                                 {formatMonthLabel(m)}
                               </option>
                             ))}
                           </select>
-                        </div>
-
-                        {/* Specific Day Picker */}
-                        <div className="relative flex items-center">
-                          <input
-                            type="date"
+                          <span className="h-5 w-px bg-[color:var(--surface-border)]" />
+                          <select
                             value={selectedDay}
-                            min={minDate}
-                            max={maxDate}
                             onChange={(e) => handleDayChange(e.target.value)}
-                            title="Тодорхой нэг өдрөөр нарийвчлан шүүх"
-                            className="h-9 px-3 pr-8 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-xs font-medium text-[color:var(--panel-text)] focus:outline-none focus:ring-2 focus:ring-theme/30 cursor-pointer shadow-sm"
-                          />
+                            disabled={selectedMonth === "ALL"}
+                            title={selectedMonth === "ALL" ? "Эхлээд сар сонгоно уу" : "Өдөр"}
+                            className="h-full bg-transparent border-none pl-2 pr-2 text-xs font-medium text-[color:var(--panel-text)] focus:outline-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <option value="">Бүх өдөр</option>
+                            {availableDays.map(({ day, count }) => (
+                              <option key={day} value={day}>
+                                {day.substring(5).replace("-", ".")} ({count})
+                              </option>
+                            ))}
+                          </select>
                           {selectedDay ? (
                             <button
                               onClick={() => handleDayChange("")}
                               title="Өдрийн шүүлтийг арилгах"
-                              className="absolute right-2.5 p-0.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                              className="mr-2 p-0.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
                             >
                               <X className="h-3.5 w-3.5" />
                             </button>
@@ -787,10 +754,22 @@ export default function BankStatementImportModal({
                         </span>
                         <span>Харагдаж буй: <strong className="text-[color:var(--panel-text)]">{filteredRows.length}</strong> гүйлгээ</span>
                       </div>
-                      {selectedRowIds.size > 0 && (
-                        <div className="text-emerald-600 dark:text-emerald-400 font-semibold">
-                          Импортлохоор сонгосон: {selectedRowIds.size} гүйлгээ ({formatNumber(selectedTotalAmount)}₮)
-                        </div>
+                      {currentViewStats.multiCount > 0 && (
+                        <button
+                          onClick={() =>
+                            setActiveTab(activeTab === "MULTI" ? "ALL" : "MULTI")
+                          }
+                          title="Гэрээ сонгох шаардлагатай гүйлгээг шүүх"
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-semibold transition ${
+                            activeTab === "MULTI"
+                              ? "bg-amber-500 text-white"
+                              : "bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-950/60 dark:text-amber-300"
+                          }`}
+                        >
+                          <AlertCircle className="h-3.5 w-3.5" />
+                          Олон гэрээтэй: {currentViewStats.multiCount}
+                          {activeTab === "MULTI" && <X className="h-3 w-3 ml-0.5" />}
+                        </button>
                       )}
                     </div>
 
@@ -799,11 +778,23 @@ export default function BankStatementImportModal({
                       <table className="w-full text-left text-xs border-collapse">
                         <thead className="sticky top-0 z-10 bg-[color:var(--surface-bg)] border-b border-[color:var(--surface-border)] text-[color:var(--muted-text)] font-medium">
                           <tr>
-                            <th className="p-3 w-10 text-center">#</th>
-                            <th className="p-3 w-28">Огноо</th>
+                            <th className="p-3 w-10 text-center">
+                              <input
+                                type="checkbox"
+                                ref={(el) => {
+                                  if (el) el.indeterminate = someVisibleSelected && !allVisibleSelected;
+                                }}
+                                checked={allVisibleSelected}
+                                disabled={selectableVisibleIds.length === 0}
+                                onChange={toggleSelectAllVisible}
+                                title="Харагдаж буйг бүгдийг сонгох"
+                                className="rounded text-theme focus:ring-theme cursor-pointer disabled:cursor-not-allowed"
+                              />
+                            </th>
+                            <th className="p-3 w-36">Огноо</th>
                             <th className="p-3 min-w-[200px]">Гүйлгээний утга</th>
-                            <th className="p-3 w-28">Илэрсэн</th>
-                            <th className="p-3 min-w-[200px]">Таарсан гэрээ / Оршин суугч</th>
+                            <th className="p-3 w-20 text-center">Тоот</th>
+                            <th className="p-3 min-w-[200px]">Тулгалтын мэдээлэл</th>
                             <th className="p-3 w-28 text-right">Дүн</th>
                             <th className="p-3 w-28 text-center">Төлөв</th>
                           </tr>
@@ -842,23 +833,28 @@ export default function BankStatementImportModal({
                                     />
                                   </td>
                                   <td className="p-3 whitespace-nowrap text-[color:var(--muted-text)]">
-                                    <div>{row.date}</div>
-                                    <div className="text-[10px] opacity-75">{row.time}</div>
+                                    {row.date}
+                                    {row.time ? (
+                                      <span className="ml-1.5 opacity-75">{row.time}</span>
+                                    ) : null}
                                   </td>
                                   <td className="p-3">
                                     <div className="font-medium text-[color:var(--panel-text)] line-clamp-1">
                                       {row.description}
                                     </div>
-                                    <div className="text-[10px] text-[color:var(--muted-text)] mt-0.5 flex gap-2">
-                                      <span>Журнал: {row.journal || "—"}</span>
-                                      {row.accName && <span>Нэр: {row.accName}</span>}
-                                    </div>
+                                    {row.accName && (
+                                      <div className="text-[10px] text-[color:var(--muted-text)] mt-0.5">
+                                        Нэр: {row.accName}
+                                      </div>
+                                    )}
                                   </td>
-                                  <td className="p-3 whitespace-nowrap">
+                                  <td className="p-3 whitespace-nowrap text-center">
                                     {row.detectedToot ? (
-                                      <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-medium bg-theme/10 text-theme">
-                                        {row.detectedBair ? `${row.detectedBair} байр, ` : ""}
-                                        {row.detectedToot} тоот
+                                      <span
+                                        title={row.detectedBair ? `${row.detectedBair} байр` : undefined}
+                                        className="inline-flex items-center justify-center px-2 py-0.5 rounded-lg text-[11px] font-semibold bg-theme/10 text-theme"
+                                      >
+                                        {row.detectedToot}
                                       </span>
                                     ) : (
                                       <span className="text-[color:var(--muted-text)] text-[11px]">—</span>
@@ -881,37 +877,43 @@ export default function BankStatementImportModal({
                                           ))}
                                         </select>
                                       </div>
+                                    ) : row.status === "ALREADY_IMPORTED" ? (
+                                      <span className="text-[color:var(--muted-text)] text-[11px]">
+                                        Өмнө нь бүртгэгдсэн
+                                      </span>
+                                    ) : row.status === "SKIP" ? (
+                                      <span className="text-[color:var(--muted-text)] text-[11px]">
+                                        {row.matchReason === "Банкны шимтгэл" ? "Банкны шимтгэл" : "Зарлага"}
+                                      </span>
                                     ) : row.matchedGeree ? (
-                                      <div>
-                                        <div className="font-medium text-[color:var(--panel-text)]">
-                                          {row.matchedGeree.bairNer
-                                            ? `${row.matchedGeree.bairNer} - `
-                                            : ""}
-                                          {row.matchedGeree.toot} тоот
-                                          <span className="ml-1 text-[color:var(--muted-text)] font-normal">
-                                            ({row.matchedGeree.ner})
+                                      <div className="flex items-center gap-1.5 flex-wrap">
+                                        <span className="font-medium text-[color:var(--panel-text)]">
+                                          {[row.matchedGeree.ovog?.charAt(0), row.matchedGeree.ner]
+                                            .filter(Boolean)
+                                            .join(". ") || "Нэргүй"}
+                                        </span>
+                                        {isNameMismatch(row) && (
+                                          <span className="px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300">
+                                            Нэр таараагүй
                                           </span>
-                                        </div>
-                                        <div className="text-[10px] text-[color:var(--muted-text)]">
-                                          Гэрээ: {row.matchedGeree.gereeniiDugaar}
-                                        </div>
+                                        )}
                                       </div>
                                     ) : (
-                                      <span className="text-[color:var(--muted-text)] text-[11px]">
-                                        {row.matchReason || "Гэрээ олдсонгүй"}
+                                      <span className="text-rose-600 dark:text-rose-400 text-[11px] font-medium">
+                                        {row.detectedToot ? "Гэрээ олдсонгүй" : "Тоот тодорхойгүй"}
                                       </span>
                                     )}
                                   </td>
                                   <td className="p-3 text-right whitespace-nowrap font-semibold">
                                     <span
                                       className={
-                                        row.orlogo > 0
+                                        row.orlogo > 0 || !row.amount
                                           ? "text-emerald-600 dark:text-emerald-400"
                                           : "text-rose-600 dark:text-rose-400"
                                       }
                                     >
-                                      {row.orlogo > 0 ? "+" : "-"}
-                                      {formatNumber(row.amount)}₮
+                                      {!row.amount ? "" : row.orlogo > 0 ? "+" : "-"}
+                                      {formatNumber(row.amount || 0)}₮
                                     </span>
                                   </td>
                                   <td className="p-3 text-center whitespace-nowrap">
@@ -959,12 +961,6 @@ export default function BankStatementImportModal({
                     <span className="text-[color:var(--muted-text)]">
                       Сонгосон: <strong className="text-[color:var(--panel-text)]">{selectedRowIds.size}</strong> гүйлгээ
                     </span>
-                    <span className="text-[color:var(--muted-text)]">
-                      Сонгосон дүн:{" "}
-                      <strong className="text-emerald-600 dark:text-emerald-400 font-semibold">
-                        {formatNumber(selectedTotalAmount)}₮
-                      </strong>
-                    </span>
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -978,9 +974,7 @@ export default function BankStatementImportModal({
                       disabled={selectedRowIds.size === 0 || submitting}
                       className="px-5 h-9 rounded-xl font-medium"
                     >
-                      {submitting
-                        ? "Бүртгэж байна..."
-                        : `Батлах ба Төлөлт бүртгэх (${selectedRowIds.size})`}
+                      {submitting ? "Хадгалж байна..." : "Хадгалах"}
                     </Button>
                   </div>
                 </div>
