@@ -842,10 +842,10 @@ export default function BankStatementImportModal({
                     <div className="flex items-center gap-1.5">
                       {(
                         [
-                          ["all", "Бүгд"],
-                          ["open", "Тулгаагүй (Улаан)"],
-                          ["match", "Тулгасан (Ногоон)"],
-                          ["done", "Бүртгэсэн"],
+                          ["all", `Бүгд (${stats.totalCount})`],
+                          ["open", `Тулгаагүй (${stats.openCount})`],
+                          ["match", `Тулгасан (${stats.matchedCount})`],
+                          ["done", `Бүртгэсэн (${stats.doneCount})`],
                         ] as const
                       ).map(([key, label]) => {
                         const active = tab === key;
@@ -886,6 +886,24 @@ export default function BankStatementImportModal({
                       </button>
                     </div>
                   </div>
+
+                  {/* Alert Banner if a Month filter is active and hiding transactions */}
+                  {selectedMonth !== "ALL" && banks.length > filteredBanks.length && (
+                    <div className="px-5 py-2 bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800/50 flex items-center justify-between text-xs text-amber-900 dark:text-amber-200 shrink-0">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                        <span>
+                          Одоогоор <strong>{formatMonthName(selectedMonth)}</strong> сараар шүүсэн байна (Зөвхөн {filteredBanks.length} гүйлгээ харагдаж байна, нийт хуулгад {banks.length} гүйлгээ бий).
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => setSelectedMonth("ALL")}
+                        className="px-3 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition cursor-pointer"
+                      >
+                        Бүх гүйлгээг харах ({banks.length})
+                      </button>
+                    </div>
+                  )}
 
                   {/* Panel Heads & Searches (Fixed above the synchronized scroll container) */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-[#e7ece9] dark:divide-zinc-800 border-b border-[#e7ece9] dark:border-zinc-800 shrink-0 bg-white dark:bg-zinc-900">
@@ -1222,15 +1240,40 @@ export default function BankStatementImportModal({
                     </div>
                   </div>
 
-                  {/* Panel Footer: Status & Counts */}
+                  {/* Panel Footer: Status & Counts & Money Sums */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-[#e7ece9] dark:divide-zinc-800 border-t border-[#e7ece9] dark:border-zinc-800 px-5 py-2 text-xs text-[#94a29b] shrink-0 bg-[#fbfcfb] dark:bg-zinc-900">
                     <div className="flex items-center justify-between pr-3">
-                      <span>{filteredBanks.length} гүйлгээ (Ногоон: {filteredBanks.filter((b) => b.status === "match").length}, Улаан: {filteredBanks.filter((b) => b.status === "open").length})</span>
-                      <span>{file ? file.name : "Дансны хуулга"}</span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-semibold text-[#203a35] dark:text-white">
+                          Нийт: {filteredBanks.length} ({formatNumber(filteredBanks.reduce((s, b) => s + b.amount, 0))} ₮)
+                        </span>
+                        <span className="text-gray-300">·</span>
+                        <span className="text-emerald-700 dark:text-emerald-400 font-medium">
+                          Тулгасан: {filteredBanks.filter((b) => b.status === "match").length} ({formatNumber(filteredBanks.filter((b) => b.status === "match").reduce((s, b) => s + b.amount, 0))} ₮)
+                        </span>
+                        <span className="text-gray-300">·</span>
+                        <span className="text-rose-600 dark:text-rose-400 font-bold">
+                          Тулгаагүй: {filteredBanks.filter((b) => b.status === "open").length} ({formatNumber(filteredBanks.filter((b) => b.status === "open").reduce((s, b) => s + b.amount, 0))} ₮)
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-gray-500">{file ? file.name : "Дансны хуулга"}</span>
                     </div>
+
                     <div className="flex items-center justify-between pl-3">
-                      <span>{filteredHomes.length} бүртгэл (Ногоон: {filteredHomes.filter((h) => h.status === "match").length}, Улаан: {filteredHomes.filter((h) => h.status === "open").length})</span>
-                      <span>Айлын төлбөр</span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-semibold text-[#203a35] dark:text-white">
+                          Нийт: {filteredHomes.length} айл
+                        </span>
+                        <span className="text-gray-300">·</span>
+                        <span className="text-emerald-700 dark:text-emerald-400 font-medium">
+                          Тулгасан: {filteredHomes.filter((h) => h.status === "match").length}
+                        </span>
+                        <span className="text-gray-300">·</span>
+                        <span className="text-rose-600 dark:text-rose-400 font-bold">
+                          Тулгаагүй: {filteredHomes.filter((h) => h.status === "open").length}
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-gray-500">Айлын төлбөр</span>
                     </div>
                   </div>
                 </div>
@@ -1241,34 +1284,97 @@ export default function BankStatementImportModal({
                 </p>
               </div>
 
-              {/* Bottom Clean Action Bar */}
-              <div className="h-14 px-6 bg-white dark:bg-zinc-900 border-t border-[#e7ece9] dark:border-zinc-800 flex items-center justify-between gap-4 shrink-0 shadow-sm">
-                {/* Left Side: Clean Selection Status */}
-                <div className="flex items-center gap-3 text-xs text-[#7c8b85]">
-                  <span>
-                    Сонгосон: <strong className="text-[#203a35] dark:text-white font-bold">{selB.size}</strong> гүйлгээ,{" "}
-                    <strong className="text-[#203a35] dark:text-white font-bold">{selH.size}</strong> айл
-                  </span>
-                  {selB.size > 0 && (
-                    <span className="font-bold text-[#203a35] dark:text-white tabular-nums">
-                      ({formatNumber(selBankSum)} ₮)
-                    </span>
+              {/* Bottom Information & Action Bar */}
+              <div className="h-16 px-6 bg-white dark:bg-zinc-900 border-t border-[#e7ece9] dark:border-zinc-800 flex items-center justify-between gap-4 shrink-0 shadow-md">
+                {/* Left Side: Must-Have Status Pills (Total, Matched, Unmatched, Selected) */}
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  {/* Total pill */}
+                  <button
+                    onClick={() => setTab("all")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs transition cursor-pointer ${
+                      tab === "all"
+                        ? "bg-gray-100 dark:bg-zinc-800 border-gray-400 font-bold"
+                        : "bg-gray-50 dark:bg-zinc-900 border-gray-200 dark:border-zinc-700 hover:bg-gray-100"
+                    }`}
+                    title="Бүх гүйлгээг шүүх"
+                  >
+                    <span className="text-[#7c8b85]">Нийт:</span>
+                    <strong className="text-[#203a35] dark:text-white font-bold">{stats.totalCount}</strong>
+                    <span className="text-gray-300">·</span>
+                    <span className="font-semibold tabular-nums text-[#203a35] dark:text-zinc-200">{formatNumber(stats.totalSum)} ₮</span>
+                  </button>
+
+                  {/* Matched green pill */}
+                  <button
+                    onClick={() => setTab("match")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs transition cursor-pointer ${
+                      tab === "match"
+                        ? "bg-emerald-100 dark:bg-emerald-950/60 border-emerald-500 font-bold"
+                        : "bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/40 hover:bg-emerald-100"
+                    }`}
+                    title="Тулгасан гүйлгээг шүүх"
+                  >
+                    <span className="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+                    <span className="text-emerald-800 dark:text-emerald-300 font-medium">Тулгасан:</span>
+                    <strong className="text-emerald-700 dark:text-emerald-200 font-bold">{stats.matchedCount}</strong>
+                    <span className="text-emerald-300 dark:text-emerald-700">·</span>
+                    <span className="font-bold tabular-nums text-emerald-700 dark:text-emerald-300">{formatNumber(stats.matchedSum)} ₮</span>
+                  </button>
+
+                  {/* Unmatched red pill */}
+                  <button
+                    onClick={() => setTab("open")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs transition cursor-pointer ${
+                      tab === "open"
+                        ? "bg-rose-100 dark:bg-rose-950/60 border-rose-500 font-bold"
+                        : "bg-rose-50/70 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800/40 hover:bg-rose-100"
+                    }`}
+                    title="Тулгаагүй гүйлгээг шүүх"
+                  >
+                    <span className="inline-block w-2 h-2 rounded-full bg-rose-500"></span>
+                    <span className="text-rose-800 dark:text-rose-300 font-medium">Тулгаагүй:</span>
+                    <strong className="text-rose-700 dark:text-rose-200 font-bold">{stats.openCount}</strong>
+                    <span className="text-rose-300 dark:text-rose-700">·</span>
+                    <span className="font-bold tabular-nums text-rose-700 dark:text-rose-300">{formatNumber(stats.openSum)} ₮</span>
+                  </button>
+
+                  {/* Selected Pill */}
+                  {(selB.size > 0 || selH.size > 0) && (
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800/50 text-xs shadow-xs">
+                      <span className="text-sky-800 dark:text-sky-300 font-medium">Сонгосон:</span>
+                      <strong className="text-sky-700 dark:text-sky-200 font-bold">{selB.size}</strong> гүйлгээ
+                      {selBankSum > 0 && (
+                        <span className="font-bold tabular-nums text-sky-700 dark:text-sky-300">({formatNumber(selBankSum)} ₮)</span>
+                      )}
+                      <span className="text-sky-400">,</span>
+                      <strong className="text-sky-700 dark:text-sky-200 font-bold">{selH.size}</strong> айл
+                    </div>
                   )}
                 </div>
 
                 {/* Right Action buttons */}
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2.5 shrink-0">
+                  {selB.size === 1 && selH.size === 1 && (
+                    <button
+                      onClick={() => setShowManualMatchModal(true)}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-sm transition animate-pulse cursor-pointer"
+                    >
+                      <Link2 className="w-3.5 h-3.5" />
+                      <span>Сонгосныг тулгах</span>
+                    </button>
+                  )}
+
                   <button
                     onClick={handleClear}
                     disabled={selB.size === 0 && selH.size === 0}
-                    className="px-4 py-1.5 rounded-lg border border-[#dce5e0] dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-semibold text-[#203a35] dark:text-zinc-200 hover:bg-[#edf5f1] transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    className="px-4 py-2 rounded-xl border border-[#dce5e0] dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-semibold text-[#203a35] dark:text-zinc-200 hover:bg-[#edf5f1] transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                   >
                     Цэвэрлэх
                   </button>
 
                   <button
                     onClick={onClose}
-                    className="px-4 py-1.5 rounded-lg border border-[#dce5e0] dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-semibold text-[#203a35] dark:text-zinc-200 hover:bg-[#edf5f1] transition cursor-pointer"
+                    className="px-4 py-2 rounded-xl border border-[#dce5e0] dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-semibold text-[#203a35] dark:text-zinc-200 hover:bg-[#edf5f1] transition cursor-pointer"
                   >
                     Болих
                   </button>
@@ -1276,7 +1382,7 @@ export default function BankStatementImportModal({
                   <button
                     onClick={() => setShowRegisterConfirm(true)}
                     disabled={stats.matchedCount === 0 && selB.size === 0}
-                    className="px-5 py-1.5 rounded-lg bg-[#087f64] hover:bg-[#05694f] text-white text-xs font-bold transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm cursor-pointer"
+                    className="px-5 py-2 rounded-xl bg-[#087f64] hover:bg-[#05694f] text-white text-xs font-bold transition disabled:opacity-40 disabled:cursor-not-allowed shadow-md cursor-pointer"
                   >
                     Бүртгэх ({stats.matchedCount || selB.size})
                   </button>
