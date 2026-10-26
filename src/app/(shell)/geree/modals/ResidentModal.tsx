@@ -399,9 +399,15 @@ export default function ResidentModal({
           tsahilgaaniiZaalt: t.tsahilgaaniiZaalt || 0,
           khonogoorBodokhEsekh: t.khonogoorBodokhEsekh || false,
           bodokhKhonog: t.bodokhKhonog || 0,
+          gereeNer: t.gereeNer || "",
+          gereeUtas: t.gereeUtas || "",
         }));
+        const olsonNemeltUtas = (Array.isArray(found.nemeltUtas) ? found.nemeltUtas : [])
+          .map((u: any) => String(u || "").trim())
+          .filter((u: string) => u && u !== phone);
         setNewResident((p: any) => ({
           ...p,
+          ...(olsonNemeltUtas.length > 0 ? { utas: [phone, ...olsonNemeltUtas] } : {}),
           ovog: found.ovog || p.ovog,
           ner: found.ner || p.ner,
           register: found.register || p.register,
@@ -662,6 +668,8 @@ export default function ResidentModal({
         tsahilgaaniiZaalt: Number(mu.tsahilgaaniiZaalt || 0),
         khonogoorBodokhEsekh: !!mu.khonogoorBodokhEsekh,
         bodokhKhonog: Number(mu.bodokhKhonog || 0),
+        gereeNer: String(mu.gereeNer || "").trim(),
+        gereeUtas: String(mu.gereeUtas || "").trim(),
       });
       (mu.garages || []).forEach((g: any) => {
         activeUnits.push({ orts: "1", davkhar: g.davkhar || "", toot: g.toot || "", turul: "Гараж",
@@ -708,6 +716,42 @@ export default function ResidentModal({
   }, [mainUnits, show]);
 
 
+
+  /** Оршин суугчийн утаснууд — эхнийх нь үндсэн */
+  const utasnuud: string[] = React.useMemo(
+    () =>
+      Array.isArray(newResident?.utas)
+        ? newResident.utas.map((u: any) => String(u ?? ""))
+        : [String(newResident?.utas || "")],
+    [newResident?.utas],
+  );
+  const undsenUtas = (utasnuud[0] || "").trim();
+  /** Тоотын гэрээнд сонгож болох бүрэн (8 оронтой) утаснууд */
+  const songokhUtasnuud = React.useMemo(
+    () => Array.from(new Set(utasnuud.map((u) => u.trim()).filter((u) => /^\d{8}$/.test(u)))),
+    [utasnuud],
+  );
+
+  const utasShinechlekh = (i: number, value: string) => {
+    const umnukh = (utasnuud[i] || "").trim();
+    const next = [...utasnuud];
+    next[i] = value;
+    setNewResident((p: any) => ({ ...p, utas: next }));
+    // Тоотод сонгосон утас засагдвал тэр тоотын сонголтыг дагуулж шинэчилнэ
+    if (i > 0 && umnukh) {
+      setMainUnits((prev) => prev.map((m) => (m.gereeUtas === umnukh ? { ...m, gereeUtas: value } : m)));
+    }
+  };
+  const utasNemekh = () => setNewResident((p: any) => ({ ...p, utas: [...utasnuud, ""] }));
+  const utasKhasakh = (i: number) => {
+    const khasakh = (utasnuud[i] || "").trim();
+    setNewResident((p: any) => ({ ...p, utas: utasnuud.filter((_, j) => j !== i) }));
+    if (khasakh) {
+      setMainUnits((prev) => prev.map((m) => (m.gereeUtas === khasakh ? { ...m, gereeUtas: "" } : m)));
+    }
+  };
+
+  const ezemshigchiinBukhNer = [newResident?.ovog, newResident?.ner].filter(Boolean).join(" ");
 
   /** Орон сууцны давхрууд — гараж/агуулахын (B1, B2…) давхрыг хасна */
   const oronSuutsniiDavkhruud = React.useMemo(
@@ -1187,29 +1231,51 @@ export default function ResidentModal({
 
                     {/* Утас */}
                     <div>
-                      <label className="block text-xs text-[color:var(--muted-text)] mb-1 transition-colors">
-                        Утас
-                      </label>
-                      <input
-                        type="tel"
-                        value={
-                          Array.isArray(newResident.utas)
-                            ? newResident.utas[0] || ""
-                            : newResident.utas || ""
-                        }
-                        onChange={(e) => {
-                          const value = e.target.value
-                            .replace(/[^0-9]/g, "")
-                            .slice(0, 8);
-                          setNewResident((p: any) => ({ ...p, utas: [value] }));
-                          if (value.length === 8 && !editingResident) {
-                            handleSearch(value);
-                          }
-                        }}
-                        className={`modern-input w-full ${errors.includes("utas") ? "input-error" : ""}`}
-                        placeholder="12345678"
-                        maxLength={8}
-                      />
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs text-[color:var(--muted-text)] transition-colors">
+                          Утас
+                        </label>
+                        <button
+                          type="button"
+                          onClick={utasNemekh}
+                          className="inline-flex items-center gap-1 text-[11px] font-medium text-brand hover:underline"
+                        >
+                          <Plus className="h-3 w-3" />
+                          Утас нэмэх
+                        </button>
+                      </div>
+                      <div className="space-y-1.5">
+                        {utasnuud.map((utas, i) => (
+                          <div key={i} className="flex items-center gap-1.5">
+                            <input
+                              type="tel"
+                              value={utas}
+                              onChange={(e) => {
+                                const value = e.target.value.replace(/[^0-9]/g, "").slice(0, 8);
+                                utasShinechlekh(i, value);
+                                if (i === 0 && value.length === 8 && !editingResident) {
+                                  handleSearch(value);
+                                }
+                              }}
+                              className={`modern-input w-full ${i === 0 && errors.includes("utas") ? "input-error" : ""}`}
+                              placeholder={i === 0 ? "12345678" : "Нэмэлт утас"}
+                              maxLength={8}
+                              aria-label={i === 0 ? "Үндсэн утас" : `Нэмэлт утас ${i}`}
+                            />
+                            {i > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => utasKhasakh(i)}
+                                title="Утас хасах"
+                                aria-label="Утас хасах"
+                                className="shrink-0 rounded-md p-1 text-[color:var(--muted-text)] transition-colors hover:bg-danger/10 hover:text-danger"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
 
                     {/* Units Section */}
@@ -1244,7 +1310,8 @@ export default function ResidentModal({
                                 </span>
                                 <span className="min-w-0">
                                   <span className="block text-[13px] font-semibold text-[color:var(--panel-text)]">
-                                    {mainUnits.length > 1 ? `Орон сууц #${index + 1}` : "Орон сууц"}
+                                    {String(mainUnit.gereeNer || "").trim() ||
+                                      (mainUnits.length > 1 ? `Орон сууц #${index + 1}` : "Орон сууц")}
                                   </span>
                                   <span className="block truncate text-[11px] text-[color:var(--muted-text)]">
                                     {mainUnit.toot
@@ -1292,6 +1359,47 @@ export default function ResidentModal({
 
                             {/* Toot Fields - collapsible */}
                             {!collapsedMains.includes(index) && (<div className="px-4 pt-3 pb-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+                              {/* Энэ тоотын гэрээнд харагдах нэр, утас — хоосон бол эзэмшигчийнх */}
+                              <div className="md:col-span-2">
+                                <label className="block text-xs font-medium text-[color:var(--muted-text)] mb-1">
+                                  Гэрээнд харагдах нэр
+                                </label>
+                                <input
+                                  type="text"
+                                  value={mainUnit.gereeNer || ""}
+                                  onChange={(e) => {
+                                    const value = e.target.value.replace(/[^a-zA-Zа-яА-ЯөүёӨҮЁ.\- ]/g, "");
+                                    updateMainUnitRow(index, "gereeNer", value);
+                                  }}
+                                  className="modern-input w-full"
+                                  placeholder={ezemshigchiinBukhNer || "Эзэмшигчийн нэр"}
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-[color:var(--muted-text)] mb-1">
+                                  Гэрээний утас
+                                </label>
+                                <div className="tusgai-wrapper w-full flex items-center">
+                                  <TusgaiZagvar
+                                    value={
+                                      mainUnit.gereeUtas && songokhUtasnuud.includes(mainUnit.gereeUtas)
+                                        ? mainUnit.gereeUtas
+                                        : undsenUtas
+                                    }
+                                    onChange={(val: string) =>
+                                      updateMainUnitRow(index, "gereeUtas", val === undsenUtas ? "" : val)
+                                    }
+                                    options={songokhUtasnuud.map((u) => ({
+                                      value: u,
+                                      label: u === undsenUtas ? `${u} (үндсэн)` : u,
+                                    }))}
+                                    className="w-full h-full"
+                                    placeholder="Утас..."
+                                    disabled={songokhUtasnuud.length < 2}
+                                  />
+                                </div>
+                              </div>
+
                               <div>
                                 <label className="block text-xs font-medium text-[color:var(--muted-text)] mb-1">Орц</label>
                                 <div className={`tusgai-wrapper w-full flex items-center ${errors.includes(`units.${getFlatIndex(index, "main")}.orts`) ? "input-error" : ""}`}>

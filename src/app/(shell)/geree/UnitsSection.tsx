@@ -1406,9 +1406,9 @@ export default function UnitsSection({
       void amount;
       void contractIsPaid;
 
+      // Огноо = сүүлд нэхэмжлэх илгээсэн огноо (илгээгээгүй бол «-»)
       let dateStr = "-";
-      const rawDate =
-        activeContract?.ekhlekhOgnoo || activeContract?.createdAt || resident?.createdAt;
+      const rawDate = isOccupied ? suuliinOgnoo : null;
       if (rawDate) {
         try {
           const d = new Date(rawDate);
@@ -1636,7 +1636,7 @@ export default function UnitsSection({
           ),
       },
       {
-        title: "Огноо",
+        title: <span title="Сүүлд нэхэмжлэх илгээсэн огноо">Огноо</span>,
         dataIndex: "ognoo",
         key: "ognoo",
         width: 92,
