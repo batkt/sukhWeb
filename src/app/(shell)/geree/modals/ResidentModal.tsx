@@ -626,7 +626,7 @@ export default function ResidentModal({
     const allGarages = units.filter((u: any) => u.turul === "Гараж");
     const allStorages = units.filter((u: any) => u.turul === "Агуулах");
 
-    const initialMains = (foundMains.length > 0 ? foundMains : [{
+    const initialMains: any[] = (foundMains.length > 0 ? foundMains : [{
       orts: base?.orts || "1",
       davkhar: base?.davkhar || "",
       toot: base?.toot || "",
@@ -635,13 +635,28 @@ export default function ResidentModal({
       tsahilgaaniiZaalt: base?.tsahilgaaniiZaalt || 0,
       khonogoorBodokhEsekh: base?.khonogoorBodokhEsekh || false,
       bodokhKhonog: base?.bodokhKhonog || 0,
-    }]).map((m: any, idx: number) => ({
-      ...m,
-      garages: idx === 0 ? allGarages.map((g: any) => ({ ...g })) : [],
-      storages: idx === 0 ? allStorages.map((s: any) => ({ ...s })) : [],
-    }));
+    }]);
 
-    return initialMains;
+    // Гараж/агуулахыг `linkedAptToot`-оор нь харьяа тоот дор нь буцаана.
+    // Холбоосгүй (хуучин) эсвэл холбосон тоот нь алга бол эхний тоот дор —
+    // backend ч тэднийг үндсэн тоотын гэрээнд тооцдог.
+    const tootKey = (v: any) => String(v ?? "").trim();
+    const kharyaalalOlyo = (u: any) => {
+      const link = tootKey(u.linkedAptToot);
+      const idx = link
+        ? initialMains.findIndex((m: any) => tootKey(m.toot) === link)
+        : -1;
+      return idx >= 0 ? idx : 0;
+    };
+    return initialMains.map((m: any, idx: number) => ({
+      ...m,
+      garages: allGarages
+        .filter((g: any) => kharyaalalOlyo(g) === idx)
+        .map((g: any) => ({ ...g })),
+      storages: allStorages
+        .filter((st: any) => kharyaalalOlyo(st) === idx)
+        .map((st: any) => ({ ...st })),
+    }));
   };
 
   // Sync local state when modal opens
@@ -673,11 +688,15 @@ export default function ResidentModal({
       });
       (mu.garages || []).forEach((g: any) => {
         activeUnits.push({ orts: "1", davkhar: g.davkhar || "", toot: g.toot || "", turul: "Гараж",
+          // Аль тоотын дор нэмсэн нь — гэрээ, нэхэмжлэх тэр тоот дээр үүснэ.
+          linkedAptToot: mu.toot || "",
           ekhniiUldegdel: Number(g.ekhniiUldegdel || 0), tsahilgaaniiZaalt: Number(g.tsahilgaaniiZaalt || 0),
           khonogoorBodokhEsekh: !!g.khonogoorBodokhEsekh, bodokhKhonog: Number(g.bodokhKhonog || 0) });
       });
       (mu.storages || []).forEach((s: any) => {
         activeUnits.push({ orts: "1", davkhar: s.davkhar || "", toot: s.toot || "", turul: "Агуулах",
+          // Аль тоотын дор нэмсэн нь — гэрээ, нэхэмжлэх тэр тоот дээр үүснэ.
+          linkedAptToot: mu.toot || "",
           ekhniiUldegdel: Number(s.ekhniiUldegdel || 0), tsahilgaaniiZaalt: Number(s.tsahilgaaniiZaalt || 0),
           khonogoorBodokhEsekh: !!s.khonogoorBodokhEsekh, bodokhKhonog: Number(s.bodokhKhonog || 0) });
       });

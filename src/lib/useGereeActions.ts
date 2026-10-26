@@ -470,6 +470,9 @@ export function useGereeActions(
                 bodokhKhonog: t.bodokhKhonog || 0,
                 gereeNer: t.gereeNer || "",
                 gereeUtas: t.gereeUtas || "",
+                // Гараж/агуулах аль тоотод хамаарахыг хадгална — эс бөгөөс
+                // засах цонх бүгдийг эхний тоот дор харуулж, тэгээд хадгалдаг.
+                linkedAptToot: t.linkedAptToot || "",
               }))
             : [
               {
