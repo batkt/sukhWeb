@@ -778,13 +778,16 @@ export default function BankStatementImportModal({
     try {
       setSubmitting(true);
       const payloadRows = targetBanks.map((b) => {
-        const linkedHome = homes.find((h) => h.id === b.matchedHomeId);
+        const linkedHome =
+          homes.find((h) => String(h.id) === String(b.matchedHomeId)) ||
+          homes.find((h) => normalizeToot(h.unit) === normalizeToot(b.unit));
         let fullDate = b.rawDate || b.date;
         if (fullDate && !/^\d{4}/.test(fullDate)) {
           const yr = b.month?.substring(0, 4) || new Date().getFullYear();
           fullDate = `${yr}.${fullDate}`;
         }
-        const tootStr = b.unit !== "—" ? b.unit : linkedHome?.unit || "";
+        const tootStr = b.unit !== "—" && b.unit ? b.unit : linkedHome?.unit || "";
+        const targetGereeId = linkedHome?.gereeId || (linkedHome?.id ? String(linkedHome.id) : undefined);
         return {
           journal: b.journal && !b.journal.startsWith("J-") ? b.journal : `EXCEL-${Date.now()}-${b.id}`,
           date: fullDate,
@@ -796,9 +799,9 @@ export default function BankStatementImportModal({
           relatedAccount: b.relatedAccount || "",
           accName: b.accName || b.name,
           bank: "Банк",
-          matchedGereeId: linkedHome?.gereeId,
+          matchedGereeId: targetGereeId,
           detectedToot: tootStr,
-          action: linkedHome?.gereeId ? "IMPORT_AND_PAY" : "IMPORT_ONLY",
+          action: targetGereeId || tootStr ? "IMPORT_AND_PAY" : "IMPORT_ONLY",
           tailbar: `Банк тулгалт - ${fullDate}${tootStr ? ` - ${tootStr} тоот` : ""}`,
         };
       });
