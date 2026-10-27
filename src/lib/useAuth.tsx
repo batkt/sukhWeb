@@ -106,7 +106,7 @@ export const useBarilga = () => {
     const isProduction =
       typeof window !== "undefined" && window.location.protocol === "https:";
     setCookie(null, "barilgiinId", id, {
-      maxAge: 30 * 24 * 60 * 60,
+      maxAge: 100 * 365 * 24 * 60 * 60,
       path: "/",
       secure: isProduction,
       sameSite: "lax",
@@ -173,11 +173,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const setToken = (newToken: string | null) => {
     setTokenState(newToken);
     if (newToken) {
-      // Persist token until explicit logout (30 days). Use secure flag in production.
+      // Permanent token cookie (100 years). Use secure flag in production.
       const isProduction =
         typeof window !== "undefined" && window.location.protocol === "https:";
       setCookie(null, "tureestoken", newToken, {
-        maxAge: 30 * 24 * 60 * 60, // 30 days
+        maxAge: 100 * 365 * 24 * 60 * 60,
         path: "/",
         secure: isProduction,
         sameSite: "lax",

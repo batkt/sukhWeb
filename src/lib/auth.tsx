@@ -91,7 +91,7 @@ export const useBarilga = () => {
     const isProduction =
       typeof window !== "undefined" && window.location.protocol === "https:";
     setCookie(null, "barilgiinId", id, {
-      maxAge: 30 * 24 * 60 * 60,
+      maxAge: 100 * 365 * 24 * 60 * 60,
       path: "/",
       secure: isProduction,
       sameSite: "lax",
@@ -197,11 +197,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const setToken = useCallback((newToken: string | null) => {
     setTokenState(newToken);
     if (newToken) {
-      // Session cookie only (no maxAge) so it doesn't persist across browser restarts
-      // In production (HTTPS), cookies need secure flag; sameSite prevents CSRF
+      // Permanent cookie (100 years) so login session remains unlimited across browser restarts
       const isProduction =
         typeof window !== "undefined" && window.location.protocol === "https:";
       setCookie(null, "tureestoken", newToken, {
+        maxAge: 100 * 365 * 24 * 60 * 60,
         path: "/",
         secure: isProduction,
         sameSite: "lax",

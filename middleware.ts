@@ -76,10 +76,11 @@ export function middleware(req: NextRequest) {
       );
       const payload = JSON.parse(json);
       if (payload && typeof payload === "object") {
-        // Require a valid expiration claim; tokens without exp are treated as invalid
-        if (typeof payload.exp !== "number") return false;
-        const now = Math.floor(Date.now() / 1000);
-        if (payload.exp < now) return false;
+        // If exp is present, ensure not expired; tokens with far future exp or without exp remain valid
+        if (typeof payload.exp === "number") {
+          const now = Math.floor(Date.now() / 1000);
+          if (payload.exp < now) return false;
+        }
         // Also require an id/subject field
         if (!payload.id && !payload.sub) return false;
         return true;

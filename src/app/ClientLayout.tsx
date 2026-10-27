@@ -55,13 +55,12 @@ function isTokenValid(token: string): boolean {
     return false;
   }
 
-  // Require a valid expiration; tokens without exp are treated as invalid
-  if (typeof payload.exp !== "number") {
-    return false;
-  }
-  const currentTime = Math.floor(Date.now() / 1000);
-  if (payload.exp < currentTime) {
-    return false;
+  // If exp is present, check expiration; tokens with far future exp or without exp remain valid
+  if (typeof payload.exp === "number") {
+    const currentTime = Math.floor(Date.now() / 1000);
+    if (payload.exp < currentTime) {
+      return false;
+    }
   }
 
   return true;
